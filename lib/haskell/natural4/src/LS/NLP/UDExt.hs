@@ -5,6 +5,7 @@ module LS.NLP.UDExt where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
+
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -176,6 +177,10 @@ type GSub1000 = Tree GSub1000_
 data GSub1000_
 type GSub1000000 = Tree GSub1000000_
 data GSub1000000_
+type GSub1000000000 = Tree GSub1000000000_
+data GSub1000000000_
+type GSub1000000000000 = Tree GSub1000000000000_
+data GSub1000000000000_
 type GSubj = Tree GSubj_
 data GSubj_
 type GSymb = Tree GSymb_
@@ -597,10 +602,23 @@ data Tree :: * -> * where
   Gpot1to19 :: GDigit -> Tree GSub100_
   Gpot1as2 :: GSub100 -> Tree GSub1000_
   Gpot2 :: GSub10 -> Tree GSub1000_
+  Gpot21 :: Tree GSub1000_
   Gpot2plus :: GSub10 -> GSub100 -> Tree GSub1000_
   Gpot2as3 :: GSub1000 -> Tree GSub1000000_
   Gpot3 :: GSub1000 -> Tree GSub1000000_
+  Gpot31 :: Tree GSub1000000_
+  Gpot3float :: GFloat -> Tree GSub1000000_
   Gpot3plus :: GSub1000 -> GSub1000 -> Tree GSub1000000_
+  Gpot3as4 :: GSub1000000 -> Tree GSub1000000000_
+  Gpot4 :: GSub1000 -> Tree GSub1000000000_
+  Gpot41 :: Tree GSub1000000000_
+  Gpot4float :: GFloat -> Tree GSub1000000000_
+  Gpot4plus :: GSub1000 -> GSub1000000 -> Tree GSub1000000000_
+  Gpot4as5 :: GSub1000000000 -> Tree GSub1000000000000_
+  Gpot5 :: GSub1000 -> Tree GSub1000000000000_
+  Gpot51 :: Tree GSub1000000000000_
+  Gpot5float :: GFloat -> Tree GSub1000000000000_
+  Gpot5plus :: GSub1000 -> GSub1000000000 -> Tree GSub1000000000000_
   LexSubj :: String -> Tree GSubj_
   GStrSymb :: GString -> Tree GSymb_
   GTTAnt :: GTense -> GAnt -> Tree GTemp_
@@ -726,6 +744,7 @@ data Tree :: * -> * where
   Groot_obj_nmod :: Groot -> Gobj -> Gnmod -> Tree GUDS_
   Groot_obj_obl :: Groot -> Gobj -> Gobl -> Tree GUDS_
   Groot_obj_obl_advcl :: Groot -> Gobj -> Gobl -> Gadvcl -> Tree GUDS_
+  Groot_obj_xcomp :: Groot -> Gobj -> Gxcomp -> Tree GUDS_
   Groot_obl :: Groot -> Gobl -> Tree GUDS_
   Groot_obl_appos :: Groot -> Gobl -> Gappos -> Tree GUDS_
   Groot_obl_aux :: Groot -> Gobl -> Gaux -> Tree GUDS_
@@ -737,7 +756,6 @@ data Tree :: * -> * where
   Groot_parataxis :: Groot -> Gparataxis -> Tree GUDS_
   Groot_xcomp :: Groot -> Gxcomp -> Tree GUDS_
   Groot_xcomp_ccomp :: Groot -> Gxcomp -> Gccomp -> Tree GUDS_
-  Groot_xcomp_obj :: Groot -> Gxcomp -> Gobj -> Tree GUDS_
   GStrV :: GString -> Tree GV_
   LexV :: String -> Tree GV_
   GAdVVP :: GAdV -> GVP -> Tree GVP_
@@ -1106,10 +1124,23 @@ instance Eq (Tree a) where
     (Gpot1to19 x1,Gpot1to19 y1) -> and [ x1 == y1 ]
     (Gpot1as2 x1,Gpot1as2 y1) -> and [ x1 == y1 ]
     (Gpot2 x1,Gpot2 y1) -> and [ x1 == y1 ]
+    (Gpot21,Gpot21) -> and [ ]
     (Gpot2plus x1 x2,Gpot2plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gpot2as3 x1,Gpot2as3 y1) -> and [ x1 == y1 ]
     (Gpot3 x1,Gpot3 y1) -> and [ x1 == y1 ]
+    (Gpot31,Gpot31) -> and [ ]
+    (Gpot3float x1,Gpot3float y1) -> and [ x1 == y1 ]
     (Gpot3plus x1 x2,Gpot3plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Gpot3as4 x1,Gpot3as4 y1) -> and [ x1 == y1 ]
+    (Gpot4 x1,Gpot4 y1) -> and [ x1 == y1 ]
+    (Gpot41,Gpot41) -> and [ ]
+    (Gpot4float x1,Gpot4float y1) -> and [ x1 == y1 ]
+    (Gpot4plus x1 x2,Gpot4plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Gpot4as5 x1,Gpot4as5 y1) -> and [ x1 == y1 ]
+    (Gpot5 x1,Gpot5 y1) -> and [ x1 == y1 ]
+    (Gpot51,Gpot51) -> and [ ]
+    (Gpot5float x1,Gpot5float y1) -> and [ x1 == y1 ]
+    (Gpot5plus x1 x2,Gpot5plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (LexSubj x,LexSubj y) -> x == y
     (GStrSymb x1,GStrSymb y1) -> and [ x1 == y1 ]
     (GTTAnt x1 x2,GTTAnt y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1235,6 +1266,7 @@ instance Eq (Tree a) where
     (Groot_obj_nmod x1 x2 x3,Groot_obj_nmod y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obj_obl x1 x2 x3,Groot_obj_obl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obj_obl_advcl x1 x2 x3 x4,Groot_obj_obl_advcl y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (Groot_obj_xcomp x1 x2 x3,Groot_obj_xcomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obl x1 x2,Groot_obl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_obl_appos x1 x2 x3,Groot_obl_appos y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Groot_obl_aux x1 x2 x3,Groot_obl_aux y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -1246,7 +1278,6 @@ instance Eq (Tree a) where
     (Groot_parataxis x1 x2,Groot_parataxis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_xcomp x1 x2,Groot_xcomp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Groot_xcomp_ccomp x1 x2 x3,Groot_xcomp_ccomp y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Groot_xcomp_obj x1 x2 x3,Groot_xcomp_obj y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GStrV x1,GStrV y1) -> and [ x1 == y1 ]
     (LexV x,LexV y) -> x == y
     (GAdVVP x1 x2,GAdVVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -1510,8 +1541,8 @@ instance Gf GAnt where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AAnter" -> GAAnter 
-      Just (i,[]) | i == mkCId "ASimul" -> GASimul 
+      Just (i,[]) | i == mkCId "AAnter" -> GAAnter
+      Just (i,[]) | i == mkCId "ASimul" -> GASimul
 
 
       _ -> error ("no Ant " ++ show t)
@@ -1555,10 +1586,10 @@ instance Gf GCN where
       Just (i,[x1,x2]) | i == mkCId "RelCN" -> GRelCN (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentCN" -> GSentCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseN" -> GUseN (fg x1)
-      Just (i,[]) | i == mkCId "day_CN" -> Gday_CN 
-      Just (i,[]) | i == mkCId "higher_CN" -> Ghigher_CN 
-      Just (i,[]) | i == mkCId "leave_CN" -> Gleave_CN 
-      Just (i,[]) | i == mkCId "tricyclic_CN" -> Gtricyclic_CN 
+      Just (i,[]) | i == mkCId "day_CN" -> Gday_CN
+      Just (i,[]) | i == mkCId "higher_CN" -> Ghigher_CN
+      Just (i,[]) | i == mkCId "leave_CN" -> Gleave_CN
+      Just (i,[]) | i == mkCId "tricyclic_CN" -> Gtricyclic_CN
 
 
       _ -> error ("no CN " ++ show t)
@@ -1678,16 +1709,16 @@ instance Gf GDig where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "D_0" -> GD_0 
-      Just (i,[]) | i == mkCId "D_1" -> GD_1 
-      Just (i,[]) | i == mkCId "D_2" -> GD_2 
-      Just (i,[]) | i == mkCId "D_3" -> GD_3 
-      Just (i,[]) | i == mkCId "D_4" -> GD_4 
-      Just (i,[]) | i == mkCId "D_5" -> GD_5 
-      Just (i,[]) | i == mkCId "D_6" -> GD_6 
-      Just (i,[]) | i == mkCId "D_7" -> GD_7 
-      Just (i,[]) | i == mkCId "D_8" -> GD_8 
-      Just (i,[]) | i == mkCId "D_9" -> GD_9 
+      Just (i,[]) | i == mkCId "D_0" -> GD_0
+      Just (i,[]) | i == mkCId "D_1" -> GD_1
+      Just (i,[]) | i == mkCId "D_2" -> GD_2
+      Just (i,[]) | i == mkCId "D_3" -> GD_3
+      Just (i,[]) | i == mkCId "D_4" -> GD_4
+      Just (i,[]) | i == mkCId "D_5" -> GD_5
+      Just (i,[]) | i == mkCId "D_6" -> GD_6
+      Just (i,[]) | i == mkCId "D_7" -> GD_7
+      Just (i,[]) | i == mkCId "D_8" -> GD_8
+      Just (i,[]) | i == mkCId "D_9" -> GD_9
 
 
       _ -> error ("no Dig " ++ show t)
@@ -1704,14 +1735,14 @@ instance Gf GDigit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "n2" -> Gn2 
-      Just (i,[]) | i == mkCId "n3" -> Gn3 
-      Just (i,[]) | i == mkCId "n4" -> Gn4 
-      Just (i,[]) | i == mkCId "n5" -> Gn5 
-      Just (i,[]) | i == mkCId "n6" -> Gn6 
-      Just (i,[]) | i == mkCId "n7" -> Gn7 
-      Just (i,[]) | i == mkCId "n8" -> Gn8 
-      Just (i,[]) | i == mkCId "n9" -> Gn9 
+      Just (i,[]) | i == mkCId "n2" -> Gn2
+      Just (i,[]) | i == mkCId "n3" -> Gn3
+      Just (i,[]) | i == mkCId "n4" -> Gn4
+      Just (i,[]) | i == mkCId "n5" -> Gn5
+      Just (i,[]) | i == mkCId "n6" -> Gn6
+      Just (i,[]) | i == mkCId "n7" -> Gn7
+      Just (i,[]) | i == mkCId "n8" -> Gn8
+      Just (i,[]) | i == mkCId "n9" -> Gn9
 
 
       _ -> error ("no Digit " ++ show t)
@@ -1733,7 +1764,7 @@ instance Gf GGen where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "'\'s_Gen'" -> Gs_Gen 
+      Just (i,[]) | i == mkCId "'\'s_Gen'" -> Gs_Gen
 
 
       _ -> error ("no Gen " ++ show t)
@@ -1755,11 +1786,11 @@ instance Gf GIAdv where
       Just (i,[x1,x2]) | i == mkCId "ConjIAdv" -> GConjIAdv (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "IAdvAdv" -> GIAdvAdv (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PrepIP" -> GPrepIP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv 
-      Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv 
-      Just (i,[]) | i == mkCId "where_IAdv" -> Gwhere_IAdv 
-      Just (i,[]) | i == mkCId "wherein_IAdv" -> Gwherein_IAdv 
-      Just (i,[]) | i == mkCId "why_IAdv" -> Gwhy_IAdv 
+      Just (i,[]) | i == mkCId "how_IAdv" -> Ghow_IAdv
+      Just (i,[]) | i == mkCId "when_IAdv" -> Gwhen_IAdv
+      Just (i,[]) | i == mkCId "where_IAdv" -> Gwhere_IAdv
+      Just (i,[]) | i == mkCId "wherein_IAdv" -> Gwherein_IAdv
+      Just (i,[]) | i == mkCId "why_IAdv" -> Gwhy_IAdv
 
 
       _ -> error ("no IAdv " ++ show t)
@@ -1800,8 +1831,8 @@ instance Gf GIP where
       Just (i,[x1,x2]) | i == mkCId "AdvIP" -> GAdvIP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "IdetCN" -> GIdetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "IdetIP" -> GIdetIP (fg x1)
-      Just (i,[]) | i == mkCId "what_IP" -> Gwhat_IP 
-      Just (i,[]) | i == mkCId "who_IP" -> Gwho_IP 
+      Just (i,[]) | i == mkCId "what_IP" -> Gwhat_IP
+      Just (i,[]) | i == mkCId "who_IP" -> Gwho_IP
 
 
       _ -> error ("no IP " ++ show t)
@@ -1811,7 +1842,7 @@ instance Gf GIQuant where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "which_IQuant" -> Gwhich_IQuant 
+      Just (i,[]) | i == mkCId "which_IQuant" -> Gwhich_IQuant
 
 
       _ -> error ("no IQuant " ++ show t)
@@ -2083,15 +2114,15 @@ instance Gf GNP where
       Just (i,[x1,x2]) | i == mkCId "RelNP" -> GRelNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RelclNP" -> GRelclNP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "SentNP" -> GSentNP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "Someone" -> GSomeone 
+      Just (i,[]) | i == mkCId "Someone" -> GSomeone
       Just (i,[x1]) | i == mkCId "TokAll" -> GTokAll (fg x1)
       Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
       Just (i,[x1]) | i == mkCId "UsePron" -> GUsePron (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Who" -> GWho (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "You" -> GYou 
-      Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP 
-      Just (i,[]) | i == mkCId "one_NP" -> Gone_NP 
-      Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP 
+      Just (i,[]) | i == mkCId "You" -> GYou
+      Just (i,[]) | i == mkCId "european_NP" -> Geuropean_NP
+      Just (i,[]) | i == mkCId "one_NP" -> Gone_NP
+      Just (i,[]) | i == mkCId "whoever_NP" -> Gwhoever_NP
 
 
       _ -> error ("no NP " ++ show t)
@@ -2101,7 +2132,7 @@ instance Gf GNeg where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "not_Neg" -> Gnot_Neg 
+      Just (i,[]) | i == mkCId "not_Neg" -> Gnot_Neg
 
 
       _ -> error ("no Neg " ++ show t)
@@ -2115,8 +2146,8 @@ instance Gf GNum where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "NumCard" -> GNumCard (fg x1)
-      Just (i,[]) | i == mkCId "NumPl" -> GNumPl 
-      Just (i,[]) | i == mkCId "NumSg" -> GNumSg 
+      Just (i,[]) | i == mkCId "NumPl" -> GNumPl
+      Just (i,[]) | i == mkCId "NumSg" -> GNumSg
       Just (i,[x1]) | i == mkCId "StrNum" -> GStrNum (fg x1)
 
 
@@ -2155,9 +2186,9 @@ instance Gf GPConj where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "but_PConj" -> Gbut_PConj 
-      Just (i,[]) | i == mkCId "for_PConj" -> Gfor_PConj 
-      Just (i,[]) | i == mkCId "so_PConj" -> Gso_PConj 
+      Just (i,[]) | i == mkCId "but_PConj" -> Gbut_PConj
+      Just (i,[]) | i == mkCId "for_PConj" -> Gfor_PConj
+      Just (i,[]) | i == mkCId "so_PConj" -> Gso_PConj
 
 
       _ -> error ("no PConj " ++ show t)
@@ -2181,8 +2212,8 @@ instance Gf GPol where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "PNeg" -> GPNeg 
-      Just (i,[]) | i == mkCId "PPos" -> GPPos 
+      Just (i,[]) | i == mkCId "PNeg" -> GPNeg
+      Just (i,[]) | i == mkCId "PPos" -> GPPos
 
 
       _ -> error ("no Pol " ++ show t)
@@ -2305,10 +2336,10 @@ instance Gf GRP where
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "FunRP" -> GFunRP (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "GenRP" -> GGenRP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "IdRP" -> GIdRP 
+      Just (i,[]) | i == mkCId "IdRP" -> GIdRP
       Just (i,[x1,x2]) | i == mkCId "PrepRP" -> GPrepRP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP 
-      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP 
+      Just (i,[]) | i == mkCId "that_RP" -> Gthat_RP
+      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP
 
 
       _ -> error ("no RP " ++ show t)
@@ -2368,7 +2399,7 @@ instance Gf GSub10 where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0" -> Gpot0 (fg x1)
-      Just (i,[]) | i == mkCId "pot01" -> Gpot01 
+      Just (i,[]) | i == mkCId "pot01" -> Gpot01
 
 
       _ -> error ("no Sub10 " ++ show t)
@@ -2385,8 +2416,8 @@ instance Gf GSub100 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0as1" -> Gpot0as1 (fg x1)
       Just (i,[x1]) | i == mkCId "pot1" -> Gpot1 (fg x1)
-      Just (i,[]) | i == mkCId "pot110" -> Gpot110 
-      Just (i,[]) | i == mkCId "pot111" -> Gpot111 
+      Just (i,[]) | i == mkCId "pot110" -> Gpot110
+      Just (i,[]) | i == mkCId "pot111" -> Gpot111
       Just (i,[x1,x2]) | i == mkCId "pot1plus" -> Gpot1plus (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "pot1to19" -> Gpot1to19 (fg x1)
 
@@ -2396,12 +2427,14 @@ instance Gf GSub100 where
 instance Gf GSub1000 where
   gf (Gpot1as2 x1) = mkApp (mkCId "pot1as2") [gf x1]
   gf (Gpot2 x1) = mkApp (mkCId "pot2") [gf x1]
+  gf Gpot21 = mkApp (mkCId "pot21") []
   gf (Gpot2plus x1 x2) = mkApp (mkCId "pot2plus") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot1as2" -> Gpot1as2 (fg x1)
       Just (i,[x1]) | i == mkCId "pot2" -> Gpot2 (fg x1)
+      Just (i,[]) | i == mkCId "pot21" -> Gpot21
       Just (i,[x1,x2]) | i == mkCId "pot2plus" -> Gpot2plus (fg x1) (fg x2)
 
 
@@ -2410,16 +2443,56 @@ instance Gf GSub1000 where
 instance Gf GSub1000000 where
   gf (Gpot2as3 x1) = mkApp (mkCId "pot2as3") [gf x1]
   gf (Gpot3 x1) = mkApp (mkCId "pot3") [gf x1]
+  gf Gpot31 = mkApp (mkCId "pot31") []
+  gf (Gpot3float x1) = mkApp (mkCId "pot3float") [gf x1]
   gf (Gpot3plus x1 x2) = mkApp (mkCId "pot3plus") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot2as3" -> Gpot2as3 (fg x1)
       Just (i,[x1]) | i == mkCId "pot3" -> Gpot3 (fg x1)
+      Just (i,[]) | i == mkCId "pot31" -> Gpot31
+      Just (i,[x1]) | i == mkCId "pot3float" -> Gpot3float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot3plus" -> Gpot3plus (fg x1) (fg x2)
 
 
       _ -> error ("no Sub1000000 " ++ show t)
+
+instance Gf GSub1000000000 where
+  gf (Gpot3as4 x1) = mkApp (mkCId "pot3as4") [gf x1]
+  gf (Gpot4 x1) = mkApp (mkCId "pot4") [gf x1]
+  gf Gpot41 = mkApp (mkCId "pot41") []
+  gf (Gpot4float x1) = mkApp (mkCId "pot4float") [gf x1]
+  gf (Gpot4plus x1 x2) = mkApp (mkCId "pot4plus") [gf x1, gf x2]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "pot3as4" -> Gpot3as4 (fg x1)
+      Just (i,[x1]) | i == mkCId "pot4" -> Gpot4 (fg x1)
+      Just (i,[]) | i == mkCId "pot41" -> Gpot41
+      Just (i,[x1]) | i == mkCId "pot4float" -> Gpot4float (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "pot4plus" -> Gpot4plus (fg x1) (fg x2)
+
+
+      _ -> error ("no Sub1000000000 " ++ show t)
+
+instance Gf GSub1000000000000 where
+  gf (Gpot4as5 x1) = mkApp (mkCId "pot4as5") [gf x1]
+  gf (Gpot5 x1) = mkApp (mkCId "pot5") [gf x1]
+  gf Gpot51 = mkApp (mkCId "pot51") []
+  gf (Gpot5float x1) = mkApp (mkCId "pot5float") [gf x1]
+  gf (Gpot5plus x1 x2) = mkApp (mkCId "pot5plus") [gf x1, gf x2]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "pot4as5" -> Gpot4as5 (fg x1)
+      Just (i,[x1]) | i == mkCId "pot5" -> Gpot5 (fg x1)
+      Just (i,[]) | i == mkCId "pot51" -> Gpot51
+      Just (i,[x1]) | i == mkCId "pot5float" -> Gpot5float (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "pot5plus" -> Gpot5plus (fg x1) (fg x2)
+
+
+      _ -> error ("no Sub1000000000000 " ++ show t)
 
 instance Gf GSubj where
   gf (LexSubj x) = mkApp (mkCId x) []
@@ -2458,10 +2531,10 @@ instance Gf GTense where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "TCond" -> GTCond 
-      Just (i,[]) | i == mkCId "TFut" -> GTFut 
-      Just (i,[]) | i == mkCId "TPast" -> GTPast 
-      Just (i,[]) | i == mkCId "TPres" -> GTPres 
+      Just (i,[]) | i == mkCId "TCond" -> GTCond
+      Just (i,[]) | i == mkCId "TFut" -> GTFut
+      Just (i,[]) | i == mkCId "TPast" -> GTPast
+      Just (i,[]) | i == mkCId "TPres" -> GTPres
 
 
       _ -> error ("no Tense " ++ show t)
@@ -2617,6 +2690,7 @@ instance Gf GUDS where
   gf (Groot_obj_nmod x1 x2 x3) = mkApp (mkCId "root_obj_nmod") [gf x1, gf x2, gf x3]
   gf (Groot_obj_obl x1 x2 x3) = mkApp (mkCId "root_obj_obl") [gf x1, gf x2, gf x3]
   gf (Groot_obj_obl_advcl x1 x2 x3 x4) = mkApp (mkCId "root_obj_obl_advcl") [gf x1, gf x2, gf x3, gf x4]
+  gf (Groot_obj_xcomp x1 x2 x3) = mkApp (mkCId "root_obj_xcomp") [gf x1, gf x2, gf x3]
   gf (Groot_obl x1 x2) = mkApp (mkCId "root_obl") [gf x1, gf x2]
   gf (Groot_obl_appos x1 x2 x3) = mkApp (mkCId "root_obl_appos") [gf x1, gf x2, gf x3]
   gf (Groot_obl_aux x1 x2 x3) = mkApp (mkCId "root_obl_aux") [gf x1, gf x2, gf x3]
@@ -2628,7 +2702,6 @@ instance Gf GUDS where
   gf (Groot_parataxis x1 x2) = mkApp (mkCId "root_parataxis") [gf x1, gf x2]
   gf (Groot_xcomp x1 x2) = mkApp (mkCId "root_xcomp") [gf x1, gf x2]
   gf (Groot_xcomp_ccomp x1 x2 x3) = mkApp (mkCId "root_xcomp_ccomp") [gf x1, gf x2, gf x3]
-  gf (Groot_xcomp_obj x1 x2 x3) = mkApp (mkCId "root_xcomp_obj") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
@@ -2726,6 +2799,7 @@ instance Gf GUDS where
       Just (i,[x1,x2,x3]) | i == mkCId "root_obj_nmod" -> Groot_obj_nmod (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obj_obl" -> Groot_obj_obl (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "root_obj_obl_advcl" -> Groot_obj_obl_advcl (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3]) | i == mkCId "root_obj_xcomp" -> Groot_obj_xcomp (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "root_obl" -> Groot_obl (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_appos" -> Groot_obl_appos (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3]) | i == mkCId "root_obl_aux" -> Groot_obl_aux (fg x1) (fg x2) (fg x3)
@@ -2737,7 +2811,6 @@ instance Gf GUDS where
       Just (i,[x1,x2]) | i == mkCId "root_parataxis" -> Groot_parataxis (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "root_xcomp" -> Groot_xcomp (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "root_xcomp_ccomp" -> Groot_xcomp_ccomp (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2,x3]) | i == mkCId "root_xcomp_obj" -> Groot_xcomp_obj (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no UDS " ++ show t)
@@ -2908,15 +2981,15 @@ instance Gf Gaux where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "aux_" -> Gaux_ (fg x1)
-      Just (i,[]) | i == mkCId "be_aux" -> Gbe_aux 
-      Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux 
-      Just (i,[]) | i == mkCId "do_aux" -> Gdo_aux 
-      Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux 
-      Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux 
-      Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux 
-      Just (i,[]) | i == mkCId "shall_aux" -> Gshall_aux 
-      Just (i,[]) | i == mkCId "should_aux" -> Gshould_aux 
-      Just (i,[]) | i == mkCId "will_aux" -> Gwill_aux 
+      Just (i,[]) | i == mkCId "be_aux" -> Gbe_aux
+      Just (i,[]) | i == mkCId "can_aux" -> Gcan_aux
+      Just (i,[]) | i == mkCId "do_aux" -> Gdo_aux
+      Just (i,[]) | i == mkCId "have_aux" -> Ghave_aux
+      Just (i,[]) | i == mkCId "may_aux" -> Gmay_aux
+      Just (i,[]) | i == mkCId "must_aux" -> Gmust_aux
+      Just (i,[]) | i == mkCId "shall_aux" -> Gshall_aux
+      Just (i,[]) | i == mkCId "should_aux" -> Gshould_aux
+      Just (i,[]) | i == mkCId "will_aux" -> Gwill_aux
 
 
       _ -> error ("no aux " ++ show t)
@@ -3009,8 +3082,8 @@ instance Gf Gcop where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "be_cop" -> Gbe_cop 
-      Just (i,[]) | i == mkCId "is_cop" -> Gis_cop 
+      Just (i,[]) | i == mkCId "be_cop" -> Gbe_cop
+      Just (i,[]) | i == mkCId "is_cop" -> Gis_cop
 
 
       _ -> error ("no cop " ++ show t)
@@ -3116,7 +3189,7 @@ instance Gf Gexpl where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "expl_" -> Gexpl_ (fg x1)
-      Just (i,[]) | i == mkCId "it_expl" -> Git_expl 
+      Just (i,[]) | i == mkCId "it_expl" -> Git_expl
 
 
       _ -> error ("no expl " ++ show t)
@@ -3228,7 +3301,7 @@ instance Gf Gmark where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "mark_" -> Gmark_ (fg x1)
-      Just (i,[]) | i == mkCId "to_mark" -> Gto_mark 
+      Just (i,[]) | i == mkCId "to_mark" -> Gto_mark
 
 
       _ -> error ("no mark " ++ show t)
@@ -3774,7 +3847,16 @@ instance Compos Tree where
     Gpot2plus x1 x2 -> r Gpot2plus `a` f x1 `a` f x2
     Gpot2as3 x1 -> r Gpot2as3 `a` f x1
     Gpot3 x1 -> r Gpot3 `a` f x1
+    Gpot3float x1 -> r Gpot3float `a` f x1
     Gpot3plus x1 x2 -> r Gpot3plus `a` f x1 `a` f x2
+    Gpot3as4 x1 -> r Gpot3as4 `a` f x1
+    Gpot4 x1 -> r Gpot4 `a` f x1
+    Gpot4float x1 -> r Gpot4float `a` f x1
+    Gpot4plus x1 x2 -> r Gpot4plus `a` f x1 `a` f x2
+    Gpot4as5 x1 -> r Gpot4as5 `a` f x1
+    Gpot5 x1 -> r Gpot5 `a` f x1
+    Gpot5float x1 -> r Gpot5float `a` f x1
+    Gpot5plus x1 x2 -> r Gpot5plus `a` f x1 `a` f x2
     GStrSymb x1 -> r GStrSymb `a` f x1
     GTTAnt x1 x2 -> r GTTAnt `a` f x1 `a` f x2
     GAdv_no_later_than_Num_calendar_days_after_the_day_UDS x1 x2 -> r GAdv_no_later_than_Num_calendar_days_after_the_day_UDS `a` f x1 `a` f x2
@@ -3895,6 +3977,7 @@ instance Compos Tree where
     Groot_obj_nmod x1 x2 x3 -> r Groot_obj_nmod `a` f x1 `a` f x2 `a` f x3
     Groot_obj_obl x1 x2 x3 -> r Groot_obj_obl `a` f x1 `a` f x2 `a` f x3
     Groot_obj_obl_advcl x1 x2 x3 x4 -> r Groot_obj_obl_advcl `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    Groot_obj_xcomp x1 x2 x3 -> r Groot_obj_xcomp `a` f x1 `a` f x2 `a` f x3
     Groot_obl x1 x2 -> r Groot_obl `a` f x1 `a` f x2
     Groot_obl_appos x1 x2 x3 -> r Groot_obl_appos `a` f x1 `a` f x2 `a` f x3
     Groot_obl_aux x1 x2 x3 -> r Groot_obl_aux `a` f x1 `a` f x2 `a` f x3
@@ -3906,7 +3989,6 @@ instance Compos Tree where
     Groot_parataxis x1 x2 -> r Groot_parataxis `a` f x1 `a` f x2
     Groot_xcomp x1 x2 -> r Groot_xcomp `a` f x1 `a` f x2
     Groot_xcomp_ccomp x1 x2 x3 -> r Groot_xcomp_ccomp `a` f x1 `a` f x2 `a` f x3
-    Groot_xcomp_obj x1 x2 x3 -> r Groot_xcomp_obj `a` f x1 `a` f x2 `a` f x3
     GStrV x1 -> r GStrV `a` f x1
     GAdVVP x1 x2 -> r GAdVVP `a` f x1 `a` f x2
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2

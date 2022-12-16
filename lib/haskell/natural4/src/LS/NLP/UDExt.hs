@@ -616,7 +616,7 @@ data Tree :: * -> * where
   GCondUpon :: GUDS -> GUDS -> GUDFragment -> Tree GUDFragment_
   GGiven :: GUDS -> GUDFragment -> Tree GUDFragment_
   GGivenStandalone :: GUDS -> Tree GUDFragment_
-  GHornClause2 :: GUDFragment -> GUDS -> Tree GUDFragment_
+  GHornClause2 :: GUDFragment -> GS -> Tree GUDFragment_
   GMeans :: GNP -> GUDS -> Tree GUDFragment_
   GRPelem :: GNP -> GUDS -> Tree GUDFragment_
   GRPeq :: GNP -> GUDS -> Tree GUDFragment_

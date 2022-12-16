@@ -225,7 +225,7 @@ nlgQuestion env rl = do
   where
     mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
     mkHCQs gr lang indentation emptE udfrag = case udfrag of
-      GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
+      GHornClause2 _ sent -> mkQs qsCond gr lang indentation emptE (sTG sent)
       GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
       _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
@@ -422,9 +422,22 @@ parseFields env rl = case rl of
     parseHornClause env fun (HC rp (Just bsr)) = do
       extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
       db_is_NDB_UDFragment <- parseRPforHC env fun rp
-      db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr
-      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
+      db_occurred_S <- bsr2s env bsr
+      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_S
       return $ gf hornclause
+
+    bsr2s :: NLGEnv -> BoolStructR -> IO GS
+    bsr2s env bsr = do
+      expr <- bsr2gf env bsr
+      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+      return $ case findType extGrammar expr of
+        "S" -> fg expr          -- S=[databreach occurred]
+        "AP" -> ap2s $ fg expr  -- someone is AP=[happy]
+        -- TODO: make other cats to S too
+        _ -> error $ "bsr2s: expected S, got " ++ showExpr expr
+
+    ap2s :: GAP -> GS
+    ap2s ap = GPredVPS GSomeone (GMkVPS presSimul GPPos (GUseComp (GCompAP ap)))
 
     -- A wrapper for ensuring same return type for parseRP
     parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment

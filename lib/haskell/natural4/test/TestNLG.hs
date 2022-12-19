@@ -10,7 +10,9 @@ import LS.Types hiding (And)
 import Data.Maybe
 import qualified AnyAll as AA
 import qualified Data.Text as Text
-
+import Data.Text.Arbitrary
+import LS.NLP.WordNet
+import Test.QuickCheck
 
 nlgTests :: NLGEnv -> Spec
 nlgTests env = do
@@ -117,6 +119,10 @@ nlgTests2 = do
     it "Should handle nested ccomps" $ do
       convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
       applyFormula (convertToFormula nestedCcompRule) "org" `shouldBe` "\\forall org . organization(org) && becomeAwareKnowOccur(org, lawyer, dataBreach)"
+    
+  describe "mkGerund" $ do
+    it "behaves like gfmkGerund" $ do
+      property prop_gerundcheck
 
 testDetsAsDet :: BoolStructR
 testDetsAsDet =
@@ -211,3 +217,7 @@ everyOrgNotPublicAg = defaultReg
   , deontic = DMust
   , action = mkLeafPT "sings"
   }
+
+prop_gerundcheck :: Text.Text -> Bool
+prop_gerundcheck string = let str = Text.unpack string in
+  gfmkGerund str == mkGerund str

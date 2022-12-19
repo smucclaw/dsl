@@ -23,6 +23,12 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
+xfiletest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+xfiletest testfile _desc parseFunc expected =
+  xit testfile $ do
+  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  parseFunc testfile `traverse` exampleStreams testcsv
+    `shouldParse` [ expected ]
 
 parserTests :: Spec
 parserTests  = do
@@ -313,6 +319,33 @@ parserTests  = do
 
       filetest "multiterm-with-blanks-1" "sl, no blanks"             (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
       filetest "multiterm-with-blanks-2" "sl, with blanks"           (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
+
+
+-- sl style
+    describe "sameOrNextLine" $ do
+      let potatoParser = parseOther (sameOrNextLine
+                                      (flip const $>| (pToken Declare) |*| (someSL (liftSL pOtherVal)))
+                                      (flip const $>| (pToken Has    ) |*| (someSL (liftSL pOtherVal))))
+          potatoExpect = ( ( [ "Potato" ]
+                           , [ "genus", "species" ] ), [] )
+
+      filetest "sameornext-1-same"  "a b on same line"  potatoParser potatoExpect
+      filetest "sameornext-2-next"  "a b on next line"  potatoParser potatoExpect
+      filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
+      filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
+
+    describe "ampersand" $ do
+      let nextLineP = myindented $ sameOrNextLine (someLiftSL pOtherVal) (someLiftSL pOtherVal)
+      xfiletest "ampersand-1" "should fail to parse" -- [TODO] how do we run a shouldFailOn? we are expecting this to fail.
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-2" "this bed is just right"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-3" "to the right shouldbe OK"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      xfiletest "ampersand-4" "to the right with extra should leave uncaptured uncaptured"
+        (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])
+      filetest "ampersand-4" "to the right with extra"
+        (parseOther nextLineP) ((["Potato", "uncaptured"],["genus", "species"]), [])
 
 srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
 srcrow', srccol' :: Int -> Rule -> Rule

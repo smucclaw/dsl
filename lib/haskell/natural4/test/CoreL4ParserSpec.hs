@@ -1,150 +1,36 @@
 {-# LANGUAGE OverloadedStrings #-}
-module ParserSpec where
+module CoreL4ParserSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
 import LS.Lib
-import LS.Parser
 import LS.Interpreter
-import LS.RelationalPredicates
-import LS.Tokens
 import AnyAll hiding (asJSON)
 import LS.BasicTypes
 import LS.Types
-import LS.Error
-import TestNLG
-import Test.QuickCheck
-import LS.NLP.WordNet
-
--- import LS.XPile.SVG
-import LS.XPile.VueJSON
 import LS.XPile.CoreL4
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Debug.Trace (traceM)
-import System.Environment (lookupEnv)
-import Data.Maybe (isJust)
-import Control.Monad (when, guard)
-import System.IO.Unsafe (unsafePerformIO)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TLE
-import Test.QuickCheck.Arbitrary.Generic
-import LS.NLP.NLG (NLGEnv, myNLGEnv)
-import Control.Concurrent.Async (async, wait)
 import Test.Hspec.Megaparsec (shouldParse)
 
--- if you just want to run a test in the repl, this might be enough:
--- λ: runMyParser id defaultRC ((,) <$> pOtherVal <*> (pToken GoDeeper *> pOtherVal <* pToken UnDeeper <* Text.Megaparsec.eof)) "" (exampleStream "foo,bar")
--- Right (("foo","bar"),[])
---
--- λ: runMyParser id defaultRC ((,,,) $>| pOtherVal |>| pOtherVal |>| pOtherVal |>< pOtherVal) "" (exampleStream "foo,foo,foo,bar")
--- Right (("foo","foo","foo","bar"),[])
-
--- | Create an expectation by saying what the result should be.
---
--- > parse letterChar "" "x" `shouldParse` 'x'
-
-filetest,filetest2 :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
+filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
   testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
-xfiletest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
-xfiletest testfile _desc parseFunc expected =
-  xit (testfile {- ++ ": " ++ desc -}) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
-  parseFunc testfile `traverse` exampleStreams testcsv
-    `shouldParse` [ expected ]
-
-texttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
-texttest testText desc parseFunc expected =
-  it desc $ do
-  let testcsv = TLE.encodeUtf8 (TL.fromStrict testText)
-  parseFunc (show testText) `traverse` exampleStreams testcsv
-    `shouldParse` [ expected ]
-
-xtexttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
-xtexttest testText desc parseFunc expected =
-  xit desc $ do
-    let testcsv = TLE.encodeUtf8 (TL.fromStrict testText)
-    parseFunc (show testText) `traverse` exampleStreams testcsv
-      `shouldParse` [ expected ]
-
-filetest2 testfile _desc parseFunc _expected =
-  it (testfile {- ++ ": " ++ desc -}) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
-  let _parsed = parseFunc testfile `traverse` exampleStreams testcsv
-  return ()
-
-
-preprocess :: String -> String
-preprocess = filter (not . (`elem` ['!', '.']))
-
-prop_gerundcheck :: T.Text -> Bool
-prop_gerundcheck string = let str = T.unpack string in
-  gfmkGerund str == mkGerund str
-
-instance Arbitrary T.Text where
-  arbitrary = T.pack <$> listOf (elements ['a' .. 'z'])
-  shrink = map T.pack . shrink . T.unpack
-
-instance Arbitrary MyToken where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-notOther :: MyToken -> Bool
-notOther (Other _) = False
-notOther (RuleMarker _ _) = False
-notOther _ = True
-
-prop_rendertoken :: MyToken -> Property
-prop_rendertoken mytok =
-  mytok `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
-  toToken (T.pack $ renderToken mytok) === [mytok]
-
-spec :: Spec
-spec = do
-  mpd <- runIO $ lookupEnv "MP_DEBUG"
-  mpn <- runIO $ lookupEnv "MP_NLG"
-  let runConfig_ = defaultRC {
-      debug = isJust mpd,
-      runNLGtests = isJust mpn || False
-    }
-
-  asyncNlgEnv <- runIO $ async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
-  nlgEnv <- runIO $ wait asyncNlgEnv
-
-  do
-    describe "mkGerund" $ do
-      it "behaves like gfmkGerund" $ do
-        property prop_gerundcheck
-    describe "renderToken" $ do
-      it "is the inverse of toToken" $ do
-        property prop_rendertoken
-    describe "Nothing Test" $ do
-      it "should be nothing" $ do
-        (Nothing :: Maybe ()) `shouldBe` (Nothing :: Maybe ())
-    describe "Parser tests" $ parserTests nlgEnv runConfig_
-    if runNLGtests runConfig_
-      then describe "NLG tests" $ nlgTests nlgEnv
-      else describe "skipping NLG tests" $ do it "to enable, run with MP_NLG=True or edit Spec.hs's runNLGtests config" $ do True
-
-parserTests :: NLGEnv -> RunConfig -> Spec
-parserTests nlgEnv runConfig_ = do
-    let runConfig = runConfig_ { sourceURL = "test/Spec" }
+parserTests :: Spec
+parserTests  = do
+    let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
-    let  dumpStream s = traceM "* Tokens" >> traceM (pRenderStream s)
-    let  parseWith  f x y s = when (debug runConfig_) (dumpStream s) >> f <$> runMyParser combine runConfig x y s
-    let _parseWith1 f x y s =                          dumpStream s  >> f <$> runMyParser combine runConfigDebug x y s
-    let  parseR       x y s = when (debug runConfig_) (dumpStream s) >> runMyParser combine runConfig x y s
-    let _parseR1      x y s =                          dumpStream s  >> runMyParser combine runConfigDebug x y s
-    let  parseOther   x y s = when (debug runConfig_) (dumpStream s) >> runMyParser id      runConfig x y s
-    let _parseOther1  x y s =                          dumpStream s  >> runMyParser id      runConfigDebug x y s
+    let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
+    let  parseR       x y s = runMyParser combine runConfig x y s
+    let _parseR1      x y s = runMyParser combine runConfigDebug x y s
+    let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
+    let  parseOther   x y s = runMyParser id      runConfig x y s
 
     -- [TODO] it'd be nice to get this working as a filetest rather than the manual way
     describe "transpiler to CoreL4" $ do

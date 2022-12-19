@@ -65,6 +65,7 @@ dependencies:
 - raw-strings-qq
 - regex-tdfa
 - baby-l4
+- quickcheck-text
 
 ghc-options: -Wall -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10
 

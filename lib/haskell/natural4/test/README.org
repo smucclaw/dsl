@@ -146,7 +146,7 @@ L4List [ L4Leaf (["foo"], Notype)
        , L4Leaf (["bar"], Notype)
        , L4Leaf (["baz"], Notype)
        ]
-           
+
 **** and/or trees
 :PROPERTIES:
 :TABLE_EXPORT_FILE: /dev/null
@@ -549,7 +549,7 @@ what if there is a blank column to the right of the OR? we need to match as many
 
 we count the number of UnDeeper+ captured, and use that to limit the greediness of the
 initial ~pOtherval +?~ component.
-                    
+
 |       | Bad |              |    |   |              |
 | MEANS | any | unauthorised |    |   | access       |
 |       |     |              | OR |   | use          |
@@ -1529,7 +1529,7 @@ MultiText RelToken MultiText
 ****** contexts
 
 - part of a HornClause
-  
+
 ***** RelationalPredicate: N-ary Predicate
 :PROPERTIES:
 :TABLE_EXPORT_FILE: /dev/null
@@ -2480,7 +2480,7 @@ The connector ~UNLESS~ is defined as ~AND NOT~, so it follows whatever preamble 
 
 **** Unless in the head
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-tail-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-means/bob-tail-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2510,7 +2510,7 @@ if (not estranged))
 
 **** You can't have an UNLESS being the head of a constitutive rule -- it has to be MEANS or WHEN or IS :shouldfail:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-means/bob-head-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2539,7 +2539,7 @@ unless follows the and/or/not
 if (not (estranged or dead))
 **** more explicit indentation, head                                                   :expected:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-1-b.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-means/bob-head-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2585,7 +2585,7 @@ note the unless goes into the hBody instead of the hHead.
 
 **** less explicit indentation                                                         :expected:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-means/bob-head-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2597,7 +2597,7 @@ is (not estranged) or dead)
 
 **** but indentation doesn't go backwards
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-3.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-means/bob-head-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3054,7 +3054,7 @@ what if we say
 | GIVEN | Player1        |         |   | Player2        | :: | Player |
 | DEEM  | Player1        | defeats |   | Player2        |    |        |
 | WHEN  | Player1.choice | beats   |   | Player2.choice |    |        |
-        
+
 *** Pilcrows
 :PROPERTIES:
 :TABLE_EXPORT_FILE: pilcrows-1.csv
@@ -3605,4 +3605,3 @@ The "IF" line has to go below.
 | IT IS | an Off-Peak Day        |
 | IF    | it is a weekend        |
 | OR    | it is a public holiday |
-

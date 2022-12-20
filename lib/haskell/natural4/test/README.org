@@ -3084,7 +3084,7 @@ what if we say
 
 *** 1: Rule Groups and Rule Labels                                                      :pdpadbno:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-1.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3108,7 +3108,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** let's try it with slightly different indentation
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-1-b.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3325,7 +3325,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** 2: Data Intermediaries, Part 1
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-2.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3340,7 +3340,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** 3: Data Intermediaries, Part 2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-3.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3414,7 +3414,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** 5: notification to PDPC
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-5.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3434,7 +3434,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** 6: "Unlikely" significant harm exception
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-6.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3449,7 +3449,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** 7: Notification to users
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-7.csv
+:TABLE_EXPORT_FILE: Parsing/pdpa/pdpadbno-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

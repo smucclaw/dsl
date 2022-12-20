@@ -6,7 +6,7 @@ import qualified Parsing.MegaparsingUnlessSpec
 import qualified Parsing.NewParserSpec
 import qualified Parsing.SLParserSpec
 import qualified BoolStructParserSpec
-import qualified PDPASpec
+import qualified Parsing.PDPASpec
 import qualified CoreL4ParserSpec
 import Control.Concurrent.Async
 import LS.NLP.NLG (myNLGEnv)
@@ -34,7 +34,7 @@ spec = do
   describe "MegaparsingUnless"     Parsing.MegaparsingUnlessSpec.parserTests
   describe "NewParserSpec"         Parsing.NewParserSpec.parserTests
   describe "SLParser"              Parsing.SLParserSpec.parserTests
-  describe "PDPASpec"              PDPASpec.parserTests
+  describe "PDPASpec"              Parsing.PDPASpec.parserTests
   describe "BoolStructParser"      (BoolStructParserSpec.parserTests nlgEnv)
   describe "CoreL4Parser"          CoreL4ParserSpec.parserTests
   describe "TestNLG"               TestNLG.nlgTests2

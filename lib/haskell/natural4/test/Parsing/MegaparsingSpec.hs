@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MegaparsingSpec where
+module Parsing.MegaparsingSpec where
 
--- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
 import LS.Lib
 import AnyAll hiding (asJSON)
@@ -15,7 +14,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  testcsv <- BS.readFile ("test/Parsing/megaparsing/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 

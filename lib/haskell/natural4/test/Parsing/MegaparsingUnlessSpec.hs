@@ -110,7 +110,7 @@ parserTests  = do
         (parseR pRules) dayOfSong
 
       it "pilcrows-1" $ do
-        testcsv <- BS.readFile ("test/" <> "pilcrows-1" <> ".csv")
+        testcsv <- BS.readFile ("test/Parsing/megaparsing-unless/" <> "pilcrows-1" <> ".csv")
         parseR pRules "pilcrows-1" `traverse` exampleStreams testcsv
           `shouldParse` [ dayOfSilence, srcrow2 <$> dayOfSong ]
 

@@ -2,7 +2,7 @@ import Test.Hspec
 import qualified TestNLG
 import qualified Parsing.MegaparsingSpec
 import qualified Parsing.MegaparsingMeansSpec
-import qualified MegaparsingUnlessSpec
+import qualified Parsing.MegaparsingUnlessSpec
 import qualified NewParserSpec
 import qualified SLParserSpec
 import qualified BoolStructParserSpec
@@ -31,7 +31,7 @@ spec = do
 
   describe "Megaparsing"           Parsing.MegaparsingSpec.parserTests
   describe "MegaparsingMeans"      Parsing.MegaparsingMeansSpec.parserTests
-  describe "MegaparsingUnless"     MegaparsingUnlessSpec.parserTests
+  describe "MegaparsingUnless"     Parsing.MegaparsingUnlessSpec.parserTests
   describe "NewParserSpec"         NewParserSpec.parserTests
   describe "PDPASpec"              PDPASpec.parserTests
   describe "SLParser"              SLParserSpec.parserTests

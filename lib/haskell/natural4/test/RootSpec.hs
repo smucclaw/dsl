@@ -4,7 +4,7 @@ import qualified Parsing.MegaparsingSpec
 import qualified Parsing.MegaparsingMeansSpec
 import qualified Parsing.MegaparsingUnlessSpec
 import qualified Parsing.NewParserSpec
-import qualified SLParserSpec
+import qualified Parsing.SLParserSpec
 import qualified BoolStructParserSpec
 import qualified PDPASpec
 import qualified CoreL4ParserSpec
@@ -33,8 +33,8 @@ spec = do
   describe "MegaparsingMeans"      Parsing.MegaparsingMeansSpec.parserTests
   describe "MegaparsingUnless"     Parsing.MegaparsingUnlessSpec.parserTests
   describe "NewParserSpec"         Parsing.NewParserSpec.parserTests
+  describe "SLParser"              Parsing.SLParserSpec.parserTests
   describe "PDPASpec"              PDPASpec.parserTests
-  describe "SLParser"              SLParserSpec.parserTests
   describe "BoolStructParser"      (BoolStructParserSpec.parserTests nlgEnv)
   describe "CoreL4Parser"          CoreL4ParserSpec.parserTests
   describe "TestNLG"               TestNLG.nlgTests2

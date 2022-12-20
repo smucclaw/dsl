@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module SLParserSpec where
+module Parsing.SLParserSpec where
 
 import Text.Megaparsec
 import LS.Lib
@@ -19,14 +19,14 @@ import Test.Hspec.Megaparsec (shouldParse)
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  testcsv <- BS.readFile ("test/Parsing/slparser/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
 xfiletest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 xfiletest testfile _desc parseFunc expected =
   xit testfile $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  testcsv <- BS.readFile ("test/Parsing/slparser/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 

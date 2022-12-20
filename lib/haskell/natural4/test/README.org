@@ -33,7 +33,7 @@ See LS/BasicTypes.hs for the authoritative list of ~MyToken~ constructors.
 
 ** how CSV derives from spreadsheets and from Org-Mode tables
 :PROPERTIES:
-:TABLE_EXPORT_FILE: org-example.csv
+:TABLE_EXPORT_FILE: examples/org-example.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -259,7 +259,7 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 |       | OR    | tomato      |   |
 ***** inline-1-a2 -- not supposed to pass
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-a2.csv
+:TABLE_EXPORT_FILE: examples/inline-1-a2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -272,7 +272,7 @@ labels are allowed to be a single word, but cannot be MultiTerm. So this won't w
 
 ***** inline-1-b
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-b.csv
+:TABLE_EXPORT_FILE: examples/inline-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -637,7 +637,7 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 
 ***** PDPA Part 1 - simpler
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-a.csv
+:TABLE_EXPORT_FILE: examples/inline-2-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -651,7 +651,7 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 
 ***** PDPA Part 1 - fancier -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-b.csv
+:TABLE_EXPORT_FILE: examples/inline-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -671,7 +671,7 @@ it does preserve the separation between "5.a" and "c1" etc though. so that's goo
 
 ***** withlabels indented first way -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-c.csv
+:TABLE_EXPORT_FILE: examples/inline-2-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -693,7 +693,7 @@ it does preserve the separation between "5.a" and "c1" etc though. so that's goo
 
 ***** withlabels indented second way -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-d.csv
+:TABLE_EXPORT_FILE: examples/inline-2-d.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -713,7 +713,7 @@ it does preserve the separation between "5.a" and "c1" etc though. so that's goo
 
 ***** withlabels indented third way -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-e.csv
+:TABLE_EXPORT_FILE: examples/inline-2-e.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -734,7 +734,7 @@ the FALSE gets in the way.
 
 ***** withlabels indented fourth way -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-f.csv
+:TABLE_EXPORT_FILE: examples/inline-2-f.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -755,7 +755,7 @@ only change, remove the FALSE
 
 ***** withlabels indented fifth way -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-g.csv
+:TABLE_EXPORT_FILE: examples/inline-2-g.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -778,7 +778,7 @@ i guess we'll just have to do that for the input spreadsheets.
 
 ***** withlabels indented sixth way -- works
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-2-h.csv
+:TABLE_EXPORT_FILE: examples/inline-2-h.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -820,7 +820,7 @@ should we expect an slMultiterm to parse it? decision: yes, we should.
 
 **** what about the same column but next line?
 :PROPERTIES:
-:TABLE_EXPORT_FILE: multiterm-with-blanks-3.csv
+:TABLE_EXPORT_FILE: examples/multiterm-with-blanks-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -926,7 +926,7 @@ we know how to expand a body with a head
 
 **** regexpand-1: regulatives conjoined via a rulealias
 :PROPERTIES:
-:TABLE_EXPORT_FILE: regexpand-1.csv
+:TABLE_EXPORT_FILE: examples/regexpand-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1090,7 +1090,7 @@ still means the same thing but with slightly more indentation
 
 **** indent-2-c: Handle labels at the parents; this is not expected to parse
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-c.csv
+:TABLE_EXPORT_FILE: examples/indent-2-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1127,7 +1127,7 @@ OR, (godeeper, label, undeeper), boolstructr
 
 **** indent-2-c-2: more label variation, right; ; this is not expected to parse
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-c-2.csv
+:TABLE_EXPORT_FILE: examples/indent-2-c-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1293,7 +1293,7 @@ let's put a DECIDE in front of it
 
 ****** horn-0-4: multiterm support in RPConstraint
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-0-4.csv
+:TABLE_EXPORT_FILE: examples/horn-0-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1301,7 +1301,7 @@ let's put a DECIDE in front of it
 
 ****** horn-1: single line: decide / is / when
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-1.csv
+:TABLE_EXPORT_FILE: examples/horn-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1326,7 +1326,7 @@ X IS HornClauseRHS
 
 ****** horn-3: multiline: decide / is // when
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-3.csv
+:TABLE_EXPORT_FILE: examples/horn-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1337,7 +1337,7 @@ BoolStructR should be (AND (z is q) (p gt np))
 
 ****** horn-3-or: decide, multi line 3, or
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-3-or.csv
+:TABLE_EXPORT_FILE: examples/horn-3-or.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1348,7 +1348,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 
 ****** horn-4: decide, multi line 4
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-4.csv
+:TABLE_EXPORT_FILE: examples/horn-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1359,7 +1359,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 
 ****** horn-5: decide, multi line 5
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-5.csv
+:TABLE_EXPORT_FILE: examples/horn-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1370,7 +1370,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 
 ****** horn-6: binding
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-6.csv
+:TABLE_EXPORT_FILE: examples/horn-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1384,7 +1384,7 @@ BoolStructR should be (OR (z is q) (p gt np))
 
 ****** horn-7: simple define, multi line 7 with nested bool
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-7.csv
+:TABLE_EXPORT_FILE: examples/horn-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1445,7 +1445,7 @@ type DECLARE rule
 
 ****** x is y when z or q
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-variant-1.csv
+:TABLE_EXPORT_FILE: examples/horn-variant-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1457,7 +1457,7 @@ type DECLARE rule
 
 ****** x is y means z or q
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-variant-2.csv
+:TABLE_EXPORT_FILE: examples/horn-variant-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1476,7 +1476,7 @@ nope.
 
 ****** x includes y when z
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-variant-4.csv
+:TABLE_EXPORT_FILE: examples/horn-variant-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1499,7 +1499,7 @@ used for equality and unification
 
 ****** simple relationalpredicate in a WHO
 :PROPERTIES:
-:TABLE_EXPORT_FILE: relpred-1.csv
+:TABLE_EXPORT_FILE: examples/relpred-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1560,7 +1560,7 @@ we should have support for multi-way define/decide IS/WHEN lines: a la
 
 ****** decision tables 1
 :PROPERTIES:
-:TABLE_EXPORT_FILE: multi-decide-1.csv
+:TABLE_EXPORT_FILE: examples/multi-decide-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1572,7 +1572,7 @@ we should have support for multi-way define/decide IS/WHEN lines: a la
 
 ****** decision tables 2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: multi-decide-2.csv
+:TABLE_EXPORT_FILE: examples/multi-decide-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1586,7 +1586,7 @@ without the IS TRUE
 
 ***** Binary Predicate definition, compact
 :PROPERTIES:
-:TABLE_EXPORT_FILE: beat-means.csv
+:TABLE_EXPORT_FILE: examples/beat-means.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1681,7 +1681,7 @@ minIncome(MI, D, SD) :- MI IS 15000 + 4000 * D + 1000 * D / 2 + 500 * SD / 3.
 
 ****** a scenario would look like:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: class-fa-2-scenario.csv
+:TABLE_EXPORT_FILE: examples/class-fa-2-scenario.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1695,7 +1695,7 @@ the HAS isn't parseable yet. [TODO]
 
 ***** the CoreL4 encoding of the AXA case uses class extensions
 :PROPERTIES:
-:TABLE_EXPORT_FILE: class-2.csv
+:TABLE_EXPORT_FILE: examples/class-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1769,7 +1769,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** ampersand: |&| too far left -- should fail
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ampersand-1.csv
+:TABLE_EXPORT_FILE: examples/ampersand-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1822,7 +1822,7 @@ HornClause
 ** Tests
 *** Not a Rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: notarule-1.csv
+:TABLE_EXPORT_FILE: examples/notarule-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1834,7 +1834,7 @@ HornClause
 
 *** Mixed Nots
 :PROPERTIES:
-:TABLE_EXPORT_FILE: notarule-2.csv
+:TABLE_EXPORT_FILE: examples/notarule-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1859,7 +1859,7 @@ HornClause
 
 **** deem ... is ...
 :PROPERTIES:
-:TABLE_EXPORT_FILE: oneliner-1.csv
+:TABLE_EXPORT_FILE: examples/oneliner-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1868,7 +1868,7 @@ HornClause
 
 **** deem with ditto
 :PROPERTIES:
-:TABLE_EXPORT_FILE: oneliner-2.csv
+:TABLE_EXPORT_FILE: examples/oneliner-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1924,7 +1924,7 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 *** simple regulative rule for the Must Sing example with a deadline on the MUST
 :PROPERTIES:
-:TABLE_EXPORT_FILE: mustsing-2.csv
+:TABLE_EXPORT_FILE: examples/mustsing-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1939,7 +1939,7 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 *** simple regulative rule for the Must Sing example with a deadline on a separate line
 :PROPERTIES:
-:TABLE_EXPORT_FILE: mustsing-3.csv
+:TABLE_EXPORT_FILE: examples/mustsing-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2028,7 +2028,7 @@ Note the defined terms in this example have moved one cell left to more natural 
 
 *** what happens if everything is on one line?
 :PROPERTIES:
-:TABLE_EXPORT_FILE: experiment-oneline.csv
+:TABLE_EXPORT_FILE: examples/experiment-oneline.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2038,7 +2038,7 @@ doesn't work
 
 *** Multiple Preambles and BoolStructs
 :PROPERTIES:
-:TABLE_EXPORT_FILE: multiple-preambles.csv
+:TABLE_EXPORT_FILE: examples/multiple-preambles.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2110,7 +2110,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 
 *** with multiple preambleBoolStructPs
 :PROPERTIES:
-:TABLE_EXPORT_FILE: if-king-wishes-queen.csv
+:TABLE_EXPORT_FILE: examples/if-king-wishes-queen.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2150,7 +2150,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 
 *** in a different order again 4
 :PROPERTIES:
-:TABLE_EXPORT_FILE: if-king-wishes-4.csv
+:TABLE_EXPORT_FILE: examples/if-king-wishes-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2353,7 +2353,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 **** three-word WHO with a proper relation should be a Constraint
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-5.csv
+:TABLE_EXPORT_FILE: examples/who-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2364,7 +2364,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 **** TODO WHO with a recursive BoolStructR
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-6.csv
+:TABLE_EXPORT_FILE: examples/who-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2375,7 +2375,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 *** vague temporal spec
 :PROPERTIES:
-:TABLE_EXPORT_FILE: t-vaguely.csv
+:TABLE_EXPORT_FILE: examples/t-vaguely.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2388,7 +2388,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 *** stanzas interrupted by blank lines
 :PROPERTIES:
-:TABLE_EXPORT_FILE: blank-lines.csv
+:TABLE_EXPORT_FILE: examples/blank-lines.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2407,7 +2407,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 *** qualifying person
 :PROPERTIES:
-:TABLE_EXPORT_FILE: qualifying-person.csv
+:TABLE_EXPORT_FILE: examples/qualifying-person.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2419,7 +2419,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 *** legislative source citations
 :PROPERTIES:
-:TABLE_EXPORT_FILE: source-citations.csv
+:TABLE_EXPORT_FILE: examples/source-citations.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2432,7 +2432,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 *** Stanza Extraction
 :PROPERTIES:
-:TABLE_EXPORT_FILE: extract-potatoes.csv
+:TABLE_EXPORT_FILE: examples/extract-potatoes.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2493,7 +2493,7 @@ is ((morbror or farbror) and (not estranged))
 
 **** TODO Unless in the tail
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-tail-1-b.csv
+:TABLE_EXPORT_FILE: examples/bob-tail-1-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2522,7 +2522,7 @@ hHead: is (not (estranged or dead))
 
 **** TODO note hHead vs hBody
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-1-c.csv
+:TABLE_EXPORT_FILE: examples/bob-head-1-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2552,7 +2552,7 @@ indenting the "Bob is estranged" term to the right of the OR below it, has the m
 if (not (estranged or dead))
 **** TODO more explicit indentation, body                                              :expected:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-1-d.csv
+:TABLE_EXPORT_FILE: examples/bob-head-1-d.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2568,7 +2568,7 @@ note this goes into the hBody instead of the hHead.
 
 **** more explicit indentation, unless in the body                                     :expected:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-1-e.csv
+:TABLE_EXPORT_FILE: examples/bob-head-1-e.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2609,7 +2609,7 @@ is ((not estranged) or dead))
 
 **** combined with other connectors
 :PROPERTIES:
-:TABLE_EXPORT_FILE: bob-head-4.csv
+:TABLE_EXPORT_FILE: examples/bob-head-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2729,7 +2729,7 @@ How does this interact with our indentation syntax?
 
 **** Maybe IF NOT indentation binds looser than AND
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ifnot-3-undefined.csv
+:TABLE_EXPORT_FILE: examples/ifnot-3-undefined.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2780,7 +2780,7 @@ maybe we want it to be a ParamText instead?
 
 **** Given in a simple constitutive rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: given-consti-1.csv
+:TABLE_EXPORT_FILE: examples/given-consti-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2813,7 +2813,7 @@ How about we then make HAVING be the ParamText that refers to something in the t
 
 ***** Simple Having
 :PROPERTIES:
-:TABLE_EXPORT_FILE: having-1.csv
+:TABLE_EXPORT_FILE: examples/having-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2932,7 +2932,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 ** Ontology
 :PROPERTIES:
-:TABLE_EXPORT_FILE: define-1.csv
+:TABLE_EXPORT_FILE: examples/define-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2983,7 +2983,7 @@ this doesn't actually compile, i think the syntax has changed
 
 *** GIVEN ... DEEM
 :PROPERTIES:
-:TABLE_EXPORT_FILE: define-2.csv
+:TABLE_EXPORT_FILE: examples/define-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3031,7 +3031,7 @@ so let's try parsing as a boolrule and if that doesn't work we just shoehorn it 
 
 *** More Deem Syntax
 :PROPERTIES:
-:TABLE_EXPORT_FILE: define-3.csv
+:TABLE_EXPORT_FILE: examples/define-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3046,7 +3046,7 @@ what if we say
 
 *** defeating
 :PROPERTIES:
-:TABLE_EXPORT_FILE: define-4.csv
+:TABLE_EXPORT_FILE: examples/define-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3057,7 +3057,7 @@ what if we say
 
 *** Pilcrows
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pilcrows-1.csv
+:TABLE_EXPORT_FILE: test/Parsing/megaparsing-unless/pilcrows-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3068,7 +3068,7 @@ what if we say
 
 **** Harder Pilcrows
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pilcrows-2.csv
+:TABLE_EXPORT_FILE: examples/pilcrows-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3132,7 +3132,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** with pre
 :PROPERTIES:
-:TABLE_EXPORT_FILE: nested-or-pre.csv
+:TABLE_EXPORT_FILE: examples/nested-or-pre.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3161,7 +3161,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** do rulelabels even work? followed by some token indented
 :PROPERTIES:
-:TABLE_EXPORT_FILE: prulelabel-3.csv
+:TABLE_EXPORT_FILE: examples/prulelabel-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3172,7 +3172,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** mathematics
 :PROPERTIES:
-:TABLE_EXPORT_FILE: scenario-1.csv
+:TABLE_EXPORT_FILE: examples/scenario-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3285,7 +3285,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** Decide has a WHEN and AND on separate lines
 :PROPERTIES:
-:TABLE_EXPORT_FILE: financialadvisor-decide-1.csv
+:TABLE_EXPORT_FILE: examples/financialadvisor-decide-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3296,7 +3296,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** Decide has a WHEN separate and AND on same line
 :PROPERTIES:
-:TABLE_EXPORT_FILE: financialadvisor-decide-2.csv
+:TABLE_EXPORT_FILE: examples/financialadvisor-decide-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3305,7 +3305,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** Decide has a WHEN and AND on the same line
 :PROPERTIES:
-:TABLE_EXPORT_FILE: financialadvisor-decide-3.csv
+:TABLE_EXPORT_FILE: examples/financialadvisor-decide-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3314,7 +3314,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** Decide has an OTHERWISE default
 :PROPERTIES:
-:TABLE_EXPORT_FILE: financialadvisor-decide-4.csv
+:TABLE_EXPORT_FILE: examples/financialadvisor-decide-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3354,7 +3354,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** 4: setting   dataBreach { Notifiable = True }
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-4.csv
+:TABLE_EXPORT_FILE: examples/pdpadbno-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3474,7 +3474,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 ***** pdpadbno-7-a: simpler regular version to test setPlus and setLess
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-7-a.csv
+:TABLE_EXPORT_FILE: examples/pdpadbno-7-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3487,7 +3487,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 ***** pdpadbno-7-b: simpler sugary version to test if an IF can precede a You Must
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-7-b.csv
+:TABLE_EXPORT_FILE: examples/pdpadbno-7-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3503,7 +3503,7 @@ The "IF" line has to go below.
 
 **** 8: Notification is 5 and 7. let's use rule groups to group specific rules
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-8.csv
+:TABLE_EXPORT_FILE: examples/pdpadbno-8.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3514,7 +3514,7 @@ The "IF" line has to go below.
 
 **** Part 1 of the Schedule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: pdpadbno-part1.csv
+:TABLE_EXPORT_FILE: examples/pdpadbno-part1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3587,7 +3587,7 @@ The "IF" line has to go below.
 
 *** you may park
 :PROPERTIES:
-:TABLE_EXPORT_FILE: intro-park.csv
+:TABLE_EXPORT_FILE: examples/intro-park.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3598,7 +3598,7 @@ The "IF" line has to go below.
 
 *** off-peak day
 :PROPERTIES:
-:TABLE_EXPORT_FILE: intro-offpeak.csv
+:TABLE_EXPORT_FILE: examples/intro-offpeak.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

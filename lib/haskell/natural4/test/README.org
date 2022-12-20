@@ -958,7 +958,7 @@ This should link up Bob and Carol's subcontracts 2a and 2b as pursuant to Alice'
 
 **** indent-2-a: no meaningful indentation
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-a.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/indent-2-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1077,7 +1077,7 @@ myindented term1, OR, myindented (myindented term2, AND, myindented term3), OR, 
 
 **** indent-2-b: slightly harder indentation
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-b.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/indent-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1141,7 +1141,7 @@ OR, godeeper, (godeeper, godeeper, label, undeeper, undeeper), boolstructr
 
 **** indent-2-c-3: more label variation, left; this is the only working syntax for the moment, so we shall use this for the demo.
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-c-3.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/indent-2-c-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1155,7 +1155,7 @@ or, godeeper, label, samedepth boolstructr
 
 **** indent-2-d: more indentation variant
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indent-2-d.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/indent-2-d.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1182,7 +1182,7 @@ one or more normal words with optional typesig
 
 ****** paramtext-1: simple case
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-1.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1190,7 +1190,7 @@ one or more normal words with optional typesig
 
 ****** paramtext-2: simple case, typed
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-2.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1198,7 +1198,7 @@ one or more normal words with optional typesig
 
 ****** paramtext-2-a: simple case, typed a different way
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-2-a.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-2-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1206,7 +1206,7 @@ one or more normal words with optional typesig
 
 ****** paramtext-2-b: simple case, typed a different way
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-2-b.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1214,21 +1214,21 @@ one or more normal words with optional typesig
 
 ****** paramtext-3: simple case, two words
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-3.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
 | two | words |
 ****** paramtext-3-b: simple case, two words, typed
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-3-b.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-3-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
 | two | words | :: | String |
 ****** paramtext-4-a: multiline
 :PROPERTIES:
-:TABLE_EXPORT_FILE: paramtext-4-a.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/paramtext-4-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1265,7 +1265,7 @@ DECLARE ParamText
 
 ****** fragments
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-0-1.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/horn-0-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1275,7 +1275,7 @@ a tiny fragment of a horn clause
 
 ******* decide
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-0-2.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/horn-0-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1285,7 +1285,7 @@ let's put a DECIDE in front of it
 
 ****** horn-0-3: multiterm support in RPConstraint
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-0-3.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/horn-0-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1316,7 +1316,7 @@ X IS HornClauseRHS
 
 ****** horn-2: multiline: decide / is // when / is // and
 :PROPERTIES:
-:TABLE_EXPORT_FILE: horn-2.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/horn-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2217,7 +2217,7 @@ do the individual components work?
 
 ***** Just an Action
 :PROPERTIES:
-:TABLE_EXPORT_FILE: action-1.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/action-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2225,7 +2225,7 @@ do the individual components work?
 
 ***** A Bigger Action
 :PROPERTIES:
-:TABLE_EXPORT_FILE: action-2.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/action-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2319,7 +2319,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 **** single-word WHO should be an RPMT
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-1.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/who-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2330,7 +2330,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 **** two-word WHO should also be an RPMT
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-2.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/who-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2342,7 +2342,7 @@ we're switching from RPParamText to MultiTerm to keep things simpler
 
 **** three-word WHO should also be an RPMT
 :PROPERTIES:
-:TABLE_EXPORT_FILE: who-3.csv
+:TABLE_EXPORT_FILE: Parsing/newparser/who-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

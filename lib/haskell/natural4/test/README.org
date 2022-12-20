@@ -2623,7 +2623,7 @@ is ((not estranged) or dead))
 
 **** Unless as the only term in a regulative rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2633,7 +2633,7 @@ is ((not estranged) or dead))
 
 **** Unless as the first term in a regulative rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2646,7 +2646,7 @@ The intepreter combines two conditions into one: ~if ((not (day of silence)) && 
 
 **** Unless as the second term in a regulative rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-3.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2659,7 +2659,7 @@ same as above
 
 **** Unless as a separated first term in a regulative rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-4.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2670,7 +2670,7 @@ same as above
 
 **** Unless as a separated second term in a regulative rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-5.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-5.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2681,7 +2681,7 @@ same as above
 
 **** Unless preambles an OR
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-6.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-6.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2693,7 +2693,7 @@ same as above
 
 **** Unless preambles an AND
 :PROPERTIES:
-:TABLE_EXPORT_FILE: unless-regulative-7.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/unless-regulative-7.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2707,7 +2707,7 @@ same as above
 
 **** Should be the same as an IF NOT (joined):
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ifnot-1-joined.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/ifnot-1-joined.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2717,7 +2717,7 @@ same as above
 
 **** Should be the same as an IF NOT (separated):
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ifnot-2-separate.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/ifnot-2-separate.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2746,7 +2746,7 @@ If we get around to https://github.com/smucclaw/sandbox/issues/33 we can revisit
 
 **** Maybe IF NOT indentation is required to appear at its own level to reduce human error
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ifnot-4-indentation-explicit.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/ifnot-4-indentation-explicit.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2759,7 +2759,7 @@ We already squash AND and OR to the same column, even though they have different
 
 **** Maybe IF NOT indentation is required to appear at its own level to reduce human error
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ifnot-5-indentation-explicit.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing-unless/ifnot-5-indentation-explicit.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

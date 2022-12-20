@@ -7,7 +7,7 @@ import qualified Parsing.NewParserSpec
 import qualified Parsing.SLParserSpec
 import qualified Parsing.BoolStructParserSpec
 import qualified Parsing.PDPASpec
-import qualified CoreL4ParserSpec
+import qualified Parsing.CoreL4ParserSpec
 import Control.Concurrent.Async
 import LS.NLP.NLG (myNLGEnv)
 import LS.Types
@@ -36,6 +36,6 @@ spec = do
   describe "SLParser"              Parsing.SLParserSpec.parserTests
   describe "PDPASpec"              Parsing.PDPASpec.parserTests
   describe "BoolStructParser"      (Parsing.BoolStructParserSpec.parserTests nlgEnv)
-  describe "CoreL4Parser"          CoreL4ParserSpec.parserTests
+  describe "CoreL4Parser"          Parsing.CoreL4ParserSpec.parserTests
   describe "TestNLG"               TestNLG.nlgTests2
   describe "NLG tests"             (TestNLG.nlgTests nlgEnv)

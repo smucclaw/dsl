@@ -1,6 +1,6 @@
 import Test.Hspec
 import qualified TestNLG
-import qualified MegaparsingSpec
+import qualified Parsing.MegaparsingSpec
 import qualified MegaparsingMeansSpec
 import qualified MegaparsingUnlessSpec
 import qualified NewParserSpec
@@ -29,7 +29,7 @@ spec = do
   asyncNlgEnv <- runIO $ async $ putStrLn "Loading env" >> myNLGEnv <* putStrLn "Loaded env"
   nlgEnv <- runIO $ wait asyncNlgEnv
 
-  describe "Megaparsing"           MegaparsingSpec.parserTests
+  describe "Megaparsing"           Parsing.MegaparsingSpec.parserTests
   describe "MegaparsingMeans"      MegaparsingMeansSpec.parserTests
   describe "MegaparsingUnless"     MegaparsingUnlessSpec.parserTests
   describe "NewParserSpec"         NewParserSpec.parserTests

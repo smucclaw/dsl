@@ -1877,7 +1877,7 @@ HornClause
 
 *** indented boolean expression under preamble WHO
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indented-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/indented-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1894,7 +1894,7 @@ walks OR runs OR eats OR (drinks AND swallows)
 
 *** indented boolean expression (with checkboxes)
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indented-1-checkboxes.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/indented-1-checkboxes.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1911,7 +1911,7 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 *** simple regulative rule for the Must Sing example
 :PROPERTIES:
-:TABLE_EXPORT_FILE: mustsing-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/mustsing-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1953,7 +1953,7 @@ Google Sheets exports checkboxes as booleans. The parser should ignore them.
 
 *** simple constitutive rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: simple-constitutive-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/simple-constitutive-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1972,7 +1972,7 @@ this should get picked up by the pConstitutiveRule and rewritten to Hornlike
 
 *** simple constitutive rule (with checkboxes)
 :PROPERTIES:
-:TABLE_EXPORT_FILE: simple-constitutive-1-checkboxes.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/simple-constitutive-1-checkboxes.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1986,7 +1986,7 @@ this should get picked up by the pConstitutiveRule and rewritten to Hornlike
 
 *** indented inline constitutive rule
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indented-2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/indented-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2006,7 +2006,7 @@ What does "imbibes" mean, anyway?
 
 *** multiple nestings
 :PROPERTIES:
-:TABLE_EXPORT_FILE: indented-3.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/indented-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2097,7 +2097,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 
 *** different kinds of conditions
 :PROPERTIES:
-:TABLE_EXPORT_FILE: if-king-wishes-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/if-king-wishes-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2124,7 +2124,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 
 *** in a different order 2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: if-king-wishes-2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/if-king-wishes-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2137,7 +2137,7 @@ Below we use pilcrows to set off two stanzas which are identical but for permuta
 
 *** in a different order again 3
 :PROPERTIES:
-:TABLE_EXPORT_FILE: if-king-wishes-3.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/if-king-wishes-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2176,7 +2176,7 @@ Let's not support this case 4 until we have a more principled approach to meta-r
 
 *** chained regulatives
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2198,7 +2198,7 @@ do the individual components work?
 
 ***** the king part
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives-part1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives-part1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2208,7 +2208,7 @@ do the individual components work?
 
 ***** the singer part
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives-part2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives-part2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2233,7 +2233,7 @@ do the individual components work?
 
 *** chained regulatives with action params
 :PROPERTIES:
-:TABLE_EXPORT_FILE: action-params-singer.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/action-params-singer.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2249,7 +2249,7 @@ We need a special case to handle it.
 *** Alternative Arrangements of Temporals and Actions
 **** may pay after time
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-1.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives-part1-alternative-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2259,7 +2259,7 @@ We need a special case to handle it.
 
 **** may after time pay
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives-part1-alternative-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2269,7 +2269,7 @@ We need a special case to handle it.
 
 **** party after may time
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-3.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives-part1-alternative-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2279,7 +2279,7 @@ We need a special case to handle it.
 
 **** party may, no time
 :PROPERTIES:
-:TABLE_EXPORT_FILE: chained-regulatives-part1-alternative-4.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/chained-regulatives-part1-alternative-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2288,7 +2288,7 @@ We need a special case to handle it.
 
 *** simple natural language aliases on the same line
 :PROPERTIES:
-:TABLE_EXPORT_FILE: nl-aliases.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/nl-aliases.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2301,7 +2301,7 @@ We need a special case to handle it.
 
 *** simple natural language aliases on the next line
 :PROPERTIES:
-:TABLE_EXPORT_FILE: nl-aliases-2.csv
+:TABLE_EXPORT_FILE: Parsing/megaparsing/nl-aliases-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

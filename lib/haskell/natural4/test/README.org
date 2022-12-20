@@ -1599,7 +1599,7 @@ don't think we ever got around to testing this one.
 
 ***** Type Declaration
 :PROPERTIES:
-:TABLE_EXPORT_FILE: class-1.csv
+:TABLE_EXPORT_FILE: Parsing/corel4/class-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1626,7 +1626,7 @@ This example serves multiple tests:
 
 ***** Financial Advisor
 :PROPERTIES:
-:TABLE_EXPORT_FILE: class-fa-1.csv
+:TABLE_EXPORT_FILE: Parsing/corel4/class-fa-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1650,7 +1650,7 @@ this is indented deliberately to exercise the parser.
 
 ***** Financial Advisor decisions
 :PROPERTIES:
-:TABLE_EXPORT_FILE: class-fa-2.csv
+:TABLE_EXPORT_FILE: Parsing/corel4/class-fa-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

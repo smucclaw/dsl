@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module CoreL4ParserSpec where
+module Parsing.CoreL4ParserSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
 import Text.Megaparsec
@@ -17,7 +17,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  testcsv <- BS.readFile ("test/Parsing/corel4/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 

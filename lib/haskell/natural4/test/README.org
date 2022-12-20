@@ -249,7 +249,7 @@ when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we shoul
 
 ***** inline-1-a
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-a.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -339,7 +339,7 @@ labels are allowed to be a single word, but cannot be MultiTerm. So this won't w
 |                                                                                            |       |       |                                                                                                                                                                                                                                                                                                                              |
 ***** inline-1-c
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-c.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-c.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -378,7 +378,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 
 ***** we want to support the "post" line at any indentation level between the IS and the OR
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-d.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-d.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -393,7 +393,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 
 ***** inline +3 / -1
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-e.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-e.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -409,7 +409,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 
 ***** inline +3 / -2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-f.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-f.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -424,7 +424,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 
 ***** inline +3 / -3
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-g.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-g.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -439,7 +439,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 
 ***** inline +2 / -3
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-h.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-h.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -453,7 +453,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       | of personal data |              |    |              |
 ***** inline +1 / -3
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-i.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-i.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -467,7 +467,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       | of personal data |   |              |              |
 ***** inline +1 / -2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-i.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-i.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -481,7 +481,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       |     | of personal data |              |              |
 ***** inline +1 / +1 / -0
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-j.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-j.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -495,7 +495,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       |     |   | of personal data |              |
 ***** inline +0 / +1 / -0
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-k.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-k.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -509,7 +509,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       |     | of personal data |              |
 ***** inline +0 / +1 / -1
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-l.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-l.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -523,7 +523,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       | of personal data |              |              |           |      |
 ***** inline +0 / +1 / -1 / +2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-m.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-m.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -539,7 +539,7 @@ for this to work, we need to be able to return the successful lookAhead match, a
 |       | of personal data |              |    |   |              |
 ***** inline no post
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-n.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-n.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -561,7 +561,7 @@ initial ~pOtherval +?~ component.
 
 ***** o: inline no pre
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-o.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-o.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -575,7 +575,7 @@ initial ~pOtherval +?~ component.
 
 ***** p: this parses: inline fragment of pdpadbno4
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-p.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-p.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -590,7 +590,7 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 
 ***** q: this parses:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-q.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-q.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -602,7 +602,7 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 
 ***** r: this parses now:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-r.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-r.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -615,7 +615,7 @@ AA.Any (Label Pre "a") / [Item honk, Item ponk]
 
 ***** when everything works we should be able to parse this:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: inline-1-s.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/inline-1-s.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -802,7 +802,7 @@ all six indentation styles now work.
 
 **** we can expect an slMultiTerm to parse this:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: multiterm-with-blanks-1.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/multiterm-with-blanks-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -810,7 +810,7 @@ all six indentation styles now work.
 
 **** what about:
 :PROPERTIES:
-:TABLE_EXPORT_FILE: multiterm-with-blanks-2.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/multiterm-with-blanks-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1723,7 +1723,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** sameOrNextLine -s same
 :PROPERTIES:
-:TABLE_EXPORT_FILE: sameornext-1-same.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/sameornext-1-same.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1731,7 +1731,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** sameOrNextLine - next
 :PROPERTIES:
-:TABLE_EXPORT_FILE: sameornext-2-next.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/sameornext-2-next.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1740,7 +1740,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** sameOrNextLine - left a bit
 :PROPERTIES:
-:TABLE_EXPORT_FILE: sameornext-3-dnl.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/sameornext-3-dnl.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1749,7 +1749,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** sameOrNextLine - next right a bit
 :PROPERTIES:
-:TABLE_EXPORT_FILE: sameornext-4-right.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/sameornext-4-right.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1778,7 +1778,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** ampersand: |&| just underneath -- should parse
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ampersand-2.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/ampersand-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1787,7 +1787,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** ampersand: |&| to the right -- should parse
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ampersand-3.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/ampersand-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1796,7 +1796,7 @@ the HAS isn't parseable yet. [TODO]
 
 *** ampersand: |&| to the right -- should parse
 :PROPERTIES:
-:TABLE_EXPORT_FILE: ampersand-4.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/ampersand-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2833,7 +2833,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** just a single pOtherVal
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-pOtherVal.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-pOtherVal.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2841,7 +2841,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** just a single pOtherVal indented a bit
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-pOtherVal-indented.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-pOtherVal-indented.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2849,7 +2849,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** just a simple number
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-pNumber.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-pNumber.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2859,7 +2859,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** number followed by a string, over multiple lines
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-number-string-multi.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-number-string-multi.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2867,7 +2867,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 | boo |
 **** number followed by a string, on the same line
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-number-string-single.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-number-string-single.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2875,7 +2875,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** number followed by a string, on the same line, 1
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-number-string-single-indented-1.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-number-string-single-indented-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2883,7 +2883,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** number followed by a string, on the same line, 2
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-number-string-single-indented-2.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-number-string-single-indented-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2891,7 +2891,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** number followed by a string, on the same line, 3
 :PROPERTIES:
-:TABLE_EXPORT_FILE: primitive-number-string-single-indented-3.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/primitive-number-string-single-indented-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2900,14 +2900,14 @@ To handle this we may need to augment our types so that each bit of logic can be
 *** compound expressions
 **** a pair of numbers one after the other, unindented
 :PROPERTIES:
-:TABLE_EXPORT_FILE: compound-pairOfNumbers-1.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/compound-pairOfNumbers-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
 | 42 | 43 |
 **** a pair of numbers one after the other, indented
 :PROPERTIES:
-:TABLE_EXPORT_FILE: compound-pairOfNumbers-2.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/compound-pairOfNumbers-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2916,7 +2916,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** a pair of numbers one after the other, indented annoyingly
 :PROPERTIES:
-:TABLE_EXPORT_FILE: compound-pairOfNumbers-3.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/compound-pairOfNumbers-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -2924,7 +2924,7 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 **** a pair of numbers one after the other, indented annoyingly, followed by an otherval
 :PROPERTIES:
-:TABLE_EXPORT_FILE: compound-pairOfNumbers-4.csv
+:TABLE_EXPORT_FILE: Parsing/slparser/compound-pairOfNumbers-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

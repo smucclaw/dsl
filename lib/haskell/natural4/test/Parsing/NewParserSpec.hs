@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module NewParserSpec where
+module Parsing.NewParserSpec where
 
 import Text.Megaparsec
 import LS.Lib
@@ -17,7 +17,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
-  testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+  testcsv <- BS.readFile ("test/Parsing/newparser/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
@@ -78,7 +78,7 @@ parserTests  = do
           myor  = LS.Types.Or
 
       it "should inject Deeper tokens to match indentation" $ do
-        let testfile = "test/indent-2-a.csv"
+        let testfile = "test/Parsing/newparser/indent-2-a.csv"
         testcsv <- BS.readFile testfile
         let mystreams = exampleStreams testcsv
         fmap tokenVal . unMyStream <$> mystreams `shouldBe` [

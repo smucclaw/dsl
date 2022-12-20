@@ -192,7 +192,7 @@ can be thought of as inline type annotations
 
 **** boolstructp-1: very simple boolstructp
 :PROPERTIES:
-:TABLE_EXPORT_FILE: boolstructp-1.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/boolstructp-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -205,7 +205,7 @@ paramtext OR paramtext AND paramtext
 
 **** boolstructp-2: very simple boolstructp
 :PROPERTIES:
-:TABLE_EXPORT_FILE: boolstructp-2.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/boolstructp-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -232,7 +232,7 @@ paramtext OR ( paramtext AND paramtext )
 
 **** boolstructp-3: with typically
 :PROPERTIES:
-:TABLE_EXPORT_FILE: boolstructp-3.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/boolstructp-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -834,7 +834,7 @@ no, the parser fails, which is correct.
 
 **** varsub-1-headhead: define one thing in terms of another thing, in the head
 :PROPERTIES:
-:TABLE_EXPORT_FILE: varsub-1-headhead.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/varsub-1-headhead.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -856,7 +856,7 @@ we know how to expand a head with a head
 
 **** varsub-2-headbody: define one thing in terms of another thing, in the head and body
 :PROPERTIES:
-:TABLE_EXPORT_FILE: varsub-2-headbody.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/varsub-2-headbody.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -882,7 +882,7 @@ we need to be able to expand a head with a body
 
 **** varsub-3-bodybody: define one thing in terms of another thing, in the body and body
 :PROPERTIES:
-:TABLE_EXPORT_FILE: varsub-3-bodybody.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/varsub-3-bodybody.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -904,7 +904,7 @@ we need to be able to expand a body with a body
 
 **** varsub-4-bodyhead: define one thing in terms of another thing, in the body and head
 :PROPERTIES:
-:TABLE_EXPORT_FILE: varsub-4-bodyhead.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/varsub-4-bodyhead.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -1757,7 +1757,7 @@ the HAS isn't parseable yet. [TODO]
 |   |         | HAS    | genus | species |
 *** ampersand: |&| declare with inline nestedHorn
 :PROPERTIES:
-:TABLE_EXPORT_FILE: declare-nestedhorn-1.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/declare-nestedhorn-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3144,7 +3144,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** do rulelabels even work? standalone
 :PROPERTIES:
-:TABLE_EXPORT_FILE: prulelabel-1.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/prulelabel-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3152,7 +3152,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 *** do rulelabels even work? followed by some token
 :PROPERTIES:
-:TABLE_EXPORT_FILE: prulelabel-2.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/prulelabel-2.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3186,7 +3186,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** unit test 1: misplaced storage drive
 :PROPERTIES:
-:TABLE_EXPORT_FILE: scenario-units-1.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/scenario-units-1.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3200,7 +3200,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** unit test 2-a: multiple organisations
 :PROPERTIES:
-:TABLE_EXPORT_FILE: scenario-units-2-a.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/scenario-units-2-a.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3222,7 +3222,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** unit test 2-b: multiple organisations
 :PROPERTIES:
-:TABLE_EXPORT_FILE: scenario-units-2-b.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/scenario-units-2-b.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3246,7 +3246,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** unit test 3: medical records
 :PROPERTIES:
-:TABLE_EXPORT_FILE: scenario-units-3.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/scenario-units-3.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
@@ -3267,7 +3267,7 @@ if this works when "respond" "to" "about" are in the same column, then we need t
 
 **** unit test 4: hotel
 :PROPERTIES:
-:TABLE_EXPORT_FILE: scenario-units-4.csv
+:TABLE_EXPORT_FILE: Parsing/boolstruct/scenario-units-4.csv
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 

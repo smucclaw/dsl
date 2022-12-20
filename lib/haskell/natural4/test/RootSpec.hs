@@ -5,7 +5,7 @@ import qualified Parsing.MegaparsingMeansSpec
 import qualified Parsing.MegaparsingUnlessSpec
 import qualified Parsing.NewParserSpec
 import qualified Parsing.SLParserSpec
-import qualified BoolStructParserSpec
+import qualified Parsing.BoolStructParserSpec
 import qualified Parsing.PDPASpec
 import qualified CoreL4ParserSpec
 import Control.Concurrent.Async
@@ -35,7 +35,7 @@ spec = do
   describe "NewParserSpec"         Parsing.NewParserSpec.parserTests
   describe "SLParser"              Parsing.SLParserSpec.parserTests
   describe "PDPASpec"              Parsing.PDPASpec.parserTests
-  describe "BoolStructParser"      (BoolStructParserSpec.parserTests nlgEnv)
+  describe "BoolStructParser"      (Parsing.BoolStructParserSpec.parserTests nlgEnv)
   describe "CoreL4Parser"          CoreL4ParserSpec.parserTests
   describe "TestNLG"               TestNLG.nlgTests2
   describe "NLG tests"             (TestNLG.nlgTests nlgEnv)

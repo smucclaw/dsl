@@ -132,17 +132,14 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
-myTrick :: Either (ParseErrorBundle MyStream e) [IO b] -> IO (Either (ParseErrorBundle MyStream e) [b])
-myTrick (Left l) = return $ Left l
-myTrick (Right r) = do
-  a <- id `traverse` r
-  return $ Right a
+pullIO :: Either (ParseErrorBundle MyStream e) [IO b] -> IO (Either (ParseErrorBundle MyStream e) [b])
+pullIO = mapM sequence
 
 filetestIO :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) (IO b)) -> b -> SpecWith ()
 filetestIO testfile desc parseFunc expected =
   it (testfile ++ ": " ++ desc ) $ do
   testcsv <- BS.readFile ("test/Parsing/boolstruct/" <> testfile <> ".csv")
-  parseResult <- myTrick $ parseFunc testfile `traverse` exampleStreams testcsv
+  parseResult <- pullIO $ parseFunc testfile `traverse` exampleStreams testcsv
   parseResult `shouldParse` [ expected ]
 
 texttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()

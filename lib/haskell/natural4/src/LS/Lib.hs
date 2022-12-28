@@ -262,10 +262,7 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
 
 getStanzas :: RawStanza -> [RawStanza]
 getStanzas rs = splitPilcrows `concatMap` chunks
-  -- traceM ("getStanzas: extracted range " ++ (Text.unpack $ pShow toreturn))
   where chunks = getChunks rs
-
-        -- traceStanzas xs = trace ("stanzas: " ++ show xs) xs
 
 splitPilcrows :: RawStanza -> [RawStanza]
 splitPilcrows rs = map (listsToStanza . transpose) splitted

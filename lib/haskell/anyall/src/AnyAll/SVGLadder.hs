@@ -292,7 +292,7 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = fst (evalRWS (drawLeafR txt) (DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)) (defaultBBox', mempty::SVGElement))
+drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = fst (execRWS (drawLeafR txt) (DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)) (defaultBBox', mempty::SVGElement))
 drawItemTiny sc negContext (Node (Q _sv Neg         pp m) childqs)  = drawItemTiny sc (not negContext) (head childqs)
 drawItemTiny sc negContext qt                                       = drawItemFull sc      negContext   qt      -- [TODO]
 
@@ -513,7 +513,26 @@ combineAnd sc elems =
     rightPad = myScale ^. aavscaleMargins.rightMargin
     addElementToRow = rowLayouter sc
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
-    combinedBox = childbbox & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftPad + rightPad
+    combinedBox = childbbox & bboxWidth %~ (+ (leftPad + rightPad))
+
+combineAndS ::  [BoxedSVG] -> SVGCanvas ()
+combineAndS elems = do
+  sc <- asks contextScale
+  myScale <- asks aav
+  let
+    leftPad = myScale ^. aavscaleMargins.leftMargin
+    rightPad = myScale ^. aavscaleMargins.rightMargin
+    addElementToRow = rowLayouter sc
+    (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
+    combinedBox = childbbox & bboxWidth %~ (+ (leftPad + rightPad))
+  put ( combinedBox
+      & boxPorts.leftPort  .~ PVoffset (portL childbbox myScale)
+      & boxPorts.rightPort .~ PVoffset (portR childbbox myScale)
+      & boxMargins.leftMargin %~ (+ leftPad)
+      & boxMargins.rightMargin %~ (+ rightPad)
+    ,
+      move (leftPad, 0) children
+    )
 
 drawPreLabelTop :: Scale -> T.Text -> BoxedSVG -> BoxedSVG
 drawPreLabelTop sc label (childBox, childSVG) =
@@ -561,7 +580,7 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
   case ao of
     Or -> decorateWithLabel sc pp (combineOr sc rawChildren)
     And -> decorateWithLabel sc pp  (combineAnd sc rawChildren)
-    Simply txt -> fst (evalRWS (drawLeafR txt) contextR (defaultBBox', mempty::SVGElement))
+    Simply txt -> fst (execRWS (drawLeafR txt) contextR (defaultBBox', mempty::SVGElement))
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
     contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
@@ -703,14 +722,14 @@ labelBoxR baseline mytext = do
     ,
     text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext))
 
-drawLeafR :: T.Text -> SVGCanvas BoxedSVG
+drawLeafR :: T.Text -> SVGCanvas ()
 drawLeafR caption = do
   dbox <- asks defaultBox
   (boxStroke, boxFill) <- getBoxColorsR
   dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
   boxCap <- drawBoxCapR caption
-  return
+  put
     (dbox & boxDims .~ dims
     ,
       rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]

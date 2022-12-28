@@ -38,6 +38,7 @@ scenario1 = Scenario
       defaults = [],
       symtab = []
     }
+
 scenario2a :: Rule
 scenario2a = Scenario
     { scgiven =
@@ -131,6 +132,18 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
+myTrick :: Either (ParseErrorBundle MyStream e) [IO b] -> IO (Either (ParseErrorBundle MyStream e) [b])
+myTrick (Left l) = return $ Left l
+myTrick (Right r) = do
+  a <- id `traverse` r
+  return $ Right a
+
+filetestIO :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) (IO b)) -> b -> SpecWith ()
+filetestIO testfile desc parseFunc expected =
+  it (testfile ++ ": " ++ desc ) $ do
+  testcsv <- BS.readFile ("test/Parsing/boolstruct/" <> testfile <> ".csv")
+  parseResult <- myTrick $ parseFunc testfile `traverse` exampleStreams testcsv
+  parseResult `shouldParse` [ expected ]
 
 texttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 texttest testText desc parseFunc expected =
@@ -159,7 +172,7 @@ parserTests nlgEnv = do
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-        asCList = unsafePerformIO . checklist nlgEnv (runConfig { extendedGrounds = True }) 
+        asCList = checklist nlgEnv (runConfig { extendedGrounds = True })
 
     describe "Parsing boolstruct" $ do
       filetest "boolstructp-1" "basic boolstruct of text"
@@ -206,7 +219,7 @@ parserTests nlgEnv = do
         (parseWith (groundrules runConfig { extendedGrounds = True }) pRules) [ ["person","is","immortal"]
                                     , ["person","has","health insurance"]]
 
-      filetest "boolstructp-3" "as checklist, extended"
+      filetestIO "boolstructp-3" "as checklist, extended"
         (parseWith asCList pRules) [ ["Does the person have health insurance?"]
                                     , ["Is the person immortal?"]]
 

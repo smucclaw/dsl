@@ -50,6 +50,7 @@ type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 type BoolStructDTR = BST.BoolStructDT (Maybe (AA.Label Text.Text)) RelationalPredicate
+type BoolStructDTP = BST.BoolStructDT (Maybe (AA.Label Text.Text)) ParamText
 
 class MyBSR a where
   mkBSRLeaf :: RelationalPredicate -> a

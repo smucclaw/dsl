@@ -128,7 +128,8 @@ sfl4ToCorel4 rs =
 sfl4ToCorel4Program :: Interpreted -> L4.Program ()
 sfl4ToCorel4Program l4i
   = Program { annotOfProgram = ()
-            , elementsOfProgram = [] } -- concatMap sfl4ToCorel4Rule (origrules l4i)}
+            , elementsOfProgram = [] }
+    -- concatMap sfl4ToCorel4Rule (origrules l4i)}
 
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 

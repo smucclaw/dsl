@@ -1,7 +1,7 @@
 //,,live updates,TRUE,,devMode port,8081,,,TRUE,,,,,,,,
 //,"CASE STUDY:    LEGISLATION — Matthew Waddington, Legislative Drafting Office, Jersey",,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,
-//,"A Person Who Walks; and Eats, or Drinks; Must Sing.",,,,,,,,,,,,,,,,6 Sep 2021
+//,"A Person Who Walks, and Eats, or Drinks, Must Sing.",,,,,,,,,,,,,,,,6 Sep 2021
 //,"In this lesson, we show how to write a simple rule in L4, illustrating key concepts along the way.",,,,,,,,,,,,,,,,
 //,We thank Matthew Waddington for originally authoring the case from which this example is drawn.,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
@@ -58,10 +58,10 @@ That allows us to break the text into two explicit parts:
 the regulative rule to the left, the constitutive rule to the right.",,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
 ,,PARTY,Person,,,,,,,,,,,,,,
-//,,WHO,,,Qualifies,,,,,,,,,,,,
-//,,,,,MEANS,walks,,,,,,,,,,,
-//,,,,,AND,,eats,,,,,,,,,,
-//,,,,,,OR,drinks,,,,,,,,,,
+,,WHO,,,Qualifies,,,,,,,,,,,,
+,,,,,MEANS,walks,,,,,,,,,,,
+,,,,,AND,,eats,,,,,,,,,,
+,,,,,,OR,drinks,,,,,,,,,,
 ,,MUST,sing,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,
 //,"In the left margin, a button hides and shows the definition of ""Qualifies"".
@@ -156,4 +156,5 @@ Truth tables help elucidate these ""default assumptions"", for the avoidance of 
 The spreadsheet syntax for L4 is original.
 DMN is defined in a standard.",,,,,,,,,,,,,,,,
 //,Tweetstorm citing historical references.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
 //,,,,,,,,,,,,,,,,,

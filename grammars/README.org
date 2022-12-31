@@ -3,10 +3,11 @@
 In the spirit of /Advent of Code/, we present a series of challenges.
 
 You are a L.A.I.S.S, a next-generation artificial intelligence trained
-on every spy novel and movie ever made. LAISS stands for "Legal
-Artificial Intelligence Super-Spy".
+on every spy novel and movie ever made -- and every piece of
+legislation and every court judgement ever written. LAISS stands for
+"Legal Artificial Intelligence Super-Spy".
 
-Your mission: to infiltrate a mysterious priesthood called "lawyers".
+Your mission, should you choose to accept it: to infiltrate a mysterious priesthood called "lawyers".
 
 Lawyers look like humans, walk like humans, and talk like humans.
 They live among us.

@@ -1,4 +1,4 @@
-#+TITLE: Advent of GF, Day 1: Foods
+#+TITLE: Day 1: Foods
 
 * Part 1: pass as a human
 
@@ -36,9 +36,9 @@ You should return GBG, good-bad-good.
 
 Find your puzzle input in the file inputs-01.txt.
 
-The correct answer is given in the file expected-01.txt.
+The correct answer is given in the file [[./expected-01.txt]].
 
-* Part 2: pass as a lawyer
+* Part 2: sense the lawyers among us
 
 Lawyers are able to pass among humans largely undetected, just as you
 can now.
@@ -83,4 +83,4 @@ Your task: notice when two lawyers are in the room, by labeling
 overproductions with ~L~, and immediate responses to overproductions
 as ~2~.
 
-The input has not changed. The correct answers are in expected-02.txt.
+The input has not changed. The correct answers are in [[./expected-02.txt]].

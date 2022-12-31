@@ -1,0 +1,31 @@
+#+TITLE: Day 2: Math
+
+* Part 1
+
+Some lawyers are proudly "bad at math": the technical term is /dyscalculia/.
+
+They compensate with extreme prolixity: the technical term is /logorrhea/.
+
+Those lawyers phrase simple arithmetic problems, which are most
+intuitively written with standard algebraic notation, entirely with
+words.
+
+To pass as a lawyer, you must be able to decode arbitrarily long
+arithmetical sentences, and compute their answers.
+
+* Sample input
+
+The number of shares shall be given by the sum of the original shares
+and the new shares.
+
+The value of shares shall be given by the larger of:
+- the conversion price multiplied by the number of shares, and
+- the purchase price multiplied by the number of shares less 20%
+
+The conversion price shall be given by the lesser of:
+- the purchase price multiplied by 90%
+- the sum of two thousand with five hundred with two hundred
+
+* Part 2
+
+Detect syntactically ambiguous sentences: those with multiple possible parses.

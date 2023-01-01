@@ -30,9 +30,9 @@ This is available in the file [[input-03.txt]].
 
 #+begin_src text :tangle input-03.txt
   X: Do you promise to serve?
-  Y: I promise to serve.
+  Y: I hereby promise to serve.
   X: Do you swear your loyalty?
-  Y: I swear my loyalty.
+  Y: I hereby swear my loyalty.
   X: Do you swear your loyalty to me?
   Y: I hereby swear my loyalty to you.
   X: Do you swear your loyalty, to me?

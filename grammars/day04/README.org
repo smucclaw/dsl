@@ -1,4 +1,4 @@
-#+TITLE: Day 04: Deontics and States
+#+TITLE: Day 04: Deontics and States, Loosely Speaking
 
 Lawyers are no stranger to romance. They, too, have needs.
 
@@ -25,7 +25,7 @@ But lawyers are not easy to please. You will need a plan.
 
   You are alive, at first.
 
-  The dragon may eat you, if you dig under the dragon when it is not a moonless night and when it is not asleep.
+  The dragon may eat you, if you dig under the dragon when it is not a moonless night and the dragon is not asleep.
 
   If the dragon eats you, you will not be alive.
 
@@ -49,7 +49,9 @@ But lawyers are not easy to please. You will need a plan.
 
   To offer a kiss, you must obtain permission from the lawyer.
 
-  Upon permission being sought, the lawyer may grant permission. Or not.
+  Upon permission being sought, the lawyer may grant permission to kiss.
+
+  Or they may not, in which case you retire with honour.
 #+end_src
 
 * Part 1
@@ -114,21 +116,19 @@ Day 2. I have ten gold. The night is not moonless.
 
 Day 3. I have twenty gold. The night is moonless.
 
-I took a purifying bath.
+I take a purifying bath.
 
-I sang to the dragon.
+I sing to the dragon.
 
-The dragon did not fall asleep. How strange.
+The dragon does not fall asleep. How strange.
 
-I will dig under the dragon, to possess the key.
+I dig under the dragon, to possess the key.
+
+I do not win the heart of the lawyer.
 #+end_example
 
 Enumerate all the possible successes and failures in the same narrative form.
  
 * Part 3
 
-What is the longest period of time you have to wait in the worst-case scenario?
-
-Hint: In the worst-case scenario, the dragon, being also in love with the lawyer, chooses to frustrate you.
-
-
+Assuming all goes against you, as it did the previous adventurer, what is the soonest you can make your offer to the lawyer and retire with honour?

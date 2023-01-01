@@ -1,27 +1,3 @@
-#+TITLE: Day 2: Math
-
-* Part 1
-
-Some lawyers are proudly "bad at math": the technical term is /dyscalculia/.
-
-They compensate with extreme prolixity: the technical term is /logorrhea/.
-
-Those lawyers phrase simple arithmetic problems, which are most
-intuitively written with standard algebraic notation, entirely with
-words.
-
-To pass as a lawyer, you must be able to decode arbitrarily long
-arithmetical sentences, and compute their answers. Along the way, you
-may choose to construct an internal intermediate representation which
-looks more algebraic, so you can check your work more easily.
-
-Part one: answer the question "what is the number of Class I shares?"
-
-* Problem input
-
-The following is found in [[input-02.txt]]
-
-#+begin_src text :tangle input-02.txt
 The number of original shares is 1000.
 
 The number of new shares is two hundred.
@@ -65,18 +41,3 @@ The term Delta shall be given by Twenty plus ten percent.
 The value of the Class L shares shall be given by the lesser of the conversion price multiplied by the number of Class L shares, and the purchase price multiplied by the number of new shares less twenty percent.
 
 The conversion price shall be given by the lesser of the purchase price multiplied by 90%, and the sum of two thousand with five hundred with two hundred.
-#+end_src
-
-* Part 2
-
-What is the number of Class L shares?
-
-* Part 3
-
-What is the greater of twelve and twenty?
-
-What is the value of Alpha?
-
-What is the value of the Class L shares?
-
-

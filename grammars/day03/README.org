@@ -13,8 +13,8 @@ At great risk to themselves, your sources have obtained a transcript
 of a ceremonial ritual, conducted by lawyers, in secret chambers,
 using this "prepositional logic". As part of your mission to
 infiltrate the priesthood of lawyers, you may, one day, find yourself
-in a position to participate in this ritual. You need to be able to
-respond appropriately to their utterances.
+in a position to participate in this ritual. You need to study the
+ritual and understand it.
 
 The transcript is incomplete: the microphone was able to pick up the
 first part of the dialogue clearly. Then the supplicant (labeled Y)
@@ -29,25 +29,25 @@ supplicant in the ritual.
 This is available in the file [[input-03.txt]].
 
 #+begin_src text :tangle input-03.txt
-  X: You promise to serve.
+  X: Do you promise to serve?
   Y: I promise to serve.
-  X: You swear your loyalty.
+  X: Do you swear your loyalty?
   Y: I swear my loyalty.
-  X: You hereby swear your loyalty to me.
+  X: Do you swear your loyalty to me?
   Y: I hereby swear my loyalty to you.
-  X: You hereby swear your loyalty, to me.
+  X: Do you swear your loyalty, to me?
   Y: I hereby swear my loyalty, to you.
-  X: You hereby swear your loyalty, to me, upon this book.
+  X: Do you swear your loyalty, to me, upon this book?
   Y: I hereby swear my loyalty, to you, upon this book.
-  X: You hereby swear your loyalty, to me, upon this book, on oath.
+  X: Do you swear your loyalty, to me, upon this book, on oath?
   Y: 
-  X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers.
+  X: Do you swear your loyalty, to me, upon this book, on oath, before our peers?
   Y: 
-  X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies.
+  X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies?
   Y: 
-  X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation.
+  X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation?
   Y: 
-  X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation, with full capacity.
+  X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation, with full capacity?
   Y: 
 #+end_src
 
@@ -59,6 +59,6 @@ the fly, lest you be detected as an imposter in the ritual.
 What would you say in response to this? ([[input-03-b.txt]])
 
 #+begin_src text :tangle input-03-b.txt
-  X: You hereby swear your loyalty, to me, upon my ring, before our peers, under my pupillage, after your call to the bar.
+  X: Do you swear your loyalty, to me, upon my ring, before our peers, under my pupillage, after your call to the bar?
 #+end_src
   

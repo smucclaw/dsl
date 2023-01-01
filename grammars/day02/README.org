@@ -15,7 +15,7 @@ arithmetical sentences, and compute their answers. Along the way, you
 may choose to construct an internal intermediate representation which
 looks more algebraic, so you can check your work more easily.
 
-Part one: answer the question ~what is the number of Class I shares?~
+Part one: answer the question ~what is the number of Class L shares?~
 
 * Problem input
 

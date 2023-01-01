@@ -1,20 +1,20 @@
-X: You promise to serve.
+X: Do you promise to serve?
 Y: I promise to serve.
-X: You swear your loyalty.
+X: Do you swear your loyalty?
 Y: I swear my loyalty.
-X: You hereby swear your loyalty to me.
+X: Do you swear your loyalty to me?
 Y: I hereby swear my loyalty to you.
-X: You hereby swear your loyalty, to me.
+X: Do you swear your loyalty, to me?
 Y: I hereby swear my loyalty, to you.
-X: You hereby swear your loyalty, to me, upon this book.
+X: Do you swear your loyalty, to me, upon this book?
 Y: I hereby swear my loyalty, to you, upon this book.
-X: You hereby swear your loyalty, to me, upon this book, on oath.
+X: Do you swear your loyalty, to me, upon this book, on oath?
 Y: 
-X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers.
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers?
 Y: 
-X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies.
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies?
 Y: 
-X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation.
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation?
 Y: 
-X: You hereby swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation, with full capacity.
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation, with full capacity?
 Y:

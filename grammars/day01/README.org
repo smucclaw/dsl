@@ -87,5 +87,5 @@ The input has not changed. The correct answers are in [[./expected-02.txt]].
 
 * Part 3: what is the edge case?
 
-Part 2 is underspecified. What edge case which leads to two equally
-correct answers?
+Part 2 is underspecified. What input constitutes an edge case which
+leads to two equally correct answers?

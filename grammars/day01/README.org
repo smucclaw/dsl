@@ -34,7 +34,7 @@ For example, if you are given the list of sentences
 
 You should return GBG, good-bad-good.
 
-Find your puzzle input in the file [[ginputs-01.txt]].
+Find your puzzle input in the file [[inputs-01.txt]].
 
 The correct answer is given in the file [[./expected-01.txt]].
 
@@ -60,8 +60,8 @@ Overproduction looks like this:
 - This warm fish pizza is warm
 - This delicous warm delicious pizza is Italian
 
-Because humans are famously self-absorbed are rarely listen closely,
-they do not notice overproductions, but continue the conversation
+Because humans are famously self-absorbed, they rarely listen closely
+enough to notice overproductions, but continue the conversation
 anyway.
 
 Lawyers, however, pay great attention to words. When they hear such a
@@ -72,7 +72,7 @@ boring or expensive:
 - This warm garlic is boring
 - This garlic pizza is expensive
 
-Thus do lawyers signal furtively to one another.
+Thus do lawyers signal furtively to one another, unnoticed by humans.
 
 Note that a sentence describing garlic as boring or expensive, but
 which does not follow an overproduction, is of no consequence; it

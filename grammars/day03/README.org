@@ -53,8 +53,8 @@ This is available in the file [[input-03.txt]].
 
 * Part 2
 
-You need to be able to give appropriate responses to new questions, on
-the fly, lest you be detected as an imposter in the ritual.
+You need to be able to give appropriate responses to new questions,
+lest you be detected as an imposter in the ritual.
 
 What would you say in response to this? ([[input-03-b.txt]])
 

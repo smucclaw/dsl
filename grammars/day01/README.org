@@ -5,16 +5,16 @@
 The humans around you are constantly probing to see if you're one of
 them, or an A.I. They will say perfectly normal things like:
 
-- This warm pizza is delicious
-- That Italian pizza is expensive
-- These wines are Italian
-- Those wines are boring
+- this warm pizza is delicious
+- that Italian pizza is expensive
+- these wines are Italian
+- those wines are boring
 
 However, they will also throw in a few strange remarks:
 
-- This cheese pizza is fish
-- That pizza is fresh wine
-- That boring is very Italian
+- this cheese pizza is fish
+- that pizza is fresh wine
+- that boring is very Italian
 
 Humans naturally notice the difference between the second kind of
 sentence, and the first. Upon hearing a strange remark, they raise
@@ -28,15 +28,15 @@ receive with either a ~G~ for good, or ~B~ for bad. Return the G's and
 B's together.
 
 For example, if you are given the list of sentences
-- This delicious Italian wine is warm
-- Those cheeses are fish
-- That warm pizza is fresh
+- this delicious Italian wine is warm
+- those cheeses are fish
+- that warm pizza is fresh
 
 You should return GBG, good-bad-good.
 
 Find your puzzle input in the file [[inputs-01.txt]].
 
-The correct answer is given in the file [[./expected-01.txt]].
+The correct answer is given in the file [[expected-01.txt]].
 
 * Part 2: sense the lawyers among us
 
@@ -56,9 +56,9 @@ and other students of the law call this tic "overproduction". It falls
 in the same category as "photophobia" and "alliumphobia".
 
 Overproduction looks like this:
-- This fresh wine is very fresh
-- This warm fish pizza is warm
-- This delicous warm delicious pizza is Italian
+- this fresh wine is very fresh
+- this warm fish pizza is warm
+- this delicous warm delicious pizza is Italian
 
 Because humans are famously self-absorbed, they rarely listen closely
 enough to notice overproductions, but continue the conversation
@@ -68,9 +68,9 @@ Lawyers, however, pay great attention to words. When they hear such a
 sentence, they do not raise their eyebrow, but instead immediately
 respond with a sentence that describes something involving garlic as
 boring or expensive:
-- That Italian garlic is boring
-- This warm garlic is boring
-- This garlic pizza is expensive
+- that Italian garlic is boring
+- this warm garlic is boring
+- this garlic pizza is expensive
 
 Thus do lawyers signal furtively to one another, unnoticed by humans.
 
@@ -83,7 +83,7 @@ Your task: notice when two lawyers are in the room, by labeling
 overproductions with ~L~, and immediate responses to overproductions
 as ~2~.
 
-The input has not changed. The correct answers are in [[./expected-02.txt]].
+The input has not changed. The correct answers are in [[expected-02.txt]].
 
 * Part 3: what is the edge case?
 

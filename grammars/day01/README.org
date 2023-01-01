@@ -10,7 +10,7 @@ them, or an A.I. They will say perfectly normal things like:
 - these wines are Italian
 - those wines are boring
 
-However, they will also throw in a few strange remarks:
+However, they occasionally throw in a few strange remarks:
 
 - this cheese pizza is fish
 - that pizza is fresh wine
@@ -32,7 +32,7 @@ For example, if you are given the list of sentences
 - those cheeses are fish
 - that warm pizza is fresh
 
-You should return GBG, good-bad-good.
+You should return ~GBG~, good-bad-good.
 
 Find your puzzle input in the file [[inputs-01.txt]].
 
@@ -55,14 +55,13 @@ over the centuries due to this particular verbal tic. Vampire hunters
 and other students of the law call this tic "overproduction". It falls
 in the same category as "photophobia" and "alliumphobia".
 
-Overproduction looks like this:
+In our example, overproduction looks like this:
 - this fresh wine is very fresh
 - this warm fish pizza is warm
 - this delicous warm delicious pizza is Italian
 
 Because humans are famously self-absorbed, they rarely listen closely
-enough to notice overproductions, but continue the conversation
-anyway.
+enough to notice these errors, but continue the conversation anyway.
 
 Lawyers, however, pay great attention to words. When they hear such a
 sentence, they do not raise their eyebrow, but instead immediately

@@ -79,3 +79,13 @@ spec = do
       let
         rp = RPnary RPnot (RPMT ["sky", "is", "blue"])
       rpHead rp `shouldBe` ["relNot", "sky", "is", "blue"]
+
+  describe "pt2text" $ do
+    it "pt2text" $ do
+      let
+        fruitType = Just (SimpleType TOne "Fruit")
+        fruitWords = "apple" :| ["orange", "banana"]
+
+        colorType = Just (SimpleType TOne "Color")
+        l2 = ("red" :| ["orange", "yellow"], colorType) :| [(fruitWords, fruitType)]
+      pt2text l2 `shouldBe` "red orange yellow apple orange banana"

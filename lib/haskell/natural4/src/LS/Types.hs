@@ -104,7 +104,7 @@ text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 
 pt2text :: ParamText -> Text.Text
-pt2text x = Text.unwords $ concatMap (toList . fst) $ toList x
+pt2text = Text.unwords . toList . (fst =<<)
 
 type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothing) [ Node (["immediately" :| [], Urgency) [] ]
 

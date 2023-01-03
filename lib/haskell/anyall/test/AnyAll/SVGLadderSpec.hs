@@ -374,7 +374,6 @@ spec = do
       elems = [(firstBox, firstRect), (secondBox, secondRect)]
       alignedBox1:alignedBox2:_ = vAlign VMiddle elems
       alignBox = fst (execRWS (combineAndS elems) contextR (defaultBBox', mempty::SVGElement))
-      --alignBox = combineAnd (cscale c) elems
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
       pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","darkgrey"),("transform","translate(22 0)")]
@@ -385,6 +384,36 @@ spec = do
                               & boxMargins.rightMargin .~ 22 + 13
                               & boxPorts.rightPort .~ PVoffset 15
                               & boxPorts.leftPort .~ PVoffset 5)
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print resultBox
+      pendingWith "it's not a real test but just a debug code"
+
+  describe "test RWS rowLayouter" $ do
+    let
+      firstBox = templatedBoundingBox & bboxWidth .~ 60 & bboxHeight .~ 10 & boxMargins.leftMargin .~ 17
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox & bboxWidth .~ 20 & bboxHeight .~ 30 & boxMargins.rightMargin .~ 13
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      contextR = DrawConfig Full True (Default ( Right (Just True) )) (defaultBBox Full) (getScale Full) textBoxLengthFull
+      alignBox = fst (execRWS (rowLayouterS alignedBox2) contextR alignedBox1)
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","darkgrey")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` (firstBox
+                              & bboxWidth .~ 90
+                              & bboxHeight .~ 30
+                              & boxMargins.leftMargin .~ 17
+                              & boxMargins.rightMargin .~ 13
+                              & boxPorts.rightPort .~ PVoffset 15
+                              & boxPorts.leftPort .~ PVoffset 15)
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do

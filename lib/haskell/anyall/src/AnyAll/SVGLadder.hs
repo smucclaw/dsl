@@ -517,13 +517,13 @@ combineAnd sc elems =
 
 combineAndS ::  [BoxedSVG] -> SVGCanvas ()
 combineAndS elems = do
-  sc <- asks contextScale
   myScale <- asks aav
+  put firstE
+  mapM_ rowLayouterS restE
+  (childbbox, children) <- get
   let
     leftPad = myScale ^. aavscaleMargins.leftMargin
     rightPad = myScale ^. aavscaleMargins.rightMargin
-    addElementToRow = rowLayouter sc
-    (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
     combinedBox = childbbox & bboxWidth %~ (+ (leftPad + rightPad))
   put ( combinedBox
       & boxPorts.leftPort  .~ PVoffset (portL childbbox myScale)
@@ -532,6 +532,34 @@ combineAndS elems = do
       & boxMargins.rightMargin %~ (+ rightPad)
     ,
       move (leftPad, 0) children
+    )
+  where
+    (firstE:restE) = vAlign VTop elems
+
+rowLayouterS :: BoxedSVG -> SVGCanvas ()
+rowLayouterS (bbnew, new) = do
+  sc <- asks contextScale
+  myScale <- asks aav
+  (bbold, old) <- get
+  let
+    templateBox = (defaultBBox sc)
+        & boxDims.dimHeight .~ max (bbold ^. bboxHeight) (bbnew ^. bboxHeight)
+        & boxDims.dimWidth .~ bbold ^. bboxWidth + lrHgap + bbnew ^. bboxWidth
+    lrHgap = myScale ^. aavscaleHorizontalLayout.gapHorizontal
+    newBoxStart = bbold ^. bboxWidth + lrHgap
+    connectingCurve =
+      if bbold ^. bboxWidth /= 0
+        then svgConnector $ rowConnectorData sc bbold bbnew
+        else mempty
+  put ( templateBox
+      & boxPorts.leftPort  .~ PVoffset (portL bbold myScale)
+      & boxPorts.rightPort .~ PVoffset (portR bbnew myScale)
+      & boxMargins.leftMargin .~ (bbold ^. boxMargins.leftMargin)
+      & boxMargins.rightMargin .~ (bbnew ^. boxMargins.rightMargin)
+      ,
+      old
+        <> move (newBoxStart, 0) new
+        <> connectingCurve
     )
 
 drawPreLabelTop :: Scale -> T.Text -> BoxedSVG -> BoxedSVG

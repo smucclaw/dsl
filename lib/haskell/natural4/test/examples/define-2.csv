@@ -1,5 +1,0 @@
-,,,,,
-,GIVEN,x,y,::,Sign
-,DECIDE,x,beats,y,
-,WHEN,x == Rock,,,
-,AND,y == Scissors,,,

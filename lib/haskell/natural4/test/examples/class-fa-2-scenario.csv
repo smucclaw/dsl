@@ -1,5 +1,0 @@
-GIVEN,p,IS A,Person,,
-,HAS,dependents,IS,5,
-,,earnings,IS,10000,
-,,savingsAmount,IS,100000,
-EXPECT,p,investment,IS,savings,-- or whatever

@@ -1,6 +1,0 @@
-IF,the King wishes,,// we could call this a meta-rule relation
-THEN,EVERY,person,
-,WHO,walks,
-,AND,eats,
-,MUST,,
-,->,sing,

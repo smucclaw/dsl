@@ -1,5 +1,0 @@
-EVERY,Party,,
-HAVING,sung,,
-,songLength,>=,2min
-MAY,claim,songFee,
-,amount,$10 * songLength,

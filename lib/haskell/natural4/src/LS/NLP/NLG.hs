@@ -28,14 +28,11 @@ import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
 import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
-import Control.Monad.Trans
-import System.IO (stderr)
-import System.Exit (exitFailure)
 import AnyAll.BoolStructTree
 import qualified Data.Tree as DT
 
@@ -81,35 +78,11 @@ gfPath x = "grammars/" ++ x
 -- | Parse text with udpipe via udpipe-hs, then convert the result into GF via gf-ud
 parseUD :: NLGEnv -> Text.Text -> IO GUDS
 parseUD env txt = do
-  when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
+  unless (verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
---  conll <- udpipe txt -- Initial parse
-  let nonWords = concat $ saveNonWords (map Text.unpack $ Text.words txt) []
-  print "string that's being replaced"
-  print nonWords
-  print "origin string"
-  print txt
-  -- check that it's not just a capitalised real word
-  print ("lowerconll")
   lowerConll <- checkAllCapsIsWord txt
-  print lowerConll
-  -- when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
-  -- let expr = case ud2gf conll of
-  --              Just e -> e
-  --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
   expr <- either errorMsg pure (ud2gf lowerConll)
-  print "the original expression"
-  print $ words $ showExpr expr
-  -- print "replaced expression as string"
-  -- let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
-  -- print replaced
-  -- when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
-  -- let replacedToExpr = fromMaybe (dummyExpr "") (PGF.readExpr replaced)
-  -- print "show replaced as expr"
-  -- print $ showExpr replacedToExpr
-  -- let uds = toUDS (pgfGrammar $ udEnv env) replacedToExpr
   let uds = toUDS (pgfGrammar $ udEnv env) expr
-  -- when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
   return uds
   where
     errorMsg msg = do
@@ -828,14 +801,10 @@ bsr2gf env bsr = case bsr of
 
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
-    let existingTrees = groupByRGLtype orConj contentsUDS
-    putStrLn ("bsr2gf: Any Nothing\n" ++ show existingTrees)
     return $ treeContents orConj contentsUDS
 
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
-    -- let existingTrees = groupByRGLtype andConj contentsUDS
-    --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
     return $ treeContents andConj contentsUDS
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do

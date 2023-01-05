@@ -12,7 +12,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
-      rp2text, pt2text, bsr2text, KVsPair, HornClause2)
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP)
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -36,6 +36,8 @@ import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPut
 import Control.Monad.Trans
 import System.IO (stderr)
 import System.Exit (exitFailure)
+import AnyAll.BoolStructTree
+import qualified Data.Tree as DT
 
 
 data NLGEnv = NLGEnv
@@ -502,6 +504,14 @@ parseFields env rl = case rl of
 bsp2gf :: NLGEnv -> BoolStructP -> IO Expr
 bsp2gf env bsp = case bsp of
   AA.Leaf (action :| mods) -> do
+    actionExpr <- kvspair2gf env action  -- notify the PDPC
+    modExprs <- mapM (kvspair2gf env) mods -- [by email, at latest at the deadline]
+    return $ combineActionMods actionExpr modExprs
+  _ -> error "bsp2gf: not supported yet"
+
+bsp2gfDT :: NLGEnv -> BoolStructDTP -> IO Expr
+bsp2gfDT env bsp = case bsp of
+  (DT.Node (FAtom (action :| mods)) _    )  -> do
     actionExpr <- kvspair2gf env action  -- notify the PDPC
     modExprs <- mapM (kvspair2gf env) mods -- [by email, at latest at the deadline]
     return $ combineActionMods actionExpr modExprs

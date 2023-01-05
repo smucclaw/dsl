@@ -4,7 +4,9 @@
 
 A sentence counts as a constitutive rule if it sets certain criteria to be met.
 
-For example, the above sentence is a constitutive rule.
+The above sentence is a constitutive rule.
 
 Constitutive rules usually describe things that *qualify*, or are *valid* in some way, if they meet certain *conditions*.
+
+"Qualifier" rules usually start with a base set, and a predicate which distinguishes certain elements of that set.
 

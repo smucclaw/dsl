@@ -42,7 +42,7 @@ The following is found in [[input-02.txt]]:
 
   The number of Class H shares is the sum of original and new shares.
 
-  The number of Class I shares is the sum of original shares and Class A shares.
+  The number of Class I shares is the sum of original and Class A shares.
 
   The number of Class J shares is the sum of Class B and Class C shares.
 
@@ -55,6 +55,8 @@ The following is found in [[input-02.txt]]:
   Twelve is six multiplied by two.
 
   Twenty is four multiplied by the sum of two and three.
+
+  Twenty is four multiplied by two plus three.
 
   The value of Alpha shall be given by the greater of twelve and twenty.
 
@@ -80,3 +82,14 @@ What is the greater of twelve and twenty?
 What is the value of Delta?
 
 What is the value of the Class L shares?
+
+* Part 4
+
+Be able to generate natural language text from algebraic notation.
+
+So, parse the algebraics, and produce English.
+
+* Part 5
+
+Detect ambiguous expressions that support multiple parses.
+

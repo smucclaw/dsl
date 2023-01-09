@@ -516,7 +516,6 @@ combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf 
 
     advVPS :: GVPS -> GAdv -> GVPS
     advVPS vps adv = GMkVPS presSimul GPPos $ GAdvVP (vps2vp vps) adv
-
 combineActionMods ("VPS",act) (("NP",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
@@ -524,6 +523,13 @@ combineActionMods ("VPS",act) (("NP",mod):rest) = combineActionMods ("VPS", gf r
 
     npVPS :: GVPS -> GNP -> GVPS
     npVPS vps np = GMkVPS presSimul GPPos $ GComplVP (vps2vp vps) np
+combineActionMods ("NP",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+  where
+    resultVP :: GVPS
+    resultVP = advVPS (GUseComp (GCompNP (fg act))) (fg mod)
+
+    advVPS :: GVP -> GAdv -> GVPS
+    advVPS vp adv = GMkVPS presSimul GPPos $ GAdvVP vp adv
 
 combineActionMods ("VPS",act) (("RS",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
 

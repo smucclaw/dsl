@@ -208,8 +208,8 @@ lin
 	  let render_unlikely : VP = mkVP render.vp <unlikely : Adv> ;
 	   in onlyPred render_unlikely ;
 
-  -- : root -> xcomp -> obj -> UDS ;
-  root_xcomp_obj rt xc obj = root_obj (advRoot rt xc) obj ;
+  -- : root -> obj -> xcomp -> UDS ;
+  root_obj_xcomp rt obj xc = root_xcomp (dObjRoot rt obj) xc ;
 
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 	root_xcomp_ccomp render unlikely result_harm =

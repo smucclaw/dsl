@@ -273,7 +273,8 @@ abstract UDApp = UDCat, JustWordsWordNet - [some_Quant, some_Det, any_Det] ** {
 		root_xcomp_ccomp : root -> xcomp -> ccomp -> UDS ;
 	--render it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 
-        root_xcomp_obj : root -> xcomp -> obj -> UDS ; -- probably misparse??
+        root_obj_xcomp : root -> obj -> xcomp -> UDS ;
+    -- render it unlikely
 
 		root_nsubj_aux_obl : root -> nsubj -> aux -> obl -> UDS ;
 	--the notifiable data [breach] will [result] in significant [harm] to the individual ;

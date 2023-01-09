@@ -32,7 +32,6 @@ import Control.Monad (when, unless)
 import System.Environment (lookupEnv)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
-import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
 import AnyAll.BoolStructTree
 import qualified Data.Tree as DT
 
@@ -81,8 +80,12 @@ parseUD env txt = do
   unless (verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
   lowerConll <- checkAllCapsIsWord txt
+  -- when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
   expr <- either errorMsg pure (ud2gf lowerConll)
+  -- let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
+  -- when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
   let uds = toUDS (pgfGrammar $ udEnv env) expr
+  -- when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
   return uds
   where
     errorMsg msg = do
@@ -801,10 +804,14 @@ bsr2gf env bsr = case bsr of
 
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
+    let existingTrees = groupByRGLtype orConj contentsUDS
+    putStrLn ("bsr2gf: Any Nothing\n" ++ show existingTrees)
     return $ treeContents orConj contentsUDS
 
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
+    -- let existingTrees = groupByRGLtype andConj contentsUDS
+    --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
     return $ treeContents andConj contentsUDS
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do

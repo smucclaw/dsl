@@ -19,6 +19,9 @@ import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
 import qualified Data.Map as Map
+import LS.NLP.NLG
+import System.IO.Unsafe (unsafePerformIO)
+
 
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
@@ -31,16 +34,18 @@ data Tuple a b = Tuple a b
 toTuple :: (a,b) -> Tuple a b
 toTuple (x,y) = Tuple x y
 
-asPurescript :: Interpreted -> String
-asPurescript l4i =
+-- startWithRule :: InterpreterOptions -> NLGEnv -> RunConfig -> [Rule] ->
+
+asPurescript :: NLGEnv -> Interpreted -> String
+asPurescript env l4i =
      show (vsep
            [ "toplevelDecisions :: Map.Map (String) (Item String)"
            , "toplevelDecisions = Map.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (T.unwords <$> names)
-                             , alwaysLabeled bs)
-                   | (names,bs) <- qaHornsT l4i
+                             , (T.pack $ unsafePerformIO $ boolStructQuestion env bs))
+                   | (names,bs) <- qaHornsR l4i
                    ]
                  )
              )
@@ -49,7 +54,7 @@ asPurescript l4i =
              (pretty . TL.unpack
               . TL.replace "False" "false"
               . TL.replace "True" "true"
-              . pShowNoColor $ 
+              . pShowNoColor $
               fmap toTuple . Map.toList . AA.getMarking $
               getMarkings l4i
              )

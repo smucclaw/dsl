@@ -63,7 +63,7 @@ main = do
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <>
                                                                  psSuffix <> "\n\n" <>
-                                                                 asPurescript l4i)
+                                                                 asPurescript nlgEnv l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
@@ -102,7 +102,7 @@ main = do
 
 
 
-  
+
   -- if --workdir is specified, and there are no --only, then we run all the things
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
   -- putStrLn $ "natural4: only = " <> SFL4.only opts

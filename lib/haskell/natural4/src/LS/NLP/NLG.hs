@@ -9,10 +9,11 @@ import LS.NLP.UDExt
 import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
       Rule(..),
-      BoolStructP, BoolStructR,
+      BoolStructP, BoolStructR, BoolStructT, Interpreted, RuleName,
       RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
       rp2text, pt2text, bsr2text, KVsPair)
+import LS.Interpreter (qaHornsR)
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF, readExpr )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -194,6 +195,29 @@ parseUD env txt = do
 -- | output          | Have there been more than two claims?               |
 -- +-----------------+-----------------------------------------------------+
 
+-- type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
+-- type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
+-- type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
+    --  Expected: BoolStructT
+    --     Actual: AA.BoolStruct (Maybe (AA.Label Text.Text)) (IO [String])
+
+
+-- nlgLabeled :: OptionallyLabeledBoolStruct a -> BoolStruct (Label T.Text) a
+-- nlgLabeled (Any Nothing    xs) = Any (Pre "any of:") (nlgLabeled <$> xs)
+-- nlgLabeled (All Nothing    xs) = All (Pre "all of:") (nlgLabeled <$> xs)
+-- nlgLabeled (Any (Just lbl) xs) = Any lbl (nlgLabeled <$> xs)
+-- nlgLabeled (All (Just lbl) xs) = All lbl (nlgLabeled <$> xs)
+-- nlgLabeled (Leaf x)            = Leaf (x)
+-- nlgLabeled (Not x)             = Not (nlgLabeled x)
+
+
+boolStructQuestion :: NLGEnv -> BoolStructR -> IO String
+boolStructQuestion env a = do
+  gr <- liftIO nlgExtPGF
+  let lang = head $ languages gr
+  expr <- bsr2gf env a
+  return $ unwords $ mkHCQs gr lang 0 (gf (GString "")) (fg expr)
+
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
   annotatedRule <- parseFields env rl
@@ -218,55 +242,54 @@ nlgQuestion env rl = do
       putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
       return mempty --
 
+mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
+mkHCQs gr lang indentation emptE udfrag = case udfrag of
+  GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
+  GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
+  _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
+
+mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
+mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e  ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
   where
-    mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
-    mkHCQs gr lang indentation emptE udfrag = case udfrag of
-      GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
-      GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
-      _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
+    tg = case findType gr e of
+          "VPS" -> vpTG $ fg e
+          _     -> udsToTreeGroups (toUDS gr e)
 
-    mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
-    mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e  ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
-      where
-        tg = case findType gr e of
-              "VPS" -> vpTG $ fg e
-              _     -> udsToTreeGroups (toUDS gr e)
+mkCondQs gr lang subj e = mkQs qsCond gr lang 2 subj (udsToTreeGroups (toUDS gr e))
 
-    mkCondQs gr lang subj e = mkQs qsCond gr lang 2 subj (udsToTreeGroups (toUDS gr e))
+mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
+mkQs qfun gr lang indentation s tg = case tg of
+  TG {gfS = Just sent} -> case sent of
+    GConjS _conj (GListS ss) -> concatMap (mkQs qfun gr lang (indentation+4) s) (sTG <$> ss)
+    _ -> qnPunct $ lin indentation (qfun s $ sTG sent)
+  TG {gfVP = Just vp} -> case vp of
+    GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
+    _ -> qnPunct $ lin indentation (qfun s $ vpTG vp)
+  TG {gfNP = Just np} -> case np of
+    GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
+    _ -> qnPunct $ lin indentation (qfun s $ npTG np)
+  TG {gfCN = Just cn} -> case cn of
+    GConjCN _conj (GListCN cns) -> concatMap (mkQs qfun gr lang (indentation+4) s) (cnTG <$> cns)
+    _ -> qnPunct $ lin indentation (qfun s $ cnTG cn)
+  TG {gfAP = Just ap} -> case ap of
+    GConjAP _conj (GListAP aps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (apTG <$> aps)
+    _ -> qnPunct $ lin indentation (qfun s $ apTG ap)
 
-    mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
-    mkQs qfun gr lang indentation s tg = case tg of
-      TG {gfS = Just sent} -> case sent of
-        GConjS _conj (GListS ss) -> concatMap (mkQs qfun gr lang (indentation+4) s) (sTG <$> ss)
-        _ -> qnPunct $ lin indentation (qfun s $ sTG sent)
-      TG {gfVP = Just vp} -> case vp of
-        GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
-        _ -> qnPunct $ lin indentation (qfun s $ vpTG vp)
-      TG {gfNP = Just np} -> case np of
-        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
-        _ -> qnPunct $ lin indentation (qfun s $ npTG np)
-      TG {gfCN = Just cn} -> case cn of
-        GConjCN _conj (GListCN cns) -> concatMap (mkQs qfun gr lang (indentation+4) s) (cnTG <$> cns)
-        _ -> qnPunct $ lin indentation (qfun s $ cnTG cn)
-      TG {gfAP = Just ap} -> case ap of
-        GConjAP _conj (GListAP aps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (apTG <$> aps)
-        _ -> qnPunct $ lin indentation (qfun s $ apTG ap)
+  -- TG {gfDet = Just det} ->
+  -- TG {gfAdv = Just adv} ->
+  _ -> []
 
-      -- TG {gfDet = Just det} ->
-      -- TG {gfAdv = Just adv} ->
-      _ -> []
-
-      where
-        {-
-        space :: Char
-        space = ' '
-        lin indentation x = [take indentation (repeat space) ++ linearize gr lang (gf x)]
-        -}
-        lin _indentation x = [linearize gr lang (gf x)]
-        qnPunct :: [String] -> [String]
-        qnPunct [] = []
-        qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
-        qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
+  where
+    {-
+    space :: Char
+    space = ' '
+    lin indentation x = [take indentation (repeat space) ++ linearize gr lang (gf x)]
+    -}
+    lin _indentation x = [linearize gr lang (gf x)]
+    qnPunct :: [String] -> [String]
+    qnPunct [] = []
+    qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
+    qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
 -- toHTML :: Text.Text -> String
 -- toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
@@ -762,8 +785,8 @@ treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
   [TG {gfCN=Just cn}, TG {gfAP=Just ap}] -> gf $ GAdjCN ap cn
   [TG {gfNP = Just np}, TG {gfVP = Just vp}] -> gf $ predVPS np vp
-  -- [TG {gfS = Just (GUseCl t p (GPredVP np vp))}, TG {gfNP = Just np2}] -> gf $ predVPS np2 (GMkVPS t p (GComplVP vp np))
-  _ -> trace ("bsr2gf: can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
+  [TG {gfS = Just (GUseCl t p (GPredVP np vp))}, TG {gfNP = Just np2}] -> gf $ predVPS np2 (GMkVPS t p (GComplVP vp np))
+  _ -> trace ("bsr2gf: heyy can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
            $ treeContents conj contents
 
 treePrePost :: GConj -> [GUDS] -> GUDS -> GUDS -> Expr
@@ -846,6 +869,9 @@ bsr2gf env bsr = case bsr of
     premodUDS <- parseUD env p1
     postmodUDS <- parseUD env p2
     return $ treePrePost andConj contentsUDS premodUDS postmodUDS
+
+  _ -> return $ dummyExpr ("error is not any of the bsr2gf so far")
+
 
 -- | A data structure for GF trees, which has different bins for different RGL categories.
 --

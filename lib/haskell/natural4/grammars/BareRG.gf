@@ -4,7 +4,7 @@
 abstract BareRG =
 
   Extend [
-    Temp, Pol, NP, Tense,
+    Temp, Tense, Pol, NP, Tense, Quant, RP, Conj,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN, -- : N -> N -> N    -- control system
@@ -13,6 +13,7 @@ abstract BareRG =
   ],
 
   Sentence [
+    NP, VP, Cl, SC, S, Subj, Temp, Tense, Pol, QCl, QS, RCl, RS,
     PredVP, UseCl, UseRCl, UseQCl
     , SSubjS , EmbedVP
     ],
@@ -29,7 +30,7 @@ abstract BareRG =
    ,AdVVP
   ],
 
-  Idiom [ProgrVP],
+  Idiom [VP, ProgrVP],
 
    Noun - [
       CountNP,
@@ -39,7 +40,7 @@ abstract BareRG =
    ],
 
   Adjective [
-    AP,AdA,A,Ord,
+    AP, AdA, A, Ord, Adv, A2, NP,
     PositA    , -- A  -> AP ;              -- warm
     UseComparA,
     AdAP,
@@ -49,8 +50,7 @@ abstract BareRG =
   ],
 
   Adverb [
-    A,
-    Prep,NP,Adv,Subj,S,
+    A, Prep, NP, Adv, Subj, S, AdN, AdnCAdv, CAdv,
     PrepNP    , -- Prep -> NP -> Adv ;     -- in the house
     SubjS,
     PositAdvAdj,   -- : A -> Adv  --- not sure if this should be used
@@ -64,7 +64,8 @@ abstract BareRG =
     always_Adv
   ],
   Symbol [
-      Symb
+      PN
+    , Symb
     , SymbPN
     -- , MkSymb
     ],

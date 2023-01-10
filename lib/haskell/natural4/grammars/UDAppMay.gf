@@ -2,7 +2,7 @@
 
 concrete UDAppMay of UDApp =
   UDCatMay, JustWordsWordNetMay **
-  open Prelude, SyntaxMay, ExtendMay, SymbolicMay, LexiconMay
+  open Prelude, SyntaxMay, ExtendMay, SymbolicMay, LexiconMay, (R=ResMay)
     in {
 
 lin
@@ -277,7 +277,7 @@ lin
 
     -- unstable hack, TODO fixme
     addRcl : LinRoot -> Adv -> LinRoot = \rt,rs ->
-      let dummyNP : NP = mkNP emptyNP rs ;
+      let dummyNP : NP = mkNP R.emptyNP rs ;
           RSasAdv : Adv = lin Adv (mkUtt dummyNP) ;
        in advRoot rt rs ;
 

@@ -1,7 +1,7 @@
 concrete BareRGMay of BareRG =
 
   ExtendMay [
-    Temp, Pol, NP, Tense,
+    Temp, Tense, Pol, NP, Tense, Quant, RP, Conj,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
@@ -11,6 +11,7 @@ concrete BareRGMay of BareRG =
   ],
 
   SentenceMay [
+    NP, VP, Cl, SC, S, Subj, Temp, Tense, Pol, QCl, QS, RCl, RS,
     PredVP, UseCl, UseRCl, UseQCl
     , SSubjS , EmbedVP
     ],
@@ -28,7 +29,7 @@ concrete BareRGMay of BareRG =
   ,AdVVP
   ],
 
-  IdiomMay [ProgrVP], -- ProgrVP only used via auxfun, disabled in labels
+  IdiomMay [VP, ProgrVP], -- ProgrVP only used via auxfun, disabled in labels
 
   NounMay - [
     CountNP,
@@ -38,7 +39,7 @@ concrete BareRGMay of BareRG =
    ],
 
   AdjectiveMay [
-    AP,AdA,A,Ord,
+    AP, AdA, A, Ord, Adv, A2, NP,
     PositA    , -- A  -> AP ;              -- warm
     UseComparA,
     AdAP,
@@ -48,7 +49,7 @@ concrete BareRGMay of BareRG =
   ],
 
   AdverbMay [
-    A,Prep,NP,Adv,Subj,S,
+    A, Prep, NP, Adv, Subj, S, AdN, AdnCAdv, CAdv,
     PrepNP    , -- Prep -> NP -> Adv ;     -- in the house
     SubjS,
     PositAdvAdj,   -- : A -> Adv  --- not sure if this should be used
@@ -62,7 +63,8 @@ concrete BareRGMay of BareRG =
     always_Adv
   ],
   SymbolMay [
-      Symb
+      PN
+    , Symb
     , SymbPN
     ],
   ConjunctionMay,
@@ -79,8 +81,7 @@ concrete BareRGMay of BareRG =
     (R=ResMay),
     SymbolicMay,
     (SyE=SymbolMay),
-    (N=NounMay),
-    JustWordsWordNetMay
+    (N=NounMay)
     in {
 
   lin
@@ -141,7 +142,7 @@ concrete BareRGMay of BareRG =
     StrN str = {s = \\_  => str.s} ;
     StrA str = <P.mkA "dummy" : A> ** {s = str.s};
     StrAP str = <mkAP (P.mkA "dummy") : AP> ** {s = str.s};
-    StrCard str = symb (mkSymb str.s) ;
+    StrCard str = SymbNum (mkSymb str.s) ;
     StrNum str = N.NumPl ** {s = str.s} ;
     StrSymb = SyE.MkSymb ; -- String -> Symb
     SymbNP x = symb x ;
@@ -164,9 +165,9 @@ concrete BareRGMay of BareRG =
     applyConj : Conj -> (s1,s2 : Str)-> Str = \or,s1,s2 ->
       or.s1 ++ s1 ++ or.s2 ++ s2 ;
 
-    slashV : VP -> VPSlash = \vp -> vp ** {
+    slashV : VP -> VPSlash = \vp -> lin VPSlash (vp ** {
       c2 = R.mkPrep "" ;
       adjCompl = "" ;
-      } ;
+      }) ;
 
 }

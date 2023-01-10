@@ -275,7 +275,7 @@ nlg env rl = do
    gr <- nlgExtPGF
    let lang = head $ languages gr
    let Just eng = readLanguage "UDExtEng"
-   let Just may = readLanguage "UDExtMay"
+   let Just may = readLanguage "UDExtSwe"
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?

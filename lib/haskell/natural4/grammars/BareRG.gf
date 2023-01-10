@@ -99,7 +99,7 @@ abstract BareRG =
 
     XorMore : Card -> Det ; -- one/two/… or more
 
-    CompoundCN : CN -> N -> N ; -- [[unlimited] area ] buildings
+    CompoundCN : CN -> N -> N ; -- [[unlimited] area] buildings
 
   -- passives
     PassV : V -> VP ;             -- is:auxPass affected

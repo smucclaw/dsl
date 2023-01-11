@@ -1,0 +1,134 @@
+#+TITLE: Day 04: Deontics and States, Loosely Speaking
+
+Lawyers are no stranger to romance. They, too, have needs.
+
+Your mission, today, is to meet those needs by winning the heart of a lawyer.
+
+But lawyers are not easy to please. You will need a plan.
+
+* Input
+
+#+begin_src text :tangle input-04.txt
+  To win the heart of a lawyer, you must provide a briefcase and offer a kiss.
+
+  To provide a briefcase, you must obtain a briefcase from the vault.
+
+  To obtain a briefcase from the vault, you must enter the dungeon, and be in good standing with the dungeonmaster.
+
+  You are in good standing with the dungeonmaster, at first.
+
+  To enter the dungeon, you may use the key.
+
+  To use the key, you must possess the key, and be alive.
+
+  To possess the key, you must dig under the dragon, after taking a purifying bath.
+
+  You are alive, at first.
+
+  The dragon may eat you, if you dig under the dragon when it is not a moonless night and the dragon is not asleep.
+
+  If the dragon eats you, you will not be alive.
+
+  To be well rested, the dragon must fall asleep upon being sung to.
+
+  You may sing to the dragon at any time.
+
+  You may take a purifying bath at any time.
+
+  Moonless nights happen every 3 nights, starting from the third night.
+
+  To enter the dungeon, you may, alternatively, break down the door.
+
+  Breaking down the door causes you to not be in good standing with the dungeonmaster.
+
+  To regain good standing with the dungeonmaster, you may bribe the dungeonmaster with 100 pieces of gold.
+
+  At first, you have 0 gold.
+
+  You receive 10 pieces of gold at the end of every day.
+
+  To offer a kiss, you must obtain permission from the lawyer.
+
+  Upon permission being sought, the lawyer may grant permission to kiss.
+
+  Or they may not, in which case you retire with honour.
+#+end_src
+
+* Part 1
+
+You think: /What an ordeal lies ahead! No wonder lawyers are always complaining about their love lives./
+
+You will definitely need a plan.
+
+Then you recall a quote attributed to Eisenhower: "plans are worthless, but planning is everything."
+
+You decide you don't just need a plan, you need a language for planning.
+
+You approach the dragon. It seems to be napping. As you get closer, it opens one sleepy eye, extends an immense horned talon, and nudges a charred backpack toward you.
+
+You dart forward and pick up the backpack. You find inside it a notebook devised, presumably, by some previous adventurer.
+
+On the the first page of the notebook is written, in a combination of cursive and block print:
+
+#+begin_example
+  rule         ::= [ TO event, ]
+                        party (MUST | MAY) predicate<event>
+                               UPON        predicate<event>
+                               WHEN        predicate<state>
+
+
+  predicate<T> ::= T  |  "(" T ")"  |  T "AND" T  |  T "OR" T  |  "NOT" T
+  
+
+  transition   ::=  SET        state
+                    TO         newstate
+                    UPON     ( event | "INIT" )
+                    WHEN [NOT] stateTest
+
+
+  stateTest    ::= state binOp value
+
+  binOp        ::= "=" | "<" | "<=" | ">" | ">=" | "NOT"
+
+  newstate     ::= state ("+" | "-" | "*" | "/" | "NOT") value
+                 | "NOT" state
+  
+  value        ::= Integer | String | Boolean
+
+  event        ::= String
+  state        ::= String
+#+end_example
+
+In the corner of the page, four cryptic letters are written, in blackletter script: "BNFC". Could it be a clue, perhaps?
+
+The question: How many ways are there to successfully win the heart of the lawyer? And how many ways are there to fail?
+
+* Part 2
+
+You turn the page. The notebook continues, in the same handwriting,
+
+#+begin_example
+Plan A.
+
+Day 1. I have zero gold. The night is not moonless.
+
+Day 2. I have ten gold. The night is not moonless.
+
+Day 3. I have twenty gold. The night is moonless.
+
+I take a purifying bath.
+
+I sing to the dragon.
+
+The dragon does not fall asleep. How strange.
+
+I dig under the dragon, to possess the key.
+
+I do not win the heart of the lawyer.
+#+end_example
+
+Enumerate all the possible successes and failures in the same narrative form.
+ 
+* Part 3
+
+Assuming all goes against you, as it did the previous adventurer, but assuming you tread more wisely before the dragon, what is the soonest you can make your offer to the lawyer and retire with honour?

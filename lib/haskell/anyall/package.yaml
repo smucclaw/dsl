@@ -69,3 +69,4 @@ tests:
     - xml
     - hspec-checkers
     - quickcheck-instances
+    - hspec-golden

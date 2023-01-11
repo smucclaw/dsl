@@ -21,9 +21,24 @@ import AnyAll (hardnormal)
 import Data.Tree
 import Data.Sequence.Internal.Sorting (Queue(Q))
 import Control.Monad.Reader (runReader)
+import Test.Hspec.Golden
 import Lens.Micro.Platform
+import Data.ByteString.Lazy.Char8 (unpack)
+import Control.Monad.RWS
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
+
+goldenBytestring :: String -> B.ByteString -> Golden B.ByteString
+goldenBytestring name actualOutput =
+    Golden {
+        output = actualOutput,
+        encodePretty = unpack,
+        writeToFile = B.writeFile,
+        readFromFile = B.readFile,
+        goldenFile = "test/golden/" <> name <> ".svg",
+        actualFile = Just ("test/golden/.actual-" <> name <> ".svg"),
+        failFirstTime = False
+    }
 
 svgRect :: SVGRect -> Element
 svgRect Rect {tl = (x, y), br = (w, h), fill = f, stroke = s} =
@@ -303,7 +318,7 @@ spec = do
       alignBox = rowLayouter (cscale c) alignedBox1 alignedBox2
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","green")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","darkgrey")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
       resultBox `shouldBe` (firstBox 
@@ -332,7 +347,7 @@ spec = do
       alignBox = combineAnd (cscale c) elems
       firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
       forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
-      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","green"),("transform","translate(22 0)")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","darkgrey"),("transform","translate(22 0)")]
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
     it "bounding box is correct" $ do
       resultBox `shouldBe` (firstBox & bboxWidth .~ 134 & bboxHeight .~ 30
@@ -340,6 +355,65 @@ spec = do
                               & boxMargins.rightMargin .~ 22 + 13
                               & boxPorts.rightPort .~ PVoffset 15
                               & boxPorts.leftPort .~ PVoffset 5)
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print resultBox
+      pendingWith "it's not a real test but just a debug code"
+
+  describe "test RWS combineAnd margins" $ do
+    let
+      mark = Default ( Right (Just True) )
+      contextR = DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
+      firstBox = templatedBoundingBox & bboxWidth .~ 60 & bboxHeight .~ 10 & boxMargins.leftMargin .~ 17
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox & bboxWidth .~ 20 & bboxHeight .~ 30 & boxMargins.rightMargin .~ 13
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      alignBox = fst (execRWS (combineAndS elems) contextR (defaultBBox', mempty::SVGElement))
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(22 0)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(70 0)translate(22 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,5 c 5,0 5,10 10 10"),("fill","none"),("stroke","darkgrey"),("transform","translate(22 0)")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` (firstBox & bboxWidth .~ 134 & bboxHeight .~ 30
+                              & boxMargins.leftMargin .~ 22 + 17
+                              & boxMargins.rightMargin .~ 22 + 13
+                              & boxPorts.rightPort .~ PVoffset 15
+                              & boxPorts.leftPort .~ PVoffset 5)
+    it "svg is correct" $ do
+      resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
+    it "print debug" $ do
+      let
+        svgXml = TL.toStrict . renderText . move (23,23) $ snd alignBox
+      _ <- print resultBox
+      pendingWith "it's not a real test but just a debug code"
+
+  describe "test RWS rowLayouter" $ do
+    let
+      firstBox = templatedBoundingBox & bboxWidth .~ 60 & bboxHeight .~ 10 & boxMargins.leftMargin .~ 17
+      firstRect = svgRect $ Rect (0, 0) (60, 10) "black" "none"
+      secondBox = templatedBoundingBox & bboxWidth .~ 20 & bboxHeight .~ 30 & boxMargins.rightMargin .~ 13
+      secondRect = svgRect $ Rect (0, 0) (20, 30) "black" "none"
+      elems = [(firstBox, firstRect), (secondBox, secondRect)]
+      alignedBox1:alignedBox2:_ = vAlign VMiddle elems
+      contextR = DrawConfig Full True (Default ( Right (Just True) )) (defaultBBox Full) (getScale Full) textBoxLengthFull
+      alignBox = fst (execRWS (rowLayouterS alignedBox2) contextR alignedBox1)
+      firstSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 10)"),("width","60"),("y","0"),("x","0")]
+      forthSVGAttrs  = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(0 0)translate(70 0)"),("width","20"),("x","0"),("y","0")]
+      pathSVGAttrs  =  [("svgName","path"), ("class","h_connector"), ("d","M 60,15 c 5,0 5,0 10 0"),("fill","none"),("stroke","darkgrey")]
+      (resultBox, resultSVG) = extractBoxAndSVG alignBox
+    it "bounding box is correct" $ do
+      resultBox `shouldBe` (firstBox
+                              & bboxWidth .~ 90
+                              & bboxHeight .~ 30
+                              & boxMargins.leftMargin .~ 17
+                              & boxMargins.rightMargin .~ 13
+                              & boxPorts.rightPort .~ PVoffset 15
+                              & boxPorts.leftPort .~ PVoffset 15)
     it "svg is correct" $ do
       resultSVG `shouldBe` Set.fromList <$> [firstSVGAttrs, forthSVGAttrs, pathSVGAttrs]
     it "print debug" $ do
@@ -367,12 +441,12 @@ spec = do
 
       (resultBox, resultSVG) = extractBoxAndSVG alignBox
       firstSVGBox  = [("svgName","rect"), ("fill","black"),("height","10"),("stroke","none"),("transform","translate(0 0)translate(0 10)"),("width","60"),("y","0"),("x","0")]
-      inConnector1 = [("d","M -22,32 C 0,32 -22,15 17 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
-      outConnector1  = [("d","M 82,32 C 60,32 82,15 47 15"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_out")]
+      inConnector1 = [("d","M -22,32 C 0,32 -22,15 17 15"),("fill","none"),("stroke","darkgrey"),("svgName","path"), ("class","v_connector_in")]
+      outConnector1  = [("d","M 82,32 C 60,32 82,15 47 15"),("fill","none"),("stroke","darkgrey"),("svgName","path"), ("class","v_connector_out")]
 
       secondSVGBox = [("svgName","rect"), ("fill","black"),("height","30"),("stroke","none"),("transform","translate(20 0)translate(0 30)"),("width","20"),("x","0"),("y","0")]
-      inConnector2  = [("d","M -22,32 C 0,32 -22,45 27 45"),("fill","none"),("stroke","green"),("svgName","path"), ("class","v_connector_in")]
-      outConnector2  =  [("d","M 82,32 C 60,32 82,45 35 45"),("fill","none"),("stroke","green"),("svgName","path"),("class","v_connector_out")]
+      inConnector2  = [("d","M -22,32 C 0,32 -22,45 27 45"),("fill","none"),("stroke","darkgrey"),("svgName","path"), ("class","v_connector_in")]
+      outConnector2  =  [("d","M 82,32 C 60,32 82,45 35 45"),("fill","none"),("stroke","darkgrey"),("svgName","path"),("class","v_connector_out")]
     it "gets correct vbox" $ do
       resultBox `shouldBe` (firstBox & bboxWidth .~ 60 & bboxHeight .~ 60
               & boxMargins.leftMargin .~ 0
@@ -406,32 +480,19 @@ spec = do
                                 & boxPorts.leftPort .~ PMiddle
                                 & boxPorts.rightPort .~ PMiddle)
 
-  describe "test combineAnd" $ do
+  describe "golden test combineAnd" $ do
     mycontents <- runIO $ B.readFile "test/fixtures/example-and-short.json"
-    myFixture <- runIO $ B.readFile "test/fixtures/example-and-short.svg"
     let
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
       questionTree = hardnormal (marking myright) (andOrTree myright)
-      --(bbox, svg) = q2svg' c qq
       (bbox2, svg2) = drawItemFull Full False simpleAndTree
       svgs = renderBS svg2
-      (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleAndTree
-      rawChildren = drawItemFull Full False <$> childqs
-      hrawChildren = hAlign HCenter rawChildren
-    -- _ <- runIO $ print svgs
-    -- _ <- runIO $ print rawChildren
     it "expands bounding box on Left alignment" $ do
-      svgs `shouldBe` myFixture
-    it "print debug" $ do
-      let
-        svgXml = TL.toStrict . renderText . move (23,23) $ svg2
-      _ <- print bbox2
-      pendingWith "it's not a real test but just a debug code"
+      goldenBytestring "example-and-short" svgs
 
   describe "test combineOr" $ do
     mycontents <- runIO $ B.readFile "test/fixtures/example-or-short.json"
-    myFixture <- runIO $ B.readFile "test/fixtures/example-or-short.svg"
     let
       myinput = eitherDecode mycontents :: Either String (StdinSchema Text)
       (Right myright) = myinput
@@ -439,13 +500,8 @@ spec = do
       --(bbox, svg) = q2svg' c qq
       (bbox2, svg2) = drawItemFull Full False simpleOrTree
       svgs = renderBS svg2
-      (Node (AnyAll.Types.Q  sv ao               pp m) childqs) = simpleOrTree
-      rawChildren = drawItemFull Full False <$> childqs
-      hrawChildren = hAlign HCenter rawChildren
-    -- _ <- runIO $ print hrawChildren
-    -- _ <- runIO $ print questionTree
     it "expands bounding box on Left alignment" $ do
-      svgs `shouldBe` myFixture
+      goldenBytestring "example-or-short" svgs
 
   describe "drawLeaf" $ do
     let
@@ -454,15 +510,15 @@ spec = do
       mark = Default ( Right (Just True) )
     it "makes elements of different sizes for Full scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull
+        shortLeaf = fst (execRWS (drawLeafR "swim") (DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull) (defaultBBox', mempty::SVGElement))
+        longLeaf = fst (execRWS (drawLeafR "discombobulate") (DrawConfig Full True mark (defaultBBox Full) (getScale Full) textBoxLengthFull) (defaultBBox', mempty::SVGElement))
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (> 0)
     it "makes elements of the same size for Tiny scale" $ do
       let
-        shortLeaf = runReader (drawLeafR "swim") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny
-        longLeaf = runReader (drawLeafR "discombobulate") $ DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny
+        shortLeaf = fst (execRWS (drawLeafR "swim") (DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny) (defaultBBox', mempty::SVGElement))
+        longLeaf = fst (execRWS (drawLeafR "discombobulate") (DrawConfig Tiny True mark (defaultBBox Tiny) (getScale Tiny) textBoxLengthTiny) (defaultBBox', mempty::SVGElement))
         shortBoxLength = shortLeaf ^. _1 . bboxWidth
         longBoxLength = longLeaf ^. _1 . bboxWidth
       (longBoxLength - shortBoxLength) `shouldSatisfy` (== 0)
@@ -475,7 +531,7 @@ spec = do
     it "box colors for (Tiny     False)" $ do
       let
         (boxStroke, boxFill) = getColorsBox False
-      (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
+      (boxStroke, boxFill) `shouldBe` ("none",   "darkgrey")
     it "box colors for (Small     True)" $ do
       let
         (boxStroke, boxFill) = getColorsBox True
@@ -483,7 +539,7 @@ spec = do
     it "box colors for (Small     False)" $ do
       let
         (boxStroke, boxFill) = getColorsBox False
-      (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
+      (boxStroke, boxFill) `shouldBe` ("none",   "darkgrey")
     it "box colors for (Full     True)" $ do
       let
         (boxStroke, boxFill) = getColorsBox True
@@ -491,7 +547,7 @@ spec = do
     it "box colors for (Full     False)" $ do
       let
         (boxStroke, boxFill) = getColorsBox False
-      (boxStroke, boxFill) `shouldBe` ("none",   "lightgrey")
+      (boxStroke, boxFill) `shouldBe` ("none",   "darkgrey")
 
   describe "getColors Text" $ do
     it "Text colors for (Tiny     True)" $ do

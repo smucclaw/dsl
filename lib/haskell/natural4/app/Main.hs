@@ -166,7 +166,7 @@ main = do
 
 
   -- when workdir is not specified, --only will dump to STDOUT
-  when (toworkdir && not (null $ SFL4.uuiddir opts)) $ do
+  when (not toworkdir) $ do
     when (SFL4.only opts == "petri")  $ putStrLn asPetri
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
@@ -213,7 +213,7 @@ main = do
     --   pdf <- toPDF (Text.concat mkdn)
     --   Byte.writeFile "output.pdf" pdf
 
-    when (SFL4.only opts `elem` ["", "native"]) $ pPrint rules
+    when (SFL4.only opts `elem` ["native"]) $ pPrint rules
 
 -- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
 -- file2rules opts

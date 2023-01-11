@@ -10,10 +10,9 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
       Rule(..),
       BoolStructP, BoolStructR, BoolStructT, Interpreted, RuleName,
-      RelationalPredicate(..), HornClause2(..), RPRel(..), HasToken (tokenOf),
+      RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
-      rp2text, pt2text, bsr2text, KVsPair)
-import LS.Interpreter (qaHornsR)
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP)
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF, readExpr )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -30,7 +29,7 @@ import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import System.Environment (lookupEnv, getExecutablePath)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
@@ -40,6 +39,8 @@ import System.IO (stderr)
 import System.Exit (exitFailure)
 import Data.Typeable
 import Paths_natural4
+import AnyAll.BoolStructTree
+import qualified Data.Tree as DT
 
 
 data NLGEnv = NLGEnv
@@ -86,7 +87,7 @@ gfPath x = "grammars/" ++ x
 -- | Parse text with udpipe via udpipe-hs, then convert the result into GF via gf-ud
 parseUD :: NLGEnv -> Text.Text -> IO GUDS
 parseUD env txt = do
-  when (not $ verbose env) $ -- when not verbose, just short output to reassure user we're doing something
+  unless (verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
   -- conll <- udpipe txt -- Initial parse
   let nonWords = concat $ saveNonWords (map Text.unpack $ Text.words txt) []
@@ -244,16 +245,17 @@ nlgQuestion env rl = do
 
 mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
 mkHCQs gr lang indentation emptE udfrag = case udfrag of
-  GHornClause2 _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
+  GHornClause2 _ sent -> mkQs qsCond gr lang indentation emptE (sTG sent)
   GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
   _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
+
 
 mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
 mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e  ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
   where
     tg = case findType gr e of
-          "VPS" -> vpTG $ fg e
-          _     -> udsToTreeGroups (toUDS gr e)
+      "VPS" -> vpTG $ fg e
+      _     -> udsToTreeGroups (toUDS gr e)
 
 mkCondQs gr lang subj e = mkQs qsCond gr lang 2 subj (udsToTreeGroups (toUDS gr e))
 
@@ -316,7 +318,7 @@ nlg env rl = do
    gr <- nlgExtPGF
    let lang = head $ languages gr
    let Just eng = readLanguage "UDExtEng"
-   let Just may = readLanguage "UDExtMay"
+   let Just may = readLanguage "UDExtSwe"
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?
@@ -437,13 +439,26 @@ parseFields env rl = case rl of
   _ -> return RegBreachA
   where
     parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
-    parseHornClause env fun (HC2 rp Nothing) = parseRP env fun rp
-    parseHornClause env fun (HC2 rp (Just bsr)) = do
+    parseHornClause env fun (HC rp Nothing) = parseRP env fun rp
+    parseHornClause env fun (HC rp (Just bsr)) = do
       extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
       db_is_NDB_UDFragment <- parseRPforHC env fun rp
-      db_occurred_UDS <- toUDS extGrammar `fmap` bsr2gf env bsr
-      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_UDS
+      db_occurred_S <- bsr2s env bsr
+      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_S
       return $ gf hornclause
+
+    bsr2s :: NLGEnv -> BoolStructR -> IO GS
+    bsr2s env bsr = do
+      expr <- bsr2gf env bsr
+      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+      return $ case findType extGrammar expr of
+        "S" -> fg expr          -- S=[databreach occurred]
+        "AP" -> ap2s $ fg expr  -- someone is AP=[happy]
+        -- TODO: make other cats to S too
+        _ -> error $ "bsr2s: expected S, got " ++ showExpr expr
+
+    ap2s :: GAP -> GS
+    ap2s ap = GPredVPS GSomeone (GMkVPS presSimul GPPos (GUseComp (GCompAP ap)))
 
     -- A wrapper for ensuring same return type for parseRP
     parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
@@ -513,6 +528,14 @@ bsp2gf env bsp = case bsp of
     return $ combineActionMods actionExpr modExprs
   _ -> error "bsp2gf: not supported yet"
 
+bsp2gfDT :: NLGEnv -> BoolStructDTP -> IO Expr
+bsp2gfDT env bsp = case bsp of
+  (DT.Node (FAtom (action :| mods)) _    )  -> do
+    actionExpr <- kvspair2gf env action  -- notify the PDPC
+    modExprs <- mapM (kvspair2gf env) mods -- [by email, at latest at the deadline]
+    return $ combineActionMods actionExpr modExprs
+  _ -> error "bsp2gf: not supported yet"
+
 -- | Takes the main action, a list of modifiers, and combines them into one Expr
 combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
 combineActionMods (_, expr) [] = expr
@@ -536,7 +559,6 @@ combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf 
 
     advVPS :: GVPS -> GAdv -> GVPS
     advVPS vps adv = GMkVPS presSimul GPPos $ GAdvVP (vps2vp vps) adv
-
 combineActionMods ("VPS",act) (("NP",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
@@ -544,6 +566,13 @@ combineActionMods ("VPS",act) (("NP",mod):rest) = combineActionMods ("VPS", gf r
 
     npVPS :: GVPS -> GNP -> GVPS
     npVPS vps np = GMkVPS presSimul GPPos $ GComplVP (vps2vp vps) np
+combineActionMods ("NP",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+  where
+    resultVP :: GVPS
+    resultVP = advVPS (GUseComp (GCompNP (fg act))) (fg mod)
+
+    advVPS :: GVP -> GAdv -> GVPS
+    advVPS vp adv = GMkVPS presSimul GPPos $ GAdvVP vp adv
 
 combineActionMods ("VPS",act) (("RS",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
 
@@ -1329,7 +1358,8 @@ verbFromUDS' verbose x = case getNsubj x of
     Groot_obj_obl (GrootV_ t p vp) (Gobj_ obj) (Gobl_ adv) -> Just $ GMkVPS t p $ GAdvVP (complVP vp obj) adv
     Groot_obl_obl (GrootV_ t p vp) (Gobl_ obl1) (Gobl_ obl2) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl1) obl2
     Groot_obl_xcomp (GrootV_ t p vp) (Gobl_ obl) (GxcompAdv_ xc) -> Just $ GMkVPS t p $ GAdvVP (GAdvVP vp obl) xc
-    Groot_xcomp (GrootV_ t p vp) (GxcompAdv_ adv) -> Just $ GMkVPS t p $ GAdvVP vp adv
+    Groot_xcomp (GrootV_ t p vp) xcomp -> Just $ GMkVPS t p $ GAdvVP vp (xcomp2adv xcomp)
+    Groot_obj_xcomp (GrootV_ t p vp) (Gobj_ obj) xcomp -> Just $ GMkVPS t p $ GAdvVP (complVP vp obj) (xcomp2adv xcomp)
     Groot_advmod (GrootV_ t p vp) (Gadvmod_ adv) ->
       Just $ GMkVPS t p $ GAdvVP vp adv
     Groot_acl_nmod root         (GaclUDSgerund_ uds) (Gnmod_ prep np) -> do
@@ -1346,6 +1376,15 @@ verbFromUDS' verbose x = case getNsubj x of
                 _ -> if verbose
                       then trace ("\n\n **** verbFromUDS: couldn't match " ++ showExpr (gf x)) Nothing
                       else Nothing
+
+xcomp2adv :: Gxcomp -> GAdv
+xcomp2adv xc = case xc of
+  GxcompAdv_ adv -> adv
+  _ -> Gxcomp2Adv xc
+  -- GxcompN_ : NP -> xcomp ;
+  -- GxcompToBeN_ : mark -> cop -> NP -> xcomp ;
+  -- GxcompA_ ap -> GPositAdvAdj ap
+  -- GxcompA_ccomp_ : AP -> ccomp -> xcomp ;
 
 -- | Two first cases overlap with verbFromUDS: rootV_ and rootVaux_ always become VPS.
 -- Rest don't, because this is called for any root ever that we want to turn into VPS.
@@ -1434,6 +1473,7 @@ sFromUDS x = case getNsubj x of
     Groot_xcomp root xcomp -> case xcomp of
       GxcompN_ np -> predVPS np <$> root2vps root
       GxcompToBeN_ _ _ np -> predVPS np <$> root2vps root
+      _ -> error ("sFromUDS: doesn't handle yet " <> showExpr (gf xcomp))
     -- todo: add other xcomps
     GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) cop) -> do
       xcomp <- pure $ GxcompToBeN_ (Gmark_ subj) cop nsubj

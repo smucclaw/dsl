@@ -16,6 +16,8 @@ import qualified Data.Text as Text
 import qualified Data.Map as Map
 import Data.List.NonEmpty as NE
 import AnyAll
+import Data.Tree
+import AnyAll.BoolStructTree
 
 prologExamples :: [Clause]
 prologExamples =
@@ -34,11 +36,7 @@ sfl4ToProlog rs =
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
 rule2clause st cr@Hornlike {} = hornlike2clauses st (Text.unwords $ name cr) (clauses cr)
 rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (Text.unwords $ name td) ens
--- [ TypeDecl
---     { name = "Chirality"
---     , enums = Just (
---             ( "Left" :| [] ) :|
---             [ "Right" :| [] ]
+
 
 rule2clause st td@TypeDecl { has   = rules }
   | rules /= [] = describeDict st (Text.unwords $ name td) (super td) rules
@@ -121,14 +119,20 @@ hornlike2clauses _st _fname hc2s =
   ]
 
 bsp2struct :: BoolStructP -> [Term]
-bsp2struct (Leaf pt)     = pure (vart . pt2text $ pt)
-bsp2struct (Not  pt)     = vart "neg" : bsp2struct pt -- how do you say \+ in Language.Prolog?
-bsp2struct (All _lbl xs) =    concatMap bsp2struct xs
+bsp2struct (Leaf pt)     = [vart . pt2text $ pt]
+bsp2struct (Not  pt)     = vart "neg" : bsp2struct pt
+bsp2struct (All _lbl xs) = concatMap bsp2struct xs
 bsp2struct (Any _lbl xs) = vart "or" : concatMap bsp2struct xs
+
+bsp2structDT :: BoolStructDTP -> [Term]
+bsp2structDT (Node (FAtom pt) _    )     = [vart . pt2text $ pt]
+bsp2structDT (Node FNot    [pt]    )     = vart "neg" : bsp2structDT pt
+bsp2structDT (Node (FAll _)    xs )      = concatMap bsp2structDT xs
+bsp2structDT (Node (FAny _)    xs )      = vart "or" : concatMap bsp2structDT xs
 
 bsr2struct :: BoolStructR -> [Term]
 bsr2struct (Leaf rt)     = rp2goal rt
-bsr2struct (Not  rt)     = vart "neg" : bsr2struct rt -- how do you say \+ in Language.Prolog?
+bsr2struct (Not  rt)     = vart "neg" : bsr2struct rt
 bsr2struct (All _lbl xs) =    concatMap bsr2struct xs
 bsr2struct (Any _lbl xs) = vart "or" : concatMap bsr2struct xs
 

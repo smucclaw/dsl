@@ -76,7 +76,7 @@ jsInstances l4i =
                 , value <- case vals of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,
                               -- rather than assume that all the HC2 are paramtexts.
-                              HC2 { hHead = RPParamText {} } : _ -> [lbrace </> asValuePT l4i vals </>
+                              HC { hHead = RPParamText {} } : _ -> [lbrace </> asValuePT l4i vals </>
                                                                      rbrace <> Prettyprinter.line]
                               _                                  -> asValue l4i <$> vals
                  ]
@@ -93,14 +93,14 @@ jsInstances l4i =
 -- [TODO] convert the GIVEN ... logic into functions that do the right thing.
 
 asValue :: Interpreted -> HornClause2 -> Doc ann
-asValue _l4i  hc2@HC2 { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
-asValue _l4i _hc2@HC2 { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
-asValue _l4i _hc2@HC2 { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
-asValue  l4i _hc2@HC2 { hHead = RPParamText pt }                = pretty (PT4 pt l4i)
-asValue  l4i  hc2@HC2 { hHead = RPnary      _rprel rp }         = asValue l4i hc2 {hHead = rp}
+asValue _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
+asValue _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
+asValue _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
+asValue  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i)
+asValue  l4i  hc2@HC { hHead = RPnary      _rprel rp }         = asValue l4i hc2 {hHead = rp}
 
 asValuePT :: Interpreted -> [HornClause2] -> Doc ann
 asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $
                      vsep [ pretty (PT4 pt l4i) <> comma
-                          | HC2 { hHead = RPParamText pt } <- hc2s ]
+                          | HC { hHead = RPParamText pt } <- hc2s ]
                  

@@ -2,7 +2,7 @@
 
 concrete UDAppMay of UDApp =
   UDCatMay, JustWordsWordNetMay **
-  open Prelude, SyntaxMay, ExtendMay, SymbolicMay, LexiconMay
+  open Prelude, SyntaxMay, ExtendMay, SymbolicMay, LexiconMay, (R=ResMay)
     in {
 
 lin
@@ -199,7 +199,7 @@ lin
 
   -- add to try getting root_only to work
  -- : root -> xcomp -> obj -> UDS ;
-  root_xcomp_obj rt xc obj = root_obj (advRoot rt xc) obj ;
+  root_obj_xcomp rt obj xc = root_obj (advRoot rt xc) obj ;
   --
 	-- : root -> xcomp -> ccomp -> UDS ;	--[render] it [unlikely] that the notifiable data breach will [result] in significant [harm] to the individual ;
 	root_xcomp_ccomp render unlikely result_harm =
@@ -277,7 +277,7 @@ lin
 
     -- unstable hack, TODO fixme
     addRcl : LinRoot -> Adv -> LinRoot = \rt,rs ->
-      let dummyNP : NP = mkNP emptyNP rs ;
+      let dummyNP : NP = mkNP R.emptyNP rs ;
           RSasAdv : Adv = lin Adv (mkUtt dummyNP) ;
        in advRoot rt rs ;
 

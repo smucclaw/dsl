@@ -17,8 +17,8 @@ src-bnfc/AbsL.hs : l4.bnfc src-l4/Top.hs
 	# (cd src-bnfc; bnfc --haskell ../l4.bnfc; rm TestL.hs)
 	stack build
 
-src-l4/Top.pgf src-l4/Top.hs : ../grammars/RuleEng.gf
-	gf -make -f haskell -D src-l4 ../grammars/TopEng.gf
+src-l4/Top.pgf src-l4/Top.hs : ../grammars/old/RuleEng.gf
+	gf -make -f haskell -D src-l4 ../grammars/old/TopEng.gf
 
 l4/test.l4 : l4/test1.l4
 	cp l4/test1.l4 l4/test.l4

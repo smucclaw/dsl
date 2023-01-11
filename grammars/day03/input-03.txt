@@ -1,0 +1,20 @@
+X: Do you promise to serve?
+Y: I promise to serve.
+X: Do you swear your loyalty?
+Y: I swear my loyalty.
+X: Do you swear your loyalty to me?
+Y: I hereby swear my loyalty to you.
+X: Do you swear your loyalty, to me?
+Y: I hereby swear my loyalty, to you.
+X: Do you swear your loyalty, to me, upon this book?
+Y: I hereby swear my loyalty, to you, upon this book.
+X: Do you swear your loyalty, to me, upon this book, on oath?
+Y: 
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers?
+Y: 
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies?
+Y: 
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation?
+Y: 
+X: Do you swear your loyalty, to me, upon this book, on oath, before our peers, against our enemies, without hesitation, with full capacity?
+Y:

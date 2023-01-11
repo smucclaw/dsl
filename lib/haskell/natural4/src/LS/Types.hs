@@ -31,6 +31,8 @@ import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
+import qualified AnyAll.BoolStructTree as BST
+import AnyAll.BoolStructTree (mkLeafDT)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -47,6 +49,17 @@ type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
+type BoolStructDTR = BST.BoolStructDT (Maybe (AA.Label Text.Text)) RelationalPredicate
+type BoolStructDTP = BST.BoolStructDT (Maybe (AA.Label Text.Text)) ParamText
+
+class MyBSR a where
+  mkBSRLeaf :: RelationalPredicate -> a
+
+instance MyBSR BoolStructR where
+  mkBSRLeaf = AA.mkLeaf
+
+instance MyBSR BoolStructDTR where
+  mkBSRLeaf = mkLeafDT
 
 type MultiTerm = [Text.Text]                          --- | apple | orange | banana
 
@@ -91,7 +104,7 @@ text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure x, Nothing)
 
 pt2text :: ParamText -> Text.Text
-pt2text x = Text.unwords $ concatMap (toList . fst) $ toList x
+pt2text = Text.unwords . toList . (fst =<<)
 
 type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothing) [ Node (["immediately" :| [], Urgency) [] ]
 
@@ -381,18 +394,22 @@ hasClauses             __ = False
 
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead
-                                | HC2 hhead _hbody <- clauses ]
+                                | HC hhead _hbody <- clauses ]
 getDecisionHeads _ = []
 
 data Expect = ExpRP      RelationalPredicate
             | ExpDeontic Rule -- regulative rule
             deriving (Eq, Ord, Show, Generic, ToJSON)
 
-data HornClause2 = HC2
+data HornClause a = HC
   { hHead :: RelationalPredicate
-  , hBody :: Maybe BoolStructR
+  , hBody :: Maybe a
   }
   deriving (Eq, Ord, Show, Generic, ToJSON)
+
+type HornClause2 = HornClause BoolStructR
+
+type HornClauseDT = HornClause BoolStructDTR
 
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Ord, Show, Generic, ToJSON)
@@ -450,6 +467,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
+                         | RPBoolStructDTR MultiTerm RPRel BoolStructDTR   -- eyes IS (left IS blue AND right IS brown)
                          | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 
@@ -460,16 +478,16 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 rel2txt :: RPRel -> Text.Text
-rel2txt RPis      = "Is"
-rel2txt RPhas     = "relHas"
-rel2txt RPeq      = "relEq"
-rel2txt RPlt      = "relLT"
-rel2txt RPlte     = "relLTE"
-rel2txt RPgt      = "relGT"
-rel2txt RPgte     = "relGTE"
-rel2txt RPelem    = "relIn"
-rel2txt RPnotElem = "relNotIn"
-rel2txt RPnot     = "relNot"
+rel2txt RPis      = "IS"
+rel2txt RPhas     = "HAS" -- "relHas"
+rel2txt RPeq      = "=="  -- "relEq"
+rel2txt RPlt      = "<"   -- "relLT"
+rel2txt RPlte     = "<="  -- "relLTE"
+rel2txt RPgt      = ">"   -- "relGT"
+rel2txt RPgte     = ">="  -- "relGTE"
+rel2txt RPelem    = "IN"  -- "relIn"
+rel2txt RPnotElem = "NOT IN" -- "relNotIn"
+rel2txt RPnot     = "NOT"    -- "relNot"
 
 rel2op :: RPRel -> Text.Text
 rel2op RPis      = "IS"

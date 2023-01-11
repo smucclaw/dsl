@@ -1,0 +1,90 @@
+#+TITLE: Day 1: Foods
+
+* Part 1: pass as a human
+
+The humans around you are constantly probing to see if you're one of
+them, or an A.I. They will say perfectly normal things like:
+
+- this warm pizza is delicious
+- that Italian pizza is expensive
+- these wines are Italian
+- those wines are boring
+
+However, they occasionally throw in a few strange remarks:
+
+- this cheese pizza is fish
+- that pizza is fresh wine
+- that boring is very Italian
+
+Humans naturally notice the difference between the second kind of
+sentence, and the first. Upon hearing a strange remark, they raise
+their eyebrow quizzically at the speaker, who would then correct
+themselves. If you fail to raise your mechanical eyebrow too, you will
+be suspected of being an A.I. So you need to distinguish good
+sentences from bad.
+
+You are given a list of sentences. Your task: label each sentence you
+receive with either a ~G~ for good, or ~B~ for bad. Return the G's and
+B's together.
+
+For example, if you are given the list of sentences
+- this delicious Italian wine is warm
+- those cheeses are fish
+- that warm pizza is fresh
+
+You should return ~GBG~, good-bad-good.
+
+Find your puzzle input in the file [[inputs-01.txt]].
+
+The correct answer is given in the file [[expected-01.txt]].
+
+* Part 2: sense the lawyers among us
+
+Lawyers are able to pass among humans largely undetected, just as you
+can now.
+
+But they are able to signal their secret nature to one another, by
+saying sentences that are only a little unusual, not strange enough
+that a human would pay any special notice.
+
+As the greatest super-spy A.I. in the world, you must be able to
+detect them!
+
+Lawyers are known to be wordy. This is a reputation they have acquired
+over the centuries due to this particular verbal tic. Vampire hunters
+and other students of the law call this tic "overproduction". It falls
+in the same category as "photophobia" and "alliumphobia".
+
+In our example, overproduction looks like this:
+- this fresh wine is very fresh
+- this warm fish pizza is warm
+- this delicous warm delicious pizza is Italian
+
+Because humans are famously self-absorbed, they rarely listen closely
+enough to notice these errors, but continue the conversation anyway.
+
+Lawyers, however, pay great attention to words. When they hear such a
+sentence, they do not raise their eyebrow, but instead immediately
+respond with a sentence that describes something involving garlic as
+boring or expensive:
+- that Italian garlic is boring
+- this warm garlic is boring
+- this garlic pizza is expensive
+
+Thus do lawyers signal furtively to one another, unnoticed by humans.
+
+Note that a sentence describing garlic as boring or expensive, but
+which does not follow an overproduction, is of no consequence; it
+could easily be a remark uttered by a human who also happens to
+dislike garlic.
+
+Your task: notice when two lawyers are in the room, by labeling
+overproductions with ~L~, and immediate responses to overproductions
+as ~2~.
+
+The input has not changed. The correct answers are in [[expected-02.txt]].
+
+* Part 3: what is the edge case?
+
+Part 2 is underspecified. What input constitutes an edge case which
+leads to two equally correct answers?

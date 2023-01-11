@@ -94,10 +94,10 @@ concrete UDCatEng of UDCat = BareRGEng **
     oblPrep_ to = mkAdv to emptyNP ;
     oblRP_ for which = mkAdv for (rp2np which) ;
 
-    rootV_ temp pol vp = mkRoot temp pol vp ;
+    rootV_ temp pol vp = mkRoot <lin Temp temp : Temp> <lin Pol pol : Pol> <lin VP vp : VP> ;
     rootVaux_ temp pol aux vp =
       let ant : Ant = lin Ant {s = [] ; a = temp.a} ;
-          may_have_occurred : VP = ParseExtendComplVV aux.vv ant pol vp ;
+          may_have_occurred : CatEng.VP = ParseExtendComplVV aux.vv ant pol vp ;
        in mkRoot presSimulTemp positivePol may_have_occurred ;
 
     rootA_ ap = mkRoot ap ;
@@ -233,9 +233,9 @@ concrete UDCatEng of UDCat = BareRGEng **
 
     LinRoot : Type = {
       -- These together will become the VPS in LinUDS
-      vp : VP ;
+      vp : CatEng.VP ;
       temp : Temp ;
-      pol : Pol ;
+      pol : CatEng.Pol ;
 
       np : NP ;
       isNP : Bool ;
@@ -250,7 +250,7 @@ concrete UDCatEng of UDCat = BareRGEng **
        mkRoot : NP -> LinRoot = \np -> emptyRoot ** {vp = mkVP np ; np = np ; isNP = True} ;
        mkRoot : CatEng.VP -> LinRoot = \vp -> emptyRoot ** {vp = vp} ;
        mkRoot : VPSlash -> LinRoot = \vp -> emptyRoot ** {vp = vp ; c2 = vp.c2} ;
-       mkRoot : Temp -> Pol -> CatEng.VP -> LinRoot = \t,p,vp ->
+       mkRoot : Temp -> CatEng.Pol -> CatEng.VP -> LinRoot = \t,p,vp ->
         emptyRoot ** {temp = t ; pol = p ; vp = vp}
     } ;
 
@@ -336,7 +336,7 @@ concrete UDCatEng of UDCat = BareRGEng **
     } ;
 
     -- copied this from ParseExtendEng, easier to duplicate code than to introduce new dependency?
-    ParseExtendComplVV : VV -> Ant -> Pol -> VP -> VP ;
+    ParseExtendComplVV : VV -> Ant -> CatEng.Pol -> CatEng.VP -> CatEng.VP ;
     ParseExtendComplVV v ant pol vp =
       insertObj (variants {\\agr => ant.s ++ pol.s ++
                                     infVP v.typ vp True  ant.a pol.p agr;

@@ -22,8 +22,8 @@ import           Data.Text.Lazy                   (toStrict, Text)
 import           Data.Text.Lazy.Builder           (toLazyText)
 import           Data.Text.Lazy.Builder.Int
 import Text.Printf (formatInteger)
-import Control.Monad.Reader
 import Lens.Micro.Platform
+import Control.Monad.RWS
 
 type Length  = Integer
 type SVGElement = Element
@@ -149,6 +149,10 @@ defaultMargins = Margins
   , _bottomMargin = 0
   }
 
+-- default stroke colour for the connecting lines between boxes
+defaultStroke_ :: T.Text
+defaultStroke_ = "darkgrey"
+
 -- | how compact should the output be?
 data Scale = Tiny  -- @ ---o---
            | Small -- @ --- [1.1] ---
@@ -230,20 +234,20 @@ portTB (PHoffset x) bb s = bb ^. boxMargins.leftMargin + x
 --                              (boxStroke, boxFill,     textFill
 getColorsBox :: Bool ->   (T.Text,   T.Text)
 getColorsBox True    = ("none",   "none")
-getColorsBox False   = ("none",   "lightgrey")
+getColorsBox False   = ("none",   "darkgrey")
 
 getColorsText :: Scale -> Bool ->    T.Text
 getColorsText    Tiny     False   = "lightgrey"
 getColorsText    _        True    = "black"
 getColorsText    _        False   = "white"
 
-getBoxColorsR :: DrawConfigM (T.Text, T.Text)
+getBoxColorsR :: SVGCanvas (T.Text, T.Text)
 getBoxColorsR = do
   m <- asks markingR
   return $ getColorsBox (confidence m)
 
 
-getTextColorsR :: DrawConfigM T.Text
+getTextColorsR :: SVGCanvas T.Text
 getTextColorsR = do
   m <- asks markingR
   sc <- asks contextScale
@@ -288,9 +292,9 @@ data HAlignment = HLeft | HCenter | HRight   deriving (Eq, Show)
 data VAlignment = VTop  | VMiddle | VBottom  deriving (Eq, Show)
 
 drawItemTiny :: Scale -> Bool -> QTree T.Text -> BoxedSVG
-drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = runReader (drawLeafR txt) $ DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
+drawItemTiny sc negContext (Node (Q _sv (Simply txt) pp m) childqs) = fst (execRWS (drawLeafR txt) (DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)) (defaultBBox', mempty::SVGElement))
 drawItemTiny sc negContext (Node (Q _sv Neg         pp m) childqs)  = drawItemTiny sc (not negContext) (head childqs)
-drawItemTiny sc negContext qt                                              = drawItemFull sc      negContext   qt      -- [TODO]
+drawItemTiny sc negContext qt                                       = drawItemFull sc      negContext   qt      -- [TODO]
 
 alignV :: VAlignment -> Length -> BoxedSVG -> BoxedSVG
 alignV alignment maxHeight (box, el) = (adjustMargins (box & bboxHeight .~ maxHeight), moveElement el)
@@ -405,7 +409,10 @@ svgConnector
       endGuide = Dot {xPos = egx, yPos = egy},
       end = Dot {xPos = ex, yPos = ey}
     } =
-    path_ [D_ <<- curveMoveCommand <> curveBezierCommand, Stroke_ <<- "green", Fill_ <<- "none", Class_ <<- "h_connector"]
+    path_ [D_ <<- curveMoveCommand <> curveBezierCommand
+          , Stroke_ <<- defaultStroke_
+          , Fill_   <<- "none"
+          , Class_  <<- "h_connector"]
     where
       curveMoveCommand = mAInt sx sy
       curveBezierCommand = cRInt sgx 0 egx  egy  ex ey
@@ -434,7 +441,8 @@ inboundCurve sc parentbbox bbold bbnew =
   path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_in") : pathcolors)
   where
     parentPortIn = portL parentbbox myScale + lrVgap
-    pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
+    pathcolors = [ Stroke_ <<- defaultStroke_
+                 , Fill_ <<- "none"]
     myScale = getScale sc
     lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     leftMargin' = myScale ^. aavscaleMargins.leftMargin
@@ -453,7 +461,8 @@ outboundCurve sc parentbbox bbold bbnew =
   path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_out") : pathcolors)
   where
     parentPortOut = portR parentbbox myScale + lrVgap
-    pathcolors = [Stroke_ <<- "green", Fill_ <<- "none"]
+    pathcolors = [ Stroke_ <<- defaultStroke_
+                 , Fill_ <<- "none"]
     myScale = getScale sc
     lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     rightMargin' = myScale ^. aavscaleMargins.rightMargin
@@ -504,7 +513,54 @@ combineAnd sc elems =
     rightPad = myScale ^. aavscaleMargins.rightMargin
     addElementToRow = rowLayouter sc
     (childbbox, children) = foldl1 addElementToRow $ vAlign VTop elems
-    combinedBox = childbbox & boxDims.dimWidth .~  childbbox ^. bboxWidth + leftPad + rightPad
+    combinedBox = childbbox & bboxWidth %~ (+ (leftPad + rightPad))
+
+combineAndS ::  [BoxedSVG] -> SVGCanvas ()
+combineAndS elems = do
+  myScale <- asks aav
+  put firstE
+  mapM_ rowLayouterS restE
+  (childbbox, children) <- get
+  let
+    leftPad = myScale ^. aavscaleMargins.leftMargin
+    rightPad = myScale ^. aavscaleMargins.rightMargin
+    combinedBox = childbbox & bboxWidth %~ (+ (leftPad + rightPad))
+  put ( combinedBox
+      & boxPorts.leftPort  .~ PVoffset (portL childbbox myScale)
+      & boxPorts.rightPort .~ PVoffset (portR childbbox myScale)
+      & boxMargins.leftMargin %~ (+ leftPad)
+      & boxMargins.rightMargin %~ (+ rightPad)
+    ,
+      move (leftPad, 0) children
+    )
+  where
+    (firstE:restE) = vAlign VTop elems
+
+rowLayouterS :: BoxedSVG -> SVGCanvas ()
+rowLayouterS (bbnew, new) = do
+  sc <- asks contextScale
+  myScale <- asks aav
+  (bbold, old) <- get
+  let
+    templateBox = (defaultBBox sc)
+        & boxDims.dimHeight .~ max (bbold ^. bboxHeight) (bbnew ^. bboxHeight)
+        & boxDims.dimWidth .~ bbold ^. bboxWidth + lrHgap + bbnew ^. bboxWidth
+    lrHgap = myScale ^. aavscaleHorizontalLayout.gapHorizontal
+    newBoxStart = bbold ^. bboxWidth + lrHgap
+    connectingCurve =
+      if bbold ^. bboxWidth /= 0
+        then svgConnector $ rowConnectorData sc bbold bbnew
+        else mempty
+  put ( templateBox
+      & boxPorts.leftPort  .~ PVoffset (portL bbold myScale)
+      & boxPorts.rightPort .~ PVoffset (portR bbnew myScale)
+      & boxMargins.leftMargin .~ (bbold ^. boxMargins.leftMargin)
+      & boxMargins.rightMargin .~ (bbnew ^. boxMargins.rightMargin)
+      ,
+      old
+        <> move (newBoxStart, 0) new
+        <> connectingCurve
+    )
 
 drawPreLabelTop :: Scale -> T.Text -> BoxedSVG -> BoxedSVG
 drawPreLabelTop sc label (childBox, childSVG) =
@@ -539,12 +595,12 @@ decorateWithLabel _ Nothing childBox = childBox
 decorateWithLabel sc (Just (Pre txt)) childBox = drawPreLabelTop sc txt childBox
 decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox = drawPrePostLabelTopBottom sc preTxt postTxt childBox
 
-decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
+decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> SVGCanvas BoxedSVG
 decorateWithLabelR Nothing childBox = return childBox
 decorateWithLabelR (Just (Pre txt)) childBox = asks contextScale >>= \sc -> return $ drawPreLabelTop sc txt childBox
 decorateWithLabelR (Just (PrePost preTxt postTxt)) childBox = asks contextScale >>= \sc -> return $ drawPrePostLabelTopBottom sc preTxt postTxt childBox
 
-decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> DrawConfigM BoxedSVG
+decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> SVGCanvas BoxedSVG
 decorateWithLabelGuardR ml childBox = asks contextScale >>= \sc -> if sc == Tiny then pure childBox else decorateWithLabelR ml childBox
 
 drawItemFull :: Scale -> Bool -> QuestionTree -> BoxedSVG
@@ -552,7 +608,7 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
   case ao of
     Or -> decorateWithLabel sc pp (combineOr sc rawChildren)
     And -> decorateWithLabel sc pp  (combineAnd sc rawChildren)
-    Simply txt -> runReader (drawLeafR txt) contextR
+    Simply txt -> fst (execRWS (drawLeafR txt) contextR (defaultBBox', mempty::SVGElement))
     Neg -> drawItemFull sc (not negContext) (head childqs)
   where
     contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
@@ -580,13 +636,13 @@ confidence :: Default Bool -> Bool
 confidence (Default (Right _)) = True
 confidence (Default (Left _)) = False
 
-drawBoxCapR :: T.Text -> DrawConfigM SVGElement
+drawBoxCapR :: T.Text -> SVGCanvas SVGElement
 drawBoxCapR caption = do
   negContext <- asks negContext
   m <- asks markingR
   drawBoxCap negContext m <$> deriveBoxSize caption
 
-drawBoxContentR :: T.Text -> DrawConfigM SVGElement
+drawBoxContentR :: T.Text -> SVGCanvas SVGElement
 drawBoxContentR caption = do
   sc <- asks contextScale
   textFill <- getTextColorsR
@@ -597,24 +653,31 @@ drawBoxCap negContext m BoxDimensions{boxWidth=bw, boxHeight=bh} =
   leftLineSVG <> rightLineSVG <> topLineSVG
   where
     (leftline, rightline, topline) = deriveBoxCap negContext m
-    leftLineSVG = drawVerticalLine 0 bh leftline "leftline"
-    rightLineSVG = drawVerticalLine bw bh rightline "rightline"
+    leftLineSVG = drawVerticalLine 0 bh leftline "leftline" "black"
+    rightLineSVG = drawVerticalLine bw bh rightline "rightline" "black"
+                   -- in Full and Small mode, draw a white line just to the left of the full-height right black line
+                   -- for increased visibility
+                   -- [TODO] don't draw the line when Tiny. Need to move this into SVGCanvas
+                   <> if rightline == FullLine
+                      then drawVerticalLine (bw-2) bh rightline "rightline" "white"
+                      else mempty
     topLineSVG = drawHorizontalLine 0 bw topline "topline"
 
-drawVerticalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
-drawVerticalLine xPosition length lineType linePosition =
+drawVerticalLine :: Length -> Length -> LineHeight -> T.Text -> T.Text -> SVGElement
+drawVerticalLine xPosition length lineType linePosition strokeColor =
   case lineType of
-    FullLine -> renderVerticalLine xPosition length (T.append linePosition ".full")
-    HalfLine -> renderVerticalLine xPosition (length `div` 2) (T.append linePosition ".half")
+    FullLine -> renderVerticalLine xPosition length (T.append linePosition ".full") strokeColor
+    HalfLine -> renderVerticalLine xPosition (length `div` 2) (T.append linePosition ".half") strokeColor
     NoLine -> mempty
 
-renderVerticalLine :: Length -> Length -> T.Text -> SVGElement
-renderVerticalLine xPosition length lineClass =
+renderVerticalLine :: Length -> Length -> T.Text -> T.Text -> SVGElement
+renderVerticalLine xPosition length lineClass strokeColor =
   line_
     [ X1_ <<-* xPosition, Y1_ <<-* 0,
       X2_ <<-* xPosition, Y2_ <<-* length,
-      Stroke_ <<- "black",
+      Stroke_ <<- strokeColor,
       Class_ <<- lineClass
+    , Stroke_width_ <<- "2px"
     ]
 
 drawHorizontalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
@@ -631,6 +694,7 @@ renderHorizontalLine yPosition length lineClass =
       X2_ <<-* length, Y2_ <<-* yPosition,
       Stroke_ <<- "black",
       Class_ <<- lineClass
+    , Stroke_width_ <<- "2px"
     ]
 
 drawBoxContent :: Scale -> T.Text -> T.Text -> BoxDimensions -> SVGElement
@@ -648,15 +712,15 @@ data DrawConfig = DrawConfig{
     textBoxLengthFn :: Length -> Length -> Length
   }
 
-type DrawConfigM = Reader DrawConfig
+type SVGCanvas = RWS DrawConfig T.Text BoxedSVG
 
 textBoxLengthFull :: Length -> Length -> Length
-textBoxLengthFull defBoxWidth captionLength = defBoxWidth - 15 + (3 * captionLength)
+textBoxLengthFull defBoxWidth captionLength = defBoxWidth + (6 * captionLength)
 
 textBoxLengthTiny :: Length -> Length -> Length
 textBoxLengthTiny defBoxWidth _ = defBoxWidth
 
-deriveBoxSize :: T.Text -> DrawConfigM BoxDimensions
+deriveBoxSize :: T.Text -> SVGCanvas BoxDimensions
 deriveBoxSize caption = do
   textBoxLength <- asks textBoxLengthFn
   BoxDimensions{boxWidth=defBoxWidth, boxHeight=boxHeight} <- asks (scaleDims.aav)
@@ -677,7 +741,7 @@ labelBox sc baseline caption =
     boxWidth = textBoxLengthFull defBoxWidth (fromIntegral (T.length caption))
     boxContent = text_ [X_ <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement caption)
 
-labelBoxR :: T.Text -> T.Text -> DrawConfigM BoxedSVG
+labelBoxR :: T.Text -> T.Text -> SVGCanvas BoxedSVG
 labelBoxR baseline mytext = do
   dbox <- asks defaultBox
   dims@BoxDimensions{boxWidth=boxWidth} <- deriveBoxSize mytext
@@ -686,14 +750,14 @@ labelBoxR baseline mytext = do
     ,
     text_ [ X_  <<-* (boxWidth `div` 2), Text_anchor_ <<- "middle", Dominant_baseline_ <<- baseline] (toElement mytext))
 
-drawLeafR :: T.Text -> DrawConfigM BoxedSVG
+drawLeafR :: T.Text -> SVGCanvas ()
 drawLeafR caption = do
   dbox <- asks defaultBox
   (boxStroke, boxFill) <- getBoxColorsR
   dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
   boxCap <- drawBoxCapR caption
-  return
+  put
     (dbox & boxDims .~ dims
     ,
       rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]

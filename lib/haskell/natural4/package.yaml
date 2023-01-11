@@ -70,6 +70,7 @@ dependencies:
 - raw-strings-qq
 - regex-tdfa
 - baby-l4
+- quickcheck-text
 
 ghc-options: -Wall -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10
 
@@ -89,7 +90,7 @@ executables:
 
 tests:
   natural4-test:
-    main:                Spec.hs
+    main:                RootSpec.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -107,3 +108,4 @@ tests:
     - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
     - natural4
+    - hspec-megaparsec

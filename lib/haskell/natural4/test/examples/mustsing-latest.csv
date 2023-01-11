@@ -1,0 +1,160 @@
+//,,live updates,TRUE,,devMode port,8081,,,TRUE,,,,,,,,
+//,"CASE STUDY:    LEGISLATION — Matthew Waddington, Legislative Drafting Office, Jersey",,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+//,"A Person Who Walks, and Eats, or Drinks, Must Sing.",,,,,,,,,,,,,,,,6 Sep 2021
+//,"In this lesson, we show how to write a simple rule in L4, illustrating key concepts along the way.",,,,,,,,,,,,,,,,
+//,We thank Matthew Waddington for originally authoring the case from which this example is drawn.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,Consider a very simple rule:,,,,,,,,,,,,,,,
+//,,"   A person who –
+    (a) walks; and
+    (b) (i)   eats, or
+           (ii) drinks,
+    must sing.",,,,"from Matthew Waddington
+4 Sep 2021",,,,"see also https://twitter.com/mattwadd/status/1454465335596290052
+which links to https://legislativedrafter.wordpress.com/2021/10/30/logic-and-legislation/ ",,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,How do we say it in L4? Like this:,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,EVERY,Person,,,,,,,,,,,,,,
+//,,WHO,walks,,,,,,,,,,,,,,
+//,,AND,,eats,,,,,,,,,,,,,
+//,,,OR,drinks,,,,,,,,,,,,,
+//,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"This rule illustrates some of the most common patterns in legal writing.
+We will name these patterns in bold.
+
+The rule itself is a regulative, or prescriptive, rule.
+It prescribes, or regulates, some behaviour: some person must act in some way.
+In this example,  a person … must sing.
+
+The rule applies to some entities and not others.
+In this example, it applies to a person who … walks; and eats, or drinks …
+That qualifier has the form of a constitutive rule:
+A person qualifies as being subject to the rule if certain requirements are met.
+In other words, a person counts as being relevant to the rule, falling within the ambit of the rule,
+if (and only if) they meet certain criteria.
+A couple of centuries ago, the legal theorist Coode called these criteria the ""legal case"",
+and the person to whom they apply, the ""legal subject"".
+
+The criteria fit into a ""Boolean structure"": walks, and eats or drinks.
+The keywords ""not"", ""and"" and ""or"" are sufficient to combine all simple logical propositions.
+In L4, as in legal writing, we use indentation (not parentheses) to group the expressions.
+
+The rule prescribes that qualifying persons must sing: what Coode called the legal action.
+The must is what linguists call a ""deontic modal"". May and shan't are two other deontic modals.
+
+This example illustrates the basic elements of L4.
+A ""must-do"" regulative rule contains, implicitly, a ""must-be"" constitutive rule.
+The rule makes use of a Boolean structure to specify the qualifying criteria.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,What's next?,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Let's add more structure.
+We'll make Qualifies an explicit defined term.
+
+That allows us to break the text into two explicit parts:
+the regulative rule to the left, the constitutive rule to the right.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+,,PARTY,Person,,,,,,,,,,,,,,
+,,WHO,,,Qualifies,,,,,,,,,,,,
+,,,,,MEANS,walks,,,,,,,,,,,
+,,,,,AND,,eats,,,,,,,,,,
+,,,,,,OR,drinks,,,,,,,,,,
+,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"In the left margin, a button hides and shows the definition of ""Qualifies"".
+This makes for easier reading. Programmers call it ""code folding"".
+The details are still there, but hidden from view until you want to see them.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"At the right of the screen, you should see a sidebar. It contains the output of the current ruleset.
+The moving parts appear in a process flowchart.
+The decision elements appear in a circuit diagram.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"The circuit diagram for ""Qualifies"" shows, graphically, how ""walk and eats or drinks"" works.
+The expression as a whole evaluates to True if and only if you are able to find a way to get from the left of the diagram to the right.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Two Rules for the Price of One!,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"""Every Person who Qualifies must sing.""
+This is the regulative essence of the rule.
+The moving parts. The dynamics. Who does what by when? Entities are acting in time.
+Regulative rules are drawn like a +.
+
+""A Qualifying Person is one who walks, and eats or drinks.""
+This is the constitutive essence of the rule.
+The statics. The yes or no logic. Does this thing count as that, for these purposes?
+Constitutive rules are drawn like a T.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Keen readers will notice that this rule has no deadline – so the system fills in the default deadline ""eventually"".
+This is meant to remind you to add a deadline.
+As every parent of a small child knows, a regulative rule without a deadline lacks teeth –
+the subject of the rule could always weasel out with ""well, I plan to, I just haven't gotten around to it yet.""",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Let's go Interactive.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"You can explore scenarios by clicking on the coloured checkboxes.
+The other checkboxes (in black) change in response.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,EVERY,Person,,,,,,,,,,,,,,
+//,,WHO,FALSE,Qualifies,,,,,,,,,,,,,
+//,,,,MEANS,FALSE,walks,,,,,,,,,,,
+//,,,,AND,FALSE,FALSE,eats,,,,,,,,,,
+//,,,,,OR,FALSE,drinks,,,,,,,,,,
+//,,MUST,sing,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"If it isn't working, you might need to make a copy of this spreadsheet –
+click on File / Make a copy.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,As a Decision Table,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,U,walks,eats,drinks,qualifies,,,,,,,,,,,,
+//,1,FALSE,-,-,FALSE,,,,,,,,,,,,
+//,2,TRUE,FALSE,FALSE,FALSE,,,,,,,,,,,,
+//,3,TRUE,FALSE,TRUE,TRUE,,,,,,,,,,,,
+//,4,TRUE,TRUE,FALSE,TRUE,,,,,,,,,,,,
+//,5,TRUE,TRUE,TRUE,TRUE,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"This is a truth table. With a specific scenario in mind, look up the corresponding ""input"" values, and read off the ""output"" value.
+The rows are numbered for convenient reference. A hyphen means ""pass"" – both true and false cases are considered to match.
+
+What's the ""U"" in the top left corner? It means ""Unique"" – but more on that later, when we talk about DMN.",,,,,,,,,,,,,,,,
+//,L4 will soon be able to automatically produce a truth table for the rules you create.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,Truth tables are a powerful way of expressing legal logic. Let's see if a person complies with the rule.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,U,qualifies,sings,complies,,,,,,,,,,,,,
+//,1,TRUE,TRUE,TRUE,,,,,,,,,,,,,
+//,2,TRUE,FALSE,FALSE,,,,,,,,,,,,,
+//,3,FALSE,FALSE,TRUE,,,,,,,,,,,,,
+//,4,FALSE,TRUE,TRUE,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Here, we see that someone who qualifies, but does not sing, is not compliant (row 2).
+Someone who is compliant shows up in row 1. That's the behaviour that the rule wants.
+
+What about rows 3 and 4? The rule is not really interested in those scenarios.
+But the format of a truth table insists that we define rows 3 and 4, as well as 1 and 2.
+For completeness, let's be sure of what happens if the person does not qualify.
+Common sense tells us that by default, anyone can sing freely, or not sing.
+We shall engrave this generosity of spirit in the truth table:
+someone who does not qualify, but who sings anyway, is considered compliant.
+A mathematician might mutter, under their breath, ""is vacuously compliant"".
+
+The mathematician's remark is actually more profound than it might seem at first glance.
+What if the deontic in the rule was a ""may"" instead of a ""must""?
+That might suggest that we live in a world where, by default, people are not allowed to sing,
+unless they have gone to the trouble of first walking and eating or drinking.
+Truth tables help elucidate these ""default assumptions"", for the avoidance of doubt.",,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,See Also,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,"Deon Digital's CSL inspired the logic and semantics of this approach to regulative rules and contract composition.
+The spreadsheet syntax for L4 is original.
+DMN is defined in a standard.",,,,,,,,,,,,,,,,
+//,Tweetstorm citing historical references.,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,
+//,,,,,,,,,,,,,,,,,

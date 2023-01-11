@@ -1,16 +1,19 @@
 concrete BareRGEng of BareRG =
 
   ExtendEng [
-    Temp, Pol, NP, Tense,
+    Temp, Tense, Pol, NP, Tense, Quant, RP, Conj,
     AP, VP, PresPartAP,
     Num, CN, NP, GenModNP, GenNP, GenRP,
     N, CompoundN,
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
-    ,VPS,MkVPS, Conj, ConjVPS, ListVPS
+    ,VPS,MkVPS, Conj, ListVPS, ConjVPS, BaseVPS
+    ,baseVPS,mkVPS -- opers
   ],
 
   SentenceEng [
-    PredVP, UseCl, UseRCl, UseQCl
+      NP, VP, Cl, SC, S, Subj, Temp, Tense, Pol, QCl, QS, RCl, RS -- cats
+    , ctr -- oper
+    , PredVP, UseCl, UseRCl, UseQCl
     , SSubjS , EmbedVP
     ],
 
@@ -27,7 +30,7 @@ concrete BareRGEng of BareRG =
   ,AdVVP
   ],
 
-  IdiomEng [ProgrVP], -- ProgrVP only used via auxfun, disabled in labels
+  IdiomEng [VP, ProgrVP], -- ProgrVP only used via auxfun, disabled in labels
 
   NounEng - [
     CountNP,
@@ -38,7 +41,7 @@ concrete BareRGEng of BareRG =
    ],
 
   AdjectiveEng [
-    AP,ParentheticalAP,AdA,A,Ord,
+    AP, AdA, A, Ord, Adv, A2, NP,
     PositA    , -- A  -> AP ;              -- warm
     UseComparA,
     AdAP,
@@ -48,7 +51,7 @@ concrete BareRGEng of BareRG =
   ],
 
   AdverbEng [
-    A,Prep,NP,Adv,Subj,S,
+    A, Prep, NP, Adv, Subj, S, AdN, AdnCAdv, CAdv,
     PrepNP    , -- Prep -> NP -> Adv ;     -- in the house
     SubjS,
     PositAdvAdj,   -- : A -> Adv  --- not sure if this should be used
@@ -62,7 +65,7 @@ concrete BareRGEng of BareRG =
     always_Adv
   ],
   SymbolEng [
-      Symb
+      Symb, PN, addGenitiveS
     , SymbPN
     ],
   ConjunctionEng,
@@ -81,8 +84,7 @@ concrete BareRGEng of BareRG =
     (R=ResEng),
     SymbolicEng,
     (SyE=SymbolEng),
-    (N=NounEng),
-    JustWordsWordNetEng
+    (N=NounEng)
     in {
 
   lin
@@ -265,10 +267,10 @@ concrete BareRGEng of BareRG =
       past =  or.s1 ++ naf1.past ++ or.s2 ++ naf2.past ;
     } ;
 
-    slashV : VP -> VPSlash = \vp -> vp ** {
+    slashV : VP -> VPSlash = \vp -> lin VPSlash (vp ** {
       c2 = [] ;
       gapInMiddle = True ;
       missingAdv = False
-      } ;
+      }) ;
 
 }

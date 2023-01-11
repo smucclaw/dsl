@@ -1,7 +1,0 @@
-§,Scenario 1,,,,,,,
-GIVEN,amount saved,,IS,22000,,,,
-,earnings,amount,IS,25000,,,,
-,earnings,steadiness,IS,steady,,,,
-EXPECT,,investment,IS,savings,WHEN,dependents,IS,5
-"""",,"""","""",combination,"""","""","""",3
-"""",,"""","""",stocks,"""","""","""",0

@@ -1,0 +1,82 @@
+#+TITLE: Day 2: Math
+
+* Part 1
+
+Some lawyers are proudly "bad at math": the technical term is /dyscalculia/.
+
+They compensate with extreme prolixity: the technical term is /logorrhea/.
+
+Those lawyers phrase simple arithmetic problems, which are most
+intuitively written with standard algebraic notation, entirely with
+words.
+
+To pass as a lawyer, you must be able to decode arbitrarily long
+arithmetical sentences, and compute their answers. Along the way, you
+may choose to construct an internal intermediate representation which
+looks more algebraic, so you can check your work more easily.
+
+Part one: answer the question ~what is the number of Class L shares?~
+
+* Problem input
+
+The following is found in [[input-02.txt]]:
+
+#+begin_src text :tangle input-02.txt
+  The number of original shares is 1000.
+
+  The number of new shares is two hundred.
+
+  The number of Class A shares shall be given by the sum of the number of original shares and the number of new shares.
+
+  The number of Class B shares shall be given by the sum of the original shares and the number of new shares.
+
+  The number of Class C shares shall be given by the sum of the original shares and the new shares.
+
+  The number of Class D shares is the sum of the original shares and the number of new shares.
+
+  The number of Class E shares is the sum of the original shares and the new shares.
+
+  The number of Class F shares is the sum of the original and the new shares.
+
+  The number of Class G shares is the sum of the original and new shares.
+
+  The number of Class H shares is the sum of original and new shares.
+
+  The number of Class I shares is the sum of original shares and Class A shares.
+
+  The number of Class J shares is the sum of Class B and Class C shares.
+
+  The number of Class K shares is the sum of the Class I and the Class J shares.
+
+  The number of Class L shares is the sum of the number of Class K, Class G, and Class H shares.
+
+  Ten is five plus five.
+
+  Twelve is six multiplied by two.
+
+  Twenty is four multiplied by the sum of two and three.
+
+  The value of Alpha shall be given by the greater of twelve and twenty.
+
+  The value of Beta shall be given by the lesser of twelve and twenty.
+
+  The value of Gamma is twenty less ten percent.
+
+  The value of Delta shall be given by Gamma plus ten percent.
+
+  The value of the Class L shares shall be given by the lesser of the conversion price multiplied by the number of Class L shares, and the purchase price multiplied by the number of new shares less twenty percent.
+
+  The conversion price shall be given by the lesser of the purchase price multiplied by 90%, and the sum of two thousand and five hundred and two hundred.
+#+end_src
+
+* Part 2
+
+What is the number of Class L shares?
+
+* Part 3
+
+What is the greater of twelve and twenty?
+
+What is the value of Delta?
+
+What is the value of the Class L shares?

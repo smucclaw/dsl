@@ -262,10 +262,7 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
 
 getStanzas :: RawStanza -> [RawStanza]
 getStanzas rs = splitPilcrows `concatMap` chunks
-  -- traceM ("getStanzas: extracted range " ++ (Text.unpack $ pShow toreturn))
   where chunks = getChunks rs
-
-        -- traceStanzas xs = trace ("stanzas: " ++ show xs) xs
 
 splitPilcrows :: RawStanza -> [RawStanza]
 splitPilcrows rs = map (listsToStanza . transpose) splitted
@@ -524,7 +521,7 @@ pVarDefn = debugName "pVarDefn" $ do
         , super = mytype
         , given = Nothing -- these get overwritten immediately above in the return
         , upon = Nothing
-        , clauses = [ HC2 { hHead = RPParamText has, hBody = Nothing }
+        , clauses = [ HC { hHead = RPParamText has, hBody = Nothing }
                     | has <- hases
                     ]
         , rlabel  = noLabel
@@ -937,7 +934,7 @@ pHornClause2 = do
   hhead <- pHornHead2
   _when <- pToken When
   hbody <- pHornBody2
-  return $ HC2 hhead (Just hbody)
+  return $ HC hhead (Just hbody)
 
 pHornHead2 :: Parser RelationalPredicate
 pHornHead2 = pRelationalPredicate

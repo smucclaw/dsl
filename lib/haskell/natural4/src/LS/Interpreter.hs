@@ -34,6 +34,9 @@ import Data.List (find)
 import qualified Data.List as DL
 import Data.Bifunctor (first)
 import Data.Map ((!))
+import qualified AnyAll.BoolStructTree as BST
+import Data.Tree
+import AnyAll.BoolStructTree (mkLeafDT)
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream
@@ -480,8 +483,8 @@ expandClauses' l4i depth hcs =
                  , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
                        newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
                        newhc = case oldhc of
-                                 HC2 _oldh Nothing -> HC2 newhead Nothing
-                                 HC2  oldh _       -> HC2 oldh    newbody
+                                 HC _oldh Nothing -> HC newhead Nothing
+                                 HC  oldh _       -> HC oldh    newbody
                  ]
   in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
      toreturn
@@ -495,7 +498,7 @@ unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
 -- from the below:
---        [ HC2
+--        [ HC
 --            { hHead = RPMT [ "c" ]
 --            , hBody = Just
 --                ( Any Nothing
@@ -534,79 +537,62 @@ expandTrace fname dpth toSay toShow =
 -- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
 -- for now we just scan across the entire ruleset to see if it matches.
 expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
-expandRP l4i depth (RPMT                   mt2) = expandTrace "expandRP" depth ("RPMT " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
-                                                  expandMT  l4i (depth + 1) mt2
-expandRP l4i depth (RPConstraint  mt1 RPis mt2) = expandTrace "expandRP" depth ("RPConstraint " ++ show mt1 ++ " is " ++ show mt2 ++ ": calling expandMT on " ++ show mt2) $
-                                                  expandMT  l4i (depth + 1) (mt1 ++ rel2txt RPis : mt2)
-expandRP l4i depth (RPBoolStructR mt1 RPis bsr) = expandTrace "expandRP" depth ("RPBoolStructR " ++ show mt1 ++ " is BSR: calling expandBSR on " ++ show bsr) $
-                                                  RPBoolStructR mt1 RPis (-- (\(RPMT rpmt) -> RPMT (mt1 ++ rel2txt RPis : rpmt)) <$>
-                                                                          expandBSR' l4i (depth + 1) bsr)
-expandRP _l4i depth x                           = expandTrace "expandRP" depth ("returning unchanged " ++ show x) $
-                                                  x
+expandRP l4i depth (RPMT                   mt2)   = expandMT  l4i (depth + 1) mt2
+expandRP l4i depth (RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) (mt1 ++ rel2txt RPis : mt2)
+expandRP l4i depth (RPBoolStructR mt1 RPis bsr)   = RPBoolStructR mt1 RPis (expandBSR' l4i (depth + 1) bsr)
+expandRP l4i depth (RPBoolStructDTR mt1 RPis bsr) = RPBoolStructDTR mt1 RPis (expandBSRDT' l4i (depth + 1) bsr)
+expandRP _l4i _depth x                            = x
 
 -- | Search the scopetable's symbol tables for a given multiterm. Expand its clauses, and return the expanded.
 expandMT :: Interpreted -> Int -> MultiTerm -> RelationalPredicate
 expandMT l4i depth mt0 =
   let expanded = listToMaybe
                  [ outrp
-                 | (scopename,symtab) <- Map.toList (scopetable l4i)
-                 , (_mytype, cs) <- maybeToList $
-                                    expandTrace "expandMT" depth ("considering scope " ++ show scopename ++ ", looking up " ++ show mt0 ++ " in symtab") $
-                                    Map.lookup mt0 symtab
-                 , c <- expandTrace "expandMT" depth ("working through clauses " ++ show cs)
-                        cs
+                 | (_scopename, symtab) <- Map.toList (scopetable l4i)
+                 , (_mytype, cs) <- maybeToList $ Map.lookup mt0 symtab
+                 , c <- cs
                  , let outs = expandClause l4i depth c
-                 , outrp <- expandTrace "expandMT" depth ("may  return " ++ show outs)
-                            outs
+                 , outrp <- outs
                  ]
-      toreturn = fromMaybe (
-        expandTrace "expandMT" depth ("defaulting to RPMT " ++ show mt0) $
-          RPMT mt0
-        ) expanded
-  in -- (expandTrace "expandMT" depth $ "expanded = " ++ show expanded) $
-     expandTrace "expandMT" depth ("will return " ++ show toreturn)
-     toreturn
+  in fromMaybe (RPMT mt0) expanded
 
 -- | Expand a horn clause that may have both head and body containing stuff we want to fill.
 -- Despite the name, this is not directly related to expandClauses.
 -- It happens deeper in, under `expandMT`.
 expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
-expandClause _l4i _depth (HC2   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC2   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC2   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ "IS" : rhs) ] -- substitute with rhs
-expandClause _l4i _depth (HC2 o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
-expandClause  l4i  depth (HC2   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ expandTrace "expandMT" depth ("body=Nothing; returning from head: BSR " ++ show mt ++ " RPis expandBSR") $
-                                                                              RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
-
-expandClause l4i depth (HC2   (RPMT          mt          ) (Just bodybsr) ) = [ expandTrace "expandMT" depth ("body=Just, returning from body: BSR " ++ show mt ++ " RPis expandBSR") $
-                                                                                RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
-expandClause _l4i _depth (HC2   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
-expandClause _l4i _depth (HC2   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
-expandClause _l4i _depth (HC2 o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) ) = [    o     ] -- maintain inequality
-expandClause _l4i _depth (HC2   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
+expandClause _l4i _depth (HC   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ "IS" : rhs) ] -- substitute with rhs
+expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
+expandClause  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
+expandClause  l4i  depth (HC   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
+expandClause _l4i _depth (HC   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
+expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) ) = [    o     ] -- maintain inequality
+expandClause _l4i _depth (HC   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
 expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
-expandBSR, expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
-expandBSR  l4i depth x =
-  let y = expandBSR' l4i depth x
-      z = AA.nnf y
-  in expandTrace "expandBSR" depth ("given " ++ show x) $
-     expandTrace "expandBSR" depth ("returning " ++ show y) $
-     expandTrace "expandBSR" depth ("nnf = " ++ show z) $ z
+expandBSR :: Interpreted -> Int -> BoolStructR -> BoolStructR
+expandBSR  l4i depth x = trace (show x) $ AA.nnf $ expandBSR' l4i depth x
 
-expandBSR' l4i depth (AA.Leaf rp)    = expandTrace "expandBSR" depth ("handling Leaf " ++ show rp ++ " by expanding; next will test output of expansion") $
+expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
+expandBSR' l4i depth (AA.Leaf rp)  =
   case expandRP l4i (depth + 1) rp of
-    RPBoolStructR _mt1 RPis bsr -> expandTrace "expandBSR" depth ("bsr track: " ++ show bsr)
-                                   bsr
-    o                           -> expandTrace "expandBSR" depth ("o track: Leaf " ++ show o) $
-                                   AA.mkLeaf o
-expandBSR' l4i depth (AA.Not item)   = expandTrace "expandBSR" depth "recursing into Not" $
-                                       AA.mkNot     (expandBSR' l4i (depth + 1) item)
-expandBSR' l4i depth (AA.All lbl xs) = expandTrace "expandBSR" depth "recursing into All" $
-                                       AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
-expandBSR' l4i depth (AA.Any lbl xs) = expandTrace "expandBSR" depth "recursing into Any" $
-                                       AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
+    RPBoolStructR _mt1 RPis bsr -> bsr
+    o                           -> AA.mkLeaf o
+expandBSR' l4i depth (AA.Not item)   = AA.mkNot     (expandBSR' l4i (depth + 1) item)
+expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
+expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
+
+expandBSRDT' :: Interpreted -> Int -> BoolStructDTR -> BoolStructDTR
+expandBSRDT' l4i depth (Node (BST.FAtom rp)          _  )  =
+  case expandRP l4i (depth + 1) rp of
+    RPBoolStructDTR _mt1 RPis bsr -> bsr
+    o                           -> mkLeafDT o
+expandBSRDT' l4i depth (Node BST.FNot [item])   = BST.mkNotDT      (expandBSRDT' l4i (depth + 1) item)
+expandBSRDT' l4i depth (Node (BST.FAll lbl) xs) = BST.mkAllDT  lbl (expandBSRDT' l4i (depth + 1) <$> xs)
+expandBSRDT' l4i depth (Node (BST.FAny lbl) xs) = BST.mkAnyDT lbl  (expandBSRDT' l4i (depth + 1) <$> xs)
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody _l4i = id

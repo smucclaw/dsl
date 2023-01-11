@@ -1,4 +1,0 @@
-,X,INCLUDES,Y
-WHEN,Y,IS,an ancestor
-OR,Y,IS,a descendant
-OR,Y,IS,a sibling

@@ -1,0 +1,10 @@
+#+TITLE: Day 07: Constitutive Rules
+
+* Part 1
+
+A sentence counts as a constitutive rule if it sets certain criteria to be met.
+
+For example, the above sentence is a constitutive rule.
+
+Constitutive rules usually describe things that *qualify*, or are *valid* in some way, if they meet certain *conditions*.
+

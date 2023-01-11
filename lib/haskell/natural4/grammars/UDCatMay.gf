@@ -207,7 +207,7 @@ concrete UDCatMay of UDCat = BareRGMay **
       mkUDSPred : Ant -> CatMay.VP -> UDSPred = \ant,vp -> defaultUDSPred vp ** {
         fin = MkVPS (mkTemp presentTense ant) positivePol vp } ;
       mkUDSPred : Temp -> CatMay.Pol -> CatMay.VP -> UDSPred = \temp,pol,vp ->
-        let neg : Str = case pol.p of {CPos => [] ; _ => "not"}
+        let neg : Str = case pol.p of {Pos => [] ; Neg => "tidak"}
          in defaultUDSPred vp ** {
               fin = MkVPS temp pol vp ;
               pp =
@@ -291,7 +291,6 @@ concrete UDCatMay of UDCat = BareRGMay **
 
     UttAccNP : NP -> Utt = \np -> ss (np.s ! Bare ) ;
 
-    emptyNP : NP = it_NP ** {s = \\_ => ""} ;
     emptySubj : Subj = that_Subj ** {s = ""} ;
 
     should_VV : VV = variants {} ;

@@ -442,84 +442,84 @@ parseFields env rl = case rl of
   RegFulfilled -> return RegFulfilledA
   RegBreach -> return RegBreachA
   _ -> return RegBreachA
+
+parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
+parseHornClause env fun (HC rp Nothing) = parseRP env fun rp
+parseHornClause env fun (HC rp (Just bsr)) = do
+  extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+  db_is_NDB_UDFragment <- parseRPforHC env fun rp
+  db_occurred_S <- bsr2s env bsr
+  let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_S
+  return $ gf hornclause
+
+bsr2s :: NLGEnv -> BoolStructR -> IO GS
+bsr2s env bsr = do
+  expr <- bsr2gf env bsr
+  extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+  return $ case findType extGrammar expr of
+    "S" -> fg expr          -- S=[databreach occurred]
+    "AP" -> ap2s $ fg expr  -- someone is AP=[happy]
+    -- TODO: make other cats to S too
+    _ -> error $ "bsr2s: expected S, got " ++ showExpr expr
+
+ap2s :: GAP -> GS
+ap2s ap = GPredVPS GSomeone (GMkVPS presSimul GPPos (GUseComp (GCompAP ap)))
+
+-- A wrapper for ensuring same return type for parseRP
+parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
+parseRPforHC env _f (RPParamText pt) = (GUDS2Fragment . fg) <$> parseParamText env pt
+parseRPforHC env _f (RPMT txts) = (GUDS2Fragment . fg) <$> parseMulti env txts
+parseRPforHC env f rp = fg <$> parseRP env f rp
+
+parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
+parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
+parseExpect  env  f (ExpRP rp) = parseRP env f rp
+
+parseRP :: NLGEnv -> CId -> RelationalPredicate -> IO Expr
+parseRP env _f (RPParamText pt) = parseParamText env pt
+parseRP env _f (RPMT txts) = parseMulti env txts
+parseRP env fun (RPConstraint sky is blue) = do
+  skyUDS <- parseMulti env sky
+  blueUDS <- parseMulti env blue
+  let skyNP = gf $ peelNP skyUDS
+  let rprel = if is==RPis then fun else keyword2cid is
+  return $ mkApp rprel [skyNP, blueUDS]
+parseRP env fun (RPBoolStructR sky is blue) = do
+  gr <- nlgExtPGF
+  skyUDS <- parseMulti env sky
+  blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
+  let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
+  let rprel = if is==RPis then fun else keyword2cid is
+  return $ mkApp rprel [skyNP, blueUDS]
+parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
+
+-- ConstitutiveName is [Text.Text]
+parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
+parseMulti env txt = gf `fmap` parseUD env (Text.unwords txt)
+
+parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
+parseName _env txt = return (Text.unwords txt)
+
+parseParamText :: NLGEnv -> ParamText -> IO Expr
+parseParamText env pt = gf `fmap` (parseUD env $ pt2text pt)
+
+keyword2cid :: (Show a) => a -> CId
+keyword2cid = mkCId . show
+
+-- NB. we assume here only structure like "before 3 months", not "before the king sings"
+parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> IO Expr
+parseTemporal env (TemporalConstraint keyword time tunit) = do
+  uds <- parseUD env $ kw2txt keyword <> time2txt time <> " " <> tunit
+  let Just adv = advFromUDS uds
+  return $ gf adv
   where
-    parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
-    parseHornClause env fun (HC rp Nothing) = parseRP env fun rp
-    parseHornClause env fun (HC rp (Just bsr)) = do
-      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
-      db_is_NDB_UDFragment <- parseRPforHC env fun rp
-      db_occurred_S <- bsr2s env bsr
-      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_S
-      return $ gf hornclause
-
-    bsr2s :: NLGEnv -> BoolStructR -> IO GS
-    bsr2s env bsr = do
-      expr <- bsr2gf env bsr
-      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
-      return $ case findType extGrammar expr of
-        "S" -> fg expr          -- S=[databreach occurred]
-        "AP" -> ap2s $ fg expr  -- someone is AP=[happy]
-        -- TODO: make other cats to S too
-        _ -> error $ "bsr2s: expected S, got " ++ showExpr expr
-
-    ap2s :: GAP -> GS
-    ap2s ap = GPredVPS GSomeone (GMkVPS presSimul GPPos (GUseComp (GCompAP ap)))
-
-    -- A wrapper for ensuring same return type for parseRP
-    parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
-    parseRPforHC env _f (RPParamText pt) = (GUDS2Fragment . fg) <$> parseParamText env pt
-    parseRPforHC env _f (RPMT txts) = (GUDS2Fragment . fg) <$> parseMulti env txts
-    parseRPforHC env f rp = fg <$> parseRP env f rp
-
-    parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
-    parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
-    parseExpect  env  f (ExpRP rp) = parseRP env f rp
-
-    parseRP :: NLGEnv -> CId -> RelationalPredicate -> IO Expr
-    parseRP env _f (RPParamText pt) = parseParamText env pt
-    parseRP env _f (RPMT txts) = parseMulti env txts
-    parseRP env fun (RPConstraint sky is blue) = do
-      skyUDS <- parseMulti env sky
-      blueUDS <- parseMulti env blue
-      let skyNP = gf $ peelNP skyUDS
-      let rprel = if is==RPis then fun else keyword2cid is
-      return $ mkApp rprel [skyNP, blueUDS]
-    parseRP env fun (RPBoolStructR sky is blue) = do
-      gr <- nlgExtPGF
-      skyUDS <- parseMulti env sky
-      blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
-      let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
-      let rprel = if is==RPis then fun else keyword2cid is
-      return $ mkApp rprel [skyNP, blueUDS]
-    parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
-
-    -- ConstitutiveName is [Text.Text]
-    parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
-    parseMulti env txt = gf `fmap` parseUD env (Text.unwords txt)
-
-    parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
-    parseName _env txt = return (Text.unwords txt)
-
-    parseParamText :: NLGEnv -> ParamText -> IO Expr
-    parseParamText env pt = gf `fmap` (parseUD env $ pt2text pt)
-
-    keyword2cid :: (Show a) => a -> CId
-    keyword2cid = mkCId . show
-
-    -- NB. we assume here only structure like "before 3 months", not "before the king sings"
-    parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> IO Expr
-    parseTemporal env (TemporalConstraint keyword time tunit) = do
-      uds <- parseUD env $ kw2txt keyword <> time2txt time <> " " <> tunit
-      let Just adv = advFromUDS uds
-      return $ gf adv
-      where
-        kw2txt tcomp = Text.pack $ case tcomp of
-          TBefore -> "before "
-          TAfter -> "after "
-          TBy -> "by "
-          TOn -> "on "
-          TVague -> "around "
-        time2txt t = Text.pack $ maybe "" show t
+    kw2txt tcomp = Text.pack $ case tcomp of
+      TBefore -> "before "
+      TAfter -> "after "
+      TBy -> "by "
+      TOn -> "on "
+      TVague -> "around "
+    time2txt t = Text.pack $ maybe "" show t
 
 
 ------------------------------------------------------------

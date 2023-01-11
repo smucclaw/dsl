@@ -23,7 +23,7 @@ import LS.XPile.Purescript
 import LS.XPile.Markdown
 import LS.XPile.NaturalLanguage
 
-import LS.NLP.NLG (nlg,myNLGEnv)
+import LS.NLP.NLG (nlg,myNLGEnv,boolStructQuestion)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -61,9 +61,7 @@ main = do
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <>
-                                                                 psSuffix <> "\n\n" <>
-                                                                 asPurescript nlgEnv l4i)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)

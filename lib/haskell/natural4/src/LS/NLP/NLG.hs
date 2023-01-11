@@ -217,7 +217,10 @@ boolStructQuestion env a = do
   gr <- liftIO nlgExtPGF
   let lang = head $ languages gr
   expr <- bsr2gf env a
-  return $ unwords $ mkHCQs gr lang 0 (gf (GString "")) (fg expr)
+  print "chekc!!!!"
+  print $ showExpr (expr)
+  print "--"
+  return $ unwords $ mkWhoQs gr lang (gf $ Groot_only (GrootN_ (Gwhoever_NP))) (expr)
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
@@ -1167,6 +1170,7 @@ toUDS pgf e = case findType pgf e of
             _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e )
   "S" -> case fg e :: GS of
     GUseCl t p (GPredVP np vp) -> Groot_nsubj (GrootV_ t p vp) (Gnsubj_ np)
+    GConjS c (GListS (s:ss)) -> toUDS pgf (gf s)
     _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e )
     -- vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
   _ -> fg $ dummyExpr $ "unable to convert to UDS all: " ++ showExpr e

@@ -45,6 +45,8 @@ asPurescript env l4i =
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (T.unwords <$> names)
                              , (T.pack $ unsafePerformIO $ boolStructQuestion env bs))
+                            -- , (alwaysLabeled bs))
+
                    | (names,bs) <- qaHornsR l4i
                    ]
                  )

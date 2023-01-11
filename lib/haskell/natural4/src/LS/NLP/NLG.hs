@@ -213,7 +213,7 @@ ruleQuestions env rule = do
       subjExpr <- bsp2gf env subj
       whoBSR <- mapM (bsr2questions qsWho gr subjExpr) who
       condBSR <- mapM (bsr2questions qsCond gr subjExpr) cond
-      pure $ catMaybes [whoBSR, condBSR]
+      pure $ concat $ catMaybes [whoBSR, condBSR]
     -- TODO: reproduce old behaviour from nlgQuestions here too
     -- HornlikeA {clausesA = cls} -> do
     --   let udfrags = map fg cls
@@ -224,19 +224,27 @@ ruleQuestions env rule = do
     _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
 
   where
-    bsr2questions :: QFun -> PGF -> Expr -> BoolStructR -> IO (AA.OptionallyLabeledBoolStruct Text.Text)
+    keepTextNegations :: AA.OptionallyLabeledBoolStruct [AA.OptionallyLabeledBoolStruct a] -> [AA.OptionallyLabeledBoolStruct a]
+    keepTextNegations bsr = case bsr of
+        AA.Leaf x -> x -- negation is in the value x!
+        AA.All l xs -> [AA.All l (concatMap keepTextNegations xs)]
+        AA.Any l xs -> [AA.Any l (concatMap keepTextNegations xs)]
+        AA.Not x    -> [AA.Not bs | bs <- keepTextNegations x]
+
+    bsr2questions :: QFun -> PGF -> Expr -> BoolStructR -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
     bsr2questions qfun gr subj bsr = do
       bsrWithExprs <- mapM (parseRP env rpIs) bsr
-      let bsrWithQuestions = mkQ qfun gr subj <$> bsrWithExprs
-      pure bsrWithQuestions
+      let bsrWithQuestions = mkQ qfun gr subj <$> bsrWithExprs -- this one returns a BSR inside a BSR, with the correct negations in the inner one
+      pure $ keepTextNegations bsrWithQuestions -- keep the new inner layer with negations added from text
 
     rpIs = mkCId "RPis"
     Just eng = readLanguage "UDExtEng"
-    mkQ qf gr subj e = Text.pack $ unlines $
-                        mkQs qf gr eng subj (expr2TreeGroups gr e)
 
--- fakeStruct :: AA.OptionallyLabeledBoolStruct Text.Text
--- fakeStruct = AA.Leaf "foo"
+    mkQ :: QFun -> PGF -> Expr -> Expr -> [AA.OptionallyLabeledBoolStruct Text.Text]
+    mkQ qf gr subj e = fmap Text.pack <$> questionStrings
+      where
+        questionStrings :: [AA.OptionallyLabeledBoolStruct String]
+        questionStrings = mkQs qf gr eng subj (expr2TreeGroups gr e)
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
@@ -244,41 +252,39 @@ nlgQuestion env rl = do
   pure $ concatMap F.toList rulesInABoolStruct
 
 
-mkHCQs :: PGF -> CId -> Expr -> GUDFragment -> [String]
+mkHCQs :: PGF -> CId -> Expr -> GUDFragment -> [AA.OptionallyLabeledBoolStruct String]
 mkHCQs gr lang emptE udfrag = case udfrag of
   GHornClause2 _ sent -> mkQs qsCond gr lang emptE (sTG sent)
   GMeans _ uds -> mkQs qsCond gr lang emptE (udsToTreeGroups uds)
   _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
 
-mkWhoQs, mkCondQs :: PGF -> CId -> Expr -> Expr -> [String]
-mkWhoQs gr lang subj e = mkQs qsWho gr lang subj (expr2TreeGroups gr e)
-mkCondQs gr lang subj e = mkQs qsCond gr lang subj (expr2TreeGroups gr e)
-
-mkQs :: QFun -> PGF -> CId -> Expr -> TreeGroups -> [String]
-mkQs qfun gr lang s tg = case tg of
+mkQs :: QFun -> PGF -> CId -> Expr -> TreeGroups -> [AA.OptionallyLabeledBoolStruct String]
+mkQs qfun gr lang subj tg = case tg of
   TG {gfS = Just sent} -> case sent of
-    GConjS _conj (GListS ss) -> concatMap (mkQs qfun gr lang s) (sTG <$> ss)
-    _ -> qnPunct $ lin (qfun s $ sTG sent)
+    GConjS _conj (GListS ss) -> concat $ mapM (mkQs qfun gr lang subj) (sTG <$> ss)
+    _ -> mapM lin $ qfun subj $ sTG sent
   TG {gfVP = Just vp} -> case vp of
-    GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang s) (vpTG <$> vps)
-    _ -> qnPunct $ lin (qfun s $ vpTG vp)
+    GConjVPS _conj (GListVPS vps) -> concat $ mapM (mkQs qfun gr lang subj) (vpTG <$> vps)
+    _ -> mapM lin $ qfun subj $ vpTG vp
   TG {gfNP = Just np} -> case np of
-    GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang s) (npTG <$> nps)
-    _ -> qnPunct $ lin (qfun s $ npTG np)
+    GConjNP _conj (GListNP nps) -> concat $ mapM (mkQs qfun gr lang subj) (npTG <$> nps)
+    _ -> mapM lin $ qfun subj $ npTG np
   TG {gfCN = Just cn} -> case cn of
-    GConjCN _conj (GListCN cns) -> concatMap (mkQs qfun gr lang s) (cnTG <$> cns)
-    _ -> qnPunct $ lin (qfun s $ cnTG cn)
+    GConjCN _conj (GListCN cns) -> concat $ mapM (mkQs qfun gr lang subj) (cnTG <$> cns)
+    _ -> mapM lin $ qfun subj $ cnTG cn
   TG {gfAP = Just ap} -> case ap of
-    GConjAP _conj (GListAP aps) -> concatMap (mkQs qfun gr lang s) (apTG <$> aps)
-    _ -> qnPunct $ lin (qfun s $ apTG ap)
+    GConjAP _conj (GListAP aps) -> concat $ mapM (mkQs qfun gr lang subj) (apTG <$> aps)
+    _ -> mapM lin $ qfun subj $ apTG ap
 
   -- TG {gfDet = Just det} ->
   -- TG {gfAdv = Just adv} ->
   _ -> []
 
   where
-    lin x = [linearize gr lang (gf x)]
+    lin :: GQS -> [String]
+    lin x = qnPunct [linearize gr lang (gf x)]
+
     qnPunct :: [String] -> [String]
     qnPunct [] = []
     qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
@@ -966,32 +972,36 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfS} =
 --     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
 --     ExistIP   : IP -> QCl ;       -- which houses are there
 
-type QFun = Expr -> TreeGroups -> GQS
+type QFun = Expr -> TreeGroups -> AA.OptionallyLabeledBoolStruct GQS
 qsWho :: QFun
 qsCond :: QFun
 qsHaving :: QFun
 
 qsWho subj whichTG = case whichTG of
-  TG {gfS = Just (GUseCl t _p cl)} -> GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
-  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
-  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
-  TG {gfVP = Just (GMkVPS t _p vp)} -> GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
-  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
-  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
-  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
-  _ -> useQCl $ GQuestCl dummyCl
+  TG {gfS = Just (GUseCl t GPPos cl)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfS = Just (GUseCl t GPNeg cl)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- same but original sentence was neg!
+  TG {gfNP = Just np} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
+  TG {gfCN = Just cn} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
+  TG {gfVP = Just (GMkVPS t GPPos vp)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
+  TG {gfVP = Just (GMkVPS t GPNeg vp)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- same but original sentence was neg!
+  TG {gfAP = Just ap} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
+  TG {gfDet = Just det} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
+  TG {gfAdv = Just adv} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
+  _ -> AA.Leaf $ useQCl $ GQuestCl dummyCl
   where sub = definiteNP $ fg subj
 
 
 qsCond _sub whichTG = case whichTG of
-  TG {gfS = Just (GUseCl t _p cl)} -> GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
-  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
-  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
-  TG {gfVP = Just (GMkVPS t _p vp)} -> GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
-  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
-  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GExistsNP (GDetNP det) -- is there this?
-  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GSomeone (GUseComp $ GCompAdv adv) -- is someone here?
-  _ -> useQCl $ GQuestCl dummyCl
+  TG {gfS = Just (GUseCl t GPPos cl)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfS = Just (GUseCl t GPNeg cl)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- same but original sentence was neg!
+  TG {gfNP = Just np} -> AA.Leaf $ GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
+  TG {gfCN = Just cn} -> AA.Leaf $ useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
+  TG {gfVP = Just (GMkVPS t GPPos vp)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
+  TG {gfVP = Just (GMkVPS t GPNeg vp)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- same but original sentence was neg!
+  TG {gfAP = Just ap} -> AA.Leaf $ useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
+  TG {gfDet = Just det} -> AA.Leaf $ useQCl $ GQuestCl $ GExistsNP (GDetNP det) -- is there this?
+  TG {gfAdv = Just adv} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP GSomeone (GUseComp $ GCompAdv adv) -- is someone here?
+  _ -> AA.Leaf $ useQCl $ GQuestCl dummyCl
 
 qsHaving = undefined
 

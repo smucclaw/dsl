@@ -12,7 +12,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       BoolStructP, BoolStructR, BoolStructT, Interpreted, RuleName,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
-      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP)
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm, multiterm2bsr')
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF, readExpr )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -40,7 +40,9 @@ import System.Exit (exitFailure)
 import Data.Typeable
 import Paths_natural4
 import AnyAll.BoolStructTree
+import qualified AnyAll.Types as AA
 import qualified Data.Tree as DT
+import System.IO.Unsafe (unsafePerformIO)
 
 
 data NLGEnv = NLGEnv
@@ -202,15 +204,6 @@ parseUD env txt = do
     --  Expected: BoolStructT
     --     Actual: AA.BoolStruct (Maybe (AA.Label Text.Text)) (IO [String])
 
-
--- nlgLabeled :: OptionallyLabeledBoolStruct a -> BoolStruct (Label T.Text) a
--- nlgLabeled (Any Nothing    xs) = Any (Pre "any of:") (nlgLabeled <$> xs)
--- nlgLabeled (All Nothing    xs) = All (Pre "all of:") (nlgLabeled <$> xs)
--- nlgLabeled (Any (Just lbl) xs) = Any lbl (nlgLabeled <$> xs)
--- nlgLabeled (All (Just lbl) xs) = All lbl (nlgLabeled <$> xs)
--- nlgLabeled (Leaf x)            = Leaf (x)
--- nlgLabeled (Not x)             = Not (nlgLabeled x)
-
 ruleQuestions :: NLGEnv -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env rule = do
   gr <- nlgExtPGF
@@ -234,16 +227,8 @@ ruleQuestions env rule = do
     mkQ qf gr subj e = Text.pack $ unlines $
                         mkQs qf gr eng subj (expr2TreeGroups gr e)
 
-
-boolStructQuestion :: NLGEnv -> BoolStructR -> IO String
-boolStructQuestion env a = do
-  gr <- liftIO nlgExtPGF
-  let lang = head $ languages gr
-  expr <- bsr2gf env a
-  print "chekc!!!!"
-  print $ showExpr (expr)
-  print "--"
-  return $ unwords $ mkWhoQs gr lang (gf $ Groot_only (GrootN_ (Gwhoever_NP))) (expr)
+-- fakeStruct :: AA.OptionallyLabeledBoolStruct Text.Text
+-- fakeStruct = AA.Leaf "foo"
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do

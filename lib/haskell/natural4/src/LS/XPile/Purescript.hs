@@ -20,7 +20,12 @@ import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 import LS.NLP.NLG
+import LS.Interpreter
+import Control.Monad (guard)
 import System.IO.Unsafe (unsafePerformIO)
+import qualified Data.List as DL
+import Data.Map ((!))
+import Data.Bifunctor (second)
 
 
 -- | extract the tree-structured rules from Interpreter
@@ -36,18 +41,52 @@ toTuple (x,y) = Tuple x y
 
 -- startWithRule :: InterpreterOptions -> NLGEnv -> RunConfig -> [Rule] ->
 
-asPurescript :: NLGEnv -> Interpreted -> String
-asPurescript env l4i =
+
+-- qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
+-- qaHornsR l4i =
+--      [ ( ruleLabelName <$> uniqrs
+--        , expanded)
+--      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
+--                            exposedRoots l4i      -- EXPOSED
+--      , not $ null grpval
+--      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
+--      ]
+
+
+-- two boolstructT: one question and one phrase
+namesAndStruct :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
+-- namesAndStruct env rl =
+--   [(names, (fakeStruct)) | (names, bs) <- qaHornsT (l4interpret defaultInterpreterOptions rl)]
+--   where
+--     fakeStruct = map (ruleQuestions env) rl
+namesAndStruct env rl =
+  [ (names, ((bs) : (unsafePerformIO q))) | (names, bs) <- qaHornsT interp, q <- questStruct]
+  where
+    questStruct = map (ruleQuestions env) rl -- [AA.OptionallyLabeledBoolStruct Text.Text]
+    interp = l4interpret defaultInterpreterOptions rl
+
+biggestQ :: NLGEnv -> [Rule] -> Maybe BoolStructT
+biggestQ env rl = do
+  let q = namesAndStruct env rl
+      flattened = (\(x,y) -> (x, AA.extractLeaves (last y))) <$> q
+      onlyqs = Data.Bifunctor.second last <$> q
+      -- onlyqs = (\(x,y) -> (x, (last y))) <$> q
+      sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
+  guard (not $ null sorted)
+  return ((Map.fromList onlyqs) ! (fst $ DL.head sorted))
+
+asPurescript :: NLGEnv -> [Rule] -> String
+asPurescript env rl =
      show (vsep
            [ "toplevelDecisions :: Map.Map (String) (Item String)"
            , "toplevelDecisions = Map.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (T.unwords <$> names)
-                             , (T.pack $ unsafePerformIO $ boolStructQuestion env bs))
-                            -- , (alwaysLabeled bs))
+                            --  , (T.pack $ unsafePerformIO $ boolStructQuestion env bs))
+                            , ((last bs)))
 
-                   | (names,bs) <- qaHornsR l4i
+                   | (names,bs) <- namesAndStruct env rl
                    ]
                  )
              )
@@ -58,7 +97,7 @@ asPurescript env l4i =
               . TL.replace "True" "true"
               . pShowNoColor $
               fmap toTuple . Map.toList . AA.getMarking $
-              getMarkings l4i
+              getMarkings (l4interpret defaultInterpreterOptions rl)
              )
            ]
           )

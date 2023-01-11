@@ -321,7 +321,7 @@ nlg env rl = do
    gr <- nlgExtPGF
    let lang = head $ languages gr
    let Just eng = readLanguage "UDExtEng"
-   let Just may = readLanguage "UDExtSwe"
+   let Just swe = readLanguage "UDExtSwe"
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?
@@ -334,7 +334,9 @@ nlg env rl = do
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
             finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            linText = linearize gr eng finalTree
+            linText = unlines [
+                                linearize gr eng finalTree
+                              , linearize gr swe finalTree ]
             linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
       HornlikeA {
@@ -345,7 +347,7 @@ nlg env rl = do
               | tree <- clausesA
               , let linText = unlines [
                                 linearize gr eng tree
-                              , linearize gr may tree ]
+                              , linearize gr swe tree ]
               , let linTree = showExpr tree ]
 
         return linTrees_exprs

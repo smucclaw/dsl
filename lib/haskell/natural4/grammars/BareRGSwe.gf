@@ -34,10 +34,11 @@ concrete BareRGSwe of BareRG =
 
   NounSwe [
      DefArt
---   , DetNP
    , DetQuant
    , IndefArt
-   , NumPl
+   , NumPl, NumSg, NumCard
+   , UseN, AdjCN, AdvCN, RelCN
+   , MassNP, UsePron, DetCN
   -- NounSwe - [
   --     CountNP
   --   , UseN2, Use2N3
@@ -66,7 +67,7 @@ concrete BareRGSwe of BareRG =
   ],
 
   StructuralSwe [
-    Prep, possess_Prep, by8agent_Prep,
+    Prep, possess_Prep,
     always_Adv
   ],
   SymbolSwe [
@@ -109,6 +110,8 @@ concrete BareRGSwe of BareRG =
 
     someSg_Det = SyntaxSwe.someSg_Det ;
     somePl_Det = SyntaxSwe.somePl_Det ;
+
+    by8agent_Prep = ss "genom" ; -- actually this is by means
 
     in_accordance_with_Prep = P.mkPrep "in accordance with" ;
 

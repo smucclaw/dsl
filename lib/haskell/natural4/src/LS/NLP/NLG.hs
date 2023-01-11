@@ -223,7 +223,7 @@ ruleQuestions env rule = do
       pure bsrWithQuestions
 
     rpIs = mkCId "RPis"
-    Just eng = readLanguage "Eng"
+    Just eng = readLanguage "UDExtEng"
     mkQ qf gr subj e = Text.pack $ unlines $
                         mkQs qf gr eng subj (expr2TreeGroups gr e)
 

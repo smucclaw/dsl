@@ -43,6 +43,7 @@ import AnyAll.BoolStructTree
 import qualified AnyAll.Types as AA
 import qualified Data.Tree as DT
 import System.IO.Unsafe (unsafePerformIO)
+import Data.Foldable as F
 
 
 data NLGEnv = NLGEnv
@@ -213,7 +214,13 @@ ruleQuestions env rule = do
       whoBSR <- mapM (bsr2questions qsWho gr subjExpr) who
       condBSR <- mapM (bsr2questions qsCond gr subjExpr) cond
       pure $ catMaybes [whoBSR, condBSR]
-    DefNameAlias {} -> pure []
+    -- TODO: reproduce old behaviour from nlgQuestions here too
+    -- HornlikeA {clausesA = cls} -> do
+    --   let udfrags = map fg cls
+    --       emptyExpr = gf (GString "")
+    --       hcQuestions = concatMap (mkHCQs gr lang emptyExpr) udfrags
+    --   return $ map Text.pack hcQuestions
+    DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
 
   where
@@ -233,27 +240,9 @@ ruleQuestions env rule = do
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
-  annotatedRule <- parseFields env rl
-  -- TODO: here let's do some actual NLG
-  gr <- nlgExtPGF
-  let lang = head $ languages gr
-  case annotatedRule of
-    RegulativeA {subjA, whoA, condA, uponA} -> do
-      let whoQuestions = concatMap (mkWhoQs gr lang subjA) $ catMaybes [whoA]
-      -- print $ udsToTreeGroups (toUDS gr subj)
-      -- print "flattened who"
-      -- print $ map showExpr $ flattenGFTrees whoAsTG
-          condQuestions = concatMap (mkCondQs gr lang subjA) $ catMaybes [condA, uponA]
-      return $ map Text.pack $ whoQuestions ++ condQuestions
-    -- HornlikeA {clausesA = cls} -> do
-    --   let udfrags = map fg cls
-    --       emptyExpr = gf (GString "")
-    --       hcQuestions = concatMap (mkHCQs gr lang emptyExpr) udfrags
-    --   return $ map Text.pack hcQuestions
-    _ -> do
-      statement <- nlg env rl
-      putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
-      return mempty --
+  rulesInABoolStruct <- ruleQuestions env rl
+  pure $ concatMap F.toList rulesInABoolStruct
+
 
 mkHCQs :: PGF -> CId -> Expr -> GUDFragment -> [String]
 mkHCQs gr lang emptE udfrag = case udfrag of

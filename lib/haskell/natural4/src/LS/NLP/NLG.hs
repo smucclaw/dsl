@@ -320,10 +320,11 @@ nlg env rl = do
    let lang = head $ languages gr
    let Just eng = readLanguage "UDExtEng"
    let Just swe = readLanguage "UDExtSwe"
+   let toNP expr = gf $ peelNP $ gf $ toUDS gr expr -- TODO remove this before merging to main—just making sure subjA is still of type NP
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?
-            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
+            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (toNP subjA)
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
@@ -396,7 +397,7 @@ parseFields :: NLGEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
     let gr = pgfGrammar $ udEnv env
-    subjA <- gf . toUDS gr <$> bsp2gf env subj
+    subjA <- bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
     condA <- mapM (bsr2gf env) cond
@@ -541,7 +542,8 @@ bsp2gfDT env bsp = case bsp of
 
 -- | Takes the main action, a list of modifiers, and combines them into one Expr
 combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
-combineActionMods (_, expr) [] = expr
+combineActionMods ("CN", cn) [] = mkApp (mkCId "MassNP") [cn] -- elevate into NP, because we assume this is going to be subjA
+combineActionMods (_, expr) [] = expr -- other cats, leave as is (no action mods)
 combineActionMods ("CN",noun) (("RS",mod):rest) = combineActionMods ("CN", gf resultCN) rest
   where
     -- cnrs
@@ -988,7 +990,7 @@ qsWho subj whichTG = case whichTG of
   TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
   TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
   _ -> useQCl $ GQuestCl dummyCl
-  where sub = definiteNP $ peelNP subj
+  where sub = definiteNP $ fg subj
 
 
 qsCond _sub whichTG = case whichTG of

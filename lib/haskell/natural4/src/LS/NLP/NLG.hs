@@ -1020,6 +1020,7 @@ definiteNP :: forall a . Tree a -> Tree a
 definiteNP np@(GDetCN (LexDet "theSg_Det") _) = np
 definiteNP np@(GDetCN (LexDet "thePl_Det") _) = np
 definiteNP t@(GComplV _ _) = t -- don't change objects
+definiteNP t@(GUseComp _) = t -- don't change copula complements
 definiteNP (GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP (GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP x = composOp definiteNP x

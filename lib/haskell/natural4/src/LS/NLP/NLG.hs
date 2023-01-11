@@ -213,7 +213,8 @@ ruleQuestions env rule = do
       whoBSR <- mapM (bsr2questions qsWho gr subjExpr) who
       condBSR <- mapM (bsr2questions qsCond gr subjExpr) cond
       pure $ catMaybes [whoBSR, condBSR]
-    _ -> pure [AA.Leaf (Text.pack "ruleQuestions: doesn't work yet, fall back to the string-based stuff")]
+    DefNameAlias {} -> pure []
+    _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
 
   where
     bsr2questions :: QFun -> PGF -> Expr -> BoolStructR -> IO (AA.OptionallyLabeledBoolStruct Text.Text)

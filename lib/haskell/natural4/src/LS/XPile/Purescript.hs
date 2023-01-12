@@ -42,40 +42,54 @@ toTuple (x,y) = Tuple x y
 
 -- startWithRule :: InterpreterOptions -> NLGEnv -> RunConfig -> [Rule] ->
 
-
--- qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
--- qaHornsR l4i =
---      [ ( ruleLabelName <$> uniqrs
---        , expanded)
---      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
---                            exposedRoots l4i      -- EXPOSED
---      , not $ null grpval
---      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
---      ]
-
-
 -- two boolstructT: one question and one phrase
-namesAndStruct :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
--- namesAndStruct env rl =
---   [(names, (fakeStruct)) | (names, bs) <- qaHornsT (l4interpret defaultInterpreterOptions rl)]
---   where
---     fakeStruct = map (ruleQuestions env) rl
+namesAndStruct :: NLGEnv -> [Rule] -> [([RuleName], BoolStructT)]
 namesAndStruct env rl =
-  [ (names, ((bs) : (unsafePerformIO q))) | (names, bs) <- qaHornsT interp, q <- questStruct]
+  [ (names, (bs)) | (names, bs) <- qaHornsT interp]
+  where
+    interp = l4interpret defaultInterpreterOptions rl
+
+namesAndQ :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
+namesAndQ env rl =
+  [ ([], unsafePerformIO q) | q <- questStruct]
   where
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
     questStruct = map (ruleQuestions env alias) rl -- [AA.OptionallyLabeledBoolStruct Text.Text]
-    interp = l4interpret defaultInterpreterOptions rl
 
-biggestQ :: NLGEnv -> [Rule] -> Maybe BoolStructT
+combine :: [([RuleName], BoolStructT)] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
+combine [] [] = []
+combine (b:bs) [] =
+  (fst b, [snd b]) : combine bs []
+combine [] (q:qs) = []
+combine (b:bs) (q:qs) =
+  (fst b, (snd b : snd q)) : combine bs qs
+
+fixNot :: BoolStructT -> BoolStructT
+fixNot (AA.Leaf x) = AA.Leaf x
+fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
+fixNot y = y
+
+appendToFirst :: BoolStructT -> [BoolStructT] -> BoolStructT
+appendToFirst (AA.All Nothing a) q = (AA.All Nothing (a ++ q))
+appendToFirst xs y = xs
+
+labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
+labelQs x = map alwaysLabeled x
+
+biggestQ :: NLGEnv -> [Rule] -> [BoolStructT]
 biggestQ env rl = do
-  let q = namesAndStruct env rl
-      flattened = (\(x,y) -> (x, AA.extractLeaves (last y))) <$> q
-      onlyqs = Data.Bifunctor.second last <$> q
-      -- onlyqs = (\(x,y) -> (x, (last y))) <$> q
-      sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
+  let q = combine (namesAndStruct env rl) (namesAndQ env rl)
+      flattened = (\(x,ys) ->
+        (x, concat [AA.extractLeaves y | y <- ys])) <$> q
+      -- onlyqs = Data.Bifunctor.second <$> q
+      onlyqs = (\(x, y) -> (x, (appendToFirst (head y) (map fixNot $ tail y)))) <$> q
+      sorted = DL.reverse $ DL.sortOn (DL.length) flattened
   guard (not $ null sorted)
   return ((Map.fromList onlyqs) ! (fst $ DL.head sorted))
+
+-- asPrefix :: NLGEnv -> [Rule] -> AA.BoolStruct (AA.Label T.Text) T.Text
+-- asPrefix env rl =
+--   foldl (++) [] (labelQs $ biggestQ env rl)
 
 asPurescript :: NLGEnv -> [Rule] -> String
 asPurescript env rl =
@@ -85,10 +99,8 @@ asPurescript env rl =
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (T.unwords <$> names)
-                            --  , (T.pack $ unsafePerformIO $ boolStructQuestion env bs))
-                            , ((last bs)))
-
-                   | (names,bs) <- namesAndStruct env rl
+                            , alwaysLabeled (appendToFirst (head bs) (map fixNot (tail bs))))
+                   | (names,bs) <- combine (namesAndStruct env rl) (namesAndQ env rl)
                    ]
                  )
              )

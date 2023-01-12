@@ -214,12 +214,15 @@ ruleQuestions env rule = do
       whoBSR <- mapM (bsr2questions qsWho gr subjExpr) who
       condBSR <- mapM (bsr2questions qsCond gr subjExpr) cond
       pure $ concat $ catMaybes [whoBSR, condBSR]
-    -- TODO: reproduce old behaviour from nlgQuestions here too
-    -- HornlikeA {clausesA = cls} -> do
-    --   let udfrags = map fg cls
-    --       emptyExpr = gf (GString "")
-    --       hcQuestions = concatMap (mkHCQs gr lang emptyExpr) udfrags
-    --   return $ map Text.pack hcQuestions
+    Constitutive {cond} -> do
+      condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
+      pure $ concat $ catMaybes [condBSR]
+    Hornlike {keyword, clauses} -> do
+      let kw = keyword2cid keyword
+      parsedClauses <- mapM (parseHornClause2 env kw) clauses
+      let statements = [s | [s] <- parsedClauses] -- TODO: eventually make a new function that parses RPs for HornClause that doesn't make its argument UDFragment
+      let questions = concatMap (mkQ qsCond gr dummySubj) statements :: [AA.OptionallyLabeledBoolStruct Text.Text]
+      pure questions
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
 
@@ -239,7 +242,7 @@ ruleQuestions env rule = do
 
     rpIs = mkCId "RPis"
     Just eng = readLanguage "UDExtEng"
-
+    dummySubj = gf dummyNP
     mkQ :: QFun -> PGF -> Expr -> Expr -> [AA.OptionallyLabeledBoolStruct Text.Text]
     mkQ qf gr subj e = fmap Text.pack <$> questionStrings
       where
@@ -439,13 +442,21 @@ parseFields env rl = case rl of
   _ -> return RegBreachA
 
 parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
-parseHornClause env fun (HC rp Nothing) = parseRP env fun rp
-parseHornClause env fun (HC rp (Just bsr)) = do
+parseHornClause env fun hc = do
+  exprs <- parseHornClause2 env fun hc
+  pure $ case exprs of
+    [expr] -> expr
+    [udf,s] -> mkApp (mkCId "HornClause2") [udf,s]
+
+parseHornClause2 :: NLGEnv -> CId -> HornClause2 -> IO [Expr]
+parseHornClause2 env fun (HC rp Nothing) = do
+  expr <- parseRP env fun rp
+  pure [expr]
+parseHornClause2 env fun (HC rp (Just bsr)) = do
   extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
   db_is_NDB_UDFragment <- parseRPforHC env fun rp
   db_occurred_S <- bsr2s env bsr
-  let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_S
-  return $ gf hornclause
+  pure $ [gf db_is_NDB_UDFragment, gf db_occurred_S]
 
 bsr2s :: NLGEnv -> BoolStructR -> IO GS
 bsr2s env bsr = do

@@ -26,6 +26,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.List as DL
 import Data.Map ((!))
 import Data.Bifunctor (second)
+import Data.Maybe (listToMaybe)
 
 
 -- | extract the tree-structured rules from Interpreter
@@ -62,7 +63,8 @@ namesAndStruct :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
 namesAndStruct env rl =
   [ (names, ((bs) : (unsafePerformIO q))) | (names, bs) <- qaHornsT interp, q <- questStruct]
   where
-    questStruct = map (ruleQuestions env) rl -- [AA.OptionallyLabeledBoolStruct Text.Text]
+    alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
+    questStruct = map (ruleQuestions env alias) rl -- [AA.OptionallyLabeledBoolStruct Text.Text]
     interp = l4interpret defaultInterpreterOptions rl
 
 biggestQ :: NLGEnv -> [Rule] -> Maybe BoolStructT

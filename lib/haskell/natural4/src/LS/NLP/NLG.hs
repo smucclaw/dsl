@@ -205,14 +205,24 @@ parseUD env txt = do
     --  Expected: BoolStructT
     --     Actual: AA.BoolStruct (Maybe (AA.Label Text.Text)) (IO [String])
 
-ruleQuestions :: NLGEnv -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
-ruleQuestions env rule = do
+ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions env alias rule = do
   gr <- nlgExtPGF
+  [youExpr, orgExpr] <-
+      case alias of
+        Nothing        -> pure [dummySubj, dummySubj]
+        Just (you,org) -> sequence [ do
+                            uds <- parseMulti env mt
+                            pure $ gf $ peelNP uds
+                            | mt <- [you, org]]
+  putStrLn $ showExpr youExpr
+  putStrLn $ showExpr orgExpr
   case rule of
     Regulative {subj,who,cond} -> do
       subjExpr <- bsp2gf env subj
-      whoBSR <- mapM (bsr2questions qsWho gr subjExpr) who
-      condBSR <- mapM (bsr2questions qsCond gr subjExpr) cond
+      let aliasExpr = if subjExpr==orgExpr then youExpr else subjExpr
+      whoBSR <- mapM (bsr2questions qsWho gr aliasExpr) who
+      condBSR <- mapM (bsr2questions qsCond gr aliasExpr) cond
       pure $ concat $ catMaybes [whoBSR, condBSR]
     Constitutive {cond} -> do
       condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
@@ -251,7 +261,7 @@ ruleQuestions env rule = do
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
-  rulesInABoolStruct <- ruleQuestions env rl
+  rulesInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList rulesInABoolStruct
 
 

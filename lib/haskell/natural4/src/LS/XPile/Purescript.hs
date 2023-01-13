@@ -58,19 +58,36 @@ namesAndQ env rl =
 
 combine :: [([RuleName], BoolStructT)] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
 combine [] [] = []
-combine (b:bs) [] =
-  (fst b, [snd b]) : combine bs []
+combine (b:bs) [] = []
 combine [] (q:qs) = []
 combine (b:bs) (q:qs) =
-  (fst b, (snd b : snd q)) : combine bs qs
+  (fst b, ((snd b) : (snd q))) : combine bs qs
+
+-- combine :: [([RuleName], BoolStructT)] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
+-- combine [] [] = []
+-- combine (b:bs) [] =
+--   (fst b, [snd b]) : combine bs []
+-- combine [] (q:qs) = []
+-- combine (b:bs) (q:qs) =
+--   (fst b, (snd b : snd q)) : combine bs qs
 
 fixNot :: BoolStructT -> BoolStructT
 fixNot (AA.Leaf x) = AA.Leaf x
 fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
 fixNot y = y
 
+matchRule ::  ([RuleName], BoolStructT) -> [([RuleName], [BoolStructT])] -> ([RuleName], [BoolStructT])
+matchRule (r, b) ((r1, b1):xs)
+  | r == r1 = (r, b1)
+  | otherwise = matchRule (r,b) xs
+
+justQuestions :: [([RuleName], BoolStructT)] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
+justQuestions rls both =
+  [ matchRule rl both | rl <- rls]
+
 appendToFirst :: BoolStructT -> [BoolStructT] -> BoolStructT
 appendToFirst (AA.All Nothing a) q = (AA.All Nothing (a ++ q))
+appendToFirst (AA.Any Nothing a) q = (AA.Any Nothing (a ++ q))
 appendToFirst xs y = xs
 
 labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]

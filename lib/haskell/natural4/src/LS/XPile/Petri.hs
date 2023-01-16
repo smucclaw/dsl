@@ -557,7 +557,7 @@ r2fgl rs defRL Regulative{..} = do
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
   whoN  <- case who of Nothing  -> pure everyN
-                       Just bsr -> do whoN <- newNode $ mkTrans $ "who " <> (escapeNewlines $ bsr2text bsr)
+                       Just bsr -> do whoN <- newNode $ mkTrans $ "who " <> (bsr2textnl bsr)
                                       newEdge everyN whoN []
                                       pure whoN
   upoN  <- case upon of Nothing -> pure whoN
@@ -682,9 +682,6 @@ deonticTemporal _ = error "Petri/deonticTemporal called for a non-Regulative rul
 
 addnewlines :: [Text] -> Text
 addnewlines = Text.intercalate "\\n"
-
-escapeNewlines :: Text -> Text
-escapeNewlines = Text.replace "\n" "\\n"
 
 -- the BoolStructP could be an AND  .. or an OR .. how do we represent all that in the petri net?
 -- for now let's only handle

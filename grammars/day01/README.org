@@ -34,7 +34,7 @@ For example, if you are given the list of sentences
 
 You should return ~GBG~, good-bad-good.
 
-Find your puzzle input in the file [[inputs-01.txt]].
+Find your puzzle input in the file [[input-01.txt]].
 
 The correct answer is given in the file [[expected-01.txt]].
 

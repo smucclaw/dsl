@@ -9,31 +9,41 @@ import LS.NLP.UDExt
 import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
       Rule(..),
-      BoolStructP, BoolStructR,
+      BoolStructP, BoolStructR, BoolStructT, Interpreted, RuleName,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
-      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP)
-import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF )
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm, multiterm2bsr')
+import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, inferExpr, showType, ppTcError, PGF, readExpr )
 import qualified PGF
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text as Text
 import Data.Char (toLower, isUpper, toUpper, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
-import Data.Maybe ( fromMaybe, catMaybes, mapMaybe )
-import Data.List ( group, sort, sortOn, nub, intercalate )
+import Data.Maybe ( fromMaybe, catMaybes, mapMaybe, fromJust )
+import Data.List ( group, sort, sortOn, nub, intercalate, isInfixOf )
 import Data.List.Extra (groupOn, splitOn)
+import Data.List.Split (splitOneOf)
 import Data.Either (partitionEithers)
 import Debug.Trace (trace)
 import qualified GF.Text.Pretty as GfPretty
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when, unless)
-import System.Environment (lookupEnv)
+import System.Environment (lookupEnv, getExecutablePath)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
+import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
+import Control.Monad.Trans
+import System.IO (stderr)
+import System.Exit (exitFailure)
+import Data.Typeable
+import Paths_natural4
 import AnyAll.BoolStructTree
+import qualified AnyAll.Types as AA
 import qualified Data.Tree as DT
+import System.IO.Unsafe (unsafePerformIO)
+import Data.Foldable as F
 
 
 data NLGEnv = NLGEnv
@@ -45,8 +55,8 @@ data NLGEnv = NLGEnv
 showExpr :: Expr -> String
 showExpr = PGF.showExpr []
 
-modelFilePath :: FilePath
-modelFilePath = gfPath "english-ewt-ud-2.5-191206.udpipe"
+modelFilePath :: IO FilePath
+modelFilePath = getDataFileName $ gfPath "english-ewt-ud-2.5-191206.udpipe"
 
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
@@ -56,7 +66,8 @@ myNLGEnv = do
       getEnv (gfPath "UDApp") "Eng" "UDS"
     ) $ do
     when verbose $ putStrLn "\n-----------------------------\n\nLoading UDPipe model..."
-    udpipeModel <- either error id <$> loadModel modelFilePath
+    udpath <- modelFilePath
+    udpipeModel <- either error id <$> loadModel udpath
     when verbose $ putStrLn "Loaded UDPipe model"
     pure udpipeModel
   -- let
@@ -66,7 +77,9 @@ myNLGEnv = do
   return $ NLGEnv {udEnv, udpipeModel, verbose}
 
 nlgExtPGF :: IO PGF
-nlgExtPGF = readPGF (gfPath "UDExt.pgf")
+nlgExtPGF = do
+  udext <- getDataFileName $ gfPath "UDExt.pgf"
+  readPGF udext
 
 dummyExpr :: String -> PGF.Expr
 dummyExpr msg = gf $ Groot_only (GrootN_ (GUsePN (GStrPN (GString msg)))) -- dummy expr
@@ -79,13 +92,21 @@ parseUD :: NLGEnv -> Text.Text -> IO GUDS
 parseUD env txt = do
   unless (verbose env) $ -- when not verbose, just short output to reassure user we're doing something
     putStrLn ("    NLG.parseUD: parsing " <> "\"" <> Text.unpack txt <> "\"")
-  lowerConll <- checkAllCapsIsWord txt
+  -- conll <- udpipe txt -- Initial parse
+  let nonWords = concat $ saveNonWords (map Text.unpack $ Text.words txt) []
+   -- check that it's not just a capitalised real word and replace if not
+  lowerConll <- udpipe (Text.unwords $ map Text.pack $ checkAllCapsIsWord txt)
   -- when (verbose env) $ putStrLn ("\nconllu:\n" ++ lowerConll)
-  expr <- either errorMsg pure (ud2gf lowerConll)
-  -- let replaced = unwords $ swapBack (splitOn "propernoun" $ showExpr expr) nonWords
-  -- when (verbose env) $ putStrLn ("The UDApp tree created by ud2gf:\n" ++ replaced)
-  let uds = toUDS (pgfGrammar $ udEnv env) expr
-  -- when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
+  -- let expr = case ud2gf lowerConll of
+  --              Just e -> e
+  --              Nothing -> fromMaybe errorMsg (ud2gf lowerConll)
+  expr <- either errorMsg pure $ ud2gf lowerConll
+  let swappedExpr = fromMaybe (dummyExpr ("no expr from udpipe: " ++ Text.unpack txt)) (readExpr $ swapBack nonWords $ showExpr expr)
+  let uds = toUDS (pgfGrammar $ udEnv env) swappedExpr
+  -- compare to just getting readExpr from original txt
+  -- uds: "every Gra25 must notify the organization if the data's breach occurs on or after the date of commencement of PDPA_PDP(A)A_2020_\167\&13"
+  -- unparsed original txt: Got the error: * Function Gra25 is not in scope
+  when (verbose env) $ putStrLn ("Converted into UDS:\n" ++ showExpr (gf uds))
   return uds
   where
     errorMsg msg = do
@@ -107,12 +128,6 @@ parseUD env txt = do
                   ((l:_l), []) -> Left l
                   ([]  ,   []) -> Left "ud2gf: no results given for input"
       [] -> Left "ud2gf: tried parsing an empty input"
-
-    swapBack :: [String] -> [String] -> [String]
-    swapBack [] [] = []
-    swapBack [] (_y:_ys) = []
-    swapBack (x:xs) [] = x:xs
-    swapBack (x:xs) (y:ys) = ((init x) ++ y) : swapBack xs ys
 
     checkIfChunk :: String -> Bool
     checkIfChunk x = checkDigit x || checkLower x || checkSymbol x
@@ -137,11 +152,11 @@ parseUD env txt = do
     replaceChunks txt = swapChunk $ map Text.unpack $ Text.words txt
     -- Text.pack $ unwords $
 
-    combinePROPERNOUN :: [[String]] ->[[String]]
+    combinePROPERNOUN :: [String] -> [String]
     combinePROPERNOUN [] = []
-    combinePROPERNOUN (x:xs)
-      | head x == "propernoun" = [intercalate "_" x] : combinePROPERNOUN xs
-      | otherwise = x : combinePROPERNOUN xs
+    combinePROPERNOUN x
+      | (head x == "propernoun") = [intercalate "_" x]
+      | otherwise = x
 
     lowerButPreserveAllCaps :: Text.Text -> Text.Text
     lowerButPreserveAllCaps txt = Text.unwords
@@ -151,17 +166,25 @@ parseUD env txt = do
       | wd <- Text.words txt
       ]
 
-    checkAllCapsIsWord :: Text.Text -> IO String
-    checkAllCapsIsWord txt = do
-      lowerConll <- udpipe (Text.map toLower txt)
-      defaultConll <- udpipe $ lowerButPreserveAllCaps txt
-      let check | (map toLower lowerConll) == (map toLower defaultConll) = defaultConll
-                | otherwise = lowerConll
-      return check
+    checkAllCapsIsWord :: Text.Text -> [String]
+    checkAllCapsIsWord txt
+      | isInfixOf "propernoun" (check (Text.map toLower txt)) = words $ check txt
+      | otherwise = words $ check (Text.map toLower txt)
+      where
+        check tx = Text.unpack $ Text.unwords $ map Text.pack $ concatMap combinePROPERNOUN $ group $ replaceChunks tx
+
+    swapBack :: [String] -> String -> String
+    swapBack str txt
+      | isInfixOf "propernoun" txt = concat $ concat $ swap str $ splitOn "propernoun" txt
+      | otherwise = txt
+      where
+        swap a b = (zipWith (++) (fst l) a) : [snd l]
+          where
+            l = splitAt (length a) b
 -----------------------------------------------------------------------------
 
 -- | rewrite statements into questions, for use by the Q&A web UI
--- 
+--
 -- +-----------------+-----------------------------------------------------+
 -- | input           | the data breach, occurs on or after 1 Feb 2022      |
 -- | output          | Did the data breach occur on or after 1 Feb 2022?   |
@@ -176,79 +199,109 @@ parseUD env txt = do
 -- | output          | Have there been more than two claims?               |
 -- +-----------------+-----------------------------------------------------+
 
-nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
-nlgQuestion env rl = do
-  annotatedRule <- parseFields env rl
-  -- TODO: here let's do some actual NLG
+-- type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
+-- type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
+-- type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
+    --  Expected: BoolStructT
+    --     Actual: AA.BoolStruct (Maybe (AA.Label Text.Text)) (IO [String])
+
+ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions env alias rule = do
   gr <- nlgExtPGF
-  let lang = head $ languages gr
-  case annotatedRule of
-    RegulativeA {subjA, whoA, condA, uponA} -> do
-      let whoQuestions = concatMap (mkWhoQs gr lang subjA) $ catMaybes [whoA]
-      -- print $ udsToTreeGroups (toUDS gr subj)
-      -- print "flattened who"
-      -- print $ map showExpr $ flattenGFTrees whoAsTG
-          condQuestions = concatMap (mkCondQs gr lang subjA) $ catMaybes [condA, uponA]
-      return $ map Text.pack $ whoQuestions ++ condQuestions
-    HornlikeA {clausesA = cls} -> do
-      let udfrags = map fg cls
-          emptyExpr = gf (GString "")
-          hcQuestions = concatMap (mkHCQs gr lang 0 (emptyExpr)) udfrags
-      return $ map Text.pack hcQuestions
-    _ -> do
-      statement <- nlg env rl
-      putStrLn ("nlgQuestion: no question to ask, but the regular NLG returns " ++ Text.unpack statement)
-      return mempty --
+  [youExpr, orgExpr] <-
+      case alias of
+        Nothing        -> pure [dummySubj, dummySubj]
+        Just (you,org) -> sequence [ do
+                            uds <- parseMulti env mt
+                            pure $ gf $ peelNP uds
+                            | mt <- [you, org]]
+  putStrLn $ showExpr youExpr
+  putStrLn $ showExpr orgExpr
+  case rule of
+    Regulative {subj,who,cond} -> do
+      subjExpr <- bsp2gf env subj
+      let aliasExpr = if subjExpr==orgExpr then youExpr else subjExpr
+      whoBSR <- mapM (bsr2questions qsWho gr aliasExpr) who
+      condBSR <- mapM (bsr2questions qsCond gr aliasExpr) cond
+      pure $ concat $ catMaybes [whoBSR, condBSR]
+    Constitutive {cond} -> do
+      condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
+      pure $ concat $ catMaybes [condBSR]
+    Hornlike {keyword, clauses} -> do
+      let kw = keyword2cid keyword
+      parsedClauses <- mapM (parseHornClause2 env kw) clauses
+      let statements = [s | [s] <- parsedClauses] -- TODO: eventually make a new function that parses RPs for HornClause that doesn't make its argument UDFragment
+      let questions = concatMap (mkQ qsCond gr dummySubj) statements :: [AA.OptionallyLabeledBoolStruct Text.Text]
+      pure questions
+    DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
+    _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
 
   where
-    mkHCQs :: PGF -> CId -> Int -> Expr -> GUDFragment -> [String]
-    mkHCQs gr lang indentation emptE udfrag = case udfrag of
-      GHornClause2 _ sent -> mkQs qsCond gr lang indentation emptE (sTG sent)
-      GMeans _ uds -> mkQs qsCond gr lang indentation emptE (udsToTreeGroups uds)
-      _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
+    keepTextNegations :: AA.OptionallyLabeledBoolStruct [AA.OptionallyLabeledBoolStruct a] -> [AA.OptionallyLabeledBoolStruct a]
+    keepTextNegations bsr = case bsr of
+        AA.Leaf x -> x -- negation is in the value x!
+        AA.All l xs -> [AA.All l (concatMap keepTextNegations xs)]
+        AA.Any l xs -> [AA.Any l (concatMap keepTextNegations xs)]
+        AA.Not x    -> [AA.Not bs | bs <- keepTextNegations x]
 
-    mkWhoQs :: PGF -> CId -> Expr -> Expr -> [String]
-    mkWhoQs gr lang subj e = trace ("whoA: " ++ showExpr e  ++ "\ntg: " ++ show tg) mkQs qsWho gr lang 2 subj tg
+    bsr2questions :: QFun -> PGF -> Expr -> BoolStructR -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+    bsr2questions qfun gr subj bsr = do
+      bsrWithExprs <- mapM (parseRP env rpIs) bsr
+      let bsrWithQuestions = mkQ qfun gr subj <$> bsrWithExprs -- this one returns a BSR inside a BSR, with the correct negations in the inner one
+      pure $ keepTextNegations bsrWithQuestions -- keep the new inner layer with negations added from text
+
+    rpIs = mkCId "RPis"
+    Just eng = readLanguage "UDExtEng"
+    dummySubj = gf dummyNP
+    mkQ :: QFun -> PGF -> Expr -> Expr -> [AA.OptionallyLabeledBoolStruct Text.Text]
+    mkQ qf gr subj e = fmap Text.pack <$> questionStrings
       where
-        tg = case findType gr e of
-              "VPS" -> vpTG $ fg e
-              _     -> udsToTreeGroups (toUDS gr e)
+        questionStrings :: [AA.OptionallyLabeledBoolStruct String]
+        questionStrings = mkQs qf gr eng subj (expr2TreeGroups gr e)
 
-    mkCondQs gr lang subj e = mkQs qsCond gr lang 2 subj (udsToTreeGroups (toUDS gr e))
+nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion env rl = do
+  rulesInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
+  pure $ concatMap F.toList rulesInABoolStruct
 
-    mkQs :: (Expr -> TreeGroups -> GQS) -> PGF -> CId -> Int -> Expr -> TreeGroups -> [String]
-    mkQs qfun gr lang indentation s tg = case tg of
-      TG {gfS = Just sent} -> case sent of
-        GConjS _conj (GListS ss) -> concatMap (mkQs qfun gr lang (indentation+4) s) (sTG <$> ss)
-        _ -> qnPunct $ lin indentation (qfun s $ sTG sent)
-      TG {gfVP = Just vp} -> case vp of
-        GConjVPS _conj (GListVPS vps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (vpTG <$> vps)
-        _ -> qnPunct $ lin indentation (qfun s $ vpTG vp)
-      TG {gfNP = Just np} -> case np of
-        GConjNP _conj (GListNP nps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (npTG <$> nps)
-        _ -> qnPunct $ lin indentation (qfun s $ npTG np)
-      TG {gfCN = Just cn} -> case cn of
-        GConjCN _conj (GListCN cns) -> concatMap (mkQs qfun gr lang (indentation+4) s) (cnTG <$> cns)
-        _ -> qnPunct $ lin indentation (qfun s $ cnTG cn)
-      TG {gfAP = Just ap} -> case ap of
-        GConjAP _conj (GListAP aps) -> concatMap (mkQs qfun gr lang (indentation+4) s) (apTG <$> aps)
-        _ -> qnPunct $ lin indentation (qfun s $ apTG ap)
 
-      -- TG {gfDet = Just det} ->
-      -- TG {gfAdv = Just adv} ->
-      _ -> []
+mkHCQs :: PGF -> CId -> Expr -> GUDFragment -> [AA.OptionallyLabeledBoolStruct String]
+mkHCQs gr lang emptE udfrag = case udfrag of
+  GHornClause2 _ sent -> mkQs qsCond gr lang emptE (sTG sent)
+  GMeans _ uds -> mkQs qsCond gr lang emptE (udsToTreeGroups uds)
+  _ -> error $ "nlgQuestion.mkHCQs: unexpected argument " ++ showExpr (gf udfrag)
 
-      where
-        {-
-        space :: Char
-        space = ' '
-        lin indentation x = [take indentation (repeat space) ++ linearize gr lang (gf x)]
-        -}
-        lin _indentation x = [linearize gr lang (gf x)]
-        qnPunct :: [String] -> [String]
-        qnPunct [] = []
-        qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
-        qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
+
+mkQs :: QFun -> PGF -> CId -> Expr -> TreeGroups -> [AA.OptionallyLabeledBoolStruct String]
+mkQs qfun gr lang subj tg = case tg of
+  TG {gfS = Just sent} -> case sent of
+    GConjS _conj (GListS ss) -> concat $ mapM (mkQs qfun gr lang subj) (sTG <$> ss)
+    _ -> mapM lin $ qfun subj $ sTG sent
+  TG {gfVP = Just vp} -> case vp of
+    GConjVPS _conj (GListVPS vps) -> concat $ mapM (mkQs qfun gr lang subj) (vpTG <$> vps)
+    _ -> mapM lin $ qfun subj $ vpTG vp
+  TG {gfNP = Just np} -> case np of
+    GConjNP _conj (GListNP nps) -> concat $ mapM (mkQs qfun gr lang subj) (npTG <$> nps)
+    _ -> mapM lin $ qfun subj $ npTG np
+  TG {gfCN = Just cn} -> case cn of
+    GConjCN _conj (GListCN cns) -> concat $ mapM (mkQs qfun gr lang subj) (cnTG <$> cns)
+    _ -> mapM lin $ qfun subj $ cnTG cn
+  TG {gfAP = Just ap} -> case ap of
+    GConjAP _conj (GListAP aps) -> concat $ mapM (mkQs qfun gr lang subj) (apTG <$> aps)
+    _ -> mapM lin $ qfun subj $ apTG ap
+
+  -- TG {gfDet = Just det} ->
+  -- TG {gfAdv = Just adv} ->
+  _ -> []
+
+  where
+    lin :: GQS -> [String]
+    lin x = qnPunct [linearize gr lang (gf x)]
+
+    qnPunct :: [String] -> [String]
+    qnPunct [] = []
+    qnPunct [l] = [toUpper (head l) :( tail l ++ "?")]
+    qnPunct (l:ls) = [toUpper (head l)] : tail l : concat ls : ["?"]
 
 -- toHTML :: Text.Text -> String
 -- toHTML str = Text.unpack $ either mempty id $ Pandoc.runPure $ Pandoc.writeHtml5String Pandoc.def =<< Pandoc.readMarkdown Pandoc.def str
@@ -275,11 +328,12 @@ nlg env rl = do
    gr <- nlgExtPGF
    let lang = head $ languages gr
    let Just eng = readLanguage "UDExtEng"
-   let Just may = readLanguage "UDExtSwe"
+   let Just swe = readLanguage "UDExtSwe"
+   let toNP expr = gf $ peelNP $ gf $ toUDS gr expr -- TODO remove this before merging to main—just making sure subjA is still of type NP
    case annotatedRule of
       RegulativeA {subjA, keywordA, whoA, condA, deonticA, actionA, temporalA, uponA, givenA} -> do
         let deonticAction = mkApp deonticA [gf $ toUDS gr actionA] -- TODO: or change type of DMust to take VP instead?
-            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (gf $ peelNP subjA)
+            subjWho = applyMaybe "Who" (gf . toUDS gr <$> whoA) (toNP subjA)
             subj = mkApp keywordA [subjWho]
             king_may_sing = mkApp (mkCId "subjAction") [subj, deonticAction]
             existingQualifiers = [(name,expr) |
@@ -288,7 +342,9 @@ nlg env rl = do
                                                        ("Upon", uponA),
                                                        ("Given", givenA)]]
             finalTree = doNLG existingQualifiers king_may_sing -- determine information structure based on which fields are Nothing
-            linText = linearize gr eng finalTree
+            linText = unlines [
+                                linearize gr eng finalTree
+                              , linearize gr swe finalTree ]
             linTree = showExpr finalTree
         return (Text.pack (linText ++ "\n" ++ linTree))
       HornlikeA {
@@ -299,7 +355,7 @@ nlg env rl = do
               | tree <- clausesA
               , let linText = unlines [
                                 linearize gr eng tree
-                              , linearize gr may tree ]
+                              , linearize gr swe tree ]
               , let linTree = showExpr tree ]
 
         return linTrees_exprs
@@ -350,7 +406,7 @@ parseFields :: NLGEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
     let gr = pgfGrammar $ udEnv env
-    subjA <- gf . toUDS gr <$> bsp2gf env subj
+    subjA <- bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
     condA <- mapM (bsr2gf env) cond
@@ -394,84 +450,92 @@ parseFields env rl = case rl of
   RegFulfilled -> return RegFulfilledA
   RegBreach -> return RegBreachA
   _ -> return RegBreachA
+
+parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
+parseHornClause env fun hc = do
+  exprs <- parseHornClause2 env fun hc
+  pure $ case exprs of
+    [expr] -> expr
+    [udf,s] -> mkApp (mkCId "HornClause2") [udf,s]
+
+parseHornClause2 :: NLGEnv -> CId -> HornClause2 -> IO [Expr]
+parseHornClause2 env fun (HC rp Nothing) = do
+  expr <- parseRP env fun rp
+  pure [expr]
+parseHornClause2 env fun (HC rp (Just bsr)) = do
+  extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+  db_is_NDB_UDFragment <- parseRPforHC env fun rp
+  db_occurred_S <- bsr2s env bsr
+  pure $ [gf db_is_NDB_UDFragment, gf db_occurred_S]
+
+bsr2s :: NLGEnv -> BoolStructR -> IO GS
+bsr2s env bsr = do
+  expr <- bsr2gf env bsr
+  extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
+  return $ case findType extGrammar expr of
+    "S" -> fg expr          -- S=[databreach occurred]
+    "AP" -> ap2s $ fg expr  -- someone is AP=[happy]
+    -- TODO: make other cats to S too
+    _ -> error $ "bsr2s: expected S, got " ++ showExpr expr
+
+ap2s :: GAP -> GS
+ap2s ap = GPredVPS GSomeone (GMkVPS presSimul GPPos (GUseComp (GCompAP ap)))
+
+-- A wrapper for ensuring same return type for parseRP
+parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
+parseRPforHC env _f (RPParamText pt) = (GUDS2Fragment . fg) <$> parseParamText env pt
+parseRPforHC env _f (RPMT txts) = (GUDS2Fragment . fg) <$> parseMulti env txts
+parseRPforHC env f rp = fg <$> parseRP env f rp
+
+parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
+parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
+parseExpect  env  f (ExpRP rp) = parseRP env f rp
+
+parseRP :: NLGEnv -> CId -> RelationalPredicate -> IO Expr
+parseRP env _f (RPParamText pt) = parseParamText env pt
+parseRP env _f (RPMT txts) = parseMulti env txts
+parseRP env fun (RPConstraint sky is blue) = do
+  skyUDS <- parseMulti env sky
+  blueUDS <- parseMulti env blue
+  let skyNP = gf $ peelNP skyUDS
+  let rprel = if is==RPis then fun else keyword2cid is
+  return $ mkApp rprel [skyNP, blueUDS]
+parseRP env fun (RPBoolStructR sky is blue) = do
+  gr <- nlgExtPGF
+  skyUDS <- parseMulti env sky
+  blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
+  let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
+  let rprel = if is==RPis then fun else keyword2cid is
+  return $ mkApp rprel [skyNP, blueUDS]
+parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
+
+-- ConstitutiveName is [Text.Text]
+parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
+parseMulti env txt = gf `fmap` parseUD env (Text.unwords txt)
+
+parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
+parseName _env txt = return (Text.unwords txt)
+
+parseParamText :: NLGEnv -> ParamText -> IO Expr
+parseParamText env pt = gf `fmap` (parseUD env $ pt2text pt)
+
+keyword2cid :: (Show a) => a -> CId
+keyword2cid = mkCId . show
+
+-- NB. we assume here only structure like "before 3 months", not "before the king sings"
+parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> IO Expr
+parseTemporal env (TemporalConstraint keyword time tunit) = do
+  uds <- parseUD env $ kw2txt keyword <> time2txt time <> " " <> tunit
+  let Just adv = advFromUDS uds
+  return $ gf adv
   where
-    parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
-    parseHornClause env fun (HC rp Nothing) = parseRP env fun rp
-    parseHornClause env fun (HC rp (Just bsr)) = do
-      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
-      db_is_NDB_UDFragment <- parseRPforHC env fun rp
-      db_occurred_S <- bsr2s env bsr
-      let hornclause = GHornClause2 db_is_NDB_UDFragment db_occurred_S
-      return $ gf hornclause
-
-    bsr2s :: NLGEnv -> BoolStructR -> IO GS
-    bsr2s env bsr = do
-      expr <- bsr2gf env bsr
-      extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
-      return $ case findType extGrammar expr of
-        "S" -> fg expr          -- S=[databreach occurred]
-        "AP" -> ap2s $ fg expr  -- someone is AP=[happy]
-        -- TODO: make other cats to S too
-        _ -> error $ "bsr2s: expected S, got " ++ showExpr expr
-
-    ap2s :: GAP -> GS
-    ap2s ap = GPredVPS GSomeone (GMkVPS presSimul GPPos (GUseComp (GCompAP ap)))
-
-    -- A wrapper for ensuring same return type for parseRP
-    parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
-    parseRPforHC env _f (RPParamText pt) = (GUDS2Fragment . fg) <$> parseParamText env pt
-    parseRPforHC env _f (RPMT txts) = (GUDS2Fragment . fg) <$> parseMulti env txts
-    parseRPforHC env f rp = fg <$> parseRP env f rp
-
-    parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
-    parseExpect _env _f (ExpDeontic _) = error "NLG/parseExpect unimplemented for deontic rules"
-    parseExpect  env  f (ExpRP rp) = parseRP env f rp
-
-    parseRP :: NLGEnv -> CId -> RelationalPredicate -> IO Expr
-    parseRP env _f (RPParamText pt) = parseParamText env pt
-    parseRP env _f (RPMT txts) = parseMulti env txts
-    parseRP env fun (RPConstraint sky is blue) = do
-      skyUDS <- parseMulti env sky
-      blueUDS <- parseMulti env blue
-      let skyNP = gf $ peelNP skyUDS
-      let rprel = if is==RPis then fun else keyword2cid is
-      return $ mkApp rprel [skyNP, blueUDS]
-    parseRP env fun (RPBoolStructR sky is blue) = do
-      gr <- nlgExtPGF
-      skyUDS <- parseMulti env sky
-      blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
-      let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
-      let rprel = if is==RPis then fun else keyword2cid is
-      return $ mkApp rprel [skyNP, blueUDS]
-    parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
-
-    -- ConstitutiveName is [Text.Text]
-    parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
-    parseMulti env txt = gf `fmap` parseUD env (Text.unwords txt)
-
-    parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
-    parseName _env txt = return (Text.unwords txt)
-
-    parseParamText :: NLGEnv -> ParamText -> IO Expr
-    parseParamText env pt = gf `fmap` (parseUD env $ pt2text pt)
-
-    keyword2cid :: (Show a) => a -> CId
-    keyword2cid = mkCId . show
-
-    -- NB. we assume here only structure like "before 3 months", not "before the king sings"
-    parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> IO Expr
-    parseTemporal env (TemporalConstraint keyword time tunit) = do
-      uds <- parseUD env $ kw2txt keyword <> time2txt time <> " " <> tunit
-      let Just adv = advFromUDS uds
-      return $ gf adv
-      where
-        kw2txt tcomp = Text.pack $ case tcomp of
-          TBefore -> "before "
-          TAfter -> "after "
-          TBy -> "by "
-          TOn -> "on "
-          TVague -> "around "
-        time2txt t = Text.pack $ maybe "" show t
+    kw2txt tcomp = Text.pack $ case tcomp of
+      TBefore -> "before "
+      TAfter -> "after "
+      TBy -> "by "
+      TOn -> "on "
+      TVague -> "around "
+    time2txt t = Text.pack $ maybe "" show t
 
 
 ------------------------------------------------------------
@@ -495,7 +559,8 @@ bsp2gfDT env bsp = case bsp of
 
 -- | Takes the main action, a list of modifiers, and combines them into one Expr
 combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
-combineActionMods (_, expr) [] = expr
+combineActionMods ("CN", cn) [] = mkApp (mkCId "MassNP") [cn] -- elevate into NP, because we assume this is going to be subjA
+combineActionMods (_, expr) [] = expr -- other cats, leave as is (no action mods)
 combineActionMods ("CN",noun) (("RS",mod):rest) = combineActionMods ("CN", gf resultCN) rest
   where
     -- cnrs
@@ -673,6 +738,14 @@ combineExpr pred compl = result
 udsToTreeGroups :: GUDS -> TreeGroups
 udsToTreeGroups uds = groupByRGLtype (LexConj "") [uds]
 
+expr2TreeGroups :: PGF -> PGF.Expr -> TreeGroups
+expr2TreeGroups gr e = case findType gr e of  -- to avoid converting back and forth between UDS and RGL cats
+      "VPS" -> vpTG $ fg e
+      "S"   -> sTG $ fg e
+      "NP"  -> npTG $ fg e
+
+      _     -> udsToTreeGroups (toUDS gr e)
+
 ------------------------------------------------------------
 -- Let's try to parse a BoolStructR into a GF list
 -- First use case: "any unauthorised [access,use,…]  of personal data"
@@ -771,7 +844,8 @@ treePre :: GConj -> [GUDS] -> GUDS -> Expr
 treePre conj contents pre = case groupByRGLtype conj <$> [contents, [pre]] of
   [TG {gfCN=Just cn}, TG {gfAP=Just ap}] -> gf $ GAdjCN ap cn
   [TG {gfNP = Just np}, TG {gfVP = Just vp}] -> gf $ predVPS np vp
-  _ -> trace ("bsr2gf: can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
+  [TG {gfS = Just (GUseCl t p (GPredVP np vp))}, TG {gfNP = Just np2}] -> gf $ predVPS np2 (GMkVPS t p (GComplVP vp np))
+  _ -> trace ("bsr2gf: heyy can't handle the combination pre=" ++ showExpr (gf pre) ++ "+ contents=" ++ showExpr (treeContents conj contents))
            $ treeContents conj contents
 
 treePrePost :: GConj -> [GUDS] -> GUDS -> GUDS -> Expr
@@ -829,8 +903,8 @@ bsr2gf env bsr = case bsr of
 
   AA.All Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
-    -- let existingTrees = groupByRGLtype andConj contentsUDS
-    --putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
+    let existingTrees = groupByRGLtype andConj contentsUDS
+    putStrLn ("bsr2gf: All Nothing\n" ++ show existingTrees)
     return $ treeContents andConj contentsUDS
 
   AA.Any (Just (AA.PrePost any_unauthorised of_personal_data)) access_use_copying -> do
@@ -854,6 +928,9 @@ bsr2gf env bsr = case bsr of
     premodUDS <- parseUD env p1
     postmodUDS <- parseUD env p2
     return $ treePrePost andConj contentsUDS premodUDS postmodUDS
+
+  _ -> return $ dummyExpr ("error is not any of the bsr2gf so far")
+
 
 -- | A data structure for GF trees, which has different bins for different RGL categories.
 --
@@ -916,31 +993,36 @@ flattenGFTrees TG {gfAP, gfAdv, gfNP, gfDet, gfCN, gfPrep, gfRP, gfVP, gfS} =
 --     QuestIAdv   : IAdv -> Cl -> QCl ;    -- why does John walk
 --     ExistIP   : IP -> QCl ;       -- which houses are there
 
-qsWho :: Expr -> TreeGroups -> GQS
-qsCond :: Expr -> TreeGroups -> GQS
-qsHaving :: Expr -> TreeGroups -> GQS
+type QFun = Expr -> TreeGroups -> AA.OptionallyLabeledBoolStruct GQS
+qsWho :: QFun
+qsCond :: QFun
+qsHaving :: QFun
 
 qsWho subj whichTG = case whichTG of
-  TG {gfS = Just (GUseCl t _p cl)} -> GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
-  TG {gfNP = Just np} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
-  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
-  TG {gfVP = Just (GMkVPS t _p vp)} -> GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
-  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
-  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
-  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
-  _ -> useQCl $ GQuestCl dummyCl
-  where sub = definiteNP $ peelNP subj
+  TG {gfS = Just (GUseCl t GPPos cl)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfS = Just (GUseCl t GPNeg cl)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- same but original sentence was neg!
+  TG {gfNP = Just np} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (indefiniteNP np))) -- are you the cat? (if it was originally MassNP, becomes "are you a cat")
+  TG {gfCN = Just cn} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetCN (LexDet "aSg_Det") cn))) -- are you a cat?
+  TG {gfVP = Just (GMkVPS t GPPos vp)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- do you eat cat food?
+  TG {gfVP = Just (GMkVPS t GPNeg vp)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP sub vp -- same but original sentence was neg!
+  TG {gfAP = Just ap} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompAP ap))
+  TG {gfDet = Just det} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp (GCompNP (GDetNP det)))
+  TG {gfAdv = Just adv} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP sub (GUseComp $ GCompAdv adv)
+  _ -> AA.Leaf $ useQCl $ GQuestCl dummyCl
+  where sub = definiteNP $ fg subj
 
 
 qsCond _sub whichTG = case whichTG of
-  TG {gfS = Just (GUseCl t _p cl)} -> GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
-  TG {gfNP = Just np} -> GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
-  TG {gfCN = Just cn} -> useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
-  TG {gfVP = Just (GMkVPS t _p vp)} -> GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
-  TG {gfAP = Just ap} -> useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
-  TG {gfDet = Just det} -> useQCl $ GQuestCl $ GExistsNP (GDetNP det) -- is there this?
-  TG {gfAdv = Just adv} -> useQCl $ GQuestCl $ GPredVP GSomeone (GUseComp $ GCompAdv adv) -- is someone here?
-  _ -> useQCl $ GQuestCl dummyCl
+  TG {gfS = Just (GUseCl t GPPos cl)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- is the cat cute?
+  TG {gfS = Just (GUseCl t GPNeg cl)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl (definiteNP cl) -- same but original sentence was neg!
+  TG {gfNP = Just np} -> AA.Leaf $ GExistNPQS presSimul GPPos (indefiniteNP np) -- is there a cat?
+  TG {gfCN = Just cn} -> AA.Leaf $ useQCl $ GQuestCl $ GExistCN cn -- is there a cat?
+  TG {gfVP = Just (GMkVPS t GPPos vp)} -> AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- does someone eat cat food?
+  TG {gfVP = Just (GMkVPS t GPNeg vp)} -> AA.Not $ AA.Leaf $ GUseQCl t GPPos $ GQuestCl $ GPredVP GSomeone vp -- same but original sentence was neg!
+  TG {gfAP = Just ap} -> AA.Leaf $ useQCl $ GQuestCl $ GExistsNP (GAdjAsNP ap) -- is there a green one?
+  TG {gfDet = Just det} -> AA.Leaf $ useQCl $ GQuestCl $ GExistsNP (GDetNP det) -- is there this?
+  TG {gfAdv = Just adv} -> AA.Leaf $ useQCl $ GQuestCl $ GPredVP GSomeone (GUseComp $ GCompAdv adv) -- is someone here?
+  _ -> AA.Leaf $ useQCl $ GQuestCl dummyCl
 
 qsHaving = undefined
 
@@ -959,6 +1041,7 @@ definiteNP :: forall a . Tree a -> Tree a
 definiteNP np@(GDetCN (LexDet "theSg_Det") _) = np
 definiteNP np@(GDetCN (LexDet "thePl_Det") _) = np
 definiteNP t@(GComplV _ _) = t -- don't change objects
+definiteNP t@(GUseComp _) = t -- don't change copula complements
 definiteNP (GDetCN _ cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP (GMassNP cn) = GDetCN (LexDet "theSg_Det") cn
 definiteNP x = composOp definiteNP x
@@ -1120,6 +1203,7 @@ toUDS pgf e = case findType pgf e of
             _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e )
   "S" -> case fg e :: GS of
     GUseCl t p (GPredVP np vp) -> Groot_nsubj (GrootV_ t p vp) (Gnsubj_ np)
+    GConjS c (GListS (s:ss)) -> toUDS pgf (gf s)
     _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e )
     -- vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
   _ -> fg $ dummyExpr $ "unable to convert to UDS all: " ++ showExpr e
@@ -1205,6 +1289,8 @@ npFromUDS x = case x of
   Groot_nmod_nmod (GrootN_ service_NP) (Gnmod_ from_Prep provider_NP) (Gnmod_ to_Prep payer_NP) -> Just $ GAdvNP (GAdvNP service_NP (GPrepNP from_Prep provider_NP)) (GPrepNP to_Prep payer_NP)
   -- great harm that she suffered
   Groot_acl (GrootN_ great_harm_NP) (GaclUDS_ (Groot_nsubj (GrootV_ _temp _pol suffer_VP) (Gnsubj_ she_NP))) -> Just $ GRelNP great_harm_NP (GRS_that_NP_VP she_NP suffer_VP)
+  -- Groot_obj (GrootN_ five_NP) (GRelclNP np aclrelcl) -> Just $ GRelclNP (GApposNP five_NP np) aclrelcl
+  ----np  gnp
 
 
   _ -> case getRoot x of -- TODO: fill in other cases
@@ -1350,6 +1436,11 @@ root2vps root = case root of
   -- GrootAdA_, GrootDet_ in the GF grammar, so we can add the cases here
   _            -> Nothing
 
+udsFromacl :: Gacl -> Maybe GUDS
+udsFromacl x = case x of
+  GaclUDSgerund_ u -> Just u
+  GaclUDSpastpart_ u -> Just u
+  _ -> error $ "udsFromacl: can't handle " ++ showExpr (gf x)
 
 scFromUDS :: GUDS -> Maybe GSC
 scFromUDS x = case sFromUDS x of
@@ -1364,10 +1455,19 @@ sFromUDS x = case getNsubj x of
   --[] -> trace ("\n\n **** sFromUDS: no nsubj in " ++ showExpr (gf x)) Nothing  -- if the UDS doesn't have a subject, then it should be handled by vpFromUDS instead
   [] -> Nothing
   _ -> case x of
+    Groot_acl root acl -> do
+      uds <- udsFromacl acl
+      np <- npFromUDS uds
+      predVPS np <$> (root2vps root)
+    Groot_aclRelcl root (GaclRelclUDS_ uds) -> do
+      np <- npFromUDS uds
+      predVPS np <$> root2vps root
     Groot_expl_cop_csubj root _expl _cop csubj -> do
       GMkVPS t p vp <- (root2vps root)
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
       pure $ GUseCl t p $ GImpersCl pred
+    Groot_nmod root (Gnmod_ prep np) ->
+      predVPS np <$> root2vps root
     Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> root2vps root
     Groot_csubj root (Gcsubj_ cs) -> do
       GMkVPS t p vp <- (root2vps root)
@@ -1394,7 +1494,9 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_cop_aclRelcl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_cop_advcl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_cop_case_nmod_acl root (Gnsubj_ np) _ _ _ _  -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_nmod root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_cop_nmodPoss root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_nsubj_cop_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obj root (Gnsubj_ np) obj -> predVPS np <$> verbFromUDSVerbose (Groot_obj root obj)
     Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
@@ -1403,6 +1505,7 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
     Groot_nsubj_aux_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
+    Groot_obj root (Gobj_ obj) -> predVPS obj <$> root2vps root
     Groot_obj_ccomp root (Gobj_ obj) _ -> predVPS obj <$> root2vps root
     Groot_xcomp root xcomp -> case xcomp of
       GxcompN_ np -> predVPS np <$> root2vps root

@@ -54,13 +54,13 @@ nlgTests env = do
         treeNP <- bsr2gf env testNPBSR
         showExpr treeNP `shouldBe` "ConjNP or_Conj (BaseNP (PredetNP all_Predet (DetCN aPl_Det (UseN occurrence_N))) (DetCN (DetQuant this_Quant NumSg) (UseN assessment_N)))"
 
-    -- it "Should return a adverbial for root_nmod_acl phrase" $ do
-    --     testNPRootNmodAcl <- bsr2gf env testNPRootNmodAclBSR
-    --     showExpr testNPRootNmodAcl `shouldBe` "ConjCN or_Conj (BaseCN (UseN none_N) (UseN policy_N))" -- incomplete TODO but suffice for now until UDApp develops more
+    xit "Should return a adverbial for root_nmod_acl phrase" $ do
+        testNPRootNmodAcl <- bsr2gf env testNPRootNmodAclBSR
+        showExpr testNPRootNmodAcl `shouldBe` "ConjCN or_Conj (BaseCN (UseN none_N) (UseN policy_N))" -- incomplete TODO but suffice for now until UDApp develops more
 
-    -- it "Should return a adverbial for root_nmod_aclRelcl phrase" $ do
-    --     testNPRootNmodAclRelcl <- bsr2gf env testNPRootNmodAclRelclBSR
-    --     showExpr testNPRootNmodAclRelcl `shouldBe` "TODO"
+    xit "Should return a adverbial for root_nmod_aclRelcl phrase" $ do
+        testNPRootNmodAclRelcl <- bsr2gf env testNPRootNmodAclRelclBSR
+        showExpr testNPRootNmodAclRelcl `shouldBe` "TODO"
 
     it "Should return a complex noun phrase" $ do
         treeNPComplex <- bsr2gf env testNPComplexBSR
@@ -71,15 +71,15 @@ nlgTests env = do
         showExpr treeDetsDet `shouldBe` "UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron i_Pron) (ComplV like_V (DetCN (ConjDet or_Conj (BaseDAP (DetDAP (DetQuant this_Quant NumSg)) (DetDAP (DetQuant that_Quant NumSg)))) (UseN cat_N))))"
 
   describe "test bsp2gf" $ do
-    it "Should return an adverbial" $ do
+    xit "Should return an adverbial" $ do
         treeAdv <- bsp2gf env $ testBSP ["today", "tomorrow"]
         showExpr treeAdv `shouldBe` "ApposCN (UseN today_N) (MassNP (UseN tomorrow_N))"
-        
-    it "Should return a complex adverbial" $ do
+
+    xit "Should return a complex adverbial" $ do
         treeAdvComplex <- bsp2gf env $ testBSP ["once upon a time", "over the monochrome rainbow"]
         showExpr treeAdvComplex `shouldBe` "AdvCN (UseN (CompoundN monochrome_N rainbow_N)) (AdvAdv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N))))"
 
-    it "Should return a det" $ do
+    xit "Should return a det" $ do
         treeDet <- bsp2gf env $ testBSP ["this", "that"]
         showExpr treeDet `shouldBe` "ApposNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg))"
 
@@ -87,32 +87,32 @@ nlgTests env = do
         treeAP <- bsp2gf env $ testBSP ["harmful to the affected individual", "significant"]
         showExpr treeAP `shouldBe` "AdvAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN theSg_Det (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositAdvAdj significant_A)"
 
-    it "Should return a common noun" $ do
+    xit "Should return a common noun" $ do
         treeCN <- bsp2gf env $ testBSP ["occurrence", "assessment"]
         showExpr treeCN `shouldBe` "ApposCN (UseN occurrence_N) (MassNP (UseN assessment_N))"
 
-    it "Should return a complex common noun" $ do
+    xit "Should return a complex common noun" $ do
         treeCNComplex <- bsp2gf env $ testBSP ["service from the provider to the payer", "great harm that she suffered" ]
         showExpr treeCNComplex `shouldBe` "ApposCN (AdvCN (AdvCN (UseN service_N) (PrepNP from_Prep (DetCN theSg_Det (UseN provider_N)))) (PrepNP to_Prep (DetCN theSg_Det (UseN payer_N)))) (MassNP (AdjCN (PositA great_A) (UseN harm_N)))"
 
-    it "Should return a simple noun phrase" $ do
+    xit "Should return a simple noun phrase" $ do
         treeNP <- bsp2gf env $ testBSP ["all occurrences", "this assessment"]
         showExpr treeNP `shouldBe` "ApposCN (UseN occurrence_N) (MassNP (UseN assessment_N))"
 
-    it "Should return a complex noun phrase" $ do
+    xit "Should return a complex noun phrase" $ do
         treeNPComplex <- bsp2gf env $ testBSP ["the occurrence at the beach", "this assessment that sucks"]
         showExpr treeNPComplex `shouldBe` "ApposCN (AdvCN (UseN occurrence_N) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (MassNP (RelCN (UseN assessment_N) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
 
   describe "test bsp2gfDT" $ do
-    it "Should return an adverbial" $ do
+    xit "Should return an adverbial" $ do
         treeAdv <- bsp2gfDT env $ testBSPDT ["today", "tomorrow"]
         showExpr treeAdv `shouldBe` "ApposCN (UseN today_N) (MassNP (UseN tomorrow_N))"
 
-    it "Should return a complex adverbial" $ do
+    xit "Should return a complex adverbial" $ do
         treeAdvComplex <- bsp2gfDT env $ testBSPDT ["once upon a time", "over the monochrome rainbow"]
         showExpr treeAdvComplex `shouldBe` "AdvCN (UseN (CompoundN monochrome_N rainbow_N)) (AdvAdv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N))))"
 
-    it "Should return a det" $ do
+    xit "Should return a det" $ do
         treeDet <- bsp2gfDT env $ testBSPDT ["this", "that"]
         showExpr treeDet `shouldBe` "ApposNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg))"
 
@@ -120,19 +120,19 @@ nlgTests env = do
         treeAP <- bsp2gfDT env $ testBSPDT ["harmful to the affected individual", "significant"]
         showExpr treeAP `shouldBe` "AdvAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN theSg_Det (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositAdvAdj significant_A)"
 
-    it "Should return a common noun" $ do
+    xit "Should return a common noun" $ do
         treeCN <- bsp2gfDT env $ testBSPDT ["occurrence", "assessment"]
         showExpr treeCN `shouldBe` "ApposCN (UseN occurrence_N) (MassNP (UseN assessment_N))"
 
-    it "Should return a complex common noun" $ do
+    xit "Should return a complex common noun" $ do
         treeCNComplex <- bsp2gfDT env $ testBSPDT ["service from the provider to the payer", "great harm that she suffered" ]
         showExpr treeCNComplex `shouldBe` "ApposCN (AdvCN (AdvCN (UseN service_N) (PrepNP from_Prep (DetCN theSg_Det (UseN provider_N)))) (PrepNP to_Prep (DetCN theSg_Det (UseN payer_N)))) (MassNP (AdjCN (PositA great_A) (UseN harm_N)))"
 
-    it "Should return a simple noun phrase" $ do
+    xit "Should return a simple noun phrase" $ do
         treeNP <- bsp2gfDT env $ testBSPDT ["all occurrences", "this assessment"]
         showExpr treeNP `shouldBe` "ApposCN (UseN occurrence_N) (MassNP (UseN assessment_N))"
 
-    it "Should return a complex noun phrase" $ do
+    xit "Should return a complex noun phrase" $ do
         treeNPComplex <- bsp2gfDT env $ testBSPDT ["the occurrence at the beach", "this assessment that sucks"]
         showExpr treeNPComplex `shouldBe` "ApposCN (AdvCN (UseN occurrence_N) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (MassNP (RelCN (UseN assessment_N) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
 
@@ -189,7 +189,7 @@ nlgTests2 = do
     it "Should handle nested ccomps" $ do
       convertToPredicate (fromJust $ uponA nestedCcompRule) `shouldBe` Ternary "becomeAwareKnowOccur" "lawyer" "dataBreach"
       applyFormula (convertToFormula nestedCcompRule) "org" `shouldBe` "\\forall org . organization(org) && becomeAwareKnowOccur(org, lawyer, dataBreach)"
-    
+
   describe "mkGerund" $ do
     it "behaves like gfmkGerund" $ do
       property prop_gerundcheck

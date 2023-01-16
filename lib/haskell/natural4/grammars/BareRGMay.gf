@@ -7,7 +7,7 @@ concrete BareRGMay of BareRG =
     N, CompoundN,
     GerundNP -- used only in an auxfun to recover nmod misparsed as acl — disabled otherwise!
     ,VPS,MkVPS,
-    ListVPS, ConjVPS, BaseVPS
+    ConjVPS, ListVPS
   ],
 
   SentenceMay [

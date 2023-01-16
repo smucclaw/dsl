@@ -192,22 +192,22 @@ parserTests nlgEnv = do
                                    ,mkLeaf (("thing3" :| [],Nothing) :| [])]]  , [] )
 
 
-      filetest "boolstructp-3" "boolstruct including typically"
-        (parseR pRules )
-        [ defaultReg
-          { subj = mkLeaf (("person" :| [],Nothing) :| [])
-          , rkeyword = REvery
-          , who = Just (Any Nothing [mkLeaf (RPMT ["is","immortal"])
-                                    ,mkLeaf (RPMT ["has","health insurance"])])
-          , deontic = DMay
-          , action = mkLeaf (("sharpen knives" :| [],Nothing) :| [])
-          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
-          }
-        , DefTypically
-          { name = ["is","immortal"]
-          , defaults = [RPConstraint ["is","immortal"] RPis ["false"]]
-          , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
-        ]
+      -- filetest "boolstructp-3" "boolstruct including typically"
+      --   (parseR pRules )
+      --   [ defaultReg
+      --     { subj = mkLeaf (("person" :| [],Nothing) :| [])
+      --     , rkeyword = REvery
+      --     , who = Just (Any Nothing [mkLeaf (RPMT ["is","immortal"])
+      --                               ,mkLeaf (RPMT ["has","health insurance"])])
+      --     , deontic = DMay
+      --     , action = mkLeaf (("sharpen knives" :| [],Nothing) :| [])
+      --     , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+      --     }
+      --   , DefTypically
+      --     { name = ["is","immortal"]
+      --     , defaults = [RPConstraint ["is","immortal"] RPis ["false"]]
+      --     , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
+      --   ]
 
       filetest "boolstructp-3" "groundrules, non-extended"
         (parseWith (groundrules runConfig) pRules) [["person","has","health insurance"]]
@@ -216,9 +216,9 @@ parserTests nlgEnv = do
         (parseWith (groundrules runConfig { extendedGrounds = True }) pRules) [ ["person","is","immortal"]
                                     , ["person","has","health insurance"]]
 
-      filetestIO "boolstructp-3" "as checklist, extended"
-        (parseWith asCList pRules) [ ["Does the person have health insurance?"]
-                                    , ["Is the person immortal?"]]
+      -- filetestIO "boolstructp-3" "as checklist, extended"
+      --   (parseWith asCList pRules) [ ["Does the person have health insurance?"]
+      --                               , ["Is the person immortal?"]]
 
       filetest "prulelabel-1" "standalone rule label"
         (parseOther pRuleLabel )

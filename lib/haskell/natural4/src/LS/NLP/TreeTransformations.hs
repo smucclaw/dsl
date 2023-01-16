@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# LANGUAGE RankNTypes, NamedFieldPuns, GADTs #-}
 
 module LS.NLP.TreeTransformations where
@@ -99,10 +100,10 @@ np2cn np = case np of
   GMassNP   cn          -> Just cn
   GDetCN    _det cn     -> Just cn
   GGenModNP _num _np cn -> Just cn
-  GExtAdvNP np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
-  GAdvNP    np   adv    -> fmap (`GAdvCN` adv) (np2cn np)
-  GRelNP    np   rs     -> fmap (`GRelCN` rs) (np2cn np)
-  GPredetNP _pre np     -> np2cn np
+  GExtAdvNP np'   adv   -> fmap (`GAdvCN` adv) (np2cn np')
+  GAdvNP    np'   adv   -> fmap (`GAdvCN` adv) (np2cn np')
+  GRelNP    np'   rs    -> fmap (`GRelCN` rs) (np2cn np')
+  GPredetNP _pre np'    -> np2cn np'
   _                     -> Nothing
 
 
@@ -276,26 +277,26 @@ sFromUDS x = case getNsubj x of
     Groot_acl root acl -> do
       uds <- udsFromacl acl
       np <- npFromUDS uds
-      predVPS np <$> (root2vps root)
+      predVPS np <$> root2vps root
     Groot_aclRelcl root (GaclRelclUDS_ uds) -> do
       np <- npFromUDS uds
       predVPS np <$> root2vps root
     Groot_expl_cop_csubj root _expl _cop csubj -> do
-      GMkVPS t p vp <- (root2vps root)
+      GMkVPS t p vp <- root2vps root
       let pred = GAdvVP vp (Gcsubj2Adv csubj)
       pure $ GUseCl t p $ GImpersCl pred
-    Groot_nmod root (Gnmod_ prep np) ->
+    Groot_nmod root (Gnmod_ _prep np) ->
       predVPS np <$> root2vps root
     Groot_nsubj root (Gnsubj_ np) -> predVPS np <$> root2vps root
     Groot_csubj root (Gcsubj_ cs) -> do
-      GMkVPS t p vp <- (root2vps root)
+      GMkVPS t p vp <- root2vps root
       sc <- scFromUDS cs
       pure $ GUseCl t p $ GPredSCVP sc vp
     Groot_nsubj_advmod root (Gnsubj_ np) (Gadvmod_ adv) -> do
-      GMkVPS t p vp <- (root2vps root)
+      GMkVPS t p vp <- root2vps root
       pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
     Groot_nsubj_obj_advcl root (Gnsubj_ subj) (Gobj_ obj) advcl -> do
-      GMkVPS t p vp <- (root2vps root)
+      GMkVPS t p vp <- root2vps root
       let adv = Gadvcl2Adv advcl
           pred = GAdvVP (complVP vp obj) adv
       pure $ GUseCl t p $ GPredVP subj pred
@@ -318,7 +319,7 @@ sFromUDS x = case getNsubj x of
     Groot_nsubj_obj root (Gnsubj_ np) obj -> predVPS np <$> verbFromUDSVerbose (Groot_obj root obj)
     Groot_nsubj_obj_xcomp root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_obl root (Gnsubj_ np) (Gobl_ adv) -> do
-      GMkVPS t p vp <- (root2vps root)
+      GMkVPS t p vp <- root2vps root
       pure $ GUseCl t p $ GPredVP np (GAdvVP vp adv)
     Groot_nsubj_obl_obl root (Gnsubj_ np) _ _ -> predVPS np <$> root2vps root
     Groot_nsubj_xcomp root (Gnsubj_ np) _ -> predVPS np <$> root2vps root
@@ -331,10 +332,10 @@ sFromUDS x = case getNsubj x of
       _ -> error ("sFromUDS: doesn't handle yet " <> showExpr (gf xcomp))
     -- todo: add other xcomps
     GaddMark (Gmark_ subj) (Groot_nsubj_cop root (Gnsubj_ nsubj) cop) -> do
-      xcomp <- pure $ GxcompToBeN_ (Gmark_ subj) cop nsubj
+      let xcomp = GxcompToBeN_ (Gmark_ subj) cop nsubj
       sFromUDS $ Groot_xcomp root xcomp
     Groot_ccomp root (Gccomp_ ccomp) -> do
-      GMkVPS t p vp <- (root2vps root)
+      GMkVPS t p vp <- root2vps root
       sc <- GEmbedS <$> sFromUDS ccomp
       pure $ GUseCl t p $ GPredSCVP sc vp
     _ -> case verbFromUDSVerbose x of -- TODO: fill in other cases
@@ -377,8 +378,7 @@ toUDS pgf e = case findType pgf e of
             _ -> fg  $ dummyExpr ("unable to convert to UDS cl: " ++ showExpr e )
   "S" -> case fg e :: GS of
     GUseCl t p (GPredVP np vp) -> Groot_nsubj (GrootV_ t p vp) (Gnsubj_ np)
-    GConjS c (GListS (s:ss)) -> toUDS pgf (gf s)
-    _ -> fg  $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e )
+    _ -> fg $ dummyExpr ("unable to convert to UDS S: " ++ showExpr e )
     -- vps2vp (GConjVPS c (GListVPS vps)) = GConjVP c (GListVP (map vps2vp vps))
   _ -> fg $ dummyExpr $ "unable to convert to UDS all: " ++ showExpr e
   where
@@ -469,7 +469,7 @@ treeContents conj contents = case groupByRGLtype conj contents of
   TG {gfDet  = Just x} -> gf x
   TG {gfRP   = Just x} -> gf x
   TG {gfPrep = Just x} -> gf x
-  _                    -> error $ "treeContents: no contents"
+  _                    -> error "treeContents: no contents"
 
 
 -- | Takes a list of UDS, and puts them into different bins according to their underlying RGL category.
@@ -565,11 +565,11 @@ expr2TreeGroups gr e = case findType gr e of  -- to avoid converting back and fo
 
 -- | Takes two UDSs, puts them together, returns Expr and a string that tells which type the result is.
 combineExpr :: GUDS -> GUDS -> (String, Expr)
-combineExpr pred compl = result
+combineExpr predUDS compl = result
   where
-    predExpr = gf pred -- used for error msg
+    predExpr = gf predUDS -- used for error msg
     complExpr = gf compl -- used for error msg
-    predTyped = udsToTreeGroups pred
+    predTyped = udsToTreeGroups predUDS
     complTyped = udsToTreeGroups compl
     result = case predTyped of
       -- root_only (rootN_ (MassNP (UseN (StrN "propernoun"))))with complement root_nmod (rootDAP_ (DetDAP each_Det)) (nmod_ of_Prep (DetCN thePl_Det (AdjCN (PositA notifiable_A) (UseN individual_N))))
@@ -638,9 +638,9 @@ combineExpr pred compl = result
           TG {gfAP=Just haunted}  -> gf $ GApposNP  the_customer (GAdjAsNP haunted)
           _ -> error ("np combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
         )
-      TG {gfDet=Just any} -> case complTyped of
-          TG {gfCN=Just house}   -> ("NP", gf $ GDetCN any house)
-          TG {gfAP=Just haunted} -> ("DAP", gf $ GAdjDAP (GDetDAP any) haunted)
+      TG {gfDet=Just anyDet} -> case complTyped of
+          TG {gfCN=Just house}   -> ("NP", gf $ GDetCN anyDet house)
+          TG {gfAP=Just haunted} -> ("DAP", gf $ GAdjDAP (GDetDAP anyDet) haunted)
           _ -> error ("det combineExpr: can't combine predicate " ++ showExpr predExpr ++ "with complement " ++ showExpr complExpr)
       TG {gfAdv=Just happily} -> case complTyped of
         TG {gfCN=Just house}   -> ("CN", gf $ GAdvCN house happily)
@@ -692,63 +692,63 @@ treePrePost conj contents pre post =
 combineActionMods :: (String,Expr) -> [(String, Expr)] -> Expr
 combineActionMods ("CN", cn) [] = mkApp (mkCId "MassNP") [cn] -- elevate into NP, because we assume this is going to be subjA
 combineActionMods (_, expr) [] = expr -- other cats, leave as is (no action mods)
-combineActionMods ("CN",noun) (("RS",mod):rest) = combineActionMods ("CN", gf resultCN) rest
+combineActionMods ("CN",noun) (("RS",modifier):rest) = combineActionMods ("CN", gf resultCN) rest
   where
     -- cnrs
     resultCN :: GCN
-    resultCN = GRelCN (fg noun) (fg mod)
-combineActionMods ("CN", noun) (("Adv",mod):rest) = combineActionMods ("CN", gf resultCN) rest
+    resultCN = GRelCN (fg noun) (fg modifier)
+combineActionMods ("CN", noun) (("Adv",modifier):rest) = combineActionMods ("CN", gf resultCN) rest
   where
     resultCN :: GCN
-    resultCN = GAdvCN (fg noun) (fg mod)
-combineActionMods ("CN", noun) (("NP", mod):rest) = combineActionMods ("CN", gf resultCN) rest
+    resultCN = GAdvCN (fg noun) (fg modifier)
+combineActionMods ("CN", noun) (("NP", modifier):rest) = combineActionMods ("CN", gf resultCN) rest
   where
     resultCN :: GCN
-    resultCN = GPossNP (fg noun) (fg mod)
-combineActionMods ("VPS",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+    resultCN = GPossNP (fg noun) (fg modifier)
+combineActionMods ("VPS",act) (("Adv",modifier):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
-    resultVP = advVPS (fg act) (fg mod)
+    resultVP = advVPS (fg act) (fg modifier)
 
     advVPS :: GVPS -> GAdv -> GVPS
     advVPS vps adv = GMkVPS presSimul GPPos $ GAdvVP (vps2vp vps) adv
-combineActionMods ("VP",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+combineActionMods ("VP",act) (("Adv",modifier):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
-    resultVP = advVPS (fg act) (fg mod)
+    resultVP = advVPS (fg act) (fg modifier)
 
     advVPS :: GVPS -> GAdv -> GVPS
     advVPS vps adv = GMkVPS presSimul GPPos $ GAdvVP (vps2vp vps) adv
 
-combineActionMods ("VPS",act) (("NP",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+combineActionMods ("VPS",act) (("NP",modifier):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
-    resultVP = npVPS (fg act) (fg mod)
+    resultVP = npVPS (fg act) (fg modifier)
 
     npVPS :: GVPS -> GNP -> GVPS
     npVPS vps np = GMkVPS presSimul GPPos $ GComplVP (vps2vp vps) np
 
-combineActionMods ("VPS",act) (("CN",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+combineActionMods ("VPS",act) (("CN",modifier):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
-    resultVP = cnVPS (fg act) (fg mod)
+    resultVP = cnVPS (fg act) (fg modifier)
 
     cnVPS :: GVPS -> GCN -> GVPS
     cnVPS vps cn = GMkVPS presSimul GPPos $ GComplVP (vps2vp vps) (GMassNP cn)
 
-combineActionMods ("NP",act) (("Adv",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+combineActionMods ("NP",act) (("Adv",modifier):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     resultVP :: GVPS
-    resultVP = advVPS (GUseComp (GCompNP (fg act))) (fg mod)
+    resultVP = advVPS (GUseComp (GCompNP (fg act))) (fg modifier)
 
     advVPS :: GVP -> GAdv -> GVPS
     advVPS vp adv = GMkVPS presSimul GPPos $ GAdvVP vp adv
 
-combineActionMods ("VPS",act) (("RS",mod):rest) = combineActionMods ("VPS", gf resultVP) rest
+combineActionMods ("VPS",act) (("RS",modifier):rest) = combineActionMods ("VPS", gf resultVP) rest
   where
     -- Assumption: RCl doesn't modify the whole VP, but rather the object of the VP
     resultVP :: GVPS
-    resultVP = rsVPS (fg act) (fg mod)
+    resultVP = rsVPS (fg act) (fg modifier)
 
     rsVPS :: GVPS -> GRS -> GVPS
     rsVPS vps rs = case vps of
@@ -757,7 +757,7 @@ combineActionMods ("VPS",act) (("RS",mod):rest) = combineActionMods ("VPS", gf r
         GComplVP vp' np -> GMkVPS t p $ complVP vp' (GRelNP np rs)
         GUseComp (GCompNP np) -> GMkVPS t p $ GUseComp $ GCompNP (GRelNP np rs)
         _               -> GMkVPS t p $ complVP vp (GRelNP dummyNP rs)
-      _ -> error $ "combineActionMods: expected VPS, got something else" -- ++ showExpr act
+      _ -> error "combineActionMods: expected VPS, got something else" -- ++ showExpr act
 
 combineActionMods (tAct,_) ((tMods,_):_) = error $ "combineActionMods: not supported yet " ++ tAct ++ "+" ++ tMods
 
@@ -911,8 +911,8 @@ udsFromacl x = case x of
 getRoot :: Tree a -> [Groot]
 getRoot rt@(GrootA_ _) = [rt]
 getRoot rt@(GrootN_ _) = [rt]
-getRoot rt@(GrootV_ _ _ _) = [rt]
-getRoot rt@(GrootVaux_ _ _ _ _) = [rt]
+getRoot rt@(GrootV_ {}) = [rt]
+getRoot rt@(GrootVaux_ {}) = [rt]
 getRoot rt@(GrootDet_ _) = [rt]
 getRoot rt@(GrootDAP_ _) = [rt]
 getRoot rt@(GrootQuant_ _) = [rt]

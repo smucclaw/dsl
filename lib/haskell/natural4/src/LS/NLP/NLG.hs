@@ -11,38 +11,35 @@ import LS.NLP.TreeTransformations -- and details of the tree transformations are
 import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
       Rule(..),
-      BoolStructP, BoolStructR, BoolStructT, Interpreted, RuleName,
+      BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       Expect(..),
-      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm, multiterm2bsr')
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm)
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, PGF, readExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text as Text
-import Data.Char (toLower, isUpper, isDigit, isLower)
+import Data.Char (toLower, isDigit, isLower)
 import UD2GF (getExprs)
 import qualified AnyAll as AA
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.List ( group, sort, sortOn, nub, intercalate, isInfixOf )
 import Data.List.Extra (groupOn, splitOn)
-import Data.List.Split (splitOneOf)
 import Data.Either (partitionEithers)
-import Debug.Trace (trace)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import UDPipe (loadModel, runPipeline, Model)
 import Control.Monad (when, unless)
 import System.Environment (lookupEnv, getExecutablePath)
 import Control.Concurrent.Async (concurrently)
 import Data.Set as Set (member, fromList)
-import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
-import Control.Monad.Trans
-import System.IO (stderr)
-import System.Exit (exitFailure)
-import Data.Typeable
+--import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile, hPutStrLn)
+--import Control.Monad.Trans
+--import System.IO (stderr)
+--import System.Exit (exitFailure)
+--import Data.Typeable
 import Paths_natural4
 import AnyAll.BoolStructTree
-import qualified AnyAll.Types as AA
+--import qualified AnyAll.Types as AA
 import qualified Data.Tree as DT
-import System.IO.Unsafe (unsafePerformIO)
 import Data.Foldable as F
 
 
@@ -118,9 +115,9 @@ parseUD env txt = do
     ud2gf :: String -> Either String Expr
     ud2gf str = case getExprs ["no-backups"] (udEnv env) str of
       xs : _ -> case partitionEithers xs of
-                  (_,  (r:_r)) -> Right r
-                  ((l:_l), []) -> Left l
-                  ([]  ,   []) -> Left "ud2gf: no results given for input"
+                  (_,    r:_) -> Right r
+                  (l:_,   []) -> Left l
+                  ([] ,   []) -> Left "ud2gf: no results given for input"
       [] -> Left "ud2gf: tried parsing an empty input"
 
     checkIfChunk :: String -> Bool
@@ -128,7 +125,7 @@ parseUD env txt = do
       where
         checkLower = not . any isLower
         checkDigit = any isDigit
-        checkSymbol x = any (`Set.member` (Set.fromList ['#','§'])) x
+        checkSymbol = any (`Set.member` Set.fromList ['#','§'])
 
     saveNonWords :: [String] -> [String] -> [[String]]
     saveNonWords [] _ls = []
@@ -139,7 +136,7 @@ parseUD env txt = do
     swapChunk :: [String] -> [String]
     swapChunk [] = []
     swapChunk (x:xs)
-      | checkIfChunk x = ("propernoun") : swapChunk xs
+      | checkIfChunk x = "propernoun" : swapChunk xs
       | otherwise = x : swapChunk xs
 
     replaceChunks :: Text.Text -> [String]
@@ -149,16 +146,17 @@ parseUD env txt = do
     combinePROPERNOUN :: [String] -> [String]
     combinePROPERNOUN [] = []
     combinePROPERNOUN x
-      | (head x == "propernoun") = [intercalate "_" x]
+      | head x == "propernoun" = [intercalate "_" x]
       | otherwise = x
 
+    {-
     lowerButPreserveAllCaps :: Text.Text -> Text.Text
     lowerButPreserveAllCaps txt = Text.unwords
       [ if all isUpper (Text.unpack wd)
           then wd
           else Text.map toLower wd
       | wd <- Text.words txt
-      ]
+      ] -}
 
     checkAllCapsIsWord :: Text.Text -> [String]
     checkAllCapsIsWord txt
@@ -172,7 +170,7 @@ parseUD env txt = do
       | isInfixOf "propernoun" txt = concat $ concat $ swap str $ splitOn "propernoun" txt
       | otherwise = txt
       where
-        swap a b = (zipWith (++) (fst l) a) : [snd l]
+        swap a b = zipWith (++) (fst l) a : [snd l]
           where
             l = splitAt (length a) b
 -----------------------------------------------------------------------------
@@ -209,8 +207,6 @@ ruleQuestions env alias rule = do
                             uds <- parseMulti env mt
                             pure $ gf $ peelNP uds
                             | mt <- [you, org]]
-  putStrLn $ showExpr youExpr -- TODO: remove redundant print statements
-  putStrLn $ showExpr orgExpr
   case rule of
     Regulative {subj,who,cond} -> do
       subjExpr <- bsp2gf env subj
@@ -274,12 +270,7 @@ nlgQuestion env rl = do
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rl = do
-  --  print ("nlgQuestion")
-  --  nlgquest <- nlgQuestion env rl
-  --  print $ Text.unwords $ nlgquest
-  --  print ("---")
    annotatedRule <- parseFields env rl
-   -- TODO: here let's do some actual NLG
    gr <- nlgExtPGF
    let lang = head $ languages gr
    let Just eng = readLanguage "UDExtEng"
@@ -360,7 +351,7 @@ mkApp2 name a1 a2 = mkApp (mkCId name) [a1, a2]
 parseFields :: NLGEnv -> Rule -> IO AnnotatedRule
 parseFields env rl = case rl of
   Regulative {subj, rkeyword, who, cond, deontic, action, temporal, upon, given, having} -> do
-    let gr = pgfGrammar $ udEnv env
+    -- let gr = pgfGrammar $ udEnv env
     subjA <- bsp2gf env subj
     let keywordA = keyword2cid $ tokenOf rkeyword
     whoA <- mapM (bsr2gf env) who
@@ -410,8 +401,9 @@ parseHornClause :: NLGEnv -> CId -> HornClause2 -> IO Expr
 parseHornClause env fun hc = do
   exprs <- parseHornClause2 env fun hc
   pure $ case exprs of
+    [] -> error $ "parseHornClause: can't parse " <> show hc
     [expr] -> expr
-    [udf,s] -> mkApp (mkCId "HornClause2") [udf,s]
+    (udf:s:_) -> mkApp (mkCId "HornClause2") [udf,s]
 
 parseHornClause2 :: NLGEnv -> CId -> HornClause2 -> IO [Expr]
 parseHornClause2 env fun (HC rp Nothing) = do
@@ -421,25 +413,17 @@ parseHornClause2 env fun (HC rp (Just bsr)) = do
   extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
   db_is_NDB_UDFragment <- parseRPforHC env fun rp
   db_occurred <- bsr2gf env bsr
-  extGrammar <- nlgExtPGF
   let db_occurred_S = case findType extGrammar db_occurred of
         "S" -> fg db_occurred          -- S=[databreach occurred]
         "AP" -> ap2s $ fg db_occurred  -- someone is AP=[happy]
         -- TODO: make other cats to S too
         _ -> error $ "parseHornClause2: expected S, got " ++ showExpr db_occurred
-  pure $ [gf db_is_NDB_UDFragment, gf db_occurred_S]
-
--- bsr2s :: NLGEnv -> BoolStructR -> IO GS
--- bsr2s env bsr = do
---   expr <- bsr2gf env bsr
---   extGrammar <- nlgExtPGF -- use extension grammar, because bsr2gf can return funs from UDExt
---   return $
-
+  pure [gf db_is_NDB_UDFragment, gf db_occurred_S]
 
 -- A wrapper for ensuring same return type for parseRP
 parseRPforHC :: NLGEnv -> CId -> RelationalPredicate -> IO GUDFragment
-parseRPforHC env _f (RPParamText pt) = (toFragment . fg) <$> parseParamText env pt
-parseRPforHC env _f (RPMT txts) = (toFragment . fg) <$> parseMulti env txts
+parseRPforHC env _f (RPParamText pt) = toFragment . fg <$> parseParamText env pt
+parseRPforHC env _f (RPMT txts) = toFragment . fg <$> parseMulti env txts
 parseRPforHC env f rp = fg <$> parseRP env f rp
 
 parseExpect :: NLGEnv -> CId -> Expect -> IO Expr
@@ -458,21 +442,22 @@ parseRP env fun (RPConstraint sky is blue) = do
 parseRP env fun (RPBoolStructR sky is blue) = do
   gr <- nlgExtPGF
   skyUDS <- parseMulti env sky
-  blueUDS <- (gf . toUDS gr) `fmap` bsr2gf env blue
+  blueUDS <- gf . toUDS gr <$> bsr2gf env blue
   let skyNP = gf $ peelNP skyUDS -- TODO: make npFromUDS more robust for different sentence types
   let rprel = if is==RPis then fun else keyword2cid is
   return $ mkApp rprel [skyNP, blueUDS]
 parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
+parseRP _ _ rp = error $ "parseRP: doesn't handle yet " <> show rp
 
 -- ConstitutiveName is [Text.Text]
 parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
-parseMulti env txt = gf `fmap` parseUD env (Text.unwords txt)
+parseMulti env txt = gf <$> parseUD env (Text.unwords txt)
 
 parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
 parseName _env txt = return (Text.unwords txt)
 
 parseParamText :: NLGEnv -> ParamText -> IO Expr
-parseParamText env pt = gf `fmap` (parseUD env $ pt2text pt)
+parseParamText env pt = gf <$> parseUD env (pt2text pt)
 
 keyword2cid :: (Show a) => a -> CId
 keyword2cid = mkCId . show
@@ -548,15 +533,10 @@ parseAndDisambiguate env text = do
   contentsAmb <- mapM (bsr2gfAmb env) text
   let parsingGrammar = pgfGrammar $ udEnv env -- here we use the parsing grammar, not extension grammar!
       contents = disambiguateList parsingGrammar contentsAmb
-  -- putStrLn ("parseAndDisambiguate.contentsAmb = " ++ show (map (map showExpr) contentsAmb))
-  -- putStrLn ("parseAndDisambiguate.contents = " ++ unwords (map showExpr contents))
-  -- putStrLn ("parseAndDisambiguate: map toUDS contents = " ++ (unwords (map (showExpr . gf . toUDS parsingGrammar) contents)))
   return $ map (toUDS parsingGrammar) contents
 
--- lookupMorpho :: Morpho -> String -> [(Lemma, Analysis)]
--- mkApp :: CId -> [Expr] -> Expr
 parseLex :: NLGEnv -> String -> [Expr]
-parseLex env str = {-- trace ("parseLex:" ++ show result)  --} result
+parseLex env str = result
   where
     lexicalCats :: [String]
     lexicalCats = words "N V A N2 N3 V2 A2 VA V2V VV V3 VS V2A V2S V2Q Adv AdV AdA AdN ACard CAdv Conj Interj PN Prep Pron Quant Det Card Text Predet Subj"
@@ -597,7 +577,7 @@ disambiguateList pgf access_use_copying_raw =
       where                                              -- cats = [["N","A"],["A","N","V"],["A","V","N"]]
         groups = Data.List.group $ Data.List.sort $ concat cats -- [["A","A","A"],["N","N","N"],["V","V"]]
         bestGuess = case head $ groupOn length groups of
-          [(cat:_)] -> cat
+          [cat:_] -> cat
           catss     -> preferCat "VP" catss -- TODO: instead of hardcoding some cat here, later put in NLGEnv the category we are currently parsing
 
     preferCat :: String -> [[String]] -> String
@@ -623,12 +603,12 @@ bsr2gfAmb env bsr = case bsr of
       -- If the leaf is a single word, do a lexicon lookup
       [_] -> return $ parseLex env (Text.unpack access)
       -- If the leaf is multiple words, parse with udpipe
-      _ -> singletonList $ gf `fmap` parseUD env access
+      _ -> singletonList $ gf <$> parseUD env access
 
   -- If it's not a leaf, call bsr2gf
   _ -> singletonList $ bsr2gf env bsr
   where
-    singletonList x = (:[]) `fmap` x
+    singletonList x = (:[]) <$> x
 
 -- TODO: deprecate in favour of AA.OptionallyLabeledBoolStruct Expr
 bsr2gf :: NLGEnv -> BoolStructR -> IO Expr
@@ -637,11 +617,11 @@ bsr2gf env bsr = case bsr of
   -- In typical case, the BoolStructR is a list of other things, and in such case, bsr2gfAmb is called on the list
   AA.Leaf rp -> do
     let access = rp2text rp
-    gf `fmap` parseUD env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
+    gf <$> parseUD env access  -- Always returns a UDS, don't check if it's a single word (no benefit because there's no context anyway)
 
   AA.Not rp -> do
     let not = bsr2text rp
-    gf `fmap` parseUD env not
+    gf <$> parseUD env not
 
   AA.Any Nothing contents -> do
     contentsUDS <- parseAndDisambiguate env contents
@@ -676,9 +656,6 @@ bsr2gf env bsr = case bsr of
     premodUDS <- parseUD env p1
     postmodUDS <- parseUD env p2
     return $ treePrePost andConj contentsUDS premodUDS postmodUDS
-
-  _ -> return $ dummyExpr ("error is not any of the bsr2gf so far")
-
 
 -----------------------------------------------------------------------------
 -- AnnotatedRule, almost isomorphic to LS.Types.Rule

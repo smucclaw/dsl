@@ -722,14 +722,14 @@ bsr2text   = bsr2text' Text.unwords
 bsr2textnl = bsr2text' (Text.intercalate "\\n")
 
 bsr2text' :: ([Text.Text] -> Text.Text) -> BoolStructR -> Text.Text
-bsr2text'  joiner (AA.Not                           x ) = joiner ["not", bsr2text x]
+bsr2text'  joiner (AA.Not                           x ) = joiner ["not",       bsr2text' joiner x]
 bsr2text' _joiner (AA.Leaf                          x ) = rp2text x
-bsr2text'  joiner (AA.Any (Just (AA.Pre p1       )) xs) = joiner $ p1 : (bsr2text <$> xs)
-bsr2text'  joiner (AA.Any (Just (AA.PrePost p1 p2)) xs) = joiner $ p1 : (bsr2text <$> xs) <> [p2]
-bsr2text'  joiner (AA.Any Nothing                   xs) = joiner ("any of:-" : (bsr2text <$> xs))
-bsr2text'  joiner (AA.All (Just (AA.Pre p1       )) xs) = joiner $ p1 : (bsr2text <$> xs)
-bsr2text'  joiner (AA.All (Just (AA.PrePost p1 p2)) xs) = joiner $ p1 : (bsr2text <$> xs) <> [p2]
-bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (bsr2text <$> xs))
+bsr2text'  joiner (AA.Any (Just (AA.Pre p1       )) xs) = joiner $        p1 : (bsr2text' joiner <$> xs)
+bsr2text'  joiner (AA.Any (Just (AA.PrePost p1 p2)) xs) = joiner $        p1 : (bsr2text' joiner <$> xs) <> [p2]
+bsr2text'  joiner (AA.Any Nothing                   xs) = joiner ("any of:-" : (bsr2text' joiner <$> xs))
+bsr2text'  joiner (AA.All (Just (AA.Pre p1       )) xs) = joiner $        p1 : (bsr2text' joiner <$> xs)
+bsr2text'  joiner (AA.All (Just (AA.PrePost p1 p2)) xs) = joiner $        p1 : (bsr2text' joiner <$> xs) <> [p2]
+bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (bsr2text' joiner <$> xs))
 
 -- and possibily we want to have interspersed BoolStructs along the way
 

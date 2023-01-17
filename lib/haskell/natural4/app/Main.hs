@@ -62,7 +62,7 @@ main = do
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       -- (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv l4i)
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> ((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv rules)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", psPrefix <> ((tail . init) $(TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix  <> "\n\n" <> asPurescript nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
@@ -287,8 +287,6 @@ schedule1_part1_nl =
   Map.fromFoldable
     [ ]
     |]
-
-
 
 -- Tuple "en" $ Map.fromFoldable
 --         [ Tuple "1" "The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services."

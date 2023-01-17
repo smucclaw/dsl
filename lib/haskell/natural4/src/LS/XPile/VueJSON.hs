@@ -9,6 +9,7 @@ module LS.XPile.VueJSON where
 
 import LS
 import LS.NLP.NLG
+import LS.NLP.TreeTransformations (showExpr, udsToTreeGroups, getQSFromTrees)
 import AnyAll.Types
 import AnyAll.BoolStruct
 

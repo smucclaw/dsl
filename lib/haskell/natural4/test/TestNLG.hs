@@ -6,6 +6,7 @@ import PGF hiding (showExpr)
 import Test.Hspec
 import LS.NLP.ToPredicate
 import LS.NLP.NLG
+import LS.NLP.TreeTransformations (showExpr)
 import LS.Types hiding (And)
 import Data.Maybe
 import qualified AnyAll as AA

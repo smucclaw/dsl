@@ -109,3 +109,12 @@ tests:
     dependencies:
     - natural4
     - hspec-megaparsec
+
+benchmarks:
+    natural4-bench:
+        source-dirs: benchmarks
+        main: Bench.hs
+        dependencies:
+          - natural4
+          - criterion
+          - deepseq

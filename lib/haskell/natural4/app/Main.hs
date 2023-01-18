@@ -149,20 +149,11 @@ main = do
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
     putStrLn "natural4: output to workdir done"
 
-
-
-
-
-
   -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
   -- natural4-exe --workdir workdir --only md inputfile.csv
   -- will produce only the workdir output file
-
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (not $ null $ SFL4.only opts)) $ do
     when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
-
-
-
 
   -- when workdir is not specified, --only will dump to STDOUT
   when (not toworkdir) $ do

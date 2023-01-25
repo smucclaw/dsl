@@ -136,8 +136,8 @@ musings l4i rs =
                      </> "***** grpval" </> srchs grpval
                      </> "***** head uniqrs" </> srchs (DL.head uniqrs)
                      </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
-                     </> "***** getBSR [head uniqrs]" </> srchs (catMaybes $ getBSR <$> [DL.head uniqrs])
-                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> catMaybes (getBSR <$> uniqrs))
+                     </> "***** getBSR [head uniqrs]" </> srchs (mapMaybe getBSR [DL.head uniqrs])
+                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> mapMaybe getBSR uniqrs)
                    | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
                                                           exposedRoots l4i      -- EXPOSED
                                                          ) [1..]

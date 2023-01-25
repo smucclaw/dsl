@@ -899,13 +899,16 @@ pBSR = debugName "pBSR" $ prePostParse pRelPred
 --
 getBSR :: Rule -> Maybe BoolStructR
 getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
-                        catMaybes $
-                        [ hbody
-                        | HC _hhead hbody <- clauses
-                        ] ++
-                        [ Just bsr
-                        | HC (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses
-                        ]
+                        catMaybes [ hbody | HC _hhead hbody <- clauses ] <//>
+                        [ bsr | HC (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses ]
+  where
+    -- | monochrom on IRC commented that I'm basically doing Prolog's `cut`, here.
+    -- I would have used (<||>) but that's already in use by the permutation parser
+    (<//>) :: Foldable t => t a -> t a -> t a
+    x <//> y = if not (null x) then x else y
+    infix 1 <//>
+
+
 getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         maybeToList (prependSubject who) ++
                         maybeToList cond

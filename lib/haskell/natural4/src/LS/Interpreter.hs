@@ -37,6 +37,7 @@ import Data.Map ((!))
 import qualified AnyAll.BoolStructTree as BST
 import Data.Tree
 import AnyAll.BoolStructTree (mkLeafDT)
+import Control.Applicative ((<|>))
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream
@@ -451,7 +452,7 @@ getAndOrTree _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly ag
 bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe BoolStructR]
 bsmtOfClauses l4i depth r =
   let toreturn =
-        [ listToMaybe $ maybeToList $ mbody <> mhead
+        [ listToMaybe $ maybeToList $ mbody <|> mhead
         | c <- expandClauses l4i 2 (clauses r)
         , (hhead, hbody)  <- [(hHead c, hBody c)]
         , let (_bodyEx, bodyNonEx) = partitionExistentials c

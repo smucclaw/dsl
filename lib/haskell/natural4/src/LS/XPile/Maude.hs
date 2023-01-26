@@ -17,12 +17,12 @@ import LS.Rule
     ( Rule(Regulative, lest, rlabel, rkeyword, deontic, action,
            temporal, hence) )
 
-import Prettyprinter ( Doc, cat, vcat, viaShow, Pretty(pretty) )
+import Prettyprinter ( Doc, cat, vcat, viaShow, Pretty(pretty), concatWith, line )
 import Flow ( (|>) )
 
 -- This function is still a work in progress.
-rule2text :: Rule -> Doc ann
-rule2text
+rule2pretty :: Rule -> Doc ann
+rule2pretty
   Regulative
     { rlabel = Just (_, _, ruleName),
       rkeyword = RParty,
@@ -44,8 +44,11 @@ rule2text
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
 
-rules2maude :: [Rule] -> String
-rules2maude rules = rules |$> rule2text |> show
+rules2maude :: Traversable m => m Rule -> String
+rules2maude rules = rules |$> rule2pretty |> vvcat |> show
+  where
+    vvcat = concatWith f
+    f x y = mconcat [x, line, line, y]
 
 -- Utilities.
 

@@ -16,6 +16,7 @@ Typical usage: an XPile module is handed the output of `l4interpret`, and  makes
 module LS.Interpreter where
 
 import LS.Types
+import LS.Rule
 import LS.RelationalPredicates
 import LS.PrettyPrinter
 import qualified AnyAll as AA

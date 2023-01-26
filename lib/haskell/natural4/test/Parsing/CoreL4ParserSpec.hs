@@ -8,6 +8,7 @@ import LS.Interpreter
 import AnyAll hiding (asJSON)
 import LS.BasicTypes
 import LS.Types
+import LS.Rule
 import LS.XPile.CoreL4
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS

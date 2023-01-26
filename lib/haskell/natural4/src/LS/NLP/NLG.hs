@@ -10,11 +10,10 @@ import LS.NLP.UDExt (GUDS, GUDFragment, gf, fg)
 import LS.NLP.TreeTransformations -- and details of the tree transformations are in this module.
 import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
-      Rule(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
-      Expect(..),
       rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm)
+import LS.Rule ( Rule(..), Expect(..))      
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, PGF, readExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
 import qualified Data.Text as Text

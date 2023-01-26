@@ -13,6 +13,7 @@ import qualified Data.Traversable as DT
 import qualified Data.Foldable as DF
 import qualified Data.Text as T
 import LS.Types
+import LS.Rule
 import qualified AnyAll as AA
 import Prettyprinter
 import Data.List (intersperse)

@@ -8,6 +8,7 @@ module LS.XPile.Uppaal where
 import L4.Syntax as CoreL4
 
 import LS.Types as SFL4
+import LS.Rule as SFL4R
 import qualified Data.Set as Set
 -- import L4.Annotation
 import Data.Text (unpack)
@@ -23,12 +24,12 @@ type Ann = ()
 taSysToString :: CoreL4.TASys () -> String
 taSysToString = show . showL4 [PrintSystem UppaalStyle]
 
-toL4TA :: [SFL4.Rule] -> CoreL4.TASys ()
+toL4TA :: [SFL4R.Rule] -> CoreL4.TASys ()
 toL4TA rules = foldr (addRule henceChannels) emptyTASys { channelsOfSys =  Set.toList henceChannels } rules
   where
     henceChannels = Set.fromList $ concatMap getHence rules
 
-getHence :: SFL4.Rule -> [String]
+getHence :: SFL4R.Rule -> [String]
 getHence Regulative{ hence = Just (RuleAlias rname)} = unpack <$> rname
 getHence _ = []
 -- TODO: Handle recursive Hence
@@ -39,7 +40,7 @@ emptyTASys
       {annotOfSys = (), nameOfTASys = "Unknown name", declsOfSys = [],
        channelsOfSys = [], automataOfSys = []}
 
-addRule :: Set.Set ChannelName -> SFL4.Rule -> CoreL4.TASys () -> CoreL4.TASys ()
+addRule :: Set.Set ChannelName -> SFL4R.Rule -> CoreL4.TASys () -> CoreL4.TASys ()
 addRule hc r@Regulative{rlabel = Just (_,_,lb)} ts | unpack lb `Set.member` hc = ts {automataOfSys = fst (ruleToTA r (Just lb)) : automataOfSys ts}
                                                    | otherwise = ts {automataOfSys = fst (ruleToTA r Nothing) : automataOfSys ts} -- TODO: Use the decls in snd
 addRule _hc _r ts = ts
@@ -48,7 +49,7 @@ addRule _hc _r ts = ts
 -- TODO Handle party
 
 -- TODO: Make it recursive to handle missing fields gracefully
-ruleToTA :: SFL4.Rule -> Maybe TL.Text -> (TA (), [VarDecl ()])
+ruleToTA :: SFL4R.Rule -> Maybe TL.Text -> (TA (), [VarDecl ()])
 ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit), upon= upn , cond = Just cnd} _ = (TA
     { nameOfTA = rName
     , annotOfTA = ()

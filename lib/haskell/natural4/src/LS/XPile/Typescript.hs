@@ -19,6 +19,7 @@ import LS.PrettyPrinter
 -- import L4.Syntax as CoreL4
 
 import LS.Types as SFL4
+import LS.Rule as SFL4R
 -- import L4.Annotation
 import LS.Interpreter
 
@@ -31,7 +32,7 @@ import qualified Data.Map as Map
 import Data.List (nub)
 
 
-asTypescript :: [SFL4.Rule] -> Doc ann
+asTypescript :: [SFL4R.Rule] -> Doc ann
 asTypescript rs =
   let l4i = l4interpret defaultInterpreterOptions rs
   in

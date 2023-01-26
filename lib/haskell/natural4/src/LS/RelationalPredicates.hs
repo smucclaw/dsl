@@ -219,6 +219,7 @@ import Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 
 import LS.Types
+import LS.Rule
 import LS.Tokens
 import LS.Parser
 import AnyAll.BoolStructTree (BoolStructDT, Formula (FAtom, FAll, FAny), mkAnyDT, mkAllDT)

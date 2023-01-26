@@ -1,17 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TypeFamilyDependencies #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -21,18 +9,20 @@
 -}
 module LS.XPile.Maude where
 
-import Data.List ( intercalate )
-import Data.Text qualified as T
-
 import LS.Types
+    ( Deontic(DShant, DMust, DMay),
+      TemporalConstraint(TemporalConstraint),
+      RegKeywords(RParty) )
 import LS.Rule
+    ( Rule(Regulative, lest, rlabel, rkeyword, deontic, action,
+           temporal, hence) )
 
-import Prettyprinter
+import Prettyprinter ( Doc, cat, vcat, viaShow, Pretty(pretty) )
 import Flow ( (|>) )
 
 -- This function is still a work in progress.
-rule2maude :: Rule -> String
-rule2maude
+rule2text :: Rule -> Doc ann
+rule2text
   Regulative
     { rlabel = Just (_, _, ruleName),
       rkeyword = RParty,
@@ -42,31 +32,20 @@ rule2maude
       hence,
       lest
     } =
-    mconcat
-      [ "RULE '",
-        T.unpack ruleName,
-        deontic',
-        "DO '",
-        show action,
-        show tempConstr,
-        "'",
-        show hence,
-        "'",
-        show lest
+      [ ["RULE '", pretty ruleName],
+        [deontic2str deontic, "DO '", viaShow action],
+        [viaShow tempConstr],
+        ["'", viaShow hence],
+        ["'", viaShow lest]
       ]
+      |$> cat |> vcat
     where
-      -- Thanks monomorphism restriction.
-      -- show2text :: forall a. Show a => a -> String
-      -- show2text = show .> T.pack
-      deontic' = deontic |> deontic2str
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
 
 rules2maude :: [Rule] -> String
-rules2maude rules = rules
-  |$> rule2maude
-  |> intercalate ", "
+rules2maude rules = rules |$> rule2text |> show
 
 -- Utilities.
 

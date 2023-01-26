@@ -13,6 +13,7 @@ import LS
 import AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as T
+import LS.Rule
 -- import Debug.Trace (trace)
 
 toNatLang :: Interpreted -> String

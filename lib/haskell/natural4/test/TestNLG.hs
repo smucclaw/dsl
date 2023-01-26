@@ -8,6 +8,7 @@ import LS.NLP.ToPredicate
 import LS.NLP.NLG
 import LS.NLP.TreeTransformations (showExpr)
 import LS.Types hiding (And)
+import LS.Rule
 import Data.Maybe
 import qualified AnyAll as AA
 import qualified Data.Text as Text

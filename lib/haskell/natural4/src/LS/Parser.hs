@@ -13,6 +13,7 @@ This module imports Control.Monad.Combinators.Expr which is the basis for the Bo
 module LS.Parser where
 
 import LS.Types
+import LS.Rule
 import LS.Tokens
 import qualified AnyAll as AA
 

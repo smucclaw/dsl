@@ -45,6 +45,7 @@ import Data.Maybe (listToMaybe, maybeToList)
 import LS.Types
 import LS.Tokens
 import LS.Parser
+import LS.Rule
 import LS.RelationalPredicates
 import LS.Error ( errorBundlePrettyCustom )
 import Control.Monad.Writer.Lazy

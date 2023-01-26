@@ -21,6 +21,7 @@ import Control.Monad.Writer.Lazy
 import Data.List (intercalate)
 
 import LS.Types
+import LS.Rule
 import Debug.Trace (traceM)
 import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)

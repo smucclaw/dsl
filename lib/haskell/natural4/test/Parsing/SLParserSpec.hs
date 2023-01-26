@@ -9,6 +9,7 @@ import LS.Tokens
 import AnyAll hiding (asJSON)
 import LS.BasicTypes
 import LS.Types
+import LS.Rule
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Control.Monad (when, guard)

@@ -88,9 +88,9 @@ test = rules2maudeStr [ Regulative {..} ]
 
 mapThenCatWith ::
   (Foldable t1, Monoid b) => (a -> t2) -> (t2 -> b -> b) -> t1 a -> b
-mapThenCatWith mapper combiner = foldr combiner' mempty
+mapThenCatWith f binop = foldr binop' mempty
   where
-    combiner' x = combiner (mapper x)
+    x `binop'` y = f x `binop` y
 
 catWithNLines :: Int -> Doc ann -> Doc ann -> Doc ann
 catWithNLines n x y = x <> lines' <> y

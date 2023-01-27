@@ -27,6 +27,7 @@ description:         natural4 parses a Legal Spreadsheet's CSV and transpiles to
 dependencies:
 - base >= 4.7 && < 5
 - containers
+- flow
 - text
 - hspec
 - megaparsec

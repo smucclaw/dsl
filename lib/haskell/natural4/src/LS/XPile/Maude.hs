@@ -21,7 +21,7 @@ module LS.XPile.Maude where
 
 import Data.Coerce ( coerce )
 import Data.Foldable ( Foldable(foldMap') )
-import GHC.TypeLits
+import GHC.TypeLits ( Nat )
 
 -- import Data.Text qualified as T
 

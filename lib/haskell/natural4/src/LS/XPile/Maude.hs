@@ -19,6 +19,8 @@
 -}
 module LS.XPile.Maude where
 
+import Control.Lens (bimap)
+import Control.Monad (join)
 import Data.Coerce ( coerce )
 import Data.Foldable ( Foldable(foldMap') )
 import GHC.TypeLits ( Nat )
@@ -34,7 +36,7 @@ import LS.Rule
 
 import Flow ( (|>) )
 import Prettyprinter
-    ( cat, hsep, line, viaShow, Doc, Pretty(pretty) )
+    ( hsep, line, viaShow, Doc, Pretty(pretty) )
 
 -- This function is still a work in progress.
 rule2doc :: Rule -> Doc ann
@@ -100,14 +102,11 @@ test = rules2maudeStr [ Regulative {..} ]
 
 newtype CatWithNewLines (n :: Nat) ann = CatWithNewLines (Doc ann)
 
-class Inhabited t where
-  defaultElem :: t
-
-instance (Semigroup t, Inhabited t) => Monoid t where
-    mempty = defaultElem
-
-instance Inhabited (CatWithNewLines n ann) where
-    defaultElem = CatWithNewLines ""
+instance
+  Semigroup (CatWithNewLines n ann) =>
+  Monoid (CatWithNewLines n ann)
+  where
+    mempty = CatWithNewLines ""
 
 instance Semigroup (CatWithNewLines 0 ann) where
   (<>) = catWithNewLines 0
@@ -135,10 +134,9 @@ catWithNewLines ::
   CatWithNewLines n ann ->
   CatWithNewLines n ann ->
   CatWithNewLines n ann
-catWithNewLines n x y = [x', lines', y'] |> cat |> coerce
+catWithNewLines n x y = [x', lines', y'] |> mconcat |> coerce
   where
-    x' = coerce2doc x
-    y' = coerce2doc y
-    lines' = line |> repeat |> take n |> cat
+    (x', y') = (x, y) |> join bimap coerce2doc
+    lines' = line |> replicate n |> mconcat
     coerce2doc :: CatWithNewLines n ann -> Doc ann
     coerce2doc = coerce

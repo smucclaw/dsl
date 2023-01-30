@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -36,7 +35,6 @@ import LS.Rule
 import Flow ( (|>) )
 import Prettyprinter
     ( cat, hsep, line, viaShow, Doc, Pretty(pretty) )
-
 
 -- This function is still a work in progress.
 rule2doc :: Rule -> Doc ann
@@ -100,11 +98,10 @@ test = rules2maudeStr [ Regulative {..} ]
 
 -- Utilities.
 
-newtype CatWithNewLines (n :: Nat) ann where
-    CatWithNewLines :: forall n ann. Doc ann -> CatWithNewLines n ann
+newtype CatWithNewLines (n :: Nat) ann = CatWithNewLines (Doc ann)
 
 class Inhabited t where
-    defaultElem :: t
+  defaultElem :: t
 
 instance (Semigroup t, Inhabited t) => Monoid t where
     mempty = defaultElem

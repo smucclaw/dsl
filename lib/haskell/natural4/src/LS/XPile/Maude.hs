@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -23,6 +24,7 @@ import Control.Lens (bimap)
 import Control.Monad (join)
 import Data.Coerce ( coerce )
 import Data.Foldable ( Foldable(foldMap') )
+import Data.Kind ( Type )
 import GHC.TypeLits ( Nat )
 
 -- import Data.Text qualified as T
@@ -100,7 +102,8 @@ test = rules2maudeStr [ Regulative {..} ]
 
 -- Utilities.
 
-newtype CatWithNewLines (n :: Nat) ann = CatWithNewLines (Doc ann)
+newtype CatWithNewLines :: Nat -> Type -> Type where
+  CatWithNewLines :: Doc ann -> CatWithNewLines n ann
 
 instance
   Semigroup (CatWithNewLines n ann) =>

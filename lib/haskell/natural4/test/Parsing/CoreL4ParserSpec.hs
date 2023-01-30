@@ -113,14 +113,3 @@ parserTests  = do
           symtab = []
         }
         ]
-
-srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
-srcrow', srccol' :: Int -> Rule -> Rule
-srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
-srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }
-srcrow1     = srcrow' 1
-srcrow2     = srcrow' 2
-srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
-srccol1     = srccol' 1
-srccol2     = srccol' 2
-srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }

@@ -23,7 +23,7 @@ import Data.Coerce ( coerce )
 import Data.Foldable ( Foldable(foldMap') )
 import GHC.TypeLits
 
-import Data.Text qualified as T
+-- import Data.Text qualified as T
 
 import LS.Types
     ( Deontic(DShant, DMust, DMay),
@@ -76,7 +76,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
 test :: String
 test = rules2maudeStr [ Regulative {..} ]
   where
-    rlabel = Just (undefined, undefined, T.pack "rule")
+    rlabel = Just (undefined, undefined, "rule")
     rkeyword = RParty
     subj = undefined
     deontic = DMust

@@ -1,7 +1,16 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -10,6 +19,10 @@
   representation that Maude can parse.
 -}
 module LS.XPile.Maude where
+
+import Data.Coerce ( coerce )
+import Data.Foldable ( Foldable(foldMap') )
+import GHC.TypeLits
 
 import Data.Text qualified as T
 
@@ -20,8 +33,10 @@ import LS.Types
 import LS.Rule
     ( Rule(..) )
 
-import Flow ( (.>) , (|>) )
-import Prettyprinter (Doc, Pretty (pretty), line, viaShow, hsep)
+import Flow ( (|>) )
+import Prettyprinter
+    ( cat, hsep, line, viaShow, Doc, Pretty(pretty) )
+
 
 -- This function is still a work in progress.
 rule2doc :: Rule -> Doc ann
@@ -43,9 +58,8 @@ rule2doc
       [show2Qid hence],
       [show2Qid lest]
     ]
-    |> mapThenCatWith hsep catWith1line
+    |> foldMapWithNewLines @1 hsep
     where
-      catWith1line = catWithNLines 1
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
@@ -53,13 +67,13 @@ rule2doc
       show2Qid x = x |> viaShow |> makeQid
       ruleNameQid = ruleName |> pretty |> makeQid
 
+rule2doc _ = "unsupported"
+
 rules2doc :: Foldable t => t Rule -> Doc ann
-rules2doc = mapThenCatWith rule2doc catWith2lines
-  where
-    catWith2lines = catWithNLines 2
+rules2doc rules = rules |> foldMapWithNewLines @2 rule2doc
 
 rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr = rules2doc .> show
+rules2maudeStr rules = rules |> rules2doc |> show
 
 test :: String
 test = rules2maudeStr [ Regulative {..} ]
@@ -86,13 +100,48 @@ test = rules2maudeStr [ Regulative {..} ]
 
 -- Utilities.
 
-mapThenCatWith ::
-  (Foldable t1, Monoid b) => (a -> t2) -> (t2 -> b -> b) -> t1 a -> b
-mapThenCatWith f binop = foldr binop' mempty
-  where
-    x `binop'` y = f x `binop` y
+newtype CatWithNewLines (n :: Nat) ann where
+    CatWithNewLines :: forall n ann. Doc ann -> CatWithNewLines n ann
 
-catWithNLines :: Int -> Doc ann -> Doc ann -> Doc ann
-catWithNLines n x y = x <> lines' <> y
+class Inhabited t where
+    defaultElem :: t
+
+instance (Semigroup t, Inhabited t) => Monoid t where
+    mempty = defaultElem
+
+instance Inhabited (CatWithNewLines n ann) where
+    defaultElem = CatWithNewLines ""
+
+instance Semigroup (CatWithNewLines 0 ann) where
+  (<>) = catWithNewLines 0
+
+instance Semigroup (CatWithNewLines 1 ann) where
+  (<>) = catWithNewLines 1
+
+instance Semigroup (CatWithNewLines 2 ann) where
+  (<>) = catWithNewLines 2
+
+foldMapWithNewLines ::
+  forall n a ann t.
+  (Foldable t, Semigroup (CatWithNewLines n ann)) =>
+  (a -> Doc ann) ->
+  t a ->
+  Doc ann
+foldMapWithNewLines f docs = docs |> foldMap' f' |> coerce
   where
-    lines' = line |> repeat |> take n |> mconcat
+    f' :: a -> CatWithNewLines n ann
+    f' x = x |> f |> coerce
+
+catWithNewLines ::
+  forall n ann.
+  Int ->
+  CatWithNewLines n ann ->
+  CatWithNewLines n ann ->
+  CatWithNewLines n ann
+catWithNewLines n x y = [x', lines', y'] |> cat |> coerce
+  where
+    x' = coerce2doc x
+    y' = coerce2doc y
+    lines' = line |> repeat |> take n |> cat
+    coerce2doc :: CatWithNewLines n ann -> Doc ann
+    coerce2doc = coerce

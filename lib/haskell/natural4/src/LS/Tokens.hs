@@ -133,6 +133,7 @@ pSrcRef = debugName "pSrcRef" $ do
 pNumAsText :: Parser Text.Text
 pNumAsText = debugName "pNumAsText" . label "number" $ do
   (TNumber n) <- pTokenMatch isNumber (pure $ TNumber 1234)
+  traceM $ "pNumAsText called, converting number " ++ show n ++ " to text string"
   return (Text.pack $ show n)
   where
     isNumber (TNumber _) = True

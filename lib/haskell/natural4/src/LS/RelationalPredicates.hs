@@ -225,22 +225,13 @@ import LS.Parser
 import AnyAll.BoolStructTree (BoolStructDT, Formula (FAtom, FAll, FAny), mkAnyDT, mkAllDT)
 import Data.Tree
 
+
+-- * parse RelationalPredicates
+
+
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = pRelPred
 
--- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
-tok2rel :: Parser RPRel
-tok2rel = choice
-    [ RPis      <$ pToken Is      
-    , RPhas     <$ pToken Has
-    , RPeq      <$ pToken TokEQ   
-    , RPlt      <$ pToken TokLT   
-    , RPlte     <$ pToken TokLTE  
-    , RPgt      <$ pToken TokGT   
-    , RPgte     <$ pToken TokGTE  
-    , RPelem    <$ pToken TokIn   
-    , RPnotElem <$ pToken TokNotIn
-    ]
 
 rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr
@@ -285,7 +276,7 @@ bsr2pt bsr =
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
 hc2preds :: (MyBSR a) => HornClause a -> a
-hc2preds (HC _headRP Nothing) = mkBSRLeaf (RPMT ["TRUE"])
+hc2preds (HC _headRP Nothing) = mkBSRLeaf (RPMT [MTT "TRUE"]) -- [TODO] turn this into MTB True
 hc2preds (HC _headRP (Just bsr)) = bsr
 
 aaLeaves :: BoolStructR -> [MultiTerm]
@@ -295,13 +286,14 @@ aaLeavesFilter :: (RelationalPredicate -> Bool) -> BoolStructR -> [MultiTerm]
 aaLeavesFilter f (AA.All _ xs) = concatMap (aaLeavesFilter f) xs
 aaLeavesFilter f (AA.Any _ xs) = concatMap (aaLeavesFilter f) xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
 aaLeavesFilter f (AA.Not x) = aaLeavesFilter f x
-aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mt rp else []
+aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mts rp else []
   where
-    rp2mt (RPMT mt)                     = [mt]
-    rp2mt (RPParamText    pt)           = [pt2multiterm pt]
-    rp2mt (RPConstraint  _mt1 _rpr mt2) = [mt2]
-    rp2mt (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
-    rp2mt (RPnary        _rprel rps)      = rp2mt rps
+    rp2mts :: RelationalPredicate -> [MultiTerm]
+    rp2mts (RPMT mt)                     = [mt]
+    rp2mts (RPParamText    pt)           = [pt2multiterm pt]
+    rp2mts (RPConstraint  _mt1 _rpr mt2) = [mt2]
+    rp2mts (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
+    rp2mts (RPnary        _rprel rps)    = [rp2mt rps]
 
   
 -- this is probably going to need cleanup
@@ -522,7 +514,7 @@ whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
   try (whenIf *> (Just <$> pBSR))
 --  <|> Nothing <$ debugName "Otherwise" (pToken Otherwise)
-  <|> Just (AA.mkLeaf (RPMT ["OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
+  <|> Just (AA.mkLeaf (RPMT [MTT "OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
 
 whenIf :: Parser MyToken
 whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
@@ -689,7 +681,7 @@ pSingleTermAka :: Parser KVsPair
 pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
 
 pSingleTerm :: Parser KVsPair
-pSingleTerm = debugName "pSingleTerm" $ ((:|[]) <$> pAnyText) `optIndentedTuple` pTypeSig
+pSingleTerm = debugName "pSingleTerm" $ (pure . MTT <$> pAnyText) `optIndentedTuple` pTypeSig
 
 -- [TODO] rewrite this in terms of slKeyValuesAka
 slParamText :: SLParser ParamText
@@ -756,13 +748,13 @@ slKeyValues = debugNameSL "slKeyValues" $ do
       $>|                                           pNumOrText
       ->| 1
       |*| nestedHorn fst id meansIsWhose pBSR
-           ((,) $>| someDeep pNumOrText |*| (|?|) slTypeSig))
+           ((,) $>| someDeep pMTExpr |*| (|?|) slTypeSig))
     <|> -- key without values, so we put the MEANS under the key
-    nestedHorn (pure.fst) id meansIsWhose pBSR
+    nestedHorn (pure . MTT . fst) id meansIsWhose pBSR
     ((\l rt -> (l,([],rt)))
      $>| pNumOrText
      |*| (|?|) slTypeSig)
-  return (fromList (lhs : rhs), typesig)
+  return (fromList (MTT lhs : rhs), typesig)
 
 
 getSrcRef :: Parser SrcRef
@@ -807,7 +799,7 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
       (_akatoken, akaval) <- (,)
                                 $>| debugName "Aka Token" (pToken Aka)
                                 |*| someLiftSL pOtherVal
-      return akaval
+      return (MTT <$> akaval)
 
 -- | parse a TYPICALLY annotation and return its value.
 --
@@ -920,13 +912,13 @@ getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
       return $ prependToRP [bsp2text subj] <$> whobsr
       where
         prependToRP :: [T.Text] -> RelationalPredicate -> RelationalPredicate
-        prependToRP ts (RPMT        mt) = RPMT (ts ++ mt)
-        prependToRP ts (RPParamText pt) = RPParamText (NE.fromList [ (myPrependList ts netext, mtypesig)
+        prependToRP ts (RPMT        mt) = RPMT $ (MTT <$> ts) ++ mt
+        prependToRP ts (RPParamText pt) = RPParamText (NE.fromList [ (myPrependList (MTT <$> ts) netext, mtypesig)
                                                                    | (netext, mtypesig) <- NE.toList pt ])
           where
             -- when we upgrade to base 4.17 we can use the real NE.prependList
             myPrependList pfix nelist = NE.fromList (pfix ++ NE.toList nelist)
-        prependToRP ts (RPConstraint  mt1 rpr mt2) = RPConstraint  mt1 rpr (ts ++ mt2)
+        prependToRP ts (RPConstraint  mt1 rpr mt2) = RPConstraint  mt1 rpr ((MTT <$> ts) ++ mt2)
         prependToRP ts (RPBoolStructR mt1 rpr bsr) = RPBoolStructR mt1 rpr (prependToRP ts <$> bsr)
         prependToRP ts (RPnary        rprel rps)   = RPnary        rprel   (prependToRP ts  $  rps)
 

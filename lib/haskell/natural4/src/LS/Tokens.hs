@@ -43,6 +43,10 @@ pDeontic = (pToken Must  >> return DMust)
            <|> (pToken May   >> return DMay)
            <|> (pToken Shant >> return DShant)
 
+
+
+-- | parse a number.
+-- [TODO] support floats
 pNumber :: Parser Integer
 pNumber = token test Set.empty <?> "number"
   where
@@ -277,11 +281,40 @@ debugPrintSL = SLParser . lift . debugPrint
 alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
-pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrText
+-- | the relations in a Relational
+-- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
+tok2rel :: Parser RPRel
+tok2rel = choice
+    [ RPis      <$ pToken Is      
+    , RPhas     <$ pToken Has
+    , RPeq      <$ pToken TokEQ   
+    , RPlt      <$ pToken TokLT   
+    , RPlte     <$ pToken TokLTE  
+    , RPgt      <$ pToken TokGT   
+    , RPgte     <$ pToken TokGTE  
+    , RPelem    <$ pToken TokIn   
+    , RPnotElem <$ pToken TokNotIn
+    ]
 
-slMultiTerm :: SLParser [Text.Text]
-slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
+-- * the new MultiTerm is made of MTExpr
+pMTExpr :: Parser MTExpr
+pMTExpr =
+  choice [ MTN . fromIntegral <$> pNumber
+         , MTT <$> pOtherVal
+         , MTB <$> pBoolean
+         ]
+
+-- | parse a TRUE or FALSE to an MTEXpr
+pBoolean :: Parser Bool
+pBoolean = True <$ pToken TokTrue <|> False <$ pToken TokFalse
+
+-- | parse a multiterm
+pMultiTerm :: Parser MultiTerm
+pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pMTExpr
+
+-- | sameline parser for multiterm
+slMultiTerm :: SLParser MultiTerm
+slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pMTExpr
 
 
 -- | sameline: foo foo bar bar

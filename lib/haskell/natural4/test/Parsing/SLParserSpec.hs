@@ -182,7 +182,7 @@ parserTests  = do
           `shouldParse` (((["foo","foo","foo"],("bar", "qux")),Other "bar",Other "qux"),[])
 
 -- [TODO] disturbingly, this fails if we use the "standard" version from Parser.
-      let aNLK :: Int -> SLParser ([T.Text],MyToken)
+      let aNLK :: Int -> SLParser (MultiTerm,MyToken)
           aNLK maxDepth = mkSL $ do
             (toreturn, n) <- runSL aboveNextLineKeyword2
             debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
@@ -279,7 +279,7 @@ parserTests  = do
           inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
           inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
           inline_   = Any Nothing                                                 inline_xs
-          inline_xs = mkLeaf . RPMT . pure <$> T.words "access use disclosure copying modification disposal"
+          inline_xs = mkLeaf $ RPMT [MTT "access use disclosure copying modification disposal"]
           inline4_pp= Any (Just $ PrePost
                            "loss of storage medium on which personal data is stored in circumstances where the unauthorised"
                            "of the personal data is likely to occur") inline_xs

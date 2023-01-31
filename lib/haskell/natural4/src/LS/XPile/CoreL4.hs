@@ -138,7 +138,7 @@ ppCorel4 p =
   T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram p)
 
 pptle :: TopLevelElement () -> Doc ann
-pptle (ClassDeclTLE cdcl) = "class" <+> snake_inner (T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
+pptle (ClassDeclTLE cdcl) = "class" <+> snake_inner (MTT . T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
 
 pptle (RuleTLE Rule { nameOfRule }) =
   vsep [nameOfRule']
@@ -176,8 +176,8 @@ varsToExprNoType (v:vs) = --
   applyVarsNoType v vs
 varsToExprNoType [] = error "internal error (varsToExprNoType [])"
 
-multiTermToExprNoType :: [T.Text] -> Expr ()
-multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack)
+multiTermToExprNoType :: MultiTerm -> Expr ()
+multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
 
 rpRelToBComparOp :: RPRel -> BinOp
 rpRelToBComparOp cop = case cop of
@@ -219,13 +219,13 @@ boolStructRToExpr bs = case bs of
 relationalPredicateToExpr :: RelationalPredicate-> Expr ()
 relationalPredicateToExpr rp = case rp of
   RPParamText ne -> undefined
-  RPMT txts -> multiTermToExprNoType txts
-  RPConstraint txts RPis txts' -> multiTermToExprNoType (txts' ++ txts)
-  RPConstraint txts rr txts' ->
-    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType txts) (multiTermToExprNoType txts')
-  RPBoolStructR txts rr bs ->
+  RPMT mts -> multiTermToExprNoType mts
+  RPConstraint mts RPis mts' -> multiTermToExprNoType (mts' ++ mts)
+  RPConstraint mts rr mts' ->
+    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType mts) (multiTermToExprNoType mts')
+  RPBoolStructR mts rr bs ->
     -- TODO: translate bs
-    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType txts) falseVNoType
+    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType mts) falseVNoType
   RPnary rr rp' -> undefined
 
 precondOfHornClauses :: [HornClause2] -> Expr ()
@@ -290,7 +290,7 @@ sfl4ToCorel4Rule Hornlike{..} =
 
 sfl4ToCorel4Rule Constitutive{ } = undefined
 sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
-                                                         , nameOfClassDecl  = ClsNm $ T.unpack (T.unwords name)
+                                                         , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
 sfl4ToCorel4Rule DefNameAlias { } = undefined
 sfl4ToCorel4Rule (RuleAlias _) = undefined -- internal softlink to a constitutive rule label = _
@@ -367,7 +367,7 @@ hc2decls r
   --    <> "### typemap:"        <+> viaShow typeMap <> Prettyprinter.line
     | c@(HC headRP hBod) <- clauses r
     , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
-    , T.take 3 pf /= "rel"
+    , T.take 3 (mtexpr2text pf) /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
           typeMap = Map.fromList [ (varName, fromJust varType) -- safe due to isJust test below
@@ -432,13 +432,13 @@ prettyBoilerplate ct@(CT ch) =
   , encloseSep "" "" " || " $ (\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList
   , ""
   , "fact" <+> angles (c_name <> "Disj")
-  , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner x <+> "/=" <+> snake_inner y)) <$> pairwise enumList
+  , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList
   , ""
   ]
   | className <- getCTkeys ct
   , Just (ctype, _) <- [Map.lookup className ch]
   , (Just (InlineEnum TOne nelist),_) <- [ctype]
-  , let c_name = snake_inner className
+  , let c_name = snake_inner (MTT className)
         enumList = enumLabels_ nelist
   ]
   where
@@ -464,7 +464,7 @@ prettyDefnCs rname cs =
     else
       "defn" <+>
       -- we assume the lhs is "p something" so we get rid of the p
-      pretty (T.unwords (tail lhs)) <+> colon <+>
+      pretty (mt2text (tail lhs)) <+> colon <+>
       -- rip out "p's dependents" and "dependents p" from the input rhs
       -- nub and zip map them to integer indices
       -- each integer index becomes an x y z a b c d etc
@@ -491,14 +491,14 @@ prettyDefnCs rname cs =
   -- OR just convert to "age < 16"
 
   , (RPConstraint lhs RPis rhs) <- [clHead]
-  , let rhss = T.unpack (T.unwords rhs)
+  , let rhss = T.unpack (mt2text rhs)
   , let myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
                                                           ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
                                           :: String)) :: [String]
         intypes = replicate (length myterms) "Integer"
         replacements = [ T.replace (T.pack t) (T.pack $ show n)
                        | (t,n) <- zip (nub myterms) x123 ]
-        outstr = chain replacements (T.unwords rhs)
+        outstr = chain replacements (mt2text rhs)
         returntype = "Integer"
 
   ]
@@ -589,7 +589,7 @@ prettyClasses ct =
   ]
   | (classpath, (ctype, children)) <- SFL4.classGraph ct []
   , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
-                   snake_inner <$> reverse classpath
+                   snake_inner . MTT <$> reverse classpath
         c_name' = untaint $ head classpath
         c_name = pretty c_name'
         uc_name = pretty $ ucfirst c_name'
@@ -628,7 +628,7 @@ prettyClasses ct =
                  then Prettyprinter.line <>
                       "decl" <+> ("has" <> uc_childname) <>
                       encloseSep ": " "" " -> " [ uc_name , "Boolean" ]
-                      <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner attrname
+                      <+> "# auto-generated by CoreL4.hs, optional " <> snake_inner (MTT attrname)
                  else emptyDoc
 
           <> if childIsClass
@@ -645,7 +645,7 @@ prettyClasses ct =
                 lc_childname = pretty $ lcfirst $ untaint attrname
                 uc_childname = pretty $ ucfirst $ untaint attrname
                 child_ts = getSymType attrtype
-                child_simpletype = maybe emptyDoc (prettySimpleType "corel4" snake_inner) child_ts
+                child_simpletype = maybe emptyDoc (prettySimpleType "corel4" (snake_inner . MTT)) child_ts
          ]
     -- guard to exclude certain forms which should not appear in the output
   , case (ctype,children) of
@@ -714,17 +714,17 @@ WHEN		numberOfAffectedIndividuals					db	>=	500
 -} 
 r1 :: SFL4.Rule
 r1 = Hornlike
-  { name = [ "savings account" ]
+  { name = [ MTT "savings account" ]
     , super = Nothing
     , keyword = Decide
     , given = Nothing
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPConstraint [ "savings account" ] RPis [ "inadequate" ]
+            { hHead = RPConstraint [ MTT "savings account" ] RPis [ MTT "inadequate" ]
             , hBody = Just
                 ( Leaf
-                    ( RPMT [ "OTHERWISE" ] )
+                    ( RPMT [ MTT "OTHERWISE" ] )
                 )
             }
         ]
@@ -751,20 +751,20 @@ AND		Baz	IS	blue
 -}
 r2 :: SFL4.Rule
 r2 = Hornlike 
-  { name = [ "Foo" ]
+  { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
     , given = Nothing
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPMT [ "Foo" ]
+            { hHead = RPMT [ MTT "Foo" ]
             , hBody = Just
                 ( All Nothing
                     [ Leaf
-                        ( RPConstraint [ "Bar" ] RPis [ "green" ] )
+                        ( RPConstraint [ MTT "Bar" ] RPis [ MTT "green" ] )
                     , Leaf
-                        ( RPConstraint [ "Baz" ] RPis [ "blue" ] )
+                        ( RPConstraint [ MTT "Baz" ] RPis [ MTT "blue" ] )
                     ]
                 )
             }
@@ -787,14 +787,14 @@ r2 = Hornlike
 testrules :: [SFL4.Rule]
 testrules = [ Hornlike
     { name =
-        [ "exceedsPrescrNumberOfIndividuals"
-        , "db"
+        [ MTT "exceedsPrescrNumberOfIndividuals"
+        , MTT "db"
         ]
     , super = Nothing
     , keyword = Decide
     , given = Just
         (
-            ( "db" NE.:| []
+            ( pure (MTT "db")
             , Just
                 ( SimpleType TOne "DataBreach" )
             ) NE.:| []
@@ -803,30 +803,30 @@ testrules = [ Hornlike
     , clauses =
         [ HC
             { hHead = RPMT
-                [ "exceedsPrescrNumberOfIndividuals"
-                , "db"
+                [ MTT "exceedsPrescrNumberOfIndividuals"
+                , MTT "db"
                 ]
             , hBody = Just
                 ( All Nothing
                     [ Leaf
                         ( RPConstraint
-                            [ "numberOfAffectedIndividuals"
-                            , "db"
-                            ] RPgte [ "500" ]
+                            [ MTT "numberOfAffectedIndividuals"
+                            , MTT "db"
+                            ] RPgte [ MTN 500 ]
                         )
                     , Leaf
                         ( RPMT
-                            [ "numberOfAffectedIndividuals"
-                            , "db"
+                            [ MTT "numberOfAffectedIndividuals"
+                            , MTT "db"
                             ]
                         )
                     , Leaf
                         ( RPConstraint
-                            [ "numberOfAffectedIndividuals"
-                            , "db"
+                            [ MTT "numberOfAffectedIndividuals"
+                            , MTT "db"
                             ] RPgte
-                            [ "foobars"
-                            , "db"
+                            [ MTT "foobars"
+                            , MTT "db"
                             ]
                         )
                     ]
@@ -852,20 +852,20 @@ testrules = [ Hornlike
     , symtab = []
     }
   , Hornlike
-    { name = [ "Foo" ]
+    { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
     , given = Nothing
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPMT [ "Foo" ]
+            { hHead = RPMT [ MTT "Foo" ]
             , hBody = Just
                 ( All Nothing
                     [ Leaf
-                        ( RPConstraint [ "Bar" ] RPis [ "green" ] )
+                        ( RPConstraint [ MTT "Bar" ] RPis [ MTT "green" ] )
                     , Leaf
-                        ( RPConstraint [ "Baz" ] RPis [ "blue" ] )
+                        ( RPConstraint [ MTT "Baz" ] RPis [ MTT "blue" ] )
                     ]
                 )
             }
@@ -885,20 +885,20 @@ testrules = [ Hornlike
     , symtab = []
     }
   , Hornlike
-    { name = [ "Foo" ]
+    { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
     , given = Nothing
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPMT [ "Foo" ]
+            { hHead = RPMT [ MTT "Foo" ]
             , hBody = Just
                 ( All Nothing
                     [ Leaf
-                        ( RPConstraint [ "Bloo" ] RPis [ "green" ] )
+                        ( RPConstraint [ MTT "Bloo" ] RPis [ MTT "green" ] )
                     , Leaf
-                        ( RPConstraint [ "Blubs" ] RPis [ "red" ] )
+                        ( RPConstraint [ MTT "Blubs" ] RPis [ MTT "red" ] )
                     ]
                 )
             }

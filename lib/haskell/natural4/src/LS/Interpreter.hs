@@ -133,7 +133,7 @@ musings l4i rs =
            , "*** Nubbed, Exposed, Decision Roots"
            , "maybe some of the decision roots are identical and don't need to be repeated; so we nub them"
            , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
-                     </> vsep [ "-" <+> pretty (T.unwords $ ruleLabelName r) | r <- uniqrs ]
+                     </> vsep [ "-" <+> pretty (ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
                      </> "***** head uniqrs" </> srchs (DL.head uniqrs)
                      </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
@@ -382,7 +382,7 @@ relPredRefs _l4i rs ridmap r =
                      , headName <- getDecisionHeads r'
                      ]
       -- given a rule, see which terms it relies on
-      bodyElements = concat $ rp2bodytexts <$> concatMap AA.extractLeaves (getBSR r)
+      bodyElements = concatMap rp2bodytexts (concatMap AA.extractLeaves (getBSR r))
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
   in [ (rid, targetRuleId', ())
      | bElem <- bodyElements
@@ -540,7 +540,7 @@ expandTrace fname dpth toSay toShow =
 -- for now we just scan across the entire ruleset to see if it matches.
 expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
 expandRP l4i depth (RPMT                   mt2)   = expandMT  l4i (depth + 1) mt2
-expandRP l4i depth (RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) (mt1 ++ rel2txt RPis : mt2)
+expandRP l4i depth (RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) (mt1 ++ MTT (rel2txt RPis) : mt2)
 expandRP l4i depth (RPBoolStructR mt1 RPis bsr)   = RPBoolStructR mt1 RPis (expandBSR' l4i (depth + 1) bsr)
 expandRP l4i depth (RPBoolStructDTR mt1 RPis bsr) = RPBoolStructDTR mt1 RPis (expandBSRDT' l4i (depth + 1) bsr)
 expandRP _l4i _depth x                            = x
@@ -564,7 +564,7 @@ expandMT l4i depth mt0 =
 expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
 expandClause _l4i _depth (HC   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
 expandClause _l4i _depth (HC   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ "IS" : rhs) ] -- substitute with rhs
+expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ MTT "IS" : rhs) ] -- substitute with rhs -- [TODO] weird, fix.
 expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
 expandClause  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
 expandClause  l4i  depth (HC   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
@@ -670,10 +670,11 @@ itemsByRule l4i rs =
   , isJust aot
   ]
 
--- we must be certain it's always going to be an RPMT
+-- | we must be certain it's always going to be an RPMT
 -- we extract so that it's easier to convert to JSON or to purescript Item Text
+-- [TODO] would it make sense for this to simply become extractRPMT2MT?
 extractRPMT2Text :: RelationalPredicate -> T.Text
-extractRPMT2Text (RPMT ts) = T.unwords ts
+extractRPMT2Text (RPMT ts) = mt2text ts
 extractRPMT2Text _         = error "extractRPMT2Text: expecting RPMT only, other constructors not supported."
 
 ruleNameStr :: Rule -> String
@@ -690,15 +691,15 @@ getRuleByLabel rs t = find (\r -> (rl2text <$> getRlabel r) == Just t) rs
 getRuleByLabelName :: RuleSet -> T.Text -> Maybe Rule
 getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
                                       ||
-                                      T.unwords (ruleName r) == t
+                                      ruleName r == [MTT t]
                                ) rs
 
 -- where every RelationalPredicate in the boolstruct is narrowed to RPMT only
 bsr2bsmt :: BoolStructR -> BoolStructR
 bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.mkLeaf (RPMT mt)
 bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.mkLeaf (RPMT $ pt2multiterm pt)
-bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.mkLeaf (RPMT (mt1 ++ rel2txt rpr : mt2))
-bsr2bsmt (AA.Leaf (RPBoolStructR  mt1  rpr bsr2) ) = let output = (\(RPMT rpmt) -> RPMT (mt1 ++ rel2txt rpr : rpmt)) <$> bsr2bsmt bsr2
+bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.mkLeaf (RPMT (mt1 ++ MTT (rel2txt rpr) : mt2))
+bsr2bsmt (AA.Leaf (RPBoolStructR  mt1  rpr bsr2) ) = let output = (\(RPMT rpmt) -> RPMT (mt1 ++ MTT (rel2txt rpr) : rpmt)) <$> bsr2bsmt bsr2
                                                      in -- trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
                                                         -- trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
                                                         output
@@ -730,23 +731,23 @@ getMarkings l4i =
   ]
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
-    markings (RPConstraint ("has" : xs) RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
-    markings (RPConstraint ("is"  : xs) RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
-    markings (RPConstraint          xs  RPis rhs) = Just (T.unwords xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint (MTT "has" : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint (MTT "is"  : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint          xs  RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
     markings _                                    = Nothing
 
-    rhsval rhs = case T.toLower <$> rhs of
-                   ["does not"] -> Just False
-                   ["doesn't"]  -> Just False
-                   ["hasn't"]   -> Just False
-                   ["not"]      -> Just False
-                   ["no"]       -> Just False
-                   ["f"]        -> Just False
-                   ["t"]        -> Just True
-                   ["so"]       -> Just True
-                   ["yes"]      -> Just True
-                   ["has"]      -> Just True
-                   ["does"]     -> Just True
+    rhsval [MTT rhs] = case T.toLower rhs of
+                   "does not" -> Just False
+                   "doesn't"  -> Just False
+                   "hasn't"   -> Just False
+                   "not"      -> Just False
+                   "no"       -> Just False
+                   "f"        -> Just False
+                   "t"        -> Just True
+                   "so"       -> Just True
+                   "yes"      -> Just True
+                   "has"      -> Just True
+                   "does"     -> Just True
                    _            -> Nothing
 
 

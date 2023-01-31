@@ -57,7 +57,7 @@ data MyToken = Every | Party | TokAll
              | TNumber Integer
              | Other Text.Text
              | Do
-             | Checkbox
+             | TokTrue | TokFalse
              | Aka -- also known as, for AKA Receiving Party
              | Typically -- to provide default values
              | Empty | EOL
@@ -134,8 +134,8 @@ toToken "PERFORM" =     pure Do
 
 -- for discarding
 toToken "" =       pure Empty
-toToken "TRUE" =   pure Checkbox
-toToken "FALSE" =  pure Checkbox
+toToken "TRUE" =   pure TokTrue
+toToken "FALSE" =  pure TokFalse
 toToken "HOLDS" =  pure Holds
 
 -- regulative chains
@@ -343,7 +343,8 @@ renderToken TokGTE = ">="
 renderToken TokIn = "IN"
 renderToken TokNotIn = "NOT IN"
 renderToken TokEQ = "=="
-renderToken Checkbox = ""
+renderToken TokTrue = "TRUE"
+renderToken TokFalse = "FALSE"
 renderToken GoDeeper = "("
 renderToken UnDeeper = ")"
 renderToken SetPlus = "PLUS"

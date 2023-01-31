@@ -12,6 +12,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       ParamText,
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
+      mt2text, mtexpr2text,
       rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm)
 import LS.Rule ( Rule(..), Expect(..))      
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, PGF, readExpr )
@@ -448,12 +449,12 @@ parseRP env fun (RPBoolStructR sky is blue) = do
 parseRP env fun (RPnary        _rprel rp) = parseRP env fun rp
 parseRP _ _ rp = error $ "parseRP: doesn't handle yet " <> show rp
 
--- ConstitutiveName is [Text.Text]
-parseMulti :: NLGEnv -> [Text.Text] -> IO Expr
-parseMulti env txt = gf <$> parseUD env (Text.unwords txt)
+-- ConstitutiveName is MultiTerm
+parseMulti :: NLGEnv -> MultiTerm -> IO Expr
+parseMulti env txt = gf <$> parseUD env (mt2text txt)
 
-parseName :: NLGEnv -> [Text.Text] -> IO Text.Text
-parseName _env txt = return (Text.unwords txt)
+parseName :: NLGEnv -> MultiTerm -> IO Text.Text
+parseName _env txt = return $ mt2text txt
 
 parseParamText :: NLGEnv -> ParamText -> IO Expr
 parseParamText env pt = gf <$> parseUD env (pt2text pt)
@@ -504,7 +505,7 @@ bsp2gfDT env bsp = case bsp of
 kvspair2gf :: NLGEnv -> KVsPair -> IO (String, Expr)
 kvspair2gf env (action,_) = case action of
   pred :| []     -> do
-    predUDS <- parseUD env pred
+    predUDS <- parseUD env (mtexpr2text pred)
     return $ case udsToTreeGroups predUDS of
       TG {gfS=Just s}     -> ("S", gf s)
       TG {gfVP=Just v}    -> ("VP", gf v)
@@ -518,8 +519,8 @@ kvspair2gf env (action,_) = case action of
       _ -> ("NP", dummyExpr $ "kvspair2gf: type of predicate not among " ++ acceptedRGLtypes)
 
   pred :| compls -> do
-    predUDS <- parseUD env pred
-    complUDS <- parseUD env (Text.unwords compls) -- TODO: or parse each item one by one?
+    predUDS <- parseUD env (mtexpr2text pred)
+    complUDS <- parseUD env (mt2text compls) -- TODO: or parse each item one by one?
     return $ combineExpr predUDS complUDS
 
 

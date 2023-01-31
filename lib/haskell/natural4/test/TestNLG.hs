@@ -203,7 +203,7 @@ testDetsAsDet =
             , AA.Leaf ( RPMT [ "that" ] ) ]
 
 testBSR :: [String] -> BoolStructR
-testBSR strs = AA.Any Nothing [ AA.Leaf (RPMT [Text.pack str]) | str <- strs ]
+testBSR strs = AA.Any Nothing [ AA.Leaf (RPMT [MTT $ Text.pack str]) | str <- strs ]
 
 testBSP :: [String] -> BoolStructP
 testBSP strs =  AA.Leaf $ ( qq, Nothing) :| []

@@ -36,7 +36,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
 checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
 checklist env _ rs = do
    qs <- nlgQuestion env `mapM` rs
-   let nonEmptyQs = [ q | q@(_:_) <- qs ]
+   let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
    pure $ sequence nonEmptyQs
 -- original:
 -- checklist env rc rs = groundsToChecklist env $ groundrules rc rs
@@ -63,8 +63,8 @@ checklist env _ rs = do
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
-  let whoGrounds  = (bsp2text subj :) <$> bsr2grounds rc globalrules r who
-      condGrounds =                       bsr2grounds rc globalrules r cond
+  let whoGrounds  = (MTT (bsp2text subj) :) <$> bsr2grounds rc globalrules r who
+      condGrounds =                             bsr2grounds rc globalrules r cond
   in concat [whoGrounds, condGrounds]
 
 rulegrounds rc globalrules r@Hornlike{..} =
@@ -90,7 +90,7 @@ bsr2grounds :: RunConfig -> [Rule] -> Rule -> Maybe BoolStructR -> Grounds
 bsr2grounds rc globalrules r = concat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
 
 pt2grounds :: RunConfig -> [Rule] -> Rule -> ParamText -> Grounds
-pt2grounds _rc _globalrules _r _pt = [["pt2grounds","unimplemented"]]
+pt2grounds _rc _globalrules _r _pt = [MTT <$> ["pt2grounds","unimplemented"]]
 
 rp2grounds :: RunConfig -> [Rule] -> Rule ->  RelationalPredicate -> Grounds
 rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
@@ -122,9 +122,9 @@ groundsToChecklist env mts = sequence [
     _ -> return $ pickOneOf mtGroup
   | mtGroup <- groupBy groupSingletons mts
   ]
-groundToChecklist :: NLGEnv -> MultiTerm -> IO [Text.Text]
+groundToChecklist :: NLGEnv -> MultiTerm -> IO MultiTerm
 groundToChecklist env mt = do
-  let txt = Text.unwords mt
+  let txt = mt2text mt
   uds <- parseUD env txt
   let qs = gf $ getQSFromTrees $ udsToTreeGroups uds
   -- Debug output: print the AST of the question generated in getQSFromTrees
@@ -134,16 +134,16 @@ groundToChecklist env mt = do
   let result = case words lin of
         "is":"there":"parseUD:":"fail":_ -> Text.pack "Is it true that " <> txt
         _ -> Text.pack lin
-  return $ quaero [result]
+  return $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
-pickOneOf mts = Text.pack "Does any of the following hold?" :
-  map (\[x] -> Text.pack "* " <> x) mts
+pickOneOf mts = MTT "Does any of the following hold?" :
+  [ MTT $ "* " <> mt2text mt | mt <- mts ]
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
 groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word
-                | [_t1] <- Text.words mt1
-                , [_t2] <- Text.words mt2 = True
+                | [_t1] <- Text.words (mtexpr2text mt1)
+                , [_t2] <- Text.words (mtexpr2text mt2) = True
 groupSingletons _ _ = False -- a) one/both mts not singleton, or b) are singletons but contain >1 word
 
 quaero :: [Text.Text] -> [Text.Text]
@@ -177,7 +177,7 @@ ruleToRuleJSON :: Rule -> RuleJSON
 ruleToRuleJSON Hornlike {clauses=[HC {hHead=RPMT mt,hBody=Just itemRP}]}
   = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
 ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
-  =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
-  <> maybe Map.empty (Map.singleton (T.unpack (T.unwords $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
+  =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (mt2text $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
+  <> maybe Map.empty (Map.singleton (T.unpack (mt2text $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
 ruleToRuleJSON DefNameAlias{} = Map.empty
-ruleToRuleJSON x = Map.fromList [(T.unpack $ T.unwords $ ruleName x, mkLeaf "unimplemented")]
+ruleToRuleJSON x = Map.fromList [(T.unpack $ mt2text $ ruleName x, mkLeaf "unimplemented")]

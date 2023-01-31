@@ -527,7 +527,7 @@ r2fgl _rs _defRL RegBreach      = pure Nothing
 -- we will do another pass over the graph subsequently to rewire any rulealiases
 r2fgl _rs _defRL (RuleAlias rn) = do
   sg <- getGraph
-  let ntxt = Text.unwords rn
+  let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
   maybe (fmap Just . newNode $
          mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
@@ -580,7 +580,7 @@ r2fgl rs defRL Regulative{..} = do
         temp = tc2nl NLen temporal
         actn = actionFragments action
         oblLab = mkDecis (addnewlines [ deon
-                                      , Text.unwords . NE.toList . fst . NE.head $ head actn
+                                      , mt2text . NE.toList . fst . NE.head $ head actn
                                       , temp
                                       ])
         successLab = mkTransA ([Temporal temp, IsLastHappy] ++ origRLdeet) $
@@ -673,7 +673,7 @@ deonticTemporal Regulative{..} =
     dTshow :: Text -> Text -> ParamText -> (Text,Text)
     dTshow deon temp actn =
       let aW = actionWord actn
-          aLine1 = Text.unwords . NE.toList . fst . NE.head $ actn
+          aLine1 = mt2text . NE.toList . fst . NE.head $ actn
       in (aW, addnewlines [ deon
                           , "(" <> temp <> ")"
                           , aLine1 ])
@@ -694,7 +694,7 @@ actionFragments (AA.Leaf x) = [x]
 actionFragments _           = []
 
 actionWord :: ParamText -> Text.Text
-actionWord = NE.head . fst . NE.head
+actionWord = mtexpr2text . NE.head . fst . NE.head
 
 
 

@@ -51,6 +51,15 @@ This is available in the file [[input-03.txt]].
   Y: 
 #+end_src
 
+OMG that looks like
+
+#+begin_src javascript
+{ "to": "me"
+, "upon": "this book"
+, "on": "oath"
+, ... }
+#+end_src
+
 * Part 2
 
 You need to be able to give appropriate responses to new questions,

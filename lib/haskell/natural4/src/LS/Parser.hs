@@ -66,7 +66,7 @@ exprIndent p = ppp $ debugName "expression indentable" (makeExprParser (termInde
 termIndent p = debugName "termIndent p" $ do
   try (debugName "term p/1a:label ends directly above next line" $ do
         (lbl, inner) <- (,)
-          $*| (someLiftSL pMTExpr <* liftSL (lookAhead pNumOrText))
+          $*| (someLiftSL pMTExpr <* liftSL (lookAhead pMTExpr))
           |>< expr p
         debugPrint $ "1a: got label, then inner immediately below: " ++ show lbl
         debugPrint $ "1a: got inner: " <> show inner
@@ -181,7 +181,7 @@ ppp base = -- local (\rc -> rc { debug = True }) $
 -- how many UnDeepers do we count between the end of this line and the start of the next (where, presumably, we get an OR)
 expectUnDeepers :: Parser Int
 expectUnDeepers = debugName "expectUnDeepers" $ lookAhead $ do
-  ignored <- manyTill (pNumOrText <|> "GD" <$ pToken GoDeeper) (lookAhead (pToken UnDeeper))
+  ignored <- manyTill (pMTExpr <|> MTT "GD" <$ pToken GoDeeper) (lookAhead (pToken UnDeeper))
   debugPrint $ "ignoring " ++ show ignored
   udps <- some (pToken UnDeeper)
   debugPrint $ "matched undeepers " ++ show udps

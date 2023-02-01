@@ -745,14 +745,14 @@ slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
   (lhs, (rhs, typesig))   <- try (
     (,) -- key followed by values, and the values can sit on top of a MEANS
-      $>|                                           pNumOrText
+      $>| pOtherVal
       ->| 1
       |*| nestedHorn fst id meansIsWhose pBSR
            ((,) $>| someDeep pMTExpr |*| (|?|) slTypeSig))
     <|> -- key without values, so we put the MEANS under the key
     nestedHorn (pure . MTT . fst) id meansIsWhose pBSR
     ((\l rt -> (l,([],rt)))
-     $>| pNumOrText
+     $>| pOtherVal
      |*| (|?|) slTypeSig)
   return (fromList (MTT lhs : rhs), typesig)
 

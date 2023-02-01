@@ -142,10 +142,10 @@ parserTests  = do
                       |>| pBSR
                       |<$ undeepers
                     ))
-        ( ( ["Food"]
+        ( ( [MTT "Food"]
           , Means
-          , Any (Just $ Pre "yummy nightshades") [ mkLeaf (RPMT ["potato"])
-                                                 , mkLeaf (RPMT ["tomato"])]
+          , Any (Just $ Pre "yummy nightshades") [ mkLeaf (RPMT [MTT "potato"])
+                                                 , mkLeaf (RPMT [MTT "tomato"])]
           ), []
         )
 
@@ -197,7 +197,7 @@ parserTests  = do
                    ) ""
          (exampleStream "foo,foo,foo,\n,OR,bar")
           `shouldParse` (("foo"                          -- pOtherVal
-                         ,(["foo","foo"],LS.Types.Or)    -- aboveNextLineKeyword
+                         ,([MTT "foo",MTT "foo"],LS.Types.Or)    -- aboveNextLineKeyword
                          ,"bar")                         -- pOtherVal
                         ,[])
 
@@ -209,7 +209,7 @@ parserTests  = do
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,foo3,\n,OR,bar")
-          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+          `shouldParse` ( ( ( ["foo1","foo2"], ( [MTT "foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
@@ -223,7 +223,7 @@ parserTests  = do
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,foo3,\n,OR,bar")
-          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+          `shouldParse` ( ( ( ["foo1","foo2"], ( [MTT "foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
@@ -237,7 +237,7 @@ parserTests  = do
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,foo3,\n,OR,bar")
-          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+          `shouldParse` ( ( ( ["foo1","foo2"], ( [MTT "foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
@@ -251,7 +251,7 @@ parserTests  = do
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,foo3,\n,OR,bar")
-          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+          `shouldParse` ( ( ( ["foo1","foo2"], ( [MTT "foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
@@ -265,24 +265,24 @@ parserTests  = do
                      |>< debugName "looking for the Bar" pOtherVal
                    ) ""
          (exampleStream "foo1,foo2,,,foo3,\n,,,OR,bar")
-          `shouldParse` ( ( ( ["foo1","foo2"], ( ["foo3"],LS.Types.Or ) )
+          `shouldParse` ( ( ( ["foo1","foo2"], ( [MTT "foo3"],LS.Types.Or ) )
                           , "foo3"
                           , LS.Types.Or
                           , "bar" )
                         ,[])
 
-      let inline_1 = ( ( ["Bad"] , Means , inline_pp ), [] )
-          inline_2 = ( ( ["Bad"] , Means , inline_p  ), [] )
-          inline_3 = ( ( ["Bad"] , Means , inline_   ), [] )
-          inline_r = ((["multiwonk"],Means,Any Nothing [mkLeaf (RPMT ["poopoo"]),Any (Just (Pre "the")) [mkLeaf (RPMT ["honk"]),mkLeaf (RPMT ["ponk"])]]),[])
-          inline_4 = ( ( ["a data breach occurred"] , Means , inline_4xs), [] )
-          inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
-          inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
-          inline_   = Any Nothing                                                 inline_xs
+      let inline_1 = ( ( [MTT "Bad"] , Means , inline_pp ), [] )
+          inline_2 = ( ( [MTT "Bad"] , Means , inline_p  ), [] )
+          inline_3 = ( ( [MTT "Bad"] , Means , inline_   ), [] )
+          inline_r = (([MTT "multiwonk"],Means,Any Nothing [mkLeaf (RPMT [MTT "poopoo"]),Any (Just (Pre "the")) [mkLeaf (RPMT [MTT "honk"]),mkLeaf (RPMT [MTT "ponk"])]]),[])
+          inline_4 = ( ( [MTT "a data breach occurred"] , Means , inline_4xs), [] )
+          inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) [inline_xs]
+          inline_p  = Any (Just $ Pre     "any unauthorised"                    ) [inline_xs]
+          inline_   = Any Nothing                                                 [inline_xs]
           inline_xs = mkLeaf $ RPMT [MTT "access use disclosure copying modification disposal"]
           inline4_pp= Any (Just $ PrePost
                            "loss of storage medium on which personal data is stored in circumstances where the unauthorised"
-                           "of the personal data is likely to occur") inline_xs
+                           "of the personal data is likely to occur") [inline_xs]
           inline_4xs= Any Nothing [inline_pp, inline4_pp]
 
           pInline1 = parseOther $ do
@@ -302,24 +302,24 @@ parserTests  = do
       filetest "inline-1-j" "line crossing" pInline1 inline_1
       filetest "inline-1-k" "line crossing" pInline1 inline_1
       filetest "inline-1-l" "line crossing" pInline1 (
-        const [DefTypically { name = ["disposal"]
-                            , defaults = [RPConstraint ["disposal"] RPis ["True"]]
+        const [DefTypically { name = [MTT "disposal"]
+                            , defaults = [RPConstraint [MTT "disposal"] RPis [MTB True]]
                             , srcref = Just (SrcRef { url = "test/Spec", short = "test/Spec"
                                                     , srcrow = 3, srccol = 8, version = Nothing})}]
           <$> inline_1)
       filetest "inline-1-m" "line crossing" pInline1 inline_1
       filetest "inline-1-n" "line crossing" pInline1 inline_2
       filetest "inline-1-o" "line crossing" pInline1 inline_3
-      filetest "inline-1-p" "line crossing" pInline1 ((["wonk"],Means,Any (Just (Pre "a")) [mkLeaf (RPMT ["honk"]),mkLeaf (RPMT ["ponk"])]),[])
-      filetest "inline-1-q" "line crossing" pInline1 ((["poowonk"],Means,Any Nothing [mkLeaf (RPMT ["poopoo"]),mkLeaf (RPMT ["just a","honk"])]),[])
+      filetest "inline-1-p" "line crossing" pInline1 (([MTT "wonk"],Means,Any (Just (Pre "a")) [mkLeaf (RPMT [MTT "honk"]),mkLeaf (RPMT [MTT "ponk"])]),[])
+      filetest "inline-1-q" "line crossing" pInline1 (([MTT "poowonk"],Means,Any Nothing [mkLeaf (RPMT [MTT "poopoo"]),mkLeaf (RPMT [MTT "just a",MTT "honk"])]),[])
       filetest "inline-1-r" "line crossing" pInline1 inline_r
       filetest "inline-1-s" "line crossing" pInline1 inline_4
 
-      filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (["foo","bar","baz"],[])
-      filetest "multiterm-with-blanks-2" "p, with blanks"            (parseOther pMultiTerm) (["foo","bar","baz"],[])
+      filetest "multiterm-with-blanks-1" "p, no blanks"              (parseOther pMultiTerm) (MTT <$> ["foo","bar","baz"],[])
+      filetest "multiterm-with-blanks-2" "p, with blanks"            (parseOther pMultiTerm) (MTT <$> ["foo","bar","baz"],[])
 
-      filetest "multiterm-with-blanks-1" "sl, no blanks"             (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
-      filetest "multiterm-with-blanks-2" "sl, with blanks"           (parseOther (slMultiTerm |<$ undeepers)) (["foo","bar","baz"],[])
+      filetest "multiterm-with-blanks-1" "sl, no blanks"             (parseOther (slMultiTerm |<$ undeepers)) (MTT <$> ["foo","bar","baz"],[])
+      filetest "multiterm-with-blanks-2" "sl, with blanks"           (parseOther (slMultiTerm |<$ undeepers)) (MTT <$> ["foo","bar","baz"],[])
 
 
 -- sl style

@@ -27,6 +27,8 @@ library
   exposed-modules:
       Explainable
       Lib
+      MathLang
+      TaxDSL
   other-modules:
       Paths_explainable
   hs-source-dirs:

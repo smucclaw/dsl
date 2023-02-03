@@ -39,7 +39,7 @@ type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int
 type Preamble = MyToken
 
-type KVsPair = (NonEmpty Text.Text, Maybe TypeSig)    --- so really there are multiple Values
+type KVsPair = (NonEmpty MTExpr, Maybe TypeSig)    --- so really there are multiple Values
 type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
 
 -- * BoolStructs wrap Phrasal types
@@ -60,7 +60,21 @@ instance MyBSR BoolStructR where
 instance MyBSR BoolStructDTR where
   mkBSRLeaf = mkLeafDT
 
-type MultiTerm = [Text.Text]                          --- | apple | orange | banana
+-- | the relations in a RelationalPredicate
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
+  deriving (Eq, Ord, Show, Generic, ToJSON)
+
+-- | Previously `MultiTerm`s were just @[Text]@.
+-- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
+data MTExpr = MTT Text.Text -- ^ Text string
+            | MTN Float     -- ^ Number
+            | MTB Bool      -- ^ Boolean
+--            | MTC Text.Text -- ^ Currency money
+--            | MTD Text.Text -- ^ Date
+            deriving (Eq, Ord, Show, Generic, ToJSON)
+
+-- | the parser returns a list of MTExpr, to be parsed further at some later point
+type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
 
 -- $phrasetypes
 
@@ -100,12 +114,18 @@ type ParamText = NonEmpty TypedMulti               --- | notify | the government
                                                    --- |        | immediately    | :: | Urgency |
 -- see PrettyPrinter for newtypes based on ParamText
 text2pt :: Text.Text -> ParamText
-text2pt x = pure (pure x, Nothing)
+text2pt x = pure (pure (MTT x), Nothing)
+
+mtexpr2text :: MTExpr -> Text.Text
+mtexpr2text (MTT t) = t
+mtexpr2text (MTN n) = Text.pack $ show n
+mtexpr2text (MTB True) = "TRUE"
+mtexpr2text (MTB False) = "FALSE"
 
 pt2text :: ParamText -> Text.Text
-pt2text = Text.unwords . toList . (fst =<<)
+pt2text = Text.unwords . fmap mtexpr2text . toList . (fst =<<)
 
-type PTree = Tree.Tree TypedMulti -- Node (["notify" :| "the government"], Nothing) [ Node (["immediately" :| [], Urgency) [] ]
+type PTree = Tree.Tree TypedMulti -- Node ([MTT "notify" :| MTT "the government"], Nothing) [ Node ([MTT "immediately" :| [], Urgency) [] ]
 
 mkPTree :: TypedMulti -> [PTree] -> PTree
 mkPTree = Tree.Node
@@ -114,10 +134,10 @@ mkLeafPT :: Text.Text -> BoolStructP
 mkLeafPT = AA.Leaf . text2pt
 
 mkLeafR :: Text.Text -> BoolStructR
-mkLeafR x = AA.Leaf $ RPMT [x]
+mkLeafR x = AA.Leaf $ RPMT [MTT x]
 
 -- remove the TypeSig from a ParamText
-untypePT :: ParamText -> NonEmpty (NonEmpty Text.Text)
+untypePT :: ParamText -> NonEmpty (NonEmpty MTExpr)
 untypePT = fmap fst
 
 tm2mt :: TypedMulti -> MultiTerm
@@ -130,7 +150,7 @@ mt2pt :: MultiTerm -> ParamText
 mt2pt ts = pure (fromList ts, Nothing)
 
 mt2text :: MultiTerm -> Text.Text
-mt2text = Text.unwords
+mt2text = Text.unwords . fmap mtexpr2text
 
 -- | Like [a] but with faster concatenation.
 newtype DList a = DList (Endo [a])
@@ -184,16 +204,21 @@ class PrependHead a where
   -- Used to prepend what was first interpreted to be a label to an item
   prependHead :: Text.Text -> a -> a
 
+instance PrependHead MTExpr where
+  prependHead t (MTT mtt) = MTT (prependHead t mtt)
+  prependHead t (MTN mtn) = MTT (prependHead t (Text.pack . show $ mtn))
+  prependHead t (MTB mtb) = MTT (prependHead t (Text.pack . show $ mtb))
+
 instance PrependHead Text.Text where
   prependHead s = ((s <> " ") <>)
 instance PrependHead ParamText where
-  prependHead s ((xs, ts) :| xss) = (pure s <> xs, ts) :| xss
+  prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
 instance PrependHead RelationalPredicate where
   prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
-  prependHead s (RPMT txts)             = RPMT (s : txts)
-  prependHead s (RPConstraint l rr r)   = RPConstraint (s : l) rr r
-  prependHead s (RPBoolStructR l rr it) = RPBoolStructR (s : l) rr it
+  prependHead s (RPMT mtes)             = RPMT (MTT s : mtes)
+  prependHead s (RPConstraint l rr r)   = RPConstraint (MTT s : l) rr r
+  prependHead s (RPBoolStructR l rr it) = RPBoolStructR (MTT s : l) rr it
   prependHead s (RPnary rel rp)         = RPnary rel $ prependHead s rp
 
 -- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
@@ -267,35 +292,29 @@ rel2op RPelem    = "IN"
 rel2op RPnotElem = "NOT IN"
 rel2op RPnot     = "NOT"
 
-rp2texts :: RelationalPredicate -> MultiTerm
-rp2texts (RPParamText    pt)            = pt2multiterm pt
-rp2texts (RPMT           mt)            = mt
-rp2texts (RPConstraint   mt1 rel mt2)   = mt1 ++ [rel2txt rel] ++ mt2
-rp2texts (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [rel2txt rel] ++ [bsr2text bsr]
-rp2texts (RPnary         rel rp)        = rel2txt rel : rp2texts rp
+rp2mt :: RelationalPredicate -> MultiTerm
+rp2mt (RPParamText    pt)            = pt2multiterm pt
+rp2mt (RPMT           mt)            = mt
+rp2mt (RPConstraint   mt1 rel mt2)   = mt1 ++ [MTT $ rel2txt rel] ++ mt2
+rp2mt (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [MTT $ rel2txt rel] ++ [MTT $ bsr2text bsr] -- [TODO] is there some better way to bsr2mtexpr?
+rp2mt (RPnary         rel rp)        = MTT (rel2txt rel) : rp2mt rp
 
 -- | pull out all the body leaves of RelationalRredicates as multiterms
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
 rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
-rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [rel2op rel], mt2]
-rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ rel2op rel : bod
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [MTT $ rel2op rel], mt2]
+rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ MTT (rel2op rel) : bod
                                               | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 
 rp2text :: RelationalPredicate -> Text.Text
-rp2text = Text.unwords . rp2texts
+rp2text = Text.unwords . fmap mtexpr2text . rp2mt
 
 text2rp :: Text.Text -> RelationalPredicate
 text2rp = RPParamText . text2pt
 
 pt2multiterm :: ParamText -> MultiTerm
-pt2multiterm pt = toList $ Text.unwords . toList <$> untypePT pt
-
-rpFirstWord :: RelationalPredicate -> Text.Text
-rpFirstWord rp =
-  case rp2texts rp of
-    []  -> ""
-    x:_ -> x
+pt2multiterm pt = concat (toList (toList <$> untypePT pt))
 
 -- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
 rpHead :: RelationalPredicate -> MultiTerm
@@ -303,10 +322,7 @@ rpHead (RPParamText    pt)            = pt2multiterm pt
 rpHead (RPMT           mt)            = mt
 rpHead (RPConstraint   mt1 _rel _mt2) = mt1
 rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
-rpHead (RPnary         rel rp)        = rel2op rel : rpHead rp
-
-data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
-  deriving (Eq, Ord, Show, Generic, ToJSON)
+rpHead (RPnary         rel rp)        = MTT (rel2op rel) : rpHead rp -- [TODO] this is lossy, why not keep it in relationalpredicate? can we MTR?
 
 newtype RelName = RN { getName :: RuleName }
 
@@ -445,7 +461,7 @@ multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt
 
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]
-bsp2text (AA.Leaf                   x ) = Text.unwords $ concatMap toList $ fst <$> x
+bsp2text (AA.Leaf                   x ) = Text.unwords $ fmap mtexpr2text . concatMap toList $ fst <$> x
 bsp2text (AA.Any (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
 bsp2text (AA.Any (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
 bsp2text (AA.Any Nothing                   xs) = "any of:-" <> Text.unwords (bsp2text <$> xs)
@@ -562,7 +578,8 @@ increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 magicKeywords :: [Text.Text]
 magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLESS DEFINE"
 
+-- | we actually want @[Text]@ here not just `MultiTerm`
 enumLabels, enumLabels_ :: ParamText -> [Text.Text]
-enumLabels nelist = concat $ NE.toList $ NE.toList . fst <$> nelist
+enumLabels nelist = fmap mtexpr2text $ concat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels

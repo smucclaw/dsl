@@ -22,6 +22,12 @@ import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
 -- import Debug.Trace
 import Prettyprinter.Render.Text
 
+-- | Pretty MTExpr
+instance Pretty MTExpr where
+  pretty (MTT t) = pretty t
+  pretty (MTN n) = pretty n
+  pretty (MTB b) = pretty b
+
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
   pretty (RPParamText   pt)            = pretty $ pt2text pt
@@ -42,29 +48,33 @@ instance Pretty RelationalPredicate where
 -- or add a string argument to RP1 String RelationalPredicate, so we can say RP1 "corel4" ....
 newtype RP1 = RP1 RelationalPredicate
 instance Pretty RP1 where
-  pretty (RP1   (RPMT     ["OTHERWISE"])     ) = "TRUE # default case"
-  pretty (RP1 o@(RPConstraint  _mt1 RPis  ["No"]))   = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (RP1   (RPMT     [MTT "OTHERWISE"])     )   = "TRUE # default case"
+  pretty (RP1 o@(RPConstraint  _mt1 RPis  [MTT "No"]))    = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (RP1 o@(RPConstraint  _mt1 RPis  [MTB False]))   = hsep $ "not" : (pretty <$> inPredicateForm o)
   pretty (RP1 o@(RPConstraint  _mt1 RPis  _mt2))     = hsep $ pretty <$> inPredicateForm o
   pretty (RP1 o@(RPConstraint  _mt1 RPhas _mt2))     = hsep $ pretty <$> inPredicateForm o
-  pretty (RP1   (RPConstraint   mt1 rprel  mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint <$> mt2 ]
+  pretty (RP1   (RPConstraint   mt1 rprel  mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint . mtexpr2text <$> mt2 ]
   pretty (RP1   (RPBoolStructR  mt1 rprel  bsr))     = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
                                                -- [TODO] confirm RP1 <$> bsr is the right thing to do
   pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o
 
+-- | [TODO] this is lossy -- preserve the original cell type information from the underlying multiterm in the relationalpredicate
 inPredicateForm :: RelationalPredicate -> MultiTerm
-inPredicateForm (RPParamText   pt)                = pure $ untaint $ pt2text pt
-inPredicateForm (RPMT     ["OTHERWISE"])          = mempty
-inPredicateForm (RPMT          mt)                = untaint <$> pred_flip mt
-inPredicateForm (RPConstraint  mt  RPis  ["Yes"]) = untaint <$> pred_flip mt
-inPredicateForm (RPConstraint  mt  RPis  ["No"])  = untaint <$> pred_flip mt
-inPredicateForm (RPConstraint  mt1 RPis  mt2)     = untaint <$> pred_flip mt2 ++ pred_flip mt1
-inPredicateForm (RPConstraint  mt1 RPhas mt2)     = untaint <$> addHas (pred_flip mt2) ++ mt1
+inPredicateForm (RPParamText   pt)                = toList . (fst =<<) $ pt
+inPredicateForm (RPMT     [MTT "OTHERWISE"])      = mempty
+inPredicateForm (RPMT          mt)                = pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  [MTT "Yes"]) = pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  [MTB True] ) = pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  [MTT "No"])  = pred_flip mt
+inPredicateForm (RPConstraint  mt  RPis  [MTB False]) = pred_flip mt
+inPredicateForm (RPConstraint  mt1 RPis  mt2)     = pred_flip mt2 ++ pred_flip mt1
+inPredicateForm (RPConstraint  mt1 RPhas mt2)     = addHas (pred_flip mt2) ++ mt1
   where
-    addHas (x:xs) = ("has"<>x) : xs
+    addHas (    x:xs) = MTT ("has"<>mtexpr2text x) : xs
     addHas [] = []
-inPredicateForm (RPConstraint  mt1 rprel mt2)     = untaint <$> rel2txt rprel : mt1 ++ mt2
-inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = untaint <$> mt1 ++ concatMap DF.toList (DT.traverse inPredicateForm bsr)
-inPredicateForm (RPnary        rprel rp)          = untaint <$> rel2txt rprel : inPredicateForm rp
+inPredicateForm (RPConstraint  mt1 rprel mt2)     = MTT (rel2txt rprel) : mt1 ++ mt2
+inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = mt1 ++ concatMap DF.toList (DT.traverse inPredicateForm bsr)
+inPredicateForm (RPnary        rprel rp)          = MTT (rel2txt rprel) : inPredicateForm rp
 
 pred_flip :: [a] -> [a]
 pred_flip xs = last xs : init xs
@@ -107,7 +117,7 @@ possessiveToObject str = T.intercalate " " $ reverse $ T.splitOn "'s " str
 -- | pred_snake
 -- "foo bar" "baz" --> "baz foo_bar
 -- "fooBar" "baz"  --> "baz fooBar"
-pred_snake :: [T.Text] -> Doc ann
+pred_snake :: MultiTerm -> Doc ann
 pred_snake xs = encloseSep "" "" " " (snake_inner <$> last xs : init xs)
 
 -- generalize the elimination of the units, across all the {pred,space}_{snake,join} functions.
@@ -116,42 +126,42 @@ pred_snake xs = encloseSep "" "" " " (snake_inner <$> last xs : init xs)
 -- | pred_join
 -- "foo bar" "baz" --> "baz foo bar
 -- "fooBar" "baz"  --> "baz fooBar"
-pred_join :: [T.Text] -> Doc ann
-pred_join (x:["years"]) = pred_join [x]
-pred_join (x:["meters"]) = pred_join [x]
-pred_join (x:["kg"]) = pred_join [x]
+pred_join :: MultiTerm -> Doc ann
+pred_join (x:[MTT "years"]) = pred_join [x]
+pred_join (x:[MTT "meters"]) = pred_join [x]
+pred_join (x:[MTT "kg"]) = pred_join [x]
 pred_join xs = encloseSep "" "" " " (pretty <$> last xs : init xs)
 
 
 -- | space_join
 -- "foo bar" "baz" --> "foo bar baz"
 -- "fooBar" "baz"  --> "fooBar baz"
-space_join :: [T.Text] -> Doc ann
+space_join :: MultiTerm -> Doc ann
 space_join xs = encloseSep "" "" " " (pretty <$> xs)
 
 -- | dot_join
 -- "foo bar" "baz" --> "foo bar.baz"
 -- "fooBar" "baz"  --> "fooBar.baz"
-dot_join :: [T.Text] -> Doc ann
+dot_join :: MultiTerm -> Doc ann
 dot_join xs = encloseSep "" "" "." (pretty <$> xs)
 
 -- | snake_join
 -- "foo bar" "baz" --> "foo bar_baz"
 -- "fooBar" "baz"  --> "fooBar_baz"
-snake_join :: [T.Text] -> Doc ann
+snake_join :: MultiTerm -> Doc ann
 snake_join xs = encloseSep "" "" "_" (pretty <$> xs)
 
 -- | snake_case
 -- "foo bar" "baz" --> "foo_bar_baz"
 -- "fooBar" "baz"  --> "fooBar_baz"
-snake_case :: [T.Text] -> Doc ann
+snake_case :: MultiTerm -> Doc ann
 snake_case xs = encloseSep "" "" "_" (snake_inner <$> xs)
 
 -- | snake_inner
 -- "foo bar" --> "foo_bar"
 -- "fooBar"" --> "fooBar"
-snake_inner :: T.Text -> Doc ann
-snake_inner = pretty . untaint
+snake_inner :: MTExpr -> Doc ann
+snake_inner = pretty . untaint . mtexpr2text
 
 untaint :: T.Text -> T.Text
 untaint = T.replace " " "_" .
@@ -193,7 +203,7 @@ instance Pretty ParamText4 where
     where
       word1,lrest :: TypedMulti -> Doc ann
       word1 l = typedOrNot "_"      ((NE.head . fst $ l) :| [], snd l)
-      lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fst $ l)
+      lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fmap mtexpr2text . fst $ l)
       -- quote based on type.
       quoteBoT :: TypedMulti -> Doc ann
       quoteBoT l@(net, _mts) =

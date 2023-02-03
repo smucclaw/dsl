@@ -115,7 +115,7 @@ asPurescript env rl =
            , "toplevelDecisions = Map.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
-                   [ toTuple ( T.intercalate " / " (T.unwords <$> names)
+                   [ toTuple ( T.intercalate " / " (mt2text <$> names)
                             , alwaysLabeled (appendToFirst (head bs) (map fixNot (tail bs))))
                    | (names,bs) <- combine (namesAndStruct env rl) (namesAndQ env rl)
                    ]

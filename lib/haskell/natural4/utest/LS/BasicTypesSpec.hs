@@ -21,7 +21,7 @@ notOther _ = True
 
 prop_rendertoken :: MyToken -> Property
 prop_rendertoken mytok =
-  mytok `notElem` [Distinct, Checkbox, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
+  mytok `notElem` [Distinct, TokTrue, TokFalse, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
   toToken (T.pack $ renderToken mytok) === [mytok]
 
 spec :: Spec

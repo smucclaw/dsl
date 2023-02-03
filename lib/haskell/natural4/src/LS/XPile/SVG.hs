@@ -22,7 +22,7 @@ import qualified Data.Text as T
 
 asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
 asAAsvg aavc l4i _rs =
-  Map.fromList [ ( T.unwords <$> names
+  Map.fromList [ ( concat names
                  , (svgtiny, svgfull, bs, qtree) )
                | (names, bs) <- qaHornsT l4i
                , isInteresting bs

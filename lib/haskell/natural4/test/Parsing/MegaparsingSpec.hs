@@ -43,7 +43,7 @@ parserTests  = do
 
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
-          `shouldParse` [Hornlike {name = ["something"], super = Nothing,  keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["something"] RPis (mkLeaf (RPMT ["something"])), hBody = Nothing}], rlabel = Just ("\167",1,"Hello"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}]
+          `shouldParse` [Hornlike {name = [MTT "something"], super = Nothing,  keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "something"] RPis (mkLeaf (RPMT [MTT "something"])), hBody = Nothing}], rlabel = Just ("\167",1,"Hello"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}]
 
       it "should parse a single OtherVal" $ do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
@@ -88,14 +88,14 @@ parserTests  = do
         (parseR pRules) (srcrow2 <$> imbibeRule)
 
       let degustates = defaultHorn
-            { name = ["degustates"]
+            { name = [MTT "degustates"]
             , keyword = Means
             , given = Nothing
             , upon = Nothing
             , clauses = [ HC
-                          { hHead = RPBoolStructR ["degustates"]
-                                    RPis (Any Nothing [mkLeaf (RPMT ["eats"])
-                                                      ,mkLeaf (RPMT ["drinks"])])
+                          { hHead = RPBoolStructR [MTT "degustates"]
+                                    RPis (Any Nothing [mkLeaf (RPMT [MTT "eats"])
+                                                      ,mkLeaf (RPMT [MTT "drinks"])])
                           , hBody = Nothing } ]
             }
 
@@ -108,15 +108,15 @@ parserTests  = do
       -- inline constitutive rules are temporarily disabled; we need to think about how to intermingle a "sameline" parser with a multiline object.
       -- we also need to think about getting the sameline parser to not consume all the godeepers at once, because an inline constitutive rule actually starts with a godeeper.
 
-      filetest "indented-2" "inline constitutive rule" (parseR pRules) [Regulative {subj = mkLeaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT ["walks"]),mkLeaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [mkLeaf (RPMT ["eats"]),mkLeaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
+      filetest "indented-2" "inline constitutive rule" (parseR pRules) [Regulative {subj = mkLeaf ((MTT "person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT [MTT "walks"]),mkLeaf (RPMT [MTT "degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf ((MTT "sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = [MTT "degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "degustates"] RPis (Any Nothing [mkLeaf (RPMT [MTT "eats"]),mkLeaf (RPMT [MTT "imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
 
-      filetest "indented-3" "defined names in natural positions" (parseR pRules) [Regulative {subj = mkLeaf (("person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT ["walks"]),mkLeaf (RPMT ["degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf (("sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = ["imbibes"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["imbibes"] RPis (All Nothing [mkLeaf (RPMT ["drinks"]),Any Nothing [mkLeaf (RPMT ["swallows"]),mkLeaf (RPMT ["spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing}), defaults = [], symtab = []},Hornlike {name = ["degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["degustates"] RPis (Any Nothing [mkLeaf (RPMT ["eats"]),mkLeaf (RPMT ["imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
+      filetest "indented-3" "defined names in natural positions" (parseR pRules) [Regulative {subj = mkLeaf ((MTT "person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [mkLeaf (RPMT [MTT "walks"]),mkLeaf (RPMT [MTT "degustates"])]), cond = Nothing, deontic = DMust, action = mkLeaf ((MTT "sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},Hornlike {name = [MTT "imbibes"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "imbibes"] RPis (All Nothing [mkLeaf (RPMT [MTT "drinks"]),Any Nothing [mkLeaf (RPMT [MTT "swallows"]),mkLeaf (RPMT [MTT "spits"])]]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing}), defaults = [], symtab = []},Hornlike {name = [MTT "degustates"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "degustates"] RPis (Any Nothing [mkLeaf (RPMT [MTT "eats"]),mkLeaf (RPMT [MTT "imbibes"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}), defaults = [], symtab = []}]
 
       let mustsing1 = [ defaultReg {
                           rlabel = Just ("\167",1,"Matt Wadd's Rule")
                           , subj = Leaf
                             (
-                              ( "Person" :| []
+                              ( MTT "Person" :| []
                               , Nothing
                               ) :| []
                             )
@@ -124,12 +124,12 @@ parserTests  = do
                           , who = Just
                             ( All Nothing
                               [ Leaf
-                                ( RPMT ["walks"] )
+                                ( RPMT [MTT "walks"] )
                               , Any Nothing
                                 [ Leaf
-                                  ( RPMT ["eats"])
+                                  ( RPMT [MTT "eats"])
                                 , Leaf
-                                  ( RPMT ["drinks"] )
+                                  ( RPMT [MTT "drinks"] )
                                 ]
                               ]
                             )
@@ -211,11 +211,11 @@ parserTests  = do
         (parseR pRules) [king_pays_singer_eventually]
 
       let if_king_wishes_singer = if_king_wishes ++
-            [ DefNameAlias ["singer"] ["person"] Nothing
+            [ DefNameAlias [MTT "singer"] [MTT "person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})) ]
 
       let if_king_wishes_singer_nextline = if_king_wishes ++
-            [ DefNameAlias ["singer"] ["person"] Nothing
+            [ DefNameAlias [MTT "singer"] [MTT "person"] Nothing
               (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})) ]
 
       filetest "nl-aliases" "should parse natural language aliases (\"NL Aliases\") aka inline defined names"
@@ -225,9 +225,9 @@ parserTests  = do
         (parseR pRules) if_king_wishes_singer_nextline
 
       let singer_must_pay_params =
-            singer_must_pay { action = mkLeaf (("pay" :| []                 , Nothing)
-                                             :| [("to"     :| ["the King"], Nothing)
-                                                ,("amount" :| ["$20"]     , Nothing)]) }
+            singer_must_pay { action = mkLeaf ((MTT "pay" :| []                 , Nothing)
+                                             :| [(MTT "to"     :| [MTT "the King"], Nothing)
+                                                ,(MTT "amount" :| [MTT "$20"]     , Nothing)]) }
 
       filetest "action-params-singer" "should parse action params"
         (parseR pRules) [singer_must_pay_params]

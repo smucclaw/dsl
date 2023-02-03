@@ -199,19 +199,19 @@ nlgTests2 = do
 testDetsAsDet :: BoolStructR
 testDetsAsDet =
     AA.Any (Just (AA.PrePost "I like" "cat"))
-            [ AA.Leaf ( RPMT [ "this" ] )
-            , AA.Leaf ( RPMT [ "that" ] ) ]
+            [ AA.Leaf ( RPMT [ MTT "this" ] )
+            , AA.Leaf ( RPMT [ MTT "that" ] ) ]
 
 testBSR :: [String] -> BoolStructR
-testBSR strs = AA.Any Nothing [ AA.Leaf (RPMT [Text.pack str]) | str <- strs ]
+testBSR strs = AA.Any Nothing [ AA.Leaf (RPMT [MTT $ Text.pack str]) | str <- strs ]
 
 testBSP :: [String] -> BoolStructP
 testBSP strs =  AA.Leaf $ ( qq, Nothing) :| []
-  where qq = fromList $ Text.pack <$> strs
+  where qq = fromList $ MTT . Text.pack <$> strs
 
 testBSPDT :: [String] -> BoolStructDTP
 testBSPDT strs =  mkLeafDT $ ( qq, Nothing) :| []
-  where qq = fromList $ Text.pack <$> strs
+  where qq = fromList $ MTT . Text.pack <$> strs
 
 testDetBSR :: BoolStructR
 testDetBSR = testBSR ["this", "that"]
@@ -292,7 +292,7 @@ everyOrgNotPublicAg ::  Rule
 everyOrgNotPublicAg = defaultReg
   { subj = mkLeafPT "organization"
   , rkeyword = REvery
-  , who = Just $ multiterm2bsr' ["is not a public agency"]
+  , who = Just $ multiterm2bsr' [MTT "is not a public agency"]
   , cond = Nothing
   , deontic = DMust
   , action = mkLeafPT "sings"

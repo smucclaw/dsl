@@ -32,11 +32,11 @@ parserTests  = do
     describe "megaparsing MEANS" $ do
 
       let bobUncle1 = defaultHorn
-            { name = ["Bob's your uncle"]
+            { name = [MTT "Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [HC { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT ["Bob is estranged"])
-                                                                                       ,mkLeaf (RPMT ["Bob is dead"])]))
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT [MTT "Bob is estranged"])
+                                                                                          ,mkLeaf (RPMT [MTT "Bob is dead"])]))
                    , hBody = Nothing}]
             , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
 
@@ -47,8 +47,8 @@ parserTests  = do
 
       let bobUncle2 = bobUncle1
             { clauses =
-              [HC { hHead = RPBoolStructR ["Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (RPMT ["Bob is estranged"]))
-                                                                                  ,mkLeaf (RPMT ["Bob is dead"])])
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (RPMT [MTT "Bob is estranged"]))
+                                                                                  ,mkLeaf (RPMT [MTT "Bob is dead"])])
                    , hBody = Nothing } ] }
 
       filetest "bob-head-2" "handle less indentation"
@@ -59,20 +59,20 @@ parserTests  = do
 
       filetest "bob-tail-1" "should work for constitutive rules"
         (parseR pRules) [ srcrow2 defaultHorn
-                          { name = ["Bob's your uncle"]
+                          { name = [MTT "Bob's your uncle"]
                           , keyword = Means
                           , clauses =  [ HC
-                                         { hHead = RPBoolStructR [ "Bob's your uncle" ] RPis
+                                         { hHead = RPBoolStructR [MTT "Bob's your uncle" ] RPis
                                            ( All Nothing
                                              [ Any Nothing
                                                [ Leaf
-                                                 ( RPMT [ "Bob is your mother's brother" ] )
+                                                 ( RPMT [ MTT "Bob is your mother's brother" ] )
                                                , Leaf
-                                                 ( RPMT [ "Bob is your father's brother" ] )
+                                                 ( RPMT [ MTT "Bob is your father's brother" ] )
                                                ]
                                              , Not
                                                ( Leaf
-                                                 ( RPMT [ "Bob is just a family friend" ] )
+                                                 ( RPMT [ MTT "Bob is just a family friend" ] )
                                                )
                                              ]
                                            )

@@ -44,17 +44,17 @@ tsClasses :: Interpreted -> Doc ann
 tsClasses l4i =
   let ct@(CT ch) = classtable l4i
   in
-  vvsep [ "class" <+> snake_case [className] <>
+  vvsep [ "class" <+> snake_case [MTT className] <>
           case clsParent ct className of
            Nothing       -> mempty
            (Just parent) -> " extends" <+> pretty parent
           -- attributes of the class are shown as decls
           <+> lbrace
-          <//> indent 2 ( vsep [ snake_case [attrname] <>
+          <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
-                                   Just t@(SimpleType TOptional _) -> " ?:" <+> prettySimpleType "ts" snake_inner t
-                                   Just t@(SimpleType TOne      _) -> " :"  <+> prettySimpleType "ts" snake_inner t
-                                   Just t                          -> " : " <+> prettySimpleType "ts" snake_inner t
+                                   Just t@(SimpleType TOptional _) -> " ?:" <+> prettySimpleType "ts" (snake_inner . MTT) t
+                                   Just t@(SimpleType TOne      _) -> " :"  <+> prettySimpleType "ts" (snake_inner . MTT) t
+                                   Just t                          -> " : " <+> prettySimpleType "ts" (snake_inner . MTT) t
                                    Nothing -> ""
                                  <> semi
                                | attrname <- getCTkeys children
@@ -72,7 +72,7 @@ jsInstances l4i =
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> scopenameStr scopename <+> "scope" <//>
-          vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" snake_inner (getSymType symtype) <+> equals <+> nest 2 value
+          vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
                 | (mt, (symtype, vals)) <- Map.toList symtab'
                 , value <- case vals of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,

@@ -37,32 +37,32 @@ parserTests  = do
             [ defaultReg
               { subj = Leaf
                 (
-                  ( "Organisation" :| []
+                  ( pure (MTT "Organisation")
                   , Nothing
                   ) :| []
                 )
               , rkeyword = REvery
               , who = Just
                 ( Leaf
-                  ( RPMT
+                  ( RPMT (MTT <$>
                     [ "is"
                     , "not"
                     , "a Public Agency"
-                    ]
+                    ])
                   )
                 )
               , cond = Just
                 ( Leaf
-                  ( RPMT [ "the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13" ] )
+                  ( RPMT [ MTT "the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13" ] )
                 )
               , deontic = DMust
               , action = Leaf
                 (
-                  ( "assess" :| [ "if it is a Notifiable Data Breach" ]
+                  ( MTT "assess" :| [ MTT "if it is a Notifiable Data Breach" ]
                   , Nothing
                   ) :|
                   [
-                    ( "by" :|
+                    ( MTT <$> "by" :|
                       [ "performing"
                       , "NDB Qualification"
                       ]
@@ -71,12 +71,12 @@ parserTests  = do
                   ]
                 )
               , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
-              , hence = Just ( RuleAlias ["Notification"] )
+              , hence = Just ( RuleAlias [MTT "Notification"] )
               , lest = Just
                 ( defaultReg
                     { subj = Leaf
                         (
-                            ( "the PDPC" :| []
+                            ( MTT "the PDPC" :| []
                             , Nothing
                             ) :| []
                         )
@@ -84,7 +84,7 @@ parserTests  = do
                     , deontic = DMay
                     , action = Leaf
                         (
-                            ( "demand" :| [ "an explanation for your inaction" ]
+                            ( MTT <$> "demand" :| [ "an explanation for your inaction" ]
                             , Nothing
                             ) :| []
                         )
@@ -94,7 +94,7 @@ parserTests  = do
                         ( defaultReg
                             { subj = Leaf
                                 (
-                                    ( "You" :| []
+                                    ( MTT "You" :| []
                                     , Nothing
                                     ) :| []
                                 )
@@ -103,15 +103,15 @@ parserTests  = do
                             , srcref = Nothing
                             , action = Leaf
                                 (
-                                    ( "respond" :| []
+                                    ( MTT "respond" :| []
                                     , Nothing
                                     ) :|
                                     [
-                                        ( "to" :| [ "the PDPC" ]
+                                        ( MTT <$> "to" :| [ "the PDPC" ]
                                         , Nothing
                                         )
                                     ,
-                                        ( "about" :| [ "your inaction" ]
+                                        ( MTT <$> "about" :| [ "your inaction" ]
                                         , Nothing
                                         )
                                     ]
@@ -122,15 +122,15 @@ parserTests  = do
                 )
             , upon = Just
                 (
-                    ( "becoming aware a data breach may have occurred" :| []
+                    ( MTT "becoming aware a data breach may have occurred" :| []
                     , Nothing
                     ) :| []
                 )
             , rlabel = Just ("\167",2,"Assess")
             }
             , DefNameAlias
-            { name = [ "You" ]
-            , detail = [ "Organisation" ]
+            { name = [ MTT "You" ]
+            , detail = [ MTT "Organisation" ]
             , nlhint = Nothing
             , srcref = Just
                 ( SrcRef
@@ -148,29 +148,29 @@ parserTests  = do
       filetest "pdpadbno-1-b" "must assess" (parseR pToplevel) expected_pdpadbno1
 
       filetest "pdpadbno-2" "data intermediaries"
-        (parseR pToplevel) [Regulative {subj = mkLeaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (mkLeaf (RPMT ["is not","processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (mkLeaf (RPMT ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["the Organisation"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Data Intermediary non PA"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = mkLeaf ((MTT "Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (mkLeaf (RPMT [MTT "is not",MTT "processing personal data on behalf of and for the purposes of a public agency"])), cond = Just (mkLeaf (RPMT [MTT "the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])), deontic = DMust, action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Organisation"],Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Data Intermediary non PA"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just ((MTT <$> "becoming aware a data breach involving a client Organisation may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = [MTT "You"], detail = [MTT "Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})}]
 
       filetest "pdpadbno-3" "data intermediaries"
-        (parseR pToplevel) [Regulative {subj = mkLeaf (("Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (mkLeaf (RPMT ["processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = mkLeaf (("NOTIFY" :| ["the Public Agency"],Nothing) :| [("for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Data Intermediary for PA"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just (("becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["You"], detail = ["Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = mkLeaf ((MTT <$> "Data Intermediary" :| [],Nothing) :| []), rkeyword = REvery, who = Just (mkLeaf (RPMT [MTT "processes personal data on behalf of and for the purposes of a public agency"])), cond = Nothing, deontic = DMust, action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Public Agency"],Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"],Nothing)]), temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Data Intermediary for PA"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Just ((MTT <$> "becoming aware a data breach involving a client public agency may have occurred" :| [],Nothing) :| []), given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = [MTT "You"], detail = [MTT "Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})}]
 
       filetest "pdpadbno-5" "notification to PDPC"
-        (parseR pToplevel) [Regulative {subj = mkLeaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT ["it is","an NDB"]),Not (mkLeaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["the PDPC"],Nothing) :| [("in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),("with" :| ["a Notification Message"],Nothing),("and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (Regulative {subj = mkLeaf (("the PDPC" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMay, action = mkLeaf (("NOTIFY" :| ["you"],Nothing) :| [("with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = ["the PDPC Exclusion List"], detail = ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}]
+        (parseR pToplevel) [Regulative {subj = mkLeaf ((MTT "You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT [MTT "it is",MTT "an NDB"]),Not (mkLeaf (RPMT [MTT "you are a Public Agency"]))]), deontic = DMust, action = mkLeaf ((MTT <$> "NOTIFY" :| ["the PDPC"],Nothing) :| [(MTT <$> "in" :| ["the form and manner specified at www.pdpc.gov.sg"],Nothing),(MTT <$> "with" :| ["a Notification Message"],Nothing),(MTT <$> "and" :| ["a list of individuals for whom notification waiver is sought"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Just (Regulative {subj = mkLeaf ((MTT <$> "the PDPC" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMay, action = mkLeaf ((MTT <$> "NOTIFY" :| ["you"],Nothing) :| [(MTT <$> "with" :| ["a list of individuals to exclude from notification"],Nothing)]), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Nothing, upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}), lest = Nothing, rlabel = Just ("\167",2,"Notify PDPC"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []},DefNameAlias {name = [MTT "the PDPC Exclusion List"], detail = MTT <$> ["with","a list of individuals to exclude from notification"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})}]
 
       filetest "pdpadbno-6" "exemption: unlikely"
         (parseR pToplevel)
         [ defaultHorn
-          { name =
+          { name = MTT <$> 
             [ "it is"
             , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
             ]
           , keyword = Decide
           , given = Just
             (
-              ( "an individual" :| []
+              ( MTT "an individual" :| []
               , Nothing
               ) :|
               [
-                ( "who" :| [ "is affected by an NDB" ]
+                ( MTT <$> "who" :| [ "is affected by an NDB" ]
                 , Nothing
                 )
               ]
@@ -178,21 +178,21 @@ parserTests  = do
           , upon = Nothing
           , clauses =
               [ HC
-                { hHead = RPMT
+                { hHead = RPMT $ MTT <$> 
                           [ "it is"
                           , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
                           ]
                 , hBody = Just
                           ( Any Nothing
                             [ Leaf
-                              ( RPMT
+                              ( RPMT $ MTT <$> 
                                 [ "the organisation has taken any action"
                                 , "to"
                                 , "render it unlikely that the notifiable data breach will result in significant harm to the individual"
                                 ]
                               )
                             , Leaf
-                              ( RPMT
+                              ( RPMT $ MTT <$> 
                                 [ "the organisation already implemented any technological measure"
                                 , "to"
                                 , "render it unlikely that the notifiable data breach will result in significant harm to the individual"
@@ -215,8 +215,8 @@ parserTests  = do
             )
           }
         , DefNameAlias
-          { name = [ "Unlikely" ]
-          , detail =
+          { name = [ MTT "Unlikely" ]
+          , detail = MTT <$> 
             [ "it is"
             , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
             ]
@@ -234,4 +234,4 @@ parserTests  = do
         ]
 
       filetest "pdpadbno-7" "notification to users"
-        (parseR pToplevel) [Regulative {subj = mkLeaf (("You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT ["it is","an NDB"]),Not (mkLeaf (RPMT ["you are a Public Agency"]))]), deontic = DMust, action = mkLeaf (("NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [("in" :| ["any manner that is reasonable in the circumstances"],Nothing),("with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPMT ["the Notifiable Individuals"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}], defaults = [], symtab = []},Hornlike {name = ["the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["the Notifiable Individuals"] RPis (All Nothing [mkLeaf (RPMT ["the set of individuals affected by the NDB"]),Not (mkLeaf (RPMT ["the individuals who are deemed","Unlikely"])),Not (mkLeaf (RPMT ["the individuals on","the PDPC Exclusion List"])),Not (mkLeaf (RPMT ["the individuals on","the LEA Exclusion List"]))]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}]
+        (parseR pToplevel) [Regulative {subj = mkLeaf ((MTT <$> "You" :| [],Nothing) :| []), rkeyword = RParty, who = Nothing, cond = Just (All Nothing [mkLeaf (RPMT (MTT <$> ["it is","an NDB"])),Not (mkLeaf (RPMT [MTT "you are a Public Agency"]))]), deontic = DMust, action = mkLeaf ((MTT <$> "NOTIFY" :| ["each of the Notifiable Individuals"],Nothing) :| [(MTT <$> "in" :| ["any manner that is reasonable in the circumstances"],Nothing),(MTT <$> "with" :| ["a message obeying a certain format"],Nothing)]), temporal = Just (TemporalConstraint TBefore (Just 3) "days"), hence = Nothing, lest = Nothing, rlabel = Just ("\167",2,"Notify Individuals"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [Hornlike {name = [MTT "the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPMT [MTT "the Notifiable Individuals"], hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}], defaults = [], symtab = []},Hornlike {name = [MTT "the Notifiable Individuals"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "the Notifiable Individuals"] RPis (All Nothing [mkLeaf (RPMT [MTT "the set of individuals affected by the NDB"]),Not (mkLeaf (RPMT [MTT "the individuals who are deemed",MTT "Unlikely"])),Not (mkLeaf (RPMT [MTT "the individuals on",MTT "the PDPC Exclusion List"])),Not (mkLeaf (RPMT [MTT "the individuals on", MTT "the LEA Exclusion List"]))]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}), defaults = [], symtab = []}]

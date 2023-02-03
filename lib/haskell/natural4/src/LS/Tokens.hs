@@ -295,7 +295,7 @@ pText ts tok = do
   p <- pOtherVal
   if p `elem` ts
     then return tok
-    else fail ("pText: couldn't match input text " ++ show ts)
+    else fail ("pText: got " ++ show p ++ " which doesn't match input text " ++ show ts)
 
 -- | parse a multiterm
 pMultiTerm :: Parser MultiTerm

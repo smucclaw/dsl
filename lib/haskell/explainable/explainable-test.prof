@@ -1,0 +1,30 @@
+	Wed Feb  1 12:36 2023 Time and Allocation Profiling Report  (Final)
+
+	   explainable-test +RTS -N -p -RTS
+
+	total time  =        0.00 secs   (5 ticks @ 1000 us, 8 processors)
+	total alloc =     198,728 bytes  (excludes profiling overheads)
+
+COST CENTRE MODULE                SRC                  %time %alloc
+
+MAIN        MAIN                  <built-in>            80.0   73.9
+CAF         GHC.IO.Encoding.Iconv <entire-module>       20.0    0.1
+CAF         GHC.IO.Encoding       <entire-module>        0.0    1.2
+CAF         GHC.IO.Handle.FD      <entire-module>        0.0   17.5
+main        Main                  test/Spec.hs:2:1-48    0.0    5.3
+
+
+                                                                           individual      inherited
+COST CENTRE  MODULE                SRC                 no.      entries  %time %alloc   %time %alloc
+
+MAIN         MAIN                  <built-in>          2206           0   80.0   73.9   100.0  100.0
+ CAF         GHC.Conc.Signal       <entire-module>     4105           0    0.0    0.3     0.0    0.3
+ CAF         GHC.Event.Thread      <entire-module>     4102           0    0.0    0.7     0.0    0.7
+ CAF         GHC.IO.Handle.FD      <entire-module>     4097           0    0.0   17.5     0.0   17.5
+ CAF         GHC.IO.Handle.Text    <entire-module>     4096           0    0.0    0.0     0.0    0.0
+ CAF         GHC.IO.Encoding       <entire-module>     3286           0    0.0    1.2     0.0    1.2
+ CAF         GHC.IO.Encoding.Iconv <entire-module>     2528           0   20.0    0.1    20.0    0.1
+ CAF:main1   Main                  <no location info>  4217           0    0.0    0.0     0.0    0.0
+  main       Main                  test/Spec.hs:2:1-48 4412           1    0.0    0.0     0.0    0.0
+ CAF:main2   Main                  <no location info>  4216           0    0.0    1.0     0.0    1.0
+ main        Main                  test/Spec.hs:2:1-48 4413           0    0.0    5.3     0.0    5.3

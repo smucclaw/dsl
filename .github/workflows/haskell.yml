@@ -35,6 +35,12 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
+      - name: Build explainable
+        run: stack build
+        working-directory: lib/haskell/explainable
+      - name: Test explainable
+        run: stack test
+        working-directory: lib/haskell/explainable
       - name: Build anyall
         run: stack build
         working-directory: lib/haskell/anyall

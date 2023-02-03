@@ -284,9 +284,18 @@ pMTExpr =
          , MTT <$> pOtherVal
          ]
 
--- | parse a TRUE or FALSE to an MTEXpr
+-- | parse a TRUE or FALSE to an MTEXpr. But see also `getMarkings` in Interpreter.hs.
 pBoolean :: Parser Bool
-pBoolean = True <$ pToken TokTrue <|> False <$ pToken TokFalse
+pBoolean = True  <$ choice [pToken TokTrue,  try $ pText (Text.words "True true"  ) TokTrue  ] <|>
+           False <$ choice [pToken TokFalse, try $ pText (Text.words "False false") TokFalse ]
+
+-- | if the next token parses with pOtherVal to one of the desired text strings, upgrade to a given token; otherwise fail.
+pText :: [Text.Text] -> MyToken -> Parser MyToken
+pText ts tok = do
+  p <- pOtherVal
+  if p `elem` ts
+    then return tok
+    else fail ("pText: couldn't match input text " ++ show ts)
 
 -- | parse a multiterm
 pMultiTerm :: Parser MultiTerm

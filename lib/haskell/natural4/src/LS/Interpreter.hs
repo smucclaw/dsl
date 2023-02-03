@@ -740,6 +740,7 @@ getMarkings l4i =
                    "does not" -> Just False
                    "doesn't"  -> Just False
                    "hasn't"   -> Just False
+                   "false"    -> Just False
                    "not"      -> Just False
                    "no"       -> Just False
                    "f"        -> Just False
@@ -747,6 +748,7 @@ getMarkings l4i =
                    "so"       -> Just True
                    "yes"      -> Just True
                    "has"      -> Just True
+                   "true"     -> Just True
                    "does"     -> Just True
                    _            -> Nothing
 

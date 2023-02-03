@@ -286,8 +286,8 @@ pMTExpr =
 
 -- | parse a TRUE or FALSE to an MTEXpr. But see also `getMarkings` in Interpreter.hs.
 pBoolean :: Parser Bool
-pBoolean = True  <$ choice [pToken TokTrue,  try $ pText (Text.words "True true"  ) TokTrue  ] <|>
-           False <$ choice [pToken TokFalse, try $ pText (Text.words "False false") TokFalse ]
+pBoolean = True  <$ choice [pToken TokTrue,  try $ pText (Text.words "True true Yes yes ja"  ) TokTrue  ] <|>
+           False <$ choice [pToken TokFalse, try $ pText (Text.words "False false No no nein") TokFalse ]
 
 -- | if the next token parses with pOtherVal to one of the desired text strings, upgrade to a given token; otherwise fail.
 pText :: [Text.Text] -> MyToken -> Parser MyToken

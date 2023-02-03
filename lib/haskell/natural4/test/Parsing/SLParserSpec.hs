@@ -276,13 +276,13 @@ parserTests  = do
           inline_3 = ( ( [MTT "Bad"] , Means , inline_   ), [] )
           inline_r = (([MTT "multiwonk"],Means,Any Nothing [mkLeaf (RPMT [MTT "poopoo"]),Any (Just (Pre "the")) [mkLeaf (RPMT [MTT "honk"]),mkLeaf (RPMT [MTT "ponk"])]]),[])
           inline_4 = ( ( [MTT "a data breach occurred"] , Means , inline_4xs), [] )
-          inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) [inline_xs]
-          inline_p  = Any (Just $ Pre     "any unauthorised"                    ) [inline_xs]
-          inline_   = Any Nothing                                                 [inline_xs]
-          inline_xs = mkLeaf $ RPMT [MTT "access use disclosure copying modification disposal"]
+          inline_pp = Any (Just $ PrePost "any unauthorised" "of personal data" ) inline_xs
+          inline_p  = Any (Just $ Pre     "any unauthorised"                    ) inline_xs
+          inline_   = Any Nothing                                                 inline_xs
+          inline_xs = mkLeaf <$> ( RPMT <$> ((:[]) <$> (MTT <$> ["access", "use", "disclosure", "copying", "modification", "disposal"])))
           inline4_pp= Any (Just $ PrePost
                            "loss of storage medium on which personal data is stored in circumstances where the unauthorised"
-                           "of the personal data is likely to occur") [inline_xs]
+                           "of the personal data is likely to occur") inline_xs
           inline_4xs= Any Nothing [inline_pp, inline4_pp]
 
           pInline1 = parseOther $ do

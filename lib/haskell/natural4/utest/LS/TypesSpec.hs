@@ -42,7 +42,7 @@ spec = do
         typeSig = Just (SimpleType TOne "Fruit")
         typedWords = "apple" :| ["orange", "banana"]
         rp = RPParamText $ (MTT <$>typedWords, typeSig) :| []
-      rp2mt rp `shouldBe`  (MTT <$> ["apple orange banana"])
+      rp2mt rp `shouldBe`  (MTT <$> ["apple", "orange", "banana"])
     it "rp2mt RPConstraint" $ do
       let
         rp = RPConstraint (MTT <$> ["sky"]) RPis (MTT <$> ["blue"])
@@ -64,9 +64,9 @@ spec = do
     it "rpHead RPParamText" $ do
       let
         typeSig = Just (SimpleType TOne "Fruit")
-        typedWords = MTT <$> "apple" :| ["orange", "banana"]
+        typedWords = MTT "apple" :| [MTN 10, MTT "banana"]
         rp = RPParamText $ (typedWords, typeSig) :| []
-      rpHead rp `shouldBe` (MTT <$> [ "apple orange banana"])
+      rpHead rp `shouldBe` [MTT "apple", MTN 10.0, MTT "banana"]
     it "rpHead RPConstraint" $ do
       let
         rp = RPConstraint (MTT <$> ["sky"]) RPis (MTT <$> ["blue"])

@@ -261,21 +261,6 @@ debugPrintSL = SLParser . lift . debugPrint
 alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
--- | the relations in a Relational
--- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
-tok2rel :: Parser RPRel
-tok2rel = choice
-    [ RPis      <$ pToken Is      
-    , RPhas     <$ pToken Has
-    , RPeq      <$ pToken TokEQ   
-    , RPlt      <$ pToken TokLT   
-    , RPlte     <$ pToken TokLTE  
-    , RPgt      <$ pToken TokGT   
-    , RPgte     <$ pToken TokGTE  
-    , RPelem    <$ pToken TokIn   
-    , RPnotElem <$ pToken TokNotIn
-    ]
-
 -- * the new MultiTerm is made of MTExpr
 pMTExpr :: Parser MTExpr
 pMTExpr =

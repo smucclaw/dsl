@@ -62,7 +62,7 @@ instance MyBSR BoolStructDTR where
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
-           | RPTC TComparison
+           | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
 -- | Previously `MultiTerm`s were just @[Text]@.
@@ -351,7 +351,7 @@ data ParamType = TOne | TOptional | TList0 | TList1
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                          deriving (Eq, Ord, Show, Generic, ToJSON)
+                 deriving (Eq, Ord, Show, Generic, ToJSON)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
                           deriving (Eq, Ord, Show, Generic, ToJSON)

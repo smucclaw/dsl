@@ -244,12 +244,11 @@ tok2rel = choice
     , RPgte     <$ pToken TokGTE  
     , RPelem    <$ pToken TokIn   
     , RPnotElem <$ pToken TokNotIn
-    , RPnotElem <$ pToken TokNotIn
-    , (RPTC TBefore) <$ pToken Before
-    , (RPTC TAfter)  <$ pToken After
-    , (RPTC TBy)     <$ pToken By
-    , (RPTC TOn)     <$ pToken On
-    , (RPTC TVague)  <$ pToken Eventually
+    , RPTC TBefore <$ pToken Before
+    , RPTC TAfter  <$ pToken After
+    , RPTC TBy     <$ pToken By
+    , RPTC TOn     <$ pToken On
+    , RPTC TVague  <$ pToken Eventually
     ]
 
 rpConstitutiveAsElement :: Rule -> BoolStructR

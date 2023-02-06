@@ -124,16 +124,16 @@ groundsToChecklist env mts = sequence [
   ]
 groundToChecklist :: NLGEnv -> MultiTerm -> IO MultiTerm
 groundToChecklist env mt = do
-  let txt = mt2text mt
+{-  let txt = Text.unwords mt
   uds <- parseUD env txt
   let qs = gf $ getQSFromTrees $ udsToTreeGroups uds
   -- Debug output: print the AST of the question generated in getQSFromTrees
   when (verbose env) $ putStrLn ("The generated QS from the UDApp tree:\n" ++ showExpr qs)
-  gr <- nlgExtPGF
-  let lin = linearize gr (head $ languages gr) qs
+  let lin = linearize (gfGrammar env) (gfLang gr) qs
   let result = case words lin of
         "is":"there":"parseUD:":"fail":_ -> Text.pack "Is it true that " <> txt
-        _ -> Text.pack lin
+        _ -> Text.pack lin -}
+  let result = Text.pack "NLG is under construction"
   return $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm

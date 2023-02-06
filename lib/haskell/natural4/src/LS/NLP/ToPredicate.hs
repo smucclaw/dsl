@@ -11,10 +11,10 @@ import LS.NLP.UDExt
 import PGF hiding (Tree)
 import Data.List.Split (splitOn)
 import Data.Char (toUpper)
-import LS.NLP.NLG (AnnotatedRule(..))
 import Data.List (intercalate)
 import Data.Bifunctor (first)
 import Data.Maybe (mapMaybe)
+import qualified Data.Text as Text
 
 newtype Formula = And [Predicate]
   deriving (Show, Eq)
@@ -182,3 +182,71 @@ capitalize :: String  -> String
 capitalize (a:as) = toUpper a : as
 capitalize [] = []
 
+
+
+data AnnotatedRule = RegulativeA
+            { subjA     :: Expr                      -- man AND woman AND child
+            , keywordA  :: CId                       -- Every , Party, All — GF funs
+            , whoA      :: Maybe Expr                -- who walks and (eats or drinks)
+            , condA     :: Maybe Expr                -- if it is a saturday
+            , deonticA  :: CId                       -- must, may
+            , actionA   :: Expr                      -- sing / pay the king $20
+            , temporalA :: Maybe Expr                -- before midnight
+            -- , henceA    :: Maybe [AnnotatedRule]     -- hence [UDS]
+            -- , lestA     :: Maybe [AnnotatedRule]     -- lest [UDS]
+            , uponA     :: Maybe Expr                -- UPON entering the club (event prereq trigger)
+            , givenA    :: Maybe Expr                -- GIVEN an Entertainment flag was previously set in the history trace
+            -- skipping rlabel, lsource, srcref
+            , havingA   :: Maybe Expr  -- HAVING sung...
+            -- , wwhereA   :: [AnnotatedRule]
+            -- TODO: what are these?
+--            , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+--            , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+            }
+            | ConstitutiveA {
+              nameA     :: Text.Text   -- the thing we are defining
+            , keywordA  :: CId       -- Means, Includes, Is, Deem
+            , condA     :: Maybe Expr -- a boolstruct set of conditions representing When/If/Unless
+            , givenA    :: Maybe Expr
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | HornlikeA {
+              nameA     :: Text.Text           -- colour
+            , keywordA  :: CId            -- decide / define / means
+            , givenA    :: Maybe Expr    -- applicant has submitted fee
+            , uponA     :: Maybe Expr    -- second request occurs
+            , clausesA  :: [Expr]
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | TypeDeclA {
+              nameA     :: Text.Text  --      DEFINE Sign
+            , superA    :: Maybe Expr     --                  :: Thing
+            --, hasA      :: Maybe [AnnotatedRule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
+            , enumsA    :: Maybe Expr   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+            , givenA    :: Maybe Expr
+            , uponA     :: Maybe Expr
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | ScenarioA {
+              scgivenA  :: [Expr]
+            , expectA   :: [Expr]      -- investment is savings when dependents is 5
+            -- skipping letbind, rlabel, lsurce, srcref, defaults, symtab
+            }
+            | DefNameAliasA { -- inline alias, like     some thing AKA Thing
+              nameA   :: Text.Text  -- "Thing" -- the thing usually said as ("Thing")
+            , detailA :: Expr  -- ["some", "thing"]
+            , nlhintA :: Maybe Text.Text   -- "lang=en number=singular"
+            }
+            | RegFulfilledA  -- trivial top
+            | RegBreachA     -- trivial bottom
+{- skipping the following
+            | DefTypically -- inline default assignment, like     some hemisphere TYPICALLY North
+            { name   :: RuleName  -- the name of the enclosing rule scope context -- a bit tricky to retrieve so typically just the termhead for now. FIXME
+            , defaults :: [RelationalPredicate] -- usually an RPParamText or RPMT. higher order not quite explored yet.
+            , srcref :: Maybe SrcRef
+            }
+          | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
+          | RuleGroup { rlabel :: Maybe RuleLabel
+                      , srcref :: Maybe SrcRef }  -- § NextStep
+
+          | NotARule [MyToken] -}

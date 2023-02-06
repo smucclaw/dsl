@@ -4,8 +4,8 @@
 module Lib where
 
 import qualified Data.Map as Map
-import Control.Monad.Trans.State ( gets, State, StateT, evalState, runStateT, modify )
 import Control.Monad.State (liftIO)
+import Control.Monad.Trans.State (StateT, modify, runStateT)
 import Control.Monad (forM_, when, unless, (>=>))
 import Control.Monad.IO.Class (MonadIO(..))
 import Data.Function ((&))
@@ -49,10 +49,6 @@ tryChoice = choice . fmap try
 int :: Parser Int
 int = read <$> some numberChar
 
-
-
-
--- * Application Support
 
 
 -- * Set up some Explainable computations
@@ -125,7 +121,7 @@ netIncome =
 runTax :: Scenario -> Focus -> IO Float
 runTax sc taxcomp = do
   sc2 <- netIncome sc
-  (val, xpl, stab, wlog) <- xplainE sc2 taxcomp
+  (val, xpl, stab, wlog) <- xplainE sc2 emptyState taxcomp
   return val
  
 tax_2_3 :: Focus
@@ -141,7 +137,7 @@ tax_2_3 = do
 (>>=>) :: MonadIO m => m a -> (a -> IO b) -> m b
 x >>=> y = x >>= liftIO . y
 
-taxPayableFor :: Float -> Explainable r Float
+taxPayableFor :: Float -> Explainable r MyState Float
 taxPayableFor = progDirectM 2023
 
 tax_34 :: Focus
@@ -170,7 +166,7 @@ tax_34 = do
                ,Node ([],["squashToTotals"]) [xpl]
                ])
 
-squashToTotals :: Scenario -> Explainable r Scenario
+squashToTotals :: Scenario -> Explainable r MyState Scenario
 squashToTotals sc = do
   (total,xpl) <- eval $ sumOf . col2mathList $ sc Map.! "net income"
   return (Map.singleton "net income" (Map.singleton "total" total)

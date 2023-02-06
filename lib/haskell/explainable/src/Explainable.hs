@@ -45,7 +45,7 @@ import Data.Bifunctor (first, second)
 --
 -- We tack on a bit of useful infrastructure of our own: basically, a call stack, and a history trace of previous execution,
 -- in the form of a `HistoryPath`.
-type Explainable r a = RWST         (HistoryPath,r) [String] MyState IO (a,XP)
+type Explainable r st a = RWST         (HistoryPath,r) [String] st IO (a,XP)
 
 -- | As we evaluate down from the root to the leaves,
 --
@@ -84,20 +84,6 @@ type Stdexp = [String]
 mkNod :: a -> Tree ([b],[a])
 mkNod x = Node ([],[x]) []
   
--- | The State supports a symbol table in which variables and functions are tracked.
--- We have a couple different symbol tables, one for numeric and one for boolean functions.
--- In future we will have as many symbol tables as there are Expr types in our DSL.
--- Grab the `MyState` by calling @<- get@. If you know which symtab you want, you can call
--- @<- gets symtabX@.
-type SymTab = Map.Map String
-data MyState = MyState { symtabF :: SymTab (Expr     Float)
-                       , symtabP :: SymTab (Pred     Float)
-                       , symtabL :: SymTab (ExprList Float)
-                       }
-  deriving (Show, Eq)
-emptyState :: MyState
-emptyState = MyState Map.empty Map.empty Map.empty
-
 -- * Utility functions
 
 -- | utility function to format the call stack  
@@ -106,8 +92,8 @@ pathSpec = intercalate " / " . reverse
 
 
 -- | Explain an arbitrary @Explainable@; it's up to the input expr to run eval whatever
-xplainE :: (Show e) => r -> Explainable r e -> IO (e, XP, MyState, [String])
-xplainE r expr = do
+xplainE :: (Show e) => r -> st -> Explainable r st e -> IO (e, XP, st, [String])
+xplainE r emptyState expr = do
   ((val,xpl), stab, wlog) <- runRWST
                              expr
                              (([],["toplevel"]),r)
@@ -119,4 +105,12 @@ xplainE r expr = do
   putStrLn $ "*** toplevel: xpl = " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
 
   return (val, xpl, stab, wlog)
+
+-- | show an explanation tree, formatted for org-mode
+drawTreeOrg :: Int -> XP -> String
+drawTreeOrg depth (Node (stdout, stdexp) xs) =
+  unlines ( (replicate depth '*' ++ " " ++ unlines stdexp)
+            : [ "#+begin_example\n" ++ unlines stdout ++ "#+end_example" | not (null stdout) ] )
+  ++
+  unlines ( drawTreeOrg (depth + 1) <$> xs )
 

@@ -112,8 +112,8 @@ data Rule = Regulative
           | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
           | RuleGroup { rlabel :: Maybe RuleLabel
                       , srcref :: Maybe SrcRef }  -- § NextStep
-          | RegFulfilled  -- trivial top
-          | RegBreach     -- trivial bottom
+          | RegFulfilled  -- trivial top -- success / fulfilled. used as the default HENCE branch of a MAY / MUST
+          | RegBreach     -- trivial bottom -- failure / breach. used as the default LEST branch of a MUST.
           -- | CaseStm       -- work in progress
           -- { name   :: RuleName
           -- , limbs  :: [(Maybe BoolStructP -- cond

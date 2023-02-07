@@ -10,7 +10,7 @@ concrete NL4Eng of NL4 =
       , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
       ]
-  ** open SyntaxEng, ParadigmsEng, ExtendEng, (ExtraEng=ExtraEng), IrregEng in {
+  ** open SyntaxEng, ParadigmsEng, ExtendEng, (ExtraEng=ExtraEng), (R=ResEng), IrregEng in {
     lincat
       Rule = S ;
       Action = ExtendEng.VPI ;
@@ -18,6 +18,9 @@ concrete NL4Eng of NL4 =
       [Who] = ExtendEng.ListVPS ;
       Subj = CN ;
       Deontic = VV ;
+
+    linref
+      Who = ExtendEng.linVPS (R.agrP3 R.Sg) ;
     lin 
 -- Application layer
       -- : Subj -> Deontic -> Action -> Rule ;

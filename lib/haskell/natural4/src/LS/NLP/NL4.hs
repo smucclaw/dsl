@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances #-}
+{-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes #-}
 {-# OPTIONS_GHC -Wno-all #-}
 module LS.NLP.NL4 where
 
@@ -37,6 +37,8 @@ instance Gf GFloat where
 
 ----------------------------------------------------
 -- below this line machine-generated
+instance (Gf (Tree a)) => Show (Tree a) where
+    show = showExpr [] . gf
 ----------------------------------------------------
 
 type GAction = Tree GAction_

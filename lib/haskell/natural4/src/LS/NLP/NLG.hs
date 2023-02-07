@@ -7,8 +7,9 @@ module LS.NLP.NLG where
 
 
 import LS.NLP.NL4
+import LS.NLP.NL4Transformations
 import LS.Types
-import LS.Rule ( Rule(..), Expect(..))      
+import LS.Rule (Rule(..))      
 import PGF
 import qualified Data.Text as Text
 import qualified AnyAll as AA
@@ -41,13 +42,31 @@ myNLGEnv = do
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
 
-parseAction :: NLGEnv -> Text.Text -> [GAction]
-parseSubj :: NLGEnv -> Text.Text -> [GSubj]
-parseWho :: NLGEnv -> Text.Text -> [GWho]
+-----------------------------------------------------------------------------
+-- Parsing fields into GF categories – all typed, no PGF.Expr allowed
 
-parseAction e t = fg <$> parseAny "Action" e t
-parseSubj e t = fg <$> parseAny "Subj" e t
-parseWho e t = fg <$> parseAny "Who" e t
+parseActions :: NLGEnv -> Text.Text -> [GAction]
+parseSubjs :: NLGEnv -> Text.Text -> [GSubj]
+parseWhos :: NLGEnv -> Text.Text -> [GWho]
+
+parseActions e t = fg <$> parseAny "Action" e t
+parseSubjs e t = fg <$> parseAny "Subj" e t
+parseWhos e t = fg <$> parseAny "Who" e t
+
+parseAction :: NLGEnv -> BoolStructP -> GAction
+parseAction env action = case parseActions env $ bsp2text action of 
+                       [] -> error $ "no parse for " <> Text.unpack (bsp2text action)
+                       x:_ -> x
+
+parseSubj :: NLGEnv -> BoolStructP -> GSubj
+parseSubj env subj = case parseSubjs env $ bsp2text subj of 
+                       [] -> error $ "no parse for " <> Text.unpack (bsp2text subj)
+                       x:_ -> x
+
+parseWho :: NLGEnv -> RelationalPredicate -> GWho
+parseWho env rp = case parseWhos env (rp2text rp) of
+                  x:_ -> x
+                  [] -> error $ "parseWhoBS: failed to parse " <> Text.unpack (rp2text rp)
 
 parseDeontic :: Deontic -> GDeontic
 parseDeontic DMust = GMUST
@@ -61,24 +80,21 @@ parseAny cat env = gfParse env typ
             Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
             Just t -> t
 
+-----------------------------------------------------------------------------
+-- Main
+
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rule = 
   case rule of 
     Regulative {subj,who,deontic,action} -> do
-      let subjRaw = parseSubj env $ bsp2text subj
-          subjExpr = case subjRaw of 
-                       [] -> error $ "no parse for " <> (Text.unpack $ bsp2text subj)
-                       x:_ -> x
-          
-          -- TODO: this is supposed to stay in a BSR and then do something smart with it. 
-          -- first fmap is for Maybe, second for BSR which is a functor
-          -- still need to get text from RelationalPredicate
-          --whoExprBSR = fmap (parseWho env) <$> who 
-
+      let subjExpr = parseSubj env subj
           deonticExpr = parseDeontic deontic
-          actionExpr:_ = parseAction env $ bsp2text action
-          wholeExpr = gf $ GRegulative subjExpr deonticExpr actionExpr
-      pure $ gfLin env wholeExpr
+          actionExpr = parseAction env action
+          whoSubjExpr = case who of 
+                        Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWho env <$> w))
+                        Nothing -> subjExpr
+          wholeRule = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+      pure $ gfLin env wholeRule
     _ -> pure "NLG.hs is under construction, we only support singing"
 
 

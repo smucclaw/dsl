@@ -14,6 +14,8 @@ import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
 import LS.XPile.ToASP(astToDoc)
 
+import ToDMN.FromL4 (genXMLTree)
+
 import L4.Annotation
 import LS as SFL4
 
@@ -42,6 +44,10 @@ import L4.PrintProg (showL4, PrintSystem (L4Style), PrintConfig (PrintSystem))
 import L4.SyntaxManipulation (applyVarsNoType)
 import LS.Tokens (undeepers)
 
+import qualified Text.XML.HXT.Core as HXT
+
+import Debug.Trace (trace)
+
 -- output to Core L4 for further transformation
 
 -- TODO: could be removed: the result type of transpilation 
@@ -57,7 +63,20 @@ sfl4ToASP rs =
   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
   let prg = Program () rulesTransformed in
   let doc = astToDoc prg in
+    -- trace ("asp" ++ (show $ showL4 [] prg)) $
     show doc
+
+-- destructure (Rule t) from this
+-- data TopLevelElement t = RuleTLE (Rule t) | ...
+-- not actually necessary
+
+-- sfl4ToDMN :: HXT.ArrowXml cat => [SFL4.Rule] -> cat a HXT.XmlTree
+sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
+sfl4ToDMN rs =
+  let rulesTransformed = concatMap sfl4ToCorel4Rule rs
+      prg = Program () rulesTransformed
+  -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
+  in genXMLTree prg
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =

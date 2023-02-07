@@ -31,6 +31,7 @@ dependencies:
 - hspec
 - megaparsec
 - hspec-megaparsec
+- hxt
 - mtl
 - cassava
 - vector

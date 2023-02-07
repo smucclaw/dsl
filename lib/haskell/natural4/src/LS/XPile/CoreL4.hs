@@ -724,7 +724,7 @@ r1 = Hornlike
             { hHead = RPConstraint [ MTT "savings account" ] RPis [ MTT "inadequate" ]
             , hBody = Just
                 ( Leaf
-                    ( RPMT [ MTT "OTHERWISE" ] )
+                    ( mkRpmt ["OTHERWISE"] )
                 )
             }
         ]
@@ -758,7 +758,7 @@ r2 = Hornlike
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPMT [ MTT "Foo" ]
+            { hHead = mkRpmt ["Foo"]
             , hBody = Just
                 ( All Nothing
                     [ Leaf
@@ -859,7 +859,7 @@ testrules = [ Hornlike
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPMT [ MTT "Foo" ]
+            { hHead = mkRpmt ["Foo"]
             , hBody = Just
                 ( All Nothing
                     [ Leaf
@@ -892,7 +892,7 @@ testrules = [ Hornlike
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPMT [ MTT "Foo" ]
+            { hHead = mkRpmt ["Foo"]
             , hBody = Just
                 ( All Nothing
                     [ Leaf

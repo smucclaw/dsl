@@ -269,6 +269,9 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
+mkRpmt :: [Text.Text] -> RelationalPredicate
+mkRpmt a = RPMT (MTT <$> a)
+
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "IS"
 rel2txt RPhas     = "HAS" -- "relHas"

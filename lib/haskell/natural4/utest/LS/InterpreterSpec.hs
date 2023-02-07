@@ -29,30 +29,30 @@ spec = do
     it "expand Leaf RPBoolStructR has" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l = mkLeaf $ RPMT (MTT <$> ["rose", "has", "red"])
+        l = mkLeaf $ mkRpmt ["rose", "has", "red"]
         bsr = mkLeaf (RPBoolStructR (MTT <$> ["head"]) RPhas l)
       expandBSR' emptyInt 0 bsr `shouldBe` bsr
 
     it "expand Not RPBoolStructR " $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l = mkLeaf $ RPMT (MTT <$> ["rose", "has", "red"])
+        l = mkLeaf $ mkRpmt ["rose", "has", "red"]
         bsr = mkNot l
       expandBSR' emptyInt 0 bsr `shouldBe` bsr
 
     it "expand All RPBoolStructR is" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l2 = mkLeaf $ RPMT (MTT <$> ["sky", "is", "blue"])
-        l1 = mkLeaf $ RPMT (MTT <$> ["rose", "is", "red"])
+        l2 = mkLeaf $ mkRpmt ["sky", "is", "blue"]
+        l1 = mkLeaf $ mkRpmt ["rose", "is", "red"]
         bsr = mkAll Nothing [l1 , l2]
       expandBSR' emptyInt 0 bsr `shouldBe` bsr
 
     it "expand Any RPBoolStructR is" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l2 = mkLeaf $ RPMT (MTT <$> ["sky", "is", "blue"])
-        l1 = mkLeaf $ RPMT (MTT <$> ["rose", "is", "red"])
+        l2 = mkLeaf $ mkRpmt ["sky", "is", "blue"]
+        l1 = mkLeaf $ mkRpmt ["rose", "is", "red"]
         bsr = mkAny Nothing [l1 , l2]
       expandBSR' emptyInt 0 bsr `shouldBe` bsr
 
@@ -60,13 +60,13 @@ spec = do
     it "expand Leaf" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        bsr = mkLeafDT (RPMT (MTT <$> ["it is a Notifiable Data Breach"]))
+        bsr = mkLeafDT (mkRpmt ["it is a Notifiable Data Breach"])
       expandBSRDT' emptyInt 0 bsr `shouldBe` bsr
     
     it "expand Leaf RPBoolStructR is" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l2 = mkLeafDT $ RPMT (MTT <$> ["sky", "is", "blue"])
+        l2 = mkLeafDT $ mkRpmt ["sky", "is", "blue"]
         l1 = mkLeafDT (RPBoolStructDTR (MTT <$> ["head2"]) RPis l2)
         bsr = mkLeafDT (RPBoolStructDTR (MTT <$> ["head1"]) RPis l1)
       expandBSRDT' emptyInt 0 bsr `shouldBe` l2
@@ -74,30 +74,30 @@ spec = do
     it "expand Leaf RPBoolStructR has" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l = mkLeafDT $ RPMT (MTT <$> ["rose", "has", "red"])
+        l = mkLeafDT $ mkRpmt ["rose", "has", "red"]
         bsr = mkLeafDT (RPBoolStructDTR (MTT <$> ["head"]) RPhas l)
       expandBSRDT' emptyInt 0 bsr `shouldBe` bsr
 
     it "expand Not RPBoolStructR " $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l = mkLeafDT $ RPMT (MTT <$> ["rose", "has", "red"])
+        l = mkLeafDT $ mkRpmt ["rose", "has", "red"]
         bsr = mkNotDT l
       expandBSRDT' emptyInt 0 bsr `shouldBe` bsr
 
     it "expand All RPBoolStructR is" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l2 = mkLeafDT $ RPMT (MTT <$> ["sky", "is", "blue"])
-        l1 = mkLeafDT $ RPMT (MTT <$> ["rose", "is", "red"])
+        l2 = mkLeafDT $ mkRpmt ["sky", "is", "blue"]
+        l1 = mkLeafDT $ mkRpmt ["rose", "is", "red"]
         bsr = mkAllDT Nothing [l1 , l2]
       expandBSRDT' emptyInt 0 bsr `shouldBe` bsr
 
     it "expand Any RPBoolStructR is" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l2 = mkLeafDT $ RPMT (MTT <$> ["sky", "is", "blue"])
-        l1 = mkLeafDT $ RPMT (MTT <$> ["rose", "is", "red"])
+        l2 = mkLeafDT $ mkRpmt ["sky", "is", "blue"]
+        l1 = mkLeafDT $ mkRpmt ["rose", "is", "red"]
         bsr = mkAnyDT Nothing [l1 , l2]
       expandBSRDT' emptyInt 0 bsr `shouldBe` bsr
 

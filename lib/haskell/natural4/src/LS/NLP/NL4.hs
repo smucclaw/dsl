@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances #-}
+{-# OPTIONS_GHC -Wno-all #-}
 module LS.NLP.NL4 where
 
 import Control.Monad.Identity
@@ -141,7 +142,8 @@ data Tree :: * -> * where
   GIIDig :: GDig -> GDigits -> Tree GDigits_
   GListWho :: [GWho] -> Tree GListWho_
   Gnum :: GSub1000000 -> Tree GNumeral_
-  GposPol :: Tree GPol_
+  GNEG :: Tree GPol_
+  GPOS :: Tree GPol_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GRule_
   Gpot0 :: GDigit -> Tree GSub10_
   Gpot01 :: Tree GSub10_
@@ -214,7 +216,8 @@ instance Eq (Tree a) where
     (GIIDig x1 x2,GIIDig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
-    (GposPol,GposPol) -> and [ ]
+    (GNEG,GNEG) -> and [ ]
+    (GPOS,GPOS) -> and [ ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Gpot0 x1,Gpot0 y1) -> and [ x1 == y1 ]
     (Gpot01,Gpot01) -> and [ ]
@@ -389,11 +392,13 @@ instance Gf GNumeral where
       _ -> error ("no Numeral " ++ show t)
 
 instance Gf GPol where
-  gf GposPol = mkApp (mkCId "posPol") []
+  gf GNEG = mkApp (mkCId "NEG") []
+  gf GPOS = mkApp (mkCId "POS") []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "posPol" -> GposPol 
+      Just (i,[]) | i == mkCId "NEG" -> GNEG 
+      Just (i,[]) | i == mkCId "POS" -> GPOS 
 
 
       _ -> error ("no Pol " ++ show t)
@@ -575,7 +580,7 @@ instance Gf GWho where
 
       _ -> error ("no Who " ++ show t)
 
-instance Show GA
+
 
 instance Gf GA where
   gf _ = undefined
@@ -583,7 +588,7 @@ instance Gf GA where
 
 
 
-instance Show GA2
+
 
 instance Gf GA2 where
   gf _ = undefined
@@ -591,7 +596,7 @@ instance Gf GA2 where
 
 
 
-instance Show GAP
+
 
 instance Gf GAP where
   gf _ = undefined
@@ -599,7 +604,7 @@ instance Gf GAP where
 
 
 
-instance Show GAnt
+
 
 instance Gf GAnt where
   gf _ = undefined
@@ -607,7 +612,7 @@ instance Gf GAnt where
 
 
 
-instance Show GN
+
 
 instance Gf GN where
   gf _ = undefined
@@ -615,7 +620,7 @@ instance Gf GN where
 
 
 
-instance Show GN2
+
 
 instance Gf GN2 where
   gf _ = undefined
@@ -623,7 +628,7 @@ instance Gf GN2 where
 
 
 
-instance Show GNP
+
 
 instance Gf GNP where
   gf _ = undefined
@@ -631,7 +636,7 @@ instance Gf GNP where
 
 
 
-instance Show GTense
+
 
 instance Gf GTense where
   gf _ = undefined
@@ -639,7 +644,7 @@ instance Gf GTense where
 
 
 
-instance Show GV
+
 
 instance Gf GV where
   gf _ = undefined
@@ -647,7 +652,7 @@ instance Gf GV where
 
 
 
-instance Show GV2
+
 
 instance Gf GV2 where
   gf _ = undefined

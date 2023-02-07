@@ -50,7 +50,8 @@ concrete NL4Eng of NL4 =
       sing = mkVP IrregEng.sing_V ;
 
       presentIndicative = mkTemp presentTense simultaneousAnt ; 
-      posPol = positivePol ;
+      POS = positivePol ;
+      NEG = negativePol ;
 
       oper 
         every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;

@@ -41,7 +41,8 @@ abstract NL4 =
       walk, eat, drink, sing : VP ;
 
       presentIndicative : Temp ; 
-      posPol : Pol ;
+      POS : Pol ;
+      NEG : Pol ;
 
     -- [Subject Constraint]
     -- [Attribute Constraint]

@@ -34,12 +34,12 @@ sfl4ToProlog rs =
     concatMap (rule2clause analysis) rs
 
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
-rule2clause st cr@Hornlike {} = hornlike2clauses st (Text.unwords $ name cr) (clauses cr)
-rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (Text.unwords $ name td) ens
+rule2clause st cr@Hornlike {} = hornlike2clauses st (mt2text $ name cr) (clauses cr)
+rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (mt2text $ name td) ens
 
 
 rule2clause st td@TypeDecl { has   = rules }
-  | rules /= [] = describeDict st (Text.unwords $ name td) (super td) rules
+  | rules /= [] = describeDict st (mt2text $ name td) (super td) rules
 -- https://www.swi-prolog.org/pldoc/man?section=bidicts
 -- TypeDecl
 --   { name = "Player"
@@ -56,7 +56,7 @@ rule2clause st td@TypeDecl { has   = rules }
 --           )
 --       ]
 
-rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (Text.unwords (name td)) sup
+rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (mt2text $ name td) sup
 -- [ TypeDecl
 --     { name = "Hand"
 --     , super = Just
@@ -68,7 +68,7 @@ describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [Rule] -> [Clause]
 describeDict st tname mparent rules =
   maybe [] (\parent -> [describeParent st tname parent]) mparent
   ++
-  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (Text.unwords $ name rule), vart typeDesc]) []
+  [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (mt2text $ name rule), vart typeDesc]) []
   | rule <- rules
   , let typeDesc = maybe "untyped" showtype (super rule)
   ]
@@ -78,7 +78,7 @@ showtype (SimpleType TOne      tt) = tt
 showtype (SimpleType TOptional tt) = "optional("     <> tt <> ")"
 showtype (SimpleType TList0    tt) = "listOf("       <> tt <> ")"
 showtype (SimpleType TList1    tt) = "nonEmptyList(" <> tt <> ")"
-showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums (untypePT tt)))
+showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums (fmap mtexpr2text <$> untypePT tt)))
 
 inEnums :: NonEmpty (NonEmpty Text.Text) -> Text.Text
 inEnums pt = "enums(" <> Text.unwords [ h | (h :| _) <- NE.toList pt ] <> ")"          
@@ -90,6 +90,11 @@ describeParent :: Analysis -> Text.Text -> TypeSig -> Clause
 describeParent _st tname parent =
   Clause (Struct "l4type" [var "class", vart tname, var "extends", vart (showtype parent)]) []
 
+varmt :: MTExpr -> Term
+varmt (MTT t) = var (Text.unpack t)
+varmt (MTB b) = error $ "you shouldn't varmt a boolean! " ++ show b
+varmt (MTN n) = error $ "you shouldn't varmt a number! "  ++ show n
+
 vart, vartl, vartu :: Text.Text -> Term
 vart  = var  . Text.unpack
 vartl = vart . Text.toLower
@@ -100,7 +105,7 @@ vari = var . show
 
 clpEnums :: Analysis -> Text.Text -> ParamText -> [Clause]
 clpEnums _st tname ens =
-  [ Clause (Struct "l4enum" [vartl tname, vari i, vartl v]) []
+  [ Clause (Struct "l4enum" [vartl tname, vari i, vartl (mtexpr2text v)]) []
   | (v :| _, i) <- Prelude.zip (NE.toList $ untypePT ens) [n..] ]
   where n = 1 :: Int
   -- [TODO]: get n out of Analysis which should become a State monad and then use it as a primary index across all enums
@@ -143,10 +148,10 @@ mbsr2rhs (Just bsr) = bsr2struct bsr
 rp2goal :: RelationalPredicate -> [Term]
 rp2goal (RPParamText _pt)     = pure $ vart "ERROR: rp2goal: paramtext not supported"
 rp2goal (RPMT [])            = pure $ vart ""
-rp2goal (RPMT [x])           = pure $ vart x
-rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack x) (vart <$> xs)
-rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct (Text.unpack $ Text.unwords lhs_) <$> [bsr2struct bsr]
-rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (vart <$> mt1) ++ (vart <$> mt2)
+rp2goal (RPMT [x])           = pure $ varmt x
+rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack (mtexpr2text x)) (varmt <$> xs)
+rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct (Text.unpack $ mt2text lhs_) <$> [bsr2struct bsr]
+rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (varmt <$> mt1) ++ (varmt <$> mt2)
 rp2goal (RPnary      rprel rp) = pure $ Struct (rel2f rprel) $ rp2goal rp
 
 rel2f :: RPRel -> String

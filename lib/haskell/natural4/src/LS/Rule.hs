@@ -151,7 +151,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
 -- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
 
 ruleLabelName :: Rule -> RuleName
-ruleLabelName r = maybe (ruleName r) (\x-> [rl2text x]) (getRlabel r)
+ruleLabelName r = maybe (ruleName r) (\x-> [MTT $ rl2text x]) (getRlabel r)
 
 getRlabel :: Rule -> Maybe RuleLabel
 getRlabel r@Regulative{}    = rlabel r
@@ -168,10 +168,10 @@ getRlabel r@RuleGroup {}    = rlabel r
 getRlabel _                 = Nothing
 
 ruleName :: Rule -> RuleName
-ruleName Regulative { subj  = x } = [bsp2text x]
+ruleName Regulative { subj  = x } = [MTT $ bsp2text x]
 ruleName (RuleAlias rn) = rn
-ruleName RegFulfilled = ["FULFILLED"]
-ruleName RegBreach    = ["BREACH"]
+ruleName RegFulfilled = [MTT "FULFILLED"]
+ruleName RegBreach    = [MTT "BREACH"]
 ruleName x = name x
 
 type RuleLabel = (Text.Text   --  "§"
@@ -184,7 +184,7 @@ rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 
 -- sometimes we just want to convert either the rulelabel or the rulename to text
 rlrn2text :: Rule -> Text.Text
-rlrn2text r = Text.unwords $ ruleLabelName r
+rlrn2text r = mt2text $ ruleLabelName r
 
 
 
@@ -320,3 +320,27 @@ whenDebug :: Parser () -> Parser ()
 whenDebug act = do
   isDebug <- asks debug
   when isDebug act
+
+srcrow_ :: Rule -> Rule
+srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
+
+srcrow1' :: Rule -> Rule
+srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }
+
+srcrow1 :: Rule -> Rule
+srcrow1     = srcrow' 1
+
+srcrow2 :: Rule -> Rule
+srcrow2     = srcrow' 2
+
+srcrow' :: Int -> Rule -> Rule
+srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
+
+srccol1 :: Rule -> Rule
+srccol1     = srccol' 1
+
+srccol2 :: Rule -> Rule
+srccol2     = srccol' 2
+
+srccol' :: Int -> Rule -> Rule
+srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }

@@ -352,7 +352,7 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
              , tokenVal <- toToken rawToken
-             , tokenVal `notElem` [ Empty, Checkbox ]
+             , tokenVal `notElem` [ Empty, TokTrue, TokFalse ] -- ignore TRUE and FALSE values ... so long as our policy is to ignore checkboxes, that is.
              ]
   where
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
@@ -615,7 +615,7 @@ pRegRule = debugName "pRegRule" $ do
 
 pRegRuleSugary :: Parser Rule
 pRegRuleSugary = debugName "pRegRuleSugary" $ do
-  entityname         <- AA.mkLeaf . multiterm2pt <$> someDeep pOtherVal            -- You ... but no AKA allowed here
+  entityname         <- AA.mkLeaf . multiterm2pt <$> someDeep pMTExpr            -- You ... but no AKA allowed here
   _leftX             <- lookAhead pXLocation
   let keynamewho = pure ((RParty, entityname), Nothing)
   (rulebody,henceLimb,lestLimb) <- someIndentation ((,,)
@@ -705,7 +705,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   where
     innerRule =
       try (debugName "pHenceLest -> innerRule -> pRegRule" pRegRule)
-      <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pOtherVal)
+      <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pMTExpr)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
@@ -853,7 +853,7 @@ exprP = debugName "expr pParamText" $ do
     MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where
-    prefixFirstLeaf :: [Text.Text] -> MyBoolStruct ParamText -> MyBoolStruct ParamText
+    prefixFirstLeaf :: MultiTerm -> MyBoolStruct ParamText -> MyBoolStruct ParamText
     -- locate the first MyLeaf in the boolstruct and jam the lbl in as the first line
     prefixFirstLeaf p (MyLeaf x)           = MyLeaf (prefixItem p x)
     prefixFirstLeaf p (MyLabel pre post myitem) = MyLabel pre post (prefixFirstLeaf p myitem)
@@ -863,7 +863,7 @@ exprP = debugName "expr pParamText" $ do
     prefixFirstLeaf p (MyAny (x:xs))       = MyAny (prefixFirstLeaf p x : xs)
     prefixFirstLeaf p (MyNot  x    )       = MyNot (prefixFirstLeaf p x)
 
-    prefixItem :: [Text.Text] -> ParamText -> ParamText
+    prefixItem :: MultiTerm -> ParamText -> ParamText
     prefixItem t pt = NE.cons (NE.fromList t, Nothing) pt
 
 

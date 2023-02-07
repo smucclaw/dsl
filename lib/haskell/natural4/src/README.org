@@ -481,7 +481,7 @@ The component parsers are:
 - declareLimb: slKeyValuesAka |&| parseHas
   - slKeyValuesAka: slAKA slKeyValues
     - slAKA: nestedHorn $ baseParser (=slKeyValues), optional akapart, optional typically
-    - slKeyValues: someLiftSL pNumOrText, optional slTypeSig
+    - slKeyValues: someLiftSL pOtherVal, optional slTypeSig
     - slTypeSig: IS A TypeSig
   - parseHas: pToken Has |>| sameDepth declareLimb
 

@@ -36,38 +36,38 @@ parserTests  = do
     describe "revised parser" $ do
 
       let simpleHorn = [ defaultHorn
-              { name = ["X"]
+              { name = [MTT "X"]
               , keyword = Decide
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
               , clauses =
                 [ HC
-                  { hHead = RPConstraint ["X"] RPis ["Y"]
-                  , hBody = Just $ All Nothing [ mkLeaf (RPConstraint ["Z"] RPis ["Q"])
-                                               , mkLeaf (RPConstraint ["P"] RPgt ["NP"]) ]
+                  { hHead = RPConstraint [MTT "X"] RPis [MTT "Y"]
+                  , hBody = Just $ All Nothing [ mkLeaf (RPConstraint [MTT "Z"] RPis [MTT "Q"])
+                                               , mkLeaf (RPConstraint [MTT "P"] RPgt [MTT "NP"]) ]
                   } ]
               }
             ]
 
       let simpleHorn02 = [ defaultHorn
-              { name = ["X"]
+              { name = [MTT "X"]
               , keyword = Decide
               , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
               , clauses =
                 [ HC
-                  { hHead = RPConstraint ["X"] RPis ["Y"]
+                  { hHead = RPConstraint [MTT "X"] RPis [MTT "Y"]
                   , hBody = Nothing
                   } ]
               }
             ]
 
       filetest "horn-0-1" "should parse X IS Y"
-        (parseOther pRelPred) ( RPConstraint ["X"] RPis ["Y"], [] )
+        (parseOther pRelPred) ( RPConstraint [MTT "X"] RPis [MTT "Y"], [] )
 
       filetest "horn-0-1" "should parse X IS Y using the other parser"
-        (parseOther pBSR) ( mkLeaf (RPConstraint ["X"] RPis ["Y"] ), [] )
+        (parseOther pBSR) ( mkLeaf (RPConstraint [MTT "X"] RPis [MTT "Y"] ), [] )
 
       filetest "horn-0-3" "should parse X1 X2 IS Y"
-        (parseOther pBSR) ( mkLeaf (RPConstraint ["X1", "X2"] RPis ["Y"] ), [] )
+        (parseOther pBSR) ( mkLeaf (RPConstraint [MTT "X1", MTT "X2"] RPis [MTT "Y"] ), [] )
 
       filetest "horn-0-2" "should parse DECIDE X IS Y" (parseR pToplevel) simpleHorn02
 
@@ -105,8 +105,8 @@ parserTests  = do
 
       let ablcd = (MyAny [MyLeaf (text2pt "top1")
                         , MyLeaf (text2pt "top2")
-                        , MyLabel ["this is a label"] Nothing $ MyAny [ MyLeaf (text2pt "mid3")
-                                                                      , MyLeaf (text2pt "mid4") ]
+                        , MyLabel [MTT "this is a label"] Nothing $ MyAny [ MyLeaf (text2pt "mid3")
+                                                                          , MyLeaf (text2pt "mid4") ]
                         ],[])
 
       filetest "indent-2-c-3" "label left"  (parseOther exprP) ablcd
@@ -123,11 +123,11 @@ parserTests  = do
 
     describe "parser elements and fragments ... should parse" $ do
       let ptFragment1 :: ParamText
-          ptFragment1 = ("one word" :| []  , Nothing) :| []
-          ptFragment2 = ("one word" :| [], Just (SimpleType TOne "String")) :| []
-          ptFragment3  = ("two" :| ["words"], Nothing) :| []
-          ptFragment3b = ("two" :| ["words"], Just (SimpleType TOne "String")) :| []
-          ptFragment4a = ptFragment3b <> (("next" :| ["line"], Nothing) :| [])
+          ptFragment1 = (MTT <$> "one word" :| []  , Nothing) :| []
+          ptFragment2 = (MTT <$> "one word" :| [], Just (SimpleType TOne "String")) :| []
+          ptFragment3  = (MTT <$> "two" :| ["words"], Nothing) :| []
+          ptFragment3b = (MTT <$> "two" :| ["words"], Just (SimpleType TOne "String")) :| []
+          ptFragment4a = ptFragment3b <> ((MTT <$> "next" :| ["line"], Nothing) :| [])
 
 
       filetest "paramtext-1" "paramtext-1 a single-token untyped ParamText"
@@ -149,7 +149,7 @@ parserTests  = do
         (parseOther pParamText) (ptFragment3b,[])
 
       filetest "paramtext-4-a" "a multi-line ParamText, typed String"
-        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = ["TwoWords"], detail = ["two","words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}])
+        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = [MTT "TwoWords"], detail = [MTT "two", MTT "words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}])
 
 
       let actionFragment1 :: BoolStructP
@@ -159,15 +159,15 @@ parserTests  = do
         (parseOther pDoAction)(actionFragment1,[])
 
       filetest "action-2" "should a two-word BoolStructP"
-        (parseOther pDoAction) (mkLeaf $ ("win" :| ["gloriously"]
-                                                 , Nothing):|[]
+        (parseOther pDoAction) (mkLeaf $ (MTT <$> "win" :| ["gloriously"]
+                                         , Nothing):|[]
                                ,[])
 
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
-      let whoStructR_1 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats"] ) ) }
-          whoStructR_2 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats", "rudely"] ) ) }
-          whoStructR_3 = defaultReg { who = Just ( mkLeaf ( RPMT ["eats", "without", "manners"] ) ) }
+      let whoStructR_1 = defaultReg { who = Just ( mkLeaf ( RPMT $ MTT <$> ["eats"] ) ) }
+          whoStructR_2 = defaultReg { who = Just ( mkLeaf ( RPMT $ MTT <$> ["eats", "rudely"] ) ) }
+          whoStructR_3 = defaultReg { who = Just ( mkLeaf ( RPMT $ MTT <$> ["eats", "without", "manners"] ) ) }
 
       filetest "who-1" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_1 ]
@@ -187,17 +187,6 @@ parserTests  = do
           `shouldParse` ((Is,(Is,Is),Is), [])
 
     describe "MISC" $ do
-      let unauthorisedExpected = [Hornlike {name = ["a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["a Data Breach"] RPis (mkLeaf (RPMT ["a Notifiable Data Breach"])), hBody = Just (mkLeaf (RPMT ["a data breach","occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = ["NDB"], detail = ["a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})},Hornlike {name = ["a data breach","occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR ["a data breach","occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [mkLeaf (RPMT ["access"]),mkLeaf (RPMT ["use"]),mkLeaf (RPMT ["disclosure"]),mkLeaf (RPMT ["copying"]),mkLeaf (RPMT ["modification"]),mkLeaf (RPMT ["disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
+      let unauthorisedExpected = [Hornlike {name = [MTT "a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "a Data Breach"] RPis (mkLeaf (RPMT [MTT "a Notifiable Data Breach"])), hBody = Just (mkLeaf (RPMT [MTT "a data breach",MTT "occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = [MTT "NDB"], detail = [MTT "a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})},Hornlike {name = [MTT "a data breach",MTT "occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "a data breach",MTT "occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [mkLeaf (RPMT [MTT "access"]),mkLeaf (RPMT [MTT "use"]),mkLeaf (RPMT [MTT "disclosure"]),mkLeaf (RPMT [MTT "copying"]),mkLeaf (RPMT [MTT "modification"]),mkLeaf (RPMT [MTT "disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
       filetest "unauthorised" "should parse correctly"
         (parseR pToplevel) unauthorisedExpected
-
-srcrow_, srcrow1', srcrow1, srcrow2, srccol1, srccol2 :: Rule -> Rule
-srcrow', srccol' :: Int -> Rule -> Rule
-srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
-srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }
-srcrow1     = srcrow' 1
-srcrow2     = srcrow' 2
-srcrow' n w = w { srcref = (\x -> x  { srcrow = n }) <$> srcref w }
-srccol1     = srccol' 1
-srccol2     = srccol' 2
-srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }

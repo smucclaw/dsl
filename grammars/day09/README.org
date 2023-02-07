@@ -1,4 +1,19 @@
-#+TITLE: Day 07: Composing Grammars
+#+TITLE: Day 09: Decision Text
 
-Write an entire contract clause.
+* Part 1: Parse a FEEL expression
+
+GF can read context-free grammars given in CF format. Write such a grammar to parse those FEEL expressions which are shown in the Camunda DMN tutorial. This includes arithmetic and comparison operators.
+
+* Turn any individual FEEL expression into natural language.
+Produce natural language versions of FEEL expressions; this should remind you of Day 02.
+
+* Turn a single row from a DMN table into natural language.
+FEEL expressions are conjoined in DMN tables and other kinds of DMN expressions. Given a collection of input, output, and annotation cells, find a way to express an entire row in a DMN table in the form of one or more natural language sentences.
+
+* Turn an entire DMN table into natural language.
+Now that you can do an entire row of DMN, consider doing an entire DMN decision table. Because no row is read in isolation, it will be necessary to first consider the interactions between rows. For example, consider how one might transform a decsion table into a decision tree. Does a tree structure give you a more natural shape from which to proceed to generate decision text?
+
+* Turn an entire DRD into natural language.
+Now that you can do an entire DMN decision table, do an entire DRD.
+
 

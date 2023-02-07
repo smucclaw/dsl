@@ -43,6 +43,10 @@ pDeontic = (pToken Must  >> return DMust)
            <|> (pToken May   >> return DMay)
            <|> (pToken Shant >> return DShant)
 
+
+
+-- | parse a number.
+-- [TODO] support floats
 pNumber :: Parser Integer
 pNumber = token test Set.empty <?> "number"
   where
@@ -130,25 +134,6 @@ pSrcRef = debugName "pSrcRef" $ do
   return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
 
 
-pNumAsText :: Parser Text.Text
-pNumAsText = debugName "pNumAsText" . label "number" $ do
-  (TNumber n) <- pTokenMatch isNumber (pure $ TNumber 1234)
-  return (Text.pack $ show n)
-  where
-    isNumber (TNumber _) = True
-    isNumber _           = False
-
--- ["investment"] Is ["savings"] becomes
--- investment(savings)
-
--- ["Minsavings"] Is ["500"] becomes
--- Minsavings is 500
-
--- it all depends if the first letter is uppercase
--- ["dependents"] Is ["5"] becomes
--- dependents(5)
--- ["Dependents"] Is ["5"] becomes
--- dependents is 5
 
 myEOL :: Parser ()
 myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
@@ -276,11 +261,34 @@ debugPrintSL = SLParser . lift . debugPrint
 alwaysdebugName :: Show a => String -> Parser a -> Parser a
 alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 
-pMultiTerm :: Parser MultiTerm
-pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pNumOrText
+-- * the new MultiTerm is made of MTExpr
+pMTExpr :: Parser MTExpr
+pMTExpr =
+  choice [ MTN . fromIntegral <$> pNumber
+         , MTB <$> pBoolean
+         , MTT <$> pOtherVal
+         ]
 
-slMultiTerm :: SLParser [Text.Text]
-slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pNumOrText
+-- | parse a TRUE or FALSE to an MTEXpr. But see also `getMarkings` in Interpreter.hs.
+pBoolean :: Parser Bool
+pBoolean = True  <$ choice [pToken TokTrue,  try $ pText (Text.words "True true Yes yes ja"  ) TokTrue  ] <|>
+           False <$ choice [pToken TokFalse, try $ pText (Text.words "False false No no nein") TokFalse ]
+
+-- | if the next token parses with pOtherVal to one of the desired text strings, upgrade to a given token; otherwise fail.
+pText :: [Text.Text] -> MyToken -> Parser MyToken
+pText ts tok = do
+  p <- pOtherVal
+  if p `elem` ts
+    then return tok
+    else fail ("pText: got " ++ show p ++ " which doesn't match input text " ++ show ts)
+
+-- | parse a multiterm
+pMultiTerm :: Parser MultiTerm
+pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pMTExpr
+
+-- | sameline parser for multiterm
+slMultiTerm :: SLParser MultiTerm
+slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pMTExpr
 
 
 -- | sameline: foo foo bar bar
@@ -295,9 +303,6 @@ sameOrNextLine pa pb =
   <|> (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
 
 -- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
-
-pNumOrText :: Parser Text.Text
-pNumOrText = pOtherVal <|> pNumAsText <?> "other text or number"
 
 -- one or more P, monotonically moving to the right, returned in a list
 someDeep :: (Show a) => Parser a -> Parser [a]
@@ -399,7 +404,7 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
         $*| dMultiTerm
         |>| tok2rel
         |*< dMultiTerm
-      where dMultiTerm = someLiftSL pNumOrText, which lifts a plain parser into the fancy combinator, slapping a "some" alongside.
+      where dMultiTerm = someLiftSL pMTExpr, which lifts a plain parser into the fancy combinator, slapping a "some" alongside.
 
    We lift a Parser a into a Parser (a, Int) where the Int records the number of UnDeepers needed to be consumed at the end.
 

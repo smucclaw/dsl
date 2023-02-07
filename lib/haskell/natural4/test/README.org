@@ -359,11 +359,11 @@ challenge: use a combination of parsers to read this stuff into some kind of str
 #+begin_example
 1 match MEANS
 2 some GoDeeper
-3 match some (pNumAsText <* GoDeeper)   -- "any", "unauthorised"
+3 match some (pMTExpr <* GoDeeper)   -- "any", "unauthorised"
 
 looking ahead,
 4 some GoDeeper                         -- | | |
-5 match some (pNumAsText <* GoDeeper)   -- "access" (TYPICALLY False)
+5 match some (pMTExpr <* GoDeeper)   -- "access" (TYPICALLY False)
 6 some UnDeeper                         -- | | to the left
 7 match OR | AND | UNLESS | NOT         -- and we are in the desired column
 

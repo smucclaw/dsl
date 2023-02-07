@@ -135,11 +135,11 @@ main = do
                mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
                mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
                let fnamext = fname <> "." <> ext
-                   displayTxt = Text.unpack $ Text.unwords n
+                   displayTxt = Text.unpack $ SFL4.mt2text n
                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-           , let (fname, ext) = (take 20 (snake_scrub n), "svg")
+           , let (fname, ext) = (take 20 (snake_scrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 

@@ -1,0 +1,177 @@
+#+TITLE: Explainable A.I.
+
+"Algorithms. You're talking about algorithms."
+
+* User goals
+
+At a high level the /end-user/ goals are:
+- *evaluate* some computation to crunch a bunch of input parameters into a set of output numbers, basically "how much tax do i need to pay?"
+- *explain* the basis for that computation, basically "why that amount and not some other?"
+
+The /legal engineer/ goals are:
+- translate the existing body of German tax law (or at least the 2 fragments we deal with) into some formal representation
+- have some nice convenient affordances like unit tests, good syntax, feedback that we are writing good code.
+- accessibility
+
+* Semantics (Requirements)
+
+Based on the input problems that we've seen so far we will need the following elements of a DSL to handle tabular arithmetic calculations:
+
+** organize input parameters into dictionaries or a multi-dimensional array
+
+so that we can look up, for instance
+- for tax year { 2022 }
+- how much { ordinary income, extraordinary income }
+- was derived from the category of { employment, rent, capital }
+
+*** we need at a minimum dictionaries aka associative arrays aka hashmaps
+
+in Haskell this is provided by Data.Map
+
+** filter some collection of things
+
+within { ordinary income }, which of the categories show negative vs positive values?
+
+sum over all of those values to arrive at subtotals
+
+*** we need Functors that can be filtered so we need Eq
+
+in Haskell this is provided by Data.List
+
+** arithmetic
+
++ - * /
+
+over individual values but also mapped over lists and the complex data structures above
+
+*** we need Num and Int and Float
+
+in Haskell this is provided by base
+
+** temporary variables / let bindings
+
+identified by names in the source laws, e.g. "residual taxable amount" -- how do we keep track of these things?
+
+*** in our skeletal version we can just hardcode and rely on the host language's ~let~
+
+let scenario_34_1 = ....
+
+*** in a fuller implementation we would need scope, closures, variables, functions, and parameters
+
+we could shoehorn a symbol table into a Haskell State monad and do all the usual function evaluation thing under the lambda calculus
+
+** make decisions -- choose a particular branch of execution -- based on some conditions
+
+if, hypothetically speaking, we were to use the 2021 tax rates, if they are lower than the actual 2022 tax rates, then the payable taxes will be the arithmetic mean between the 2021 and 2022 rates.
+
+we need comparison operators: > >= == <= <
+
+we need boolean logic: and or not
+
+syntactic sugar "implies"
+
+if something "leads to" something, then we choose to use it, otherwise we don't.
+
+*** the typeclasses are: Eq, Ord, Bool.
+
+*** this decision logic makes heavy use of "defaults", and thinks in terms of "exceptions".
+
+in law defaults go first, in computing defaults go last.
+
+Catala supports out-of-order definitions.
+
+** evaluate hypotheticals
+
+if we were to apply this tax computation method, what tax would we pay?
+
+without actually returning that as our final answer.
+
+and without outputting our reasoning as part of the overall explanation.
+
+we need to be able to do sort of local scope, but also Reader's ~local~ to contrive counterfactuals
+
+but in future maybe Eric Walkingshaw would be interested in framing this as a variational problem
+
+** do we need to let the user define their own functions?
+
+for the initial skeletal DSL maybe we hardcode all the functions that need to be defined but could also be general enough to be used elsewhere.
+
+So for now we say we don't let the user do this.
+
+And then if a function is something taxRatesFor2023 or section_34_1_Computation then that is specific to this use case "program" and the user should have some way of defining that.
+
+* Semantics (implementation / specification)
+
+We'll have a think about this when we have made a little more progress.
+
+** assertions
+
+*** some value must always be > 0
+
+** refinement types could be used to limit the bounds of some things, like, whole numbers vs Ints
+
+** syntactic sugar for frequently expressed notions that can reduce to lower-level primitives
+
+** projectional editing
+
+automatically generate isomorphic visual representations eg diagrams, graphs
+
+* Syntax
+
+** embedded DSL in Haskell
+
+
+
+** Natural4 spreadsheet
+
+* Software Structure
+
+Typically the app stack looks like this:
+
+| LEVEL             | DESCRIPTION                      | EXAMPLE                                                                                  |
+|-------------------+----------------------------------+------------------------------------------------------------------------------------------|
+| application       | let's compute taxes!             | import Explainable, import AnyAll                                                        |
+|                   | let's decide if PDPA DBNO!       |                                                                                          |
+|-------------------+----------------------------------+------------------------------------------------------------------------------------------|
+| internal dsl      | booleans                         | BoolStructT with AnyAll (walks,runs,eats)                                                |
+| representing      | first-order predicate logic      | BoolStructR with AnyAll (X IS Y, Z < 1000)                                               |
+| the logic of      | arithmetic                       | MathLang with Plus Minus Times Divide Parens (Tax = Income * 0.25)                       |
+| some "theory"     | temporal                         | LTL / CTL (EX, AF, AG, etc) (Always Eventually Get Paid)                                 |
+|                   | deontic                          | State transition system (PetriNet HENCE LEST, Bob Must Pay Alice Before end of quarter)  |
+|                   | etc                              | ...                                                                                      |
+|-------------------+----------------------------------+------------------------------------------------------------------------------------------|
+| explainable monad | evaluate a computation verbosely | We want to be able to lift the particular DSL's eval() function into Explainable         |
+|                   |                                  | such that every computation is verbosely logged to Stdout,Stderr or some Org-Mode format |
+
+Each of the internal DSLs should be able to run within Explainable:
+
+Suppose we are given ~(Tax = Income * 0.25) :: MathLang~
+
+We eval it inside Explainable and we get literal output like                                                     
+
+#+BEGIN_EXAMPLE                                                                    
+Tax is 2,500                                                                       
+Because Tax = Income * 0.25                                                        
+And Income is 10,000.                                                              
+#+END_EXAMPLE                                                                      
+                                                                                   
+This should work for any of the "internal DSLs" above, so we can
+evaluate boolean AnyAlls, we can evaluate arithmetic expressions, we
+can do more interesting things with the modal logics.
+
+** Example of Explanation
+
+In ~Explainable.hs~ you will find a family of functions ~xplainE~, ~xplainF~, ~xplainL~ which take some Reader environment and some expression in the DSL, and return an IO of the result, the explanation, and the state that was accumulated along the way. (Also a Writer ~[String]~ which isn't actually used but it's there because we are taking advantage of ~RWST~ so we have to respect the ~W~ somehow.)
+
+The ~xplainF~ evaluates & explains an ~Expr Float~.
+
+The ~xplainL~ evaluates & explains an ~ExprList Float~.
+
+The ~xplainE~ evaluates & explains an arbitrary ~Explainable~.
+
+So any future explainable DSL should have a similar structure in which the ~Expr~ expression language can be evaluated and explained within the ~Explainable~ monad.
+
+** How to compose Explainable with whatever Expression DSL?
+
+
+Should we make Explainable a typeclass, and then instantiate things like AnyAll into Explainable?

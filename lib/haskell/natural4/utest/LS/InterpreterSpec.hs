@@ -15,13 +15,13 @@ spec = do
     it "expand Leaf" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        bsr = mkLeaf (RPMT [MTT "it is a Notifiable Data Breach"])
+        bsr = mkLeaf (mkRpmt ["it is a Notifiable Data Breach"])
       expandBSR' emptyInt 0 bsr `shouldBe` bsr
     
     it "expand Leaf RPBoolStructR is" $ do
       let
         emptyInt = L4I {classtable = CT Map.empty, scopetable = Map.empty, origrules = []}
-        l2 = mkLeaf $ RPMT $ MTT <$> ["sky", "is", "blue"]
+        l2 = mkLeaf $ mkRpmt ["sky", "is", "blue"]
         l1 = mkLeaf (RPBoolStructR (MTT <$> ["head2"]) RPis l2)
         bsr = mkLeaf (RPBoolStructR (MTT <$> ["head1"]) RPis l1)
       expandBSR' emptyInt 0 bsr `shouldBe` l2

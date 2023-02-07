@@ -165,9 +165,9 @@ parserTests  = do
 
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
-      let whoStructR_1 = defaultReg { who = Just ( mkLeaf ( RPMT $ MTT <$> ["eats"] ) ) }
-          whoStructR_2 = defaultReg { who = Just ( mkLeaf ( RPMT $ MTT <$> ["eats", "rudely"] ) ) }
-          whoStructR_3 = defaultReg { who = Just ( mkLeaf ( RPMT $ MTT <$> ["eats", "without", "manners"] ) ) }
+      let whoStructR_1 = defaultReg { who = Just ( mkLeaf ( mkRpmt ["eats"] ) ) }
+          whoStructR_2 = defaultReg { who = Just ( mkLeaf ( mkRpmt ["eats", "rudely"] ) ) }
+          whoStructR_3 = defaultReg { who = Just ( mkLeaf ( mkRpmt ["eats", "without", "manners"] ) ) }
 
       filetest "who-1" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_1 ]
@@ -187,6 +187,46 @@ parserTests  = do
           `shouldParse` ((Is,(Is,Is),Is), [])
 
     describe "MISC" $ do
-      let unauthorisedExpected = [Hornlike {name = [MTT "a Data Breach"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "a Data Breach"] RPis (mkLeaf (RPMT [MTT "a Notifiable Data Breach"])), hBody = Just (mkLeaf (RPMT [MTT "a data breach",MTT "occurred"]))}], rlabel = Just ("\167",1,"NDB Qualification"), lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []},DefNameAlias {name = [MTT "NDB"], detail = [MTT "a Notifiable Data Breach"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})},Hornlike {name = [MTT "a data breach",MTT "occurred"], super = Nothing, keyword = Means, given = Nothing, upon = Nothing, clauses = [HC {hHead = RPBoolStructR [MTT "a data breach",MTT "occurred"] RPis (Any (Just (PrePost "any unauthorised" "of personal data")) [mkLeaf (RPMT [MTT "access"]),mkLeaf (RPMT [MTT "use"]),mkLeaf (RPMT [MTT "disclosure"]),mkLeaf (RPMT [MTT "copying"]),mkLeaf (RPMT [MTT "modification"]),mkLeaf (RPMT [MTT "disposal"])]), hBody = Nothing}], rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing}), defaults = [], symtab = []}]
+      let unauthorisedExpected = [
+            defaultHorn { name = [MTT "a Data Breach"],
+              clauses =
+                [ HC
+                    { hHead = RPBoolStructR [MTT "a Data Breach"] RPis (mkLeaf (mkRpmt ["a Notifiable Data Breach"])),
+                      hBody = Just (mkLeaf (RPMT [MTT "a data breach", MTT "occurred"]))
+                    }
+                ],
+              rlabel = Just ("\167", 1, "NDB Qualification"),
+              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+            },
+            DefNameAlias
+            { name = [MTT "NDB"],
+              detail = [MTT "a Notifiable Data Breach"],
+              nlhint = Nothing,
+              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})
+            },
+            defaultHorn
+            { name = [MTT "a data breach", MTT "occurred"],
+              clauses =
+                [ HC
+                    { hHead =
+                        RPBoolStructR
+                          [MTT "a data breach", MTT "occurred"]
+                          RPis
+                          ( Any
+                              (Just (PrePost "any unauthorised" "of personal data"))
+                              [ mkLeaf (mkRpmt ["access"]),
+                                mkLeaf (mkRpmt ["use"]),
+                                mkLeaf (mkRpmt ["disclosure"]),
+                                mkLeaf (mkRpmt ["copying"]),
+                                mkLeaf (mkRpmt ["modification"]),
+                                mkLeaf (mkRpmt ["disposal"])
+                              ]
+                          ),
+                      hBody = Nothing
+                    }
+                ],
+              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing})
+            }
+            ]
       filetest "unauthorised" "should parse correctly"
         (parseR pToplevel) unauthorisedExpected

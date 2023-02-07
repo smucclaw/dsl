@@ -15,7 +15,7 @@ spec = do
     it "expand Leaf (not RPParamText)" $ do
       let
         l = mkLeaf $ mkRpmt ["sky", "is", "blue"]
-        hc = HC {hHead = RPMT (MTT <$> [""]), hBody = Just l}
+        hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentials hc `shouldBe` (l,l)
 
     it "expand Leaf RPParamText" $ do
@@ -51,7 +51,7 @@ spec = do
   describe "partitionExistentialsDT" $ do
     it "expand Leaf (not RPParamText)" $ do
       let
-        l = mkLeafDT $ RPMT $ MTT <$> ["sky", "is", "blue"]
+        l = mkLeafDT $ mkRpmt ["sky", "is", "blue"]
         hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentialsDT hc `shouldBe` (l,l)
 

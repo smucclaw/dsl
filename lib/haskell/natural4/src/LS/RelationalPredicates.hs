@@ -232,6 +232,24 @@ import Data.Tree
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = pRelPred
 
+-- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
+tok2rel :: Parser RPRel
+tok2rel = choice
+    [ RPis      <$ pToken Is      
+    , RPhas     <$ pToken Has
+    , RPeq      <$ pToken TokEQ   
+    , RPlt      <$ pToken TokLT   
+    , RPlte     <$ pToken TokLTE  
+    , RPgt      <$ pToken TokGT   
+    , RPgte     <$ pToken TokGTE  
+    , RPelem    <$ pToken TokIn   
+    , RPnotElem <$ pToken TokNotIn
+    , RPTC TBefore <$ pToken Before
+    , RPTC TAfter  <$ pToken After
+    , RPTC TBy     <$ pToken By
+    , RPTC TOn     <$ pToken On
+    , RPTC TVague  <$ pToken Eventually
+    ]
 
 rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr

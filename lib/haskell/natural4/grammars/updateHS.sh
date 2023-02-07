@@ -1,6 +1,12 @@
 #!/bin/bash
-gf -make -f haskell --haskell=gadt --haskell=lexical --lexical=N,V,A,N2,N3,V2,A2,VA,V2V,VV,V3,VS,V2A,V2S,V2Q,Adv,AdV,AdA,AdN,ACard,CAdv,Conj,Interj,PN,Prep,Pron,Quant,Det,Card,Text,Predet,Subj UDExtEng.gf UDExtSwe.gf
-sed 's/module UDExt where/{-# OPTIONS_GHC -Wno-all #-}\nmodule LS.NLP.UDExt where/ ; s/instance Show .*//' UDExt.hs > /tmp/whatever.hs
-mv /tmp/whatever.hs ../src/LS/NLP/UDExt.hs
-rm UDExt.hs
-gf -make UDAppEng.gf
+
+gf -make -f haskell --haskell=gadt --haskell=lexical --lexical=CN,VP  NL4Eng.gf
+cat NL4.hs |
+    sed 's/module NL4 where/{-# OPTIONS_GHC -Wno-all #-}\nmodule LS.NLP.NL4 where/' | \
+    sed 's/instance Show .*//' | \
+    sed 's/-- below this line machine-generated/-- below this line machine-generated\ninstance (Gf (Tree a)) => Show (Tree a) where\n    show = showExpr [] . gf/' | \
+    sed 's/LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances/LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes/' > ../src/LS/NLP/NL4.hs
+
+echo "moved NL4.hs into ../src/LS/NLP/"
+# head -5 ../src/LS/NLP/NL4.hs
+rm NL4.hs

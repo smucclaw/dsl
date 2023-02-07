@@ -7,6 +7,8 @@ import Explainable
 import Control.Monad.RWS
 import Data.Tree
 import Data.Map ((!))
+import TaxDSL
+import MathLang
 
 scenarios :: Map.Map String Scenario
 scenarios = Map.fromList

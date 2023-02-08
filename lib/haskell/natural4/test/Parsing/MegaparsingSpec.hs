@@ -58,7 +58,7 @@ parserTests  = do
                   ],
                 rlabel = Just ("\167", 1, "Hello"),
                 lsource = Nothing,
-                srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+                srcref = mkTestSrcRef 1 1,
                 defaults = [],
                 symtab = []
               }
@@ -121,7 +121,7 @@ parserTests  = do
         (parseR pRules) [srcrow2 degustates]
 
       filetest "simple-constitutive-1-checkboxes" "should parse a simple constitutive rule with checkboxes"
-        (parseR pRules) [degustates { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 4, srccol = 1, version = Nothing}) }]
+        (parseR pRules) [degustates { srcref = mkTestSrcRef 4 1 }]
 
       -- inline constitutive rules are temporarily disabled; we need to think about how to intermingle a "sameline" parser with a multiline object.
       -- we also need to think about getting the sameline parser to not consume all the godeepers at once, because an inline constitutive rule actually starts with a godeeper.
@@ -147,7 +147,7 @@ parserTests  = do
               lest = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               upon = Nothing,
               given = Nothing,
               having = Nothing,
@@ -178,7 +178,7 @@ parserTests  = do
                 ],
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}),
+              srcref = mkTestSrcRef 2 3,
               defaults = [],
               symtab = []
             }
@@ -205,7 +205,7 @@ parserTests  = do
               lest = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               upon = Nothing,
               given = Nothing,
               having = Nothing,
@@ -240,7 +240,7 @@ parserTests  = do
                 ],
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 5, version = Nothing}),
+              srcref = mkTestSrcRef 3 5,
               defaults = [],
               symtab = []
             },
@@ -267,7 +267,7 @@ parserTests  = do
                 ],
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}),
+              srcref = mkTestSrcRef 2 3,
               defaults = [],
               symtab = []
             }
@@ -373,11 +373,11 @@ parserTests  = do
 
       let if_king_wishes_singer = if_king_wishes ++
             [ DefNameAlias [MTT "singer"] [MTT "person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})) ]
+              (mkTestSrcRef 2 2) ]
 
       let if_king_wishes_singer_nextline = if_king_wishes ++
             [ DefNameAlias [MTT "singer"] [MTT "person"] Nothing
-              (Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})) ]
+              (mkTestSrcRef 2 3) ]
 
       filetest "nl-aliases" "should parse natural language aliases (\"NL Aliases\") aka inline defined names"
         (parseR pRules) if_king_wishes_singer

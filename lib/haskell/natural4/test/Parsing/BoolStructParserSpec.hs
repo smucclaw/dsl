@@ -210,12 +210,12 @@ parserTests nlgEnv = do
       --                               ,mkLeaf (RPMT ["has","health insurance"])])
       --     , deontic = DMay
       --     , action = mkLeaf (("sharpen knives" :| [],Nothing) :| [])
-      --     , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+      --     , srcref = mkTestSrcRef 1 1
       --     }
       --   , DefTypically
       --     { name = ["is","immortal"]
       --     , defaults = [RPConstraint ["is","immortal"] RPis ["false"]]
-      --     , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 3, version = Nothing})}
+      --     , srcref = mkTestSrcRef 3 3}
       --   ]
 
       filetest "boolstructp-3" "groundrules, non-extended"
@@ -325,7 +325,7 @@ parserTests nlgEnv = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               defaults = [],
               symtab = []
             },
@@ -338,7 +338,7 @@ parserTests nlgEnv = do
               clauses = [HC {hHead = RPBoolStructR [MTT "genus", MTT "species"] RPis (mkLeaf (RPMT [MTT "some Linnaen thing"])), hBody = Nothing}],
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 2, version = Nothing}),
+              srcref = mkTestSrcRef 3 2,
               defaults = [],
               symtab = []
             }

@@ -161,7 +161,7 @@ parserTests  = do
               lest = Nothing,
               rlabel = Just ("\167", 2, "Data Intermediary non PA"),
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               upon = Just ((MTT <$> "becoming aware a data breach involving a client Organisation may have occurred" :| [], Nothing) :| []),
               given = Nothing,
               having = Nothing,
@@ -170,7 +170,7 @@ parserTests  = do
               symtab = []
             },
           DefNameAlias {
-          name = [MTT "You"], detail = [MTT "Data Intermediary"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})}
+          name = [MTT "You"], detail = [MTT "Data Intermediary"], nlhint = Nothing, srcref = mkTestSrcRef 2 3}
         ]
 
       filetest "pdpadbno-3" "data intermediaries"
@@ -187,7 +187,7 @@ parserTests  = do
               lest = Nothing,
               rlabel = Just ("\167", 2, "Data Intermediary for PA"),
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               upon = Just ((MTT <$> "becoming aware a data breach involving a client public agency may have occurred" :| [], Nothing) :| []),
               given = Nothing,
               having = Nothing,
@@ -199,7 +199,7 @@ parserTests  = do
             { name = [MTT "You"],
               detail = [MTT "Data Intermediary"],
               nlhint = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing})
+              srcref = mkTestSrcRef 2 3
             }
         ]
 
@@ -239,7 +239,7 @@ parserTests  = do
               lest = Nothing,
               rlabel = Just ("\167", 2, "Notify PDPC"),
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               upon = Nothing,
               given = Nothing,
               having = Nothing,
@@ -251,7 +251,7 @@ parserTests  = do
             { name = [MTT "the PDPC Exclusion List"],
               detail = MTT <$> ["with", "a list of individuals to exclude from notification"],
               nlhint = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing})
+              srcref = mkTestSrcRef 2 1
             }
         ]
 
@@ -353,7 +353,7 @@ parserTests  = do
               lest = Nothing,
               rlabel = Just ("\167", 2, "Notify Individuals"),
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               upon = Nothing,
               given = Nothing,
               having = Nothing,
@@ -367,7 +367,7 @@ parserTests  = do
                       clauses = [HC {hHead = RPMT [MTT "the Notifiable Individuals"], hBody = Nothing}],
                       rlabel = Nothing,
                       lsource = Nothing,
-                      srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}),
+                      srcref = mkTestSrcRef 2 9,
                       defaults = [],
                       symtab = []
                     }
@@ -400,7 +400,7 @@ parserTests  = do
                 ],
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 9, version = Nothing}),
+              srcref = mkTestSrcRef 2 9,
               defaults = [],
               symtab = []
             }

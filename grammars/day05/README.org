@@ -1,2 +1,138 @@
 #+TITLE: Day 05: Temporal Grammar
 
+Phew, exploring dungeons and slaying dragons is hard!
+
+Let's try something simpler.
+
+Like humans, lawyers have to live under the tyranny of the clock.
+Indeed, temporal calculations are even more crucial for them than for
+humans. Some kinds of lawyers, called the "nightshift", are unable to
+move about in daylight: it is the price they pay for unnatural long
+life. Yet they need to interface with the waking world of humanity if
+only to manage the investments from which they derive the bulk of
+their wealth. This makes the conduct of business especially fraught!
+If you miss an appointment with a nightshift lawyer in April, due to
+the lengthening days, the next possible appointment could be in
+October.
+
+For these reasons, lawyers have developed a sophisticated grammar for
+discussing time, at the level of hours, days, months, years, decades
+... even centuries and millenia, because the nightshift are immortal.
+Some enter hibernation for entire human lifetimes. Some find
+themselves incarcerated -- immured -- or otherwise embarrassed from
+society both mortal and undead.
+
+It is therefore not uncommon for one lawyer to say to another: "Oh,
+Lestat? He has not been seen among us for some time. In the twelfth
+year of the second reign of the Lion Queen I heard from a member of
+her court that as of the previous winter he had been absent from court
+for some thirteen seasons and thus was at risk of losing his
+residential privileges at her lesser estates for the remainder of her
+cycle if he did not appear at court within the next five seasons to
+re-affirm his loyalty to the Queen."
+
+These references to seasons and cycles are oblique, and difficult --
+but not impossible -- to reconcile with the common Gregorian which is
+all the calendar most mortals alive today know of.
+
+To pass as a lawyer you must learn to field these conversations with
+ease.
+
+To a night-shift lawyer whose immortality blurs the days into
+sameness, an event of significance rarely happens at a particular
+instant, but stretches over a span: it may be said to have begun at a
+certain time, and ended at another. Even such a simple notion as birth
+is not crystallized to a moment, but is graduated from the first sip
+of blood a fledge takes from its sire, to the day -- more accurately,
+the night between two days -- when it wakes undead.
+
+Nightshift lawyers love to point out imprecisions in time: the first
+sip of blood does not last a single instant, but also has soft
+boundaries -- would you say the sip began when the first drop of blood
+touched the fledge's mouth, or when the sire broke their own skin? Did
+the sip end with the breaking of the embrace, or the final swallow?
+Which is the final swallow of blood, anyway? Surely every swallow
+merely diminishes the concentration of the sire's blood in the mouth,
+but does not eliminate it entirely.
+
+Nightshift lawyers frequently emphasize the puzzles inherent in such
+events, as a sort of cruel game, as if to emphasize their immortality
+by mocking humans for their short lives measured out in minutes and
+seconds.
+
+* A simple example before we move on to the real challenges.
+
+** Here is your input text:
+
+The first reign of the Lion Queen began in 1256 and ended in 1497.
+
+The second reign of the Lion Queen began in 1886 and has not ended.
+
+If one is absent from court for 18 seasons consecutively, one may lose
+one's residential privileges.
+
+In the 12th year of the 2nd reign of the Lion Queen, it was known that
+as of the previous winter Lestat had been absent from court for 13
+seasons.
+
+When is the very latest season, of which year, that Lestat must appear
+so as to not risk losing his residential privileges?
+
+** Surrounding the input text are some guidance notes:
+
+Each year has four quarters: spring, summer, autumn, winter. By
+convention a winter belongs to the year in which it began, and is
+followed by spring in the next year. So you may think of December as
+being a winter month of 2022, and January as lying in the spring
+of 2023.
+
+New Year's Day is the 1st of January.
+
+Because the transition from one royal reign to another is often a
+messy and under-documented time, historians have agreed on a
+convention that the first year of a reign lasts until the /second/ New
+Year's Day after that reign was agreed to have begun. This way every
+monarch's first year lasts at least a year; anything shorter would be
+less than regal.
+
+So the second year of the first reign of the Lion Queen began on 1
+January 1258.
+
+
+* The Real Challenges
+
+We have learned that at your investiture you will be asked to analyze
+one of three possible puzzles. We have the text of one of those
+puzzles; it is believed that if you can solve this one, you should be
+in a good position to answer all three.
+
+** Inheritance
+
+Because nightshift lawyers are immortal, to remain unsuspected and
+undetected by humans, they occasionally need to assume new identities.
+The typical strategy is to pretend to travel away from home, and
+return decades later as their own son or nephew, conveniently
+inheriting their properties.
+
+To avoid suspicion, these periods of travel are usually extended as
+long as possible, so that the humans who knew them have the chance to
+forget, or to die.
+
+However, these periods cannot run too long, because if no human can be
+found who remembers the testator, their lands and estates would be
+repossessed by human towns and cities as abandoned.
+
+One of the most respected among the nightshifts, one called the Gray,
+laid down this rule which came to be accepted among mortals and
+immortals alike:
+
+No interest is good unless it must vest, if at all, not later than
+twenty-one years after some life in being at the creation of the
+interest.
+
+Encode this rule, and use your encoding to automate the answering of
+the following scenarios:
+
+
+
+

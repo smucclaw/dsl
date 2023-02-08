@@ -13,13 +13,13 @@ But lawyers are not easy to please. You will need a plan.
 
   To provide a briefcase, you must obtain a briefcase from the vault.
 
-  To obtain a briefcase from the vault, you must enter the dungeon, and be in good standing with the dungeonmaster.
+  To obtain a briefcase from the vault, you must enter the dungeon, and you must be in good standing with the dungeonmaster.
 
   You are in good standing with the dungeonmaster, at first.
 
   To enter the dungeon, you may use the key.
 
-  To use the key, you must possess the key, and be alive.
+  To use the key, you must possess the key, and you must be alive.
 
   To possess the key, you must dig under the dragon, after taking a purifying bath.
 

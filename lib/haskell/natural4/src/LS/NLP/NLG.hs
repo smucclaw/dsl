@@ -14,7 +14,7 @@ import PGF
 import Data.Maybe (catMaybes)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
-import System.Environment (lookupEnv, getExecutablePath)
+import System.Environment (lookupEnv)
 import Paths_natural4
 import Data.Foldable as F
 
@@ -49,15 +49,22 @@ gfPath x = "grammars/" ++ x
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg env rule = 
   case rule of 
-    Regulative {subj,who,deontic,action} -> do
+    Regulative {subj,who,deontic,action,lest} -> do
       let subjExpr = parseSubj env subj
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
           whoSubjExpr = case who of 
                         Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWho env <$> w))
                         Nothing -> subjExpr
-          wholeRule = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
-      pure $ gfLin env wholeRule
+          ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+
+      lestText <- case lest of 
+                    Just r -> do 
+                      ruleText <- nlg env r
+                      pure $ Text.unwords ["If you disobey, then", Text.strip ruleText, "D:"]
+                    Nothing -> pure mempty
+      pure $ Text.unlines [ruleText, lestText]
+    DefNameAlias {} -> pure mempty
     _ -> pure "NLG.hs is under construction, we only support singing"
 
 

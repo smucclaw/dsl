@@ -66,8 +66,8 @@ infix 4 ~==
 infixl 8 ~=>
 infixl 1 <-~
 
---      type Explainable r                 a     = RWST (HistoryPath,r) [String] MyState IO (a,XP)
-type Focus = Explainable Scenario MyState Float
+--      type ExplainableIO r                 a     = RWST (HistoryPath,r) [String] MyState IO (a,XP)
+type Focus = ExplainableIO Scenario MyState Float
            
 deplus,deminus,detimes,getCol :: String -> String -> (Float,XP) -> Focus
 deplus colName row (x,xpl) = do
@@ -123,13 +123,13 @@ addCol newcol fs sc = do
 col2mathList :: IncomeStreams -> ExprList Float
 col2mathList is = MathList ( Val <$> Map.elems is )
 
-mathList2col :: ExprList Float -> Explainable r MyState [Float]
+mathList2col :: ExprList Float -> ExplainableIO r MyState [Float]
 mathList2col ml = deepEvalList (ml,mkNod "mathList2col")
 
 getColAsMathList :: String -> Scenario -> ExprList Float
 getColAsMathList colname sc = col2mathList $ sc Map.! colname
 
-getColAsMathListM :: String -> Explainable Scenario MyState (ExprList Float)
+getColAsMathListM :: String -> ExplainableIO Scenario MyState (ExprList Float)
 getColAsMathListM colname = do
   sc <- asks snd
   return (getColAsMathList colname sc
@@ -645,8 +645,8 @@ rateTable _    = rateTable 2023
 
 mkParent title children = Node ([],[title]) [children]
 
--- | an Explainable version
-rateTableM :: Int -> [(Ordering, Float, Float -> Explainable r MyState Float)]
+-- | an ExplainableIO version
+rateTableM :: Int -> [(Ordering, Float, Float -> ExplainableIO r MyState Float)]
 rateTableM 2023 =
   [(LT,  10909, const (return (0, mkNod "below tax threshold")))
   ,(GT,  10908, \zvE -> do
@@ -684,12 +684,12 @@ progDirect year income =
       | otherwise                = go rts income'
     go [] _ = 0
 
-progDirectM :: Int -> Float -> Explainable r MyState Float
+progDirectM :: Int -> Float -> ExplainableIO r MyState Float
 progDirectM year income =
   let rt = reverse $ rateTableM year
   in go rt income
   where
-    go :: [(Ordering, Float, Float -> Explainable r MyState Float)] -> Float -> Explainable r MyState Float
+    go :: [(Ordering, Float, Float -> ExplainableIO r MyState Float)] -> Float -> ExplainableIO r MyState Float
     go ((o,n,f):rts) income'
       | income' `compare` n == o = f income'
       | otherwise                = go rts income'

@@ -12,7 +12,7 @@ import Data.Maybe (mapMaybe)
 import Control.Monad (forM_, mapAndUnzipM)
 import Data.Bifunctor (first, second)
 
--- | Our Explainable monad supports evaluation-with-explanation of expressions in our DSL.
+-- | Our ExplainableIO monad supports evaluation-with-explanation of expressions in our DSL.
 -- Normally, a DSL is /evaluated/: its expressions are reduced from types in the DSL to types in the host language.
 -- for example, a DSL @eval@ would turn @(MathBin Plus (Val 1) (Val 2))@ into a simple Haskell @3 :: Float@.
 --
@@ -23,7 +23,7 @@ import Data.Bifunctor (first, second)
 -- Evaluation operates by recursive evaluation of the expression tree.
 -- This monad offers transparency into evaluation, by constructing an
 -- explanation tree which parallels the operation of the recursive
--- evaluation. Each eval inside the Explainable monad returns an `XP`
+-- evaluation. Each eval inside the ExplainableIO monad returns an `XP`
 -- explanation of the "reasoning" behind that step, and that
 -- explanation is (manually) stitched into the larger XP tree as it
 -- builds up.
@@ -45,9 +45,13 @@ import Data.Bifunctor (first, second)
 --
 -- We tack on a bit of useful infrastructure of our own: basically, a call stack, and a history trace of previous execution,
 -- in the form of a `HistoryPath`.
-type ExplainableId  r st a = RWS          (HistoryPath,r) [String] st    (a,XP)
+--
 type ExplainableIO  r st a = RWST         (HistoryPath,r) [String] st IO (a,XP)
-type Explainable = ExplainableIO
+type Explainable    r st a = ExplainableIO r st a
+
+-- | we also provide a non-transformer form so we don't have do IO
+type ExplainableId  r st a = RWS          (HistoryPath,r) [String] st    (a,XP)
+
 
 -- | As we evaluate down from the root to the leaves,
 --
@@ -65,7 +69,7 @@ origReader  :: (hp,r) ->    r
 
 -- | Prepend some string to the path part of the @Reader ((history,path),r)@.
 -- So that any code that wants to know what its call stack looks like can consult "path"
-retitle :: String -> Explainable r st a -> Explainable r st a
+retitle :: String -> ExplainableIO r st a -> ExplainableIO r st a
 retitle str = local (first (fmap (str:)))
 
 
@@ -99,8 +103,8 @@ pathSpec :: [String] -> String
 pathSpec = intercalate " / " . reverse
 
 
--- | Explain an arbitrary @Explainable@; it's up to the input expr to run eval whatever
-xplainE :: (Show e) => r -> st -> Explainable r st e -> IO (e, XP, st, [String])
+-- | Explain an arbitrary @ExplainableIO@; it's up to the input expr to run eval whatever
+xplainE :: (Show e) => r -> st -> ExplainableIO r st e -> IO (e, XP, st, [String])
 xplainE r emptyState expr = do
   ((val,xpl), stab, wlog) <- runRWST
                              expr
@@ -116,8 +120,8 @@ xplainE r emptyState expr = do
 
 -- | similar to xplainE but not in IO
 xplainE' :: (Show e) => r -> st -> ExplainableId r st e -> (e, XP, st, [String])
-xplainE' r emptyState expr = do
-  let ((val,xpl), stab, wlog) = runRWST
+xplainE' r emptyState expr =
+  let ((val,xpl), stab, wlog) = runRWS
                                 expr
                                 (([],["toplevel"]),r)
                                 emptyState

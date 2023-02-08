@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 gf -make -f haskell --haskell=gadt --haskell=lexical --lexical=CN,VP  NL4Eng.gf
 cat NL4.hs |
     sed 's/module NL4 where/{-# OPTIONS_GHC -Wno-all #-}\nmodule LS.NLP.NL4 where/' | \

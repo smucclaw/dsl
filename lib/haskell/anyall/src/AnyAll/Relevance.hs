@@ -15,6 +15,8 @@ import Data.Tree
 import qualified Data.Text       as T
 import AnyAll.BoolStructTree
 
+import Explainable
+
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
 relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
 relevant sh  marking parentValue self =

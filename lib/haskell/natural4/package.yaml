@@ -71,6 +71,7 @@ dependencies:
 - regex-tdfa
 - baby-l4
 - quickcheck-text
+- explainable
 
 ghc-options: -Wall -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 

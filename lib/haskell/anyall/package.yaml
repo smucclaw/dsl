@@ -37,6 +37,7 @@ dependencies:
 - microlens-platform
 - QuickCheck
 - checkers
+- explainable
 
 # - ihaskell
 

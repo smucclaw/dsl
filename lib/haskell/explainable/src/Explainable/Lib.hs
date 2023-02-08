@@ -51,7 +51,7 @@ int = read <$> some numberChar
 
 
 
--- * Set up some Explainable computations
+-- * Set up some ExplainableIO computations
 
 runTests_1 :: Scenario -> IO ()
 runTests_1 sc = do
@@ -137,7 +137,7 @@ tax_2_3 = do
 (>>=>) :: MonadIO m => m a -> (a -> IO b) -> m b
 x >>=> y = x >>= liftIO . y
 
-taxPayableFor :: Float -> Explainable r MyState Float
+taxPayableFor :: Float -> ExplainableIO r MyState Float
 taxPayableFor = progDirectM 2023
 
 tax_34 :: Focus
@@ -166,7 +166,7 @@ tax_34 = do
                ,Node ([],["squashToTotals"]) [xpl]
                ])
 
-squashToTotals :: Scenario -> Explainable r MyState Scenario
+squashToTotals :: Scenario -> ExplainableIO r MyState Scenario
 squashToTotals sc = do
   (total,xpl) <- eval $ sumOf . col2mathList $ sc Map.! "net income"
   return (Map.singleton "net income" (Map.singleton "total" total)

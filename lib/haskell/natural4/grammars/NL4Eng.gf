@@ -2,7 +2,7 @@ concrete NL4Eng of NL4 =
     NumeralEng
   , GrammarEng [
         N, N2, CN, UseN, NP, Det, DetCN
-      , V, V2, VS, VP
+      , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
       , Cl, ImpersCl -- it is a NDB
 --      , ProgrVP -- becoming aware
@@ -10,8 +10,9 @@ concrete NL4Eng of NL4 =
       , Prep, PrepNP, AdvVP
       ]
   , StructuralEng [
-       Prep, to_Prep, by8means_Prep, for_Prep
-     ]
+      Prep, to_Prep, by8means_Prep, for_Prep
+    , VV, must_VV  
+    ]
   , ExtendEng [
         VPS, MkVPS --, [VPS], BaseVPS, ConsVPS, ConjVPS
       , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
@@ -41,10 +42,13 @@ concrete NL4Eng of NL4 =
       [Who] = ExtendEng.ListVPS ;
       Subj = NP ;
       Deontic = VV ;
+      Upon = VP ; -- hack: thanks to linref, parse in gerund, and linearise finite forms in qUPON question
+                  -- would be smaller to use VPI or VPS, and doable in English (thanks to questions taking inf form), but dangerous for other langs
 
     linref
       Who = linWho ;
       Cond = \c -> c.s.s ;
+      Upon = linUpon ;
     oper
       LinCond : Type = {s : S ; qs : QS} ; -- {subj : NP ; pred : ExtendEng.VPS} ;
       LinListCond : Type = {s : [S] ; qs : ListQS} ;
@@ -52,12 +56,15 @@ concrete NL4Eng of NL4 =
       linWho : ExtendEng.VPS -> Str = \vps -> 
         let vpss = vps.s ! R.ODir False ! R.agrP3 R.Sg
          in vpss.fin ++ vpss.inf ;
+      linUpon : VP -> Str = \vp -> (GerundAdv vp).s ;
+
     lin 
 -- Application layer
       -- : Subj -> Deontic -> Action -> Rule ;
       Regulative subj deontic action = mkS (mkCl subj (ComplVPIVV deontic action)) ;
       qWHO subj who = ExtendEng.SQuestVPS subj who ;
-      qCOND c = c.qs ;
+      qCOND cond = cond.qs ;
+      qUPON subj upon = qWHO subj (MkVPS presAnt positivePol upon) ;
 
       EVERY cn = every <cn : CN> ;
       PARTY cn = mkNP cn ;
@@ -81,6 +88,8 @@ concrete NL4Eng of NL4 =
       SubjWho subj who = mkNP subj (RelVPS ExtraEng.who_RP who) ;
 
       You = you_NP | mkNP (mkN "You" "You" "Your" "Your") ;
+
+      UPON vp = vp ;
 
       WHEN np vps = {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
 
@@ -141,22 +150,40 @@ concrete NL4Eng of NL4 =
       data_breach = mkCN (mkN ("data breach"|"Data Breach")) ;
       public = mkAP (mkA ("public"|"Public")) ;
       notifiable = mkAP (mkA ("notifiable"|"Notifiable")) ;
+      aware = mkAP (mkA "aware") ;
       NDB_Qualification = mkNP (mkN "NDB Qualification") ;
 
       -- PDPA use case
       demand = mkV2 "demand" ;
       perform = mkV2 "perform" ;
+      become = mkV2 IrregEng.become_V ;
       assess = mkVS (mkV "assess") ; 
       occur = mkVP (mkV "occur") ;
       respond = mkVP (mkV "respond") ;
+
+      -- : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred 
+      ComplVAS become aware db_occurs = 
+        let become_aware : VP = mkVP <lin VA become : VA> <lin AP aware : AP> ;
+            optThat : Str = "that" | "" ;
+         in become_aware ** {
+              ext = become_aware.ext ++ optThat ++ db_occurs.s
+              } ;
+      -- : V2 -> NP -> S -> VP ; -- notify PDPC that a data breach has occurred
+      ComplV2S notify pdpc db_occurs = mkVP notify pdpc db_occurs ; -- already in RGL, just a shortcut
       ComplV2 v2 np = mkVP v2 np ;
       ComplVSif vs s = R.insertObj (\\_ => "if" ++ s.s) (R.predV vs) ;
       ComplVSthat vs s = mkVP vs s ;
 
+      MayHave occur = 
+        let vps : ExtendEng.VPS = MkVPS presAnt POS occur ;
+            have_occurred : {fin,inf : Str} = vps.s ! R.ODir False ! R.AgP3Pl R.Neutr ;
+            may_have_occurred : {fin,inf : Str} = {fin = "may" ; inf = have_occurred.fin ++ have_occurred.inf} ;
+         in vps ** {s = \\_,_ => may_have_occurred} ;
       -- : NP -> S ; -- it is NP — reference to a previous NP
       ReferenceNP np = mkS (mkCl it_NP np) ;
 
-      presentIndicative = mkTemp presentTense simultaneousAnt ; 
+      presSimul = mkTemp presentTense simultaneousAnt ; 
+      presAnt = mkTemp presentTense anteriorAnt ;
       POS = positivePol ;
       NEG = negativePol ;
 
@@ -166,6 +193,10 @@ concrete NL4Eng of NL4 =
       your = mkDet youSg_Pron ;
 
       about_Prep = mkPrep "about" ;
+      may_VV = ExtraEng.may_VV ; -- ** {s = \\_ => "may"};
+
       oper 
         every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
+
 }
+

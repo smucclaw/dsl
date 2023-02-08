@@ -2,7 +2,7 @@ abstract NL4 =
     Numeral
   , Grammar [
         N, N2, CN, UseN, NP, Det, DetCN
-      , V, V2, VS, VP
+      , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
       , Cl, ImpersCl -- it is a NDB
 --      , ProgrVP -- becoming aware
@@ -11,6 +11,7 @@ abstract NL4 =
       ]
   , Structural [
        Prep, to_Prep, by8means_Prep, for_Prep
+     , VV, must_VV  
      ]
   , Extend [
         VPS, MkVPS --, [VPS], BaseVPS, ConsVPS, ConjVPS
@@ -32,11 +33,13 @@ abstract NL4 =
       [Who]{2} ;
       Subj ;
       Deontic ;
-
+      Upon ;
     fun 
 -- Application layer
       Regulative : Subj -> Deontic -> Action -> Rule ;
       qWHO : Subj -> Who -> Question ;
+      qUPON : Subj -> Upon -> Question ; -- TODO rethink types when adding more langs 
+                                         -- TODO2 do we allow upon to take full sentence or just VP*?
       qCOND : Cond -> Question ;
 
       EVERY,
@@ -53,8 +56,11 @@ abstract NL4 =
 
       You : Subj ;
 
+      UPON : VP -> Upon ; -- upon becoming
+      
       WHEN : NP -> VPS -> Cond ;
       ConjCond : Conj -> [Cond] -> Cond ;
+
 
 -- Time expressions
     cat
@@ -83,13 +89,14 @@ abstract NL4 =
        , PDPC
        , data_breach
        : CN ;
-      public, notifiable : AP ;
+      public, notifiable, aware : AP ;
       NDB_Qualification : NP ; 
       walk, eat, drink, sing : VP ; -- VP = intransitive verb
 
       -- PDPA use case
       demand,
-      perform : V2 ;
+      perform,
+      become : V2 ;
       assess : VS ; 
       occur,
       respond : VP ; -- in corpus, takes oblique complements 
@@ -98,13 +105,20 @@ abstract NL4 =
                      -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement
                      -- "assess" :| [ "if it is a Notifiable Data Breach" ] -> assess : VS, S complement
                      -- TODO: is it overkill to have keywords in language? assess,IF,it is a NDB
+      ComplVAS : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred 
+      ComplV2S : V2 -> NP -> S -> VP ; -- notify PDPC that a data breach has occurred
       ComplV2 : V2 -> NP -> VP ;
       ComplVSif,
       ComplVSthat : VS -> S -> VP ;
+      MayHave : VP -> VPS ; -- getting "may have occurred" with pure RGL is a pain
+
       ReferenceNP : NP -> S ; -- it is NP — reference to a previous NP
 --      ExpletiveVP : VP -> S ; -- it is raining — dummy subject it (TODO: restrict usage of this and above from HS)
 
-      presentIndicative : Temp ; 
+      presAnt,  -- has occurred
+      presSimul  -- occurs
+        : Temp ; 
+      
       POS : Pol ;
       NEG : Pol ;
 
@@ -114,4 +128,5 @@ abstract NL4 =
       your : Det ;
 
       about_Prep : Prep ;
+      may_VV : VV ;
 }

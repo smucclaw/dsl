@@ -109,6 +109,8 @@ type GTemporal = Tree GTemporal_
 data GTemporal_
 type GTimeUnit = Tree GTimeUnit_
 data GTimeUnit_
+type GUpon = Tree GUpon_
+data GUpon_
 type GV2 = Tree GV2_
 data GV2_
 type GVP = Tree GVP_
@@ -119,6 +121,8 @@ type GVPS = Tree GVPS_
 data GVPS_
 type GVS = Tree GVS_
 data GVS_
+type GVV = Tree GVV_
+data GVV_
 type GWho = Tree GWho_
 data GWho_
 type GA = Tree GA_
@@ -144,6 +148,7 @@ data GFloat_
 
 data Tree :: * -> * where
   GPositA :: GA -> Tree GAP_
+  Gaware :: Tree GAP_
   Gnotifiable :: Tree GAP_
   Gpublic :: Tree GAP_
   GACTION :: GVPI -> Tree GAction_
@@ -214,6 +219,7 @@ data Tree :: * -> * where
   Gfor_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
   GqCOND :: GCond -> Tree GQuestion_
+  GqUPON :: GSubj -> GUpon -> Tree GQuestion_
   GqWHO :: GSubj -> GWho -> Tree GQuestion_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GRule_
   GPredVPS :: GNP -> GVPS -> Tree GS_
@@ -251,22 +257,30 @@ data Tree :: * -> * where
   GSubjWho :: GSubj -> GWho -> Tree GSubj_
   GTHE :: GCN -> Tree GSubj_
   GYou :: Tree GSubj_
-  GpresentIndicative :: Tree GTemp_
+  GpresAnt :: Tree GTemp_
+  GpresSimul :: Tree GTemp_
   GWITHIN :: GInt -> GTimeUnit -> Tree GTemporal_
   GDay_Unit :: Tree GTimeUnit_
   GMonth_Unit :: Tree GTimeUnit_
   GYear_Unit :: Tree GTimeUnit_
+  GUPON :: GVP -> Tree GUpon_
+  Gbecome :: Tree GV2_
   Gdemand :: Tree GV2_
   Gperform :: Tree GV2_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
   GComplV2 :: GV2 -> GNP -> Tree GVP_
+  GComplV2S :: GV2 -> GNP -> GS -> Tree GVP_
+  GComplVAS :: GV2 -> GAP -> GS -> Tree GVP_
   GComplVSif :: GVS -> GS -> Tree GVP_
   GComplVSthat :: GVS -> GS -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
   LexVP :: String -> Tree GVP_
   GMkVPI :: GVP -> Tree GVPI_
+  GMayHave :: GVP -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   Gassess :: Tree GVS_
+  Gmay_VV :: Tree GVV_
+  Gmust_VV :: Tree GVV_
   GConjWho :: GConj -> GListWho -> Tree GWho_
   GWHO :: GVPS -> Tree GWho_
   GString :: String -> Tree GString_
@@ -276,6 +290,7 @@ data Tree :: * -> * where
 instance Eq (Tree a) where
   i == j = case (i,j) of
     (GPositA x1,GPositA y1) -> and [ x1 == y1 ]
+    (Gaware,Gaware) -> and [ ]
     (Gnotifiable,Gnotifiable) -> and [ ]
     (Gpublic,Gpublic) -> and [ ]
     (GACTION x1,GACTION y1) -> and [ x1 == y1 ]
@@ -346,6 +361,7 @@ instance Eq (Tree a) where
     (Gfor_Prep,Gfor_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
     (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
+    (GqUPON x1 x2,GqUPON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GqWHO x1 x2,GqWHO y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -383,22 +399,30 @@ instance Eq (Tree a) where
     (GSubjWho x1 x2,GSubjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTHE x1,GTHE y1) -> and [ x1 == y1 ]
     (GYou,GYou) -> and [ ]
-    (GpresentIndicative,GpresentIndicative) -> and [ ]
+    (GpresAnt,GpresAnt) -> and [ ]
+    (GpresSimul,GpresSimul) -> and [ ]
     (GWITHIN x1 x2,GWITHIN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDay_Unit,GDay_Unit) -> and [ ]
     (GMonth_Unit,GMonth_Unit) -> and [ ]
     (GYear_Unit,GYear_Unit) -> and [ ]
+    (GUPON x1,GUPON y1) -> and [ x1 == y1 ]
+    (Gbecome,Gbecome) -> and [ ]
     (Gdemand,Gdemand) -> and [ ]
     (Gperform,Gperform) -> and [ ]
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV2 x1 x2,GComplV2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GComplV2S x1 x2 x3,GComplV2S y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GComplVAS x1 x2 x3,GComplVAS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GComplVSif x1 x2,GComplVSif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplVSthat x1 x2,GComplVSthat y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (LexVP x,LexVP y) -> x == y
     (GMkVPI x1,GMkVPI y1) -> and [ x1 == y1 ]
+    (GMayHave x1,GMayHave y1) -> and [ x1 == y1 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (Gassess,Gassess) -> and [ ]
+    (Gmay_VV,Gmay_VV) -> and [ ]
+    (Gmust_VV,Gmust_VV) -> and [ ]
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GWHO x1,GWHO y1) -> and [ x1 == y1 ]
     (GString x, GString y) -> x == y
@@ -408,12 +432,14 @@ instance Eq (Tree a) where
 
 instance Gf GAP where
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
+  gf Gaware = mkApp (mkCId "aware") []
   gf Gnotifiable = mkApp (mkCId "notifiable") []
   gf Gpublic = mkApp (mkCId "public") []
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
+      Just (i,[]) | i == mkCId "aware" -> Gaware 
       Just (i,[]) | i == mkCId "notifiable" -> Gnotifiable 
       Just (i,[]) | i == mkCId "public" -> Gpublic 
 
@@ -719,11 +745,13 @@ instance Gf GPrep where
 
 instance Gf GQuestion where
   gf (GqCOND x1) = mkApp (mkCId "qCOND") [gf x1]
+  gf (GqUPON x1 x2) = mkApp (mkCId "qUPON") [gf x1, gf x2]
   gf (GqWHO x1 x2) = mkApp (mkCId "qWHO") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "qCOND" -> GqCOND (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "qUPON" -> GqUPON (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "qWHO" -> GqWHO (fg x1) (fg x2)
 
 
@@ -874,11 +902,13 @@ instance Gf GSubj where
       _ -> error ("no Subj " ++ show t)
 
 instance Gf GTemp where
-  gf GpresentIndicative = mkApp (mkCId "presentIndicative") []
+  gf GpresAnt = mkApp (mkCId "presAnt") []
+  gf GpresSimul = mkApp (mkCId "presSimul") []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "presentIndicative" -> GpresentIndicative 
+      Just (i,[]) | i == mkCId "presAnt" -> GpresAnt 
+      Just (i,[]) | i == mkCId "presSimul" -> GpresSimul 
 
 
       _ -> error ("no Temp " ++ show t)
@@ -907,12 +937,24 @@ instance Gf GTimeUnit where
 
       _ -> error ("no TimeUnit " ++ show t)
 
+instance Gf GUpon where
+  gf (GUPON x1) = mkApp (mkCId "UPON") [gf x1]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "UPON" -> GUPON (fg x1)
+
+
+      _ -> error ("no Upon " ++ show t)
+
 instance Gf GV2 where
+  gf Gbecome = mkApp (mkCId "become") []
   gf Gdemand = mkApp (mkCId "demand") []
   gf Gperform = mkApp (mkCId "perform") []
 
   fg t =
     case unApp t of
+      Just (i,[]) | i == mkCId "become" -> Gbecome 
       Just (i,[]) | i == mkCId "demand" -> Gdemand 
       Just (i,[]) | i == mkCId "perform" -> Gperform 
 
@@ -922,6 +964,8 @@ instance Gf GV2 where
 instance Gf GVP where
   gf (GAdvVP x1 x2) = mkApp (mkCId "AdvVP") [gf x1, gf x2]
   gf (GComplV2 x1 x2) = mkApp (mkCId "ComplV2") [gf x1, gf x2]
+  gf (GComplV2S x1 x2 x3) = mkApp (mkCId "ComplV2S") [gf x1, gf x2, gf x3]
+  gf (GComplVAS x1 x2 x3) = mkApp (mkCId "ComplVAS") [gf x1, gf x2, gf x3]
   gf (GComplVSif x1 x2) = mkApp (mkCId "ComplVSif") [gf x1, gf x2]
   gf (GComplVSthat x1 x2) = mkApp (mkCId "ComplVSthat") [gf x1, gf x2]
   gf (GUseComp x1) = mkApp (mkCId "UseComp") [gf x1]
@@ -931,6 +975,8 @@ instance Gf GVP where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdvVP" -> GAdvVP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplV2" -> GComplV2 (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "ComplV2S" -> GComplV2S (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "ComplVAS" -> GComplVAS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ComplVSif" -> GComplVSif (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplVSthat" -> GComplVSthat (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseComp" -> GUseComp (fg x1)
@@ -949,10 +995,12 @@ instance Gf GVPI where
       _ -> error ("no VPI " ++ show t)
 
 instance Gf GVPS where
+  gf (GMayHave x1) = mkApp (mkCId "MayHave") [gf x1]
   gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "MayHave" -> GMayHave (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
 
 
@@ -967,6 +1015,18 @@ instance Gf GVS where
 
 
       _ -> error ("no VS " ++ show t)
+
+instance Gf GVV where
+  gf Gmay_VV = mkApp (mkCId "may_VV") []
+  gf Gmust_VV = mkApp (mkCId "must_VV") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "may_VV" -> Gmay_VV 
+      Just (i,[]) | i == mkCId "must_VV" -> Gmust_VV 
+
+
+      _ -> error ("no VV " ++ show t)
 
 instance Gf GWho where
   gf (GConjWho x1 x2) = mkApp (mkCId "ConjWho") [gf x1, gf x2]
@@ -1059,6 +1119,7 @@ instance Compos Tree where
     GGerundNP x1 -> r GGerundNP `a` f x1
     Gnum x1 -> r Gnum `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1
+    GqUPON x1 x2 -> r GqUPON `a` f x1 `a` f x2
     GqWHO x1 x2 -> r GqWHO `a` f x1 `a` f x2
     GRegulative x1 x2 x3 -> r GRegulative `a` f x1 `a` f x2 `a` f x3
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
@@ -1089,12 +1150,16 @@ instance Compos Tree where
     GSubjWho x1 x2 -> r GSubjWho `a` f x1 `a` f x2
     GTHE x1 -> r GTHE `a` f x1
     GWITHIN x1 x2 -> r GWITHIN `a` f x1 `a` f x2
+    GUPON x1 -> r GUPON `a` f x1
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplV2 x1 x2 -> r GComplV2 `a` f x1 `a` f x2
+    GComplV2S x1 x2 x3 -> r GComplV2S `a` f x1 `a` f x2 `a` f x3
+    GComplVAS x1 x2 x3 -> r GComplVAS `a` f x1 `a` f x2 `a` f x3
     GComplVSif x1 x2 -> r GComplVSif `a` f x1 `a` f x2
     GComplVSthat x1 x2 -> r GComplVSthat `a` f x1 `a` f x2
     GUseComp x1 -> r GUseComp `a` f x1
     GMkVPI x1 -> r GMkVPI `a` f x1
+    GMayHave x1 -> r GMayHave `a` f x1
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2
     GWHO x1 -> r GWHO `a` f x1

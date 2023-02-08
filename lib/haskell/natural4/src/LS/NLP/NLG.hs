@@ -11,6 +11,7 @@ import LS.NLP.NL4Transformations
 import LS.Types
 import LS.Rule (Rule(..))      
 import PGF
+import Data.Maybe (catMaybes)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv, getExecutablePath)
@@ -43,44 +44,6 @@ gfPath :: String -> String
 gfPath x = "grammars/" ++ x
 
 -----------------------------------------------------------------------------
--- Parsing fields into GF categories – all typed, no PGF.Expr allowed
-
-parseActions :: NLGEnv -> Text.Text -> [GAction]
-parseSubjs :: NLGEnv -> Text.Text -> [GSubj]
-parseWhos :: NLGEnv -> Text.Text -> [GWho]
-
-parseActions e t = fg <$> parseAny "Action" e t
-parseSubjs e t = fg <$> parseAny "Subj" e t
-parseWhos e t = fg <$> parseAny "Who" e t
-
-parseAction :: NLGEnv -> BoolStructP -> GAction
-parseAction env action = case parseActions env $ bsp2text action of 
-                       [] -> error $ "no parse for " <> Text.unpack (bsp2text action)
-                       x:_ -> x
-
-parseSubj :: NLGEnv -> BoolStructP -> GSubj
-parseSubj env subj = case parseSubjs env $ bsp2text subj of 
-                       [] -> error $ "no parse for " <> Text.unpack (bsp2text subj)
-                       x:_ -> x
-
-parseWho :: NLGEnv -> RelationalPredicate -> GWho
-parseWho env rp = case parseWhos env (rp2text rp) of
-                  x:_ -> x
-                  [] -> error $ "parseWhoBS: failed to parse " <> Text.unpack (rp2text rp)
-
-parseDeontic :: Deontic -> GDeontic
-parseDeontic DMust = GMUST
-parseDeontic DMay = GMAY
-parseDeontic DShant = GSHANT
-
-parseAny :: String -> NLGEnv -> Text.Text -> [Expr] 
-parseAny cat env = gfParse env typ 
-  where
-    typ = case readType cat of 
-            Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
-            Just t -> t
-
------------------------------------------------------------------------------
 -- Main
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
@@ -97,8 +60,6 @@ nlg env rule =
       pure $ gfLin env wholeRule
     _ -> pure "NLG.hs is under construction, we only support singing"
 
-
------------------------------------------------------------------------------
 
 -- | rewrite statements into questions, for use by the Q&A web UI
 --
@@ -123,35 +84,34 @@ nlg env rule =
     --     Actual: AA.BoolStruct (Maybe (AA.Label Text.Text)) (IO [String])
 
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
-ruleQuestions env alias rule = pure [AA.Leaf (Text.pack "NLG.hs is under construction, this will work again shortly")]
-{-  do
-  gr <- nlgExtPGF
-  [youExpr, orgExpr] <-
-      case alias of
-        Nothing        -> pure [dummySubj, dummySubj]
-        Just (you,org) -> sequence [ do
-                            uds <- parseMulti env mt
-                            pure $ gf $ peelNP uds
+-- ruleQuestions env alias rule = pure [AA.Leaf (Text.pack "NLG.hs is under construction, this will work again shortly")]
+ruleQuestions env alias rule = do
+  let [youExpr, orgExpr] =
+        case alias of
+          Nothing        -> [GYou, GYou]
+          Just (you,org) -> [ parseSubj env $ mkLeafPT $ mt2text mt
                             | mt <- [you, org]]
   case rule of
     Regulative {subj,who,cond} -> do
-      subjExpr <- bsp2gf env subj
-      let aliasExpr = if subjExpr==orgExpr then youExpr else subjExpr
-      whoBSR <- mapM (bsr2questions qsWho gr aliasExpr) who
-      condBSR <- mapM (bsr2questions qsCond gr aliasExpr) cond
-      pure $ concat $ catMaybes [whoBSR, condBSR]
-    Constitutive {cond} -> do
-      condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
-      pure $ concat $ catMaybes [condBSR]
-    Hornlike {keyword, clauses} -> do
-      let kw = keyword2cid keyword
-      parsedClauses <- mapM (parseHornClause2 env kw) clauses
-      let statements = [s | [s] <- parsedClauses] -- TODO: eventually make a new function that parses RPs for HornClause that doesn't make its argument UDFragment
-      let questions = concatMap (mkQ qsCond gr dummySubj) statements :: [AA.OptionallyLabeledBoolStruct Text.Text]
-      pure questions
+      let subjExpr = parseSubj env subj
+          aliasExpr = if subjExpr==orgExpr then youExpr else subjExpr
+          mkWhoQ = gfLin env . gf . GqWHO aliasExpr . parseWho env -- :: RelationalPredicate -> Text
+          mkCondQ = gfLin env . gf . GqCOND . parseCond env
+          qWhoBSR = fmap (mkWhoQ <$>) who -- fmap is for Maybe, <$> for BoolStruct
+          qCondBSR = fmap (mkCondQ <$>) cond
+      pure $ catMaybes [qWhoBSR, qCondBSR]
+    -- Constitutive {cond} -> do
+    --   condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
+    --   pure $ concat $ catMaybes [condBSR]
+    -- Hornlike {keyword, clauses} -> do
+    --   let kw = keyword2cid keyword
+    --   parsedClauses <- mapM (parseHornClause2 env kw) clauses
+    --   let statements = [s | [s] <- parsedClauses] -- TODO: eventually make a new function that parses RPs for HornClause that doesn't make its argument UDFragment
+    --   let questions = concatMap (mkQ qsCond gr dummySubj) statements :: [AA.OptionallyLabeledBoolStruct Text.Text]
+    --   pure questions
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
-
+{-
   where
     keepTextNegations :: AA.OptionallyLabeledBoolStruct [AA.OptionallyLabeledBoolStruct a] -> [AA.OptionallyLabeledBoolStruct a]
     keepTextNegations bsr = case bsr of
@@ -181,3 +141,54 @@ nlgQuestion env rl = do
   rulesInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList rulesInABoolStruct
 
+-----------------------------------------------------------------------------
+-- Parsing fields into GF categories – all typed, no PGF.Expr allowed
+
+parseActions :: NLGEnv -> Text.Text -> [GAction]
+parseSubjs :: NLGEnv -> Text.Text -> [GSubj]
+parseConds :: NLGEnv -> Text.Text -> [GCond]
+parseWhos :: NLGEnv -> Text.Text -> [GWho]
+
+parseActions e t = fg <$> parseAny "Action" e t
+parseSubjs e t = fg <$> parseAny "Subj" e t
+parseConds e t = fg <$> parseAny "Cond" e t
+parseWhos e t = fg <$> parseAny "Who" e t
+
+-- TODO: stop using *2text, instead use the internal structure
+  -- "respond" :| []  -> respond : VP 
+  -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement, call ComplV2
+  -- "assess" :| [ "if it is a Notifiable Data Breach" ] -> assess : VS, S complement, call ComplS2
+parseAction :: NLGEnv -> BoolStructP -> GAction
+parseAction env action = case parseActions env $ bsp2text action of 
+                       [] -> error $ "no parse for " <> Text.unpack (bsp2text action)
+                       x:_ -> x
+
+parseSubj :: NLGEnv -> BoolStructP -> GSubj
+parseSubj env subj = case parseSubjs env $ bsp2text subj of 
+                       [] -> error $ "no parse for " <> Text.unpack (bsp2text subj)
+                       x:_ -> x
+
+parseWho :: NLGEnv -> RelationalPredicate -> GWho
+parseWho env rp = case parseWhos env (rp2text rp) of
+                  x:_ -> x
+                  [] -> error $ "parseWho: failed to parse " <> Text.unpack (rp2text rp)
+
+parseCond :: NLGEnv -> RelationalPredicate -> GCond
+parseCond env rp = case parseConds env (rp2text rp) of
+                  x:_ -> x
+                  [] -> error $ "parseCond: failed to parse " <> Text.unpack (rp2text rp)
+
+parseDeontic :: Deontic -> GDeontic
+parseDeontic DMust = GMUST
+parseDeontic DMay = GMAY
+parseDeontic DShant = GSHANT
+
+parseAny :: String -> NLGEnv -> Text.Text -> [Expr] 
+parseAny cat env = gfParse env typ 
+  where
+    typ = case readType cat of 
+            Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
+            Just t -> t
+
+
+-----------------------------------------------------------------------------

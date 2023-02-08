@@ -25,7 +25,7 @@ packages:
 #
 extra-deps:
 - ../anyall
-
+- ../explainable
 
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)

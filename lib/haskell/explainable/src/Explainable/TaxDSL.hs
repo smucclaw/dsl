@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiWayIf #-}
 
-module TaxDSL where
+module Explainable.TaxDSL where
 
 import qualified Data.Map as Map
 import Control.Monad.Trans.State ( gets, State, StateT, evalState, runStateT, modify )
@@ -19,7 +19,7 @@ import Control.Monad.Combinators.Expr
 import Data.Ord
 
 import Explainable
-import MathLang
+import Explainable.MathLang
 
 import qualified Data.Tree as DT
 import Control.Monad.Trans.RWS

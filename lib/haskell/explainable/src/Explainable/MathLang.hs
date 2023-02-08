@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiWayIf #-}
 
-module MathLang where
+module Explainable.MathLang where
 
 import qualified Data.Map as Map
 import Control.Monad.State (liftIO)

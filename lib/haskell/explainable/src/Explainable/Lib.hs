@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiWayIf #-}
 
-module Lib where
+module Explainable.Lib where
 
 import qualified Data.Map as Map
 import Control.Monad.State (liftIO)
@@ -19,8 +19,8 @@ import Control.Monad.Combinators.Expr
 import Data.Ord
 
 import Explainable
-import MathLang
-import TaxDSL
+import Explainable.MathLang
+import Explainable.TaxDSL
 
 import qualified Data.Tree as DT
 import Control.Monad.Trans.RWS

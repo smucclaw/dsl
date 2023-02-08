@@ -2,13 +2,14 @@ module LibSpec where
 
 import Test.Hspec
 import qualified Data.Map as Map
-import Lib
-import Explainable
 import Control.Monad.RWS
 import Data.Tree
 import Data.Map ((!))
-import TaxDSL
-import MathLang
+
+import Explainable
+import Explainable.MathLang
+import Explainable.TaxDSL
+import Explainable.Lib
 
 scenarios :: Map.Map String Scenario
 scenarios = Map.fromList

@@ -61,6 +61,12 @@ historypath :: (hp,r) -> hp
 origReader  :: (hp,r) ->    r
 (historypath,origReader) = (fst,snd)
 
+-- | Prepend some string to the path part of the @Reader ((history,path),r)@.
+-- So that any code that wants to know what its call stack looks like can consult "path"
+retitle :: String -> Explainable r st a -> Explainable r st a
+retitle str = local (first (fmap (str:)))
+
+
 -- | The Writer supports logging, basically. We set it as @[String]@ in case you actually do want to use it.
 -- Our primary app doen't actually use the Writer, but returns XP as the @snd@ part in our return value instead.
 -- 

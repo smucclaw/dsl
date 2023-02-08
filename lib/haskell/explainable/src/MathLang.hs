@@ -74,6 +74,22 @@ x |/ y = MathBin Divide x y
 infix 5 |*, |/
 infix 4 |+, |-
 
+-- | fmap.
+-- 
+-- In Haskell, we would say @(+2) <$> [1,2,3]@
+--
+-- Here, we would say @2 +| [1,2,3]@
+--
+-- But this is crude. There's an alternative way to say it, using MathSections in an ExprList.
+
+(+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> Explainable r MyState [Float]
+x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Plus   x) ys
+x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Minus  x) ys
+x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Times  x) ys
+x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Divide x) ys
+
+-- ** Function Sections and infrastructure for folds
+
 -- | a function section is a unary math operator constructed from partial application of a binary.
 -- for example, if we wanted to do a Haskell @(2*)@ we would say @MathSection Times (Val 2)@
 data MathSection a
@@ -90,17 +106,6 @@ data SomeFold = FoldSum      -- ^ by taking the sum
               | FoldMax      -- ^ by taking the maximum
               | FoldMin      -- ^ by taking the minimum
               deriving (Eq, Show)
-
--- | fmap.
--- 
--- In Haskell, we would say @(+2) <$> [1,2,3]@
---
--- Here, we would say @2 +| [1,2,3]@
-(+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> Explainable r MyState [Float]
-x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Plus   x) ys
-x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Minus  x) ys
-x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Times  x) ys
-x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Divide x) ys
 
 -- ** Lists
 
@@ -184,11 +189,6 @@ data Var a
   = VarMath String (Expr a)
   | VarPred String (Pred a)
     deriving (Eq, Show)
-
--- | Prepend some string to the path part of the @Reader ((history,path),r)@.
--- So that any code that wants to know what its call stack looks like can consult "path"
-retitle :: String -> Explainable r MyState a -> Explainable r MyState a
-retitle str = local (first (fmap (str:)))
 
 -- * Evaluations
 

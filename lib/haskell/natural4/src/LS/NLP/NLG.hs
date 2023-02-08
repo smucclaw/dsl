@@ -133,14 +133,18 @@ ruleQuestions env alias rule = do
                 _ -> (GYou, GYou) -- dummy values
           Nothing -> (GYou, GYou) -- dummy values
   case rule of
-    Regulative {subj,who,cond} -> do
+    Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
           aliasExpr = if subjExpr==orgExpr then youExpr else subjExpr
           mkWhoQ = gfLin env . gf . GqWHO aliasExpr . parseWho env -- :: RelationalPredicate -> Text
           mkCondQ = gfLin env . gf . GqCOND . parseCond env
-          qWhoBSR = fmap (mkWhoQ <$>) who -- fmap is for Maybe, <$> for BoolStruct
-          qCondBSR = fmap (mkCondQ <$>) cond
-      pure $ catMaybes [qWhoBSR, qCondBSR]
+          mkUponQ = gfLin env . gf . GqUPON aliasExpr . parseUpon env -- :: ParamText -> Text
+          qWhoBS = fmap (mkWhoQ <$>) who -- fmap is for Maybe, <$> for BoolStruct
+          qCondBS = fmap (mkCondQ <$>) cond
+          qUponBS = case upon of 
+                      Just u -> Just $ AA.Leaf $ mkUponQ u
+                      Nothing -> Nothing
+      pure $ catMaybes [qWhoBS, qCondBS, qUponBS]
     -- Constitutive {cond} -> do
     --   condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
     --   pure $ concat $ catMaybes [condBSR]
@@ -186,11 +190,13 @@ nlgQuestion env rl = do
 -- Parsing fields into GF categories – all typed, no PGF.Expr allowed
 
 parseActions :: NLGEnv -> Text.Text -> [GAction]
+parseUpons :: NLGEnv -> Text.Text -> [GUpon]
 parseSubjs :: NLGEnv -> Text.Text -> [GSubj]
 parseConds :: NLGEnv -> Text.Text -> [GCond]
 parseWhos :: NLGEnv -> Text.Text -> [GWho]
 
 parseActions e t = fg <$> parseAny "Action" e t
+parseUpons e t =  fg <$> parseAny "Upon" e t
 parseSubjs e t = fg <$> parseAny "Subj" e t
 parseConds e t = fg <$> parseAny "Cond" e t
 parseWhos e t = fg <$> parseAny "Who" e t
@@ -211,13 +217,18 @@ parseSubj env subj = case parseSubjs env $ bsp2text subj of
 
 parseWho :: NLGEnv -> RelationalPredicate -> GWho
 parseWho env rp = case parseWhos env (rp2text rp) of
-                  x:_ -> x
-                  [] -> error $ "parseWho: failed to parse " <> Text.unpack (rp2text rp)
+                    x:_ -> x
+                    [] -> error $ "parseWho: failed to parse " <> Text.unpack (rp2text rp)
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
 parseCond env rp = case parseConds env (rp2text rp) of
-                  x:_ -> x
-                  [] -> error $ "parseCond: failed to parse " <> Text.unpack (rp2text rp)
+                    x:_ -> x
+                    [] -> error $ "parseCond: failed to parse " <> Text.unpack (rp2text rp)
+
+parseUpon :: NLGEnv -> ParamText -> GUpon
+parseUpon env pt = case parseUpons env (pt2text pt) of
+                    x:_ -> x
+                    [] -> error $ "parseUpon: failed to parse " <> Text.unpack (pt2text pt)
 
 parseDeontic :: Deontic -> GDeontic
 parseDeontic DMust = GMUST

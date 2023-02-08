@@ -38,7 +38,7 @@ parserTests  = do
               [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT [MTT "Bob is estranged"])
                                                                                           ,mkLeaf (RPMT [MTT "Bob is dead"])]))
                    , hBody = Nothing}]
-            , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}) }
+            , srcref = mkTestSrcRef 1 1 }
 
       filetest "bob-head-1" "less indented NOT" (parseR pRules) [srcrow2 bobUncle1]
 

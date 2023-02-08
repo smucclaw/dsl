@@ -14,8 +14,8 @@ spec = do
   describe "partitionExistentials" $ do
     it "expand Leaf (not RPParamText)" $ do
       let
-        l = mkLeaf $ RPMT (MTT <$> ["sky", "is", "blue"])
-        hc = HC {hHead = RPMT (MTT <$> [""]), hBody = Just l}
+        l = mkLeaf $ mkRpmt ["sky", "is", "blue"]
+        hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentials hc `shouldBe` (l,l)
 
     it "expand Leaf RPParamText" $ do
@@ -24,7 +24,7 @@ spec = do
         typedWords = "apple" :| ["orange", "banana"]
         rp = RPParamText $ (MTT <$> typedWords, typeSig) :| []
         l = mkLeaf rp
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just l}
+        hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentials hc `shouldBe` (l,l)
 
     it "partition All" $ do
@@ -35,7 +35,7 @@ spec = do
         colorType = Just (SimpleType TOne "Color")
         l2 = mkLeaf $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], colorType) :| []
 
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just (mkAll Nothing [l1, l2])}
+        hc = HC {hHead = mkRpmt [""], hBody = Just (mkAll Nothing [l1, l2])}
       partitionExistentials hc `shouldBe` (mkAll Nothing [l1, l2], mkAll Nothing [])
 
     it "partition Any" $ do
@@ -45,14 +45,14 @@ spec = do
 
         l2 = mkLeaf $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], Nothing) :| []
 
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just (mkAny Nothing [l1, l2])}
+        hc = HC {hHead = mkRpmt [""], hBody = Just (mkAny Nothing [l1, l2])}
       partitionExistentials hc `shouldBe` (mkAny Nothing [l1], mkAny Nothing [l2])
 
   describe "partitionExistentialsDT" $ do
     it "expand Leaf (not RPParamText)" $ do
       let
-        l = mkLeafDT $ RPMT $ MTT <$> ["sky", "is", "blue"]
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just l}
+        l = mkLeafDT $ mkRpmt ["sky", "is", "blue"]
+        hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentialsDT hc `shouldBe` (l,l)
 
     it "expand Leaf RPParamText" $ do
@@ -61,7 +61,7 @@ spec = do
         typedWords = "apple" :| ["orange", "banana"]
         rp = RPParamText $ (MTT <$> typedWords, typeSig) :| []
         l = mkLeafDT rp
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just l}
+        hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentialsDT hc `shouldBe` (l,l)
 
     it "partition All" $ do
@@ -72,7 +72,7 @@ spec = do
         colorType = Just (SimpleType TOne "Color")
         l2 = mkLeafDT $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], colorType) :| []
 
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just (mkAllDT Nothing [l1, l2])}
+        hc = HC {hHead = mkRpmt [""], hBody = Just (mkAllDT Nothing [l1, l2])}
       partitionExistentialsDT hc `shouldBe` (mkAllDT Nothing [l1, l2], mkAllDT Nothing [])
 
     it "partition Any" $ do
@@ -82,5 +82,5 @@ spec = do
 
         l2 = mkLeafDT $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], Nothing) :| []
 
-        hc = HC {hHead = RPMT [MTT ""], hBody = Just (mkAnyDT Nothing [l1, l2])}
+        hc = HC {hHead = mkRpmt [""], hBody = Just (mkAnyDT Nothing [l1, l2])}
       partitionExistentialsDT hc `shouldBe` (mkAnyDT Nothing [l1], mkAnyDT Nothing [l2])

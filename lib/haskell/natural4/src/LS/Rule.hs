@@ -112,8 +112,8 @@ data Rule = Regulative
           | RuleAlias RuleName -- internal softlink to a rule label (rlabel), e.g. HENCE NextStep
           | RuleGroup { rlabel :: Maybe RuleLabel
                       , srcref :: Maybe SrcRef }  -- § NextStep
-          | RegFulfilled  -- trivial top
-          | RegBreach     -- trivial bottom
+          | RegFulfilled  -- trivial top -- success / fulfilled. used as the default HENCE branch of a MAY / MUST
+          | RegBreach     -- trivial bottom -- failure / breach. used as the default LEST branch of a MUST.
           -- | CaseStm       -- work in progress
           -- { name   :: RuleName
           -- , limbs  :: [(Maybe BoolStructP -- cond
@@ -186,7 +186,11 @@ rl2text (_sectionSymbol, _numSymbols, ruleText) = ruleText
 rlrn2text :: Rule -> Text.Text
 rlrn2text r = mt2text $ ruleLabelName r
 
+mkTestSrcRef :: Int -> Int ->Maybe SrcRef
+mkTestSrcRef row col = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = row, srccol = col, version = Nothing})
 
+dummyRef :: Maybe SrcRef
+dummyRef = mkTestSrcRef 1 1
 
 defaultReg, defaultCon, defaultHorn :: Rule
 defaultReg = Regulative
@@ -201,7 +205,7 @@ defaultReg = Regulative
   , lest = Nothing
   , rlabel = Nothing
   , lsource = Nothing
-  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , srcref = dummyRef
   , upon = Nothing
   , given = Nothing
   , having = Nothing
@@ -217,7 +221,7 @@ defaultCon = Constitutive
   , cond = Nothing
   , rlabel = Nothing
   , lsource = Nothing
-  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , srcref = dummyRef
   , given = Nothing
   , defaults = []
   , symtab   = []
@@ -232,7 +236,7 @@ defaultHorn = Hornlike
   , clauses = []
   , rlabel = Nothing
   , lsource = Nothing
-  , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+  , srcref = dummyRef
   , defaults = []
   , symtab   = []
   }

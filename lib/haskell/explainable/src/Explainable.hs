@@ -45,7 +45,9 @@ import Data.Bifunctor (first, second)
 --
 -- We tack on a bit of useful infrastructure of our own: basically, a call stack, and a history trace of previous execution,
 -- in the form of a `HistoryPath`.
-type Explainable r st a = RWST         (HistoryPath,r) [String] st IO (a,XP)
+type ExplainableId  r st a = RWS          (HistoryPath,r) [String] st    (a,XP)
+type ExplainableIO  r st a = RWST         (HistoryPath,r) [String] st IO (a,XP)
+type Explainable = ExplainableIO
 
 -- | As we evaluate down from the root to the leaves,
 --
@@ -111,6 +113,16 @@ xplainE r emptyState expr = do
   putStrLn $ "*** toplevel: xpl = " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
 
   return (val, xpl, stab, wlog)
+
+-- | similar to xplainE but not in IO
+xplainE' :: (Show e) => r -> st -> ExplainableId r st e -> (e, XP, st, [String])
+xplainE' r emptyState expr = do
+  let ((val,xpl), stab, wlog) = runRWST
+                                expr
+                                (([],["toplevel"]),r)
+                                emptyState
+  in
+    (val, xpl, stab, "*** xplainE" : drawTreeOrg 3 xpl : wlog)
 
 -- | show an explanation tree, formatted for org-mode
 drawTreeOrg :: Int -> XP -> String

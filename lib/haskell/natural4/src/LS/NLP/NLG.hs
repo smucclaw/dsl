@@ -46,10 +46,27 @@ gfPath x = "grammars/" ++ x
 -----------------------------------------------------------------------------
 -- Main
 
+-- WIP: crude way of keeping track of whether we're in hence, lest or whatever
+data RecursionLevel = TopLevel | MyHence Int | MyLest Int 
+  deriving (Eq,Ord,Show)
+
+getLevel :: RecursionLevel -> Int
+getLevel l = case l of
+  TopLevel -> 2
+  MyHence i -> i
+  MyLest i -> i 
+
+debugNesting :: RecursionLevel -> (Text.Text, Text.Text)
+debugNesting TopLevel = (Text.pack "", Text.pack "")
+debugNesting (MyLest _) = (Text.pack "If you disobey, then", Text.pack "D:")
+debugNesting (MyHence _) = (Text.pack "When that happens,", Text.pack "\\:D/")
+
 nlg :: NLGEnv -> Rule -> IO Text.Text
-nlg env rule = 
-  case rule of 
-    Regulative {subj,who,deontic,action,lest} -> do
+nlg = nlg' TopLevel
+
+nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
+nlg' thl env rule = case rule of 
+    Regulative {subj,who,deontic,action,lest,hence} -> do
       let subjExpr = parseSubj env subj
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
@@ -57,15 +74,30 @@ nlg env rule =
                         Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWho env <$> w))
                         Nothing -> subjExpr
           ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
-
+          ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
       lestText <- case lest of 
                     Just r -> do 
-                      ruleText <- nlg env r
-                      pure $ Text.unwords ["If you disobey, then", Text.strip ruleText, "D:"]
+                      rt <- nlg' (MyLest i) env r
+                      pure $ pad rt
                     Nothing -> pure mempty
-      pure $ Text.unlines [ruleText, lestText]
+      henceText <- case hence of 
+                    Just r -> do 
+                      rt <- nlg' (MyHence i) env r
+                      pure $ pad rt
+                    Nothing -> pure mempty
+
+--      pure $ Text.unlines [ruleText, henceText, lestText]
+      pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
+    RuleAlias mt -> do
+      let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
+          ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
+      pure $ Text.strip $ ruleTextDebug
     DefNameAlias {} -> pure mempty
     _ -> pure "NLG.hs is under construction, we only support singing"
+  where
+    (prefix,suffix) = debugNesting thl
+    i = getLevel thl + 2
+    pad x = Text.replicate i " " <> x
 
 
 -- | rewrite statements into questions, for use by the Q&A web UI
@@ -93,11 +125,13 @@ nlg env rule =
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
 -- ruleQuestions env alias rule = pure [AA.Leaf (Text.pack "NLG.hs is under construction, this will work again shortly")]
 ruleQuestions env alias rule = do
-  let [youExpr, orgExpr] =
+  let (youExpr, orgExpr) =
         case alias of
-          Nothing        -> [GYou, GYou]
-          Just (you,org) -> [ parseSubj env $ mkLeafPT $ mt2text mt
-                            | mt <- [you, org]]
+          Just (you,org) -> 
+              case parseSubj env . mkLeafPT . mt2text <$> [you, org] of
+                [y,o] -> (y,o) -- both are parsed
+                _ -> (GYou, GYou) -- dummy values
+          Nothing -> (GYou, GYou) -- dummy values
   case rule of
     Regulative {subj,who,cond} -> do
       let subjExpr = parseSubj env subj

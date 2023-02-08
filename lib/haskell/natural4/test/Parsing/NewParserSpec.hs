@@ -38,7 +38,7 @@ parserTests  = do
       let simpleHorn = [ defaultHorn
               { name = [MTT "X"]
               , keyword = Decide
-              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+              , srcref = mkTestSrcRef 1 1
               , clauses =
                 [ HC
                   { hHead = RPConstraint [MTT "X"] RPis [MTT "Y"]
@@ -51,7 +51,7 @@ parserTests  = do
       let simpleHorn02 = [ defaultHorn
               { name = [MTT "X"]
               , keyword = Decide
-              , srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+              , srcref = mkTestSrcRef 1 1
               , clauses =
                 [ HC
                   { hHead = RPConstraint [MTT "X"] RPis [MTT "Y"]
@@ -149,7 +149,7 @@ parserTests  = do
         (parseOther pParamText) (ptFragment3b,[])
 
       filetest "paramtext-4-a" "a multi-line ParamText, typed String"
-        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = [MTT "TwoWords"], detail = [MTT "two", MTT "words"], nlhint = Nothing, srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing})}])
+        (parseOther pParamText) (ptFragment4a,[DefNameAlias {name = [MTT "TwoWords"], detail = [MTT "two", MTT "words"], nlhint = Nothing, srcref = mkTestSrcRef 2 2}])
 
 
       let actionFragment1 :: BoolStructP
@@ -196,13 +196,13 @@ parserTests  = do
                     }
                 ],
               rlabel = Just ("\167", 1, "NDB Qualification"),
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing})
+              srcref = mkTestSrcRef 1 1
             },
             DefNameAlias
             { name = [MTT "NDB"],
               detail = [MTT "a Notifiable Data Breach"],
               nlhint = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 4, version = Nothing})
+              srcref = mkTestSrcRef 2 4
             },
             defaultHorn
             { name = [MTT "a data breach", MTT "occurred"],
@@ -225,7 +225,7 @@ parserTests  = do
                       hBody = Nothing
                     }
                 ],
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 3, srccol = 4, version = Nothing})
+              srcref = mkTestSrcRef 3 4
             }
             ]
       filetest "unauthorised" "should parse correctly"

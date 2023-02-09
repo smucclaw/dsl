@@ -18,7 +18,6 @@ import System.Environment (lookupEnv)
 import Paths_natural4
 import Data.Foldable as F
 
-
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
   , gfLang :: Language
@@ -88,6 +87,9 @@ nlg' thl env rule = case rule of
 
 --      pure $ Text.unlines [ruleText, henceText, lestText]
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
+    Hornlike {keyword, clauses} -> do
+      let headHC = parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+      pure $ Text.unlines $ gfLin env . gf <$> headHC
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
           ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
@@ -145,41 +147,18 @@ ruleQuestions env alias rule = do
                       Just u -> Just $ AA.Leaf $ mkUponQ u
                       Nothing -> Nothing
       pure $ catMaybes [qWhoBS, qCondBS, qUponBS]
+    Hornlike {keyword, clauses} -> do
+      let headHC = parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+          getBodyBS cl = case hBody cl of 
+                    Just bs -> parseBSConstraint env bs
+                    Nothing -> AA.Leaf mempty
+          bodyBS = getBodyBS <$> clauses
+      pure bodyBS
     -- Constitutive {cond} -> do
     --   condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
     --   pure $ concat $ catMaybes [condBSR]
-    -- Hornlike {keyword, clauses} -> do
-    --   let kw = keyword2cid keyword
-    --   parsedClauses <- mapM (parseHornClause2 env kw) clauses
-    --   let statements = [s | [s] <- parsedClauses] -- TODO: eventually make a new function that parses RPs for HornClause that doesn't make its argument UDFragment
-    --   let questions = concatMap (mkQ qsCond gr dummySubj) statements :: [AA.OptionallyLabeledBoolStruct Text.Text]
-    --   pure questions
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
-{-
-  where
-    keepTextNegations :: AA.OptionallyLabeledBoolStruct [AA.OptionallyLabeledBoolStruct a] -> [AA.OptionallyLabeledBoolStruct a]
-    keepTextNegations bsr = case bsr of
-        AA.Leaf x -> x -- negation is in the value x!
-        AA.All l xs -> [AA.All l (concatMap keepTextNegations xs)]
-        AA.Any l xs -> [AA.Any l (concatMap keepTextNegations xs)]
-        AA.Not x    -> [AA.Not bs | bs <- keepTextNegations x]
-
-    bsr2questions :: QFun -> PGF -> Expr -> BoolStructR -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
-    bsr2questions qfun gr subj bsr = do
-      bsrWithExprs <- mapM (parseRP env rpIs) bsr
-      let bsrWithQuestions = mkQ qfun gr subj <$> bsrWithExprs -- this one returns a BSR inside a BSR, with the correct negations in the inner one
-      pure $ keepTextNegations bsrWithQuestions -- keep the new inner layer with negations added from text
-
-    rpIs = mkCId "RPis"
-    Just eng = readLanguage "UDExtEng"
-    dummySubj = gf dummyNP
-    mkQ :: QFun -> PGF -> Expr -> Expr -> [AA.OptionallyLabeledBoolStruct Text.Text]
-    mkQ qf gr subj e = fmap Text.pack <$> questionStrings
-      where
-        questionStrings :: [AA.OptionallyLabeledBoolStruct String]
-        questionStrings = mkQs qf gr eng subj (expr2TreeGroups gr e)
--}
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
@@ -189,12 +168,14 @@ nlgQuestion env rl = do
 -----------------------------------------------------------------------------
 -- Parsing fields into GF categories – all typed, no PGF.Expr allowed
 
+parseConstraints :: NLGEnv -> Text.Text -> [GConstraint]
 parseActions :: NLGEnv -> Text.Text -> [GAction]
 parseUpons :: NLGEnv -> Text.Text -> [GUpon]
 parseSubjs :: NLGEnv -> Text.Text -> [GSubj]
 parseConds :: NLGEnv -> Text.Text -> [GCond]
 parseWhos :: NLGEnv -> Text.Text -> [GWho]
 
+parseConstraints e t = fg <$> parseAny "Constraint" e t
 parseActions e t = fg <$> parseAny "Action" e t
 parseUpons e t =  fg <$> parseAny "Upon" e t
 parseSubjs e t = fg <$> parseAny "Subj" e t
@@ -224,11 +205,37 @@ parseCond :: NLGEnv -> RelationalPredicate -> GCond
 parseCond env rp = case parseConds env (rp2text rp) of
                     x:_ -> x
                     [] -> error $ "parseCond: failed to parse " <> Text.unpack (rp2text rp)
-
+                    
 parseUpon :: NLGEnv -> ParamText -> GUpon
 parseUpon env pt = case parseUpons env (pt2text pt) of
                     x:_ -> x
                     [] -> error $ "parseUpon: failed to parse " <> Text.unpack (pt2text pt)
+
+parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
+parseConstraint env rp = case parseConstraints env (rp2text rp) of
+                    x:_ -> x
+                    [] -> error $ "parseConstraint: failed to parse " <> Text.unpack (rp2text rp)
+
+data QuestionOrNot = TurnIntoQuestion | KeepAsStatement deriving (Show,Eq,Ord)
+
+parseBSConstraint :: NLGEnv -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
+parseBSConstraint env = parseBSConstraint' GqCONSTR
+  where 
+    parseBSConstraint' :: (GConstraint -> GConstraint) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
+    parseBSConstraint' f bs = case bs of
+        AA.Leaf x -> AA.Leaf $ gfLin env $ gf $ f $ parseConstraint env x
+        AA.Any (Just pre) xs -> AA.Any (Just $ parseAndLinPre pre) (parseBSConstraint' GqCONSTR <$> xs)
+        AA.All (Just pre) xs -> AA.All (Just $ parseAndLinPre pre) (parseBSConstraint' GqCONSTR <$> xs)
+        AA.Any Nothing xs -> AA.Any Nothing (parseBSConstraint' GqCONSTR <$> xs)
+        AA.All Nothing xs -> AA.All Nothing (parseBSConstraint' GqCONSTR <$> xs)
+        AA.Not b -> AA.Not $ parseBSConstraint' GqCONSTR b
+
+    parseAndLinPre :: AA.Label Text.Text -> AA.Label Text.Text
+    parseAndLinPre (AA.Pre t) = AA.Pre $
+      case parseAny "Pre" env t of 
+        x:_ -> gfLin env $ mkApp (mkCId "qPRE") [x]
+        [] -> "Is " <> t <> "?" -- Fallback, in case can't parse text in Pre
+    parseAndLinPre x = x
 
 parseDeontic :: Deontic -> GDeontic
 parseDeontic DMust = GMUST

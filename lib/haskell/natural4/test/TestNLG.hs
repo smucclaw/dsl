@@ -17,8 +17,6 @@ import LS.NLP.WordNet
 import Test.QuickCheck
 import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
 import LS.NLP.UDExt
-import AnyAll.BoolStructTree (mkLeafDT)
-import LS.NLP.NLG (bsp2gfDT)
 
 nlgTests :: NLGEnv -> Spec
 nlgTests env = do
@@ -105,39 +103,6 @@ nlgTests env = do
         treeNPComplex <- bsp2gf env $ testBSP ["the occurrence at the beach", "this assessment that sucks"]
         showExpr treeNPComplex `shouldBe` "ApposCN (AdvCN (UseN occurrence_N) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (MassNP (RelCN (UseN assessment_N) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
 
-  describe "test bsp2gfDT" $ do
-    xit "Should return an adverbial" $ do
-        treeAdv <- bsp2gfDT env $ testBSPDT ["today", "tomorrow"]
-        showExpr treeAdv `shouldBe` "ApposCN (UseN today_N) (MassNP (UseN tomorrow_N))"
-
-    xit "Should return a complex adverbial" $ do
-        treeAdvComplex <- bsp2gfDT env $ testBSPDT ["once upon a time", "over the monochrome rainbow"]
-        showExpr treeAdvComplex `shouldBe` "AdvCN (UseN (CompoundN monochrome_N rainbow_N)) (AdvAdv once_Adv (PrepNP upon_Prep (DetCN aSg_Det (UseN time_N))))"
-
-    xit "Should return a det" $ do
-        treeDet <- bsp2gfDT env $ testBSPDT ["this", "that"]
-        showExpr treeDet `shouldBe` "ApposNP (DetNP (DetQuant this_Quant NumSg)) (DetNP (DetQuant that_Quant NumSg))"
-
-    it "Should return an adjective phrase" $ do
-        treeAP <- bsp2gfDT env $ testBSPDT ["harmful to the affected individual", "significant"]
-        showExpr treeAP `shouldBe` "AdvAP (AdvAP (PositA harmful_A) (PrepNP to_Prep (DetCN theSg_Det (AdjCN (PastPartAP (UseV affect_V)) (UseN individual_N))))) (PositAdvAdj significant_A)"
-
-    xit "Should return a common noun" $ do
-        treeCN <- bsp2gfDT env $ testBSPDT ["occurrence", "assessment"]
-        showExpr treeCN `shouldBe` "ApposCN (UseN occurrence_N) (MassNP (UseN assessment_N))"
-
-    xit "Should return a complex common noun" $ do
-        treeCNComplex <- bsp2gfDT env $ testBSPDT ["service from the provider to the payer", "great harm that she suffered" ]
-        showExpr treeCNComplex `shouldBe` "ApposCN (AdvCN (AdvCN (UseN service_N) (PrepNP from_Prep (DetCN theSg_Det (UseN provider_N)))) (PrepNP to_Prep (DetCN theSg_Det (UseN payer_N)))) (MassNP (AdjCN (PositA great_A) (UseN harm_N)))"
-
-    xit "Should return a simple noun phrase" $ do
-        treeNP <- bsp2gfDT env $ testBSPDT ["all occurrences", "this assessment"]
-        showExpr treeNP `shouldBe` "ApposCN (UseN occurrence_N) (MassNP (UseN assessment_N))"
-
-    xit "Should return a complex noun phrase" $ do
-        treeNPComplex <- bsp2gfDT env $ testBSPDT ["the occurrence at the beach", "this assessment that sucks"]
-        showExpr treeNPComplex `shouldBe` "ApposCN (AdvCN (UseN occurrence_N) (PrepNP at_Prep (DetCN theSg_Det (UseN beach_N)))) (MassNP (RelCN (UseN assessment_N) (UseRCl (TTAnt TPres ASimul) PPos (RelVP IdRP (UseV suck_V)))))"
-
 nlgTests2 :: Spec
 nlgTests2 = do
   describe "Convert to predicate" $ do
@@ -207,10 +172,6 @@ testBSR strs = AA.Any Nothing [ AA.Leaf (RPMT [MTT $ Text.pack str]) | str <- st
 
 testBSP :: [String] -> BoolStructP
 testBSP strs =  AA.Leaf $ ( qq, Nothing) :| []
-  where qq = fromList $ MTT . Text.pack <$> strs
-
-testBSPDT :: [String] -> BoolStructDTP
-testBSPDT strs =  mkLeafDT $ ( qq, Nothing) :| []
   where qq = fromList $ MTT . Text.pack <$> strs
 
 testDetBSR :: BoolStructR

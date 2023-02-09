@@ -3,7 +3,6 @@ module AnyAll.RelevanceSpec where
 
 import qualified Data.Text as T
 import Data.Tree
-import AnyAll.BoolStructTree
 import Test.Hspec
 import AnyAll.Types
 import AnyAll.Relevance
@@ -27,9 +26,6 @@ evalAnyAssoc m n ints = evaluate Hard m (mkAny "" ints) `shouldBe` evaluate Hard
 
 mkTextLeaf :: a -> BoolStruct T.Text a
 mkTextLeaf = Leaf
-
-mkTextLeafDT :: a -> BoolStructDT T.Text a
-mkTextLeafDT = mkLeafDT
 
 spec :: Spec
 spec = do
@@ -193,87 +189,7 @@ spec = do
 
       it "All (Nothing, Nothing)" $ do
         evaluate Hard mrt (mkAll "" [mkLeaf "missing1", mkLeaf "missing2"]) `shouldBe` Nothing
-
-  describe "evaluateDT" $ do
-    let
-      ma =
-        Map.fromList
-          [ ("key1", Default $ Right $ Just True),
-            ("key2", Default $ Right $ Just True)
-          ]
-
-      m =  Marking {getMarking = ma}
-      qc1 = Q {shouldView = View, andOr = Simply "key1", prePost = Nothing, mark = Default (Right (Just True))}
-      qc2 = Q {shouldView = View, andOr = Simply "key2", prePost = Nothing, mark = Default (Right (Just True))}
-      mrt =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just True)}
-      mrf =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just False)}
-      mlf =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just False)}
-      mlt =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just True)}
-
-      leafNode = mkLeaf "key1"
-      leafNodeDT = mkLeafDT "key1"
-
-    describe "leaf" $ do
-      it "Hard (Right True) (leaf key)" $ do
-        evaluateDT Hard mrt leafNodeDT `shouldBe` Just True
-
-      it "Hard (Right False) (leaf key)" $ do
-        evaluateDT Hard mrf leafNodeDT `shouldBe` Just False
-
-      it "Hard (Left True) (leaf key)" $ do
-        evaluateDT Hard mlt leafNodeDT `shouldBe` Nothing
-
-      it "Hard (Left False) (leaf key)" $ do
-        evaluateDT Hard mlf leafNodeDT `shouldBe` Nothing
-
-      it "Hard (Nothing) (leaf key)" $ do
-        evaluateDT Hard mrf (mkLeafDT "missing") `shouldBe` Nothing
-
-      it "Soft (Right True) (leaf key)" $ do
-        evaluateDT Soft mrt leafNodeDT `shouldBe` Just True
-
-      it "Soft (Right False) (leaf key)" $ do
-        evaluateDT Soft mrf leafNodeDT `shouldBe` Just False
-
-      it "Soft (Left True) (leaf key)" $ do
-        evaluateDT Soft mlt leafNodeDT `shouldBe` Just True
-
-      it "Soft (Left False) (leaf key)" $ do
-        evaluateDT Soft mlf leafNodeDT `shouldBe` Just False
-
-      it "Soft (Nothing) (leaf key)" $ do
-        evaluateDT Soft mrf (mkLeafDT "missing") `shouldBe` Nothing
-
-    describe "not" $ do
-      it "Not Just True" $ do
-        evaluateDT Hard mrt (mkNotDT leafNodeDT) `shouldBe` Just False
-
-      it "Not Just False" $ do
-        evaluateDT Hard mrf (mkNotDT leafNodeDT) `shouldBe` Just True
-
-      it "Not Nothing" $ do
-        evaluateDT Hard mlt (mkNotDT leafNodeDT) `shouldBe` Nothing
-
-    describe "Any" $ do
-      it "Any (Just True, Nothing)" $ do
-        evaluateDT Hard mrt (mkAnyDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` Just True
-
-      it "Any (Just False, Nothing)" $ do
-        evaluateDT Hard mrf (mkAnyDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` Nothing
-
-      it "Any (Nothing, Nothing)" $ do
-        evaluateDT Hard mrt (mkAnyDT "" [mkLeafDT "missing1", mkLeafDT "missing2"]) `shouldBe` Nothing
-
-    describe "All" $ do
-      it "All (Just True, Nothing)" $ do
-        evaluateDT Hard mrt (mkAllDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` Nothing
-
-      it "All (Just False, Nothing)" $ do
-        evaluateDT Hard mrf (mkAllDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` Just False
-
-      it "All (Nothing, Nothing)" $ do
-        evaluateDT Hard mrt (mkAllDT "" [mkLeafDT "missing1", mkLeafDT "missing2"]) `shouldBe` Nothing
-
+ 
   describe "dispositive" $ do
     let
       ma =
@@ -352,83 +268,3 @@ spec = do
 
       it "All (Nothing, Nothing)" $ do
         dispositive Hard mrt (mkAll "" [mkLeaf "missing1", mkLeaf "missing2"]) `shouldBe` []
-
-  describe "dispositiveDT" $ do
-    let
-      ma =
-        Map.fromList
-          [ ("key1", Default $ Right $ Just True),
-            ("key2", Default $ Right $ Just True)
-          ]
-
-      m =  Marking {getMarking = ma}
-      qc1 = Q {shouldView = View, andOr = Simply "key1", prePost = Nothing, mark = Default (Right (Just True))}
-      qc2 = Q {shouldView = View, andOr = Simply "key2", prePost = Nothing, mark = Default (Right (Just True))}
-      mrt =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just True)}
-      mrf =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just False)}
-      mlf =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just False)}
-      mlt =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just True)}
-
-      leafNode = mkLeaf "key1"::BoolStruct T.Text T.Text
-      leafNodeDT = mkLeafDT "key1"::BoolStructDT T.Text T.Text
-
-    describe "leaf" $ do
-      it "Hard (Right True) (leaf key)" $ do
-        dispositiveDT Hard mrt leafNodeDT `shouldBe` [leafNodeDT]
-
-      it "Hard (Right False) (leaf key)" $ do
-        dispositiveDT Hard mrf leafNodeDT `shouldBe` [leafNodeDT]
-
-      it "Hard (Left True) (leaf key)" $ do
-        dispositiveDT Hard mlt leafNodeDT `shouldBe` []
-
-      it "Hard (Left False) (leaf key)" $ do
-        dispositiveDT Hard mlf leafNodeDT `shouldBe` []
-
-      it "Hard (Nothing) (leaf key)" $ do
-        dispositiveDT Hard mrf (mkTextLeafDT "missing") `shouldBe` []
-
-      it "Soft (Right True) (leaf key)" $ do
-        dispositiveDT Soft mrt leafNodeDT `shouldBe` [leafNodeDT]
-
-      it "Soft (Right False) (leaf key)" $ do
-        dispositiveDT Soft mrf leafNodeDT `shouldBe` [leafNodeDT]
-
-      it "Soft (Left True) (leaf key)" $ do
-        dispositiveDT Soft mlt leafNodeDT `shouldBe` [leafNodeDT]
-
-      it "Soft (Left False) (leaf key)" $ do
-        dispositiveDT Soft mlf leafNodeDT `shouldBe` [leafNodeDT]
-
-      it "Soft (Nothing) (leaf key)" $ do
-        dispositiveDT Soft mrf (mkTextLeafDT "missing") `shouldBe` []
-
-    describe "not" $ do
-      xit "Not Just True" $ do
-        dispositiveDT Hard mrt (mkNotDT leafNodeDT) `shouldBe` [leafNodeDT]
-
-      xit "Not Just False" $ do
-        dispositiveDT Hard mrf (mkNotDT leafNodeDT) `shouldBe` [leafNodeDT]
-
-      it "Not Nothing" $ do
-        dispositiveDT Hard mlt (mkNotDT leafNodeDT) `shouldBe` []
-
-    describe "Any" $ do
-      it "Any (Just True, Nothing)" $ do
-        dispositiveDT Hard mrt (mkAnyDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` [leafNodeDT]
-
-      it "Any (Just False, Nothing)" $ do
-        dispositiveDT Hard mrf (mkAnyDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` []
-
-      it "Any (Nothing, Nothing)" $ do
-        dispositiveDT Hard mrt (mkAnyDT "" [mkLeafDT "missing1", mkLeafDT "missing2"]) `shouldBe` []
-
-    describe "All" $ do
-      it "All (Just True, Nothing)" $ do
-        dispositiveDT Hard mrt (mkAllDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` []
-
-      it "All (Just False, Nothing)" $ do
-        dispositiveDT Hard mrf (mkAllDT "" [leafNodeDT, mkLeafDT "missing"]) `shouldBe` [leafNodeDT]
-
-      it "All (Nothing, Nothing)" $ do
-        dispositiveDT Hard mrt (mkAllDT "" [mkLeafDT "missing1", mkLeafDT "missing2"]) `shouldBe` []

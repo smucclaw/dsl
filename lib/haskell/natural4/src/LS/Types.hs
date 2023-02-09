@@ -31,8 +31,6 @@ import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
-import qualified AnyAll.BoolStructTree as BST
-import AnyAll.BoolStructTree (mkLeafDT)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -47,18 +45,6 @@ type TypedMulti = KVsPair                             --- | apple | orange | ban
 type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
-
-type BoolStructDTR = BST.BoolStructDT (Maybe (AA.Label Text.Text)) RelationalPredicate
-type BoolStructDTP = BST.BoolStructDT (Maybe (AA.Label Text.Text)) ParamText
-
-class MyBSR a where
-  mkBSRLeaf :: RelationalPredicate -> a
-
-instance MyBSR BoolStructR where
-  mkBSRLeaf = AA.mkLeaf
-
-instance MyBSR BoolStructDTR where
-  mkBSRLeaf = mkLeafDT
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
@@ -196,8 +182,6 @@ data HornClause a = HC
 
 type HornClause2 = HornClause BoolStructR
 
-type HornClauseDT = HornClause BoolStructDTR
-
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
@@ -259,7 +243,6 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
-                         | RPBoolStructDTR MultiTerm RPRel BoolStructDTR   -- eyes IS (left IS blue AND right IS brown)
                          | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 

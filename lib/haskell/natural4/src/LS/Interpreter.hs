@@ -736,6 +736,8 @@ getMarkings l4i =
     markings (RPConstraint          xs  RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
     markings _                                    = Nothing
 
+    rhsval [MTB rhs] = Just rhs
+    rhsval [MTN rhs] = if rhs == 0 then Just False else Just True
     rhsval [MTT rhs] = case T.toLower rhs of
                    "does not" -> Just False
                    "doesn't"  -> Just False
@@ -751,6 +753,8 @@ getMarkings l4i =
                    "true"     -> Just True
                    "does"     -> Just True
                    _            -> Nothing
-
+    rhsval [] = Nothing
+    -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
+    rhsval _  = Nothing
 
 

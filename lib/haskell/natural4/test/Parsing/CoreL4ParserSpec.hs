@@ -66,7 +66,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 1 1,
               defaults = [],
               symtab = []
             },
@@ -199,7 +199,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 4, version = Nothing}),
+              srcref = mkTestSrcRef 1 4,
               defaults = [],
               symtab = []
             },
@@ -239,7 +239,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 15, version = Nothing}),
+              srcref = mkTestSrcRef 1 15,
               defaults = [],
               symtab = []
             }
@@ -281,7 +281,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 1, version = Nothing}),
+              srcref = mkTestSrcRef 2 1,
               defaults = [],
               symtab = []
             },
@@ -294,7 +294,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 2, version = Nothing}),
+              srcref = mkTestSrcRef 2 2,
               defaults = [],
               symtab = []
             },
@@ -307,7 +307,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Nothing,
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 3, version = Nothing}),
+              srcref = mkTestSrcRef 2 3,
               defaults = [],
               symtab = []
             },
@@ -438,7 +438,7 @@ parserTests  = do
               upon = Nothing,
               rlabel = Just ("\167", 2, "person type"),
               lsource = Nothing,
-              srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 2, srccol = 5, version = Nothing}),
+              srcref = mkTestSrcRef 2 5,
               defaults = [],
               symtab = []
             }
@@ -507,7 +507,7 @@ parserTests  = do
           ,
           rlabel = Nothing,
           lsource = Nothing,
-          srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}),
+          srcref = mkTestSrcRef 1 1,
           defaults = [],
           symtab = []
         }

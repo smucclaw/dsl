@@ -49,14 +49,14 @@ type GAdv = Tree GAdv_
 data GAdv_
 type GCN = Tree GCN_
 data GCN_
-type GCl = Tree GCl_
-data GCl_
 type GComp = Tree GComp_
 data GComp_
 type GCond = Tree GCond_
 data GCond_
 type GConj = Tree GConj_
 data GConj_
+type GConstraint = Tree GConstraint_
+data GConstraint_
 type GDate = Tree GDate_
 data GDate_
 type GDeontic = Tree GDeontic_
@@ -81,6 +81,8 @@ type GNumeral = Tree GNumeral_
 data GNumeral_
 type GPol = Tree GPol_
 data GPol_
+type GPre = Tree GPre_
+data GPre_
 type GPrep = Tree GPrep_
 data GPrep_
 type GQuestion = Tree GQuestion_
@@ -149,6 +151,9 @@ data GFloat_
 data Tree :: * -> * where
   GPositA :: GA -> Tree GAP_
   Gaware :: Tree GAP_
+  Gcaused_by :: GNP -> Tree GAP_
+  Gcovered :: Tree GAP_
+  Gensuing :: GNP -> Tree GAP_
   Gnotifiable :: Tree GAP_
   Gpublic :: Tree GAP_
   GACTION :: GVPI -> Tree GAction_
@@ -156,7 +161,6 @@ data Tree :: * -> * where
   GAdjCN :: GAP -> GCN -> Tree GCN_
   GUseN :: GN -> Tree GCN_
   LexCN :: String -> Tree GCN_
-  GImpersCl :: GVP -> Tree GCl_
   GCompAP :: GAP -> Tree GComp_
   GCompAdv :: GAdv -> Tree GComp_
   GCompCN :: GCN -> Tree GComp_
@@ -166,6 +170,13 @@ data Tree :: * -> * where
   GWHEN :: GNP -> GVPS -> Tree GCond_
   GAND :: Tree GConj_
   GOR :: Tree GConj_
+  GRPisAP :: GNP -> GAP -> Tree GConstraint_
+  GRPisAdv :: GNP -> GAdv -> Tree GConstraint_
+  GRPisnotAP :: GNP -> GAP -> Tree GConstraint_
+  GRPisnotAdv :: GNP -> GAdv -> Tree GConstraint_
+  GRPleafNP :: GNP -> Tree GConstraint_
+  GRPleafS :: GNP -> GVPS -> Tree GConstraint_
+  GqCONSTR :: GConstraint -> Tree GConstraint_
   GMkDate :: GInt -> GMonth -> GInt -> Tree GDate_
   GMAY :: Tree GDeontic_
   GMUST :: Tree GDeontic_
@@ -208,12 +219,27 @@ data Tree :: * -> * where
   GNov :: Tree GMonth_
   GOct :: Tree GMonth_
   GSep :: Tree GMonth_
+  GContents :: Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
   GGerundNP :: GVP -> Tree GNP_
+  GLoss_or_Damage :: Tree GNP_
+  GMassNP :: GCN -> Tree GNP_
   GNDB_Qualification :: Tree GNP_
+  Ganimal :: Tree GNP_
+  Gany_other_exclusion :: Tree GNP_
+  Gbirds :: Tree GNP_
+  Ghousehold_appliance :: Tree GNP_
+  Ginsects :: Tree GNP_
+  Gplumbing_heating_or_AC :: Tree GNP_
+  Grodents :: Tree GNP_
+  Gswimming_pool :: Tree GNP_
+  Gvermin :: Tree GNP_
   Gnum :: GSub1000000 -> Tree GNumeral_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
+  GNP_caused_by_Pre :: GNP -> Tree GPre_
+  GNP_caused_water_to_escape_from_Pre :: GNP -> Tree GPre_
+  GqPRE :: GPre -> Tree GPre_
   Gabout_Prep :: Tree GPrep_
   Gby8means_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
@@ -291,6 +317,9 @@ instance Eq (Tree a) where
   i == j = case (i,j) of
     (GPositA x1,GPositA y1) -> and [ x1 == y1 ]
     (Gaware,Gaware) -> and [ ]
+    (Gcaused_by x1,Gcaused_by y1) -> and [ x1 == y1 ]
+    (Gcovered,Gcovered) -> and [ ]
+    (Gensuing x1,Gensuing y1) -> and [ x1 == y1 ]
     (Gnotifiable,Gnotifiable) -> and [ ]
     (Gpublic,Gpublic) -> and [ ]
     (GACTION x1,GACTION y1) -> and [ x1 == y1 ]
@@ -298,7 +327,6 @@ instance Eq (Tree a) where
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseN x1,GUseN y1) -> and [ x1 == y1 ]
     (LexCN x,LexCN y) -> x == y
-    (GImpersCl x1,GImpersCl y1) -> and [ x1 == y1 ]
     (GCompAP x1,GCompAP y1) -> and [ x1 == y1 ]
     (GCompAdv x1,GCompAdv y1) -> and [ x1 == y1 ]
     (GCompCN x1,GCompCN y1) -> and [ x1 == y1 ]
@@ -308,6 +336,13 @@ instance Eq (Tree a) where
     (GWHEN x1 x2,GWHEN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAND,GAND) -> and [ ]
     (GOR,GOR) -> and [ ]
+    (GRPisAP x1 x2,GRPisAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPisAdv x1 x2,GRPisAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPisnotAP x1 x2,GRPisnotAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPisnotAdv x1 x2,GRPisnotAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPleafNP x1,GRPleafNP y1) -> and [ x1 == y1 ]
+    (GRPleafS x1 x2,GRPleafS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GqCONSTR x1,GqCONSTR y1) -> and [ x1 == y1 ]
     (GMkDate x1 x2 x3,GMkDate y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GMAY,GMAY) -> and [ ]
     (GMUST,GMUST) -> and [ ]
@@ -350,12 +385,27 @@ instance Eq (Tree a) where
     (GNov,GNov) -> and [ ]
     (GOct,GOct) -> and [ ]
     (GSep,GSep) -> and [ ]
+    (GContents,GContents) -> and [ ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GGerundNP x1,GGerundNP y1) -> and [ x1 == y1 ]
+    (GLoss_or_Damage,GLoss_or_Damage) -> and [ ]
+    (GMassNP x1,GMassNP y1) -> and [ x1 == y1 ]
     (GNDB_Qualification,GNDB_Qualification) -> and [ ]
+    (Ganimal,Ganimal) -> and [ ]
+    (Gany_other_exclusion,Gany_other_exclusion) -> and [ ]
+    (Gbirds,Gbirds) -> and [ ]
+    (Ghousehold_appliance,Ghousehold_appliance) -> and [ ]
+    (Ginsects,Ginsects) -> and [ ]
+    (Gplumbing_heating_or_AC,Gplumbing_heating_or_AC) -> and [ ]
+    (Grodents,Grodents) -> and [ ]
+    (Gswimming_pool,Gswimming_pool) -> and [ ]
+    (Gvermin,Gvermin) -> and [ ]
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
     (GNEG,GNEG) -> and [ ]
     (GPOS,GPOS) -> and [ ]
+    (GNP_caused_by_Pre x1,GNP_caused_by_Pre y1) -> and [ x1 == y1 ]
+    (GNP_caused_water_to_escape_from_Pre x1,GNP_caused_water_to_escape_from_Pre y1) -> and [ x1 == y1 ]
+    (GqPRE x1,GqPRE y1) -> and [ x1 == y1 ]
     (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
@@ -433,6 +483,9 @@ instance Eq (Tree a) where
 instance Gf GAP where
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
   gf Gaware = mkApp (mkCId "aware") []
+  gf (Gcaused_by x1) = mkApp (mkCId "caused_by") [gf x1]
+  gf Gcovered = mkApp (mkCId "covered") []
+  gf (Gensuing x1) = mkApp (mkCId "ensuing") [gf x1]
   gf Gnotifiable = mkApp (mkCId "notifiable") []
   gf Gpublic = mkApp (mkCId "public") []
 
@@ -440,6 +493,9 @@ instance Gf GAP where
     case unApp t of
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
       Just (i,[]) | i == mkCId "aware" -> Gaware 
+      Just (i,[x1]) | i == mkCId "caused_by" -> Gcaused_by (fg x1)
+      Just (i,[]) | i == mkCId "covered" -> Gcovered 
+      Just (i,[x1]) | i == mkCId "ensuing" -> Gensuing (fg x1)
       Just (i,[]) | i == mkCId "notifiable" -> Gnotifiable 
       Just (i,[]) | i == mkCId "public" -> Gpublic 
 
@@ -478,16 +534,6 @@ instance Gf GCN where
 
       Just (i,[]) -> LexCN (showCId i)
       _ -> error ("no CN " ++ show t)
-
-instance Gf GCl where
-  gf (GImpersCl x1) = mkApp (mkCId "ImpersCl") [gf x1]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1]) | i == mkCId "ImpersCl" -> GImpersCl (fg x1)
-
-
-      _ -> error ("no Cl " ++ show t)
 
 instance Gf GComp where
   gf (GCompAP x1) = mkApp (mkCId "CompAP") [gf x1]
@@ -530,6 +576,28 @@ instance Gf GConj where
 
 
       _ -> error ("no Conj " ++ show t)
+
+instance Gf GConstraint where
+  gf (GRPisAP x1 x2) = mkApp (mkCId "RPisAP") [gf x1, gf x2]
+  gf (GRPisAdv x1 x2) = mkApp (mkCId "RPisAdv") [gf x1, gf x2]
+  gf (GRPisnotAP x1 x2) = mkApp (mkCId "RPisnotAP") [gf x1, gf x2]
+  gf (GRPisnotAdv x1 x2) = mkApp (mkCId "RPisnotAdv") [gf x1, gf x2]
+  gf (GRPleafNP x1) = mkApp (mkCId "RPleafNP") [gf x1]
+  gf (GRPleafS x1 x2) = mkApp (mkCId "RPleafS") [gf x1, gf x2]
+  gf (GqCONSTR x1) = mkApp (mkCId "qCONSTR") [gf x1]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "RPisAP" -> GRPisAP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPisAdv" -> GRPisAdv (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPisnotAP" -> GRPisnotAP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RPisnotAdv" -> GRPisnotAdv (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "RPleafNP" -> GRPleafNP (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "RPleafS" -> GRPleafS (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "qCONSTR" -> GqCONSTR (fg x1)
+
+
+      _ -> error ("no Constraint " ++ show t)
 
 instance Gf GDate where
   gf (GMkDate x1 x2 x3) = mkApp (mkCId "MkDate") [gf x1, gf x2, gf x3]
@@ -692,15 +760,39 @@ instance Gf GMonth where
       _ -> error ("no Month " ++ show t)
 
 instance Gf GNP where
+  gf GContents = mkApp (mkCId "Contents") []
   gf (GDetCN x1 x2) = mkApp (mkCId "DetCN") [gf x1, gf x2]
   gf (GGerundNP x1) = mkApp (mkCId "GerundNP") [gf x1]
+  gf GLoss_or_Damage = mkApp (mkCId "Loss_or_Damage") []
+  gf (GMassNP x1) = mkApp (mkCId "MassNP") [gf x1]
   gf GNDB_Qualification = mkApp (mkCId "NDB_Qualification") []
+  gf Ganimal = mkApp (mkCId "animal") []
+  gf Gany_other_exclusion = mkApp (mkCId "any_other_exclusion") []
+  gf Gbirds = mkApp (mkCId "birds") []
+  gf Ghousehold_appliance = mkApp (mkCId "household_appliance") []
+  gf Ginsects = mkApp (mkCId "insects") []
+  gf Gplumbing_heating_or_AC = mkApp (mkCId "plumbing_heating_or_AC") []
+  gf Grodents = mkApp (mkCId "rodents") []
+  gf Gswimming_pool = mkApp (mkCId "swimming_pool") []
+  gf Gvermin = mkApp (mkCId "vermin") []
 
   fg t =
     case unApp t of
+      Just (i,[]) | i == mkCId "Contents" -> GContents 
       Just (i,[x1,x2]) | i == mkCId "DetCN" -> GDetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "GerundNP" -> GGerundNP (fg x1)
+      Just (i,[]) | i == mkCId "Loss_or_Damage" -> GLoss_or_Damage 
+      Just (i,[x1]) | i == mkCId "MassNP" -> GMassNP (fg x1)
       Just (i,[]) | i == mkCId "NDB_Qualification" -> GNDB_Qualification 
+      Just (i,[]) | i == mkCId "animal" -> Ganimal 
+      Just (i,[]) | i == mkCId "any_other_exclusion" -> Gany_other_exclusion 
+      Just (i,[]) | i == mkCId "birds" -> Gbirds 
+      Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance 
+      Just (i,[]) | i == mkCId "insects" -> Ginsects 
+      Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC 
+      Just (i,[]) | i == mkCId "rodents" -> Grodents 
+      Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool 
+      Just (i,[]) | i == mkCId "vermin" -> Gvermin 
 
 
       _ -> error ("no NP " ++ show t)
@@ -726,6 +818,20 @@ instance Gf GPol where
 
 
       _ -> error ("no Pol " ++ show t)
+
+instance Gf GPre where
+  gf (GNP_caused_by_Pre x1) = mkApp (mkCId "NP_caused_by_Pre") [gf x1]
+  gf (GNP_caused_water_to_escape_from_Pre x1) = mkApp (mkCId "NP_caused_water_to_escape_from_Pre") [gf x1]
+  gf (GqPRE x1) = mkApp (mkCId "qPRE") [gf x1]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "NP_caused_by_Pre" -> GNP_caused_by_Pre (fg x1)
+      Just (i,[x1]) | i == mkCId "NP_caused_water_to_escape_from_Pre" -> GNP_caused_water_to_escape_from_Pre (fg x1)
+      Just (i,[x1]) | i == mkCId "qPRE" -> GqPRE (fg x1)
+
+
+      _ -> error ("no Pre " ++ show t)
 
 instance Gf GPrep where
   gf Gabout_Prep = mkApp (mkCId "about_Prep") []
@@ -1100,11 +1206,12 @@ instance Gf GV where
 instance Compos Tree where
   compos r a f t = case t of
     GPositA x1 -> r GPositA `a` f x1
+    Gcaused_by x1 -> r Gcaused_by `a` f x1
+    Gensuing x1 -> r Gensuing `a` f x1
     GACTION x1 -> r GACTION `a` f x1
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GUseN x1 -> r GUseN `a` f x1
-    GImpersCl x1 -> r GImpersCl `a` f x1
     GCompAP x1 -> r GCompAP `a` f x1
     GCompAdv x1 -> r GCompAdv `a` f x1
     GCompCN x1 -> r GCompCN `a` f x1
@@ -1112,12 +1219,23 @@ instance Compos Tree where
     GConjCond x1 x2 -> r GConjCond `a` f x1 `a` f x2
     GON x1 x2 -> r GON `a` f x1 `a` f x2
     GWHEN x1 x2 -> r GWHEN `a` f x1 `a` f x2
+    GRPisAP x1 x2 -> r GRPisAP `a` f x1 `a` f x2
+    GRPisAdv x1 x2 -> r GRPisAdv `a` f x1 `a` f x2
+    GRPisnotAP x1 x2 -> r GRPisnotAP `a` f x1 `a` f x2
+    GRPisnotAdv x1 x2 -> r GRPisnotAdv `a` f x1 `a` f x2
+    GRPleafNP x1 -> r GRPleafNP `a` f x1
+    GRPleafS x1 x2 -> r GRPleafS `a` f x1 `a` f x2
+    GqCONSTR x1 -> r GqCONSTR `a` f x1
     GMkDate x1 x2 x3 -> r GMkDate `a` f x1 `a` f x2 `a` f x3
     GIDig x1 -> r GIDig `a` f x1
     GIIDig x1 x2 -> r GIIDig `a` f x1 `a` f x2
     GDetCN x1 x2 -> r GDetCN `a` f x1 `a` f x2
     GGerundNP x1 -> r GGerundNP `a` f x1
+    GMassNP x1 -> r GMassNP `a` f x1
     Gnum x1 -> r Gnum `a` f x1
+    GNP_caused_by_Pre x1 -> r GNP_caused_by_Pre `a` f x1
+    GNP_caused_water_to_escape_from_Pre x1 -> r GNP_caused_water_to_escape_from_Pre `a` f x1
+    GqPRE x1 -> r GqPRE `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1
     GqUPON x1 x2 -> r GqUPON `a` f x1 `a` f x2
     GqWHO x1 x2 -> r GqWHO `a` f x1 `a` f x2

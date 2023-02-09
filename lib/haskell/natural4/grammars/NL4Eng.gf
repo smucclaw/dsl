@@ -1,10 +1,9 @@
 concrete NL4Eng of NL4 = 
     NumeralEng
   , GrammarEng [
-        N, N2, CN, UseN, NP, Det, DetCN
+        N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
-      , Cl, ImpersCl -- it is a NDB
 --      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
@@ -14,11 +13,11 @@ concrete NL4Eng of NL4 =
     , VV, must_VV  
     ]
   , ExtendEng [
-        VPS, MkVPS --, [VPS], BaseVPS, ConsVPS, ConjVPS
-      , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
+        VPS, MkVPS, mkVPS --, [VPS], BaseVPS, ConsVPS, ConjVPS
+      , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
       , S, PredVPS
-      , GerundNP -- by performing NDB qualification
+      , NP, GerundNP -- by performing NDB qualification
       ]
   ** open 
       SyntaxEng
@@ -51,7 +50,7 @@ concrete NL4Eng of NL4 =
       Upon = linUpon ;
     oper
       LinCond : Type = {s : S ; qs : QS} ; -- {subj : NP ; pred : ExtendEng.VPS} ;
-      LinListCond : Type = {s : [S] ; qs : ListQS} ;
+      LinListCond : Type = {s : SyntaxEng.ListS ; qs : ListQS} ;
       ListQS : Type = {s1,s2 : R.QForm => Str} ;
       linWho : ExtendEng.VPS -> Str = \vps -> 
         let vpss = vps.s ! R.ODir False ! R.agrP3 R.Sg
@@ -66,10 +65,10 @@ concrete NL4Eng of NL4 =
       qCOND cond = cond.qs ;
       qUPON subj upon = qWHO subj (MkVPS presAnt positivePol upon) ;
 
-      EVERY cn = every <cn : CN> ;
-      PARTY cn = mkNP cn ;
-      AN cn = mkNP <a_Det : Det> <cn : CN> ;
-      THE cn = mkNP <the_Det : Det> <cn : CN> ;
+      EVERY cn = every <lin CN cn : CN> ;
+      PARTY cn = mkNP <lin CN cn : CN> ;
+      AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
+      THE cn = mkNP <lin Det the_Det : Det> <lin CN cn : CN> ;
       WHO who = lin VPS who ; 
       ACTION act = lin VPI act ;
 
@@ -89,13 +88,13 @@ concrete NL4Eng of NL4 =
 
       You = you_NP | mkNP (mkN "You" "You" "Your" "Your") ;
 
-      UPON vp = vp ;
+      UPON vp = lin VP vp ;
 
       WHEN np vps = {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
 
       BaseCond c d = {s = BaseS c.s d.s ; qs = twoTable R.QForm c.qs d.qs} ;
       ConsCond c d = {s = ConsS c.s d.s ; qs = consrTable R.QForm comma c.qs d.qs} ;
-      ConjCond conj cs = {s = ConjS conj cs.s ; qs = conjunctDistrTable R.QForm conj cs.qs} ;
+      ConjCond conj cs = {s = ConjS conj cs.s ; qs = lin QS (conjunctDistrTable R.QForm conj cs.qs)} ;
 
 -- Time expressions
     lincat 
@@ -109,7 +108,7 @@ concrete NL4Eng of NL4 =
         let onDate : Adv = lin Adv {s = "ON" ++ date.s} ;
         in {s = postAdvS cond.s onDate ; qs = postAdvQS cond.qs onDate} ;
     oper
-      postAdvS : S -> Adv -> S = \s,adv -> s ** mkS <s : Adv> <adv : S> ; -- hack that only works for Eng
+      postAdvS : S -> Adv -> S = \s,adv -> s ** mkS <lin Adv s : Adv> <lin S adv : S> ; -- hack that only works for Eng
       postAdvQS : QS -> Adv -> QS = \qs,adv -> qs ** {s = \\qf => qs.s ! qf ++ adv.s} ;
     lin
       MkDate a b c = lin Adv (cc3 a b c) ;
@@ -129,6 +128,44 @@ concrete NL4Eng of NL4 =
       -- WITHIN : Int -> TimeUnit -> Temporal ;
       -- Day, Month, Year : TimeUnit ;
 
+-- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
+    lincat
+      Pre,
+      Constraint = LinPre ; -- "Loss or Damage caused by", "an animal caused water to escape from"
+    oper
+      LinPre : Type = {s, qs : Str} ; -- TODO later proper RGL structures and parsing
+      npStr : NP -> Str = \np -> (UttNP np).s ;
+    lin
+      NP_caused_by_Pre np = {
+        s = npStr np ++ "caused by" ;
+        qs = "Is the" ++ npStr np ++ "caused by"
+        } ;
+      NP_caused_water_to_escape_from_Pre np = {
+        s = npStr np ++ "caused water to escape from" ;
+        qs = "Did" ++ npStr np ++ "cause water to escape from"
+        } ;
+      qPRE pr = pr ** {s = pr.qs} ; -- hack
+
+      -- : NP -> Adv -> Constraint ; -- damage IS to contents
+      -- TODO: use CompAP/CompAdv and don't even parse the IS and NOT in GF
+      -- but map 1-to-1 RelationalPredicates to GF constructors and convert BSnegation to text negation systematically back and forth
+      RPisAdv np adv = {
+        s = npStr np ++ ("is"|"IS") ++ adv.s ;
+        qs = "Is" ++ npStr np ++ adv.s ++ "?"
+        } ;
+      RPisnotAdv np adv = {
+        s = npStr np ++ ("is"|"IS") ++ "not" ++ adv.s ;
+        qs = "Is" ++ npStr np ++ adv.s ++ "?" -- TODO: should question be negative? Should this never be made into Q, because we flip the negations in BS?
+        } ;
+      -- : NP -> AP -> Constraint ; -- damage IS caused by birds
+      RPisAP np ap = RPisAdv np (mkUtt <lin AP ap : AP>) ;
+      RPisnotAP np ap = RPisnotAdv np (mkUtt <lin AP ap : AP>) ;
+      RPleafNP np = {s = npStr np ; qs = npStr np ++ "?"} ;
+      RPleafS np vps = {
+        s = (PredVPS np vps).s ;
+        qs = (SQuestVPS np vps).s ! R.QDir ++ "?"
+      } ;
+      qCONSTR = qPRE ; -- hack
 
 -----------------------------------------------------------------------------
 -- RGL layer, later to be automatically generated in different modules
@@ -153,13 +190,32 @@ concrete NL4Eng of NL4 =
       aware = mkAP (mkA "aware") ;
       NDB_Qualification = mkNP (mkN "NDB Qualification") ;
 
-      -- PDPA use case
       demand = mkV2 "demand" ;
       perform = mkV2 "perform" ;
       become = mkV2 IrregEng.become_V ;
       assess = mkVS (mkV "assess") ; 
       occur = mkVP (mkV "occur") ;
       respond = mkVP (mkV "respond") ;
+
+  -- rodents and vermin
+      Loss_or_Damage = mkNP (mkN "Loss or Damage") ;
+      Contents = mkNP aPl_Det (mkN ("content"|"Content")) ;
+      rodents = mkNP aPl_Det (mkN "rodent") ;
+      insects = mkNP aPl_Det (mkN "insect") ;
+      vermin = mkNP (mkN "vermin") ;
+      birds = mkNP aPl_Det (mkN "bird") ;
+      loss = mkCN (mkN "loss") ;
+      animal = mkNP aSg_Det (mkN "animal") ;
+      household_appliance = mkNP aSg_Det (mkN "household appliance") ;
+      swimming_pool = mkNP aSg_Det (mkN "swimming pool") ;
+      plumbing_heating_or_AC = mkNP aSg_Det (mkN "plumbing, heating, or air conditioning system") ;
+
+      covered = mkAP (mkA ("covered"|"Covered")) ;
+      ensuing np = mkAP (strA2 "ensuing") <lin NP np : NP>  ;
+      caused_by np = mkAP (mkA2 (mkA "caused") by8agent_Prep) <lin NP np : NP> ;
+
+      any_other_exclusion = mkNP (mkN "any other exclusion") ;
+      apply = mkVP (mkV "apply") ;
 
       -- : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred 
       ComplVAS become aware db_occurs = 
@@ -169,10 +225,10 @@ concrete NL4Eng of NL4 =
               ext = become_aware.ext ++ optThat ++ db_occurs.s
               } ;
       -- : V2 -> NP -> S -> VP ; -- notify PDPC that a data breach has occurred
-      ComplV2S notify pdpc db_occurs = mkVP notify pdpc db_occurs ; -- already in RGL, just a shortcut
-      ComplV2 v2 np = mkVP v2 np ;
-      ComplVSif vs s = R.insertObj (\\_ => "if" ++ s.s) (R.predV vs) ;
-      ComplVSthat vs s = mkVP vs s ;
+      ComplV2S v2 np s = mkVP <lin V2S v2 : V2S> <lin NP np : NP> <lin S s : S> ; -- already in RGL, just a shortcut
+      ComplV2 v2 np = mkVP <lin V2 v2 : V2> <lin NP np : NP>  ;
+      ComplVSif vs s = R.insertObj (\\_ => "if" ++ s.s) (R.predV <lin V vs : V>) ;
+      ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;
 
       MayHave occur = 
         let vps : ExtendEng.VPS = MkVPS presAnt POS occur ;
@@ -180,7 +236,7 @@ concrete NL4Eng of NL4 =
             may_have_occurred : {fin,inf : Str} = {fin = "may" ; inf = have_occurred.fin ++ have_occurred.inf} ;
          in vps ** {s = \\_,_ => may_have_occurred} ;
       -- : NP -> S ; -- it is NP — reference to a previous NP
-      ReferenceNP np = mkS (mkCl it_NP np) ;
+      ReferenceNP np = mkS (mkCl it_NP <lin NP np : NP>) ;
 
       presSimul = mkTemp presentTense simultaneousAnt ; 
       presAnt = mkTemp presentTense anteriorAnt ;
@@ -197,6 +253,7 @@ concrete NL4Eng of NL4 =
 
       oper 
         every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
+        strA2 : Str -> A2 = \str -> mkA2 (mkA str) noPrep ;
 
 }
 

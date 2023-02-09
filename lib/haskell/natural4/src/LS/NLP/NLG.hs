@@ -13,7 +13,7 @@ import LS.Types ( TemporalConstraint (..), TComparison(..),
       BoolStructP, BoolStructR,
       RelationalPredicate(..), HornClause(..), RPRel(..), HasToken (tokenOf),
       mt2text, mtexpr2text,
-      rp2text, pt2text, bsr2text, KVsPair, HornClause2, BoolStructDTP, MultiTerm)
+      rp2text, pt2text, bsr2text, KVsPair, HornClause2, MultiTerm)
 import LS.Rule ( Rule(..), Expect(..))      
 import PGF ( readPGF, readLanguage, languages, CId, Expr, linearize, mkApp, mkCId, lookupMorpho, PGF, readExpr )
 import UDAnnotations ( UDEnv(..), getEnv )
@@ -37,7 +37,6 @@ import Data.Set as Set (member, fromList)
 --import System.Exit (exitFailure)
 --import Data.Typeable
 import Paths_natural4
-import AnyAll.BoolStructTree
 --import qualified AnyAll.Types as AA
 import qualified Data.Tree as DT
 import Data.Foldable as F
@@ -491,15 +490,6 @@ bsp2gf env bsp = case bsp of
   AA.All _ (x:_) -> bsp2gf env x -- TODO: handle others
   AA.Not x -> bsp2gf env x -- TODO: handle negation
   _ -> error "bsp2gf: not supported yet"
-
-bsp2gfDT :: NLGEnv -> BoolStructDTP -> IO Expr
-bsp2gfDT env bsp = case bsp of
-  (DT.Node (FAtom (action :| mods)) _    )  -> do
-    actionExpr <- kvspair2gf env action  -- notify the PDPC
-    modExprs <- mapM (kvspair2gf env) mods -- [by email, at latest at the deadline]
-    return $ combineActionMods actionExpr modExprs
-  _ -> error "bsp2gf: not supported yet"
-
 
 -- | Takes a KVsPair, parses the fields, puts them together into GF Expr
 kvspair2gf :: NLGEnv -> KVsPair -> IO (String, Expr)

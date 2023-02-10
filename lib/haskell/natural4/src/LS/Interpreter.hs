@@ -81,7 +81,7 @@ qaHornsR l4i =
                            exposedRoots l4i      -- EXPOSED
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
-     ]      
+     ]
 
 -- | Talk a little bit about what we've interpreted.
 -- The output of this function gets saved to the workdir's @org/@ directory
@@ -417,7 +417,7 @@ decisionRoots rg =
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
--- 
+--
 -- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.
 --
 -- a Constitutive rule exposes the body of its `clauses`.
@@ -706,12 +706,12 @@ isRuleAlias l4i rname =
     matchHenceLest _              = False
     testMatch :: Maybe Rule -> Bool
     testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
-    
+
 -- | extract all TYPICALLY annotations for use by XPilers to indicate default markings.
 -- This is used by the Purescript and SVG transpilers.
 
 getMarkings :: Interpreted -> AA.TextMarking
-getMarkings l4i = 
+getMarkings l4i =
   AA.Marking $ Map.fromList $
   [ (defkey, defval)
   | DefTypically{..} <- origrules l4i

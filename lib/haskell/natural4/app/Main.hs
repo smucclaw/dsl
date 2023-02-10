@@ -62,7 +62,10 @@ main = do
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       -- (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv l4i)
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> ((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv rules)
+      -- (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> ((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv rules)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <>
+                                                                 psSuffix <> "\n\n" <>
+                                                                 asPurescript l4i)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)

@@ -130,10 +130,14 @@ concrete NL4Eng of NL4 =
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     lincat
-      Pre,
-      Constraint = LinPre ; -- "Loss or Damage caused by", "an animal caused water to escape from"
+      Pre,  -- "Loss or Damage caused by", "an animal caused water to escape from"
+--      IncompleteConstraint,
+      Constraint = LinConstraint ;
+--      [IncompleteConstraint],
+      [Constraint] = LinListConstraint ;
     oper
-      LinPre : Type = {s, qs : Str} ; -- TODO later proper RGL structures and parsing
+      LinConstraint : Type = {s, qs : Str} ; -- TODO later proper RGL structures and parsing
+      LinListConstraint : Type = {s, qs : ListX} ;
       npStr : NP -> Str = \np -> (UttNP np).s ;
     lin
       NP_caused_by_Pre np = {
@@ -144,7 +148,7 @@ concrete NL4Eng of NL4 =
         s = npStr np ++ "caused water to escape from" ;
         qs = "Did" ++ npStr np ++ "cause water to escape from"
         } ;
-      qPRE pr = pr ** {s = pr.qs} ; -- hack
+      dummyPre = {s,qs = "DUMMY, FIX LATER"} ;
 
       -- : NP -> Adv -> Constraint ; -- damage IS to contents
       -- TODO: use CompAP/CompAdv and don't even parse the IS and NOT in GF
@@ -155,7 +159,7 @@ concrete NL4Eng of NL4 =
         } ;
       RPisnotAdv np adv = {
         s = npStr np ++ ("is"|"IS") ++ "not" ++ adv.s ;
-        qs = "Is" ++ npStr np ++ adv.s ++ "?" -- TODO: should question be negative? Should this never be made into Q, because we flip the negations in BS?
+        qs = "Is" ++ npStr np ++ adv.s ++ "?" -- TODO: should question be negative? Should this never be made into Q, because we flip the negations in BS? or do we need to flip at top level when we generate questions one by one in BS?
         } ;
       -- : NP -> AP -> Constraint ; -- damage IS caused by birds
       RPisAP np ap = RPisAdv np (mkUtt <lin AP ap : AP>) ;
@@ -165,7 +169,26 @@ concrete NL4Eng of NL4 =
         s = (PredVPS np vps).s ;
         qs = (SQuestVPS np vps).s ! R.QDir ++ "?"
       } ;
-      qCONSTR = qPRE ; -- hack
+
+      ConjCond conj cs = {s = ConjS conj cs.s ; qs = lin QS (conjunctDistrTable R.QForm conj cs.qs)} ;
+
+      BaseConstraint c d = {s = twoStr c.s d.s ; qs = twoStr c.qs d.qs} ;
+      ConsConstraint c d = {s = consrStr comma c.s d.s ; qs = consrStr comma c.qs d.qs} ;
+      ConjConstraint conj cs = {s = conjunctDistrX conj cs.s ; qs = conjunctDistrX conj cs.qs} ; 
+
+      --  : Pre -> Conj -> [Constraint] -> Constraint ;
+      ConjPreConstraint pr conj cs = 
+        let constr : Constraint = ConjConstraint conj cs ;
+         in constr ** {
+              s  = pr.s ++ constr.s ;
+              qs =  pr.s ++ constr.s ++ "?" ; -- if Constraint has undergone ConjConstraint, it will have ? after every item, we don't want that
+            } ;
+
+    -- convert into questions – lincats have fields for question and statement
+    -- TODO how about using Question type? or is that only for Regulative rules?
+      qPRE,
+      qCONSTR = \c -> c ** {s = c.qs} ;
+
 
 -----------------------------------------------------------------------------
 -- RGL layer, later to be automatically generated in different modules

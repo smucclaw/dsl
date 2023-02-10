@@ -82,19 +82,28 @@ abstract NL4 =
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     cat
       Pre ; -- "Loss or Damage caused by", "an animal caused water to escape from"
-      Constraint ; -- TODO don't parse in GF but create GF constructors that correspond to 
+      Constraint ; -- TODO don't parse in GF but create GF constructors that correspond to
+      [Constraint]{2} ;
+    --   IncompleteConstraint ;
+    --   [IncompleteConstraint]{2} ;
     fun
       NP_caused_by_Pre : NP -> Pre ;
       NP_caused_water_to_escape_from_Pre : NP -> Pre ; -- TODO generalise later
-      qPRE : Pre -> Pre ; -- hack
+      dummyPre : Pre ; -- Temporary workaround, will fix later
 
       RPisAdv,   -- damage IS to contents
       RPisnotAdv : NP -> Adv -> Constraint ; 
       RPisAP,    -- damage IS caused by birds
       RPisnotAP : NP -> AP -> Constraint ; -- damage IS not covered
-      RPleafNP : NP -> Constraint ; -- to pair with Pre to get a full sentence ???
       RPleafS : NP -> VPS -> Constraint ;
-      qCONSTR : Constraint -> Constraint ; -- also hack TODO make this not suck so much
+      RPleafNP : NP -> Constraint ; -- to pair with Pre to get a full sentence ???
+      ConjConstraint : Conj -> [Constraint] -> Constraint ;
+      ConjPreConstraint : Pre -> Conj -> [Constraint] -> Constraint ;
+
+    -- convert into questions – lincats have fields for question and statement
+    -- TODO how about using Question type? or is that only for Regulative rules?
+      qPRE : Pre -> Pre ;
+      qCONSTR : Constraint -> Constraint ;
 
 -----------------------------------------------------------------------------
 -- Lexicon, later to be automatically generated in different modules

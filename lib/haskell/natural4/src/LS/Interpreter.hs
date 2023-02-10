@@ -35,9 +35,7 @@ import Data.List (find)
 import qualified Data.List as DL
 import Data.Bifunctor (first)
 import Data.Map ((!))
-import qualified AnyAll.BoolStructTree as BST
 import Data.Tree
-import AnyAll.BoolStructTree (mkLeafDT)
 import Control.Applicative ((<|>))
 
 -- | interpret the parsed rules based on some configuration options.
@@ -542,7 +540,6 @@ expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
 expandRP l4i depth (RPMT                   mt2)   = expandMT  l4i (depth + 1) mt2
 expandRP l4i depth (RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) (mt1 ++ MTT (rel2txt RPis) : mt2)
 expandRP l4i depth (RPBoolStructR mt1 RPis bsr)   = RPBoolStructR mt1 RPis (expandBSR' l4i (depth + 1) bsr)
-expandRP l4i depth (RPBoolStructDTR mt1 RPis bsr) = RPBoolStructDTR mt1 RPis (expandBSRDT' l4i (depth + 1) bsr)
 expandRP _l4i _depth x                            = x
 
 -- | Search the scopetable's symbol tables for a given multiterm. Expand its clauses, and return the expanded.
@@ -586,15 +583,6 @@ expandBSR' l4i depth (AA.Leaf rp)  =
 expandBSR' l4i depth (AA.Not item)   = AA.mkNot     (expandBSR' l4i (depth + 1) item)
 expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
 expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
-
-expandBSRDT' :: Interpreted -> Int -> BoolStructDTR -> BoolStructDTR
-expandBSRDT' l4i depth (Node (BST.FAtom rp)          _  )  =
-  case expandRP l4i (depth + 1) rp of
-    RPBoolStructDTR _mt1 RPis bsr -> bsr
-    o                           -> mkLeafDT o
-expandBSRDT' l4i depth (Node BST.FNot [item])   = BST.mkNotDT      (expandBSRDT' l4i (depth + 1) item)
-expandBSRDT' l4i depth (Node (BST.FAll lbl) xs) = BST.mkAllDT  lbl (expandBSRDT' l4i (depth + 1) <$> xs)
-expandBSRDT' l4i depth (Node (BST.FAny lbl) xs) = BST.mkAnyDT lbl  (expandBSRDT' l4i (depth + 1) <$> xs)
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody _l4i = id

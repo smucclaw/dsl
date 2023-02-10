@@ -222,8 +222,8 @@ import LS.Types
 import LS.Rule
 import LS.Tokens
 import LS.Parser
-import AnyAll.BoolStructTree (BoolStructDT, Formula (FAtom, FAll, FAny), mkAnyDT, mkAllDT)
 import Data.Tree
+import AnyAll.BoolStruct (mkLeaf)
 
 
 -- * parse RelationalPredicates
@@ -274,15 +274,6 @@ partitionExistentials c = ( aaFilter (\case { AA.Leaf (RPParamText x) ->     (ha
       aaFilter f (AA.All lbl xs) = AA.mkAll lbl (filter f (aaFilter f <$> xs))
       aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
 
-partitionExistentialsDT :: HornClauseDT -> (BoolStructDTR, BoolStructDTR)
-partitionExistentialsDT c = ( aaFilter (\case { Node (FAtom (RPParamText x)) _ ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
-                            , aaFilter (\case { Node (FAtom (RPParamText x)) _ -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
-    where
-      aaFilter :: (BoolStructDT lbl a -> Bool) -> BoolStructDT lbl a -> BoolStructDT lbl a
-      aaFilter f (Node (FAny lbl) xs) = mkAnyDT lbl (filter f (aaFilter f <$> xs))
-      aaFilter f (Node (FAll lbl) xs) = mkAllDT lbl (filter f (aaFilter f <$> xs))
-      aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
-
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> Maybe ParamText
 bsr2pt bsr =
@@ -293,8 +284,8 @@ bsr2pt bsr =
 -- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
-hc2preds :: (MyBSR a) => HornClause a -> a
-hc2preds (HC _headRP Nothing) = mkBSRLeaf (RPMT [MTT "TRUE"]) -- [TODO] turn this into MTB True
+hc2preds :: HornClause BoolStructR -> BoolStructR
+hc2preds (HC _headRP Nothing) = mkLeaf (RPMT [MTT "TRUE"]) -- [TODO] turn this into MTB True
 hc2preds (HC _headRP (Just bsr)) = bsr
 
 aaLeaves :: BoolStructR -> [MultiTerm]

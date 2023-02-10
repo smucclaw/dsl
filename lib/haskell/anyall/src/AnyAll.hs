@@ -11,4 +11,3 @@ import AnyAll.SVGLadder
 import AnyAll.Relevance
 import AnyAll.PP
 import AnyAll.BoolStruct
-

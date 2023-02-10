@@ -13,7 +13,6 @@ import Data.Maybe (isJust)
 import Data.Either
 import Data.Tree
 import qualified Data.Text       as T
-import AnyAll.BoolStructTree
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
 relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
@@ -57,16 +56,6 @@ dispositive sh marking self =
        All label items -> recurse items
        Not       item  -> recurse [item]
 
-dispositiveDT :: Ord a => Hardness -> Marking a -> BoolStructDT l a -> [BoolStructDT l a]
-dispositiveDT sh marking self =
-  let selfValue  = evaluateDT sh marking self
-      recurse cs = concatMap (dispositiveDT sh marking) (filter ((selfValue ==) . evaluateDT sh marking) cs)
-  in case self of
-       (Node (FAtom x)          _  ) -> if isJust selfValue then return self else mempty
-       (Node (FAny label)    items ) -> recurse items
-       (Node (FAll label)    items ) -> recurse items
-       (Node FNot            [item]) -> recurse [item]
-
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: Ord a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
 evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
@@ -85,23 +74,3 @@ evaluate sh marking (All label items)
   | all (== Just True) (evaluate sh marking <$> items) = Just True
   | Just False `elem`  (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing
-
-evaluateDT :: Ord a => Hardness -> Marking a -> BoolStructDT l a -> Maybe Bool
-evaluateDT Soft (Marking marking) (Node (FAtom x) _    ) = case Map.lookup x marking of
-                                             Just (Default (Right (Just x))) -> Just x
-                                             Just (Default (Left  (Just x))) -> Just x
-                                             _                               -> Nothing
-evaluateDT Hard (Marking marking) (Node (FAtom x) _    ) = case Map.lookup x marking of
-                                             Just (Default (Right (Just x))) -> Just x
-                                             _                               -> Nothing
-evaluateDT sh   marking           (Node FNot    [x]      )  = not <$> evaluateDT sh marking x
-evaluateDT sh marking (Node (FAny label)    items )
-  | Just True `elem`    (evaluateDT sh marking <$> items) = Just True
-  | all (== Just False) (evaluateDT sh marking <$> items) = Just False
-  | otherwise = Nothing
-evaluateDT sh marking (Node (FAll label)    items )
-  | all (== Just True) (evaluateDT sh marking <$> items) = Just True
-  | Just False `elem`  (evaluateDT sh marking <$> items) = Just False
-  | otherwise = Nothing
-
-

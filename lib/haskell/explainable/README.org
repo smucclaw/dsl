@@ -128,23 +128,24 @@ automatically generate isomorphic visual representations eg diagrams, graphs
 
 Typically the app stack looks like this:
 
-| LEVEL             | EXAMPLE MODULE     | DESCRIPTION                      | EXAMPLE                                                                                  |
-|-------------------+--------------------+----------------------------------+------------------------------------------------------------------------------------------|
-| application exe   | Main.hs            | some kind of runtime             | import GermanTaxes2022                                                                   |
-|-------------------+--------------------+----------------------------------+------------------------------------------------------------------------------------------|
-| application lib   | GermanTaxes2022.hs | Let's compute taxes!             | import Explainable, import AnyAll, import MathLang                                       |
-|                   | PDPADBNO.hs        | Let's decide if PDPA DBNO!       |                                                                                          |
-|                   | L4.hs              | Let's have a DSL for law!        |                                                                                          |
-|-------------------+--------------------+----------------------------------+------------------------------------------------------------------------------------------|
-| internal dsl      | AnyAll.hs          | booleans                         | BoolStructT with AnyAll (walks,runs,eats)                                                |
-| representing      | MathLang.hs        | first-order predicate logic      | BoolStructR with AnyAll (X IS Y, Z < 1000)                                               |
-| the logic of      | Prolog.hs          | arithmetic                       | MathLang with Plus Minus Times Divide Parens (Tax = Income * 0.25)                       |
-| some "theory"     |                    | temporal                         | LTL / CTL (EX, AF, AG, etc) (Always Eventually Get Paid)                                 |
-|                   |                    | deontic                          | State transition system (PetriNet HENCE LEST, Bob Must Pay Alice Before end of quarter)  |
-|                   |                    | etc                              | ...                                                                                      |
-|-------------------+--------------------+----------------------------------+------------------------------------------------------------------------------------------|
-| explainable monad | Explainable.hs     | evaluate a computation verbosely | We want to be able to lift the particular DSL's eval() function into Explainable         |
-|                   |                    |                                  | such that every computation is verbosely logged to Stdout,Stderr or some Org-Mode format |
+| LEVEL             | EXAMPLE MODULE | DESCRIPTION                      | EXAMPLE                                                                                  |
+|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
+| application exe   | Main.hs        | some kind of runtime             | imports Lib                                                                              |
+|                   | Lib.hs         |                                  | import TaxDSL                                                                            |
+|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
+| application lib   | TaxDSL.hs      | Let's compute taxes!             | import Explainable, import AnyAll, import MathLang                                       |
+|                   | PDPADBNO.hs    | Let's decide if PDPA DBNO!       |                                                                                          |
+|                   | L4.hs          | Let's have a DSL for law!        |                                                                                          |
+|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
+| internal dsl      | AnyAll.hs      | booleans                         | BoolStructT with AnyAll (walks,runs,eats)                                                |
+| representing      | MathLang.hs    | first-order predicate logic      | BoolStructR with AnyAll (X IS Y, Z < 1000)                                               |
+| the logic of      | Prolog.hs      | arithmetic                       | MathLang with Plus Minus Times Divide Parens (Tax = Income * 0.25)                       |
+| some "theory"     |                | temporal                         | LTL / CTL (EX, AF, AG, etc) (Always Eventually Get Paid)                                 |
+|                   |                | deontic                          | State transition system (PetriNet HENCE LEST, Bob Must Pay Alice Before end of quarter)  |
+|                   |                | etc                              | ...                                                                                      |
+|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
+| explainable monad | Explainable.hs | evaluate a computation verbosely | We want to be able to lift the particular DSL's eval() function into Explainable         |
+|                   |                |                                  | such that every computation is verbosely logged to Stdout,Stderr or some Org-Mode format |
 
 Each of the internal DSLs should be able to run within Explainable.
 

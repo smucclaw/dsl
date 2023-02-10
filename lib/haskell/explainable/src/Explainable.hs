@@ -111,9 +111,6 @@ xplainE r emptyState expr = do
                              (([],["toplevel"]),r)
                              emptyState
   putStrLn $ "** xplainE: " ++ show val
- -- putStrLn $ "** toplevel: val = "    ++ show val 
- --  putStrLn $ "** toplevel: symtab = " ++ show stab
- -- putStrLn $ "** toplevel: log = "    ++ show wlog
   putStrLn $ "*** toplevel: xpl = " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
 
   return (val, xpl, stab, wlog)

@@ -87,15 +87,19 @@ nlg' thl env rule = case rule of
 
 --      pure $ Text.unlines [ruleText, henceText, lestText]
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
-    Hornlike {keyword, clauses} -> do
-      let headHC = parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
-      pure $ Text.unlines $ gfLin env . gf <$> headHC
+    Hornlike {clauses} -> do
+      let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+          parseBodyHC cl = case hBody cl of 
+            Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
+            Nothing -> mempty
+          bodyLins = parseBodyHC <$> clauses
+      pure $ Text.unlines $ headLins <> ["when"] <> bodyLins
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
           ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
-      pure $ Text.strip $ ruleTextDebug
+      pure $ Text.strip ruleTextDebug
     DefNameAlias {} -> pure mempty
-    _ -> pure "NLG.hs is under construction, we only support singing"
+    _ -> pure $ "NLG.hs is under construction, we don't support yet " <> Text.pack (show rule)
   where
     (prefix,suffix) = debugNesting thl
     i = getLevel thl + 2
@@ -118,14 +122,8 @@ nlg' thl env rule = case rule of
 -- | output          | Have there been more than two claims?               |
 -- +-----------------+-----------------------------------------------------+
 
--- type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
--- type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
--- type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
-    --  Expected: BoolStructT
-    --     Actual: AA.BoolStruct (Maybe (AA.Label Text.Text)) (IO [String])
 
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
--- ruleQuestions env alias rule = pure [AA.Leaf (Text.pack "NLG.hs is under construction, this will work again shortly")]
 ruleQuestions env alias rule = do
   let (youExpr, orgExpr) =
         case alias of
@@ -147,101 +145,99 @@ ruleQuestions env alias rule = do
                       Just u -> Just $ AA.Leaf $ mkUponQ u
                       Nothing -> Nothing
       pure $ catMaybes [qWhoBS, qCondBS, qUponBS]
-    Hornlike {keyword, clauses} -> do
-      let headHC = parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
-          getBodyBS cl = case hBody cl of 
-                    Just bs -> parseBSConstraint env bs
-                    Nothing -> AA.Leaf mempty
-          bodyBS = getBodyBS <$> clauses
+    Hornlike {clauses} -> do
+      let getBodyBS cl = case hBody cl of 
+                          Just bs -> mapTxt $ bsConstraint2questions $ parseConstraintBS env bs
+                          Nothing -> AA.Leaf mempty
+          bodyBS =  getBodyBS <$> clauses
       pure bodyBS
     -- Constitutive {cond} -> do
     --   condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
     --   pure $ concat $ catMaybes [condBSR]
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
+  where 
+    mapTxt :: BoolStructConstraint -> AA.BoolStruct (Maybe (AA.Label Text.Text)) Text.Text
+    mapTxt = mapBSLabel (AA.Pre . gfLin env . gf) (gfLin env . gf)
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
-  rulesInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
-  pure $ concatMap F.toList rulesInABoolStruct
+  questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
+  pure $ concatMap F.toList questionsInABoolStruct
 
 -----------------------------------------------------------------------------
 -- Parsing fields into GF categories – all typed, no PGF.Expr allowed
 
-parseConstraints :: NLGEnv -> Text.Text -> [GConstraint]
-parseActions :: NLGEnv -> Text.Text -> [GAction]
-parseUpons :: NLGEnv -> Text.Text -> [GUpon]
-parseSubjs :: NLGEnv -> Text.Text -> [GSubj]
-parseConds :: NLGEnv -> Text.Text -> [GCond]
-parseWhos :: NLGEnv -> Text.Text -> [GWho]
-
-parseConstraints e t = fg <$> parseAny "Constraint" e t
-parseActions e t = fg <$> parseAny "Action" e t
-parseUpons e t =  fg <$> parseAny "Upon" e t
-parseSubjs e t = fg <$> parseAny "Subj" e t
-parseConds e t = fg <$> parseAny "Cond" e t
-parseWhos e t = fg <$> parseAny "Who" e t
+-- not really parsing, just converting nL4 constructors to GF constructors
+parseDeontic :: Deontic -> GDeontic
+parseDeontic DMust = GMUST
+parseDeontic DMay = GMAY
+parseDeontic DShant = GSHANT
 
 -- TODO: stop using *2text, instead use the internal structure
   -- "respond" :| []  -> respond : VP 
   -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement, call ComplV2
   -- "assess" :| [ "if it is a Notifiable Data Breach" ] -> assess : VS, S complement, call ComplS2
 parseAction :: NLGEnv -> BoolStructP -> GAction
-parseAction env action = case parseActions env $ bsp2text action of 
-                       [] -> error $ "no parse for " <> Text.unpack (bsp2text action)
-                       x:_ -> x
+parseAction env bsp = let txt = bsp2text bsp in
+  case parseAny "Action" env txt of 
+    [] -> error $ msg "Action" txt
+    x:_ -> fg x
 
 parseSubj :: NLGEnv -> BoolStructP -> GSubj
-parseSubj env subj = case parseSubjs env $ bsp2text subj of 
-                       [] -> error $ "no parse for " <> Text.unpack (bsp2text subj)
-                       x:_ -> x
+parseSubj env bsp = let txt = bsp2text bsp in
+  case parseAny "Subj" env txt of 
+    [] -> error $ msg "Subj" txt
+    x:_ -> fg x
 
 parseWho :: NLGEnv -> RelationalPredicate -> GWho
-parseWho env rp = case parseWhos env (rp2text rp) of
-                    x:_ -> x
-                    [] -> error $ "parseWho: failed to parse " <> Text.unpack (rp2text rp)
+parseWho env rp = let txt = rp2text rp in
+  case parseAny "Who" env txt of
+    [] -> error $ msg "Who" txt
+    x:_ -> fg x
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
-parseCond env rp = case parseConds env (rp2text rp) of
-                    x:_ -> x
-                    [] -> error $ "parseCond: failed to parse " <> Text.unpack (rp2text rp)
+parseCond env rp = let txt = rp2text rp in
+  case parseAny "Cond" env txt of
+    [] -> error $ msg "Cond" txt
+    x:_ -> fg x
                     
 parseUpon :: NLGEnv -> ParamText -> GUpon
-parseUpon env pt = case parseUpons env (pt2text pt) of
-                    x:_ -> x
-                    [] -> error $ "parseUpon: failed to parse " <> Text.unpack (pt2text pt)
+parseUpon env pt = let txt = pt2text pt in
+  case parseAny "Upon" env txt of
+    [] -> error $ msg "Upon" txt
+    x:_ -> fg x
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
-parseConstraint env rp = case parseConstraints env (rp2text rp) of
-                    x:_ -> x
-                    [] -> error $ "parseConstraint: failed to parse " <> Text.unpack (rp2text rp)
+parseConstraint env rp = let txt = rp2text rp in
+  case parseAny "Constraint" env txt of
+    [] -> error $ msg "Constraint" txt
+    x:_ -> fg x
 
-data QuestionOrNot = TurnIntoQuestion | KeepAsStatement deriving (Show,Eq,Ord)
+parsePre :: NLGEnv -> AA.Label Text.Text -> GPre
+parsePre env lbl = let txt = lbl2text lbl in
+  case parseAny "Pre" env txt of
+    [] -> error $ msg "Pre" txt
+    x:_ -> fg x
+  where
+    lbl2text :: AA.Label Text.Text -> Text.Text
+    lbl2text (AA.Pre t) = t
+    lbl2text (AA.PrePost t u) = t <> " " <> u -- TODO: handle PrePost properly, make GF lincat have two fields and linearise accordingly
 
-parseBSConstraint :: NLGEnv -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
-parseBSConstraint env = parseBSConstraint' GqCONSTR
-  where 
-    parseBSConstraint' :: (GConstraint -> GConstraint) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
-    parseBSConstraint' f bs = case bs of
-        AA.Leaf x -> AA.Leaf $ gfLin env $ gf $ f $ parseConstraint env x
-        AA.Any (Just pre) xs -> AA.Any (Just $ parseAndLinPre pre) (parseBSConstraint' GqCONSTR <$> xs)
-        AA.All (Just pre) xs -> AA.All (Just $ parseAndLinPre pre) (parseBSConstraint' GqCONSTR <$> xs)
-        AA.Any Nothing xs -> AA.Any Nothing (parseBSConstraint' GqCONSTR <$> xs)
-        AA.All Nothing xs -> AA.All Nothing (parseBSConstraint' GqCONSTR <$> xs)
-        AA.Not b -> AA.Not $ parseBSConstraint' GqCONSTR b
+-- BoolStructConstraint is so far the only one where Label fields also have GF content
+-- In the future, all boolstructs should be prepared for the same.
+-- It's just that in the 3 first use cases, it wasn't needed for other structures yet.
+parseConstraintBS :: NLGEnv -> BoolStructR -> BoolStructConstraint
+parseConstraintBS env bsr = case bsr of
+    AA.Leaf x -> AA.Leaf $ parseConstraint env x
+    AA.Any (Just pre) xs -> AA.Any (Just $ parsePre env pre) (parseConstraintBS env <$> xs)
+    AA.All (Just pre) xs -> AA.All (Just $ parsePre env pre) (parseConstraintBS env <$> xs)
+    AA.Any Nothing xs -> AA.Any Nothing (parseConstraintBS env <$> xs)
+    AA.All Nothing xs -> AA.All Nothing (parseConstraintBS env <$> xs)
+    AA.Not b -> AA.Not $ parseConstraintBS env b
 
-    parseAndLinPre :: AA.Label Text.Text -> AA.Label Text.Text
-    parseAndLinPre (AA.Pre t) = AA.Pre $
-      case parseAny "Pre" env t of 
-        x:_ -> gfLin env $ mkApp (mkCId "qPRE") [x]
-        [] -> "Is " <> t <> "?" -- Fallback, in case can't parse text in Pre
-    parseAndLinPre x = x
 
-parseDeontic :: Deontic -> GDeontic
-parseDeontic DMust = GMUST
-parseDeontic DMay = GMAY
-parseDeontic DShant = GSHANT
-
+-- TODO: later if grammar is ambiguous, should we rank trees here?
 parseAny :: String -> NLGEnv -> Text.Text -> [Expr] 
 parseAny cat env = gfParse env typ 
   where
@@ -249,5 +245,7 @@ parseAny cat env = gfParse env typ
             Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
             Just t -> t
 
+msg :: String -> Text.Text -> String 
+msg typ txt = "parse" <> typ <> ": failed to parse " <> Text.unpack txt
 
 -----------------------------------------------------------------------------

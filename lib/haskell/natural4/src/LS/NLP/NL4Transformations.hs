@@ -12,11 +12,14 @@ flipPolarity (GMkVPS temp GPOS vp) = GMkVPS temp GNEG vp
 flipPolarity (GMkVPS temp GNEG vp) = GMkVPS temp GPOS vp
 flipPolarity x = composOp flipPolarity x
 
---type BoolStructTree = (Gf a) => AA.OptionallyLabeledBoolStruct (Tree a)
 type BoolStructWho = AA.OptionallyLabeledBoolStruct GWho
 type BoolStructCond = AA.OptionallyLabeledBoolStruct GCond
+--type BoolStructConstraint = AA.OptionallyLabeledBoolStruct GConstraint
 
-bsNeg2textNeg :: (Gf (Tree a)) => AA.OptionallyLabeledBoolStruct (Tree a) -> AA.OptionallyLabeledBoolStruct (Tree a)
+-- TODO: parse BoolStructR into this structure, where even the Pre and Post are parsed into GF types
+type BoolStructConstraint = AA.BoolStruct (Maybe GPre) GConstraint
+
+bsNeg2textNeg :: (Gf (Tree a)) => AA.BoolStruct b (Tree a) -> AA.BoolStruct b (Tree a)
 bsNeg2textNeg bs = case bs of
   AA.Leaf x -> AA.Leaf x
   AA.All l xs -> AA.All l (fmap bsNeg2textNeg xs)
@@ -43,6 +46,29 @@ bsCond2gfCond bs = case bs' of
     AA.Leaf x -> x
     AA.Any _ xs -> GConjCond GOR $ GListCond $ bsCond2gfCond <$> xs
     AA.All _ xs -> GConjCond GAND $ GListCond $ bsCond2gfCond <$> xs
-    AA.Not _ -> error $ "bsWho2gfWho: not expecting NOT in " <> show bs'
+    AA.Not _ -> error $ "bsCond2gfCond: not expecting NOT in " <> show bs'
   where 
     bs' = bsNeg2textNeg bs
+
+bsConstraint2gfConstraint :: BoolStructConstraint -> GConstraint
+bsConstraint2gfConstraint bs = case bs' of
+    AA.Leaf x -> x
+    AA.Any Nothing xs -> GConjConstraint GOR $ GListConstraint $ bsConstraint2gfConstraint <$> xs
+    AA.All Nothing xs -> GConjConstraint GAND $ GListConstraint $ bsConstraint2gfConstraint <$> xs
+    AA.Any (Just pre) xs -> GConjPreConstraint pre GOR $ GListConstraint $ bsConstraint2gfConstraint <$> xs
+    AA.All (Just pre) xs -> GConjPreConstraint pre GAND $ GListConstraint $ bsConstraint2gfConstraint <$> xs
+    AA.Not _ -> error $ "bsConstraint2gfConstraint: not expecting NOT in " <> show bs'
+  where 
+    bs' = bsNeg2textNeg bs
+
+mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe a) c ->  AA.BoolStruct (Maybe b) d
+mapBSLabel f g bs = case bs of 
+    AA.Leaf x -> AA.Leaf $ g x
+    AA.Any Nothing xs -> AA.Any Nothing (mapBSLabel f g <$> xs)
+    AA.All Nothing xs -> AA.All Nothing (mapBSLabel f g <$> xs)
+    AA.Any (Just pre) xs -> AA.Any (Just $ f pre) (mapBSLabel f g <$> xs)
+    AA.All (Just pre) xs -> AA.All (Just $ f pre) (mapBSLabel f g <$> xs)
+    AA.Not x -> AA.Not $ mapBSLabel f g x
+
+bsConstraint2questions :: BoolStructConstraint -> BoolStructConstraint
+bsConstraint2questions = mapBSLabel GqPRE GqCONSTR

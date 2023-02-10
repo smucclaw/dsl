@@ -95,12 +95,14 @@ rule2doc
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
-      pretty2Qid x = x |> pretty |> ("'" <>)
 
 rule2doc _ = "Not supported."
 
 rules2doc :: Foldable t => t Rule -> Doc ann
 rules2doc rules = rules |> foldMapWithNewLines @2 rule2doc
+
+pretty2Qid :: T.Text -> Doc ann
+pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
@@ -111,7 +113,7 @@ hencelest2str hence = hence |> maybe "NOTHING" f
     f (RuleAlias hence') = hence' <&> quotOrUpper |> hsep
     f _ = ""
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
-    quotOrUpper (MTT x) = x |> pretty |> ("'" <>)
+    quotOrUpper (MTT x) = x |> pretty2Qid
     quotOrUpper _ = ""
 
 foldMapWithNewLines ::
@@ -125,6 +127,7 @@ foldMapWithNewLines f docs = docs |> foldMap' f' |> coerce
     f' :: a -> CatWithNewLines n ann
     f' x = x |> f |> coerce
 
+-- Used to define the monoid <> op for CatWithNewLines
 catWithNewLines ::
   forall n ann.
   Int ->

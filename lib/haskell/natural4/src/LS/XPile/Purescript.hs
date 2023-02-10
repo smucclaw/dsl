@@ -46,8 +46,8 @@ textMT rl = map mt2text rl
 asPurescript :: Interpreted -> String
 asPurescript l4i =
      show (vsep
-           [ "toplevelDecisions :: Map.Map (String) (Item String)"
-           , "toplevelDecisions = Map.fromFoldable " <>
+           [ "toplevelDecisions :: Object.Object (Item String)"
+           , "toplevelDecisions = Object.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " ((textMT names))

@@ -132,15 +132,7 @@ parserTests  = do
             { name = [ MTT "You" ]
             , detail = [ MTT "Organisation" ]
             , nlhint = Nothing
-            , srcref = Just
-                ( SrcRef
-                    { url = "test/Spec"
-                    , short = "test/Spec"
-                    , srcrow = 2
-                    , srccol = 3
-                    , version = Nothing
-                    }
-                )
+            , srcref = mkTestSrcRef 2 3
             }
             ]
 
@@ -215,25 +207,12 @@ parserTests  = do
               temporal = Just (TemporalConstraint TBefore (Just 3) "days"),
               hence =
                 Just
-                  ( Regulative
+                  ( defaultReg
                       { subj = mkLeaf ((MTT <$> "the PDPC" :| [], Nothing) :| []),
                         rkeyword = RParty,
-                        who = Nothing,
-                        cond = Nothing,
                         deontic = DMay,
                         action = mkLeaf ((MTT <$> "NOTIFY" :| ["you"], Nothing) :| [(MTT <$> "with" :| ["a list of individuals to exclude from notification"], Nothing)]),
-                        temporal = Nothing,
-                        hence = Nothing,
-                        lest = Nothing,
-                        rlabel = Nothing,
-                        lsource = Nothing,
-                        srcref = Nothing,
-                        upon = Nothing,
-                        given = Nothing,
-                        having = Nothing,
-                        wwhere = [],
-                        defaults = [],
-                        symtab = []
+                        srcref = Nothing
                       }
                   ),
               lest = Nothing,
@@ -303,15 +282,7 @@ parserTests  = do
               ]
           , rlabel =Just ("\167", 2, "Unlikely")
           , lsource = Nothing
-          , srcref = Just
-            ( SrcRef
-              { url = "test/Spec"
-              , short = "test/Spec"
-              , srcrow = 1
-              , srccol = 1
-              , version = Nothing
-              }
-            )
+          , srcref = dummyRef
           }
         , DefNameAlias
           { name = [ MTT "Unlikely" ]
@@ -320,24 +291,15 @@ parserTests  = do
             , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
             ]
           , nlhint = Nothing
-          , srcref = Just
-            ( SrcRef
-              { url = "test/Spec"
-              , short = "test/Spec"
-              , srcrow = 2
-              , srccol = 5
-              , version = Nothing
-              }
-            )
+          , srcref = mkTestSrcRef 2 5
           }
         ]
 
       filetest "pdpadbno-7" "notification to users"
         (parseR pToplevel)
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT <$> "You" :| [], Nothing) :| []),
               rkeyword = RParty,
-              who = Nothing,
               cond =
                 Just
                   ( All
@@ -349,38 +311,22 @@ parserTests  = do
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["each of the Notifiable Individuals"], Nothing) :| [(MTT <$> "in" :| ["any manner that is reasonable in the circumstances"], Nothing), (MTT <$> "with" :| ["a message obeying a certain format"], Nothing)]),
               temporal = Just (TemporalConstraint TBefore (Just 3) "days"),
-              hence = Nothing,
-              lest = Nothing,
               rlabel = Just ("\167", 2, "Notify Individuals"),
-              lsource = Nothing,
               srcref = mkTestSrcRef 1 1,
-              upon = Nothing,
-              given = Nothing,
-              having = Nothing,
               wwhere =
-                [ Hornlike
+                [ defaultHorn
                     { name = [MTT "the Notifiable Individuals"],
-                      super = Nothing,
                       keyword = Means,
-                      given = Nothing,
-                      upon = Nothing,
                       clauses = [HC {hHead = RPMT [MTT "the Notifiable Individuals"], hBody = Nothing}],
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = mkTestSrcRef 2 9,
-                      defaults = [],
-                      symtab = []
+                      srcref = mkTestSrcRef 2 9
                     }
                 ],
               defaults = [],
               symtab = []
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "the Notifiable Individuals"],
-              super = Nothing,
               keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -398,10 +344,6 @@ parserTests  = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 9,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 9
             }
         ]

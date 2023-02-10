@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -11,6 +10,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -24,7 +24,8 @@ import Control.Lens (bimap)
 import Control.Monad (join)
 import Data.Coerce ( coerce )
 import Data.Foldable ( Foldable(foldMap') )
-import Data.Kind ( Type )
+import Data.List.NonEmpty ( NonEmpty((:|)) )
+import Data.Text qualified as T
 import GHC.TypeLits ( Nat )
 
 -- import Data.Text qualified as T
@@ -32,63 +33,32 @@ import GHC.TypeLits ( Nat )
 import LS.Types
     ( Deontic(DShant, DMust, DMay),
       TemporalConstraint(TemporalConstraint),
-      RegKeywords(RParty) )
+      RegKeywords(RParty), MTExpr (MTT), TComparison (TBefore) )
 import LS.Rule
     ( Rule(..) )
-
 import Flow ( (|>) )
 import Prettyprinter
-    ( hsep, line, viaShow, Doc, Pretty(pretty) )
+    ( hsep, line, Doc, Pretty(pretty) )
+import AnyAll (BoolStruct(Leaf))
+import Data.Functor ((<&>))
 
--- This function is still a work in progress.
-rule2doc :: Rule -> Doc ann
-rule2doc
-  Regulative
-    { rlabel = Just (_, _, ruleName),
-      rkeyword = RParty,
-      subj,
-      deontic,
-      action,
-      temporal = Just tempConstr@(TemporalConstraint _ _ _),
-      hence,
-      lest
-    } =
-    [ ["RULE", ruleNameQid],
-      ["PARTY", show2Qid subj],
-      [deontic2str deontic, "DO", show2Qid action],
-      [viaShow tempConstr],
-      [show2Qid hence],
-      [show2Qid lest]
-    ]
-    |> foldMapWithNewLines @1 hsep
-    where
-      deontic2str DMust = "MUST"
-      deontic2str DMay = "MAY"
-      deontic2str DShant = "SHANT"
-      makeQid x = "'" <> x
-      show2Qid x = x |> viaShow |> makeQid
-      ruleNameQid = ruleName |> pretty |> makeQid
-
-rule2doc _ = "unsupported"
-
-rules2doc :: Foldable t => t Rule -> Doc ann
-rules2doc rules = rules |> foldMapWithNewLines @2 rule2doc
-
-rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules = rules |> rules2doc |> show
-
-test :: String
-test = rules2maudeStr [ Regulative {..} ]
+{-
+  Based on experiments being run here:
+  https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit#gid=929226277
+-}
+testRule :: String
+testRule = rules2maudeStr [Regulative {..}]
   where
-    rlabel = Just (undefined, undefined, "rule")
+    rlabel = Just ("§", 1, "START")
     rkeyword = RParty
-    subj = undefined
+    subj = Leaf ((MTT "actor" :| [], Nothing) :| [])
     deontic = DMust
-    action = undefined
-    temporal = Just (TemporalConstraint undefined undefined undefined)
-    hence = Nothing
+    action = Leaf ((MTT "action" :| [], Nothing) :| [])
+    temporal = Just (TemporalConstraint TBefore (Just 5) "day")
+    hence = Just (RuleAlias [MTT "rule0", MTT "and", MTT "rule1"])
     lest = Nothing
 
+    -- The remaining fields aren't used and hence don't matter.
     given = Nothing
     having = Nothing
     who = Nothing
@@ -100,25 +70,49 @@ test = rules2maudeStr [ Regulative {..} ]
     defaults = []
     symtab = []
 
--- Utilities.
+-- This function is still a work in progress.
+rule2doc :: Rule -> Doc ann
+rule2doc
+  Regulative
+    { rlabel = Just (_, _, ruleName),
+      rkeyword = RParty,
+      subj = Leaf ((MTT actorName :| [], _) :| []),
+      deontic,
+      action = Leaf ((MTT actionName :| [], _) :| []),
+      temporal = Just (TemporalConstraint TBefore (Just n) (T.toLower -> "day")),
+      hence,
+      lest
+    } =
+    [ ["RULE", pretty2Qid ruleName],
+      ["PARTY", pretty2Qid actorName],
+      [deontic2str deontic, "DO", pretty2Qid actionName],
+      ["WITHIN", pretty n, "DAY"],
+      [hencelest2str hence],
+      [hencelest2str lest]
+    ]
+    |> foldMapWithNewLines @1 hsep
+    where
+      deontic2str DMust = "MUST"
+      deontic2str DMay = "MAY"
+      deontic2str DShant = "SHANT"
+      pretty2Qid x = x |> pretty |> ("'" <>)
 
-newtype CatWithNewLines :: Nat -> Type -> Type where
-  CatWithNewLines :: Doc ann -> CatWithNewLines n ann
+rule2doc _ = "Not supported."
 
-instance
-  Semigroup (CatWithNewLines n ann) =>
-  Monoid (CatWithNewLines n ann)
+rules2doc :: Foldable t => t Rule -> Doc ann
+rules2doc rules = rules |> foldMapWithNewLines @2 rule2doc
+
+rules2maudeStr :: Foldable t => t Rule -> String
+rules2maudeStr rules = rules |> rules2doc |> show
+
+hencelest2str :: Maybe Rule -> Doc ann
+hencelest2str hence = hence |> maybe "NOTHING" f
   where
-    mempty = CatWithNewLines ""
-
-instance Semigroup (CatWithNewLines 0 ann) where
-  (<>) = catWithNewLines 0
-
-instance Semigroup (CatWithNewLines 1 ann) where
-  (<>) = catWithNewLines 1
-
-instance Semigroup (CatWithNewLines 2 ann) where
-  (<>) = catWithNewLines 2
+    f (RuleAlias hence') = hence' <&> quotOrUpper |> hsep
+    f _ = ""
+    quotOrUpper (MTT (T.toLower -> "and")) = "AND"
+    quotOrUpper (MTT x) = x |> pretty |> ("'" <>)
+    quotOrUpper _ = ""
 
 foldMapWithNewLines ::
   forall n a ann t.
@@ -143,3 +137,18 @@ catWithNewLines n x y = [x', lines', y'] |> mconcat |> coerce
     lines' = line |> replicate n |> mconcat
     coerce2doc :: CatWithNewLines n ann -> Doc ann
     coerce2doc = coerce
+
+-- Boring utilities below.
+newtype CatWithNewLines (n :: Nat) ann = CatWithNewLines (Doc ann)
+
+instance
+  Semigroup (CatWithNewLines n ann) =>
+  Monoid (CatWithNewLines n ann)
+  where
+    mempty = CatWithNewLines ""
+
+instance Semigroup (CatWithNewLines 1 ann) where
+  (<>) = catWithNewLines 1
+
+instance Semigroup (CatWithNewLines 2 ann) where
+  (<>) = catWithNewLines 2

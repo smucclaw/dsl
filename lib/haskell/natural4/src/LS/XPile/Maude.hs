@@ -87,8 +87,8 @@ rule2doc
       ["PARTY", pretty2Qid actorName],
       [deontic2str deontic, "DO", pretty2Qid actionName],
       ["WITHIN", pretty n, "DAY"],
-      [hencelest2str hence],
-      [hencelest2str lest]
+      [henceLest2maudeStr hence],
+      [henceLest2maudeStr lest]
     ]
     |> foldMapWithNewLines @1 hsep
     where
@@ -107,8 +107,8 @@ pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
-hencelest2str :: Maybe Rule -> Doc ann
-hencelest2str hence = hence |> maybe "NOTHING" f
+henceLest2maudeStr :: Maybe Rule -> Doc ann
+henceLest2maudeStr hence = hence |> maybe "NOTHING" f
   where
     f (RuleAlias hence') = hence' <&> quotOrUpper |> hsep
     f _ = ""

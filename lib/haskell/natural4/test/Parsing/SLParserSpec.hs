@@ -304,8 +304,7 @@ parserTests  = do
       filetest "inline-1-l" "line crossing" pInline1 (
         const [DefTypically { name = [MTT "disposal"]
                             , defaults = [RPConstraint [MTT "disposal"] RPis [MTB True]]
-                            , srcref = Just (SrcRef { url = "test/Spec", short = "test/Spec"
-                                                    , srcrow = 3, srccol = 8, version = Nothing})}]
+                            , srcref = mkTestSrcRef 3 8}]
           <$> inline_1)
       filetest "inline-1-m" "line crossing" pInline1 inline_1
       filetest "inline-1-n" "line crossing" pInline1 inline_2

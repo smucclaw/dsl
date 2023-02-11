@@ -112,8 +112,8 @@ parserTests  = do
             , upon = Nothing
             , clauses = [ HC
                           { hHead = RPBoolStructR [MTT "degustates"]
-                                    RPis (Any Nothing [mkLeaf (mkRpmt ["eats"])
-                                                      ,mkLeaf (mkRpmt ["drinks"])])
+                                    RPis (Any Nothing [mkLeafR "eats"
+                                                      ,mkLeafR "drinks"])
                           , hBody = Nothing } ]
             }
 
@@ -135,8 +135,8 @@ parserTests  = do
                 Just
                   ( All
                       Nothing
-                      [ mkLeaf (mkRpmt ["walks"]),
-                        mkLeaf (mkRpmt ["degustates"])
+                      [ mkLeafR "walks",
+                        mkLeafR "degustates"
                       ]
                   ),
               cond = Nothing,
@@ -169,8 +169,8 @@ parserTests  = do
                           RPis
                           ( Any
                               Nothing
-                              [ mkLeaf (mkRpmt ["eats"]),
-                                mkLeaf (mkRpmt ["imbibes"])
+                              [ mkLeafR "eats",
+                                mkLeafR "imbibes"
                               ]
                           ),
                       hBody = Nothing
@@ -193,8 +193,8 @@ parserTests  = do
                 Just
                   ( All
                       Nothing
-                      [ mkLeaf (mkRpmt ["walks"]),
-                        mkLeaf (mkRpmt ["degustates"])
+                      [ mkLeafR "walks",
+                        mkLeafR "degustates"
                       ]
                   ),
               cond = Nothing,
@@ -227,11 +227,11 @@ parserTests  = do
                           RPis
                           ( All
                               Nothing
-                              [ mkLeaf (mkRpmt ["drinks"]),
+                              [ mkLeafR "drinks",
                                 Any
                                   Nothing
-                                  [ mkLeaf (mkRpmt ["swallows"]),
-                                    mkLeaf (mkRpmt ["spits"])
+                                  [ mkLeafR "swallows",
+                                    mkLeafR "spits"
                                   ]
                               ]
                           ),
@@ -258,8 +258,8 @@ parserTests  = do
                           RPis
                           ( Any
                               Nothing
-                              [ mkLeaf (mkRpmt ["eats"]),
-                                mkLeaf (mkRpmt ["imbibes"])
+                              [ mkLeafR "eats",
+                                mkLeafR "imbibes"
                               ]
                           ),
                       hBody = Nothing

@@ -52,7 +52,7 @@ parserTests  = do
                 upon = Nothing,
                 clauses =
                   [ HC
-                      { hHead = RPBoolStructR [MTT "something"] RPis (mkLeaf (RPMT [MTT "something"])),
+                      { hHead = RPBoolStructR [MTT "something"] RPis (mkLeafR "something"),
                         hBody = Nothing
                       }
                   ],
@@ -112,8 +112,8 @@ parserTests  = do
             , upon = Nothing
             , clauses = [ HC
                           { hHead = RPBoolStructR [MTT "degustates"]
-                                    RPis (Any Nothing [mkLeaf (RPMT [MTT "eats"])
-                                                      ,mkLeaf (RPMT [MTT "drinks"])])
+                                    RPis (Any Nothing [mkLeaf (mkRpmt ["eats"])
+                                                      ,mkLeaf (mkRpmt ["drinks"])])
                           , hBody = Nothing } ]
             }
 
@@ -135,8 +135,8 @@ parserTests  = do
                 Just
                   ( All
                       Nothing
-                      [ mkLeaf (RPMT [MTT "walks"]),
-                        mkLeaf (RPMT [MTT "degustates"])
+                      [ mkLeaf (mkRpmt ["walks"]),
+                        mkLeaf (mkRpmt ["degustates"])
                       ]
                   ),
               cond = Nothing,
@@ -169,8 +169,8 @@ parserTests  = do
                           RPis
                           ( Any
                               Nothing
-                              [ mkLeaf (RPMT [MTT "eats"]),
-                                mkLeaf (RPMT [MTT "imbibes"])
+                              [ mkLeaf (mkRpmt ["eats"]),
+                                mkLeaf (mkRpmt ["imbibes"])
                               ]
                           ),
                       hBody = Nothing
@@ -193,8 +193,8 @@ parserTests  = do
                 Just
                   ( All
                       Nothing
-                      [ mkLeaf (RPMT [MTT "walks"]),
-                        mkLeaf (RPMT [MTT "degustates"])
+                      [ mkLeaf (mkRpmt ["walks"]),
+                        mkLeaf (mkRpmt ["degustates"])
                       ]
                   ),
               cond = Nothing,
@@ -227,11 +227,11 @@ parserTests  = do
                           RPis
                           ( All
                               Nothing
-                              [ mkLeaf (RPMT [MTT "drinks"]),
+                              [ mkLeaf (mkRpmt ["drinks"]),
                                 Any
                                   Nothing
-                                  [ mkLeaf (RPMT [MTT "swallows"]),
-                                    mkLeaf (RPMT [MTT "spits"])
+                                  [ mkLeaf (mkRpmt ["swallows"]),
+                                    mkLeaf (mkRpmt ["spits"])
                                   ]
                               ]
                           ),
@@ -258,8 +258,8 @@ parserTests  = do
                           RPis
                           ( Any
                               Nothing
-                              [ mkLeaf (RPMT [MTT "eats"]),
-                                mkLeaf (RPMT [MTT "imbibes"])
+                              [ mkLeaf (mkRpmt ["eats"]),
+                                mkLeaf (mkRpmt ["imbibes"])
                               ]
                           ),
                       hBody = Nothing
@@ -285,12 +285,12 @@ parserTests  = do
                           , who = Just
                             ( All Nothing
                               [ Leaf
-                                ( RPMT [MTT "walks"] )
+                                ( mkRpmt ["walks"] )
                               , Any Nothing
                                 [ Leaf
-                                  ( RPMT [MTT "eats"])
+                                  ( mkRpmt ["eats"])
                                 , Leaf
-                                  ( RPMT [MTT "drinks"] )
+                                  ( mkRpmt ["drinks"] )
                                 ]
                               ]
                             )

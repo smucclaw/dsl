@@ -25,15 +25,13 @@ import Test.Hspec.Megaparsec (shouldParse)
 scenario1 :: Rule
 scenario1 = Scenario
     { scgiven =
-        [ RPMT
-            [ MTT "the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"
-            ],
-          RPMT (MTT <$> [ "loss of storage medium on which personal data is stored in circumstances where the unauthorised",
-                          "disposal",
-                          "of the personal data is likely to occur"]),
-          RPMT [MTT "the data breach occurred only within an organisation"]
+        [ mkRpmt ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
+          mkRpmt [ "loss of storage medium on which personal data is stored in circumstances where the unauthorised",
+                    "disposal",
+                    "of the personal data is likely to occur"],
+          mkRpmt ["the data breach occurred only within an organisation"]
         ],
-      expect = [ExpRP (RPMT $ MTT <$> ["IT IS", "not", "A Notifiable Data Breach"])],
+      expect = [ExpRP (mkRpmt ["IT IS", "not", "A Notifiable Data Breach"])],
       rlabel = Just ("SCENARIO", 1, "Misplaced storage drive"),
       lsource = Nothing,
       srcref = Nothing,
@@ -45,16 +43,16 @@ scenario2a :: Rule
 scenario2a = Scenario
     { scgiven =
         [ RPConstraint [MTT "Organisation's name"] RPis [MTT "ABC"],
-          RPMT $ MTT <$> ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
-          RPMT $ MTT <$> ["unauthorised", "disclosure", "of personal data", "occurred"],
-          RPMT $ MTT <$> ["not", "the data breach occurred only within an organisation"],
-          RPMT $ MTT <$> ["the data breach relates to", "the individual's", "full name"],
-          RPMT $ MTT <$> ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."]
+          mkRpmt ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
+          mkRpmt ["unauthorised", "disclosure", "of personal data", "occurred"],
+          mkRpmt ["not", "the data breach occurred only within an organisation"],
+          mkRpmt ["the data breach relates to", "the individual's", "full name"],
+          mkRpmt ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."]
         ],
       expect =
-        [ ExpRP (RPMT $ MTT <$> ["IT IS", "A Notifiable Data Breach"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify PDPC"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify Affected Individuals"])
+        [ ExpRP (mkRpmt ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify PDPC"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify Affected Individuals"])
         ],
       rlabel = Just ("SCENARIO", 1, "Data breach involving multiple organisations for ABC"),
       lsource = Nothing,
@@ -67,17 +65,17 @@ scenario2b :: Rule
 scenario2b = Scenario
     { scgiven =
         [ RPParamText ((MTT "Organisation's name" :| [], Just (InlineEnum TOne ((MTT <$> "DEF" :| ["GHI"], Nothing) :| []))) :| []),
-          RPMT $ MTT <$> ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
-          RPMT $ MTT <$> ["unauthorised", "disclosure", "of personal data", "occurred"],
-          RPMT $ MTT <$> ["not", "the data breach occurred only within an organisation"],
-          RPMT $ MTT <$> ["the data breach relates to", "the individual's", "full name"],
-          RPMT $ MTT <$> ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."],
-          RPMT $ MTT <$> ["PDPC instructs you not to notify them"]
+          mkRpmt ["the data breach is in relation to any prescribed personal data or class of personal data relating to the individual"],
+          mkRpmt ["unauthorised", "disclosure", "of personal data", "occurred"],
+          mkRpmt ["not", "the data breach occurred only within an organisation"],
+          mkRpmt ["the data breach relates to", "the individual's", "full name"],
+          mkRpmt ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."],
+          mkRpmt ["PDPC instructs you not to notify them"]
         ],
       expect =
-        [ ExpRP (RPMT $ MTT <$> ["IT IS", "A Notifiable Data Breach"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify PDPC"]),
-          ExpRP (RPMT $ MTT <$> ["not", "Organisation", "must", "notify Affected Individuals"])
+        [ ExpRP (mkRpmt ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify PDPC"]),
+          ExpRP (mkRpmt ["not", "Organisation", "must", "notify Affected Individuals"])
         ],
       rlabel = Just ("SCENARIO", 1, "Data breach involving multiple organisations for DEF and GHI"),
       lsource = Nothing,
@@ -90,17 +88,15 @@ scenario3 :: Rule
 scenario3 = Scenario
     { scgiven =
         [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTN 50],
-          RPMT $ MTT <$> ["unauthorised", "access", "of personal data", "occurred"],
-          RPMT $ MTT <$> ["the data breach relates to", "the individual's", "identification number"],
-          RPMT $ MTT <$> [ "the data breach relates to",
-                            "The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:",
-                            "any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"
-                         ]
-        ],
+          mkRpmt ["unauthorised", "access", "of personal data", "occurred"],
+          mkRpmt ["the data breach relates to", "the individual's", "identification number"],
+          mkRpmt [ "the data breach relates to",
+                    "The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:",
+                    "any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"]],
       expect =
-        [ ExpRP (RPMT $ MTT <$> ["IT IS", "A Notifiable Data Breach"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify PDPC"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify Affected Individuals"])
+        [ ExpRP (mkRpmt ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify PDPC"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify Affected Individuals"])
         ],
       rlabel = Just ("SCENARIO", 1, "Unauthorised access of patients\8217 medical records"),
       lsource = Nothing,
@@ -113,19 +109,18 @@ scenario4 :: Rule
 scenario4 = Scenario
     { scgiven =
         [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTN 1000],
-          RPMT $ MTT <$> ["unauthorised", "access", "of personal data", "occurred"],
-          RPMT $ MTT <$> ["the data breach relates to", "the individual's", "full name"],
-          RPMT $ MTT <$> [ "the data breach relates to",
-                            "the individual's",
-                            "identification number",
-                            "any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"
-                          ],
-          RPMT $ MTT <$> ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."]
+          mkRpmt ["unauthorised", "access", "of personal data", "occurred"],
+          mkRpmt ["the data breach relates to", "the individual's", "full name"],
+          mkRpmt [ "the data breach relates to",
+                    "the individual's",
+                    "identification number",
+                    "any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;"],
+          mkRpmt ["the data breach relates to", "The number of any credit card, charge card or debit card issued to or in the name of the individual."]
         ],
       expect =
-        [ ExpRP (RPMT $ MTT <$> ["IT IS", "A Notifiable Data Breach"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify PDPC"]),
-          ExpRP (RPMT $ MTT <$> ["Organisation", "must", "notify Affected Individuals"])
+        [ ExpRP (mkRpmt ["IT IS", "A Notifiable Data Breach"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify PDPC"]),
+          ExpRP (mkRpmt ["Organisation", "must", "notify Affected Individuals"])
         ],
       rlabel = Just ("SCENARIO", 1, "Theft of portable storage drive containing hotel guests\8217 details"),
       lsource = Nothing,
@@ -249,7 +244,7 @@ parserTests nlgEnv = do
 
       texttest "EXPECT,IT IS,A Notifiable Data Breach," "unit test 1 for scenarios"
         (parseOther pExpect )
-        ( ExpRP (RPMT $ MTT <$> ["IT IS","A Notifiable Data Breach"])
+        ( ExpRP (mkRpmt ["IT IS","A Notifiable Data Breach"])
         , []
         )
 
@@ -257,7 +252,7 @@ parserTests nlgEnv = do
         (parseOther pExpect)
         ( ExpRP (RPBoolStructR
                  [] RPis
-                 (Not (mkLeaf (RPMT $ MTT <$> ["IT IS","A Notifiable Data Breach"]))))
+                 (Not (mkLeaf (mkRpmt ["IT IS","A Notifiable Data Breach"]))))
         , []
         )
 
@@ -265,7 +260,7 @@ parserTests nlgEnv = do
         (parseOther pGivens )
         (  [RPBoolStructR
                  [] RPis
-                 (Not (mkLeaf (RPMT $ MTT <$> ["IT IS","A Notifiable Data Breach"])))]
+                 (Not (mkLeaf (mkRpmt ["IT IS","A Notifiable Data Breach"])))]
         , []
         )
 
@@ -277,7 +272,7 @@ parserTests nlgEnv = do
 
       xtexttest "EXPECT,,Organisation,,MUST,,notify PDPC,,,," "unit test EXPECT ... MUST"
         (parseOther pExpect )
-        ( ExpRP (RPMT $ MTT <$> ["Organisation","MUST","notify PDPC"])
+        ( ExpRP (mkRpmt ["Organisation","MUST","notify PDPC"])
         , []
         )
 

@@ -35,8 +35,8 @@ parserTests  = do
             { name = [MTT "Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (RPMT [MTT "Bob is estranged"])
-                                                                                          ,mkLeaf (RPMT [MTT "Bob is dead"])]))
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (mkRpmt ["Bob is estranged"])
+                                                                                          ,mkLeaf (mkRpmt ["Bob is dead"])]))
                    , hBody = Nothing}]
             , srcref = mkTestSrcRef 1 1 }
 
@@ -47,8 +47,8 @@ parserTests  = do
 
       let bobUncle2 = bobUncle1
             { clauses =
-              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (RPMT [MTT "Bob is estranged"]))
-                                                                                  ,mkLeaf (RPMT [MTT "Bob is dead"])])
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (mkRpmt ["Bob is estranged"]))
+                                                                                  ,mkLeaf (mkRpmt ["Bob is dead"])])
                    , hBody = Nothing } ] }
 
       filetest "bob-head-2" "handle less indentation"
@@ -66,13 +66,13 @@ parserTests  = do
                                            ( All Nothing
                                              [ Any Nothing
                                                [ Leaf
-                                                 ( RPMT [ MTT "Bob is your mother's brother" ] )
+                                                 ( mkRpmt ["Bob is your mother's brother"] )
                                                , Leaf
-                                                 ( RPMT [ MTT "Bob is your father's brother" ] )
+                                                 ( mkRpmt ["Bob is your father's brother"] )
                                                ]
                                              , Not
                                                ( Leaf
-                                                 ( RPMT [ MTT "Bob is just a family friend" ] )
+                                                 ( mkRpmt ["Bob is just a family friend"] )
                                                )
                                              ]
                                            )

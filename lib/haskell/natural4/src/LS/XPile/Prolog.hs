@@ -92,8 +92,8 @@ describeParent _st tname parent =
 
 varmt :: MTExpr -> Term
 varmt (MTT t) = var (Text.unpack t)
-varmt (MTB b) = error $ "you shouldn't varmt a boolean! " ++ show b
-varmt (MTN n) = error $ "you shouldn't varmt a number! "  ++ show n
+varmt (MTB b) = var (show b)
+varmt (MTN n) = var (show n)
 
 vart, vartl, vartu :: Text.Text -> Term
 vart  = var  . Text.unpack

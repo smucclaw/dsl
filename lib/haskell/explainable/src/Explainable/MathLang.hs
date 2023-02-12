@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiWayIf #-}
 
-module MathLang where
+module Explainable.MathLang where
 
 import qualified Data.Map as Map
 import Control.Monad.State (liftIO)
@@ -74,6 +74,22 @@ x |/ y = MathBin Divide x y
 infix 5 |*, |/
 infix 4 |+, |-
 
+-- | fmap.
+-- 
+-- In Haskell, we would say @(+2) <$> [1,2,3]@
+--
+-- Here, we would say @2 +| [1,2,3]@
+--
+-- But this is crude. There's an alternative way to say it, using MathSections in an ExprList.
+
+(+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> ExplainableIO r MyState [Float]
+x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Plus   x) ys
+x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Minus  x) ys
+x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Times  x) ys
+x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Divide x) ys
+
+-- ** Function Sections and infrastructure for folds
+
 -- | a function section is a unary math operator constructed from partial application of a binary.
 -- for example, if we wanted to do a Haskell @(2*)@ we would say @MathSection Times (Val 2)@
 data MathSection a
@@ -90,17 +106,6 @@ data SomeFold = FoldSum      -- ^ by taking the sum
               | FoldMax      -- ^ by taking the maximum
               | FoldMin      -- ^ by taking the minimum
               deriving (Eq, Show)
-
--- | fmap.
--- 
--- In Haskell, we would say @(+2) <$> [1,2,3]@
---
--- Here, we would say @2 +| [1,2,3]@
-(+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> Explainable r MyState [Float]
-x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Plus   x) ys
-x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Minus  x) ys
-x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Times  x) ys
-x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Divide x) ys
 
 -- ** Lists
 
@@ -185,16 +190,11 @@ data Var a
   | VarPred String (Pred a)
     deriving (Eq, Show)
 
--- | Prepend some string to the path part of the @Reader ((history,path),r)@.
--- So that any code that wants to know what its call stack looks like can consult "path"
-retitle :: String -> Explainable r MyState a -> Explainable r MyState a
-retitle str = local (first (fmap (str:)))
-
 -- * Evaluations
 
 -- | Evaluate floats
 
-eval :: Expr Float -> Explainable r MyState Float
+eval :: Expr Float -> ExplainableIO r MyState Float
 eval (Val x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
@@ -229,7 +229,7 @@ eval (ListFold FoldSum     xs) = doFold "sum" sum xs
 eval (ListFold FoldProduct xs) = doFold "product" product xs                              
 
 -- | do a fold over an `ExprList`
-doFold :: String -> ([Float] -> Float) -> ExprList Float -> Explainable r MyState Float
+doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
 doFold str f xs = retitle ("listfold " <> str) $ do
   (MathList yvals,yexps) <- evalList xs
   zs <- mapM eval yvals
@@ -240,7 +240,7 @@ doFold str f xs = retitle ("listfold " <> str) $ do
            (yexps : (snd <$> zs)))
   
 -- | helper function, Unary evaluation of an `Expr` `Float` to some `Float`
-unaEval :: String -> (Float -> Float) -> Expr Float -> Explainable r MyState Float
+unaEval :: String -> (Float -> Float) -> Expr Float -> ExplainableIO r MyState Float
 unaEval title f x =
   let (lhs,_rhs) = verbose title
   in retitle title $ do
@@ -249,7 +249,7 @@ unaEval title f x =
     return (toreturn, Node ([], [show toreturn ++ ": " ++ lhs]) [xpl])
 
 -- | helper function, Binary evaluation
-binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> Explainable r MyState Float
+binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> ExplainableIO r MyState Float
 binEval title f x y = retitle title $ do
   -- liftIO putStrLn should be treated as more of a Debug.Trace.
   -- "normal" output gets returned in the fst part of the Node.
@@ -266,7 +266,7 @@ binEval title f x y = retitle title $ do
 
 -- | Evaluate predicates
 
-evalP :: Pred Float -> Explainable r MyState Bool
+evalP :: Pred Float -> ExplainableIO r MyState Bool
 evalP (PredVal x) = do
   return (x, Node ([],[show x ++ ": a leaf value"]) [])
 evalP (PredNot x) = do
@@ -306,11 +306,11 @@ evalP (PredITE p x y) = evalFP evalP p x y
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
 -- This works for both boolean Predicates and float Exprs.
 evalFP :: Show t
-       => (t -> Explainable r MyState a)
+       => (t -> ExplainableIO r MyState a)
        -> Pred Float
        -> t
        -> t
-       -> Explainable r MyState a
+       -> ExplainableIO r MyState a
 evalFP evf p x y = retitle "if-then-else" $ do
   (pval,pxpl) <- evalP p
   if pval
@@ -323,7 +323,7 @@ evalFP evf p x y = retitle "if-then-else" $ do
 
 -- | Evaluate an `ExprList`
 
-evalList :: ExprList Float -> Explainable r MyState (ExprList Float)
+evalList :: ExprList Float -> ExplainableIO r MyState (ExprList Float)
 evalList (MathList a) = return (MathList a, Node (show <$> a,["base MathList with " ++ show (length a) ++ " elements"]) [])
 evalList (ListFilt x comp (MathList ys)) = do
   origs <- mapM eval ys
@@ -368,7 +368,7 @@ evalList (ListMapIf (MathSection binop x) c comp ylist) = retitle "fmap mathsect
 -- | deepEvalList means we reduce the `ExprList` to a plain haskell list of floats.
 -- I supposed this is analogous to "unboxed" types.
 
-deepEvalList :: (ExprList Float,XP) -> Explainable r MyState [Float]
+deepEvalList :: (ExprList Float,XP) -> ExplainableIO r MyState [Float]
 deepEvalList (MathList xs,xp) = do
   vals <- mapM eval xs
   return (fst <$> vals, Node ([],["deep evaluation to floats"]) (xp : (snd <$> vals)))
@@ -380,14 +380,14 @@ deepEvalList (other,_xp) = deepEvalList =<< evalList other
 
 -- | Get an @Expr Float@ variable
 
-getvarF :: String -> Explainable r MyState (Expr Float)
+getvarF :: String -> ExplainableIO r MyState (Expr Float)
 getvarF x = do
   symtab <- gets symtabF
   return (symtab Map.! x, Node ([show $ symtab Map.! x], ["looked up " ++ x]) [])
 
 -- | Get a @Pred Float@ variable
   
-getvarP :: String -> Explainable r MyState (Pred Float)
+getvarP :: String -> ExplainableIO r MyState (Pred Float)
 getvarP x = do
   symtab <- gets symtabP
   return (symtab Map.! x, Node ([show $ symtab Map.! x], ["looked up " ++ x]) [])

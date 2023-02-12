@@ -28,7 +28,9 @@ resolver: lts-20.2
 #   - auto-update
 #   - wai
 packages:
+- ../explainable
 - .
+
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:

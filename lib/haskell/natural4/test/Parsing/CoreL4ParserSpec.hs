@@ -470,7 +470,7 @@ parserTests  = do
               },
             HC
               { hHead = RPConstraint (MTT <$> ["p", "investment"]) RPis [MTT "combination"],
-                hBody = Just (mkLeaf (RPMT [MTT "OTHERWISE"]))
+                hBody = Just (mkLeafR "OTHERWISE")
               },
             HC
               { hHead = RPConstraint (MTT <$> ["p", "minSavings"]) RPis [MTT "p's dependents", MTT "*", MTN 5000],
@@ -482,7 +482,7 @@ parserTests  = do
               },
             HC
               { hHead = RPConstraint (MTT <$> ["p", "savingsAccount"]) RPis [MTT "inadequate"],
-                hBody = Just (mkLeaf (RPMT [MTT "OTHERWISE"]))
+                hBody = Just (mkLeafR "OTHERWISE")
               },
             HC
               { hHead = RPConstraint (MTT <$> ["p", "minIncome"]) RPis [MTT "15000 + 4000 * p's dependents"],

@@ -12,11 +12,12 @@ flipPolarity (GMkVPS temp GPOS vp) = GMkVPS temp GNEG vp
 flipPolarity (GMkVPS temp GNEG vp) = GMkVPS temp GPOS vp
 flipPolarity x = composOp flipPolarity x
 
-type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPre)) a
 
-type BoolStructWho = BoolStructGF GWho
-type BoolStructCond = BoolStructGF GCond
-type BoolStructConstraint = BoolStructGF GConstraint
+type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPrePost)) (Tree a)
+
+type BoolStructWho = BoolStructGF GWho_  -- have to use underscore versions because of flipPolarity
+type BoolStructCond = BoolStructGF GCond_
+type BoolStructConstraint = BoolStructGF GConstraint_
 
 bsNeg2textNeg :: (Gf (Tree a)) => AA.BoolStruct b (Tree a) -> AA.BoolStruct b (Tree a)
 bsNeg2textNeg bs = case bs of
@@ -31,36 +32,39 @@ bsNeg2textNeg bs = case bs of
 -- inverse:
 -- textNeg2bsNeg :: BoolStructWho -> BoolStructWho
 
-bsWho2gfWho :: BoolStructWho -> GWho
-bsWho2gfWho bs = case bs' of
+-----------------------------------------------------------------------------
+
+-- This is rather hard to read, but the alternative is to duplicate bs2gf for every single GF category
+
+type ConjFun list single = GConj -> Tree list -> Tree single
+type ConjPreFun list single = GPrePost -> GConj -> Tree list -> Tree single
+type ConjPrePostFun list single = GPrePost -> GPrePost -> GConj -> Tree list -> Tree single
+type ListFun single list = [Tree single] -> Tree list
+
+bs2gf :: (Gf (Tree s)) => ConjFun l s -> ConjPreFun l s -> ConjPrePostFun l s -> ListFun s l -> BoolStructGF s -> Tree s
+bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.Leaf x -> x
-    AA.Any _ xs -> GConjWho GOR $ GListWho $ bsWho2gfWho <$> xs
-    AA.All _ xs -> GConjWho GAND $ GListWho $ bsWho2gfWho <$> xs
-    AA.Not _ -> error $ "bsWho2gfWho: not expecting NOT in " <> show bs'
+    AA.Any Nothing xs -> conj GOR $ mkList $ f <$> xs
+    AA.All Nothing xs -> conj GAND $ mkList $ f <$> xs
+    AA.Any (Just (AA.Pre pre)) xs -> conjPre pre GOR $ mkList $ f <$> xs
+    AA.All (Just (AA.Pre pre)) xs -> conjPre pre GAND $ mkList $ f <$> xs
+    AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
+    AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GAND $ mkList $ f <$> xs
+    AA.Not _ -> error $ "bs2gf: not expecting NOT in " <> show bs'
   where 
+    f = bs2gf conj conjPre conjPrePost mkList
     bs' = bsNeg2textNeg bs
+
+bsWho2gfWho :: BoolStructWho -> GWho
+bsWho2gfWho = bs2gf GConjWho GConjPreWho GConjPrePostWho GListWho
 
 bsCond2gfCond :: BoolStructCond -> GCond
-bsCond2gfCond bs = case bs' of
-    AA.Leaf x -> x
-    AA.Any _ xs -> GConjCond GOR $ GListCond $ bsCond2gfCond <$> xs
-    AA.All _ xs -> GConjCond GAND $ GListCond $ bsCond2gfCond <$> xs
-    AA.Not _ -> error $ "bsCond2gfCond: not expecting NOT in " <> show bs'
-  where 
-    bs' = bsNeg2textNeg bs
+bsCond2gfCond = bs2gf GConjCond GConjPreCond GConjPrePostCond GListCond 
 
 bsConstraint2gfConstraint :: BoolStructConstraint -> GConstraint
-bsConstraint2gfConstraint bs = case bs' of
-    AA.Leaf x -> x
-    AA.Any Nothing xs -> GConjConstraint GOR $ GListConstraint $ bsConstraint2gfConstraint <$> xs
-    AA.All Nothing xs -> GConjConstraint GAND $ GListConstraint $ bsConstraint2gfConstraint <$> xs
-    AA.Any (Just (AA.Pre pre)) xs -> GConjPreConstraint pre GOR $ GListConstraint $ bsConstraint2gfConstraint <$> xs
-    AA.All (Just (AA.Pre pre)) xs -> GConjPreConstraint pre GAND $ GListConstraint $ bsConstraint2gfConstraint <$> xs
-    AA.Any (Just (AA.PrePost pre post)) xs -> GConjPrePostConstraint pre post GOR $ GListConstraint $ bsConstraint2gfConstraint <$> xs
-    AA.All (Just (AA.PrePost pre post)) xs -> GConjPrePostConstraint pre post GAND $ GListConstraint $ bsConstraint2gfConstraint <$> xs
-    AA.Not _ -> error $ "bsConstraint2gfConstraint: not expecting NOT in " <> show bs'
-  where 
-    bs' = bsNeg2textNeg bs
+bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePostConstraint GListConstraint 
+
+-----------------------------------------------------------------------------
 
 mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe (AA.Label a)) c ->  AA.BoolStruct (Maybe (AA.Label b)) d
 mapBSLabel f g bs = case bs of 
@@ -70,7 +74,7 @@ mapBSLabel f g bs = case bs of
     AA.Not x -> AA.Not $ mapBSLabel f g x
 
 bsConstraint2questions :: BoolStructConstraint -> BoolStructConstraint
-bsConstraint2questions = mapBSLabel GqPRE GqCONSTR
+bsConstraint2questions = mapBSLabel GqPREPOST GqCONSTR
 
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
 applyLabel f (AA.Pre a) = AA.Pre (f a)

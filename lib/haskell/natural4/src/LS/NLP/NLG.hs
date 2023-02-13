@@ -170,13 +170,13 @@ nlgQuestion env rl = do
 
 -- Special constructions for the fields that are BoolStructR
 parseConstraintBS :: NLGEnv -> BoolStructR -> BoolStructConstraint
-parseConstraintBS env = mapBSLabel (parsePre env) (parseConstraint env)
+parseConstraintBS env = mapBSLabel (parsePrePost env) (parseConstraint env)
 
 parseWhoBS :: NLGEnv -> BoolStructR -> BoolStructWho
-parseWhoBS env = mapBSLabel (parsePre env) (parseWho env)
+parseWhoBS env = mapBSLabel (parsePrePost env) (parseWho env)
 
 parseCondBS :: NLGEnv -> BoolStructR -> BoolStructCond
-parseCondBS env = mapBSLabel (parsePre env) (parseCond env)
+parseCondBS env = mapBSLabel (parsePrePost env) (parseCond env)
 
 -- not really parsing, just converting nL4 constructors to GF constructors
 parseDeontic :: Deontic -> GDeontic
@@ -224,8 +224,8 @@ parseConstraint env rp = let txt = rp2text rp in
     [] -> error $ msg "Constraint" txt
     x:_ -> fg x
 
-parsePre :: NLGEnv -> Text.Text -> GPre
-parsePre env txt = 
+parsePrePost :: NLGEnv -> Text.Text -> GPrePost
+parsePrePost env txt = 
   case parseAny "Pre" env txt of
     [] -> GrecoverUnparsedPre $ GString $ Text.unpack txt
     x:_ -> fg x

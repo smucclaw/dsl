@@ -82,7 +82,16 @@ concrete NL4Eng of NL4 =
       BaseWho = ExtendEng.BaseVPS ;
       ConsWho = ExtendEng.ConsVPS ;
       ConjWho = ExtendEng.ConjVPS ;
-
+      --  : PrePost -> Conj -> [Who] -> Who ;
+      ConjPreWho pr conj cs = ConjPrePostWho pr {s,qs=[]} conj cs ;
+      --  : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
+      ConjPrePostWho pr pst conj cs =
+        let who : Who = ConjWho conj cs ;
+         in who ** {
+              s  = \\o,a =>
+                    let orig : {fin,inf : Str} = who.s ! o ! a
+                     in orig ** {fin = pr.s ++ orig.fin ; inf = orig.inf ++ pst.s}
+            } ;
       -- : Subj -> Who -> Subj ;
       SubjWho subj who = mkNP subj (RelVPS ExtraEng.who_RP who) ;
 
@@ -130,7 +139,7 @@ concrete NL4Eng of NL4 =
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     lincat
-      Pre,  -- "Loss or Damage caused by", "an animal caused water to escape from"
+      PrePost,  -- "Loss or Damage caused by", "an animal caused water to escape from"
 --      IncompleteConstraint,
       Constraint = LinConstraint ;
 --      [IncompleteConstraint],
@@ -149,7 +158,7 @@ concrete NL4Eng of NL4 =
         qs = "Did" ++ npStr np ++ "cause water to escape from"
         } ;
       recoverUnparsedPre string = {
-        s = string.s ; -- if Pre isn't parsed, use the original string
+        s = string.s ; -- if PrePost isn't parsed, use the original string
         qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
         } ;
 
@@ -174,14 +183,24 @@ concrete NL4Eng of NL4 =
       } ;
 
       ConjCond conj cs = {s = ConjS conj cs.s ; qs = lin QS (conjunctDistrTable R.QForm conj cs.qs)} ;
+      --  : PrePost -> Conj -> [Cond] -> Cond ;
+      ConjPreCond pr conj cs = ConjPrePostCond pr {s,qs=[]} conj cs ;
+      --  : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;
+      ConjPrePostCond pr pst conj cs =
+        let cond : Cond = ConjCond conj cs ;
+         in cond ** {
+              s  = lin S {s = pr.s ++ cond.s.s ++ pst.s} ;
+              qs = lin QS {s = \\qf => pr.s ++ cond.qs.s ! qf ++ pst.s ++ "?"} ;
+            } ;
 
       BaseConstraint c d = {s = twoStr c.s d.s ; qs = twoStr c.qs d.qs} ;
       ConsConstraint c d = {s = consrStr comma c.s d.s ; qs = consrStr comma c.qs d.qs} ;
       ConjConstraint conj cs = {s = conjunctDistrX conj cs.s ; qs = conjunctDistrX conj cs.qs} ; 
 
-      --  : Pre -> Conj -> [Constraint] -> Constraint ;
+      --  : PrePost -> Conj -> [Constraint] -> Constraint ;
       ConjPreConstraint pr conj cs = ConjPrePostConstraint pr {s,qs=[]} conj cs ;
 
+      --  : (_,_ : PrePost) -> Conj -> [Constraint] -> Constraint ;
       ConjPrePostConstraint pr pst conj cs =
         let constr : Constraint = ConjConstraint conj cs ;
          in constr ** {
@@ -190,7 +209,7 @@ concrete NL4Eng of NL4 =
             } ;
     -- convert into questions – lincats have fields for question and statement
     -- TODO how about using Question type? or is that only for Regulative rules?
-      qPRE,
+      qPREPOST,
       qCONSTR = \c -> c ** {s = c.qs} ;
 
 

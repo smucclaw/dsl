@@ -26,6 +26,9 @@ abstract NL4 =
       Rule ;
       Question ;
 
+      -- Any structure that is using BoolStruct needs to prepare for PrePost
+      PrePost ; -- "Loss or Damage caused by", "an animal caused water to escape from"
+
       -- Regulative
       Cond ;
       [Cond]{2} ;
@@ -52,8 +55,10 @@ abstract NL4 =
       MUST, MAY, SHANT : Deontic ;
       AND, OR : Conj ;
 
-      ConjWho : Conj -> [Who] -> Who ;
       SubjWho : Subj -> Who -> Subj ;
+      ConjWho : Conj -> [Who] -> Who ;
+      ConjPreWho : PrePost -> Conj -> [Who] -> Who ; -- TODO need to find examples in the wild
+      ConjPrePostWho : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
 
       You : Subj ;
 
@@ -61,6 +66,8 @@ abstract NL4 =
       
       WHEN : NP -> VPS -> Cond ;
       ConjCond : Conj -> [Cond] -> Cond ;
+      ConjPreCond : PrePost -> Conj -> [Cond] -> Cond ; -- TODO need to find examples in the wild
+      ConjPrePostCond : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;
 
 
 -- Time expressions
@@ -81,29 +88,28 @@ abstract NL4 =
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     cat
-      Pre ; -- "Loss or Damage caused by", "an animal caused water to escape from"
       Constraint ; -- TODO don't parse in GF but create GF constructors that correspond to
       [Constraint]{2} ;
     --   IncompleteConstraint ;
     --   [IncompleteConstraint]{2} ;
     fun
-      NP_caused_by_Pre : NP -> Pre ;
-      NP_caused_water_to_escape_from_Pre : NP -> Pre ; -- TODO generalise later
-      recoverUnparsedPre : String -> Pre ; -- Temporary workaround, will fix later
+      NP_caused_by_Pre : NP -> PrePost ;
+      NP_caused_water_to_escape_from_Pre : NP -> PrePost ; -- TODO generalise later
+      recoverUnparsedPre : String -> PrePost ; -- Temporary workaround, will fix later
 
       RPisAdv,   -- damage IS to contents
       RPisnotAdv : NP -> Adv -> Constraint ; 
       RPisAP,    -- damage IS caused by birds
       RPisnotAP : NP -> AP -> Constraint ; -- damage IS not covered
       RPleafS : NP -> VPS -> Constraint ;
-      RPleafNP : NP -> Constraint ; -- to pair with Pre to get a full sentence ???
+      RPleafNP : NP -> Constraint ; -- to pair with PrePost to get a full sentence ???
       ConjConstraint : Conj -> [Constraint] -> Constraint ;
-      ConjPreConstraint : Pre -> Conj -> [Constraint] -> Constraint ;
-      ConjPrePostConstraint : Pre -> Pre -> Conj -> [Constraint] -> Constraint ;
+      ConjPreConstraint : PrePost -> Conj -> [Constraint] -> Constraint ;
+      ConjPrePostConstraint : PrePost -> PrePost -> Conj -> [Constraint] -> Constraint ;
 
     -- convert into questions – lincats have fields for question and statement
     -- TODO how about using Question type? or is that only for Regulative rules?
-      qPRE : Pre -> Pre ;
+      qPREPOST : PrePost -> PrePost ;
       qCONSTR : Constraint -> Constraint ;
 
 -----------------------------------------------------------------------------

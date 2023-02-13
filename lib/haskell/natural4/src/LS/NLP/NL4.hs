@@ -83,8 +83,8 @@ type GNumeral = Tree GNumeral_
 data GNumeral_
 type GPol = Tree GPol_
 data GPol_
-type GPre = Tree GPre_
-data GPre_
+type GPrePost = Tree GPrePost_
+data GPrePost_
 type GPrep = Tree GPrep_
 data GPrep_
 type GQuestion = Tree GQuestion_
@@ -168,13 +168,15 @@ data Tree :: * -> * where
   GCompCN :: GCN -> Tree GComp_
   GCompNP :: GNP -> Tree GComp_
   GConjCond :: GConj -> GListCond -> Tree GCond_
+  GConjPreCond :: GPrePost -> GConj -> GListCond -> Tree GCond_
+  GConjPrePostCond :: GPrePost -> GPrePost -> GConj -> GListCond -> Tree GCond_
   GON :: GCond -> GDate -> Tree GCond_
   GWHEN :: GNP -> GVPS -> Tree GCond_
   GAND :: Tree GConj_
   GOR :: Tree GConj_
   GConjConstraint :: GConj -> GListConstraint -> Tree GConstraint_
-  GConjPreConstraint :: GPre -> GConj -> GListConstraint -> Tree GConstraint_
-  GConjPrePostConstraint :: GPre -> GPre -> GConj -> GListConstraint -> Tree GConstraint_
+  GConjPreConstraint :: GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
+  GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GRPisAP :: GNP -> GAP -> Tree GConstraint_
   GRPisAdv :: GNP -> GAdv -> Tree GConstraint_
   GRPisnotAP :: GNP -> GAP -> Tree GConstraint_
@@ -243,10 +245,10 @@ data Tree :: * -> * where
   Gnum :: GSub1000000 -> Tree GNumeral_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
-  GNP_caused_by_Pre :: GNP -> Tree GPre_
-  GNP_caused_water_to_escape_from_Pre :: GNP -> Tree GPre_
-  GqPRE :: GPre -> Tree GPre_
-  GrecoverUnparsedPre :: GString -> Tree GPre_
+  GNP_caused_by_Pre :: GNP -> Tree GPrePost_
+  GNP_caused_water_to_escape_from_Pre :: GNP -> Tree GPrePost_
+  GqPREPOST :: GPrePost -> Tree GPrePost_
+  GrecoverUnparsedPre :: GString -> Tree GPrePost_
   Gabout_Prep :: Tree GPrep_
   Gby8means_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
@@ -314,6 +316,8 @@ data Tree :: * -> * where
   Gassess :: Tree GVS_
   Gmay_VV :: Tree GVV_
   Gmust_VV :: Tree GVV_
+  GConjPrePostWho :: GPrePost -> GPrePost -> GConj -> GListWho -> Tree GWho_
+  GConjPreWho :: GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjWho :: GConj -> GListWho -> Tree GWho_
   GWHO :: GVPS -> Tree GWho_
   GString :: String -> Tree GString_
@@ -339,6 +343,8 @@ instance Eq (Tree a) where
     (GCompCN x1,GCompCN y1) -> and [ x1 == y1 ]
     (GCompNP x1,GCompNP y1) -> and [ x1 == y1 ]
     (GConjCond x1 x2,GConjCond y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GConjPreCond x1 x2 x3,GConjPreCond y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GConjPrePostCond x1 x2 x3 x4,GConjPrePostCond y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GON x1 x2,GON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GWHEN x1 x2,GWHEN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAND,GAND) -> and [ ]
@@ -416,7 +422,7 @@ instance Eq (Tree a) where
     (GPOS,GPOS) -> and [ ]
     (GNP_caused_by_Pre x1,GNP_caused_by_Pre y1) -> and [ x1 == y1 ]
     (GNP_caused_water_to_escape_from_Pre x1,GNP_caused_water_to_escape_from_Pre y1) -> and [ x1 == y1 ]
-    (GqPRE x1,GqPRE y1) -> and [ x1 == y1 ]
+    (GqPREPOST x1,GqPREPOST y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPre x1,GrecoverUnparsedPre y1) -> and [ x1 == y1 ]
     (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
@@ -485,6 +491,8 @@ instance Eq (Tree a) where
     (Gassess,Gassess) -> and [ ]
     (Gmay_VV,Gmay_VV) -> and [ ]
     (Gmust_VV,Gmust_VV) -> and [ ]
+    (GConjPrePostWho x1 x2 x3 x4,GConjPrePostWho y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (GConjPreWho x1 x2 x3,GConjPreWho y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GWHO x1,GWHO y1) -> and [ x1 == y1 ]
     (GString x, GString y) -> x == y
@@ -565,12 +573,16 @@ instance Gf GComp where
 
 instance Gf GCond where
   gf (GConjCond x1 x2) = mkApp (mkCId "ConjCond") [gf x1, gf x2]
+  gf (GConjPreCond x1 x2 x3) = mkApp (mkCId "ConjPreCond") [gf x1, gf x2, gf x3]
+  gf (GConjPrePostCond x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostCond") [gf x1, gf x2, gf x3, gf x4]
   gf (GON x1 x2) = mkApp (mkCId "ON") [gf x1, gf x2]
   gf (GWHEN x1 x2) = mkApp (mkCId "WHEN") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjCond" -> GConjCond (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "ConjPreCond" -> GConjPreCond (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostCond" -> GConjPrePostCond (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "ON" -> GON (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "WHEN" -> GWHEN (fg x1) (fg x2)
 
@@ -849,21 +861,21 @@ instance Gf GPol where
 
       _ -> error ("no Pol " ++ show t)
 
-instance Gf GPre where
+instance Gf GPrePost where
   gf (GNP_caused_by_Pre x1) = mkApp (mkCId "NP_caused_by_Pre") [gf x1]
   gf (GNP_caused_water_to_escape_from_Pre x1) = mkApp (mkCId "NP_caused_water_to_escape_from_Pre") [gf x1]
-  gf (GqPRE x1) = mkApp (mkCId "qPRE") [gf x1]
+  gf (GqPREPOST x1) = mkApp (mkCId "qPREPOST") [gf x1]
   gf (GrecoverUnparsedPre x1) = mkApp (mkCId "recoverUnparsedPre") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "NP_caused_by_Pre" -> GNP_caused_by_Pre (fg x1)
       Just (i,[x1]) | i == mkCId "NP_caused_water_to_escape_from_Pre" -> GNP_caused_water_to_escape_from_Pre (fg x1)
-      Just (i,[x1]) | i == mkCId "qPRE" -> GqPRE (fg x1)
+      Just (i,[x1]) | i == mkCId "qPREPOST" -> GqPREPOST (fg x1)
       Just (i,[x1]) | i == mkCId "recoverUnparsedPre" -> GrecoverUnparsedPre (fg x1)
 
 
-      _ -> error ("no Pre " ++ show t)
+      _ -> error ("no PrePost " ++ show t)
 
 instance Gf GPrep where
   gf Gabout_Prep = mkApp (mkCId "about_Prep") []
@@ -1167,11 +1179,15 @@ instance Gf GVV where
       _ -> error ("no VV " ++ show t)
 
 instance Gf GWho where
+  gf (GConjPrePostWho x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostWho") [gf x1, gf x2, gf x3, gf x4]
+  gf (GConjPreWho x1 x2 x3) = mkApp (mkCId "ConjPreWho") [gf x1, gf x2, gf x3]
   gf (GConjWho x1 x2) = mkApp (mkCId "ConjWho") [gf x1, gf x2]
   gf (GWHO x1) = mkApp (mkCId "WHO") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostWho" -> GConjPrePostWho (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2,x3]) | i == mkCId "ConjPreWho" -> GConjPreWho (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ConjWho" -> GConjWho (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "WHO" -> GWHO (fg x1)
 
@@ -1249,6 +1265,8 @@ instance Compos Tree where
     GCompCN x1 -> r GCompCN `a` f x1
     GCompNP x1 -> r GCompNP `a` f x1
     GConjCond x1 x2 -> r GConjCond `a` f x1 `a` f x2
+    GConjPreCond x1 x2 x3 -> r GConjPreCond `a` f x1 `a` f x2 `a` f x3
+    GConjPrePostCond x1 x2 x3 x4 -> r GConjPrePostCond `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GON x1 x2 -> r GON `a` f x1 `a` f x2
     GWHEN x1 x2 -> r GWHEN `a` f x1 `a` f x2
     GConjConstraint x1 x2 -> r GConjConstraint `a` f x1 `a` f x2
@@ -1270,7 +1288,7 @@ instance Compos Tree where
     Gnum x1 -> r Gnum `a` f x1
     GNP_caused_by_Pre x1 -> r GNP_caused_by_Pre `a` f x1
     GNP_caused_water_to_escape_from_Pre x1 -> r GNP_caused_water_to_escape_from_Pre `a` f x1
-    GqPRE x1 -> r GqPRE `a` f x1
+    GqPREPOST x1 -> r GqPREPOST `a` f x1
     GrecoverUnparsedPre x1 -> r GrecoverUnparsedPre `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1
     GqUPON x1 x2 -> r GqUPON `a` f x1 `a` f x2
@@ -1315,6 +1333,8 @@ instance Compos Tree where
     GMkVPI x1 -> r GMkVPI `a` f x1
     GMayHave x1 -> r GMayHave `a` f x1
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
+    GConjPrePostWho x1 x2 x3 x4 -> r GConjPrePostWho `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    GConjPreWho x1 x2 x3 -> r GConjPreWho `a` f x1 `a` f x2 `a` f x3
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2
     GWHO x1 -> r GWHO `a` f x1
     GListCond x1 -> r GListCond `a` foldr (a . a (r (:)) . f) (r []) x1

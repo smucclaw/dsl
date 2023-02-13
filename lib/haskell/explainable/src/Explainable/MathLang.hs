@@ -4,29 +4,12 @@
 module Explainable.MathLang where
 
 import qualified Data.Map as Map
-import Control.Monad.State (liftIO)
-import Control.Monad (forM_, when, unless, (>=>))
-import Control.Monad.IO.Class (MonadIO(..))
-import Data.Function ((&))
-import Text.Megaparsec ( choice, many, some, Parsec, MonadParsec(try) )
-import Text.Megaparsec.Char ( numberChar, hspace )
-import Data.List ( sort, isPrefixOf, nub )
-import Text.PrettyPrint.Boxes
-    ( emptyBox, hsep, nullBox, render, vcat, Box )
-import qualified Text.PrettyPrint.Boxes as BX
-import Control.Monad.Combinators.Expr
-import Data.Ord
 import Data.Maybe (mapMaybe)
 import Control.Monad (forM_, mapAndUnzipM)
-import Data.Bifunctor (first, second)
-
-import Explainable
-
-import qualified Data.Tree as DT
 import Control.Monad.Trans.RWS
 import Data.Tree
 import Data.Bifunctor
-
+import Explainable
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:

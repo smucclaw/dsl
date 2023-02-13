@@ -4,29 +4,19 @@
 module Explainable.TaxDSL where
 
 import qualified Data.Map as Map
-import Control.Monad.Trans.State ( gets, State, StateT, evalState, runStateT, modify )
-import Control.Monad.State (liftIO)
-import Control.Monad (forM_, when, unless, (>=>))
-import Control.Monad.IO.Class (MonadIO(..))
-import Data.Function ((&))
-import Text.Megaparsec ( choice, many, some, Parsec, MonadParsec(try) )
-import Text.Megaparsec.Char ( numberChar, hspace )
 import Data.List ( sort, isPrefixOf, nub )
 import Text.PrettyPrint.Boxes
-    ( emptyBox, hsep, nullBox, render, vcat, Box )
+    ( emptyBox, hsep, render, vcat, Box )
 import qualified Text.PrettyPrint.Boxes as BX
-import Control.Monad.Combinators.Expr
-import Data.Ord
-
-import Explainable
-import Explainable.MathLang
-
-import qualified Data.Tree as DT
 import Control.Monad.Trans.RWS
 import Data.Tree
 import Data.Bifunctor
 
-
+import Explainable
+import Explainable.MathLang
+import Control.Monad
+import Control.Monad.State
+import qualified Control.Monad.Trans.State
 
 
 defaultScenario :: Scenario

@@ -20,27 +20,32 @@
 -}
 module LS.XPile.Maude where
 
+import AnyAll (BoolStruct (Leaf))
 import Control.Lens (bimap)
 import Control.Monad (join)
-import Data.Coerce ( coerce )
-import Data.Foldable ( Foldable(foldMap') )
-import Data.List.NonEmpty ( NonEmpty((:|)) )
-import Data.Text qualified as T
-import GHC.TypeLits ( Nat )
-
--- import Data.Text qualified as T
-
-import LS.Types
-    ( Deontic(DShant, DMust, DMay),
-      TemporalConstraint(TemporalConstraint),
-      RegKeywords(RParty), MTExpr (MTT), TComparison (TBefore) )
-import LS.Rule
-    ( Rule(..) )
-import Flow ( (|>) )
-import Prettyprinter
-    ( hsep, line, Doc, Pretty(pretty) )
-import AnyAll (BoolStruct(Leaf))
+import Data.Coerce (coerce)
+import Data.Foldable (Foldable (foldMap'))
 import Data.Functor ((<&>))
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Text qualified as T
+import Flow ((|>))
+import GHC.TypeLits (Nat)
+import LS.Rule
+  ( Rule (..),
+  )
+import LS.Types
+  ( Deontic (DMay, DMust, DShant),
+    MTExpr (MTT),
+    RegKeywords (RParty),
+    TComparison (TBefore),
+    TemporalConstraint (TemporalConstraint),
+  )
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    hsep,
+    line,
+  )
 
 {-
   Based on experiments being run here:
@@ -90,12 +95,11 @@ rule2doc
       [henceLest2maudeStr hence],
       [henceLest2maudeStr lest]
     ]
-    |> foldMapWithNewLines @1 hsep
+      |> foldMapWithNewLines @1 hsep
     where
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
-
 rule2doc _ = "Not supported."
 
 rules2doc :: Foldable t => t Rule -> Doc ann
@@ -148,7 +152,7 @@ instance
   Semigroup (CatWithNewLines n ann) =>
   Monoid (CatWithNewLines n ann)
   where
-    mempty = CatWithNewLines ""
+  mempty = CatWithNewLines ""
 
 instance Semigroup (CatWithNewLines 1 ann) where
   (<>) = catWithNewLines 1

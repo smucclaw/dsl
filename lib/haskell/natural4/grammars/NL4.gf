@@ -89,7 +89,7 @@ abstract NL4 =
     fun
       NP_caused_by_Pre : NP -> Pre ;
       NP_caused_water_to_escape_from_Pre : NP -> Pre ; -- TODO generalise later
-      dummyPre : Pre ; -- Temporary workaround, will fix later
+      recoverUnparsedPre : String -> Pre ; -- Temporary workaround, will fix later
 
       RPisAdv,   -- damage IS to contents
       RPisnotAdv : NP -> Adv -> Constraint ; 
@@ -99,6 +99,7 @@ abstract NL4 =
       RPleafNP : NP -> Constraint ; -- to pair with Pre to get a full sentence ???
       ConjConstraint : Conj -> [Constraint] -> Constraint ;
       ConjPreConstraint : Pre -> Conj -> [Constraint] -> Constraint ;
+      ConjPrePostConstraint : Pre -> Pre -> Conj -> [Constraint] -> Constraint ;
 
     -- convert into questions – lincats have fields for question and statement
     -- TODO how about using Question type? or is that only for Regulative rules?
@@ -110,8 +111,11 @@ abstract NL4 =
 
     fun
     -- must sing
-      person
-       , organisation
+      person : CN ;
+      walk, eat, drink, sing : VP ; -- VP = intransitive verb
+
+    -- PDPA
+      organisation
        , agency
        , explanation
        , inaction
@@ -121,9 +125,7 @@ abstract NL4 =
        : CN ;
       public, notifiable, aware : AP ;
       NDB_Qualification : NP ; 
-      walk, eat, drink, sing : VP ; -- VP = intransitive verb
 
-    -- PDPA
       demand,
       perform,
       become : V2 ;

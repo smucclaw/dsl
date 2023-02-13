@@ -148,7 +148,10 @@ concrete NL4Eng of NL4 =
         s = npStr np ++ "caused water to escape from" ;
         qs = "Did" ++ npStr np ++ "cause water to escape from"
         } ;
-      dummyPre = {s,qs = "DUMMY, FIX LATER"} ;
+      recoverUnparsedPre string = {
+        s = string.s ; -- if Pre isn't parsed, use the original string
+        qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
+        } ;
 
       -- : NP -> Adv -> Constraint ; -- damage IS to contents
       -- TODO: use CompAP/CompAdv and don't even parse the IS and NOT in GF
@@ -177,13 +180,14 @@ concrete NL4Eng of NL4 =
       ConjConstraint conj cs = {s = conjunctDistrX conj cs.s ; qs = conjunctDistrX conj cs.qs} ; 
 
       --  : Pre -> Conj -> [Constraint] -> Constraint ;
-      ConjPreConstraint pr conj cs = 
+      ConjPreConstraint pr conj cs = ConjPrePostConstraint pr {s,qs=[]} conj cs ;
+
+      ConjPrePostConstraint pr pst conj cs =
         let constr : Constraint = ConjConstraint conj cs ;
          in constr ** {
-              s  = pr.s ++ constr.s ;
-              qs =  pr.s ++ constr.s ++ "?" ; -- if Constraint has undergone ConjConstraint, it will have ? after every item, we don't want that
+              s  = pr.s ++ constr.s ++ pst.s ;
+              qs =  pr.s ++ constr.s ++ pst.s ++ "?" ; -- if Constraint has undergone ConjConstraint, it will have ? after every item, we don't want that
             } ;
-
     -- convert into questions – lincats have fields for question and statement
     -- TODO how about using Question type? or is that only for Regulative rules?
       qPRE,

@@ -174,6 +174,7 @@ data Tree :: * -> * where
   GOR :: Tree GConj_
   GConjConstraint :: GConj -> GListConstraint -> Tree GConstraint_
   GConjPreConstraint :: GPre -> GConj -> GListConstraint -> Tree GConstraint_
+  GConjPrePostConstraint :: GPre -> GPre -> GConj -> GListConstraint -> Tree GConstraint_
   GRPisAP :: GNP -> GAP -> Tree GConstraint_
   GRPisAdv :: GNP -> GAdv -> Tree GConstraint_
   GRPisnotAP :: GNP -> GAP -> Tree GConstraint_
@@ -244,8 +245,8 @@ data Tree :: * -> * where
   GPOS :: Tree GPol_
   GNP_caused_by_Pre :: GNP -> Tree GPre_
   GNP_caused_water_to_escape_from_Pre :: GNP -> Tree GPre_
-  GdummyPre :: Tree GPre_
   GqPRE :: GPre -> Tree GPre_
+  GrecoverUnparsedPre :: GString -> Tree GPre_
   Gabout_Prep :: Tree GPrep_
   Gby8means_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
@@ -344,6 +345,7 @@ instance Eq (Tree a) where
     (GOR,GOR) -> and [ ]
     (GConjConstraint x1 x2,GConjConstraint y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreConstraint x1 x2 x3,GConjPreConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GRPisAP x1 x2,GRPisAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRPisAdv x1 x2,GRPisAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRPisnotAP x1 x2,GRPisnotAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -414,8 +416,8 @@ instance Eq (Tree a) where
     (GPOS,GPOS) -> and [ ]
     (GNP_caused_by_Pre x1,GNP_caused_by_Pre y1) -> and [ x1 == y1 ]
     (GNP_caused_water_to_escape_from_Pre x1,GNP_caused_water_to_escape_from_Pre y1) -> and [ x1 == y1 ]
-    (GdummyPre,GdummyPre) -> and [ ]
     (GqPRE x1,GqPRE y1) -> and [ x1 == y1 ]
+    (GrecoverUnparsedPre x1,GrecoverUnparsedPre y1) -> and [ x1 == y1 ]
     (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
@@ -590,6 +592,7 @@ instance Gf GConj where
 instance Gf GConstraint where
   gf (GConjConstraint x1 x2) = mkApp (mkCId "ConjConstraint") [gf x1, gf x2]
   gf (GConjPreConstraint x1 x2 x3) = mkApp (mkCId "ConjPreConstraint") [gf x1, gf x2, gf x3]
+  gf (GConjPrePostConstraint x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostConstraint") [gf x1, gf x2, gf x3, gf x4]
   gf (GRPisAP x1 x2) = mkApp (mkCId "RPisAP") [gf x1, gf x2]
   gf (GRPisAdv x1 x2) = mkApp (mkCId "RPisAdv") [gf x1, gf x2]
   gf (GRPisnotAP x1 x2) = mkApp (mkCId "RPisnotAP") [gf x1, gf x2]
@@ -602,6 +605,7 @@ instance Gf GConstraint where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjConstraint" -> GConjConstraint (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreConstraint" -> GConjPreConstraint (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostConstraint" -> GConjPrePostConstraint (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "RPisAP" -> GRPisAP (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RPisAdv" -> GRPisAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "RPisnotAP" -> GRPisnotAP (fg x1) (fg x2)
@@ -848,15 +852,15 @@ instance Gf GPol where
 instance Gf GPre where
   gf (GNP_caused_by_Pre x1) = mkApp (mkCId "NP_caused_by_Pre") [gf x1]
   gf (GNP_caused_water_to_escape_from_Pre x1) = mkApp (mkCId "NP_caused_water_to_escape_from_Pre") [gf x1]
-  gf GdummyPre = mkApp (mkCId "dummyPre") []
   gf (GqPRE x1) = mkApp (mkCId "qPRE") [gf x1]
+  gf (GrecoverUnparsedPre x1) = mkApp (mkCId "recoverUnparsedPre") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "NP_caused_by_Pre" -> GNP_caused_by_Pre (fg x1)
       Just (i,[x1]) | i == mkCId "NP_caused_water_to_escape_from_Pre" -> GNP_caused_water_to_escape_from_Pre (fg x1)
-      Just (i,[]) | i == mkCId "dummyPre" -> GdummyPre 
       Just (i,[x1]) | i == mkCId "qPRE" -> GqPRE (fg x1)
+      Just (i,[x1]) | i == mkCId "recoverUnparsedPre" -> GrecoverUnparsedPre (fg x1)
 
 
       _ -> error ("no Pre " ++ show t)
@@ -1249,6 +1253,7 @@ instance Compos Tree where
     GWHEN x1 x2 -> r GWHEN `a` f x1 `a` f x2
     GConjConstraint x1 x2 -> r GConjConstraint `a` f x1 `a` f x2
     GConjPreConstraint x1 x2 x3 -> r GConjPreConstraint `a` f x1 `a` f x2 `a` f x3
+    GConjPrePostConstraint x1 x2 x3 x4 -> r GConjPrePostConstraint `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GRPisAP x1 x2 -> r GRPisAP `a` f x1 `a` f x2
     GRPisAdv x1 x2 -> r GRPisAdv `a` f x1 `a` f x2
     GRPisnotAP x1 x2 -> r GRPisnotAP `a` f x1 `a` f x2
@@ -1266,6 +1271,7 @@ instance Compos Tree where
     GNP_caused_by_Pre x1 -> r GNP_caused_by_Pre `a` f x1
     GNP_caused_water_to_escape_from_Pre x1 -> r GNP_caused_water_to_escape_from_Pre `a` f x1
     GqPRE x1 -> r GqPRE `a` f x1
+    GrecoverUnparsedPre x1 -> r GrecoverUnparsedPre `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1
     GqUPON x1 x2 -> r GqUPON `a` f x1 `a` f x2
     GqWHO x1 x2 -> r GqWHO `a` f x1 `a` f x2

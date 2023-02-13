@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Lib
+import Explainable.Lib
 import qualified Data.Map as Map
 import Control.Monad.Trans.State
 

@@ -31,6 +31,7 @@ import LS.BasicTypes
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Monoid (Endo (Endo))
 import Data.Bifunctor (second)
+import AnyAll (mkLeaf)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -254,6 +255,9 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT (MTT <$> a)
+
+mkRpmtLeaf :: [Text.Text] -> BoolStructR
+mkRpmtLeaf a = mkLeaf (mkRpmt a)
 
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "IS"

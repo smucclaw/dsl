@@ -53,7 +53,7 @@ parserTests  = do
                 )
               , cond = Just
                 ( Leaf
-                  ( RPMT [ MTT "the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13" ] )
+                  ( mkRpmt ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13"] )
                 )
               , deontic = DMust
               , action = Leaf
@@ -144,8 +144,8 @@ parserTests  = do
         [ Regulative
             { subj = mkLeaf ((MTT "Data Intermediary" :| [], Nothing) :| []),
               rkeyword = REvery,
-              who = Just (mkLeaf (RPMT [MTT "is not", MTT "processing personal data on behalf of and for the purposes of a public agency"])),
-              cond = Just (mkLeaf (RPMT [MTT "the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])),
+              who = Just (mkLeaf (mkRpmt [ "is not",  "processing personal data on behalf of and for the purposes of a public agency"])),
+              cond = Just (mkLeaf (mkRpmt ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])),
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Organisation"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
@@ -170,7 +170,7 @@ parserTests  = do
         [ Regulative
             { subj = mkLeaf ((MTT <$> "Data Intermediary" :| [], Nothing) :| []),
               rkeyword = REvery,
-              who = Just (mkLeaf (RPMT [MTT "processes personal data on behalf of and for the purposes of a public agency"])),
+              who = Just (mkLeaf (mkRpmt ["processes personal data on behalf of and for the purposes of a public agency"])),
               cond = Nothing,
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Public Agency"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
@@ -201,9 +201,11 @@ parserTests  = do
             { subj = mkLeaf ((MTT "You" :| [], Nothing) :| []),
               rkeyword = RParty,
               who = Nothing,
-              cond = Just (All Nothing [mkLeaf (RPMT [MTT "it is", MTT "an NDB"]), Not (mkLeaf (RPMT [MTT "you are a Public Agency"]))]),
+              cond = Just (All Nothing [mkLeaf (mkRpmt [ "it is",  "an NDB"]), Not (mkLeaf (mkRpmt ["you are a Public Agency"]))]),
               deontic = DMust,
-              action = mkLeaf ((MTT <$> "NOTIFY" :| ["the PDPC"], Nothing) :| [(MTT <$> "in" :| ["the form and manner specified at www.pdpc.gov.sg"], Nothing), (MTT <$> "with" :| ["a Notification Message"], Nothing), (MTT <$> "and" :| ["a list of individuals for whom notification waiver is sought"], Nothing)]),
+              action = mkLeaf ((MTT <$> "NOTIFY" :| ["the PDPC"], Nothing) :| [ (MTT <$> "in" :| ["the form and manner specified at www.pdpc.gov.sg"], Nothing),
+                                                                                (MTT <$> "with" :| ["a Notification Message"], Nothing),
+                                                                                (MTT <$> "and" :| ["a list of individuals for whom notification waiver is sought"], Nothing)]),
               temporal = Just (TemporalConstraint TBefore (Just 3) "days"),
               hence =
                 Just
@@ -256,21 +258,21 @@ parserTests  = do
           , upon = Nothing
           , clauses =
               [ HC
-                { hHead = RPMT $ MTT <$> 
+                { hHead = mkRpmt
                           [ "it is"
                           , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
                           ]
                 , hBody = Just
                           ( Any Nothing
                             [ Leaf
-                              ( RPMT $ MTT <$> 
+                              ( mkRpmt
                                 [ "the organisation has taken any action"
                                 , "to"
                                 , "render it unlikely that the notifiable data breach will result in significant harm to the individual"
                                 ]
                               )
                             , Leaf
-                              ( RPMT $ MTT <$> 
+                              ( mkRpmt
                                 [ "the organisation already implemented any technological measure"
                                 , "to"
                                 , "render it unlikely that the notifiable data breach will result in significant harm to the individual"
@@ -304,8 +306,8 @@ parserTests  = do
                 Just
                   ( All
                       Nothing
-                      [ mkLeaf (RPMT (MTT <$> ["it is", "an NDB"])),
-                        Not (mkLeaf (RPMT [MTT "you are a Public Agency"]))
+                      [ mkLeaf (mkRpmt ["it is", "an NDB"]),
+                        Not (mkLeaf (mkRpmt ["you are a Public Agency"]))
                       ]
                   ),
               deontic = DMust,
@@ -317,7 +319,7 @@ parserTests  = do
                 [ defaultHorn
                     { name = [MTT "the Notifiable Individuals"],
                       keyword = Means,
-                      clauses = [HC {hHead = RPMT [MTT "the Notifiable Individuals"], hBody = Nothing}],
+                      clauses = [HC {hHead = mkRpmt ["the Notifiable Individuals"], hBody = Nothing}],
                       srcref = mkTestSrcRef 2 9
                     }
                 ],
@@ -335,10 +337,10 @@ parserTests  = do
                           RPis
                           ( All
                               Nothing
-                              [ mkLeaf (RPMT [MTT "the set of individuals affected by the NDB"]),
-                                Not (mkLeaf (RPMT [MTT "the individuals who are deemed", MTT "Unlikely"])),
-                                Not (mkLeaf (RPMT [MTT "the individuals on", MTT "the PDPC Exclusion List"])),
-                                Not (mkLeaf (RPMT [MTT "the individuals on", MTT "the LEA Exclusion List"]))
+                              [ mkRpmtLeaf ["the set of individuals affected by the NDB"],
+                                Not (mkRpmtLeaf ["the individuals who are deemed", "Unlikely"]),
+                                Not (mkRpmtLeaf ["the individuals on", "the PDPC Exclusion List"]),
+                                Not (mkRpmtLeaf ["the individuals on", "the LEA Exclusion List"])
                               ]
                           ),
                       hBody = Nothing

@@ -70,7 +70,7 @@ nlg' thl env rule = case rule of
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
           whoSubjExpr = case who of 
-                        Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWho env <$> w))
+                        Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
                         Nothing -> subjExpr
           ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
           ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
@@ -149,16 +149,16 @@ ruleQuestions env alias rule = do
       let getBodyBS cl = case hBody cl of 
                           Just bs -> mapTxt $ bsConstraint2questions $ parseConstraintBS env bs
                           Nothing -> AA.Leaf mempty
-          bodyBS =  getBodyBS <$> clauses
+          bodyBS = getBodyBS <$> clauses
       pure bodyBS
     -- Constitutive {cond} -> do
     --   condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
     --   pure $ concat $ catMaybes [condBSR]
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
-    _ -> pure [AA.Leaf (Text.pack $ "ruleQuestions: doesn't work yet for " <> show rule)]
+    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
   where 
     mapTxt :: BoolStructConstraint -> AA.BoolStruct (Maybe (AA.Label Text.Text)) Text.Text
-    mapTxt = mapBSLabel (AA.Pre . gfLin env . gf) (gfLin env . gf)
+    mapTxt = mapBSLabel (gfLin env . gf) (gfLin env . gf)
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
@@ -167,6 +167,16 @@ nlgQuestion env rl = do
 
 -----------------------------------------------------------------------------
 -- Parsing fields into GF categories – all typed, no PGF.Expr allowed
+
+-- Special constructions for the fields that are BoolStructR
+parseConstraintBS :: NLGEnv -> BoolStructR -> BoolStructConstraint
+parseConstraintBS env = mapBSLabel (parsePre env) (parseConstraint env)
+
+parseWhoBS :: NLGEnv -> BoolStructR -> BoolStructWho
+parseWhoBS env = mapBSLabel (parsePre env) (parseWho env)
+
+parseCondBS :: NLGEnv -> BoolStructR -> BoolStructCond
+parseCondBS env = mapBSLabel (parsePre env) (parseCond env)
 
 -- not really parsing, just converting nL4 constructors to GF constructors
 parseDeontic :: Deontic -> GDeontic
@@ -214,28 +224,11 @@ parseConstraint env rp = let txt = rp2text rp in
     [] -> error $ msg "Constraint" txt
     x:_ -> fg x
 
-parsePre :: NLGEnv -> AA.Label Text.Text -> GPre
-parsePre env lbl = let txt = lbl2text lbl in
+parsePre :: NLGEnv -> Text.Text -> GPre
+parsePre env txt = 
   case parseAny "Pre" env txt of
-    [] -> error $ msg "Pre" txt
+    [] -> GrecoverUnparsedPre $ GString $ Text.unpack txt
     x:_ -> fg x
-  where
-    lbl2text :: AA.Label Text.Text -> Text.Text
-    lbl2text (AA.Pre t) = t
-    lbl2text (AA.PrePost t u) = t <> " " <> u -- TODO: handle PrePost properly, make GF lincat have two fields and linearise accordingly
-
--- BoolStructConstraint is so far the only one where Label fields also have GF content
--- In the future, all boolstructs should be prepared for the same.
--- It's just that in the 3 first use cases, it wasn't needed for other structures yet.
-parseConstraintBS :: NLGEnv -> BoolStructR -> BoolStructConstraint
-parseConstraintBS env bsr = case bsr of
-    AA.Leaf x -> AA.Leaf $ parseConstraint env x
-    AA.Any (Just pre) xs -> AA.Any (Just $ parsePre env pre) (parseConstraintBS env <$> xs)
-    AA.All (Just pre) xs -> AA.All (Just $ parsePre env pre) (parseConstraintBS env <$> xs)
-    AA.Any Nothing xs -> AA.Any Nothing (parseConstraintBS env <$> xs)
-    AA.All Nothing xs -> AA.All Nothing (parseConstraintBS env <$> xs)
-    AA.Not b -> AA.Not $ parseConstraintBS env b
-
 
 -- TODO: later if grammar is ambiguous, should we rank trees here?
 parseAny :: String -> NLGEnv -> Text.Text -> [Expr] 

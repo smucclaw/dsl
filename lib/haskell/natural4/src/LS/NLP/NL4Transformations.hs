@@ -113,3 +113,6 @@ squeezeRedundant (GConjCond conj (GListCond
     conjTC :: GTComparison
     conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
 squeezeRedundant x = composOp squeezeRedundant x
+
+-- handle e.g. this
+-- ConjConstraint AND (BaseConstraint (ConjPreConstraint (NP_caused_by_PrePost Loss_or_Damage) OR (ConsConstraint (RPleafNP rodents) (ConsConstraint (RPleafNP insects) (BaseConstraint (RPleafNP vermin) (RPleafNP birds))))) (ConjConstraint OR (BaseConstraint (ConjConstraint AND (BaseConstraint (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAdv (PrepNP to_Prep Contents))))) (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAP (caused_by birds))))))) (ConjConstraint AND (ConsConstraint (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAP (ensuing (MassNP loss)))))) (BaseConstraint (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAP covered)))) (ConjConstraint OR (BaseConstraint (RPleafS any_other_exclusion (MkVPS presSimul POS apply)) (ConjPreConstraint (NP_caused_NP_to_VP_Prep_PrePost animal water escape from_Prep) OR (ConsConstraint (RPleafNP household_appliance) (BaseConstraint (RPleafNP swimming_pool) (RPleafNP plumbing_heating_or_AC))))))))))))

@@ -178,13 +178,10 @@ data Tree :: * -> * where
   GConjConstraint :: GConj -> GListConstraint -> Tree GConstraint_
   GConjPreConstraint :: GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
-  GRPisAP :: GNP -> GAP -> Tree GConstraint_
-  GRPisAdv :: GNP -> GAdv -> Tree GConstraint_
-  GRPisnotAP :: GNP -> GAP -> Tree GConstraint_
-  GRPisnotAdv :: GNP -> GAdv -> Tree GConstraint_
   GRPleafNP :: GNP -> Tree GConstraint_
   GRPleafS :: GNP -> GVPS -> Tree GConstraint_
   GqCONSTR :: GConstraint -> Tree GConstraint_
+  GrecoverRPis :: GString -> GString -> Tree GConstraint_
   GMkDate :: GInt -> GMonth -> GInt -> Tree GDate_
   GMAY :: Tree GDeontic_
   GMUST :: Tree GDeontic_
@@ -348,13 +345,10 @@ instance Eq (Tree a) where
     (GConjConstraint x1 x2,GConjConstraint y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreConstraint x1 x2 x3,GConjPreConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (GRPisAP x1 x2,GRPisAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GRPisAdv x1 x2,GRPisAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GRPisnotAP x1 x2,GRPisnotAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GRPisnotAdv x1 x2,GRPisnotAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRPleafNP x1,GRPleafNP y1) -> and [ x1 == y1 ]
     (GRPleafS x1 x2,GRPleafS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GqCONSTR x1,GqCONSTR y1) -> and [ x1 == y1 ]
+    (GrecoverRPis x1 x2,GrecoverRPis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMkDate x1 x2 x3,GMkDate y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GMAY,GMAY) -> and [ ]
     (GMUST,GMUST) -> and [ ]
@@ -592,26 +586,20 @@ instance Gf GConstraint where
   gf (GConjConstraint x1 x2) = mkApp (mkCId "ConjConstraint") [gf x1, gf x2]
   gf (GConjPreConstraint x1 x2 x3) = mkApp (mkCId "ConjPreConstraint") [gf x1, gf x2, gf x3]
   gf (GConjPrePostConstraint x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostConstraint") [gf x1, gf x2, gf x3, gf x4]
-  gf (GRPisAP x1 x2) = mkApp (mkCId "RPisAP") [gf x1, gf x2]
-  gf (GRPisAdv x1 x2) = mkApp (mkCId "RPisAdv") [gf x1, gf x2]
-  gf (GRPisnotAP x1 x2) = mkApp (mkCId "RPisnotAP") [gf x1, gf x2]
-  gf (GRPisnotAdv x1 x2) = mkApp (mkCId "RPisnotAdv") [gf x1, gf x2]
   gf (GRPleafNP x1) = mkApp (mkCId "RPleafNP") [gf x1]
   gf (GRPleafS x1 x2) = mkApp (mkCId "RPleafS") [gf x1, gf x2]
   gf (GqCONSTR x1) = mkApp (mkCId "qCONSTR") [gf x1]
+  gf (GrecoverRPis x1 x2) = mkApp (mkCId "recoverRPis") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjConstraint" -> GConjConstraint (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreConstraint" -> GConjPreConstraint (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostConstraint" -> GConjPrePostConstraint (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2]) | i == mkCId "RPisAP" -> GRPisAP (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "RPisAdv" -> GRPisAdv (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "RPisnotAP" -> GRPisnotAP (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "RPisnotAdv" -> GRPisnotAdv (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "RPleafNP" -> GRPleafNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "RPleafS" -> GRPleafS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "qCONSTR" -> GqCONSTR (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "recoverRPis" -> GrecoverRPis (fg x1) (fg x2)
 
 
       _ -> error ("no Constraint " ++ show t)
@@ -1270,13 +1258,10 @@ instance Compos Tree where
     GConjConstraint x1 x2 -> r GConjConstraint `a` f x1 `a` f x2
     GConjPreConstraint x1 x2 x3 -> r GConjPreConstraint `a` f x1 `a` f x2 `a` f x3
     GConjPrePostConstraint x1 x2 x3 x4 -> r GConjPrePostConstraint `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    GRPisAP x1 x2 -> r GRPisAP `a` f x1 `a` f x2
-    GRPisAdv x1 x2 -> r GRPisAdv `a` f x1 `a` f x2
-    GRPisnotAP x1 x2 -> r GRPisnotAP `a` f x1 `a` f x2
-    GRPisnotAdv x1 x2 -> r GRPisnotAdv `a` f x1 `a` f x2
     GRPleafNP x1 -> r GRPleafNP `a` f x1
     GRPleafS x1 x2 -> r GRPleafS `a` f x1 `a` f x2
     GqCONSTR x1 -> r GqCONSTR `a` f x1
+    GrecoverRPis x1 x2 -> r GrecoverRPis `a` f x1 `a` f x2
     GMkDate x1 x2 x3 -> r GMkDate `a` f x1 `a` f x2 `a` f x3
     GIDig x1 -> r GIDig `a` f x1
     GIIDig x1 x2 -> r GIIDig `a` f x1 `a` f x2

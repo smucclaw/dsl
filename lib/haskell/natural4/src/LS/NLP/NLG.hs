@@ -251,6 +251,29 @@ parseUpon env pt = let txt = pt2text pt in
     x:_ -> fg x
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
+parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (flipPolarity $ fg vp)
+  _ -> GrecoverRPis (tString aTxt) (tString $ Text.unwords ["not", bTxt])
+  where
+    aTxt = mt2text a
+    bTxt = bsr2text b
+    nps = parseAny "NP" env aTxt
+    vps = parseAny "VPS" env $ Text.unwords ["is", bTxt]
+    
+    tString :: Text.Text -> GString
+    tString = GString . read . Text.unpack
+parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPis (tString aTxt) (tString bTxt)
+  where
+    aTxt = mt2text a
+    bTxt = mt2text b
+    nps = parseAny "NP" env aTxt
+    vps = parseAny "VPS" env $ Text.unwords ["is", bTxt]
+    
+    tString :: Text.Text -> GString
+    tString = GString . read . Text.unpack
+
 parseConstraint env rp = let txt = rp2text rp in
   case parseAny "Constraint" env txt of
     [] -> error $ msg "Constraint" txt

@@ -94,15 +94,13 @@ abstract NL4Base =
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     cat
-      Constraint ; -- TODO don't parse in GF but create GF constructors that correspond to
+      Constraint ;
       [Constraint]{2} ;
     --   IncompleteConstraint ;
     --   [IncompleteConstraint]{2} ;
     fun
-      RPisAdv,   -- damage IS to contents
-      RPisnotAdv : NP -> Adv -> Constraint ; 
-      RPisAP,    -- damage IS caused by birds
-      RPisnotAP : NP -> AP -> Constraint ; -- damage IS not covered
+      recoverRPis : String -> String -> Constraint ;
+
       RPleafS : NP -> VPS -> Constraint ;
       RPleafNP : NP -> Constraint ; -- to pair with PrePost to get a full sentence ???
       ConjConstraint : Conj -> [Constraint] -> Constraint ;

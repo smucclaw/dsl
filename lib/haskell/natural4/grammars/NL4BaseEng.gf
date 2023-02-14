@@ -156,24 +156,16 @@ concrete NL4BaseEng of NL4Base =
   lin
 
     recoverUnparsedPre string = {
-      s = string.s ++ ":" ; -- if PrePost isn't parsed, use the original string
+      s = "!" ++ string.s ; -- if PrePost isn't parsed, use the original string
       qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
       } ;
 
-    -- : NP -> Adv -> Constraint ; -- damage IS to contents
-    -- TODO: use CompAP/CompAdv and don't even parse the IS and NOT in GF
-    -- but map 1-to-1 RelationalPredicates to GF constructors and convert BSnegation to text negation systematically back and forth
-    RPisAdv np adv = {
-      s = npStr np ++ ("is"|"IS") ++ adv.s ;
-      qs = "Is" ++ npStr np ++ adv.s ++ "?"
+    -- : String -> String -> Constraint ;
+    recoverRPis damage toContents = {
+      s = "!" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
+      qs = "! is" ++ damage.s ++ toContents.s ++ "?"
       } ;
-    RPisnotAdv np adv = {
-      s = npStr np ++ ("is"|"IS") ++ "not" ++ adv.s ;
-      qs = "Is" ++ npStr np ++ adv.s ++ "?" -- TODO: should question be negative? Should this never be made into Q, because we flip the negations in BS? or do we need to flip at top level when we generate questions one by one in BS?
-      } ;
-    -- : NP -> AP -> Constraint ; -- damage IS caused by birds
-    RPisAP np ap = RPisAdv np (mkUtt <lin AP ap : AP>) ;
-    RPisnotAP np ap = RPisnotAdv np (mkUtt <lin AP ap : AP>) ;
+
     RPleafNP np = {s = npStr np ; qs = npStr np ++ "?"} ;
     RPleafS np vps = {
       s = (PredVPS np vps).s ;

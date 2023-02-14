@@ -226,7 +226,7 @@ parseConstraint env rp = let txt = rp2text rp in
 
 parsePrePost :: NLGEnv -> Text.Text -> GPrePost
 parsePrePost env txt = 
-  case parseAny "Pre" env txt of
+  case parseAny "PrePost" env txt of
     [] -> GrecoverUnparsedPre $ GString $ Text.unpack txt
     x:_ -> fg x
 

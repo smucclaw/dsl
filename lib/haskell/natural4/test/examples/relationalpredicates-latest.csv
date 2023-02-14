@@ -1,0 +1,7 @@
+//,,live updates,TRUE,,devMode port,8081,,,TRUE,
+,§,Rule_exceeds1,,,,,,,,
+,GIVEN,,db,IS,A,DataBreach,,,,
+,DECIDE,,exceedsPrescrNumberOfIndividuals,,,db,,,,
+,WHEN,,numberOfAffectedIndividuals,,,db,>=,500,,
+,AND,NOT,numberOfAffectedIndividuals,,,db,,,,
+//,AND,,numberOfAffectedIndividuals,,,db,>=,foobars,db,db2

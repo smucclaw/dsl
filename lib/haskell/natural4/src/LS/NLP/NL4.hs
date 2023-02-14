@@ -152,12 +152,9 @@ data GFloat_
 
 data Tree :: * -> * where
   GPositA :: GA -> Tree GAP_
-  Gaware :: Tree GAP_
   Gcaused_by :: GNP -> Tree GAP_
-  Gcovered :: Tree GAP_
   Gensuing :: GNP -> Tree GAP_
-  Gnotifiable :: Tree GAP_
-  Gpublic :: Tree GAP_
+  LexAP :: String -> Tree GAP_
   GACTION :: GVPI -> Tree GAction_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
@@ -215,18 +212,7 @@ data Tree :: * -> * where
   GListCond :: [GCond] -> Tree GListCond_
   GListConstraint :: [GConstraint] -> Tree GListConstraint_
   GListWho :: [GWho] -> Tree GListWho_
-  GApr :: Tree GMonth_
-  GAug :: Tree GMonth_
-  GDec :: Tree GMonth_
-  GFeb :: Tree GMonth_
-  GJan :: Tree GMonth_
-  GJul :: Tree GMonth_
-  GJun :: Tree GMonth_
-  GMar :: Tree GMonth_
-  GMay :: Tree GMonth_
-  GNov :: Tree GMonth_
-  GOct :: Tree GMonth_
-  GSep :: Tree GMonth_
+  LexMonth :: String -> Tree GMonth_
   GContents :: Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
   GGerundNP :: GVP -> Tree GNP_
@@ -242,16 +228,18 @@ data Tree :: * -> * where
   Grodents :: Tree GNP_
   Gswimming_pool :: Tree GNP_
   Gvermin :: Tree GNP_
+  Gwater :: Tree GNP_
   Gnum :: GSub1000000 -> Tree GNumeral_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
-  GNP_caused_by_Pre :: GNP -> Tree GPrePost_
-  GNP_caused_water_to_escape_from_Pre :: GNP -> Tree GPrePost_
+  GNP_caused_NP_to_VP_Prep_PrePost :: GNP -> GNP -> GVP -> GPrep -> Tree GPrePost_
+  GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
   GqPREPOST :: GPrePost -> Tree GPrePost_
   GrecoverUnparsedPre :: GString -> Tree GPrePost_
   Gabout_Prep :: Tree GPrep_
   Gby8means_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
+  Gfrom_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
   GqCOND :: GCond -> Tree GQuestion_
   GqUPON :: GSubj -> GUpon -> Tree GQuestion_
@@ -299,9 +287,7 @@ data Tree :: * -> * where
   GMonth_Unit :: Tree GTimeUnit_
   GYear_Unit :: Tree GTimeUnit_
   GUPON :: GVP -> Tree GUpon_
-  Gbecome :: Tree GV2_
-  Gdemand :: Tree GV2_
-  Gperform :: Tree GV2_
+  LexV2 :: String -> Tree GV2_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
   GComplV2 :: GV2 -> GNP -> Tree GVP_
   GComplV2S :: GV2 -> GNP -> GS -> Tree GVP_
@@ -313,7 +299,7 @@ data Tree :: * -> * where
   GMkVPI :: GVP -> Tree GVPI_
   GMayHave :: GVP -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
-  Gassess :: Tree GVS_
+  LexVS :: String -> Tree GVS_
   Gmay_VV :: Tree GVV_
   Gmust_VV :: Tree GVV_
   GConjPrePostWho :: GPrePost -> GPrePost -> GConj -> GListWho -> Tree GWho_
@@ -327,12 +313,9 @@ data Tree :: * -> * where
 instance Eq (Tree a) where
   i == j = case (i,j) of
     (GPositA x1,GPositA y1) -> and [ x1 == y1 ]
-    (Gaware,Gaware) -> and [ ]
     (Gcaused_by x1,Gcaused_by y1) -> and [ x1 == y1 ]
-    (Gcovered,Gcovered) -> and [ ]
     (Gensuing x1,Gensuing y1) -> and [ x1 == y1 ]
-    (Gnotifiable,Gnotifiable) -> and [ ]
-    (Gpublic,Gpublic) -> and [ ]
+    (LexAP x,LexAP y) -> x == y
     (GACTION x1,GACTION y1) -> and [ x1 == y1 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -390,18 +373,7 @@ instance Eq (Tree a) where
     (GListCond x1,GListCond y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListConstraint x1,GListConstraint y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
-    (GApr,GApr) -> and [ ]
-    (GAug,GAug) -> and [ ]
-    (GDec,GDec) -> and [ ]
-    (GFeb,GFeb) -> and [ ]
-    (GJan,GJan) -> and [ ]
-    (GJul,GJul) -> and [ ]
-    (GJun,GJun) -> and [ ]
-    (GMar,GMar) -> and [ ]
-    (GMay,GMay) -> and [ ]
-    (GNov,GNov) -> and [ ]
-    (GOct,GOct) -> and [ ]
-    (GSep,GSep) -> and [ ]
+    (LexMonth x,LexMonth y) -> x == y
     (GContents,GContents) -> and [ ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GGerundNP x1,GGerundNP y1) -> and [ x1 == y1 ]
@@ -417,16 +389,18 @@ instance Eq (Tree a) where
     (Grodents,Grodents) -> and [ ]
     (Gswimming_pool,Gswimming_pool) -> and [ ]
     (Gvermin,Gvermin) -> and [ ]
+    (Gwater,Gwater) -> and [ ]
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
     (GNEG,GNEG) -> and [ ]
     (GPOS,GPOS) -> and [ ]
-    (GNP_caused_by_Pre x1,GNP_caused_by_Pre y1) -> and [ x1 == y1 ]
-    (GNP_caused_water_to_escape_from_Pre x1,GNP_caused_water_to_escape_from_Pre y1) -> and [ x1 == y1 ]
+    (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4,GNP_caused_NP_to_VP_Prep_PrePost y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
     (GqPREPOST x1,GqPREPOST y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPre x1,GrecoverUnparsedPre y1) -> and [ x1 == y1 ]
     (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
+    (Gfrom_Prep,Gfrom_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
     (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
     (GqUPON x1 x2,GqUPON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -474,9 +448,7 @@ instance Eq (Tree a) where
     (GMonth_Unit,GMonth_Unit) -> and [ ]
     (GYear_Unit,GYear_Unit) -> and [ ]
     (GUPON x1,GUPON y1) -> and [ x1 == y1 ]
-    (Gbecome,Gbecome) -> and [ ]
-    (Gdemand,Gdemand) -> and [ ]
-    (Gperform,Gperform) -> and [ ]
+    (LexV2 x,LexV2 y) -> x == y
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV2 x1 x2,GComplV2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV2S x1 x2 x3,GComplV2S y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -488,7 +460,7 @@ instance Eq (Tree a) where
     (GMkVPI x1,GMkVPI y1) -> and [ x1 == y1 ]
     (GMayHave x1,GMayHave y1) -> and [ x1 == y1 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (Gassess,Gassess) -> and [ ]
+    (LexVS x,LexVS y) -> x == y
     (Gmay_VV,Gmay_VV) -> and [ ]
     (Gmust_VV,Gmust_VV) -> and [ ]
     (GConjPrePostWho x1 x2 x3 x4,GConjPrePostWho y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -502,24 +474,17 @@ instance Eq (Tree a) where
 
 instance Gf GAP where
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
-  gf Gaware = mkApp (mkCId "aware") []
   gf (Gcaused_by x1) = mkApp (mkCId "caused_by") [gf x1]
-  gf Gcovered = mkApp (mkCId "covered") []
   gf (Gensuing x1) = mkApp (mkCId "ensuing") [gf x1]
-  gf Gnotifiable = mkApp (mkCId "notifiable") []
-  gf Gpublic = mkApp (mkCId "public") []
+  gf (LexAP x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
-      Just (i,[]) | i == mkCId "aware" -> Gaware 
       Just (i,[x1]) | i == mkCId "caused_by" -> Gcaused_by (fg x1)
-      Just (i,[]) | i == mkCId "covered" -> Gcovered 
       Just (i,[x1]) | i == mkCId "ensuing" -> Gensuing (fg x1)
-      Just (i,[]) | i == mkCId "notifiable" -> Gnotifiable 
-      Just (i,[]) | i == mkCId "public" -> Gpublic 
 
-
+      Just (i,[]) -> LexAP (showCId i)
       _ -> error ("no AP " ++ show t)
 
 instance Gf GAction where
@@ -770,35 +735,12 @@ instance Gf GListWho where
       _ -> error ("no ListWho " ++ show t)
 
 instance Gf GMonth where
-  gf GApr = mkApp (mkCId "Apr") []
-  gf GAug = mkApp (mkCId "Aug") []
-  gf GDec = mkApp (mkCId "Dec") []
-  gf GFeb = mkApp (mkCId "Feb") []
-  gf GJan = mkApp (mkCId "Jan") []
-  gf GJul = mkApp (mkCId "Jul") []
-  gf GJun = mkApp (mkCId "Jun") []
-  gf GMar = mkApp (mkCId "Mar") []
-  gf GMay = mkApp (mkCId "May") []
-  gf GNov = mkApp (mkCId "Nov") []
-  gf GOct = mkApp (mkCId "Oct") []
-  gf GSep = mkApp (mkCId "Sep") []
+  gf (LexMonth x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "Apr" -> GApr 
-      Just (i,[]) | i == mkCId "Aug" -> GAug 
-      Just (i,[]) | i == mkCId "Dec" -> GDec 
-      Just (i,[]) | i == mkCId "Feb" -> GFeb 
-      Just (i,[]) | i == mkCId "Jan" -> GJan 
-      Just (i,[]) | i == mkCId "Jul" -> GJul 
-      Just (i,[]) | i == mkCId "Jun" -> GJun 
-      Just (i,[]) | i == mkCId "Mar" -> GMar 
-      Just (i,[]) | i == mkCId "May" -> GMay 
-      Just (i,[]) | i == mkCId "Nov" -> GNov 
-      Just (i,[]) | i == mkCId "Oct" -> GOct 
-      Just (i,[]) | i == mkCId "Sep" -> GSep 
 
-
+      Just (i,[]) -> LexMonth (showCId i)
       _ -> error ("no Month " ++ show t)
 
 instance Gf GNP where
@@ -817,6 +759,7 @@ instance Gf GNP where
   gf Grodents = mkApp (mkCId "rodents") []
   gf Gswimming_pool = mkApp (mkCId "swimming_pool") []
   gf Gvermin = mkApp (mkCId "vermin") []
+  gf Gwater = mkApp (mkCId "water") []
 
   fg t =
     case unApp t of
@@ -835,6 +778,7 @@ instance Gf GNP where
       Just (i,[]) | i == mkCId "rodents" -> Grodents 
       Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool 
       Just (i,[]) | i == mkCId "vermin" -> Gvermin 
+      Just (i,[]) | i == mkCId "water" -> Gwater 
 
 
       _ -> error ("no NP " ++ show t)
@@ -862,15 +806,15 @@ instance Gf GPol where
       _ -> error ("no Pol " ++ show t)
 
 instance Gf GPrePost where
-  gf (GNP_caused_by_Pre x1) = mkApp (mkCId "NP_caused_by_Pre") [gf x1]
-  gf (GNP_caused_water_to_escape_from_Pre x1) = mkApp (mkCId "NP_caused_water_to_escape_from_Pre") [gf x1]
+  gf (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4) = mkApp (mkCId "NP_caused_NP_to_VP_Prep_PrePost") [gf x1, gf x2, gf x3, gf x4]
+  gf (GNP_caused_by_PrePost x1) = mkApp (mkCId "NP_caused_by_PrePost") [gf x1]
   gf (GqPREPOST x1) = mkApp (mkCId "qPREPOST") [gf x1]
   gf (GrecoverUnparsedPre x1) = mkApp (mkCId "recoverUnparsedPre") [gf x1]
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "NP_caused_by_Pre" -> GNP_caused_by_Pre (fg x1)
-      Just (i,[x1]) | i == mkCId "NP_caused_water_to_escape_from_Pre" -> GNP_caused_water_to_escape_from_Pre (fg x1)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "NP_caused_NP_to_VP_Prep_PrePost" -> GNP_caused_NP_to_VP_Prep_PrePost (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1]) | i == mkCId "NP_caused_by_PrePost" -> GNP_caused_by_PrePost (fg x1)
       Just (i,[x1]) | i == mkCId "qPREPOST" -> GqPREPOST (fg x1)
       Just (i,[x1]) | i == mkCId "recoverUnparsedPre" -> GrecoverUnparsedPre (fg x1)
 
@@ -881,6 +825,7 @@ instance Gf GPrep where
   gf Gabout_Prep = mkApp (mkCId "about_Prep") []
   gf Gby8means_Prep = mkApp (mkCId "by8means_Prep") []
   gf Gfor_Prep = mkApp (mkCId "for_Prep") []
+  gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
   gf Gto_Prep = mkApp (mkCId "to_Prep") []
 
   fg t =
@@ -888,6 +833,7 @@ instance Gf GPrep where
       Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep 
       Just (i,[]) | i == mkCId "by8means_Prep" -> Gby8means_Prep 
       Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
+      Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
       Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
 
 
@@ -1098,17 +1044,12 @@ instance Gf GUpon where
       _ -> error ("no Upon " ++ show t)
 
 instance Gf GV2 where
-  gf Gbecome = mkApp (mkCId "become") []
-  gf Gdemand = mkApp (mkCId "demand") []
-  gf Gperform = mkApp (mkCId "perform") []
+  gf (LexV2 x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "become" -> Gbecome 
-      Just (i,[]) | i == mkCId "demand" -> Gdemand 
-      Just (i,[]) | i == mkCId "perform" -> Gperform 
 
-
+      Just (i,[]) -> LexV2 (showCId i)
       _ -> error ("no V2 " ++ show t)
 
 instance Gf GVP where
@@ -1157,13 +1098,12 @@ instance Gf GVPS where
       _ -> error ("no VPS " ++ show t)
 
 instance Gf GVS where
-  gf Gassess = mkApp (mkCId "assess") []
+  gf (LexVS x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "assess" -> Gassess 
 
-
+      Just (i,[]) -> LexVS (showCId i)
       _ -> error ("no VS " ++ show t)
 
 instance Gf GVV where
@@ -1286,8 +1226,8 @@ instance Compos Tree where
     GGerundNP x1 -> r GGerundNP `a` f x1
     GMassNP x1 -> r GMassNP `a` f x1
     Gnum x1 -> r Gnum `a` f x1
-    GNP_caused_by_Pre x1 -> r GNP_caused_by_Pre `a` f x1
-    GNP_caused_water_to_escape_from_Pre x1 -> r GNP_caused_water_to_escape_from_Pre `a` f x1
+    GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4 -> r GNP_caused_NP_to_VP_Prep_PrePost `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    GNP_caused_by_PrePost x1 -> r GNP_caused_by_PrePost `a` f x1
     GqPREPOST x1 -> r GqPREPOST `a` f x1
     GrecoverUnparsedPre x1 -> r GrecoverUnparsedPre `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1

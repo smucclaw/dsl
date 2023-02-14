@@ -55,7 +55,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
 data MTExpr = MTT Text.Text -- ^ Text string
-            | MTI Int       -- ^ Int
+            | MTI Integer   -- ^ Integer
             | MTN Float     -- ^ Float
             | MTB Bool      -- ^ Boolean
 --            | MTC Text.Text -- ^ Currency money

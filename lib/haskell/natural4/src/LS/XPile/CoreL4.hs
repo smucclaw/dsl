@@ -39,7 +39,7 @@ import Data.Map ((!))
 
 -- TODO: the following is only for testing purposes, can be removed later
 import L4.PrintProg (showL4, PrintSystem (L4Style), PrintConfig (PrintSystem))
-import L4.SyntaxManipulation (applyVarsNoType)
+import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS.Tokens (undeepers)
 
 -- output to Core L4 for further transformation
@@ -177,7 +177,20 @@ varsToExprNoType (v:vs) = --
 varsToExprNoType [] = error "internal error (varsToExprNoType [])"
 
 multiTermToExprNoType :: MultiTerm -> Expr ()
-multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
+-- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
+multiTermToExprNoType mt =  
+  case map mtExprToExprNoType mt of
+    ((VarE t v) : args) -> funArgsToAppNoType (VarE t v) args
+    [e] -> e
+    _ -> error "non-variable name in function position"
+
+
+mtExprToExprNoType :: MTExpr -> Expr ()
+mtExprToExprNoType (MTT t) = VarE () (varNameToVarNoType (T.unpack t))
+mtExprToExprNoType (MTI i) = ValE () (IntV i)
+mtExprToExprNoType (MTN i) = ValE () (FloatV i)
+mtExprToExprNoType (MTB i) = ValE () (BoolV i)
+
 
 rpRelToBComparOp :: RPRel -> BinOp
 rpRelToBComparOp cop = case cop of
@@ -191,6 +204,7 @@ rpRelToBComparOp cop = case cop of
   RPelem -> undefined
   RPnotElem -> undefined
   RPnot -> undefined
+  RPTC _ -> undefined
 
 conjExprNoType :: Expr () -> Expr () -> Expr ()
 conjExprNoType = BinOpE () (BBool BBand)

@@ -9,7 +9,6 @@ module LS.XPile.VueJSON where
 
 import LS
 import LS.NLP.NLG
-import LS.NLP.TreeTransformations (showExpr, udsToTreeGroups, getQSFromTrees)
 import AnyAll.Types
 import AnyAll.BoolStruct
 
@@ -19,7 +18,6 @@ import qualified Data.Text as Text
 import Control.Monad (when)
 
 import PGF ( linearize, languages )
-import LS.NLP.UDExt (gf)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 import qualified Data.Map as Map
 import qualified Data.Text as T

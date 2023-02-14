@@ -73,6 +73,8 @@ type GListCond = Tree GListCond_
 data GListCond_
 type GListConstraint = Tree GListConstraint_
 data GListConstraint_
+type GListTComparison = Tree GListTComparison_
+data GListTComparison_
 type GListWho = Tree GListWho_
 data GListWho_
 type GMonth = Tree GMonth_
@@ -107,6 +109,8 @@ type GSub1000000000000 = Tree GSub1000000000000_
 data GSub1000000000000_
 type GSubj = Tree GSubj_
 data GSubj_
+type GTComparison = Tree GTComparison_
+data GTComparison_
 type GTemp = Tree GTemp_
 data GTemp_
 type GTemporal = Tree GTemporal_
@@ -167,7 +171,7 @@ data Tree :: * -> * where
   GConjCond :: GConj -> GListCond -> Tree GCond_
   GConjPreCond :: GPrePost -> GConj -> GListCond -> Tree GCond_
   GConjPrePostCond :: GPrePost -> GPrePost -> GConj -> GListCond -> Tree GCond_
-  GON :: GCond -> GDate -> Tree GCond_
+  GTemporalConstraint :: GCond -> GTComparison -> GDate -> Tree GCond_
   GWHEN :: GNP -> GVPS -> Tree GCond_
   GAND :: Tree GConj_
   GOR :: Tree GConj_
@@ -211,6 +215,7 @@ data Tree :: * -> * where
   GIIDig :: GDig -> GDigits -> Tree GDigits_
   GListCond :: [GCond] -> Tree GListCond_
   GListConstraint :: [GConstraint] -> Tree GListConstraint_
+  GListTComparison :: [GTComparison] -> Tree GListTComparison_
   GListWho :: [GWho] -> Tree GListWho_
   LexMonth :: String -> Tree GMonth_
   GContents :: Tree GNP_
@@ -240,6 +245,7 @@ data Tree :: * -> * where
   Gby8means_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
   Gfrom_Prep :: Tree GPrep_
+  Gon_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
   GqCOND :: GCond -> Tree GQuestion_
   GqUPON :: GSubj -> GUpon -> Tree GQuestion_
@@ -280,6 +286,13 @@ data Tree :: * -> * where
   GSubjWho :: GSubj -> GWho -> Tree GSubj_
   GTHE :: GCN -> Tree GSubj_
   GYou :: Tree GSubj_
+  GAFTER :: Tree GTComparison_
+  GBEFORE :: Tree GTComparison_
+  GBY :: Tree GTComparison_
+  GConjTComparison :: GConj -> GListTComparison -> Tree GTComparison_
+  GON :: Tree GTComparison_
+  GVAGUE :: Tree GTComparison_
+  GpastSimul :: Tree GTemp_
   GpresAnt :: Tree GTemp_
   GpresSimul :: Tree GTemp_
   GWITHIN :: GInt -> GTimeUnit -> Tree GTemporal_
@@ -328,7 +341,7 @@ instance Eq (Tree a) where
     (GConjCond x1 x2,GConjCond y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreCond x1 x2 x3,GConjPreCond y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostCond x1 x2 x3 x4,GConjPrePostCond y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (GON x1 x2,GON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GTemporalConstraint x1 x2 x3,GTemporalConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GWHEN x1 x2,GWHEN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAND,GAND) -> and [ ]
     (GOR,GOR) -> and [ ]
@@ -372,6 +385,7 @@ instance Eq (Tree a) where
     (GIIDig x1 x2,GIIDig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GListCond x1,GListCond y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListConstraint x1,GListConstraint y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListTComparison x1,GListTComparison y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
     (LexMonth x,LexMonth y) -> x == y
     (GContents,GContents) -> and [ ]
@@ -401,6 +415,7 @@ instance Eq (Tree a) where
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
     (Gfrom_Prep,Gfrom_Prep) -> and [ ]
+    (Gon_Prep,Gon_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
     (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
     (GqUPON x1 x2,GqUPON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -441,6 +456,13 @@ instance Eq (Tree a) where
     (GSubjWho x1 x2,GSubjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTHE x1,GTHE y1) -> and [ x1 == y1 ]
     (GYou,GYou) -> and [ ]
+    (GAFTER,GAFTER) -> and [ ]
+    (GBEFORE,GBEFORE) -> and [ ]
+    (GBY,GBY) -> and [ ]
+    (GConjTComparison x1 x2,GConjTComparison y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GON,GON) -> and [ ]
+    (GVAGUE,GVAGUE) -> and [ ]
+    (GpastSimul,GpastSimul) -> and [ ]
     (GpresAnt,GpresAnt) -> and [ ]
     (GpresSimul,GpresSimul) -> and [ ]
     (GWITHIN x1 x2,GWITHIN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -540,7 +562,7 @@ instance Gf GCond where
   gf (GConjCond x1 x2) = mkApp (mkCId "ConjCond") [gf x1, gf x2]
   gf (GConjPreCond x1 x2 x3) = mkApp (mkCId "ConjPreCond") [gf x1, gf x2, gf x3]
   gf (GConjPrePostCond x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostCond") [gf x1, gf x2, gf x3, gf x4]
-  gf (GON x1 x2) = mkApp (mkCId "ON") [gf x1, gf x2]
+  gf (GTemporalConstraint x1 x2 x3) = mkApp (mkCId "TemporalConstraint") [gf x1, gf x2, gf x3]
   gf (GWHEN x1 x2) = mkApp (mkCId "WHEN") [gf x1, gf x2]
 
   fg t =
@@ -548,7 +570,7 @@ instance Gf GCond where
       Just (i,[x1,x2]) | i == mkCId "ConjCond" -> GConjCond (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreCond" -> GConjPreCond (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostCond" -> GConjPrePostCond (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2]) | i == mkCId "ON" -> GON (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "TemporalConstraint" -> GTemporalConstraint (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "WHEN" -> GWHEN (fg x1) (fg x2)
 
 
@@ -722,6 +744,18 @@ instance Gf GListConstraint where
 
       _ -> error ("no ListConstraint " ++ show t)
 
+instance Gf GListTComparison where
+  gf (GListTComparison [x1,x2]) = mkApp (mkCId "BaseTComparison") [gf x1, gf x2]
+  gf (GListTComparison (x:xs)) = mkApp (mkCId "ConsTComparison") [gf x, gf (GListTComparison xs)]
+  fg t =
+    GListTComparison (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseTComparison" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsTComparison" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListTComparison " ++ show t)
+
 instance Gf GListWho where
   gf (GListWho [x1,x2]) = mkApp (mkCId "BaseWho") [gf x1, gf x2]
   gf (GListWho (x:xs)) = mkApp (mkCId "ConsWho") [gf x, gf (GListWho xs)]
@@ -826,6 +860,7 @@ instance Gf GPrep where
   gf Gby8means_Prep = mkApp (mkCId "by8means_Prep") []
   gf Gfor_Prep = mkApp (mkCId "for_Prep") []
   gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
+  gf Gon_Prep = mkApp (mkCId "on_Prep") []
   gf Gto_Prep = mkApp (mkCId "to_Prep") []
 
   fg t =
@@ -834,6 +869,7 @@ instance Gf GPrep where
       Just (i,[]) | i == mkCId "by8means_Prep" -> Gby8means_Prep 
       Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
       Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
+      Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 
       Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
 
 
@@ -997,12 +1033,34 @@ instance Gf GSubj where
 
       _ -> error ("no Subj " ++ show t)
 
+instance Gf GTComparison where
+  gf GAFTER = mkApp (mkCId "AFTER") []
+  gf GBEFORE = mkApp (mkCId "BEFORE") []
+  gf GBY = mkApp (mkCId "BY") []
+  gf (GConjTComparison x1 x2) = mkApp (mkCId "ConjTComparison") [gf x1, gf x2]
+  gf GON = mkApp (mkCId "ON") []
+  gf GVAGUE = mkApp (mkCId "VAGUE") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "AFTER" -> GAFTER 
+      Just (i,[]) | i == mkCId "BEFORE" -> GBEFORE 
+      Just (i,[]) | i == mkCId "BY" -> GBY 
+      Just (i,[x1,x2]) | i == mkCId "ConjTComparison" -> GConjTComparison (fg x1) (fg x2)
+      Just (i,[]) | i == mkCId "ON" -> GON 
+      Just (i,[]) | i == mkCId "VAGUE" -> GVAGUE 
+
+
+      _ -> error ("no TComparison " ++ show t)
+
 instance Gf GTemp where
+  gf GpastSimul = mkApp (mkCId "pastSimul") []
   gf GpresAnt = mkApp (mkCId "presAnt") []
   gf GpresSimul = mkApp (mkCId "presSimul") []
 
   fg t =
     case unApp t of
+      Just (i,[]) | i == mkCId "pastSimul" -> GpastSimul 
       Just (i,[]) | i == mkCId "presAnt" -> GpresAnt 
       Just (i,[]) | i == mkCId "presSimul" -> GpresSimul 
 
@@ -1207,7 +1265,7 @@ instance Compos Tree where
     GConjCond x1 x2 -> r GConjCond `a` f x1 `a` f x2
     GConjPreCond x1 x2 x3 -> r GConjPreCond `a` f x1 `a` f x2 `a` f x3
     GConjPrePostCond x1 x2 x3 x4 -> r GConjPrePostCond `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    GON x1 x2 -> r GON `a` f x1 `a` f x2
+    GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
     GWHEN x1 x2 -> r GWHEN `a` f x1 `a` f x2
     GConjConstraint x1 x2 -> r GConjConstraint `a` f x1 `a` f x2
     GConjPreConstraint x1 x2 x3 -> r GConjPreConstraint `a` f x1 `a` f x2 `a` f x3
@@ -1261,6 +1319,7 @@ instance Compos Tree where
     GPARTY x1 -> r GPARTY `a` f x1
     GSubjWho x1 x2 -> r GSubjWho `a` f x1 `a` f x2
     GTHE x1 -> r GTHE `a` f x1
+    GConjTComparison x1 x2 -> r GConjTComparison `a` f x1 `a` f x2
     GWITHIN x1 x2 -> r GWITHIN `a` f x1 `a` f x2
     GUPON x1 -> r GUPON `a` f x1
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
@@ -1279,6 +1338,7 @@ instance Compos Tree where
     GWHO x1 -> r GWHO `a` f x1
     GListCond x1 -> r GListCond `a` foldr (a . a (r (:)) . f) (r []) x1
     GListConstraint x1 -> r GListConstraint `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListTComparison x1 -> r GListTComparison `a` foldr (a . a (r (:)) . f) (r []) x1
     GListWho x1 -> r GListWho `a` foldr (a . a (r (:)) . f) (r []) x1
     _ -> r t
 

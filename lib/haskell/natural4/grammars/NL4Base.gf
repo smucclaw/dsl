@@ -9,7 +9,7 @@ abstract NL4Base =
       , Prep, PrepNP, AdvVP
       ]
   , Structural [
-        Prep, to_Prep, by8means_Prep, for_Prep, from_Prep
+        Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
       , VV, must_VV  
       ]
   , Extend [
@@ -77,9 +77,16 @@ abstract NL4Base =
       TimeUnit ; -- day, month, year …
       Date ;
       Month ;
+      TComparison ;
+      [TComparison]{2} ;
 
     fun
-      ON : Cond -> Date -> Cond ; -- ON 1 Feb 2022
+      TemporalConstraint : 
+        Cond -> TComparison -- ON , AFTER, …
+             -> Date        -- 1 Feb 2022
+             -> Cond ;
+      BEFORE, AFTER, BY, ON, VAGUE : TComparison ;
+      ConjTComparison : Conj -> [TComparison] -> TComparison ;
       MkDate : Int -> Month -> Int -> Date ;
  
       WITHIN : Int -> TimeUnit -> Temporal ;
@@ -123,8 +130,9 @@ abstract NL4Base =
       ReferenceNP : NP -> S ; -- it is NP — reference to a previous NP
 --      ExpletiveVP : VP -> S ; -- it is raining — dummy subject it (TODO: restrict usage of this and above from HS)
 
-      presAnt,  -- has occurred
-      presSimul  -- occurs
+      presAnt,   -- has occurred
+      presSimul, -- occurs
+      pastSimul  -- occurred
         : Temp ; 
       
       POS : Pol ;

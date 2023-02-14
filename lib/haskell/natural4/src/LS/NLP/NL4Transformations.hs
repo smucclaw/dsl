@@ -33,7 +33,6 @@ bsNeg2textNeg bs = case bs of
 -- textNeg2bsNeg :: BoolStructWho -> BoolStructWho
 
 -----------------------------------------------------------------------------
-
 -- This is rather hard to read, but the alternative is to duplicate bs2gf for every single GF category
 
 type ConjFun list single = GConj -> Tree list -> Tree single
@@ -83,3 +82,34 @@ applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
 -- could do this technically?
 -- instance Functor AA.Label where
 --     fmap = applyLabel
+
+-----------------------------------------------------------------------------
+-- Generic useful transformations
+
+introduceSubj :: forall a . Tree a -> Tree a
+introduceSubj (GEVERY x) = GAN x
+introduceSubj (GPARTY x) = GAN x
+introduceSubj x = composOp introduceSubj x
+
+referSubj :: forall a . Tree a -> Tree a
+referSubj (GEVERY x) = GTHE x
+referSubj (GPARTY x) = GTHE x
+referSubj (GAN x) = GTHE x
+referSubj x = composOp referSubj x
+
+pastTense :: forall a . Tree a -> Tree a
+pastTense (GMkVPS _ pol vp) = GMkVPS GpastSimul pol vp
+pastTense x = composOp pastTense x
+
+-- TODO: generalise to other list constructors + lists longer than 2
+squeezeRedundant :: forall a . Tree a -> Tree a
+squeezeRedundant (GConjCond conj (GListCond
+  [ GTemporalConstraint cond1 tc1 date1
+  , GTemporalConstraint cond2 tc2 date2]))
+  | cond1==cond2
+  , date1==date2 = 
+     GTemporalConstraint cond1 conjTC date1
+  where 
+    conjTC :: GTComparison
+    conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
+squeezeRedundant x = composOp squeezeRedundant x

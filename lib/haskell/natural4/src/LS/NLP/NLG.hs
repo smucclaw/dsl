@@ -57,23 +57,32 @@ getLevel l = case l of
 
 debugNesting :: RecursionLevel -> (Text.Text, Text.Text)
 debugNesting TopLevel = (Text.pack "", Text.pack "")
-debugNesting (MyLest _) = (Text.pack "If you disobey, then", Text.pack "D:")
-debugNesting (MyHence _) = (Text.pack "When that happens,", Text.pack "\\:D/")
+debugNesting (MyHence _) = (Text.pack "Follow by:", Text.pack "")
+debugNesting (MyLest _) = (Text.pack "In case of failure:", Text.pack "")
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg = nlg' TopLevel
 
 nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
 nlg' thl env rule = case rule of 
-    Regulative {subj,who,deontic,action,lest,hence} -> do
-      let subjExpr = parseSubj env subj
+    Regulative {subj,upon,cond,who,deontic,action,lest,hence} -> do
+      let subjExpr = introduceSubj $ parseSubj env subj
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
           whoSubjExpr = case who of 
                         Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
                         Nothing -> subjExpr
           ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
-          ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
+          uponText = case upon of  -- TODO: doesn't work once we add another language
+                      Just u -> "Upon " <> pt2text u <> ", "
+                      Nothing -> mempty
+          condText = case cond of 
+                      Just c -> 
+                        let condExpr = gf $ pastTense $ squeezeRedundant $ bsCond2gfCond (parseCondBS env c)
+                         in ". If " <> gfLin env condExpr <> ", "
+                      Nothing -> mempty
+
+          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> condText, suffix]
       lestText <- case lest of 
                     Just r -> do 
                       rt <- nlg' (MyLest i) env r
@@ -184,6 +193,24 @@ parseDeontic DMust = GMUST
 parseDeontic DMay = GMAY
 parseDeontic DShant = GSHANT
 
+parseTComparison :: TComparison -> GTComparison
+parseTComparison TBefore = GBEFORE
+parseTComparison TAfter = GAFTER
+parseTComparison TBy = GBY
+parseTComparison TOn = GON
+parseTComparison TVague = GVAGUE
+
+parseDate :: MultiTerm -> GDate 
+parseDate mt = case Text.words $ mt2text mt of
+  [d, m, y] -> GMkDate (tInt d) (tMonth m) (tInt y)
+  _ -> GMkDate (GInt 999) (LexMonth "Jan") (GInt 999)
+ where
+  tInt :: Text.Text -> GInt
+  tInt = GInt . read . Text.unpack
+
+  tMonth :: Text.Text -> GMonth
+  tMonth = LexMonth . Text.unpack
+
 -- TODO: stop using *2text, instead use the internal structure
   -- "respond" :| []  -> respond : VP 
   -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement, call ComplV2
@@ -207,10 +234,15 @@ parseWho env rp = let txt = rp2text rp in
     x:_ -> fg x
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
+parseCond env (RPConstraint c (RPTC t) d) = GTemporalConstraint cond tc date
+  where
+    cond = parseCond env (RPMT c)
+    tc = parseTComparison t
+    date = parseDate d
 parseCond env rp = let txt = rp2text rp in
-  case parseAny "Cond" env txt of
-    [] -> error $ msg "Cond" txt
-    x:_ -> fg x
+    case parseAny "Cond" env txt of
+      [] -> error $ msg "Cond" txt
+      x:_ -> fg x
                     
 parseUpon :: NLGEnv -> ParamText -> GUpon
 parseUpon env pt = let txt = pt2text pt in

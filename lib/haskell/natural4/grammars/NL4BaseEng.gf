@@ -9,7 +9,7 @@ concrete NL4BaseEng of NL4Base =
       , Prep, PrepNP, AdvVP
       ]
   , StructuralEng [
-      Prep, to_Prep, by8means_Prep, for_Prep, from_Prep
+      Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
     , VV, must_VV  
     ]
   , ExtendEng [
@@ -110,18 +110,30 @@ concrete NL4BaseEng of NL4Base =
   lincat 
     Temporal = Adv ;
     TimeUnit = CN ;
-    Date = Adv ;
+    Date = NP ;
+    TComparison = Prep ;
+    [TComparison] = ListX ;
 
   lin
-    -- : Cond -> Date -> Cond ; -- ON 1 Feb 2022 -- TODO: switch from parsing the string ON to handling the RelationalPredicate structurally, this is just quick and dirty 
-    ON cond date = 
-      let onDate : Adv = lin Adv {s = "ON" ++ date.s} ;
-      in {s = postAdvS cond.s onDate ; qs = postAdvQS cond.qs onDate} ;
+    BaseTComparison = twoSS ;
+    ConsTComparison = consrSS comma ;
+    ConjTComparison co tcs = conjunctDistrSS co tcs ** {isPre = True} ;
+
+    TemporalConstraint cond on date = 
+      let onDate : Adv = SyntaxEng.mkAdv on date ;
+       in {s = postAdvS cond.s onDate ; qs = postAdvQS cond.qs onDate} ;
+
+    BEFORE = mkPrep "before" ;
+    AFTER = mkPrep "after" ;
+    BY = by8means_Prep ;
+    ON = on_Prep ;
+    VAGUE = noPrep ;
+
   oper
     postAdvS : S -> Adv -> S = \s,adv -> s ** mkS <lin Adv s : Adv> <lin S adv : S> ; -- hack that only works for Eng
     postAdvQS : QS -> Adv -> QS = \qs,adv -> qs ** {s = \\qf => qs.s ! qf ++ adv.s} ;
   lin
-    MkDate a b c = lin Adv (cc3 a b c) ;
+    MkDate a b c = symb (cc3 a b c) ;
 
     --  : Int -> TimeUnit -> Temporal ; -- TODO: fix "1 days" by using Dig from RGL
     WITHIN int time = 
@@ -144,7 +156,7 @@ concrete NL4BaseEng of NL4Base =
   lin
 
     recoverUnparsedPre string = {
-      s = string.s ; -- if PrePost isn't parsed, use the original string
+      s = string.s ++ ":" ; -- if PrePost isn't parsed, use the original string
       qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
       } ;
 
@@ -226,6 +238,7 @@ concrete NL4BaseEng of NL4Base =
 
     presSimul = mkTemp presentTense simultaneousAnt ; 
     presAnt = mkTemp presentTense anteriorAnt ;
+    pastSimul = mkTemp pastTense simultaneousAnt ;
     POS = positivePol ;
     NEG = negativePol ;
 

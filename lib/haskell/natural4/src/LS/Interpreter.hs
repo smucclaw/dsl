@@ -137,6 +137,14 @@ musings l4i rs =
                      </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
                      </> "***** getBSR [head uniqrs]" </> srchs (mapMaybe getBSR [DL.head uniqrs])
                      </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> mapMaybe getBSR uniqrs)
+                     </> vvsep [ "****** uniq rules" </> srchs r
+                                 </> "******* givens" </> srchs (given r)
+                                 </> vvsep [ "******* horn clause" </> srchs c
+                                             </> "******** partitionExistentials"
+                                             </> srchs (partitionExistentials c)
+                                           | c <- clauses r ]
+                               | r <- uniqrs ]
+
                    | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
                                                           exposedRoots l4i      -- EXPOSED
                                                          ) [1..]

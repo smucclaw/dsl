@@ -1,7 +1,12 @@
-//,,live updates,TRUE,,devMode port,8081,,,TRUE,
+//,,live updates,FALSE,,devMode port,8081,,,TRUE,
 ,§,Rule_exceeds1,,,,,,,,
 ,GIVEN,,db,IS,A,DataBreach,,,,
+,,,db2,,,,,,,
 ,DECIDE,,exceedsPrescrNumberOfIndividuals,,,db,,,,
 ,WHEN,,numberOfAffectedIndividuals,,,db,>=,500,,
-,AND,NOT,numberOfAffectedIndividuals,,,db,,,,
+,AND,NOT,numberOfAffectedIndividuals,,,db2,,,,
 //,AND,,numberOfAffectedIndividuals,,,db,>=,foobars,db,db2
+,,,,,,,,,,
+//,"goals for local vs global variables
+
+identify givens",,,,,,,,,

@@ -812,7 +812,7 @@ testrules = [ Hornlike
                         ( RPConstraint
                             [ MTT "numberOfAffectedIndividuals"
                             , MTT "db"
-                            ] RPgte [ MTN 500 ]
+                            ] RPgte [ MTI 500 ]
                         )
                     , Leaf
                         ( RPMT

@@ -54,7 +54,7 @@ data MyToken = Every | Party | TokAll
              | Unless
              | Hence | Lest | Fulfilled | Breach | Goto
              | Then | Else
-             | TNumber Integer
+             | TNumber Float
              | Other Text.Text
              | Do
              | TokTrue | TokFalse

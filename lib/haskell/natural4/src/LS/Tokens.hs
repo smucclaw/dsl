@@ -270,8 +270,8 @@ pMTExpr =
          ]
   where
     isIntegral pn = do
-      x <- pn
-      if not ('.' `elem` show x) -- [TODO] also ,
+      x :: Float <- pn
+      if (fromIntegral (floor x :: Int) :: Float) == x
         then return $ floor x
         else fail "not an integer"
 

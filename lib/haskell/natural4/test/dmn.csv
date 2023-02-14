@@ -1,0 +1,5 @@
+§,Rule_r1,,,,,,,,,
+DECIDE,o,10,
+IF,p1,,1
+§,Rule_r2,,,,,,,,,
+DECIDE,p1,1,

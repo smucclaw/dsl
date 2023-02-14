@@ -39,6 +39,8 @@ import qualified Text.RawString.QQ as QQ
 import qualified Data.Foldable as DF
 -- import qualified Data.Traversable as DT
 
+import qualified Text.XML.HXT.Core as HXT
+
 myTraceM :: String -> IO ()
 myTraceM = SFL4.myTraceM
 
@@ -60,6 +62,7 @@ main = do
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
+      (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       -- (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem l4i rules)) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv l4i)
       -- (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> ((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv rules)
@@ -115,6 +118,7 @@ main = do
     when (SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
     when (SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
     when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
+    when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN      iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
@@ -236,6 +240,18 @@ mywritefile doLink dirname filename ext s = do
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
   -- putStrLn ("mywritefile: outputting to " <> mypath)
   writeFile mypath s
+  -- do the symlink more atomically by renaming
+  when doLink $ myMkLink (filename <> "." <> ext) mylink
+
+mywritefileDMN :: Bool -> FilePath -> FilePath -> String -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree -> IO ()
+mywritefileDMN doLink dirname filename ext xmltree = do
+  createDirectoryIfMissing True dirname
+  let mypath = dirname <> "/" <> filename     <> "." <> ext
+      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  -- putStrLn ("mywritefile: outputting to " <> mypath)
+  -- to replace writeFile mypath s
+  _ <- HXT.runX ( xmltree HXT.>>> HXT.writeDocument [ HXT.withIndent HXT.yes ] mypath )
+
   -- do the symlink more atomically by renaming
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 

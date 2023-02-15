@@ -148,7 +148,7 @@ ruleQuestions env alias rule = do
           qWhoBS = mkWhoText env (GqWHO aliasExpr) <$> who
           qCondBS = mkCondText env GqCOND <$> cond
           qUponBS = mkUponText env (GqUPON aliasExpr) <$> upon
-      pure $ catMaybes [qWhoBS, qCondBS, qUponBS]
+      pure $ catMaybes [qWhoBS, qUponBS, qCondBS]
     Hornlike {clauses} -> do
       let bodyBS = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
       pure $ catMaybes bodyBS

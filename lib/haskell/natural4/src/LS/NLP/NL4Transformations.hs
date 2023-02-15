@@ -2,16 +2,14 @@
 {-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes #-}
 
 module LS.NLP.NL4Transformations where
-
 import LS.NLP.NL4
 import qualified AnyAll as AA
-
+import Data.Maybe (fromMaybe)
 
 flipPolarity :: forall a . Tree a -> Tree a
 flipPolarity (GMkVPS temp GPOS vp) = GMkVPS temp GNEG vp
 flipPolarity (GMkVPS temp GNEG vp) = GMkVPS temp GPOS vp
 flipPolarity x = composOp flipPolarity x
-
 
 type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPrePost)) (Tree a)
 
@@ -43,8 +41,8 @@ type ListFun single list = [Tree single] -> Tree list
 bs2gf :: (Gf (Tree s)) => ConjFun l s -> ConjPreFun l s -> ConjPrePostFun l s -> ListFun s l -> BoolStructGF s -> Tree s
 bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.Leaf x -> x
-    AA.Any Nothing xs -> squeezeRedundant $ conj GOR $ mkList $ f <$> xs
-    AA.All Nothing xs -> squeezeRedundant $ conj GAND $ mkList $ f <$> xs
+    AA.Any Nothing xs -> mergeConj $ conj GOR $ mkList $ f <$> xs
+    AA.All Nothing xs -> mergeConj $ conj GAND $ mkList $ f <$> xs
     AA.Any (Just (AA.Pre pre)) xs -> conjPre pre GOR $ mkList $ f <$> xs
     AA.All (Just (AA.Pre pre)) xs -> conjPre pre GAND $ mkList $ f <$> xs
     AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
@@ -101,43 +99,41 @@ pastTense :: forall a . Tree a -> Tree a
 pastTense (GMkVPS _ pol vp) = GMkVPS GpastSimul pol vp
 pastTense x = composOp pastTense x
 
--- TODO: generalise to lists longer than 2
-squeezeRedundant :: forall a . Tree a -> Tree a
-squeezeRedundant (GConjCond conj (GListCond
-  [ GTemporalConstraint cond1 tc1 date1
-  , GTemporalConstraint cond2 tc2 date2]))
+-----------------------------------------------------------------------------
+-- db happens ON x or db happens AFTER x ==> db happens ON or AFTER x
+
+mergeConj :: forall a . Tree a -> Tree a
+mergeConj og@(GConjCond conj (GListCond cs)) = fromMaybe og $ squeezeTrees conj cs
+mergeConj og@(GConjConstraint conj (GListConstraint cs)) = fromMaybe og $ squeezeTrees conj cs
+mergeConj x = composOp mergeConj x
+
+
+-- The function that does all the repetitive work
+-- TODO: check if viewpatterns help?
+squeezeTrees :: forall a . GConj -> [Tree a] -> Maybe (Tree a)
+squeezeTrees conj [
+    GTemporalConstraint cond1 tc1 date1
+  , GTemporalConstraint cond2 tc2 date2]
   | cond1==cond2
-  , date1==date2 = 
-     GTemporalConstraint cond1 conjTC date1
+  , date1==date2 = pure $ GTemporalConstraint cond1 conjTC date1
   where 
     conjTC :: GTComparison
     conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
 
--- Finite amount of different list constructors, TODO can we use ViewPatterns to make it more readable?
-squeezeRedundant (GConjConstraint conj (GListConstraint
-  [ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompNP np1)))
-  , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp (GCompNP np2)))]))
-  | subj1==subj2
-  , temp1==temp2
-  , pol1==pol2 = GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompNP (GConjNP conj (GListNP [np1, np2])))))
+-- TODO: how to make this work without lots of copy and paste?
+-- squeezeTrees conj [GCompNP np1, GCompNP np2] = pure $ GCompNP (GConjNP conj (GListNP [np1, np2]))
+-- squeezeTrees conj [GCompAP ap1, GCompAP ap2] = pure $ GCompAP (GConjAP conj (GListAP [ap1, ap2]))
+-- squeezeTrees conj [GCompAdv adv1, GCompAdv adv2] = pure $ GCompAdv (GConjAdv conj (GListAdv [adv1, adv2]))
+-- squeezeTrees conj [
+--     GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp comp1))
+--   , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp comp2))]
+--   | subj1==subj2, temp1==temp2, pol1==pol2 = do
+--     newComp <- squeezeTrees conj [comp1, comp2]
+--     pure $ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp newComp))
+     
+squeezeTrees conj [
+    GRPleafS subj1 vps1
+  , GRPleafS subj2 vps2]
+  | subj1==subj2 = pure $ GRPleafS subj1 (GConjVPS conj (GListVPS [vps1, vps2]))
 
-squeezeRedundant (GConjConstraint conj (GListConstraint
-  [ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAP ap1)))
-  , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp (GCompAP ap2)))]))
-  | subj1==subj2
-  , temp1==temp2
-  , pol1==pol2 = GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAP (GConjAP conj (GListAP [ap1, ap2])))))
-
-squeezeRedundant (GConjConstraint conj (GListConstraint
-  [ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAdv adv1)))
-  , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp (GCompAdv adv2)))]))
-  | subj1==subj2
-  , temp1==temp2
-  , pol1==pol2 = GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAdv (GConjAdv conj (GListAdv [adv1, adv2])))))
-
-squeezeRedundant (GConjConstraint conj (GListConstraint
-  [ GRPleafS subj1 vps1
-  , GRPleafS subj2 vps2]))
-  | subj1==subj2 = GRPleafS subj1 (GConjVPS conj (GListVPS [vps1, vps2]))
-
-squeezeRedundant x = composOp squeezeRedundant x
+squeezeTrees _ _ = Nothing

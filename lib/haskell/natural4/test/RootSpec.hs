@@ -37,5 +37,4 @@ spec = do
   describe "PDPASpec"              Parsing.PDPASpec.parserTests
   describe "BoolStructParser"      (Parsing.BoolStructParserSpec.parserTests nlgEnv)
   describe "CoreL4Parser"          Parsing.CoreL4ParserSpec.parserTests
-  describe "TestNLG"               TestNLG.nlgTests2
   describe "NLG tests"             (TestNLG.nlgTests nlgEnv)

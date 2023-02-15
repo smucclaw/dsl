@@ -144,30 +144,34 @@ ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
-          aliasExpr = if subjExpr==orgExpr then youExpr else subjExpr
-          mkWhoQ = gfLin env . gf . GqWHO aliasExpr . parseWho env -- :: RelationalPredicate -> Text
-          mkCondQ = gfLin env . gf . GqCOND . parseCond env
-          mkUponQ = gfLin env . gf . GqUPON aliasExpr . parseUpon env -- :: ParamText -> Text
-          qWhoBS = fmap (mkWhoQ <$>) who -- fmap is for Maybe, <$> for BoolStruct
-          qCondBS = fmap (mkCondQ <$>) cond
-          qUponBS = case upon of 
-                      Just u -> Just $ AA.Leaf $ mkUponQ u
-                      Nothing -> Nothing
+          aliasExpr = if subjExpr==orgExpr then youExpr else referSubj subjExpr
+          qWhoBS = mkWhoText env (GqWHO aliasExpr) <$> who
+          qCondBS = mkCondText env GqCOND <$> cond
+          qUponBS = mkUponText env (GqUPON aliasExpr) <$> upon
       pure $ catMaybes [qWhoBS, qCondBS, qUponBS]
     Hornlike {clauses} -> do
-      let getBodyBS cl = case hBody cl of 
-                          Just bs -> mapTxt $ bsConstraint2questions $ parseConstraintBS env bs
-                          Nothing -> AA.Leaf mempty
-          bodyBS = getBodyBS <$> clauses
-      pure bodyBS
-    -- Constitutive {cond} -> do
-    --   condBSR <- mapM (bsr2questions qsCond gr dummySubj) cond
-    --   pure $ concat $ catMaybes [condBSR]
+      let bodyBS = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
+      pure $ catMaybes bodyBS
+    Constitutive {cond} -> do
+      let qCondBS = mkCondText env GqCOND <$> cond
+      pure $ catMaybes [qCondBS]
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
-  where 
-    mapTxt :: BoolStructConstraint -> AA.BoolStruct (Maybe (AA.Label Text.Text)) Text.Text
-    mapTxt = mapBSLabel (gfLin env . gf) (gfLin env . gf)
+
+mkWhoText :: NLGEnv -> (GWho -> GText) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
+mkWhoText env f bsr = mapBSLabel (gfLin env . gf) (gfLin env . gf) bs
+  where bs = mapBSLabel id f $ aggregateBoolStruct $ parseWhoBS env bsr
+
+mkCondText :: NLGEnv -> (GCond -> GText) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
+mkCondText env f bsr = mapBSLabel (gfLin env . gf) (gfLin env . gf) bs
+  where bs = mapBSLabel id f $ aggregateBoolStruct $ parseCondBS env bsr
+
+mkConstraintText :: NLGEnv -> (GPrePost -> GText) -> (GConstraint -> GText) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
+mkConstraintText env f g bsr = mapBSLabel (gfLin env . gf) (gfLin env . gf) bs
+  where bs = mapBSLabel f g $ aggregateBoolStruct $ parseConstraintBS env bsr
+
+mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
+mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do

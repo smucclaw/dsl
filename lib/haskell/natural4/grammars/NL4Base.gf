@@ -25,8 +25,11 @@ abstract NL4Base =
   ** {
     flags startcat = Rule ;
     cat
+      -- for fancy NLG
       Rule ;
-      Question ;
+
+      -- for web forms
+      Text ;
 
       -- Any structure that is using BoolStruct needs to prepare for PrePost
       PrePost ; -- "Loss or Damage caused by", "an animal caused water to escape from"
@@ -42,11 +45,17 @@ abstract NL4Base =
       Upon ;
     fun 
 -- Application layer
+      -- for fancy NLG
       Regulative : Subj -> Deontic -> Action -> Rule ;
-      qWHO : Subj -> Who -> Question ;
-      qUPON : Subj -> Upon -> Question ; -- TODO rethink types when adding more langs 
-                                         -- TODO2 do we allow upon to take full sentence or just VP*?
-      qCOND : Cond -> Question ;
+
+      -- for web forms
+      qWHO,
+      sWHO : Subj -> Who -> Text ;
+      qUPON,  -- TODO rethink types when adding more langs 
+              -- TODO2 do we allow upon to take full sentence or just VP*?
+      sUPON : Subj -> Upon -> Text ;
+      qCOND,
+      sCOND : Cond -> Text ;
 
       EVERY,
       PARTY,
@@ -109,13 +118,8 @@ abstract NL4Base =
       ConjPreConstraint : PrePost -> Conj -> [Constraint] -> Constraint ;
       ConjPrePostConstraint : PrePost -> PrePost -> Conj -> [Constraint] -> Constraint ;
 
-    -- convert into questions – lincats have fields for question and statement
-    -- TODO how about using Question type? or is that only for Regulative rules?
-      qPREPOST : PrePost -> PrePost ;
-      qCONSTR : Constraint -> Constraint ;
-
-
-
+      qPREPOST : PrePost -> Text ;
+      qCONSTR : Constraint -> Text ;
 
 -----------------------------------------------------------------------------
 -- Shortcuts and extensions to RGL

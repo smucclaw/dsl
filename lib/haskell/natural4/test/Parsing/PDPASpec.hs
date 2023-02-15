@@ -32,110 +32,6 @@ parserTests  = do
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
     describe "PDPA" $ do
-
-      let expected_pdpadbno1 =
-            [ defaultReg
-              { subj = Leaf
-                (
-                  ( pure (MTT "Organisation")
-                  , Nothing
-                  ) :| []
-                )
-              , rkeyword = REvery
-              , who = Just
-                ( Leaf
-                  ( RPMT (MTT <$>
-                    [ "is"
-                    , "not"
-                    , "a Public Agency"
-                    ])
-                  )
-                )
-              , cond = Just
-                ( Leaf
-                  ( mkRpmt ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 §13"] )
-                )
-              , deontic = DMust
-              , action = Leaf
-                (
-                  ( MTT "assess" :| [ MTT "if it is a Notifiable Data Breach" ]
-                  , Nothing
-                  ) :|
-                  [
-                    ( MTT <$> "by" :|
-                      [ "performing"
-                      , "NDB Qualification"
-                      ]
-                    , Nothing
-                    )
-                  ]
-                )
-              , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
-              , hence = Just ( RuleAlias [MTT "Notification"] )
-              , lest = Just
-                ( defaultReg
-                    { subj = Leaf
-                        (
-                            ( MTT "the PDPC" :| []
-                            , Nothing
-                            ) :| []
-                        )
-                    , rkeyword = RParty
-                    , deontic = DMay
-                    , action = Leaf
-                        (
-                            ( MTT <$> "demand" :| [ "an explanation for your inaction" ]
-                            , Nothing
-                            ) :| []
-                        )
-                    , temporal = Nothing
-                    , srcref = Nothing
-                    , hence = Just
-                        ( defaultReg
-                            { subj = Leaf
-                                (
-                                    ( MTT "You" :| []
-                                    , Nothing
-                                    ) :| []
-                                )
-                            , rkeyword = RParty
-                            , deontic = DMust
-                            , srcref = Nothing
-                            , action = Leaf
-                                (
-                                    ( MTT "respond" :| []
-                                    , Nothing
-                                    ) :|
-                                    [
-                                        ( MTT <$> "to" :| [ "the PDPC" ]
-                                        , Nothing
-                                        )
-                                    ,
-                                        ( MTT <$> "about" :| [ "your inaction" ]
-                                        , Nothing
-                                        )
-                                    ]
-                                )
-                            }
-                        )
-                    }
-                )
-            , upon = Just
-                (
-                    ( MTT "becoming aware a data breach may have occurred" :| []
-                    , Nothing
-                    ) :| []
-                )
-            , rlabel = Just ("\167",2,"Assess")
-            }
-            , DefNameAlias
-            { name = [ MTT "You" ]
-            , detail = [ MTT "Organisation" ]
-            , nlhint = Nothing
-            , srcref = mkTestSrcRef 2 3
-            }
-            ]
-
       filetest "pdpadbno-1"   "must assess" (parseR pToplevel) expected_pdpadbno1
       filetest "pdpadbno-1-b" "must assess" (parseR pToplevel) expected_pdpadbno1
 
@@ -349,3 +245,99 @@ parserTests  = do
               srcref = mkTestSrcRef 2 9
             }
         ]
+
+expected_pdpadbno1 :: [Rule]
+expected_pdpadbno1 =
+            [ defaultReg
+              { subj = Leaf
+                (
+                  ( pure (MTT "Organisation")
+                  , Nothing
+                  ) :| []
+                )
+              , rkeyword = REvery
+              , who = Just (Not (Leaf (RPMT [MTT "is", MTT "a Public Agency"])))
+              , cond = Just (
+                  Any Nothing 
+                  [ Leaf (RPConstraint [MTT "the data breach occurs"] (RPTC TOn) [MTT "1 Feb 2022"])
+                  , Leaf (RPConstraint [MTT "the data breach occurs"] (RPTC TAfter) [MTT "1 Feb 2022"])])
+              , deontic = DMust
+              , action = Leaf
+                (
+                  ( MTT "assess" :| [ MTT "if it is a Notifiable Data Breach" ]
+                  , Nothing
+                  ) :|
+                  [
+                    ( MTT <$> "by" :|
+                      [ "performing"
+                      , "NDB Qualification"
+                      ]
+                    , Nothing
+                    )
+                  ]
+                )
+              , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
+              , hence = Just ( RuleAlias [MTT "Notification"] )
+              , lest = Just
+                ( defaultReg
+                    { subj = Leaf
+                        (
+                            ( MTT "the PDPC" :| []
+                            , Nothing
+                            ) :| []
+                        )
+                    , rkeyword = RParty
+                    , deontic = DMay
+                    , action = Leaf
+                        (
+                            ( MTT <$> "demand" :| [ "an explanation for your inaction" ]
+                            , Nothing
+                            ) :| []
+                        )
+                    , temporal = Nothing
+                    , srcref = Nothing
+                    , hence = Just
+                        ( defaultReg
+                            { subj = Leaf
+                                (
+                                    ( MTT "You" :| []
+                                    , Nothing
+                                    ) :| []
+                                )
+                            , rkeyword = RParty
+                            , deontic = DMust
+                            , srcref = Nothing
+                            , action = Leaf
+                                (
+                                    ( MTT "respond" :| []
+                                    , Nothing
+                                    ) :|
+                                    [
+                                        ( MTT <$> "to" :| [ "the PDPC" ]
+                                        , Nothing
+                                        )
+                                    ,
+                                        ( MTT <$> "about" :| [ "your inaction" ]
+                                        , Nothing
+                                        )
+                                    ]
+                                )
+                            }
+                        )
+                    }
+                )
+            , upon = Just
+                (
+                    ( MTT "becoming aware a data breach may have occurred" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , rlabel = Just ("\167",2,"Assess")
+            }
+            , DefNameAlias
+            { name = [ MTT "You" ]
+            , detail = [ MTT "Organisation" ]
+            , nlhint = Nothing
+            , srcref = mkTestSrcRef 2 3
+            }
+            ]

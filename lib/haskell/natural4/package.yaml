@@ -11,9 +11,7 @@ extra-source-files:
 - ChangeLog.md
 
 data-files:
-- grammars/english-ewt-ud-2.5-191206.udpipe
-- grammars/UDExt.pgf
-- grammars/UDApp.pgf
+- grammars/NL4.pgf
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package

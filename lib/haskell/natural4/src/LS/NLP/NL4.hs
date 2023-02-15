@@ -69,12 +69,20 @@ type GDigit = Tree GDigit_
 data GDigit_
 type GDigits = Tree GDigits_
 data GDigits_
+type GListAP = Tree GListAP_
+data GListAP_
+type GListAdv = Tree GListAdv_
+data GListAdv_
 type GListCond = Tree GListCond_
 data GListCond_
 type GListConstraint = Tree GListConstraint_
 data GListConstraint_
+type GListNP = Tree GListNP_
+data GListNP_
 type GListTComparison = Tree GListTComparison_
 data GListTComparison_
+type GListVPS = Tree GListVPS_
+data GListVPS_
 type GListWho = Tree GListWho_
 data GListWho_
 type GMonth = Tree GMonth_
@@ -155,11 +163,13 @@ type GFloat = Tree GFloat_
 data GFloat_
 
 data Tree :: * -> * where
+  GConjAP :: GConj -> GListAP -> Tree GAP_
   GPositA :: GA -> Tree GAP_
   Gcaused_by :: GNP -> Tree GAP_
   Gensuing :: GNP -> Tree GAP_
   LexAP :: String -> Tree GAP_
   GACTION :: GVPI -> Tree GAction_
+  GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
   GUseN :: GN -> Tree GCN_
@@ -210,11 +220,16 @@ data Tree :: * -> * where
   Gn9 :: Tree GDigit_
   GIDig :: GDig -> Tree GDigits_
   GIIDig :: GDig -> GDigits -> Tree GDigits_
+  GListAP :: [GAP] -> Tree GListAP_
+  GListAdv :: [GAdv] -> Tree GListAdv_
   GListCond :: [GCond] -> Tree GListCond_
   GListConstraint :: [GConstraint] -> Tree GListConstraint_
+  GListNP :: [GNP] -> Tree GListNP_
   GListTComparison :: [GTComparison] -> Tree GListTComparison_
+  GListVPS :: [GVPS] -> Tree GListVPS_
   GListWho :: [GWho] -> Tree GListWho_
   LexMonth :: String -> Tree GMonth_
+  GConjNP :: GConj -> GListNP -> Tree GNP_
   GContents :: Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
   GGerundNP :: GVP -> Tree GNP_
@@ -307,6 +322,7 @@ data Tree :: * -> * where
   GUseComp :: GComp -> Tree GVP_
   LexVP :: String -> Tree GVP_
   GMkVPI :: GVP -> Tree GVPI_
+  GConjVPS :: GConj -> GListVPS -> Tree GVPS_
   GMayHave :: GVP -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   LexVS :: String -> Tree GVS_
@@ -322,11 +338,13 @@ data Tree :: * -> * where
 
 instance Eq (Tree a) where
   i == j = case (i,j) of
+    (GConjAP x1 x2,GConjAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPositA x1,GPositA y1) -> and [ x1 == y1 ]
     (Gcaused_by x1,Gcaused_by y1) -> and [ x1 == y1 ]
     (Gensuing x1,Gensuing y1) -> and [ x1 == y1 ]
     (LexAP x,LexAP y) -> x == y
     (GACTION x1,GACTION y1) -> and [ x1 == y1 ]
+    (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseN x1,GUseN y1) -> and [ x1 == y1 ]
@@ -377,11 +395,16 @@ instance Eq (Tree a) where
     (Gn9,Gn9) -> and [ ]
     (GIDig x1,GIDig y1) -> and [ x1 == y1 ]
     (GIIDig x1 x2,GIIDig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GListAP x1,GListAP y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListAdv x1,GListAdv y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListCond x1,GListCond y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListConstraint x1,GListConstraint y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListNP x1,GListNP y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListTComparison x1,GListTComparison y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListVPS x1,GListVPS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
     (LexMonth x,LexMonth y) -> x == y
+    (GConjNP x1 x2,GConjNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GContents,GContents) -> and [ ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GGerundNP x1,GGerundNP y1) -> and [ x1 == y1 ]
@@ -474,6 +497,7 @@ instance Eq (Tree a) where
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (LexVP x,LexVP y) -> x == y
     (GMkVPI x1,GMkVPI y1) -> and [ x1 == y1 ]
+    (GConjVPS x1 x2,GConjVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMayHave x1,GMayHave y1) -> and [ x1 == y1 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexVS x,LexVS y) -> x == y
@@ -489,6 +513,7 @@ instance Eq (Tree a) where
     _ -> False
 
 instance Gf GAP where
+  gf (GConjAP x1 x2) = mkApp (mkCId "ConjAP") [gf x1, gf x2]
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
   gf (Gcaused_by x1) = mkApp (mkCId "caused_by") [gf x1]
   gf (Gensuing x1) = mkApp (mkCId "ensuing") [gf x1]
@@ -496,6 +521,7 @@ instance Gf GAP where
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ConjAP" -> GConjAP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
       Just (i,[x1]) | i == mkCId "caused_by" -> Gcaused_by (fg x1)
       Just (i,[x1]) | i == mkCId "ensuing" -> Gensuing (fg x1)
@@ -514,10 +540,12 @@ instance Gf GAction where
       _ -> error ("no Action " ++ show t)
 
 instance Gf GAdv where
+  gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
 
 
@@ -708,6 +736,30 @@ instance Gf GDigits where
 
       _ -> error ("no Digits " ++ show t)
 
+instance Gf GListAP where
+  gf (GListAP [x1,x2]) = mkApp (mkCId "BaseAP") [gf x1, gf x2]
+  gf (GListAP (x:xs)) = mkApp (mkCId "ConsAP") [gf x, gf (GListAP xs)]
+  fg t =
+    GListAP (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseAP" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsAP" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListAP " ++ show t)
+
+instance Gf GListAdv where
+  gf (GListAdv [x1,x2]) = mkApp (mkCId "BaseAdv") [gf x1, gf x2]
+  gf (GListAdv (x:xs)) = mkApp (mkCId "ConsAdv") [gf x, gf (GListAdv xs)]
+  fg t =
+    GListAdv (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseAdv" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsAdv" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListAdv " ++ show t)
+
 instance Gf GListCond where
   gf (GListCond [x1,x2]) = mkApp (mkCId "BaseCond") [gf x1, gf x2]
   gf (GListCond (x:xs)) = mkApp (mkCId "ConsCond") [gf x, gf (GListCond xs)]
@@ -732,6 +784,18 @@ instance Gf GListConstraint where
 
       _ -> error ("no ListConstraint " ++ show t)
 
+instance Gf GListNP where
+  gf (GListNP [x1,x2]) = mkApp (mkCId "BaseNP") [gf x1, gf x2]
+  gf (GListNP (x:xs)) = mkApp (mkCId "ConsNP") [gf x, gf (GListNP xs)]
+  fg t =
+    GListNP (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseNP" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsNP" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListNP " ++ show t)
+
 instance Gf GListTComparison where
   gf (GListTComparison [x1,x2]) = mkApp (mkCId "BaseTComparison") [gf x1, gf x2]
   gf (GListTComparison (x:xs)) = mkApp (mkCId "ConsTComparison") [gf x, gf (GListTComparison xs)]
@@ -743,6 +807,18 @@ instance Gf GListTComparison where
 
 
       _ -> error ("no ListTComparison " ++ show t)
+
+instance Gf GListVPS where
+  gf (GListVPS [x1,x2]) = mkApp (mkCId "BaseVPS") [gf x1, gf x2]
+  gf (GListVPS (x:xs)) = mkApp (mkCId "ConsVPS") [gf x, gf (GListVPS xs)]
+  fg t =
+    GListVPS (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseVPS" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsVPS" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListVPS " ++ show t)
 
 instance Gf GListWho where
   gf (GListWho [x1,x2]) = mkApp (mkCId "BaseWho") [gf x1, gf x2]
@@ -766,6 +842,7 @@ instance Gf GMonth where
       _ -> error ("no Month " ++ show t)
 
 instance Gf GNP where
+  gf (GConjNP x1 x2) = mkApp (mkCId "ConjNP") [gf x1, gf x2]
   gf GContents = mkApp (mkCId "Contents") []
   gf (GDetCN x1 x2) = mkApp (mkCId "DetCN") [gf x1, gf x2]
   gf (GGerundNP x1) = mkApp (mkCId "GerundNP") [gf x1]
@@ -785,6 +862,7 @@ instance Gf GNP where
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ConjNP" -> GConjNP (fg x1) (fg x2)
       Just (i,[]) | i == mkCId "Contents" -> GContents 
       Just (i,[x1,x2]) | i == mkCId "DetCN" -> GDetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "GerundNP" -> GGerundNP (fg x1)
@@ -1132,11 +1210,13 @@ instance Gf GVPI where
       _ -> error ("no VPI " ++ show t)
 
 instance Gf GVPS where
+  gf (GConjVPS x1 x2) = mkApp (mkCId "ConjVPS") [gf x1, gf x2]
   gf (GMayHave x1) = mkApp (mkCId "MayHave") [gf x1]
   gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ConjVPS" -> GConjVPS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "MayHave" -> GMayHave (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
 
@@ -1239,10 +1319,12 @@ instance Gf GV where
 
 instance Compos Tree where
   compos r a f t = case t of
+    GConjAP x1 x2 -> r GConjAP `a` f x1 `a` f x2
     GPositA x1 -> r GPositA `a` f x1
     Gcaused_by x1 -> r Gcaused_by `a` f x1
     Gensuing x1 -> r Gensuing `a` f x1
     GACTION x1 -> r GACTION `a` f x1
+    GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GUseN x1 -> r GUseN `a` f x1
@@ -1265,6 +1347,7 @@ instance Compos Tree where
     GMkDate x1 x2 x3 -> r GMkDate `a` f x1 `a` f x2 `a` f x3
     GIDig x1 -> r GIDig `a` f x1
     GIIDig x1 x2 -> r GIIDig `a` f x1 `a` f x2
+    GConjNP x1 x2 -> r GConjNP `a` f x1 `a` f x2
     GDetCN x1 x2 -> r GDetCN `a` f x1 `a` f x2
     GGerundNP x1 -> r GGerundNP `a` f x1
     GMassNP x1 -> r GMassNP `a` f x1
@@ -1315,15 +1398,20 @@ instance Compos Tree where
     GComplVSthat x1 x2 -> r GComplVSthat `a` f x1 `a` f x2
     GUseComp x1 -> r GUseComp `a` f x1
     GMkVPI x1 -> r GMkVPI `a` f x1
+    GConjVPS x1 x2 -> r GConjVPS `a` f x1 `a` f x2
     GMayHave x1 -> r GMayHave `a` f x1
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GConjPrePostWho x1 x2 x3 x4 -> r GConjPrePostWho `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjPreWho x1 x2 x3 -> r GConjPreWho `a` f x1 `a` f x2 `a` f x3
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2
     GWHO x1 -> r GWHO `a` f x1
+    GListAP x1 -> r GListAP `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListAdv x1 -> r GListAdv `a` foldr (a . a (r (:)) . f) (r []) x1
     GListCond x1 -> r GListCond `a` foldr (a . a (r (:)) . f) (r []) x1
     GListConstraint x1 -> r GListConstraint `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListNP x1 -> r GListNP `a` foldr (a . a (r (:)) . f) (r []) x1
     GListTComparison x1 -> r GListTComparison `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListVPS x1 -> r GListVPS `a` foldr (a . a (r (:)) . f) (r []) x1
     GListWho x1 -> r GListWho `a` foldr (a . a (r (:)) . f) (r []) x1
     _ -> r t
 

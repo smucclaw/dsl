@@ -4,16 +4,18 @@ abstract NL4Base =
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
---      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
+      , ListAdv, BaseAdv, ConsAdv, ConjAdv 
+      , ListAP, BaseAP, ConsAP, ConjAP
+      , ListNP, BaseNP, ConsNP, ConjNP
       ]
   , Structural [
         Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
       , VV, must_VV  
       ]
   , Extend [
-        VPS, MkVPS --, [VPS], BaseVPS, ConsVPS, ConjVPS
+        VPS, MkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS
       , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
 --      , GenRP -- nice to have in the future?

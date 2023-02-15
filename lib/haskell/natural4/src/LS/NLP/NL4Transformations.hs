@@ -43,8 +43,8 @@ type ListFun single list = [Tree single] -> Tree list
 bs2gf :: (Gf (Tree s)) => ConjFun l s -> ConjPreFun l s -> ConjPrePostFun l s -> ListFun s l -> BoolStructGF s -> Tree s
 bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.Leaf x -> x
-    AA.Any Nothing xs -> conj GOR $ mkList $ f <$> xs
-    AA.All Nothing xs -> conj GAND $ mkList $ f <$> xs
+    AA.Any Nothing xs -> squeezeRedundant $ conj GOR $ mkList $ f <$> xs
+    AA.All Nothing xs -> squeezeRedundant $ conj GAND $ mkList $ f <$> xs
     AA.Any (Just (AA.Pre pre)) xs -> conjPre pre GOR $ mkList $ f <$> xs
     AA.All (Just (AA.Pre pre)) xs -> conjPre pre GAND $ mkList $ f <$> xs
     AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
@@ -101,7 +101,7 @@ pastTense :: forall a . Tree a -> Tree a
 pastTense (GMkVPS _ pol vp) = GMkVPS GpastSimul pol vp
 pastTense x = composOp pastTense x
 
--- TODO: generalise to other list constructors + lists longer than 2
+-- TODO: generalise to lists longer than 2
 squeezeRedundant :: forall a . Tree a -> Tree a
 squeezeRedundant (GConjCond conj (GListCond
   [ GTemporalConstraint cond1 tc1 date1
@@ -112,7 +112,32 @@ squeezeRedundant (GConjCond conj (GListCond
   where 
     conjTC :: GTComparison
     conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
-squeezeRedundant x = composOp squeezeRedundant x
 
--- handle e.g. this
--- ConjConstraint AND (BaseConstraint (ConjPreConstraint (NP_caused_by_PrePost Loss_or_Damage) OR (ConsConstraint (RPleafNP rodents) (ConsConstraint (RPleafNP insects) (BaseConstraint (RPleafNP vermin) (RPleafNP birds))))) (ConjConstraint OR (BaseConstraint (ConjConstraint AND (BaseConstraint (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAdv (PrepNP to_Prep Contents))))) (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAP (caused_by birds))))))) (ConjConstraint AND (ConsConstraint (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAP (ensuing (MassNP loss)))))) (BaseConstraint (RPleafS Loss_or_Damage (MkVPS presSimul POS (UseComp (CompAP covered)))) (ConjConstraint OR (BaseConstraint (RPleafS any_other_exclusion (MkVPS presSimul POS apply)) (ConjPreConstraint (NP_caused_NP_to_VP_Prep_PrePost animal water escape from_Prep) OR (ConsConstraint (RPleafNP household_appliance) (BaseConstraint (RPleafNP swimming_pool) (RPleafNP plumbing_heating_or_AC))))))))))))
+-- Finite amount of different list constructors, TODO can we use ViewPatterns to make it more readable?
+squeezeRedundant (GConjConstraint conj (GListConstraint
+  [ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompNP np1)))
+  , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp (GCompNP np2)))]))
+  | subj1==subj2
+  , temp1==temp2
+  , pol1==pol2 = GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompNP (GConjNP conj (GListNP [np1, np2])))))
+
+squeezeRedundant (GConjConstraint conj (GListConstraint
+  [ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAP ap1)))
+  , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp (GCompAP ap2)))]))
+  | subj1==subj2
+  , temp1==temp2
+  , pol1==pol2 = GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAP (GConjAP conj (GListAP [ap1, ap2])))))
+
+squeezeRedundant (GConjConstraint conj (GListConstraint
+  [ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAdv adv1)))
+  , GRPleafS subj2 (GMkVPS temp2 pol2 (GUseComp (GCompAdv adv2)))]))
+  | subj1==subj2
+  , temp1==temp2
+  , pol1==pol2 = GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp (GCompAdv (GConjAdv conj (GListAdv [adv1, adv2])))))
+
+squeezeRedundant (GConjConstraint conj (GListConstraint
+  [ GRPleafS subj1 vps1
+  , GRPleafS subj2 vps2]))
+  | subj1==subj2 = GRPleafS subj1 (GConjVPS conj (GListVPS [vps1, vps2]))
+
+squeezeRedundant x = composOp squeezeRedundant x

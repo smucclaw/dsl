@@ -78,7 +78,7 @@ nlg' thl env rule = case rule of
                       Nothing -> mempty
           condText = case cond of 
                       Just c -> 
-                        let condExpr = gf $ pastTense $ squeezeRedundant $ bsCond2gfCond (parseCondBS env c)
+                        let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
                          in ". If " <> gfLin env condExpr <> ", "
                       Nothing -> mempty
 

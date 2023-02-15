@@ -104,17 +104,16 @@ biggestS env rl = do
   guard (not $ null sorted)
   return ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
 
--- (namesAndStruct env rl)
-
-asPurescript l4i =
+asPurescript :: NLGEnv -> [Rule] -> String
+asPurescript env rl =
      show (vsep
-           [ "toplevelDecisions :: Map.Map (String) (Item String)"
-           , "toplevelDecisions = Map.fromFoldable " <>
+           [ "toplevelDecisions :: Object.Object (Item String)"
+           , "toplevelDecisions = Object.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                             , alwaysLabeled bs)
-                   | (names,bs) <- qaHornsT l4i
+                            , alwaysLabeled (justQuestions (head bs) (map fixNot (tail bs))))
+                   | (names,bs) <- (combine (namesAndStruct env rl) (namesAndQ env rl))
                    ]
                  )
              )
@@ -125,33 +124,7 @@ asPurescript l4i =
               . TL.replace "True" "true"
               . pShowNoColor $
               fmap toTuple . Map.toList . AA.getMarking $
-              getMarkings l4i
+              getMarkings (l4interpret defaultInterpreterOptions rl)
              )
            ]
           )
-
-
--- asPurescript :: NLGEnv -> [Rule] -> String
--- asPurescript env rl =
---      show (vsep
---            [ "toplevelDecisions :: Object.Object (Item String)"
---            , "toplevelDecisions = Object.fromFoldable " <>
---              (pretty $ TL.unpack (
---                  pShowNoColor
---                    [ toTuple ( T.intercalate " / " (mt2text <$> names)
---                             , alwaysLabeled (justStatements (head bs) (map fixNot (tail bs))))
---                    | (names,bs) <- (combine (namesAndStruct env rl) (namesAndQ env rl))
---                    ]
---                  )
---              )
---            , "toplevelDefaultMarking :: Marking"
---            , "toplevelDefaultMarking = Marking $ Map.fromFoldable " <>
---              (pretty . TL.unpack
---               . TL.replace "False" "false"
---               . TL.replace "True" "true"
---               . pShowNoColor $
---               fmap toTuple . Map.toList . AA.getMarking $
---               getMarkings (l4interpret defaultInterpreterOptions rl)
---              )
---            ]
---           )

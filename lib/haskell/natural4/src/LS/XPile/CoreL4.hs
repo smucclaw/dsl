@@ -186,6 +186,8 @@ falseVNoType = ValE () (BoolV False)
 -- Convert variable name to global variable
 -- TODO: should be refined to generate local/global variable 
 -- depending on contextual information when available
+-- ASP TODO: add env (var list) as a second arg, and look up varname in env
+-- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
 varNameToVarNoType :: VarName -> Var ()
 varNameToVarNoType vn = GlobalVar (QVarName () vn)
 
@@ -261,6 +263,9 @@ relationalPredicateToExpr rp = case rp of
     BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType mts) falseVNoType
   RPnary rr rp' -> undefined
 
+
+-- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
+-- i.e. precondOfHornClauses :: [HornClause2] -> [String] -> Expr ()
 precondOfHornClauses :: [HornClause2] -> Expr ()
 precondOfHornClauses [HC _hh (Just hb)] = boolStructRToExpr hb
 precondOfHornClauses _ = trueVNoType
@@ -311,12 +316,15 @@ sfl4ToCorel4Rule Hornlike{..} =
                     _                         -> Nothing
                 | ts <- snd <$> NE.toList pt
                 ]
+    -- ASP TODO: localContext = extractLocalsFromGiven given
+    -- account also for the case where there are no givens in horn clause
     rule = RuleTLE Rule
       { annotOfRule    = ()
       , nameOfRule     = rlabel <&> rl2text <&> T.unpack
       , instrOfRule    = []
       , varDeclsOfRule = []
       , precondOfRule  = precondOfHornClauses clauses
+      -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
       , postcondOfRule = postcondOfHornClauses clauses
       }
 

@@ -5,6 +5,7 @@ module LS.NLP.NL4Transformations where
 import LS.NLP.NL4
 import qualified AnyAll as AA
 import Data.Maybe (fromMaybe)
+import Data.Foldable (toList)
 
 flipPolarity :: forall a . Tree a -> Tree a
 flipPolarity (GMkVPS temp GPOS vp) = GMkVPS temp GNEG vp
@@ -70,16 +71,9 @@ mapBSLabel f g bs = case bs of
     AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
     AA.Not x -> AA.Not $ mapBSLabel f g x
 
-bsConstraint2questions :: BoolStructConstraint -> BoolStructConstraint
-bsConstraint2questions = mapBSLabel GqPREPOST GqCONSTR
-
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
 applyLabel f (AA.Pre a) = AA.Pre (f a)
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
-
--- could do this technically?
--- instance Functor AA.Label where
---     fmap = applyLabel
 
 -----------------------------------------------------------------------------
 -- Generic useful transformations
@@ -137,3 +131,11 @@ squeezeTrees conj [
   | subj1==subj2 = pure $ GRPleafS subj1 (GConjVPS conj (GListVPS [vps1, vps2]))
 
 squeezeTrees _ _ = Nothing
+
+
+aggregateBoolStruct :: forall a . BoolStructGF a ->  BoolStructGF a
+aggregateBoolStruct bs = case bs of 
+
+    AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
+    AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
+    _ -> bs

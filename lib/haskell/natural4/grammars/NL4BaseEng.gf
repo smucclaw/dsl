@@ -35,7 +35,9 @@ concrete NL4BaseEng of NL4Base =
     in {
   lincat
     Rule = S ;
-    Question = QS ;
+
+    Text = Utt ;
+
     Cond = LinCond ; -- RPConstraint
                       -- [ MTT "the data breach occurs" ] ( RPTC TOn )
                       -- [ MTT "1 Feb 2022" ] 
@@ -65,9 +67,12 @@ concrete NL4BaseEng of NL4Base =
 -- Application layer
     -- : Subj -> Deontic -> Action -> Rule ;
     Regulative subj deontic action = mkS (mkCl subj (ComplVPIVV deontic action)) ;
-    qWHO subj who = ExtendEng.SQuestVPS subj who ;
-    qCOND cond = cond.qs ;
+    qWHO subj who = cc2 (mkUtt (ExtendEng.SQuestVPS subj who)) (ss "?") ;
+    sWHO subj who = mkUtt (ExtendEng.PredVPS subj who) ;
+    qCOND cond = cc2 (mkUtt cond.qs) (ss "?") ;
+    sCOND cond = mkUtt cond.s ;
     qUPON subj upon = qWHO subj (MkVPS presAnt positivePol upon) ;
+    sUPON subj upon = sWHO subj (MkVPS presAnt positivePol upon) ;
 
     EVERY cn = every <lin CN cn : CN> ;
     PARTY cn = mkNP <lin CN cn : CN> ;
@@ -200,10 +205,9 @@ concrete NL4BaseEng of NL4Base =
             s  = pr.s ++ constr.s ++ pst.s ;
             qs =  pr.s ++ constr.s ++ pst.s ++ "?" ; -- if Constraint has undergone ConjConstraint, it will have ? after every item, we don't want that
           } ;
-  -- convert into questions – lincats have fields for question and statement
-  -- TODO how about using Question type? or is that only for Regulative rules?
+
     qPREPOST,
-    qCONSTR = \c -> c ** {s = c.qs} ;
+    qCONSTR = \c -> lin Utt (ss c.qs) ;
 
 
 -----------------------------------------------------------------------------

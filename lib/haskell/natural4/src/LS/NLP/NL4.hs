@@ -97,8 +97,6 @@ type GPrePost = Tree GPrePost_
 data GPrePost_
 type GPrep = Tree GPrep_
 data GPrep_
-type GQuestion = Tree GQuestion_
-data GQuestion_
 type GRule = Tree GRule_
 data GRule_
 type GS = Tree GS_
@@ -123,6 +121,8 @@ type GTemp = Tree GTemp_
 data GTemp_
 type GTemporal = Tree GTemporal_
 data GTemporal_
+type GText = Tree GText_
+data GText_
 type GTimeUnit = Tree GTimeUnit_
 data GTimeUnit_
 type GUpon = Tree GUpon_
@@ -190,7 +190,6 @@ data Tree :: * -> * where
   GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GRPleafNP :: GNP -> Tree GConstraint_
   GRPleafS :: GNP -> GVPS -> Tree GConstraint_
-  GqCONSTR :: GConstraint -> Tree GConstraint_
   GrecoverRPis :: GString -> GString -> Tree GConstraint_
   GMkDate :: GInt -> GMonth -> GInt -> Tree GDate_
   GMAY :: Tree GDeontic_
@@ -251,7 +250,6 @@ data Tree :: * -> * where
   GPOS :: Tree GPol_
   GNP_caused_NP_to_VP_Prep_PrePost :: GNP -> GNP -> GVP -> GPrep -> Tree GPrePost_
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
-  GqPREPOST :: GPrePost -> Tree GPrePost_
   GrecoverUnparsedPre :: GString -> Tree GPrePost_
   Gabout_Prep :: Tree GPrep_
   Gby8means_Prep :: Tree GPrep_
@@ -259,9 +257,6 @@ data Tree :: * -> * where
   Gfrom_Prep :: Tree GPrep_
   Gon_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
-  GqCOND :: GCond -> Tree GQuestion_
-  GqUPON :: GSubj -> GUpon -> Tree GQuestion_
-  GqWHO :: GSubj -> GWho -> Tree GQuestion_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GRule_
   GPredVPS :: GNP -> GVPS -> Tree GS_
   GReferenceNP :: GNP -> Tree GS_
@@ -308,6 +303,14 @@ data Tree :: * -> * where
   GpresAnt :: Tree GTemp_
   GpresSimul :: Tree GTemp_
   GWITHIN :: GInt -> GTimeUnit -> Tree GTemporal_
+  GqCOND :: GCond -> Tree GText_
+  GqCONSTR :: GConstraint -> Tree GText_
+  GqPREPOST :: GPrePost -> Tree GText_
+  GqUPON :: GSubj -> GUpon -> Tree GText_
+  GqWHO :: GSubj -> GWho -> Tree GText_
+  GsCOND :: GCond -> Tree GText_
+  GsUPON :: GSubj -> GUpon -> Tree GText_
+  GsWHO :: GSubj -> GWho -> Tree GText_
   GDay_Unit :: Tree GTimeUnit_
   GMonth_Unit :: Tree GTimeUnit_
   GYear_Unit :: Tree GTimeUnit_
@@ -365,7 +368,6 @@ instance Eq (Tree a) where
     (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GRPleafNP x1,GRPleafNP y1) -> and [ x1 == y1 ]
     (GRPleafS x1 x2,GRPleafS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GqCONSTR x1,GqCONSTR y1) -> and [ x1 == y1 ]
     (GrecoverRPis x1 x2,GrecoverRPis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMkDate x1 x2 x3,GMkDate y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GMAY,GMAY) -> and [ ]
@@ -426,7 +428,6 @@ instance Eq (Tree a) where
     (GPOS,GPOS) -> and [ ]
     (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4,GNP_caused_NP_to_VP_Prep_PrePost y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
-    (GqPREPOST x1,GqPREPOST y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPre x1,GrecoverUnparsedPre y1) -> and [ x1 == y1 ]
     (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
@@ -434,9 +435,6 @@ instance Eq (Tree a) where
     (Gfrom_Prep,Gfrom_Prep) -> and [ ]
     (Gon_Prep,Gon_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
-    (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
-    (GqUPON x1 x2,GqUPON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GqWHO x1 x2,GqWHO y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GReferenceNP x1,GReferenceNP y1) -> and [ x1 == y1 ]
@@ -483,6 +481,14 @@ instance Eq (Tree a) where
     (GpresAnt,GpresAnt) -> and [ ]
     (GpresSimul,GpresSimul) -> and [ ]
     (GWITHIN x1 x2,GWITHIN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
+    (GqCONSTR x1,GqCONSTR y1) -> and [ x1 == y1 ]
+    (GqPREPOST x1,GqPREPOST y1) -> and [ x1 == y1 ]
+    (GqUPON x1 x2,GqUPON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GqWHO x1 x2,GqWHO y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GsCOND x1,GsCOND y1) -> and [ x1 == y1 ]
+    (GsUPON x1 x2,GsUPON y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GsWHO x1 x2,GsWHO y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GDay_Unit,GDay_Unit) -> and [ ]
     (GMonth_Unit,GMonth_Unit) -> and [ ]
     (GYear_Unit,GYear_Unit) -> and [ ]
@@ -616,7 +622,6 @@ instance Gf GConstraint where
   gf (GConjPrePostConstraint x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostConstraint") [gf x1, gf x2, gf x3, gf x4]
   gf (GRPleafNP x1) = mkApp (mkCId "RPleafNP") [gf x1]
   gf (GRPleafS x1 x2) = mkApp (mkCId "RPleafS") [gf x1, gf x2]
-  gf (GqCONSTR x1) = mkApp (mkCId "qCONSTR") [gf x1]
   gf (GrecoverRPis x1 x2) = mkApp (mkCId "recoverRPis") [gf x1, gf x2]
 
   fg t =
@@ -626,7 +631,6 @@ instance Gf GConstraint where
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostConstraint" -> GConjPrePostConstraint (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "RPleafNP" -> GRPleafNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "RPleafS" -> GRPleafS (fg x1) (fg x2)
-      Just (i,[x1]) | i == mkCId "qCONSTR" -> GqCONSTR (fg x1)
       Just (i,[x1,x2]) | i == mkCId "recoverRPis" -> GrecoverRPis (fg x1) (fg x2)
 
 
@@ -908,14 +912,12 @@ instance Gf GPol where
 instance Gf GPrePost where
   gf (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4) = mkApp (mkCId "NP_caused_NP_to_VP_Prep_PrePost") [gf x1, gf x2, gf x3, gf x4]
   gf (GNP_caused_by_PrePost x1) = mkApp (mkCId "NP_caused_by_PrePost") [gf x1]
-  gf (GqPREPOST x1) = mkApp (mkCId "qPREPOST") [gf x1]
   gf (GrecoverUnparsedPre x1) = mkApp (mkCId "recoverUnparsedPre") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3,x4]) | i == mkCId "NP_caused_NP_to_VP_Prep_PrePost" -> GNP_caused_NP_to_VP_Prep_PrePost (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "NP_caused_by_PrePost" -> GNP_caused_by_PrePost (fg x1)
-      Just (i,[x1]) | i == mkCId "qPREPOST" -> GqPREPOST (fg x1)
       Just (i,[x1]) | i == mkCId "recoverUnparsedPre" -> GrecoverUnparsedPre (fg x1)
 
 
@@ -940,20 +942,6 @@ instance Gf GPrep where
 
 
       _ -> error ("no Prep " ++ show t)
-
-instance Gf GQuestion where
-  gf (GqCOND x1) = mkApp (mkCId "qCOND") [gf x1]
-  gf (GqUPON x1 x2) = mkApp (mkCId "qUPON") [gf x1, gf x2]
-  gf (GqWHO x1 x2) = mkApp (mkCId "qWHO") [gf x1, gf x2]
-
-  fg t =
-    case unApp t of
-      Just (i,[x1]) | i == mkCId "qCOND" -> GqCOND (fg x1)
-      Just (i,[x1,x2]) | i == mkCId "qUPON" -> GqUPON (fg x1) (fg x2)
-      Just (i,[x1,x2]) | i == mkCId "qWHO" -> GqWHO (fg x1) (fg x2)
-
-
-      _ -> error ("no Question " ++ show t)
 
 instance Gf GRule where
   gf (GRegulative x1 x2 x3) = mkApp (mkCId "Regulative") [gf x1, gf x2, gf x3]
@@ -1142,6 +1130,30 @@ instance Gf GTemporal where
 
 
       _ -> error ("no Temporal " ++ show t)
+
+instance Gf GText where
+  gf (GqCOND x1) = mkApp (mkCId "qCOND") [gf x1]
+  gf (GqCONSTR x1) = mkApp (mkCId "qCONSTR") [gf x1]
+  gf (GqPREPOST x1) = mkApp (mkCId "qPREPOST") [gf x1]
+  gf (GqUPON x1 x2) = mkApp (mkCId "qUPON") [gf x1, gf x2]
+  gf (GqWHO x1 x2) = mkApp (mkCId "qWHO") [gf x1, gf x2]
+  gf (GsCOND x1) = mkApp (mkCId "sCOND") [gf x1]
+  gf (GsUPON x1 x2) = mkApp (mkCId "sUPON") [gf x1, gf x2]
+  gf (GsWHO x1 x2) = mkApp (mkCId "sWHO") [gf x1, gf x2]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "qCOND" -> GqCOND (fg x1)
+      Just (i,[x1]) | i == mkCId "qCONSTR" -> GqCONSTR (fg x1)
+      Just (i,[x1]) | i == mkCId "qPREPOST" -> GqPREPOST (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "qUPON" -> GqUPON (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "qWHO" -> GqWHO (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "sCOND" -> GsCOND (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "sUPON" -> GsUPON (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "sWHO" -> GsWHO (fg x1) (fg x2)
+
+
+      _ -> error ("no Text " ++ show t)
 
 instance Gf GTimeUnit where
   gf GDay_Unit = mkApp (mkCId "Day_Unit") []
@@ -1342,7 +1354,6 @@ instance Compos Tree where
     GConjPrePostConstraint x1 x2 x3 x4 -> r GConjPrePostConstraint `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GRPleafNP x1 -> r GRPleafNP `a` f x1
     GRPleafS x1 x2 -> r GRPleafS `a` f x1 `a` f x2
-    GqCONSTR x1 -> r GqCONSTR `a` f x1
     GrecoverRPis x1 x2 -> r GrecoverRPis `a` f x1 `a` f x2
     GMkDate x1 x2 x3 -> r GMkDate `a` f x1 `a` f x2 `a` f x3
     GIDig x1 -> r GIDig `a` f x1
@@ -1354,11 +1365,7 @@ instance Compos Tree where
     Gnum x1 -> r Gnum `a` f x1
     GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4 -> r GNP_caused_NP_to_VP_Prep_PrePost `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GNP_caused_by_PrePost x1 -> r GNP_caused_by_PrePost `a` f x1
-    GqPREPOST x1 -> r GqPREPOST `a` f x1
     GrecoverUnparsedPre x1 -> r GrecoverUnparsedPre `a` f x1
-    GqCOND x1 -> r GqCOND `a` f x1
-    GqUPON x1 x2 -> r GqUPON `a` f x1 `a` f x2
-    GqWHO x1 x2 -> r GqWHO `a` f x1 `a` f x2
     GRegulative x1 x2 x3 -> r GRegulative `a` f x1 `a` f x2 `a` f x3
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
     GReferenceNP x1 -> r GReferenceNP `a` f x1
@@ -1389,6 +1396,14 @@ instance Compos Tree where
     GTHE x1 -> r GTHE `a` f x1
     GConjTComparison x1 x2 -> r GConjTComparison `a` f x1 `a` f x2
     GWITHIN x1 x2 -> r GWITHIN `a` f x1 `a` f x2
+    GqCOND x1 -> r GqCOND `a` f x1
+    GqCONSTR x1 -> r GqCONSTR `a` f x1
+    GqPREPOST x1 -> r GqPREPOST `a` f x1
+    GqUPON x1 x2 -> r GqUPON `a` f x1 `a` f x2
+    GqWHO x1 x2 -> r GqWHO `a` f x1 `a` f x2
+    GsCOND x1 -> r GsCOND `a` f x1
+    GsUPON x1 x2 -> r GsUPON `a` f x1 `a` f x2
+    GsWHO x1 x2 -> r GsWHO `a` f x1 `a` f x2
     GUPON x1 -> r GUPON `a` f x1
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplV2 x1 x2 -> r GComplV2 `a` f x1 `a` f x2

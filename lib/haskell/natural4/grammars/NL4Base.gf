@@ -80,8 +80,6 @@ abstract NL4Base =
       ConjPreCond : PrePost -> Conj -> [Cond] -> Cond ; -- TODO need to find examples in the wild
       ConjPrePostCond : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;
 
-      recoverUnparsedPre : String -> PrePost ; -- Workaround if PrePost not parsed (since they are not full constituents)
-
 -- Time expressions
     cat
       Temporal ;
@@ -110,7 +108,6 @@ abstract NL4Base =
     --   IncompleteConstraint ;
     --   [IncompleteConstraint]{2} ;
     fun
-      recoverRPis : String -> String -> Constraint ;
 
       RPleafS : NP -> VPS -> Constraint ;
       RPleafNP : NP -> Constraint ; -- to pair with PrePost to get a full sentence ???
@@ -120,6 +117,21 @@ abstract NL4Base =
 
       qPREPOST : PrePost -> Text ;
       qCONSTR : Constraint -> Text ;
+
+-----------------------------------------------------------------------------
+-- Instead of crashing, every category should have a dummy constructor where to put a string
+
+    fun
+      recoverUnparsedPrePost : String -> PrePost ; -- Workaround if PrePost not parsed (since they are not full constituents)
+      recoverUnparsedConstraint : String -> Constraint ;
+      recoverUnparsedWho : String -> Who ;
+      recoverUnparsedCond : String -> Cond ;
+      recoverUnparsedUpon : String -> Upon ;
+      recoverUnparsedSubj : String -> Subj ;
+      recoverUnparsedAction : String -> Action ;
+
+      recoverRPis : String -> String -> Constraint ;
+
 
 -----------------------------------------------------------------------------
 -- Shortcuts and extensions to RGL

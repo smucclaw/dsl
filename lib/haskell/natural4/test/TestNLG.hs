@@ -9,8 +9,9 @@ import Parsing.PDPASpec (expected_pdpadbno1)
 import qualified AnyAll as AA
 import LS.Types
 
-nlgTests :: NLGEnv -> Spec
-nlgTests env = do
+nlgTests ::  Spec
+nlgTests = do
+  env <- runIO myNLGEnv
   describe "test rodents" $ do
     it "Should return questions about rodent damage" $ do
         let questions = mkConstraintText env GqPREPOST GqCONSTR rodentsBSR

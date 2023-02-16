@@ -160,8 +160,8 @@ xtexttest testText desc parseFunc expected =
     parseFunc (show testText) `traverse` exampleStreams testcsv
       `shouldParse` [ expected ]
 
-parserTests :: NLGEnv -> Spec
-parserTests nlgEnv = do
+parserTests :: Spec
+parserTests = do
     let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
@@ -172,8 +172,6 @@ parserTests nlgEnv = do
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
-
-        asCList = checklist nlgEnv (runConfig { extendedGrounds = True })
 
     describe "Parsing boolstruct" $ do
       filetest "boolstructp-1" "basic boolstruct of text"

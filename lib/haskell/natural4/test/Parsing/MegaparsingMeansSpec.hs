@@ -19,8 +19,8 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
-parserTests :: Spec
-parserTests  = do
+spec :: Spec
+spec = do
     let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b

@@ -9,8 +9,8 @@ import Parsing.PDPASpec (expected_pdpadbno1)
 import qualified AnyAll as AA
 import LS.Types
 
-nlgTests ::  Spec
-nlgTests = do
+spec :: Spec
+spec = do
   env <- runIO myNLGEnv
   describe "test rodents" $ do
     it "Should return questions about rodent damage" $ do

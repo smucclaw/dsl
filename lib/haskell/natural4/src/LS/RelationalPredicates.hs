@@ -222,7 +222,6 @@ import LS.Types
 import LS.Rule
 import LS.Tokens
 import LS.Parser
-import Data.Tree
 import AnyAll.BoolStruct (mkLeaf)
 
 
@@ -754,16 +753,16 @@ slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
   (lhs, (rhs, typesig))   <- try (
     (,) -- key followed by values, and the values can sit on top of a MEANS
-      $>| pOtherVal
+      $>| pMTExpr
       ->| 1
       |*| nestedHorn fst id meansIsWhose pBSR
            ((,) $>| someDeep pMTExpr |*| (|?|) slTypeSig))
     <|> -- key without values, so we put the MEANS under the key
-    nestedHorn (pure . MTT . fst) id meansIsWhose pBSR
+    nestedHorn (pure . fst) id meansIsWhose pBSR
     ((\l rt -> (l,([],rt)))
-     $>| pOtherVal
+     $>| pMTExpr
      |*| (|?|) slTypeSig)
-  return (fromList (MTT lhs : rhs), typesig)
+  return (fromList (lhs : rhs), typesig)
 
 
 getSrcRef :: Parser SrcRef

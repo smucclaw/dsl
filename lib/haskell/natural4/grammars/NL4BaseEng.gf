@@ -163,17 +163,6 @@ concrete NL4BaseEng of NL4Base =
     npStr : NP -> Str = \np -> (UttNP np).s ;
   lin
 
-    recoverUnparsedPre string = {
-      s = "!" ++ string.s ; -- if PrePost isn't parsed, use the original string
-      qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
-      } ;
-
-    -- : String -> String -> Constraint ;
-    recoverRPis damage toContents = {
-      s = "!" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
-      qs = "! is" ++ damage.s ++ toContents.s ++ "?"
-      } ;
-
     RPleafNP np = {s = npStr np ; qs = npStr np ++ "?"} ;
     RPleafS np vps = {
       s = (PredVPS np vps).s ;
@@ -209,11 +198,40 @@ concrete NL4BaseEng of NL4Base =
     qPREPOST,
     qCONSTR = \c -> lin Utt (ss c.qs) ;
 
+-----------------------------------------------------------------------------
+-- Instead of crashing, every category should have a dummy constructor where to put a string
 
+    recoverUnparsedPrePost string = {
+      s = "·" ++ string.s ; -- if PrePost isn't parsed, use the original string
+      qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
+      } ;
+
+    -- : String -> String -> Constraint ;
+    recoverRPis damage toContents = {
+      s = "·" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
+      qs = "Is" ++ damage.s ++ toContents.s ++ "?"
+      } ;
+    recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
+
+    recoverUnparsedWho string = MkVPS presSimul POS (mkVP (invarV string.s)) ;
+
+    recoverUnparsedCond string = {
+      s = lin S string ;
+      qs = lin QS {s = \\_ => string.s}
+      } ;
+
+    recoverUnparsedUpon string = mkVP (invarV string.s) ;
+
+    recoverUnparsedSubj string = symb string ;
+
+    recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
+
+  oper 
+    invarV : Str -> V = \s -> mk5V s s s s s ;
 -----------------------------------------------------------------------------
 -- RGL layer, later to be automatically generated in different modules
 
-
+  lin
     -- : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred 
     ComplVAS become aware db_occurs = 
       let become_aware : VP = mkVP <lin VA become : VA> <lin AP aware : AP> ;

@@ -15,9 +15,6 @@ import AnyAll.BoolStruct
 import Data.Maybe (maybeToList)
 import Data.List (nub, groupBy)
 import qualified Data.Text as Text
-import Control.Monad (when)
-
-import PGF ( linearize, languages )
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 import qualified Data.Map as Map
 import qualified Data.Text as T

@@ -261,8 +261,8 @@ parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
   where
     aTxt = mt2text a
     bTxt = bsr2text b
-    nps = parseAny "NP" env aTxt
-    vps = parseAny "VPS" env $ Text.unwords ["is", bTxt]
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
     
     tString :: Text.Text -> GString
     tString = GString . read . Text.unpack
@@ -272,8 +272,8 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
   where
     aTxt = mt2text a
     bTxt = mt2text b
-    nps = parseAny "NP" env aTxt
-    vps = parseAny "VPS" env $ Text.unwords ["is", bTxt]
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
     
     tString :: Text.Text -> GString
     tString = GString . read . Text.unpack
@@ -286,12 +286,22 @@ parseConstraint env rp = let txt = rp2text rp in
 parsePrePost :: NLGEnv -> Text.Text -> GPrePost
 parsePrePost env txt = 
   case parseAny "PrePost" env txt of
-    [] -> GrecoverUnparsedPre $ GString $ Text.unpack txt
+    [] -> GrecoverUnparsedPrePost $ GString $ Text.unpack txt
     x:_ -> fg x
 
 -- TODO: later if grammar is ambiguous, should we rank trees here?
 parseAny :: String -> NLGEnv -> Text.Text -> [Expr] 
-parseAny cat env = gfParse env typ 
+parseAny cat env txt = res
+  where
+    typ = case readType cat of 
+            Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
+            Just t -> t
+    res = case gfParse env typ txt of 
+            [] -> [mkApp (mkCId $ "recoverUnparsed"<>cat) [mkStr $ Text.unpack txt]]
+            xs -> xs
+
+parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
+parseAnyNoRecover cat env = gfParse env typ
   where
     typ = case readType cat of 
             Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]

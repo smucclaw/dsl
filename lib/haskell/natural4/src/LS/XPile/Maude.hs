@@ -106,7 +106,7 @@ rules2doc rules = rules
 pretty2Qid :: forall ann. T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
-rules2maudeStr :: Foldable t => t Rule -> String
+rules2maudeStr :: forall t. Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
 henceLest2maudeStr :: forall ann. Maybe Rule -> Doc ann

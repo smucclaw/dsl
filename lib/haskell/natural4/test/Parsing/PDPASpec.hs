@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module Parsing.PDPASpec where
 
 import Text.Megaparsec
@@ -37,7 +38,7 @@ spec = do
 
       filetest "pdpadbno-2" "data intermediaries"
         (parseR pToplevel)
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT "Data Intermediary" :| [], Nothing) :| []),
               rkeyword = REvery,
               who = Just (mkLeaf (mkRpmt [ "is not",  "processing personal data on behalf of and for the purposes of a public agency"])),
@@ -45,17 +46,8 @@ spec = do
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Organisation"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
-              hence = Nothing,
-              lest = Nothing,
               rlabel = Just ("\167", 2, "Data Intermediary non PA"),
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Just ((MTT <$> "becoming aware a data breach involving a client Organisation may have occurred" :| [], Nothing) :| []),
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              upon = Just ((MTT <$> "becoming aware a data breach involving a client Organisation may have occurred" :| [], Nothing) :| [])
             },
           DefNameAlias {
           name = [MTT "You"], detail = [MTT "Data Intermediary"], nlhint = Nothing, srcref = mkTestSrcRef 2 3}
@@ -63,25 +55,15 @@ spec = do
 
       filetest "pdpadbno-3" "data intermediaries"
         (parseR pToplevel)
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT <$> "Data Intermediary" :| [], Nothing) :| []),
               rkeyword = REvery,
               who = Just (mkLeaf (mkRpmt ["processes personal data on behalf of and for the purposes of a public agency"])),
-              cond = Nothing,
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Public Agency"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
-              hence = Nothing,
-              lest = Nothing,
               rlabel = Just ("\167", 2, "Data Intermediary for PA"),
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Just ((MTT <$> "becoming aware a data breach involving a client public agency may have occurred" :| [], Nothing) :| []),
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              upon = Just ((MTT <$> "becoming aware a data breach involving a client public agency may have occurred" :| [], Nothing) :| [])
             },
           DefNameAlias
             { name = [MTT "You"],
@@ -93,10 +75,9 @@ spec = do
 
       filetest "pdpadbno-5" "notification to PDPC"
         (parseR pToplevel)
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT "You" :| [], Nothing) :| []),
               rkeyword = RParty,
-              who = Nothing,
               cond = Just (All Nothing [mkLeaf (mkRpmt [ "it is",  "an NDB"]), Not (mkLeaf (mkRpmt ["you are a Public Agency"]))]),
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the PDPC"], Nothing) :| [ (MTT <$> "in" :| ["the form and manner specified at www.pdpc.gov.sg"], Nothing),
@@ -113,16 +94,7 @@ spec = do
                         srcref = Nothing
                       }
                   ),
-              lest = Nothing,
-              rlabel = Just ("\167", 2, "Notify PDPC"),
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Nothing,
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              rlabel = Just ("\167", 2, "Notify PDPC")
             },
           DefNameAlias
             { name = [MTT "the PDPC Exclusion List"],
@@ -218,9 +190,7 @@ spec = do
                       clauses = [HC {hHead = mkRpmt ["the Notifiable Individuals"], hBody = Nothing}],
                       srcref = mkTestSrcRef 2 9
                     }
-                ],
-              defaults = [],
-              symtab = []
+                ]
             },
           defaultHorn
             { name = [MTT "the Notifiable Individuals"],

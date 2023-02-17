@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module Parsing.MegaparsingSpec where
 
 import Text.Megaparsec
@@ -128,7 +129,7 @@ spec = do
 
       filetest "indented-2" "inline constitutive rule"
         (parseR pRules) 
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT "person" :| [], Nothing) :| []),
               rkeyword = REvery,
               who =
@@ -139,21 +140,9 @@ spec = do
                         mkLeafR "degustates"
                       ]
                   ),
-              cond = Nothing,
               deontic = DMust,
               action = mkLeaf ((MTT "sing" :| [], Nothing) :| []),
-              temporal = Nothing,
-              hence = Nothing,
-              lest = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Nothing,
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 1
             },
           Hornlike
             { name = [MTT "degustates"],
@@ -186,7 +175,7 @@ spec = do
 
       filetest "indented-3" "defined names in natural positions"
         (parseR pRules)
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT "person" :| [], Nothing) :| []),
               rkeyword = REvery,
               who =
@@ -197,21 +186,9 @@ spec = do
                         mkLeafR "degustates"
                       ]
                   ),
-              cond = Nothing,
               deontic = DMust,
               action = mkLeaf ((MTT "sing" :| [], Nothing) :| []),
-              temporal = Nothing,
-              hence = Nothing,
-              lest = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Nothing,
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 1
             },
           Hornlike
             { name = [MTT "imbibes"],

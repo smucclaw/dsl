@@ -90,7 +90,7 @@ executables:
 
 tests:
   natural4-test:
-    main:                RootSpec.hs
+    main:                Spec.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -98,17 +98,6 @@ tests:
     - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
     - natural4
-
-  natural4-unittest:
-    main:                Spec.hs
-    source-dirs:         utest
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - '"-with-rtsopts=-N -H500M -qg"'
-    dependencies:
-    - natural4
-    - hspec-megaparsec
 
 benchmarks:
     natural4-bench:

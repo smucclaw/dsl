@@ -1,15 +1,9 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-
@@ -21,15 +15,12 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
-import Control.Lens (bimap)
-import Control.Monad (join)
 import Data.Coerce (coerce)
 import Data.Foldable (Foldable (foldMap'))
 import Data.Functor ((<&>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
 import Flow ((|>))
-import GHC.TypeLits (Nat)
 import LS.Rule
   ( Rule (..),
   )
@@ -95,15 +86,31 @@ rule2doc
       [henceLest2maudeStr hence],
       [henceLest2maudeStr lest]
     ]
-      |> foldMapWithNewLines @1 hsep
+    |> map hsep
+    |> foldMap' coerce2CatWithNewLine
+    |> coerce2Doc
     where
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
+      coerce2CatWithNewLine :: Doc ann -> CatWithNewLine ann
+      coerce2CatWithNewLine = coerce
+      coerce2Doc :: CatWithNewLine ann -> Doc ann
+      coerce2Doc = coerce
+
 rule2doc _ = "Not supported."
 
 rules2doc :: Foldable t => t Rule -> Doc ann
-rules2doc rules = rules |> foldMapWithNewLines @2 rule2doc
+rules2doc rules = rules
+ |> foldMap' toCatWithCommaAndNewLines
+ |> coerce2Doc
+ where
+  toCatWithCommaAndNewLines rule = rule
+    |> rule2doc |> coerce2CatWithCommaAndNewLines
+  coerce2CatWithCommaAndNewLines :: Doc ann -> CatWithCommaAndNewLines ann
+  coerce2CatWithCommaAndNewLines = coerce
+  coerce2Doc :: CatWithCommaAndNewLines ann -> Doc ann
+  coerce2Doc = coerce
 
 pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
@@ -120,42 +127,35 @@ henceLest2maudeStr hence = hence |> maybe "NOTHING" f
     quotOrUpper (MTT x) = x |> pretty2Qid
     quotOrUpper _ = ""
 
-foldMapWithNewLines ::
-  forall n a ann t.
-  (Foldable t, Semigroup (CatWithNewLines n ann)) =>
-  (a -> Doc ann) ->
-  t a ->
-  Doc ann
-foldMapWithNewLines f docs = docs |> foldMap' f' |> coerce
-  where
-    f' :: a -> CatWithNewLines n ann
-    f' x = x |> f |> coerce
-
--- Used to define the monoid <> op for CatWithNewLines
-catWithNewLines ::
-  forall n ann.
-  Int ->
-  CatWithNewLines n ann ->
-  CatWithNewLines n ann ->
-  CatWithNewLines n ann
-catWithNewLines n x y = [x', lines', y'] |> mconcat |> coerce
-  where
-    (x', y') = (x, y) |> join bimap coerce2doc
-    lines' = line |> replicate n |> mconcat
-    coerce2doc :: CatWithNewLines n ann -> Doc ann
-    coerce2doc = coerce
+-- foldMapWithNewLines ::
+--   (Foldable t, Semigroup (CatWithNewLine ann)) =>
+--   (a -> Doc ann) ->
+--   t a ->
+--   Doc ann
+-- foldMapWithNewLines f docs = docs |> foldMap' f' |> coerce
+--   where
+--     f' :: a -> CatWithNewLine ann
+--     f' x = x |> f |> coerce
 
 -- Boring utilities below.
-newtype CatWithNewLines (n :: Nat) ann = CatWithNewLines (Doc ann)
+newtype CatWithNewLine ann = CatWithNewLine (Doc ann)
 
-instance
-  Semigroup (CatWithNewLines n ann) =>
-  Monoid (CatWithNewLines n ann)
-  where
-  mempty = CatWithNewLines ""
+newtype CatWithCommaAndNewLines ann = CatWithCommaAndNewLines (Doc ann)
 
-instance Semigroup (CatWithNewLines 1 ann) where
-  (<>) = catWithNewLines 1
+instance Semigroup (CatWithNewLine ann) where
+  x <> y = [x', line, y'] |> mconcat |> coerce @(Doc ann)
+    where
+      x' = coerce x
+      y' = coerce y
 
-instance Semigroup (CatWithNewLines 2 ann) where
-  (<>) = catWithNewLines 2
+instance Monoid (CatWithNewLine ann) where
+  mempty = CatWithNewLine ""
+
+instance Semigroup (CatWithCommaAndNewLines ann) where
+  x <> y = [x', ",", line, line, y'] |> mconcat |> coerce @(Doc ann)
+    where
+      x' = coerce x
+      y' = coerce y
+
+instance Monoid (CatWithCommaAndNewLines ann) where
+  mempty = CatWithCommaAndNewLines ""

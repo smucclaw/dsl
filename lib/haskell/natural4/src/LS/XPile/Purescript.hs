@@ -126,5 +126,15 @@ asPurescript env rl =
               fmap toTuple . Map.toList . AA.getMarking $
               getMarkings (l4interpret defaultInterpreterOptions rl)
              )
+          , "toplevelStatements :: Object.Object (Item String)"
+          , "toplevelStatements = Object.fromFoldable " <>
+            (pretty $ TL.unpack (
+                pShowNoColor
+                  [ toTuple ( T.intercalate " / " (mt2text <$> names)
+                          , alwaysLabeled (justStatements (head bs) (map fixNot (tail bs))))
+                  | (names,bs) <- (combine (namesAndStruct env rl) (namesAndQ env rl))
+                  ]
+                )
+            )
            ]
           )

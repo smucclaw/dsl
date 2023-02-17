@@ -86,10 +86,10 @@ rule2doc
       [henceLest2maudeStr hence],
       [henceLest2maudeStr lest]
     ]
-    |> map hsep
-    |> foldMap' (coerce @(Doc ann))
+    |> foldMap' f 
     |> coerce @(CatWithNewLine ann)
     where
+      f x = x |> hsep |> coerce @(Doc ann)
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"

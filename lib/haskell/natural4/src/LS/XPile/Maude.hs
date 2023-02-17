@@ -67,7 +67,7 @@ testRule = rules2maudeStr [Regulative {..}]
     symtab = []
 
 -- This function is still a work in progress.
-rule2doc :: Rule -> Doc ann
+rule2doc :: forall ann. Rule -> Doc ann
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -87,38 +87,29 @@ rule2doc
       [henceLest2maudeStr lest]
     ]
     |> map hsep
-    |> foldMap' coerce2CatWithNewLine
-    |> coerce2Doc
+    |> foldMap' (coerce @(Doc ann))
+    |> coerce @(CatWithNewLine ann)
     where
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
-      coerce2CatWithNewLine :: Doc ann -> CatWithNewLine ann
-      coerce2CatWithNewLine = coerce
-      coerce2Doc :: CatWithNewLine ann -> Doc ann
-      coerce2Doc = coerce
 
 rule2doc _ = "Not supported."
 
-rules2doc :: Foldable t => t Rule -> Doc ann
+rules2doc :: forall t ann. Foldable t => t Rule -> Doc ann
 rules2doc rules = rules
  |> foldMap' toCatWithCommaAndNewLines
- |> coerce2Doc
+ |> coerce @(CatWithCommaAndNewLines ann)
  where
-  toCatWithCommaAndNewLines rule = rule
-    |> rule2doc |> coerce2CatWithCommaAndNewLines
-  coerce2CatWithCommaAndNewLines :: Doc ann -> CatWithCommaAndNewLines ann
-  coerce2CatWithCommaAndNewLines = coerce
-  coerce2Doc :: CatWithCommaAndNewLines ann -> Doc ann
-  coerce2Doc = coerce
+  toCatWithCommaAndNewLines rule = rule |> rule2doc |> coerce @(Doc ann)
 
-pretty2Qid :: T.Text -> Doc ann
+pretty2Qid :: forall ann. T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
-henceLest2maudeStr :: Maybe Rule -> Doc ann
+henceLest2maudeStr :: forall ann. Maybe Rule -> Doc ann
 henceLest2maudeStr hence = hence |> maybe "NOTHING" f
   where
     f (RuleAlias hence') = hence' <&> quotOrUpper |> hsep
@@ -142,20 +133,20 @@ newtype CatWithNewLine ann = CatWithNewLine (Doc ann)
 
 newtype CatWithCommaAndNewLines ann = CatWithCommaAndNewLines (Doc ann)
 
-instance Semigroup (CatWithNewLine ann) where
+instance forall ann. Semigroup (CatWithNewLine ann) where
   x <> y = [x', line, y'] |> mconcat |> coerce @(Doc ann)
     where
       x' = coerce x
       y' = coerce y
 
-instance Monoid (CatWithNewLine ann) where
+instance forall ann. Monoid (CatWithNewLine ann) where
   mempty = CatWithNewLine ""
 
-instance Semigroup (CatWithCommaAndNewLines ann) where
+instance forall ann. Semigroup (CatWithCommaAndNewLines ann) where
   x <> y = [x', ",", line, line, y'] |> mconcat |> coerce @(Doc ann)
     where
       x' = coerce x
       y' = coerce y
 
-instance Monoid (CatWithCommaAndNewLines ann) where
+instance forall ann. Monoid (CatWithCommaAndNewLines ann) where
   mempty = CatWithCommaAndNewLines ""

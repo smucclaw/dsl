@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module Parsing.BoolStructParserSpec where
 
 import Text.Megaparsec
@@ -295,47 +296,17 @@ spec = do
     describe "nestedHorn" $ do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
         (parseR pToplevel)
-        [ TypeDecl
-            { name = [MTT "Potato"],
-              super = Nothing,
-              has =
-                [ TypeDecl
-                    { name = MTT <$> ["genus", "species"],
-                      super = Nothing,
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
-                    }
-                ],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              defaults = [],
-              symtab = []
-            },
-          Hornlike
-            { name = MTT <$> ["genus", "species"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
-              clauses = [HC {hHead = RPBoolStructR [MTT "genus", MTT "species"] RPis (mkLeaf (RPMT [MTT "some Linnaen thing"])), hBody = Nothing}],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 3 2,
-              defaults = [],
-              symtab = []
-            }
-        ]
+          [ defaultTypeDecl
+              { name = [MTT "Potato"],
+                has = [defaultTypeDecl {name = MTT <$> ["genus", "species"]}],
+                srcref = mkTestSrcRef 1 1
+              },
+            defaultHorn
+              { name = MTT <$> ["genus", "species"],
+                clauses = [HC {hHead = RPBoolStructR [MTT "genus", MTT "species"] RPis (mkLeaf (RPMT [MTT "some Linnaen thing"])), hBody = Nothing}],
+                srcref = mkTestSrcRef 3 2
+              }
+          ]
 
 
     describe "variable substitution and rule expansion" $ do

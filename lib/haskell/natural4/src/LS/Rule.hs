@@ -192,7 +192,7 @@ mkTestSrcRef row col = Just (SrcRef {url = "test/Spec", short = "test/Spec", src
 dummyRef :: Maybe SrcRef
 dummyRef = mkTestSrcRef 1 1
 
-defaultReg, defaultCon, defaultHorn :: Rule
+defaultReg :: Rule
 defaultReg = Regulative
   { subj = mkLeafPT "person"
   , rkeyword = REvery
@@ -214,6 +214,7 @@ defaultReg = Regulative
   , symtab   = []
   }
 
+defaultCon :: Rule
 defaultCon = Constitutive
   { name = []
   , keyword = Means
@@ -227,6 +228,7 @@ defaultCon = Constitutive
   , symtab   = []
   }
 
+defaultHorn :: Rule
 defaultHorn = Hornlike
   { name = []
   , super = Nothing
@@ -240,6 +242,22 @@ defaultHorn = Hornlike
   , defaults = []
   , symtab   = []
   }
+
+defaultTypeDecl :: Rule
+defaultTypeDecl =
+  TypeDecl
+    { name = [],
+      super = Nothing,
+      has = [],
+      enums = Nothing,
+      given = Nothing,
+      upon = Nothing,
+      rlabel = Nothing,
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool

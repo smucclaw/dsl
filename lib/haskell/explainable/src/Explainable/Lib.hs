@@ -4,28 +4,19 @@
 module Explainable.Lib where
 
 import qualified Data.Map as Map
-import Control.Monad.State (liftIO)
-import Control.Monad.Trans.State (StateT, modify, runStateT)
-import Control.Monad (forM_, when, unless, (>=>))
 import Control.Monad.IO.Class (MonadIO(..))
-import Data.Function ((&))
-import Text.Megaparsec ( choice, many, some, Parsec, MonadParsec(try) )
-import Text.Megaparsec.Char ( numberChar, hspace )
-import Data.List ( sort, isPrefixOf, nub )
-import Text.PrettyPrint.Boxes
-    ( emptyBox, hsep, nullBox, render, vcat, Box )
+import Text.Megaparsec ( choice, some, Parsec, MonadParsec(try) )
+import Text.Megaparsec.Char ( numberChar )
+import Text.PrettyPrint.Boxes ( Box, nullBox )
 import qualified Text.PrettyPrint.Boxes as BX
-import Control.Monad.Combinators.Expr
-import Data.Ord
 
 import Explainable
 import Explainable.MathLang
 import Explainable.TaxDSL
 
-import qualified Data.Tree as DT
 import Control.Monad.Trans.RWS
 import Data.Tree
-import Data.Bifunctor
+import Control.Monad
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"

@@ -22,8 +22,8 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
-parserTests :: Spec
-parserTests  = do
+spec :: Spec
+spec  = do
     let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
@@ -473,7 +473,7 @@ parserTests  = do
                 hBody = Just (mkLeafR "OTHERWISE")
               },
             HC
-              { hHead = RPConstraint (MTT <$> ["p", "minSavings"]) RPis [MTT "p's dependents", MTT "*", MTN 5000],
+              { hHead = RPConstraint (MTT <$> ["p", "minSavings"]) RPis [MTT "p's dependents", MTT "*", MTI 5000],
                 hBody = Nothing
               },
             HC
@@ -500,7 +500,7 @@ parserTests  = do
                     )
               },
             HC
-              { hHead = RPConstraint (MTT <$> ["p", "blah"]) RPis [MTN 42],
+              { hHead = RPConstraint (MTT <$> ["p", "blah"]) RPis [MTI 42],
                 hBody = Nothing
               }
           ]

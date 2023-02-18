@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module Parsing.BoolStructParserSpec where
 
 import Text.Megaparsec
@@ -87,7 +88,7 @@ scenario2b = Scenario
 scenario3 :: Rule
 scenario3 = Scenario
     { scgiven =
-        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTN 50],
+        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTI 50],
           mkRpmt ["unauthorised", "access", "of personal data", "occurred"],
           mkRpmt ["the data breach relates to", "the individual's", "identification number"],
           mkRpmt [ "the data breach relates to",
@@ -108,7 +109,7 @@ scenario3 = Scenario
 scenario4 :: Rule
 scenario4 = Scenario
     { scgiven =
-        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTN 1000],
+        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTI 1000],
           mkRpmt ["unauthorised", "access", "of personal data", "occurred"],
           mkRpmt ["the data breach relates to", "the individual's", "full name"],
           mkRpmt [ "the data breach relates to",
@@ -160,8 +161,8 @@ xtexttest testText desc parseFunc expected =
     parseFunc (show testText) `traverse` exampleStreams testcsv
       `shouldParse` [ expected ]
 
-parserTests :: NLGEnv -> Spec
-parserTests nlgEnv = do
+spec :: Spec
+spec = do
     let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
@@ -172,8 +173,6 @@ parserTests nlgEnv = do
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
-
-        asCList = checklist nlgEnv (runConfig { extendedGrounds = True })
 
     describe "Parsing boolstruct" $ do
       filetest "boolstructp-1" "basic boolstruct of text"
@@ -297,47 +296,17 @@ parserTests nlgEnv = do
     describe "nestedHorn" $ do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
         (parseR pToplevel)
-        [ TypeDecl
-            { name = [MTT "Potato"],
-              super = Nothing,
-              has =
-                [ TypeDecl
-                    { name = MTT <$> ["genus", "species"],
-                      super = Nothing,
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
-                    }
-                ],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              defaults = [],
-              symtab = []
-            },
-          Hornlike
-            { name = MTT <$> ["genus", "species"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
-              clauses = [HC {hHead = RPBoolStructR [MTT "genus", MTT "species"] RPis (mkLeaf (RPMT [MTT "some Linnaen thing"])), hBody = Nothing}],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 3 2,
-              defaults = [],
-              symtab = []
-            }
-        ]
+          [ defaultTypeDecl
+              { name = [MTT "Potato"],
+                has = [defaultTypeDecl {name = MTT <$> ["genus", "species"]}],
+                srcref = mkTestSrcRef 1 1
+              },
+            defaultHorn
+              { name = MTT <$> ["genus", "species"],
+                clauses = [HC {hHead = RPBoolStructR [MTT "genus", MTT "species"] RPis (mkLeaf (RPMT [MTT "some Linnaen thing"])), hBody = Nothing}],
+                srcref = mkTestSrcRef 3 2
+              }
+          ]
 
 
     describe "variable substitution and rule expansion" $ do

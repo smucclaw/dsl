@@ -9,17 +9,12 @@ module LS.XPile.VueJSON where
 
 import LS
 import LS.NLP.NLG
-import LS.NLP.TreeTransformations (showExpr, udsToTreeGroups, getQSFromTrees)
 import AnyAll.Types
 import AnyAll.BoolStruct
 
 import Data.Maybe (maybeToList)
 import Data.List (nub, groupBy)
 import qualified Data.Text as Text
-import Control.Monad (when)
-
-import PGF ( linearize, languages )
-import LS.NLP.UDExt (gf)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 import qualified Data.Map as Map
 import qualified Data.Text as T
@@ -124,16 +119,16 @@ groundsToChecklist env mts = sequence [
   ]
 groundToChecklist :: NLGEnv -> MultiTerm -> IO MultiTerm
 groundToChecklist env mt = do
-  let txt = mt2text mt
+{-  let txt = Text.unwords mt
   uds <- parseUD env txt
   let qs = gf $ getQSFromTrees $ udsToTreeGroups uds
   -- Debug output: print the AST of the question generated in getQSFromTrees
   when (verbose env) $ putStrLn ("The generated QS from the UDApp tree:\n" ++ showExpr qs)
-  gr <- nlgExtPGF
-  let lin = linearize gr (head $ languages gr) qs
+  let lin = linearize (gfGrammar env) (gfLang gr) qs
   let result = case words lin of
         "is":"there":"parseUD:":"fail":_ -> Text.pack "Is it true that " <> txt
-        _ -> Text.pack lin
+        _ -> Text.pack lin -}
+  let result = Text.pack "NLG is under construction"
   return $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm

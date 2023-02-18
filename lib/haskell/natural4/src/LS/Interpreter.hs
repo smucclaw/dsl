@@ -142,8 +142,10 @@ musings l4i rs =
                                  </> vvsep [ "******* horn clause" </> srchs c
                                              </> "******** partitionExistentials"
                                              </> srchs (partitionExistentials c)
-                                           | c <- clauses r ]
-                               | r <- uniqrs ]
+                                           | c <- clauses r
+                                           , hasClauses r ]
+                               | r <- uniqrs
+                               , hasGiven r ]
 
                    | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
                                                           exposedRoots l4i      -- EXPOSED

@@ -30,11 +30,11 @@ extra-deps:
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)
 # you may prefer to do something like this:
-# - ../../../../baby-l4
+# ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
 # temporarily pinning to dmn-revisions
-  commit: fcfa2de7386e6e28afdcc08431c96ecede405c4d
+  commit: 409decfb7448e77c61b1c1063598298f5aa74fb1
 # commit: 6bab8b48ada14383a28b862ccb63f608764737e1
   # branch: after remove-gf
 

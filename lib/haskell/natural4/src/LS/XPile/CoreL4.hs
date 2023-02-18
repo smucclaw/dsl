@@ -14,7 +14,7 @@ import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
 import LS.XPile.ToASP(astToDoc)
 
-import ToDMN.FromL4 (genXMLTree)
+import ToDMN.FromL4 (genXMLTreeNoType)
 
 import L4.Annotation
 import LS as SFL4
@@ -76,7 +76,7 @@ sfl4ToDMN rs =
   let rulesTransformed = concatMap sfl4ToCorel4Rule rs
       prg = Program () rulesTransformed
   -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
-  in genXMLTree prg
+  in genXMLTreeNoType prg
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =

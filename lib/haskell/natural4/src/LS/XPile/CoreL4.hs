@@ -215,17 +215,17 @@ mtExprToExprNoType (MTB i) = ValE () (BoolV i)
 
 rpRelToBComparOp :: RPRel -> BinOp
 rpRelToBComparOp cop = case cop of
-  RPis -> undefined
-  RPhas -> undefined
+  RPis -> error "rpRelToBComparOp: erroring on RPis"
+  RPhas -> error "rpRelToBComparOp: erroring on RPhas"
   RPeq -> BCompar BCeq
   RPlt -> BCompar BClt
   RPlte -> BCompar BClte
   RPgt -> BCompar BCgt
   RPgte -> BCompar BCgte
-  RPelem -> undefined
-  RPnotElem -> undefined
-  RPnot -> undefined
-  RPTC _ -> undefined
+  RPelem -> error "rpRelToBComparOp: erroring on RPelem"
+  RPnotElem -> error "rpRelToBComparOp: erroring on RPnotElem"
+  RPnot -> error "rpRelToBComparOp: erroring on RPnot"
+  RPTC _ -> error "rpRelToBComparOp: erroring on RPTC"
 
 conjExprNoType :: Expr () -> Expr () -> Expr ()
 conjExprNoType = BinOpE () (BBool BBand)
@@ -253,7 +253,7 @@ boolStructRToExpr bs = case bs of
 
 relationalPredicateToExpr :: RelationalPredicate-> Expr ()
 relationalPredicateToExpr rp = case rp of
-  RPParamText ne -> undefined
+  RPParamText ne -> error "relationalPredicateToExpr: erroring on RPParamText"
   RPMT mts -> multiTermToExprNoType mts
   RPConstraint mts RPis mts' -> multiTermToExprNoType (mts' ++ mts)
   RPConstraint mts rr mts' ->
@@ -261,7 +261,7 @@ relationalPredicateToExpr rp = case rp of
   RPBoolStructR mts rr bs ->
     -- TODO: translate bs
     BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType mts) falseVNoType
-  RPnary rr rp' -> undefined
+  RPnary rr rp' -> error "relationalPredicateToExpr: erroring on RPnary"
 
 
 -- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
@@ -329,15 +329,16 @@ sfl4ToCorel4Rule Hornlike{..} =
       }
 
 
-sfl4ToCorel4Rule Constitutive{ } = undefined
+sfl4ToCorel4Rule Constitutive{ } = error "sfl4ToCorel4Rule: erroring on Constitutive"
 sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias { } = undefined
-sfl4ToCorel4Rule (RuleAlias _) = undefined -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled = undefined -- trivial top = _
-sfl4ToCorel4Rule RegBreach    = undefined -- trivial bottom
-sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
+sfl4ToCorel4Rule DefNameAlias { } = error "sfl4ToCorel4Rule: erroring on DefNameAlias"
+sfl4ToCorel4Rule (RuleAlias _) = error "sfl4ToCorel4Rule: erroring on RuleAlias"   -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled" -- trivial top = _
+sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"    -- trivial bottom
+sfl4ToCorel4Rule Hornlike{}    = error "sfl4ToCorel4Rule: erroring on Hornlike" -- [TODO] Hornlike
+sfl4ToCorel4Rule _             = error "sfl4ToCorel4Rule: erroring on other rule" -- [TODO] Hornlike
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr

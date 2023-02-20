@@ -96,20 +96,20 @@ rule2doc
 
 rule2doc _ = "Not supported."
 
-rules2doc :: forall t ann. Foldable t => t Rule -> Doc ann
+rules2doc :: forall ann t. Foldable t => t Rule -> Doc ann
 rules2doc rules = rules
  |> foldMap' toCatWithCommaAndNewLines
  |> coerce @(CatWithCommaAndNewLines ann)
  where
   toCatWithCommaAndNewLines rule = rule |> rule2doc |> coerce @(Doc ann)
 
-pretty2Qid :: forall ann. T.Text -> Doc ann
+pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
-rules2maudeStr :: forall t. Foldable t => t Rule -> String
+rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
-henceLest2maudeStr :: forall ann. Maybe Rule -> Doc ann
+henceLest2maudeStr :: Maybe Rule -> Doc ann
 henceLest2maudeStr hence = hence |> maybe "NOTHING" f
   where
     f (RuleAlias hence') = hence' <&> quotOrUpper |> hsep
@@ -139,14 +139,14 @@ instance forall ann. Semigroup (CatWithNewLine ann) where
       x' = coerce x
       y' = coerce y
 
-instance forall ann. Monoid (CatWithNewLine ann) where
+instance Monoid (CatWithNewLine ann) where
   mempty = CatWithNewLine ""
 
-instance forall ann. Semigroup (CatWithCommaAndNewLines ann) where
+instance Semigroup (CatWithCommaAndNewLines ann) where
   x <> y = [x', ",", line, line, y'] |> mconcat |> coerce @(Doc ann)
     where
       x' = coerce x
       y' = coerce y
 
-instance forall ann. Monoid (CatWithCommaAndNewLines ann) where
+instance Monoid (CatWithCommaAndNewLines ann) where
   mempty = CatWithCommaAndNewLines ""

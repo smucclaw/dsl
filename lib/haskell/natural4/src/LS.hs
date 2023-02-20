@@ -19,7 +19,6 @@ import LS.Error
 import LS.PrettyPrinter
 import Debug.Trace (traceM)
 import Control.Monad (when)
-import qualified DBNF as LS
 
 myTraceM :: Monad m => String -> m ()
 myTraceM x = when False $ traceM x

@@ -208,12 +208,10 @@ spec = do
 
       filetest "class-fa-2" "financial advisor decision modelling"
         (parseR pToplevel)
-        [ Hornlike {
+        [ defaultHorn {
           name = MTT <$> ["p", "investment"],
-          super = Nothing,
           keyword = Decide,
           given = Just ((MTT "p" :| [], Just (SimpleType TOne "Person")) :| []),
-          upon = Nothing,
           clauses =
           [ HC
               { hHead = RPConstraint (MTT <$> ["p", "investment"]) RPis [MTT "savings"],
@@ -266,11 +264,5 @@ spec = do
                 hBody = Nothing
               }
           ]
-          ,
-          rlabel = Nothing,
-          lsource = Nothing,
-          srcref = mkTestSrcRef 1 1,
-          defaults = [],
-          symtab = []
         }
         ]

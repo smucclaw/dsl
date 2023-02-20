@@ -133,7 +133,7 @@ newtype CatWithNewLine ann = CatWithNewLine (Doc ann)
 
 newtype CatWithCommaAndNewLines ann = CatWithCommaAndNewLines (Doc ann)
 
-instance forall ann. Semigroup (CatWithNewLine ann) where
+instance Semigroup (CatWithNewLine ann) where
   x <> y = [x', line, y'] |> mconcat |> coerce @(Doc ann)
     where
       x' = coerce x

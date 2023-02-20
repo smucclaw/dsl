@@ -142,11 +142,11 @@ musings l4i rs =
                                  </> vvsep [ "******* horn clause" </> srchs c
                                              </> "******** partitionExistentials"
                                              </> srchs (partitionExistentials c)
-                                           | c <- clauses r
-                                           , hasClauses r ]
+                                           | c <- clauses r ]
                                | r <- uniqrs
-                               , hasGiven r ]
-
+                               , hasClauses r
+                               , hasGiven r
+                               ]
                    | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
                                                           exposedRoots l4i      -- EXPOSED
                                                          ) [1..]
@@ -459,26 +459,28 @@ getAndOrTree _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly ag
 
 -- convert clauses to a boolStruct MT
 bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe BoolStructR]
-bsmtOfClauses l4i depth r =
-  let toreturn =
-        [ listToMaybe $ maybeToList $ mbody <|> mhead
-        | c <- expandClauses l4i 2 (clauses r)
-        , (hhead, hbody)  <- [(hHead c, hBody c)]
-        , let (_bodyEx, bodyNonEx) = partitionExistentials c
-        , let mhead, mbody :: Maybe BoolStructR
-              mhead = case hhead of
-                        RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
-                                                           Just (bsr2bsmt bsr1)
-                        _                               -> expandTrace "bsmtOfClauses" depth ("returning nothing for " <> show hhead) $
-                                                           Nothing
-              mbody = case hbody of
-                        Nothing -> Nothing
-                        _       ->
-                          let output = bsr2bsmt bodyNonEx in
-                            expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
-                            Just output
-        ]
-  in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
+bsmtOfClauses l4i depth r
+  | hasClauses r =
+      let toreturn =
+            [ listToMaybe $ maybeToList $ mbody <|> mhead
+            | c <- expandClauses l4i 2 (clauses r)
+            , (hhead, hbody)  <- [(hHead c, hBody c)]
+            , let (_bodyEx, bodyNonEx) = partitionExistentials c
+            , let mhead, mbody :: Maybe BoolStructR
+                  mhead = case hhead of
+                            RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
+                                                               Just (bsr2bsmt bsr1)
+                            _                               -> expandTrace "bsmtOfClauses" depth ("returning nothing for " <> show hhead) $
+                                                               Nothing
+                  mbody = case hbody of
+                            Nothing -> Nothing
+                            _       ->
+                              let output = bsr2bsmt bodyNonEx in
+                                expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
+                                Just output
+            ]
+      in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
+  | otherwise = []
 
 -- | What does clause expansion mean?
 -- We walk through the RelationalPredicates found in the head and the body of HornClause.

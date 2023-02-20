@@ -44,7 +44,6 @@ dependencies:
 - aeson-pretty
 - utf8-string
 - gf
-- gf-ud
 - optparse-generic
 - prolog
 - typed-process
@@ -59,7 +58,6 @@ dependencies:
 - lens
 - QuickCheck
 - generic-arbitrary
-- udpipe-hs
 - async
 - time
 - iso8601-time

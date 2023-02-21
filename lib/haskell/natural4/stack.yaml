@@ -33,24 +33,10 @@ extra-deps:
 # ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-# temporarily pinning to dmn-revisions
-  commit: 409decfb7448e77c61b1c1063598298f5aa74fb1
-# commit: 6bab8b48ada14383a28b862ccb63f608764737e1
-  # branch: after remove-gf
+  commit: a63360e
 
-  
-  
 - github: smucclaw/gf-core
   commit: edb55df7b0c4892ba0bac2817b5f493921c20c36
-
-- github: smucclaw/gf-ud
-  commit: bb53f75a789fa1d8173bccf52bd076e60771796c
-
-# - github: smucclaw/udpipe-hs
-#   commit: b9f5e969e90f83a7a786fa4d4282cb28e2ec47d3
-
-- git: https://github.com/anka-213/udpipe-hs.git
-  commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
 
 # - prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
 # - ../../../../prolog # smucclaw fork of the standard hackage package for prolog
@@ -62,10 +48,6 @@ extra-deps:
 # - github: anka-213/gf-core # Upstream: GrammaticalFramework/gf-core
 #   commit: 04ce6eea6cf75f1405bb8e30e8cfe2584e35cc89
 #   # branch: random-performance-improvements
-
-# - github: anka-213/gf-ud # Upstream: GrammaticalFramework/gf-ud
-#   commit: 9a3a89f1e2896a26ab1671405f2af2b3facfc893
-#   # branch: all-changes
 
 
 - github: anka-213/haskell-wordnet

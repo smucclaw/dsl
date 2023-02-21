@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: aaeb3490b065c0148d1eb1bf3de1c04c64c7eaf42f6f4628003af1ba8aefde60
+      sha256: bdfb5577dd1da2d8fae28f11cda0b115906a50cd38bead6db976db03823b2644
       size: 12398
-    sha256: 7afccbd71460f45315cb741d67cbb74c19265bf8faabf7019d731fb776a3870d
-    size: 3189038
-    url: https://github.com/smucclaw/baby-l4/archive/409decfb7448e77c61b1c1063598298f5aa74fb1.tar.gz
+    sha256: 230a0bb1856a6f3edd44389ae006646f0f288b2a72bacde36bc1825455b85e9c
+    size: 3189537
+    url: https://github.com/smucclaw/baby-l4/archive/a63360e.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/409decfb7448e77c61b1c1063598298f5aa74fb1.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/a63360e.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -26,28 +26,6 @@ packages:
     version: 3.11.1
   original:
     url: https://github.com/smucclaw/gf-core/archive/edb55df7b0c4892ba0bac2817b5f493921c20c36.tar.gz
-- completed:
-    name: gf-ud
-    pantry-tree:
-      sha256: bd4aba2ea7ff8a85019615884a20edb05988184ce4b60bb9000a82e6dadc4e45
-      size: 7012
-    sha256: 62979c5079995a8eb10b0df9274eac956c0ebf3a9730eecdddc1560d425cd009
-    size: 1363816
-    url: https://github.com/smucclaw/gf-ud/archive/bb53f75a789fa1d8173bccf52bd076e60771796c.tar.gz
-    version: 0.1.0.0
-  original:
-    url: https://github.com/smucclaw/gf-ud/archive/bb53f75a789fa1d8173bccf52bd076e60771796c.tar.gz
-- completed:
-    commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
-    git: https://github.com/anka-213/udpipe-hs.git
-    name: udpipe-hs
-    pantry-tree:
-      sha256: 113a9b2276e12a623dd8c5f58f2feb7d6383f1c5a3ce3ff5abbfc2dfe5bd802c
-      size: 46505
-    version: 0.1.0.0
-  original:
-    commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
-    git: https://github.com/anka-213/udpipe-hs.git
 - completed:
     name: prolog
     pantry-tree:

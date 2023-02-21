@@ -45,23 +45,15 @@ spec = do
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
           `shouldParse`
-          [ Hornlike
+          [ defaultHorn
               { name = [MTT "something"],
-                super = Nothing,
-                keyword = Means,
-                given = Nothing,
-                upon = Nothing,
                 clauses =
                   [ HC
                       { hHead = RPBoolStructR [MTT "something"] RPis (mkLeafR "something"),
                         hBody = Nothing
                       }
                   ],
-                rlabel = Just ("\167", 1, "Hello"),
-                lsource = Nothing,
-                srcref = mkTestSrcRef 1 1,
-                defaults = [],
-                symtab = []
+                rlabel = Just ("\167", 1, "Hello")
               }
           ]
       it "should parse a single OtherVal" $ do
@@ -144,12 +136,8 @@ spec = do
               action = mkLeaf ((MTT "sing" :| [], Nothing) :| []),
               srcref = mkTestSrcRef 1 1
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "degustates"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -165,11 +153,7 @@ spec = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 3,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 3
             }
         ]
 
@@ -190,12 +174,8 @@ spec = do
               action = mkLeaf ((MTT "sing" :| [], Nothing) :| []),
               srcref = mkTestSrcRef 1 1
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "imbibes"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -215,18 +195,10 @@ spec = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 3 5,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 3 5
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "degustates"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -242,11 +214,7 @@ spec = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 3,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 3
             }
         ]
         

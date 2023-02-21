@@ -222,7 +222,6 @@ import LS.Types
 import LS.Rule
 import LS.Tokens
 import LS.Parser
-import Data.Tree
 import AnyAll.BoolStruct (mkLeaf)
 
 
@@ -322,7 +321,7 @@ c2hornlike :: Rule -> Rule
 c2hornlike Constitutive { name, keyword, letbind, cond, given, rlabel, lsource, srcref, defaults, symtab } =
   let clauses = pure $ HC (RPBoolStructR name RPis letbind) cond
       upon = Nothing
-  in Hornlike { name, super = Nothing, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
+  in defaultHorn { name, super = Nothing, keyword, given, upon, clauses, rlabel, lsource, srcref, defaults, symtab }
 c2hornlike r = r
 
 -- | there is some overlap with pHornlike. We should probably merge these two to a single rule.
@@ -436,24 +435,24 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
   let dKeyword = if needDkeyword
                  then Just <$> choice [ pToken Decide ] -- [TODO] try allowing DEFINE in future, for things like simple-constitutive-1
                  else Nothing <$ pure ()
-  let permutepart = debugName "pHornlike / permute" $ permute $ (,,,)
+  let permutepart = debugName "pHornlike / permute" $ permute $ (,,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
                someStructure dKeyword -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
              -- )
         <|?> (Nothing, Just . snd <$> givenLimb)
+        <|?> (Nothing, Just . snd <$> givethLimb)
         <|?> (Nothing, Just . snd <$> uponLimb)
         <|?> (Nothing, whenCase)
         -- [TODO] refactor the rule-label logic to allow outdentation of rule label line relative to main part of the rule
-  ((keyword, name, clauses), given, upon, topwhen) <- permutepart
-  return $ Hornlike { name
-                    , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
-                    , keyword = fromMaybe Means keyword
-                    , given
-                    , clauses = addWhen topwhen clauses
-                    , upon, rlabel, srcref
-                    , lsource = noLSource
-                    , defaults = mempty, symtab = mempty
-                    }
+  ((keyword, name, clauses), given, giveth, upon, topwhen) <- permutepart
+  return $ defaultHorn { name = name
+                       , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
+                       , keyword = fromMaybe Means keyword
+                       , given = given
+                       , giveth
+                       , clauses = addWhen topwhen clauses
+                       , upon = upon, rlabel = rlabel, srcref = srcref
+                       }
   where
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ -- trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
@@ -498,7 +497,8 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
                | (relPred, whenpart) <- relwhens ])
 
 
-    givenLimb = debugName "pHornlike/givenLimb" $ preambleParamText [Given]
+    givenLimb  = debugName "pHornlike/givenLimb"  $ preambleParamText [Given]
+    givethLimb = debugName "pHornlike/givethLimb" $ preambleParamText [Giveth]
     uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
 
     inferRuleName :: RelationalPredicate -> RuleName
@@ -754,16 +754,16 @@ slKeyValues :: SLParser KVsPair
 slKeyValues = debugNameSL "slKeyValues" $ do
   (lhs, (rhs, typesig))   <- try (
     (,) -- key followed by values, and the values can sit on top of a MEANS
-      $>| pOtherVal
+      $>| pMTExpr
       ->| 1
       |*| nestedHorn fst id meansIsWhose pBSR
            ((,) $>| someDeep pMTExpr |*| (|?|) slTypeSig))
     <|> -- key without values, so we put the MEANS under the key
-    nestedHorn (pure . MTT . fst) id meansIsWhose pBSR
+    nestedHorn (pure . fst) id meansIsWhose pBSR
     ((\l rt -> (l,([],rt)))
-     $>| pOtherVal
+     $>| pMTExpr
      |*| (|?|) slTypeSig)
-  return (fromList (MTT lhs : rhs), typesig)
+  return (fromList (lhs : rhs), typesig)
 
 
 getSrcRef :: Parser SrcRef
@@ -854,17 +854,11 @@ mustNestHorn toMT toRN connector pbsr basesl =
 
   -- the conceptual positioning of the cursor above is critical
 
-  let simpleHorn = Hornlike { name = toRN (toMT subj)
-                            , super = Nothing
-                            , keyword = meansTok
-                            , given = Nothing
-                            , upon = Nothing
-                            , clauses = [ HC (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
-                            , rlabel = Nothing
-                            , lsource = Nothing
-                            , srcref = Just srcref
-                            , defaults = []
-                            , symtab = [] }
+  let simpleHorn = defaultHorn { name = toRN (toMT subj)
+                               , keyword = meansTok
+                               , clauses = [ HC (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
+                               , srcref = Just srcref
+                               }
   debugPrint "constructed simpleHorn; running tellIdFirst"
   _ <- liftSL $ tellIdFirst (return simpleHorn)
   return subj

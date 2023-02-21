@@ -81,7 +81,7 @@ qaHornsR l4i =
                            exposedRoots l4i      -- EXPOSED
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
-     ]      
+     ]
 
 -- | Talk a little bit about what we've interpreted.
 -- The output of this function gets saved to the workdir's @org/@ directory
@@ -137,6 +137,16 @@ musings l4i rs =
                      </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
                      </> "***** getBSR [head uniqrs]" </> srchs (mapMaybe getBSR [DL.head uniqrs])
                      </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> mapMaybe getBSR uniqrs)
+                     </> vvsep [ "****** uniq rules" </> srchs r
+                                 </> "******* givens" </> srchs (given r)
+                                 </> vvsep [ "******* horn clause" </> srchs c
+                                             </> "******** partitionExistentials"
+                                             </> srchs (partitionExistentials c)
+                                           | c <- clauses r ]
+                               | r <- uniqrs
+                               , hasClauses r
+                               , hasGiven r
+                               ]
                    | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
                                                           exposedRoots l4i      -- EXPOSED
                                                          ) [1..]
@@ -417,7 +427,7 @@ decisionRoots rg =
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
--- 
+--
 -- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.
 --
 -- a Constitutive rule exposes the body of its `clauses`.
@@ -449,26 +459,28 @@ getAndOrTree _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly ag
 
 -- convert clauses to a boolStruct MT
 bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe BoolStructR]
-bsmtOfClauses l4i depth r =
-  let toreturn =
-        [ listToMaybe $ maybeToList $ mbody <|> mhead
-        | c <- expandClauses l4i 2 (clauses r)
-        , (hhead, hbody)  <- [(hHead c, hBody c)]
-        , let (_bodyEx, bodyNonEx) = partitionExistentials c
-        , let mhead, mbody :: Maybe BoolStructR
-              mhead = case hhead of
-                        RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
-                                                           Just (bsr2bsmt bsr1)
-                        _                               -> expandTrace "bsmtOfClauses" depth ("returning nothing for " <> show hhead) $
-                                                           Nothing
-              mbody = case hbody of
-                        Nothing -> Nothing
-                        _       ->
-                          let output = bsr2bsmt bodyNonEx in
-                            expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
-                            Just output
-        ]
-  in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
+bsmtOfClauses l4i depth r
+  | hasClauses r =
+      let toreturn =
+            [ listToMaybe $ maybeToList $ mbody <|> mhead
+            | c <- expandClauses l4i 2 (clauses r)
+            , (hhead, hbody)  <- [(hHead c, hBody c)]
+            , let (_bodyEx, bodyNonEx) = partitionExistentials c
+            , let mhead, mbody :: Maybe BoolStructR
+                  mhead = case hhead of
+                            RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
+                                                               Just (bsr2bsmt bsr1)
+                            _                               -> expandTrace "bsmtOfClauses" depth ("returning nothing for " <> show hhead) $
+                                                               Nothing
+                  mbody = case hbody of
+                            Nothing -> Nothing
+                            _       ->
+                              let output = bsr2bsmt bodyNonEx in
+                                expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
+                                Just output
+            ]
+      in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
+  | otherwise = []
 
 -- | What does clause expansion mean?
 -- We walk through the RelationalPredicates found in the head and the body of HornClause.
@@ -706,12 +718,12 @@ isRuleAlias l4i rname =
     matchHenceLest _              = False
     testMatch :: Maybe Rule -> Bool
     testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
-    
+
 -- | extract all TYPICALLY annotations for use by XPilers to indicate default markings.
 -- This is used by the Purescript and SVG transpilers.
 
 getMarkings :: Interpreted -> AA.TextMarking
-getMarkings l4i = 
+getMarkings l4i =
   AA.Marking $ Map.fromList $
   [ (defkey, defval)
   | DefTypically{..} <- origrules l4i

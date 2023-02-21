@@ -73,6 +73,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tocorel4  :: w ::: Bool   <!> "True"  <?> "in core-l4 syntax"
                    , tobabyl4  :: w ::: Bool   <!> "True"  <?> "in baby-l4 syntax (directly via AST)"
                    , toasp     :: w ::: Bool   <!> "True"  <?> "in ASP syntax"
+                   , todmn     :: w ::: Bool   <!> "True"  <?> "in DMN syntax"
                    , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
                    , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
@@ -516,19 +517,14 @@ pVarDefn = debugName "pVarDefn" $ do
       myTraceM $ "got mytype = " <> show mytype
       hases   <- concat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
-      return $ Hornlike
+      return $ defaultHorn
         { name = NE.toList name
         , keyword = Define
         , super = mytype
         , given = Nothing -- these get overwritten immediately above in the return
-        , upon = Nothing
         , clauses = [ HC { hHead = RPParamText has, hBody = Nothing }
                     | has <- hases
                     ]
-        , rlabel  = noLabel
-        , lsource = noLSource
-        , srcref  = noSrcRef
-        , defaults = mempty, symtab = mempty
         }
 
     givenLimb = debugName "pVarDefn/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
@@ -711,7 +707,7 @@ pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
   where
     eventually   = debugName "pTemporal/eventually"   $ mkTC <$> pToken Eventually <*> pure (Just 0) <*> pure ""
-    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |*| liftSLOptional pNumber |>< pOtherVal
+    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |*| liftSLOptional (floor <$> pNumber) |>< pOtherVal
     vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague (Just 0) <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 

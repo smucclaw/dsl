@@ -60,7 +60,8 @@ data Rule = Regulative
             { name     :: RuleName           -- MyInstance
             , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
-            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender -- the signature of the input
+            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender       -- the type signature of the input
+            , giveth   :: Maybe ParamText    -- m:Amount,   mp:Principal, mi:Interest -- the type signature of the output
         --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
@@ -233,7 +234,8 @@ defaultHorn = Hornlike
   { name = []
   , super = Nothing
   , keyword = Means
-  , given = Nothing
+  , given  = Nothing
+  , giveth = Nothing
   , upon  = Nothing
   , clauses = []
   , rlabel = Nothing

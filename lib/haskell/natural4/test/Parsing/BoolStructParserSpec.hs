@@ -88,7 +88,7 @@ scenario2b = Scenario
 scenario3 :: Rule
 scenario3 = Scenario
     { scgiven =
-        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTN 50],
+        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTI 50],
           mkRpmt ["unauthorised", "access", "of personal data", "occurred"],
           mkRpmt ["the data breach relates to", "the individual's", "identification number"],
           mkRpmt [ "the data breach relates to",
@@ -109,7 +109,7 @@ scenario3 = Scenario
 scenario4 :: Rule
 scenario4 = Scenario
     { scgiven =
-        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTN 1000],
+        [ RPConstraint [MTT "the prescribed number of affected individuals"] RPis [MTI 1000],
           mkRpmt ["unauthorised", "access", "of personal data", "occurred"],
           mkRpmt ["the data breach relates to", "the individual's", "full name"],
           mkRpmt [ "the data breach relates to",

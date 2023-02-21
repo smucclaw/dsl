@@ -33,7 +33,7 @@ extra-deps:
 # - ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: 0a74bf3
+  commit: a63360e
   # branch: after remove-gf
 
 - github: smucclaw/gf-core

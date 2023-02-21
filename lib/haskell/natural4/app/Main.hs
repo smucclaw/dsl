@@ -22,6 +22,7 @@ import LS.XPile.Typescript
 import LS.XPile.Purescript
 import LS.XPile.Markdown
 import LS.XPile.NaturalLanguage
+import LS.XPile.GFTrees
 
 import LS.NLP.NLG (nlg,myNLGEnv)
 import qualified Data.Text as Text
@@ -62,6 +63,7 @@ main = do
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> ((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv rules)
+      (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
@@ -113,6 +115,7 @@ main = do
     when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr
+    when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr

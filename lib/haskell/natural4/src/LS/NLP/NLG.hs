@@ -131,8 +131,25 @@ nlg' thl env rule = case rule of
 -- | output          | Have there been more than two claims?               |
 -- +-----------------+-----------------------------------------------------+
 
+
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
+  case rule of
+    Regulative {subj,who,cond,upon} -> text
+    Hornlike {clauses} -> do
+      print "---"
+      print $ ruleQnTrees env alias rule
+      print "---"
+      text
+    Constitutive {cond} -> text
+    DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
+    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
+    where
+      text = pure $ fmap (linBStext env) (concat $ ruleQnTrees env alias rule)
+
+
+ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [[BoolStructGText]]
+ruleQnTrees env alias rule = do
   let (youExpr, orgExpr) =
         case alias of
           Just (you,org) ->
@@ -145,28 +162,15 @@ ruleQuestions env alias rule = do
       let subjExpr = parseSubj env subj
           aliasExpr = if subjExpr==orgExpr then youExpr else referSubj subjExpr
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
-          qWhoText = fmap (linBStext env) qWhoTrees
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-          qCondText = fmap (linBStext env) qCondTrees
-          qUponBS = mkUponText env (GqUPON aliasExpr) <$> upon
-      print [qWhoTrees, qCondTrees]
-      pure $ catMaybes [qWhoText, qUponBS, qCondText]
-      where
-
+          qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
+      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
-          bodyText = fmap (linBStext env <$>) bodyTrees
-      print bodyTrees
-      pure $ catMaybes bodyText
+      return $ catMaybes bodyTrees
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-          qCondText = fmap (linBStext env) qCondTrees
-      print qCondTrees
-      pure $ catMaybes [qCondText]
-    DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
-    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
-
-
+      return $ catMaybes [qCondTrees]
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)
@@ -180,8 +184,11 @@ mkCondText env f g bsr = mapBSLabel f g $ aggregateBoolStruct $ parseCondBS env 
 mkConstraintText :: NLGEnv -> (GPrePost -> GText) -> (GConstraint -> GText) -> BoolStructR -> BoolStructGText
 mkConstraintText env f g bsr = mapBSLabel f g $ aggregateBoolStruct $ parseConstraintBS env bsr
 
-mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
-mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
+mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> BoolStructGText
+mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
+
+-- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
+-- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do

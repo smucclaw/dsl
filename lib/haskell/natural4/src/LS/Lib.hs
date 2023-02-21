@@ -73,6 +73,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tocorel4  :: w ::: Bool   <!> "True"  <?> "in core-l4 syntax"
                    , tobabyl4  :: w ::: Bool   <!> "True"  <?> "in baby-l4 syntax (directly via AST)"
                    , toasp     :: w ::: Bool   <!> "True"  <?> "in ASP syntax"
+                   , todmn     :: w ::: Bool   <!> "True"  <?> "in DMN syntax"
                    , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
                    , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
@@ -711,7 +712,7 @@ pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))
 pTemporal = eventually <|> specifically <|> vaguely
   where
     eventually   = debugName "pTemporal/eventually"   $ mkTC <$> pToken Eventually <*> pure (Just 0) <*> pure ""
-    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |*| liftSLOptional pNumber |>< pOtherVal
+    specifically = debugName "pTemporal/specifically" $ mkTC $>| sometime |*| liftSLOptional (floor <$> pNumber) |>< pOtherVal
     vaguely      = debugName "pTemporal/vaguely"      $ Just . TemporalConstraint TVague (Just 0) <$> pOtherVal
     sometime     = choice $ map pToken [ Before, After, By, On ]
 

@@ -1,0 +1,20 @@
+//,,live updates,FALSE,,devMode port,8081,,,TRUE,
+,,,,,,,,,,
+,§,Data Breaches in the Abstract,,,,,,,,
+,DECLARE,Data Breach,,IS,AN,Object,,,,
+,HAS,affected individuals,,IS,AN,Integer,,,,
+,,,,,,,,,,
+,§,A Concrete Data Breach,,,,,,,,
+,DEFINE,db1,,IS,A,Data Breach,,,,
+,HAS,250,,IS,THE,affected individuals,,,,
+,,,,,,,,,,
+,§,Rule_exceeds1,,,,,,,,
+,GIVEN,,db,IS,A,DataBreach,,,,
+,DECIDE,,excessive,,,db,,,,
+,WHEN,,number of Affected Individuals,,,db,>=,500,,
+,AND,NOT,Affected Individuals,,,db2,,,,
+,AND,,numberOfAffectedIndividuals,,,db,>=,foobars,db,db2
+,,,,,,,,,,
+//,"goals for local vs global variables
+
+identify givens",,,,,,,,,

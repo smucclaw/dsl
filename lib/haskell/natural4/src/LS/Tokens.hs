@@ -46,8 +46,7 @@ pDeontic = (pToken Must  >> return DMust)
 
 
 -- | parse a number.
--- [TODO] support floats
-pNumber :: Parser Integer
+pNumber :: Parser Float
 pNumber = token test Set.empty <?> "number"
   where
     test WithPos {tokenVal = TNumber n} = Just n
@@ -264,10 +263,17 @@ alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 -- * the new MultiTerm is made of MTExpr
 pMTExpr :: Parser MTExpr
 pMTExpr =
-  choice [ MTN . fromIntegral <$> pNumber
+  choice [ try $ MTI <$> isIntegral pNumber
+         , try $ MTN <$> pNumber
          , MTB <$> pBoolean
          , MTT <$> pOtherVal
          ]
+  where
+    isIntegral pn = do
+      x <- pn
+      if (fromIntegral (floor x :: Int) :: Float) == x
+        then return $ floor x
+        else fail "not an integer"
 
 -- | parse a TRUE or FALSE to an MTEXpr. But see also `getMarkings` in Interpreter.hs.
 pBoolean :: Parser Bool

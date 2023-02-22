@@ -93,7 +93,7 @@ rule2doc
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
 
-rule2doc _ = "Not supported."
+rule2doc _ = errMsg
 
 rules2doc :: forall ann t. Foldable t => t Rule -> Doc ann
 rules2doc rules = rules
@@ -112,10 +112,13 @@ henceLest2maudeStr :: Maybe Rule -> Doc ann
 henceLest2maudeStr hence = hence |> maybe "NOTHING" f
   where
     f (RuleAlias hence') = hence' |> map quotOrUpper |> hsep
-    f _ = ""
+    f _ = errMsg
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid
-    quotOrUpper _ = ""
+    quotOrUpper _ = errMsg
+
+errMsg :: a
+errMsg = error "Not supported."
 
 -- foldMapWithNewLines ::
 --   (Foldable t, Semigroup (CatWithNewLine ann)) =>

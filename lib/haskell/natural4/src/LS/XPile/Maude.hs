@@ -38,7 +38,7 @@ import Prettyprinter
     Pretty (pretty),
     hsep,
     line,
-    (<+>),
+    (<+>), viaShow,
   )
 
 {-
@@ -85,8 +85,8 @@ rule2doc
       ["PARTY", pretty2Qid actorName],
       [deontic2str deontic, pretty2Qid actionName],
       ["WITHIN", pretty n, "DAY"],
-      [henceLest2maudeStr Hence hence],
-      [henceLest2maudeStr Lest lest]
+      [henceLest2maudeStr HENCE hence],
+      [henceLest2maudeStr LEST lest]
     ]
       |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
     where
@@ -107,7 +107,7 @@ pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
-data HenceOrLest = Hence | Lest
+data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)
 
 henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Doc ann
@@ -119,16 +119,13 @@ henceLest2maudeStr henceOrLest hence =
         |> fmap quotOrUpper
         |> hsep
         |> parenthesizeIf (length hence' > 1)
-        |> (henceOrLest' <+>)
+        |> (viaShow henceOrLest <+>)
     f _ = errMsg
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid
     quotOrUpper _ = errMsg
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf False x = x
-    henceOrLest'
-      | henceOrLest == Hence = "HENCE"
-      | otherwise = "LEST"
 
 errMsg :: a
 errMsg = error "Not supported."

@@ -17,6 +17,9 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
+import Control.Monad (join)
+import Data.Bifunctor (bimap)
+import Data.Char (toUpper)
 import Data.Coerce (Coercible, coerce)
 import Data.Foldable (Foldable (foldMap'))
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -39,7 +42,6 @@ import Prettyprinter
     line,
     (<+>), viaShow,
   )
-import Data.Char (toUpper)
 
 {-
   Based on experiments being run here:
@@ -91,11 +93,7 @@ rule2doc
       |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
     where
       deontic2str deon =
-        deon
-          |> show
-          |> tail
-          |> (<$>) toUpper
-          |> pretty
+        deon |> show |> tail |> (<$>) toUpper |> pretty
 
 rule2doc _ = errMsg
 
@@ -155,13 +153,12 @@ catViaDocAnn ::
   a ->
   a ->
   a
-catViaDocAnn sep x y = [x', sep', y'] |> mconcat |> coerce @(Doc ann)
+catViaDocAnn sep x y =
+    (x, y) |> join bimap coerce |> catWithSep |> coerce @(Doc ann)
   where
-    sep'
-      | mempty `elem` (show <$> [x', y']) = mempty
-      | otherwise = sep
-    x' = coerce x
-    y' = coerce y
+    catWithSep (show -> "", _) = mempty
+    catWithSep (_, show -> "") = mempty
+    catWithSep (a, b) = mconcat [a, sep, b]
 
 foldMapToDocViaMonoid ::
   forall m ann a t.

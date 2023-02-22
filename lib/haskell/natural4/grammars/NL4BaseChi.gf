@@ -69,9 +69,9 @@ concrete NL4BaseChi of NL4Base =
     EVERY cn = every <lin CN cn : CN> ;
     PARTY cn = mkNP <lin CN cn : CN> ;
     AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
-    THE cn = mkNP <lin Det this_Det : Det> <lin CN cn : CN> ;
-    WHO t p who = MkVPS t p (progressiveVP who) ;
-    ACTION act = MkVPI act ;
+    THE cn = mkNP <lin Det the_Det : Det> <lin CN cn : CN> ;
+    WHO who = lin VPS who ;
+    ACTION act = lin VPI act ;
 
     MUST = must_VV ;
     MAY = must_VV ;  ----
@@ -97,9 +97,7 @@ concrete NL4BaseChi of NL4Base =
 
     UPON vp = vp ;
 
-    WHEN np t p vp =
-      let vps : VPS = MkVPS t p vp
-       in {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
+    WHEN np vps = {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
 
     BaseCond c d = {s = BaseS c.s d.s ; qs = twoTable Bool c.qs d.qs} ;
     ConsCond c d = {s = ConsS c.s d.s ; qs = consrTable Bool comma c.qs d.qs} ;

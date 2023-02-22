@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -15,7 +17,7 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
-import Data.Coerce (coerce)
+import Data.Coerce (Coercible, coerce)
 import Data.Foldable (Foldable (foldMap'))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
@@ -85,10 +87,8 @@ rule2doc
       [henceLest2maudeStr hence],
       [henceLest2maudeStr lest]
     ]
-    |> foldMap' f 
-    |> coerce @(CatWithNewLine ann)
+      |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
     where
-      f x = x |> hsep |> coerce @(Doc ann)
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
@@ -96,11 +96,9 @@ rule2doc
 rule2doc _ = errMsg
 
 rules2doc :: forall ann t. Foldable t => t Rule -> Doc ann
-rules2doc rules = rules
- |> foldMap' toCatWithCommaAndNewLines
- |> coerce @(CatWithCommaAndNewLines ann)
- where
-  toCatWithCommaAndNewLines rule = rule |> rule2doc |> coerce @(Doc ann)
+rules2doc rules =
+  rules
+    |> foldMapToDocViaMonoid @(CatWithCommaAndNewLines ann) rule2doc
 
 pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
@@ -135,20 +133,39 @@ newtype CatWithNewLine ann = CatWithNewLine (Doc ann)
 
 newtype CatWithCommaAndNewLines ann = CatWithCommaAndNewLines (Doc ann)
 
+catViaDocAnn ::
+  forall ann a.
+  Coercible a (Doc ann) =>
+  Doc ann ->
+  a ->
+  a ->
+  a
+catViaDocAnn sep x y = [x', sep, y'] |> mconcat |> coerce @(Doc ann)
+  where
+    x' = coerce x
+    y' = coerce y
+
+foldMapToDocViaMonoid ::
+  forall m ann a t.
+  (Coercible (Doc ann) m, Foldable t, Monoid m) =>
+  (a -> Doc ann) ->
+  t a ->
+  Doc ann
+foldMapToDocViaMonoid f xs = xs |> foldMap' f' |> coerce @m
+  where
+    f' x = x |> f |> coerce
+
+
 instance Semigroup (CatWithNewLine ann) where
-  x <> y = [x', line, y'] |> mconcat |> coerce @(Doc ann)
-    where
-      x' = coerce x
-      y' = coerce y
+  (<>) = catViaDocAnn @ann line
 
 instance Monoid (CatWithNewLine ann) where
   mempty = CatWithNewLine ""
 
 instance Semigroup (CatWithCommaAndNewLines ann) where
-  x <> y = [x', ",", line, line, y'] |> mconcat |> coerce @(Doc ann)
+  (<>) = catViaDocAnn @ann sep
     where
-      x' = coerce x
-      y' = coerce y
+      sep = [",", line, line] |> mconcat
 
 instance Monoid (CatWithCommaAndNewLines ann) where
   mempty = CatWithCommaAndNewLines ""

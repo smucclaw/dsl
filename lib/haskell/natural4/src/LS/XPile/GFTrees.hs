@@ -31,5 +31,5 @@ trees env rl = concat $ concatMap (ruleQnTrees env alias) rl
 printTrees :: NLGEnv -> [Rule] -> String
 printTrees env rl =
   show (
-    trees env rl
+    pretty $ pShowNoColor $ trees env rl
   )

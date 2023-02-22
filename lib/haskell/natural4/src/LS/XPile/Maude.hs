@@ -156,8 +156,8 @@ catViaDocAnn ::
 catViaDocAnn sep x y =
     (x, y) |> join bimap coerce |> catWithSep |> coerce @(Doc ann)
   where
-    catWithSep (show -> "", _) = mempty
-    catWithSep (_, show -> "") = mempty
+    catWithSep (show -> "", b) = b
+    catWithSep (a, show -> "") = a
     catWithSep (a, b) = mconcat [a, sep, b]
 
 foldMapToDocViaMonoid ::

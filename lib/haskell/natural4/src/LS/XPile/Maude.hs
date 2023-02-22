@@ -108,6 +108,7 @@ rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
 data HenceOrLest = Hence | Lest
+  deriving (Eq, Ord, Read, Show)
 
 henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Doc ann
 henceLest2maudeStr henceOrLest hence =
@@ -127,7 +128,7 @@ henceLest2maudeStr henceOrLest hence =
     parenthesizeIf False x = x
     henceOrLest'
       | henceOrLest == Hence = "HENCE"
-      | henceOrLest == Lest = "LEST"
+      | otherwise = "LEST"
 
 errMsg :: a
 errMsg = error "Not supported."

@@ -21,7 +21,7 @@
 ,PARTY,party2,,
 ,MUST,WITHIN,2,DAY
 ,DO,action2,,
-,LEST,rule2,,
+,LEST,rule3,,
 ,,,,
 ,§,rule3,,
 ,PARTY,party3,,

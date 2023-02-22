@@ -209,7 +209,7 @@ multiTermToExprNoType mt =
 mtExprToExprNoType :: MTExpr -> Expr ()
 mtExprToExprNoType (MTT t) = VarE () (varNameToVarNoType (T.unpack t))
 mtExprToExprNoType (MTI i) = ValE () (IntV i)
-mtExprToExprNoType (MTN i) = ValE () (FloatV i)
+mtExprToExprNoType (MTF i) = ValE () (FloatV i)
 mtExprToExprNoType (MTB i) = ValE () (BoolV i)
 
 

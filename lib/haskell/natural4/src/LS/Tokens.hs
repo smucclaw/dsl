@@ -264,7 +264,7 @@ alwaysdebugName dname p = local (\rc -> rc { debug = True }) $ debugName dname p
 pMTExpr :: Parser MTExpr
 pMTExpr =
   choice [ try $ MTI <$> isIntegral pNumber
-         , try $ MTN <$> pNumber
+         , try $ MTF <$> pNumber
          , MTB <$> pBoolean
          , MTT <$> pOtherVal
          ]

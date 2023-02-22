@@ -16,14 +16,12 @@
 -}
 module LS.XPile.Maude where
 
-import Debug.Trace
-
 import AnyAll (BoolStruct (Leaf))
 import Data.Coerce (Coercible, coerce)
 import Data.Foldable (Foldable (foldMap'))
-import Data.List ( transpose )
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
+-- import Debug.Trace
 import Flow ((|>))
 import LS.Rule
   ( Rule (..),
@@ -39,7 +37,8 @@ import Prettyprinter
   ( Doc,
     Pretty (pretty),
     hsep,
-    line, (<+>),
+    line,
+    (<+>),
   )
 
 {-
@@ -95,7 +94,6 @@ rule2doc
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
-
 rule2doc _ = errMsg
 
 rules2doc :: forall ann t. Foldable t => t Rule -> Doc ann
@@ -111,14 +109,20 @@ rules2maudeStr rules = rules |> rules2doc |> show
 
 henceLest2maudeStr :: Doc ann -> Maybe Rule -> Doc ann
 henceLest2maudeStr henceOrLest hence =
-    hence |> maybe "NOTHING" f |> (henceOrLest <+>)
+  hence |> maybe "" f
   where
-    f (RuleAlias hence') = hence' |> map quotOrUpper |> hsep |> parenthesize
+    f (RuleAlias hence') =
+      hence'
+        |> fmap quotOrUpper
+        |> hsep
+        |> parenthesizeIf (length hence' > 1)
+        |> (henceOrLest <+>)
     f _ = errMsg
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid
     quotOrUpper _ = errMsg
-    parenthesize x = mconcat ["(", x, ")"]
+    parenthesizeIf True x = mconcat ["(", x, ")"]
+    parenthesizeIf False x = x
 
 errMsg :: a
 errMsg = error "Not supported."

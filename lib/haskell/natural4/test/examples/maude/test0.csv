@@ -18,7 +18,7 @@
 ,HENCE,rule3,,
 ,,,,
 ,§,rule2,,
-,PARTY,party1,,
+,PARTY,party2,,
 ,MUST,WITHIN,2,DAY
 ,DO,action2,,
 ,LEST,rule2,,

@@ -84,7 +84,7 @@ rule2doc
     } =
     [ ["RULE", pretty2Qid ruleName],
       ["PARTY", pretty2Qid actorName],
-      [deontic2str deontic, "DO", pretty2Qid actionName],
+      [deontic2str deontic, pretty2Qid actionName],
       ["WITHIN", pretty n, "DAY"],
       [henceLest2maudeStr "HENCE" hence],
       [henceLest2maudeStr "LEST" lest]

@@ -157,7 +157,7 @@ catViaDocAnn ::
 catViaDocAnn sep x y = [x', sep', y'] |> mconcat |> coerce @(Doc ann)
   where
     sep'
-      | "" `elem` show <$> [x', y'] = ""
+      | "" `elem` (show <$> [x', y']) = ""
       | otherwise = sep
     x' = coerce x
     y' = coerce y

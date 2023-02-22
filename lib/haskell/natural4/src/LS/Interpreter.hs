@@ -737,7 +737,7 @@ getMarkings l4i =
     markings _                                    = Nothing
 
     rhsval [MTB rhs] = Just rhs
-    rhsval [MTN rhs] = if rhs == 0 then Just False else Just True
+    rhsval [MTF rhs] = if rhs == 0 then Just False else Just True
     rhsval [MTT rhs] = case T.toLower rhs of
                    "does not" -> Just False
                    "doesn't"  -> Just False

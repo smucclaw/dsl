@@ -64,9 +64,9 @@ spec = do
     it "rpHead RPParamText" $ do
       let
         typeSig = Just (SimpleType TOne "Fruit")
-        typedWords = MTT "apple" :| [MTN 10, MTT "banana"]
+        typedWords = MTT "apple" :| [MTF 10, MTT "banana"]
         rp = RPParamText $ (typedWords, typeSig) :| []
-      rpHead rp `shouldBe` [MTT "apple", MTN 10.0, MTT "banana"]
+      rpHead rp `shouldBe` [MTT "apple", MTF 10.0, MTT "banana"]
     it "rpHead RPConstraint" $ do
       let
         rp = RPConstraint (MTT <$> ["sky"]) RPis (MTT <$> ["blue"])

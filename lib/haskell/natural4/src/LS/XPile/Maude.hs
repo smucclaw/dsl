@@ -17,7 +17,6 @@ module LS.XPile.Maude where
 import AnyAll (BoolStruct (Leaf))
 import Data.Coerce (coerce)
 import Data.Foldable (Foldable (foldMap'))
-import Data.Functor ((<&>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
 import Flow ((|>))
@@ -112,7 +111,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
 henceLest2maudeStr :: Maybe Rule -> Doc ann
 henceLest2maudeStr hence = hence |> maybe "NOTHING" f
   where
-    f (RuleAlias hence') = hence' <&> quotOrUpper |> hsep
+    f (RuleAlias hence') = hence' |> map quotOrUpper |> hsep
     f _ = ""
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid

@@ -27,8 +27,7 @@ import LS.Rule
   ( Rule (..),
   )
 import LS.Types
-  ( Deontic (DMay, DMust, DShant),
-    MTExpr (MTT),
+  ( MTExpr (MTT),
     RegKeywords (RParty),
     TComparison (TBefore),
     TemporalConstraint (TemporalConstraint),
@@ -40,34 +39,35 @@ import Prettyprinter
     line,
     (<+>), viaShow,
   )
+import Data.Char (toUpper)
 
 {-
   Based on experiments being run here:
   https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit#gid=929226277
 -}
-testRule :: String
-testRule = rules2maudeStr [Regulative {..}]
-  where
-    rlabel = Just ("§", 1, "START")
-    rkeyword = RParty
-    subj = Leaf ((MTT "actor" :| [], Nothing) :| [])
-    deontic = DMust
-    action = Leaf ((MTT "action" :| [], Nothing) :| [])
-    temporal = Just (TemporalConstraint TBefore (Just 5) "day")
-    hence = Just (RuleAlias [MTT "rule0", MTT "and", MTT "rule1"])
-    lest = Nothing
+-- testRule :: String
+-- testRule = rules2maudeStr [Regulative {..}]
+--   where
+--     rlabel = Just ("§", 1, "START")
+--     rkeyword = RParty
+--     subj = Leaf ((MTT "actor" :| [], Nothing) :| [])
+--     deontic = DMust
+--     action = Leaf ((MTT "action" :| [], Nothing) :| [])
+--     temporal = Just (TemporalConstraint TBefore (Just 5) "day")
+--     hence = Just (RuleAlias [MTT "rule0", MTT "and", MTT "rule1"])
+--     lest = Nothing
 
-    -- The remaining fields aren't used and hence don't matter.
-    given = Nothing
-    having = Nothing
-    who = Nothing
-    cond = Nothing
-    lsource = Nothing
-    srcref = Nothing
-    upon = Nothing
-    wwhere = []
-    defaults = []
-    symtab = []
+--     -- The remaining fields aren't used and hence don't matter.
+--     given = Nothing
+--     having = Nothing
+--     who = Nothing
+--     cond = Nothing
+--     lsource = Nothing
+--     srcref = Nothing
+--     upon = Nothing
+--     wwhere = []
+--     defaults = []
+--     symtab = []
 
 rule2doc :: forall ann. Rule -> Doc ann
 rule2doc
@@ -90,9 +90,12 @@ rule2doc
     ]
       |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
     where
-      deontic2str DMust = "MUST"
-      deontic2str DMay = "MAY"
-      deontic2str DShant = "SHANT"
+      deontic2str deon =
+        deon
+          |> show
+          |> tail
+          |> (<$>) toUpper
+          |> pretty
 
 rule2doc _ = errMsg
 

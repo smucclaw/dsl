@@ -16,9 +16,12 @@
 -}
 module LS.XPile.Maude where
 
+import Debug.Trace
+
 import AnyAll (BoolStruct (Leaf))
 import Data.Coerce (Coercible, coerce)
 import Data.Foldable (Foldable (foldMap'))
+import Data.List ( transpose )
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
 import Flow ((|>))
@@ -36,7 +39,7 @@ import Prettyprinter
   ( Doc,
     Pretty (pretty),
     hsep,
-    line,
+    line, (<+>),
   )
 
 {-
@@ -84,8 +87,8 @@ rule2doc
       ["PARTY", pretty2Qid actorName],
       [deontic2str deontic, "DO", pretty2Qid actionName],
       ["WITHIN", pretty n, "DAY"],
-      [henceLest2maudeStr hence],
-      [henceLest2maudeStr lest]
+      [henceLest2maudeStr "HENCE" hence],
+      [henceLest2maudeStr "LEST" lest]
     ]
       |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
     where
@@ -106,14 +109,16 @@ pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
-henceLest2maudeStr :: Maybe Rule -> Doc ann
-henceLest2maudeStr hence = hence |> maybe "NOTHING" f
+henceLest2maudeStr :: Doc ann -> Maybe Rule -> Doc ann
+henceLest2maudeStr henceOrLest hence =
+    hence |> maybe "NOTHING" f |> (henceOrLest <+>)
   where
-    f (RuleAlias hence') = hence' |> map quotOrUpper |> hsep
+    f (RuleAlias hence') = hence' |> map quotOrUpper |> hsep |> parenthesize
     f _ = errMsg
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid
     quotOrUpper _ = errMsg
+    parenthesize x = mconcat ["(", x, ")"]
 
 errMsg :: a
 errMsg = error "Not supported."
@@ -140,8 +145,11 @@ catViaDocAnn ::
   a ->
   a ->
   a
-catViaDocAnn sep x y = [x', sep, y'] |> mconcat |> coerce @(Doc ann)
+catViaDocAnn sep x y = [x', sep', y'] |> mconcat |> coerce @(Doc ann)
   where
+    sep'
+      | show x' == "" || show y' == "" = ""
+      | otherwise = sep
     x' = coerce x
     y' = coerce y
 
@@ -154,7 +162,6 @@ foldMapToDocViaMonoid ::
 foldMapToDocViaMonoid f xs = xs |> foldMap' f' |> coerce @m
   where
     f' x = x |> f |> coerce
-
 
 instance Semigroup (CatWithNewLine ann) where
   (<>) = catViaDocAnn @ann line

@@ -1,0 +1,16 @@
+,,,,
+,§,START,,
+,PARTY,actor,,
+,MUST,WITHIN,5,Day
+,DO,action,,
+,HENCE,Rule0,And,Rule1
+,,,,
+,§,Rule0,,
+,PARTY,actor,,
+,MUST,WITHIN,1,DAY
+,DO,action0,,
+,,,,
+,§,Rule1,,
+,PARTY,actor,,
+,MUST,WITHIN,2,DAY
+,DO,action1,,

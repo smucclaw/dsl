@@ -116,7 +116,7 @@ henceLest2maudeStr henceOrLest hence =
   where
     f (RuleAlias hence') =
       hence'
-        |> fmap quotOrUpper
+        |> (<$>) quotOrUpper
         |> hsep
         |> parenthesizeIf (length hence' > 1)
         |> (viaShow henceOrLest <+>)
@@ -155,7 +155,7 @@ catViaDocAnn ::
 catViaDocAnn sep x y = [x', sep', y'] |> mconcat |> coerce @(Doc ann)
   where
     sep'
-      | "" `elem` (show <$> [x', y']) = ""
+      | mempty `elem` (show <$> [x', y']) = mempty
       | otherwise = sep
     x' = coerce x
     y' = coerce y

@@ -69,7 +69,6 @@ testRule = rules2maudeStr [Regulative {..}]
     defaults = []
     symtab = []
 
--- This function is still a work in progress.
 rule2doc :: forall ann. Rule -> Doc ann
 rule2doc
   Regulative
@@ -86,14 +85,15 @@ rule2doc
       ["PARTY", pretty2Qid actorName],
       [deontic2str deontic, pretty2Qid actionName],
       ["WITHIN", pretty n, "DAY"],
-      [henceLest2maudeStr "HENCE" hence],
-      [henceLest2maudeStr "LEST" lest]
+      [henceLest2maudeStr Hence hence],
+      [henceLest2maudeStr Lest lest]
     ]
       |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
     where
       deontic2str DMust = "MUST"
       deontic2str DMay = "MAY"
       deontic2str DShant = "SHANT"
+
 rule2doc _ = errMsg
 
 rules2doc :: forall ann t. Foldable t => t Rule -> Doc ann
@@ -107,7 +107,9 @@ pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
-henceLest2maudeStr :: Doc ann -> Maybe Rule -> Doc ann
+data HenceOrLest = Hence | Lest
+
+henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Doc ann
 henceLest2maudeStr henceOrLest hence =
   hence |> maybe "" f
   where
@@ -116,13 +118,16 @@ henceLest2maudeStr henceOrLest hence =
         |> fmap quotOrUpper
         |> hsep
         |> parenthesizeIf (length hence' > 1)
-        |> (henceOrLest <+>)
+        |> (henceOrLest' <+>)
     f _ = errMsg
     quotOrUpper (MTT (T.toLower -> "and")) = "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid
     quotOrUpper _ = errMsg
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf False x = x
+    henceOrLest'
+      | henceOrLest == Hence = "HENCE"
+      | henceOrLest == Lest = "LEST"
 
 errMsg :: a
 errMsg = error "Not supported."
@@ -152,7 +157,7 @@ catViaDocAnn ::
 catViaDocAnn sep x y = [x', sep', y'] |> mconcat |> coerce @(Doc ann)
   where
     sep'
-      | show x' == "" || show y' == "" = ""
+      | "" `elem` show <$> [x', y'] = ""
       | otherwise = sep
     x' = coerce x
     y' = coerce y

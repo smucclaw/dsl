@@ -1,0 +1,7 @@
+§,Rule_exceeds1,,,,,,,,,
+GIVEN,db,IS,A,DataBreach,,,,,,
+,p,IS,A,Person,,,,,,
+DECIDE,exceedsPrescrNumberOfIndividuals,,,,db,p,,,,
+WHEN,numberOfAffectedIndividuals,,,,db ,>= ,500,,,
+AND,numberOfAffectedIndividuals,,,,db,,,,,
+AND,numberOfAffectedIndividuals,,,,,db,>=,foobars,db

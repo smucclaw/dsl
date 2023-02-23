@@ -171,6 +171,7 @@ ruleQnTrees env alias rule = do
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
       return $ catMaybes [qCondTrees]
+    DefNameAlias {} -> pure []
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)

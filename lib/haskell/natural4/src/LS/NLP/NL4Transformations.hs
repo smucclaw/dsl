@@ -8,8 +8,8 @@ import Data.Maybe (fromMaybe)
 import Data.Foldable (toList)
 
 flipPolarity :: forall a . Tree a -> Tree a
-flipPolarity (GMkVPS temp GPOS vp) = GMkVPS temp GNEG vp
-flipPolarity (GMkVPS temp GNEG vp) = GMkVPS temp GPOS vp
+flipPolarity GPOS = GNEG
+flipPolarity GNEG = GPOS
 flipPolarity x = composOp flipPolarity x
 
 type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPrePost)) (Tree a)

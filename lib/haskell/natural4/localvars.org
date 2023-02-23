@@ -45,9 +45,19 @@ We upgrade from propositional to predicate logic:
 
 The above format is fine if ~p~ is a singleton which accrues facts.
 
-But more conventionally we would expect the argument to the above predicates to be a variable.
+#+begin_src prolog
+  walks(p).
+  eats(p).
+  drinks(p).
+#+end_src
+
+But that's a bit hard-coded, isn't it?
+
+More conventionally we would expect the argument to the above predicates to be a variable.
 
 **** Form 2.B: As Quantified Predicates
+
+When written as a variable we can run the logic not just over a particular ~p~ but over any variable.
 
 #+begin_src prolog
   qualifies(X) :- walks(X), ( eats(X) ; drinks(X) ).
@@ -65,7 +75,7 @@ or more familiarly
 \forall X. walks(X) \land ( eats(X) \lor drinks(X) ) \Rightarrow qualifies(X)
 #+end_quote
 
-In L4 we treat the universally quantified X as an input argument, we add a ~GIVEN~.
+In L4 we treat the universally quantified X as an input argument by adding a ~GIVEN~.
 
 #+begin_src l4
    GIVEN           X IS A Person
@@ -85,9 +95,11 @@ We have not yet settled the question of whether we take license as a CNL to rear
       OR X drinks
 #+end_src
 
+I think that reads nicely. It gets us closer to our goal of isomorphism.
+
 **** Form 3: The inputs are a dictionary
 
-How do we quantify over multiple inputs? Maybe we want to say \forall X \forall Y ....
+How do we quantify over multiple inputs? Maybe we want to say \forall X : Person \forall Y : Person ....
 
 #+begin_src l4
    GIVEN X IS A Person
@@ -98,6 +110,10 @@ How do we quantify over multiple inputs? Maybe we want to say \forall X \forall 
       OR Y drinks
      AND X marriedTo Y
 #+end_src
+
+Up to now, everything is Boolean. You might say we are dealing with Boolean attributes of a Person object. Or we are simply dealing with Boolean predicates upon a Person object.
+
+But what if we want to deal with real values? Like, maybe you need to pay $200.
 
 **** Form 4: The outputs are a dictionary
 
@@ -121,29 +137,29 @@ What does L4 do?
 
 Here we follow the convention set by Haskell, where a binding is typed on one line, and given a value on another.
 
-Syntactically we uncurry the input arguments to match the style of the returned output, and to offer some familiarity to programmers coming from languages where function invocation looks like ~f(x,y)~ not Haskell's ~f x y~.
-
 #+begin_src haskell
   qualifies :: (Person, Person) -> Maybe (Price, Qualification)
   qualifies (x,y) | walks(x) && (eats(y) || drinks(y)) && marriedTo(x,y) = Just (200, True)
   qualifies _ = Nothing
 #+end_src
 
+Above, we have chosen to syntactically uncurry the input arguments to match the style of the returned output, and to offer some familiarity to programmers coming from languages where function invocation looks like ~f(x,y)~ not Haskell's ~f x y~.
+
 (We wrap the return in a ~Maybe~ and add a default ~Nothing~ return to preserve totality.)
 
-In Prolog,
+Prolog now has [[https://www.swi-prolog.org/pldoc/man?section=bidicts][dict]]s too!
 
 #+begin_src prolog :tangle tmp/pq.pl
   qualifies(X,Y,_{p:200,q:true}) :- walks(X), (eats(Y) ; drinks(Y)), marriedTo(X,Y).
 #+end_src
 
-If we set up a query like so:
+If we set up some facts like so:
 
 #+begin_src prolog :tangle tmp/pq.pl
-  assertz(walks(alice)).
-  assertz(eats(bob)).
-  assertz(drinks(bob)).
-  assertz(marriedTo(alice,bob)).
+  walks(alice).
+  eats(bob).
+  drinks(bob).
+  marriedTo(alice,bob).
 #+end_src
 
 We can run this query:
@@ -176,11 +192,13 @@ a typed input dictionary, similar to Python
    UNLESS d IS quiet holiday
  #+end_src
 
-*** typed output parameters
-
-keyword ~GIVETH~
+Note that the ~p~ and ~d~ bits have to line up vertically in the same column.
+ 
+*** typed output parameters: ~GIVETH~
 
 a typed output dictionary, similar to Python, same internal syntax as ~GIVEN~
+
+From Form 4 above:
 
 #+begin_src text
        § waddington 1
@@ -215,7 +233,9 @@ Haskell directly:
     | otherwise = Nothing
 #+end_src
  
-Haskell in a more interpretive, contemplative manner:
+Haskell in a more interpretive, contemplative manner: we would do
+something like this, it is still a sketch.
+
 #+begin_src haskell
   type VarName = String
   type VarType = String
@@ -243,11 +263,14 @@ Haskell in a more interpretive, contemplative manner:
     | otherwise = return Nothing
 #+end_src
 
-*** ~let~ in the body of the function
-
-*** ~where~ at the end of a function
 
 ** we want to add better support for local vs global variables
+
+Now that we have talked about function input and outputs, how does that line up with local and global variables?
+
+*** convention: variables declared in ~GIVEN~ and ~GIVETH~ are local to the ~DECIDE~ in which they occur
+
+*** what about upper and lower case?
 
 *** in a ruleset, top-level definitions are global
 
@@ -274,3 +297,13 @@ to allow trees that look like this
  #+end_src
 
 
+
+
+
+ 
+
+* Other things to deal with
+
+** ~let~ in the body of the function
+
+** ~where~ at the end of a function

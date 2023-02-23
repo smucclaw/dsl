@@ -32,11 +32,14 @@ myNLGEnv = do
   let verbose = maybe False (read :: String -> Bool) mpn
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  let lang = case readLanguage "NL4May" of
+  let lang = case readLanguage "NL4Eng" of
+        Nothing -> error $ "concrete language NL4Eng not found among " <> show (languages gr)
+        Just l -> l
+      lang2 = case readLanguage "NL4May" of
         Nothing -> error $ "concrete language NL4May not found among " <> show (languages gr)
         Just l -> l
       myParse typ txt = parse gr lang typ (Text.unpack txt)
-      myLin = Text.pack . linearize gr lang
+      myLin = Text.pack . linearize gr lang2
   pure $ NLGEnv gr lang myParse myLin verbose
 
 gfPath :: String -> String

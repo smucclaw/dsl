@@ -1,0 +1,274 @@
+#+TITLE: branch notes regarding localvars
+
+* Goals
+
+** within a ~DECIDE~ rule, we want to approximate the affordances of haskell function definitions
+
+Every DECIDE rule can be thought of as a function.
+
+In the simple case, a DECIDE rule is a propositional Horn Clause which reads a global environment and returns a Boolean.
+
+In the complex case, a DECIDE rule is a first-order Horn Clause which reads a dictionary of input arguments and returns a dictionary of output return values.
+
+*** Translational semantics: Prolog
+
+**** Form 1: Globals Only
+Propositionally, the most naive way to write something in Prolog is in terms of facts:
+
+#+begin_src prolog
+  qualifies :- walks, (eats ; drinks).
+#+end_src
+
+#+begin_src l4
+  DECIDE qualifies
+    WHEN walks
+     AND eats
+      OR drinks
+#+end_src
+
+**** Form 2.A: As Fact Predicates
+
+We upgrade from propositional to predicate logic:
+
+#+begin_src prolog
+  qualifies(p) :- walks(p), ( eats(p) ; drinks(p) ).
+#+end_src
+
+#+begin_src l4
+  DECIDE qualifies p
+    WHEN walks     p
+     AND eats      p
+      OR drinks    p
+#+end_src
+
+The above format is fine if ~p~ is a singleton which accrues facts.
+
+But more conventionally we would expect the argument to the above predicates to be a variable.
+
+**** Form 2.B: As Quantified Predicates
+
+#+begin_src prolog
+  qualifies(X) :- walks(X), ( eats(X) ; drinks(X) ).
+#+end_src
+
+This is universal quantification:
+
+#+begin_quote
+$\forall X.$ qualifies($X$) $Leftarrow$ walks($X$) $\land$ ( eats($X$) $\lor$ drinks($X$) )
+#+end_quote
+
+or more familiarly
+
+#+begin_quote
+$\forall X.$ walks($X$) $\land$ ( eats($X$) $\lor$ drinks($X$) ) $Rightarrow$ qualifies($X$)
+#+end_quote
+
+In L4 we treat the universally quantified $X$ as an input argument, we add a ~GIVEN~.
+
+#+begin_src l4
+   GIVEN           X IS A Person
+  DECIDE qualifies X
+    WHEN walks     X
+     AND eats      X
+      OR drinks    X
+#+end_src
+
+We have not yet settled the question of whether we take license as a CNL to rearrange the terms:
+
+#+begin_src l4
+   GIVEN X IS A Person
+  DECIDE X qualifies
+    WHEN X walks
+     AND X eats
+      OR X drinks
+#+end_src
+
+**** Form 3: The inputs are a dictionary
+
+How do we quantify over multiple inputs? Maybe we want to say $\forall X \forall Y ...$.
+
+#+begin_src l4
+   GIVEN X IS A Person
+         Y IS A Person
+  DECIDE X qualifies
+    WHEN X walks
+     AND Y eats
+      OR Y drinks
+     AND X marriedTo Y
+#+end_src
+
+**** Form 4: The outputs are a dictionary
+
+In the beginning, functions used to only return a single argument: ~return 0~. Then Adam and Eve were banished from the Garden of Eden, the world got complicated, and functions want to return multiple values at once. C would return a pointer to a struct. Python would ~return 'abc', 100~. Javascript would ~return { key1: val1, key2: val2 }~.
+
+What does L4 do?
+
+#+begin_src l4
+       §   qualifies
+   GIVEN X IS A Person
+         Y IS A Person
+  GIVETH P IS A Price
+         Q IS A Qualification
+  DECIDE P IS 200
+         Q IS True
+    WHEN X walks
+     AND Y eats
+      OR Y drinks
+     AND X marriedTo Y
+#+end_src
+
+Here we follow the convention set by Haskell, where a binding is typed on one line, and given a value on another.
+
+Syntactically we uncurry the input arguments to match the style of the returned output, and to offer some familiarity to programmers coming from languages where function invocation looks like ~f(x,y)~ not Haskell's ~f x y~.
+
+#+begin_src haskell
+  qualifies :: (Person, Person) -> Maybe (Price, Qualification)
+  qualifies (x,y) | walks(x) && (eats(y) || drinks(y)) && marriedTo(x,y) = Just (200, True)
+  qualifies _ = Nothing
+#+end_src
+
+(We wrap the return in a ~Maybe~ and add a default ~Nothing~ return to preserve totality.)
+
+In Prolog,
+
+#+begin_src prolog :tangle tmp/pq.pl
+  qualifies(X,Y,_{p:200,q:true}) :- walks(X), (eats(Y) ; drinks(Y)), marriedTo(X,Y).
+#+end_src
+
+If we set up a query like so:
+
+#+begin_src prolog :tangle tmp/pq.pl
+  assertz(walks(alice)).
+  assertz(eats(bob)).
+  assertz(drinks(bob)).
+  assertz(marriedTo(alice,bob)).
+#+end_src
+
+We can run this query:
+
+#+begin_example
+?- qualifies(alice,bob,PQ).
+#+end_example
+and get this answer:
+
+#+begin_example
+PQ = _{p:200, q:true} .
+#+end_example
+
+*** Translational semantics: DMN
+
+[TODO] we repeat the above forms using DMN.
+
+** Syntax Definition
+*** typed input parameters: ~GIVEN~
+
+a typed input dictionary, similar to Python
+
+ #+begin_src text
+    GIVEN p IS A Person
+          d IS A Date
+   DECIDE p Qualifies
+     WHEN p walks
+      AND p eats
+       OR p drinks
+   UNLESS d IS quiet holiday
+ #+end_src
+
+*** typed output parameters
+
+keyword ~GIVETH~
+
+a typed output dictionary, similar to Python, same internal syntax as ~GIVEN~
+
+#+begin_src text
+       § waddington 1
+   GIVEN p IS A  Person
+         d IS A  Date
+  GIVETH a IS AN Action
+         s IS A  Title
+  DECIDE a IS sing
+         s IS Happy Birthday
+    WHEN p walks
+     AND p eats
+      OR p drinks
+  UNLESS d IS quiet holiday
+#+end_src
+
+Natural language text: 
+#+begin_example
+For the purposes of this section,
+the Action and the Title
+are "sing" and "Happy Birthday" respectively
+when, given a person and a date,
+the person walks and eats or drinks
+unless it is a quiet holiday on the given date.
+#+end_example
+
+Haskell directly:
+#+begin_src haskell
+  waddington_1 :: Person -> Date -> Maybe (Action, Title)
+  waddington_1 p d
+    | not (quietHoliday d) &&
+      walks p && (eats p || drinks p) = Just (sing, "Happy Birthday")
+    | otherwise = Nothing
+#+end_src
+ 
+Haskell in a more interpretive, contemplative manner:
+#+begin_src haskell
+  type VarName = String
+  type VarType = String
+  type VarVal  = String
+  type RuleName = String
+  type SymbolTable = Map.Map VarName (VarType, VarVal)
+
+  sub :: [Varname] -> Reader SymbolTable a
+  sub ks = local $ filterWithKey (`elem` ks) rm
+
+  (-:) :: RuleName -> VarName -> Reader SymbolTable Boolean
+  (-:) rn vn = let withReader ... (sub [vn] $ evald rn)
+               in fromMaybe ("Boolean", False) (out Map.! "RETURN") -- i got your negation as failure right here
+
+  evald :: RuleName -> Reader SymbolTable (Maybe SymbolTable) -- in future update the return value to Maybe [RelationalPredicate]
+  evald "waddington 1" =
+    | (&&)
+      <$> fmap not ("quiet holiday" -: "d")
+      <*> ( (&&)
+            <$> "walks" -: "p"
+            <*> ( (||)
+                  <$> "eats" -: "p"
+                  <*> "drinks" -: "p" )
+          ) = return $ pure (fromList [("a","sing"), ("s","Happy Birthday")])
+    | otherwise = return Nothing
+#+end_src
+
+*** ~let~ in the body of the function
+
+*** ~where~ at the end of a function
+
+** we want to add better support for local vs global variables
+
+*** in a ruleset, top-level definitions are global
+
+*** within a rule, what do we do about unqualified variables
+
+**** can we uniquely ~with~ them to an in-scope variable?
+
+See Pascal's treatment of ~WITH~, which is different from Python's
+
+https://www.freepascal.org/docs-html/ref/refsu62.html
+
+***** we might need advanced CNL management
+
+to allow trees that look like this
+
+ #+begin_src text
+    GIVEN p IS A Person
+          d IS A Date
+   DECIDE p mustSing
+     WHEN p       walks
+             AND  eats
+              OR  drinks
+   UNLESS d IS quiet holiday
+ #+end_src
+
+

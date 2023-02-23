@@ -79,8 +79,8 @@ concrete NL4BaseEng of NL4Base =
     PARTY cn = mkNP <lin CN cn : CN> ;
     AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
     THE cn = mkNP <lin Det the_Det : Det> <lin CN cn : CN> ;
-    WHO who = lin VPS who ;
-    ACTION act = lin VPI act ;
+    WHO t p who = MkVPS t p who ;
+    ACTION act = MkVPI act ;
 
     MUST = must_VV ;
     MAY = ExtraEng.may_VV ;
@@ -109,7 +109,9 @@ concrete NL4BaseEng of NL4Base =
 
     UPON vp = lin VP vp ;
 
-    WHEN np vps = {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
+    WHEN np t p vp =
+      let vps : VPS = MkVPS t p <vp : VP>
+       in {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
 
     BaseCond c d = {s = BaseS c.s d.s ; qs = twoTable R.QForm c.qs d.qs} ;
     ConsCond c d = {s = ConsS c.s d.s ; qs = consrTable R.QForm comma c.qs d.qs} ;

@@ -61,8 +61,8 @@ abstract NL4Base =
       EVERY,
       PARTY,
       AN, THE : CN -> Subj ; -- EVERY Person
-      WHO : VPS -> Who ;    -- WHO walks
-      ACTION : VPI -> Action ;
+      WHO : Temp -> Pol -> VP -> Who ;    -- WHO walks
+      ACTION : VP -> Action ;
 
       MUST, MAY, SHANT : Deontic ;
       AND, OR : Conj ;
@@ -76,7 +76,7 @@ abstract NL4Base =
 
       UPON : VP -> Upon ; -- upon becoming
 
-      WHEN : NP -> VPS -> Cond ;
+      WHEN : NP -> Temp -> Pol -> VP -> Cond ;
       ConjCond : Conj -> [Cond] -> Cond ;
       ConjPreCond : PrePost -> Conj -> [Cond] -> Cond ; -- TODO need to find examples in the wild
       ConjPrePostCond : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;

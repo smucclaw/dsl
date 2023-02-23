@@ -5,6 +5,7 @@ module LS.NLP.NL4 where
 import Control.Monad.Identity
 import Data.Monoid
 import PGF hiding (Tree)
+
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
 ----------------------------------------------------
@@ -78,6 +79,8 @@ type GListConstraint = Tree GListConstraint_
 data GListConstraint_
 type GListNP = Tree GListNP_
 data GListNP_
+type GListS = Tree GListS_
+data GListS_
 type GListTComparison = Tree GListTComparison_
 data GListTComparison_
 type GListVPS = Tree GListVPS_
@@ -226,6 +229,7 @@ data Tree :: * -> * where
   GListCond :: [GCond] -> Tree GListCond_
   GListConstraint :: [GConstraint] -> Tree GListConstraint_
   GListNP :: [GNP] -> Tree GListNP_
+  GListS :: [GS] -> Tree GListS_
   GListTComparison :: [GTComparison] -> Tree GListTComparison_
   GListVPS :: [GVPS] -> Tree GListVPS_
   GListWho :: [GWho] -> Tree GListWho_
@@ -260,6 +264,7 @@ data Tree :: * -> * where
   Gon_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GRule_
+  GConjS :: GConj -> GListS -> Tree GS_
   GPredVPS :: GNP -> GVPS -> Tree GS_
   GReferenceNP :: GNP -> Tree GS_
   Gpot0 :: GDigit -> Tree GSub10_
@@ -410,6 +415,7 @@ instance Eq (Tree a) where
     (GListCond x1,GListCond y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListConstraint x1,GListConstraint y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListNP x1,GListNP y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListS x1,GListS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListTComparison x1,GListTComparison y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListVPS x1,GListVPS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
@@ -444,6 +450,7 @@ instance Eq (Tree a) where
     (Gon_Prep,Gon_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GConjS x1 x2,GConjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GReferenceNP x1,GReferenceNP y1) -> and [ x1 == y1 ]
     (Gpot0 x1,Gpot0 y1) -> and [ x1 == y1 ]
@@ -817,6 +824,18 @@ instance Gf GListNP where
 
       _ -> error ("no ListNP " ++ show t)
 
+instance Gf GListS where
+  gf (GListS [x1,x2]) = mkApp (mkCId "BaseS") [gf x1, gf x2]
+  gf (GListS (x:xs)) = mkApp (mkCId "ConsS") [gf x, gf (GListS xs)]
+  fg t =
+    GListS (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "BaseS" -> [fg x1, fg x2]
+      Just (i,[x1,x2]) | i == mkCId "ConsS" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListS " ++ show t)
+
 instance Gf GListTComparison where
   gf (GListTComparison [x1,x2]) = mkApp (mkCId "BaseTComparison") [gf x1, gf x2]
   gf (GListTComparison (x:xs)) = mkApp (mkCId "ConsTComparison") [gf x, gf (GListTComparison xs)]
@@ -971,11 +990,13 @@ instance Gf GRule where
       _ -> error ("no Rule " ++ show t)
 
 instance Gf GS where
+  gf (GConjS x1 x2) = mkApp (mkCId "ConjS") [gf x1, gf x2]
   gf (GPredVPS x1 x2) = mkApp (mkCId "PredVPS") [gf x1, gf x2]
   gf (GReferenceNP x1) = mkApp (mkCId "ReferenceNP") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ConjS" -> GConjS (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PredVPS" -> GPredVPS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "ReferenceNP" -> GReferenceNP (fg x1)
 
@@ -1393,6 +1414,7 @@ instance Compos Tree where
     GNP_caused_by_PrePost x1 -> r GNP_caused_by_PrePost `a` f x1
     GrecoverUnparsedPrePost x1 -> r GrecoverUnparsedPrePost `a` f x1
     GRegulative x1 x2 x3 -> r GRegulative `a` f x1 `a` f x2 `a` f x3
+    GConjS x1 x2 -> r GConjS `a` f x1 `a` f x2
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
     GReferenceNP x1 -> r GReferenceNP `a` f x1
     Gpot0 x1 -> r Gpot0 `a` f x1
@@ -1454,6 +1476,7 @@ instance Compos Tree where
     GListCond x1 -> r GListCond `a` foldr (a . a (r (:)) . f) (r []) x1
     GListConstraint x1 -> r GListConstraint `a` foldr (a . a (r (:)) . f) (r []) x1
     GListNP x1 -> r GListNP `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListS x1 -> r GListS `a` foldr (a . a (r (:)) . f) (r []) x1
     GListTComparison x1 -> r GListTComparison `a` foldr (a . a (r (:)) . f) (r []) x1
     GListVPS x1 -> r GListVPS `a` foldr (a . a (r (:)) . f) (r []) x1
     GListWho x1 -> r GListWho `a` foldr (a . a (r (:)) . f) (r []) x1

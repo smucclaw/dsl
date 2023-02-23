@@ -10,9 +10,11 @@ In the simple case, a DECIDE rule is a propositional Horn Clause which reads a g
 
 In the complex case, a DECIDE rule is a first-order Horn Clause which reads a dictionary of input arguments and returns a dictionary of output return values.
 
-*** Translational semantics: Prolog
+Let's unpack that.
 
-**** Form 1: Globals Only
+*** Translational semantics with Prolog and Haskell
+
+**** Form 1: Simple Case: Globals Only
 Propositionally, the most naive way to write something in Prolog is in terms of facts:
 
 #+begin_src prolog
@@ -26,7 +28,7 @@ Propositionally, the most naive way to write something in Prolog is in terms of 
       OR drinks
 #+end_src
 
-**** Form 2.A: As Fact Predicates
+**** Form 2.A: Simple Case: As Fact Predicates
 
 We upgrade from propositional to predicate logic:
 
@@ -54,16 +56,16 @@ But more conventionally we would expect the argument to the above predicates to 
 This is universal quantification:
 
 #+begin_quote
-$\forall X.$ qualifies($X$) $Leftarrow$ walks($X$) $\land$ ( eats($X$) $\lor$ drinks($X$) )
+\forall X. qualifies(X) \Leftarrow walks(X) \land ( eats(X) \lor drinks(X) )
 #+end_quote
 
 or more familiarly
 
 #+begin_quote
-$\forall X.$ walks($X$) $\land$ ( eats($X$) $\lor$ drinks($X$) ) $Rightarrow$ qualifies($X$)
+\forall X. walks(X) \land ( eats(X) \lor drinks(X) ) \Rightarrow qualifies(X)
 #+end_quote
 
-In L4 we treat the universally quantified $X$ as an input argument, we add a ~GIVEN~.
+In L4 we treat the universally quantified X as an input argument, we add a ~GIVEN~.
 
 #+begin_src l4
    GIVEN           X IS A Person
@@ -85,7 +87,7 @@ We have not yet settled the question of whether we take license as a CNL to rear
 
 **** Form 3: The inputs are a dictionary
 
-How do we quantify over multiple inputs? Maybe we want to say $\forall X \forall Y ...$.
+How do we quantify over multiple inputs? Maybe we want to say \forall X \forall Y ....
 
 #+begin_src l4
    GIVEN X IS A Person

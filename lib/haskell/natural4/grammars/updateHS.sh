@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-gf -make -f haskell --haskell=gadt --haskell=lexical --lexical=CN,AP,VP,Month,V2,VS  NL4Eng.gf
+gf -make -f haskell --haskell=gadt --haskell=lexical --lexical=CN,AP,VP,Month,V2,VS  NL4Eng.gf NL4May.gf
 cat NL4.hs |
     sed 's/module NL4 where/{-# OPTIONS_GHC -Wno-all #-}\nmodule LS.NLP.NL4 where/' | \
     sed 's/instance Show .*//' | \

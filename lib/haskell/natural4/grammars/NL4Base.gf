@@ -1,4 +1,4 @@
-abstract NL4Base = 
+abstract NL4Base =
     Numeral
   , Grammar [
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
@@ -6,13 +6,14 @@ abstract NL4Base =
       , A, A2, AP, AdjCN, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
-      , ListAdv, BaseAdv, ConsAdv, ConjAdv 
+      , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP
+      , ListS, BaseS, ConsS, ConjS
       ]
   , Structural [
         Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
-      , VV, must_VV  
+      , VV, must_VV
       ]
   , Extend [
         VPS, MkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS
@@ -43,7 +44,7 @@ abstract NL4Base =
       Subj ;
       Deontic ;
       Upon ;
-    fun 
+    fun
 -- Application layer
       -- for fancy NLG
       Regulative : Subj -> Deontic -> Action -> Rule ;
@@ -51,7 +52,7 @@ abstract NL4Base =
       -- for web forms
       qWHO,
       sWHO : Subj -> Who -> Text ;
-      qUPON,  -- TODO rethink types when adding more langs 
+      qUPON,  -- TODO rethink types when adding more langs
               -- TODO2 do we allow upon to take full sentence or just VP*?
       sUPON : Subj -> Upon -> Text ;
       qCOND,
@@ -74,7 +75,7 @@ abstract NL4Base =
       You : Subj ;
 
       UPON : VP -> Upon ; -- upon becoming
-      
+
       WHEN : NP -> VPS -> Cond ;
       ConjCond : Conj -> [Cond] -> Cond ;
       ConjPreCond : PrePost -> Conj -> [Cond] -> Cond ; -- TODO need to find examples in the wild
@@ -90,14 +91,14 @@ abstract NL4Base =
       [TComparison]{2} ;
 
     fun
-      TemporalConstraint : 
+      TemporalConstraint :
         Cond -> TComparison -- ON , AFTER, …
              -> Date        -- 1 Feb 2022
              -> Cond ;
       BEFORE, AFTER, BY, ON, VAGUE : TComparison ;
       ConjTComparison : Conj -> [TComparison] -> TComparison ;
       MkDate : Int -> Month -> Int -> Date ;
- 
+
       WITHIN : Int -> TimeUnit -> Temporal ;
       -- NB. time units and months in StandardLexicon
 
@@ -136,7 +137,7 @@ abstract NL4Base =
 -----------------------------------------------------------------------------
 -- Shortcuts and extensions to RGL
 
-      ComplVAS : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred 
+      ComplVAS : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred
       ComplV2S : V2 -> NP -> S -> VP ; -- notify PDPC that a data breach has occurred
       ComplV2 : V2 -> NP -> VP ;
       ComplVSif,
@@ -149,8 +150,8 @@ abstract NL4Base =
       presAnt,   -- has occurred
       presSimul, -- occurs
       pastSimul  -- occurred
-        : Temp ; 
-      
+        : Temp ;
+
       POS : Pol ;
       NEG : Pol ;
 

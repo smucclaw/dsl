@@ -1,4 +1,4 @@
-concrete NL4BaseEng of NL4Base = 
+concrete NL4BaseEng of NL4Base =
     NumeralEng
   , GrammarEng [
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
@@ -7,13 +7,14 @@ concrete NL4BaseEng of NL4Base =
   --      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
-      , ListAdv, BaseAdv, ConsAdv, ConjAdv 
+      , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP
+      , ListS, BaseS, ConsS, ConjS
       ]
   , StructuralEng [
       Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
-    , VV, must_VV  
+    , VV, must_VV
     ]
   , ExtendEng [
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS
@@ -22,14 +23,14 @@ concrete NL4BaseEng of NL4Base =
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]
-  ** open 
+  ** open
       SyntaxEng
     , ParadigmsEng
     , ExtendEng
     , SymbolicEng
     , (ExtraEng=ExtraEng)
     , (R=ResEng)
-    , IrregEng 
+    , IrregEng
     , Coordination
     , Prelude
     in {
@@ -40,7 +41,7 @@ concrete NL4BaseEng of NL4Base =
 
     Cond = LinCond ; -- RPConstraint
                       -- [ MTT "the data breach occurs" ] ( RPTC TOn )
-                      -- [ MTT "1 Feb 2022" ] 
+                      -- [ MTT "1 Feb 2022" ]
     [Cond] = LinListCond ;
     Action = ExtendEng.VPI ;
     Who = ExtendEng.VPS ;
@@ -58,12 +59,12 @@ concrete NL4BaseEng of NL4Base =
     LinCond : Type = {s : S ; qs : QS} ; -- {subj : NP ; pred : ExtendEng.VPS} ;
     LinListCond : Type = {s : SyntaxEng.ListS ; qs : ListQS} ;
     ListQS : Type = {s1,s2 : R.QForm => Str} ;
-    linWho : ExtendEng.VPS -> Str = \vps -> 
+    linWho : ExtendEng.VPS -> Str = \vps ->
       let vpss = vps.s ! R.ODir False ! R.agrP3 R.Sg
         in vpss.fin ++ vpss.inf ;
     linUpon : VP -> Str = \vp -> (GerundAdv vp).s ;
 
-  lin 
+  lin
 -- Application layer
     -- : Subj -> Deontic -> Action -> Rule ;
     Regulative subj deontic action = mkS (mkCl subj (ComplVPIVV deontic action)) ;
@@ -78,7 +79,7 @@ concrete NL4BaseEng of NL4Base =
     PARTY cn = mkNP <lin CN cn : CN> ;
     AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
     THE cn = mkNP <lin Det the_Det : Det> <lin CN cn : CN> ;
-    WHO who = lin VPS who ; 
+    WHO who = lin VPS who ;
     ACTION act = lin VPI act ;
 
     MUST = must_VV ;
@@ -115,7 +116,7 @@ concrete NL4BaseEng of NL4Base =
     ConjCond conj cs = {s = ConjS conj cs.s ; qs = lin QS (conjunctDistrTable R.QForm conj cs.qs)} ;
 
 -- Time expressions
-  lincat 
+  lincat
     Temporal = Adv ;
     TimeUnit = CN ;
     Date = NP ;
@@ -127,7 +128,7 @@ concrete NL4BaseEng of NL4Base =
     ConsTComparison = consrSS comma ;
     ConjTComparison co tcs = conjunctDistrSS co tcs ** {isPre = True} ;
 
-    TemporalConstraint cond on date = 
+    TemporalConstraint cond on date =
       let onDate : Adv = SyntaxEng.mkAdv on date ;
        in {s = postAdvS cond.s onDate ; qs = postAdvQS cond.qs onDate} ;
 
@@ -144,7 +145,7 @@ concrete NL4BaseEng of NL4Base =
     MkDate a b c = symb (cc3 a b c) ;
 
     --  : Int -> TimeUnit -> Temporal ; -- TODO: fix "1 days" by using Dig from RGL
-    WITHIN int time = 
+    WITHIN int time =
       let sym : Symb = mkSymb int.s ; -- mkSymb : Str -> Symb ;
           card : Card = symb sym ;    -- symb : Symb -> Card ;
           det : Det = mkDet card ;
@@ -182,7 +183,7 @@ concrete NL4BaseEng of NL4Base =
 
     BaseConstraint c d = {s = twoStr c.s d.s ; qs = twoStr c.qs d.qs} ;
     ConsConstraint c d = {s = consrStr comma c.s d.s ; qs = consrStr comma c.qs d.qs} ;
-    ConjConstraint conj cs = {s = conjunctDistrX conj cs.s ; qs = conjunctDistrX conj cs.qs} ; 
+    ConjConstraint conj cs = {s = conjunctDistrX conj cs.s ; qs = conjunctDistrX conj cs.qs} ;
 
     --  : PrePost -> Conj -> [Constraint] -> Constraint ;
     ConjPreConstraint pr conj cs = ConjPrePostConstraint pr {s,qs=[]} conj cs ;
@@ -226,14 +227,14 @@ concrete NL4BaseEng of NL4Base =
 
     recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
 
-  oper 
+  oper
     invarV : Str -> V = \s -> mk5V s s s s s ;
 -----------------------------------------------------------------------------
 -- RGL layer, later to be automatically generated in different modules
 
   lin
-    -- : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred 
-    ComplVAS become aware db_occurs = 
+    -- : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred
+    ComplVAS become aware db_occurs =
       let become_aware : VP = mkVP <lin VA become : VA> <lin AP aware : AP> ;
           optThat : Str = "that" | "" ;
         in become_aware ** {
@@ -245,7 +246,7 @@ concrete NL4BaseEng of NL4Base =
     ComplVSif vs s = R.insertObj (\\_ => "if" ++ s.s) (R.predV <lin V vs : V>) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;
 
-    MayHave occur = 
+    MayHave occur =
       let vps : ExtendEng.VPS = MkVPS presAnt POS occur ;
           have_occurred : {fin,inf : Str} = vps.s ! R.ODir False ! R.AgP3Pl R.Neutr ;
           may_have_occurred : {fin,inf : Str} = {fin = "may" ; inf = have_occurred.fin ++ have_occurred.inf} ;
@@ -253,7 +254,7 @@ concrete NL4BaseEng of NL4Base =
     -- : NP -> S ; -- it is NP — reference to a previous NP
     ReferenceNP np = mkS (mkCl it_NP <lin NP np : NP>) ;
 
-    presSimul = mkTemp presentTense simultaneousAnt ; 
+    presSimul = mkTemp presentTense simultaneousAnt ;
     presAnt = mkTemp presentTense anteriorAnt ;
     pastSimul = mkTemp pastTense simultaneousAnt ;
     POS = positivePol ;
@@ -267,7 +268,7 @@ concrete NL4BaseEng of NL4Base =
     about_Prep = mkPrep "about" ;
     may_VV = ExtraEng.may_VV ; -- ** {s = \\_ => "may"};
 
-    oper 
+    oper
       every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
       strA2 : Str -> A2 = \str -> mkA2 (mkA str) noPrep ;
 

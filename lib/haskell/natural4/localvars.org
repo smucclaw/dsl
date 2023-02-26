@@ -21,6 +21,8 @@ Propositionally, the most naive way to write something in Prolog is in terms of 
   qualifies :- walks, (eats ; drinks).
 #+end_src
 
+The values here are Boolean truth values. In L4:
+
 #+begin_src l4
   DECIDE qualifies
     WHEN walks
@@ -28,98 +30,144 @@ Propositionally, the most naive way to write something in Prolog is in terms of 
       OR drinks
 #+end_src
 
+The logic is readable, but the domain of discourse is rather limited -- everything feels global, and we need to have the values of ~walks~ and ~eats~ and ~drinks~ known at compile-time, so we could statically compute ~qualifies~ so what's the point of even having a program?
+
+Let's upgrade from propositional logic to predicate logic. Now we can talk a little more intelligently, about things.
+
 **** Form 2.A: Simple Case: As Fact Predicates
 
-We upgrade from propositional to predicate logic:
+We take the first step from propositional logic toward predicate logic:
 
 #+begin_src prolog
-  qualifies(p) :- walks(p), ( eats(p) ; drinks(p) ).
+  qualifies(aristotle) :- walks(aristotle), ( eats(aristotle) ; drinks(aristotle) ).
 #+end_src
+
+Aristotle qualifies if he walks and eats or drinks.
 
 #+begin_src l4
-  DECIDE qualifies p
-    WHEN walks     p
-     AND eats      p
-      OR drinks    p
+  DECIDE qualifies aristotle
+    WHEN walks     aristotle
+     AND eats      aristotle
+      OR drinks    aristotle
 #+end_src
 
-The above format is fine if ~p~ is a singleton which accrues facts.
+In Prolog, instead of having unadorned facts, we now have facts
+/about/ someone -- about a particular Greek person who first got
+people talking this way.
 
 #+begin_src prolog
-  walks(p).
-  eats(p).
-  drinks(p).
+  walks(aristotle).
+  eats(aristotle).
+  drinks(aristotle).
 #+end_src
 
-But that's a bit hard-coded, isn't it?
+Note that Prolog uses lowercase for terms, and uppercase for
+variables. Above, ~aristotle~ is not a variable. If it were, it would
+be ~Aristotle~.
 
-More conventionally we would expect the argument to the above predicates to be a variable.
+But that's a bit hard-coded, isn't it? We're stuck with talking about
+a single person. Which may be enough, in the constrained environment
+of a particular contract or even a particular law which deals with a
+single hypothetically regarded person -- "one may".
+
+But that doesn't buy us much beyond the first form.
+
+More conventionally we would expect the argument to the above
+predicates to be a /variable/.
 
 **** Form 2.B: As Quantified Predicates
 
-When written as a variable we can run the logic not just over a particular ~p~ but over any variable.
+When written as a variable we can run the logic not just over a particular ~aristotle~ but over any variable ~Person~.
 
 #+begin_src prolog
-  qualifies(X) :- walks(X), ( eats(X) ; drinks(X) ).
+  qualifies(Person) :- walks(Person), ( eats(Person) ; drinks(Person) ).
 #+end_src
 
 This is universal quantification:
 
 #+begin_quote
-\forall X. qualifies(X) \Leftarrow walks(X) \land ( eats(X) \lor drinks(X) )
+\forall Person. qualifies(Person) \Leftarrow walks(Person) \land ( eats(Person) \lor drinks(Person) )
 #+end_quote
 
 or more familiarly
 
 #+begin_quote
-\forall X. walks(X) \land ( eats(X) \lor drinks(X) ) \Rightarrow qualifies(X)
+\forall Person. walks(Person) \land ( eats(Person) \lor drinks(Person) ) \Rightarrow qualifies(Person)
 #+end_quote
 
-In L4 we treat the universally quantified X as an input argument by adding a ~GIVEN~.
+Now we can talk about multiple Persons. We could substitute Aristotle.
+We could substitute Frege. We could substitute you or me.
+
+In L4 we treat the universally quantified Person as an input argument by adding a ~GIVEN~, and we compact the variable:
 
 #+begin_src l4
-   GIVEN           X IS A Person
-  DECIDE qualifies X
-    WHEN walks     X
-     AND eats      X
-      OR drinks    X
+   GIVEN           P IS A Person
+  DECIDE qualifies P
+    WHEN walks     P
+     AND eats      P
+      OR drinks    P
 #+end_src
 
 We have not yet settled the question of whether we take license as a CNL to rearrange the terms:
 
 #+begin_src l4
-   GIVEN X IS A Person
-  DECIDE X qualifies
-    WHEN X walks
-     AND X eats
-      OR X drinks
+   GIVEN P IS A Person
+  DECIDE P qualifies
+    WHEN P walks
+     AND P eats
+      OR P drinks
 #+end_src
 
 I think that reads nicely. It gets us closer to our goal of isomorphism.
 
 **** Form 3: The inputs are a dictionary
 
+It doesn't matter if we use the letter ~P~ or ~Q~ or even ~X~ or ~Y~.
+
 How do we quantify over multiple inputs? Maybe we want to say \forall X : Person \forall Y : Person ....
 
 #+begin_src l4
-   GIVEN X IS A Person
-         Y IS A Person
-  DECIDE X qualifies
-    WHEN X walks
-     AND Y eats
-      OR Y drinks
-     AND X marriedTo Y
+   GIVEN X  IS A Person
+          Y IS A Person
+  DECIDE X  qualifies
+    WHEN X  walks
+     AND  Y eats
+      OR  Y drinks
+     AND X  marriedTo Y
 #+end_src
 
 Up to now, everything is Boolean. You might say we are dealing with Boolean attributes of a Person object. Or we are simply dealing with Boolean predicates upon a Person object.
 
-But what if we want to deal with real values? Like, maybe you need to pay $200.
+But what if we want to deal with real values? Like, maybe the Person needs to pay $200.
 
 **** Form 4: The outputs are a dictionary
 
-In the beginning, functions used to only return a single argument: ~return 0~. Then Adam and Eve were banished from the Garden of Eden, the world got complicated, and functions want to return multiple values at once. C would return a pointer to a struct. Python would ~return 'abc', 100~. Javascript would ~return { key1: val1, key2: val2 }~.
+Suppose we want a function that takes two input Booleans, ~x~ and ~y~; thinks about them; and -- if certain requirements are met -- returns two values, saying that the ~qualification~ is ~true~ and the ~price~ is ~200~.
 
-What does L4 do?
+In Prolog, you could connect all the variables in a Horn clause, and wrap the output values in a dictionary:
+
+#+begin_src prolog
+  pq( X, Y, _{price:200, qualification:true} ) :- walks(X), ( eats(Y) ; drinks(Y) ), married(X,Y).
+#+end_src
+
+In Python, you could return a dictionary:
+
+#+begin_src python :tangle tmp/pq.py
+  def qualifies(x, y):
+    if x.walks() and (y.eats() or y.drinks()) and x.marriedTo(y):
+      return { 'qualification': True, 'price': 200 }
+#+end_src
+
+In Javascript, you could return a dictionary:
+
+#+begin_src typescript :tangle tmp/pq.ts
+  function qualifies(x : Person, y : Person) {
+    if (x.walks && (x.eats || x.drinks) && married(x,y))
+        return { 'qualification': true, 'price': 200 }
+  }
+#+end_src
+
+How would we say it in L4?
 
 #+begin_src l4
        §   qualifies
@@ -135,7 +183,15 @@ What does L4 do?
      AND X marriedTo Y
 #+end_src
 
-Here we follow the convention set by Haskell, where a binding is typed on one line, and given a value on another.
+L4 distinguishes input parameters from output attributes using ~GIVEN~ vs ~GIVETH~.
+
+In English:
+
+#+begin_quote
+The price shall be $200, and the qualification shall be True, in the case of any two married persons, one of whom walks and the other eats or drinks.
+#+end_quote
+
+In Haskell, a variable binding is usually typed on one line, and given a value on another.
 
 #+begin_src haskell
   qualifies :: (Person, Person) -> Maybe (Price, Qualification)
@@ -143,35 +199,36 @@ Here we follow the convention set by Haskell, where a binding is typed on one li
   qualifies _ = Nothing
 #+end_src
 
-Above, we have chosen to syntactically uncurry the input arguments to match the style of the returned output, and to offer some familiarity to programmers coming from languages where function invocation looks like ~f(x,y)~ not Haskell's ~f x y~.
+Note: In the Haskell example, we have chosen to syntactically uncurry
+the input arguments to match the style of the returned output, and to
+offer some familiarity to programmers coming from languages where
+function invocation looks like ~f(x,y)~ not Haskell's ~f x y~.
 
 (We wrap the return in a ~Maybe~ and add a default ~Nothing~ return to preserve totality.)
 
-Prolog now has [[https://www.swi-prolog.org/pldoc/man?section=bidicts][dict]]s too!
+*** The Interpreter knows about local variables
 
-#+begin_src prolog :tangle tmp/pq.pl
-  qualifies(X,Y,_{p:200,q:true}) :- walks(X), (eats(Y) ; drinks(Y)), marriedTo(X,Y).
-#+end_src
+In the above example, the local variables are
+- X
+- Y
+- P
+- Q
 
-If we set up some facts like so:
+Given a Hornlike clause, the Interpreter distinguishes the input from the output variables.
 
-#+begin_src prolog :tangle tmp/pq.pl
-  walks(alice).
-  eats(bob).
-  drinks(bob).
-  marriedTo(alice,bob).
-#+end_src
+Some logic programming languages may disregard the distinction between input and output variables, and treat them all as local variables that are arguments to the predicate in the head of the Horn clause. Other logic languages may annotate the arguments with [[https://www.swi-prolog.org/pldoc/man?section=preddesc][input or output modes]].
 
-We can run this query:
+**** API
 
-#+begin_example
-?- qualifies(alice,bob,PQ).
-#+end_example
-and get this answer:
+~Interpreter.ruleLocals~ returns a list of the input and output arguments in a rule.
 
-#+begin_example
-PQ = _{p:200, q:true} .
-#+end_example
+~Interpreter.ruleLocalsIn~ returns a list of the input arguments in a rule, identified by GIVEN.
+
+~Interpreter.ruleLocalsOut~ returns a list of the output arguments in a rule, identified by GIVETH.
+
+**** Examples
+
+See the Typescript transpiler.
 
 *** Translational semantics: DMN
 
@@ -233,8 +290,11 @@ Haskell directly:
     | otherwise = Nothing
 #+end_src
  
-Haskell in a more interpretive, contemplative manner: we would do
-something like this, it is still a sketch.
+In the above example we render the semantics directly in Haskell.
+
+In practice, Haskell is the host language for our DSL, and we would
+lift the above into a DSL environment where the interpreter would
+perform evaluation -- something like this.
 
 #+begin_src haskell
   type VarName = String

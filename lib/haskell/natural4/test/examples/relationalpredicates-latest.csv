@@ -1,7 +1,7 @@
 //,,live updates,FALSE,,devMode port,8081,,,TRUE
 ,,,,,,,,,
 ,§,Data Breaches in the Abstract,,,,,,,
-,DECLARE,Data Breach,,IS,A,Class,,,
+,DECLARE,Data Breach
 ,HAS,Affected Individuals,,IS,AN,Integer,,,
 ,,Excessive,,IS,A,Boolean,,,
 ,,Uninterested Individuals,,IS,AN,Float,,,

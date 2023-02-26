@@ -272,7 +272,16 @@ Now that we have talked about function input and outputs, how does that line up 
 
 *** what about upper and lower case?
 
+|         | upper case | lower case |
+|---------+------------+------------|
+| Haskell | type       | function   |
+| Prolog  | variable   | term       |
+| L4      | ?          | ?          |
+
+
 *** in a ruleset, top-level definitions are global
+
+Consider Contract As Automaton: the L4 ruleset is a particular instance of a template. The declared and defined type definitions and instance definitions are global to that tab, but that just means they're local to that module.
 
 *** within a rule, what do we do about unqualified variables
 

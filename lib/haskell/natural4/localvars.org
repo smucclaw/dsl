@@ -165,6 +165,16 @@ In Javascript, you could return a dictionary:
     if (x.walks && (x.eats || x.drinks) && married(x,y))
         return { 'qualification': true, 'price': 200 }
   }
+
+  interface Person {
+      walks  : boolean;
+      eats   : boolean;
+      drinks : boolean;
+  }
+
+  function married(x : Person, y : Person) : boolean {
+      return (x != y ? true : false);
+  }
 #+end_src
 
 How would we say it in L4?
@@ -376,3 +386,35 @@ to allow trees that look like this
 ** ~let~ in the body of the function
 
 ** ~where~ at the end of a function
+
+* Currency example
+
+This example shows up in ~Typescript.hs~
+
+#+begin_src typescript :tangle tmp/pq.ts
+
+  class Currency {
+      unitName : string;
+      subUnitName : string;
+      subUnitScale : number;
+      region : string;
+  }
+
+  let usd : Currency = {
+      unitName: "dollar",
+      subUnitName: "cent",
+      subUnitScale: 100,
+      region: "US"
+  }
+
+  class Money {
+      amount : number;
+      currency : Currency;
+  }
+
+  let price : Money = {
+      amount: 100,
+      currency: usd
+  }
+
+#+end_src

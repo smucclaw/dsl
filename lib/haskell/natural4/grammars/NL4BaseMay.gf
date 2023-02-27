@@ -125,8 +125,8 @@ concrete NL4BaseMay of NL4Base =
       let onDate : Adv = SyntaxMay.mkAdv on date ;
        in {s = mkS onDate cond.s ; qs = lin QS (mkS onDate <lin S cond.qs : S>)} ;
 
-    BEFORE = R.mkPrep "before" ;
-    AFTER = R.mkPrep "after" ;
+    BEFORE = R.mkPrep "sebelum" ;
+    AFTER = R.mkPrep "selepas" ;
     BY = by8means_Prep ;
     ON = on_Prep ;
     VAGUE = R.mkPrep [] ;
@@ -139,7 +139,7 @@ concrete NL4BaseMay of NL4Base =
       let sym : Symb = mkSymb int.s ; -- mkSymb : Str -> Symb ;
           card : Card = symb sym ;    -- symb : Symb -> Card ;
           det : Det = mkDet card ;
-      in SyntaxMay.mkAdv (R.mkPrep "within") (mkNP det time) ;
+      in SyntaxMay.mkAdv (R.mkPrep "dalam lingkungan") (mkNP det time) ;
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
   lincat
@@ -194,7 +194,7 @@ concrete NL4BaseMay of NL4Base =
   lin
     recoverUnparsedPrePost string = {
       s = "·" ++ string.s ; -- if PrePost isn't parsed, use the original string
-      qs = "Did the following happen:" ++ string.s -- make a question in an awkward way
+      qs = "Adakah perkara berikut berlaku:" ++ string.s -- make a question in an awkward way
       } ;
 
     -- : String -> String -> Constraint ;
@@ -255,7 +255,7 @@ concrete NL4BaseMay of NL4Base =
     aSg = aSg_Det ;
     your = mkDet youSg_Pron ;
 
-    about_Prep = R.mkPrep "about" ;
+    about_Prep = R.mkPrep "tentang" ;
     may_VV = must_VV ; -- ** {s = \\_ => "may"};
 
     oper

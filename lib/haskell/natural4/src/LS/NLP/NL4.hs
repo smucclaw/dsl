@@ -170,7 +170,7 @@ data Tree :: * -> * where
   Gcaused_by :: GNP -> Tree GAP_
   Gensuing :: GNP -> Tree GAP_
   LexAP :: String -> Tree GAP_
-  GACTION :: GVPI -> Tree GAction_
+  GACTION :: GVP -> Tree GAction_
   GrecoverUnparsedAction :: GString -> Tree GAction_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
@@ -185,7 +185,7 @@ data Tree :: * -> * where
   GConjPreCond :: GPrePost -> GConj -> GListCond -> Tree GCond_
   GConjPrePostCond :: GPrePost -> GPrePost -> GConj -> GListCond -> Tree GCond_
   GTemporalConstraint :: GCond -> GTComparison -> GDate -> Tree GCond_
-  GWHEN :: GNP -> GVPS -> Tree GCond_
+  GWHEN :: GNP -> GTemp -> GPol -> GVP -> Tree GCond_
   GrecoverUnparsedCond :: GString -> Tree GCond_
   GAND :: Tree GConj_
   GOR :: Tree GConj_
@@ -343,7 +343,7 @@ data Tree :: * -> * where
   GConjPrePostWho :: GPrePost -> GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjPreWho :: GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjWho :: GConj -> GListWho -> Tree GWho_
-  GWHO :: GVPS -> Tree GWho_
+  GWHO :: GTemp -> GPol -> GVP -> Tree GWho_
   GrecoverUnparsedWho :: GString -> Tree GWho_
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
@@ -371,7 +371,7 @@ instance Eq (Tree a) where
     (GConjPreCond x1 x2 x3,GConjPreCond y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostCond x1 x2 x3 x4,GConjPrePostCond y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GTemporalConstraint x1 x2 x3,GTemporalConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (GWHEN x1 x2,GWHEN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GWHEN x1 x2 x3 x4,GWHEN y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GrecoverUnparsedCond x1,GrecoverUnparsedCond y1) -> and [ x1 == y1 ]
     (GAND,GAND) -> and [ ]
     (GOR,GOR) -> and [ ]
@@ -529,7 +529,7 @@ instance Eq (Tree a) where
     (GConjPrePostWho x1 x2 x3 x4,GConjPrePostWho y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjPreWho x1 x2 x3,GConjPreWho y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GWHO x1,GWHO y1) -> and [ x1 == y1 ]
+    (GWHO x1 x2 x3,GWHO y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GrecoverUnparsedWho x1,GrecoverUnparsedWho y1) -> and [ x1 == y1 ]
     (GString x, GString y) -> x == y
     (GInt x, GInt y) -> x == y
@@ -611,7 +611,7 @@ instance Gf GCond where
   gf (GConjPreCond x1 x2 x3) = mkApp (mkCId "ConjPreCond") [gf x1, gf x2, gf x3]
   gf (GConjPrePostCond x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostCond") [gf x1, gf x2, gf x3, gf x4]
   gf (GTemporalConstraint x1 x2 x3) = mkApp (mkCId "TemporalConstraint") [gf x1, gf x2, gf x3]
-  gf (GWHEN x1 x2) = mkApp (mkCId "WHEN") [gf x1, gf x2]
+  gf (GWHEN x1 x2 x3 x4) = mkApp (mkCId "WHEN") [gf x1, gf x2, gf x3, gf x4]
   gf (GrecoverUnparsedCond x1) = mkApp (mkCId "recoverUnparsedCond") [gf x1]
 
   fg t =
@@ -620,7 +620,7 @@ instance Gf GCond where
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreCond" -> GConjPreCond (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostCond" -> GConjPrePostCond (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "TemporalConstraint" -> GTemporalConstraint (fg x1) (fg x2) (fg x3)
-      Just (i,[x1,x2]) | i == mkCId "WHEN" -> GWHEN (fg x1) (fg x2)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "WHEN" -> GWHEN (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "recoverUnparsedCond" -> GrecoverUnparsedCond (fg x1)
 
 
@@ -1302,7 +1302,7 @@ instance Gf GWho where
   gf (GConjPrePostWho x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostWho") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjPreWho x1 x2 x3) = mkApp (mkCId "ConjPreWho") [gf x1, gf x2, gf x3]
   gf (GConjWho x1 x2) = mkApp (mkCId "ConjWho") [gf x1, gf x2]
-  gf (GWHO x1) = mkApp (mkCId "WHO") [gf x1]
+  gf (GWHO x1 x2 x3) = mkApp (mkCId "WHO") [gf x1, gf x2, gf x3]
   gf (GrecoverUnparsedWho x1) = mkApp (mkCId "recoverUnparsedWho") [gf x1]
 
   fg t =
@@ -1310,7 +1310,7 @@ instance Gf GWho where
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostWho" -> GConjPrePostWho (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreWho" -> GConjPreWho (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ConjWho" -> GConjWho (fg x1) (fg x2)
-      Just (i,[x1]) | i == mkCId "WHO" -> GWHO (fg x1)
+      Just (i,[x1,x2,x3]) | i == mkCId "WHO" -> GWHO (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "recoverUnparsedWho" -> GrecoverUnparsedWho (fg x1)
 
 
@@ -1393,7 +1393,7 @@ instance Compos Tree where
     GConjPreCond x1 x2 x3 -> r GConjPreCond `a` f x1 `a` f x2 `a` f x3
     GConjPrePostCond x1 x2 x3 x4 -> r GConjPrePostCond `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
-    GWHEN x1 x2 -> r GWHEN `a` f x1 `a` f x2
+    GWHEN x1 x2 x3 x4 -> r GWHEN `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GrecoverUnparsedCond x1 -> r GrecoverUnparsedCond `a` f x1
     GConjConstraint x1 x2 -> r GConjConstraint `a` f x1 `a` f x2
     GConjPreConstraint x1 x2 x3 -> r GConjPreConstraint `a` f x1 `a` f x2 `a` f x3
@@ -1469,7 +1469,7 @@ instance Compos Tree where
     GConjPrePostWho x1 x2 x3 x4 -> r GConjPrePostWho `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjPreWho x1 x2 x3 -> r GConjPreWho `a` f x1 `a` f x2 `a` f x3
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2
-    GWHO x1 -> r GWHO `a` f x1
+    GWHO x1 x2 x3 -> r GWHO `a` f x1 `a` f x2 `a` f x3
     GrecoverUnparsedWho x1 -> r GrecoverUnparsedWho `a` f x1
     GListAP x1 -> r GListAP `a` foldr (a . a (r (:)) . f) (r []) x1
     GListAdv x1 -> r GListAdv `a` foldr (a . a (r (:)) . f) (r []) x1

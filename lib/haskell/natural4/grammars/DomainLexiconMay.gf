@@ -7,47 +7,47 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
 
   lin
   -- must sing
-    person = mkCN person_N ;
-    walk = mkVP walk_V ;
+    person = mkCN (mkN "seseorang") ;
+    walk = mkVP (mkV "jalan") ;
     eat = mkVP <eat_V2 : V> ;
     drink = mkVP <drink_V2 : V> ;
-    sing = mkVP sing_V ;
+    sing = mkVP (mkV "nyanyi") ;
 
   -- pdpa
-    explanation = mkCN (mkN "explanation") ;
-    inaction = mkCN (mkN "inaction") ;
-    notification = mkCN (mkN ("notification"|"Notification")) ;
+    explanation = mkCN (mkN "penjelasan") ;
+    inaction = mkCN (mkN "tidak bertindak") ;
+    notification = mkCN (mkN ("pemberitahuan"|"Pemberitahuan")) ;
     PDPC = mkCN (mkN "PDPC") ;
-    data_breach = mkCN (mkN ("data breach"|"Data Breach")) ;
-    public = mkAP (mkA ("public"|"Public")) ;
-    notifiable = mkAP (mkA ("notifiable"|"Notifiable")) ;
-    aware = mkAP (mkA "aware") ;
-    NDB_Qualification = mkNP (mkN "NDB Qualification") ;
+    data_breach = mkCN (mkN ("pelanggaran data"|"Pelanggaran Data")) ;
+    public = mkAP (mkA ("awam"|"Awam")) ;
+    notifiable = mkAP (mkA ("boleh dimaklumkan"|"Boleh Dimaklumkan")) ;
+    aware = mkAP (mkA "menyedari") ;
+    NDB_Qualification = mkNP (mkN "Kelayakan NDB") ;
 
 
   -- rodents and vermin
-    Loss_or_Damage = mkNP (mkN "Loss or Damage") ;
-    Contents = mkNP aPl_Det (mkN ("content"|"Content")) ;
-    rodents = mkNP aPl_Det (mkN "rodent") ;
-    insects = mkNP aPl_Det (mkN "insect") ;
-    vermin = mkNP (mkN "vermin") ;
-    birds = mkNP aPl_Det bird_N ;
-    water = mkNP water_N ;
+    Loss_or_Damage = mkNP (mkN "Kerugian atau Kerosakan") ;
+    Contents = mkNP aPl_Det (mkN ("kandungan"|"Kandungan")) ;
+    rodents = mkNP aPl_Det (mkN "rodensia") ;
+    insects = mkNP aPl_Det (mkN "serangga") ;
+    vermin = mkNP (mkN "binatang perosak") ;
+    birds = mkNP aPl_Det (mkN "burung") ;
+    water = mkNP (mkN "air") ;
 
-    animal = mkNP aSg_Det animal_N ;
-    household_appliance = mkNP aSg_Det appliance_N ;
+    animal = mkNP aSg_Det (mkN "binatang") ;
+    household_appliance = mkNP aSg_Det (appliance_N) ;
     swimming_pool = mkNP aSg_Det pool_N ;
     plumbing_heating_or_AC = mkNP or_Conj (mkNP plumbing_N) (mkNP hvac_N) ;
 
-    any_other_exclusion = mkNP (mkN "any other exclusion") ;
+    any_other_exclusion = mkNP (mkN "sebarang pengecualian lain") ;
     escape = mkVP leak_V ;
 
   oper
   -- Google translate or Wikipedia, TODO check these
-    plumbing_N : N = mkN "plumbing" ;
+    plumbing_N : N = mkN "sistem paip" ;
     hvac_N : N = mkN "HVAC" ;
-    leak_V : V = mkV "leak" ;
-    pool_N : N = mkN "swimming pool" ;
-    appliance_N : N = mkN "household appliance" ;
+    leak_V : V = mkV "kebocoran" ;
+    pool_N : N = mkN "kolam renang" ;
+    appliance_N : N = mkN "perkakas rumah" ;
 
 }

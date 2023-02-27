@@ -10,26 +10,26 @@ concrete StandardLexiconMay of StandardLexicon = NL4BaseMay **
   -- Very ad hoc at the moment, should consult a proper legal corpus, analyse valencies and complement types etc.
   -- This module should be the really high quality stuff
   lin
-    organisation = mkCN (mkN ("organisation"|"Organisation")) ;
-    agency = mkCN (mkN ("agency"|"Agency")) ;
-    loss = mkCN (mkN "loss") ;
+    organisation = mkCN (mkN ("organisasi"|"Organisasi")) ;
+    agency = mkCN (mkN ("agensi"|"Agensi")) ;
+    loss = mkCN (mkN "kerugian") ;
 
-    demand = mkV2 "demand" ;
-    perform = mkV2 "perform" ;
-    become = mkV2 "become" ;
-    assess = mkVS (mkV "assess") ;
+    demand = mkV2 "tuntutan" ;
+    perform = mkV2 "melaksanakan" ;
+    become = mkV2 "menjadi" ;
+    assess = mkVS (mkV "menilai") ;
 
-    apply = mkVP (mkV "apply") ;
-    occur = mkVP (mkV "occur") ;
-    respond = mkVP (mkV "respond") ;
+    apply = mkVP (mkV "memohon") ;
+    occur = mkVP (mkV "berlaku") ;
+    respond = mkVP (mkV "membalas") ;
 
-    covered = mkAP (mkA ("covered"|"Covered")) ;
-    ensuing np = mkAP (strA2 "ensuing") <lin NP np : NP>  ;
-    caused_by np = mkAP (mkA2 (mkA "caused") by8agent_Prep) <lin NP np : NP> ;
+    covered = mkAP (mkA ("dilindungi"|"Dilindungi")) ;
+    ensuing np = mkAP (strA2 "seterusnya") <lin NP np : NP>  ;
+    caused_by np = mkAP (mkA2 (mkA "disebabkan") by8agent_Prep) <lin NP np : NP> ;
 
     NP_caused_by_PrePost np = {
-      s = npStr np ++ "caused by" ;
-      qs = "Is the" ++ npStr np ++ "caused by"
+      s = npStr np ++ "disebabkan oleh" ;
+      qs = "Adakah" ++ npStr np ++ "disebabkan oleh"
       } ;
 
     NP_caused_NP_to_VP_Prep_PrePost np water escape from =
@@ -41,7 +41,7 @@ concrete StandardLexiconMay of StandardLexicon = NL4BaseMay **
       in {s = ss.s ; qs = (mkUtt qs).s} ;
 
   oper
-    cause_V2V : V2V = mkV2V "cause" ;
+    cause_V2V : V2V = mkV2V "sebab" ;
 
 -- hack: just to get "does NP cause water to escape from", not "whom does NP cause water to escape from"
     hackQCl : ClSlash -> QCl = \clSlash -> mkQCl emptyIP clSlash ;
@@ -55,17 +55,17 @@ lin
     Feb = ss "Feb" ;
     Mar = ss "Mar" ;
     Apr = ss "Apr" ;
-    May = ss "May" ;
+    May = ss "Mai" ;
     Jun = ss "Jun" ;
     Jul = ss "Jul" ;
-    Aug = ss "Aug" ;
+    Aug = ss "Ogos" ;
     Sep = ss "Sep" ;
     Oct = ss "Oct" ;
     Nov = ss "Nov" ;
-    Dec = ss "Dec" ;
+    Dec = ss "Dis" ;
 
-    Day_Unit = mkCN (mkN "day") ;
-    Month_Unit = mkCN (mkN "month") ;
-    Year_Unit = mkCN (mkN "year") ;
+    Day_Unit = mkCN (mkN "hari") ;
+    Month_Unit = mkCN (mkN "bulan") ;
+    Year_Unit = mkCN (mkN "tahun") ;
 
 }

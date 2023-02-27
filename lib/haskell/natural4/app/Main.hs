@@ -28,7 +28,6 @@ import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
 import Data.ByteString.Lazy.UTF8 (toString)
-import qualified Data.ByteString.Lazy.Char8 as Byte (ByteString, writeFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
@@ -77,7 +76,8 @@ main = do
 
                                    , "-- variable-substitution expanded AnyAll rules\n"
                                    , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
-                                                               | r@SFL4.Hornlike{} <- rules
+                                                               | r <- rules
+                                                               , SFL4.hasClauses r
                                                                ])
 
                                    , "\n\n-- class hierarchy:\n"
@@ -112,7 +112,9 @@ main = do
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     when (SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
+    when (not $ SFL4.tocorel4  opts) $ putStrLn "skipping corel4"
     when (SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
+    when (not $ SFL4.tobabyl4  opts) $ putStrLn "skipping babyl4"
     when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN      iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr

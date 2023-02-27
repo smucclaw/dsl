@@ -20,7 +20,7 @@ import LS.Rule
 import LS.RelationalPredicates
 import LS.PrettyPrinter
 import qualified AnyAll as AA
-import Data.List.NonEmpty
+import Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map as Map
@@ -98,6 +98,7 @@ musings l4i rs =
       expandedRules = DL.nub $ concatMap (expandRule rs) rs
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
+           , "** Global Facts" </> srchs (globalFacts l4i)
            , "** Class Hierarchy"
            , vvsep [ vvsep [ "*** Class:" <+> pretty cname <>
                              if null (Prelude.tail cname) then emptyDoc
@@ -178,7 +179,9 @@ musings l4i rs =
            , vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (unCT $ classtable l4i) ]
 
            , "** The original rules (~origrules l4i~)"
-           , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r | r <- rs ]
+           , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r
+                   </> "**** local variables" </> srchs (ruleLocals l4i r)
+                   | r <- rs ]
            ]
   where
     srchs :: (Show a) => a -> Doc ann
@@ -758,3 +761,39 @@ getMarkings l4i =
     rhsval _  = Nothing
 
 
+-- | local variables
+-- a list of the typed multiterms which show up inside the GIVEN and GIVETH attributes of a rule.
+ruleLocals, ruleLocalsIn, ruleLocalsOut :: Interpreted -> Rule -> [TypedMulti]
+ruleLocals l4i r = ruleLocalsIn l4i r ++ ruleLocalsOut l4i r
+
+-- | input variables -- GIVEN
+ruleLocalsIn _l4i r
+  | not (hasGiven r) = []
+  | otherwise = concatMap NE.toList (maybeToList (given r))
+
+-- | output variables -- GIVETH
+ruleLocalsOut _l4i r
+  | not (hasGiveth r) = []
+  | otherwise = concatMap NE.toList (maybeToList (giveth r))
+
+
+
+type NestedClass = Tree ParamText
+
+-- | top-level DEFINEs
+-- DEFINEs that have horn clause heads but no bodies are constant facts, so we'll define them as such here.
+-- DEFINEs that have horn clauses with bodies are functions that need to be set up a little differently. We'll deal with those separately.
+globalFacts :: Interpreted -> [NestedClass]
+globalFacts l4i =
+  [ Node (NE.singleton (NE.fromList (name r), super r) :: ParamText)
+    [ Node pt []
+    | HC { hHead = RPParamText pt, hBody = Nothing } <- clauses r
+    ]
+  | r@Hornlike{} <- origrules l4i
+  , hasClauses r, Define == keyword r
+  ]
+
+        
+  
+    
+    

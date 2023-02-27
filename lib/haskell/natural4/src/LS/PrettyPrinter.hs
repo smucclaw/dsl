@@ -19,7 +19,7 @@ import Prettyprinter
 import Data.List (intersperse)
 -- import qualified Data.Map as Map
 import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
--- import Debug.Trace
+import Debug.Trace
 import Prettyprinter.Render.Text
 
 -- | Pretty MTExpr
@@ -28,6 +28,15 @@ instance Pretty MTExpr where
   pretty (MTI i) = pretty i
   pretty (MTF n) = pretty n
   pretty (MTB b) = pretty b
+
+-- | Pretty MTExpr with quoting of string values; to use this, just wrap the MTExpr in an MT1 and pretty it as usual
+data MTQ = MT1 MTExpr
+         | MT2 MTExpr
+instance Pretty MTQ where
+  pretty (MT1 o@(MTT t)) = dquotes (pretty o) -- ^ double quotes
+  pretty (MT1 o)         = pretty o
+  pretty (MT2 o@(MTT t)) = squotes (pretty o) -- ^ single quotes
+  pretty (MT2 o)         = pretty o
 
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
@@ -193,30 +202,48 @@ instance Pretty ParamText3 where
 -- | ParamText4 is used to approximate a recursive record. currently we can only go 2 deep.
 -- in future we will have to upgrade ParamText to a full Tree type which can nest arbitrarily deep.
 data ParamText4 = PT4 ParamText Interpreted -- VarPath
+                | PT5 ParamText Interpreted
   deriving (Eq, Show)
 instance Pretty ParamText4 where
-  pretty (PT4 (line1 :| line2s) l4i) -- varpath)
-    | line2s == [] = word1 line1 <> colon <+> quoteBoT line1
-    | otherwise    = word1 line1 <> colon <+> lbrace <+> "--" <+> quoteBoT line1 <> Prettyprinter.line
+  pretty (PT5 orig@(line1 :| line2s) l4i)
+    | null line2s = word1 line1 <+> equals <+> quoteBoT l4i line1
+    | otherwise   = word1 line1 <+> colon  <+> quoteBoT l4i line1
+    
+  pretty (PT4 orig@(line1 :| line2s) l4i) -- varpath)
+    | null line2s = -- "//" <+> "208:" <+> viaShow line1 <//>
+                     quoteRHS line1 <+> colon <+> pretty (MT1 (NE.head (fst line1)))
+                     -- we should be in a DEFINE, printing a value; if we're not, we may be dumping values with the wrong order, so we need to create a PT5.
+                     --    | line2s == [] = "-- " <> viaShow line1 <//> "199: " <> word1 line1 <> colon <+> quoteBoT line1
+                     
+    | otherwise    = "//" <+> "213: " <+> viaShow orig <//> -- [TODO] need to fix this -- test by considering a DEFINE with nested records.
+                     quoteRHS line1 <> equals <+> lbrace <+> "--" <+> quoteBoT l4i line1 <> Prettyprinter.line
                      <> nest 2 (vsep [ word1 l2 <+> colon <+> dquotes (lrest l2) <> comma | l2 <- line2s ])
                      <> Prettyprinter.line
                      <> rbrace
-    where
-      word1,lrest :: TypedMulti -> Doc ann
-      word1 l = typedOrNot "_"      ((NE.head . fst $ l) :| [], snd l)
-      lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fmap mtexpr2text . fst $ l)
-      -- quote based on type.
-      quoteBoT :: TypedMulti -> Doc ann
-      quoteBoT l@(net, _mts) =
-        let unquoted = hsep $ pretty <$> NE.tail net
-        in case typeOfTerm l4i {-varpath-} l of
-          Just (SimpleType _ s1)  -> case s1 of
-                                       "string" -> dquotes $ lrest l
-                                       "number" -> unquoted
-                                       "num"    -> unquoted
-                                       _        -> snake_case (NE.tail net)
-          Just (InlineEnum _p _s) -> dquotes $ lrest l
-          Nothing                 -> unquoted
+
+word1,lrest :: TypedMulti -> Doc ann
+word1 l = typedOrNot "_"      ((NE.head . fst $ l) :| [], snd l)
+lrest l = hsep $ pretty . T.replace "\n" "\\n" <$> (NE.tail . fmap mtexpr2text . fst $ l)
+-- quote based on type.
+quoteBoT :: Interpreted -> TypedMulti -> Doc ann
+quoteBoT l4i l@(net, _mts) =
+  let unquoted = hsep $ pretty <$> NE.tail net
+  in case typeOfTerm l4i {-varpath-} l of
+    Just (SimpleType _ s1)  -> case s1 of
+                                 "string" -> dquotes $ lrest l
+                                 "number" -> unquoted
+                                 "num"    -> unquoted
+                                 _        -> snake_case (NE.tail net)
+    Just (InlineEnum _p _s) -> dquotes $ lrest l
+    Nothing                 -> unquoted
+-- quote for a DEFINE value, where we are saying X IS THE Y
+-- "Y" = X;
+quoteRHS :: TypedMulti -> Doc ann
+quoteRHS l@(val, mts) =
+  case mts of
+    Just (SimpleType _ s1) -> snake_case [MTT s1]
+    unexpected             -> trace ("ERROR: PrettyPrinter PT4 quoteRHS: surprised to see the type annotation " ++ show unexpected) $
+                              dquotes "ERRORTYPE_PrettyPrinter_quoteRHS"
 
 -- what is the (L4) type of a given term?
 -- the term in question is given as a TypedMulti, which often works out to be a key/value together in a TypedMulti.
@@ -259,13 +286,13 @@ typeOfTerm l4i _tm =
 --                                         walk l4i (Just ct1) xs ot
 
 typedOrNot :: String -> TypedMulti -> Doc ann
-typedOrNot        _ (multitext, Nothing)                        = snake_case (toList multitext) <> ":"  <+> "Object"
-typedOrNot        _ (multitext, Just (SimpleType TOne      s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
-typedOrNot "corel4" (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":"  <+> pretty s1
-typedOrNot        _ (multitext, Just (SimpleType TOptional s1)) = snake_case (toList multitext) <> ":?" <+> pretty s1
-typedOrNot        _ (multitext, Just (SimpleType TList0    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
-typedOrNot        _ (multitext, Just (SimpleType TList1    s1)) = snake_case (toList multitext) <> ":"  <+> brackets (pretty s1)
-typedOrNot        _ (multitext, Just (InlineEnum pt1       s1)) = snake_case (toList multitext) <> "# :"  <+> "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
+typedOrNot        _ (multiterm, Nothing)                        = snake_case (toList multiterm) <> ":"  <+> "Object"
+typedOrNot        _ (multiterm, Just (SimpleType TOne      s1)) = snake_case (toList multiterm) <> ":"  <+> snake_case [MTT s1]
+typedOrNot "corel4" (multiterm, Just (SimpleType TOptional s1)) = snake_case (toList multiterm) <> ":"  <+> pretty [MTT s1]
+typedOrNot        _ (multiterm, Just (SimpleType TOptional s1)) = snake_case (toList multiterm) <> ":?" <+> snake_case [MTT s1]
+typedOrNot        _ (multiterm, Just (SimpleType TList0    s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
+typedOrNot        _ (multiterm, Just (SimpleType TList1    s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
+typedOrNot        _ (multiterm, Just (InlineEnum pt1       s1)) = snake_case (toList multiterm) <> "# :"  <+> "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
 
 prettySimpleType :: String -> (T.Text -> Doc ann) -> TypeSig -> Doc ann
 prettySimpleType _        prty (SimpleType TOne      s1) = prty s1

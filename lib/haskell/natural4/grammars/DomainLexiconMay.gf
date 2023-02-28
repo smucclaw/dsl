@@ -7,7 +7,7 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
 
   lin
   -- must sing
-    person = mkCN (mkN "seseorang") ;
+    person = mkCN (mkN "seseorang"|"Seseorang") ;
     walk = mkVP (mkV "jalan") ;
     eat = mkVP <eat_V2 : V> ;
     drink = mkVP <drink_V2 : V> ;

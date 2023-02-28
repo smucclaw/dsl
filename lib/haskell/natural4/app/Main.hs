@@ -24,7 +24,7 @@ import LS.XPile.Markdown
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 
-import LS.NLP.NLG (nlg,myNLGEnv)
+import LS.NLP.NLG (nlg,myNLGEnv, allLangs, getLang)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -47,8 +47,10 @@ main :: IO ()
 main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
-  nlgEnv   <- unsafeInterleaveIO myNLGEnv -- Only load the NLG environment if we need it.
+  nlgLangs <- unsafeInterleaveIO allLangs
+  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv (getLang "NL4Eng") -- Only load the NLG environment if we need it.
 --  putStrLn "main: doing dumpRules"
+  allNLGEnv <- unsafeInterleaveIO $ mapM myNLGEnv nlgLangs
   rules    <- SFL4.dumpRules opts
 --  putStrLn "main: done with dumpRules"
   iso8601  <- now8601
@@ -62,7 +64,7 @@ main = do
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> ((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules))) <> "\n\n" <> psSuffix <> "\n\n" <> asPurescript nlgEnv rules)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     psPrefix <> (((tail . init) $ (TL.unpack) ((pShowNoColor . (map alwaysLabeled)) (biggestQ nlgEnv rules)))) <> "\n\n" <> psSuffix <> "\n\n" <> (intercalate "\n\n" $ [asPurescript l rules | l <- allNLGEnv]))
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
@@ -147,7 +149,7 @@ main = do
 
 
     when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
-        asCheckl <- show <$> multiChecklist nlgEnv rc rules
+        asCheckl <- show <$> checklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
     putStrLn "natural4: output to workdir done"
 
@@ -162,7 +164,8 @@ main = do
     when (SFL4.only opts == "petri")  $ putStrLn asPetri
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
-    when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
+    when (SFL4.asJSON rc) $ putStrLn asJSONstr
+
     when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
       naturalLangSents <- mapM (nlg nlgEnv) rules
       mapM_ (putStrLn . Text.unpack) naturalLangSents
@@ -177,7 +180,7 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toChecklist rc) $ do
-      checkls <- multiChecklist nlgEnv rc rules
+      checkls <- checklist nlgEnv rc rules
       pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint $ asProlog

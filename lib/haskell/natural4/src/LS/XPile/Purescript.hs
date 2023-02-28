@@ -20,6 +20,7 @@ import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 import LS.NLP.NLG
+import LS.NLP.NL4Transformations
 import LS.Interpreter
 import Control.Monad (guard)
 import System.IO.Unsafe (unsafePerformIO)
@@ -28,6 +29,7 @@ import Data.Map ((!))
 import Data.Bifunctor (second)
 import Data.Maybe (listToMaybe)
 import Data.List.Split (chunk)
+import PGF
 
 
 -- | extract the tree-structured rules from Interpreter
@@ -107,8 +109,8 @@ biggestS env rl = do
 asPurescript :: NLGEnv -> [Rule] -> String
 asPurescript env rl =
      show (vsep
-           [ "toplevelDecisions :: Object.Object (Item String)"
-           , "toplevelDecisions = Object.fromFoldable " <>
+           [ (pretty $ showLanguage $ gfLang env) <> "Decisions :: Object.Object (Item String)"
+           , (pretty $ showLanguage $ gfLang env) <> "Decisions = Object.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (mt2text <$> names)
@@ -117,8 +119,8 @@ asPurescript env rl =
                    ]
                  )
              )
-           , "toplevelDefaultMarking :: Marking"
-           , "toplevelDefaultMarking = Marking $ Map.fromFoldable " <>
+           , (pretty $ showLanguage $ gfLang env) <> "Marking :: Marking"
+           , (pretty $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable " <>
              (pretty . TL.unpack
               . TL.replace "False" "false"
               . TL.replace "True" "true"
@@ -126,15 +128,15 @@ asPurescript env rl =
               fmap toTuple . Map.toList . AA.getMarking $
               getMarkings (l4interpret defaultInterpreterOptions rl)
              )
-          , "toplevelStatements :: Object.Object (Item String)"
-          , "toplevelStatements = Object.fromFoldable " <>
-            (pretty $ TL.unpack (
-                pShowNoColor
-                  [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                          , alwaysLabeled (justStatements (head bs) (map fixNot (tail bs))))
-                  | (names,bs) <- (combine (namesAndStruct env rl) (namesAndQ env rl))
-                  ]
-                )
-            )
+          -- , (pretty $ showLanguage $ gfLang env) <> "Statements :: Object.Object (Item String)"
+          -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
+          --   (pretty $ TL.unpack (
+          --       pShowNoColor
+          --         [ toTuple ( T.intercalate " / " (mt2text <$> names)
+          --                 , alwaysLabeled (justStatements (head bs) (map fixNot (tail bs))))
+          --         | (names,bs) <- (combine (namesAndStruct env rl) (namesAndQ env rl))
+          --         ]
+          --       )
+          --   )
            ]
           )

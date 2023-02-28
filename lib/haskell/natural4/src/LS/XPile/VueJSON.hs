@@ -33,6 +33,12 @@ checklist env _ rs = do
    qs <- nlgQuestion env `mapM` rs
    let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
    pure $ sequence nonEmptyQs
+
+multiChecklist :: [NLGEnv] -> RunConfig -> [Rule] -> IO Grounds
+multiChecklist env rc rs = do
+  qs <- sequence [checklist e rc rs | e <- env]
+  pure $ concat qs
+
 -- original:
 -- checklist env rc rs = groundsToChecklist env $ groundrules rc rs
 

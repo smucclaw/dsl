@@ -147,7 +147,7 @@ main = do
 
 
     when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
-        asCheckl <- show <$> checklist nlgEnv rc rules
+        asCheckl <- show <$> multiChecklist nlgEnv rc rules
         mywritefile True tochecklFN   iso8601 "txt" asCheckl
     putStrLn "natural4: output to workdir done"
 
@@ -177,7 +177,7 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toChecklist rc) $ do
-      checkls <- checklist nlgEnv rc rules
+      checkls <- multiChecklist nlgEnv rc rules
       pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint $ asProlog

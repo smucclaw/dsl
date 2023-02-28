@@ -384,6 +384,33 @@ Conventionally one would expect such a form to gather the exact birthdate, from 
 
 * Transpiling the instance DEFINEs to typescript
 
+We lean heavily on the PrettyPrinter to format ParamTexts correctly.
+
+Different languages have a dizzying variety of ways to format records.
+
+In this running example we use a nested record:
+
+#+begin_src haskell
+  data MyOuter = Outer { field1 :: String
+                       , field2 :: MyInner
+                       }
+  data MyInner = Inner { field3 :: Int
+                       , field4 :: Boolean
+                       }
+
+  myvalue = Outer { field1 = "field1"
+                  , field2 = Inner { field3 = 1
+                                   , field4 = True } }
+#+end_src
+
+In Typescript we would say something like
+
+#+begin_src typescript
+  interface Outer { field1 : string,
+		      field2 : Inner }
+#+end_src
+
+
 * Notes on the code
 
 * More about nested hornlike rules

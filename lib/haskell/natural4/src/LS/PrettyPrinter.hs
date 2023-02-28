@@ -184,27 +184,29 @@ untaint = T.replace " " "_" .
 instance Pretty RPRel where
   pretty rpr = pretty $ rel2txt rpr
 
-newtype ParamText2 = PT2 ParamText
+-- | Some specializations of ParamText for pretty-printing purposes.
+-- See the @natural4/src/README.org@ file for details under
+-- "Transpiling the instance DEFINEs to typescript".
 
--- | ParamText2: the first line appears on the first line, subsequent lines appear on subsequent lines
+data ParamTextN
+  = PT2 ParamText
+  | PT3 ParamText
+  | PT4 ParamText Interpreted
+  | PT5 ParamText Interpreted
+    deriving (Eq, Show)
+
+-- | PT2: the first line appears on the first line, subsequent lines appear on subsequent lines
 -- if you want different ways of rendering a ParamText, go ahead and create newtypes for it.
 -- because a ParamText is a type alias.
--- so it makes sense to marshal to a newtype PT2, PT3, PT4 etc that has the appropriate rendering instance.
-instance Pretty ParamText2 where
+instance Pretty ParamTextN where
   pretty (PT2 (x1 :| xs)) = nest 4 ( vsep ( hsep (pretty <$> NE.toList ( fst x1) )
                                            : (hsep . fmap pretty . toList . fst <$> xs) ) )
 
--- | ParamText3 is used by the CoreL4 transpiler to produce colon-annotated paramtexts.
-newtype ParamText3 = PT3 ParamText
-instance Pretty ParamText3 where
+-- | PT3 is used by the CoreL4 transpiler to produce colon-annotated paramtexts.
   pretty (PT3 pt) = hcat (intersperse ", " (toList $ typedOrNot "_" <$> pt))
 
--- | ParamText4 is used to approximate a recursive record. currently we can only go 2 deep.
+-- | PT4 is used for nested classes
 -- in future we will have to upgrade ParamText to a full Tree type which can nest arbitrarily deep.
-data ParamText4 = PT4 ParamText Interpreted -- VarPath
-                | PT5 ParamText Interpreted
-  deriving (Eq, Show)
-instance Pretty ParamText4 where
   pretty (PT5 orig@(line1 :| line2s) l4i)
     | null line2s = word1 line1 <+> equals <+> quoteBoT l4i line1
     | otherwise   = word1 line1 <+> colon  <+> quoteBoT l4i line1

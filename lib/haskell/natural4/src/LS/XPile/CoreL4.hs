@@ -148,8 +148,6 @@ sfl4ToCorel4Program :: Interpreted -> L4.Program ()
 sfl4ToCorel4Program l4i
   = Program { annotOfProgram = ()
             , elementsOfProgram = [] }
-    -- concatMap sfl4ToCorel4Rule (origrules l4i)}
-
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
 ppCorel4 :: L4.Program () -> String
@@ -275,26 +273,6 @@ precondOfHornClauses _ = trueVNoType
 postcondOfHornClauses :: [HornClause2] -> Expr ()
 postcondOfHornClauses [HC hh _hb] = relationalPredicateToExpr hh
 postcondOfHornClauses _ = trueVNoType
-
-{- TODO: remove after testing
-sfl4ToCorel4RuleSingle :: SFL4.Rule -> [L4.Rule ()]
-sfl4ToCorel4RuleSingle Hornlike{..} =
-            -- pull any type annotations out of the "given" paramtext as ClassDeclarations
-            -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            -- TODO: the following produces an error: Prelude.tail: empty list
-            -- has been temporarily commented out 
-            -- given2classdecls given ++
-      [Rule
-      { annotOfRule    = ()
-      , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-      , instrOfRule    = []
-      , varDeclsOfRule = []
-      , precondOfRule  = precondOfHornClauses clauses
-      , postcondOfRule = postcondOfHornClauses clauses
-      }
-      ]
-sfl4ToCorel4RuleSingle _ = []
--}
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = []

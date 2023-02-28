@@ -47,10 +47,8 @@ main :: IO ()
 main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
-  nlgEnv   <- unsafeInterleaveIO myNLGEnv -- Only load the NLG environment if we need it.
---  putStrLn "main: doing dumpRules"
+  nlgEnv   <- unsafeInterleaveIO myNLGEnv
   rules    <- SFL4.dumpRules opts
---  putStrLn "main: done with dumpRules"
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
       l4i         = l4interpret SFL4.defaultInterpreterOptions rules
@@ -66,7 +64,7 @@ main = do
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     translate2PS nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (tomarkdownFN, asMD) = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
+      (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
@@ -106,7 +104,6 @@ main = do
 
   -- if --workdir is specified, and there are no --only, then we run all the things
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
-  -- putStrLn $ "natural4: only = " <> SFL4.only opts
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (null $ SFL4.only opts)) $ do
 
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
@@ -145,7 +142,7 @@ main = do
                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-           , let (fname, ext) = (take 20 (snake_scrub (SFL4.mtexpr2text <$> n)), "svg")
+           , let (fname, ext) = (take 20 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 
@@ -184,35 +181,17 @@ main = do
       checkls <- checklist nlgEnv rc rules
       pPrint checkls
 
-    when (SFL4.toProlog rc) $ pPrint $ asProlog
+    when (SFL4.toProlog rc) $ pPrint asProlog
 
     when (SFL4.toTS rc) $ print $ asTypescript rules
 
     when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
-    when (SFL4.only opts `elem` ["native"])  $ pPrint rules
-    when (SFL4.only opts `elem` ["classes"]) $ print (SFL4.classtable l4i)
-    when (SFL4.only opts `elem` ["symtab"])  $ print (SFL4.scopetable l4i)
+    when (SFL4.only opts == "native")  $ pPrint rules
+    when (SFL4.only opts == "classes") $ pPrint (SFL4.classtable l4i)
+    when (SFL4.only opts == "symtab")  $ pPrint (SFL4.scopetable l4i)
 
     when (SFL4.toVue rc) $ do
-      -- putStrLn $ toString $ encodePretty $ rulesToRuleJSON rules
       putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
-      -- pPrint $ itemRPToItemJSON  $ toVueRules rules
-
-    -- when (SFL4.toHTML rc) $ do
-    --   mkdn <- mapM (toMarkdown nlgEnv) rules
-    --   let htm = concatMap toHTML mkdn
-    --   writeFile "output.html" htm
-    --   pPrint htm
-
-    -- when (SFL4.toPDF rc) $ do
-    --   mkdn <- mapM (toMarkdown nlgEnv) rules
-    --   pdf <- toPDF (Text.concat mkdn)
-    --   Byte.writeFile "output.pdf" pdf
-
-    when (SFL4.only opts `elem` ["native"]) $ pPrint rules
-
--- file2rules :: Opts Unwrapped -> [FileName] -> IO [Rule]
--- file2rules opts
 
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime
@@ -222,21 +201,15 @@ mywritefile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
   let mypath = dirname <> "/" <> filename     <> "." <> ext
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
-  -- putStrLn ("mywritefile: outputting to " <> mypath)
   writeFile mypath s
-  -- do the symlink more atomically by renaming
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 
 mywritefileDMN :: Bool -> FilePath -> FilePath -> String -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree -> IO ()
 mywritefileDMN doLink dirname filename ext xmltree = do
   createDirectoryIfMissing True dirname
   let mypath = dirname <> "/" <> filename     <> "." <> ext
-      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
-  -- putStrLn ("mywritefile: outputting to " <> mypath)
-  -- to replace writeFile mypath s
+      mylink = dirname <> "/" <> "LATEST" <> "." <> ext
   _ <- HXT.runX ( xmltree HXT.>>> HXT.writeDocument [ HXT.withIndent HXT.yes ] mypath )
-
-  -- do the symlink more atomically by renaming
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 
 myMkLink :: FilePath -> FilePath -> IO ()
@@ -245,8 +218,8 @@ myMkLink filename mylink = do
   createFileLink filename mylink_tmp
   renameFile mylink_tmp mylink
 
-snake_scrub :: [Text.Text] -> String
-snake_scrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_-") $
+snakeScrub :: [Text.Text] -> String
+snakeScrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_-") $
                 Text.unpack $
                 Text.replace " " "_" $
                 Text.intercalate "-" x

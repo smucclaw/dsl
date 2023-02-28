@@ -265,8 +265,9 @@ rpLeafVal = debugName "rpLeafVal" $ do
 -- | in the body of a HornClause, any elements which are defined with a type signature are considered local/private existential variables internal to the body.
 -- we partition the body of the Horn Clause into such existential variables, vs the rest of the logic.
 partitionExistentials :: HornClause2 -> (BoolStructR, BoolStructR)
-partitionExistentials c = ( aaFilter (\case { AA.Leaf (RPParamText x) ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
-                          , aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
+partitionExistentials c = -- [TODO] can we restructure this to use the actual `partition` function
+  ( aaFilter (\case { AA.Leaf (RPParamText x) ->     (hasTypeSig x) ; _ -> False }) (hc2preds c)
+  , aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
     where
       aaFilter :: (AA.BoolStruct lbl a -> Bool) -> AA.BoolStruct lbl a -> AA.BoolStruct lbl a
       aaFilter f (AA.Any lbl xs) = AA.mkAny lbl (filter f (aaFilter f <$> xs))

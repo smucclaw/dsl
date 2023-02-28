@@ -77,7 +77,6 @@ data Rule = Regulative
             , super    :: Maybe TypeSig         -- IS A Superclass
             , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
---            , given    :: [ParamText]
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
@@ -269,6 +268,11 @@ hasGiven     TypeDecl{} = True
 hasGiven Constitutive{} = True
 hasGiven             __ = False
 
+-- | does a rule have a Giveth attribute? this should go away upon refactoring the Rule type to avoid multiple record selectors
+hasGiveth :: Rule -> Bool
+hasGiveth Hornlike{} = True
+hasGiveth _          = False
+
 -- | does a rule have Clauses?
 -- [TODO] it's beginning to look like we need to break out the Rule Types into different types not just constructors
 hasClauses :: Rule -> Bool
@@ -368,3 +372,4 @@ srccol2     = srccol' 2
 
 srccol' :: Int -> Rule -> Rule
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
+

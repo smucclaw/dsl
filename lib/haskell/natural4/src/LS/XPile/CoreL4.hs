@@ -253,7 +253,9 @@ boolStructRToExpr bs = case bs of
 
 relationalPredicateToExpr :: RelationalPredicate-> Expr ()
 relationalPredicateToExpr rp = case rp of
-  RPParamText ne -> error "relationalPredicateToExpr: erroring on RPParamText"
+  RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
+                    ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
+  
   RPMT mts -> multiTermToExprNoType mts
   RPConstraint mts RPis mts' -> multiTermToExprNoType (mts' ++ mts)
   RPConstraint mts rr mts' ->
@@ -337,7 +339,6 @@ sfl4ToCorel4Rule DefNameAlias { } = error "sfl4ToCorel4Rule: erroring on DefName
 sfl4ToCorel4Rule (RuleAlias _) = error "sfl4ToCorel4Rule: erroring on RuleAlias"   -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled" -- trivial top = _
 sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"    -- trivial bottom
-sfl4ToCorel4Rule Hornlike{}    = error "sfl4ToCorel4Rule: erroring on Hornlike" -- [TODO] Hornlike
 sfl4ToCorel4Rule _             = error "sfl4ToCorel4Rule: erroring on other rule" -- [TODO] Hornlike
 
 -- we need some function to convert a HornClause2 to an Expr
@@ -755,7 +756,7 @@ DECIDE		exceedsPrescrNumberOfIndividuals					db
 WHEN		numberOfAffectedIndividuals					db	>=	500
 -} 
 r1 :: SFL4.Rule
-r1 = Hornlike
+r1 = defaultHorn
   { name = [ MTT "savings account" ]
     , super = Nothing
     , keyword = Decide
@@ -792,7 +793,7 @@ WHEN		Bar	IS	green
 AND		Baz	IS	blue
 -}
 r2 :: SFL4.Rule
-r2 = Hornlike 
+r2 = defaultHorn
   { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
@@ -827,7 +828,7 @@ r2 = Hornlike
     }
 
 testrules :: [SFL4.Rule]
-testrules = [ Hornlike
+testrules = [ defaultHorn
     { name =
         [ MTT "exceedsPrescrNumberOfIndividuals"
         , MTT "db"
@@ -893,7 +894,7 @@ testrules = [ Hornlike
     , defaults = []
     , symtab = []
     }
-  , Hornlike
+  , defaultHorn
     { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
@@ -926,7 +927,7 @@ testrules = [ Hornlike
     , defaults = []
     , symtab = []
     }
-  , Hornlike
+  , defaultHorn
     { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide

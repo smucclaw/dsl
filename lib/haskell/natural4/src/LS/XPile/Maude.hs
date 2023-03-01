@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -19,10 +20,13 @@ import AnyAll (BoolStruct (Leaf))
 -- import Debug.Trace
 
 import Control.Applicative (liftA2)
+import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList))
+import Data.Functor ((<&>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String (IsString)
 import Data.Text qualified as T
-import Flow ((|>), (.>))
+import Flow ((.>), (|>))
 import LS.Rule
   ( Rule (..),
   )
@@ -33,7 +37,15 @@ import LS.Types
     TemporalConstraint (TemporalConstraint),
   )
 import Prettyprinter
-  ( Doc, pretty, hsep, line, vcat, viaShow, vsep, (<+>), concatWith,
+  ( Doc,
+    concatWith,
+    hsep,
+    line,
+    pretty,
+    vcat,
+    viaShow,
+    vsep,
+    (<+>),
   )
 
 {-
@@ -69,20 +81,15 @@ rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> either show show
 
 -- Auxiliary functions that help with the transpilation.
-rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
-rules2doc rules
-  | null rules = pure mempty
-  | otherwise =
-    rules
-      |> toList
-      |> map rule2doc
-      |> sequence
-      |> fmap (concatWith catWithLines)
+rules2doc :: (MonadErrorString s m, Foldable t) => t Rule -> m (Doc ann)
+rules2doc (null -> True) = pure mempty
+rules2doc rules =
+  rules |> toList |$> rule2doc |> sequence |$> concatWith catWithLines
   where
     catWithLines x y = [x, line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
-rule2doc :: Rule -> Either String (Doc ann)
+rule2doc :: MonadErrorString s m => Rule -> m (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just ("§", 1, ruleName),
@@ -101,8 +108,14 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-      (ruleNoHenceLest, henceLestClauses)
-        |> uncurry (liftA2 (:)) |> fmap vcat
+      {-
+        Here we first process separately:
+        - the part of the rule without the HENCE/LEST clauses.
+        - the HENCE/LEST clauses.
+        We then combine these together via vcat, using sequence to collect all
+        the errors which occured while processing each part.
+      -}
+      [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
     where
       ruleNoHenceLest =
         [ ["RULE", pretty2Qid ruleName],
@@ -110,12 +123,13 @@ rule2doc
           [deontic2str deontic, pretty2Qid actionName],
           ["WITHIN", pretty n, "DAY"]
         ]
-          |> map hsep |> vcat |> pure
+          |$> hsep |> vcat |> pure
       henceLestClauses =
         [(HENCE, hence), (LEST, lest)]
-          |> map (uncurry henceLest2maudeStr)
+          |$> uncurry henceLest2maudeStr
           |> sequence
-          |> fmap (filter isNonEmptyStr)
+          |$> filter isNonEmptyStr
+          |$> vcat
       deontic2str deon =
         deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
       isNonEmptyStr str = str |> show |> null |> not
@@ -123,38 +137,55 @@ rule2doc
 rule2doc _ = errMsg
 
 -- Auxiliary stuff for handling HENCE/LEST clauses.
+
+{-
+  A valid HENCE/LEST clause has the form
+  rule0 [ AND rule1 AND ... AND ruleN ]
+-}
+isValidHenceLest :: Maybe Rule -> Bool
+isValidHenceLest maybeRule = maybeRule |> maybe True isValidRuleAlias
+  where
+    isValidRuleAlias (RuleAlias xs) = go xs
+    go [MTT _] = True
+    go (MTT _ : MTT (T.toUpper -> "AND") : xs) = go xs
+    go _ = False
+
 data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)
 
-isValidHenceLest :: Maybe Rule -> Bool
-isValidHenceLest Nothing = True
-isValidHenceLest (Just (RuleAlias xs)) =
-  isValidMTTs xs
-  where
-    isValidMTTs [MTT _] = True
-    isValidMTTs (MTT _ : MTT (T.toUpper -> "AND") : xs) = isValidMTTs xs
-
-henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Either String (Doc ann)
+{-
+  This function can handle invalid HENCE/LEST clauses.
+  A left with an error message is returned in such cases.
+-}
+henceLest2maudeStr ::
+  MonadErrorString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
 henceLest2maudeStr henceOrLest henceLest =
   henceLest |> maybe (pure mempty) henceLest2doc
   where
     henceLest2doc (RuleAlias henceLest') =
       henceLest'
-        |> map quotOrUpper
+        |$> quotOrUpper
         |> sequence
-        |> fmap hsep
-        |> fmap (parenthesizeIf (length henceLest' > 1))
-        |> fmap (viaShow henceOrLest <+>)
+        |$> hsep
+        |$> parenthesizeIf (length henceLest' > 1)
+        |$> (viaShow henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure
     quotOrUpper _ = errMsg
     parenthesizeIf True x = ["(", x, ")"] |> mconcat
-    parenthesizeIf False x = x
+    parentheSizeIf False x = x
 
 -- Common utilities
+type MonadErrorString s m = (IsString s, MonadError s m)
+
+infixl 0 |$>
+
+(|$>) :: Functor f => f a -> (a -> b) -> f b
+(|$>) = (<&>)
+
 pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
-errMsg :: Either String a
-errMsg = Left "Not supported."
+errMsg :: MonadErrorString s m => m a
+errMsg = throwError "Not supported."

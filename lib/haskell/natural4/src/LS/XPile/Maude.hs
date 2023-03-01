@@ -163,7 +163,7 @@ henceLest2maudeStr henceOrLest hence =
 errMsg :: Either String a
 errMsg = Left "Not supported."
 
-mapButLast :: (a -> b) -> [a] -> [b]
+mapButLast :: (a -> a) -> [a] -> [a]
 mapButLast _ [] = []
-mapButLast _ [_] = []
+mapButLast _ [x] = [x]
 mapButLast f (x : xs) = f x : mapButLast f xs

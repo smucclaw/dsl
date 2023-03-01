@@ -4,7 +4,7 @@ abstract NL4Base =
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
-      , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
+      , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
@@ -86,7 +86,9 @@ abstract NL4Base =
       Temporal ;
       TimeUnit ; -- day, month, year …
       Date ;
+      Day ;
       Month ;
+      Year ;
       TComparison ;
       [TComparison]{2} ;
 
@@ -97,10 +99,10 @@ abstract NL4Base =
              -> Cond ;
       BEFORE, AFTER, BY, ON, VAGUE : TComparison ;
       ConjTComparison : Conj -> [TComparison] -> TComparison ;
-      MkDate : Int -> Month -> Int -> Date ;
+      MkDate : Day -> Month -> Year -> Date ;
 
       WITHIN : Int -> TimeUnit -> Temporal ;
-      -- NB. time units and months in StandardLexicon
+      -- NB. time units, months and years in StandardLexicon
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     cat

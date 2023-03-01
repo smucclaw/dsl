@@ -188,6 +188,7 @@ ruleQnTrees env alias rule = do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
       return $ catMaybes [qCondTrees]
     DefNameAlias {} -> pure []
+    _ -> pure []
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)
@@ -240,14 +241,18 @@ parseTComparison TVague = GVAGUE
 
 parseDate :: MultiTerm -> GDate
 parseDate mt = case Text.words $ mt2text mt of
-  [d, m, y] -> GMkDate (tInt d) (tMonth m) (tInt y)
-  _ -> GMkDate (GInt 999) (LexMonth "Jan") (GInt 999)
+  [d, m, y] -> GMkDate (tDay d) (tMonth m) (tYear y)
+  _ -> GMkDate (LexDay "Day1") (LexMonth "Jan") (LexYear "Year2000")
  where
-  tInt :: Text.Text -> GInt
-  tInt = GInt . read . Text.unpack
+  tDay :: Text.Text -> GDay
+  tDay t = LexDay ("Day"<> Text.unpack t)
 
   tMonth :: Text.Text -> GMonth
   tMonth = LexMonth . Text.unpack
+
+  tYear :: Text.Text -> GYear
+  tYear t = LexYear ("Year"<> Text.unpack t)
+
 
 -- TODO: stop using *2text, instead use the internal structure
   -- "respond" :| []  -> respond : VP

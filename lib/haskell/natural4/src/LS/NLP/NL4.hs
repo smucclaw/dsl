@@ -59,6 +59,8 @@ type GConstraint = Tree GConstraint_
 data GConstraint_
 type GDate = Tree GDate_
 data GDate_
+type GDay = Tree GDay_
+data GDay_
 type GDeontic = Tree GDeontic_
 data GDeontic_
 type GDet = Tree GDet_
@@ -143,6 +145,8 @@ type GVV = Tree GVV_
 data GVV_
 type GWho = Tree GWho_
 data GWho_
+type GYear = Tree GYear_
+data GYear_
 type GA = Tree GA_
 data GA_
 type GA2 = Tree GA2_
@@ -179,7 +183,6 @@ data Tree :: * -> * where
   LexCN :: String -> Tree GCN_
   GCompAP :: GAP -> Tree GComp_
   GCompAdv :: GAdv -> Tree GComp_
-  GCompCN :: GCN -> Tree GComp_
   GCompNP :: GNP -> Tree GComp_
   GConjCond :: GConj -> GListCond -> Tree GCond_
   GConjPreCond :: GPrePost -> GConj -> GListCond -> Tree GCond_
@@ -196,7 +199,8 @@ data Tree :: * -> * where
   GRPleafS :: GNP -> GVPS -> Tree GConstraint_
   GrecoverRPis :: GString -> GString -> Tree GConstraint_
   GrecoverUnparsedConstraint :: GString -> Tree GConstraint_
-  GMkDate :: GInt -> GMonth -> GInt -> Tree GDate_
+  GMkDate :: GDay -> GMonth -> GYear -> Tree GDate_
+  LexDay :: String -> Tree GDay_
   GMAY :: Tree GDeontic_
   GMUST :: Tree GDeontic_
   GSHANT :: Tree GDeontic_
@@ -345,6 +349,7 @@ data Tree :: * -> * where
   GConjWho :: GConj -> GListWho -> Tree GWho_
   GWHO :: GTemp -> GPol -> GVP -> Tree GWho_
   GrecoverUnparsedWho :: GString -> Tree GWho_
+  LexYear :: String -> Tree GYear_
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
   GFloat :: Double -> Tree GFloat_
@@ -365,7 +370,6 @@ instance Eq (Tree a) where
     (LexCN x,LexCN y) -> x == y
     (GCompAP x1,GCompAP y1) -> and [ x1 == y1 ]
     (GCompAdv x1,GCompAdv y1) -> and [ x1 == y1 ]
-    (GCompCN x1,GCompCN y1) -> and [ x1 == y1 ]
     (GCompNP x1,GCompNP y1) -> and [ x1 == y1 ]
     (GConjCond x1 x2,GConjCond y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreCond x1 x2 x3,GConjPreCond y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -383,6 +387,7 @@ instance Eq (Tree a) where
     (GrecoverRPis x1 x2,GrecoverRPis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GrecoverUnparsedConstraint x1,GrecoverUnparsedConstraint y1) -> and [ x1 == y1 ]
     (GMkDate x1 x2 x3,GMkDate y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (LexDay x,LexDay y) -> x == y
     (GMAY,GMAY) -> and [ ]
     (GMUST,GMUST) -> and [ ]
     (GSHANT,GSHANT) -> and [ ]
@@ -531,6 +536,7 @@ instance Eq (Tree a) where
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GWHO x1 x2 x3,GWHO y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GrecoverUnparsedWho x1,GrecoverUnparsedWho y1) -> and [ x1 == y1 ]
+    (LexYear x,LexYear y) -> x == y
     (GString x, GString y) -> x == y
     (GInt x, GInt y) -> x == y
     (GFloat x, GFloat y) -> x == y
@@ -593,14 +599,12 @@ instance Gf GCN where
 instance Gf GComp where
   gf (GCompAP x1) = mkApp (mkCId "CompAP") [gf x1]
   gf (GCompAdv x1) = mkApp (mkCId "CompAdv") [gf x1]
-  gf (GCompCN x1) = mkApp (mkCId "CompCN") [gf x1]
   gf (GCompNP x1) = mkApp (mkCId "CompNP") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "CompAP" -> GCompAP (fg x1)
       Just (i,[x1]) | i == mkCId "CompAdv" -> GCompAdv (fg x1)
-      Just (i,[x1]) | i == mkCId "CompCN" -> GCompCN (fg x1)
       Just (i,[x1]) | i == mkCId "CompNP" -> GCompNP (fg x1)
 
 
@@ -669,6 +673,15 @@ instance Gf GDate where
 
 
       _ -> error ("no Date " ++ show t)
+
+instance Gf GDay where
+  gf (LexDay x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+
+      Just (i,[]) -> LexDay (showCId i)
+      _ -> error ("no Day " ++ show t)
 
 instance Gf GDeontic where
   gf GMAY = mkApp (mkCId "MAY") []
@@ -1316,6 +1329,15 @@ instance Gf GWho where
 
       _ -> error ("no Who " ++ show t)
 
+instance Gf GYear where
+  gf (LexYear x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+
+      Just (i,[]) -> LexYear (showCId i)
+      _ -> error ("no Year " ++ show t)
+
 
 
 instance Gf GA where
@@ -1387,7 +1409,6 @@ instance Compos Tree where
     GUseN x1 -> r GUseN `a` f x1
     GCompAP x1 -> r GCompAP `a` f x1
     GCompAdv x1 -> r GCompAdv `a` f x1
-    GCompCN x1 -> r GCompCN `a` f x1
     GCompNP x1 -> r GCompNP `a` f x1
     GConjCond x1 x2 -> r GConjCond `a` f x1 `a` f x2
     GConjPreCond x1 x2 x3 -> r GConjPreCond `a` f x1 `a` f x2 `a` f x3

@@ -5,7 +5,7 @@ concrete NL4BaseEng of NL4Base =
       , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
   --      , ProgrVP -- becoming aware
-      , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
+      , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP

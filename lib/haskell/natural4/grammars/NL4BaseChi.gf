@@ -3,8 +3,8 @@ concrete NL4BaseChi of NL4Base =
   , GrammarChi [
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
-      , A, A2, AP, AdjCN, PositA
-      , Comp, Adv, VP, UseComp, CompAP, CompNP, CompCN, CompAdv -- is a public agency
+      , A, A2, AP, PositA
+      , Comp, Adv, VP, UseComp, CompAP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
@@ -49,11 +49,12 @@ concrete NL4BaseChi of NL4Base =
                 -- would be smaller to use VPI or VPS, and doable in English (thanks to questions taking inf form), but dangerous for other langs
 
   linref
-    Cond = \c -> ResChi.linS c.s  ;
+    Cond = linCond ;
   oper
-    LinCond : Type = {s : S ; qs : QS} ; -- {subj : NP ; pred : ExtendChi.VPS} ;
-    LinListCond : Type = {s : SyntaxChi.ListS ; qs : ListQS} ;
-    ListQS : Type = {s1,s2 : Bool => Str} ;
+    LinCond : Type = {subj : NP ; pred : ExtendChi.VPS} ;
+    linCond : LinCond -> Str = \c -> ResChi.linS (ExtendChi.PredVPS c.subj c.pred) ;
+
+    LinListCond : Type = {subj : NP ; preds : ExtendChi.ListVPS} ; -- TODO see if this works
 
   lin
 -- Application layer
@@ -61,8 +62,8 @@ concrete NL4BaseChi of NL4Base =
     Regulative subj deontic action = mkS (mkCl subj (ComplVPIVV deontic action)) ;
     qWHO subj who = cc2 (mkUtt (ExtendChi.SQuestVPS subj who)) (ss "?") ;
     sWHO subj who = mkUtt (ExtendChi.PredVPS subj who) ;
-    qCOND cond = cc2 (mkUtt cond.qs) (ss "?") ;
-    sCOND cond = mkUtt cond.s ;
+    qCOND cond = cc2 (mkUtt (ExtendChi.SQuestVPS cond.subj cond.pred)) (ss "?") ;
+    sCOND cond = mkUtt (ExtendChi.PredVPS cond.subj cond.pred) ;
     qUPON subj upon = qWHO subj (MkVPS presAnt positivePol upon) ;
     sUPON subj upon = sWHO subj (MkVPS presAnt positivePol upon) ;
 
@@ -99,11 +100,22 @@ concrete NL4BaseChi of NL4Base =
 
     WHEN np t p vp =
       let vps : VPS = MkVPS t p vp
-       in {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
+       in {subj = np ; pred = vps} ;
 
-    BaseCond c d = {s = BaseS c.s d.s ; qs = twoTable Bool c.qs d.qs} ;
-    ConsCond c d = {s = ConsS c.s d.s ; qs = consrTable Bool comma c.qs d.qs} ;
-    ConjCond conj cs = {s = ConjS conj cs.s ; qs = lin QS (conjunctDistrTable Bool (conj.s ! R.CSent) cs.qs)} ;
+    BaseCond c d = {subj = c.subj ; preds = ExtendChi.BaseVPS c.pred (mergeSubjectVPS d)} ;
+    ConsCond c cs = {subj = c.subj ; preds = ExtendChi.ConsVPS c.pred (mergeSubjectListVPS cs)} ;
+    ConjCond conj cs = {subj = cs.subj ; pred = ExtendChi.ConjVPS conj cs.preds} ;
+
+  oper
+    -- NB. doesn't work if we change lincat of VPS in ExtendChi
+    mergeSubjectVPS : LinCond -> ExtendChi.VPS = \cond -> lin VPS {s = linCond cond} ;
+
+   -- {subj : NP ; preds : ExtendChi.ListVPS}
+    mergeSubjectListVPS : LinListCond -> ExtendChi.ListVPS = \conds ->
+      let trueVPSNoSubj : VPS = lin VPS {s = conds.preds.s1} ; -- s1 has latest VPS that has no subject, older ones have had subject merged in
+          newS1 : Str = R.linS (ExtendChi.PredVPS conds.subj trueVPSNoSubj) ;
+          newPreds : ListVPS = conds.preds ** {s1 = newS1} ;
+       in newPreds ;
 
 -- Time expressions
   lincat
@@ -119,20 +131,20 @@ concrete NL4BaseChi of NL4Base =
     ConjTComparison co tcs =
       let conj : ConjunctionDistr = co.s ! R.CSent ;
           tc : SS = conjunctDistrSS conj tcs ;
-       in lin Prep {prepPre = tc.s ; prepPost = []} ** tcs ;
+       in lin Prep {prepPre = [] ; prepPost = tc.s} ** tcs ;
 
     TemporalConstraint cond on date =
       let onDate : Adv = SyntaxChi.mkAdv on date ;
-       in {s = mkS onDate cond.s ; qs = advQS cond.qs onDate} ;
+       in cond ** {pred = advVPS cond.pred onDate} ;
 
-    BEFORE = P.mkPrep "before" ;
-    AFTER = P.mkPrep "after" ;
+    BEFORE = P.mkPrep "前" ;
+    AFTER = P.mkPrep "后" ;
     BY = by8means_Prep ;
     ON = on_Prep ;
     VAGUE = P.mkPrep [] ;
 
   oper
-    advQS : QS -> CatChi.Adv -> QS = \qs,adv -> qs ** {s = \\qf => qs.s ! qf ++ (mkUtt adv).s} ;
+    advVPS : ExtendChi.VPS -> CatChi.Adv -> ExtendChi.VPS = \vps,adv -> cc2 vps (mkUtt adv) ;
   lin
     MkDate a b c = symb (cc3 a b c) ;
 
@@ -141,7 +153,7 @@ concrete NL4BaseChi of NL4Base =
       let sym : Symb = mkSymb int.s ; -- mkSymb : Str -> Symb ;
           card : Card = symb sym ;    -- symb : Symb -> Card ;
           det : Det = mkDet card ;
-      in SyntaxChi.mkAdv (P.mkPrep "within") (mkNP det time) ;
+      in SyntaxChi.mkAdv (P.mkPrep [] "内") (mkNP det time) ;
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
   lincat
@@ -168,10 +180,10 @@ concrete NL4BaseChi of NL4Base =
     --  : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;
     ConjPrePostCond pr pst conj cs =
       let cond : Cond = ConjCond conj cs ;
-        in cond ** {
-            s  = cond.s ** {preJiu = pr.s ++ cond.s.preJiu ; postJiu = cond.s.postJiu ++ pst.s} ;
-            qs = lin QS {s = \\qf => pr.s ++ cond.qs.s ! qf ++ pst.s ++ "?"} ;
-          } ;
+          predet : Predet = lin Predet pr ; -- NB. using this instead of mkPredet pattern matches its argument,
+          newSubj : NP = mkNP predet cond.subj ;
+          newPred : VPS = cond.pred ** {s = cond.pred.s ++ pst.s} ;
+       in cond ** {subj = newSubj ; pred = newPred} ;
 
     BaseConstraint c d = {s = twoStr c.s d.s ; qs = twoStr c.qs d.qs} ;
     ConsConstraint c d = {s = consrStr comma c.s d.s ; qs = consrStr comma c.qs d.qs} ;
@@ -209,8 +221,8 @@ concrete NL4BaseChi of NL4Base =
     recoverUnparsedWho string = MkVPS presSimul POS (mkVP (invarV string.s)) ;
 
     recoverUnparsedCond string = {
-      s = lin S (R.simpleS string.s) ;
-      qs = lin QS {s = \\_ => string.s}
+      subj = emptyNP ;
+      pred = MkVPS presSimul POS (mkVP (invarV string.s)) ;
       } ;
 
     recoverUnparsedUpon string = mkVP (invarV string.s) ;
@@ -243,9 +255,12 @@ concrete NL4BaseChi of NL4Base =
        in lin VP (R.insertObj if_S vp) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;
 
+    AdjCN ap cn = {s = ap.s ! R.Attr ++ cn.s ; c = cn.c} ;
+    CompNP np = R.insertObj np (R.predV local_copula []) ;
+
     MayHave occur =
       let vps : ExtendChi.VPS = MkVPS presAnt POS occur ;
-        in vps ** {s = "may" ++ vps.s} ;
+        in vps ** {s = "可 能" ++ vps.s} ;
     -- : NP -> S ; -- it is NP — reference to a previous NP
     ReferenceNP np = mkS (mkCl it_NP <lin NP np : NP>) ;
 
@@ -266,6 +281,14 @@ concrete NL4BaseChi of NL4Base =
     oper
       every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
       strA2 : Str -> A2 = \str -> P.mkA2 str ;
+      local_copula :  R.Verb = R.mkVerb "是" [] [] [] [] "不" ;
+      hen_copula : R.Verb =
+        {s = R.hen_s ; sn = [] ; pp = [] ; ds = [] ; dp = [] ; ep = [] ; neg = "不"} ; ---
+      nocopula : R.Verb =
+        {s = [] ; sn = [] ; pp = [] ; ds = [] ; dp = [] ; ep = [] ; neg = "不"} ; ---
+      adjcopula : R.Verb =
+        {s = "是" ; sn = [] ; pp = [] ; ds = [] ; dp = [] ; ep = [] ; neg = "不"} ; ---
 
+      emptyNP : NP = it_NP ** {s = []} ;
 }
 

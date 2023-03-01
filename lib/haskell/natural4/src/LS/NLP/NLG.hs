@@ -45,18 +45,14 @@ myNLGEnv lang = do
   gr <- readPGF grammarFile
   let eng = getLang "NL4Eng"
       myParse typ txt = parse gr eng typ (Text.unpack txt)
+
   print "lang"
   print $ showLanguage lang
   let myLin = Text.pack . linearize gr lang
   pure $ NLGEnv gr lang myParse myLin verbose
-  -- map (lineariselang typ txt) (languages gr)
 
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
-
--- lineariselang typ txt lang gr = pure $ NLGEnv gr eng myParse myLin verbose
---   where myLin = parse gr lang typ (Text.unpack txt)
-
 
 -----------------------------------------------------------------------------
 -- Main
@@ -97,7 +93,6 @@ nlg' thl env rule = case rule of
                         let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
                          in ". If " <> gfLin env condExpr <> ", "
                       Nothing -> mempty
-
           ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> condText, suffix]
       lestText <- case lest of
                     Just r -> do
@@ -111,6 +106,8 @@ nlg' thl env rule = case rule of
                     Nothing -> pure mempty
 
 --      pure $ Text.unlines [ruleText, henceText, lestText]
+      print "---"
+      print $ gf $ whoSubjExpr
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question

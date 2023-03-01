@@ -70,7 +70,7 @@ concrete NL4BaseMay of NL4Base =
     EVERY cn = every <lin CN cn : CN> ;
     PARTY cn = mkNP <lin CN cn : CN> ;
     AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
-    THE cn = mkNP <lin Det this_Det : Det> <lin CN cn : CN> ;
+    THE cn = mkNP <lin Det that_Det : Det> <lin CN cn : CN> ;
     WHO t p who = MkVPS t p who ;
     ACTION act = MkVPI act ;
 

@@ -76,6 +76,24 @@ import Prettyprinter
 --     defaults = []
 --     symtab = []
 
+-- Main function to transpile rules to plaintext natural4 for Maude.
+rules2maudeStr :: Foldable t => t Rule -> String
+rules2maudeStr rules = rules |> rules2doc |> either show show
+
+-- Auxiliary functions that help with the transpilation.
+rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
+rules2doc rules
+  | null rules = pure ""
+  | otherwise =
+    rules
+      |> toList
+      |> map rule2doc
+      |> sequence
+      |> fmap (concatWith catWithLines)
+  where
+    catWithLines x y = [x, line, line, y] |> mconcat
+
+-- Main function that transpiles individual rules.
 rule2doc :: Rule -> Either String (Doc ann)
 rule2doc
   Regulative
@@ -109,30 +127,11 @@ rule2doc
         [(HENCE, hence), (LEST, lest)] |> map (uncurry henceLest2maudeStr)
       deontic2str deon =
         deon |> show |> tail |> map toUpper |> pretty
+      isNonEmptyStr xs = xs |> show |> null |> not
 
 rule2doc _ = errMsg
 
-rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
-rules2doc rules
-  | null rules = pure ""
-  | otherwise =
-    rules
-      |> toList
-      |> map rule2doc
-      |> sequence
-      |> fmap (concatWith catWithLines)
-  where
-    catWithLines x y = [x, line, line, y] |> mconcat
-
-isNonEmptyStr :: Show a => a -> Bool
-isNonEmptyStr xs = xs |> show |> null |> not
-
-pretty2Qid :: T.Text -> Doc ann
-pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
-
-rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules = rules |> rules2doc |> either show show
-
+-- Auxiliary stuff for handling HENCE/LEST clauses.
 data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)
 
@@ -161,6 +160,10 @@ henceLest2maudeStr henceOrLest hence =
     quotOrUpper _ = errMsg
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf False x = x
+
+-- Common utilities
+pretty2Qid :: T.Text -> Doc ann
+pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
 errMsg :: Either String a
 errMsg = Left "Not supported."

@@ -113,15 +113,16 @@ rule2doc
 rule2doc _ = errMsg
 
 rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
-rules2doc rules =
-  rules
-    |> toList
-    |> map rule2doc
-    |> sequence
-    |> fmap (filter isNonEmptyStr)
-    |> fmap (concatWith catWithLines)
-    where
-      catWithLines x y = x <> line <> line <> y
+rules2doc rules
+  | null rules = pure ""
+  | otherwise =
+    rules
+      |> toList
+      |> map rule2doc
+      |> sequence
+      |> fmap (concatWith catWithLines)
+  where
+    catWithLines x y = [x, line, line, y] |> mconcat
 
 isNonEmptyStr :: Show a => a -> Bool
 isNonEmptyStr xs = xs |> show |> null |> not

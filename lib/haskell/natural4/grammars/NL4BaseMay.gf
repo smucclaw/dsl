@@ -11,7 +11,7 @@ concrete NL4BaseMay of NL4Base =
       , ListNP, BaseNP, ConsNP, ConjNP
       ]
   , StructuralMay [
-      Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
+      Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
     , VV, must_VV
     ]
   , ExtendMay [
@@ -258,11 +258,12 @@ concrete NL4BaseMay of NL4Base =
     your = mkDet youSg_Pron ;
 
     about_Prep = R.mkPrep "tentang" ;
+    to_Prep = R.mkPrep "kepada" ;
     may_VV = must_VV ; -- ** {s = \\_ => "may"};
 
     oper
       every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
-      strA2 : Str -> A2 = \str -> P.mkA2 str ;
+      strA2 : Str -> Prep -> A2 = \str,prep -> P.mkA2 str prep;
 
 }
 

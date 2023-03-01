@@ -26,7 +26,7 @@ import Prettyprinter.Render.Text
 instance Pretty MTExpr where
   pretty (MTT t) = pretty t
   pretty (MTI i) = pretty i
-  pretty (MTN n) = pretty n
+  pretty (MTF n) = pretty n
   pretty (MTB b) = pretty b
 
 -- | Pretty MTExpr with quoting of string values; to use this, just wrap the MTExpr in an MT1 and pretty it as usual

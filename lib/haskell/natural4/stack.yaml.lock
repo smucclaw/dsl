@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: bdfb5577dd1da2d8fae28f11cda0b115906a50cd38bead6db976db03823b2644
-      size: 12398
-    sha256: 230a0bb1856a6f3edd44389ae006646f0f288b2a72bacde36bc1825455b85e9c
-    size: 3189537
-    url: https://github.com/smucclaw/baby-l4/archive/a63360e.tar.gz
+      sha256: 4b74637dd2bfb13802a5bd3f4071ee1f57a8b524c64f3ce535b44a34be240284
+      size: 12486
+    sha256: 0495039305a00d139642007d56b6f14cda1411fca488e35cb50a0e237399c62c
+    size: 3188371
+    url: https://github.com/smucclaw/baby-l4/archive/1695781f5a86d2db6af84324a662b0394d5fb8ea.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/a63360e.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/1695781f5a86d2db6af84324a662b0394d5fb8ea.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -38,6 +38,17 @@ packages:
   original:
     url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
 - completed:
+    name: simple-smt
+    pantry-tree:
+      sha256: 52b7da75230a4cbc27007b8560371a007d3ce5f4773023dc8f1f43299e99a414
+      size: 357
+    sha256: f9d9fea35beb8ca0260a0ca6af2feba5db2f01d9ca1dc4b9a0b139795eccd488
+    size: 10807
+    url: https://github.com/yav/simple-smt/archive/dd03ca1.tar.gz
+    version: 0.9.7
+  original:
+    url: https://github.com/yav/simple-smt/archive/dd03ca1.tar.gz
+- completed:
     name: wordnet
     pantry-tree:
       sha256: 7db8d23ba9a90ac1cc7a51d98bd3d464d3dcfe0c0f04b6ca795878c4f2d3ac1a
@@ -49,40 +60,12 @@ packages:
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
-    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
-    pantry-tree:
-      sha256: ddbb8343712ef5d96480180f4df7113db80ecb41336ec3e02876ccdb6ff6b547
-      size: 253
-  original:
-    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
-- completed:
     hackage: cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
     pantry-tree:
       sha256: c6f1c2f201b196b43cd8d0537482796c9fd389b40c4be945ee66348d31f130bf
       size: 993
   original:
     hackage: cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
-- completed:
-    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
-    pantry-tree:
-      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
-      size: 546
-  original:
-    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
-- completed:
-    hackage: lsp-1.6.0.0@sha256:2b95e406cc85ffa95406ae8ad7d16b82283a6ca2fcb7ea5308a4ef3e6d6e68e6,4397
-    pantry-tree:
-      sha256: 43a82c501ec3074d888f2bf4960e4b447028c1537abbca4cf65e74944604bf62
-      size: 1044
-  original:
-    hackage: lsp-1.6.0.0@sha256:2b95e406cc85ffa95406ae8ad7d16b82283a6ca2fcb7ea5308a4ef3e6d6e68e6,4397
-- completed:
-    hackage: co-log-core-0.3.2.0@sha256:9b2699adecee2f072b6c713089e675b592ef23f00a2ff3740bdaf4d87de8d456,3850
-    pantry-tree:
-      sha256: af9c807ce50a126706bd99983ec71c060a489ab2b914de8dbccf756adccc2a43
-      size: 584
-  original:
-    hackage: co-log-core-0.3.2.0@sha256:9b2699adecee2f072b6c713089e675b592ef23f00a2ff3740bdaf4d87de8d456,3850
 - completed:
     hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
     pantry-tree:
@@ -92,7 +75,7 @@ packages:
     hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 snapshots:
 - completed:
-    sha256: fc39d8afc97531d53d87b10abdef593bce503c0c1e46c2e9a84ebcbc78bf8470
-    size: 648432
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/2.yaml
-  original: lts-20.2
+    sha256: af5d667f6096e535b9c725a72cffe0f6c060e0568d9f9eeda04caee70d0d9d2d
+    size: 649133
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/12.yaml
+  original: lts-20.12

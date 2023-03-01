@@ -148,8 +148,6 @@ sfl4ToCorel4Program :: Interpreted -> L4.Program ()
 sfl4ToCorel4Program l4i
   = Program { annotOfProgram = ()
             , elementsOfProgram = [] }
-    -- concatMap sfl4ToCorel4Rule (origrules l4i)}
-
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
 ppCorel4 :: L4.Program () -> String
@@ -209,7 +207,7 @@ multiTermToExprNoType mt =
 mtExprToExprNoType :: MTExpr -> Expr ()
 mtExprToExprNoType (MTT t) = VarE () (varNameToVarNoType (T.unpack t))
 mtExprToExprNoType (MTI i) = ValE () (IntV i)
-mtExprToExprNoType (MTN i) = ValE () (FloatV i)
+mtExprToExprNoType (MTF i) = ValE () (FloatV i)
 mtExprToExprNoType (MTB i) = ValE () (BoolV i)
 
 
@@ -276,26 +274,6 @@ postcondOfHornClauses :: [HornClause2] -> Expr ()
 postcondOfHornClauses [HC hh _hb] = relationalPredicateToExpr hh
 postcondOfHornClauses _ = trueVNoType
 
-{- TODO: remove after testing
-sfl4ToCorel4RuleSingle :: SFL4.Rule -> [L4.Rule ()]
-sfl4ToCorel4RuleSingle Hornlike{..} =
-            -- pull any type annotations out of the "given" paramtext as ClassDeclarations
-            -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            -- TODO: the following produces an error: Prelude.tail: empty list
-            -- has been temporarily commented out 
-            -- given2classdecls given ++
-      [Rule
-      { annotOfRule    = ()
-      , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-      , instrOfRule    = []
-      , varDeclsOfRule = []
-      , precondOfRule  = precondOfHornClauses clauses
-      , postcondOfRule = postcondOfHornClauses clauses
-      }
-      ]
-sfl4ToCorel4RuleSingle _ = []
--}
-
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = []
 
@@ -335,11 +313,14 @@ sfl4ToCorel4Rule Constitutive{ } = error "sfl4ToCorel4Rule: erroring on Constitu
 sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias { } = error "sfl4ToCorel4Rule: erroring on DefNameAlias"
+sfl4ToCorel4Rule DefNameAlias { } = []
 sfl4ToCorel4Rule (RuleAlias _) = error "sfl4ToCorel4Rule: erroring on RuleAlias"   -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled" -- trivial top = _
-sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"    -- trivial bottom
-sfl4ToCorel4Rule _             = error "sfl4ToCorel4Rule: erroring on other rule" -- [TODO] Hornlike
+sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled"
+sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"
+sfl4ToCorel4Rule Scenario {}   = error "sfl4ToCorel4Rule: erroring on Scenario"
+sfl4ToCorel4Rule DefTypically {} = []
+sfl4ToCorel4Rule RuleGroup {}  = error "sfl4ToCorel4Rule: erroring on RuleGroup"
+sfl4ToCorel4Rule (NotARule _)            = error "sfl4ToCorel4Rule: erroring on NotARule"
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr

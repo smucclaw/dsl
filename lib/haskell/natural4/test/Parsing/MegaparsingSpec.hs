@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 module Parsing.MegaparsingSpec where
 
 import Text.Megaparsec
@@ -19,8 +20,8 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
-parserTests :: Spec
-parserTests  = do
+spec :: Spec
+spec = do
     let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
@@ -44,23 +45,15 @@ parserTests  = do
       it "should parse a rule label followed by something" $ do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
           `shouldParse`
-          [ Hornlike
+          [ defaultHorn
               { name = [MTT "something"],
-                super = Nothing,
-                keyword = Means,
-                given = Nothing,
-                upon = Nothing,
                 clauses =
                   [ HC
                       { hHead = RPBoolStructR [MTT "something"] RPis (mkLeafR "something"),
                         hBody = Nothing
                       }
                   ],
-                rlabel = Just ("\167", 1, "Hello"),
-                lsource = Nothing,
-                srcref = mkTestSrcRef 1 1,
-                defaults = [],
-                symtab = []
+                rlabel = Just ("\167", 1, "Hello")
               }
           ]
       it "should parse a single OtherVal" $ do
@@ -128,7 +121,7 @@ parserTests  = do
 
       filetest "indented-2" "inline constitutive rule"
         (parseR pRules) 
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT "person" :| [], Nothing) :| []),
               rkeyword = REvery,
               who =
@@ -139,28 +132,12 @@ parserTests  = do
                         mkLeafR "degustates"
                       ]
                   ),
-              cond = Nothing,
               deontic = DMust,
               action = mkLeaf ((MTT "sing" :| [], Nothing) :| []),
-              temporal = Nothing,
-              hence = Nothing,
-              lest = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Nothing,
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 1
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "degustates"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -176,17 +153,13 @@ parserTests  = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 3,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 3
             }
         ]
 
       filetest "indented-3" "defined names in natural positions"
         (parseR pRules)
-        [ Regulative
+        [ defaultReg
             { subj = mkLeaf ((MTT "person" :| [], Nothing) :| []),
               rkeyword = REvery,
               who =
@@ -197,28 +170,12 @@ parserTests  = do
                         mkLeafR "degustates"
                       ]
                   ),
-              cond = Nothing,
               deontic = DMust,
               action = mkLeaf ((MTT "sing" :| [], Nothing) :| []),
-              temporal = Nothing,
-              hence = Nothing,
-              lest = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              upon = Nothing,
-              given = Nothing,
-              having = Nothing,
-              wwhere = [],
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 1
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "imbibes"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -238,18 +195,10 @@ parserTests  = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 3 5,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 3 5
             },
-          Hornlike
+          defaultHorn
             { name = [MTT "degustates"],
-              super = Nothing,
-              keyword = Means,
-              given = Nothing,
-              upon = Nothing,
               clauses =
                 [ HC
                     { hHead =
@@ -265,11 +214,7 @@ parserTests  = do
                       hBody = Nothing
                     }
                 ],
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 3,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 3
             }
         ]
         

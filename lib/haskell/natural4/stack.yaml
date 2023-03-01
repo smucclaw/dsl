@@ -9,7 +9,7 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-20.2
+resolver: lts-20.12
 
 packages:
 - .
@@ -30,51 +30,24 @@ extra-deps:
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)
 # you may prefer to do something like this:
-# - ../../../../baby-l4
+# ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: 6bab8b48ada14383a28b862ccb63f608764737e1
-  # branch: after remove-gf
+  commit: 1695781f5a86d2db6af84324a662b0394d5fb8ea
 
-  
-  
 - github: smucclaw/gf-core
   commit: edb55df7b0c4892ba0bac2817b5f493921c20c36
 
-- github: smucclaw/gf-ud
-  commit: bb53f75a789fa1d8173bccf52bd076e60771796c
-
-# - github: smucclaw/udpipe-hs
-#   commit: b9f5e969e90f83a7a786fa4d4282cb28e2ec47d3
-
-- git: https://github.com/anka-213/udpipe-hs.git
-  commit: 89998d79819c978d4740fd8c04f27ef6e5adc5cf
-
-# - prolog-0.3.2@sha256:3a447764bf97ef7104e6c93a3314cb4f1b730b237eb04974632d2d86fa7b67a3,1105
-# - ../../../../prolog # smucclaw fork of the standard hackage package for prolog
 - github: smucclaw/prolog
   commit: 1f793236846ad506eef1cf3acd8646334123088d
-  # branch: ghc-9
   
-
-# - github: anka-213/gf-core # Upstream: GrammaticalFramework/gf-core
-#   commit: 04ce6eea6cf75f1405bb8e30e8cfe2584e35cc89
-#   # branch: random-performance-improvements
-
-# - github: anka-213/gf-ud # Upstream: GrammaticalFramework/gf-ud
-#   commit: 9a3a89f1e2896a26ab1671405f2af2b3facfc893
-#   # branch: all-changes
-
+- github: yav/simple-smt
+  commit: dd03ca1
 
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
-- simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
 - cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
-- compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
-- lsp-1.6.0.0@sha256:2b95e406cc85ffa95406ae8ad7d16b82283a6ca2fcb7ea5308a4ef3e6d6e68e6,4397
-
-- co-log-core-0.3.2.0@sha256:9b2699adecee2f072b6c713089e675b592ef23f00a2ff3740bdaf4d87de8d456,3850
 - multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 
 allow-newer: true

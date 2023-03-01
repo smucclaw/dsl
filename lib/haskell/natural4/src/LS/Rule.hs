@@ -60,7 +60,8 @@ data Rule = Regulative
             { name     :: RuleName           -- MyInstance
             , super    :: Maybe TypeSig         -- IS A Superclass
             , keyword  :: MyToken            -- decide / define / means
-            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender -- the signature of the input
+            , given    :: Maybe ParamText    -- a:Applicant, p:Person, l:Lender       -- the type signature of the input
+            , giveth   :: Maybe ParamText    -- m:Amount,   mp:Principal, mi:Interest -- the type signature of the output
         --  , having   :: Maybe ParamText    -- event trace history predicate: applicant has submitted fee
             , upon     :: Maybe ParamText    -- second request occurs
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
@@ -76,7 +77,6 @@ data Rule = Regulative
             , super    :: Maybe TypeSig         -- IS A Superclass
             , has      :: [Rule]      -- HAS foo :: List Hand \n bar :: Optional Restaurant
             , enums    :: Maybe ParamText   -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
---            , given    :: [ParamText]
             , given    :: Maybe ParamText
             , upon     :: Maybe ParamText
             , rlabel   :: Maybe RuleLabel
@@ -192,7 +192,7 @@ mkTestSrcRef row col = Just (SrcRef {url = "test/Spec", short = "test/Spec", src
 dummyRef :: Maybe SrcRef
 dummyRef = mkTestSrcRef 1 1
 
-defaultReg, defaultCon, defaultHorn :: Rule
+defaultReg :: Rule
 defaultReg = Regulative
   { subj = mkLeafPT "person"
   , rkeyword = REvery
@@ -214,6 +214,7 @@ defaultReg = Regulative
   , symtab   = []
   }
 
+defaultCon :: Rule
 defaultCon = Constitutive
   { name = []
   , keyword = Means
@@ -227,11 +228,13 @@ defaultCon = Constitutive
   , symtab   = []
   }
 
+defaultHorn :: Rule
 defaultHorn = Hornlike
   { name = []
   , super = Nothing
   , keyword = Means
-  , given = Nothing
+  , given  = Nothing
+  , giveth = Nothing
   , upon  = Nothing
   , clauses = []
   , rlabel = Nothing
@@ -241,6 +244,22 @@ defaultHorn = Hornlike
   , symtab   = []
   }
 
+defaultTypeDecl :: Rule
+defaultTypeDecl =
+  TypeDecl
+    { name = [],
+      super = Nothing,
+      has = [],
+      enums = Nothing,
+      given = Nothing,
+      upon = Nothing,
+      rlabel = Nothing,
+      lsource = Nothing,
+      srcref = Nothing,
+      defaults = [],
+      symtab = []
+    }
+
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool
 hasGiven     Hornlike{} = True
@@ -248,6 +267,11 @@ hasGiven   Regulative{} = True
 hasGiven     TypeDecl{} = True
 hasGiven Constitutive{} = True
 hasGiven             __ = False
+
+-- | does a rule have a Giveth attribute? this should go away upon refactoring the Rule type to avoid multiple record selectors
+hasGiveth :: Rule -> Bool
+hasGiveth Hornlike{} = True
+hasGiveth _          = False
 
 -- | does a rule have Clauses?
 -- [TODO] it's beginning to look like we need to break out the Rule Types into different types not just constructors
@@ -348,3 +372,4 @@ srccol2     = srccol' 2
 
 srccol' :: Int -> Rule -> Rule
 srccol' n w = w { srcref = (\x -> x  { srccol = n }) <$> srcref w }
+

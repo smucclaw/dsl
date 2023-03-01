@@ -55,7 +55,8 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
 data MTExpr = MTT Text.Text -- ^ Text string
-            | MTN Float     -- ^ Number
+            | MTI Integer   -- ^ Integer
+            | MTF Float     -- ^ Float
             | MTB Bool      -- ^ Boolean
 --            | MTC Text.Text -- ^ Currency money
 --            | MTD Text.Text -- ^ Date
@@ -106,7 +107,8 @@ text2pt x = pure (pure (MTT x), Nothing)
 
 mtexpr2text :: MTExpr -> Text.Text
 mtexpr2text (MTT t) = t
-mtexpr2text (MTN n) = Text.pack $ show n
+mtexpr2text (MTI n) = Text.pack $ show n
+mtexpr2text (MTF n) = Text.pack $ show n
 mtexpr2text (MTB True) = "TRUE"
 mtexpr2text (MTB False) = "FALSE"
 
@@ -192,7 +194,8 @@ class PrependHead a where
 
 instance PrependHead MTExpr where
   prependHead t (MTT mtt) = MTT (prependHead t mtt)
-  prependHead t (MTN mtn) = MTT (prependHead t (Text.pack . show $ mtn))
+  prependHead t (MTI mti) = MTT (prependHead t (Text.pack . show $ mti))
+  prependHead t (MTF mtn) = MTT (prependHead t (Text.pack . show $ mtn))
   prependHead t (MTB mtb) = MTT (prependHead t (Text.pack . show $ mtb))
 
 instance PrependHead Text.Text where

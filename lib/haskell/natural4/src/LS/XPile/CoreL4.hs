@@ -14,6 +14,8 @@ import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
 import LS.XPile.ToASP(astToDoc)
 
+import ToDMN.FromL4 (genXMLTreeNoType)
+
 import L4.Annotation
 import LS as SFL4
 
@@ -39,8 +41,12 @@ import Data.Map ((!))
 
 -- TODO: the following is only for testing purposes, can be removed later
 import L4.PrintProg (showL4, PrintSystem (L4Style), PrintConfig (PrintSystem))
-import L4.SyntaxManipulation (applyVarsNoType)
+import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS.Tokens (undeepers)
+
+import qualified Text.XML.HXT.Core as HXT
+
+import Debug.Trace (trace)
 
 -- output to Core L4 for further transformation
 
@@ -57,7 +63,20 @@ sfl4ToASP rs =
   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
   let prg = Program () rulesTransformed in
   let doc = astToDoc prg in
+    -- trace ("asp" ++ (show $ showL4 [] prg)) $
     show doc
+
+-- destructure (Rule t) from this
+-- data TopLevelElement t = RuleTLE (Rule t) | ...
+-- not actually necessary
+
+-- sfl4ToDMN :: HXT.ArrowXml cat => [SFL4.Rule] -> cat a HXT.XmlTree
+sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
+sfl4ToDMN rs =
+  let rulesTransformed = concatMap sfl4ToCorel4Rule rs
+      prg = Program () rulesTransformed
+  -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
+  in genXMLTreeNoType prg
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
@@ -129,8 +148,6 @@ sfl4ToCorel4Program :: Interpreted -> L4.Program ()
 sfl4ToCorel4Program l4i
   = Program { annotOfProgram = ()
             , elementsOfProgram = [] }
-    -- concatMap sfl4ToCorel4Rule (origrules l4i)}
-
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
 ppCorel4 :: L4.Program () -> String
@@ -167,6 +184,8 @@ falseVNoType = ValE () (BoolV False)
 -- Convert variable name to global variable
 -- TODO: should be refined to generate local/global variable 
 -- depending on contextual information when available
+-- ASP TODO: add env (var list) as a second arg, and look up varname in env
+-- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
 varNameToVarNoType :: VarName -> Var ()
 varNameToVarNoType vn = GlobalVar (QVarName () vn)
 
@@ -177,20 +196,34 @@ varsToExprNoType (v:vs) = --
 varsToExprNoType [] = error "internal error (varsToExprNoType [])"
 
 multiTermToExprNoType :: MultiTerm -> Expr ()
-multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
+-- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
+multiTermToExprNoType mt =  
+  case map mtExprToExprNoType mt of
+    ((VarE t v) : args) -> funArgsToAppNoType (VarE t v) args
+    [e] -> e
+    _ -> error "non-variable name in function position"
+
+
+mtExprToExprNoType :: MTExpr -> Expr ()
+mtExprToExprNoType (MTT t) = VarE () (varNameToVarNoType (T.unpack t))
+mtExprToExprNoType (MTI i) = ValE () (IntV i)
+mtExprToExprNoType (MTF i) = ValE () (FloatV i)
+mtExprToExprNoType (MTB i) = ValE () (BoolV i)
+
 
 rpRelToBComparOp :: RPRel -> BinOp
 rpRelToBComparOp cop = case cop of
-  RPis -> undefined
-  RPhas -> undefined
+  RPis -> error "rpRelToBComparOp: erroring on RPis"
+  RPhas -> error "rpRelToBComparOp: erroring on RPhas"
   RPeq -> BCompar BCeq
   RPlt -> BCompar BClt
   RPlte -> BCompar BClte
   RPgt -> BCompar BCgt
   RPgte -> BCompar BCgte
-  RPelem -> undefined
-  RPnotElem -> undefined
-  RPnot -> undefined
+  RPelem -> error "rpRelToBComparOp: erroring on RPelem"
+  RPnotElem -> error "rpRelToBComparOp: erroring on RPnotElem"
+  RPnot -> error "rpRelToBComparOp: erroring on RPnot"
+  RPTC _ -> error "rpRelToBComparOp: erroring on RPTC"
 
 conjExprNoType :: Expr () -> Expr () -> Expr ()
 conjExprNoType = BinOpE () (BBool BBand)
@@ -218,7 +251,9 @@ boolStructRToExpr bs = case bs of
 
 relationalPredicateToExpr :: RelationalPredicate-> Expr ()
 relationalPredicateToExpr rp = case rp of
-  RPParamText ne -> undefined
+  RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
+                    ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
+  
   RPMT mts -> multiTermToExprNoType mts
   RPConstraint mts RPis mts' -> multiTermToExprNoType (mts' ++ mts)
   RPConstraint mts rr mts' ->
@@ -226,8 +261,11 @@ relationalPredicateToExpr rp = case rp of
   RPBoolStructR mts rr bs ->
     -- TODO: translate bs
     BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType mts) falseVNoType
-  RPnary rr rp' -> undefined
+  RPnary rr rp' -> error "relationalPredicateToExpr: erroring on RPnary"
 
+
+-- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
+-- i.e. precondOfHornClauses :: [HornClause2] -> [String] -> Expr ()
 precondOfHornClauses :: [HornClause2] -> Expr ()
 precondOfHornClauses [HC _hh (Just hb)] = boolStructRToExpr hb
 precondOfHornClauses _ = trueVNoType
@@ -235,26 +273,6 @@ precondOfHornClauses _ = trueVNoType
 postcondOfHornClauses :: [HornClause2] -> Expr ()
 postcondOfHornClauses [HC hh _hb] = relationalPredicateToExpr hh
 postcondOfHornClauses _ = trueVNoType
-
-{- TODO: remove after testing
-sfl4ToCorel4RuleSingle :: SFL4.Rule -> [L4.Rule ()]
-sfl4ToCorel4RuleSingle Hornlike{..} =
-            -- pull any type annotations out of the "given" paramtext as ClassDeclarations
-            -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            -- TODO: the following produces an error: Prelude.tail: empty list
-            -- has been temporarily commented out 
-            -- given2classdecls given ++
-      [Rule
-      { annotOfRule    = ()
-      , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-      , instrOfRule    = []
-      , varDeclsOfRule = []
-      , precondOfRule  = precondOfHornClauses clauses
-      , postcondOfRule = postcondOfHornClauses clauses
-      }
-      ]
-sfl4ToCorel4RuleSingle _ = []
--}
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = []
@@ -278,25 +296,28 @@ sfl4ToCorel4Rule Hornlike{..} =
                     _                         -> Nothing
                 | ts <- snd <$> NE.toList pt
                 ]
+    -- ASP TODO: localContext = extractLocalsFromGiven given
+    -- account also for the case where there are no givens in horn clause
     rule = RuleTLE Rule
       { annotOfRule    = ()
       , nameOfRule     = rlabel <&> rl2text <&> T.unpack
       , instrOfRule    = []
       , varDeclsOfRule = []
       , precondOfRule  = precondOfHornClauses clauses
+      -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
       , postcondOfRule = postcondOfHornClauses clauses
       }
 
 
-sfl4ToCorel4Rule Constitutive{ } = undefined
+sfl4ToCorel4Rule Constitutive{ } = error "sfl4ToCorel4Rule: erroring on Constitutive"
 sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias { } = undefined
-sfl4ToCorel4Rule (RuleAlias _) = undefined -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled = undefined -- trivial top = _
-sfl4ToCorel4Rule RegBreach    = undefined -- trivial bottom
-sfl4ToCorel4Rule _    = undefined -- [TODO] Hornlike
+sfl4ToCorel4Rule DefNameAlias { } = error "sfl4ToCorel4Rule: erroring on DefNameAlias"
+sfl4ToCorel4Rule (RuleAlias _) = error "sfl4ToCorel4Rule: erroring on RuleAlias"   -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled" -- trivial top = _
+sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"    -- trivial bottom
+sfl4ToCorel4Rule _             = error "sfl4ToCorel4Rule: erroring on other rule" -- [TODO] Hornlike
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr
@@ -713,7 +734,7 @@ DECIDE		exceedsPrescrNumberOfIndividuals					db
 WHEN		numberOfAffectedIndividuals					db	>=	500
 -} 
 r1 :: SFL4.Rule
-r1 = Hornlike
+r1 = defaultHorn
   { name = [ MTT "savings account" ]
     , super = Nothing
     , keyword = Decide
@@ -750,7 +771,7 @@ WHEN		Bar	IS	green
 AND		Baz	IS	blue
 -}
 r2 :: SFL4.Rule
-r2 = Hornlike 
+r2 = defaultHorn
   { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
@@ -785,7 +806,7 @@ r2 = Hornlike
     }
 
 testrules :: [SFL4.Rule]
-testrules = [ Hornlike
+testrules = [ defaultHorn
     { name =
         [ MTT "exceedsPrescrNumberOfIndividuals"
         , MTT "db"
@@ -812,7 +833,7 @@ testrules = [ Hornlike
                         ( RPConstraint
                             [ MTT "numberOfAffectedIndividuals"
                             , MTT "db"
-                            ] RPgte [ MTN 500 ]
+                            ] RPgte [ MTI 500 ]
                         )
                     , Leaf
                         ( RPMT
@@ -851,7 +872,7 @@ testrules = [ Hornlike
     , defaults = []
     , symtab = []
     }
-  , Hornlike
+  , defaultHorn
     { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
@@ -884,7 +905,7 @@ testrules = [ Hornlike
     , defaults = []
     , symtab = []
     }
-  , Hornlike
+  , defaultHorn
     { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide

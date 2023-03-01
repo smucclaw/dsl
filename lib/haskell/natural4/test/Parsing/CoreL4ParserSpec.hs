@@ -22,8 +22,8 @@ filetest testfile desc parseFunc expected =
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
-parserTests :: Spec
-parserTests  = do
+spec :: Spec
+spec  = do
     let runConfig = defaultRC { sourceURL = "test/Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
@@ -43,205 +43,77 @@ parserTests  = do
 
       filetest "class-1" "type definitions"
         (parseR pRules)
-        [ TypeDecl
+        [ defaultTypeDecl
             { name = [MTT "Class1"],
               super = Just (SimpleType TOne "Object"),
               has =
-                [ TypeDecl
+                [ defaultTypeDecl
                     { name = [MTT "id"],
-                      super = Just (SimpleType TOne "Integer"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "Integer")
                     }
                 ],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 1,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 1
             },
-          TypeDecl
+          defaultTypeDecl
             { name = [MTT "Class2"],
               super = Just (SimpleType TOne "Class1"),
               has =
-                [ TypeDecl
+                [ defaultTypeDecl
                     { name = [MTT "firstname"],
-                      super = Just (SimpleType TOne "String"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "String")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "lastname"],
-                      super = Just (SimpleType TOne "String"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "String")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "office address"],
                       super = Nothing,
                       has =
-                        [ TypeDecl
+                        [ defaultTypeDecl
                             { name = [MTT "line1"],
-                              super = Just (SimpleType TOne "String"),
-                              has = [],
-                              enums = Nothing,
-                              given = Nothing,
-                              upon = Nothing,
-                              rlabel = Nothing,
-                              lsource = Nothing,
-                              srcref = Nothing,
-                              defaults = [],
-                              symtab = []
+                              super = Just (SimpleType TOne "String")
                             },
-                          TypeDecl
+                          defaultTypeDecl
                             { name = [MTT "line2"],
-                              super = Just (SimpleType TOne "String"),
-                              has = [],
-                              enums = Nothing,
-                              given = Nothing,
-                              upon = Nothing,
-                              rlabel = Nothing,
-                              lsource = Nothing,
-                              srcref = Nothing,
-                              defaults = [],
-                              symtab = []
+                              super = Just (SimpleType TOne "String")
                             }
-                        ],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                        ]
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "bar address"],
-                      super = Just (SimpleType TOne "address"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "address")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "work address"],
                       super = Just (SimpleType TOne "address"),
                       has =
-                        [ TypeDecl
+                        [ defaultTypeDecl
                             { name = [MTT "floor"],
-                              super = Just (SimpleType TOne "String"),
-                              has = [],
-                              enums = Nothing,
-                              given = Nothing,
-                              upon = Nothing,
-                              rlabel = Nothing,
-                              lsource = Nothing,
-                              srcref = Nothing,
-                              defaults = [],
-                              symtab = []
+                              super = Just (SimpleType TOne "String")
                             },
-                          TypeDecl
+                          defaultTypeDecl
                             { name = [MTT "company name"],
-                              super = Just (SimpleType TOne "String"),
-                              has = [],
-                              enums = Nothing,
-                              given = Nothing,
-                              upon = Nothing,
-                              rlabel = Nothing,
-                              lsource = Nothing,
-                              srcref = Nothing,
-                              defaults = [],
-                              symtab = []
+                              super = Just (SimpleType TOne "String")
                             }
-                        ],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                        ]
                     }
                 ],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 4,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 4
             },
-          TypeDecl
+          defaultTypeDecl
             { name = [MTT "address"],
-              super = Nothing,
               has =
-                [ TypeDecl
+                [ defaultTypeDecl
                     { name = [MTT "line1"],
-                      super = Just (SimpleType TOne "String"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "String")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "line2"],
-                      super = Just (SimpleType TOne "String"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "String")
                     }
                 ],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 1 15,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 1 15
             }
         ]
 
@@ -272,186 +144,72 @@ parserTests  = do
 
       filetest "class-fa-1" "financial advisor data modelling"
         (parseR pToplevel) 
-        [ TypeDecl
+        [ defaultTypeDecl
             { name = [MTT "FinancialStatus"],
               super = Just (InlineEnum TOne ((MTT <$> "adequate" :| ["inadequate"], Nothing) :| [])),
-              has = [],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 1,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 1
             },
-          TypeDecl
+          defaultTypeDecl
             { name = [MTT "EarningsStatus"],
               super = Just (InlineEnum TOne ((MTT <$> "steady" :| ["unsteady"], Nothing) :| [])),
-              has = [],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 2,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 2
             },
-          TypeDecl
+          defaultTypeDecl
             { name = [MTT "InvestmentStrategy"],
               super = Just (InlineEnum TOne ((MTT <$> "savings" :| ["stocks", "combination"], Nothing) :| [])),
-              has = [],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
-              rlabel = Nothing,
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 3,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 3
             },
-          TypeDecl
+          defaultTypeDecl
             { name = [MTT "Person"],
-              super = Nothing,
               has =
-                [ TypeDecl
+                [ defaultTypeDecl
                     { name = [MTT "dependents"],
-                      super = Just (SimpleType TOne "Number"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "Number")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "amountSaved"],
-                      super = Just (SimpleType TOne "Number"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "Number")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "earnings"],
-                      super = Just (SimpleType TOne "Number"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "Number")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "steadiness"],
-                      super = Just (SimpleType TOne "EarningsStatus"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "EarningsStatus")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "income"],
-                      super = Just (SimpleType TOne "FinancialStatus"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "FinancialStatus")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "savingsAccount"],
-                      super = Just (SimpleType TOne "FinancialStatus"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "FinancialStatus")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "isDead"],
-                      super = Just (SimpleType TOne "Boolean"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "Boolean")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "spendthrift"],
-                      super = Just (SimpleType TOne "Boolean"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "Boolean")
                     },
-                  TypeDecl
+                  defaultTypeDecl
                     { name = [MTT "investment"],
-                      super = Just (SimpleType TOne "InvestmentStrategy"),
-                      has = [],
-                      enums = Nothing,
-                      given = Nothing,
-                      upon = Nothing,
-                      rlabel = Nothing,
-                      lsource = Nothing,
-                      srcref = Nothing,
-                      defaults = [],
-                      symtab = []
+                      super = Just (SimpleType TOne "InvestmentStrategy")
                     }
                 ],
-              enums = Nothing,
-              given = Nothing,
-              upon = Nothing,
               rlabel = Just ("\167", 2, "person type"),
-              lsource = Nothing,
-              srcref = mkTestSrcRef 2 5,
-              defaults = [],
-              symtab = []
+              srcref = mkTestSrcRef 2 5
             }
         ]
 
       filetest "class-fa-2" "financial advisor decision modelling"
         (parseR pToplevel)
-        [ Hornlike {
+        [ defaultHorn {
           name = MTT <$> ["p", "investment"],
-          super = Nothing,
           keyword = Decide,
           given = Just ((MTT "p" :| [], Just (SimpleType TOne "Person")) :| []),
-          upon = Nothing,
           clauses =
           [ HC
               { hHead = RPConstraint (MTT <$> ["p", "investment"]) RPis [MTT "savings"],
@@ -473,7 +231,7 @@ parserTests  = do
                 hBody = Just (mkLeafR "OTHERWISE")
               },
             HC
-              { hHead = RPConstraint (MTT <$> ["p", "minSavings"]) RPis [MTT "p's dependents", MTT "*", MTN 5000],
+              { hHead = RPConstraint (MTT <$> ["p", "minSavings"]) RPis [MTT "p's dependents", MTT "*", MTI 5000],
                 hBody = Nothing
               },
             HC
@@ -500,15 +258,9 @@ parserTests  = do
                     )
               },
             HC
-              { hHead = RPConstraint (MTT <$> ["p", "blah"]) RPis [MTN 42],
+              { hHead = RPConstraint (MTT <$> ["p", "blah"]) RPis [MTI 42],
                 hBody = Nothing
               }
           ]
-          ,
-          rlabel = Nothing,
-          lsource = Nothing,
-          srcref = mkTestSrcRef 1 1,
-          defaults = [],
-          symtab = []
         }
         ]

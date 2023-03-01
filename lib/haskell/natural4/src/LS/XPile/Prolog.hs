@@ -92,7 +92,8 @@ describeParent _st tname parent =
 varmt :: MTExpr -> Term
 varmt (MTT t) = var (Text.unpack t)
 varmt (MTB b) = var (show b)
-varmt (MTN n) = var (show n)
+varmt (MTF n) = var (show n)
+varmt (MTI i) = var (show i)
 
 vart, vartl, vartu :: Text.Text -> Term
 vart  = var  . Text.unpack

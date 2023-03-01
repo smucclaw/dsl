@@ -29,6 +29,7 @@ dependencies:
 - hspec
 - megaparsec
 - hspec-megaparsec
+- hxt
 - mtl
 - cassava
 - vector
@@ -44,7 +45,6 @@ dependencies:
 - aeson-pretty
 - utf8-string
 - gf
-- gf-ud
 - optparse-generic
 - prolog
 - typed-process
@@ -59,7 +59,6 @@ dependencies:
 - lens
 - QuickCheck
 - generic-arbitrary
-- udpipe-hs
 - async
 - time
 - iso8601-time
@@ -71,7 +70,7 @@ dependencies:
 - quickcheck-text
 - explainable
 
-ghc-options: -Wall -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
+ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 
 library:
   source-dirs: src
@@ -89,7 +88,7 @@ executables:
 
 tests:
   natural4-test:
-    main:                RootSpec.hs
+    main:                Spec.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -97,17 +96,6 @@ tests:
     - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
     - natural4
-
-  natural4-unittest:
-    main:                Spec.hs
-    source-dirs:         utest
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - '"-with-rtsopts=-N -H500M -qg"'
-    dependencies:
-    - natural4
-    - hspec-megaparsec
 
 benchmarks:
     natural4-bench:

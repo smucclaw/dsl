@@ -11,26 +11,26 @@ concrete StandardLexiconChi of StandardLexicon = NL4BaseChi **
   -- This module should be the really high quality stuff
   lin
     organisation = mkCN (mkN ("organisation"|"Organisation")) ;
-    agency = mkCN (mkN ("机构")) ;
-    loss = mkCN (mkN "亏损") ;
+    agency = mkCN (mkN ("机 构")) ;
+    loss = mkCN (mkN "亏 损") ;
 
-    demand = mkV2 "需求" ;
-    perform = mkV2 "履行" ;
-    become = mkV2 "成为" ;
-    become_aware = mkVS "察觉" ;
+    demand = mkV2 "需 求" ;
+    perform = mkV2 "履 行" ;
+    become = mkV2 "成 为" ;
+    become_aware = mkVS "察 觉" ;
     -- assess = mkVS (mkV "评估") ;
 
-    apply = mkVP (mkV "申请") ;
-    occur = mkVP (mkV "发案") ;
-    respond = mkVP (mkV "回应") ;
+    apply = mkVP (mkV "申 请") ;
+    occur = mkVP (mkV "发 案") ;
+    respond = mkVP (mkV "回 应") ;
 
-    covered = mkAP (mkA ("保户")) ;
-    ensuing np = mkAP (strA2 "接着") <lin NP np : NP>  ;
-    caused_by np = mkAP (mkA2 (mkA "起因") by8agent_Prep) <lin NP np : NP> ;
+    covered = mkAP (mkA ("保 户")) ;
+    ensuing np = mkAP (strA2 "接 着") <lin NP np : NP>  ;
+    caused_by np = mkAP (mkA2 (mkA "的 原 因") by8agent_Prep) <lin NP np : NP> ;
 
     NP_caused_by_PrePost np = {
-      s = npStr np ++ "起因" ; -- np ++ "caused by"
-      qs = "那个" ++ npStr np ++ "起因" -- "Is the" ++ np ++ "caused by"
+      s = npStr np ++ "的 原 因" ; -- np ++ "caused by"
+      qs = "那 个" ++ npStr np ++ "的 原 因" -- "Is the" ++ np ++ "caused by"
       } ;
 
     NP_caused_NP_to_VP_Prep_PrePost np water escape from =
@@ -42,7 +42,7 @@ concrete StandardLexiconChi of StandardLexicon = NL4BaseChi **
       in {s = ss.s ++ R.linPrep ss.c2 ; qs = (mkUtt qs).s} ;
 
   oper
-    cause_V2V : V2V = mkV2V (mkV "使") ;
+    cause_V2V : V2V = mkV2V (mkV "导 致") ;
 
 -- hack: just to get "does NP cause water to escape from", not "whom does NP cause water to escape from"
     hackQCl : ClSlash -> QCl = \clSlash -> mkQCl emptyIP clSlash ;

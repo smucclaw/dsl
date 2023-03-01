@@ -138,9 +138,9 @@ concrete NL4BaseChi of NL4Base =
        in cond ** {pred = advVPS cond.pred onDate} ;
 
     BEFORE = P.mkPrep "前" ;
-    AFTER = P.mkPrep "之 后" ;
+    AFTER = P.mkPrep "在" "之 后" ;
     BY = by8means_Prep ;
-    ON = P.mkPrep "或" ;
+    ON = P.mkPrep "在" ;
     VAGUE = P.mkPrep [] ;
 
   oper

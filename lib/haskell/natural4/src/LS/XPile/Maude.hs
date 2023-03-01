@@ -86,7 +86,7 @@ rules2doc (null -> True) = pure mempty
 rules2doc rules =
   rules |> toList |$> rule2doc |> sequence |$> concatWith catWithLines
   where
-    catWithLines x y = [x, line, line, y] |> mconcat
+    catWithLines x y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
 rule2doc :: MonadErrorString s m => Rule -> m (Doc ann)

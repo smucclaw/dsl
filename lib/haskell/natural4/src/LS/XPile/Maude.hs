@@ -4,7 +4,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -20,12 +19,7 @@ import AnyAll (BoolStruct (Leaf))
 -- import Debug.Trace
 
 import Control.Applicative (liftA2)
-import Control.Lens ((<&>))
-import Control.Monad (join)
-import Data.Bifunctor (bimap, Bifunctor (..))
-import Data.Char (toUpper)
-import Data.Coerce (Coercible, coerce)
-import Data.Foldable (Foldable (foldMap', toList))
+import Data.Foldable (Foldable (toList))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
 import Flow ((|>), (.>))
@@ -39,14 +33,7 @@ import LS.Types
     TemporalConstraint (TemporalConstraint),
   )
 import Prettyprinter
-  ( Doc,
-    Pretty (pretty),
-    hsep,
-    line,
-    vcat,
-    viaShow,
-    vsep,
-    (<+>), concatWith,
+  ( Doc, pretty, hsep, line, vcat, viaShow, vsep, (<+>), concatWith,
   )
 
 {-
@@ -162,7 +149,7 @@ henceLest2maudeStr henceOrLest henceLest =
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure
     quotOrUpper _ = errMsg
-    parenthesizeIf True x = mconcat ["(", x, ")"]
+    parenthesizeIf True x = ["(", x, ")"] |> mconcat
     parenthesizeIf False x = x
 
 -- Common utilities

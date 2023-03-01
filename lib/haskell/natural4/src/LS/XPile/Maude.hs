@@ -113,6 +113,7 @@ rule2doc
           |> fmap vsep
       deontic2str deon =
         deon |> show |> tail |> map toUpper |> pretty
+
 rule2doc _ = Left "Not supported."
 
 rules2doc :: Foldable t => t Rule -> Either String (Doc ann)

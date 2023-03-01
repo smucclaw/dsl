@@ -1,5 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -37,7 +40,7 @@ import LS.Types
     TemporalConstraint (TemporalConstraint),
   )
 import Prettyprinter
-  ( Doc,
+  ( Doc, Pretty,
     concatWith,
     hsep,
     line,
@@ -84,9 +87,9 @@ rules2maudeStr rules = rules |> rules2doc |> either show show
 rules2doc :: (MonadErrorString s m, Foldable t) => t Rule -> m (Doc ann)
 rules2doc (null -> True) = pure mempty
 rules2doc rules =
-  rules |> toList |$> rule2doc |> sequence |$> concatWith catWithLines
+  rules |> toList |$> rule2doc |> sequence |$> concatWith (<.>)
   where
-    catWithLines x y = [x, ",", line, line, y] |> mconcat
+     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
 rule2doc :: MonadErrorString s m => Rule -> m (Doc ann)
@@ -128,11 +131,11 @@ rule2doc
         [(HENCE, hence), (LEST, lest)]
           |$> uncurry henceLest2maudeStr
           |> sequence
-          |$> filter isNonEmptyStr
+          |$> filter isNonEmptyDoc
           |$> vcat
       deontic2str deon =
         deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
-      isNonEmptyStr str = str |> show |> null |> not
+      isNonEmptyDoc doc = doc |> show |> (/= mempty)
 
 rule2doc _ = errMsg
 
@@ -151,7 +154,8 @@ isValidHenceLest maybeRule = maybeRule |> maybe True isValidRuleAlias
     go _ = False
 
 data HenceOrLest = HENCE | LEST
-  deriving (Eq, Ord, Read, Show)
+  deriving stock (Eq, Ord, Read, Show)
+  deriving anyclass Pretty
 
 {-
   This function can handle invalid HENCE/LEST clauses.
@@ -168,7 +172,7 @@ henceLest2maudeStr henceOrLest henceLest =
         |> sequence
         |$> hsep
         |$> parenthesizeIf (length henceLest' > 1)
-        |$> (viaShow henceOrLest <+>)
+        |$> (pretty henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure

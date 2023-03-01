@@ -113,7 +113,7 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-      ruleNoHenceLest : henceLest
+      ruleNoHenceLest : henceLestClauses
         |> sequence -- Propagate errors from henceLest2maudeStr here.
         |> fmap vcat
     where
@@ -124,7 +124,7 @@ rule2doc
           ["WITHIN", pretty n, "DAY"]
         ]
           |> map hsep |> vcat |> pure
-      henceLest =
+      henceLestClauses =
         [(HENCE, hence), (LEST, lest)]
           |> map (uncurry henceLest2maudeStr)
           |> filter isNotRightOfEmptyStr
@@ -148,18 +148,18 @@ isValidHenceLest (Just (RuleAlias xs)) =
     isValidMTTs (MTT _ : MTT (T.toUpper -> "AND") : xs) = isValidMTTs xs
 
 henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Either String (Doc ann)
-henceLest2maudeStr henceOrLest hence =
-  hence |> maybe (pure mempty) f
+henceLest2maudeStr henceOrLest henceLest =
+  henceLest |> maybe (pure mempty) henceLest2doc
   where
-    f (RuleAlias hence') =
+    henceLest2doc (RuleAlias hence') =
       hence'
         |> map quotOrUpper
         |> sequence
         |> fmap hsep
         |> fmap (parenthesizeIf (length hence' > 1))
         |> fmap (viaShow henceOrLest <+>)
-    f _ = errMsg
-    quotOrUpper (MTT (T.toLower -> "and")) = pure "AND"
+    henceLest2doc _ = errMsg
+    quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure
     quotOrUpper _ = errMsg
     parenthesizeIf True x = mconcat ["(", x, ")"]

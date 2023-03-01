@@ -30,6 +30,7 @@ import Data.Bifunctor (second)
 import Data.Maybe (listToMaybe)
 import Data.List.Split (chunk)
 import PGF
+import qualified Data.Char as Char
 
 
 -- | extract the tree-structured rules from Interpreter
@@ -109,8 +110,8 @@ biggestS env rl = do
 asPurescript :: NLGEnv -> [Rule] -> String
 asPurescript env rl =
      show (vsep
-           [ (pretty $ showLanguage $ gfLang env) <> "Decisions :: Object.Object (Item String)"
-           , (pretty $ showLanguage $ gfLang env) <> "Decisions = Object.fromFoldable " <>
+           [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
                    [ toTuple ( T.intercalate " / " (mt2text <$> names)
@@ -119,8 +120,8 @@ asPurescript env rl =
                    ]
                  )
              )
-           , (pretty $ showLanguage $ gfLang env) <> "Marking :: Marking"
-           , (pretty $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable " <>
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> "Marking :: Marking"
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable " <>
              (pretty . TL.unpack
               . TL.replace "False" "false"
               . TL.replace "True" "true"

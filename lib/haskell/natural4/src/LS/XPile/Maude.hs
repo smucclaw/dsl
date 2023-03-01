@@ -17,7 +17,7 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
--- import Debug.Trace
+import Debug.Trace
 
 import Control.Applicative (liftA2)
 import Control.Monad.Except (MonadError (throwError))
@@ -174,7 +174,7 @@ henceLest2maudeStr henceOrLest henceLest =
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure
     quotOrUpper _ = errMsg
     parenthesizeIf True x = ["(", x, ")"] |> mconcat
-    parentheSizeIf False x = x
+    parenthesizeIf False x = x
 
 -- Common utilities
 type MonadErrorString s m = (IsString s, MonadError s m)

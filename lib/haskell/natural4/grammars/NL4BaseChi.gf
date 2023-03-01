@@ -71,7 +71,7 @@ concrete NL4BaseChi of NL4Base =
     PARTY cn = mkNP <lin CN cn : CN> ;
     AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
     THE cn = mkNP <lin Det this_Det : Det> <lin CN cn : CN> ;
-    WHO t p who = MkVPS t p (progressiveVP who) ;
+    WHO t p who = MkVPS t p who ;
     ACTION act = MkVPI act ;
 
     MUST = must_VV ;
@@ -138,15 +138,15 @@ concrete NL4BaseChi of NL4Base =
        in cond ** {pred = advVPS cond.pred onDate} ;
 
     BEFORE = P.mkPrep "前" ;
-    AFTER = P.mkPrep "后" ;
+    AFTER = P.mkPrep "之 后" ;
     BY = by8means_Prep ;
-    ON = on_Prep ;
+    ON = P.mkPrep "或" ;
     VAGUE = P.mkPrep [] ;
 
   oper
     advVPS : ExtendChi.VPS -> CatChi.Adv -> ExtendChi.VPS = \vps,adv -> cc2 vps (mkUtt adv) ;
   lin
-    MkDate a b c = symb (cc3 a b c) ;
+    MkDate a b c = symb (cc3 c b a) ;
 
     --  : Int -> TimeUnit -> Temporal ; -- TODO: fix "1 days" by using Dig from RGL
     WITHIN int time =

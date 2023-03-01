@@ -241,17 +241,25 @@ parseTComparison TVague = GVAGUE
 
 parseDate :: MultiTerm -> GDate
 parseDate mt = case Text.words $ mt2text mt of
-  [d, m, y] -> GMkDate (tDay d) (tMonth m) (tYear y)
-  _ -> GMkDate (LexDay "Day1") (LexMonth "Jan") (LexYear "Year2000")
+  [d, m, y] -> GMkDate (tDay d) (tMonth m) (mkYear y)
+  -- _ -> GMkDate (LexDay "Day1") (LexMonth "Jan")
  where
+  dummy = "Year0"
+
+  mkYear :: Text.Text -> GYear
+  mkYear y = GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
+    where [y1, y2, y3, y4] = splitYear y 
+
+  splitYear :: Text.Text -> [String]
+  splitYear y = case ["Y" <> [d] | d <- Text.unpack y] of
+    xs@[_, _, _, _] -> xs
+    _ -> [dummy, dummy, dummy, dummy]
+
   tDay :: Text.Text -> GDay
   tDay t = LexDay ("Day"<> Text.unpack t)
 
   tMonth :: Text.Text -> GMonth
   tMonth = LexMonth . Text.unpack
-
-  tYear :: Text.Text -> GYear
-  tYear t = LexYear ("Year"<> Text.unpack t)
 
 
 -- TODO: stop using *2text, instead use the internal structure

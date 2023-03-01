@@ -143,8 +143,9 @@ concrete NL4BaseEng of NL4Base =
   oper
     postAdvS : S -> Adv -> S = \s,adv -> s ** mkS <lin Adv s : Adv> <lin S adv : S> ; -- hack that only works for Eng
     postAdvQS : QS -> Adv -> QS = \qs,adv -> qs ** {s = \\qf => qs.s ! qf ++ adv.s} ;
+    cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> cc2 s1 (cc3 s2 s3 s4) ;  
   lin
-    MkDate a b c = symb (cc3 a b c) ;
+    MkDate day month year = symb (cc3 day month year);
 
     --  : Int -> TimeUnit -> Temporal ; -- TODO: fix "1 days" by using Dig from RGL
     WITHIN int time =

@@ -147,6 +147,8 @@ type GWho = Tree GWho_
 data GWho_
 type GYear = Tree GYear_
 data GYear_
+type GYearComponent = Tree GYearComponent_
+data GYearComponent_
 type GA = Tree GA_
 data GA_
 type GA2 = Tree GA2_
@@ -349,7 +351,8 @@ data Tree :: * -> * where
   GConjWho :: GConj -> GListWho -> Tree GWho_
   GWHO :: GTemp -> GPol -> GVP -> Tree GWho_
   GrecoverUnparsedWho :: GString -> Tree GWho_
-  LexYear :: String -> Tree GYear_
+  GMkYear :: GYearComponent -> GYearComponent -> GYearComponent -> GYearComponent -> Tree GYear_
+  LexYearComponent :: String -> Tree GYearComponent_
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
   GFloat :: Double -> Tree GFloat_
@@ -536,7 +539,8 @@ instance Eq (Tree a) where
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GWHO x1 x2 x3,GWHO y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GrecoverUnparsedWho x1,GrecoverUnparsedWho y1) -> and [ x1 == y1 ]
-    (LexYear x,LexYear y) -> x == y
+    (GMkYear x1 x2 x3 x4,GMkYear y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (LexYearComponent x,LexYearComponent y) -> x == y
     (GString x, GString y) -> x == y
     (GInt x, GInt y) -> x == y
     (GFloat x, GFloat y) -> x == y
@@ -1330,13 +1334,23 @@ instance Gf GWho where
       _ -> error ("no Who " ++ show t)
 
 instance Gf GYear where
-  gf (LexYear x) = mkApp (mkCId x) []
+  gf (GMkYear x1 x2 x3 x4) = mkApp (mkCId "MkYear") [gf x1, gf x2, gf x3, gf x4]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "MkYear" -> GMkYear (fg x1) (fg x2) (fg x3) (fg x4)
+
+
+      _ -> error ("no Year " ++ show t)
+
+instance Gf GYearComponent where
+  gf (LexYearComponent x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
 
-      Just (i,[]) -> LexYear (showCId i)
-      _ -> error ("no Year " ++ show t)
+      Just (i,[]) -> LexYearComponent (showCId i)
+      _ -> error ("no YearComponent " ++ show t)
 
 
 
@@ -1492,6 +1506,7 @@ instance Compos Tree where
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2
     GWHO x1 x2 x3 -> r GWHO `a` f x1 `a` f x2 `a` f x3
     GrecoverUnparsedWho x1 -> r GrecoverUnparsedWho `a` f x1
+    GMkYear x1 x2 x3 x4 -> r GMkYear `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GListAP x1 -> r GListAP `a` foldr (a . a (r (:)) . f) (r []) x1
     GListAdv x1 -> r GListAdv `a` foldr (a . a (r (:)) . f) (r []) x1
     GListCond x1 -> r GListCond `a` foldr (a . a (r (:)) . f) (r []) x1

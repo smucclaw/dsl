@@ -131,8 +131,10 @@ concrete NL4BaseMay of NL4Base =
     ON = on_Prep ;
     VAGUE = R.mkPrep [] ;
 
+  oper
+    cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> cc2 s1 (cc3 s2 s3 s4) ;  
   lin
-    MkDate a b c = symb (cc3 a b c) ;
+    MkDate day month year = symb (cc3 day month year) ;
 
     --  : Int -> TimeUnit -> Temporal ; -- TODO: fix "1 days" by using Dig from RGL
     WITHIN int time =

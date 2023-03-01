@@ -89,6 +89,7 @@ abstract NL4Base =
       Day ;
       Month ;
       Year ;
+      YearComponent ;
       TComparison ;
       [TComparison]{2} ;
 

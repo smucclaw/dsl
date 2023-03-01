@@ -138,12 +138,12 @@ henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Either String (Doc ann)
 henceLest2maudeStr henceOrLest henceLest =
   henceLest |> maybe (pure mempty) henceLest2doc
   where
-    henceLest2doc (RuleAlias hence') =
-      hence'
+    henceLest2doc (RuleAlias henceLest') =
+      henceLest'
         |> map quotOrUpper
         |> sequence
         |> fmap hsep
-        |> fmap (parenthesizeIf (length hence' > 1))
+        |> fmap (parenthesizeIf (length henceLest' > 1))
         |> fmap (viaShow henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"

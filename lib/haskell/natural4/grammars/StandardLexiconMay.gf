@@ -17,14 +17,17 @@ concrete StandardLexiconMay of StandardLexicon = NL4BaseMay **
     demand = mkV2 "tuntutan" ;
     perform = mkV2 "melaksanakan" ;
     become = mkV2 "jadi" ;
-    assess = mkVS (mkV "menilai") ;
+    become_aware = mkVS (mkV "sedari" R.Meng) ;
+    assess = mkVS (mkV "nilai") ;
+
+
 
     apply = mkVP (mkV "memohon") ;
     occur = mkVP (mkV "laku") ;
     respond = mkVP (mkV "membalas") ;
 
     covered = mkAP (mkA ("dilindungi"|"Dilindungi")) ;
-    ensuing np = mkAP (strA2 "seterusnya") <lin NP np : NP>  ;
+    ensuing np = mkAP (strA2 "berlaku seterusnya") <lin NP np : NP>  ;
     caused_by np = mkAP (mkA2 (mkA "disebabkan") by8agent_Prep) <lin NP np : NP> ;
 
     NP_caused_by_PrePost np = {

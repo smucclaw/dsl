@@ -4,6 +4,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -21,7 +22,7 @@ import AnyAll (BoolStruct (Leaf))
 import Control.Applicative (liftA2)
 import Control.Lens ((<&>))
 import Control.Monad (join)
-import Data.Bifunctor (bimap)
+import Data.Bifunctor (bimap, Bifunctor (..))
 import Data.Char (toUpper)
 import Data.Coerce (Coercible, coerce)
 import Data.Foldable (Foldable (foldMap', toList))
@@ -113,9 +114,8 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-      ruleNoHenceLest : henceLestClauses
-        |> sequence -- Propagate errors from henceLest2maudeStr here.
-        |> fmap vcat
+      (ruleNoHenceLest, henceLestClauses)
+        |> uncurry (liftA2 (:)) |> fmap vcat
     where
       ruleNoHenceLest =
         [ ["RULE", pretty2Qid ruleName],
@@ -127,11 +127,11 @@ rule2doc
       henceLestClauses =
         [(HENCE, hence), (LEST, lest)]
           |> map (uncurry henceLest2maudeStr)
-          |> filter isNotRightOfEmptyStr
+          |> sequence
+          |> fmap (filter isNonEmptyStr)
       deontic2str deon =
         deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
-      isNotRightOfEmptyStr str =
-        str |> either (const True) (show .> null .> not)
+      isNonEmptyStr str = str |> show |> null |> not
 
 rule2doc _ = errMsg
 

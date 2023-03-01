@@ -45,7 +45,7 @@ import Prettyprinter
     vcat,
     viaShow,
     vsep,
-    (<+>),
+    (<+>), concatWith,
   )
 
 {-
@@ -95,27 +95,20 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-        liftA2 catWithLine rule_without_henceLest henceLest
+      [ ["RULE", pretty2Qid ruleName],
+        ["PARTY", pretty2Qid actorName],
+        [deontic2str deontic, pretty2Qid actionName],
+        ["WITHIN", pretty n, "DAY"]
+      ]
+        |> map hsep |> vcat |> pure |> (: henceLest)
+        |> sequence -- Propagate errors from henceLest2maudeStr here.
+        |> fmap (filter isNonEmptyStr) -- Remove empty HENCE/LEST clauses.
+        |> fmap vcat
     where
-      rule_without_henceLest =
-        [ ["RULE", pretty2Qid ruleName],
-          ["PARTY", pretty2Qid actorName],
-          [deontic2str deontic, pretty2Qid actionName],
-          ["WITHIN", pretty n, "DAY"]
-        ]
-          |> map hsep
-          |> vcat
-          |> pure
       henceLest =
-        [(HENCE, hence), (LEST, lest)]
-          |> map (uncurry henceLest2maudeStr)
-          |> sequence
-          |> fmap (foldr1 catWithLine)
+        [(HENCE, hence), (LEST, lest)] |> map (uncurry henceLest2maudeStr)
       deontic2str deon =
         deon |> show |> tail |> map toUpper |> pretty
-      catWithLine (show -> "") y = y
-      catWithLine x (show -> "") = x
-      catWithLine x y = [x, line, y] |> mconcat
 
 rule2doc _ = errMsg
 
@@ -125,8 +118,13 @@ rules2doc rules =
     |> toList
     |> map rule2doc
     |> sequence
-    |> fmap (mapButLast (<> line))
-    |> fmap vcat
+    |> fmap (filter isNonEmptyStr)
+    |> fmap (concatWith catWithLines)
+    where
+      catWithLines x y = x <> line <> line <> y
+
+isNonEmptyStr :: Show a => a -> Bool
+isNonEmptyStr xs = xs |> show |> null |> not
 
 pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
@@ -165,8 +163,3 @@ henceLest2maudeStr henceOrLest hence =
 
 errMsg :: Either String a
 errMsg = Left "Not supported."
-
-mapButLast :: (a -> a) -> [a] -> [a]
-mapButLast _ [] = []
-mapButLast _ [x] = [x]
-mapButLast f (x : xs) = f x : mapButLast f xs

@@ -21,7 +21,7 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     data_breach = mkCN (mkN ("pelanggaran data"|"Pelanggaran Data")) ;
     public = mkAP (mkA ("awam"|"Awam")) ;
     notifiable = mkAP (mkA ("boleh dimaklumkan"|"Boleh Dimaklumkan")) ;
-    aware = mkAP (mkA "menyedari") ;
+    aware = mkAP (mkA "sedar") ;
     NDB_Qualification = mkNP (mkN "Kelayakan NDB") ;
 
 
@@ -49,5 +49,4 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     leak_V : V = mkV "kebocoran" ;
     pool_N : N = mkN "kolam renang" ;
     appliance_N : N = mkN "perkakas rumah" ;
-
 }

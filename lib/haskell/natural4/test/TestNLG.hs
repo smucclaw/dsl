@@ -8,18 +8,19 @@ import LS.NLP.NL4
 import Parsing.PDPASpec (expected_pdpadbno1)
 import qualified AnyAll as AA
 import LS.Types
+import PGF (mkCId)
 
 spec :: Spec
 spec = do
-  env <- runIO myNLGEnv
+  env <- runIO $ myNLGEnv (mkCId "NL4Eng")
   describe "test rodents" $ do
     it "Should return questions about rodent damage" $ do
-        let questions = mkConstraintText env GqPREPOST GqCONSTR rodentsBSR
+        let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR rodentsBSR
         questions `shouldBe` AA.All Nothing [AA.Any (Just (AA.Pre "Is the Loss or Damage caused by")) [AA.Leaf "rodents ?",AA.Leaf "insects ?",AA.Leaf "vermin ?",AA.Leaf "birds ?"],AA.Not (AA.Any Nothing [AA.All Nothing [AA.Leaf "is Loss or Damage to contents ?",AA.Leaf "is Loss or Damage caused by birds ?"],AA.All Nothing [AA.Leaf "is Loss or Damage ensuing loss ?",AA.Leaf "is Loss or Damage covered ?",AA.Not (AA.Any Nothing [AA.Leaf "does any other exclusion apply ?",AA.Any (Just (AA.Pre "did an animal cause water to escape from")) [AA.Leaf "a household appliance ?",AA.Leaf "a swimming pool ?",AA.Leaf "a plumbing, heating, or air conditioning system ?"]])]])]
 
   describe "test not bird" $ do
     it "Should return questions about not bird damage" $ do
-        let questions = mkConstraintText env GqPREPOST GqCONSTR notRodentsBSR
+        let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR notRodentsBSR
         questions `shouldBe` AA.All Nothing [AA.Any (Just (AA.Pre "Is the Loss or Damage caused by")) [AA.Leaf "rodents ?",AA.Leaf "insects ?",AA.Leaf "vermin ?",AA.Leaf "birds ?"],AA.Not (AA.Any Nothing [AA.All Nothing [AA.Leaf "is Loss or Damage to contents ?",AA.Leaf "isn't Loss or Damage caused by birds ?"],AA.All Nothing [AA.Leaf "is Loss or Damage ensuing loss ?",AA.Leaf "is Loss or Damage covered ?",AA.Not (AA.Any Nothing [AA.Leaf "does any other exclusion apply ?",AA.Any (Just (AA.Pre "did an animal cause water to escape from")) [AA.Leaf "a household appliance ?",AA.Leaf "a swimming pool ?",AA.Leaf "a plumbing, heating, or air conditioning system ?"]])]])]
 
   describe "test PDPA" $ do

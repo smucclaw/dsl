@@ -16,11 +16,11 @@ concrete StandardLexiconMay of StandardLexicon = NL4BaseMay **
 
     demand = mkV2 "tuntutan" ;
     perform = mkV2 "melaksanakan" ;
-    become = mkV2 "menjadi" ;
+    become = mkV2 "jadi" ;
     assess = mkVS (mkV "menilai") ;
 
     apply = mkVP (mkV "memohon") ;
-    occur = mkVP (mkV "berlaku") ;
+    occur = mkVP (mkV "laku") ;
     respond = mkVP (mkV "membalas") ;
 
     covered = mkAP (mkA ("dilindungi"|"Dilindungi")) ;

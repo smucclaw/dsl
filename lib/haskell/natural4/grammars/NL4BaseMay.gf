@@ -240,7 +240,7 @@ concrete NL4BaseMay of NL4Base =
 
     MayHave occur =
       let vps : ExtendMay.VPS = MkVPS presAnt POS occur ;
-        in vps ** {s = "may" ++ vps.s} ;
+        in vps ** {s = "mungkin" ++ vps.s} ;
     -- : NP -> S ; -- it is NP — reference to a previous NP
     ReferenceNP np = mkS (mkCl it_NP <lin NP np : NP>) ;
 

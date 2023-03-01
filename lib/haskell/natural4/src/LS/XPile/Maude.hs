@@ -129,7 +129,7 @@ pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
 
 rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules = rules |> rules2doc |> show
+rules2maudeStr rules = rules |> rules2doc |> either show show
 
 data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)

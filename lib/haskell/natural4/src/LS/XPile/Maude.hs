@@ -1,11 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-
@@ -17,14 +16,17 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
+-- import Debug.Trace
+
+import Control.Applicative (liftA2)
+import Control.Lens ((<&>))
 import Control.Monad (join)
 import Data.Bifunctor (bimap)
 import Data.Char (toUpper)
 import Data.Coerce (Coercible, coerce)
-import Data.Foldable (Foldable (foldMap'))
+import Data.Foldable (Foldable (foldMap', toList))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
--- import Debug.Trace
 import Flow ((|>))
 import LS.Rule
   ( Rule (..),
@@ -40,7 +42,10 @@ import Prettyprinter
     Pretty (pretty),
     hsep,
     line,
-    (<+>), viaShow,
+    vcat,
+    viaShow,
+    vsep,
+    (<+>),
   )
 
 {-
@@ -71,36 +76,53 @@ import Prettyprinter
 --     defaults = []
 --     symtab = []
 
-rule2doc :: forall ann. Rule -> Doc ann
+rule2doc :: Rule -> Either String (Doc ann)
 rule2doc
   Regulative
-    { rlabel = Just (_, _, ruleName),
+    { rlabel = Just ("§", 1, ruleName),
       rkeyword = RParty,
-      subj = Leaf ((MTT actorName :| [], _) :| []),
+      subj = Leaf ((MTT actorName :| [], Nothing) :| []),
       deontic,
-      action = Leaf ((MTT actionName :| [], _) :| []),
-      temporal = Just (TemporalConstraint TBefore (Just n) (T.toLower -> "day")),
+      action = Leaf ((MTT actionName :| [], Nothing) :| []),
+      temporal =
+        Just (TemporalConstraint TBefore (Just n) (T.toLower -> "day")),
       hence,
-      lest
-    } =
-    [ ["RULE", pretty2Qid ruleName],
-      ["PARTY", pretty2Qid actorName],
-      [deontic2str deontic, pretty2Qid actionName],
-      ["WITHIN", pretty n, "DAY"],
-      [henceLest2maudeStr HENCE hence],
-      [henceLest2maudeStr LEST lest]
-    ]
-      |> foldMapToDocViaMonoid @(CatWithNewLine ann) hsep
+      lest,
+
+      srcref, -- May want to use this for better error reporting.
+      given = Nothing, having = Nothing, who = Nothing, cond = Nothing,
+      lsource = Nothing, upon = Nothing, wwhere = [],
+      defaults = [], symtab = []
+    }
+    | all isValidHenceLest [hence, lest] =
+        liftA2 (<+>) rule_without_henceLest henceLest
     where
+      rule_without_henceLest =
+        [ ["RULE", pretty2Qid ruleName],
+          ["PARTY", pretty2Qid actorName],
+          [deontic2str deontic, pretty2Qid actionName],
+          ["WITHIN", pretty n, "DAY"]
+        ]
+          |> map hsep
+          |> vcat
+          |> pure
+      henceLest =
+        [(HENCE, hence), (LEST, lest)]
+          |> map (uncurry henceLest2maudeStr)
+          |> sequence
+          |> fmap vsep
       deontic2str deon =
-        deon |> show |> tail |> (<$>) toUpper |> pretty
+        deon |> show |> tail |> map toUpper |> pretty
+rule2doc _ = Left "Not supported."
 
-rule2doc _ = errMsg
-
-rules2doc :: forall ann t. Foldable t => t Rule -> Doc ann
+rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
 rules2doc rules =
   rules
-    |> foldMapToDocViaMonoid @(CatWithCommaAndNewLines ann) rule2doc
+    |> toList
+    |> map rule2doc
+    |> sequence
+    |> fmap (mapButLast (<> line))
+    |> fmap vcat
 
 pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
@@ -111,75 +133,36 @@ rules2maudeStr rules = rules |> rules2doc |> show
 data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)
 
-henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Doc ann
+isValidHenceLest :: Maybe Rule -> Bool
+isValidHenceLest Nothing = True
+isValidHenceLest (Just (RuleAlias xs)) =
+  isValidMTTs xs
+  where
+    isValidMTTs [MTT _] = True
+    isValidMTTs (MTT _ : MTT (T.toUpper -> "AND") : xs) = isValidMTTs xs
+
+henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Either String (Doc ann)
 henceLest2maudeStr henceOrLest hence =
-  hence |> maybe "" f
+  hence |> maybe (pure "") f
   where
     f (RuleAlias hence') =
       hence'
-        |> (<$>) quotOrUpper
-        |> hsep
-        |> parenthesizeIf (length hence' > 1)
-        |> (viaShow henceOrLest <+>)
+        |> map quotOrUpper
+        |> sequence
+        |> fmap hsep
+        |> fmap (parenthesizeIf (length hence' > 1))
+        |> fmap (viaShow henceOrLest <+>)
     f _ = errMsg
-    quotOrUpper (MTT (T.toLower -> "and")) = "AND"
-    quotOrUpper (MTT x) = x |> pretty2Qid
+    quotOrUpper (MTT (T.toLower -> "and")) = pure "AND"
+    quotOrUpper (MTT x) = x |> pretty2Qid |> pure
     quotOrUpper _ = errMsg
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf False x = x
 
-errMsg :: a
-errMsg = error "Not supported."
+errMsg :: Either String a
+errMsg = Left "Not supported."
 
--- foldMapWithNewLines ::
---   (Foldable t, Semigroup (CatWithNewLine ann)) =>
---   (a -> Doc ann) ->
---   t a ->
---   Doc ann
--- foldMapWithNewLines f docs = docs |> foldMap' f' |> coerce
---   where
---     f' :: a -> CatWithNewLine ann
---     f' x = x |> f |> coerce
-
--- Boring utilities below.
-newtype CatWithNewLine ann = CatWithNewLine (Doc ann)
-
-newtype CatWithCommaAndNewLines ann = CatWithCommaAndNewLines (Doc ann)
-
-catViaDocAnn ::
-  forall ann a.
-  Coercible a (Doc ann) =>
-  Doc ann ->
-  a ->
-  a ->
-  a
-catViaDocAnn sep x y =
-    (x, y) |> join bimap coerce |> catWithSep |> coerce @(Doc ann)
-  where
-    catWithSep (show -> "", b) = b
-    catWithSep (a, show -> "") = a
-    catWithSep (a, b) = mconcat [a, sep, b]
-
-foldMapToDocViaMonoid ::
-  forall m ann a t.
-  (Coercible (Doc ann) m, Foldable t, Monoid m) =>
-  (a -> Doc ann) ->
-  t a ->
-  Doc ann
-foldMapToDocViaMonoid f xs = xs |> foldMap' f' |> coerce @m
-  where
-    f' x = x |> f |> coerce
-
-instance Semigroup (CatWithNewLine ann) where
-  (<>) = catViaDocAnn @ann line
-
-instance Monoid (CatWithNewLine ann) where
-  mempty = CatWithNewLine ""
-
-instance Semigroup (CatWithCommaAndNewLines ann) where
-  (<>) = catViaDocAnn @ann sep
-    where
-      sep = [",", line, line] |> mconcat
-
-instance Monoid (CatWithCommaAndNewLines ann) where
-  mempty = CatWithCommaAndNewLines ""
+mapButLast :: (a -> b) -> [a] -> [b]
+mapButLast _ [] = []
+mapButLast _ [_] = []
+mapButLast f (x : xs) = f x : mapButLast f xs

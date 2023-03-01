@@ -3,6 +3,7 @@
 
 module LS.NLP.NL4Transformations where
 import LS.NLP.NL4
+import PGF (Language, mkCId)
 import qualified AnyAll as AA
 import Data.Maybe (fromMaybe)
 import Data.Foldable (toList)
@@ -134,10 +135,15 @@ squeezeTrees conj [
 
 squeezeTrees _ _ = Nothing
 
+isChinese :: Language -> Bool
+isChinese l = l == mkCId "NL4Chi"
 
-aggregateBoolStruct :: forall a . BoolStructGF a ->  BoolStructGF a
-aggregateBoolStruct bs = case bs of
-
-    AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
-    AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
-    _ -> bs
+aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
+aggregateBoolStruct l bs =
+  if isChinese l
+    then bs
+    else
+      (case bs of
+        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
+        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
+        _ -> bs)

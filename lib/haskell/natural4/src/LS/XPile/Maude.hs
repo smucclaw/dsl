@@ -27,7 +27,7 @@ import Data.Coerce (Coercible, coerce)
 import Data.Foldable (Foldable (foldMap', toList))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
-import Flow ((|>))
+import Flow ((|>), (.>))
 import LS.Rule
   ( Rule (..),
   )
@@ -83,7 +83,7 @@ rules2maudeStr rules = rules |> rules2doc |> either show show
 -- Auxiliary functions that help with the transpilation.
 rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
 rules2doc rules
-  | null rules = pure ""
+  | null rules = pure mempty
   | otherwise =
     rules
       |> toList
@@ -103,7 +103,7 @@ rule2doc
       deontic,
       action = Leaf ((MTT actionName :| [], Nothing) :| []),
       temporal =
-        Just (TemporalConstraint TBefore (Just n) (T.toLower -> "day")),
+        Just (TemporalConstraint TBefore (Just n) (T.toUpper -> "DAY")),
       hence,
       lest,
 
@@ -113,21 +113,25 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-      [ ["RULE", pretty2Qid ruleName],
-        ["PARTY", pretty2Qid actorName],
-        [deontic2str deontic, pretty2Qid actionName],
-        ["WITHIN", pretty n, "DAY"]
-      ]
-        |> map hsep |> vcat |> pure |> (: henceLest)
+      rule_no_henceLest : henceLest
         |> sequence -- Propagate errors from henceLest2maudeStr here.
-        |> fmap (filter isNonEmptyStr) -- Remove empty HENCE/LEST clauses.
         |> fmap vcat
     where
+      rule_no_henceLest =
+        [ ["RULE", pretty2Qid ruleName],
+          ["PARTY", pretty2Qid actorName],
+          [deontic2str deontic, pretty2Qid actionName],
+          ["WITHIN", pretty n, "DAY"]
+        ]
+          |> map hsep |> vcat |> pure
       henceLest =
-        [(HENCE, hence), (LEST, lest)] |> map (uncurry henceLest2maudeStr)
+        [(HENCE, hence), (LEST, lest)]
+          |> map (uncurry henceLest2maudeStr)
+          |> filter isRightOfNonEmptyStr
       deontic2str deon =
-        deon |> show |> tail |> map toUpper |> pretty
-      isNonEmptyStr xs = xs |> show |> null |> not
+        deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
+      isRightOfNonEmptyStr str =
+        str |> either (const False) (show .> null .> not)
 
 rule2doc _ = errMsg
 
@@ -145,7 +149,7 @@ isValidHenceLest (Just (RuleAlias xs)) =
 
 henceLest2maudeStr :: HenceOrLest -> Maybe Rule -> Either String (Doc ann)
 henceLest2maudeStr henceOrLest hence =
-  hence |> maybe (pure "") f
+  hence |> maybe (pure mempty) f
   where
     f (RuleAlias hence') =
       hence'

@@ -17,8 +17,8 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
     demand = mkV2 "demand" ;
     perform = mkV2 "perform" ;
     become = mkV2 IrregEng.become_V ;
-    become_aware = mkVS (partV (mkV "become") "aware") ;
-    -- assess = mkVS (mkV "assess") ;
+    become_aware = mkVS (partV IrregEng.become_V  "aware") ;
+    assess = mkVS (mkV "assess") ;
 
     apply = mkVP (mkV "apply") ;
     occur = mkVP (mkV "occur") ;

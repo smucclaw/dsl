@@ -95,7 +95,7 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-        liftA2 (<+>) rule_without_henceLest henceLest
+        liftA2 catWithLine rule_without_henceLest henceLest
     where
       rule_without_henceLest =
         [ ["RULE", pretty2Qid ruleName],
@@ -110,11 +110,14 @@ rule2doc
         [(HENCE, hence), (LEST, lest)]
           |> map (uncurry henceLest2maudeStr)
           |> sequence
-          |> fmap vsep
+          |> fmap (foldr1 catWithLine)
       deontic2str deon =
         deon |> show |> tail |> map toUpper |> pretty
+      catWithLine (show -> "") y = y
+      catWithLine x (show -> "") = x
+      catWithLine x y = [x, line, y] |> mconcat
 
-rule2doc _ = Left "Not supported."
+rule2doc _ = errMsg
 
 rules2doc :: Foldable t => t Rule -> Either String (Doc ann)
 rules2doc rules =

@@ -113,11 +113,11 @@ rule2doc
       defaults = [], symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-      rule_no_henceLest : henceLest
+      ruleNoHenceLest : henceLest
         |> sequence -- Propagate errors from henceLest2maudeStr here.
         |> fmap vcat
     where
-      rule_no_henceLest =
+      ruleNoHenceLest =
         [ ["RULE", pretty2Qid ruleName],
           ["PARTY", pretty2Qid actorName],
           [deontic2str deontic, pretty2Qid actionName],

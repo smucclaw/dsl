@@ -127,11 +127,11 @@ rule2doc
       henceLest =
         [(HENCE, hence), (LEST, lest)]
           |> map (uncurry henceLest2maudeStr)
-          |> filter isRightOfNonEmptyStr
+          |> filter isRightOfNonEmptyStrOrLeft
       deontic2str deon =
         deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
-      isRightOfNonEmptyStr str =
-        str |> either (const False) (show .> null .> not)
+      isRightOfNonEmptyStrOrLeft str =
+        str |> either (const True) (show .> null .> not)
 
 rule2doc _ = errMsg
 

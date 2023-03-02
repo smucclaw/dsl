@@ -1,109 +1,57 @@
-abstract NL4Base =
-    Numeral
-  , Grammar [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
-      , V,  VV, V2, VS, VP
-      , A, A2, AP, AdjCN, PositA
-      , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
-      , Prep, PrepNP, AdvVP
-      , ListAdv, BaseAdv, ConsAdv, ConjAdv
-      , ListAP, BaseAP, ConsAP, ConjAP
-      , ListNP, BaseNP, ConsNP, ConjNP
-      , ListS, BaseS, ConsS, ConjS
-      ]
-  , Structural [
-        Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
-      , VV, must_VV
-      ]
-  , Extend [
-        VPS, MkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS
-      , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
-      , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
---      , GenRP -- nice to have in the future?
-      , S, PredVPS
-      , NP, GerundNP
-      ]
-  ** {
-    flags startcat = Rule ;
-    cat
-      -- for fancy NLG
-      Rule ;
+abstract NL4Base = CustomSyntax ** {
+  flags startcat = Text ;
+  cat
+    Text ; -- for fancy NLG and web forms
 
-      -- for web forms
-      Text ;
+    -- Any structure that is using BoolStruct needs to prepare for PrePost
+    PrePost ; -- "Loss or Damage caused by", "an animal caused water to escape from"
 
-      -- Any structure that is using BoolStruct needs to prepare for PrePost
-      PrePost ; -- "Loss or Damage caused by", "an animal caused water to escape from"
+    -- Regulative
+    Cond ;
+    [Cond]{2} ;
+    Action ;
+    Who ;
+    [Who]{2} ;
+    Subj ;
+    Deontic ;
+    Upon ;
+  fun
+    -- for fancy NLG
+    Regulative : Subj -> Deontic -> Action -> Text ;
 
-      -- Regulative
-      Cond ;
-      [Cond]{2} ;
-      Action ;
-      Who ;
-      [Who]{2} ;
-      Subj ;
-      Deontic ;
-      Upon ;
-    fun
--- Application layer
-      -- for fancy NLG
-      Regulative : Subj -> Deontic -> Action -> Rule ;
+    -- for web forms
+    qWHO,
+    sWHO : Subj -> Who -> Text ;
+    qUPON,  -- TODO rethink types when adding more langs
+            -- TODO2 do we allow upon to take full sentence or just VP*?
+    sUPON : Subj -> Upon -> Text ;
+    qCOND,
+    sCOND : Cond -> Text ;
 
-      -- for web forms
-      qWHO,
-      sWHO : Subj -> Who -> Text ;
-      qUPON,  -- TODO rethink types when adding more langs
-              -- TODO2 do we allow upon to take full sentence or just VP*?
-      sUPON : Subj -> Upon -> Text ;
-      qCOND,
-      sCOND : Cond -> Text ;
+    -- general Regulative stuff
+    EVERY,
+    PARTY,
+    AN, THE : CN -> Subj ; -- EVERY Person
+    WHO : Temp -> Pol -> VP -> Who ;    -- WHO walks
+    ACTION : VP -> Action ;
 
-      EVERY,
-      PARTY,
-      AN, THE : CN -> Subj ; -- EVERY Person
-      WHO : Temp -> Pol -> VP -> Who ;    -- WHO walks
-      ACTION : VP -> Action ;
+    MUST, MAY, SHANT : Deontic ;
+    AND, OR : Conj ;
 
-      MUST, MAY, SHANT : Deontic ;
-      AND, OR : Conj ;
+    SubjWho : Subj -> Who -> Subj ;
+    ConjWho : Conj -> [Who] -> Who ;
+    ConjPreWho : PrePost -> Conj -> [Who] -> Who ; -- TODO need to find examples in the wild
+    ConjPrePostWho : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
 
-      SubjWho : Subj -> Who -> Subj ;
-      ConjWho : Conj -> [Who] -> Who ;
-      ConjPreWho : PrePost -> Conj -> [Who] -> Who ; -- TODO need to find examples in the wild
-      ConjPrePostWho : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
+    You : Subj ;
 
-      You : Subj ;
+    UPON : VP -> Upon ; -- upon becoming
 
-      UPON : VP -> Upon ; -- upon becoming
+    WHEN : NP -> Temp -> Pol -> VP -> Cond ;
+    ConjCond : Conj -> [Cond] -> Cond ;
+    ConjPreCond : PrePost -> Conj -> [Cond] -> Cond ; -- TODO need to find examples in the wild
+    ConjPrePostCond : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;
 
-      WHEN : NP -> Temp -> Pol -> VP -> Cond ;
-      ConjCond : Conj -> [Cond] -> Cond ;
-      ConjPreCond : PrePost -> Conj -> [Cond] -> Cond ; -- TODO need to find examples in the wild
-      ConjPrePostCond : (_,_ : PrePost) -> Conj -> [Cond] -> Cond ;
-
--- Time expressions
-    cat
-      Temporal ;
-      TimeUnit ; -- day, month, year …
-      Date ;
-      Day ;
-      Month ;
-      Year ;
-      YearComponent ;
-      TComparison ;
-      [TComparison]{2} ;
-
-    fun
-      TemporalConstraint :
-        Cond -> TComparison -- ON , AFTER, …
-             -> Date        -- 1 Feb 2022
-             -> Cond ;
-      BEFORE, AFTER, BY, ON, VAGUE : TComparison ;
-      ConjTComparison : Conj -> [TComparison] -> TComparison ;
-      MkDate : Day -> Month -> Year -> Date ;
-
-      WITHIN : Int -> TimeUnit -> Temporal ;
-      -- NB. time units, months and years in StandardLexicon
 
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
     cat
@@ -123,6 +71,45 @@ abstract NL4Base =
       qCONSTR : Constraint -> Text ;
 
 -----------------------------------------------------------------------------
+-- Time expressions
+
+  cat
+    Temporal ;
+    TimeUnit ; -- day, month, year …
+
+  fun
+    WITHIN : Digits -> TimeUnit -> Temporal ; -- digit comes from RGL Numeral module
+
+    Day_Unit
+    , Month_Unit
+    , Year_Unit : TimeUnit ;
+
+  cat
+    Date ;
+      Day ; Month ; Year ;
+      YearComponent ; -- to make up a year: 4 digits
+    TComparison ;
+    [TComparison]{2} ;
+
+  fun
+    TemporalConstraint :
+      Cond -> TComparison -- ON , AFTER, …
+           -> Date        -- 1 Feb 2022
+           -> Cond ;
+    BEFORE, AFTER, BY, ON, VAGUE : TComparison ;
+    ConjTComparison : Conj -> [TComparison] -> TComparison ;
+
+    MkDate : Day -> Month -> Year -> Date ;
+
+    Day1, Day2, Day3, Day4, Day5, Day6, Day7, Day8, Day9, Day10, Day11, Day12, Day13, Day14, Day15, Day16, Day17, Day18, Day19, Day20, Day21, Day22, Day23, Day24, Day25, Day26, Day27, Day28, Day29, Day30, Day31 : Day ;
+
+    Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec : Month ;
+
+    MkYear : (x1,_,_,x4: YearComponent) -> Year ;
+    Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9 : YearComponent ;
+
+
+-----------------------------------------------------------------------------
 -- Instead of crashing, every category should have a dummy constructor where to put a string
 
     fun
@@ -136,33 +123,4 @@ abstract NL4Base =
 
       recoverRPis : String -> String -> Constraint ;
 
-
------------------------------------------------------------------------------
--- Shortcuts and extensions to RGL
-
-      ComplVAS : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred
-      ComplV2S : V2 -> NP -> S -> VP ; -- notify PDPC that a data breach has occurred
-      ComplV2 : V2 -> NP -> VP ;
-      ComplVSif,
-      ComplVSthat : VS -> S -> VP ;
-      MayHave : VP -> VPS ; -- getting "may have occurred" with pure RGL is a pain
-
-      ReferenceNP : NP -> S ; -- it is NP — reference to a previous NP
---      ExpletiveVP : VP -> S ; -- it is raining — dummy subject it (TODO: restrict usage of this and above from HS)
-
-      presAnt,   -- has occurred
-      presSimul, -- occurs
-      pastSimul  -- occurred
-        : Temp ;
-
-      POS : Pol ;
-      NEG : Pol ;
-
-      theSg : Det ;
-      thePl : Det ;
-      aSg : Det ;
-      your : Det ;
-
-      about_Prep : Prep ;
-      may_VV : VV ;
 }

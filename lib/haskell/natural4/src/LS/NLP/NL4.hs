@@ -195,7 +195,7 @@ data Tree :: * -> * where
   GConjCond :: GConj -> GListCond -> Tree GCond_
   GConjPreCond :: GPrePost -> GConj -> GListCond -> Tree GCond_
   GConjPrePostCond :: GPrePost -> GPrePost -> GConj -> GListCond -> Tree GCond_
-  GTemporalConstraint :: GCond -> GTComparison -> GDate -> Tree GCond_
+  GRPConstraint :: GCond -> GTComparison -> GDate -> Tree GCond_
   GWHEN :: GNP -> GTemp -> GPol -> GVP -> Tree GCond_
   GrecoverUnparsedCond :: GString -> Tree GCond_
   GAND :: Tree GConj_
@@ -331,7 +331,7 @@ data Tree :: * -> * where
   GpastSimul :: Tree GTemp_
   GpresAnt :: Tree GTemp_
   GpresSimul :: Tree GTemp_
-  GWITHIN :: GDigits -> GTimeUnit -> Tree GTemporal_
+  GTemporalConstraint :: GTComparison -> GDigits -> GTimeUnit -> Tree GTemporal_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GText_
   GqCOND :: GCond -> Tree GText_
   GqCONSTR :: GConstraint -> Tree GText_
@@ -393,7 +393,7 @@ instance Eq (Tree a) where
     (GConjCond x1 x2,GConjCond y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreCond x1 x2 x3,GConjPreCond y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostCond x1 x2 x3 x4,GConjPrePostCond y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
-    (GTemporalConstraint x1 x2 x3,GTemporalConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GRPConstraint x1 x2 x3,GRPConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GWHEN x1 x2 x3 x4,GWHEN y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GrecoverUnparsedCond x1,GrecoverUnparsedCond y1) -> and [ x1 == y1 ]
     (GAND,GAND) -> and [ ]
@@ -529,7 +529,7 @@ instance Eq (Tree a) where
     (GpastSimul,GpastSimul) -> and [ ]
     (GpresAnt,GpresAnt) -> and [ ]
     (GpresSimul,GpresSimul) -> and [ ]
-    (GWITHIN x1 x2,GWITHIN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GTemporalConstraint x1 x2 x3,GTemporalConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
     (GqCONSTR x1,GqCONSTR y1) -> and [ x1 == y1 ]
@@ -644,7 +644,7 @@ instance Gf GCond where
   gf (GConjCond x1 x2) = mkApp (mkCId "ConjCond") [gf x1, gf x2]
   gf (GConjPreCond x1 x2 x3) = mkApp (mkCId "ConjPreCond") [gf x1, gf x2, gf x3]
   gf (GConjPrePostCond x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostCond") [gf x1, gf x2, gf x3, gf x4]
-  gf (GTemporalConstraint x1 x2 x3) = mkApp (mkCId "TemporalConstraint") [gf x1, gf x2, gf x3]
+  gf (GRPConstraint x1 x2 x3) = mkApp (mkCId "RPConstraint") [gf x1, gf x2, gf x3]
   gf (GWHEN x1 x2 x3 x4) = mkApp (mkCId "WHEN") [gf x1, gf x2, gf x3, gf x4]
   gf (GrecoverUnparsedCond x1) = mkApp (mkCId "recoverUnparsedCond") [gf x1]
 
@@ -653,7 +653,7 @@ instance Gf GCond where
       Just (i,[x1,x2]) | i == mkCId "ConjCond" -> GConjCond (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreCond" -> GConjPreCond (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostCond" -> GConjPrePostCond (fg x1) (fg x2) (fg x3) (fg x4)
-      Just (i,[x1,x2,x3]) | i == mkCId "TemporalConstraint" -> GTemporalConstraint (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "RPConstraint" -> GRPConstraint (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "WHEN" -> GWHEN (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "recoverUnparsedCond" -> GrecoverUnparsedCond (fg x1)
 
@@ -1258,11 +1258,11 @@ instance Gf GTemp where
       _ -> error ("no Temp " ++ show t)
 
 instance Gf GTemporal where
-  gf (GWITHIN x1 x2) = mkApp (mkCId "WITHIN") [gf x1, gf x2]
+  gf (GTemporalConstraint x1 x2 x3) = mkApp (mkCId "TemporalConstraint") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
-      Just (i,[x1,x2]) | i == mkCId "WITHIN" -> GWITHIN (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "TemporalConstraint" -> GTemporalConstraint (fg x1) (fg x2) (fg x3)
 
 
       _ -> error ("no Temporal " ++ show t)
@@ -1499,7 +1499,7 @@ instance Compos Tree where
     GConjCond x1 x2 -> r GConjCond `a` f x1 `a` f x2
     GConjPreCond x1 x2 x3 -> r GConjPreCond `a` f x1 `a` f x2 `a` f x3
     GConjPrePostCond x1 x2 x3 x4 -> r GConjPrePostCond `a` f x1 `a` f x2 `a` f x3 `a` f x4
-    GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
+    GRPConstraint x1 x2 x3 -> r GRPConstraint `a` f x1 `a` f x2 `a` f x3
     GWHEN x1 x2 x3 x4 -> r GWHEN `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GrecoverUnparsedCond x1 -> r GrecoverUnparsedCond `a` f x1
     GConjConstraint x1 x2 -> r GConjConstraint `a` f x1 `a` f x2
@@ -1554,7 +1554,7 @@ instance Compos Tree where
     GTHE x1 -> r GTHE `a` f x1
     GrecoverUnparsedSubj x1 -> r GrecoverUnparsedSubj `a` f x1
     GConjTComparison x1 x2 -> r GConjTComparison `a` f x1 `a` f x2
-    GWITHIN x1 x2 -> r GWITHIN `a` f x1 `a` f x2
+    GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
     GRegulative x1 x2 x3 -> r GRegulative `a` f x1 `a` f x2 `a` f x3
     GqCOND x1 -> r GqCOND `a` f x1
     GqCONSTR x1 -> r GqCONSTR `a` f x1

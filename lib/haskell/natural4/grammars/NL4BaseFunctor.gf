@@ -145,15 +145,15 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 -----------------------------------------------------------------------------
 -- Time expressions
   lincat
-    Temporal = Adv ;
+    Temporal = Syntax.Adv ;
     TimeUnit = CN ;
 
   lin
-    --  : Digits -> TimeUnit -> Temporal ;
-    WITHIN digits time =
+    -- : TComparison -> Digits -> TimeUnit -> Temporal ;
+    TemporalConstraint tcomp digits time =
       let card : Card = mkCard <lin Digits digits : Digits> ;
           det : Det = mkDet card ;
-      in Syntax.mkAdv CustomSyntax.within_Prep (mkNP det time) ;
+      in Syntax.mkAdv tcomp (mkNP det time) ;
 
     Day_Unit = mkCN Lexicon.day_N ;
     Month_Unit = mkCN CustomSyntax.month_N ;
@@ -169,7 +169,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     ConsTComparison = CustomSyntax.ConsPrep ;
     ConjTComparison = CustomSyntax.ConjPrep ;
 
-    BEFORE = before_Prep ;
+    BEFORE = CustomSyntax.within_Prep | before_Prep ;
     AFTER = after_Prep ;
     BY = by8means_Prep ;
     ON = on_Prep ;
@@ -178,6 +178,8 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
   oper
     cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> cc2 s1 (cc3 s2 s3 s4) ;
 
+  lincat
+    Day, Month, Year, YearComponent = SS ;
   lin
     MkDate day month year = symb (cc3 day month year);
 

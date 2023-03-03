@@ -10,7 +10,7 @@ concrete NL4BaseMay of NL4Base =
    ** open Coordination, Prelude, ParadigmsMay, (R=ResMay) in {
 
 
-  lin TemporalConstraint cond on date =
+  lin RPConstraint cond on date =
       let onDate : Adv = SyntaxMay.mkAdv on date ;
        in {s = mkS onDate cond.s ; qs = lin QS (mkS onDate <lin S cond.qs : S>)} ;
 

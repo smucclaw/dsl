@@ -245,7 +245,7 @@ parseDate mt = case Text.words $ mt2text mt of
 
   mkYear :: Text.Text -> GYear
   mkYear y = GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
-    where [y1, y2, y3, y4] = splitYear y 
+    where [y1, y2, y3, y4] = splitYear y
 
   splitYear :: Text.Text -> [String]
   splitYear y = case ["Y" <> [d] | d <- Text.unpack y] of
@@ -282,7 +282,7 @@ parseWho env rp = let txt = rp2text rp in
     x:_ -> fg x
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
-parseCond env (RPConstraint c (RPTC t) d) = GTemporalConstraint cond tc date
+parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
   where
     cond = parseCond env (RPMT c)
     tc = parseTComparison t

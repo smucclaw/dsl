@@ -12,7 +12,7 @@ concrete NL4BaseEng of NL4Base =
 
   lin You = you_NP | mkNP (ParadigmsEng.mkN "You" "You" "Your" "Your") ;
 
-  lin TemporalConstraint cond on date =
+  lin RPConstraint cond on date =
       let onDate : Adv = SyntaxEng.mkAdv on date in {
         s = CustomSyntaxEng.postAdvS cond.s onDate ;
         qs = CustomSyntaxEng.postAdvQS cond.qs onDate

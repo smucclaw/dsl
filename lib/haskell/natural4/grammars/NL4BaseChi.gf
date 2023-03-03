@@ -4,6 +4,7 @@ concrete NL4BaseChi of NL4Base =
       Cond,ListCond,BaseCond, ConsCond, ConjCond, ConjPreCond, ConjPrePostCond
     , WHEN, qCOND, sCOND
     , ConjConstraint -- Conj has different lincat
+    , BEFORE, AFTER, ON -- different choices from RGL API
     , Y0,Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8,Y9
     , Day1,Day2,Day3,Day4,Day5,Day6,Day7,Day8,Day9,Day10,Day11,Day12,Day13,Day14,Day15,Day16,Day17,Day18,Day19,Day20,Day21,Day22,Day23,Day24,Day25,Day26,Day27,Day28,Day29,Day30,Day31
     ]
@@ -18,8 +19,8 @@ concrete NL4BaseChi of NL4Base =
 -----------------------------------------------------------------------------
 -- These are not implemented in the functor, different for all 3
 
-  lin TemporalConstraint cond on date =
-      let onDate : Adv = SyntaxChi.mkAdv on date ;
+  lin RPConstraint cond on date =
+      let onDate : CatChi.Adv = SyntaxChi.mkAdv on date ;
        in cond ** {pred = advVPS cond.pred onDate} ;
 
   oper
@@ -87,6 +88,10 @@ concrete NL4BaseChi of NL4Base =
 -----------------------------------------------------------------------------
 -- Time units
 lin
+    BEFORE = ParadigmsChi.mkPrep "前" ;
+    AFTER = ParadigmsChi.mkPrep "在" "之 后" ;
+    ON = ParadigmsChi.mkPrep "在" ;
+
     Jan = ss "一 月" ; Feb = ss "二 月" ; Mar = ss "三 月" ; Apr = ss "四 月" ;
     May = ss "五 月" ; Jun = ss "六 月" ; Jul = ss "七 月" ; Aug = ss "八 月" ;
     Sep = ss "九 月" ; Oct = ss "十 月" ; Nov = ss "十 一 月" ; Dec = ss "十 二 月" ;

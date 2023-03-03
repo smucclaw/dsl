@@ -78,7 +78,11 @@ abstract NL4Base = CustomSyntax ** {
     TimeUnit ; -- day, month, year …
 
   fun
-    WITHIN : Digits -> TimeUnit -> Temporal ; -- digit comes from RGL Numeral module
+    TemporalConstraint
+      : TComparison   -- isomorphic to TComparison in Types.hs, defined below
+      -> Digits       -- from RGL Numeral module
+      -> TimeUnit     -- ad hoc, defined below (TODO: should this )
+      -> Temporal ;
 
     Day_Unit
     , Month_Unit
@@ -92,7 +96,7 @@ abstract NL4Base = CustomSyntax ** {
     [TComparison]{2} ;
 
   fun
-    TemporalConstraint :
+    RPConstraint :
       Cond -> TComparison -- ON , AFTER, …
            -> Date        -- 1 Feb 2022
            -> Cond ;

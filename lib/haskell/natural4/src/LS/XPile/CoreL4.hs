@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE LambdaCase, TupleSections #-}
+{-# LANGUAGE TupleSections #-}
 
 {-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
 
@@ -35,7 +35,7 @@ import Data.Either (rights, isRight)
 -- import qualified Data.Traversable as DT
 
 import Text.Regex.TDFA
-import Data.List (nub, intercalate, (\\), isPrefixOf, findIndex, elemIndex)
+import Data.List (nub, intercalate, (\\), isPrefixOf, elemIndex)
 import qualified Data.Foldable as DF
 import Data.Map ((!))
 
@@ -46,8 +46,7 @@ import LS.Tokens (undeepers)
 
 import qualified Text.XML.HXT.Core as HXT
 
-import Debug.Trace (trace)
-import qualified Data.Text as Text
+-- import Debug.Trace (trace)
 
 -- output to Core L4 for further transformation
 
@@ -216,7 +215,7 @@ falseVNoType = ValE () (BoolV False)
 varNameToVarNoType :: [String] -> VarName -> Var ()
 varNameToVarNoType cont vn
   | null cont = GlobalVar (QVarName () vn)
-  | vn ==  (head cont) = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
+  | vn ==  head cont = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
   | otherwise = varNameToVarNoType (tail cont) vn
 
 varsToExprNoType :: [Var t] -> Expr t
@@ -333,7 +332,7 @@ sfl4ToCorel4Rule h@Hornlike{..} =
             -- given2classdecls given ++
             [rule]
   where
-    cont = createcontext h
+    cont = createContext h
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
     
@@ -1025,50 +1024,24 @@ testrules = [ Hornlike
   ]
 
 -- New stuff
---extractLocalVars2 :: Maybe ParamText -> [MTExpr]
---extractLocalVars2 [] = []
---extractLocalVars2 (Just []) = []
-extractLocalVars2 (x,_) = [NE.head (x)]
---extractLocalVars2 ((y : ys)) = ((extractLocalVars2 ([y])) ++ extractLocalVars2 ys)
 
-getPure Nothing = []
-getPure (Just x) = x
---How to extract component of product type
---extractLocalVars3 :: Hornlike -> [str]
-extractLocalVars3 h = extractLocalVars2 ((( (extractGiven h))))
+-- For easier reference
+-- given :: Maybe ParamText
+-- given :: Maybe (NonEmpty (NonEmpty MTExpr, Maybe TypeSig))
 
---getIndex :: [Str] -> [[]]
---reverse order 
---getIndex [] = []
---getIndex [x] = [(x,0)]
---getIndex ((x):xs) = (getIndex xs) ++ (x, length (getIndex xs))
+-- extractGiven :: SFL4.Rule -> [TypedMulti]
+extractGiven :: SFL4.Rule -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
+extractGiven Hornlike{given=Nothing}        = []
+extractGiven Hornlike{given=Just paramtext} = NE.toList paramtext
+extractGiven _                              = error "not a Hornlike rule, not extracting given"
 
--- Final fun 
---getDebruijn hlike = getIndex (extractLocalVars3 hlike)
+-- typedMultitoMTExprs :: TypedMulti -> MultiTerm
+typedMultitoMTExprs :: (NE.NonEmpty MTExpr, Maybe TypeSig) -> [MTExpr]
+typedMultitoMTExprs (mtexprs, _) = NE.toList mtexprs
 
---Extract given part of hornlike datastructure
---extractGiven (Hornlike _ _ _ x _ _ _ _ _ _ _) = x 
---extractGiven :: SFL4.Rule -> Maybe ParamText
+destructMTT :: MTExpr -> String
+destructMTT (MTT x) = T.unpack x
+destructMTT _       = error "nothing to destructure; not an MTT"
 
-
-extractGiven :: SFL4.Rule -> [TypedMulti]
-extractGiven Hornlike{given=Nothing,..} = []
-extractGiven Hornlike{given=Just paramtext,..} = NE.toList paramtext
-extractGiven _ = []
---makeList x = fromMaybe [] x 
-
---makeList (extractGiven hlike)
-
---extractName :: TypedMulti -> String 
---extractName (x:xs) = T.unpack x 
---extractName _ = error "error"
-
---extractList y = NE.toList y 
-
-typedMultitoMTExprs ::  (NE.NonEmpty MTExpr, Maybe TypeSig) -> [MTExpr]
-typedMultitoMTExprs z = extractLocalVars2 z
-
-destructmtt (MTT x) = T.unpack x
---createcontext :: SFL4.Rule -> [String]
-createcontext :: SFL4.Rule -> [[MTExpr]]
-createcontext hlike = (map typedMultitoMTExprs (extractGiven hlike))
+createContext :: SFL4.Rule -> [String]
+createContext hlike = map destructMTT (concatMap typedMultitoMTExprs (extractGiven hlike))

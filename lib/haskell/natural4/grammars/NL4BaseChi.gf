@@ -44,7 +44,7 @@ concrete NL4BaseChi of NL4Base =
       let vps : VPS = MkVPS t p vp
        in {subj = np ; pred = vps} ;
 
-    qCOND cond = cc2 (mkUtt (ExtendChi.SQuestVPS cond.subj cond.pred)) (ss "?") ;
+    qCOND cond = cc2 (mkUtt (ExtendChi.SQuestVPS cond.subj cond.pred)) (ss bindQM) ;
     sCOND cond = mkUtt (ExtendChi.PredVPS cond.subj cond.pred) ;
 
   -- custom opers for [Cond]
@@ -119,7 +119,7 @@ lin
     -- : String -> String -> Constraint ;
     recoverRPis damage toContents = {
       s = "·" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
-      qs = "Is" ++ damage.s ++ toContents.s ++ "?"
+      qs = "Is" ++ damage.s ++ toContents.s ++ bindQM
       } ;
     recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
 

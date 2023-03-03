@@ -44,9 +44,9 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     Regulative subj deontic action = mkUtt (mkS (mkCl subj (Extend.ComplVPIVV deontic action))) ;
 
     -- for web forms
-    qWHO subj who = lin Utt (cc2 (mkUtt (Extend.SQuestVPS subj who)) (ss "?")) ;
+    qWHO subj who = lin Utt (cc2 (mkUtt (Extend.SQuestVPS subj who)) (ss bindQM)) ;
     sWHO subj who = mkUtt (Extend.PredVPS subj who) ;
-    qCOND cond = lin Utt (cc2 (mkUtt cond.qs) (ss "?")) ;
+    qCOND cond = lin Utt (cc2 (mkUtt cond.qs) (ss bindQM)) ;
     sCOND cond = mkUtt cond.s ;
     advUPON upon = mkUtt (Syntax.mkAdv CustomSyntax.upon_Prep (Extend.GerundNP upon)) ;
     qUPON subj upon = qWHO subj (Extend.MkVPS presAnt positivePol upon) ;
@@ -125,10 +125,10 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     qsStr : QS -> Str = \qs -> (UttQS qs).s ;
   lin
 
-    RPleafNP np = {s = npStr np ; qs = npStr np ++ "?"} ;
+    RPleafNP np = {s = npStr np ; qs = npStr np ++ bindQM} ;
     RPleafS np vps = {
       s = sStr (Extend.PredVPS np vps) ;
-      qs = qsStr (Extend.SQuestVPS np vps) ++ "?"
+      qs = qsStr (Extend.SQuestVPS np vps) ++ bindQM
     } ;
 
     BaseConstraint c d = {
@@ -152,7 +152,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
       let constr : Constraint = ConjConstraint conj cs ;
        in constr ** {
             s  = pr.s ++ constr.s ++ pst.s ;
-            qs =  pr.s ++ constr.s ++ pst.s ++ "?" ; -- if Constraint has undergone ConjConstraint, it will have ? after every item, we don't want that
+            qs =  pr.s ++ constr.s ++ pst.s ++ bindQM ; -- if Constraint has undergone ConjConstraint, it will have ? after every item, we don't want that
           } ;
 
     qPREPOST,

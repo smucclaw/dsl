@@ -57,7 +57,7 @@ concrete CustomSyntaxMay of CustomSyntax =
         in cc3 pr vps pst ;
 
     -- : (pr,pst : String) -> Conj -> [QS] -> QS ;
-    ConjPrePostQS pr pst conj qss = cc2 (ConjPrePostS pr pst conj qss) (ss "?") ;
+    ConjPrePostQS pr pst conj qss = cc2 (ConjPrePostS pr pst conj qss) (ss bindQM) ;
 
     ConjPrePostS pr pst conj ss =
       let s : S = ConjS conj ss
@@ -117,4 +117,5 @@ oper
     invarV : Str -> V = \v -> R.mkVerb v v v v ;
     upon_Prep : Prep = R.mkPrep "semasa" ;
 
+    bindQM : Str = BIND ++ "?" ;
 }

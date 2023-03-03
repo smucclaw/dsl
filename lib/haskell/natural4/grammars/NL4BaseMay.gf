@@ -36,7 +36,7 @@ lin
     -- : String -> String -> Constraint ;
     recoverRPis damage toContents = {
       s = "·" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
-      qs = "Is" ++ damage.s ++ toContents.s ++ "?"
+      qs = "Is" ++ damage.s ++ toContents.s ++ bindQM
       } ;
     recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
 

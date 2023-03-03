@@ -101,6 +101,8 @@ concrete CustomSyntaxChi of CustomSyntax =
       s = "不 可 能" ;  -- TODO check
       } ;
 
+    bindQM : Str = BIND ++ "？" ;
+
     advVPS : ExtendChi.VPS -> CatChi.Adv -> ExtendChi.VPS = \vps,adv -> cc2 vps (mkUtt adv) ;
     invarV : Str -> V = \v -> lin V {
       s,sn = v ; pp = "了" ; ds = "着" ; dp = "在" ; ep = "过" ; neg = "不"

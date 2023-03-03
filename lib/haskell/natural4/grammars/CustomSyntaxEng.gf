@@ -63,7 +63,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     -- : (pr,pst : String) -> Conj -> [QS] -> QS ;
     ConjPrePostQS pr pst conj qss =
       let qs : QS = ConjQS conj qss
-      in qs ** {s = \\qf => pr.s ++ qs.s ! qf ++ pst.s ++ "?"} ;
+      in qs ** {s = \\qf => pr.s ++ qs.s ! qf ++ pst.s ++ bindQM} ;
     ConjPrePostS  pr pst conj ss =
       let s : S = ConjS conj ss
       in s ** {s = pr.s ++ s.s ++ pst.s} ;
@@ -120,6 +120,8 @@ concrete CustomSyntaxEng of CustomSyntax =
     strA2 : Str -> A2 = \str -> mkA2 (mkA str) noPrep ;
     invarV : Str -> V = \s -> mk5V s s s s s ;
     upon_Prep : Prep = ParadigmsEng.mkPrep "upon" ;
+
+    bindQM : Str = BIND ++ "?" ;
 
     postAdvS : S -> Adv -> S = \s,adv -> s ** mkS <lin Adv s : Adv> <lin S adv : S> ; -- hack that only works for Eng
     postAdvQS : QS -> Adv -> QS = \qs,adv -> qs ** {s = \\qf => qs.s ! qf ++ adv.s} ;

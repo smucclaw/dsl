@@ -1,7 +1,7 @@
 concrete CustomSyntaxEng of CustomSyntax =
     NumeralEng
   , GrammarEng [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP, RP
+        N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
   --      , ProgrVP -- becoming aware
@@ -104,17 +104,18 @@ concrete CustomSyntaxEng of CustomSyntax =
     aSg = aSg_Det ;
     your = mkDet youSg_Pron ;
 
-    who_RP = ExtraEng.who_RP ;
-    about_Prep = ParadigmsEng.mkPrep "about" ;
-    within_Prep = ParadigmsEng.mkPrep "within" ;
-    vaguePrep = ParadigmsEng.noPrep ;
-    month_N = ParadigmsEng.mkN "month" ;
-    may_VV = ExtraEng.may_VV ; -- ** {s = \\_ => "may"};
-    shant_VV = ExtraEng.shall_VV ** { -- only used in NLG, not parsing
+  oper
+
+    who_RP : RP = ExtraEng.who_RP ;
+    about_Prep : Prep = ParadigmsEng.mkPrep "about" ;
+    within_Prep : Prep = ParadigmsEng.mkPrep "within" ;
+    vaguePrep : Prep = ParadigmsEng.noPrep ;
+    month_N : N = ParadigmsEng.mkN "month" ;
+    may_VV : VV = ExtraEng.may_VV ; -- ** {s = \\_ => "may"};
+    shant_VV : VV = ExtraEng.shall_VV ** { -- only used in NLG, not parsing
       s = \\_ => "shan't" ;        -- so negation here should be fine
       } ;
 
-  oper
     every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
     strA2 : Str -> A2 = \str -> mkA2 (mkA str) noPrep ;
     invarV : Str -> V = \s -> mk5V s s s s s ;

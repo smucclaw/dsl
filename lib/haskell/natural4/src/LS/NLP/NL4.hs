@@ -95,8 +95,6 @@ type GListWho = Tree GListWho_
 data GListWho_
 type GMonth = Tree GMonth_
 data GMonth_
-type GN = Tree GN_
-data GN_
 type GNP = Tree GNP_
 data GNP_
 type GNumeral = Tree GNumeral_
@@ -109,8 +107,6 @@ type GPrep = Tree GPrep_
 data GPrep_
 type GQS = Tree GQS_
 data GQS_
-type GRP = Tree GRP_
-data GRP_
 type GS = Tree GS_
 data GS_
 type GSub10 = Tree GSub10_
@@ -163,6 +159,8 @@ type GA2 = Tree GA2_
 data GA2_
 type GAnt = Tree GAnt_
 data GAnt_
+type GN = Tree GN_
+data GN_
 type GN2 = Tree GN2_
 data GN2_
 type GTense = Tree GTense_
@@ -239,7 +237,6 @@ data Tree :: * -> * where
   GListVPS :: [GVPS] -> Tree GListVPS_
   GListWho :: [GWho] -> Tree GListWho_
   LexMonth :: String -> Tree GMonth_
-  LexN :: String -> Tree GN_
   GConjNP :: GConj -> GListNP -> Tree GNP_
   GContents :: Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
@@ -264,17 +261,13 @@ data Tree :: * -> * where
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
   GrecoverUnparsedPrePost :: GString -> Tree GPrePost_
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
-  Gabout_Prep :: Tree GPrep_
   Gby8means_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
   Gfrom_Prep :: Tree GPrep_
   Gon_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
-  GvaguePrep :: Tree GPrep_
-  Gwithin_Prep :: Tree GPrep_
   GConjPrePostQS :: GString -> GString -> GConj -> GListQS -> Tree GQS_
   GConjQS :: GConj -> GListQS -> Tree GQS_
-  Gwho_RP :: Tree GRP_
   GConjPrePostS :: GString -> GString -> GConj -> GListS -> Tree GS_
   GConjS :: GConj -> GListS -> Tree GS_
   GPredVPS :: GNP -> GVPS -> Tree GS_
@@ -361,6 +354,7 @@ data Tree :: * -> * where
   GrecoverUnparsedWho :: GString -> Tree GWho_
   GMkYear :: GYearComponent -> GYearComponent -> GYearComponent -> GYearComponent -> Tree GYear_
   LexYearComponent :: String -> Tree GYearComponent_
+  LexN :: String -> Tree GN_
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
   GFloat :: Double -> Tree GFloat_
@@ -429,7 +423,6 @@ instance Eq (Tree a) where
     (GListVPS x1,GListVPS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
     (LexMonth x,LexMonth y) -> x == y
-    (LexN x,LexN y) -> x == y
     (GConjNP x1 x2,GConjNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GContents,GContents) -> and [ ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -454,17 +447,13 @@ instance Eq (Tree a) where
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPrePost x1,GrecoverUnparsedPrePost y1) -> and [ x1 == y1 ]
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gby8means_Prep,Gby8means_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
     (Gfrom_Prep,Gfrom_Prep) -> and [ ]
     (Gon_Prep,Gon_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
-    (GvaguePrep,GvaguePrep) -> and [ ]
-    (Gwithin_Prep,Gwithin_Prep) -> and [ ]
     (GConjPrePostQS x1 x2 x3 x4,GConjPrePostQS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjQS x1 x2,GConjQS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Gwho_RP,Gwho_RP) -> and [ ]
     (GConjPrePostS x1 x2 x3 x4,GConjPrePostS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjS x1 x2,GConjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -551,6 +540,7 @@ instance Eq (Tree a) where
     (GrecoverUnparsedWho x1,GrecoverUnparsedWho y1) -> and [ x1 == y1 ]
     (GMkYear x1 x2 x3 x4,GMkYear y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (LexYearComponent x,LexYearComponent y) -> x == y
+    (LexN x,LexN y) -> x == y
     (GString x, GString y) -> x == y
     (GInt x, GInt y) -> x == y
     (GFloat x, GFloat y) -> x == y
@@ -913,15 +903,6 @@ instance Gf GMonth where
       Just (i,[]) -> LexMonth (showCId i)
       _ -> error ("no Month " ++ show t)
 
-instance Gf GN where
-  gf (LexN x) = mkApp (mkCId x) []
-
-  fg t =
-    case unApp t of
-
-      Just (i,[]) -> LexN (showCId i)
-      _ -> error ("no N " ++ show t)
-
 instance Gf GNP where
   gf (GConjNP x1 x2) = mkApp (mkCId "ConjNP") [gf x1, gf x2]
   gf GContents = mkApp (mkCId "Contents") []
@@ -1002,26 +983,20 @@ instance Gf GPrePost where
 
 instance Gf GPrep where
   gf (GConjPrep x1 x2) = mkApp (mkCId "ConjPrep") [gf x1, gf x2]
-  gf Gabout_Prep = mkApp (mkCId "about_Prep") []
   gf Gby8means_Prep = mkApp (mkCId "by8means_Prep") []
   gf Gfor_Prep = mkApp (mkCId "for_Prep") []
   gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
   gf Gon_Prep = mkApp (mkCId "on_Prep") []
   gf Gto_Prep = mkApp (mkCId "to_Prep") []
-  gf GvaguePrep = mkApp (mkCId "vaguePrep") []
-  gf Gwithin_Prep = mkApp (mkCId "within_Prep") []
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjPrep" -> GConjPrep (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep 
       Just (i,[]) | i == mkCId "by8means_Prep" -> Gby8means_Prep 
       Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
       Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
       Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 
       Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
-      Just (i,[]) | i == mkCId "vaguePrep" -> GvaguePrep 
-      Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep 
 
 
       _ -> error ("no Prep " ++ show t)
@@ -1037,16 +1012,6 @@ instance Gf GQS where
 
 
       _ -> error ("no QS " ++ show t)
-
-instance Gf GRP where
-  gf Gwho_RP = mkApp (mkCId "who_RP") []
-
-  fg t =
-    case unApp t of
-      Just (i,[]) | i == mkCId "who_RP" -> Gwho_RP 
-
-
-      _ -> error ("no RP " ++ show t)
 
 instance Gf GS where
   gf (GConjPrePostS x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostS") [gf x1, gf x2, gf x3, gf x4]
@@ -1418,6 +1383,14 @@ instance Gf GA2 where
 
 
 instance Gf GAnt where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
+
+
+instance Gf GN where
   gf _ = undefined
   fg _ = undefined
 

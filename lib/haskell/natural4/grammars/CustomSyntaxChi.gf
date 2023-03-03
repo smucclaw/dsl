@@ -1,7 +1,7 @@
 concrete CustomSyntaxChi of CustomSyntax =
     NumeralChi
   , GrammarChi [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP, RP
+        N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
       , A, A2, AP, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompAdv -- is a public agency
@@ -90,17 +90,17 @@ concrete CustomSyntaxChi of CustomSyntax =
     aSg = aSg_Det ;
     your = mkDet youSg_Pron ;
 
-    who_RP = which_RP ;
-    about_Prep = ParadigmsChi.mkPrep "about" ; -- TODO
-    within_Prep = ParadigmsChi.mkPrep [] "内";
-    vaguePrep = ParadigmsChi.mkPrep [] ;
-    month_N = ParadigmsChi.mkN "month" ; -- TODO
-    may_VV = must_VV ** {s = "可 能"};
-    shant_VV = must_VV ** {
+  oper
+    who_RP : RP = which_RP ;
+    about_Prep : Prep = ParadigmsChi.mkPrep "about" ; -- TODO
+    within_Prep : Prep = ParadigmsChi.mkPrep [] "内";
+    vaguePrep : Prep = ParadigmsChi.mkPrep [] ;
+    month_N : N = ParadigmsChi.mkN "month" ; -- TODO
+    may_VV : VV = must_VV ** {s = "可 能"};
+    shant_VV : VV = must_VV ** {
       s = "不 可 能" ;  -- TODO check
       } ;
 
-  oper
     advVPS : ExtendChi.VPS -> CatChi.Adv -> ExtendChi.VPS = \vps,adv -> cc2 vps (mkUtt adv) ;
     invarV : Str -> V = \v -> lin V {
       s,sn = v ; pp = "了" ; ds = "着" ; dp = "在" ; ep = "过" ; neg = "不"

@@ -1,7 +1,7 @@
 abstract CustomSyntax =
     Numeral
   , Grammar [
-          N, N2, CN, UseN, NP, Det, DetCN, MassNP, RP
+          N, N2, CN, UseN, NP, Det, DetCN, MassNP
         , V,  VV, V2, VS, VP
         , A, A2, AP, AdjCN, PositA
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
@@ -67,16 +67,4 @@ abstract CustomSyntax =
     thePl : Det ;
     aSg : Det ;
     your : Det ;
-
------------------------------------------------------------------------------
--- Lexicon
-
-    about_Prep : Prep ;
-    within_Prep : Prep ;
-    vaguePrep : Prep ;
-    month_N : N ;
-    who_RP : RP ;
-    may_VV : VV ;
-    shant_VV : VV ;
-
 }

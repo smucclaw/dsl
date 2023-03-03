@@ -35,7 +35,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
   oper
     -- hack: thanks to linref, parse in gerund, and linearise finite forms in qUPON question
     -- would be smaller to use VPI or VPS, and doable in English (thanks to questions taking inf form), but dangerous for other langs
-    linUpon : VP -> Str = \vp -> (GerundAdv vp).s ;
+    linUpon : VP -> Str = \vp -> (Extend.GerundAdv vp).s ;
 
   lin
     -- for fancy NLG
@@ -47,7 +47,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     sWHO subj who = mkUtt (Extend.PredVPS subj who) ;
     qCOND cond = lin Utt (cc2 (mkUtt cond.qs) (ss "?")) ;
     sCOND cond = mkUtt cond.s ;
-    advUPON upon = mkUtt (Syntax.mkAdv upon_Prep (GerundNP upon)) ;
+    advUPON upon = mkUtt (Syntax.mkAdv CustomSyntax.upon_Prep (Extend.GerundNP upon)) ;
     qUPON subj upon = qWHO subj (Extend.MkVPS presAnt positivePol upon) ;
     sUPON subj upon = sWHO subj (Extend.MkVPS presAnt positivePol upon) ;
 
@@ -59,9 +59,9 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     WHO t p who = MkVPS t p who ;
     ACTION act = MkVPI act ;
 
-    MUST = must_VV ;
-    MAY = CustomSyntax.may_VV ;
-    SHANT = CustomSyntax.shant_VV ;
+    MUST = must_VV ; -- from RGL API
+    MAY = CustomSyntax.may_VV ; -- oper in CustomSyntax
+    SHANT = CustomSyntax.shant_VV ;  -- oper in CustomSyntax
     AND = and_Conj ;
     OR = or_Conj ;
 
@@ -72,10 +72,10 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     --  : PrePost -> Conj -> [Who] -> Who ;
     ConjPreWho pr conj cs = ConjPrePostWho pr {s,qs=[]} conj cs ;
     --  : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
-    ConjPrePostWho = CustomSyntax.ConjPrePostVPS ;
+    ConjPrePostWho = CustomSyntax.ConjPrePostVPS ; -- fun/lin in CustomSyntax
 
     -- : Subj -> Who -> Subj ;
-    SubjWho subj who = mkNP subj (Extend.RelVPS CustomSyntax.who_RP who) ;
+    SubjWho subj who = mkNP subj (Extend.RelVPS CustomSyntax.who_RP who) ; -- who_RP is oper in CustomSyntax
 
     You = you_NP ;
 

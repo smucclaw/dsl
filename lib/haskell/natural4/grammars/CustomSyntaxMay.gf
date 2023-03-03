@@ -1,7 +1,7 @@
 concrete CustomSyntaxMay of CustomSyntax =
     NumeralMay
   , GrammarMay [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP, RP
+        N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V, VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
   --      , ProgrVP -- becoming aware
@@ -99,20 +99,20 @@ concrete CustomSyntaxMay of CustomSyntax =
     aSg = aSg_Det ;
     your = mkDet youSg_Pron ;
 
-    about_Prep = R.mkPrep "tentang" ;
+oper
+    about_Prep : Prep = R.mkPrep "tentang" ;
     to_Prep = R.mkPrep "kepada" ;
 
-    who_RP = which_RP ;
-    within_Prep = R.mkPrep "dalam lingkungan" ;
-    vaguePrep = R.mkPrep ""  ;
+    who_RP : RP = which_RP ;
+    within_Prep : Prep = R.mkPrep "dalam lingkungan" ;
+    vaguePrep : Prep = R.mkPrep ""  ;
 
-    month_N = ParadigmsMay.mkN "bulan" ;
-    may_VV = must_VV ** {s = "mungkin"};
-    shant_VV = must_VV ** {
+    month_N : N = ParadigmsMay.mkN "bulan" ;
+    may_VV : VV = must_VV ** {s = "mungkin"};
+    shant_VV : VV = must_VV ** {
       s = "tidak mungkin" ; -- TODO check
       } ;
 
-  oper
     strA2 : Str -> A2 = \str -> mkA2 str noPrep ;
     invarV : Str -> V = \v -> R.mkVerb v v v v ;
     upon_Prep : Prep = R.mkPrep "semasa" ;

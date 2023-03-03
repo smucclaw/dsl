@@ -20,8 +20,6 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
-import Debug.Trace
-
 import Control.Applicative (liftA2)
 import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList))
@@ -29,6 +27,7 @@ import Data.Functor ((<&>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString)
 import Data.Text qualified as T
+import Debug.Trace
 import Flow ((.>), (|>))
 import LS.Rule
   ( Rule (..),
@@ -36,11 +35,12 @@ import LS.Rule
 import LS.Types
   ( MTExpr (MTT),
     RegKeywords (RParty),
-    TComparison (TBefore),
+    TComparison (..),
     TemporalConstraint (TemporalConstraint),
   )
 import Prettyprinter
-  ( Doc, Pretty,
+  ( Doc,
+    Pretty,
     concatWith,
     hsep,
     line,
@@ -89,7 +89,7 @@ rules2doc (null -> True) = pure mempty
 rules2doc rules =
   rules |> toList |$> rule2doc |> sequence |$> concatWith (<.>)
   where
-     x <.> y = [x, ",", line, line, y] |> mconcat
+    x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
 rule2doc :: MonadErrorString s m => Rule -> m (Doc ann)
@@ -101,42 +101,55 @@ rule2doc
       deontic,
       action = Leaf ((MTT actionName :| [], Nothing) :| []),
       temporal =
-        Just (TemporalConstraint TBefore (Just n) (T.toUpper -> "DAY")),
+        Just
+          ( TemporalConstraint
+              tComparison@((`elem` [TOn, TBefore]) -> True)
+              (Just n)
+              (T.toUpper -> "DAY")
+            ),
       hence,
       lest,
-
       srcref, -- May want to use this for better error reporting.
-      given = Nothing, having = Nothing, who = Nothing, cond = Nothing,
-      lsource = Nothing, upon = Nothing, wwhere = [],
-      defaults = [], symtab = []
+      given = Nothing,
+      having = Nothing,
+      who = Nothing,
+      cond = Nothing,
+      lsource = Nothing,
+      upon = Nothing,
+      wwhere = [],
+      defaults = [],
+      symtab = []
     }
     | all isValidHenceLest [hence, lest] =
-      {-
-        Here we first process separately:
-        - the part of the rule without the HENCE/LEST clauses.
-        - the HENCE/LEST clauses.
-        We then combine these together via vcat, using sequence to collect all
-        the errors which occured while processing each part.
-      -}
-      [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
+        {-
+          Here we first process separately:
+          - the part of the rule without the HENCE/LEST clauses.
+          - the HENCE/LEST clauses.
+          We then combine these together via vcat, using sequence to collect all
+          the errors which occured while processing each part.
+        -}
+        [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
     where
       ruleNoHenceLest =
         [ ["RULE", pretty2Qid ruleName],
           ["PARTY", pretty2Qid actorName],
-          [deontic2str deontic, pretty2Qid actionName],
-          ["WITHIN", pretty n, "DAY"]
+          [deontic2doc deontic, pretty2Qid actionName],
+          [tComparison2doc tComparison, pretty n, "DAY"]
         ]
-          |$> hsep |> vcat |> pure
+          |$> hsep
+          |> vcat
+          |> pure
       henceLestClauses =
         [(HENCE, hence), (LEST, lest)]
           |$> uncurry henceLest2maudeStr
           |> sequence
-          |$> filter isNonEmptyDoc
-          |$> vcat
-      deontic2str deon =
+            |$> filter isNonEmptyDoc
+            |$> vcat
+      deontic2doc deon =
         deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
-      isNonEmptyDoc doc = doc |> show |> (/= mempty)
-
+      tComparison2doc TOn = "ON"
+      tComparison2doc TBefore = "WITHIN"
+      isNonEmptyDoc doc = doc |> show |> not . null
 rule2doc _ = errMsg
 
 -- Auxiliary stuff for handling HENCE/LEST clauses.
@@ -155,7 +168,7 @@ isValidHenceLest maybeRule = maybeRule |> maybe True isValidRuleAlias
 
 data HenceOrLest = HENCE | LEST
   deriving stock (Eq, Ord, Read, Show)
-  deriving anyclass Pretty
+  deriving anyclass (Pretty)
 
 {-
   This function can handle invalid HENCE/LEST clauses.
@@ -170,9 +183,9 @@ henceLest2maudeStr henceOrLest henceLest =
       henceLest'
         |$> quotOrUpper
         |> sequence
-        |$> hsep
-        |$> parenthesizeIf (length henceLest' > 1)
-        |$> (pretty henceOrLest <+>)
+          |$> hsep
+          |$> parenthesizeIf (length henceLest' > 1)
+          |$> (pretty henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure

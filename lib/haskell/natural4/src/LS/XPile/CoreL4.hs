@@ -59,7 +59,7 @@ sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
 
 sfl4ToASP :: [SFL4.Rule] -> String
-sfl4ToASP rs = 
+sfl4ToASP rs =
   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
   let prg = Program () rulesTransformed in
   let doc = astToDoc prg in
@@ -188,8 +188,11 @@ falseVNoType = ValE () (BoolV False)
 -- depending on contextual information when available
 -- ASP TODO: add env (var list) as a second arg, and look up varname in env
 -- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
-varNameToVarNoType :: VarName -> Var ()
-varNameToVarNoType vn = GlobalVar (QVarName () vn)
+varNameToVarNoType :: VarName -> [(str,int)] -> Var ()
+varNameToVarNoType vn cont
+  | cont == [] = GlobalVar (QVarName () vn)
+  | vn == fst (head cont) = LocalVar ((QVarName () vn), snd (head cont))
+  | otherwise = varNameToVarNoType vn (tail cont)
 
 varsToExprNoType :: [Var t] -> Expr t
 varsToExprNoType (v:vs) = --
@@ -199,7 +202,7 @@ varsToExprNoType [] = error "internal error (varsToExprNoType [])"
 
 multiTermToExprNoType :: MultiTerm -> Expr ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
-multiTermToExprNoType mt =  
+multiTermToExprNoType mt =
   case map mtExprToExprNoType mt of
     ((VarE t v) : args) -> funArgsToAppNoType (VarE t v) args
     [e] -> e
@@ -753,7 +756,7 @@ then Foo]
 GIVEN		db	IS	A	DataBreach				
 DECIDE		exceedsPrescrNumberOfIndividuals					db		
 WHEN		numberOfAffectedIndividuals					db	>=	500
--} 
+-}
 r1 :: SFL4.Rule
 r1 = Hornlike
   { name = [ MTT "savings account" ]
@@ -784,7 +787,7 @@ r1 = Hornlike
     , defaults = []
     , symtab = []
     }
-    
+
 
 {-
 DECIDE		Foo		
@@ -792,7 +795,7 @@ WHEN		Bar	IS	green
 AND		Baz	IS	blue
 -}
 r2 :: SFL4.Rule
-r2 = Hornlike 
+r2 = Hornlike
   { name = [ MTT "Foo" ]
     , super = Nothing
     , keyword = Decide
@@ -962,3 +965,28 @@ testrules = [ Hornlike
 
   ]
 
+-- New stuff
+--extractLocalVars2 :: Maybe ParamText -> [MTExpr]
+extractLocalVars2 [] = []
+--extractLocalVars2 (Just []) = []
+extractLocalVars2 [x] = [head (fst (x))]
+extractLocalVars2 ((y : ys)) = ((extractLocalVars2 ([y])) ++ extractLocalVars2 ys)
+
+getPure Nothing = []
+getPure (Just x) = x
+--How to extract component of product type
+--extractLocalVars3 :: Hornlike -> [str]
+extractLocalVars3 h = extractLocalVars2 (fromMaybe [] (NE.toList ( (extractGiven h))))
+
+--getIndex :: [Str] -> [[]]
+--reverse order 
+getIndex [] = []
+getIndex [MTT x] = [(x,0)]
+getIndex (x:xs) = (getIndex xs) ++ (x, length (getIndex xs))
+
+-- Final fun 
+getDebruijn hlike = getIndex (extractLocalVars3 hlike)
+
+--Extract given part of hornlike datastructure
+--extractGiven (Hornlike _ _ _ x _ _ _ _ _ _ _) = x 
+extractGiven Hornlike{..} = given

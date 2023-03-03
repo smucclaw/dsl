@@ -5,11 +5,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -215,7 +215,7 @@ infixl 0 |$>
 (|$>) = (<&>)
 
 pretty2Qid :: T.Text -> Doc ann
-pretty2Qid x = x |> T.strip |> pretty |> ("'" <>)
+pretty2Qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 errMsg :: MonadErrorString s m => m a
 errMsg = throwError "Not supported."

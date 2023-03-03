@@ -139,8 +139,8 @@ rule2doc
         [(Hence, hence), (Lest, lest)]
           |$> uncurry henceLest2maudeStr
           |> sequence
-            |$> filter isNonEmptyDoc
-            |$> vcat
+          |$> filter isNonEmptyDoc
+          |$> vcat
       deontic2doc deon =
         deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
       tComparison2doc TOn = "ON"

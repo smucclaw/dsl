@@ -10,21 +10,23 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
 
   lincat
-    Text = Utt ;
+    Text = Syntax.Utt ;
 
-    Cond = LinCond ;
-    [Cond] = LinListCond ;
+    Cond = LinCond ;       -- defined in this module
+    [Cond] = LinListCond ; -- defined in this module
     Action = Extend.VPI ;
     Who = Extend.VPS ;
     [Who] = Extend.ListVPS ;
-    Subj = NP ;
-    Deontic = VV ;
-    Upon = VP ;
+    Subj = Syntax.NP ;
+    Deontic = Syntax.VV ;
+    Upon = Syntax.VP ;
+
+-- In general, all non-prefixed mkXxx funs come from RGL API (Syntax.mkXxx)
 
   oper
-    LinCond : Type = {s : S ; qs : QS} ;
+    LinCond : Type = {s : Syntax.S ; qs : Syntax.QS} ;
     LinListCond : Type = {
-      s : Syntax.ListS ;  -- from the RGL API
+      s : Syntax.ListS ;  -- from RGL API
       qs : CustomSyntax.ListQS -- from our own custom module
       } ;
 
@@ -34,7 +36,6 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
   oper
     -- hack: thanks to linref, parse in gerund, and linearise finite forms in qUPON question
-    -- would be smaller to use VPI or VPS, and doable in English (thanks to questions taking inf form), but dangerous for other langs
     linUpon : VP -> Str = \vp -> (Extend.GerundAdv vp).s ;
 
   lin
@@ -56,8 +57,8 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     PARTY cn = mkNP <lin CN cn : CN> ;
     AN cn = mkNP <lin Det a_Det : Det> <lin CN cn : CN> ;
     THE cn = mkNP <lin Det the_Det : Det> <lin CN cn : CN> ;
-    WHO t p who = MkVPS t p who ;
-    ACTION act = MkVPI act ;
+    WHO t p who = Extend.MkVPS t p who ;
+    ACTION act = Extend.MkVPI act ;
 
     MUST = must_VV ; -- from RGL API
     MAY = CustomSyntax.may_VV ; -- oper in CustomSyntax
@@ -79,21 +80,35 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
     You = you_NP ;
 
-    UPON vp = vp ;
+    UPON vp = lin VP vp ;
 
     WHEN np t p vp =
-      let vps : VPS = MkVPS t p <lin VP vp : VP>
-       in {s = PredVPS np vps ; qs = SQuestVPS np vps} ;
+      let vps : VPS = Extend.MkVPS t p <lin VP vp : VP> in {
+        s = Extend.PredVPS np vps ;
+        qs = Extend.SQuestVPS np vps
+        } ;
 
-    BaseCond c d = {s = BaseS c.s d.s ; qs = BaseQS c.qs d.qs} ;
-    ConsCond c d = {s = ConsS c.s d.s ; qs = ConsQS c.qs d.qs} ;
-    ConjCond conj cs = {s = ConjS conj cs.s ; qs = ConjQS conj cs.qs} ;
+    -- BaseS, ConsS and ConjS are available in this grammar via CustomSyntax,
+    -- but originally they come from the RGL abstract syntax.
+    -- We could as well write Syntax.mkListS c.s d.s etc.
+    -- In contrast, {Base,Cons,Conj}QS are only defined in CustomSyntax.
+    BaseCond c d = {
+      s = BaseS c.s d.s ;
+      qs = CustomSyntax.BaseQS c.qs d.qs} ;
+    ConsCond c d = {
+      s = ConsS c.s d.s ;
+      qs = CustomSyntax.ConsQS c.qs d.qs
+      } ;
+    ConjCond conj cs = {
+      s = ConjS conj cs.s ;
+      qs = CustomSyntax.ConjQS conj cs.qs
+      } ;
 
     --  : PrePost -> Conj -> [Cond] -> Cond ;
     ConjPreCond pr conj cs = ConjPrePostCond pr {s,qs=[]} conj cs ;
     ConjPrePostCond pr pst conj cs = {
-      s  = ConjPrePostS pr pst conj cs.s ;
-      qs = ConjPrePostQS pr pst conj cs.qs ;
+      s  = CustomSyntax.ConjPrePostS pr pst conj cs.s ;
+      qs = CustomSyntax.ConjPrePostQS pr pst conj cs.qs ;
     } ;
 -----------------------------------------------------------------------------
 -- General BoolStruct stuff, just first sketch — should be handled more structurally in HS
@@ -112,8 +127,8 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
     RPleafNP np = {s = npStr np ; qs = npStr np ++ "?"} ;
     RPleafS np vps = {
-      s = sStr (PredVPS np vps) ;
-      qs = qsStr (SQuestVPS np vps) ++ "?"
+      s = sStr (Extend.PredVPS np vps) ;
+      qs = qsStr (Extend.SQuestVPS np vps) ++ "?"
     } ;
 
     BaseConstraint c d = {
@@ -147,7 +162,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 -- Time expressions
   lincat
     Temporal = Syntax.Adv ;
-    TimeUnit = CN ;
+    TimeUnit = Syntax.CN ;
 
   lin
     -- : TComparison -> Digits -> TimeUnit -> Temporal ;
@@ -161,8 +176,8 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     Year_Unit = mkCN Lexicon.year_N ;
 
   lincat
-    Date = NP ;
-    TComparison = Prep ;
+    Date = Syntax.NP ;
+    TComparison = Syntax.Prep ;
     [TComparison] = CustomSyntax.ListPrep ;
 
   lin
@@ -197,10 +212,6 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     Y5 = ss "5" ; Y6 = ss "6" ; Y7 = ss "7" ; Y8 = ss "8" ; Y9 = ss "9" ;
 
     MkYear = cc4 ;
-
-
-
-
 
 }
 

@@ -165,30 +165,6 @@ pptle (RuleTLE Rule { nameOfRule }) =
       "" $
       -- Otherwise if the rule has a name, we turn it into
       -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-      
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-      
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
       nameOfRule
       <&> (\x -> ["rule <", x, ">"])
       <&> foldMap pretty
@@ -269,7 +245,7 @@ disjsExprNoType [e] = e
 disjsExprNoType (e:es) = disjExprNoType e (disjsExprNoType es)
 -- END helper functions
 
-boolStructRToExpr :: [String] -> BoolStructR-> Expr ()
+boolStructRToExpr :: [String] -> BoolStructR -> Expr ()
 boolStructRToExpr cont bs = case bs of
   Leaf rp -> relationalPredicateToExpr cont rp
   All _m_la bss -> conjsExprNoType (map (boolStructRToExpr cont) bss)
@@ -315,7 +291,6 @@ sfl4ToCorel4Rule h@Hornlike{..} =
     cont = createContext h
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
-    
     given2classdecls (Just pt) =
       catMaybes [ case ts of
                     Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
@@ -517,31 +492,7 @@ prettyDefnCs rname cs =
     else
       "defn" <+>
       -- we assume the lhs is "p something" so we get rid of the p
-
-      -- we assume the lhs is "p something" so we get rid of the p
-      
-      -- we assume the lhs is "p something" so we get rid of the p
-
-      -- we assume the lhs is "p something" so we get rid of the p
       pretty (mt2text (tail lhs)) <+> colon <+>
-      -- rip out "p's dependents" and "dependents p" from the input rhs
-      -- nub and zip map them to integer indices
-      -- each integer index becomes an x y z a b c d etc
-      -- perhaps wiser if we use x1 x2 x3 instead of x y z
-      -- them we output it all back with the input terms rewritten to x1 x2 x3
-
-      -- rip out "p's dependents" and "dependents p" from the input rhs
-      -- nub and zip map them to integer indices
-      -- each integer index becomes an x y z a b c d etc
-      -- perhaps wiser if we use x1 x2 x3 instead of x y z
-      -- them we output it all back with the input terms rewritten to x1 x2 x3
-      
-      -- rip out "p's dependents" and "dependents p" from the input rhs
-      -- nub and zip map them to integer indices
-      -- each integer index becomes an x y z a b c d etc
-      -- perhaps wiser if we use x1 x2 x3 instead of x y z
-      -- them we output it all back with the input terms rewritten to x1 x2 x3
-
       -- rip out "p's dependents" and "dependents p" from the input rhs
       -- nub and zip map them to integer indices
       -- each integer index becomes an x y z a b c d etc
@@ -666,14 +617,6 @@ prettyClasses ct =
   ]
   | (classpath, (ctype, children)) <- SFL4.classGraph ct []
   , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
                    snake_inner . MTT <$> reverse classpath
         c_name' = untaint $ head classpath
         c_name = pretty c_name'

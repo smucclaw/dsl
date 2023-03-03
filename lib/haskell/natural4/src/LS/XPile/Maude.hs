@@ -194,15 +194,14 @@ instance Pretty HenceOrLest where
 henceLest2maudeStr ::
   forall ann s (m :: Type -> Type).
   MonadErrorIsString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
-henceLest2maudeStr henceOrLest henceLest =
-  henceLest |> maybe (pure mempty) henceLest2doc
+henceLest2maudeStr _ Nothing = pure mempty
+henceLest2maudeStr henceOrLest (Just (RuleAlias henceLest)) =
+  henceLest
+    |> traverse quotOrUpper
+    |$> hsep
+    |$> parenthesizeIf (length henceLest > 1)
+    |$> (pretty henceOrLest <+>)
   where
-    henceLest2doc (RuleAlias henceLest') =
-      henceLest'
-        |> traverse quotOrUpper
-        |$> hsep
-        |$> parenthesizeIf (length henceLest' > 1)
-        |$> (pretty henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> text2qidDoc |> pure

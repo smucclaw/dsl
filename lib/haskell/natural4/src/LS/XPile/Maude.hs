@@ -5,8 +5,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-
@@ -14,7 +16,12 @@
   Note that since we do all the parsing and transpilation within Maude itself,
   all we do here is convert the list of rules to a textual, string
   representation that Maude can parse.
+
+  Note that we use NoMonomorphism restriction and ScopedTypeVariables because
+  we use a _lot_ of polymorphic functions, like those from pretty printer, and
+  GHC's type checker can be very, very annoying otherwise.
 -}
+
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
@@ -80,8 +87,15 @@ import Prettyprinter
 rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules = rules |> rules2doc |> either show show
 
--- Auxiliary functions that help with the transpilation.
-rules2doc :: (MonadErrorString s m, Foldable t) => t Rule -> m (Doc ann)
+{-
+  Auxiliary functions that help with the transpilation.
+  Note that we annotate some of these functions with explicit foralls because
+  the pretty printer functions are all polymorphic over some (ann :: Type) and
+  we sometimes need to explicitly pass these around as type params to keep GHC
+  happy.
+-}
+
+rules2doc :: forall ann s m t. (MonadErrorString s m, Foldable t) => t Rule -> m (Doc ann)
 rules2doc (null -> True) = pure mempty
 rules2doc rules =
   rules |> toList |$> rule2doc |> sequence |$> concatWith (<.>)
@@ -89,7 +103,7 @@ rules2doc rules =
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
-rule2doc :: MonadErrorString s m => Rule -> m (Doc ann)
+rule2doc :: forall ann s m. MonadErrorString s m => Rule -> m (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just ("§", 1, ruleName),
@@ -173,7 +187,7 @@ instance Pretty HenceOrLest where
   A left with an error message is returned in such cases.
 -}
 henceLest2maudeStr ::
-  MonadErrorString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
+  forall ann s m. MonadErrorString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
 henceLest2maudeStr henceOrLest henceLest =
   henceLest |> maybe (pure mempty) henceLest2doc
   where
@@ -181,9 +195,9 @@ henceLest2maudeStr henceOrLest henceLest =
       henceLest'
         |$> quotOrUpper
         |> sequence
-          |$> hsep
-          |$> parenthesizeIf (length henceLest' > 1)
-          |$> (pretty henceOrLest <+>)
+        |$> hsep
+        |$> parenthesizeIf (length henceLest' > 1)
+        |$> (pretty henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
     quotOrUpper (MTT x) = x |> pretty2Qid |> pure
@@ -192,6 +206,7 @@ henceLest2maudeStr henceOrLest henceLest =
     parenthesizeIf False x = x
 
 -- Common utilities
+
 type MonadErrorString s m = (IsString s, MonadError s m)
 
 infixl 0 |$>

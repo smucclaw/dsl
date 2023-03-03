@@ -18,6 +18,7 @@ abstract NL4Base = CustomSyntax ** {
   fun
     -- for fancy NLG
     Regulative : Subj -> Deontic -> Action -> Text ;
+    advUPON : Upon -> Text ; -- actually include the word Upon
 
     -- for web forms
     qWHO,

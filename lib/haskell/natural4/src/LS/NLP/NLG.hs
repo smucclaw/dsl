@@ -45,11 +45,11 @@ myNLGEnv lang = do
   gr <- readPGF grammarFile
   let eng = getLang "NL4Eng"
       myParse typ txt = parse gr eng typ (Text.unpack txt)
-
-  print "lang"
-  print $ showLanguage lang
-  let myLin = Text.pack . linearize gr lang
+  let myLin = rmBIND . Text.pack . linearize gr lang
   pure $ NLGEnv gr lang myParse myLin verbose
+
+rmBIND :: Text.Text -> Text.Text
+rmBIND = Text.replace " &+ " ""
 
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
@@ -77,7 +77,7 @@ nlg = nlg' TopLevel
 
 nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
 nlg' thl env rule = case rule of
-    Regulative {subj,upon,cond,who,deontic,action,lest,hence} -> do
+    Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
       let subjExpr = introduceSubj $ parseSubj env subj
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
@@ -86,14 +86,19 @@ nlg' thl env rule = case rule of
                         Nothing -> subjExpr
           ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
           uponText = case upon of  -- TODO: doesn't work once we add another language
-                      Just u -> "Upon " <> pt2text u <> ", "
+                      Just u ->
+                        let uponExpr = gf $ GadvUPON $ parseUpon env u
+                         in gfLin env uponExpr <> ", "
+                      Nothing -> mempty
+          tcText = case temporal of
+                      Just t -> " " <> (gfLin env $ gf $ parseTemporal env t)
                       Nothing -> mempty
           condText = case cond of
                       Just c ->
                         let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
                          in ". If " <> gfLin env condExpr <> ", "
                       Nothing -> mempty
-          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> condText, suffix]
+          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> tcText <> condText, suffix]
       lestText <- case lest of
                     Just r -> do
                       rt <- nlg' (MyLest i) env r
@@ -104,10 +109,6 @@ nlg' thl env rule = case rule of
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
-
---      pure $ Text.unlines [ruleText, henceText, lestText]
-      print "---"
-      print $ gf $ whoSubjExpr
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
@@ -239,9 +240,9 @@ parseTComparison TVague = GVAGUE
 parseDate :: MultiTerm -> GDate
 parseDate mt = case Text.words $ mt2text mt of
   [d, m, y] -> GMkDate (tDay d) (tMonth m) (mkYear y)
-  -- _ -> GMkDate (LexDay "Day1") (LexMonth "Jan")
+  _ -> GMkDate (LexDay "Day1") (LexMonth "Jan") dummyYear
  where
-  dummy = "Year0"
+  dummyYear = mkYear "1970"
 
   mkYear :: Text.Text -> GYear
   mkYear y = GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
@@ -250,7 +251,7 @@ parseDate mt = case Text.words $ mt2text mt of
   splitYear :: Text.Text -> [String]
   splitYear y = case ["Y" <> [d] | d <- Text.unpack y] of
     xs@[_, _, _, _] -> xs
-    _ -> [dummy, dummy, dummy, dummy]
+    _ -> ["Y2", "Y0", "Y0", "Y0"]
 
   tDay :: Text.Text -> GDay
   tDay t = LexDay ("Day"<> Text.unpack t)
@@ -297,6 +298,28 @@ parseUpon env pt = let txt = pt2text pt in
   case parseAny "Upon" env txt of
     [] -> error $ msg "Upon" txt
     x:_ -> fg x
+
+parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
+parseTemporal env (TemporalConstraint t (Just int) text) = GTemporalConstraint tc digits unit
+  where
+    tc = parseTComparison t
+    digits = mkDigits int
+    unit = parseTimeUnit text
+
+    mkDigits :: Integer -> GDigits
+    mkDigits i = case [LexDig $ "D_" <> [d] | d <- show i] of
+      [] -> GIDig (LexDig "D_0") -- shouldn't happen, TODO alert user?
+      [dig] -> GIDig dig
+      xs -> foldr GIIDig (GIDig (last xs)) (init xs)
+
+parseTemporal _ (TemporalConstraint tc Nothing text) = undefined
+
+parseTimeUnit :: Text.Text -> GTimeUnit
+parseTimeUnit text = case take 3 $ Text.unpack $ Text.toLower text of
+  "day" -> GDay_Unit
+  "mon" -> GMonth_Unit
+  "yea" -> GYear_Unit
+  xs -> error $ "unrecognised unit of time: " <> Text.unpack text
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
 parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of

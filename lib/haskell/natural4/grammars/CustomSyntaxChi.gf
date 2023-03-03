@@ -114,4 +114,6 @@ concrete CustomSyntaxChi of CustomSyntax =
       {s = "是" ; sn = [] ; pp = [] ; ds = [] ; dp = [] ; ep = [] ; neg = "不"} ; ---
 
     emptyNP : NP = it_NP ** {s = []} ;
+
+    upon_Prep : Prep = mkPrep "什么时候" ;
 }

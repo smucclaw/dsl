@@ -47,6 +47,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     sWHO subj who = mkUtt (Extend.PredVPS subj who) ;
     qCOND cond = lin Utt (cc2 (mkUtt cond.qs) (ss "?")) ;
     sCOND cond = mkUtt cond.s ;
+    advUPON upon = mkUtt (Syntax.mkAdv upon_Prep (GerundNP upon)) ;
     qUPON subj upon = qWHO subj (Extend.MkVPS presAnt positivePol upon) ;
     sUPON subj upon = sWHO subj (Extend.MkVPS presAnt positivePol upon) ;
 
@@ -176,7 +177,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     VAGUE = CustomSyntax.vaguePrep ;
 
   oper
-    cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> cc2 s1 (cc3 s2 s3 s4) ;
+    cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> {s = glue s1.s (glue s2.s (glue s3.s s4.s))} ;
 
   lincat
     Day, Month, Year, YearComponent = SS ;

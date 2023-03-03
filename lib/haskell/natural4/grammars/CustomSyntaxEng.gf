@@ -118,6 +118,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     every : CN -> NP = \cn -> mkNP <every_Det : Det> <cn : CN> ;
     strA2 : Str -> A2 = \str -> mkA2 (mkA str) noPrep ;
     invarV : Str -> V = \s -> mk5V s s s s s ;
+    upon_Prep : Prep = ParadigmsEng.mkPrep "upon" ;
 
     postAdvS : S -> Adv -> S = \s,adv -> s ** mkS <lin Adv s : Adv> <lin S adv : S> ; -- hack that only works for Eng
     postAdvQS : QS -> Adv -> QS = \qs,adv -> qs ** {s = \\qf => qs.s ! qf ++ adv.s} ;

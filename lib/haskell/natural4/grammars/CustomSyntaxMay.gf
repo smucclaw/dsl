@@ -115,4 +115,6 @@ concrete CustomSyntaxMay of CustomSyntax =
   oper
     strA2 : Str -> A2 = \str -> mkA2 str noPrep ;
     invarV : Str -> V = \v -> R.mkVerb v v v v ;
+    upon_Prep : Prep = R.mkPrep "semasa" ;
+
 }

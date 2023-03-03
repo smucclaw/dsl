@@ -216,16 +216,7 @@ data Tree :: * -> * where
   GthePl :: Tree GDet_
   GtheSg :: Tree GDet_
   Gyour :: Tree GDet_
-  GD_0 :: Tree GDig_
-  GD_1 :: Tree GDig_
-  GD_2 :: Tree GDig_
-  GD_3 :: Tree GDig_
-  GD_4 :: Tree GDig_
-  GD_5 :: Tree GDig_
-  GD_6 :: Tree GDig_
-  GD_7 :: Tree GDig_
-  GD_8 :: Tree GDig_
-  GD_9 :: Tree GDig_
+  LexDig :: String -> Tree GDig_
   Gn2 :: Tree GDigit_
   Gn3 :: Tree GDigit_
   Gn4 :: Tree GDigit_
@@ -333,6 +324,7 @@ data Tree :: * -> * where
   GpresSimul :: Tree GTemp_
   GTemporalConstraint :: GTComparison -> GDigits -> GTimeUnit -> Tree GTemporal_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GText_
+  GadvUPON :: GUpon -> Tree GText_
   GqCOND :: GCond -> Tree GText_
   GqCONSTR :: GConstraint -> Tree GText_
   GqPREPOST :: GPrePost -> Tree GText_
@@ -414,16 +406,7 @@ instance Eq (Tree a) where
     (GthePl,GthePl) -> and [ ]
     (GtheSg,GtheSg) -> and [ ]
     (Gyour,Gyour) -> and [ ]
-    (GD_0,GD_0) -> and [ ]
-    (GD_1,GD_1) -> and [ ]
-    (GD_2,GD_2) -> and [ ]
-    (GD_3,GD_3) -> and [ ]
-    (GD_4,GD_4) -> and [ ]
-    (GD_5,GD_5) -> and [ ]
-    (GD_6,GD_6) -> and [ ]
-    (GD_7,GD_7) -> and [ ]
-    (GD_8,GD_8) -> and [ ]
-    (GD_9,GD_9) -> and [ ]
+    (LexDig x,LexDig y) -> x == y
     (Gn2,Gn2) -> and [ ]
     (Gn3,Gn3) -> and [ ]
     (Gn4,Gn4) -> and [ ]
@@ -531,6 +514,7 @@ instance Eq (Tree a) where
     (GpresSimul,GpresSimul) -> and [ ]
     (GTemporalConstraint x1 x2 x3,GTemporalConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GadvUPON x1,GadvUPON y1) -> and [ x1 == y1 ]
     (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
     (GqCONSTR x1,GqCONSTR y1) -> and [ x1 == y1 ]
     (GqPREPOST x1,GqPREPOST y1) -> and [ x1 == y1 ]
@@ -744,31 +728,12 @@ instance Gf GDet where
       _ -> error ("no Det " ++ show t)
 
 instance Gf GDig where
-  gf GD_0 = mkApp (mkCId "D_0") []
-  gf GD_1 = mkApp (mkCId "D_1") []
-  gf GD_2 = mkApp (mkCId "D_2") []
-  gf GD_3 = mkApp (mkCId "D_3") []
-  gf GD_4 = mkApp (mkCId "D_4") []
-  gf GD_5 = mkApp (mkCId "D_5") []
-  gf GD_6 = mkApp (mkCId "D_6") []
-  gf GD_7 = mkApp (mkCId "D_7") []
-  gf GD_8 = mkApp (mkCId "D_8") []
-  gf GD_9 = mkApp (mkCId "D_9") []
+  gf (LexDig x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "D_0" -> GD_0 
-      Just (i,[]) | i == mkCId "D_1" -> GD_1 
-      Just (i,[]) | i == mkCId "D_2" -> GD_2 
-      Just (i,[]) | i == mkCId "D_3" -> GD_3 
-      Just (i,[]) | i == mkCId "D_4" -> GD_4 
-      Just (i,[]) | i == mkCId "D_5" -> GD_5 
-      Just (i,[]) | i == mkCId "D_6" -> GD_6 
-      Just (i,[]) | i == mkCId "D_7" -> GD_7 
-      Just (i,[]) | i == mkCId "D_8" -> GD_8 
-      Just (i,[]) | i == mkCId "D_9" -> GD_9 
 
-
+      Just (i,[]) -> LexDig (showCId i)
       _ -> error ("no Dig " ++ show t)
 
 instance Gf GDigit where
@@ -1269,6 +1234,7 @@ instance Gf GTemporal where
 
 instance Gf GText where
   gf (GRegulative x1 x2 x3) = mkApp (mkCId "Regulative") [gf x1, gf x2, gf x3]
+  gf (GadvUPON x1) = mkApp (mkCId "advUPON") [gf x1]
   gf (GqCOND x1) = mkApp (mkCId "qCOND") [gf x1]
   gf (GqCONSTR x1) = mkApp (mkCId "qCONSTR") [gf x1]
   gf (GqPREPOST x1) = mkApp (mkCId "qPREPOST") [gf x1]
@@ -1281,6 +1247,7 @@ instance Gf GText where
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "Regulative" -> GRegulative (fg x1) (fg x2) (fg x3)
+      Just (i,[x1]) | i == mkCId "advUPON" -> GadvUPON (fg x1)
       Just (i,[x1]) | i == mkCId "qCOND" -> GqCOND (fg x1)
       Just (i,[x1]) | i == mkCId "qCONSTR" -> GqCONSTR (fg x1)
       Just (i,[x1]) | i == mkCId "qPREPOST" -> GqPREPOST (fg x1)
@@ -1556,6 +1523,7 @@ instance Compos Tree where
     GConjTComparison x1 x2 -> r GConjTComparison `a` f x1 `a` f x2
     GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
     GRegulative x1 x2 x3 -> r GRegulative `a` f x1 `a` f x2 `a` f x3
+    GadvUPON x1 -> r GadvUPON `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1
     GqCONSTR x1 -> r GqCONSTR `a` f x1
     GqPREPOST x1 -> r GqPREPOST `a` f x1

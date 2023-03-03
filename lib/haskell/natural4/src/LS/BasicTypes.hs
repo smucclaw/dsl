@@ -42,7 +42,7 @@ data MyToken = Every | Party | TokAll
              | Or | And | MPNot
              | Before | After | By | On | Eventually -- TVague is a temporal constraint but not a token
              | Means | Includes  | Is
-             | Given | Having | Upon
+             | Given | Giveth | Having | Upon
              | Declare | Define | OneOf | Holds
              | Decide
              | A_An
@@ -94,6 +94,7 @@ toToken "WHEN" =   pure When
 toToken "IF" =     pure If
 toToken "UPON" =   pure Upon
 toToken "GIVEN" =  pure Given
+toToken "GIVETH" = pure Giveth
 toToken "HAVING" = pure Having
 
 toToken "MEANS" =  pure Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"

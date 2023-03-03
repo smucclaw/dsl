@@ -4,10 +4,12 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -28,6 +30,7 @@ import AnyAll (BoolStruct (Leaf))
 import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList))
 import Data.Functor ((<&>))
+import Data.Kind (Type, Constraint)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString)
 import Data.Text qualified as T
@@ -95,7 +98,9 @@ rules2maudeStr rules = rules |> rules2doc |> either show show
   happy.
 -}
 
-rules2doc :: forall ann s m t. (MonadErrorString s m, Foldable t) => t Rule -> m (Doc ann)
+rules2doc ::
+  forall ann s (m :: Type -> Type) t.
+  (MonadErrorIsString s m, Foldable t) => t Rule -> m (Doc ann)
 rules2doc (null -> True) = pure mempty
 rules2doc rules =
   rules |> toList |$> rule2doc |> sequence |$> concatWith (<.>)
@@ -103,7 +108,9 @@ rules2doc rules =
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
-rule2doc :: forall ann s m. MonadErrorString s m => Rule -> m (Doc ann)
+rule2doc ::
+  forall ann s (m :: Type -> Type).
+  MonadErrorIsString s m => Rule -> m (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just ("§", 1, ruleName),
@@ -156,7 +163,7 @@ rule2doc
           |$> filter isNonEmptyDoc
           |$> vcat
       deontic2doc deon =
-        deon |> show |> T.pack |> T.tail |> T.toUpper |> pretty
+        deon |> show2text |> T.tail |> T.toUpper |> pretty
       tComparison2doc TOn = "ON"
       tComparison2doc TBefore = "WITHIN"
       isNonEmptyDoc doc = doc |> show |> not . null
@@ -180,14 +187,15 @@ data HenceOrLest = Hence | Lest
   deriving (Eq, Ord, Read, Show)
 
 instance Pretty HenceOrLest where
-  pretty henceOrLest = henceOrLest |> show |> T.pack |> T.toUpper |> pretty
+  pretty henceOrLest = henceOrLest |> show2text |> T.toUpper |> pretty
 
 {-
   This function can handle invalid HENCE/LEST clauses.
   A left with an error message is returned in such cases.
 -}
 henceLest2maudeStr ::
-  forall ann s m. MonadErrorString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
+  forall ann s (m :: Type -> Type).
+  MonadErrorIsString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
 henceLest2maudeStr henceOrLest henceLest =
   henceLest |> maybe (pure mempty) henceLest2doc
   where
@@ -207,15 +215,26 @@ henceLest2maudeStr henceOrLest henceLest =
 
 -- Common utilities
 
-type MonadErrorString s m = (IsString s, MonadError s m)
+{-
+  Error monad, polymorphic over:
+  - a type variable (s :: Type) such that IsString s.
+  - a type constructor (m :: Type -> Type) such that (m a) is a monad for all
+    (a :: Type).
+    (which could be (Either s) or ExceptT)
+-}
+type MonadErrorIsString :: Type -> (Type -> Type) -> Constraint
+type MonadErrorIsString s m = (IsString s, MonadError s m)
 
 infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = (<&>)
 
+show2text :: Show a => a -> T.Text
+show2text x = x |> show |> T.pack
+
 pretty2Qid :: T.Text -> Doc ann
 pretty2Qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
-errMsg :: MonadErrorString s m => m a
+errMsg :: MonadErrorIsString s m => m a
 errMsg = throwError "Not supported."

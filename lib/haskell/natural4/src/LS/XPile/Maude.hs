@@ -148,9 +148,9 @@ rule2doc
     [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
     where
       ruleNoHenceLest =
-        [ ["RULE", pretty2Qid ruleName],
-          ["PARTY", pretty2Qid actorName],
-          [deontic2doc deontic, pretty2Qid actionName],
+        [ ["RULE", text2qidDoc ruleName],
+          ["PARTY", text2qidDoc actorName],
+          [deontic2doc deontic, text2qidDoc actionName],
           [tComparison2doc tComparison, pretty n, "DAY"]
         ]
           |$> hsep
@@ -208,7 +208,7 @@ henceLest2maudeStr henceOrLest henceLest =
         |$> (pretty henceOrLest <+>)
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
-    quotOrUpper (MTT x) = x |> pretty2Qid |> pure
+    quotOrUpper (MTT x) = x |> text2qidDoc |> pure
     quotOrUpper _ = errMsg
     parenthesizeIf True x = ["(", x, ")"] |> mconcat
     parenthesizeIf False x = x
@@ -233,8 +233,8 @@ infixl 0 |$>
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack
 
-pretty2Qid :: T.Text -> Doc ann
-pretty2Qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
+text2qidDoc :: T.Text -> Doc ann
+text2qidDoc x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 errMsg :: MonadErrorIsString s m => m a
 errMsg = throwError "Not supported."

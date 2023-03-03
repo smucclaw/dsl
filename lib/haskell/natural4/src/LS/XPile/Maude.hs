@@ -1,7 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -20,7 +18,6 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
-import Control.Applicative (liftA2)
 import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList))
 import Data.Functor ((<&>))
@@ -107,8 +104,8 @@ rule2doc
               (Just n)
               (T.toUpper -> "DAY")
             ),
-      hence,
-      lest,
+      hence = hence@(isValidHenceLest -> True),
+      lest = lest@(isValidHenceLest -> True),
       srcref, -- May want to use this for better error reporting.
       given = Nothing,
       having = Nothing,
@@ -119,16 +116,15 @@ rule2doc
       wwhere = [],
       defaults = [],
       symtab = []
-    }
-    | all isValidHenceLest [hence, lest] =
-        {-
-          Here we first process separately:
-          - the part of the rule without the HENCE/LEST clauses.
-          - the HENCE/LEST clauses.
-          We then combine these together via vcat, using sequence to collect all
-          the errors which occured while processing each part.
-        -}
-        [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
+    } =
+    {-
+      Here we first process separately:
+      - the part of the rule without the HENCE/LEST clauses.
+      - the HENCE/LEST clauses.
+      We then combine these together via vcat, using sequence to collect all
+      the errors which occured while processing each part.
+    -}
+    [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
     where
       ruleNoHenceLest =
         [ ["RULE", pretty2Qid ruleName],
@@ -140,7 +136,7 @@ rule2doc
           |> vcat
           |> pure
       henceLestClauses =
-        [(HENCE, hence), (LEST, lest)]
+        [(Hence, hence), (Lest, lest)]
           |$> uncurry henceLest2maudeStr
           |> sequence
             |$> filter isNonEmptyDoc
@@ -166,9 +162,11 @@ isValidHenceLest maybeRule = maybeRule |> maybe True isValidRuleAlias
     go (MTT _ : MTT (T.toUpper -> "AND") : xs) = go xs
     go _ = False
 
-data HenceOrLest = HENCE | LEST
-  deriving stock (Eq, Ord, Read, Show)
-  deriving anyclass (Pretty)
+data HenceOrLest = Hence | Lest
+  deriving (Eq, Ord, Read, Show)
+
+instance Pretty HenceOrLest where
+  pretty henceOrLest = henceOrLest |> show |> T.pack |> T.toUpper |> pretty
 
 {-
   This function can handle invalid HENCE/LEST clauses.

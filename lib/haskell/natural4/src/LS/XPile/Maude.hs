@@ -176,9 +176,9 @@ rule2doc _ = errMsg
   rule0 [ AND rule1 AND ... AND ruleN ]
 -}
 isValidHenceLest :: Maybe Rule -> Bool
-isValidHenceLest maybeRule = maybeRule |> maybe True isValidRuleAlias
+isValidHenceLest Nothing = True
+isValidHenceLest (Just (RuleAlias xs)) = go xs
   where
-    isValidRuleAlias (RuleAlias xs) = go xs
     go [MTT _] = True
     go (MTT _ : MTT (T.toUpper -> "AND") : xs) = go xs
     go _ = False

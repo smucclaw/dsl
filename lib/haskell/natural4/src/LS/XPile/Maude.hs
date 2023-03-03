@@ -9,7 +9,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -99,11 +98,11 @@ rules2maudeStr rules = rules |> rules2doc |> either show show
 -}
 
 rules2doc ::
-  forall ann s (m :: Type -> Type) t.
+  forall ann s (m :: Type -> Type) (t :: Type -> Type).
   (MonadErrorIsString s m, Foldable t) => t Rule -> m (Doc ann)
 rules2doc (null -> True) = pure mempty
 rules2doc rules =
-  rules |> toList |$> rule2doc |> sequence |$> concatWith (<.>)
+  rules |> toList |> traverse rule2doc |$> concatWith (<.>)
   where
     x <.> y = [x, ",", line, line, y] |> mconcat
 
@@ -145,7 +144,7 @@ rule2doc
       We then combine these together via vcat, using sequence to collect all
       the errors which occured while processing each part.
     -}
-    [ruleNoHenceLest, henceLestClauses] |> sequence |$> vcat
+    [ruleNoHenceLest, henceLestClauses] |> sequenceA |$> vcat
     where
       ruleNoHenceLest =
         [ ["RULE", text2qidDoc ruleName],
@@ -158,8 +157,7 @@ rule2doc
           |> pure
       henceLestClauses =
         [(Hence, hence), (Lest, lest)]
-          |$> uncurry henceLest2maudeStr
-          |> sequence
+          |> traverse (uncurry henceLest2maudeStr)
           |$> filter isNonEmptyDoc
           |$> vcat
       deontic2doc deon =
@@ -201,8 +199,7 @@ henceLest2maudeStr henceOrLest henceLest =
   where
     henceLest2doc (RuleAlias henceLest') =
       henceLest'
-        |$> quotOrUpper
-        |> sequence
+        |> traverse quotOrUpper
         |$> hsep
         |$> parenthesizeIf (length henceLest' > 1)
         |$> (pretty henceOrLest <+>)
@@ -222,8 +219,7 @@ henceLest2maudeStr henceOrLest henceLest =
     (a :: Type).
     (which could be (Either s) or ExceptT)
 -}
-type MonadErrorIsString :: Type -> (Type -> Type) -> Constraint
-type MonadErrorIsString s m = (IsString s, MonadError s m)
+type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
 
 infixl 0 |$>
 

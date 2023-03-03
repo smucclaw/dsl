@@ -46,7 +46,7 @@ import LS.Tokens (undeepers)
 
 import qualified Text.XML.HXT.Core as HXT
 
--- import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 -- output to Core L4 for further transformation
 

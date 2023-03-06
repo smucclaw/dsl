@@ -175,11 +175,13 @@ rule2doc _ = errMsg
 -}
 isValidHenceLest :: Maybe Rule -> Bool
 isValidHenceLest Nothing = True
-isValidHenceLest (Just (RuleAlias xs)) = go xs
+isValidHenceLest (Just (RuleAlias xs)) =
+  xs |> list2oddIndices |> all isAnd
   where
-    go [MTT _] = True
-    go (MTT _ : MTT (T.toUpper -> "AND") : xs) = go xs
-    go _ = False
+    list2oddIndices xs = xs |> zip [0..] |> filter isIndexOdd |$> snd
+    isIndexOdd (index, _) = odd index
+    isAnd (MTT (T.toUpper -> "AND")) = True
+    isAnd _ = False
 
 data HenceOrLest = Hence | Lest
   deriving (Eq, Ord, Read, Show)

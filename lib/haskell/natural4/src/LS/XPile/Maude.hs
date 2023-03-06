@@ -176,9 +176,9 @@ rule2doc _ = errMsg
 isValidHenceLest :: Maybe Rule -> Bool
 isValidHenceLest Nothing = True
 isValidHenceLest (Just (RuleAlias xs)) =
-  xs |> list2oddIndices |> all isAnd
+  xs |> elemsOfOddIndices |> all isAnd
   where
-    list2oddIndices xs = xs |> zip [0..] |> filter isIndexOdd |$> snd
+    elemsOfOddIndices xs = xs |> zip [0..] |> filter isIndexOdd |$> snd
     isIndexOdd (index, _) = odd index
     isAnd (MTT (T.toUpper -> "AND")) = True
     isAnd _ = False

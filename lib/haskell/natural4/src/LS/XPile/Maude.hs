@@ -180,7 +180,7 @@ isValidHenceLest (Just (RuleAlias xs)) =
   where
     isValidMTExpr (even -> True) (MTT _) = True
     isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
-    isValidMTTExpr _ _ = False
+    isValidMTExpr _ _ = False
 
 data HenceOrLest = Hence | Lest
   deriving (Eq, Ord, Read, Show)

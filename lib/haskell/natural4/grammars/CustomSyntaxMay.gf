@@ -14,7 +14,7 @@ concrete CustomSyntaxMay of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralMay [
-      Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
+      Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
     , VV, must_VV
     ]
   , ExtendMay [
@@ -116,6 +116,7 @@ oper
     strA2 : Str -> A2 = \str -> mkA2 str noPrep ;
     invarV : Str -> V = \v -> R.mkVerb v v v v ;
     upon_Prep : Prep = R.mkPrep "semasa" ;
+    by8time_Prep : Prep = before_Prep ;
 
     bindQM : Str = BIND ++ "?" ;
 }

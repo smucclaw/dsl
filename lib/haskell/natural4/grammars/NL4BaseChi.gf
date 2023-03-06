@@ -5,7 +5,6 @@ concrete NL4BaseChi of NL4Base =
     , WHEN, qCOND, sCOND
     , qUPON, sUPON -- change tense
     , ConjConstraint -- Conj has different lincat
-    , BEFORE, AFTER, ON -- different choices from RGL API
     , MkDate -- different order
     ]
   with
@@ -20,7 +19,7 @@ concrete NL4BaseChi of NL4Base =
 -- These are not implemented in the functor, different for all 3
 
   lin RPConstraint cond on date =
-      let onDate : CatChi.Adv = SyntaxChi.mkAdv on date ;
+      let onDate : CatChi.Adv = SyntaxChi.mkAdv <on : SyntaxChi.Prep> date ;
        in cond ** {pred = advVPS cond.pred onDate} ;
 
   oper
@@ -92,10 +91,6 @@ concrete NL4BaseChi of NL4Base =
 -----------------------------------------------------------------------------
 -- Time units
 lin
-    BEFORE = ParadigmsChi.mkPrep "前" ;
-    AFTER = ParadigmsChi.mkPrep "在" "之 后" ;
-    ON = ParadigmsChi.mkPrep "在" ;
-
     MkDate day month year = symb (cc3 (cc2 year (ss "年")) month (cc2 day (ss "日"))) ;
 
     Jan = ss "1 月" ; Feb = ss "2 月" ; Mar = ss "3 月" ; Apr = ss "4 月" ;

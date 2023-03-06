@@ -169,7 +169,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     TemporalConstraint tcomp digits time =
       let card : Card = mkCard <lin Digits digits : Digits> ;
           det : Det = mkDet card ;
-      in Syntax.mkAdv tcomp (mkNP det time) ;
+      in Syntax.mkAdv <tcomp : Syntax.Prep> (mkNP det time) ;
 
     Day_Unit = mkCN Lexicon.day_N ;
     Month_Unit = mkCN CustomSyntax.month_N ;
@@ -177,18 +177,18 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
   lincat
     Date = Syntax.NP ;
-    TComparison = Syntax.Prep ;
+    TComparison = CustomSyntax.Prep ; -- because Chi has changed its lincat for Prep, must specify this one
     [TComparison] = CustomSyntax.ListPrep ;
 
   lin
     BaseTComparison = CustomSyntax.BasePrep ;
     ConsTComparison = CustomSyntax.ConsPrep ;
     ConjTComparison = CustomSyntax.ConjPrep ;
-
-    BEFORE = CustomSyntax.within_Prep | before_Prep ;
-    AFTER = after_Prep ;
-    BY = by8means_Prep ;
-    ON = on_Prep ;
+    -- Chi has changed lincat and defs of Prep, so all must be from CustomSyntax
+    BEFORE = CustomSyntax.within_Prep | CustomSyntax.before_Prep ;
+    AFTER = CustomSyntax.after_Prep ;
+    BY = CustomSyntax.by8time_Prep ;
+    ON = CustomSyntax.on_Prep ;
     VAGUE = CustomSyntax.vaguePrep ;
 
   oper

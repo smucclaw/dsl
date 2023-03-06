@@ -14,7 +14,7 @@ concrete CustomSyntaxEng of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralEng [
-      Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
+      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
     , VV, must_VV
     ]
   , ExtendEng [
@@ -120,6 +120,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     strA2 : Str -> A2 = \str -> mkA2 (mkA str) noPrep ;
     invarV : Str -> V = \s -> mk5V s s s s s ;
     upon_Prep : Prep = ParadigmsEng.mkPrep "upon" ;
+    by8time_Prep : Prep = ParadigmsEng.mkPrep "by" ;
 
     bindQM : Str = BIND ++ "?" ;
 

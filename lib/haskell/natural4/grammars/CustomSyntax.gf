@@ -13,7 +13,7 @@ abstract CustomSyntax =
         , S, QS, Conj
         ]
   , Structural [
-        Prep, to_Prep, by8means_Prep, for_Prep, from_Prep, on_Prep
+        Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
         , VV, must_VV
         ]
   , Extend [

@@ -27,7 +27,7 @@ module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
 import Control.Monad.Except (MonadError (throwError))
-import Data.Foldable (Foldable (toList))
+import Data.Foldable (Foldable (toList,  elem))
 import Data.Functor ((<&>))
 import Data.Kind (Type, Constraint)
 import Data.List.NonEmpty (NonEmpty ((:|)))

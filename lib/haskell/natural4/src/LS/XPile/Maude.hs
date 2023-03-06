@@ -204,10 +204,10 @@ henceLest2maudeStr henceOrLest (Just (RuleAlias henceLest)) =
   where
     henceLest2doc _ = errMsg
     quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
-    quotOrUpper (MTT x) = x |> text2qidDoc |> pure
+    quotOrUpper (MTT ruleName) = ruleName |> text2qidDoc |> pure
     quotOrUpper _ = errMsg
-    parenthesizeIf True x = ["(", x, ")"] |> mconcat
-    parenthesizeIf False x = x
+    parenthesizeIf True doc = ["(", doc, ")"] |> mconcat
+    parenthesizeIf False doc = doc
 
 -- Common utilities
 

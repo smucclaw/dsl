@@ -75,7 +75,7 @@ concrete CustomSyntaxChi of CustomSyntax =
 
     MayHave occur =
       let vps : ExtendChi.VPS = MkVPS presAnt POS occur ;
-        in vps ** {s = "可 能" ++ vps.s} ;
+        in vps ** {s = "可 能 已 经" ++ vps.s} ; --
     -- : NP -> S ; -- it is NP — reference to a previous NP
     ReferenceNP np = mkS (mkCl it_NP <lin NP np : NP>) ;
 
@@ -87,7 +87,7 @@ concrete CustomSyntaxChi of CustomSyntax =
 
     theSg = theSg_Det ;
     thePl = thePl_Det ;
-    aSg = aSg_Det ;
+    aSg = theSg_Det ;
     your = mkDet youSg_Pron ;
 
   oper

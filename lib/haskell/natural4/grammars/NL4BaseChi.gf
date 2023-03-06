@@ -3,10 +3,10 @@ concrete NL4BaseChi of NL4Base =
   ** NL4BaseFunctor - [
       Cond,ListCond,BaseCond, ConsCond, ConjCond, ConjPreCond, ConjPrePostCond
     , WHEN, qCOND, sCOND
+    , qUPON, sUPON -- change tense
     , ConjConstraint -- Conj has different lincat
     , BEFORE, AFTER, ON -- different choices from RGL API
-    , Y0,Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8,Y9
-    , Day1,Day2,Day3,Day4,Day5,Day6,Day7,Day8,Day9,Day10,Day11,Day12,Day13,Day14,Day15,Day16,Day17,Day18,Day19,Day20,Day21,Day22,Day23,Day24,Day25,Day26,Day27,Day28,Day29,Day30,Day31
+    , MkDate -- different order
     ]
   with
       (Syntax=SyntaxChi)
@@ -46,6 +46,10 @@ concrete NL4BaseChi of NL4Base =
 
     qCOND cond = cc2 (mkUtt (ExtendChi.SQuestVPS cond.subj cond.pred)) (ss bindQM) ;
     sCOND cond = mkUtt (ExtendChi.PredVPS cond.subj cond.pred) ;
+
+    qUPON subj upon = qWHO subj (Extend.MkVPS presSimul positivePol upon) ;
+    sUPON subj upon = sWHO subj (Extend.MkVPS presSimul positivePol upon) ;
+
 
   -- custom opers for [Cond]
   oper
@@ -92,21 +96,15 @@ lin
     AFTER = ParadigmsChi.mkPrep "在" "之 后" ;
     ON = ParadigmsChi.mkPrep "在" ;
 
-    Jan = ss "一 月" ; Feb = ss "二 月" ; Mar = ss "三 月" ; Apr = ss "四 月" ;
-    May = ss "五 月" ; Jun = ss "六 月" ; Jul = ss "七 月" ; Aug = ss "八 月" ;
-    Sep = ss "九 月" ; Oct = ss "十 月" ; Nov = ss "十 一 月" ; Dec = ss "十 二 月" ;
+    MkDate day month year = symb (cc3 (cc2 year (ss "年")) month (cc2 day (ss "日"))) ;
 
-    Day1 = ss "一 号" ; Day2 = ss "二 号" ; Day3 = ss "三 号" ; Day4 = ss "四 号" ;
-    Day5 = ss "五 号" ; Day6 = ss "六 号" ; Day7 = ss "七 号" ; Day8 = ss "八 号" ;
-    Day9 = ss "九 号" ; Day10 = ss "十 号" ; Day11 = ss "十 一 号" ; Day12 = ss "十 二 号" ;
-    Day13 = ss "十 三 号" ; Day14 = ss "十 四 号" ; Day15 = ss "十 五 号" ; Day16 = ss "十 六 号" ;
-    Day17 = ss "十 七 号" ; Day18 = ss "十 八 号" ; Day19 = ss "十 九 号" ; Day20 = ss "二 十 号" ;
-    Day21 = ss "二 十 一 号" ; Day22 = ss "二 十 二 号" ; Day23 = ss "二 十 三 号" ; Day24 = ss "二 十 四 号" ;
-    Day25 = ss "二 十 五 号" ; Day26 = ss "二 十 六 号" ; Day27 = ss "二 十 七 号" ; Day28 = ss "二 十 八 号" ;
-    Day29 = ss "二 十 九 号" ; Day30 = ss "三 十 号" ; Day31 = ss "三 十 一 号" ;
+    Jan = ss "1 月" ; Feb = ss "2 月" ; Mar = ss "3 月" ; Apr = ss "4 月" ;
+    May = ss "5 月" ; Jun = ss "6 月" ; Jul = ss "7 月" ; Aug = ss "8 月" ;
+    Sep = ss "9 月" ; Oct = ss "10 月" ; Nov = ss "11 月" ; Dec = ss "12 月" ;
 
-    Y0 = ss "零" ; Y1 = ss "一" ; Y2 = ss "二" ; Y3 = ss "三" ; Y4 = ss "四" ;
-    Y5 = ss "五" ; Y6 = ss "六" ; Y7 = ss "七" ; Y8 = ss "八" ; Y9 = ss "九" ;
+    -- Jan = ss "一 月" ; Feb = ss "二 月" ; Mar = ss "三 月" ; Apr = ss "四 月" ;
+    -- May = ss "五 月" ; Jun = ss "六 月" ; Jul = ss "七 月" ; Aug = ss "八 月" ;
+    -- Sep = ss "九 月" ; Oct = ss "十 月" ; Nov = ss "十 一 月" ; Dec = ss "十 二 月" ;
 
 -----------------------------------------------------------------------------
 -- Instead of crashing, every category should have a dummy constructor where to put a string

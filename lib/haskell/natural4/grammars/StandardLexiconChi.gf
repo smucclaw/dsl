@@ -17,11 +17,11 @@ concrete StandardLexiconChi of StandardLexicon = NL4BaseChi **
     demand = mkV2 "需 求" ;
     perform = mkV2 "履 行" ;
     become = mkV2 "成 为" ;
-    become_aware = mkVS "察 觉" ;
+    become_aware = mkVS "意识到" ;
     -- assess = mkVS (mkV "评估") ;
 
     apply = mkVP (mkV "申 请") ;
-    occur = mkVP (mkV "发 案") ;
+    occur = mkVP (mkV "发生") ;
     respond = mkVP (mkV "回 应") ;
 
     covered = mkAP (mkA ("保 户")) ;

@@ -41,8 +41,8 @@ spec = do
         [ defaultReg
             { subj = mkLeaf ((MTT "Data Intermediary" :| [], Nothing) :| []),
               rkeyword = REvery,
-              who = Just (mkLeaf (mkRpmt [ "is not",  "processing personal data on behalf of and for the purposes of a public agency"])),
-              cond = Just (mkLeaf (mkRpmt ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"])),
+              who = Just (mkRpmtLeaf [ "is not",  "processing personal data on behalf of and for the purposes of a public agency"]),
+              cond = Just (mkRpmtLeaf ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"]),
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Organisation"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
@@ -58,7 +58,7 @@ spec = do
         [ defaultReg
             { subj = mkLeaf ((MTT <$> "Data Intermediary" :| [], Nothing) :| []),
               rkeyword = REvery,
-              who = Just (mkLeaf (mkRpmt ["processes personal data on behalf of and for the purposes of a public agency"])),
+              who = Just (mkRpmtLeaf ["processes personal data on behalf of and for the purposes of a public agency"]),
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Public Agency"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
@@ -78,7 +78,7 @@ spec = do
         [ defaultReg
             { subj = mkLeaf ((MTT "You" :| [], Nothing) :| []),
               rkeyword = RParty,
-              cond = Just (All Nothing [mkLeaf (mkRpmt [ "it is",  "an NDB"]), Not (mkLeaf (mkRpmt ["you are a Public Agency"]))]),
+              cond = Just (All Nothing [mkRpmtLeaf [ "it is",  "an NDB"], Not (mkRpmtLeaf ["you are a Public Agency"])]),
               deontic = DMust,
               action = mkLeaf ((MTT <$> "NOTIFY" :| ["the PDPC"], Nothing) :| [ (MTT <$> "in" :| ["the form and manner specified at www.pdpc.gov.sg"], Nothing),
                                                                                 (MTT <$> "with" :| ["a Notification Message"], Nothing),
@@ -174,8 +174,8 @@ spec = do
                 Just
                   ( All
                       Nothing
-                      [ mkLeaf (mkRpmt ["it is", "an NDB"]),
-                        Not (mkLeaf (mkRpmt ["you are a Public Agency"]))
+                      [ mkRpmtLeaf ["it is", "an NDB"],
+                        Not (mkRpmtLeaf ["you are a Public Agency"])
                       ]
                   ),
               deontic = DMust,

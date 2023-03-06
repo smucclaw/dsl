@@ -35,8 +35,8 @@ spec = do
             { name = [MTT "Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (mkRpmt ["Bob is estranged"])
-                                                                                          ,mkLeaf (mkRpmt ["Bob is dead"])]))
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkRpmtLeaf ["Bob is estranged"]
+                                                                                          ,mkRpmtLeaf ["Bob is dead"]]))
                    , hBody = Nothing}]
             , srcref = mkTestSrcRef 1 1 }
 
@@ -47,8 +47,8 @@ spec = do
 
       let bobUncle2 = bobUncle1
             { clauses =
-              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (mkRpmt ["Bob is estranged"]))
-                                                                                  ,mkLeaf (mkRpmt ["Bob is dead"])])
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Any Nothing [Not (mkRpmtLeaf ["Bob is estranged"])
+                                                                                  ,mkRpmtLeaf ["Bob is dead"]])
                    , hBody = Nothing } ] }
 
       filetest "bob-head-2" "handle less indentation"

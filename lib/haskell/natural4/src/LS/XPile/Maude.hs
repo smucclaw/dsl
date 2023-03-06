@@ -26,7 +26,6 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
-import Control.Applicative (Applicative(liftA2))
 import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList,  elem))
 import Data.Functor ((<&>))
@@ -142,10 +141,9 @@ rule2doc
       Here we first process separately:
       - the part of the rule without the HENCE/LEST clauses.
       - the HENCE/LEST clauses.
-      We then combine these together via vcat, letting liftA2 collect all
-      the errors which occured while processing each part.
+      We then combine these together via vcat.
     -}
-    henceLestClauses |> liftA2 (:) ruleNoHenceLest |$> vcat
+    henceLestClauses |$> (ruleNoHenceLest :) |$> vcat
     where
       ruleNoHenceLest =
         [ ["RULE", text2qidDoc ruleName],
@@ -155,7 +153,6 @@ rule2doc
         ]
           |$> hsep
           |> vcat
-          |> pure
       henceLestClauses =
         [(Hence, hence), (Lest, lest)]
           |> traverse (uncurry henceLest2maudeStr)

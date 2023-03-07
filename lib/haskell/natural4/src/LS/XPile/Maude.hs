@@ -6,11 +6,11 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -34,6 +34,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString)
 import Data.Text qualified as T
 import Debug.Trace
+import Data.Traversable (mapAccumL)
 import Flow ((.>), (|>))
 import LS.Rule
   ( Rule (..),
@@ -42,7 +43,7 @@ import LS.Types
   ( MTExpr (MTT),
     RegKeywords (RParty),
     TComparison (..),
-    TemporalConstraint (TemporalConstraint),
+    TemporalConstraint (TemporalConstraint), RunConfig (wantNotRules),
   )
 import Prettyprinter
   ( Doc,
@@ -124,8 +125,8 @@ rule2doc
               (Just n)
               (T.toUpper -> "DAY")
             ),
-      hence = hence@(isValidHenceLest -> True),
-      lest = lest@(isValidHenceLest -> True),
+      hence = hence, -- @(isValidHenceLest -> True),
+      lest = lest, -- @(isValidHenceLest -> True),
       srcref, -- May want to use this for better error reporting.
       given = Nothing,
       having = Nothing,
@@ -154,8 +155,8 @@ rule2doc
           |$> hsep
           |> vcat
       henceLestClauses =
-        [(Hence, hence), (Lest, lest)]
-          |> traverse (uncurry henceLest2maudeStr)
+        [hence, lest]
+          |> traverseWith henceLest2doc [Hence, Lest]
           |$> filter isNonEmptyDoc
       deontic2doc deon =
         deon |> show2text |> T.tail |> T.toUpper |> pretty
@@ -170,14 +171,14 @@ rule2doc _ = errMsg
   A valid HENCE/LEST clause has the form
   rule0 [ AND rule1 AND ... AND ruleN ]
 -}
-isValidHenceLest :: Maybe Rule -> Bool
-isValidHenceLest Nothing = True
-isValidHenceLest (Just (RuleAlias xs)) =
-  xs |> zipWith isValidMTExpr [0 ..] |> and
-  where
-    isValidMTExpr (even -> True) (MTT _) = True
-    isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
-    isValidMTExpr _ _ = False
+-- isValidHenceLest :: Maybe Rule -> Bool
+-- isValidHenceLest Nothing = True
+-- isValidHenceLest (Just (RuleAlias xs)) =
+--   xs |> zipWith isValidMTExpr [0 ..] |> and
+--   where
+--     isValidMTExpr (even -> True) (MTT _) = True
+--     isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
+--     isValidMTExpr _ _ = False
 
 data HenceOrLest = Hence | Lest
   deriving (Eq, Ord, Read, Show)
@@ -189,23 +190,23 @@ instance Pretty HenceOrLest where
   This function can handle invalid HENCE/LEST clauses.
   A left with an error message is returned in such cases.
 -}
-henceLest2maudeStr ::
+henceLest2doc ::
   forall ann s (m :: Type -> Type).
   MonadErrorIsString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
-henceLest2maudeStr _ Nothing = pure mempty
-henceLest2maudeStr henceOrLest (Just (RuleAlias henceLest)) =
+henceLest2doc _ Nothing = pure mempty
+henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
   henceLest
-    |> traverse quotOrUpper
+    |> traverseIndexed quotOrUpper
     |$> hsep
     |$> parenthesizeIf (length henceLest > 1)
     |$> (pretty henceOrLest <+>)
   where
-    henceLest2doc _ = errMsg
-    quotOrUpper (MTT (T.toUpper -> "AND")) = pure "AND"
-    quotOrUpper (MTT ruleName) = ruleName |> text2qidDoc |> pure
-    quotOrUpper _ = errMsg
+    quotOrUpper (odd -> True) (MTT (T.toUpper -> "AND")) = pure "AND"
+    quotOrUpper (even -> True) (MTT ruleName) = ruleName |> text2qidDoc |> pure
+    quotOrUpper _ _ = errMsg
     parenthesizeIf True doc = ["(", doc, ")"] |> mconcat
     parenthesizeIf False doc = doc
+henceLest2doc _ _ = errMsg
 
 -- Common utilities
 
@@ -217,6 +218,20 @@ henceLest2maudeStr henceOrLest (Just (RuleAlias henceLest)) =
     (which could be (Either s) or ExceptT)
 -}
 type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
+
+mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
+mapIndexed f xs = xs |> mapAccumL g 0 |> snd
+  where
+    g index val = (index + 1, f index val)
+
+traverseIndexed ::
+  (Traversable t, Num s, Applicative f) =>
+  (s -> a1 -> f a2) -> t a1 -> f (t a2)
+traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
+
+traverseWith :: Applicative f => (a -> b -> f c) -> [a] -> [b] -> f [c]
+traverseWith f xs ys =
+    (xs, ys) |> uncurry (zipWith f) |> sequenceA
 
 infixl 0 |$>
 

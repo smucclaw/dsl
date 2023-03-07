@@ -3,16 +3,19 @@
 
 module LS.NLP.NL4Transformations where
 import LS.NLP.NL4
+import PGF (Language, mkCId)
 import qualified AnyAll as AA
 import Data.Maybe (fromMaybe)
 import Data.Foldable (toList)
 
 flipPolarity :: forall a . Tree a -> Tree a
-flipPolarity (GMkVPS temp GPOS vp) = GMkVPS temp GNEG vp
-flipPolarity (GMkVPS temp GNEG vp) = GMkVPS temp GPOS vp
+flipPolarity GPOS = GNEG
+flipPolarity GNEG = GPOS
 flipPolarity x = composOp flipPolarity x
 
 type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPrePost)) (Tree a)
+
+type BoolStructGText = AA.BoolStruct (Maybe (AA.Label GText)) GText
 
 type BoolStructWho = BoolStructGF GWho_  -- have to use underscore versions because of flipPolarity
 type BoolStructCond = BoolStructGF GCond_
@@ -49,7 +52,7 @@ bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
     AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GAND $ mkList $ f <$> xs
     AA.Not _ -> error $ "bs2gf: not expecting NOT in " <> show bs'
-  where 
+  where
     f = bs2gf conj conjPre conjPrePost mkList
     bs' = bsNeg2textNeg bs
 
@@ -57,15 +60,15 @@ bsWho2gfWho :: BoolStructWho -> GWho
 bsWho2gfWho = bs2gf GConjWho GConjPreWho GConjPrePostWho GListWho
 
 bsCond2gfCond :: BoolStructCond -> GCond
-bsCond2gfCond = bs2gf GConjCond GConjPreCond GConjPrePostCond GListCond 
+bsCond2gfCond = bs2gf GConjCond GConjPreCond GConjPrePostCond GListCond
 
 bsConstraint2gfConstraint :: BoolStructConstraint -> GConstraint
-bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePostConstraint GListConstraint 
+bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePostConstraint GListConstraint
 
 -----------------------------------------------------------------------------
 
 mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe (AA.Label a)) c ->  AA.BoolStruct (Maybe (AA.Label b)) d
-mapBSLabel f g bs = case bs of 
+mapBSLabel f g bs = case bs of
     AA.Leaf x -> AA.Leaf $ g x
     AA.Any pre xs -> AA.Any (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
     AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
@@ -106,11 +109,11 @@ mergeConj x = composOp mergeConj x
 -- TODO: check if viewpatterns help?
 squeezeTrees :: forall a . GConj -> [Tree a] -> Maybe (Tree a)
 squeezeTrees conj [
-    GTemporalConstraint cond1 tc1 date1
-  , GTemporalConstraint cond2 tc2 date2]
+    GRPConstraint cond1 tc1 date1
+  , GRPConstraint cond2 tc2 date2]
   | cond1==cond2
-  , date1==date2 = pure $ GTemporalConstraint cond1 conjTC date1
-  where 
+  , date1==date2 = pure $ GRPConstraint cond1 conjTC date1
+  where
     conjTC :: GTComparison
     conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
 
@@ -124,7 +127,7 @@ squeezeTrees conj [
 --   | subj1==subj2, temp1==temp2, pol1==pol2 = do
 --     newComp <- squeezeTrees conj [comp1, comp2]
 --     pure $ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp newComp))
-     
+
 squeezeTrees conj [
     GRPleafS subj1 vps1
   , GRPleafS subj2 vps2]
@@ -132,10 +135,15 @@ squeezeTrees conj [
 
 squeezeTrees _ _ = Nothing
 
+isChinese :: Language -> Bool
+isChinese l = l == mkCId "NL4Chi"
 
-aggregateBoolStruct :: forall a . BoolStructGF a ->  BoolStructGF a
-aggregateBoolStruct bs = case bs of 
-
-    AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
-    AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
-    _ -> bs
+aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
+aggregateBoolStruct l bs =
+  if False -- isChinese l
+    then bs
+    else
+      (case bs of
+        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
+        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
+        _ -> bs)

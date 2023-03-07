@@ -9,7 +9,7 @@ module LS.NLP.NLG where
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
 import LS.Types
-import LS.Rule (Rule(..))      
+import LS.Rule (Rule(..))
 import PGF
 import Data.Maybe (catMaybes)
 import qualified Data.Text as Text
@@ -26,18 +26,30 @@ data NLGEnv = NLGEnv
   , verbose :: Bool
   }
 
-myNLGEnv :: IO NLGEnv
-myNLGEnv = do
+allLangs :: IO [Language]
+allLangs = do
+  grammarFile <- getDataFileName $ gfPath "NL4.pgf"
+  gr <- readPGF grammarFile
+  pure $ languages gr
+
+getLang :: String -> Language
+getLang str = case readLanguage str of
+    Nothing -> error $ "language " <> str <> " not found"
+    Just l -> l
+
+myNLGEnv :: Language -> IO NLGEnv
+myNLGEnv lang = do
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  let lang = case readLanguage "NL4Eng" of 
-        Nothing -> error $ "concrete language NL4Eng not found among " <> show (languages gr)
-        Just l -> l
-      myParse typ txt = parse gr lang typ (Text.unpack txt)
-      myLin = Text.pack . linearize gr lang
+  let eng = getLang "NL4Eng"
+      myParse typ txt = parse gr eng typ (Text.unpack txt)
+  let myLin = rmBIND . Text.pack . linearize gr lang
   pure $ NLGEnv gr lang myParse myLin verbose
+
+rmBIND :: Text.Text -> Text.Text
+rmBIND = Text.replace " &+ " ""
 
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
@@ -46,14 +58,14 @@ gfPath x = "grammars/" ++ x
 -- Main
 
 -- WIP: crude way of keeping track of whether we're in hence, lest or whatever
-data RecursionLevel = TopLevel | MyHence Int | MyLest Int 
+data RecursionLevel = TopLevel | MyHence Int | MyLest Int
   deriving (Eq,Ord,Show)
 
 getLevel :: RecursionLevel -> Int
 getLevel l = case l of
   TopLevel -> 2
   MyHence i -> i
-  MyLest i -> i 
+  MyLest i -> i
 
 debugNesting :: RecursionLevel -> (Text.Text, Text.Text)
 debugNesting TopLevel = (Text.pack "", Text.pack "")
@@ -64,41 +76,43 @@ nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg = nlg' TopLevel
 
 nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
-nlg' thl env rule = case rule of 
-    Regulative {subj,upon,cond,who,deontic,action,lest,hence} -> do
+nlg' thl env rule = case rule of
+    Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
       let subjExpr = introduceSubj $ parseSubj env subj
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
-          whoSubjExpr = case who of 
+          whoSubjExpr = case who of
                         Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
                         Nothing -> subjExpr
           ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
           uponText = case upon of  -- TODO: doesn't work once we add another language
-                      Just u -> "Upon " <> pt2text u <> ", "
+                      Just u ->
+                        let uponExpr = gf $ GadvUPON $ parseUpon env u
+                         in gfLin env uponExpr <> ", "
                       Nothing -> mempty
-          condText = case cond of 
-                      Just c -> 
+          tcText = case temporal of
+                      Just t -> " " <> (gfLin env $ gf $ parseTemporal env t)
+                      Nothing -> mempty
+          condText = case cond of
+                      Just c ->
                         let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
                          in ". If " <> gfLin env condExpr <> ", "
                       Nothing -> mempty
-
-          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> condText, suffix]
-      lestText <- case lest of 
-                    Just r -> do 
+          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> tcText <> condText, suffix]
+      lestText <- case lest of
+                    Just r -> do
                       rt <- nlg' (MyLest i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
-      henceText <- case hence of 
-                    Just r -> do 
+      henceText <- case hence of
+                    Just r -> do
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
-
---      pure $ Text.unlines [ruleText, henceText, lestText]
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
-          parseBodyHC cl = case hBody cl of 
+          parseBodyHC cl = case hBody cl of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
             Nothing -> mempty
           bodyLins = parseBodyHC <$> clauses
@@ -134,9 +148,25 @@ nlg' thl env rule = case rule of
 
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
+  case rule of
+    Regulative {subj,who,cond,upon} -> text
+    Hornlike {clauses} -> do
+      print "---"
+      print $ ruleQnTrees env alias rule
+      print "---"
+      text
+    Constitutive {cond} -> text
+    DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
+    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
+    where
+      text = pure $ fmap (linBStext env) (concat $ ruleQnTrees env alias rule)
+
+
+ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [[BoolStructGText]]
+ruleQnTrees env alias rule = do
   let (youExpr, orgExpr) =
         case alias of
-          Just (you,org) -> 
+          Just (you,org) ->
               case parseSubj env . mkLeafPT . mt2text <$> [you, org] of
                 [y,o] -> (y,o) -- both are parsed
                 _ -> (GYou, GYou) -- dummy values
@@ -145,33 +175,36 @@ ruleQuestions env alias rule = do
     Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
           aliasExpr = if subjExpr==orgExpr then youExpr else referSubj subjExpr
-          qWhoBS = mkWhoText env (GqWHO aliasExpr) <$> who
-          qCondBS = mkCondText env GqCOND <$> cond
-          qUponBS = mkUponText env (GqUPON aliasExpr) <$> upon
-      pure $ catMaybes [qWhoBS, qUponBS, qCondBS]
+          qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
+          qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
+          qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
+      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
-      let bodyBS = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
-      pure $ catMaybes bodyBS
+      let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
+      return $ catMaybes bodyTrees
     Constitutive {cond} -> do
-      let qCondBS = mkCondText env GqCOND <$> cond
-      pure $ catMaybes [qCondBS]
-    DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
-    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
+      let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
+      return $ catMaybes [qCondTrees]
+    DefNameAlias {} -> pure []
+    _ -> pure []
 
-mkWhoText :: NLGEnv -> (GWho -> GText) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
-mkWhoText env f bsr = mapBSLabel (gfLin env . gf) (gfLin env . gf) bs
-  where bs = mapBSLabel id f $ aggregateBoolStruct $ parseWhoBS env bsr
+linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
+linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)
 
-mkCondText :: NLGEnv -> (GCond -> GText) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
-mkCondText env f bsr = mapBSLabel (gfLin env . gf) (gfLin env . gf) bs
-  where bs = mapBSLabel id f $ aggregateBoolStruct $ parseCondBS env bsr
+mkWhoText :: NLGEnv -> (GPrePost -> GText) -> (GWho -> GText) -> BoolStructR -> BoolStructGText
+mkWhoText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseWhoBS env bsr
 
-mkConstraintText :: NLGEnv -> (GPrePost -> GText) -> (GConstraint -> GText) -> BoolStructR -> AA.OptionallyLabeledBoolStruct Text.Text
-mkConstraintText env f g bsr = mapBSLabel (gfLin env . gf) (gfLin env . gf) bs
-  where bs = mapBSLabel f g $ aggregateBoolStruct $ parseConstraintBS env bsr
+mkCondText :: NLGEnv -> (GPrePost -> GText) -> (GCond -> GText) -> BoolStructR -> BoolStructGText
+mkCondText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseCondBS env bsr
 
-mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
-mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
+mkConstraintText :: NLGEnv -> (GPrePost -> GText) -> (GConstraint -> GText) -> BoolStructR -> BoolStructGText
+mkConstraintText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseConstraintBS env bsr
+
+mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> BoolStructGText
+mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
+
+-- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
+-- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
 nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
 nlgQuestion env rl = do
@@ -204,30 +237,42 @@ parseTComparison TBy = GBY
 parseTComparison TOn = GON
 parseTComparison TVague = GVAGUE
 
-parseDate :: MultiTerm -> GDate 
+parseDate :: MultiTerm -> GDate
 parseDate mt = case Text.words $ mt2text mt of
-  [d, m, y] -> GMkDate (tInt d) (tMonth m) (tInt y)
-  _ -> GMkDate (GInt 999) (LexMonth "Jan") (GInt 999)
+  [d, m, y] -> GMkDate (tDay d) (tMonth m) (mkYear y)
+  _ -> GMkDate (LexDay "Day1") (LexMonth "Jan") dummyYear
  where
-  tInt :: Text.Text -> GInt
-  tInt = GInt . read . Text.unpack
+  dummyYear = mkYear "1970"
+
+  mkYear :: Text.Text -> GYear
+  mkYear y = GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
+    where [y1, y2, y3, y4] = splitYear y
+
+  splitYear :: Text.Text -> [String]
+  splitYear y = case ["Y" <> [d] | d <- Text.unpack y] of
+    xs@[_, _, _, _] -> xs
+    _ -> ["Y2", "Y0", "Y0", "Y0"]
+
+  tDay :: Text.Text -> GDay
+  tDay t = LexDay ("Day"<> Text.unpack t)
 
   tMonth :: Text.Text -> GMonth
   tMonth = LexMonth . Text.unpack
 
+
 -- TODO: stop using *2text, instead use the internal structure
-  -- "respond" :| []  -> respond : VP 
+  -- "respond" :| []  -> respond : VP
   -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement, call ComplV2
   -- "assess" :| [ "if it is a Notifiable Data Breach" ] -> assess : VS, S complement, call ComplS2
 parseAction :: NLGEnv -> BoolStructP -> GAction
 parseAction env bsp = let txt = bsp2text bsp in
-  case parseAny "Action" env txt of 
+  case parseAny "Action" env txt of
     [] -> error $ msg "Action" txt
     x:_ -> fg x
 
 parseSubj :: NLGEnv -> BoolStructP -> GSubj
 parseSubj env bsp = let txt = bsp2text bsp in
-  case parseAny "Subj" env txt of 
+  case parseAny "Subj" env txt of
     [] -> error $ msg "Subj" txt
     x:_ -> fg x
 
@@ -238,7 +283,7 @@ parseWho env rp = let txt = rp2text rp in
     x:_ -> fg x
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
-parseCond env (RPConstraint c (RPTC t) d) = GTemporalConstraint cond tc date
+parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
   where
     cond = parseCond env (RPMT c)
     tc = parseTComparison t
@@ -247,12 +292,34 @@ parseCond env rp = let txt = rp2text rp in
     case parseAny "Cond" env txt of
       [] -> error $ msg "Cond" txt
       x:_ -> fg x
-                    
+
 parseUpon :: NLGEnv -> ParamText -> GUpon
 parseUpon env pt = let txt = pt2text pt in
   case parseAny "Upon" env txt of
     [] -> error $ msg "Upon" txt
     x:_ -> fg x
+
+parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
+parseTemporal env (TemporalConstraint t (Just int) text) = GTemporalConstraint tc digits unit
+  where
+    tc = parseTComparison t
+    digits = mkDigits int
+    unit = parseTimeUnit text
+
+    mkDigits :: Integer -> GDigits
+    mkDigits i = case [LexDig $ "D_" <> [d] | d <- show i] of
+      [] -> GIDig (LexDig "D_0") -- shouldn't happen, TODO alert user?
+      [dig] -> GIDig dig
+      xs -> foldr GIIDig (GIDig (last xs)) (init xs)
+
+parseTemporal _ (TemporalConstraint tc Nothing text) = undefined
+
+parseTimeUnit :: Text.Text -> GTimeUnit
+parseTimeUnit text = case take 3 $ Text.unpack $ Text.toLower text of
+  "day" -> GDay_Unit
+  "mon" -> GMonth_Unit
+  "yea" -> GYear_Unit
+  xs -> error $ "unrecognised unit of time: " <> Text.unpack text
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
 parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
@@ -263,7 +330,7 @@ parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
     bTxt = bsr2text b
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
-    
+
     tString :: Text.Text -> GString
     tString = GString . read . Text.unpack
 parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
@@ -274,7 +341,7 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
     bTxt = mt2text b
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
-    
+
     tString :: Text.Text -> GString
     tString = GString . read . Text.unpack
 
@@ -284,30 +351,30 @@ parseConstraint env rp = let txt = rp2text rp in
     x:_ -> fg x
 
 parsePrePost :: NLGEnv -> Text.Text -> GPrePost
-parsePrePost env txt = 
+parsePrePost env txt =
   case parseAny "PrePost" env txt of
     [] -> GrecoverUnparsedPrePost $ GString $ Text.unpack txt
     x:_ -> fg x
 
 -- TODO: later if grammar is ambiguous, should we rank trees here?
-parseAny :: String -> NLGEnv -> Text.Text -> [Expr] 
+parseAny :: String -> NLGEnv -> Text.Text -> [Expr]
 parseAny cat env txt = res
   where
-    typ = case readType cat of 
+    typ = case readType cat of
             Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
             Just t -> t
-    res = case gfParse env typ txt of 
+    res = case gfParse env typ txt of
             [] -> [mkApp (mkCId $ "recoverUnparsed"<>cat) [mkStr $ Text.unpack txt]]
             xs -> xs
 
 parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
 parseAnyNoRecover cat env = gfParse env typ
   where
-    typ = case readType cat of 
+    typ = case readType cat of
             Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
             Just t -> t
 
-msg :: String -> Text.Text -> String 
+msg :: String -> Text.Text -> String
 msg typ txt = "parse" <> typ <> ": failed to parse " <> Text.unpack txt
 
 -----------------------------------------------------------------------------

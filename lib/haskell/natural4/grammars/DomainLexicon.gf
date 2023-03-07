@@ -14,8 +14,8 @@ abstract DomainLexicon = NL4Base ** {
        , PDPC
        , data_breach
        : CN ;
-      public, notifiable, aware : AP ;
-      NDB_Qualification : NP ; 
+      public, notifiable : AP ;
+      NDB_Qualification : NP ;
 
   -- rodents and vermin
       Loss_or_Damage : NP ;

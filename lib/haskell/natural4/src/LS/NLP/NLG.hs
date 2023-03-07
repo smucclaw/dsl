@@ -17,6 +17,8 @@ import qualified AnyAll as AA
 import System.Environment (lookupEnv)
 import Paths_natural4
 import Data.Foldable as F
+import Data.List (intercalate)
+import qualified Data.Char as Char (toLower)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -31,6 +33,9 @@ allLangs = do
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
   pure $ languages gr
+
+printLangs :: IO [Language] -> IO String
+printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
 getLang :: String -> Language
 getLang str = case readLanguage str of
@@ -245,7 +250,7 @@ parseDate mt = case Text.words $ mt2text mt of
 
   mkYear :: Text.Text -> GYear
   mkYear y = GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
-    where [y1, y2, y3, y4] = splitYear y 
+    where [y1, y2, y3, y4] = splitYear y
 
   splitYear :: Text.Text -> [String]
   splitYear y = case ["Y" <> [d] | d <- Text.unpack y] of

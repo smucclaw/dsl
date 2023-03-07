@@ -23,7 +23,7 @@ import LS.XPile.Markdown
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 
-import LS.NLP.NLG (nlg,myNLGEnv, allLangs, getLang)
+import LS.NLP.NLG (nlg,myNLGEnv, allLangs, getLang, printLangs)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -46,6 +46,7 @@ main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
   nlgLangs <- unsafeInterleaveIO allLangs
+  strLangs <- unsafeInterleaveIO $ printLangs allLangs
   nlgEnv   <- unsafeInterleaveIO $ myNLGEnv (getLang "NL4Eng") -- Only load the NLG environment if we need it.
 --  putStrLn "main: doing dumpRules"
   allNLGEnv <- unsafeInterleaveIO $ mapM myNLGEnv nlgLangs
@@ -62,7 +63,7 @@ main = do
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv rules)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)

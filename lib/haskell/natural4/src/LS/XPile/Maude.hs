@@ -43,7 +43,7 @@ import LS.Types
   ( MTExpr (MTT),
     RegKeywords (RParty),
     TComparison (..),
-    TemporalConstraint (TemporalConstraint), RunConfig (wantNotRules),
+    TemporalConstraint (TemporalConstraint),
   )
 import Prettyprinter
   ( Doc,

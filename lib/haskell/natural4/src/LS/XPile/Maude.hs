@@ -27,6 +27,7 @@ module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
 import Data.Bifunctor (Bifunctor(bimap))
+import Data.Either (rights)
 import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList,  elem))
 import Data.Functor ((<&>))
@@ -89,7 +90,7 @@ import Prettyprinter
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
 rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules = rules |> rules2doc |> either show show
+rules2maudeStr rules = rules |> rules2doc |> show
 
 {-
   Auxiliary functions that help with the transpilation.
@@ -99,12 +100,16 @@ rules2maudeStr rules = rules |> rules2doc |> either show show
   happy.
 -}
 
+{- 
+  This function happily swallows up rules that don't transpile properly and
+  only outputs those that do to plaintext.
+-}
 rules2doc ::
-  forall ann s (m :: Type -> Type) (t :: Type -> Type).
-  (MonadErrorIsString s m, Foldable t) => t Rule -> m (Doc ann)
-rules2doc (null -> True) = pure mempty
+  forall ann s (t :: Type -> Type).
+  Foldable t => t Rule -> Doc ann
+rules2doc (null -> True) = mempty
 rules2doc rules =
-  rules |> toList |> traverse rule2doc |$> concatWith (<.>)
+  rules |> toList |$> rule2doc |> rights |> concatWith (<.>)
   where
     x <.> y = [x, ",", line, line, y] |> mconcat
 
@@ -114,8 +119,8 @@ rule2doc ::
   MonadErrorIsString s m => Rule -> m (Doc ann)
 rule2doc
   Regulative
-    { rlabel = Just ("§", 1, ruleName),
-      rkeyword = RParty,
+    { rlabel = Just (_, _, ruleName),
+      rkeyword,
       subj = Leaf ((MTT actorName :| [], Nothing) :| []),
       deontic,
       action = Leaf ((MTT actionName :| [], Nothing) :| []),
@@ -126,18 +131,18 @@ rule2doc
               (Just n)
               (T.toUpper -> "DAY")
             ),
-      hence = hence, -- @(isValidHenceLest -> True),
-      lest = lest, -- @(isValidHenceLest -> True),
+      hence, -- @(isValidHenceLest -> True),
+      lest, -- @(isValidHenceLest -> True),
       srcref, -- May want to use this for better error reporting.
-      given = Nothing,
-      having = Nothing,
-      who = Nothing,
-      cond = Nothing,
-      lsource = Nothing,
-      upon = Nothing,
-      wwhere = [],
-      defaults = [],
-      symtab = []
+      given,
+      having,
+      who,
+      cond,
+      lsource,
+      upon,
+      wwhere,
+      defaults,
+      symtab
     } =
     {-
       Here we first process separately:

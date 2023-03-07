@@ -26,6 +26,7 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (Leaf))
+import Data.Bifunctor (Bifunctor(bimap))
 import Control.Monad.Except (MonadError (throwError))
 import Data.Foldable (Foldable (toList,  elem))
 import Data.Functor ((<&>))
@@ -226,12 +227,14 @@ mapIndexed f xs = xs |> mapAccumL g 0 |> snd
 
 traverseIndexed ::
   (Traversable t, Num s, Applicative f) =>
-  (s -> a1 -> f a2) -> t a1 -> f (t a2)
+  (s -> a -> f b) -> t a -> f (t b)
 traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
 
-traverseWith :: Applicative f => (a -> b -> f c) -> [a] -> [b] -> f [c]
+traverseWith ::
+  (Foldable t1, Foldable t2, Applicative f) =>
+  (a1 -> a2 -> f b) -> t1 a1 -> t2 a2 -> f [b]
 traverseWith f xs ys =
-    (xs, ys) |> uncurry (zipWith f) |> sequenceA
+    (xs, ys) |> bimap toList toList |> uncurry (zipWith f) |> sequenceA
 
 infixl 0 |$>
 

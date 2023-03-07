@@ -140,7 +140,7 @@ isChinese l = l == mkCId "NL4Chi"
 
 aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
 aggregateBoolStruct l bs =
-  if isChinese l
+  if False -- isChinese l
     then bs
     else
       (case bs of

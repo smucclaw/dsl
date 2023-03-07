@@ -109,8 +109,17 @@ rules2doc ::
   Foldable t => t Rule -> Doc ann
 rules2doc (null -> True) = mempty
 rules2doc rules =
-  rules |> toList |$> rule2doc |> rights |> concatWith (<.>)
+  rules
+    |> toList
+    |> renameFirstRegRule
+    |$> rule2doc
+    |> rights
+    |> concatWith (<.>)
   where
+    renameFirstRegRule (rule@(Regulative {}) : rules) =
+      rule { rlabel = Just ("§", 1, "START") } : rules
+    renameFirstRegRule (rule : rules) = rule : renameFirstRegRule rules
+    renameFirstRegRule rules = rules
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
@@ -129,7 +138,7 @@ rule2doc
           ( TemporalConstraint
               tComparison@((`elem` [TOn, TBefore]) -> True)
               (Just n)
-              (T.toUpper -> "DAY")
+              (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
             ),
       hence, -- @(isValidHenceLest -> True),
       lest, -- @(isValidHenceLest -> True),

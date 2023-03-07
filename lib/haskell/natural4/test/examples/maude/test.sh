@@ -1,0 +1,1 @@
+stack run -- --workdir=workdir --toasp test0.csv

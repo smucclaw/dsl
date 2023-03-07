@@ -1,4 +1,6 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 import qualified LS as SFL4
@@ -20,6 +22,7 @@ import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
 import LS.XPile.Markdown
+import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 
@@ -70,7 +73,39 @@ main = do
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   rules2String l4i rules)
+      (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
+                                   [ "-- original rules:\n"
+                                   , TL.unpack (pShowNoColor rules)
+
+                                   , "-- variable-substitution expanded AnyAll rules\n"
+                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
+                                                               | r@SFL4.Hornlike{} <- rules
+                                                               ])
+
+                                   , "\n\n-- class hierarchy:\n"
+                                   , TL.unpack (pShowNoColor (SFL4.classtable l4i))
+
+                                   , "\n\n-- symbol table:\n"
+                                   , TL.unpack (pShowNoColor (SFL4.scopetable l4i))
+
+                                   , "-- getAndOrTrees"
+                                   , unlines $ (\r -> "\n-- " <> show (SFL4.ruleLabelName r) <> "\n" <>
+                                                 TL.unpack (pShowNoColor $ getAndOrTree l4i 1 r)) <$> rules
+
+                                   , "-- traverse toList of the getAndOrTrees"
+                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i 1 <$> rules
+
+                                   , "-- onlyTheItems"
+                                   , TL.unpack $ pShowNoColor (onlyTheItems l4i)
+
+                                   , "-- ItemsByRule"
+                                   , TL.unpack $ pShowNoColor (SFL4.itemsByRule l4i rules)
+
+                                   ])
+
+
+
 
   -- if --workdir is specified, and there are no --only, then we run all the things
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
@@ -93,6 +128,7 @@ main = do
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
+    when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg

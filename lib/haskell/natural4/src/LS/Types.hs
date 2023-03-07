@@ -115,6 +115,10 @@ mtexpr2text (MTB False) = "FALSE"
 pt2text :: ParamText -> Text.Text
 pt2text = Text.unwords . fmap mtexpr2text . toList . (fst =<<)
 
+-- | this is a DRAFT function, it loses the tail
+pt2tm :: ParamText -> TypedMulti
+pt2tm = NE.head
+
 type PTree = Tree.Tree TypedMulti -- Node ([MTT "notify" :| MTT "the government"], Nothing) [ Node ([MTT "immediately" :| [], Urgency) [] ]
 
 mkPTree :: TypedMulti -> [PTree] -> PTree

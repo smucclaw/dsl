@@ -103,10 +103,10 @@ globalDefinitions l4i =
         ]
 
 -- | What's going on with nested classes?
--- See the discussion in localvars.org
+-- See the discussion in src\/README.org and in the documentation\/keywords doc
 
 
-dumpNestedClass :: Interpreted -> DT.Tree ParamText -> Doc ann
+dumpNestedClass :: Interpreted -> PTree -> Doc ann
 dumpNestedClass l4i (DT.Node pt children)
   | not $ null children =
     -- "// pt:"       <+> viaShow pt <//>

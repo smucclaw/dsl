@@ -778,14 +778,14 @@ ruleLocalsOut _l4i r
 
 
 
-type NestedClass = Tree ParamText
+type NestedClass = PTree
 
 -- | top-level DEFINEs
 -- DEFINEs that have horn clause heads but no bodies are constant facts, so we'll define them as such here.
 -- DEFINEs that have horn clauses with bodies are functions that need to be set up a little differently. We'll deal with those separately.
 globalFacts :: Interpreted -> [NestedClass]
 globalFacts l4i =
-  [ Node (NE.singleton (NE.fromList (name r), super r) :: ParamText)
+  [ Node ((NE.fromList (name r), super r) :: TypedMulti)
     [ Node pt []
     | HC { hHead = RPParamText pt, hBody = Nothing } <- clauses r
     ]

@@ -382,7 +382,7 @@ Conventionally one would expect such a form to gather the exact birthdate, from 
 * Transpiling the above type declarations
 
 
-* Transpiling the instance DEFINEs to typescript
+* Nested Records: Transpiling the instance DEFINEs to typescript
 
 We lean heavily on the PrettyPrinter to format ParamTexts correctly.
 
@@ -408,8 +408,72 @@ In Typescript we would say something like
 #+begin_src typescript
   interface Outer { field1 : string,
 		      field2 : Inner }
+  interface Inner { field3 : number,
+		      field4 : boolean }
 #+end_src
 
+In L4 we would say
+
+#+begin_src l4
+  DECLARE Outer
+      HAS field1 IS A  String
+          field2 IS AN Inner
+          HAS field3 IS A Number
+              field4 IS A Boolean
+#+end_src
+
+A hoist later, we desugar to:
+
+#+begin_src l4
+  DECLARE Outer
+      HAS field1 IS A  String
+          field2 IS AN Inner
+  DECLARE Inner
+      HAS field3 IS A Number
+          field4 IS A Boolean
+#+end_src
+
+The value side of things is a bit tricky, though.
+
+This is the hoistable syntax:
+
+#+begin_src l4
+  DEFINE o1 IS AN Outer
+     HAS foobar   IS THE field1
+         bazqux   IS THE field2
+         HAS 100  IS THE field3
+             true IS THE field4
+#+end_src
+
+This causes ~bazqux~ to go global at top-level.
+
+This is the local, unhoisted syntax:
+
+#+begin_src l4
+  DEFINE o1 IS AN Outer
+     HAS foobar   IS THE field1
+         field2
+         HAS 100  IS THE field3
+             true IS THE field4
+#+end_src
+
+Now field2 has the value of the inner record, and is not labeled.
+
+Now, in the parser, we seem to have a PTree which is intended for this kind of nesting.
+
+#+begin_src haskell
+  Node (MTT "o1" :| [], Just (SimpleType TOne "Outer"))
+    [ Node (MTT "foobar" :| [], Just (SimpleType TOne "field1")) []
+    , Node (MTT "field2" :| [], Nothing)
+      [ Node (MTI  100 :| [], Just (SimpleType TOne "field3")) []
+      , Node (MTB True :| [], Just (SimpleType TOne "field4")) []
+      ]
+    ]
+#+end_src
+
+This is a PTree, and it can recurse as deep as you like.
+
+Note that the ~fst~ element of that pair is just an MTExpr. Maybe we want a ~NestedClass~ instead -- a ~Tree ParamText~? Or maybe we should shoehorn NestedClass into PTree.
 
 * Notes on the code
 

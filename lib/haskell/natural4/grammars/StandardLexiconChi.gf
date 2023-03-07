@@ -1,8 +1,8 @@
-concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
+concrete StandardLexiconChi of StandardLexicon = NL4BaseChi **
   open
-    SyntaxEng
-  , ParadigmsEng
-  , IrregEng
+    SyntaxChi
+  , ParadigmsChi
+  , (R=ResChi)
   , Prelude
   in {
 
@@ -11,42 +11,42 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
   -- This module should be the really high quality stuff
   lin
     organisation = mkCN (mkN ("organisation"|"Organisation")) ;
-    agency = mkCN (mkN ("agency"|"Agency")) ;
-    loss = mkCN (mkN "loss") ;
+    agency = mkCN (mkN ("机 构")) ;
+    loss = mkCN (mkN "亏 损") ;
 
-    demand = mkV2 "demand" ;
-    perform = mkV2 "perform" ;
-    become = mkV2 IrregEng.become_V ;
-    become_aware = mkVS (partV IrregEng.become_V  "aware") ;
-    assess = mkVS (mkV "assess") ;
+    demand = mkV2 "需 求" ;
+    perform = mkV2 "履 行" ;
+    become = mkV2 "成 为" ;
+    become_aware = mkVS "意识到" ;
+    -- assess = mkVS (mkV "评估") ;
 
-    apply = mkVP (mkV "apply") ;
-    occur = mkVP (mkV "occur") ;
-    respond = mkVP (mkV "respond") ;
+    apply = mkVP (mkV "申 请") ;
+    occur = mkVP (mkV "发生") ;
+    respond = mkVP (mkV "回 应") ;
 
-    covered = mkAP (mkA ("covered"|"Covered")) ;
-    ensuing np = mkAP (strA2 "ensuing") <lin NP np : NP>  ;
-    caused_by np = mkAP (mkA2 (mkA "caused") by8agent_Prep) <lin NP np : NP> ;
+    covered = mkAP (mkA ("保 户")) ;
+    ensuing np = mkAP (mkA2 "接 着") <lin NP np : NP>  ;
+    caused_by np = mkAP (mkA2 (mkA "的 原 因") by8agent_Prep) <lin NP np : NP> ;
 
     NP_caused_by_PrePost np = {
-      s = npStr np ++ "caused by" ;
-      qs = "Is the" ++ npStr np ++ "caused by"
+      s = npStr np ++ "的 原 因" ; -- np ++ "caused by"
+      qs = "那 个" ++ npStr np ++ "的 原 因" -- "Is the" ++ np ++ "caused by"
       } ;
+
     NP_caused_NP_to_VP_Prep_PrePost np water escape from =
       let cl : Cl = mkCl <np : NP> (mkVP cause_V2V <water : NP> <escape : VP>) ;
           cls : ClSlash = mkClSlash cl <from : Prep> ;
           qcl : QCl = hackQCl cls ;
           ss : SSlash = mkSSlash (mkTemp pastTense simultaneousAnt) positivePol cls ;
           qs : QS = mkQS pastTense qcl ;
-      in {s = ss.s ++ ss.c2 ; qs = (mkUtt qs).s} ;
+      in {s = ss.s ++ R.linPrep ss.c2 ; qs = (mkUtt qs).s} ;
 
   oper
-    cause_V2V : V2V = mkV2V (mkV "cause") noPrep to_Prep ;
+    cause_V2V : V2V = mkV2V (mkV "导 致") ;
 
 -- hack: just to get "does NP cause water to escape from", not "whom does NP cause water to escape from"
     hackQCl : ClSlash -> QCl = \clSlash -> mkQCl emptyIP clSlash ;
 
-    emptyIP : IP = whatSg_IP ** {s = \\_ => []} ;
-
+    emptyIP : IP = whatSg_IP ** {s = []} ;
 
 }

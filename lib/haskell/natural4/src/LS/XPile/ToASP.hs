@@ -11,10 +11,11 @@ import L4.PrintProg
       capitalise )
 -- import RuleTransfo (ruleDisjL, clarify) -- TODO: Not needed here, and module RuleTransfo not visible here
 import Data.Maybe (fromJust, mapMaybe, fromMaybe)
-import L4.SyntaxManipulation (decomposeBinop, appToFunArgs, applyVars, globalVarsOfProgram, funArgsToAppNoType, applyVarsNoType)
+import L4.SyntaxManipulation (decomposeBinop, appToFunArgs, applyVars, globalVarsOfProgram, funArgsToAppNoType, applyVarsNoType, fv, isLocalVar)
 import Data.List (nub)
 import Data.Foldable (find)
 import L4.KeyValueMap (ValueKVM)
+import qualified Data.Set as Set
 
 data ASPRule t = ASPRule {
                      nameOfASPRule :: String
@@ -26,6 +27,8 @@ data ASPRule t = ASPRule {
 
 
 -- Skolemized ASP rules code
+--Additional function when starting at natural4. 
+--addinVarDecls :: ASPRule -> ASPRule
 
 
 skolemizeASPRuleGlobals :: ASPRule t -> [VarDecl t]
@@ -144,13 +147,16 @@ negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
             _ -> error "negationPredicate: ill-formed negation"
 negationPredicate e = (e, Nothing)
 
-ruleToASPRule :: (Show t) => [VarDecl t] -> Rule t -> (ASPRule t, [(Var t, Var t, Int)])
-ruleToASPRule globals r =
+ruleToASPRule :: (Show t, Ord t) => Rule t -> (ASPRule t, [(Var t, Var t, Int)])
+ruleToASPRule r =
     let precondsNeg = map negationPredicate (decomposeBinop (BBool BBand)(precondOfRule r))
         postcondNeg = negationPredicate (postcondOfRule r)
         preconds = map fst precondsNeg
         postcond = fst postcondNeg
         negpreds = mapMaybe snd (postcondNeg : precondsNeg)
+        allVars = Set.unions (map fv (postcond : preconds))
+        globalvars = map varTovarDecl (Set.toList(Set.filter (not . isLocalVar) allVars))
+        localvars = map varTovarDecl (Set.toList(Set.filter isLocalVar allVars))
     in  ( ASPRule
                 (fromMaybe (error $
                             "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" ++
@@ -158,12 +164,17 @@ ruleToASPRule globals r =
                             "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option."
                            ) $
                  nameOfRule r)
-                globals
-                (varDeclsOfRule r)
-                preconds
-                postcond
-        , negpreds)
+                globalvars -- filterGlobalVars (map fv (postcond : preconds))
+                localvars  -- filterLocalVars (map (fv (postcond : preconds)))
+                preconds   -- filterGlobalVars [] = []
+                postcond   -- filterGlobalVars (GlobalVar x : xs) = (GlobalVar x) : filterGlobalVars xs 
+        , negpreds)        -- filterGlobalVars (LocalVar x n :xs) = filterGlobalVars xs 
 
+--varTovarDecl :: Var (Tp()) -> VarDecl (Tp())
+--varTovarDecl :: Var t -> VarDecl t
+varTovarDecl :: Var t -> VarDecl t
+varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT 
+varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT   
 
 data TranslationMode = AccordingToR | CausedByR | ExplainsR | VarSubs1R | VarSubs2R | VarSubs3R | AccordingToE String | LegallyHoldsE | QueryE | VarSubs4R | RawL4 | AddFacts
 class ShowASP x where
@@ -392,13 +403,13 @@ genOppClauseNoType (posvar, negvar, n) =
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
 -- This could possibly be remedied with NoType versions of these tactics
-astToASP :: (Eq t, Show t) => Program t -> IO ()
+astToASP :: (Eq t, Ord t, Show t) => Program t -> IO ()
 astToASP prg = do
     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
     let rules = rulesOfProgram prg
     -- putStrLn "Simplified L4 rules:"
     -- putDoc $ vsep (map (showL4 []) rules) <> line
-    let aspRulesWithNegs = map (ruleToASPRule (globalVarsOfProgram prg)) rules
+    let aspRulesWithNegs = map (ruleToASPRule ) rules
     let aspRules = map fst aspRulesWithNegs
     let aspRulesNoFact = removeFacts aspRules
     let aspRulesFact = keepFacts aspRules
@@ -420,13 +431,13 @@ astToASP prg = do
     putDoc $ vsep (map showOppClause oppClauses) <> line
 
 -- TODO: redundant with the above. Define astToASP as putDoc (astToDoc prg)
-astToDoc :: (Show t, Eq t) => Program t -> Doc ann
+astToDoc :: (Show t, Ord t, Eq t) => Program t -> Doc ann
 astToDoc prg =
     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
     let rules = rulesOfProgram prg in
     -- putStrLn "Simplified L4 rules:"
     -- putDoc $ vsep (map (showL4 []) rules) <> line
-    let aspRulesWithNegs = map (ruleToASPRule (globalVarsOfProgram prg)) rules in
+    let aspRulesWithNegs = map ruleToASPRule rules in
     let aspRules = map fst aspRulesWithNegs in
     let aspRulesNoFact = removeFacts aspRules in
     let aspRulesFact = keepFacts aspRules in

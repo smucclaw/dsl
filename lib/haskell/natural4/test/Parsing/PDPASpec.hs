@@ -10,8 +10,9 @@ import LS.Types
 import LS.Rule
 import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
-import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
 import Test.Hspec.Megaparsec (shouldParse)
+import qualified Data.Text as T
 
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
@@ -20,6 +21,12 @@ filetest testfile desc parseFunc expected =
   testcsv <- BS.readFile ("test/Parsing/pdpa/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
+
+mkMTExprMulti :: [T.Text] -> TypedMulti
+mkMTExprMulti xs = (MTT <$> fromList xs, Nothing)
+
+mkParamText :: [[T.Text]] -> ParamText
+mkParamText = fromList . fmap mkMTExprMulti
 
 spec :: Spec
 spec = do
@@ -39,15 +46,15 @@ spec = do
       filetest "pdpadbno-2" "data intermediaries"
         (parseR pToplevel)
         [ defaultReg
-            { subj = mkLeaf ((MTT "Data Intermediary" :| [], Nothing) :| []),
+            { subj = mkLeaf $ mkParamText [["Data Intermediary"]],
               rkeyword = REvery,
               who = Just (mkRpmtLeaf [ "is not",  "processing personal data on behalf of and for the purposes of a public agency"]),
               cond = Just (mkRpmtLeaf ["the data breach occurs on or after the date of commencement of PDP(A)A 2020 \167\&13"]),
               deontic = DMust,
-              action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Organisation"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
+              action = mkLeaf $ mkParamText [["NOTIFY", "the Organisation"], ["for which", "you act as a Data Intermediary"]],
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
               rlabel = Just ("\167", 2, "Data Intermediary non PA"),
-              upon = Just ((MTT <$> "becoming aware a data breach involving a client Organisation may have occurred" :| [], Nothing) :| [])
+              upon = Just $ mkParamText [["becoming aware a data breach involving a client Organisation may have occurred"]]
             },
           DefNameAlias {
           name = [MTT "You"], detail = [MTT "Data Intermediary"], nlhint = Nothing, srcref = mkTestSrcRef 2 3}
@@ -56,14 +63,14 @@ spec = do
       filetest "pdpadbno-3" "data intermediaries"
         (parseR pToplevel)
         [ defaultReg
-            { subj = mkLeaf ((MTT <$> "Data Intermediary" :| [], Nothing) :| []),
+            { subj = mkLeaf $ mkParamText [["Data Intermediary"]],
               rkeyword = REvery,
               who = Just (mkRpmtLeaf ["processes personal data on behalf of and for the purposes of a public agency"]),
               deontic = DMust,
-              action = mkLeaf ((MTT <$> "NOTIFY" :| ["the Public Agency"], Nothing) :| [(MTT <$> "for which" :| ["you act as a Data Intermediary"], Nothing)]),
+              action = mkLeaf $ mkParamText [["NOTIFY", "the Public Agency"], ["for which", "you act as a Data Intermediary"]],
               temporal = Just (TemporalConstraint TVague (Just 0) "without undue delay"),
               rlabel = Just ("\167", 2, "Data Intermediary for PA"),
-              upon = Just ((MTT <$> "becoming aware a data breach involving a client public agency may have occurred" :| [], Nothing) :| [])
+              upon = Just $ mkParamText [["becoming aware a data breach involving a client public agency may have occurred"]]
             },
           DefNameAlias
             { name = [MTT "You"],
@@ -76,21 +83,24 @@ spec = do
       filetest "pdpadbno-5" "notification to PDPC"
         (parseR pToplevel)
         [ defaultReg
-            { subj = mkLeaf ((MTT "You" :| [], Nothing) :| []),
+            { subj = mkLeaf $ mkParamText [["You"]],
               rkeyword = RParty,
               cond = Just (All Nothing [mkRpmtLeaf [ "it is",  "an NDB"], Not (mkRpmtLeaf ["you are a Public Agency"])]),
               deontic = DMust,
-              action = mkLeaf ((MTT <$> "NOTIFY" :| ["the PDPC"], Nothing) :| [ (MTT <$> "in" :| ["the form and manner specified at www.pdpc.gov.sg"], Nothing),
-                                                                                (MTT <$> "with" :| ["a Notification Message"], Nothing),
-                                                                                (MTT <$> "and" :| ["a list of individuals for whom notification waiver is sought"], Nothing)]),
+              action = mkLeaf $ mkParamText
+                    [ ["NOTIFY", "the PDPC"],
+                      ["in", "the form and manner specified at www.pdpc.gov.sg"],
+                      ["with", "a Notification Message"],
+                      ["and", "a list of individuals for whom notification waiver is sought"]
+                    ],
               temporal = Just (TemporalConstraint TBefore (Just 3) "days"),
               hence =
                 Just
                   ( defaultReg
-                      { subj = mkLeaf ((MTT <$> "the PDPC" :| [], Nothing) :| []),
+                      { subj = mkLeaf $ mkParamText [["the PDPC"]],
                         rkeyword = RParty,
                         deontic = DMay,
-                        action = mkLeaf ((MTT <$> "NOTIFY" :| ["you"], Nothing) :| [(MTT <$> "with" :| ["a list of individuals to exclude from notification"], Nothing)]),
+                        action = mkLeaf $ mkParamText [["NOTIFY", "you"], ["with", "a list of individuals to exclude from notification"]],
                         srcref = Nothing
                       }
                   ),
@@ -107,22 +117,12 @@ spec = do
       filetest "pdpadbno-6" "exemption: unlikely"
         (parseR pToplevel)
         [ defaultHorn
-          { name = MTT <$> 
+          { name = MTT <$>
             [ "it is"
             , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
             ]
           , keyword = Decide
-          , given = Just
-            (
-              ( MTT "an individual" :| []
-              , Nothing
-              ) :|
-              [
-                ( MTT <$> "who" :| [ "is affected by an NDB" ]
-                , Nothing
-                )
-              ]
-            )
+          , given = Just $ mkParamText [["an individual"] ,["who",  "is affected by an NDB" ]]
           , upon = Nothing
           , clauses =
               [ HC
@@ -156,7 +156,7 @@ spec = do
           }
         , DefNameAlias
           { name = [ MTT "Unlikely" ]
-          , detail = MTT <$> 
+          , detail = MTT <$>
             [ "it is"
             , "unlikely that the notifiable data breach will result in significant harm to the affected individual"
             ]
@@ -168,7 +168,7 @@ spec = do
       filetest "pdpadbno-7" "notification to users"
         (parseR pToplevel)
         [ defaultReg
-            { subj = mkLeaf ((MTT <$> "You" :| [], Nothing) :| []),
+            { subj = mkLeaf $ mkParamText [["You"]],
               rkeyword = RParty,
               cond =
                 Just
@@ -179,7 +179,9 @@ spec = do
                       ]
                   ),
               deontic = DMust,
-              action = mkLeaf ((MTT <$> "NOTIFY" :| ["each of the Notifiable Individuals"], Nothing) :| [(MTT <$> "in" :| ["any manner that is reasonable in the circumstances"], Nothing), (MTT <$> "with" :| ["a message obeying a certain format"], Nothing)]),
+              action = mkLeaf $ mkParamText [ ["NOTIFY", "each of the Notifiable Individuals"],
+                                              ["in", "any manner that is reasonable in the circumstances"],
+                                              ["with", "a message obeying a certain format"]],
               temporal = Just (TemporalConstraint TBefore (Just 3) "days"),
               rlabel = Just ("\167", 2, "Notify Individuals"),
               srcref = mkTestSrcRef 1 1,
@@ -219,33 +221,15 @@ spec = do
 expected_pdpadbno1 :: [Rule]
 expected_pdpadbno1 =
             [ defaultReg
-              { subj = Leaf
-                (
-                  ( pure (MTT "Organisation")
-                  , Nothing
-                  ) :| []
-                )
+              { subj = Leaf $ mkParamText [["Organisation"]]
               , rkeyword = REvery
               , who = Just (Not (Leaf (RPMT [MTT "is", MTT "a Public Agency"])))
               , cond = Just (
-                  Any Nothing 
+                  Any Nothing
                   [ Leaf (RPConstraint [MTT "the data breach occurs"] (RPTC TOn) [MTT "1 Feb 2022"])
                   , Leaf (RPConstraint [MTT "the data breach occurs"] (RPTC TAfter) [MTT "1 Feb 2022"])])
               , deontic = DMust
-              , action = Leaf
-                (
-                  ( MTT "assess" :| [ MTT "if it is a Notifiable Data Breach" ]
-                  , Nothing
-                  ) :|
-                  [
-                    ( MTT <$> "by" :|
-                      [ "performing"
-                      , "NDB Qualification"
-                      ]
-                    , Nothing
-                    )
-                  ]
-                )
+              , action = Leaf $ mkParamText [["assess", "if it is a Notifiable Data Breach" ], ["by", "performing", "NDB Qualification"]]
               , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
               , hence = Just ( RuleAlias [MTT "Notification"] )
               , lest = Just
@@ -258,40 +242,20 @@ expected_pdpadbno1 =
                         )
                     , rkeyword = RParty
                     , deontic = DMay
-                    , action = Leaf
-                        (
-                            ( MTT <$> "demand" :| [ "an explanation for your inaction" ]
-                            , Nothing
-                            ) :| []
-                        )
+                    , action = Leaf $ mkParamText [["demand", "an explanation for your inaction" ]]
                     , temporal = Nothing
                     , srcref = Nothing
                     , hence = Just
                         ( defaultReg
-                            { subj = Leaf
-                                (
-                                    ( MTT "You" :| []
-                                    , Nothing
-                                    ) :| []
-                                )
+                            { subj = Leaf $ mkParamText [["You"]]
                             , rkeyword = RParty
                             , deontic = DMust
                             , srcref = Nothing
-                            , action = Leaf
-                                (
-                                    ( MTT "respond" :| []
-                                    , Nothing
-                                    ) :|
-                                    [
-                                        ( MTT <$> "to" :| [ "the PDPC" ]
-                                        , Nothing
-                                        )
-                                    ,
-                                        ( MTT <$> "about" :| [ "your inaction" ]
-                                        , Nothing
-                                        )
-                                    ]
-                                )
+                            , action = Leaf $ mkParamText
+                                                [ ["respond"],
+                                                  ["to", "the PDPC"],
+                                                  ["about", "your inaction"]
+                                                ]
                             }
                         )
                     }

@@ -31,7 +31,7 @@ WITHIN 10 DAY
 HENCE qid("Cannot notify individuals"),
 
 RULE qid("Cannot notify individuals")
-PARTY qid("YOU")
+PARTY qid("You")
 SHANT qid("NOTIFY each of the Notifiable Individuals")
 WITHIN 10 DAY,
 

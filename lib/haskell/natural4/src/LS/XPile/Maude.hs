@@ -173,7 +173,7 @@ rule2doc
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [HENCE, LEST]
-            |$> filter isNonEmptyDoc
+          |$> filter isNonEmptyDoc
       isNonEmptyDoc doc = doc |> show |> not . null
 
 rule2doc DefNameAlias {name, detail} =

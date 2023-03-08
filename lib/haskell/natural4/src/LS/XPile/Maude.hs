@@ -163,33 +163,32 @@ rule2doc
     } =
     {-
       Here we first process separately:
-      - the part of the rule without the HENCE/LEST clauses.
-      - the HENCE/LEST clauses.
+      - RULE ruleName
+      - rkeyword actor
+      - deontic action
+      - deadline
+      - HENCE/LEST clauses
       We then combine these together via vcat.
     -}
     henceLestClauses
-      |$> ([ruleActorDeonticAction, deadline] <>)
+      |$> ([ruleName', rkeywordActor, deonticAction, deadline] <>)
       |$> vcat
     where
-      ruleActorDeonticAction =
-        [ ["RULE", ruleName |> text2qid],
-          [rkeyword', actor |> pt2qid],
-          [deontic |> deontic2doc, action |> pt2qid]
-        ]
-          |$> map pretty
-          |$> hsep
-          |> vcat
+      ruleName' = ruleName |> text2qid |> pretty |> ("RULE" <+>)
+      rkeywordActor = rkeywordParamText2doc rkeyword actor 
+      deonticAction = rkeywordParamText2doc deontic action
       deadline = temporal |> maybeTempConstr2doc
+      rkeyword2doc rkeyword =
+        rkeyword |> show2text |> T.tail |> T.toUpper
+      rkeywordParamText2doc rkeyword paramText =
+        [rkeyword2doc rkeyword, pt2qid paramText] |$> pretty |> hsep
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [Hence, Lest]
           |$> filter isNonEmptyDoc
-      deontic2doc deon =
-        deon |> show2text |> T.tail |> T.toUpper
-      rkeyword' = rkeyword |> tokenOf |> show2text |> T.toUpper
       isNonEmptyDoc doc = doc |> show |> not . null
-      -- pt2qid paramText = paramText |> pt2text |> text2qid
       pt2qid ((mtt, _) :| _) = mtt |> toList |> mt2text |> text2qid
+      -- pt2qid paramText = paramText |> pt2text |> text2qid
 
 rule2doc DefNameAlias { name, detail } =
   nameDetails2means name [detail] |> pure

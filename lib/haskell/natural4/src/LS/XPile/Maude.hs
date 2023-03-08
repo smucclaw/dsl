@@ -25,13 +25,14 @@ module LS.XPile.Maude where
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Applicative (Applicative (liftA2))
 import Control.Monad.Except (MonadError (throwError))
-import Data.Bifunctor (Bifunctor (bimap, second))
+import Data.Bifunctor (Bifunctor (bimap, second, first))
 import Data.Either (rights)
 import Data.Foldable (Foldable (elem, toList))
 import Data.Functor ((<&>))
 import Data.Kind (Constraint, Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Maybe (mapMaybe)
 import Data.String (IsString)
 import Data.Text qualified as T
 import Data.Traversable (mapAccumL)
@@ -67,7 +68,6 @@ import Prettyprinter
     vsep,
     (<+>),
   )
-import Data.Maybe (mapMaybe)
 
 {-
   Based on experiments being run here:
@@ -180,23 +180,25 @@ rule2doc
       - HENCE/LEST clauses
       We then combine these together via vcat.
     -}
-    henceLestClauses
-      |$> ([ruleName', rkeywordActor, deonticAction, deadline] <>)
+    ([ruleName', rkeywordActor, deonticAction, deadline], henceLestClauses)
+      |> first pure
+      |> uncurry (liftA2 (<>))
       |$> vcat
     where
       ruleName' = ruleName |> text2qid |> pretty |> ("RULE" <+>)
       rkeywordActor = rkeywordParamText2doc rkeyword actor 
       deonticAction = rkeywordParamText2doc deontic action
-      deadline = temporal |> maybeTempConstr2doc
-      rkeyword2doc rkeyword =
-        rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
-      rkeywordParamText2doc rkeyword paramText =
-        [rkeyword2doc rkeyword, pt2qid paramText] |> hsep
-      pt2qid ((mtExpr, _) :| _) = mtExpr |> toList |> mt2qid
+      deadline = maybeTempConstr2doc temporal
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [HENCE, LEST]
           |$> filter isNonEmptyDoc
+
+      rkeywordParamText2doc rkeyword paramText =
+        (rkeyword, paramText) |> bimap rkeyword2doc pt2qid |> uncurry (<+>)
+      rkeyword2doc rkeyword =
+        rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
+      pt2qid ((mtExpr, _) :| _) = mtExpr |> toList |> mt2qid
       isNonEmptyDoc doc = doc |> show |> not . null
       -- pt2qid paramText = paramText |> pt2text |> text2qid
 
@@ -321,23 +323,23 @@ elt2pair :: a -> (a, a)
 elt2pair x = (x, x)
 
 -- map where the function is also passed the index of the current element.
-mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
-mapIndexed f xs = xs |> mapAccumL g 0 |> snd
-  where
-    g index val = (index + 1, f index val)
+-- mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
+-- mapIndexed f xs = xs |> mapAccumL g 0 |> snd
+--   where
+--     g index val = (index + 1, f index val)
 
 -- mapFirst pred f xs applies f to the first element of xs that satisfies pred.
-mapFirst :: Traversable t => (b -> Bool) -> (b -> b) -> t b -> t b
-mapFirst pred f xs = xs |> mapAccumL g False |> snd
-  where
-    g False elt@(pred -> True) = (True, f elt)
-    g seen elt = (seen, elt)
+-- mapFirst :: Traversable t => (b -> Bool) -> (b -> b) -> t b -> t b
+-- mapFirst pred f xs = xs |> mapAccumL g False |> snd
+--   where
+--     g False elt@(pred -> True) = (True, f elt)
+--     g seen elt = (seen, elt)
 
 --- Like mapIndexed, but uses traverse/sequenceA for short-circuiting.
-traverseIndexed ::
-  (Traversable t, Num s, Applicative f) =>
-  (s -> a -> f b) -> t a -> f (t b)
-traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
+-- traverseIndexed ::
+--   (Traversable t, Num s, Applicative f) =>
+--   (s -> a -> f b) -> t a -> f (t b)
+-- traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
 
 --- Like zipWith, but uses traverse/sequenceA for short-circuiting.
 traverseWith ::

@@ -3,11 +3,11 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -25,7 +25,7 @@ module LS.XPile.Maude where
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Applicative (Applicative (liftA2))
 import Control.Monad.Except (MonadError (throwError))
-import Data.Bifunctor (Bifunctor (bimap, second, first))
+import Data.Bifunctor (Bifunctor (bimap, first, second))
 import Data.Either (rights)
 import Data.Foldable (Foldable (elem, toList))
 import Data.Functor ((<&>))
@@ -36,7 +36,7 @@ import Data.Maybe (mapMaybe)
 import Data.String (IsString)
 import Data.Text qualified as T
 import Data.Traversable (mapAccumL)
-import Debug.Trace
+-- import Debug.Trace
 import Flow ((.>), (|>))
 import LS.Rule
   ( Rule (..),
@@ -47,14 +47,15 @@ import LS.Types
     MTExpr (MTT),
     MultiTerm,
     MyToken (Means),
+    ParamText,
     RPRel (RPis),
     RegKeywords (REvery, RParty),
     RelationalPredicate (RPBoolStructR, RPMT),
-    TComparison (TOn, TBefore),
+    TComparison (TBefore, TOn),
     TemporalConstraint (TemporalConstraint),
     mt2text,
     mtexpr2text,
-    pt2text, ParamText,
+    pt2text,
   )
 import Prettyprinter
   ( Doc,
@@ -115,10 +116,13 @@ rules2maudeStr rules = rules |> rules2doc |> show
 -}
 rules2doc ::
   forall ann s t.
-  Foldable t => t Rule -> Doc ann
+  Foldable t =>
+  t Rule ->
+  Doc ann
 rules2doc (null -> True) = mempty
+
 rules2doc rules =
-  (startRule, transpiledRules) |> uncurry (:) |> concatWith (<.>) 
+  (startRule, transpiledRules) |> uncurry (:) |> concatWith (<.>)
   where
     startRule =
       rules'
@@ -128,7 +132,7 @@ rules2doc rules =
         |> maybe mempty ("START" <+>)
     transpiledRules = rules' |$> rule2doc |> rights
     rules' = toList rules
-    rule2RegRuleName Regulative { rlabel = Just (_, _, ruleName) } =
+    rule2RegRuleName Regulative {rlabel = Just (_, _, ruleName)} =
       Just ruleName
     rule2RegRuleName _ = Nothing
     x <.> y = [x, ",", line, line, y] |> mconcat
@@ -136,34 +140,17 @@ rules2doc rules =
 -- Main function that transpiles individual rules.
 rule2doc ::
   forall ann s m.
-  MonadErrorIsString s m => Rule -> m (Doc ann)
-
+  MonadErrorIsString s m =>
+  Rule ->
+  m (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
-      rkeyword,
-      subj = Leaf actor,
-      deontic,
-      action = Leaf action,
+      rkeyword, subj = Leaf actor,
+      deontic, action = Leaf action,
       temporal,
-      -- Just
-      --   ( TemporalConstraint
-      --       tComparison@((`elem` [TOn, TBefore]) -> True)
-      --       (Just n)
-      --       (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
-      --     ),
-      hence, -- @(isValidHenceLest -> True),
-      lest -- @(isValidHenceLest -> True),
+      hence, lest
       -- srcref, -- May want to use this for better error reporting.
-      -- given,
-      -- having,
-      -- who,
-      -- cond,
-      -- lsource,
-      -- upon,
-      -- wwhere,
-      -- defaults,
-      -- symtab
     } =
     {-
       Here we first process separately:
@@ -180,36 +167,29 @@ rule2doc
       |$> vcat
     where
       ruleName' = ruleName |> text2qid |> ("RULE" <+>)
-      rkeywordActor = rkeywordDeonParamText2doc rkeyword actor 
+      rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
       deadline = maybeTempConstr2doc temporal
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [HENCE, LEST]
-          |$> filter isNonEmptyDoc
+            |$> filter isNonEmptyDoc
       isNonEmptyDoc doc = doc |> show |> not . null
 
-rule2doc DefNameAlias { name, detail } =
+rule2doc DefNameAlias {name, detail} =
   nameDetails2means name [detail] |> pure
 
+{-
+  clauses =
+  [ Leaf ( RPMT [MTT "Notify PDPC"] ),
+    Leaf ( RPMT [MTT "Notify Individuals"] ) ]
+-}
 rule2doc
   Hornlike
     { keyword = Means,
-      clauses =
-        [HC {hHead = RPBoolStructR mtExpr RPis (All _ leaves)}]
-        --   [ Leaf
-        --       ( RPMT
-        --           [MTT "Notify PDPC"]
-        --         ),
-        --     Leaf
-        --       ( RPMT
-        --           [MTT "Notify Individuals"]
-        --         )
-        --     ]
-        -- )
-        -- hBody = Nothing
-    } = 
-      leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
+      clauses = [HC {hHead = RPBoolStructR mtExpr RPis (All _ leaves)}]
+    } =
+    leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
     where
       leaf2mtt (Leaf (RPMT mtt)) = pure mtt
       leaf2mtt _ = errMsg
@@ -228,7 +208,6 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     rkeyword2doc rkeyword =
       rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
     paramText2qid ((mtExpr, _) :| _) = mtExpr |> toList |> multiTerm2qid
-    -- pt2qid paramText = paramText |> pt2text |> text2qid
 
 maybeTempConstr2doc :: Maybe (TemporalConstraint T.Text) -> Doc ann
 maybeTempConstr2doc
@@ -238,12 +217,13 @@ maybeTempConstr2doc
           (Just n)
           (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
         )
-    ) = [tComparison', n', "DAY"] |> hsep
-  where
-    n' = pretty n
-    tComparison' = tComparison2doc tComparison
-    tComparison2doc TOn = "ON"
-    tComparison2doc TBefore = "WITHIN"
+    ) =
+    [tComparison', n', "DAY"] |> hsep
+    where
+      n' = pretty n
+      tComparison' = tComparison2doc tComparison
+      tComparison2doc TOn = "ON"
+      tComparison2doc TBefore = "WITHIN"
 
 maybeTempConstr2doc _ = "WITHIN 7 DAY"
 
@@ -293,7 +273,10 @@ instance Pretty HenceOrLest where
 -}
 henceLest2doc ::
   forall ann s m.
-  MonadErrorIsString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
+  MonadErrorIsString s m =>
+  HenceOrLest ->
+  Maybe Rule ->
+  m (Doc ann)
 henceLest2doc _ Nothing = pure mempty
 
 henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
@@ -314,9 +297,6 @@ henceLest2doc _ _ = errMsg
     (which could be (Either s) or ExceptT)
 -}
 type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
-
-elt2pair :: a -> (a, a)
-elt2pair x = (x, x)
 
 -- map where the function is also passed the index of the current element.
 -- mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
@@ -340,7 +320,10 @@ elt2pair x = (x, x)
 --- Like zipWith, but uses traverse/sequenceA for short-circuiting.
 traverseWith ::
   (Foldable t1, Foldable t2, Applicative f) =>
-  (a1 -> a2 -> f b) -> t1 a1 -> t2 a2 -> f [b]
+  (a1 -> a2 -> f b) ->
+  t1 a1 ->
+  t2 a2 ->
+  f [b]
 traverseWith f xs ys =
   zipWith f xs' ys' |> sequenceA
   where

@@ -114,9 +114,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
 -}
 rules2doc ::
   forall ann s (t :: Type -> Type).
-  Foldable t =>
-  t Rule ->
-  Doc ann
+  Foldable t => t Rule -> Doc ann
 rules2doc (null -> True) = mempty
 rules2doc rules =
   rules
@@ -134,9 +132,7 @@ rules2doc rules =
 -- Main function that transpiles individual rules.
 rule2doc ::
   forall ann s (m :: Type -> Type).
-  MonadErrorIsString s m =>
-  Rule ->
-  m (Doc ann)
+  MonadErrorIsString s m => Rule -> m (Doc ann)
 
 rule2doc
   Regulative

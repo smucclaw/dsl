@@ -233,7 +233,7 @@ maybeTempConstr2texts
   where
     tComparison2doc TOn = "ON"
     tComparison2doc TBefore = "WITHIN"
-maybeTempConstr2texts _ = ["WITHIN", "10", "DAY"]
+maybeTempConstr2texts _ = ["WITHIN", "7", "DAY"]
 
 nameDetails2means :: Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =

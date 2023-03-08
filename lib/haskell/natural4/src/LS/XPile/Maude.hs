@@ -249,10 +249,10 @@ nameDetails2means name details =
         |> intersperse "AND"
         |> hsep
         |> parenthesizeIf (length details > 1)
-    details2qids details =
-      details |> toList |$> mt2qid
+    details2qids details = details |> toList |$> mt2qid
     parenthesizeIf True x = ["(", x, ")"] |> mconcat
     parenthesizeIf _ x = x
+
 -- Auxiliary stuff for handling HENCE/LEST clauses.
 
 {-

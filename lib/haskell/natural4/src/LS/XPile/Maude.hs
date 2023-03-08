@@ -6,12 +6,11 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -132,7 +131,7 @@ rules2doc rules =
   where
     isRegRule Regulative {} = True
     isRegRule _ = False
-    renameRuleToStart rule = rule {rlabel = Just ("§", 1, "START")}
+    renameRuleToStart rule = rule { rlabel = Just ("§", 1, "START") }
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
@@ -179,11 +178,12 @@ rule2doc
       ruleNoHenceLest =
         [ ["RULE", ruleName |> text2qid],
           [rkeyword', actor |> pt2qid],
-          [deontic |> deontic2doc, action |> pt2qid],
-          temporal |> maybeTempConstr2texts
+          [deontic |> deontic2doc, action |> pt2qid]
         ]
           |$> map pretty
           |$> hsep
+          |> vcat
+          |> (: temporal')
           |> vcat
       henceLestClauses =
         [hence, lest]
@@ -192,6 +192,7 @@ rule2doc
       deontic2doc deon =
         deon |> show2text |> T.tail |> T.toUpper
       rkeyword' = rkeyword |> tokenOf |> show2text |> T.toUpper
+      temporal' = temporal |> maybeTempConstr2doc |> pure
       isNonEmptyDoc doc = doc |> show |> not . null
       -- pt2qid paramText = paramText |> pt2text |> text2qid
       pt2qid ((mtt, _) :| _) = mtt |> toList |> mt2text |> text2qid
@@ -214,26 +215,28 @@ rule2doc
         --     ]
         -- )
         -- hBody = Nothing
-    } =
-    leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
+    } = 
+      leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
     where
       leaf2mtt (Leaf (RPMT mtt)) = pure mtt
       leaf2mtt _ = errMsg
 rule2doc _ = errMsg
 
-maybeTempConstr2texts :: Maybe (TemporalConstraint T.Text) -> [T.Text]
-maybeTempConstr2texts
+maybeTempConstr2doc :: Maybe (TemporalConstraint T.Text) -> Doc ann
+maybeTempConstr2doc
   ( Just
       ( TemporalConstraint
           tComparison@((`elem` [TOn, TBefore]) -> True)
           (Just n)
           (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
         )
-    ) = [tComparison2doc tComparison, show2text n, "DAY"]
+    ) = [tComparison', n', "DAY"] |$> pretty |> hsep
   where
+    tComparison' = tComparison |> tComparison2doc
     tComparison2doc TOn = "ON"
     tComparison2doc TBefore = "WITHIN"
-maybeTempConstr2texts _ = ["WITHIN", "7", "DAY"]
+    n' = n |> show2text
+maybeTempConstr2doc _ = ["WITHIN", "7", "DAY"] |> hsep
 
 nameDetails2means :: Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =
@@ -318,17 +321,20 @@ type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
 -- quotOrUpper (even -> True) (MTT ruleName) = ruleName |> text2qid |> pure
 -- quotOrUpper _ _ = errMsg
 
+-- map where the function is also passed the index of the current element.
 mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
 mapIndexed f xs = xs |> mapAccumL g 0 |> snd
   where
     g index val = (index + 1, f index val)
 
+-- mapFirst pred f xs applies f to the first element of xs that satisfies pred.
 mapFirst :: Traversable t => (b -> Bool) -> (b -> b) -> t b -> t b
 mapFirst pred f xs = xs |> mapAccumL g False |> snd
   where
     g False val@(pred -> True) = (True, f val)
     g seen val = (seen, val)
 
+--- Like mapIndexed, but uses traverse/sequenceA for short-circuiting.
 traverseIndexed ::
   (Traversable t, Num s, Applicative f) =>
   (s -> a -> f b) ->
@@ -336,6 +342,7 @@ traverseIndexed ::
   f (t b)
 traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
 
+--- Like zipWith, but uses traverse/sequenceA for short-circuiting.
 traverseWith ::
   (Foldable t1, Foldable t2, Applicative f) =>
   (a1 -> a2 -> f b) ->

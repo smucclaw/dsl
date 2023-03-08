@@ -46,8 +46,8 @@ PARTY qid("You")
 MUST qid("notify each of the Notifiable Individuals")
 WITHIN 7 DAY,
 
-qid("You") MEANS (qid("Organisation")),
+qid("You") MEANS qid("Organisation"),
 
-qid("NDB") MEANS (qid("it is a Notifiable Data Breach")),
+qid("NDB") MEANS qid("it is a Notifiable Data Breach"),
 
-qid("the PDPC Exclusion List") MEANS (qid("with a list of individuals to exclude from notification"))
+qid("the PDPC Exclusion List") MEANS qid("with a list of individuals to exclude from notification")

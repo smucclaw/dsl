@@ -1,8 +1,5 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -140,6 +137,7 @@ rule2doc ::
   MonadErrorIsString s m =>
   Rule ->
   m (Doc ann)
+
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -155,17 +153,17 @@ rule2doc
       --       (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
       --     ),
       hence, -- @(isValidHenceLest -> True),
-      lest, -- @(isValidHenceLest -> True),
-      srcref, -- May want to use this for better error reporting.
-      given,
-      having,
-      who,
-      cond,
-      lsource,
-      upon,
-      wwhere,
-      defaults,
-      symtab
+      lest -- @(isValidHenceLest -> True),
+      -- srcref, -- May want to use this for better error reporting.
+      -- given,
+      -- having,
+      -- who,
+      -- cond,
+      -- lsource,
+      -- upon,
+      -- wwhere,
+      -- defaults,
+      -- symtab
     } =
     {-
       Here we first process separately:
@@ -173,9 +171,11 @@ rule2doc
       - the HENCE/LEST clauses.
       We then combine these together via vcat.
     -}
-    henceLestClauses |$> (ruleNoHenceLest :) |$> vcat
+    henceLestClauses
+      |$> ([ruleActorDeonticAction, temporal'] <>)
+      |$> vcat
     where
-      ruleNoHenceLest =
+      ruleActorDeonticAction =
         [ ["RULE", ruleName |> text2qid],
           [rkeyword', actor |> pt2qid],
           [deontic |> deontic2doc, action |> pt2qid]
@@ -183,8 +183,7 @@ rule2doc
           |$> map pretty
           |$> hsep
           |> vcat
-          |> (: temporal')
-          |> vcat
+      temporal' = temporal |> maybeTempConstr2doc
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [Hence, Lest]
@@ -192,13 +191,13 @@ rule2doc
       deontic2doc deon =
         deon |> show2text |> T.tail |> T.toUpper
       rkeyword' = rkeyword |> tokenOf |> show2text |> T.toUpper
-      temporal' = temporal |> maybeTempConstr2doc |> pure
       isNonEmptyDoc doc = doc |> show |> not . null
       -- pt2qid paramText = paramText |> pt2text |> text2qid
       pt2qid ((mtt, _) :| _) = mtt |> toList |> mt2text |> text2qid
-rule2doc
-  DefNameAlias {name, detail} =
-    nameDetails2means name [detail] |> pure
+
+rule2doc DefNameAlias { name, detail } =
+  nameDetails2means name [detail] |> pure
+
 rule2doc
   Hornlike
     { keyword = Means,
@@ -220,6 +219,7 @@ rule2doc
     where
       leaf2mtt (Leaf (RPMT mtt)) = pure mtt
       leaf2mtt _ = errMsg
+
 rule2doc _ = errMsg
 
 maybeTempConstr2doc :: Maybe (TemporalConstraint T.Text) -> Doc ann
@@ -245,15 +245,14 @@ nameDetails2means name details =
     name' = name |> mt2text |> text2qid |> pretty
     details' =
       details
-        |> toList
-        |$> mt2text
-        |$> text2qid
-        |> intersperse "AND"
+        |> details2qids
         |$> pretty
+        |> intersperse "AND"
         |> hsep
-        |> parenthesize
-    parenthesize x = ["(", x, ")"] |> mconcat
-
+        |> parenthesizeIf (length details > 1)
+    details2qids details = details |> toList |$> mt2text |$> text2qid
+    parenthesizeIf True x = ["(", x, ")"] |> mconcat
+    parenthesizeIf _ x = x
 -- Auxiliary stuff for handling HENCE/LEST clauses.
 
 {-

@@ -282,10 +282,7 @@ instance Pretty HenceOrLest where
 -}
 henceLest2doc ::
   forall ann s (m :: Type -> Type).
-  MonadErrorIsString s m =>
-  HenceOrLest ->
-  Maybe Rule ->
-  m (Doc ann)
+  MonadErrorIsString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
 henceLest2doc _ Nothing = pure mempty
 henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
   henceLest
@@ -338,18 +335,13 @@ mapFirst pred f xs = xs |> mapAccumL g False |> snd
 --- Like mapIndexed, but uses traverse/sequenceA for short-circuiting.
 traverseIndexed ::
   (Traversable t, Num s, Applicative f) =>
-  (s -> a -> f b) ->
-  t a ->
-  f (t b)
+  (s -> a -> f b) -> t a -> f (t b)
 traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
 
 --- Like zipWith, but uses traverse/sequenceA for short-circuiting.
 traverseWith ::
   (Foldable t1, Foldable t2, Applicative f) =>
-  (a1 -> a2 -> f b) ->
-  t1 a1 ->
-  t2 a2 ->
-  f [b]
+  (a1 -> a2 -> f b) -> t1 a1 -> t2 a2 -> f [b]
 traverseWith f xs ys =
   (xs, ys) |> bimap toList toList |> uncurry (zipWith f) |> sequenceA
 

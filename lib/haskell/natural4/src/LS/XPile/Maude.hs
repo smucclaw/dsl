@@ -29,7 +29,7 @@ import Data.Bifunctor (Bifunctor (bimap, second, first))
 import Data.Either (rights)
 import Data.Foldable (Foldable (elem, toList))
 import Data.Functor ((<&>))
-import Data.Kind (Constraint, Type)
+import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe (mapMaybe)
@@ -50,11 +50,11 @@ import LS.Types
     RPRel (RPis),
     RegKeywords (REvery, RParty),
     RelationalPredicate (RPBoolStructR, RPMT),
-    TComparison (..),
+    TComparison (TOn, TBefore),
     TemporalConstraint (TemporalConstraint),
     mt2text,
     mtexpr2text,
-    pt2text, 
+    pt2text, ParamText,
   )
 import Prettyprinter
   ( Doc,
@@ -114,24 +114,20 @@ rules2maudeStr rules = rules |> rules2doc |> show
   only outputs those that do to plaintext.
 -}
 rules2doc ::
-  forall ann s (t :: Type -> Type).
+  forall ann s t.
   Foldable t => t Rule -> Doc ann
 rules2doc (null -> True) = mempty
 rules2doc rules =
-  rules
-    |> toList
-    |> elt2pair
-    |> bimap rules2startRule rules2docs
-    |> uncurry (:)
-    |> concatWith (<.>)
+  (startRule, transpiledRules) |> uncurry (:) |> concatWith (<.>) 
   where
-    rules2startRule rules =
-      rules
+    startRule =
+      rules'
         |> mapMaybe rule2RegRuleName
         |> safeHead
         |$> text2qid
         |> maybe mempty ("START" <+>)
-    rules2docs rules = rules |$> rule2doc |> rights
+    transpiledRules = rules' |$> rule2doc |> rights
+    rules' = toList rules
     rule2RegRuleName Regulative { rlabel = Just (_, _, ruleName) } =
       Just ruleName
     rule2RegRuleName _ = Nothing
@@ -139,7 +135,7 @@ rules2doc rules =
 
 -- Main function that transpiles individual rules.
 rule2doc ::
-  forall ann s (m :: Type -> Type).
+  forall ann s m.
   MonadErrorIsString s m => Rule -> m (Doc ann)
 
 rule2doc
@@ -184,21 +180,14 @@ rule2doc
       |$> vcat
     where
       ruleName' = ruleName |> text2qid |> ("RULE" <+>)
-      rkeywordActor = rkeywordParamText2doc rkeyword actor 
-      deonticAction = rkeywordParamText2doc deontic action
+      rkeywordActor = rkeywordDeonParamText2doc rkeyword actor 
+      deonticAction = rkeywordDeonParamText2doc deontic action
       deadline = maybeTempConstr2doc temporal
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [HENCE, LEST]
           |$> filter isNonEmptyDoc
-
-      rkeywordParamText2doc rkeyword paramText =
-        (rkeyword, paramText) |> bimap rkeyword2doc pt2qid |> uncurry (<+>)
-      rkeyword2doc rkeyword =
-        rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
-      pt2qid ((mtExpr, _) :| _) = mtExpr |> toList |> mt2qid
       isNonEmptyDoc doc = doc |> show |> not . null
-      -- pt2qid paramText = paramText |> pt2text |> text2qid
 
 rule2doc DefNameAlias { name, detail } =
   nameDetails2means name [detail] |> pure
@@ -227,6 +216,20 @@ rule2doc
 
 rule2doc _ = errMsg
 
+text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
+text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
+
+rkeywordDeonParamText2doc :: forall ann a. Show a => a -> ParamText -> Doc ann
+rkeywordDeonParamText2doc rkeywordDeon paramText =
+  rkeywordDeon' <+> paramText'
+  where
+    rkeywordDeon' = rkeyword2doc rkeywordDeon
+    paramText' = paramText2qid paramText
+    rkeyword2doc rkeyword =
+      rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
+    paramText2qid ((mtExpr, _) :| _) = mtExpr |> toList |> multiTerm2qid
+    -- pt2qid paramText = paramText |> pt2text |> text2qid
+
 maybeTempConstr2doc :: Maybe (TemporalConstraint T.Text) -> Doc ann
 maybeTempConstr2doc
   ( Just
@@ -235,31 +238,31 @@ maybeTempConstr2doc
           (Just n)
           (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
         )
-    ) = [tComparison', pretty n, "DAY"] |> hsep
+    ) = [tComparison', n', "DAY"] |> hsep
   where
+    n' = pretty n
     tComparison' = tComparison2doc tComparison
     tComparison2doc TOn = "ON"
     tComparison2doc TBefore = "WITHIN"
 
 maybeTempConstr2doc _ = "WITHIN 7 DAY"
 
-mt2qid :: MultiTerm -> Doc ann
-mt2qid multiTerm = multiTerm |> mt2text |> text2qid
+multiTerm2qid :: MultiTerm -> Doc ann
+multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
 
 nameDetails2means ::
-  forall ann (t :: Type -> Type).
-  Foldable t => MultiTerm -> t MultiTerm -> Doc ann
+  forall ann t. Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =
   [name', "MEANS", details'] |> hsep
   where
-    name' = mt2qid name
+    name' = multiTerm2qid name
     details' =
       details
         |> details2qids
         |> intersperse "AND"
         |> hsep
         |> parenthesizeIf (length details > 1)
-    details2qids details = details |> toList |$> mt2qid
+    details2qids details = details |> toList |$> multiTerm2qid
     parenthesizeIf True x = ["(", x, ")"] |> mconcat
     parenthesizeIf _ x = x
 
@@ -281,28 +284,23 @@ nameDetails2means name details =
 data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)
 
--- instance Pretty HenceOrLest where
---   pretty henceOrLest = henceOrLest |> show2text |> T.toUpper |> pretty
+instance Pretty HenceOrLest where
+  pretty = viaShow
 
 {-
   This function can handle invalid HENCE/LEST clauses.
   A left with an error message is returned in such cases.
 -}
 henceLest2doc ::
-  forall ann s (m :: Type -> Type).
+  forall ann s m.
   MonadErrorIsString s m => HenceOrLest -> Maybe Rule -> m (Doc ann)
 henceLest2doc _ Nothing = pure mempty
+
 henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
-  henceLest
-    |> mt2text |> text2qid
-    |> (viaShow henceOrLest <+>)
+  (henceOrLest, henceLest)
+    |> bimap pretty multiTerm2qid
+    |> uncurry (<+>)
     |> pure
--- where
--- quotOrUpper (odd -> True) (MTT (T.toUpper -> "AND")) = pure "AND"
--- quotOrUpper (even -> True) (MTT ruleName) = ruleName |> text2qidDoc |> pure
--- quotOrUpper _ _ = errMsg
--- parenthesizeIf True doc = ["(", doc, ")"] |> mconcat
--- parenthesizeIf False doc = doc
 
 henceLest2doc _ _ = errMsg
 
@@ -344,7 +342,10 @@ traverseWith ::
   (Foldable t1, Foldable t2, Applicative f) =>
   (a1 -> a2 -> f b) -> t1 a1 -> t2 a2 -> f [b]
 traverseWith f xs ys =
-  (xs, ys) |> bimap toList toList |> uncurry (zipWith f) |> sequenceA
+  zipWith f xs' ys' |> sequenceA
+  where
+    xs' = toList xs
+    ys' = toList ys
 
 infixl 0 |$>
 
@@ -353,9 +354,6 @@ infixl 0 |$>
 
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack
-
-text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
-text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
 safeHead (x : _) = pure x

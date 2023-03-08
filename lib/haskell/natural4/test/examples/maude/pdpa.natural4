@@ -1,4 +1,6 @@
-RULE qid("START")
+START qid("Assessment"),
+
+RULE qid("Assessment")
 EVERY qid("Organisation")
 MUST qid("assess if it is a Notifiable Data Breach")
 WITHIN 30 DAY

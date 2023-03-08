@@ -67,6 +67,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
+import Data.Maybe (mapMaybe)
 
 {-
   Based on experiments being run here:
@@ -119,14 +120,23 @@ rules2doc (null -> True) = mempty
 rules2doc rules =
   rules
     |> toList
-    |> mapFirst isRegRule renameRuleToStart
-    |$> rule2doc
-    |> rights
+    |> elt2pair
+    |> bimap rules2startRule rules2docs
+    |> uncurry (:)
     |> concatWith (<.>)
   where
-    isRegRule Regulative {} = True
-    isRegRule _ = False
-    renameRuleToStart rule = rule { rlabel = Just ("§", 1, "START") }
+    rules2startRule rules =
+      rules
+        |> mapMaybe rule2RegRuleName
+        |> head
+        |> text2qid
+        |> pretty
+        |> ("START" <+>)
+    rules2docs rules = rules |$> rule2doc |> rights
+    rule2RegRuleName Regulative { rlabel = Just (_, _, ruleName) } =
+      pure ruleName
+    rule2RegRuleName _ = mempty
+    -- renameRuleToStart rule = rule { rlabel = Just ("§", 1, "START") }
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
@@ -307,11 +317,8 @@ henceLest2doc _ _ = errMsg
 -}
 type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
 
--- quotOrUpper ::
---   (Integral a, IsString s, MonadError s f) => a -> MTExpr -> f T.Text
--- quotOrUpper (odd -> True) (MTT (T.toUpper -> "AND")) = pure "AND"
--- quotOrUpper (even -> True) (MTT ruleName) = ruleName |> text2qid |> pure
--- quotOrUpper _ _ = errMsg
+elt2pair :: a -> (a, a)
+elt2pair x = (x, x)
 
 -- map where the function is also passed the index of the current element.
 mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
@@ -323,8 +330,8 @@ mapIndexed f xs = xs |> mapAccumL g 0 |> snd
 mapFirst :: Traversable t => (b -> Bool) -> (b -> b) -> t b -> t b
 mapFirst pred f xs = xs |> mapAccumL g False |> snd
   where
-    g False val@(pred -> True) = (True, f val)
-    g seen val = (seen, val)
+    g False elt@(pred -> True) = (True, f elt)
+    g seen elt = (seen, elt)
 
 --- Like mapIndexed, but uses traverse/sequenceA for short-circuiting.
 traverseIndexed ::

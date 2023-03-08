@@ -238,7 +238,9 @@ maybeTempConstr2doc
     n' = n |> show2text
 maybeTempConstr2doc _ = ["WITHIN", "7", "DAY"] |> hsep
 
-nameDetails2means :: Foldable t => MultiTerm -> t MultiTerm -> Doc ann
+nameDetails2means ::
+  forall ann (t :: Type -> Type).
+  Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =
   [name', "MEANS", details'] |> hsep
   where
@@ -289,10 +291,10 @@ henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
   henceLest
     |$> mtexpr2text
     |$> pretty
-    -- \|> traverseIndexed quotOrUpper
+    -- |> traverseIndexed quotOrUpper
     |> hsep
     |> text2qid
-    -- \|$> parenthesizeIf (length henceLest > 1)
+    -- |$> parenthesizeIf (length henceLest > 1)
     |> (pretty henceOrLest <+>)
     |> pure
 -- where

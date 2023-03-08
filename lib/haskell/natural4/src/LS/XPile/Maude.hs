@@ -128,15 +128,14 @@ rules2doc rules =
     rules2startRule rules =
       rules
         |> mapMaybe rule2RegRuleName
-        |> head
-        |> text2qid
-        |> pretty
-        |> ("START" <+>)
+        |> safeHead
+        |$> text2qid
+        |$> pretty
+        |> maybe mempty ("START" <+>)
     rules2docs rules = rules |$> rule2doc |> rights
     rule2RegRuleName Regulative { rlabel = Just (_, _, ruleName) } =
       pure ruleName
     rule2RegRuleName _ = mempty
-    -- renameRuleToStart rule = rule { rlabel = Just ("§", 1, "START") }
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
@@ -358,6 +357,10 @@ show2text x = x |> show |> T.pack
 
 text2qid :: (IsString a, Monoid a) => a -> a
 text2qid x = ["qid(\"", x, "\")"] |> mconcat
+
+safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
+safeHead (x : _) = pure x
+safeHead _ = mempty
 
 errMsg :: MonadErrorIsString s m => m a
 errMsg = throwError "Not supported."

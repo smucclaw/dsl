@@ -179,15 +179,15 @@ rule2doc
       deonticAction = rkeywordParamText2doc deontic action
       deadline = temporal |> maybeTempConstr2doc
       rkeyword2doc rkeyword =
-        rkeyword |> show2text |> T.tail |> T.toUpper
+        rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
       rkeywordParamText2doc rkeyword paramText =
-        [rkeyword2doc rkeyword, pt2qid paramText] |$> pretty |> hsep
+        [rkeyword2doc rkeyword, pt2qid paramText] |> hsep
+      pt2qid ((mtExpr, _) :| _) = mtExpr |> toList |> mt2qid
       henceLestClauses =
         [hence, lest]
-          |> traverseWith henceLest2doc [Hence, Lest]
+          |> traverseWith henceLest2doc [HENCE, LEST]
           |$> filter isNonEmptyDoc
       isNonEmptyDoc doc = doc |> show |> not . null
-      pt2qid ((mtt, _) :| _) = mtt |> toList |> mt2text |> text2qid
       -- pt2qid paramText = paramText |> pt2text |> text2qid
 
 rule2doc DefNameAlias { name, detail } =
@@ -225,13 +225,16 @@ maybeTempConstr2doc
           (Just n)
           (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
         )
-    ) = [tComparison', n', "DAY"] |$> pretty |> hsep
+    ) = [tComparison', pretty n, "DAY"] |> hsep
   where
-    tComparison' = tComparison |> tComparison2doc
+    tComparison' = tComparison2doc tComparison
     tComparison2doc TOn = "ON"
     tComparison2doc TBefore = "WITHIN"
-    n' = n |> show2text
-maybeTempConstr2doc _ = ["WITHIN", "7", "DAY"] |> hsep
+
+maybeTempConstr2doc _ = "WITHIN 7 DAY"
+
+mt2qid :: MultiTerm -> Doc ann
+mt2qid multiTerm = multiTerm |> mt2text |> text2qid |> pretty
 
 nameDetails2means ::
   forall ann (t :: Type -> Type).
@@ -239,15 +242,15 @@ nameDetails2means ::
 nameDetails2means name details =
   [name', "MEANS", details'] |> hsep
   where
-    name' = name |> mt2text |> text2qid |> pretty
+    name' = mt2qid name
     details' =
       details
         |> details2qids
-        |$> pretty
         |> intersperse "AND"
         |> hsep
         |> parenthesizeIf (length details > 1)
-    details2qids details = details |> toList |$> mt2text |$> text2qid
+    details2qids details =
+      details |> toList |$> mt2qid
     parenthesizeIf True x = ["(", x, ")"] |> mconcat
     parenthesizeIf _ x = x
 -- Auxiliary stuff for handling HENCE/LEST clauses.
@@ -265,11 +268,11 @@ nameDetails2means name details =
 --     isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
 --     isValidMTExpr _ _ = False
 
-data HenceOrLest = Hence | Lest
+data HenceOrLest = HENCE | LEST
   deriving (Eq, Ord, Read, Show)
 
-instance Pretty HenceOrLest where
-  pretty henceOrLest = henceOrLest |> show2text |> T.toUpper |> pretty
+-- instance Pretty HenceOrLest where
+--   pretty henceOrLest = henceOrLest |> show2text |> T.toUpper |> pretty
 
 {-
   This function can handle invalid HENCE/LEST clauses.
@@ -281,13 +284,8 @@ henceLest2doc ::
 henceLest2doc _ Nothing = pure mempty
 henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
   henceLest
-    |$> mtexpr2text
-    |$> pretty
-    -- |> traverseIndexed quotOrUpper
-    |> hsep
-    |> text2qid
-    -- |$> parenthesizeIf (length henceLest > 1)
-    |> (pretty henceOrLest <+>)
+    |> mt2text |> text2qid |> pretty
+    |> (viaShow henceOrLest <+>)
     |> pure
 -- where
 -- quotOrUpper (odd -> True) (MTT (T.toUpper -> "AND")) = pure "AND"
@@ -295,6 +293,7 @@ henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
 -- quotOrUpper _ _ = errMsg
 -- parenthesizeIf True doc = ["(", doc, ")"] |> mconcat
 -- parenthesizeIf False doc = doc
+
 henceLest2doc _ _ = errMsg
 
 -- Common utilities

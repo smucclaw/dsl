@@ -27,6 +27,7 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (All, Leaf))
+import Control.Applicative (Applicative (liftA2))
 import Control.Monad.Except (MonadError (throwError))
 import Data.Bifunctor (Bifunctor (bimap, second))
 import Data.Either (rights)
@@ -44,17 +45,19 @@ import LS.Rule
   ( Rule (..),
   )
 import LS.Types
-  ( HornClause (HC, hBody, hHead),
+  ( HasToken (tokenOf),
+    HornClause (HC, hBody, hHead),
     MTExpr (MTT),
+    MultiTerm,
     MyToken (Means),
     RPRel (RPis),
-    RegKeywords (RParty, REvery),
+    RegKeywords (REvery, RParty),
     RelationalPredicate (RPBoolStructR, RPMT),
     TComparison (..),
     TemporalConstraint (TemporalConstraint),
     mt2text,
     mtexpr2text,
-    pt2text, HasToken (tokenOf), MultiTerm,
+    pt2text, 
   )
 import Prettyprinter
   ( Doc,
@@ -128,8 +131,8 @@ rules2doc rules =
     |> concatWith (<.>)
   where
     isRegRule Regulative {} = True
-    isRegRule _ = False 
-    renameRuleToStart rule = rule { rlabel = Just ("§", 1, "START") }
+    isRegRule _ = False
+    renameRuleToStart rule = rule {rlabel = Just ("§", 1, "START")}
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
@@ -145,13 +148,13 @@ rule2doc
       subj = Leaf actor,
       deontic,
       action = Leaf action,
-      temporal =
-        Just
-          ( TemporalConstraint
-              tComparison@((`elem` [TOn, TBefore]) -> True)
-              (Just n)
-              (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
-            ),
+      temporal,
+      -- Just
+      --   ( TemporalConstraint
+      --       tComparison@((`elem` [TOn, TBefore]) -> True)
+      --       (Just n)
+      --       (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+      --     ),
       hence, -- @(isValidHenceLest -> True),
       lest, -- @(isValidHenceLest -> True),
       srcref, -- May want to use this for better error reporting.
@@ -177,7 +180,7 @@ rule2doc
         [ ["RULE", ruleName |> text2qid],
           [rkeyword', actor |> pt2qid],
           [deontic |> deontic2doc, action |> pt2qid],
-          [tComparison2doc tComparison, n |> show2text, "DAY"]
+          temporal |> maybeTempConstr2texts
         ]
           |$> map pretty
           |$> hsep
@@ -189,15 +192,12 @@ rule2doc
       deontic2doc deon =
         deon |> show2text |> T.tail |> T.toUpper
       rkeyword' = rkeyword |> tokenOf |> show2text |> T.toUpper
-      tComparison2doc TOn = "ON"
-      tComparison2doc TBefore = "WITHIN"
       isNonEmptyDoc doc = doc |> show |> not . null
-      pt2qid paramText = paramText |> pt2text |> text2qid
-
+      -- pt2qid paramText = paramText |> pt2text |> text2qid
+      pt2qid ((mtt, _) :| _) = mtt |> toList |> mt2text |> text2qid
 rule2doc
-  DefNameAlias {name, detail}
-  = nameDetails2means name [detail] |> pure
-
+  DefNameAlias {name, detail} =
+    nameDetails2means name [detail] |> pure
 rule2doc
   Hornlike
     { keyword = Means,
@@ -215,14 +215,25 @@ rule2doc
         -- )
         -- hBody = Nothing
     } =
-      (mtExpr, leaves)
-        |> second (map leaf2mtt)  
-        |> uncurry nameDetails2means
-        |> pure
+    leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
     where
-      leaf2mtt (Leaf (RPMT mtt)) = mtt
-
+      leaf2mtt (Leaf (RPMT mtt)) = pure mtt
+      leaf2mtt _ = errMsg
 rule2doc _ = errMsg
+
+maybeTempConstr2texts :: Maybe (TemporalConstraint T.Text) -> [T.Text]
+maybeTempConstr2texts
+  ( Just
+      ( TemporalConstraint
+          tComparison@((`elem` [TOn, TBefore]) -> True)
+          (Just n)
+          (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+        )
+    ) = [tComparison2doc tComparison, show2text n, "DAY"]
+  where
+    tComparison2doc TOn = "ON"
+    tComparison2doc TBefore = "WITHIN"
+maybeTempConstr2texts _ = ["WITHIN", "10", "DAY"]
 
 nameDetails2means :: Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =

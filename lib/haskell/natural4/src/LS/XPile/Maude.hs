@@ -248,6 +248,8 @@ nameDetails2means name details =
         |> intersperse "AND"
         |$> pretty
         |> hsep
+        |> parenthesize
+    parenthesize x = ["(", x, ")"] |> mconcat
 
 -- Auxiliary stuff for handling HENCE/LEST clauses.
 

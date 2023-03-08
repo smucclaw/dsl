@@ -16,7 +16,7 @@ PARTY qid("You")
 MUST qid("respond to the PDPC")
 WITHIN 10 DAY,
 
-qid("Notification") MEANS qid("Notify PDPC") AND qid("Notify Individuals"),
+qid("Notification") MEANS (qid("Notify PDPC") AND qid("Notify Individuals")),
 
 RULE qid("Notify PDPC")
 PARTY qid("You")
@@ -46,8 +46,8 @@ PARTY qid("You")
 MUST qid("notify each of the Notifiable Individuals")
 WITHIN 10 DAY,
 
-qid("You") MEANS qid("Organisation"),
+qid("You") MEANS (qid("Organisation")),
 
-qid("NDB") MEANS qid("it is a Notifiable Data Breach"),
+qid("NDB") MEANS (qid("it is a Notifiable Data Breach")),
 
-qid("the PDPC Exclusion List") MEANS qid("with a list of individuals to exclude from notification")
+qid("the PDPC Exclusion List") MEANS (qid("with a list of individuals to exclude from notification"))

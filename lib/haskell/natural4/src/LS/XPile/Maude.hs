@@ -130,12 +130,11 @@ rules2doc rules =
         |> mapMaybe rule2RegRuleName
         |> safeHead
         |$> text2qid
-        |$> pretty
         |> maybe mempty ("START" <+>)
     rules2docs rules = rules |$> rule2doc |> rights
     rule2RegRuleName Regulative { rlabel = Just (_, _, ruleName) } =
-      pure ruleName
-    rule2RegRuleName _ = mempty
+      Just ruleName
+    rule2RegRuleName _ = Nothing
     x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
@@ -184,7 +183,7 @@ rule2doc
       |> uncurry (liftA2 (<>))
       |$> vcat
     where
-      ruleName' = ruleName |> text2qid |> pretty |> ("RULE" <+>)
+      ruleName' = ruleName |> text2qid |> ("RULE" <+>)
       rkeywordActor = rkeywordParamText2doc rkeyword actor 
       deonticAction = rkeywordParamText2doc deontic action
       deadline = maybeTempConstr2doc temporal
@@ -245,7 +244,7 @@ maybeTempConstr2doc
 maybeTempConstr2doc _ = "WITHIN 7 DAY"
 
 mt2qid :: MultiTerm -> Doc ann
-mt2qid multiTerm = multiTerm |> mt2text |> text2qid |> pretty
+mt2qid multiTerm = multiTerm |> mt2text |> text2qid
 
 nameDetails2means ::
   forall ann (t :: Type -> Type).
@@ -295,7 +294,7 @@ henceLest2doc ::
 henceLest2doc _ Nothing = pure mempty
 henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
   henceLest
-    |> mt2text |> text2qid |> pretty
+    |> mt2text |> text2qid
     |> (viaShow henceOrLest <+>)
     |> pure
 -- where
@@ -355,8 +354,8 @@ infixl 0 |$>
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack
 
-text2qid :: (IsString a, Monoid a) => a -> a
-text2qid x = ["qid(\"", x, "\")"] |> mconcat
+text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
+text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
 safeHead (x : _) = pure x

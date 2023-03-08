@@ -168,7 +168,7 @@ rule2doc
       We then combine these together via vcat.
     -}
     henceLestClauses
-      |$> ([ruleActorDeonticAction, temporal'] <>)
+      |$> ([ruleActorDeonticAction, deadline] <>)
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -179,7 +179,7 @@ rule2doc
           |$> map pretty
           |$> hsep
           |> vcat
-      temporal' = temporal |> maybeTempConstr2doc
+      deadline = temporal |> maybeTempConstr2doc
       henceLestClauses =
         [hence, lest]
           |> traverseWith henceLest2doc [Hence, Lest]

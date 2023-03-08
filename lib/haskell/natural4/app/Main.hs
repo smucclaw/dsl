@@ -63,7 +63,7 @@ main = do
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)

@@ -51,8 +51,6 @@ myNLGEnv lang = do
   let eng = getLang "NL4Eng"
       myParse typ txt = parse gr eng typ (Text.unpack txt)
 
-  print "lang"
-  print $ showLanguage lang
   let myLin = Text.pack . linearize gr lang
   pure $ NLGEnv gr lang myParse myLin verbose
 
@@ -111,10 +109,11 @@ nlg' thl env rule = case rule of
                     Nothing -> pure mempty
 
 --      pure $ Text.unlines [ruleText, henceText, lestText]
-      print "---"
+      print "reg"
       print $ gf $ whoSubjExpr
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
+      print "hornlike"
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
           parseBodyHC cl = case hBody cl of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
@@ -314,7 +313,7 @@ parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
     tString :: Text.Text -> GString
-    tString = GString . read . Text.unpack
+    tString = GString . Text.unpack
 parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
   _ -> GrecoverRPis (tString aTxt) (tString bTxt)
@@ -325,7 +324,7 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
     tString :: Text.Text -> GString
-    tString = GString . read . Text.unpack
+    tString = GString . Text.unpack
 
 parseConstraint env rp = let txt = rp2text rp in
   case parseAny "Constraint" env txt of

@@ -16,4 +16,5 @@ markdown :: NLGEnv -> [Rule] -> IO String
 markdown env rl = do
   nl <- mapM (nlg env) rl
   print $ concatMap Text.unpack nl
+  print "---"
   return $ concatMap Text.unpack nl

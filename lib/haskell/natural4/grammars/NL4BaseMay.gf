@@ -132,7 +132,7 @@ concrete NL4BaseMay of NL4Base =
     VAGUE = R.mkPrep [] ;
 
   oper
-    cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> cc2 s1 (cc3 s2 s3 s4) ;  
+    cc4 : (_,_,_,_ : SS) -> SS = \s1, s2, s3, s4 -> cc2 s1 (cc3 s2 s3 s4) ;
   lin
     MkDate day month year = symb (cc3 day month year) ;
 

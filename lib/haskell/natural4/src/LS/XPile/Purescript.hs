@@ -145,10 +145,10 @@ asPurescript env rl =
            ]
           )
 
-translate2PS :: [NLGEnv] -> [Rule] -> String
-translate2PS nlgEnv rules =
+translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> String
+translate2PS nlgEnv eng rules =
   psPrefix
-    <> ((tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ (head nlgEnv) rules))))
+    <> ((tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules))))
     <> "\n\n"
     <> psSuffix
     <> "\n\n"

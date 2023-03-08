@@ -40,6 +40,7 @@ import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Data.Foldable as DF
 import qualified Text.XML.HXT.Core as HXT
 import LS.XPile.DumpRule
+import LS.XPile.Maude (rules2maudeStr)
 
 myTraceM :: String -> IO ()
 myTraceM = SFL4.myTraceM
@@ -199,6 +200,9 @@ main = do
 
     when (SFL4.toVue rc) $ do
       putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
+
+    when (SFL4.only opts == "maude") $
+      rules |> rules2maudeStr |> putStrLn 
 
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime

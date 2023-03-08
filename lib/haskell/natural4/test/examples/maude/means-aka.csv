@@ -1,0 +1,11 @@
+§,Notification,,
+,Notification,,
+MEANS,Notify PDPC,,
+AND,Notify Individuals,,
+,,,
+§,Rule,,
+EVERY,Actor,AKA,Person
+MUST,WITHIN,2,days
+DO,action,,
+HENCE,Notification,,
+LEST,Rule1,,

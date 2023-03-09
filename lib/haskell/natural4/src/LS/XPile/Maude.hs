@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DisambiguateRecordFields #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -31,7 +31,7 @@ import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, fromMaybe)
 import Data.String (IsString)
 import Data.Text qualified as T
 import Data.Traversable (mapAccumL)
@@ -123,12 +123,17 @@ rules2doc (null -> True) = mempty
 rules2doc rules =
   (startRule, transpiledRules) |> uncurry (:) |> concatWith (<.>)
   where
+    -- Find the first regulative rule and extracts its rule name.
+    -- This returns a Maybe because there may not be any regulative rule.
+    -- In such cases, we simply return mempty, the empty doc.
+    -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
       rules'
-        |> mapMaybe rule2RegRuleName
-        |> safeHead
-        |$> text2qid
-        |> maybe mempty ("START" <+>)
+        |> mapMaybe rule2RegRuleName |> safeHead
+        |$> (("START" <+>) . text2qid)
+        |> fromMaybe mempty
+    -- Transpile the rules to docs and collect all those that transpiled correcly.
+    -- Erraneous ones are ignored.
     transpiledRules = rules' |$> rule2doc |> rights
     rules' = toList rules
     rule2RegRuleName Regulative {rlabel = Just (_, _, ruleName)} =
@@ -165,17 +170,20 @@ rule2doc
       |> uncurry (liftA2 (<>))
       |$> vcat
     where
-      ruleName' = ruleName |> text2qid |> ("RULE" <+>)
+      ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
       deadline = maybeTempConstr2doc temporal
+
       henceLestClauses =
         [maybeHence, maybeLest]
           |> traverseWith maybeHenceLest2doc [HENCE, LEST]
           |$> filter isNonEmptyDoc
+
       maybeHenceLest2doc _ Nothing = pure mempty
       maybeHenceLest2doc henceOrLest (Just henceLest) =
         henceLest2doc henceOrLest henceLest
+
       isNonEmptyDoc doc = doc |> show |> not . null
 
 rule2doc DefNameAlias {name, detail} =

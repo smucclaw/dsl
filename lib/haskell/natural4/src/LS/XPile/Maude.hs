@@ -121,8 +121,9 @@ rules2doc ::
 rules2doc (null -> True) = mempty
 
 rules2doc rules =
-  (startRule, transpiledRules) |> uncurry (:) |> concatWith (<.>)
+  (startRule : transpiledRules) |> concatWith (<.>)
   where
+    x <.> y = [x, ",", line, line, y] |> mconcat
     -- Find the first regulative rule and extracts its rule name.
     -- This returns a Maybe because there may not be any regulative rule.
     -- In such cases, we simply return mempty, the empty doc.
@@ -132,14 +133,15 @@ rules2doc rules =
         |> mapMaybe rule2RegRuleName |> safeHead
         |$> (("START" <+>) . text2qid)
         |> fromMaybe mempty
+
     -- Transpile the rules to docs and collect all those that transpiled correcly.
     -- Erraneous ones are ignored.
     transpiledRules = rules' |$> rule2doc |> rights
+
     rules' = toList rules
     rule2RegRuleName Regulative {rlabel = Just (_, _, ruleName)} =
       Just ruleName
     rule2RegRuleName _ = Nothing
-    x <.> y = [x, ",", line, line, y] |> mconcat
 
 -- Main function that transpiles individual rules.
 rule2doc ::

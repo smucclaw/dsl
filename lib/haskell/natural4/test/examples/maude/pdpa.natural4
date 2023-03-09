@@ -10,13 +10,11 @@ LEST qid("PDPC query with demand"),
 RULE qid("PDPC query with demand")
 PARTY qid("the PDPC")
 MAY qid("query You")
-WITHIN 7 DAY
 HENCE qid("Respond to PDPC"),
 
 RULE qid("Respond to PDPC")
 PARTY qid("You")
-MUST qid("respond to the PDPC")
-WITHIN 7 DAY,
+MUST qid("respond to the PDPC"),
 
 qid("Notification") MEANS (qid("Notify PDPC") AND qid("Notify Individuals")),
 
@@ -29,13 +27,11 @@ HENCE qid("PDPC prohibit notify individuals"),
 RULE qid("PDPC prohibit notify individuals")
 PARTY qid("the PDPC")
 MAY qid("NOTIFY you")
-WITHIN 7 DAY
 HENCE qid("Cannot notify individuals"),
 
 RULE qid("Cannot notify individuals")
 PARTY qid("You")
-SHANT qid("NOTIFY each of the Notifiable Individuals")
-WITHIN 7 DAY,
+SHANT qid("NOTIFY each of the Notifiable Individuals"),
 
 RULE qid("Notify Individuals")
 PARTY qid("You")
@@ -45,8 +41,7 @@ LEST qid("Notify and explain"),
 
 RULE qid("Notify and explain")
 PARTY qid("You")
-MUST qid("notify each of the Notifiable Individuals")
-WITHIN 7 DAY,
+MUST qid("notify each of the Notifiable Individuals"),
 
 qid("You") MEANS qid("Organisation"),
 

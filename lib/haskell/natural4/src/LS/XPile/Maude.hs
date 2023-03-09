@@ -31,7 +31,7 @@ import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Maybe (mapMaybe, fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String (IsString)
 import Data.Text qualified as T
 import Data.Traversable (mapAccumL)
@@ -119,7 +119,6 @@ rules2doc ::
   t Rule ->
   Doc ann
 rules2doc (null -> True) = mempty
-
 rules2doc rules =
   (startRule : transpiledRules) |> concatWith (<.>)
   where
@@ -130,7 +129,8 @@ rules2doc rules =
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
       rules'
-        |> mapMaybe rule2RegRuleName |> safeHead
+        |> mapMaybe rule2RegRuleName
+        |> safeHead
         |$> (("START" <+>) . text2qid)
         |> fromMaybe mempty
 
@@ -152,10 +152,13 @@ rule2doc ::
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
-      rkeyword, subj = Leaf actor,
-      deontic, action = Leaf action,
+      rkeyword,
+      subj = Leaf actor,
+      deontic,
+      action = Leaf action,
       temporal,
-      hence = maybeHence, lest = maybeLest
+      hence = maybeHence,
+      lest = maybeLest
       -- srcref, -- May want to use this for better error reporting.
     } =
     {-
@@ -167,9 +170,12 @@ rule2doc
       - HENCE/LEST clauses
       We then combine these together via vcat.
     -}
-    ([ruleName', rkeywordActor, deonticAction, deadline], henceLestClauses)
-      |> first pure
-      |> uncurry (liftA2 (<>))
+    [ pure [ruleName', rkeywordActor, deonticAction, deadline],
+      henceLestClauses
+    ]
+      |> sequenceA
+      |$> mconcat
+      |$> filter isNonEmptyDoc
       |$> vcat
     where
       ruleName' = "RULE" <+> text2qid ruleName
@@ -178,9 +184,7 @@ rule2doc
       deadline = maybeTempConstr2doc temporal
 
       henceLestClauses =
-        [maybeHence, maybeLest]
-          |> traverseWith maybeHenceLest2doc [HENCE, LEST]
-          |$> filter isNonEmptyDoc
+        traverseWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
 
       maybeHenceLest2doc _ Nothing = pure mempty
       maybeHenceLest2doc henceOrLest (Just henceLest) =
@@ -240,7 +244,7 @@ maybeTempConstr2doc
       tComparison2doc TOn = "ON"
       tComparison2doc TBefore = "WITHIN"
 
-maybeTempConstr2doc _ = "WITHIN 7 DAY"
+maybeTempConstr2doc _ = mempty
 
 multiTerm2qid :: MultiTerm -> Doc ann
 multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid

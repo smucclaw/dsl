@@ -4,7 +4,6 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -149,7 +148,7 @@ rule2doc
       rkeyword, subj = Leaf actor,
       deontic, action = Leaf action,
       temporal,
-      hence, lest
+      hence = maybeHence, lest = maybeLest
       -- srcref, -- May want to use this for better error reporting.
     } =
     {-
@@ -171,9 +170,12 @@ rule2doc
       deonticAction = rkeywordDeonParamText2doc deontic action
       deadline = maybeTempConstr2doc temporal
       henceLestClauses =
-        [hence, lest]
-          |> traverseWith henceLest2doc [HENCE, LEST]
+        [maybeHence, maybeLest]
+          |> traverseWith maybeHenceLest2doc [HENCE, LEST]
           |$> filter isNonEmptyDoc
+      maybeHenceLest2doc _ Nothing = pure mempty
+      maybeHenceLest2doc henceOrLest (Just henceLest) =
+        henceLest2doc henceOrLest henceLest
       isNonEmptyDoc doc = doc |> show |> not . null
 
 rule2doc DefNameAlias {name, detail} =
@@ -207,7 +209,10 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     paramText' = paramText2qid paramText
     rkeyword2doc rkeyword =
       rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
-    paramText2qid ((mtExpr, _) :| _) = mtExpr |> toList |> multiTerm2qid
+    -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
+    -- that we have to use toList to convert it to a multi term before passing
+    -- it to multiTerm2qid.
+    paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
 
 maybeTempConstr2doc :: Maybe (TemporalConstraint T.Text) -> Doc ann
 maybeTempConstr2doc
@@ -275,15 +280,13 @@ henceLest2doc ::
   forall ann s m.
   MonadErrorIsString s m =>
   HenceOrLest ->
-  Maybe Rule ->
+  Rule ->
   m (Doc ann)
-henceLest2doc _ Nothing = pure mempty
-
-henceLest2doc henceOrLest (Just (RuleAlias henceLest)) =
-  (henceOrLest, henceLest)
-    |> bimap pretty multiTerm2qid
-    |> uncurry (<+>)
-    |> pure
+henceLest2doc henceOrLest (RuleAlias henceLest) =
+  pure $ henceOrLest' <+> henceLest'
+  where
+    henceOrLest' = pretty henceOrLest
+    henceLest' = multiTerm2qid henceLest
 
 henceLest2doc _ _ = errMsg
 

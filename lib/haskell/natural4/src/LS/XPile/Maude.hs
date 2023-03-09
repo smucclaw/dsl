@@ -193,7 +193,7 @@ rule2doc
       isNonEmptyDoc doc = doc |> show |> not . null
 
 rule2doc DefNameAlias {name, detail} =
-  nameDetails2means name [detail] |> pure
+  pure $ nameDetails2means name [detail]
 
 {-
   clauses =

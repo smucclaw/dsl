@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -281,7 +282,9 @@ nameDetails2means name details =
 --     isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
 --     isValidMTExpr _ _ = False
 
-data HenceOrLest = HENCE | LEST
+data HenceOrLest :: Type where
+  HENCE :: HenceOrLest
+  LEST :: HenceOrLest
   deriving (Eq, Ord, Read, Show)
 
 instance Pretty HenceOrLest where

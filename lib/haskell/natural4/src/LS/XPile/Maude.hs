@@ -260,7 +260,9 @@ nameDetails2means name details =
         |> intersperse "AND"
         |> hsep
         |> parenthesizeIf (length details > 1)
+
     details2qids details = details |> toList |$> multiTerm2qid
+
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf _ x = x
 

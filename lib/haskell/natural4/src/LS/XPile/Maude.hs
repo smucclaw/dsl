@@ -123,6 +123,7 @@ rules2doc rules =
   (startRule : transpiledRules) |> concatWith (<.>)
   where
     x <.> y = [x, ",", line, line, y] |> mconcat
+
     -- Find the first regulative rule and extracts its rule name.
     -- This returns a Maybe because there may not be any regulative rule.
     -- In such cases, we simply return mempty, the empty doc.

@@ -143,7 +143,7 @@ rules2doc rules =
       Just ruleName
     rule2RegRuleName _ = Nothing
 
-    regRuleName2startRule regRuleName =  "START" <+> text2qid regRuleName
+    regRuleName2startRule regRuleName = "START" <+> text2qid regRuleName
 
 -- Main function that transpiles individual rules.
 rule2doc ::
@@ -183,7 +183,7 @@ rule2doc
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
-      deadline = maybeTempConstr2doc temporal
+      deadline = temporal |> maybe mempty tempConstr2doc
 
       henceLestClauses =
         traverseWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
@@ -230,23 +230,19 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     -- it to multiTerm2qid.
     paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
 
-maybeTempConstr2doc :: Maybe (TemporalConstraint T.Text) -> Doc ann
-maybeTempConstr2doc
-  ( Just
-      ( TemporalConstraint
-          tComparison@((`elem` [TOn, TBefore]) -> True)
-          (Just n)
-          (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
-        )
+tempConstr2doc :: TemporalConstraint T.Text -> Doc ann
+tempConstr2doc
+  ( TemporalConstraint
+      tComparison@((`elem` [TOn, TBefore]) -> True)
+      (Just n)
+      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) =
-    [tComparison', n', "DAY"] |> hsep
+    hsep [tComparison', n', "DAY"]
     where
       n' = pretty n
       tComparison' = tComparison2doc tComparison
       tComparison2doc TOn = "ON"
       tComparison2doc TBefore = "WITHIN"
-
-maybeTempConstr2doc _ = mempty
 
 multiTerm2qid :: MultiTerm -> Doc ann
 multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
@@ -264,7 +260,7 @@ nameDetails2means name details =
         |> hsep
         |> parenthesizeIf (length details > 1)
     details2qids details = details |> toList |$> multiTerm2qid
-    parenthesizeIf True x = ["(", x, ")"] |> mconcat
+    parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf _ x = x
 
 -- Auxiliary stuff for handling HENCE/LEST clauses.

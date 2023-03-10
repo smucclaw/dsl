@@ -131,17 +131,19 @@ rules2doc rules =
       rules'
         |> mapMaybe rule2RegRuleName
         |> safeHead
-        |$> (("START" <+>) . text2qid)
-        |> fromMaybe mempty
+        |> maybe mempty regRuleName2startRule
 
     -- Transpile the rules to docs and collect all those that transpiled correcly.
     -- Erraneous ones are ignored.
     transpiledRules = rules' |$> rule2doc |> rights
 
     rules' = toList rules
+
     rule2RegRuleName Regulative {rlabel = Just (_, _, ruleName)} =
       Just ruleName
     rule2RegRuleName _ = Nothing
+
+    regRuleName2startRule regRuleName =  "START" <+> text2qid regRuleName
 
 -- Main function that transpiles individual rules.
 rule2doc ::
@@ -252,7 +254,7 @@ multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
 nameDetails2means ::
   forall ann t. Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =
-  [name', "MEANS", details'] |> hsep
+  hsep [name', "MEANS", details']
   where
     name' = multiTerm2qid name
     details' =

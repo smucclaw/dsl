@@ -132,7 +132,7 @@ rules2doc rules =
       rules'
         |> mapMaybe rule2RegRuleName
         |> safeHead
-        |> maybe mempty regRuleName2startRule
+        |> maybe2monoid regRuleName2startRule
 
     -- Transpile the rules to docs and collect all those that transpiled correcly.
     -- Erraneous ones are ignored.
@@ -184,7 +184,7 @@ rule2doc
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
-      deadline = temporal |> maybe mempty tempConstr2doc
+      deadline = maybe2monoid tempConstr2doc temporal
 
       henceLestClauses =
         traverseWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
@@ -359,6 +359,9 @@ show2text x = x |> show |> T.pack
 safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
 safeHead (x : _) = pure x
 safeHead _ = mempty
+
+maybe2monoid :: Monoid b => (a -> b) -> Maybe a -> b
+maybe2monoid = maybe mempty
 
 errMsg :: MonadErrorIsString s m => m a
 errMsg = throwError "Not supported."

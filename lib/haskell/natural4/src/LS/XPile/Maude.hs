@@ -122,7 +122,7 @@ rules2doc (null -> True) = mempty
 rules2doc rules =
   (startRule : transpiledRules) |> concatWith (<.>)
   where
-    x <.> y = [x, ",", line, line, y] |> mconcat
+    x <.> y = mconcat [x, ",", line, line, y]
 
     -- Find the first regulative rule and extracts its rule name.
     -- This returns a Maybe because there may not be any regulative rule.

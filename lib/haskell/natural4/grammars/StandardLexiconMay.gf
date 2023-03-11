@@ -24,9 +24,9 @@ concrete StandardLexiconMay of StandardLexicon = NL4BaseMay **
     occur = mkVP (mkV "laku") ;
     respond = mkVP (mkV "membalas") ;
 
-    covered = mkAP (mkA ("dilindungi"|"Dilindungi")) ;
-    ensuing np = mkAP (strA2 "berlanjut seterusnya") <lin NP np : NP> ;
-    caused_by np = mkAP (mkA2 (mkA "disebabkan") by8agent_Prep) <lin NP np : NP> ;
+    covered = mkAP (mkA ("yang dilindungi")) ;
+    ensuing np = mkAP (strA2 "berlaku akibat") <lin NP np : NP> ;
+    caused_by np = mkAP (strA2  "disebabkan") <lin NP np : NP> ;
 
     NP_caused_by_PrePost np = {
       s = npStr np ++ "disebabkan oleh" ;

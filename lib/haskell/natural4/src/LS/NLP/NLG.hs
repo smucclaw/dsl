@@ -17,6 +17,8 @@ import qualified AnyAll as AA
 import System.Environment (lookupEnv)
 import Paths_natural4
 import Data.Foldable as F
+import Data.List (intercalate)
+import qualified Data.Char as Char (toLower)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -31,6 +33,9 @@ allLangs = do
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
   pure $ languages gr
+
+printLangs :: IO [Language] -> IO String
+printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
 getLang :: String -> Language
 getLang str = case readLanguage str of
@@ -111,6 +116,7 @@ nlg' thl env rule = case rule of
                     Nothing -> pure mempty
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
+      print "hornlike"
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
           parseBodyHC cl = case hBody cl of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
@@ -332,7 +338,7 @@ parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
     tString :: Text.Text -> GString
-    tString = GString . read . Text.unpack
+    tString = GString . Text.unpack
 parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
   _ -> GrecoverRPis (tString aTxt) (tString bTxt)
@@ -343,7 +349,7 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
     tString :: Text.Text -> GString
-    tString = GString . read . Text.unpack
+    tString = GString . Text.unpack
 
 parseConstraint env rp = let txt = rp2text rp in
   case parseAny "Constraint" env txt of

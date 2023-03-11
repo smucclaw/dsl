@@ -261,7 +261,8 @@ data Tree :: * -> * where
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
   GrecoverUnparsedPrePost :: GString -> Tree GPrePost_
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
-  Gby8means_Prep :: Tree GPrep_
+  Gafter_Prep :: Tree GPrep_
+  Gbefore_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
   Gfrom_Prep :: Tree GPrep_
   Gon_Prep :: Tree GPrep_
@@ -447,7 +448,8 @@ instance Eq (Tree a) where
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPrePost x1,GrecoverUnparsedPrePost y1) -> and [ x1 == y1 ]
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Gby8means_Prep,Gby8means_Prep) -> and [ ]
+    (Gafter_Prep,Gafter_Prep) -> and [ ]
+    (Gbefore_Prep,Gbefore_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
     (Gfrom_Prep,Gfrom_Prep) -> and [ ]
     (Gon_Prep,Gon_Prep) -> and [ ]
@@ -983,7 +985,8 @@ instance Gf GPrePost where
 
 instance Gf GPrep where
   gf (GConjPrep x1 x2) = mkApp (mkCId "ConjPrep") [gf x1, gf x2]
-  gf Gby8means_Prep = mkApp (mkCId "by8means_Prep") []
+  gf Gafter_Prep = mkApp (mkCId "after_Prep") []
+  gf Gbefore_Prep = mkApp (mkCId "before_Prep") []
   gf Gfor_Prep = mkApp (mkCId "for_Prep") []
   gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
   gf Gon_Prep = mkApp (mkCId "on_Prep") []
@@ -992,7 +995,8 @@ instance Gf GPrep where
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjPrep" -> GConjPrep (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "by8means_Prep" -> Gby8means_Prep 
+      Just (i,[]) | i == mkCId "after_Prep" -> Gafter_Prep 
+      Just (i,[]) | i == mkCId "before_Prep" -> Gbefore_Prep 
       Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
       Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
       Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 

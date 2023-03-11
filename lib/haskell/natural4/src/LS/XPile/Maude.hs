@@ -1,31 +1,31 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-
   Work-in-progress transpiler to Maude.
   Note that since we do all the parsing and transpilation within Maude itself,
   all we do here is convert the list of rules to a textual, string
   representation that Maude can parse.
-
-  Note that we use NoMonomorphism restriction and ScopedTypeVariables because
-  we use a _lot_ of polymorphic functions, like those from pretty printer, and
-  GHC's type checker can be very, very annoying otherwise.
 -}
 
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (All, Leaf))
-import Control.Monad.Except (MonadError (throwError))
-import Data.Coerce (coerce)
+import Control.Monad.Except (MonadError (throwError), catchError)
+import Data.Coerce (coerce, Coercible)
 import Data.Either (rights)
 import Data.Foldable ( Foldable(elem, toList), find )
 import Data.Functor ((<&>))
@@ -100,7 +100,7 @@ import Prettyprinter
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
 rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules = rules |> rules2doc |> show
+rules2maudeStr rules = rules |> rules2doc |> either show show
 
 {-
   Auxiliary functions that help with the transpilation.
@@ -115,12 +115,22 @@ rules2maudeStr rules = rules |> rules2doc |> show
   only outputs those that do to plaintext.
 -}
 rules2doc ::
-  forall ann t.
-  Foldable t =>
+  forall ann t m s.
+  (MonadErrorIsString s m, Foldable t) =>
   t Rule ->
-  Doc ann
+  m (Doc ann)
 rules2doc rules =
-  (startRule : transpiledRules) |> rights |> concatWith (<.>)
+  (startRule : transpiledRules)
+    -- coerce eliminates the overhead that we would have incurred if we had
+    -- used (map Ap) instead.
+    |> coerce @[m (Doc ann)] @[Ap m (Doc ann)]
+    -- TODO:
+    -- Don't just swallow up errors and turn them into mempty.
+    -- Actually output a comment indicating what went wrong while transpiling
+    -- those erraneous rules.
+    |$> (`catchError` const mempty)
+    |> coerceAndRemoveEmptyDocs
+    |$> concatWith (<.>)
   where
     x <.> y = mconcat [x, ",", line, line, y]
 
@@ -135,7 +145,7 @@ rules2doc rules =
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules' |$> rule2doc 
+    transpiledRules = rules' |$> rule2doc
 
     rules' = toList rules
 
@@ -180,10 +190,7 @@ rule2doc
     -}
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
-      -- Coerce all the (Ap m b) back to (m b), short-circuiting evaluation
-      -- along the way if any of the (m b)'s are erraneous.
-      |> traverse coerce
-      |$> filter isNonEmptyDoc
+      |> coerceAndRemoveEmptyDocs
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -204,8 +211,8 @@ rule2doc
           annotation here.
       -}
       maybeEmpty ::
-        forall f a b.
         (Applicative f, Monoid b) => (a -> f b) -> Maybe a -> Ap f b
+        -- (a -> m (Doc ann)) -> Maybe a -> Ap m (Doc ann)
       maybeEmpty f = maybe mempty $ f .> coerce
 
       deadline = maybeEmpty tempConstr2doc temporal
@@ -242,6 +249,12 @@ rule2doc
       leaf2mtt _ = errMsg
 
 rule2doc _ = errMsg
+
+coerceAndRemoveEmptyDocs ::
+  (Coercible a (f b), Applicative f, Show b) => [a] -> f [b]
+  -- MonadErrorIsString s m => [Ap m (Doc ann)] -> m [Doc ann]
+coerceAndRemoveEmptyDocs docs =
+  docs |> traverse coerce |$> filter (show .> (/= ""))
 
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
@@ -345,10 +358,12 @@ henceLest2doc _ _ = errMsg
   - a type variable (s :: Type) such that IsString s.
   - a type constructor (m :: Type -> Type) such that (m a) is a monad for all
     (a :: Type).
-    (which could be (Either s) or ExceptT)
 -}
-type MonadErrorIsString s (m :: Type -> Type) =
-  (IsString s, MonadError s m)
+type MonadErrorIsString s m = (IsString s, MonadError s m)
+
+-- This lifts MonadError instances for m up into the applicative (Ap m).
+deriving via m :: Type -> Type instance
+  MonadError s m => MonadError s (Ap m)
 
 infixl 0 |$>
 

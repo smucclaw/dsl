@@ -356,18 +356,6 @@ henceLest2doc _ _ = errMsg
 type MonadErrorIsString s (m :: Type -> Type) =
   (IsString s, MonadError s m)
 
-traverseWith ::
-  (Foldable t1, Foldable t2, Applicative f) =>
-  (a1 -> a2 -> f b) ->
-  t1 a1 ->
-  t2 a2 ->
-  f [b]
-traverseWith f xs ys =
-  zipWith f xs' ys' |> sequenceA
-  where
-    xs' = toList xs
-    ys' = toList ys
-
 infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
@@ -382,6 +370,18 @@ show2text x = x |> show |> T.pack
 
 errMsg :: MonadErrorIsString s m => m a
 errMsg = throwError "Not supported."
+
+-- traverseWith ::
+--   (Foldable t1, Foldable t2, Applicative f) =>
+--   (a1 -> a2 -> f b) ->
+--   t1 a1 ->
+--   t2 a2 ->
+--   f [b]
+-- traverseWith f xs ys =
+--   zipWith f xs' ys' |> sequenceA
+--   where
+--     xs' = toList xs
+--     ys' = toList ys
 
 -- map where the function is also passed the index of the current element.
 -- mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b

@@ -33,9 +33,6 @@ rpFilter (RPnary rel rp) = rpFilter rp
 rpFilter (RPMT mt) = mt
 
 rl2bs :: [Rule] -> [BoolStructR]
--- rl2bs rl = map snd $ qaHornsR interp
---   where
---     interp = l4interpret defaultInterpreterOptions rl
 rl2bs rl = concatMap r2b rl
 
 r2b :: Rule -> [BoolStructR]

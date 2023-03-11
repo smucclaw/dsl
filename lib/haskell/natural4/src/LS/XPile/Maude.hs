@@ -190,6 +190,16 @@ rule2doc
       deonticAction = rkeywordDeonParamText2doc deontic action
       deadline = maybeEmpty tempConstr2doc temporal
 
+      {-
+        For processing HENCE/LEST clauses, maybeHenceLest2doc is used and this
+        requires the assumption that (m (Doc ann)) is a monoid.
+        The idea is that:
+        - we transform missing clauses (ie Nothing) into mempty
+         (which is really pure mempty because we lift the (Doc ann) monoid up
+         to the MonadError involving m).
+        - we traverse over present clauses (ie Justs) using henceLest2doc,
+          short-circuiting evaluation should an error occur.
+      -}
       henceLestClauses =
         traverseWith maybeHenceLest2doc
           [HENCE, LEST] [maybeHence, maybeLest]

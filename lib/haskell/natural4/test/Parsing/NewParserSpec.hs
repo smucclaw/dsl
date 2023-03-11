@@ -165,9 +165,9 @@ spec = do
 
     describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
 
-      let whoStructR_1 = defaultReg { who = Just ( mkLeaf ( mkRpmt ["eats"] ) ) }
-          whoStructR_2 = defaultReg { who = Just ( mkLeaf ( mkRpmt ["eats", "rudely"] ) ) }
-          whoStructR_3 = defaultReg { who = Just ( mkLeaf ( mkRpmt ["eats", "without", "manners"] ) ) }
+      let whoStructR_1 = defaultReg { who = Just ( mkRpmtLeaf ["eats"] ) }
+          whoStructR_2 = defaultReg { who = Just ( mkRpmtLeaf ["eats", "rudely"] ) }
+          whoStructR_3 = defaultReg { who = Just ( mkRpmtLeaf ["eats", "without", "manners"] ) }
 
       filetest "who-1" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_1 ]
@@ -191,7 +191,7 @@ spec = do
             defaultHorn { name = [MTT "a Data Breach"],
               clauses =
                 [ HC
-                    { hHead = RPBoolStructR [MTT "a Data Breach"] RPis (mkLeaf (mkRpmt ["a Notifiable Data Breach"])),
+                    { hHead = RPBoolStructR [MTT "a Data Breach"] RPis (mkRpmtLeaf ["a Notifiable Data Breach"]),
                       hBody = Just (mkLeaf (RPMT [MTT "a data breach", MTT "occurred"]))
                     }
                 ],
@@ -214,12 +214,12 @@ spec = do
                           RPis
                           ( Any
                               (Just (PrePost "any unauthorised" "of personal data"))
-                              [ mkLeaf (mkRpmt ["access"]),
-                                mkLeaf (mkRpmt ["use"]),
-                                mkLeaf (mkRpmt ["disclosure"]),
-                                mkLeaf (mkRpmt ["copying"]),
-                                mkLeaf (mkRpmt ["modification"]),
-                                mkLeaf (mkRpmt ["disposal"])
+                              [ mkRpmtLeaf ["access"],
+                                mkRpmtLeaf ["use"],
+                                mkRpmtLeaf ["disclosure"],
+                                mkRpmtLeaf ["copying"],
+                                mkRpmtLeaf ["modification"],
+                                mkRpmtLeaf ["disposal"]
                               ]
                           ),
                       hBody = Nothing

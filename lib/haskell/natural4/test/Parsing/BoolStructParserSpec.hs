@@ -251,7 +251,7 @@ spec = do
         (parseOther pExpect)
         ( ExpRP (RPBoolStructR
                  [] RPis
-                 (Not (mkLeaf (mkRpmt ["IT IS","A Notifiable Data Breach"]))))
+                 (Not (mkRpmtLeaf ["IT IS","A Notifiable Data Breach"])))
         , []
         )
 
@@ -259,7 +259,7 @@ spec = do
         (parseOther pGivens )
         (  [RPBoolStructR
                  [] RPis
-                 (Not (mkLeaf (mkRpmt ["IT IS","A Notifiable Data Breach"])))]
+                 (Not (mkRpmtLeaf ["IT IS","A Notifiable Data Breach"]))]
         , []
         )
 

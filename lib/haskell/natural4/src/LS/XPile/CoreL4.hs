@@ -313,11 +313,14 @@ sfl4ToCorel4Rule Constitutive{ } = error "sfl4ToCorel4Rule: erroring on Constitu
 sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias { } = error "sfl4ToCorel4Rule: erroring on DefNameAlias"
+sfl4ToCorel4Rule DefNameAlias { } = []
 sfl4ToCorel4Rule (RuleAlias _) = error "sfl4ToCorel4Rule: erroring on RuleAlias"   -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled" -- trivial top = _
-sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"    -- trivial bottom
-sfl4ToCorel4Rule _             = error "sfl4ToCorel4Rule: erroring on other rule" -- [TODO] Hornlike
+sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled"
+sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"
+sfl4ToCorel4Rule Scenario {}   = error "sfl4ToCorel4Rule: erroring on Scenario"
+sfl4ToCorel4Rule DefTypically {} = []
+sfl4ToCorel4Rule RuleGroup {}  = error "sfl4ToCorel4Rule: erroring on RuleGroup"
+sfl4ToCorel4Rule (NotARule _)            = error "sfl4ToCorel4Rule: erroring on NotARule"
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr

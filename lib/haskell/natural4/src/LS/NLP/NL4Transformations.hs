@@ -109,10 +109,10 @@ mergeConj x = composOp mergeConj x
 -- TODO: check if viewpatterns help?
 squeezeTrees :: forall a . GConj -> [Tree a] -> Maybe (Tree a)
 squeezeTrees conj [
-    GTemporalConstraint cond1 tc1 date1
-  , GTemporalConstraint cond2 tc2 date2]
+    GRPConstraint cond1 tc1 date1
+  , GRPConstraint cond2 tc2 date2]
   | cond1==cond2
-  , date1==date2 = pure $ GTemporalConstraint cond1 conjTC date1
+  , date1==date2 = pure $ GRPConstraint cond1 conjTC date1
   where
     conjTC :: GTComparison
     conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
@@ -140,7 +140,7 @@ isChinese l = l == mkCId "NL4Chi"
 
 aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
 aggregateBoolStruct l bs =
-  if isChinese l
+  if False -- isChinese l
     then bs
     else
       (case bs of

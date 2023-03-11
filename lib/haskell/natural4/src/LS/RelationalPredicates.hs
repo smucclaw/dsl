@@ -687,10 +687,10 @@ pMultiTermAka :: Parser MultiTerm
 pMultiTermAka = debugName "pMultiTermAka" $ pAKA slMultiTerm id
 
 -- head of nonempty list
-pSingleTermAka :: Parser KVsPair
+pSingleTermAka :: Parser TypedMulti
 pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
 
-pSingleTerm :: Parser KVsPair
+pSingleTerm :: Parser TypedMulti
 pSingleTerm = debugName "pSingleTerm" $ (pure . MTT <$> pAnyText) `optIndentedTuple` pTypeSig
 
 -- [TODO] rewrite this in terms of slKeyValuesAka
@@ -698,7 +698,7 @@ slParamText :: SLParser ParamText
 slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
 -- so it turns out we usually don't even ever get here because a TYPICALLY gets handled by slAKA
-slTypedMulti :: SLParser KVsPair
+slTypedMulti :: SLParser TypedMulti
 slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
   (l,ts,typicalval) <- (,,)
     $*| slMultiTerm
@@ -740,18 +740,18 @@ slOneOf = do
     |>| pParamText
 
 -- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
-pKeyValuesAka :: Parser KVsPair
+pKeyValuesAka :: Parser TypedMulti
 pKeyValuesAka = debugName "pKeyValuesAka" $ finishSL slKeyValuesAka
 
-slKeyValuesAka :: SLParser KVsPair
+slKeyValuesAka :: SLParser TypedMulti
 slKeyValuesAka = debugNameSL "slKeyValuesAka" $ slAKA slKeyValues (toList . fst)
 
-pKeyValues :: Parser KVsPair
+pKeyValues :: Parser TypedMulti
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 
 -- | a ParamText key value pair is simply a (key : [v1,v2,v3]).
 -- we use nestedHorn to allow a MEANS under the v1.
-slKeyValues :: SLParser KVsPair
+slKeyValues :: SLParser TypedMulti
 slKeyValues = debugNameSL "slKeyValues" $ do
   (lhs, (rhs, typesig))   <- try (
     (,) -- key followed by values, and the values can sit on top of a MEANS

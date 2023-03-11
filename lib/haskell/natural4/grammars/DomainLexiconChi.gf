@@ -9,8 +9,8 @@ concrete DomainLexiconChi of DomainLexicon = NL4BaseChi **
   -- must sing
     person = mkCN person_N ;
     walk = mkVP walk_V ;
-    eat = mkVP <eat_V2 : V> ;
-    drink = mkVP <drink_V2 : V> ;
+    eat = mkVP <lin V eat_V2 : V> ;
+    drink = mkVP <lin V drink_V2 : V> ;
     sing = mkVP sing_V ;
 
   -- pdpa
@@ -18,7 +18,7 @@ concrete DomainLexiconChi of DomainLexicon = NL4BaseChi **
     inaction = mkCN (mkN "不 作 为") ; --indirectly obtained from zaobao.com, specifically the term "democratic inaction"
     notification = mkCN (mkN ("通 知")) ;
     PDPC = mkCN (mkN "个 人 资 料 保 护 委 员 会") ; --obtained from zaobao.com
-    data_breach = mkCN (mkN ("资 料 外 泄 事 件")) ; --obtained from zaobao.com
+    data_breach = mkCN (mkN ("数据泄露")) ;
     public = mkAP (mkA ("公 共")) ;
     notifiable = mkAP (mkA ("应 通 报 的")) ;
     -- aware = mkAP (mkA "发现") ;

@@ -38,8 +38,9 @@ type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 type Depth = Int
 type Preamble = MyToken
 
-type KVsPair = (NonEmpty MTExpr, Maybe TypeSig)    --- so really there are multiple Values
-type TypedMulti = KVsPair                             --- | apple | orange | banana | :: | Fruit   |
+--- so really there are multiple Values
+--- | apple | orange | banana | :: | Fruit   |
+type TypedMulti = (NonEmpty MTExpr, Maybe TypeSig)
 
 -- * BoolStructs wrap Phrasal types
 
@@ -98,10 +99,10 @@ type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
 --
 -- > action = ( "walk" :| [] , Nothing )
 --
+-- | notify | the government |    |         |
+-- |        | immediately    | :: | Urgency |
+type ParamText = NonEmpty TypedMulti
 
-type ParamText = NonEmpty TypedMulti               --- | notify | the government |    |         |
-                                                   --- |        | immediately    | :: | Urgency |
--- see PrettyPrinter for newtypes based on ParamText
 text2pt :: Text.Text -> ParamText
 text2pt x = pure (pure (MTT x), Nothing)
 

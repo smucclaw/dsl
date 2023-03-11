@@ -35,8 +35,8 @@ spec = do
             { name = [MTT "Bob's your uncle"]
             , keyword = Means
             , clauses =
-              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkLeaf (mkRpmt ["Bob is estranged"])
-                                                                                          ,mkLeaf (mkRpmt ["Bob is dead"])]))
+              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Not (Any Nothing [mkRpmtLeaf ["Bob is estranged"]
+                                                                                          ,mkRpmtLeaf ["Bob is dead"]]))
                    , hBody = Nothing}]
             , srcref = mkTestSrcRef 1 1 }
 
@@ -45,11 +45,24 @@ spec = do
       filetest "bob-head-1-b" "more indented NOT"
         (parseR pRules) [srcrow2 bobUncle1]
 
-      let bobUncle2 = bobUncle1
-            { clauses =
-              [HC { hHead = RPBoolStructR [MTT "Bob's your uncle"] RPis (Any Nothing [Not (mkLeaf (mkRpmt ["Bob is estranged"]))
-                                                                                  ,mkLeaf (mkRpmt ["Bob is dead"])])
-                   , hBody = Nothing } ] }
+      let bobUncle2 =
+            bobUncle1
+              { clauses =
+                  [ HC
+                      { hHead =
+                          RPBoolStructR
+                            [MTT "Bob's your uncle"]
+                            RPis
+                            ( Any
+                                Nothing
+                                [ Not (mkRpmtLeaf ["Bob is estranged"]),
+                                  mkRpmtLeaf ["Bob is dead"]
+                                ]
+                            ),
+                        hBody = Nothing
+                      }
+                  ]
+              }
 
       filetest "bob-head-2" "handle less indentation"
           (parseR pRules) [srcrow2 bobUncle2]
@@ -65,14 +78,11 @@ spec = do
                                          { hHead = RPBoolStructR [MTT "Bob's your uncle" ] RPis
                                            ( All Nothing
                                              [ Any Nothing
-                                               [ Leaf
-                                                 ( mkRpmt ["Bob is your mother's brother"] )
-                                               , Leaf
-                                                 ( mkRpmt ["Bob is your father's brother"] )
+                                               [ Leaf ( mkRpmt ["Bob is your mother's brother"] )
+                                               , Leaf ( mkRpmt ["Bob is your father's brother"] )
                                                ]
                                              , Not
-                                               ( Leaf
-                                                 ( mkRpmt ["Bob is just a family friend"] )
+                                               ( Leaf ( mkRpmt ["Bob is just a family friend"] )
                                                )
                                              ]
                                            )

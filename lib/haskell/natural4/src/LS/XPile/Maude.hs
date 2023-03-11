@@ -1,18 +1,13 @@
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 {-
   Work-in-progress transpiler to Maude.
@@ -121,15 +116,12 @@ rules2doc ::
   m (Doc ann)
 rules2doc rules =
   (startRule : transpiledRules)
-    -- coerce eliminates the overhead that we would have incurred if we had
-    -- used (map Ap) instead.
-    |> coerce @[m (Doc ann)] @[Ap m (Doc ann)]
     -- TODO:
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |$> (`catchError` const mempty)
-    |> removeEmptyDocs
+    |$> (`catchError` const (pure mempty))
+    |> sequenceAndremoveEmptyDocs
     |$> concatWith (<.>)
   where
     x <.> y = mconcat [x, ",", line, line, y]
@@ -190,7 +182,8 @@ rule2doc
     -}
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
-      |> removeEmptyDocs
+      |> coerce
+      |> sequenceAndremoveEmptyDocs
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -250,11 +243,9 @@ rule2doc
 
 rule2doc _ = errMsg
 
-removeEmptyDocs ::
-  (Coercible a (f b), Applicative f, Show b) => [a] -> f [b]
-  -- MonadErrorIsString s m => [Ap m (Doc ann)] -> m [Doc ann]
-removeEmptyDocs docs =
-  docs |> coerce |> sequenceA |$> filter (show .> (/= ""))
+sequenceAndremoveEmptyDocs :: (Applicative f, Show a) => [f a] -> f [a]
+sequenceAndremoveEmptyDocs docs =
+  docs |> sequenceA |$> filter (show .> (/= ""))
 
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
@@ -362,8 +353,8 @@ henceLest2doc _ _ = errMsg
 type MonadErrorIsString s m = (IsString s, MonadError s m)
 
 -- This lifts MonadError instances for m up into the applicative (Ap m).
-deriving via m :: Type -> Type instance
-  MonadError s m => MonadError s (Ap m)
+-- deriving via m :: Type -> Type instance
+--   MonadError s m => MonadError s (Ap m)
 
 infixl 0 |$>
 

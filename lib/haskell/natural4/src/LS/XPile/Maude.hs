@@ -27,6 +27,7 @@ module LS.XPile.Maude where
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Except (MonadError (throwError))
 import Data.Bifunctor (Bifunctor (bimap, first, second))
+import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Foldable ( Foldable(elem, toList), find )
 import Data.Functor ((<&>))
@@ -37,7 +38,7 @@ import Data.Monoid (Ap(Ap))
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import Data.Traversable (mapAccumL)
--- import Debug.Trace
+import Debug.Trace
 import Flow ((.>), (|>))
 import LS.Rule
   ( Rule (..),
@@ -136,7 +137,7 @@ rules2doc rules =
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules' |$> rule2doc
+    transpiledRules = rules' |$> rule2doc 
 
     rules' = toList rules
 
@@ -152,7 +153,8 @@ rules2doc rules =
 -- Main function that transpiles individual rules.
 rule2doc ::
   forall ann s m.
-  (MonadErrorIsString s m, Monoid (m (Doc ann))) =>
+  -- (MonadErrorIsString s m, Monoid (m (Doc ann))) =>
+  MonadErrorIsString s m =>
   Rule ->
   m (Doc ann)
 
@@ -175,37 +177,30 @@ rule2doc
       - deontic action
       - deadline
       - HENCE/LEST clauses
-      We then combine these together via vcat.
+      If an error occurs, traverse short-circuits the unhappy path.
+      We continue along the happy path by removing empty docs and vcat'ing
+      everything together.
     -}
-    [ pure [ruleName', rkeywordActor, deonticAction, deadline],
-      henceLestClauses
-    ]
-      |> sequenceA
-      |$> mconcat
+    [ruleActorDeonticAction, [deadline], henceLestClauses]
+      |> mconcat
+      -- Coerce all the (Ap m b) back to (m b), short-circuiting evaluation
+      -- along the way if any of the (m b)'s are erraneous.
+      |> traverse coerce
       |$> filter isNonEmptyDoc
       |$> vcat
     where
+      ruleActorDeonticAction =
+        [ruleName', rkeywordActor, deonticAction] |$> pure
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
+
       deadline = maybeEmpty tempConstr2doc temporal
 
-      {-
-        For processing HENCE/LEST clauses, maybeHenceLest2doc is used and this
-        requires the assumption that (m (Doc ann)) is a monoid.
-        The idea is that:
-        - we transform missing clauses (ie Nothing) into mempty
-         (which is really pure mempty because we lift the (Doc ann) monoid up
-         to the MonadError involving m).
-        - we map over present clauses (ie Justs) using henceLest2doc.
-        - traverse is used during this whole process to short-circuit evaluation
-          should an error occur.
-      -}
       henceLestClauses =
-        traverseWith maybeHenceLest2doc
-          [HENCE, LEST] [maybeHence, maybeLest]
+        zipWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
 
-      maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> m (Doc ann)
+      maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> Ap m (Doc ann)
       maybeHenceLest2doc = henceLest2doc .> maybeEmpty
 
       isNonEmptyDoc doc = doc |> show |> not . null
@@ -246,21 +241,22 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     -- it to multiTerm2qid.
     paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
 
-tempConstr2doc :: Show a => TemporalConstraint a -> Doc ann
+tempConstr2doc ::
+  MonadErrorIsString s m => TemporalConstraint T.Text -> m (Doc ann)
 tempConstr2doc
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)
-      (show2text .> T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) =
-    hsep [tComparison', n', "DAY"]
+    [tComparison', n', "DAY"] |> hsep |> pure
     where
       n' = pretty n
       tComparison' = tComparison2doc tComparison
       tComparison2doc TOn = "ON"
       tComparison2doc TBefore = "WITHIN"
 
-tempConstr2doc _ = mempty
+tempConstr2doc _ = errMsg
 
 multiTerm2qid :: MultiTerm -> Doc ann
 multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
@@ -336,10 +332,6 @@ henceLest2doc _ _ = errMsg
 type MonadErrorIsString s (m :: Type -> Type) =
   (IsString s, MonadError s m)
 
--- Lift a monoid into an Either using the natural embedding.
-deriving via Ap (Either a) b instance
-  Monoid b => Monoid (Either a b)
-
 traverseWith ::
   (Foldable t1, Foldable t2, Applicative f) =>
   (a1 -> a2 -> f b) ->
@@ -364,10 +356,23 @@ show2text x = x |> show |> T.pack
 -- safeHead (x : _) = pure x
 -- safeHead _ = mempty
 
-maybeEmpty :: Monoid b => (a -> b) -> Maybe a -> b
-maybeEmpty = maybe mempty
+{-
+  Note that:
+    - (Ap f b) is a type isomorphic to (f b), the lifting of the monoid b into
+      the applicative f.
+    - coerce is the natural embedding witnessing this isomorphism.
 
-findWithErrMsg :: (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
+  This function lies at the heart of processing HENCE/LEST clauses and deadlines
+  wrapped in Maybe.
+  For that we choose:
+  - f = m (Doc ann) where (IsString s, MonadError s m).
+  - b = Doc ann.
+-}
+maybeEmpty :: (Applicative f, Monoid b) => (a -> f b) -> Maybe a -> Ap f b
+maybeEmpty f = maybe mempty $ f .> coerce
+
+findWithErrMsg ::
+  (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
 findWithErrMsg pred errMsg xs =
   xs |> find pred |> maybe (throwError errMsg) pure
 

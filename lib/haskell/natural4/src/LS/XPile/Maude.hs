@@ -197,8 +197,9 @@ rule2doc
         - we transform missing clauses (ie Nothing) into mempty
          (which is really pure mempty because we lift the (Doc ann) monoid up
          to the MonadError involving m).
-        - we traverse over present clauses (ie Justs) using henceLest2doc,
-          short-circuiting evaluation should an error occur.
+        - we map over present clauses (ie Justs) using henceLest2doc.
+        - traverse is used during this whole process to short-circuit evaluation
+          should an error occur.
       -}
       henceLestClauses =
         traverseWith maybeHenceLest2doc

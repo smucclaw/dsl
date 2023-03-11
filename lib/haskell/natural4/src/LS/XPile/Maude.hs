@@ -148,13 +148,9 @@ rules2doc rules =
     regRule2startRule Regulative {rlabel = Just (_, _, ruleName)} =
       "START" <+> text2qid ruleName
 
--- instance Monoid b => Monoid (Either a b) where
---   mempty = pure mempty
-
 -- Main function that transpiles individual rules.
 rule2doc ::
   forall ann s m.
-  -- (MonadErrorIsString s m, Monoid (m (Doc ann))) =>
   MonadErrorIsString s m =>
   Rule ->
   m (Doc ann)

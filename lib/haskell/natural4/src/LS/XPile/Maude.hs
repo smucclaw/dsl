@@ -7,7 +7,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -26,7 +25,6 @@ module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Except (MonadError (throwError))
-import Data.Bifunctor (Bifunctor (bimap, first, second))
 import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Foldable ( Foldable(elem, toList), find )
@@ -38,7 +36,7 @@ import Data.Monoid (Ap(Ap))
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import Data.Traversable (mapAccumL)
-import Debug.Trace
+-- import Debug.Trace
 import Flow ((.>), (|>))
 import LS.Rule
   ( Rule (..),

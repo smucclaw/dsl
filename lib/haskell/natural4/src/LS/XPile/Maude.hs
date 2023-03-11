@@ -129,7 +129,7 @@ rules2doc rules =
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
     |$> (`catchError` const mempty)
-    |> coerceAndRemoveEmptyDocs
+    |> removeEmptyDocs
     |$> concatWith (<.>)
   where
     x <.> y = mconcat [x, ",", line, line, y]
@@ -190,7 +190,7 @@ rule2doc
     -}
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
-      |> coerceAndRemoveEmptyDocs
+      |> removeEmptyDocs
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -250,11 +250,11 @@ rule2doc
 
 rule2doc _ = errMsg
 
-coerceAndRemoveEmptyDocs ::
+removeEmptyDocs ::
   (Coercible a (f b), Applicative f, Show b) => [a] -> f [b]
   -- MonadErrorIsString s m => [Ap m (Doc ann)] -> m [Doc ann]
-coerceAndRemoveEmptyDocs docs =
-  docs |> traverse coerce |$> filter (show .> (/= ""))
+removeEmptyDocs docs =
+  docs |> coerce |> sequenceA |$> filter (show .> (/= ""))
 
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty

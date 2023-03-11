@@ -110,21 +110,22 @@ biggestS env rl = do
   guard (not $ null sorted)
   return ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
 
+
 asPurescript :: NLGEnv -> [Rule] -> String
 asPurescript env rl =
      show (vsep
-           [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable " <>
+           [ "toplevelDecisions :: Object.Object (Item String)"
+           , "toplevelDecisions = Object.fromFoldable " <>
              (pretty $ TL.unpack (
                  pShowNoColor
-                   [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                            , alwaysLabeled (justQuestions (head bs) (map fixNot (tail bs))))
-                   | (names,bs) <- (combine (namesAndStruct rl) (namesAndQ env rl))
+                   [ toTuple ( T.intercalate " / " ((textMT names))
+                             , alwaysLabeled bs)
+                   | (names,bs) <- qaHornsT (l4interpret defaultInterpreterOptions rl)
                    ]
                  )
              )
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> "Marking :: Marking"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable " <>
+           , "toplevelDefaultMarking :: Marking"
+           , "toplevelDefaultMarking = Marking $ Map.fromFoldable " <>
              (pretty . TL.unpack
               . TL.replace "False" "false"
               . TL.replace "True" "true"
@@ -132,6 +133,8 @@ asPurescript env rl =
               fmap toTuple . Map.toList . AA.getMarking $
               getMarkings (l4interpret defaultInterpreterOptions rl)
              )
+           ]
+          )
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements :: Object.Object (Item String)"
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
           --   (pretty $ TL.unpack (
@@ -142,17 +145,15 @@ asPurescript env rl =
           --         ]
           --       )
           --   )
-           ]
-          )
 
-translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> String
-translate2PS nlgEnv eng rules =
+translate2PS :: NLGEnv -> [Rule] -> String
+translate2PS eng rules =
   psPrefix
-    <> ((tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules))))
+    <> (TL.unpack (maybe "-- nothing" (pShowNoColor . alwaysLabeled) (biggestItem (l4interpret defaultInterpreterOptions rules) rules)))
     <> "\n\n"
     <> psSuffix
     <> "\n\n"
-    <> (DL.intercalate "\n\n" $ [asPurescript l rules | l <- nlgEnv])
+    <> (DL.intercalate "\n\n" $ [asPurescript eng rules])
 
 psPrefix :: String -- the stuff at the top of the purescript output
 psPrefix = [QQ.r|

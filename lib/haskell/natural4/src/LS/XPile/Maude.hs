@@ -206,8 +206,8 @@ rule2doc
         - (Ap f b) is a type isomorphic to (f b), the lifting
           of the monoid b into the applicative f.
         - coerce is the natural embedding witnessing this isomorphism.
-        - coerce is highly polymorphic and GHC's type inference breaks down
-          completely if we don't provide a type annotation here.
+        - GHC's type inference breaks down if we don't provide a type
+          annotation here.
       -}
       maybeEmpty ::
         forall f a b.

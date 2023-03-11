@@ -144,6 +144,9 @@ rules2doc rules =
     isRegRule Regulative {} = True
     isRegRule _ = False
 
+    findWithErrMsg pred errMsg xs =
+      xs |> find pred |> maybe (throwError errMsg) pure
+
     regRule2startRule Regulative {rlabel = Just (_, _, ruleName)} =
       "START" <+> text2qid ruleName
 
@@ -195,11 +198,32 @@ rule2doc
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
 
+      {-
+        This function lies at the heart of processing HENCE/LEST clauses and
+        deadlines, which are wrapped in Maybe.
+        Note that:
+        - We may choose (f = m) and (b = Doc ann)
+        - (Ap f b) is a type isomorphic to (f b), the lifting
+          of the monoid b into the applicative f.
+        - coerce is the natural embedding witnessing this isomorphism.
+        - coerce is highly polymorphic and GHC's type inference breaks down
+          completely if we don't provide a type annotation here.
+      -}
+      maybeEmpty ::
+        forall f a b.
+        (Applicative f, Monoid b) => (a -> f b) -> Maybe a -> Ap f b
+      maybeEmpty f = maybe mempty $ f .> coerce
+
       deadline = maybeEmpty tempConstr2doc temporal
 
       henceLestClauses =
         zipWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
 
+      {-
+        Note that GHC's type inference breaks down if we don't type annotate
+        this and for that, we need ScopedTypeVariables with m and ann
+        quantified in the outer scope.
+      -}
       maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> Ap m (Doc ann)
       maybeHenceLest2doc = henceLest2doc .> maybeEmpty
 
@@ -355,26 +379,6 @@ show2text x = x |> show |> T.pack
 -- safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
 -- safeHead (x : _) = pure x
 -- safeHead _ = mempty
-
-{-
-  Note that:
-    - (Ap f b) is a type isomorphic to (f b), the lifting of the monoid b into
-      the applicative f.
-    - coerce is the natural embedding witnessing this isomorphism.
-
-  This function lies at the heart of processing HENCE/LEST clauses and deadlines
-  wrapped in Maybe.
-  For that we choose:
-  - f = m (Doc ann) where (IsString s, MonadError s m).
-  - b = Doc ann.
--}
-maybeEmpty :: (Applicative f, Monoid b) => (a -> f b) -> Maybe a -> Ap f b
-maybeEmpty f = maybe mempty $ f .> coerce
-
-findWithErrMsg ::
-  (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
-findWithErrMsg pred errMsg xs =
-  xs |> find pred |> maybe (throwError errMsg) pure
 
 errMsg :: MonadErrorIsString s m => m a
 errMsg = throwError "Not supported."

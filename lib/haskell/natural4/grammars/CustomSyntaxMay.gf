@@ -14,7 +14,7 @@ concrete CustomSyntaxMay of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralMay [
-      Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
+      Prep, for_Prep, from_Prep, on_Prep, after_Prep
     , VV, must_VV
     ]
   , ExtendMay [
@@ -113,10 +113,11 @@ oper
       s = "tidak mungkin" ; -- TODO check
       } ;
 
-    strA2 : Str -> A2 = \str -> mkA2 str noPrep ;
+    strA2 : Str -> A2 = \str -> mkA2 str ;
     invarV : Str -> V = \v -> R.mkVerb v v v v ;
     upon_Prep : Prep = R.mkPrep "semasa" ;
-    by8time_Prep : Prep = before_Prep ;
+    by8time_Prep : Prep = R.mkPrep "sebelum" ;
+    before_Prep : Prep = R.mkPrep "sebelum" ;
 
     bindQM : Str = BIND ++ "?" ;
 }

@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
@@ -6,6 +7,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
@@ -23,19 +25,18 @@
 module LS.XPile.Maude where
 
 import AnyAll (BoolStruct (All, Leaf))
-import Control.Applicative (Applicative (liftA2))
 import Control.Monad.Except (MonadError (throwError))
 import Data.Bifunctor (Bifunctor (bimap, first, second))
 import Data.Either (rights)
-import Data.Foldable (Foldable (elem, toList))
+import Data.Foldable ( Foldable(elem, toList), find )
 import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Monoid (Ap(Ap))
 import Data.String (IsString)
 import Data.Text qualified as T
-import Data.Traversable (mapAccumL)
+-- import Data.Traversable (mapAccumL)
 -- import Debug.Trace
 import Flow ((.>), (|>))
 import LS.Rule
@@ -115,13 +116,12 @@ rules2maudeStr rules = rules |> rules2doc |> show
   only outputs those that do to plaintext.
 -}
 rules2doc ::
-  forall ann s t.
+  forall ann t.
   Foldable t =>
   t Rule ->
   Doc ann
-rules2doc (null -> True) = mempty
 rules2doc rules =
-  (startRule : transpiledRules) |> concatWith (<.>)
+  (startRule : transpiledRules) |> rights |> concatWith (<.>)
   where
     x <.> y = mconcat [x, ",", line, line, y]
 
@@ -131,28 +131,31 @@ rules2doc rules =
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
       rules'
-        |> mapMaybe rule2RegRuleName
-        |> safeHead
-        |> maybe2monoid regRuleName2startRule
+        |> findWithErrMsg isRegRule "No regulative rule found."
+        |$> regRule2startRule
 
-    -- Transpile the rules to docs and collect all those that transpiled correcly.
-    -- Erraneous ones are ignored.
-    transpiledRules = rules' |$> rule2doc |> rights
+    -- Transpile the rules to docs and collect all those that transpiled
+    -- correctly, while ignoring erraneous ones.
+    transpiledRules = rules' |$> rule2doc
 
     rules' = toList rules
 
-    rule2RegRuleName Regulative {rlabel = Just (_, _, ruleName)} =
-      Just ruleName
-    rule2RegRuleName _ = Nothing
+    isRegRule Regulative {} = True
+    isRegRule _ = False
 
-    regRuleName2startRule regRuleName = "START" <+> text2qid regRuleName
+    regRule2startRule Regulative {rlabel = Just (_, _, ruleName)} =
+      "START" <+> text2qid ruleName
+
+-- instance Monoid b => Monoid (Either a b) where
+--   mempty = pure mempty
 
 -- Main function that transpiles individual rules.
 rule2doc ::
   forall ann s m.
-  MonadErrorIsString s m =>
+  (MonadErrorIsString s m, Monoid (m (Doc ann))) =>
   Rule ->
   m (Doc ann)
+
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -185,14 +188,14 @@ rule2doc
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
-      deadline = maybe2monoid tempConstr2doc temporal
+      deadline = maybeEmpty tempConstr2doc temporal
 
       henceLestClauses =
-        traverseWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
+        traverseWith maybeHenceLest2doc
+          [HENCE, LEST] [maybeHence, maybeLest]
 
-      maybeHenceLest2doc _ Nothing = pure mempty
-      maybeHenceLest2doc henceOrLest (Just henceLest) =
-        henceLest2doc henceOrLest henceLest
+      maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> m (Doc ann)
+      maybeHenceLest2doc = henceLest2doc .> maybeEmpty
 
       isNonEmptyDoc doc = doc |> show |> not . null
 
@@ -232,12 +235,12 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     -- it to multiTerm2qid.
     paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
 
-tempConstr2doc :: TemporalConstraint T.Text -> Doc ann
+tempConstr2doc :: Show a => TemporalConstraint a -> Doc ann
 tempConstr2doc
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)
-      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+      (show2text .> T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) =
     hsep [tComparison', n', "DAY"]
     where
@@ -245,6 +248,8 @@ tempConstr2doc
       tComparison' = tComparison2doc tComparison
       tComparison2doc TOn = "ON"
       tComparison2doc TBefore = "WITHIN"
+
+tempConstr2doc _ = mempty
 
 multiTerm2qid :: MultiTerm -> Doc ann
 multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
@@ -282,7 +287,7 @@ nameDetails2means name details =
 --     isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
 --     isValidMTExpr _ _ = False
 
-data HenceOrLest :: Type where
+data HenceOrLest where
   HENCE :: HenceOrLest
   LEST :: HenceOrLest
   deriving (Eq, Ord, Read, Show)
@@ -317,7 +322,46 @@ henceLest2doc _ _ = errMsg
     (a :: Type).
     (which could be (Either s) or ExceptT)
 -}
-type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
+type MonadErrorIsString s (m :: Type -> Type) =
+  (IsString s, MonadError s m)
+
+-- Lift a monoid into an Either using the natural embedding.
+deriving via Ap (Either a) b instance
+  Monoid b => Monoid (Either a b)
+
+traverseWith ::
+  (Foldable t1, Foldable t2, Applicative f) =>
+  (a1 -> a2 -> f b) ->
+  t1 a1 ->
+  t2 a2 ->
+  f [b]
+traverseWith f xs ys =
+  zipWith f xs' ys' |> sequenceA
+  where
+    xs' = toList xs
+    ys' = toList ys
+
+infixl 0 |$>
+
+(|$>) :: Functor f => f a -> (a -> b) -> f b
+(|$>) = (<&>)
+
+show2text :: Show a => a -> T.Text
+show2text x = x |> show |> T.pack
+
+-- safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
+-- safeHead (x : _) = pure x
+-- safeHead _ = mempty
+
+maybeEmpty :: Monoid b => (a -> b) -> Maybe a -> b
+maybeEmpty = maybe mempty
+
+findWithErrMsg :: (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
+findWithErrMsg pred errMsg xs =
+  xs |> find pred |> maybe (throwError errMsg) pure
+
+errMsg :: MonadErrorIsString s m => m a
+errMsg = throwError "Not supported."
 
 -- map where the function is also passed the index of the current element.
 -- mapIndexed :: (Traversable t, Num s) => (s -> a -> b) -> t a -> t b
@@ -339,32 +383,3 @@ type MonadErrorIsString s (m :: Type -> Type) = (IsString s, MonadError s m)
 -- traverseIndexed f xs = xs |> mapIndexed f |> sequenceA
 
 --- Like zipWith, but uses traverse/sequenceA for short-circuiting.
-traverseWith ::
-  (Foldable t1, Foldable t2, Applicative f) =>
-  (a1 -> a2 -> f b) ->
-  t1 a1 ->
-  t2 a2 ->
-  f [b]
-traverseWith f xs ys =
-  zipWith f xs' ys' |> sequenceA
-  where
-    xs' = toList xs
-    ys' = toList ys
-
-infixl 0 |$>
-
-(|$>) :: Functor f => f a -> (a -> b) -> f b
-(|$>) = (<&>)
-
-show2text :: Show a => a -> T.Text
-show2text x = x |> show |> T.pack
-
-safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
-safeHead (x : _) = pure x
-safeHead _ = mempty
-
-maybe2monoid :: Monoid b => (a -> b) -> Maybe a -> b
-maybe2monoid = maybe mempty
-
-errMsg :: MonadErrorIsString s m => m a
-errMsg = throwError "Not supported."

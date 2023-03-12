@@ -4,9 +4,23 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-{-| transpiler to SVG visualization of the AnyAll and/or trees.
+{-| transpiler to Purescript encoding of the AnyAll and/or trees, with extra natural language goodness.
 
-Largely a wrapper. Most of the functionality is in the anyall lib.
+The output of this transpiler is consumed by the vue-pure-pdpa web UI, as @src/RuleLib/PDPADBNO.purs@
+
+([TODO] That filename needs to be generalized to remove PDPADBNO.)
+
+* Goals
+
+Extract the tree-structured rules from the Interpreter.
+
+Construct a Data.Map of rulenames to exposed decision root expanded BSRs.
+
+Also ship out a Marking which represents the TYPICALLY values.
+
+* Future Goals
+
+Construct a JSON with everything in it, and get the Purescript to read the JSON, so we are more interoperable with non-FP languages.
 
 -}
 
@@ -34,11 +48,6 @@ import PGF
 import qualified Data.Char as Char
 
 import qualified Text.RawString.QQ as QQ
-
--- | extract the tree-structured rules from Interpreter
--- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
--- in future: also ship out a Marking which represents the TYPICALLY values
--- far future: construct a JSON with everything in it, and get the Purescript to read the JSON, so we are more interoperable with non-FP languages
 
 data Tuple a b = Tuple a b
   deriving (Show, Eq, Ord)

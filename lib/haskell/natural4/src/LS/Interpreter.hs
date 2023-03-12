@@ -154,8 +154,13 @@ musings l4i rs =
                    , not $ null uniqrs
                    ]
 
-           , "** qaHornsR" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsR l4i ]
-           , "** qaHornsT" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsT l4i ]
+           , "** qaHornsR"
+           , "the question-and-answer Horn clauses in a boolstruct of relationalpredicates"
+           , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsR l4i ]
+           , "** qaHornsT"
+           , "the question-and-answer Horn clauses in a boolstruct of plain text."
+           , "If you are doing serious processing, consider the qaHornsR alternative."
+           , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsT l4i ]
            , "** expandedRules"
            , if expandedRules == DL.nub rs
              then "(ahem, they're actually the same as unexpanded, not showing)"

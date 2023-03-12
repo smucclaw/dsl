@@ -1,12 +1,16 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-
@@ -95,7 +99,11 @@ import Prettyprinter
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
 rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules = rules |> rules2doc |> either show show
+rules2maudeStr rules =
+  rules
+    |> rules2doc
+    |> (coerce :: Ap (Either a) a -> Either a a)
+    |> either show show
 
 {-
   Auxiliary functions that help with the transpilation.
@@ -113,19 +121,16 @@ rules2doc ::
   forall ann t m s.
   (MonadErrorIsString s m, Foldable t) =>
   t Rule ->
-  m (Doc ann)
+  Ap m (Doc ann)
 rules2doc rules =
   (startRule : transpiledRules)
     -- TODO:
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |$> (`catchError` const (pure mempty))
-    |> sequenceAndremoveEmptyDocs
+    |> traverseAndremoveEmptyDocs swallowErrs
     |$> concatWith (<.>)
   where
-    x <.> y = mconcat [x, ",", line, line, y]
-
     -- Find the first regulative rule and extracts its rule name.
     -- This returns a Maybe because there may not be any regulative rule.
     -- In such cases, we simply return mempty, the empty doc.
@@ -138,6 +143,10 @@ rules2doc rules =
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
     transpiledRules = rules' |$> rule2doc
+
+    swallowErrs docs = docs `catchError` const mempty
+
+    x <.> y = mconcat [x, ",", line, line, y]
 
     rules' = toList rules
 
@@ -155,7 +164,7 @@ rule2doc ::
   forall ann s m.
   MonadErrorIsString s m =>
   Rule ->
-  m (Doc ann)
+  Ap m (Doc ann)
 
 rule2doc
   Regulative
@@ -182,8 +191,8 @@ rule2doc
     -}
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
+      |> traverseAndremoveEmptyDocs id
       |> coerce
-      |> sequenceAndremoveEmptyDocs
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -191,22 +200,6 @@ rule2doc
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
-
-      {-
-        This function lies at the heart of processing HENCE/LEST clauses and
-        deadlines, which are wrapped in Maybe.
-        Note that:
-        - We may choose (f = m) and (b = Doc ann)
-        - (Ap f b) is a type isomorphic to (f b), the lifting
-          of the monoid b into the applicative f.
-        - coerce is the natural embedding witnessing this isomorphism.
-        - GHC's type inference breaks down if we don't provide a type
-          annotation here.
-      -}
-      maybeEmpty ::
-        (Applicative f, Monoid b) => (a -> f b) -> Maybe a -> Ap f b
-        -- (a -> m (Doc ann)) -> Maybe a -> Ap m (Doc ann)
-      maybeEmpty f = maybe mempty $ f .> coerce
 
       deadline = maybeEmpty tempConstr2doc temporal
 
@@ -217,6 +210,7 @@ rule2doc
         Note that GHC's type inference breaks down if we don't type annotate
         this and for that, we need ScopedTypeVariables with m and ann
         quantified in the outer scope.
+        In any case, a type annotations is provided here for readability.
       -}
       maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> Ap m (Doc ann)
       maybeHenceLest2doc = henceLest2doc .> maybeEmpty
@@ -243,10 +237,11 @@ rule2doc
 
 rule2doc _ = errMsg
 
-sequenceAndremoveEmptyDocs :: (Applicative f, Show a) => [f a] -> f [a]
-sequenceAndremoveEmptyDocs docs =
-  docs |> sequenceA |$> filter (show .> (/= ""))
-
+traverseAndremoveEmptyDocs ::
+  (Applicative m, Show a) => (Ap m a -> Ap m a) -> [Ap m a] -> Ap m [a]
+traverseAndremoveEmptyDocs f docs =
+  docs |> traverse f |$> filter (not . null . show)
+ 
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
@@ -347,19 +342,38 @@ henceLest2doc _ _ = errMsg
 {-
   Error monad, polymorphic over:
   - a type variable (s :: Type) such that IsString s.
-  - a type constructor (m :: Type -> Type) such that (m a) is a monad for all
-    (a :: Type).
+  - a type constructor (m :: Type -> Type) with the structure of a monad.
 -}
 type MonadErrorIsString s m = (IsString s, MonadError s m)
 
--- This lifts MonadError instances for m up into the applicative (Ap m).
--- deriving via m :: Type -> Type instance
---   MonadError s m => MonadError s (Ap m)
+{-
+  The idea is that given a (MonadError s m) and a monoid (a :: Type), we want
+  to operate on (m a :: Type) as if it were also a monoid.
+  Here, we often take (m = Either a) and (a = Doc ann) and we want to
+  utilize the (<>) and mempty of (Doc ann), lifted up into (Either a).
+
+  Suppose (m :: Type -> Type) is a type constructor and (a :: Type) is a monoid.
+  Then Data.Monoid defines (newtype Ap m a) which lifts the monoid structure of
+  a up into the applicative m.
+  More concretely, (Ap m :: Type -> Type) inherits both the applicative
+  structure of m and the monoid structure of its input type argument, with:
+  - (<>) = liftA2 (<>)
+  - mempty = pure mempty
+  Moreover, if m is also a monad, then (Ap m) also inherits this monad
+  structure.
+  The standalone deriving via thing below enables (Ap m) to inherit the
+  MonadError instance of m should m also be a MonadError.
+-}
+deriving via m :: Type -> Type instance
+  MonadError s m => MonadError s (Ap m)
 
 infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = (<&>)
+
+maybeEmpty :: Monoid b => (a -> b) -> Maybe a -> b
+maybeEmpty = maybe mempty
 
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack

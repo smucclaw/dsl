@@ -258,6 +258,7 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
 
 tempConstr2doc ::
+  forall ann s m.
   MonadErrorIsString s m => TemporalConstraint T.Text -> Ap m (Doc ann)
 tempConstr2doc
   ( TemporalConstraint

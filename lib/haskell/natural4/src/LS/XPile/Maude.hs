@@ -192,7 +192,6 @@ rule2doc
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
       |> traverseAndremoveEmptyDocs id
-      |> coerce
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -259,7 +258,7 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
 
 tempConstr2doc ::
-  MonadErrorIsString s m => TemporalConstraint T.Text -> m (Doc ann)
+  MonadErrorIsString s m => TemporalConstraint T.Text -> Ap m (Doc ann)
 tempConstr2doc
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
@@ -328,7 +327,7 @@ henceLest2doc ::
   MonadErrorIsString s m =>
   HenceOrLest ->
   Rule ->
-  m (Doc ann)
+  Ap m (Doc ann)
 henceLest2doc henceOrLest (RuleAlias henceLest) =
   pure $ henceOrLest' <+> henceLest'
   where

@@ -22,18 +22,20 @@
 
 module LS.XPile.Maude where
 
-import AnyAll (BoolStruct (All, Leaf), DrawConfig (aav))
+import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Except (MonadError (throwError), catchError)
-import Data.Coerce (coerce, Coercible)
+import Data.Coerce (coerce)
 import Data.Either (rights)
-import Data.Foldable ( Foldable(elem, toList), find )
+import Data.Foldable qualified as Fold
+  (Foldable (elem, toList), find, fold, toList)
 import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Monoid (Ap(Ap))
+import Data.Monoid (Ap (Ap))
 import Data.String (IsString)
 import Data.Text qualified as T
+
 -- import Data.Traversable (mapAccumL)
 -- import Debug.Trace
 import Flow ((.>), (|>))
@@ -68,6 +70,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
+import Witherable qualified as Wither
 
 {-
   Based on experiments being run here:
@@ -129,7 +132,7 @@ rules2doc rules =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |> traverseAndremoveEmptyDocs swallowErrs
+    |> Wither.wither swallowErrs
     |$> concatWith (<.>)
   where
     -- Find the first regulative rule and extracts its rule name.
@@ -145,11 +148,14 @@ rules2doc rules =
     -- correctly, while ignoring erraneous ones.
     transpiledRules = rules' |$> rule2doc
 
-    swallowErrs docs = docs `catchError` const mempty
+    swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
+    swallowErrs doc = do {
+      pure <$> doc
+    } `catchError` const mempty -- (pure Nothing)
 
     x <.> y = mconcat [x, ",", line, line, y]
 
-    rules' = toList rules
+    rules' = Fold.toList rules
 
     isRegRule Regulative {} = True
     isRegRule _ = False
@@ -189,35 +195,22 @@ rule2doc
     -}
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
-      |> traverseAndremoveEmptyDocs id
+      |> Wither.wither id
       |$> vcat
     where
+      ruleActorDeonticAction :: [Ap m (Maybe (Doc ann))]
       ruleActorDeonticAction =
-        [ruleName', rkeywordActor, deonticAction] |$> pure
+        [ruleName', rkeywordActor, deonticAction] |$> Just |$> pure
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
 
-      deadline = maybeEmpty tempConstr2doc temporal
+      deadline = traverse tempConstr2doc temporal
 
       henceLestClauses =
         [(HENCE, hence), (LEST, lest)]
           |$> uncurry HenceLestClause
           |$> henceLest2doc
-
-      -- henceLestClauses =
-      --   zipWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
-
-      {-
-        Note that GHC's type inference breaks down if we don't type annotate
-        this and for that, we need ScopedTypeVariables with m and ann
-        quantified in the outer scope.
-        In any case, a type annotations is provided here for readability.
-      -}
-      -- maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> Ap m (Doc ann)
-      -- maybeHenceLest2doc = henceLest2doc .> maybeEmpty
-
-      isNonEmptyDoc doc = doc |> show |> not . null
 
 rule2doc DefNameAlias {name, detail} =
   pure $ nameDetails2means name [detail]
@@ -239,10 +232,11 @@ rule2doc
 
 rule2doc _ = throwDefaultErr
 
-traverseAndremoveEmptyDocs ::
-  (Applicative m, Show a) => (Ap m a -> Ap m a) -> [Ap m a] -> Ap m [a]
-traverseAndremoveEmptyDocs f docs =
-  docs |> traverse f |$> filter (not . null . show)
+-- traverseAndremoveEmptyDocs ::
+--   (Traversable t, Applicative f, Wither.Filterable t, Show b) =>
+--   (a -> f b) -> t a -> f (t b)
+-- traverseAndremoveEmptyDocs f docs =
+--   docs |> traverse f |$> Wither.filter (not . null . show)
 
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
@@ -258,7 +252,7 @@ rkeywordDeonParamText2doc rkeywordDeon paramText =
     -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
     -- that we have to use toList to convert it to a multi term before passing
     -- it to multiTerm2qid.
-    paramText2qid ((mtExprs, _) :| _) = mtExprs |> toList |> multiTerm2qid
+    paramText2qid ((mtExprs, _) :| _) = mtExprs |> Fold.toList |> multiTerm2qid
 
 tempConstr2doc ::
   forall ann s m.
@@ -294,7 +288,7 @@ nameDetails2means name details =
         |> hsep
         |> parenthesizeIf (length details > 1)
 
-    details2qids details = details |> toList |$> multiTerm2qid
+    details2qids details = details |> Fold.toList |$> multiTerm2qid
 
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf _ x = x
@@ -334,9 +328,9 @@ henceLest2doc ::
   forall ann s m.
   MonadErrorIsString s m =>
   HenceLestClause ->
-  Ap m (Doc ann)
+  Ap m (Maybe (Doc ann))
 henceLest2doc HenceLestClause {henceLest, clause} =
-  maybeEmpty clause2doc clause
+  traverse clause2doc clause
   where
     clause2doc (RuleAlias clause) =
       pure $ viaShow henceLest <+> multiTerm2qid clause
@@ -375,7 +369,7 @@ deriving via m :: Type -> Type instance
 findWithErrMsg ::
   (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
 findWithErrMsg pred err xs =
-  xs |> find pred |> maybe (throwError err) pure
+  xs |> Fold.find pred |> maybe (throwError err) pure
 
 throwDefaultErr :: MonadErrorIsString s m => m a
 throwDefaultErr = throwError "Not supported."
@@ -384,9 +378,6 @@ infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = (<&>)
-
-maybeEmpty :: Monoid b => (a -> b) -> Maybe a -> b
-maybeEmpty = maybe mempty
 
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack

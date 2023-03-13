@@ -172,8 +172,8 @@ rule2doc
       deontic,
       action = Leaf action,
       temporal,
-      hence = maybeHence,
-      lest = maybeLest
+      hence,
+      lest
       -- srcref, -- May want to use this for better error reporting.
     } =
     {-
@@ -201,7 +201,12 @@ rule2doc
       deadline = maybeEmpty tempConstr2doc temporal
 
       henceLestClauses =
-        zipWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
+        [(HENCE, hence), (LEST, lest)]
+          |$> uncurry HenceLestClause
+          |$> henceLest2doc
+
+      -- henceLestClauses =
+      --   zipWith maybeHenceLest2doc [HENCE, LEST] [maybeHence, maybeLest]
 
       {-
         Note that GHC's type inference breaks down if we don't type annotate
@@ -209,8 +214,8 @@ rule2doc
         quantified in the outer scope.
         In any case, a type annotations is provided here for readability.
       -}
-      maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> Ap m (Doc ann)
-      maybeHenceLest2doc = henceLest2doc .> maybeEmpty
+      -- maybeHenceLest2doc :: HenceOrLest -> Maybe Rule -> Ap m (Doc ann)
+      -- maybeHenceLest2doc = henceLest2doc .> maybeEmpty
 
       isNonEmptyDoc doc = doc |> show |> not . null
 
@@ -309,31 +314,33 @@ nameDetails2means name details =
 --     isValidMTExpr (odd -> True) (MTT (T.toUpper -> "AND")) = True
 --     isValidMTExpr _ _ = False
 
-data HenceOrLest where
-  HENCE :: HenceOrLest
-  LEST :: HenceOrLest
+data HenceLest where
+  HENCE :: HenceLest
+  LEST :: HenceLest
   deriving (Eq, Ord, Read, Show)
 
-instance Pretty HenceOrLest where
-  pretty = viaShow
+-- instance Pretty HenceLest where
+--   pretty = viaShow
 
-{-
-  This function can handle invalid HENCE/LEST clauses.
-  A left with an error message is returned in such cases.
--}
+data HenceLestClause where
+  HenceLestClause ::
+    { henceLest :: HenceLest,
+      clause :: Maybe Rule
+    } ->
+    HenceLestClause
+  deriving (Eq, Ord, Show)
+
 henceLest2doc ::
   forall ann s m.
   MonadErrorIsString s m =>
-  HenceOrLest ->
-  Rule ->
+  HenceLestClause ->
   Ap m (Doc ann)
-henceLest2doc henceOrLest (RuleAlias henceLest) =
-  pure $ henceOrLest' <+> henceLest'
+henceLest2doc HenceLestClause {henceLest, clause} =
+  maybeEmpty clause2doc clause
   where
-    henceOrLest' = pretty henceOrLest
-    henceLest' = multiTerm2qid henceLest
-
-henceLest2doc _ _ = throwDefaultErr
+    clause2doc (RuleAlias clause) =
+      pure $ viaShow henceLest <+> multiTerm2qid clause
+    clause2doc _ = throwDefaultErr
 
 -- Common utilities
 

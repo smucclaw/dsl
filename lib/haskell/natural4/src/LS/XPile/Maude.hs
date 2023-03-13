@@ -22,7 +22,7 @@
 
 module LS.XPile.Maude where
 
-import AnyAll (BoolStruct (All, Leaf))
+import AnyAll (BoolStruct (All, Leaf), DrawConfig (aav))
 import Control.Monad.Except (MonadError (throwError), catchError)
 import Data.Coerce (coerce, Coercible)
 import Data.Either (rights)
@@ -154,9 +154,6 @@ rules2doc rules =
     isRegRule Regulative {} = True
     isRegRule _ = False
 
-    findWithErrMsg pred errMsg xs =
-      xs |> find pred |> maybe (throwError errMsg) pure
-
     regRule2startRule Regulative {rlabel = Just (_, _, ruleName)} =
       "START" <+> text2qid ruleName
 
@@ -233,9 +230,9 @@ rule2doc
     leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
     where
       leaf2mtt (Leaf (RPMT mtt)) = pure mtt
-      leaf2mtt _ = errMsg
+      leaf2mtt _ = throwDefaultErr
 
-rule2doc _ = errMsg
+rule2doc _ = throwDefaultErr
 
 traverseAndremoveEmptyDocs ::
   (Applicative m, Show a) => (Ap m a -> Ap m a) -> [Ap m a] -> Ap m [a]
@@ -274,7 +271,7 @@ tempConstr2doc
       tComparison2doc TOn = "ON"
       tComparison2doc TBefore = "WITHIN"
 
-tempConstr2doc _ = errMsg
+tempConstr2doc _ = throwDefaultErr
 
 multiTerm2qid :: MultiTerm -> Doc ann
 multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
@@ -336,7 +333,7 @@ henceLest2doc henceOrLest (RuleAlias henceLest) =
     henceOrLest' = pretty henceOrLest
     henceLest' = multiTerm2qid henceLest
 
-henceLest2doc _ _ = errMsg
+henceLest2doc _ _ = throwDefaultErr
 
 -- Common utilities
 
@@ -368,6 +365,14 @@ type MonadErrorIsString s m = (IsString s, MonadError s m)
 deriving via m :: Type -> Type instance
   MonadError s m => MonadError s (Ap m)
 
+findWithErrMsg ::
+  (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
+findWithErrMsg pred err xs =
+  xs |> find pred |> maybe (throwError err) pure
+
+throwDefaultErr :: MonadErrorIsString s m => m a
+throwDefaultErr = throwError "Not supported."
+
 infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
@@ -382,9 +387,6 @@ show2text x = x |> show |> T.pack
 -- safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
 -- safeHead (x : _) = pure x
 -- safeHead _ = mempty
-
-errMsg :: MonadErrorIsString s m => m a
-errMsg = throwError "Not supported."
 
 -- traverseWith ::
 --   (Foldable t1, Foldable t2, Applicative f) =>

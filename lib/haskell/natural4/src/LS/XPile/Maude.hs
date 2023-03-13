@@ -102,8 +102,9 @@ rules2maudeStr :: Foldable t => t Rule -> String
 rules2maudeStr rules =
   rules
     |> rules2doc
-    |> (coerce :: Ap (Either a) a -> Either a a)
-    |> either show show
+    |> (coerce :: Ap (Either (Doc ann)) (Doc ann) -> Either (Doc ann) (Doc ann))
+    |> either id id
+    |> show
 
 {-
   Auxiliary functions that help with the transpilation.
@@ -240,7 +241,7 @@ traverseAndremoveEmptyDocs ::
   (Applicative m, Show a) => (Ap m a -> Ap m a) -> [Ap m a] -> Ap m [a]
 traverseAndremoveEmptyDocs f docs =
   docs |> traverse f |$> filter (not . null . show)
- 
+
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 

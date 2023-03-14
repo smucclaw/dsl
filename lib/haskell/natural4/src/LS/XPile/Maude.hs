@@ -32,6 +32,7 @@ import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.NonEmpty qualified as NonEmpty (toList)
 import Data.Monoid (Ap (Ap))
 import Data.String (IsString)
 import Data.Text qualified as T
@@ -149,9 +150,9 @@ rules2doc rules =
     transpiledRules = rules' |$> rule2doc
 
     swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
-    swallowErrs doc = do {
-      pure <$> doc
-    } `catchError` const mempty -- (pure Nothing)
+    swallowErrs doc = do
+      Just <$> doc;
+      `catchError` const mempty -- (pure Nothing)
 
     x <.> y = mconcat [x, ",", line, line, y]
 
@@ -217,8 +218,10 @@ rule2doc DefNameAlias {name, detail} =
 
 {-
   clauses =
-  [ Leaf ( RPMT [MTT "Notify PDPC"] ),
-    Leaf ( RPMT [MTT "Notify Individuals"] ) ]
+  [ RPBoolStructR ["Notification"] RPis
+    (All _
+      Leaf ( RPMT [MTT "Notify PDPC"] ),
+      Leaf ( RPMT [MTT "Notify Individuals"] )) ]
 -}
 rule2doc
   Hornlike
@@ -241,18 +244,21 @@ rule2doc _ = throwDefaultErr
 text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
+{-
+  This function handles things like:
+  - PARTY/EVERY (some paramText denoting the actor)
+  - MUST/MAY/SHANT (some paramText denoting the action)
+-}
 rkeywordDeonParamText2doc :: forall ann a. Show a => a -> ParamText -> Doc ann
-rkeywordDeonParamText2doc rkeywordDeon paramText =
+rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
   rkeywordDeon' <+> paramText'
   where
-    rkeywordDeon' = rkeyword2doc rkeywordDeon
-    paramText' = paramText2qid paramText
-    rkeyword2doc rkeyword =
-      rkeyword |> show2text |> T.tail |> T.toUpper |> pretty
+    rkeywordDeon' =
+      rkeywordDeon |> show2text |> T.tail |> T.toUpper |> pretty
     -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
     -- that we have to use toList to convert it to a multi term before passing
     -- it to multiTerm2qid.
-    paramText2qid ((mtExprs, _) :| _) = mtExprs |> Fold.toList |> multiTerm2qid
+    paramText' = mtExprs |> NonEmpty.toList |> multiTerm2qid
 
 tempConstr2doc ::
   forall ann s m.
@@ -332,6 +338,7 @@ henceLest2doc ::
 henceLest2doc HenceLestClause {henceLest, clause} =
   traverse clause2doc clause
   where
+    clause2doc :: Rule -> Ap m (Doc ann)
     clause2doc (RuleAlias clause) =
       pure $ viaShow henceLest <+> multiTerm2qid clause
     clause2doc _ = throwDefaultErr

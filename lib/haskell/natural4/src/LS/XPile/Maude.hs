@@ -74,7 +74,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
-import Witherable qualified as Wither
+import Witherable (wither)
 
 {-
   Based on experiments being run here:
@@ -136,7 +136,7 @@ rules2doc rules =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |> Wither.wither swallowErrs
+    |> wither swallowErrs
     |$> concatWith (<.>)
   where
     -- Find the first regulative rule and extracts its rule name.
@@ -199,7 +199,7 @@ rule2doc
     -}
     [ruleActorDeonticAction, [deadline], henceLestClauses]
       |> mconcat
-      |> Wither.wither id
+      |> wither id
       |$> vcat
     where
       ruleActorDeonticAction :: [Ap m (Maybe (Doc ann))]

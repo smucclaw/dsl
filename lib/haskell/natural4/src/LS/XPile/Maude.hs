@@ -27,7 +27,11 @@ import Control.Monad.Except (MonadError (throwError), catchError)
 import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Foldable qualified as Fold
-  (Foldable (elem, toList), find, fold, toList)
+  ( Foldable (elem, toList),
+    find,
+    fold,
+    toList,
+  )
 import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
@@ -36,7 +40,6 @@ import Data.List.NonEmpty qualified as NonEmpty (toList)
 import Data.Monoid (Ap (Ap))
 import Data.String (IsString)
 import Data.Text qualified as T
-
 -- import Data.Traversable (mapAccumL)
 -- import Debug.Trace
 import Flow ((.>), (|>))
@@ -150,9 +153,10 @@ rules2doc rules =
     transpiledRules = rules' |$> rule2doc
 
     swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
-    swallowErrs doc = do
-      Just <$> doc;
-      `catchError` const mempty -- (pure Nothing)
+    swallowErrs doc =
+      do
+        Just <$> doc
+      `catchError` const mempty
 
     x <.> y = mconcat [x, ",", line, line, y]
 
@@ -170,7 +174,6 @@ rule2doc ::
   MonadErrorIsString s m =>
   Rule ->
   Ap m (Doc ann)
-
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -206,7 +209,7 @@ rule2doc
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
 
-      deadline = traverse tempConstr2doc temporal
+      deadline = tempConstr2doc temporal
 
       henceLestClauses =
         [(HENCE, hence), (LEST, lest)]
@@ -261,22 +264,34 @@ rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
     paramText' = mtExprs |> NonEmpty.toList |> multiTerm2qid
 
 tempConstr2doc ::
-  forall ann s m.
-  MonadErrorIsString s m => TemporalConstraint T.Text -> Ap m (Doc ann)
-tempConstr2doc
-  ( TemporalConstraint
-      tComparison@((`elem` [TOn, TBefore]) -> True)
-      (Just n)
-      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
-    ) =
-    [tComparison', n', "DAY"] |> hsep |> pure
-    where
-      n' = pretty n
-      tComparison' = tComparison2doc tComparison
-      tComparison2doc TOn = "ON"
-      tComparison2doc TBefore = "WITHIN"
+  forall ann s m. 
+  MonadErrorIsString s m =>
+  Maybe (TemporalConstraint T.Text) ->
+  Ap m (Maybe (Doc ann))
+tempConstr2doc = traverse go
+  {-
+    Note that traverse is effectively an effectful fmap, meaning that the
+    function used for traversal can throw exceptions, which traverse will lift
+    up to the outer layer.
+    This lets us short-circuit evaluation if we are traversing over something
+    like a list.
+  -}
+  where
+    go :: TemporalConstraint T.Text -> Ap m (Doc ann)
+    go
+      ( TemporalConstraint
+          tComparison@((`elem` [TOn, TBefore]) -> True)
+          (Just n)
+          (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+        ) =
+        [tComparison', n', "DAY"] |> hsep |> pure
+        where
+          n' = pretty n
+          tComparison' = tComparison2doc tComparison
+          tComparison2doc TOn = "ON"
+          tComparison2doc TBefore = "WITHIN"
 
-tempConstr2doc _ = throwDefaultErr
+    go _ = throwDefaultErr
 
 multiTerm2qid :: MultiTerm -> Doc ann
 multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
@@ -355,8 +370,9 @@ type MonadErrorIsString s m = (IsString s, MonadError s m)
 {-
   The idea is that given a (MonadError s m) and a monoid (a :: Type), we want
   to operate on (m a :: Type) as if it were also a monoid.
-  Here, we often take (m = Either a) and (a = Doc ann) and we want to
-  utilize the (<>) and mempty of (Doc ann), lifted up into (Either a).
+  Here, we often take (m = Either (Doc ann)) and (a = Maybe (Doc ann)) and we
+  want to utilize the (<>) and mempty of (Maybe (Doc ann)), lifted up into
+  the Either.
 
   Suppose (m :: Type -> Type) is a type constructor and (a :: Type) is a monoid.
   Then Data.Monoid defines (newtype Ap m a) which lifts the monoid structure of
@@ -369,9 +385,20 @@ type MonadErrorIsString s m = (IsString s, MonadError s m)
   structure.
   The standalone deriving via thing below enables (Ap m) to inherit the
   MonadError instance of m should m also be a MonadError.
+
+  TODO: 
+  Note that for (m = Either s), the monoid structure of (Ap m a) is
+  a bit stupid in that Lefts are left-absorbing under (<>), that is
+    Ap (Left x) <> Ap _ = Ap (Left x)
+  Thus it may be better to use (m a) directly and manually define a monoid
+  structure for that rather than use (Ap m a).
+
+  See http://www.staff.city.ac.uk/~ross/papers/Applicative.pdf
 -}
-deriving via m :: Type -> Type instance
-  MonadError s m => MonadError s (Ap m)
+deriving via
+  m :: Type -> Type
+  instance
+    MonadError s m => MonadError s (Ap m)
 
 findWithErrMsg ::
   (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a

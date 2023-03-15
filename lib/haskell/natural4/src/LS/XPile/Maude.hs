@@ -260,8 +260,8 @@ rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
       rkeywordDeon |> show2text |> T.tail |> T.toUpper |> pretty
     -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
     -- that we have to use toList to convert it to a multi term before passing
-    -- it to multiTerm2qid.
-    paramText' = mtExprs |> NonEmpty.toList |> multiTerm2qid
+    -- it to multiExprs2qid.
+    paramText' = multiExprs2qid mtExprs
 
 tempConstr2doc ::
   forall ann s m. 
@@ -293,26 +293,25 @@ tempConstr2doc = traverse go
 
     go _ = throwDefaultErr
 
-multiTerm2qid :: MultiTerm -> Doc ann
-multiTerm2qid multiTerm = multiTerm |> mt2text |> text2qid
+multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
+multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
 nameDetails2means ::
   forall ann t. Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =
   hsep [name', "MEANS", details']
   where
-    name' = multiTerm2qid name
+    name' = multiExprs2qid name
     details' =
       details
-        |> details2qids
+        |> Fold.toList
+        |$> multiExprs2qid
         |> intersperse "AND"
         |> hsep
         |> parenthesizeIf (length details > 1)
 
-    details2qids details = details |> Fold.toList |$> multiTerm2qid
-
     parenthesizeIf True x = mconcat ["(", x, ")"]
-    parenthesizeIf _ x = x
+    parenthesizeIf False x = x
 
 -- Auxiliary stuff for handling HENCE/LEST clauses.
 
@@ -355,7 +354,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
   where
     clause2doc :: Rule -> Ap m (Doc ann)
     clause2doc (RuleAlias clause) =
-      pure $ viaShow henceLest <+> multiTerm2qid clause
+      pure $ viaShow henceLest <+> multiExprs2qid clause
     clause2doc _ = throwDefaultErr
 
 -- Common utilities

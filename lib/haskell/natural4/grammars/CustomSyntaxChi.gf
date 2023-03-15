@@ -5,6 +5,7 @@ concrete CustomSyntaxChi of CustomSyntax =
       , V, VV, V2, VS, VP, AdvVP
       , A, A2, AP, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompAdv -- is a public agency
+      , AdA, AdAdv -- only (within the organisation)
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP

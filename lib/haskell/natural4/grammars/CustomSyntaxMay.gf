@@ -7,6 +7,7 @@ concrete CustomSyntaxMay of CustomSyntax =
   --      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
+      , AdA, AdAdv -- only (within the organisation)
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP

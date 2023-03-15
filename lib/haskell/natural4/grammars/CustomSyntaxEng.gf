@@ -4,9 +4,9 @@ concrete CustomSyntaxEng of CustomSyntax =
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
       , V,  VV, V2, VS, VP
       , A, A2, AP, AdjCN, PositA
-  --      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
+      , AdA, AdAdv -- only (within the organisation)
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP

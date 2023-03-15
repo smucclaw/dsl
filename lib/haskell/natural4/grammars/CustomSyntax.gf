@@ -6,6 +6,7 @@ abstract CustomSyntax =
         , A, A2, AP, AdjCN, PositA
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
         , Prep, PrepNP, AdvVP
+        , AdA, AdAdv
         , ListAdv, BaseAdv, ConsAdv, ConjAdv
         , ListAP, BaseAP, ConsAP, ConjAP
         , ListNP, BaseNP, ConsNP, ConjNP

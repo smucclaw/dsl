@@ -200,13 +200,15 @@ concrete CustomSyntaxChi of CustomSyntax =
     your = mkDet youSg_Pron ;
 
   oper
-    who_RP : RP = which_RP ;
-    about_Prep : LinPrep = mkPrepChi "about" [] ; -- TODO
-    within_Prep : LinPrep = mkPrepChi [] "内";
+    whoRP : RP = which_RP ;
+    aboutPrep : LinPrep = mkPrepChi "about" [] ; -- TODO
+    withinPrep : LinPrep = mkPrepChi [] "内";
+    uponPrep : Prep = mkPrep "什么时候" [] ; -- this is only used in a lin that expects a real Prep, confusingly enough
+    by8timePrep : LinPrep = mkPrepChi "前" [] ;
     vaguePrep : LinPrep = mkPrepChi [] [] ;
-    month_N : N = ParadigmsChi.mkN "month" ; -- TODO
-    may_VV : VV = must_VV ** {s = "可 能"};
-    shant_VV : VV = must_VV ** {
+    monthN : N = ParadigmsChi.mkN "month" ; -- TODO
+    mayVV :  VV = must_VV ** {s = "可 能"};
+    shantVV :  VV = must_VV ** {
       s = "不 可 能" ;  -- TODO check
       } ;
 
@@ -226,7 +228,5 @@ concrete CustomSyntaxChi of CustomSyntax =
 
     emptyNP : NP = it_NP ** {s = []} ;
 
-    upon_Prep : Prep = mkPrep "什么时候" [] ; -- this is only used in a lin that expects a real Prep, confusingly enough
-    by8time_Prep : LinPrep = mkPrepChi "前" [] ;
 
 }

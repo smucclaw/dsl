@@ -41,6 +41,10 @@ concrete CustomSyntaxMay of CustomSyntax =
     [Prep], [QS] = Co.ListX ;
 
   lin
+   -- overrides RGL preps
+    to_Prep = R.mkPrep "kepada" ;
+    before_Prep = R.mkPrep "sebelum" ;
+
     BasePrep = Co.twoSS ;
     ConsPrep = Co.consrSS Co.comma ;
     ConjPrep c ps =
@@ -100,24 +104,21 @@ concrete CustomSyntaxMay of CustomSyntax =
     your = mkDet youSg_Pron ;
 
 oper
-    about_Prep : Prep = R.mkPrep "tentang" ;
-    to_Prep = R.mkPrep "kepada" ;
-
-    who_RP : RP = which_RP ;
-    within_Prep : Prep = R.mkPrep "dalam lingkungan" ;
+    whoRP : RP = which_RP ;
+    aboutPrep : Prep = R.mkPrep "tentang" ;
+    uponPrep : Prep = R.mkPrep "semasa" ;
+    by8timePrep : Prep = R.mkPrep "sebelum" ;
+    withinPrep : Prep = R.mkPrep "dalam lingkungan" ;
     vaguePrep : Prep = R.mkPrep ""  ;
 
-    month_N : N = ParadigmsMay.mkN "bulan" ;
-    may_VV : VV = must_VV ** {s = "mungkin"};
-    shant_VV : VV = must_VV ** {
+    monthN : N = ParadigmsMay.mkN "bulan" ;
+    mayVV :  VV = must_VV ** {s = "mungkin"};
+    shantVV :  VV = must_VV ** {
       s = "tidak mungkin" ; -- TODO check
       } ;
 
     strA2 : Str -> A2 = \str -> mkA2 str ;
     invarV : Str -> V = \v -> R.mkVerb v v v v ;
-    upon_Prep : Prep = R.mkPrep "semasa" ;
-    by8time_Prep : Prep = R.mkPrep "sebelum" ;
-    before_Prep : Prep = R.mkPrep "sebelum" ;
 
     bindQM : Str = BIND ++ "?" ;
 }

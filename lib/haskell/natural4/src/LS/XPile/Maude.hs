@@ -153,10 +153,7 @@ rules2doc rules =
     transpiledRules = rules' |$> rule2doc
 
     swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
-    swallowErrs doc =
-      do
-        Just <$> doc
-      `catchError` const mempty
+    swallowErrs doc = doc |$> pure |$> (`catchError` const mempty)
 
     x <.> y = mconcat [x, ",", line, line, y]
 

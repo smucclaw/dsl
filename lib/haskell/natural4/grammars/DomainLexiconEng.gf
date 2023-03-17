@@ -1,7 +1,7 @@
 concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
-  open 
+  open
     SyntaxEng
-  , ParadigmsEng 
+  , ParadigmsEng
   , IrregEng
   in {
 
@@ -11,9 +11,9 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
   lin
   -- must sing
       person = mkCN (mkN ("person"|"Person")) ;
-      walk = mkVP (mkV "walk") ; 
+      walk = mkVP (mkV "walk") ;
       eat = mkVP IrregEng.eat_V ;
-      drink = mkVP IrregEng.drink_V ; 
+      drink = mkVP IrregEng.drink_V ;
       sing = mkVP IrregEng.sing_V ;
 
   -- pdpa
@@ -23,6 +23,7 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       PDPC = mkCN (mkN "PDPC") ;
       data_breach = mkCN (mkN ("data breach"|"Data Breach")) ;
       public = mkAP (mkA ("public"|"Public")) ;
+      public_agency = mkCN (mkN "public agency") ;
       notifiable = mkAP (mkA ("notifiable"|"Notifiable")) ;
       aware = mkAP (mkA "aware") ;
       NDB_Qualification = mkNP (mkN "NDB Qualification") ;

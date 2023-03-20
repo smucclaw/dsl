@@ -155,7 +155,7 @@ rules2doc rules =
     transpiledRules = rules' |$> rule2doc
 
     swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
-    swallowErrs doc = (pure <$> doc) `catchError` const mempty
+    swallowErrs doc = (Just <$> doc) `catchError` const mempty
 
     x <.> y = mconcat [x, ",", line, line, y]
 
@@ -263,7 +263,7 @@ rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
     paramText' = multiExprs2qid mtExprs
 
 tempConstr2doc ::
-  forall ann s m. 
+  forall ann s m.
   MonadErrorIsString s m =>
   Maybe (TemporalConstraint T.Text) ->
   Ap m (Maybe (Doc ann))

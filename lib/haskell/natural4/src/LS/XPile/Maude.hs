@@ -20,7 +20,9 @@
   representation that Maude can parse.
 -}
 
-module LS.XPile.Maude where
+module LS.XPile.Maude
+  (rules2maudeStr)
+where
 
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Except (MonadError (throwError), catchError)

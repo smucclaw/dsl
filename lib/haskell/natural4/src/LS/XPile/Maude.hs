@@ -27,7 +27,7 @@ where
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Except (MonadError (throwError), catchError)
 import Data.Coerce (coerce)
-import Data.Either (rights)
+-- import Data.Either (rights)
 import Data.Foldable qualified as Fold
   ( Foldable (elem, toList),
     find,
@@ -49,8 +49,7 @@ import LS.Rule
   ( Rule (..),
   )
 import LS.Types
-  ( HasToken (tokenOf),
-    HornClause (HC, hBody, hHead),
+  ( HornClause (HC, hBody, hHead),
     MTExpr (MTT),
     MultiTerm,
     MyToken (Means),

@@ -145,20 +145,18 @@ rules2doc rules =
     -- In such cases, we simply return mempty, the empty doc.
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
-      rules'
+      rules
         |> findWithErrMsg isRegRule "No regulative rule found."
         |$> regRule2startRule
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules' |$> rule2doc
+    transpiledRules = rules |> Fold.toList |$> rule2doc
 
     swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
     swallowErrs doc = (Just <$> doc) `catchError` const mempty
 
     x <.> y = mconcat [x, ",", line, line, y]
-
-    rules' = Fold.toList rules
 
     isRegRule Regulative {} = True
     isRegRule _ = False

@@ -1,16 +1,10 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-
@@ -25,9 +19,8 @@ module LS.XPile.Maude
 where
 
 import AnyAll (BoolStruct (All, Leaf))
-import Control.Monad.Except (MonadError (throwError), catchError)
 import Data.Coerce (coerce)
--- import Data.Either (rights)
+import Data.Either (rights)
 import Data.Foldable qualified as Fold
   ( Foldable (elem, toList),
     find,
@@ -132,9 +125,10 @@ rules2doc rules =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |> wither swallowErrs
-    |> (coerce :: Ap (Either (Doc ann)) [Doc ann] -> Either (Doc ann) [Doc ann])
-    |> either id (concatWith (<.>))
+    -- |> wither swallowErrs
+    |> (coerce :: [Ap (Either (Doc ann)) (Doc ann)] -> [Either (Doc ann) (Doc ann)])
+    |> rights
+    |> concatWith (<.>)
   where
     -- Find the first regulative rule and extracts its rule name.
     -- This returns a Maybe because there may not be any regulative rule.
@@ -149,11 +143,6 @@ rules2doc rules =
     -- correctly, while ignoring erraneous ones.
     transpiledRules = rules |> Fold.toList |$> rule2doc
 
-    swallowErrs ::
-      Ap (Either (Doc ann)) (Doc ann) ->
-      Ap (Either (Doc ann)) (Maybe (Doc ann))
-    swallowErrs doc = (Just <$> doc) `catchError` const mempty
-
     x <.> y = mconcat [x, ",", line, line, y]
 
     isRegRule Regulative {} = True
@@ -164,10 +153,7 @@ rules2doc rules =
 
 -- Main function that transpiles individual rules.
 rule2doc ::
-  forall ann s m.
-  MonadErrorIsString s m =>
-  Rule ->
-  Ap m (Doc ann)
+  forall ann s. IsString s => Rule -> Ap (Either s) (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -187,28 +173,33 @@ rule2doc
       - deontic action
       - deadline
       - HENCE/LEST clauses
-      If an error occurs, traverse short-circuits the unhappy path.
+      If an error occurs, seaquenceA short-circuits the unhappy path.
       We continue along the happy path by removing empty docs and vcat'ing
       everything together.
     -}
-    [ruleActorDeonticAction, [deadline], henceLestClauses]
-      |> mconcat
-      |> wither id
+    [ruleActorDeonticAction, deadline, henceLestClauses]
+      -- Sequence to propagate errors that occured while processing deadline
+      -- and henceLestClauses up to here.
+      |> (sequenceA :: [Ap (Either s) [Doc ann]] -> Ap (Either s) [[Doc ann]])
+      |$> mconcat
       |$> vcat
     where
-      ruleActorDeonticAction :: [Ap m (Maybe (Doc ann))]
       ruleActorDeonticAction =
-        [ruleName', rkeywordActor, deonticAction] |$> Just |$> pure
+        pure [ruleName', rkeywordActor, deonticAction]
       ruleName' = "RULE" <+> text2qid ruleName
       rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
       deonticAction = rkeywordDeonParamText2doc deontic action
 
-      deadline = tempConstr2doc temporal
+      deadline = temporal |> tempConstr2doc |$> Fold.toList
 
       henceLestClauses =
-        [(HENCE, hence), (LEST, lest)]
-          |$> uncurry HenceLestClause
-          |$> henceLest2doc
+        -- wither is an effectful mapMaybes, so that this maps henceLest2doc
+        -- which returns (Either s (Maybe (Doc ann)) over the list,
+        -- throwing out all the (Right Nothing).
+        -- Note that this is effectful in that we short-circuit when we
+        --- encounter a Left.
+        wither henceLest2doc
+          [HenceLestClause HENCE hence, HenceLestClause LEST lest]
 
 rule2doc DefNameAlias {name, detail} =
   pure $ nameDetails2means name [detail]
@@ -246,7 +237,7 @@ text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
   - PARTY/EVERY (some paramText denoting the actor)
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
-rkeywordDeonParamText2doc :: forall ann a. Show a => a -> ParamText -> Doc ann
+rkeywordDeonParamText2doc :: Show a => a -> ParamText -> Doc ann
 rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
   rkeywordDeon' <+> paramText'
   where
@@ -258,20 +249,18 @@ rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
     paramText' = multiExprs2qid mtExprs
 
 tempConstr2doc ::
-  forall ann s m.
-  MonadErrorIsString s m =>
+  forall ann s.
+  IsString s =>
   Maybe (TemporalConstraint T.Text) ->
-  Ap m (Maybe (Doc ann))
+  Ap (Either s) (Maybe (Doc ann))
 tempConstr2doc = traverse go
   {-
     Note that traverse is effectively an effectful fmap, meaning that the
-    function used for traversal can throw exceptions, which traverse will lift
-    up to the outer layer.
-    This lets us short-circuit evaluation if we are traversing over something
-    like a list.
+    function used for traversal can throw exceptions, which will short-circuit
+    traverse.
   -}
   where
-    go :: TemporalConstraint T.Text -> Ap m (Doc ann)
+    go :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
     go
       ( TemporalConstraint
           tComparison@((`elem` [TOn, TBefore]) -> True)
@@ -291,7 +280,7 @@ multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
 nameDetails2means ::
-  forall ann t. Foldable t => MultiTerm -> t MultiTerm -> Doc ann
+  Foldable t => MultiTerm -> t MultiTerm -> Doc ann
 nameDetails2means name details =
   hsep [name', "MEANS", details']
   where
@@ -339,14 +328,14 @@ data HenceLestClause where
   deriving (Eq, Ord, Show)
 
 henceLest2doc ::
-  forall ann s m.
-  MonadErrorIsString s m =>
+  forall ann s.
+  IsString s =>
   HenceLestClause ->
-  Ap m (Maybe (Doc ann))
+  Ap (Either s) (Maybe (Doc ann))
 henceLest2doc HenceLestClause {henceLest, clause} =
   traverse clause2doc clause
   where
-    clause2doc :: Rule -> Ap m (Doc ann)
+    clause2doc :: Rule -> Ap (Either s) (Doc ann)
     clause2doc (RuleAlias clause) =
       pure $ viaShow henceLest <+> multiExprs2qid clause
     clause2doc _ = throwDefaultErr
@@ -358,7 +347,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
   - a type variable (s :: Type) such that IsString s.
   - a type constructor (m :: Type -> Type) with the structure of a monad.
 -}
-type MonadErrorIsString s m = (IsString s, MonadError s m)
+-- type MonadErrorIsString s m = (IsString s, MonadError s m)
 
 {-
   The idea is that given a (MonadError s m) and a monoid (a :: Type), we want
@@ -388,26 +377,36 @@ type MonadErrorIsString s m = (IsString s, MonadError s m)
 
   See http://www.staff.city.ac.uk/~ross/papers/Applicative.pdf
 -}
-deriving via
-  m :: Type -> Type
-  instance
-    MonadError s m => MonadError s (Ap m)
+-- deriving via
+--   m :: Type -> Type
+--   instance
+--     MonadError s m => MonadError s (Ap m)
 
 findWithErrMsg ::
-  (Foldable t, MonadError e m) => (a -> Bool) -> e -> t a -> m a
+  Foldable t => (a -> Bool) -> e -> t a -> Ap (Either e) a
 findWithErrMsg pred err xs =
-  xs |> Fold.find pred |> maybe (throwError err) pure
+  xs |> Fold.find pred |> maybe (Left err) Right |> coerce
 
-throwDefaultErr :: MonadErrorIsString s m => m a
-throwDefaultErr = throwError "Not supported."
+-- throwDefaultErr :: (IsString s, MonadError s m) => m a
+-- throwDefaultErr = throwError "Not supported."
+
+throwDefaultErr :: IsString s => Ap (Either s) a
+throwDefaultErr =
+    Left "Not supported." |> (coerce :: Either s a -> Ap (Either s) a)
 
 infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = (<&>)
 
+{-# INLINE (|$>) #-}
+
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack
+
+-- {-# RULES
+--   "|$>" forall f g xs. xs |$> f |$> g = xs |$> (g . f)
+-- #-}
 
 -- safeHead :: (Applicative f, Monoid (f a)) => [a] -> f a
 -- safeHead (x : _) = pure x

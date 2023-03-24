@@ -107,12 +107,7 @@ import Witherable (wither)
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
 rules2maudeStr :: Foldable t => t Rule -> String
-rules2maudeStr rules =
-  rules
-    |> rules2doc
-    |> (coerce :: Ap (Either (Doc ann)) (Doc ann) -> Either (Doc ann) (Doc ann))
-    |> either id id
-    |> show
+rules2maudeStr rules = rules |> rules2doc |> show
 
 {-
   Auxiliary functions that help with the transpilation.
@@ -127,10 +122,10 @@ rules2maudeStr rules =
   only outputs those that do to plaintext.
 -}
 rules2doc ::
-  forall ann t m s.
-  (MonadErrorIsString s m, Foldable t) =>
+  forall ann t.
+  Foldable t =>
   t Rule ->
-  Ap m (Doc ann)
+  Doc ann
 rules2doc rules =
   (startRule : transpiledRules)
     -- TODO:
@@ -138,7 +133,8 @@ rules2doc rules =
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
     |> wither swallowErrs
-    |$> concatWith (<.>)
+    |> (coerce :: Ap (Either (Doc ann)) [Doc ann] -> Either (Doc ann) [Doc ann])
+    |> either id (concatWith (<.>))
   where
     -- Find the first regulative rule and extracts its rule name.
     -- This returns a Maybe because there may not be any regulative rule.
@@ -153,7 +149,9 @@ rules2doc rules =
     -- correctly, while ignoring erraneous ones.
     transpiledRules = rules |> Fold.toList |$> rule2doc
 
-    swallowErrs :: Ap m (Doc ann) -> Ap m (Maybe (Doc ann))
+    swallowErrs ::
+      Ap (Either (Doc ann)) (Doc ann) ->
+      Ap (Either (Doc ann)) (Maybe (Doc ann))
     swallowErrs doc = (Just <$> doc) `catchError` const mempty
 
     x <.> y = mconcat [x, ",", line, line, y]

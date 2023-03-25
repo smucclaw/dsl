@@ -1,0 +1,12 @@
+#+TITLE: primitive NLP extraction from natural language legal text to L4
+
+This package attempts to automatically generate NaturaL4 from natural language text formatted in Org mode.
+
+The application grammar attempts to be as general as possible.
+
+* To be Obsoleted By
+
+** GF
+
+** GATE
+

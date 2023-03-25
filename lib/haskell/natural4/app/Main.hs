@@ -66,6 +66,7 @@ main = do
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
       (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
+      -- [TODO] pass l4i to translate2PS instead of rules, because this method requires re-interpreting
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))

@@ -154,6 +154,10 @@ asPurescript env rl =
            ]
           )
 
+-- | called by Main.
+-- [TODO] have this accept l4i from Main.hs instead of rules, because the original rules are available in l4i.
+-- downstream functions need the interpreted output anyway, e.g. namesAndStruct, so all that should be given
+-- either in a Reader environment or instead of [Rule] below.
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> String
 translate2PS nlgEnv eng rules =
   psPrefix

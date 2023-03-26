@@ -10,3 +10,6 @@ The application grammar attempts to be as general as possible.
 
 ** GATE
 
+* The source code here also illustrates a simple Insurance library that calculates benefits claimable based on a given policy template and choice of plans.
+
+This was written as a sketch to clarify the underlying algebra and logic of an insurance policy contract.

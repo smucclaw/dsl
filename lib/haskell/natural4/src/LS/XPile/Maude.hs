@@ -122,7 +122,8 @@ rules2doc rules =
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
     -- |> wither swallowErrs
-    |> (coerce :: [Ap (Either (Doc ann)) (Doc ann)] -> [Either (Doc ann) (Doc ann)])
+    |> (coerce ::
+          [Ap (Either (Doc ann)) (Doc ann)] -> [Either (Doc ann) (Doc ann)])
     |> rights
     |> concatWith (<.>)
   where
@@ -148,8 +149,7 @@ rules2doc rules =
       "START" <+> text2qid ruleName
 
 -- Main function that transpiles individual rules.
-rule2doc ::
-  IsString s => Rule -> Ap (Either s) (Doc ann)
+rule2doc :: IsString s => Rule -> Ap (Either s) (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -175,9 +175,9 @@ rule2doc
     -}
     [ruleActorDeonticAction, deadline, henceLestClauses]
       -- Sequence to propagate errors that occured while processing deadline
-      -- and henceLestClauses up to here.
+      -- and henceLestClauses.
       |> (sequenceA :: [Ap (Either s) [Doc ann]] -> Ap (Either s) [[Doc ann]])
-      |$> mconcat
+      |$> concat
       |$> vcat
     where
       ruleActorDeonticAction =
@@ -245,7 +245,6 @@ rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
     paramText' = multiExprs2qid mtExprs
 
 tempConstr2doc ::
-  forall ann s.
   IsString s =>
   Maybe (TemporalConstraint T.Text) ->
   Ap (Either s) (Maybe (Doc ann))
@@ -256,7 +255,7 @@ tempConstr2doc = traverse go
     traverse.
   -}
   where
-    go :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
+    -- go :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
     go
       ( TemporalConstraint
           tComparison@((`elem` [TOn, TBefore]) -> True)
@@ -275,15 +274,13 @@ tempConstr2doc = traverse go
 multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
-nameDetails2means ::
-  Foldable t => MultiTerm -> t MultiTerm -> Doc ann
+nameDetails2means :: MultiTerm -> [MultiTerm] -> Doc ann
 nameDetails2means name details =
   hsep [name', "MEANS", details']
   where
     name' = multiExprs2qid name
     details' =
       details
-        |> Fold.toList
         |$> multiExprs2qid
         |> intersperse "AND"
         |> hsep
@@ -378,8 +375,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
 --   instance
 --     MonadError s m => MonadError s (Ap m)
 
-findWithErrMsg ::
-  Foldable t => (a -> Bool) -> e -> t a -> Ap (Either e) a
+findWithErrMsg :: Foldable t => (a -> Bool) -> e -> t a -> Ap (Either e) a
 findWithErrMsg pred err xs =
   xs |> Fold.find pred |> maybe (Left err) Right |> coerce
 
@@ -387,8 +383,7 @@ findWithErrMsg pred err xs =
 -- throwDefaultErr = throwError "Not supported."
 
 throwDefaultErr :: IsString s => Ap (Either s) a
-throwDefaultErr =
-    Left "Not supported." |> (coerce :: Either s a -> Ap (Either s) a)
+throwDefaultErr = Ap $ Left "Not supported."
 
 infixl 0 |$>
 

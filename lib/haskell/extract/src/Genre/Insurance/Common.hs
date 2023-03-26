@@ -22,6 +22,7 @@ type Scenario = Map ScL ScR
 type ScL = String
 type ScR = Int
 
+-- | A little minilang so we can deal with the scenario logic in a Showable fashion.
 data ScenarioEval
   = ScEqN ScL ScR    -- ^ numeric equality
   | ScGt  ScL ScR    -- ^ greater than
@@ -44,6 +45,7 @@ evalScenario sc (ScAnd sc1 sc2) = evalScenario sc sc1 && evalScenario sc sc2
 evalScenario sc (ScOr  sc1 sc2) = evalScenario sc sc1 || evalScenario sc sc2
 evalScenario sc (ScGrp sc0)     = evalScenario sc sc0
 
+-- | Let's pretend we took an Uber.
 exampleSc1 :: Scenario
 exampleSc1 = Map.fromList
   [ ("NQQ sum consumed", 50000)
@@ -51,6 +53,7 @@ exampleSc1 = Map.fromList
   , ("Uber",                 1)
   , ("Taxi",                 0) ]
 
+-- | Let's pretend we took a taxi.
 exampleSc2 :: Scenario
 exampleSc2 = Map.fromList
   [ ("NQQ sum consumed", 50000)
@@ -58,16 +61,19 @@ exampleSc2 = Map.fromList
   , ("Uber",                 0)
   , ("Taxi",                 1) ]
 
+-- | example modifiers
 modTaxi, modUber :: Modifier Scenario
 -- | pay-out doubles if we're in a taxi
 modTaxi = Coefficient (200%100) $ ScGtE "Taxi" 1
 -- | pay-out halves if we're in an Uber
 modUber = Coefficient ( 50%100) $ ScGtE "Uber" 1
 
+-- | in a particular scenario, a modifier will decide to multiple the Sum Assured by something like 50% or 200% or 300%... or 0
 evalMod :: Scenario -> Modifier Scenario -> Maybe Rational
 evalMod sc (Coefficient rat sceval) = if evalScenario sc sceval then Just rat else Nothing
 evalMod sc (FirstOf mods)           = listToMaybe $ catMaybes [ evalMod sc md | md <- mods ]
 
+-- | run all the modifiers and come out with a result. Usually there's really only one modifier that fires, but if there are multiples, we need to be careful. One way out is to use the FirstOf logic.
 evalMods :: Scenario -> [Modifier Scenario] -> Rational
 evalMods sc mods =
   let coefficients = catMaybes [ evalMod sc md | md <- mods ]

@@ -12,12 +12,13 @@ module Genre.Insurance ( module Genre.Insurance.Policy2020
 import Genre.Insurance.Policy2020
 import Genre.Insurance.Common
 
+-- | Given a particular policy template, instance, scenario, and choice of benefit being claimed, what amount is claimable?
 claimable :: PolicyTemplate -> PolicyInstance -> Scenario
           -> (PolicyInstance -> SumAssured)
           -> (PolicyTemplate -> [Modifier Scenario])
           -> Int
 claimable pt pi sc claimBenefit getMods =
-  let sumAss        = claimBenefit pi
-      mods          = getMods pt
-      adjustment    = evalMods sc mods
-  in round $ fromIntegral sumAss * fromRational adjustment
+  let sumAssured    = claimBenefit pi
+      modifiers     = getMods pt
+      adjustment    = evalMods sc modifiers
+  in round $ fromIntegral sumAssured * fromRational adjustment

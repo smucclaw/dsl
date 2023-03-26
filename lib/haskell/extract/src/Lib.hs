@@ -1,19 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
+{-| This library is intended for parsing and extracting, or at least reformatting, natural language input, in the direction of L4.
+-}
+
 module Lib
     ( orgMain
     ) where
 
-import Data.Maybe
-
+import Data.Maybe ( maybeToList )
 import Data.OrgMode
 import Text.Megaparsec
-import Text.Megaparsec.Char
-import Data.Void
+    ( anySingle, parseMaybe, some, someTill, Parsec )
+import Text.Megaparsec.Char ( string )
+import Data.Void ( Void )
 
 import Data.List (intercalate, partition)
-import Data.List.Split
+import Data.List.Split ( splitOn )
 
 -- | top level function called by Main: extract, transform, load!
 orgMain :: IO ()
@@ -22,11 +25,12 @@ orgMain = do
   let processed = updateNode processNode <$> odNodes input
   mapM_ putStrLn $ showNode <$> processed
 
+-- | add a text paragraph to represent our analysis of a given org section
 processNode :: Node -> Maybe Node
 processNode n = pure $
                 n { nTags = ["moo"]
                   , nChildren = ChildText (TextLine { tlIndent = 0
-                                                    , tlText = example "moo"
+                                                    , tlText = srcL4 "moo"
                                                     , tlLineNum = Nothing
                                                     } )
                                 `afterPropertiesDrawer`
@@ -34,7 +38,7 @@ processNode n = pure $
                   }
 
   where
-    example x = unlines [ "#+BEGIN_SRC l4 :tangle out.l4", x, "#+END_SRC" ]
+    srcL4 x = unlines [ "#+BEGIN_SRC l4 :tangle out.l4", x, "#+END_SRC" ]
     afterPropertiesDrawer :: NodeChild -> [NodeChild] -> [NodeChild]
     afterPropertiesDrawer new olds =
       let (drawers, notdrawers) =
@@ -48,7 +52,10 @@ data MyTag
   | TDisplay           -- ^ verbatim output
   | TSummarizeChildren -- ^ signposting giving outline of what is coming up next
   | TPleaseRefer       -- ^ signposting to elsewhere in this document
-  | TMeans             -- ^ a defined term given using "Means"
+  | TMeans             -- ^ "X Means Y"
+  | TDecide            -- ^ "Decide ... "
+  | TDefine            -- ^ variable definition
+  | TDeclare           -- ^ type declaration
   deriving (Eq, Show)
 
 -- | TextLine to L4 text
@@ -56,8 +63,8 @@ tl2l4 :: String -> [(MyTag, String)]
 tl2l4 tlt
   -- recurse to process multiple sentences within a single input
   | length (sentences tlt) > 1
-    && (concatMap tl2l4 $ sentences tlt) /= [] =
-      concatMap tl2l4 $ sentences tlt
+    && concatMap tl2l4 (sentences tlt) /= [] =
+       concatMap tl2l4 (sentences tlt)
 
   -- a MEANS rule
   | "means" `elem` words tlt = maybeToList $ do

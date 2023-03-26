@@ -23,7 +23,7 @@ policyTemplate2020 = PolicyTemplate
                 }
   }
 
--- | Sum Assured is really a Money, but we'll pretend it's an int for now.
+-- | Sum Assured is really a Money, but we'll pretend it's an Int for now.
 type SumAssured = Int
 
 -- * The benefits are organized into plans.
@@ -97,9 +97,9 @@ data PISP = PISP { pispsoq :: SumAssured
 
 -- | The constructor function requires that the caller choose one of the plans based on pa--pf and p1--p4.
 mkPolicy :: PolicyTemplate
-         -> (BenefitsAF -> SumAssured)
-         -> Maybe ({- follows above -}) -- does it opt for the supplemental BEN benefit?
-         -> Maybe (Benefits14 -> SumAssured)   -- does it opt for the supplemental SP  benefit?
+         -> (BenefitsAF -> SumAssured)        -- which plan A--F did the customer choose?
+         -> Maybe ({- follows above -})       -- did the customer opt for the supplemental BEN benefit?
+         -> Maybe (Benefits14 -> SumAssured)  -- did the customer opt for the supplemental SP  benefit? If so, which plan 1--4?
          -> PolicyInstance
 mkPolicy pt fAF fBEN fSP =
   PolicyInstance { piNQQ = fAF (ptNQQ pt)

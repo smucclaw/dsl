@@ -2,6 +2,28 @@ module Genre.Insurance.Policy2020 where
 
 import Genre.Insurance.Common
 
+-- | We gather the Sum Assured data from the policy offer document
+-- into a single template, from which a particular contract instance
+-- is chosen by the customer from the A--F and 1--4 plans.
+policyTemplate2020 :: PolicyTemplate
+policyTemplate2020 = PolicyTemplate
+  { ptNQQ =                BAF 1000000 2000000 3000000 5000000 7500000 10000000 [modTaxi, modUber]
+  , ptZE  =                BAF   20000   25000   30000   40000   50000    60000 []
+  , ptGPZ =                BAF    5000    5000   10000   10000   12500    15000 []
+  , ptEN  = BEN { pqnuv  = BAF     500    1000    1500    2500    3500     4500 []
+                , pqnvph = BAF     500    1000    1500    2500    3500     4500 []
+                , pzn    = BAF   10000   10000   10000   20000   20000    25000 []
+                , ptjg   = BAF     500     500     500     500     500      500 []
+                , psfs   = BAF  300000  300000  600000 1000000 1500000  2000000 []
+                }
+  , ptSP  = BSP { spsoq =  B14  250000  500000  750000 1000000 []
+                , spzn  =  B14    2500    5000    7500   10000 []
+                , spusr =  B14   25000   50000   75000  100000 []
+                , speo  =  B14    2500    5000    7500   10000 []
+                }
+  }
+
+-- | Sum Assured is really a Money, but we'll pretend it's an int for now.
 type SumAssured = Int
 
 -- * The benefits are organized into plans.
@@ -34,24 +56,6 @@ data PolicyTemplate = PolicyTemplate
   , ptEN  :: BEN
   , ptSP  :: BSP
   }
-policyTemplate2020 :: PolicyTemplate
-policyTemplate2020 = PolicyTemplate
-  { ptNQQ = BAF 1000000 2000000 3000000 5000000 7500000 10000000 []
-  , ptZE  = BAF   20000   25000   30000   40000   50000    60000 []
-  , ptGPZ = BAF    5000    5000   10000   10000   12500    15000 []
-  , ptEN  = BEN { pqnuv  = BAF    500    1000    1500    2500    3500    4500 []
-                , pqnvph = BAF    500    1000    1500    2500    3500    4500 []
-                , pzn    = BAF  10000   10000   10000   20000   20000   25000 []
-                , ptjg   = BAF    500     500     500     500     500     500 []
-                , psfs   = BAF 300000  300000  600000 1000000 1500000 2000000 []
-                }
-  , ptSP  = BSP { spsoq = B14  250000  500000  750000 1000000 []
-                , spzn  = B14    2500    5000    7500   10000 []
-                , spusr = B14   25000   50000   75000  100000 []
-                , speo  = B14    2500    5000    7500   10000 []
-                }
-  }
-
 
 -- | One of the optional benefits, the "EN" benefit, has sub-benefits also organized by plan A--F.
 data BEN = BEN { pqnuv  :: BenefitsAF
@@ -117,3 +121,5 @@ mkPolicy pt fAF fBEN fSP =
                                , pispusr = f $ spusr (ptSP pt)
                                , pispeo  = f $ speo  (ptSP pt) }
                  }
+
+

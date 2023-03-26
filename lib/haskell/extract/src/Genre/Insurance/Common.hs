@@ -2,7 +2,8 @@ module Genre.Insurance.Common where
 
 import qualified Data.Map as Map
 import Data.Map (Map, (!))
-import Data.Ratio
+import Data.Maybe (catMaybes, listToMaybe)
+import Data.Ratio ( (%) )
 
 -- * Each benefit can be modified in various ways.
 -- So each benefit contains an attribute listing modifiers.
@@ -47,16 +48,28 @@ exampleSc1 :: Scenario
 exampleSc1 = Map.fromList
   [ ("NQQ sum consumed", 50000)
   , ("age",                 50)
-  , ("Grab",                 1)
+  , ("Uber",                 1)
   , ("Taxi",                 0) ]
 
 exampleSc2 :: Scenario
 exampleSc2 = Map.fromList
   [ ("NQQ sum consumed", 50000)
   , ("age",                 50)
-  , ("Grab",                 0)
+  , ("Uber",                 0)
   , ("Taxi",                 1) ]
 
-modTaxi, modGrab :: Modifier Scenario
+modTaxi, modUber :: Modifier Scenario
+-- | pay-out doubles if we're in a taxi
 modTaxi = Coefficient (200%100) $ ScGtE "Taxi" 1
-modGrab = Coefficient ( 50%100) $ ScGtE "Grab" 1
+-- | pay-out halves if we're in an Uber
+modUber = Coefficient ( 50%100) $ ScGtE "Uber" 1
+
+evalMod :: Scenario -> Modifier Scenario -> Maybe Rational
+evalMod sc (Coefficient rat sceval) = if evalScenario sc sceval then Just rat else Nothing
+evalMod sc (FirstOf mods)           = listToMaybe $ catMaybes [ evalMod sc md | md <- mods ]
+
+evalMods :: Scenario -> [Modifier Scenario] -> Rational
+evalMods sc mods =
+  let coefficients = catMaybes [ evalMod sc md | md <- mods ]
+  in product coefficients
+                     

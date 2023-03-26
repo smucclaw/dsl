@@ -25,6 +25,9 @@ source-repository head
 
 library
   exposed-modules:
+      Genre.Insurance
+      Genre.Insurance.Common
+      Genre.Insurance.Policy2020
       Lib
   other-modules:
       Paths_extract
@@ -33,6 +36,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , containers
     , megaparsec
     , orgmode
     , split
@@ -47,6 +51,7 @@ executable extract-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers
     , extract
     , megaparsec
     , orgmode
@@ -63,6 +68,7 @@ test-suite extract-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers
     , extract
     , megaparsec
     , orgmode

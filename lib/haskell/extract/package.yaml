@@ -24,6 +24,7 @@ dependencies:
 - orgmode
 - split
 - megaparsec
+- containers
 
 ghc-options:
 - -Wall

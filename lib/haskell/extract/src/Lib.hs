@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Lib
     ( orgMain
@@ -11,52 +12,63 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Data.Void
 
-import Data.List (intercalate)
+import Data.List (intercalate, partition)
 import Data.List.Split
 
+-- | top level function called by Main: extract, transform, load!
 orgMain :: IO ()
 orgMain = do
   input <- orgFile <$> getContents
-  let processed = processNode <$> odNodes input
+  let processed = updateNode processNode <$> odNodes input
   mapM_ putStrLn $ showNode <$> processed
 
-processNode :: Node -> Node
-processNode n = n { nChildren = processNodeChild <$> nChildren n }
+processNode :: Node -> Maybe Node
+processNode n = pure $
+                n { nTags = ["moo"]
+                  , nChildren = ChildText (TextLine { tlIndent = 0
+                                                    , tlText = example "moo"
+                                                    , tlLineNum = Nothing
+                                                    } )
+                                `afterPropertiesDrawer`
+                                nChildren n
+                  }
+
   where
-    processNodeChild :: NodeChild -> NodeChild
-    processNodeChild (ChildText tl@(TextLine tli tlt tll)) =
-      let asl4 = example <$> tl2l4 tlt
-      in case asl4 of
-        Nothing -> ChildText tl
-        Just ex -> 
-          ChildNode (Node { nDepth = nDepth n + 1
-                          , nPrefix = pure $ Prefix "TODO"
-                          , nTags = []
-                          , nChildren = [ChildText (TextLine tli ex tll)]
-                          , nTopic = take 20 tlt
-                          , nLine = tl
-                          })
-
-    processNodeChild (ChildNode cn) = ChildNode $ processNode cn
-    processNodeChild x = x
-
     example x = unlines [ "#+BEGIN_SRC l4 :tangle out.l4", x, "#+END_SRC" ]
+    afterPropertiesDrawer :: NodeChild -> [NodeChild] -> [NodeChild]
+    afterPropertiesDrawer new olds =
+      let (drawers, notdrawers) =
+            partition (\case ChildDrawer _ -> True
+                             _             -> False) olds
+      in drawers ++ new : notdrawers
+
+-- | we annotate rules using tags
+data MyTag
+  = TDeontic           -- ^ deontic, duty, regulative rule
+  | TDisplay           -- ^ verbatim output
+  | TSummarizeChildren -- ^ signposting giving outline of what is coming up next
+  | TPleaseRefer       -- ^ signposting to elsewhere in this document
+  | TMeans             -- ^ a defined term given using "Means"
+  deriving (Eq, Show)
 
 -- | TextLine to L4 text
-tl2l4 :: String -> Maybe String
+tl2l4 :: String -> [(MyTag, String)]
 tl2l4 tlt
-  | "means" `elem` words tlt = do
+  -- recurse to process multiple sentences within a single input
+  | length (sentences tlt) > 1
+    && (concatMap tl2l4 $ sentences tlt) /= [] =
+      concatMap tl2l4 $ sentences tlt
+
+  -- a MEANS rule
+  | "means" `elem` words tlt = maybeToList $ do
       (lhs, rhs) <- parseMaybe ((,)
                                 <$> someTill anySingle (string " means ")
                                 <*> (some anySingle :: Parsec Void String String)
                                ) tlt
-      pure (intercalate "," [ ";;\n", "", trimStars lhs ++ "\n", "MEANS", rhs ])
+      pure (TMeans, intercalate "," [ ";;\n", "", trimStars lhs ++ "\n", "MEANS", rhs ])
 
-  | length (sentences tlt) > 1
-    && catMaybes (tl2l4 <$> sentences tlt) /= [] =
-      pure $ unlines (catMaybes (tl2l4 <$> sentences tlt))
-
-  | otherwise = Nothing
+  -- untransformed
+  | otherwise = []
 
   where
     trimStars x = reverse (dropWhile (== '*') (reverse (dropWhile (== '*') x)))

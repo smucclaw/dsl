@@ -4,9 +4,7 @@
 {-| This library is intended for parsing and extracting, or at least reformatting, natural language input, in the direction of L4.
 -}
 
-module Lib
-    ( orgMain
-    ) where
+module Lib where
 
 import Data.Maybe ( maybeToList )
 import Data.OrgMode

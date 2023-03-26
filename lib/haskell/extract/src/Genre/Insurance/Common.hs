@@ -1,12 +1,14 @@
 module Genre.Insurance.Common where
 
+{-| This module provides common functionality regarding modifiers and scenarios. -}
+
 import qualified Data.Map as Map
 import Data.Map (Map, (!))
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Ratio ( (%) )
 
 -- * Each benefit can be modified in various ways.
--- So each benefit contains an attribute listing modifiers.
+-- | Each benefit contains an attribute listing multiple modifiers.
 data Modifier scenario =
   Coefficient Rational ScenarioEval
   -- ^ naively, we multiply all the modifier coefficients in the list, if they apply
@@ -64,16 +66,16 @@ exampleSc2 = Map.fromList
 -- | example modifiers
 modTaxi, modUber :: Modifier Scenario
 -- | pay-out doubles if we're in a taxi
-modTaxi = Coefficient (200%100) $ ScGtE "Taxi" 1
+modTaxi = Coefficient (200%100) $ "Taxi" `ScGtE` 1
 -- | pay-out halves if we're in an Uber
-modUber = Coefficient ( 50%100) $ ScGtE "Uber" 1
+modUber = Coefficient ( 50%100) $ "Uber" `ScGtE` 1
 
--- | in a particular scenario, a modifier will decide to multiple the Sum Assured by something like 50% or 200% or 300%... or 0
+-- | In a particular scenario, a modifier will decide to multiple the Sum Assured by something like 50% or 200% or 300%... or 0
 evalMod :: Scenario -> Modifier Scenario -> Maybe Rational
 evalMod sc (Coefficient rat sceval) = if evalScenario sc sceval then Just rat else Nothing
 evalMod sc (FirstOf mods)           = listToMaybe $ catMaybes [ evalMod sc md | md <- mods ]
 
--- | run all the modifiers and come out with a result. Usually there's really only one modifier that fires, but if there are multiples, we need to be careful. One way out is to use the FirstOf logic.
+-- | Run all the modifiers and come out with a result. Usually there's really only one modifier that fires, but if there are multiples, we need to be careful. One way out is to use the FirstOf logic.
 evalMods :: Scenario -> [Modifier Scenario] -> Rational
 evalMods sc mods =
   let coefficients = catMaybes [ evalMod sc md | md <- mods ]

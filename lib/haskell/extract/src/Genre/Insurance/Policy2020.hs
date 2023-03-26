@@ -1,3 +1,12 @@
+{-| This module represents a particular policy template containing a
+    choice of multiple plans. If we ever want to represent multiple
+    different policy templates, we would have to do some refactoring
+    to support the essential functionality of setting up the template
+    with multiple plans and optional supplementary packages, with
+    modifiers based on the runtime scenario, and doing the benefits
+    calculation.
+-}
+
 module Genre.Insurance.Policy2020 where
 
 import Genre.Insurance.Common
@@ -57,7 +66,7 @@ data PolicyTemplate = PolicyTemplate
   , ptSP  :: BSP
   }
 
--- | One of the optional benefits, the "EN" benefit, has sub-benefits also organized by plan A--F.
+-- | One of the optional benefits, the EN benefit, has sub-benefits also organized by plan A--F.
 data BEN = BEN { pqnuv  :: BenefitsAF
                , pqnvph :: BenefitsAF
                , pzn    :: BenefitsAF
@@ -96,11 +105,11 @@ data PISP = PISP { pispsoq :: SumAssured
                  , pispeo  :: SumAssured } deriving (Eq, Show)
 
 -- | The constructor function requires that the caller choose one of the plans based on pa--pf and p1--p4.
-mkPolicy :: PolicyTemplate
-         -> (BenefitsAF -> SumAssured)        -- which plan A--F did the customer choose?
-         -> Maybe ({- follows above -})       -- did the customer opt for the supplemental BEN benefit?
-         -> Maybe (Benefits14 -> SumAssured)  -- did the customer opt for the supplemental SP  benefit? If so, which plan 1--4?
-         -> PolicyInstance
+mkPolicy :: PolicyTemplate                    -- ^ the parent template
+         -> (BenefitsAF -> SumAssured)        -- ^ which plan A--F did the customer choose?
+         -> Maybe ({- follows above -})       -- ^ did the customer opt for the supplemental BEN benefit? Trying to avoid Boolean Blindness here.
+         -> Maybe (Benefits14 -> SumAssured)  -- ^ did the customer opt for the supplemental SP  benefit? If so, which plan 1--4?
+         -> PolicyInstance                    -- ^ returns a policy instance. Note that you'll still need to look up the modifiers against the template.
 mkPolicy pt fAF fBEN fSP =
   PolicyInstance { piNQQ = fAF (ptNQQ pt)
                  , piZE  = fAF (ptZE  pt)

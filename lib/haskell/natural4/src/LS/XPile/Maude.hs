@@ -114,11 +114,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
   This function happily swallows up rules that don't transpile properly and
   only outputs those that do to plaintext.
 -}
-rules2doc ::
-  forall ann t.
-  Foldable t =>
-  t Rule ->
-  Doc ann
+rules2doc :: Foldable t => t Rule -> Doc ann
 rules2doc rules =
   (startRule : transpiledRules)
     -- TODO:
@@ -153,7 +149,7 @@ rules2doc rules =
 
 -- Main function that transpiles individual rules.
 rule2doc ::
-  forall ann s. IsString s => Rule -> Ap (Either s) (Doc ann)
+  IsString s => Rule -> Ap (Either s) (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -229,7 +225,7 @@ rule2doc _ = throwDefaultErr
 -- traverseAndremoveEmptyDocs f docs =
 --   docs |> traverse f |$> Wither.filter (not . null . show)
 
-text2qid :: forall ann a. (IsString a, Monoid a, Pretty a) => a -> Doc ann
+text2qid :: (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 {-

@@ -39,38 +39,75 @@ data ScenarioEval
 
 -- | The valuation routine will add explainability in future
 evalScenario :: Scenario -> ScenarioEval -> Bool
-evalScenario sc (ScEqN k n)     = sc ! k == n
-evalScenario sc (ScGt  k n)     = sc ! k >  n
-evalScenario sc (ScGtE k n)     = sc ! k >= n
-evalScenario sc (ScLt  k n)     = sc ! k <  n
-evalScenario sc (ScLtE k n)     = sc ! k <= n
+evalScenario sc (ScEqN k n)     = maybe False (== n) $ k `Map.lookup` sc
+evalScenario sc (ScGt  k n)     = maybe False (>  n) $ k `Map.lookup` sc
+evalScenario sc (ScGtE k n)     = maybe False (>= n) $ k `Map.lookup` sc
+evalScenario sc (ScLt  k n)     = maybe False (<  n) $ k `Map.lookup` sc
+evalScenario sc (ScLtE k n)     = maybe False (<= n) $ k `Map.lookup` sc
 evalScenario sc (ScAnd sc1 sc2) = evalScenario sc sc1 && evalScenario sc sc2
 evalScenario sc (ScOr  sc1 sc2) = evalScenario sc sc1 || evalScenario sc sc2
 evalScenario sc (ScGrp sc0)     = evalScenario sc sc0
 
 -- * Some Made-Up Examples
 -- | Let's pretend we took an Uber.
-exampleSc1 :: Scenario
-exampleSc1 = Map.fromList
-  [ ("NQQ sum consumed", 50000)
-  , ("age",                 50)
-  , ("Uber",                 1)
-  , ("Taxi",                 0) ]
+exampleScs :: [Scenario]
+exampleScs = Map.fromList <$>
+  [
+    [ ("Scenario ID",          1)
+    , ("NQQ sum consumed", 50000)
+    , ("age",                 50)
+    , ("Uber",                 1)
+    , ("Taxi",                 0)
+    , ("step-ups",             0)
+    , ("death",                1)
+    ]
+  , [ ("Scenario ID",          2)
+    , ("NQQ sum consumed", 50000)
+    , ("age",                 50)
+    , ("Uber",                 0)
+    , ("Taxi",                 1)
+    , ("step-ups",             2)
+    , ("minor toe",            1)
+    ]
+  , [ ("Scenario ID",          3)
+    , ("NQQ sum consumed", 50000)
+    , ("age",                 14)
+    , ("school",               1)
+    , ("step-ups",             2)
+    , ("death",                1)
+    ]
+  , [ ("Scenario ID",          3)
+    , ("NQQ sum consumed", 50000)
+    , ("age",                 50)
+    , ("fire",                 1)
+    , ("step-ups",             4)
+    , ("death",                1)
+    ]
+  ]
 
--- | Let's pretend we took a taxi.
-exampleSc2 :: Scenario
-exampleSc2 = Map.fromList
-  [ ("NQQ sum consumed", 50000)
-  , ("age",                 50)
-  , ("Uber",                 0)
-  , ("Taxi",                 1) ]
+scenarioID :: Scenario -> String
+scenarioID = show . (! "Scenario ID")
 
--- | example modifiers
-modTaxi, modUber :: Modifier Scenario
--- | pay-out doubles if we're in a taxi
-modTaxi = Coefficient (200%100) $ "Taxi" `ScGtE` 1
--- | pay-out halves if we're in an Uber
-modUber = Coefficient ( 50%100) $ "Uber" `ScGtE` 1
+appliesTo x = x `ScGtE` 1
+
+-- | modifiers. [TODO] tweak so the coefficients can take the actual scenario number from ScR into account
+allMods :: [Modifier Scenario]
+
+allMods =
+  [ Coefficient (300%100) $ appliesTo "Taxi"
+  , Coefficient (300%100) $ appliesTo "public transportation"
+  , Coefficient (200%100) $ appliesTo "school"
+  , Coefficient (200%100) $ appliesTo "pedestrian"
+  , Coefficient (200%100) $ appliesTo "fire"
+  , Coefficient ( 50%100) $ appliesTo "rock climbing"
+  , Coefficient ( 5%100) $ "step-ups" `ScEqN` 1
+  , Coefficient (10%100) $ "step-ups" `ScEqN` 2
+  , Coefficient (15%100) $ "step-ups" `ScEqN` 3
+  , Coefficient (20%100) $ "step-ups" `ScEqN` 4
+  , Coefficient (25%100) $ "step-ups" `ScEqN` 5
+  , Coefficient (100%100) $ appliesTo "death"
+  , Coefficient (  1%100) $ appliesTo "minor toe"
+  ]
 
 -- * Evaluating Modifiers
 

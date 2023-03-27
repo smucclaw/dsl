@@ -16,14 +16,14 @@ import Genre.Insurance.Common
 -- is chosen by the customer from the A--F and 1--4 plans.
 policyTemplate2020 :: PolicyTemplate
 policyTemplate2020 = PolicyTemplate
-  { ptNQQ =                BAF 1000000 2000000 3000000 5000000 7500000 10000000 [modTaxi, modUber]
-  , ptZE  =                BAF   20000   25000   30000   40000   50000    60000 []
-  , ptGPZ =                BAF    5000    5000   10000   10000   12500    15000 []
-  , ptEN  = BEN { pqnuv  = BAF     500    1000    1500    2500    3500     4500 []
-                , pqnvph = BAF     500    1000    1500    2500    3500     4500 []
-                , pzn    = BAF   10000   10000   10000   20000   20000    25000 []
-                , ptjg   = BAF     500     500     500     500     500      500 []
-                , psfs   = BAF  300000  300000  600000 1000000 1500000  2000000 []
+  { ptNQQ =                BAF 1000000 2000000 3000000 5000000 7500000 10000000 allMods
+  , ptZE  =                BAF   20000   25000   30000   40000   50000    60000 allMods
+  , ptGPZ =                BAF    5000    5000   10000   10000   12500    15000 allMods
+  , ptEN  = BEN { pqnuv  = BAF     500    1000    1500    2500    3500     4500 allMods
+                , pqnvph = BAF     500    1000    1500    2500    3500     4500 allMods
+                , pzn    = BAF   10000   10000   10000   20000   20000    25000 allMods
+                , ptjg   = BAF     500     500     500     500     500      500 allMods
+                , psfs   = BAF  300000  300000  600000 1000000 1500000  2000000 allMods
                 }
   , ptSP  = BSP { spsoq =  B14  250000  500000  750000 1000000 []
                 , spzn  =  B14    2500    5000    7500   10000 []

@@ -28,8 +28,8 @@ main = do
                  (Just p1) -- yes they wanted the supplementary SP plan, choosing plan 1 out of 1--4
   putStrLn "* the customer has purchased this policy"
   printHS mypolicy
-  forM_ [exampleSc1, exampleSc2] $ \sc -> do
-    putStrLn "** here's a scenario, how much is claimable?"
+  forM_ exampleScs $ \sc -> do
+    putStrLn $ "** Scenario " ++ scenarioID sc ++ ", how much is claimable?"
     printHS sc
     putStrLn $ "*** under benefit NQQ, sum assured is " ++ show (piNQQ mypolicy)
     putStrLn "the modifiers are"

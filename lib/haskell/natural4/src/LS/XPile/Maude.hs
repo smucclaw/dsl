@@ -27,7 +27,6 @@ import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NonEmpty (toList)
 import Data.Monoid (Ap (Ap))
-import Data.String (IsString)
 import Data.Text qualified as T
 -- import Data.Traversable (mapAccumL)
 -- import Debug.Trace
@@ -145,7 +144,7 @@ rules2doc rules =
       "START" <+> text2qid ruleName
 
 -- Main function that transpiles individual rules.
-rule2doc :: IsString s => Rule -> Ap (Either s) (Doc ann)
+rule2doc :: Rule -> Ap (Either (Doc ann)) (Doc ann)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -172,7 +171,8 @@ rule2doc
     [ruleName', rkeywordActorDeonticAction, deadline, henceLestClauses]
       -- Sequence to propagate errors that occured while processing
       -- rkeyword actor, deontic action, deadline, and henceLestClauses.
-      |> (sequenceA :: [Ap (Either s) [Doc ann]] -> Ap (Either s) [[Doc ann]])
+      -- |> (sequenceA :: [Ap (Either s) [Doc ann]] -> Ap (Either s) [[Doc ann]])
+      |> sequenceA
       |$> mconcat
       |$> vcat
     where
@@ -220,7 +220,7 @@ rule2doc _ = throwDefaultErr
 -- traverseAndremoveEmptyDocs f docs =
 --   docs |> traverse f |$> Wither.filter (not . null . show)
 
-text2qid :: (IsString a, Monoid a, Pretty a) => a -> Doc ann
+text2qid :: T.Text -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 -- data RKeywordDeon where
@@ -247,7 +247,7 @@ data RKeywordActorDeonticAction where
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
 rkeywordDeonticActorAction2doc ::
-  IsString s => RKeywordActorDeonticAction -> Ap (Either s) (Doc ann)
+  RKeywordActorDeonticAction -> Ap (Either (Doc ann)) (Doc ann)
 rkeywordDeonticActorAction2doc = \case
   RKeywordActor
     { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
@@ -281,9 +281,8 @@ rkeywordDeonticActorAction2doc = \case
 --     paramText' = mtExprs |> multiExprs2qid |> pure
 
 tempConstr2doc ::
-  IsString s =>
   Maybe (TemporalConstraint T.Text) ->
-  Ap (Either s) (Maybe (Doc ann))
+  Ap (Either (Doc ann)) (Maybe (Doc ann))
 tempConstr2doc = traverse $ \case
   {-
     Note that traverse is effectively an effectful fmap, meaning that the
@@ -355,9 +354,8 @@ data HenceLestClause where
   deriving (Eq, Ord, Show)
 
 henceLest2doc ::
-  IsString s =>
   HenceLestClause ->
-  Ap (Either s) (Maybe (Doc ann))
+  Ap (Either (Doc ann)) (Maybe (Doc ann))
 henceLest2doc HenceLestClause {henceLest, clause} =
   traverse clause2doc clause
   where
@@ -415,7 +413,7 @@ findWithErrMsg pred err xs =
 -- throwDefaultErr :: (IsString s, MonadError s m) => m a
 -- throwDefaultErr = throwError "Not supported."
 
-throwDefaultErr :: IsString s => Ap (Either s) a
+throwDefaultErr :: Ap (Either (Doc ann)) a
 throwDefaultErr = Ap $ Left "Not supported."
 
 infixl 0 |$>

@@ -30,10 +30,10 @@ extra-deps:
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)
 # you may prefer to do something like this:
-# ../../../../baby-l4
+- ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
-- github: smucclaw/baby-l4
-  commit: 1695781f5a86d2db6af84324a662b0394d5fb8ea
+# - github: smucclaw/baby-l4
+#  commit: 1695781f5a86d2db6af84324a662b0394d5fb8ea
 
 - github: smucclaw/gf-core
   commit: edb55df7b0c4892ba0bac2817b5f493921c20c36

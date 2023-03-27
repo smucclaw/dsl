@@ -266,7 +266,7 @@ rkeywordDeonticActorAction2doc = \case
       where
         rkeywordDeon' =
           rkeywordDeon |> show2text |> T.tail |> T.toUpper |> pretty
-        actorAction' = actorAction |> multiExprs2qid
+        actorAction' = multiExprs2qid actorAction
 
 --     rkeywordDeon2doc (RKeyword x@((`elem` [REvery, RParty]) -> True)) =
 --       go x

@@ -125,9 +125,8 @@ rules2doc rules =
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
       rules'
-        |> mapMaybe rule2maybeRegRuleLabel
+        |> mapMaybe rule2maybeStartRuleLabel
         |> take 1
-        |$> pure . ("START" <+>) . text2qid
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
@@ -135,9 +134,9 @@ rules2doc rules =
 
     rules' = Fold.toList rules
 
-    rule2maybeRegRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
-      Just ruleName
-    rule2maybeRegRuleLabel _ = Nothing
+    rule2maybeStartRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
+      "START" <+> text2qid ruleName |> pure |> Just
+    rule2maybeStartRuleLabel _ = Nothing
 
     x <.> y = mconcat [x, ",", line, line, y]
 

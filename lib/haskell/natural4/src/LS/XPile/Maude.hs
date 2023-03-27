@@ -26,7 +26,7 @@ import Data.Foldable qualified as Fold
     fold,
     toList,
   )
-import Data.Functor ((<&>))
+-- import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -239,9 +239,15 @@ text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 data RKeywordActorDeonticAction where
   RKeywordActor ::
-    {rkeyword :: RegKeywords, actor :: ParamText} -> RKeywordActorDeonticAction
+    { rkeyword :: RegKeywords,
+      actor :: ParamText
+    } ->
+    RKeywordActorDeonticAction
   DeonticAction ::
-    {deontic :: Deontic, action :: ParamText} -> RKeywordActorDeonticAction
+    { deontic :: Deontic,
+      action :: ParamText
+    } ->
+    RKeywordActorDeonticAction
   deriving (Eq, Ord, Show)
 
 {-
@@ -428,8 +434,13 @@ throwDefaultErr = Ap $ Left "Not supported."
 infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
-(|$>) = (<&>)
-{-# INLINE (|$>) #-}
+(|$>) = flip fmap
+
+{-# NOINLINE (|$>) #-}
+
+{-# RULES
+  "fmap"    forall f g x. x |$> f |$> g = g . f <$> x
+#-}
 
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack

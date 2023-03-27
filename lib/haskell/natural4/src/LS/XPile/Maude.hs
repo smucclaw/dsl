@@ -21,11 +21,6 @@ import AnyAll (BoolStruct (All, Leaf))
 import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Foldable qualified as Fold
-  ( Foldable (elem, toList),
-    find,
-    fold,
-    toList,
-  )
 -- import Data.Functor ((<&>))
 import Data.Kind (Type)
 import Data.List (intersperse)
@@ -174,20 +169,17 @@ rule2doc
       We continue along the happy path by removing empty docs and vcat'ing
       everything together.
     -}
-    [ruleActorDeonticAction, deadline, henceLestClauses]
-      -- Sequence to propagate errors that occured while processing deadline
-      -- and henceLestClauses.
+    [ruleName', rkeywordActorDeonticAction, deadline, henceLestClauses]
+      -- Sequence to propagate errors that occured while processing
+      -- rkeyword actor, deontic action, deadline, and henceLestClauses.
       |> (sequenceA :: [Ap (Either s) [Doc ann]] -> Ap (Either s) [[Doc ann]])
-      |$> concat
+      |$> mconcat
       |$> vcat
     where
-      ruleActorDeonticAction =
-        sequenceA [ruleName', rkeywordActor, deonticAction]
-      ruleName' = pure $ "RULE" <+> text2qid ruleName
-      rkeywordActor =
-        RKeywordActor rkeyword actor |> rkeywordDeonActorAction2doc
-      deonticAction =
-        DeonticAction deontic action |> rkeywordDeonActorAction2doc
+      ruleName' = pure [ "RULE" <+> text2qid ruleName ]
+      rkeywordActorDeonticAction =
+        [RKeywordActor rkeyword actor, DeonticAction deontic action]
+          |> traverse rkeywordDeonticActorAction2doc
 
       deadline = temporal |> tempConstr2doc |$> Fold.toList
 
@@ -197,9 +189,8 @@ rule2doc
         -- throwing out all the (Right Nothing).
         -- Note that this is effectful in that we short-circuit when we
         --- encounter a Left.
-        wither
-          henceLest2doc
-          [HenceLestClause HENCE hence, HenceLestClause LEST lest]
+        [HenceLestClause HENCE hence, HenceLestClause LEST lest]
+          |> wither henceLest2doc
 
 rule2doc DefNameAlias {name, detail} =
   pure $ nameDetails2means name [detail]
@@ -255,9 +246,9 @@ data RKeywordActorDeonticAction where
   - PARTY/EVERY (some paramText denoting the actor)
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
-rkeywordDeonActorAction2doc ::
+rkeywordDeonticActorAction2doc ::
   IsString s => RKeywordActorDeonticAction -> Ap (Either s) (Doc ann)
-rkeywordDeonActorAction2doc = \case
+rkeywordDeonticActorAction2doc = \case
   RKeywordActor
     { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
       actor
@@ -364,14 +355,13 @@ data HenceLestClause where
   deriving (Eq, Ord, Show)
 
 henceLest2doc ::
-  forall ann s.
   IsString s =>
   HenceLestClause ->
   Ap (Either s) (Maybe (Doc ann))
 henceLest2doc HenceLestClause {henceLest, clause} =
   traverse clause2doc clause
   where
-    clause2doc :: Rule -> Ap (Either s) (Doc ann)
+    -- clause2doc :: Rule -> Ap (Either s) (Doc ann)
     clause2doc (RuleAlias clause) =
       pure $ viaShow henceLest <+> multiExprs2qid clause
     clause2doc _ = throwDefaultErr

@@ -20,8 +20,8 @@ claimable :: PolicyTemplate -> PolicyInstance -> Scenario
           -> (PolicyInstance -> SumAssured)
           -> (PolicyTemplate -> [Modifier Scenario])
           -> Int
-claimable pt pi sc claimBenefit getMods =
-  let sumAssured    = claimBenefit pi
+claimable pt pI sc claimBenefit getMods =
+  let sumAssured    = claimBenefit pI
       modifiers     = getMods pt
       adjustment    = evalMods sc modifiers
   in round $ fromIntegral sumAssured * fromRational adjustment

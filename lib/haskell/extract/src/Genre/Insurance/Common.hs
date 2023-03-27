@@ -1,6 +1,6 @@
-module Genre.Insurance.Common where
-
 {-| This module provides common functionality regarding modifiers and scenarios. -}
+
+module Genre.Insurance.Common where
 
 import qualified Data.Map as Map
 import Data.Map (Map, (!))
@@ -17,6 +17,7 @@ data Modifier scenario =
   -- similar to the DMN F hit policy
   deriving (Eq, Show)
 
+-- * Scenarios
 -- | A user will typically come to us with a certain scenario in mind.
 -- The scenario helps inform how the reductions and double/triple benefits apply.
 type Scenario = Map ScL ScR
@@ -47,6 +48,7 @@ evalScenario sc (ScAnd sc1 sc2) = evalScenario sc sc1 && evalScenario sc sc2
 evalScenario sc (ScOr  sc1 sc2) = evalScenario sc sc1 || evalScenario sc sc2
 evalScenario sc (ScGrp sc0)     = evalScenario sc sc0
 
+-- * Some Made-Up Examples
 -- | Let's pretend we took an Uber.
 exampleSc1 :: Scenario
 exampleSc1 = Map.fromList
@@ -69,6 +71,8 @@ modTaxi, modUber :: Modifier Scenario
 modTaxi = Coefficient (200%100) $ "Taxi" `ScGtE` 1
 -- | pay-out halves if we're in an Uber
 modUber = Coefficient ( 50%100) $ "Uber" `ScGtE` 1
+
+-- * Evaluating Modifiers
 
 -- | In a particular scenario, a modifier will decide to multiple the Sum Assured by something like 50% or 200% or 300%... or 0
 evalMod :: Scenario -> Modifier Scenario -> Maybe Rational

@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -22,10 +21,8 @@ import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Foldable qualified as Fold
 -- import Data.Functor ((<&>))
-import Data.Kind (Type)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.List.NonEmpty qualified as NonEmpty (toList)
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
 -- import Data.Traversable (mapAccumL)

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -14,9 +15,7 @@
   representation that Maude can parse.
 -}
 
-module LS.XPile.Maude
-  (rules2maudeStr)
-where
+module LS.XPile.Maude (rules2maudeStr) where
 
 import AnyAll (BoolStruct (All, Leaf))
 import Data.Coerce (coerce)
@@ -42,7 +41,8 @@ import LS.Rule
   ( Rule (..),
   )
 import LS.Types
-  ( HornClause (HC, hBody, hHead),
+  ( Deontic (DMay, DMust, DShant),
+    HornClause (HC, hBody, hHead),
     MTExpr (MTT),
     MultiTerm,
     MyToken (Means),
@@ -121,9 +121,10 @@ rules2doc rules =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    -- |> wither swallowErrs
-    |> (coerce ::
-          [Ap (Either (Doc ann)) (Doc ann)] -> [Either (Doc ann) (Doc ann)])
+    -- \|> wither swallowErrs
+    |> ( coerce ::
+           [Ap (Either (Doc ann)) (Doc ann)] -> [Either (Doc ann) (Doc ann)]
+       )
     |> rights
     |> concatWith (<.>)
   where
@@ -134,7 +135,7 @@ rules2doc rules =
     startRule =
       rules
         |> findWithErrMsg isRegRule "No regulative rule found."
-        |$> regRule2startRule
+          |$> regRule2startRule
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
@@ -181,10 +182,12 @@ rule2doc
       |$> vcat
     where
       ruleActorDeonticAction =
-        pure [ruleName', rkeywordActor, deonticAction]
-      ruleName' = "RULE" <+> text2qid ruleName
-      rkeywordActor = rkeywordDeonParamText2doc rkeyword actor
-      deonticAction = rkeywordDeonParamText2doc deontic action
+        sequenceA [ruleName', rkeywordActor, deonticAction]
+      ruleName' = pure $ "RULE" <+> text2qid ruleName
+      rkeywordActor =
+        RKeywordActor rkeyword actor |> rkeywordDeonActorAction2doc
+      deonticAction =
+        DeonticAction deontic action |> rkeywordDeonActorAction2doc
 
       deadline = temporal |> tempConstr2doc |$> Fold.toList
 
@@ -194,7 +197,8 @@ rule2doc
         -- throwing out all the (Right Nothing).
         -- Note that this is effectful in that we short-circuit when we
         --- encounter a Left.
-        wither henceLest2doc
+        wither
+          henceLest2doc
           [HenceLestClause HENCE hence, HenceLestClause LEST lest]
 
 rule2doc DefNameAlias {name, detail} =
@@ -228,33 +232,69 @@ rule2doc _ = throwDefaultErr
 text2qid :: (IsString a, Monoid a, Pretty a) => a -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
+-- data RKeywordDeon where
+--   RKeyword :: RegKeywords -> RKeywordDeon
+--   Deon :: Deontic -> RKeywordDeon
+--   deriving (Eq, Ord, Show)
+
+data RKeywordActorDeonticAction where
+  RKeywordActor ::
+    {rkeyword :: RegKeywords, actor :: ParamText} -> RKeywordActorDeonticAction
+  DeonticAction ::
+    {deontic :: Deontic, action :: ParamText} -> RKeywordActorDeonticAction
+  deriving (Eq, Ord, Show)
+
 {-
   This function handles things like:
   - PARTY/EVERY (some paramText denoting the actor)
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
-rkeywordDeonParamText2doc :: Show a => a -> ParamText -> Doc ann
-rkeywordDeonParamText2doc rkeywordDeon ((mtExprs, _) :| _) =
-  rkeywordDeon' <+> paramText'
+rkeywordDeonActorAction2doc ::
+  IsString s => RKeywordActorDeonticAction -> Ap (Either s) (Doc ann)
+rkeywordDeonActorAction2doc = \case
+  RKeywordActor
+    { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
+      actor
+    } -> go rkeyword actor
+
+  DeonticAction
+    { deontic = deon@((`elem` [DMust, DMay, DShant]) -> True),
+      action
+    } -> go deon action
+
+  _ -> throwDefaultErr
   where
-    rkeywordDeon' =
-      rkeywordDeon |> show2text |> T.tail |> T.toUpper |> pretty
-    -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
-    -- that we have to use toList to convert it to a multi term before passing
-    -- it to multiExprs2qid.
-    paramText' = multiExprs2qid mtExprs
+    go rkeywordDeon ((actorAction, _) :| _) =
+      pure $ rkeywordDeon' <+> actorAction'
+      where
+        rkeywordDeon' =
+          rkeywordDeon |> show2text |> T.tail |> T.toUpper |> pretty
+        actorAction' = actorAction |> multiExprs2qid
+
+--     rkeywordDeon2doc (RKeyword x@((`elem` [REvery, RParty]) -> True)) =
+--       go x
+--     rkeywordDeon2doc (Deon x@((`elem` [DMust, DMay, DShant]) -> True)) =
+--       go x
+--     rkeywordDeon2doc _ = throwDefaultErr
+--     go x = x |> show2text |> T.tail |> T.toUpper |> pretty |> pure
+
+--     -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
+--     -- that we have to use toList to convert it to a multi term before passing
+--     -- it to multiExprs2qid.
+--     paramText' = mtExprs |> multiExprs2qid |> pure
 
 tempConstr2doc ::
   IsString s =>
   Maybe (TemporalConstraint T.Text) ->
   Ap (Either s) (Maybe (Doc ann))
 tempConstr2doc = traverse go
-  {-
-    Note that traverse is effectively an effectful fmap, meaning that the
-    function used for traversal can throw exceptions, which will short-circuit
-    traverse.
-  -}
   where
+    {-
+      Note that traverse is effectively an effectful fmap, meaning that the
+      function used for traversal can throw exceptions, which will short-circuit
+      traverse.
+    -}
+
     -- go :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
     go
       ( TemporalConstraint
@@ -361,7 +401,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
   The standalone deriving via thing below enables (Ap m) to inherit the
   MonadError instance of m should m also be a MonadError.
 
-  TODO: 
+  TODO:
   Note that for (m = Either s), the monoid structure of (Ap m a) is
   a bit stupid in that Lefts are left-absorbing under (<>), that is
     Ap (Left x) <> Ap _ = Ap (Left x)
@@ -389,7 +429,6 @@ infixl 0 |$>
 
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = (<&>)
-
 {-# INLINE (|$>) #-}
 
 show2text :: Show a => a -> T.Text

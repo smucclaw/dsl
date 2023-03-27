@@ -21,7 +21,7 @@ import Control.Monad (forM_)
 
 main :: IO ()
 main = do
-  orgMain
+  -- orgMain -- extract and rewrite org file. commented out because this was a one-time thing
   let mypolicy = mkPolicy policyTemplate2020 -- the customer bought a policy in 2020
                  pa        -- they chose plan A out of A--F
                  (Just ()) -- yes they wanted the supplementary EN plan
@@ -29,12 +29,12 @@ main = do
   putStrLn "* the customer has purchased this policy"
   printHS mypolicy
   forM_ [exampleSc1, exampleSc2] $ \sc -> do
-    putStrLn "* how much is claimable under this scenario?"
+    putStrLn "** here's a scenario, how much is claimable?"
     printHS sc
-    putStrLn $ "** under benefit NQQ, sum assured is " ++ show (piNQQ mypolicy)
+    putStrLn $ "*** under benefit NQQ, sum assured is " ++ show (piNQQ mypolicy)
     putStrLn "the modifiers are"
     printHS $ pmodaf $ ptNQQ policyTemplate2020
-    putStrLn $ "** result: " ++ show (claimable policyTemplate2020 mypolicy sc piNQQ (pmodaf . ptNQQ))
+    putStrLn $ "*** result: " ++ show (claimable policyTemplate2020 mypolicy sc piNQQ (pmodaf . ptNQQ))
 
 -- | helper function to format Haskell source for org-mode
 srcHS :: String -> String

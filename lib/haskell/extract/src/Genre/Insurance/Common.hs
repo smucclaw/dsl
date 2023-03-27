@@ -84,4 +84,4 @@ evalMods :: Scenario -> [Modifier Scenario] -> Rational
 evalMods sc mods =
   let coefficients = catMaybes [ evalMod sc md | md <- mods ]
   in product coefficients
-                     
+

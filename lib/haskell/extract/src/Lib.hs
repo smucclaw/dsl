@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternGuards #-}
 
 {-| This library is intended for parsing and extracting, or at least reformatting, natural language input, in the direction of L4.
 -}
@@ -28,7 +29,7 @@ processNode :: Node -> Maybe Node
 processNode n = pure $
                 n { nTags = ["moo"]
                   , nChildren = ChildText (TextLine { tlIndent = 0
-                                                    , tlText = srcL4 "moo"
+                                                    , tlText = srcL4 ";;,//,§,"
                                                     , tlLineNum = Nothing
                                                     } )
                                 `afterPropertiesDrawer`
@@ -61,8 +62,8 @@ tl2l4 :: String -> [(MyTag, String)]
 tl2l4 tlt
   -- recurse to process multiple sentences within a single input
   | length (sentences tlt) > 1
-    && concatMap tl2l4 (sentences tlt) /= [] =
-       concatMap tl2l4 (sentences tlt)
+  , concatMap tl2l4 (sentences tlt) /= []
+  = concatMap tl2l4 (sentences tlt)
 
   -- a MEANS rule
   | "means" `elem` words tlt = maybeToList $ do

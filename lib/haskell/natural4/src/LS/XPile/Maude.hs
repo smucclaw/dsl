@@ -135,7 +135,7 @@ rules2doc rules =
     startRule =
       rules
         |> findWithErrMsg isRegRule "No regulative rule found."
-          |$> regRule2startRule
+        |$> regRule2startRule
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
@@ -436,11 +436,11 @@ infixl 0 |$>
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = flip fmap
 
-{-# NOINLINE (|$>) #-}
+-- {-# NOINLINE (|$>) #-}
 
-{-# RULES
-  "fmap"    forall f g x. x |$> f |$> g = g . f <$> x
-#-}
+-- {-# RULES
+--   "fmap"    forall f g x. x |$> f |$> g = g . f <$> x
+-- #-}
 
 show2text :: Show a => a -> T.Text
 show2text x = x |> show |> T.pack

@@ -354,8 +354,8 @@ henceLest2doc ::
   Ap (Either (Doc ann)) (Maybe (Doc ann))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
-    (RuleAlias clause) ->
-      pure $ viaShow henceLest <+> multiExprs2qid clause
+    (RuleAlias clause') ->
+      pure $ viaShow henceLest <+> multiExprs2qid clause'
     _  -> throwDefaultErr
 
 -- Common utilities

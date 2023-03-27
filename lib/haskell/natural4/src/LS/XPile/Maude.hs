@@ -124,28 +124,22 @@ rules2doc rules =
     -- In such cases, we simply return mempty, the empty doc.
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
-      rules
-        |> Fold.toList
+      rules'
         |> mapMaybe rule2maybeRegRuleLabel
         |> take 1
-        |$> pretty
-        |$> pure
+        |$> pure . ("START" <+>) . text2qid
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules |> Fold.toList |$> rule2doc
+    transpiledRules = rules' |$> rule2doc
 
-    x <.> y = mconcat [x, ",", line, line, y]
+    rules' = Fold.toList rules
 
     rule2maybeRegRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
       Just ruleName
     rule2maybeRegRuleLabel _ = Nothing
 
-    isLabelledRegRule Regulative {rlabel = Just _} = True
-    isLabelledRegRule _ = False
-
-    regRule2startRule Regulative {rlabel = Just (_, _, ruleName)} =
-      "START" <+> text2qid ruleName
+    x <.> y = mconcat [x, ",", line, line, y]
 
 -- Main function that transpiles individual rules.
 rule2doc :: Rule -> Ap (Either (Doc ann)) (Doc ann)

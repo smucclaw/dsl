@@ -293,29 +293,26 @@ tempConstr2doc ::
   IsString s =>
   Maybe (TemporalConstraint T.Text) ->
   Ap (Either s) (Maybe (Doc ann))
-tempConstr2doc = traverse go
-  where
-    {-
-      Note that traverse is effectively an effectful fmap, meaning that the
-      function used for traversal can throw exceptions, which will short-circuit
-      traverse.
-    -}
+tempConstr2doc = traverse $ \case
+  {-
+    Note that traverse is effectively an effectful fmap, meaning that the
+    function used for traversal can throw exceptions, which will short-circuit
+    traverse.
+  -}
+  -- _ :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
+  ( TemporalConstraint
+      tComparison@((`elem` [TOn, TBefore]) -> True)
+      (Just n)
+      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+    ) ->
+      [tComparison', n', "DAY"] |> hsep |> pure
+      where
+        n' = pretty n
+        tComparison' = tComparison2doc tComparison
+        tComparison2doc TOn = "ON"
+        tComparison2doc TBefore = "WITHIN"
 
-    -- go :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
-    go
-      ( TemporalConstraint
-          tComparison@((`elem` [TOn, TBefore]) -> True)
-          (Just n)
-          (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
-        ) =
-        [tComparison', n', "DAY"] |> hsep |> pure
-        where
-          n' = pretty n
-          tComparison' = tComparison2doc tComparison
-          tComparison2doc TOn = "ON"
-          tComparison2doc TBefore = "WITHIN"
-
-    go _ = throwDefaultErr
+  _ -> throwDefaultErr
 
 multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid

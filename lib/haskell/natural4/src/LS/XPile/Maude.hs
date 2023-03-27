@@ -255,17 +255,17 @@ rkeywordDeonticActorAction2doc = \case
     } -> go rkeyword actor
 
   DeonticAction
-    { deontic = deon@((`elem` [DMust, DMay, DShant]) -> True),
+    { deontic = deontic@((`elem` [DMust, DMay, DShant]) -> True),
       action
-    } -> go deon action
+    } -> go deontic action
 
   _ -> throwDefaultErr
   where
-    go rkeywordDeon ((actorAction, _) :| _) =
-      pure $ rkeywordDeon' <+> actorAction'
+    go rkeywordDeontic ((actorAction, _) :| _) =
+      pure $ rkeywordDeontic' <+> actorAction'
       where
-        rkeywordDeon' =
-          rkeywordDeon |> show2text |> T.tail |> T.toUpper |> pretty
+        rkeywordDeontic' =
+          rkeywordDeontic |> show2text |> T.tail |> T.toUpper |> pretty
         actorAction' = multiExprs2qid actorAction
 
 --     rkeywordDeon2doc (RKeyword x@((`elem` [REvery, RParty]) -> True)) =

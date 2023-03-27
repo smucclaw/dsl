@@ -17,6 +17,7 @@
 module LS.XPile.Maude (rules2maudeStr) where
 
 import AnyAll (BoolStruct (All, Leaf))
+import Data.Maybe (mapMaybe)
 import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Foldable qualified as Fold
@@ -25,7 +26,7 @@ import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
--- import Data.Traversable (mapAccumL)
+import Data.Traversable (for)
 -- import Debug.Trace
 import Flow ((.>), (|>))
 import LS.Rule
@@ -107,15 +108,14 @@ rules2maudeStr rules = rules |> rules2doc |> show
 -}
 rules2doc :: Foldable t => t Rule -> Doc ann
 rules2doc rules =
-  (startRule : transpiledRules)
+  [startRule, transpiledRules]
+    |> mconcat
     -- TODO:
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
     -- \|> wither swallowErrs
-    |> ( coerce ::
-           [Ap (Either (Doc ann)) (Doc ann)] -> [Either (Doc ann) (Doc ann)]
-       )
+    |> (coerce :: [Ap (Either a) a] -> [Either a a])
     |> rights
     |> concatWith (<.>)
   where
@@ -125,8 +125,11 @@ rules2doc rules =
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
       rules
-        |> findWithErrMsg isRegRule "No regulative rule found."
-        |$> regRule2startRule
+        |> Fold.toList
+        |> mapMaybe rule2maybeRegRuleLabel
+        |> take 1
+        |$> pretty
+        |$> pure
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
@@ -134,8 +137,12 @@ rules2doc rules =
 
     x <.> y = mconcat [x, ",", line, line, y]
 
-    isRegRule Regulative {} = True
-    isRegRule _ = False
+    rule2maybeRegRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
+      Just ruleName
+    rule2maybeRegRuleLabel _ = Nothing
+
+    isLabelledRegRule Regulative {rlabel = Just _} = True
+    isLabelledRegRule _ = False
 
     regRule2startRule Regulative {rlabel = Just (_, _, ruleName)} =
       "START" <+> text2qid ruleName
@@ -168,12 +175,11 @@ rule2doc
     [ruleName', rkeywordActorDeonticAction, deadline, henceLestClauses]
       -- Sequence to propagate errors that occured while processing
       -- rkeyword actor, deontic action, deadline, and henceLestClauses.
-      -- |> (sequenceA :: [Ap (Either s) [Doc ann]] -> Ap (Either s) [[Doc ann]])
       |> sequenceA
       |$> mconcat
       |$> vcat
     where
-      ruleName' = pure [ "RULE" <+> text2qid ruleName ]
+      ruleName' = pure ["RULE" <+> text2qid ruleName]
       rkeywordActorDeonticAction =
         [RKeywordActor rkeyword actor, DeonticAction deontic action]
           |> traverse rkeywordDeonticActorAction2doc
@@ -292,12 +298,12 @@ tempConstr2doc = traverse $ \case
       (Just n)
       (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) ->
-      [tComparison', n', "DAY"] |> hsep |> pure
+      pure $ hsep [tComparison', n', "DAY"]
       where
         n' = pretty n
-        tComparison' = tComparison2doc tComparison
-        tComparison2doc TOn = "ON"
-        tComparison2doc TBefore = "WITHIN"
+        tComparison' = case tComparison of
+          TOn -> "ON"
+          TBefore -> "WITHIN"
 
   _ -> throwDefaultErr
 
@@ -354,12 +360,10 @@ henceLest2doc ::
   HenceLestClause ->
   Ap (Either (Doc ann)) (Maybe (Doc ann))
 henceLest2doc HenceLestClause {henceLest, clause} =
-  traverse clause2doc clause
-  where
-    -- clause2doc :: Rule -> Ap (Either s) (Doc ann)
-    clause2doc (RuleAlias clause) =
+   for clause $ \case
+    (RuleAlias clause) ->
       pure $ viaShow henceLest <+> multiExprs2qid clause
-    clause2doc _ = throwDefaultErr
+    _  -> throwDefaultErr
 
 -- Common utilities
 
@@ -402,10 +406,6 @@ henceLest2doc HenceLestClause {henceLest, clause} =
 --   m :: Type -> Type
 --   instance
 --     MonadError s m => MonadError s (Ap m)
-
-findWithErrMsg :: Foldable t => (a -> Bool) -> e -> t a -> Ap (Either e) a
-findWithErrMsg pred err xs =
-  xs |> Fold.find pred |> maybe (Left err) Right |> coerce
 
 -- throwDefaultErr :: (IsString s, MonadError s m) => m a
 -- throwDefaultErr = throwError "Not supported."

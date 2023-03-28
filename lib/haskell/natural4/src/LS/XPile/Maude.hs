@@ -91,7 +91,7 @@ import Witherable (wither)
 --     symtab = []
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
-rules2maudeStr :: Foldable t => t Rule -> String
+rules2maudeStr :: [Rule] -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
 {-
@@ -106,7 +106,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
   This function happily swallows up rules that don't transpile properly and
   only outputs those that do to plaintext.
 -}
-rules2doc :: Foldable t => t Rule -> Doc ann
+rules2doc :: forall ann. [Rule] -> Doc ann
 rules2doc rules =
   [startRule, transpiledRules]
     |> mconcat
@@ -115,7 +115,7 @@ rules2doc rules =
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
     -- \|> wither swallowErrs
-    |> (coerce :: [Ap (Either a) a] -> [Either a a])
+    |> (coerce :: [Ap (Either a) b] -> [Either a b])
     |> rights
     |> concatWith (<.>)
   where
@@ -124,15 +124,13 @@ rules2doc rules =
     -- In such cases, we simply return mempty, the empty doc.
     -- Otherwise, we turn it into a quoted symbol and prepend START.
     startRule =
-      rules'
+      rules
         |> mapMaybe rule2maybeStartRuleLabel
         |> take 1
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules' |$> rule2doc
-
-    rules' = Fold.toList rules
+    transpiledRules = rules |$> rule2doc
 
     rule2maybeStartRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
       "START" <+> text2qid ruleName |> pure |> Just
@@ -141,7 +139,7 @@ rules2doc rules =
     x <.> y = mconcat [x, ",", line, line, y]
 
 -- Main function that transpiles individual rules.
-rule2doc :: Rule -> Ap (Either (Doc ann)) (Doc ann)
+rule2doc :: forall ann1 ann2. Rule -> Ap (Either (Doc ann1)) (Doc ann2)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -216,7 +214,7 @@ rule2doc _ = throwDefaultErr
 -- traverseAndremoveEmptyDocs f docs =
 --   docs |> traverse f |$> Wither.filter (not . null . show)
 
-text2qid :: T.Text -> Doc ann
+text2qid :: forall ann. T.Text -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 -- data RKeywordDeon where
@@ -243,7 +241,7 @@ data RKeywordActorDeonticAction where
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
 rkeywordDeonticActorAction2doc ::
-  RKeywordActorDeonticAction -> Ap (Either (Doc ann)) (Doc ann)
+  RKeywordActorDeonticAction -> Ap (Either (Doc ann1)) (Doc ann2)
 rkeywordDeonticActorAction2doc = \case
   RKeywordActor
     { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
@@ -261,7 +259,7 @@ rkeywordDeonticActorAction2doc = \case
       pure $ rkeywordDeontic' <+> actorAction'
       where
         rkeywordDeontic' =
-          rkeywordDeontic |> show2text |> T.tail |> T.toUpper |> pretty
+          rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper |> pretty
         actorAction' = multiExprs2qid actorAction
 
 --     rkeywordDeon2doc (RKeyword x@((`elem` [REvery, RParty]) -> True)) =
@@ -277,8 +275,9 @@ rkeywordDeonticActorAction2doc = \case
 --     paramText' = mtExprs |> multiExprs2qid |> pure
 
 tempConstr2doc ::
+  forall ann1 ann2.
   Maybe (TemporalConstraint T.Text) ->
-  Ap (Either (Doc ann)) (Maybe (Doc ann))
+  Ap (Either (Doc ann1)) (Maybe (Doc ann2))
 tempConstr2doc = traverse $ \case
   {-
     Note that traverse is effectively an effectful fmap, meaning that the
@@ -300,10 +299,10 @@ tempConstr2doc = traverse $ \case
 
   _ -> throwDefaultErr
 
-multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
+multiExprs2qid :: forall ann t. Foldable t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
-nameDetails2means :: MultiTerm -> [MultiTerm] -> Doc ann
+nameDetails2means :: forall ann. MultiTerm -> [MultiTerm] -> Doc ann
 nameDetails2means name details =
   hsep [name', "MEANS", details']
   where
@@ -350,8 +349,9 @@ data HenceLestClause where
   deriving (Eq, Ord, Show)
 
 henceLest2doc ::
+  forall ann1 ann2.
   HenceLestClause ->
-  Ap (Either (Doc ann)) (Maybe (Doc ann))
+  Ap (Either (Doc ann1)) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
     (RuleAlias clause') ->
@@ -403,7 +403,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
 -- throwDefaultErr :: (IsString s, MonadError s m) => m a
 -- throwDefaultErr = throwError "Not supported."
 
-throwDefaultErr :: Ap (Either (Doc ann)) a
+throwDefaultErr :: forall ann a. Ap (Either (Doc ann)) a
 throwDefaultErr = Ap $ Left "Not supported."
 
 infixl 0 |$>
@@ -416,9 +416,6 @@ infixl 0 |$>
 -- {-# RULES
 --   "fmap"    forall f g x. x |$> f |$> g = g . f <$> x
 -- #-}
-
-show2text :: Show a => a -> T.Text
-show2text x = x |> show |> T.pack
 
 -- {-# RULES
 --   "|$>" forall f g xs. xs |$> f |$> g = xs |$> (g . f)

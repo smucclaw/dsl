@@ -106,7 +106,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
   This function happily swallows up rules that don't transpile properly and
   only outputs those that do to plaintext.
 -}
-rules2doc :: forall ann. [Rule] -> Doc ann
+rules2doc :: [Rule] -> Doc ann
 rules2doc rules =
   [startRule, transpiledRules]
     |> mconcat
@@ -139,7 +139,7 @@ rules2doc rules =
     x <.> y = mconcat [x, ",", line, line, y]
 
 -- Main function that transpiles individual rules.
-rule2doc :: forall ann1 ann2. Rule -> Ap (Either (Doc ann1)) (Doc ann2)
+rule2doc :: Rule -> Ap (Either (Doc ann1)) (Doc ann2)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -214,7 +214,7 @@ rule2doc _ = throwDefaultErr
 -- traverseAndremoveEmptyDocs f docs =
 --   docs |> traverse f |$> Wither.filter (not . null . show)
 
-text2qid :: forall ann. T.Text -> Doc ann
+text2qid :: T.Text -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
 -- data RKeywordDeon where
@@ -299,10 +299,10 @@ tempConstr2doc = traverse $ \case
 
   _ -> throwDefaultErr
 
-multiExprs2qid :: forall ann t. Foldable t => t MTExpr -> Doc ann
+multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
-nameDetails2means :: forall ann. MultiTerm -> [MultiTerm] -> Doc ann
+nameDetails2means :: MultiTerm -> [MultiTerm] -> Doc ann
 nameDetails2means name details =
   hsep [name', "MEANS", details']
   where
@@ -349,7 +349,6 @@ data HenceLestClause where
   deriving (Eq, Ord, Show)
 
 henceLest2doc ::
-  forall ann1 ann2.
   HenceLestClause ->
   Ap (Either (Doc ann1)) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
@@ -359,14 +358,6 @@ henceLest2doc HenceLestClause {henceLest, clause} =
     _  -> throwDefaultErr
 
 -- Common utilities
-
-{-
-  Error monad, polymorphic over:
-  - a type variable (s :: Type) such that IsString s.
-  - a type constructor (m :: Type -> Type) with the structure of a monad.
--}
--- type MonadErrorIsString s m = (IsString s, MonadError s m)
-
 {-
   The idea is that given a (MonadError s m) and a monoid (a :: Type), we want
   to operate on (m a :: Type) as if it were also a monoid.
@@ -400,10 +391,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
 --   instance
 --     MonadError s m => MonadError s (Ap m)
 
--- throwDefaultErr :: (IsString s, MonadError s m) => m a
--- throwDefaultErr = throwError "Not supported."
-
-throwDefaultErr :: forall ann a. Ap (Either (Doc ann)) a
+throwDefaultErr :: Ap (Either (Doc ann)) a
 throwDefaultErr = Ap $ Left "Not supported."
 
 infixl 0 |$>

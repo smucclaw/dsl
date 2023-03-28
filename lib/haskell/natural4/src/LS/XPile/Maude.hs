@@ -298,10 +298,13 @@ nameDetails2means name details =
         |$> multiExprs2qid
         |> intersperse "AND"
         |> hsep
-        |> parenthesizeIf (length details > 1)
+        |> parenthesizeIf (lengthMoreThanOne details)
 
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf False x = x
+
+    lengthMoreThanOne (_ : _ : _) = True
+    lengthMoreThanOne _ = False
 
 -- Auxiliary stuff for handling HENCE/LEST clauses.
 

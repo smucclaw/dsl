@@ -275,7 +275,6 @@ rkeywordDeonticActorAction2doc = \case
 --     paramText' = mtExprs |> multiExprs2qid |> pure
 
 tempConstr2doc ::
-  forall ann1 ann2.
   Maybe (TemporalConstraint T.Text) ->
   Ap (Either (Doc ann1)) (Maybe (Doc ann2))
 tempConstr2doc = traverse $ \case

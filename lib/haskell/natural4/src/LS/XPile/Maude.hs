@@ -208,12 +208,6 @@ rule2doc
 
 rule2doc _ = throwDefaultErr
 
--- traverseAndremoveEmptyDocs ::
---   (Traversable t, Applicative f, Wither.Filterable t, Show b) =>
---   (a -> f b) -> t a -> f (t b)
--- traverseAndremoveEmptyDocs f docs =
---   docs |> traverse f |$> Wither.filter (not . null . show)
-
 text2qid :: T.Text -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
@@ -261,13 +255,6 @@ rkeywordDeonticActorAction2doc = \case
         rkeywordDeontic' =
           rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper |> pretty
         actorAction' = multiExprs2qid actorAction
-
---     rkeywordDeon2doc (RKeyword x@((`elem` [REvery, RParty]) -> True)) =
---       go x
---     rkeywordDeon2doc (Deon x@((`elem` [DMust, DMay, DShant]) -> True)) =
---       go x
---     rkeywordDeon2doc _ = throwDefaultErr
---     go x = x |> show2text |> T.tail |> T.toUpper |> pretty |> pure
 
 --     -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
 --     -- that we have to use toList to convert it to a multi term before passing

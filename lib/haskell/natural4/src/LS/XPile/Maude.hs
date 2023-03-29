@@ -167,8 +167,7 @@ rule2doc
       -- Sequence to propagate errors that occured while processing
       -- rkeyword actor, deontic action, deadline, and henceLestClauses.
       |> sequenceA
-      |$> mconcat
-      |$> vcat
+      |$> mconcat .> vcat
     where
       ruleName' = pure ["RULE" <+> text2qid ruleName]
       rkeywordActorDeonticAction =
@@ -256,11 +255,6 @@ rkeywordDeonticActorAction2doc = \case
           rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper |> pretty
         actorAction' = multiExprs2qid actorAction
 
---     -- Note that mtExprs is a (NonEmpty MTExpr) but MultiTerm = [MTExpr] so
---     -- that we have to use toList to convert it to a multi term before passing
---     -- it to multiExprs2qid.
---     paramText' = mtExprs |> multiExprs2qid |> pure
-
 tempConstr2doc ::
   Maybe (TemporalConstraint T.Text) ->
   Ap (Either (Doc ann1)) (Maybe (Doc ann2))
@@ -285,6 +279,13 @@ tempConstr2doc = traverse $ \case
 
   _ -> throwDefaultErr
 
+{-
+  Note that (mt2text :: MultiTerm -> Text) and that Multiterm = [MTExpr], but
+  sometimes we want to apply this function not just to MultiTerm but to
+  NonEmpty MTExpr.
+  Hence, in the input type, we use (t MTExpr) with t being a Foldable, and then
+  Foldable.toList in the function body.
+-}
 multiExprs2qid :: Foldable t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
@@ -342,8 +343,11 @@ henceLest2doc ::
   Ap (Either (Doc ann1)) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
-    (RuleAlias clause') ->
-      pure $ viaShow henceLest <+> multiExprs2qid clause'
+    (RuleAlias clause) ->
+      pure $ henceLest' <+> clause'
+      where
+        henceLest' = viaShow henceLest
+        clause' = multiExprs2qid clause
     _  -> throwDefaultErr
 
 -- Common utilities

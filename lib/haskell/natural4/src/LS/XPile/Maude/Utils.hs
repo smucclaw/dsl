@@ -12,13 +12,13 @@ module LS.XPile.Maude.Utils
   )
 where
 
+import Data.Coerce (coerce)
 import Data.Foldable qualified as Fold
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import Prettyprinter (Doc, Pretty (pretty))
-import Data.Aeson.Encoding (text)
 
 -- Common utilities
 {-
@@ -55,7 +55,8 @@ import Data.Aeson.Encoding (text)
 --     MonadError s m => MonadError s (Ap m)
 
 throwDefaultErr :: Ap (Either (Doc ann)) a
-throwDefaultErr = Ap $ Left "Not supported."
+throwDefaultErr =
+  Left "Not supported." |> (coerce :: Either a b -> Ap (Either a) b)
 
 infixl 0 |$>
 

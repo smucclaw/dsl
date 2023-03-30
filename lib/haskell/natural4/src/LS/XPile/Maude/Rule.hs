@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -18,25 +19,35 @@ where
 
 import AnyAll (BoolStruct (All, Leaf))
 import Data.Foldable qualified as Fold
+import Data.List (intersperse)
 import Data.Monoid (Ap (Ap))
 import Flow ((.>), (|>))
-import LS.Types
-    ( HornClause(..),
-      MultiTerm,
-      MyToken(Means),
-      RPRel(RPis),
-      RelationalPredicate(RPBoolStructR, RPMT) )
 import LS.Rule (Rule (..), rkeyword)
+import LS.Types
+  ( HornClause (..),
+    MultiTerm,
+    MyToken (Means),
+    RPRel (RPis),
+    RelationalPredicate (RPBoolStructR, RPMT),
+  )
+import LS.XPile.Maude.HenceLest
+  ( HenceLest (..),
+    HenceLestClause (..),
+    henceLest2doc,
+  )
 import LS.XPile.Maude.RkeywordDeonticActorAction
   ( RKeywordActorDeonticAction (..),
     rkeywordDeonticActorAction2doc,
   )
-import LS.XPile.Maude.Utils (text2qid, (|$>), throwDefaultErr, multiExprs2qid)
-import Prettyprinter (Doc, vcat, (<+>), hsep)
-import Witherable (wither)
 import LS.XPile.Maude.TempConstr (tempConstr2doc)
-import LS.XPile.Maude.HenceLest (HenceLestClause(..), HenceLest (..), henceLest2doc)
-import Data.List (intersperse)
+import LS.XPile.Maude.Utils
+  ( multiExprs2qid,
+    text2qid,
+    throwDefaultErr,
+    (|$>),
+  )
+import Prettyprinter (Doc, hsep, vcat, (<+>))
+import Witherable (wither)
 
 {-
   Based on experiments being run here:

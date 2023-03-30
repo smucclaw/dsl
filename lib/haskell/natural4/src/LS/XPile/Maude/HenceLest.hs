@@ -43,6 +43,7 @@ henceLest2doc HenceLestClause {henceLest, clause} =
       where
         henceLest' = viaShow henceLest
         clause' = multiExprs2qid clause
+
     _  -> throwDefaultErr
 
 {-

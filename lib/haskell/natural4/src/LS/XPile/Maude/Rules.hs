@@ -28,13 +28,11 @@ rules2maudeStr rules = rules |> rules2doc |> show
 -}
 rules2doc :: [Rule] -> Doc ann
 rules2doc rules =
-  [startRule, transpiledRules]
-    |> mconcat
+  startRule <> transpiledRules
     -- TODO:
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    -- \|> wither swallowErrs
     |> (coerce :: [Ap (Either a) b] -> [Either a b])
     |> rights
     |> concatWith (<.>)

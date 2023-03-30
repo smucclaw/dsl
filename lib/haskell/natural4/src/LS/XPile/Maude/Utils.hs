@@ -4,7 +4,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module LS.XPile.Maude.Utils where
+module LS.XPile.Maude.Utils
+  ( (|$>),
+    throwDefaultErr,
+    multiExprs2qid,
+    text2qid,
+  )
+where
 
 import Data.Foldable qualified as Fold
 import Data.Monoid (Ap (Ap))
@@ -12,6 +18,7 @@ import Data.Text qualified as T
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import Prettyprinter (Doc, Pretty (pretty))
+import Data.Aeson.Encoding (text)
 
 -- Common utilities
 {-

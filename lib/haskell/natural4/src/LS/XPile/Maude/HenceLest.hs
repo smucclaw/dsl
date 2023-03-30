@@ -2,7 +2,6 @@
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module LS.XPile.Maude.HenceLest

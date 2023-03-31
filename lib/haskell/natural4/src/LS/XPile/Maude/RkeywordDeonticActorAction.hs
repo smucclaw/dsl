@@ -69,10 +69,10 @@ deonticAction2doc
 deonticAction2doc _ = throwDefaultErr
 
 rkeywordDeonticActorAction2doc ::
-  (Foldable t, Show a, Applicative f) =>
+  (Foldable t, Show a) =>
   a ->
   NonEmpty (t MTExpr, b) ->
-  f (Doc ann)
+  Ap (Validate (Doc ann1)) (Doc ann2)
 rkeywordDeonticActorAction2doc rkeywordDeontic ((actorAction, _) :| _) =
   pure $ rkeywordDeontic' <+> actorAction'
   where

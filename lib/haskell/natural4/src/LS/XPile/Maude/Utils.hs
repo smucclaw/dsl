@@ -16,9 +16,11 @@ import Data.Coerce (coerce)
 import Data.Foldable qualified as Fold
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
+import Data.Validation (Validation (Failure))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import Prettyprinter (Doc, Pretty (pretty))
+import Control.Exception (throw)
 
 -- Common utilities
 {-
@@ -54,9 +56,10 @@ import Prettyprinter (Doc, Pretty (pretty))
 --   instance
 --     MonadError s m => MonadError s (Ap m)
 
-throwDefaultErr :: Ap (Either (Doc ann)) a
+throwDefaultErr :: Ap (Validation (Doc ann)) a
+  -- Ap (Either (Doc ann)) a
 throwDefaultErr =
-  Left "Not supported." |> (coerce :: Either a b -> Ap (Either a) b)
+  Failure "Not supported." |> (coerce :: Validation a b -> Ap (Validation a) b)
 
 infixl 0 |$>
 

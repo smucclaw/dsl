@@ -12,6 +12,7 @@ import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Maybe (mapMaybe)
 import Data.Monoid (Ap (Ap))
+import Data.Validation (Validation, toEither)
 import Flow ((|>))
 import LS.Rule (Rule (..))
 import LS.XPile.Maude.Rule (rule2doc)
@@ -33,7 +34,8 @@ rules2doc rules =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |> (coerce :: [Ap (Either a) b] -> [Either a b])
+    |> (coerce :: [Ap (Validation a) b] -> [Validation a b])
+    |$> toEither
     |> rights
     |> concatWith (<.>)
   where

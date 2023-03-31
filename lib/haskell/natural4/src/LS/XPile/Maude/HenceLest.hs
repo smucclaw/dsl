@@ -16,6 +16,7 @@ import Data.Monoid (Ap)
 import Prettyprinter (Doc, viaShow, (<+>))
 import Data.Traversable (for)
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
+import Data.Validation (Validation)
 
 data HenceLest where
   HENCE :: HenceLest
@@ -35,7 +36,7 @@ data HenceLestClause where
 
 henceLest2doc ::
   HenceLestClause ->
-  Ap (Either (Doc ann1)) (Maybe (Doc ann2))
+  Ap (Validation (Doc ann1)) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
     (RuleAlias clause) ->

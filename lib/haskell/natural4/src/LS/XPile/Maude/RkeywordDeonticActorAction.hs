@@ -24,6 +24,7 @@ import LS.Types
   )
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, Pretty (pretty), (<+>))
+import Data.Validation (Validation)
 
 data RkeywordActor where
   RkeywordActor ::
@@ -38,7 +39,7 @@ data RkeywordActor where
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
 rkeywordActor2doc ::
-  RkeywordActor -> Ap (Either (Doc ann1)) (Doc ann2)
+  RkeywordActor -> Ap (Validation (Doc ann1)) (Doc ann2)
 rkeywordActor2doc
   RkeywordActor
     { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
@@ -57,7 +58,7 @@ data DeonticAction where
   deriving (Eq, Ord, Show)
 
 deonticAction2doc ::
-  DeonticAction -> Ap (Either (Doc ann1)) (Doc ann2)
+  DeonticAction -> Ap (Validation (Doc ann1)) (Doc ann2)
 deonticAction2doc
   DeonticAction
     { deontic = deontic@((`elem` [DMust, DMay, DShant]) -> True),

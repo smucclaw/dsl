@@ -13,6 +13,7 @@ where
 
 import Data.Monoid (Ap)
 import Data.Text qualified as T
+import Data.Validation (Validation)
 import Flow ((.>))
 import LS.Types
   ( TComparison (TBefore, TOn),
@@ -23,7 +24,7 @@ import Prettyprinter (Doc, Pretty (pretty), hsep)
 
 tempConstr2doc ::
   Maybe (TemporalConstraint T.Text) ->
-  Ap (Either (Doc ann1)) (Maybe (Doc ann2))
+  Ap (Validation (Doc ann1)) (Maybe (Doc ann2))
 tempConstr2doc = traverse $ \case
   {-
     Note that traverse is effectively an effectful fmap, meaning that the

@@ -21,6 +21,7 @@ import AnyAll (BoolStruct (All, Leaf))
 import Data.Foldable qualified as Fold
 import Data.List (intersperse)
 import Data.Monoid (Ap (Ap))
+import Data.Validation (Validation)
 import Flow ((.>), (|>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
@@ -75,7 +76,7 @@ import Witherable (wither)
 --     symtab = []
 
 -- Main function that transpiles individual rules.
-rule2doc :: Rule -> Ap (Either (Doc ann1)) (Doc ann2)
+rule2doc :: Rule -> Ap (Validation (Doc ann1)) (Doc ann2)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),
@@ -102,7 +103,7 @@ rule2doc
       ruleActorAction <> deadline <> henceLestClauses
         |$> vcat
     where
-      ruleActorAction = ruleName' <> rkeywordActor <> deonticAction |$> pure
+      ruleActorAction = sequenceA [ruleName', rkeywordActor, deonticAction]
       ruleName' = pure $ "RULE" <+> text2qid ruleName
       rkeywordActor =
         RkeywordActor {rkeyword, actor} |> rkeywordActor2doc -- |$> pure

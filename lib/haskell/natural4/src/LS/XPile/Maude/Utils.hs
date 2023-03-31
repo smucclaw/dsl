@@ -1,65 +1,61 @@
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module LS.XPile.Maude.Utils
   ( (|$>),
     throwDefaultErr,
     multiExprs2qid,
     text2qid,
+    test
   )
 where
 
-import Data.Coerce (coerce)
+import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
 import Data.Foldable qualified as Fold
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
-import Data.Validation (Validation (Failure))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import Prettyprinter (Doc, Pretty (pretty))
-import Control.Exception (throw)
+import Data.Coerce (coerce)
 
--- Common utilities
 {-
-  The idea is that given a (MonadError s m) and a monoid (a :: Type), we want
-  to operate on (m a :: Type) as if it were also a monoid.
-  Here, we often take (m = Either (Doc ann)) and (a = Maybe (Doc ann)) and we
-  want to utilize the (<>) and mempty of (Maybe (Doc ann)), lifted up into
-  the Either.
+  The idea is that given a (MonadValidate e m) (say, Validate e) and a monoid
+  (a :: Type), we want to equip (m a :: Type) (ie Validate e m) with a monoid
+  structure that combines errors using the applicative operator <*> and
+  non-errorneous values (~ rights) using the monoid <> of a.
 
-  Suppose (m :: Type -> Type) is a type constructor and (a :: Type) is a monoid.
-  Then Data.Monoid defines (newtype Ap m a) which lifts the monoid structure of
-  a up into the applicative m.
-  More concretely, (Ap m :: Type -> Type) inherits both the applicative
-  structure of m and the monoid structure of its input type argument, with:
-  - (<>) = liftA2 (<>)
-  - mempty = pure mempty
-  Moreover, if m is also a monad, then (Ap m) also inherits this monad
-  structure.
-  The standalone deriving via thing below enables (Ap m) to inherit the
-  MonadError instance of m should m also be a MonadError.
+  We use the Ap newtype as defined in Data.Monoid for this.
+  Suppose (m :: Type -> Type) is an applicative type constructor and
+  (a :: Type) is a monoid.
+  (Ap m a) lifts the monoid structure of a up into the applicative m, so that
+  the <> operator of (Ap m a) behaves as a combination of <*> on m and <> on a.
 
-  TODO:
-  Note that for (m = Either s), the monoid structure of (Ap m a) is
-  a bit stupid in that Lefts are left-absorbing under (<>), that is
-    Ap (Left x) <> Ap _ = Ap (Left x)
-  Thus it may be better to use (m a) directly and manually define a monoid
-  structure for that rather than use (Ap m a).
+  In the case of m = Validate b, the <> op of
+    (Ap (Validate b) a) ~ Validate b a
+  combines errors using <*> and non-erroneous values using the <> of a.
 
-  See http://www.staff.city.ac.uk/~ross/papers/Applicative.pdf
+  Now, this standalone deriving via thing enables (Ap m) to inherit the
+  MonadValidate structure of m, so that we can refute (~ throwError)
+  directly into (Ap (Validate b) a) without needing to first refute into
+  (Validate b a) and then use an Ap constructor to lift it to the newtype Ap.
 -}
--- deriving via
---   m :: Type -> Type
---   instance
---     MonadError s m => MonadError s (Ap m)
+deriving via
+  m :: * -> *
+  instance
+    MonadValidate e m => MonadValidate e (Ap m)
 
-throwDefaultErr :: Ap (Validation (Doc ann)) a
-  -- Ap (Either (Doc ann)) a
-throwDefaultErr =
-  Failure "Not supported." |> (coerce :: Validation a b -> Ap (Validation a) b)
+throwDefaultErr :: Ap (Validate (Doc ann)) a
+throwDefaultErr = refute "Not supported."
 
 infixl 0 |$>
 
@@ -78,6 +74,13 @@ multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
 text2qid :: T.Text -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
+
+test :: Either (Doc ann) (Doc ann)
+test =
+  -- throwDefaultErr <> throwDefaultErr
+  pure "abc" <> pure "def"
+    |> (coerce :: Ap (Validate a) b -> Validate a b)
+    |> runValidate
 
 -- {-# NOINLINE (|$>) #-}
 

@@ -26,6 +26,7 @@ packages:
 extra-deps:
 - ../anyall
 - ../explainable
+- monad-validate-1.2.0.1
 
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)

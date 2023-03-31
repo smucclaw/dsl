@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: monad-validate-1.2.0.1@sha256:5a100da896f11ca4b7c123da85decbedeb46c37054a097f258ac911e715cb68d,2587
+    pantry-tree:
+      sha256: 034ee4de9765e38b763f5d73b236cc112205728e680cefbfe12d2882accc3264
+      size: 611
+  original:
+    hackage: monad-validate-1.2.0.1
+- completed:
     name: baby-l4
     pantry-tree:
       sha256: 4b74637dd2bfb13802a5bd3f4071ee1f57a8b524c64f3ce535b44a34be240284

@@ -18,10 +18,10 @@ module LS.XPile.Maude.Rule
 where
 
 import AnyAll (BoolStruct (All, Leaf))
+import Control.Monad.Validate (Validate)
 import Data.Foldable qualified as Fold
 import Data.List (intersperse)
 import Data.Monoid (Ap (Ap))
-import Data.Validation (Validation)
 import Flow ((.>), (|>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
@@ -76,7 +76,7 @@ import Witherable (wither)
 --     symtab = []
 
 -- Main function that transpiles individual rules.
-rule2doc :: Rule -> Ap (Validation (Doc ann1)) (Doc ann2)
+rule2doc :: Rule -> Ap (Validate (Doc ann1)) (Doc ann2)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),

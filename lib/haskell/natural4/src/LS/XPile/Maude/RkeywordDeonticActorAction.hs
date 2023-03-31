@@ -1,8 +1,11 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.RkeywordDeonticActorAction
@@ -17,14 +20,17 @@ import Control.Monad.Validate (Validate)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (Ap)
 import Data.Text qualified as T
+import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types
   ( Deontic (DMay, DMust, DShant),
+    MTExpr,
     ParamText,
-    RegKeywords (REvery, RParty), MTExpr,
+    RegKeywords (REvery, RParty),
   )
-import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
+import LS.XPile.Maude.Utils (IsList, multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, Pretty (pretty), (<+>))
+import Data.Type.Bool (type (||))
 
 data RkeywordActor where
   RkeywordActor ::
@@ -69,9 +75,9 @@ deonticAction2doc
 deonticAction2doc _ = throwDefaultErr
 
 rkeywordDeonticActorAction2doc ::
-  (Foldable t, Show a) =>
+  (Show a, (a == RegKeywords || a == Deontic) ~ True) =>
   a ->
-  NonEmpty (t MTExpr, b) ->
+  NonEmpty (NonEmpty MTExpr, b) ->
   Ap (Validate (Doc ann1)) (Doc ann2)
 rkeywordDeonticActorAction2doc rkeywordDeontic ((actorAction, _) :| _) =
   pure $ rkeywordDeontic' <+> actorAction'

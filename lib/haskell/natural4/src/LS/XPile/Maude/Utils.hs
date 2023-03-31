@@ -15,7 +15,6 @@ module LS.XPile.Maude.Utils
     throwDefaultErr,
     multiExprs2qid,
     text2qid,
-    test
   )
 where
 
@@ -75,12 +74,12 @@ multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 text2qid :: T.Text -> Doc ann
 text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
 
-test :: Either (Doc ann) (Doc ann)
-test =
-  -- throwDefaultErr <> throwDefaultErr
-  pure "abc" <> pure "def"
-    |> (coerce :: Ap (Validate a) b -> Validate a b)
-    |> runValidate
+-- test :: Either (Doc ann) (Doc ann)
+-- test =
+--   -- throwDefaultErr <> throwDefaultErr
+--   pure "abc" <> pure "def"
+--     |> (coerce :: Ap (Validate a) b -> Validate a b)
+--     |> runValidate
 
 -- {-# NOINLINE (|$>) #-}
 

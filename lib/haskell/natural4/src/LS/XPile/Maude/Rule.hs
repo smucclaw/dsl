@@ -36,9 +36,6 @@ import LS.XPile.Maude.HenceLest
     henceLest2doc,
   )
 import LS.XPile.Maude.RkeywordDeonticActorAction
-  ( RKeywordActorDeonticAction (..),
-    rkeywordDeonticActorAction2doc,
-  )
 import LS.XPile.Maude.TempConstr (tempConstr2doc)
 import LS.XPile.Maude.Utils
   ( multiExprs2qid,
@@ -102,16 +99,15 @@ rule2doc
       We continue along the happy path by removing empty docs and vcat'ing
       everything together.
     -}
-    [ruleName', rkeywordActorDeonticAction, deadline, henceLestClauses]
-      -- Sequence to propagate errors that occured while processing
-      -- rkeyword actor, deontic action, deadline, and henceLestClauses.
-      |> sequenceA
-      |$> mconcat .> vcat
+      ruleActorAction <> deadline <> henceLestClauses
+        |$> vcat
     where
-      ruleName' = pure ["RULE" <+> text2qid ruleName]
-      rkeywordActorDeonticAction =
-        [RKeywordActor rkeyword actor, DeonticAction deontic action]
-          |> traverse rkeywordDeonticActorAction2doc
+      ruleActorAction = ruleName' <> rkeywordActor <> deonticAction |$> pure
+      ruleName' = pure $ "RULE" <+> text2qid ruleName
+      rkeywordActor =
+        RkeywordActor {rkeyword, actor} |> rkeywordActor2doc -- |$> pure
+      deonticAction =
+        DeonticAction {deontic, action} |> deonticAction2doc -- |$> pure
 
       deadline = temporal |> tempConstr2doc |$> Fold.toList
 

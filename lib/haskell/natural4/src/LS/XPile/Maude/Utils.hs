@@ -28,11 +28,11 @@ import Data.Foldable qualified as Fold
 import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
-import Data.Type.Equality ( type (==) )
+import Data.Type.Bool (type (||))
+import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import Prettyprinter (Doc, Pretty (pretty))
-import Data.Type.Bool ( type (||) )
 
 {-
   The idea is that given a (Validate e :: Type -> Type) and a monoid

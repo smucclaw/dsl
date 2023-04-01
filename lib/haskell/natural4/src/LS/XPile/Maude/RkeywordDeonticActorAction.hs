@@ -20,6 +20,7 @@ import Control.Monad.Validate (Validate)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (Ap)
 import Data.Text qualified as T
+import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types
@@ -30,7 +31,6 @@ import LS.Types
   )
 import LS.XPile.Maude.Utils (IsList, multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, Pretty (pretty), (<+>))
-import Data.Type.Bool (type (||))
 
 data RkeywordActor where
   RkeywordActor ::

@@ -406,10 +406,11 @@ pRulesOnly = do
                *> manyIndentation (sameDepth (try pRule))
                <* optional dnl)
          )
+    <* semicolonBetweenRules
     <* eof
 
-semicolonBetweenRules :: Parser (Maybe MyToken)
-semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
+semicolonBetweenRules :: Parser [MyToken]
+semicolonBetweenRules = many (manyIndentation (Semicolon <$ some (pToken Semicolon)))
 
 pRules = pRulesOnly
 

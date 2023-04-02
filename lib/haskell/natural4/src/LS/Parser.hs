@@ -37,6 +37,7 @@ type MyBoolStruct = MyItem MultiTerm
 pBoolStruct :: Parser BoolStructT
 pBoolStruct = prePostParse pOtherVal
 
+-- | a boolstruct may carry optional labels -- see `AnyAll.Types.Label` for details. Here, we parse for pre-labels and post-labels
 prePostParse :: (Show a, PrependHead a) => Parser a -> Parser (AA.OptionallyLabeledBoolStruct a)
 prePostParse base = either fail pure . toBoolStruct =<< expr base
 
@@ -57,7 +58,8 @@ toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre
 toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pre ++ ") followed by negation (" ++ show (MyNot x) ++ ") is not allowed"
 
 
-
+-- | we build an expression parser on the primitives provided by the parser-combinators package.
+-- These parsers look for AnyAll Labels above and below a base expression.
 expr,exprIndent, term,termIndent, notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
 term p = termIndent p
@@ -174,9 +176,11 @@ plain p = MyLeaf <$> p
 
 ppp :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 ppp base = -- local (\rc -> rc { debug = True }) $
-  try noPrePost <|> try (withPrePost noPrePost) <|> withPreOnly noPrePost
+  try noPrePost <|>                  --          foo AND bar
+  try (withPrePost noPrePost) <|>    -- both     foo AND bar    are required
+  withPreOnly noPrePost              -- both     foo AND bar
   where
-    noPrePost = debugName "ppp inner" base
+    noPrePost = debugName "(noPrePost) ppp inner" base
 
 -- how many UnDeepers do we count between the end of this line and the start of the next (where, presumably, we get an OR)
 expectUnDeepers :: Parser Int

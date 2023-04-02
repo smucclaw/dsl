@@ -141,6 +141,7 @@ toToken "HOLDS" =  pure Holds
 
 -- regulative chains
 toToken "HENCE" = pure Hence
+toToken "THUS"  = pure Hence
 
 -- mutable state variables are modified by UPON THEN ELSE
 toToken     "THEN" = pure Then

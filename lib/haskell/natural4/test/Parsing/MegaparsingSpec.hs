@@ -254,7 +254,7 @@ spec = do
                           }
                         ]
 
-      let king_pays_singer = defaultReg
+      let king_pays_singer = srctest 1 1 $ defaultReg
                           { subj = mkLeafPT "King"
                           , rkeyword = RParty
                           , deontic = DMay
@@ -266,7 +266,7 @@ spec = do
       let king_pays_singer_eventually =
             king_pays_singer { temporal = Nothing }
 
-      let singer_must_pay = defaultReg
+      let singer_must_pay = srctest 1 1 $ defaultReg
                               { rkeyword = RParty
                               , subj = mkLeafPT "Singer"
                               , action = mkLeafPT "pay"
@@ -274,16 +274,15 @@ spec = do
                               }
 
 
-      let singer_chain = [ defaultReg
+      let singer_chain = [ srctest 1 1 $ defaultReg
                          { subj = mkLeafPT "person"
                          , who = Just $ All Nothing
                                  [ mkLeafR "walks"
                                  , mkLeafR "eats"
                                  ]
                          , cond = Just $ mkLeafR "the King wishes"
-                         , hence = Just king_pays_singer
-                         , lest  = Just singer_must_pay
-                         , srcref = Nothing
+                         , hence = Just (srctest 2 7 king_pays_singer)
+                         , lest  = Just (srctest 2 10 singer_must_pay)
                          } ]
 
       filetest "if-king-wishes-1" "should parse kingly permutations 1"
@@ -302,7 +301,7 @@ spec = do
         (parseR pRules) [singer_must_pay]
 
       filetest "chained-regulatives" "should parse chained-regulatives.csv"
-        (parseR pRules) (srcrow1' <$> srcrow_ <$> singer_chain)
+        (parseR pRules) (singer_chain)
 
       filetest "chained-regulatives-part1-alternative-1" "should parse alternative deadline/action arrangement 1"
         (parseR pRules) [king_pays_singer]

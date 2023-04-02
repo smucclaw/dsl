@@ -149,7 +149,7 @@ main = do
                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-           , let (fname, ext) = (take 20 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
+           , let (fname, ext) = (take 128 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 

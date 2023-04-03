@@ -80,7 +80,8 @@ qaHornsR l4i =
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
                            exposedRoots l4i      -- EXPOSED
      , not $ null grpval
-     , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
+     , expanded <- trace "* qaHornsR" $
+                   expandBSR l4i 2 <$> maybeToList (getBSR (DL.head uniqrs))
      ]
 
 -- | Talk a little bit about what we've interpreted.
@@ -450,27 +451,31 @@ decisionRoots rg =
 -- It's another thing to merge decision rules.
 -- Perhaps we can have an interpreter pragma decide whether to return an error, or just give a warning that the merge is happening.
 
-getAndOrTree :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.Item T.Text
-getAndOrTree _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
+getAndOrTree,getAndOrTree' :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.Item T.Text
+getAndOrTree l4i depth r = expandAround ("getAndOrTree " ++ T.unpack (mt2text (ruleLabelName r))) depth
+                           (getAndOrTree' l4i depth) r
+getAndOrTree' _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
   (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
 -- [TODO] convert the above *MBSRs to horn clauses and run expansion on them
 
-getAndOrTree  l4i depth r@Hornlike{} = expandTrace "getAndOrTree" depth "fmap extractRPMT2Text ..." $
+-- [TODO] convert the debug tracing to a writer monad so we don't have weird ordering problems in the output
+getAndOrTree'  l4i depth r@Hornlike{} = expandTrace "getAndOrTree" (depth+1) "fmap extractRPMT2Text ..." $
                                        fmap extractRPMT2Text <$>
-                                       (expandTrace "getAndOrTree" depth "mconcat bsmtOfClauses..." $
+                                       (expandTrace "getAndOrTree" (depth+1) "mconcat bsmtOfClauses..." $
                                         mconcat (-- traceShowId $
                                            bsmtOfClauses l4i (depth+1) r $
                                            expandClauses l4i (depth+1) (clauses r) ))
 
-getAndOrTree l4i depth _r@(RuleAlias rn) = do
+getAndOrTree' l4i depth _r@(RuleAlias rn) = do
   r' <- getRuleByName (origrules l4i) rn
   getAndOrTree l4i (depth+1) r'
 
-getAndOrTree _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly against rule " <> show r) $
+getAndOrTree' _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly against rule " <> show r) $
   Nothing
 
 -- | convert clauses to a boolStructR whose contents are all flattened to RPMT.
+-- this is lossy, so only intended for user-facing UI.
 bsmtOfClauses :: Interpreted -> Int -> Rule -> [HornClause2] -> [Maybe BoolStructR]
 bsmtOfClauses l4i depth r rClauses =
   expandTrace "bsmtOfClauses" depth ("either mbody or mhead") $
@@ -492,14 +497,28 @@ bsmtOfClauses l4i depth r rClauses =
                                 Just output
             ]
 
+-- | convert every RelationalPredicate in the boolstruct to RPMT only
+bsr2bsmt :: BoolStructR -> BoolStructR
+bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.mkLeaf (RPMT mt)
+bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.mkLeaf (RPMT $ pt2multiterm pt)
+bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.mkLeaf (RPMT (mt1 ++ MTT (rel2txt rpr) : mt2))
+bsr2bsmt (AA.Leaf (RPBoolStructR  mt1  rpr bsr2) ) = let output = (\(RPMT rpmt) -> RPMT (mt1 ++ MTT (rel2txt rpr) : rpmt)) <$> bsr2bsmt bsr2
+                                                     in -- trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
+                                                        -- trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
+                                                        output
+bsr2bsmt (AA.Leaf (RPnary     _rprel rp) )         = AA.mkLeaf rp
+bsr2bsmt (AA.All lbl xs) = AA.mkAll lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Any lbl xs) = AA.mkAny lbl (bsr2bsmt <$> xs)
+bsr2bsmt (AA.Not     x ) = AA.mkNot     (bsr2bsmt x)
+
 -- | expand horn clauses by calling expandRP to expand relational predicates in head and body.
 expandClauses :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
 expandClauses l4i depth hcs =
   let toreturn = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses")
                  [ newhc
                  | oldhc <- hcs
-                 , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
-                       newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
+                 , let newhead = expandAround "expandClauses - head" (depth+1)                      (expandRP l4i (depth+2))   (hHead oldhc)
+                       newbody = expandAround "expandClauses - body" (depth+1) (fmap (unleaf . fmap (expandRP l4i (depth+2)))) (hBody oldhc)
                        newhc = case oldhc of
                                  HC _oldh Nothing -> HC newhead Nothing
                                  HC  oldh _       -> HC oldh    newbody
@@ -507,15 +526,10 @@ expandClauses l4i depth hcs =
   in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
      toreturn
 
-unleaf :: BoolStructR -> BoolStructR
-unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
-unleaf (AA.All  lbl xs) = AA.mkAll lbl (unleaf <$> xs)
-unleaf (AA.Any  lbl xs) = AA.mkAny lbl (unleaf <$> xs)
-unleaf (AA.Not      x ) = AA.mkNot     (unleaf     x )
-unleaf (AA.Leaf x     ) = AA.mkLeaf    x
-
--- take out the Leaf ( RPBoolStructR [ "b" ] RPis
+-- | unleaf
+-- take out the @Leaf ( RPBoolStructR [ "b" ] RPis@
 -- from the below:
+-- @
 --        [ HC
 --            { hHead = RPMT [ "c" ]
 --            , hBody = Just
@@ -536,28 +550,15 @@ unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 --                )
 --            }
 --        ]
---
+-- @
 
--- * Some debugging utils
--- If you set this to true, and then run with @2>&1 > trace.org@ you will get good output
--- | Set true for debugging, False for prod
-expandTraceDebugging :: Bool
-expandTraceDebugging = True
+unleaf :: BoolStructR -> BoolStructR
+unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr -- [TODO] this may turn out to be a bad idea after all, we might want to preserve the original
+unleaf (AA.All  lbl xs) = AA.mkAll lbl (unleaf <$> xs)
+unleaf (AA.Any  lbl xs) = AA.mkAny lbl (unleaf <$> xs)
+unleaf (AA.Not      x ) = AA.mkNot     (unleaf     x )
+unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 
--- | a little helper function to do trace debugging of the expansion process
-expandTrace :: (Show a) => String -> Int -> String -> a -> a
-expandTrace fname dpth toSay toShow =
-  if expandTraceDebugging
-  then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
-               "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
-       toShow
-  else toShow
-
--- | expandTrace the before and after of a function call
-expandAround :: (Show a, Show b) => String -> Int -> (a -> b) -> a -> b
-expandAround str d f x =
-  expandTrace str d "after" $ f (
-  expandTrace str d "before"  x )
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
@@ -654,6 +655,29 @@ expandRule rules r@Hornlike{..} =
 expandRule _ _ = []
 
 
+-- * Some debugging utils
+-- If you set this to true, and then run with @2>&1 > trace.org@ you will get good output
+-- | Set true for debugging, False for prod
+expandTraceDebugging :: Bool
+expandTraceDebugging = True
+
+-- | a little helper function to do trace debugging of the expansion process
+expandTrace :: (Show a) => String -> Int -> String -> a -> a
+expandTrace fname dpth toSay toShow =
+  if expandTraceDebugging
+  then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
+               "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
+       toShow
+  else toShow
+
+-- | expandTrace the before and after of a function call
+expandAround :: (Show a, Show b) => String -> Int -> (a -> b) -> a -> b
+expandAround str d f x =
+  expandTrace str d "after" $ f (
+  expandTrace str d "before"  x )
+
+-- * Other Things
+
 -- | used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> BoolStructT
 onlyTheItems l4i =
@@ -711,20 +735,6 @@ getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
                                       ||
                                       ruleName r == [MTT t]
                                ) rs
-
--- where every RelationalPredicate in the boolstruct is narrowed to RPMT only
-bsr2bsmt :: BoolStructR -> BoolStructR
-bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.mkLeaf (RPMT mt)
-bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.mkLeaf (RPMT $ pt2multiterm pt)
-bsr2bsmt (AA.Leaf (RPConstraint   mt1  rpr mt2)  ) = AA.mkLeaf (RPMT (mt1 ++ MTT (rel2txt rpr) : mt2))
-bsr2bsmt (AA.Leaf (RPBoolStructR  mt1  rpr bsr2) ) = let output = (\(RPMT rpmt) -> RPMT (mt1 ++ MTT (rel2txt rpr) : rpmt)) <$> bsr2bsmt bsr2
-                                                     in -- trace ("bsr2bsmt handling a boolstructr, input = " <> show bsr2) $
-                                                        -- trace ("bsr2bsmt handling a boolstructr, returning " <> show output) $
-                                                        output
-bsr2bsmt (AA.Leaf (RPnary     _rprel rp) )         = AA.mkLeaf rp
-bsr2bsmt (AA.All lbl xs) = AA.mkAll lbl (bsr2bsmt <$> xs)
-bsr2bsmt (AA.Any lbl xs) = AA.mkAny lbl (bsr2bsmt <$> xs)
-bsr2bsmt (AA.Not     x ) = AA.mkNot     (bsr2bsmt x)
 
 -- | is a given RuleName the target of a Hence or Lest "GOTO"-style pointer?
 -- If it is, we deem it a RuleAlias.

@@ -131,7 +131,7 @@ musings l4i rs =
 
            , "*** Nubbed, Exposed, Decision Roots"
            , "maybe some of the decision roots are identical and don't need to be repeated; so we nub them"
-           , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
+           , vvsep [ "**** Decision Root" <+> viaShow (n :: Int) <> ":" <+> hsep (pretty . ruleLabelName <$> uniqrs)
                      </> vsep [ "-" <+> pretty (ruleLabelName r) | r <- uniqrs ]
                      </> "***** grpval" </> srchs grpval
                      </> "***** head uniqrs" </> srchs (DL.head uniqrs)
@@ -429,11 +429,20 @@ decisionRoots rg =
         toreturn
 
 
--- | return the internal conditions of the rule, if any, as an and-or tree.
+-- * Clause Expansion
+-- 
+-- What does clause expansion mean?
+-- We walk through the RelationalPredicates found in the head and the body of HornClause.
+-- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
+-- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
+
+-- | Return the internal conditions of the rule, if any, as an and-or tree. This is the top-level entry point for clause expansion.
 --
 -- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.
 --
 -- a Constitutive rule exposes the body of its `clauses`.
+--
+-- Generally, the principle is that if we find a RelationalPredicate we look for an exact match elsewhere in the program.
 --
 -- [TODO] multiple rules with the same head should get &&'ed together and jammed into a single big rule
 -- Or perhaps this depends on the mode in which the interpreter is running.
@@ -445,13 +454,14 @@ getAndOrTree :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.
 getAndOrTree _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
   (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
+-- [TODO] convert the above *MBSRs to horn clauses and run expansion on them
 
 getAndOrTree  l4i depth r@Hornlike{} = expandTrace "getAndOrTree" depth "fmap extractRPMT2Text ..." $
                                        fmap extractRPMT2Text <$>
                                        (expandTrace "getAndOrTree" depth "mconcat bsmtOfClauses..." $
                                         mconcat (-- traceShowId $
-                                           bsmtOfClauses l4i (depth+1) $
-                                           r { clauses = expandClauses l4i (depth+1) (clauses r) } ))
+                                           bsmtOfClauses l4i (depth+1) r $
+                                           expandClauses l4i (depth+1) (clauses r) ))
 
 getAndOrTree l4i depth _r@(RuleAlias rn) = do
   r' <- getRuleByName (origrules l4i) rn
@@ -460,13 +470,12 @@ getAndOrTree l4i depth _r@(RuleAlias rn) = do
 getAndOrTree _l4i _depth _r = -- trace ("ERROR: getAndOrTree called invalidly against rule " <> show r) $
   Nothing
 
--- convert clauses to a boolStruct MT
-bsmtOfClauses :: Interpreted -> Int -> Rule -> [Maybe BoolStructR]
-bsmtOfClauses l4i depth r
-  | hasClauses r =
-      let toreturn =
+-- | convert clauses to a boolStructR whose contents are all flattened to RPMT.
+bsmtOfClauses :: Interpreted -> Int -> Rule -> [HornClause2] -> [Maybe BoolStructR]
+bsmtOfClauses l4i depth r rClauses =
+  expandTrace "bsmtOfClauses" depth ("either mbody or mhead") $
             [ listToMaybe $ maybeToList $ mbody <|> mhead
-            | c <- expandClauses l4i 2 (clauses r)
+            | c <- expandClauses l4i (depth + 1) rClauses
             , (hhead, hbody)  <- [(hHead c, hBody c)]
             , let (_bodyEx, bodyNonEx) = partitionExistentials c
             , let mhead, mbody :: Maybe BoolStructR
@@ -482,18 +491,12 @@ bsmtOfClauses l4i depth r
                                 expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
                                 Just output
             ]
-      in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
-  | otherwise = []
 
--- | What does clause expansion mean?
--- We walk through the RelationalPredicates found in the head and the body of HornClause.
--- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
--- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
-
-expandClauses, expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
-expandClauses l4i depth hcs = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses") $ expandClauses' l4i (depth+1) hcs
-expandClauses' l4i depth hcs =
-  let toreturn = [ newhc
+-- | expand horn clauses by calling expandRP to expand relational predicates in head and body.
+expandClauses :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
+expandClauses l4i depth hcs =
+  let toreturn = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses")
+                 [ newhc
                  | oldhc <- hcs
                  , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
                        newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
@@ -535,9 +538,11 @@ unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 --        ]
 --
 
+-- * Some debugging utils
+-- If you set this to true, and then run with @2>&1 > trace.org@ you will get good output
 -- | Set true for debugging, False for prod
 expandTraceDebugging :: Bool
-expandTraceDebugging = False
+expandTraceDebugging = True
 
 -- | a little helper function to do trace debugging of the expansion process
 expandTrace :: (Show a) => String -> Int -> String -> a -> a
@@ -547,6 +552,12 @@ expandTrace fname dpth toSay toShow =
                "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
        toShow
   else toShow
+
+-- | expandTrace the before and after of a function call
+expandAround :: (Show a, Show b) => String -> Int -> (a -> b) -> a -> b
+expandAround str d f x =
+  expandTrace str d "after" $ f (
+  expandTrace str d "before"  x )
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
@@ -565,39 +576,43 @@ expandMT l4i depth mt0 =
                  | (_scopename, symtab) <- Map.toList (scopetable l4i)
                  , (_mytype, cs) <- maybeToList $ Map.lookup mt0 symtab
                  , c <- cs
-                 , let outs = expandClause l4i depth c
+                 , let outs = expandClause l4i (depth+1) c
                  , outrp <- outs
                  ]
   in fromMaybe (RPMT mt0) expanded
 
+-- [TODO] expand RPConstraints of the form Foo IS Bar matching against hc heads that are exactly Foo IS Bar.
+
 -- | Expand a horn clause that may have both head and body containing stuff we want to fill.
 -- Despite the name, this is not directly related to expandClauses.
 -- It happens deeper in, under `expandMT`.
-expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
-expandClause _l4i _depth (HC   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ MTT "IS" : rhs) ] -- substitute with rhs -- [TODO] weird, fix.
-expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
-expandClause  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
-expandClause  l4i  depth (HC   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
-expandClause _l4i _depth (HC   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
-expandClause _l4i _depth (HC   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
-expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) ) = [    o     ] -- maintain inequality
-expandClause _l4i _depth (HC   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
-expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
+expandClause,expandClause' :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
+expandClause l4i depth hc = expandAround "expandClause" depth (expandClause' l4i depth) hc
+expandClause' _l4i _depth (HC   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
+expandClause' _l4i _depth (HC   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
+expandClause' _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ MTT "IS" : rhs) ] -- substitute with rhs -- [TODO] weird, fix.
+expandClause' _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
+expandClause'  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bsr) ]
+expandClause'  l4i  depth (HC   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR l4i (depth + 1) bodybsr) ]
+expandClause' _l4i _depth (HC   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
+expandClause' _l4i _depth (HC   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
+expandClause' _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) ) = [    o     ] -- maintain inequality
+expandClause' _l4i _depth (HC   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
+expandClause' _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
 expandBSR :: Interpreted -> Int -> BoolStructR -> BoolStructR
-expandBSR  l4i depth x = trace (show x) $ AA.nnf $ expandBSR' l4i depth x
+expandBSR  l4i depth x =
+  expandAround "expandBSR" depth (AA.nnf . expandBSR' l4i depth) x
 
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth (AA.Leaf rp)  =
   case expandRP l4i (depth + 1) rp of
-    RPBoolStructR _mt1 RPis bsr -> bsr
+    RPBoolStructR _mt1 RPis bsr -> expandTrace "expandBSR'" depth "stripping LHS IS part, returning RHS" bsr
     o                           -> AA.mkLeaf o
-expandBSR' l4i depth (AA.Not item)   = AA.mkNot     (expandBSR' l4i (depth + 1) item)
-expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
-expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
+expandBSR' l4i depth (AA.Not item)   = AA.mkNot     (expandBSR l4i (depth + 1) item)
+expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR l4i (depth + 1) <$> xs)
+expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR l4i (depth + 1) <$> xs)
 
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody _l4i = id

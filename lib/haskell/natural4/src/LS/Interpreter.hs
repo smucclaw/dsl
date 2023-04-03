@@ -464,9 +464,9 @@ decisionRoots rg =
 getAndOrTree,getAndOrTree' :: Interpreted -> Int -> Rule -> Maybe BoolStructT -- Vue wants AA.Item T.Text
 getAndOrTree l4i depth r = expandAround ("getAndOrTree " ++ T.unpack (mt2text (ruleLabelName r))) depth
                            (getAndOrTree' l4i depth) r
-getAndOrTree' _l4i _depth r@Regulative{who=whoMBSR, cond=condMBSR} =
+getAndOrTree' l4i depth r@Regulative{who=whoMBSR, cond=condMBSR} =
   (fmap (((bsp2text (subj r) <> " ") <>) . rp2text) <$> whoMBSR)  <> -- WHO is relative to the subject
-  (fmap                                    rp2text  <$> condMBSR)    -- the condition is absolute
+  (fmap                                    rp2text . fmap (expandRP l4i (depth+1)) <$> condMBSR)    -- the condition is absolute
 -- [TODO] convert the above *MBSRs to horn clauses and run expansion on them
 
 -- [TODO] convert the debug tracing to a writer monad so we don't have weird ordering problems in the output
@@ -521,14 +521,14 @@ bsr2bsmt (AA.All lbl xs) = AA.mkAll lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Any lbl xs) = AA.mkAny lbl (bsr2bsmt <$> xs)
 bsr2bsmt (AA.Not     x ) = AA.mkNot     (bsr2bsmt x)
 
--- | expand horn clauses by calling expandRP to expand relational predicates in head and body.
+-- | expand horn clauses by calling expandRP to expand relational predicates in head and body. This doesn't flatten to RPMT.
 expandClauses :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
 expandClauses l4i depth hcs =
   let toreturn = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses")
                  [ newhc
                  | oldhc <- hcs
-                 , let newhead = expandAround "expandClauses - head" (depth+1)                      (expandRP l4i (depth+2))   (hHead oldhc)
-                       newbody = expandAround "expandClauses - body" (depth+1) (fmap (unleaf . fmap (expandRP l4i (depth+2)))) (hBody oldhc)
+                 , let newhead = expandAround "expandClauses - head" depth                      (expandRP l4i (depth+2))   (hHead oldhc)
+                       newbody = expandAround "expandClauses - body" depth (fmap (unleaf . fmap (expandRP l4i (depth+2)))) (hBody oldhc)
                        newhc = case oldhc of
                                  HC _oldh Nothing -> HC newhead Nothing
                                  HC  oldh _       -> HC oldh    newbody
@@ -573,11 +573,28 @@ unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
 -- for now we just scan across the entire ruleset to see if it matches.
-expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
-expandRP l4i depth (RPMT                   mt2)   = expandMT  l4i (depth + 1) mt2
-expandRP l4i depth (RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) (mt1 ++ MTT (rel2txt RPis) : mt2)
-expandRP l4i depth (RPBoolStructR mt1 RPis bsr)   = RPBoolStructR mt1 RPis (expandBSR' l4i (depth + 1) bsr)
-expandRP _l4i _depth x                            = x
+expandRP,expandRP' :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
+expandRP  l4i depth = expandAround "expandRP" depth (expandRP' l4i depth)
+expandRP' l4i depth (RPMT                   mt2)   = expandMT  l4i (depth + 1) mt2
+expandRP' l4i depth (RPBoolStructR mt1 RPis bsr)   = RPBoolStructR mt1 RPis (expandBSR' l4i (depth + 1) bsr)
+expandRP' l4i depth origc@(RPConstraint  mt1 RPis mt2)   =
+  let expanded = listToMaybe $ catMaybes
+                 [ outbsr
+                 | (_scopename, symtab) <- Map.toList (scopetable l4i)
+                 , (_mytype, cs) <- maybeToList $ Map.lookup mt1 symtab
+                 , c@(HC hHead hBody) <- cs
+                 , trace ("expandRP: testing if " ++ show hHead ++ " is a match for wanted " ++ show origc) True
+                 , hHead == origc
+                 , let outbsr = fmap (expandRP l4i (depth+1)) <$> hBody
+                 ]
+  in maybe (expandMT  l4i (depth + 1) (mt1 ++ MTT (rel2txt RPis) : mt2) ) (RPBoolStructR mt1 RPis) expanded
+
+
+expandRP' _l4i _depth x                            = x
+
+-- | We begin to implement Prolog-like logic here. Initially we do expansions for unconditional horn clauses -- where the body is empty.
+-- In the future we will want to evaluate against the fact base to decide which expansions to proceed with.
+
 
 -- | Search the scopetable's symbol tables for a given multiterm. Expand its clauses, and return the expanded.
 expandMT :: Interpreted -> Int -> MultiTerm -> RelationalPredicate

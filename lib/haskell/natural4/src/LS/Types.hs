@@ -418,6 +418,7 @@ type SymTab = Map.Map MultiTerm (Inferrable TypeSig, [HornClause2])
 -- | The explicitly annotated types from the L4 source text are recorded in the fst of Inferrable.
 --   The confirmed & inferred types after the type checker & inferrer has run, are recorded in the snd of Inferrable.
 --   If type checking / inference have not been implemented the snd will be empty.
+--   Don't take the above too seriously: this inference stuff is currently a gesture in the direction of what we actually want to implement one day.
 type Inferrable ts = (Maybe ts, [ts])
 
 thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab

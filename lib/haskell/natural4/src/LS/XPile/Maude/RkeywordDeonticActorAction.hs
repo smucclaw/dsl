@@ -44,8 +44,7 @@ data RkeywordActor where
   - PARTY/EVERY (some paramText denoting the actor)
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
-rkeywordActor2doc ::
-  RkeywordActor -> Ap (Validate (Doc ann1)) (Doc ann2)
+rkeywordActor2doc :: RkeywordActor -> Ap (Validate (Doc ann1)) (Doc ann2)
 rkeywordActor2doc
   RkeywordActor
     { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
@@ -63,8 +62,7 @@ data DeonticAction where
     DeonticAction
   deriving (Eq, Ord, Show)
 
-deonticAction2doc ::
-  DeonticAction -> Ap (Validate (Doc ann1)) (Doc ann2)
+deonticAction2doc :: DeonticAction -> Ap (Validate (Doc ann1)) (Doc ann2)
 deonticAction2doc
   DeonticAction
     { deontic = deontic@((`elem` [DMust, DMay, DShant]) -> True),

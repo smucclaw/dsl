@@ -34,7 +34,6 @@ data Rule = Regulative
             , lsource  :: Maybe Text.Text
             , srcref   :: Maybe SrcRef
             , upon     :: Maybe ParamText
---            , given    :: [ParamText]      -- input parameters basically, or the type thereof
             , given    :: Maybe ParamText
             , having   :: Maybe ParamText  -- HAVING sung...
             , wwhere   :: [Rule]
@@ -348,6 +347,9 @@ whenDebug :: Parser () -> Parser ()
 whenDebug act = do
   isDebug <- asks debug
   when isDebug act
+
+srctest :: Int -> Int -> Rule -> Rule
+srctest srow scol r = r { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = srow, srccol = scol, version = Nothing }) }
 
 srcrow_ :: Rule -> Rule
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }

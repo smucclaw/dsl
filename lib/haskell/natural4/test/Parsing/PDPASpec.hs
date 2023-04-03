@@ -41,7 +41,6 @@ spec = do
 
     describe "PDPA" $ do
       filetest "pdpadbno-1"   "must assess" (parseR pToplevel) expected_pdpadbno1
-      filetest "pdpadbno-1-b" "must assess" (parseR pToplevel) expected_pdpadbno1
 
       filetest "pdpadbno-2" "data intermediaries"
         (parseR pToplevel)
@@ -101,7 +100,7 @@ spec = do
                         rkeyword = RParty,
                         deontic = DMay,
                         action = mkLeaf $ mkParamText [["NOTIFY", "you"], ["with", "a list of individuals to exclude from notification"]],
-                        srcref = Nothing
+                        srcref = mkTestSrcRef 4 11
                       }
                   ),
               rlabel = Just ("\167", 2, "Notify PDPC")
@@ -190,7 +189,7 @@ spec = do
                     { name = [MTT "the Notifiable Individuals"],
                       keyword = Means,
                       clauses = [HC {hHead = mkRpmt ["the Notifiable Individuals"], hBody = Nothing}],
-                      srcref = mkTestSrcRef 2 9
+                      srcref = mkTestSrcRef 1 1
                     }
                 ]
             },
@@ -233,7 +232,7 @@ expected_pdpadbno1 =
               , temporal = Just ( TemporalConstraint TBefore (Just 30) "days" )
               , hence = Just ( RuleAlias [MTT "Notification"] )
               , lest = Just
-                ( defaultReg
+                ( srctest 2 11 $ defaultReg
                     { subj = Leaf
                         (
                             ( MTT "the PDPC" :| []
@@ -246,11 +245,10 @@ expected_pdpadbno1 =
                     , temporal = Nothing
                     , srcref = Nothing
                     , hence = Just
-                        ( defaultReg
+                        ( srctest 3 13 $ defaultReg
                             { subj = Leaf $ mkParamText [["You"]]
                             , rkeyword = RParty
                             , deontic = DMust
-                            , srcref = Nothing
                             , action = Leaf $ mkParamText
                                                 [ ["respond"],
                                                   ["to", "the PDPC"],

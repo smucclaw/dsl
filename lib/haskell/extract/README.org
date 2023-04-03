@@ -1,0 +1,15 @@
+#+TITLE: primitive NLP extraction from natural language legal text to L4
+
+This package attempts to automatically generate NaturaL4 from natural language text formatted in Org mode.
+
+The application grammar attempts to be as general as possible.
+
+* To be Obsoleted By
+
+** GF
+
+** GATE
+
+* The source code here also illustrates a simple Insurance library that calculates benefits claimable based on a given policy template and choice of plans.
+
+This was written as a sketch to clarify the underlying algebra and logic of an insurance policy contract.

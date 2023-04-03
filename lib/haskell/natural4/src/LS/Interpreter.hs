@@ -190,11 +190,15 @@ musings l4i rs =
     src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
     example  x = vsep [ "#+begin_example", x, "#+end_example" ]
 
--- | interpret the parsed rules and construct the symbol tables
+-- | interpret the parsed rules and construct the symbol tables.
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
 symbolTable _iopts rs =
-  Map.fromListWith (<>) (fromGivens <> fromDefines <> fromDecides)
-  -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []
+  -- traceShowId $
+  Map.fromListWith (Map.unionWith (\((s1, ss1), c1) -- necessary for predicates which differ only in the contents of their horn clauses
+                                    ((s2, ss2), c2) ->
+                                    ((s1, ss1), c1 <> c2))) $
+  concat [ fromGivens, fromDefines, fromDecides ]
+  
   where
     fromGivens :: [(RuleName, SymTab)]
     fromGivens = -- trace "fromGivens:" $ traceShowId $
@@ -217,7 +221,10 @@ symbolTable _iopts rs =
                   , keyword r `elem` [Define, Means]
                   , let scopename = -- trace ("fromDefines: working rule " ++ show (ruleLabelName r)) $
                                     ruleLabelName r
-                        symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
+                        symtable = Map.fromListWith (\((s1, ss1), c1)
+                                                      ((s2, ss2), c2) ->
+                                                      ((s1, ss1), c1 <> c2))
+                                   [(name r, ((super r,[]), clauses r))]
                   ]
 
     fromDecides :: [(RuleName, SymTab)]
@@ -227,7 +234,10 @@ symbolTable _iopts rs =
                   , keyword r `elem` [Decide, Is]
                   , let scopename = -- trace ("fromDecides: working rule " ++ show (ruleLabelName r)) $
                                     ruleLabelName r
-                        symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
+                        symtable = Map.fromListWith (\((s1, ss1), c1)
+                                                      ((s2, ss2), c2) ->
+                                                      ((s1, ss1), c1 <> c2))
+                                   [(name r, ((super r,[]), clauses r))]
                   ]
 
 -- | classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module LS.XPile.ToEpilog_fm_nat where
 
 import Prettyprinter
@@ -269,7 +268,7 @@ instance Show t => ShowOppClause (OpposesClause t) where
 instance Show t => ShowASP (ASPRule t) where
     showASP AccordingToR (ASPRule rn _env _vds preconds postcond) =
         showASP (AccordingToE rn) postcond <+> pretty ":-" <+>
-            hsep (punctuate "&" (map (showASP LegallyHoldsE) preconds)) 
+            hsep (punctuate (pretty "&") (map (showASP LegallyHoldsE) preconds))
 
 {-     showASP ExplainsSkolemR (ASPRule rn vds preconds postcond)=
                              let new_rn = rn
@@ -332,9 +331,22 @@ instance Show t => ShowASP (ASPRule t) where
                     )
             preconds)
     
-    showASP FixedCode (ASPRule _rn _env _vds preconds postcond) = vsep (["defeated(R2,C2):-overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)", "opposes(C1,C2):-opposes(C2,C1)", "legally_enforces(R,C):-according_to(R,C) & ~defeated(R,C) ", "legally_holds(C):-legally_enforces(R,C)", "legally_holds(contradiction_entailed):-opposes(C1,C2) & legally_holds(C1) & legally_holds(C2)",
-     "caused_by(pos,overrides(R1,R2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)", "caused_by(pos,according_to(R2,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)",
-     "caused_by(pos,legally_enforces(R1,C1),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)","caused_by(pos,opposes(C1,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)", "caused_by(pos,according_to(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)", "caused_by(neg,defeated(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)", "caused_by(pos,legally_enforces(R,C),legally_holds(C),0):-legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)","justify(X,0):-caused_by(pos,X,Y,0)", "directedEdge(Sgn,X,Y):-caused_by(Sgn,X,Y,0)", "justify(X,0):-gen_graph(X)"])
+    showASP FixedCode (ASPRule _rn _env _vds preconds postcond) =
+      vsep ([ pretty "defeated(R2,C2):-overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)"
+            , pretty "opposes(C1,C2):-opposes(C2,C1)"
+            , pretty "legally_enforces(R,C):-according_to(R,C) & ~defeated(R,C) "
+            , pretty "legally_holds(C):-legally_enforces(R,C)"
+            , pretty "legally_holds(contradiction_entailed):-opposes(C1,C2) & legally_holds(C1) & legally_holds(C2)"
+            , pretty "caused_by(pos,overrides(R1,R2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,according_to(R2,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,legally_enforces(R1,C1),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,opposes(C1,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,according_to(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)"
+            , pretty "caused_by(neg,defeated(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)"
+            , pretty "caused_by(pos,legally_enforces(R,C),legally_holds(C),0):-legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)"
+            , pretty "justify(X,0):-caused_by(pos,X,Y,0)"
+            , pretty "directedEdge(Sgn,X,Y):-caused_by(Sgn,X,Y,0)"
+            , pretty "justify(X,0):-gen_graph(X)" ])
         
 
 
@@ -386,7 +398,7 @@ instance Show t => ShowASP (ASPRule t) where
                             ) <+>
                         pretty ":-" <+>
                         showASP (AccordingToE rn) postcond <> pretty "&" <+>
-                        hsep (punctuate "&" (map (showASP LegallyHoldsE) preconds)) <>  pretty "&" <+>
+                        hsep (punctuate (pretty "&") (map (showASP LegallyHoldsE) preconds)) <>  pretty "&" <+>
                         pretty "justify" <>
                         parens (
                             showASP (AccordingToE rn) postcond <>  pretty "," <+>

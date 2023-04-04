@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Maude.TempConstr
+module LS.XPile.Maude.Regulative.TempConstr
   ( tempConstr2doc,
   )
 where

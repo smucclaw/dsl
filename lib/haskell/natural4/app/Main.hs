@@ -22,7 +22,7 @@ import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
 import LS.XPile.Markdown
-import LS.XPile.Maude.Rules qualified as MaudeRules
+import LS.XPile.Maude.Maude qualified as MaudeRules
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 

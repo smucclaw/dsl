@@ -31,13 +31,13 @@ import LS.Types
     RPRel (RPis),
     RelationalPredicate (RPBoolStructR, RPMT),
   )
-import LS.XPile.Maude.HenceLest
+import LS.XPile.Maude.Regulative.HenceLest
   ( HenceLest (..),
     HenceLestClause (..),
     henceLest2doc,
   )
-import LS.XPile.Maude.RkeywordDeonticActorAction
-import LS.XPile.Maude.TempConstr (tempConstr2doc)
+import LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
+import LS.XPile.Maude.Regulative.TempConstr (tempConstr2doc)
 import LS.XPile.Maude.Utils
   ( multiExprs2qid,
     text2qid,

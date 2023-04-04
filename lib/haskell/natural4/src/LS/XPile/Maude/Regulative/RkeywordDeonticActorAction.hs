@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Maude.RkeywordDeonticActorAction
+module LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
   ( RkeywordActor (..),
     DeonticAction (..),
     rkeywordActor2doc,

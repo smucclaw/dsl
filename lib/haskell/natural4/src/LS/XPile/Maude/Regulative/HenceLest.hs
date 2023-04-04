@@ -4,7 +4,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module LS.XPile.Maude.HenceLest
+module LS.XPile.Maude.Regulative.HenceLest
   ( HenceLest(..),
     HenceLestClause(..),
     henceLest2doc,

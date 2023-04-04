@@ -12,7 +12,8 @@ import Prettyprinter
 import AnyAll
 import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
-import LS.XPile.ToASP(astToDoc)
+import qualified LS.XPile.ToASP as ASP
+import qualified LS.XPile.ToEpilog_fm_nat as Epilog
 
 import ToDMN.FromL4 (genXMLTreeNoType)
 
@@ -62,8 +63,15 @@ sfl4ToASP :: [SFL4.Rule] -> String
 sfl4ToASP rs =
   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
   let prg = Program () rulesTransformed in
-  let doc = astToDoc prg in
+  let doc = ASP.astToDoc prg in
     -- trace ("asp" ++ (show $ showL4 [] prg)) $
+    show doc
+
+sfl4ToEpilog :: [SFL4.Rule] -> String
+sfl4ToEpilog rs =
+  let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
+  let prg = Program () rulesTransformed in
+  let doc = Epilog.astToDoc prg in
     show doc
 
 -- destructure (Rule t) from this

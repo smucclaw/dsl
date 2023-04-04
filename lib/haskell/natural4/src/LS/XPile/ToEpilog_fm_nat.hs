@@ -466,11 +466,11 @@ astToDoc prg =
 
     -- putStrLn "ASP rules:"
     vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
-    vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line <>
     vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line <>
     vsep (map showOppClause oppClauses) <> line
 

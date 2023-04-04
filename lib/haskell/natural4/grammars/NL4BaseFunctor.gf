@@ -48,7 +48,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     sWHO subj who = mkUtt (Extend.PredVPS subj who) ;
     qCOND cond = lin Utt (cc2 (mkUtt cond.qs) (ss bindQM)) ;
     sCOND cond = mkUtt cond.s ;
-    advUPON upon = mkUtt (Syntax.mkAdv CustomSyntax.upon_Prep (Extend.GerundNP upon)) ;
+    advUPON upon = mkUtt (Syntax.mkAdv CustomSyntax.uponPrep (Extend.GerundNP upon)) ;
     qUPON subj upon = qWHO subj (Extend.MkVPS presAnt positivePol upon) ;
     sUPON subj upon = sWHO subj (Extend.MkVPS presAnt positivePol upon) ;
 
@@ -61,8 +61,8 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     ACTION act = Extend.MkVPI act ;
 
     MUST = must_VV ; -- from RGL API
-    MAY = CustomSyntax.may_VV ; -- oper in CustomSyntax
-    SHANT = CustomSyntax.shant_VV ;  -- oper in CustomSyntax
+    MAY = CustomSyntax.mayVV ; -- oper in CustomSyntax
+    SHANT = CustomSyntax.shantVV ;  -- oper in CustomSyntax
     AND = and_Conj ;
     OR = or_Conj ;
 
@@ -76,7 +76,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     ConjPrePostWho = CustomSyntax.ConjPrePostVPS ; -- fun/lin in CustomSyntax
 
     -- : Subj -> Who -> Subj ;
-    SubjWho subj who = mkNP subj (Extend.RelVPS CustomSyntax.who_RP who) ; -- who_RP is oper in CustomSyntax
+    SubjWho subj who = mkNP subj (Extend.RelVPS CustomSyntax.whoRP who) ; -- who_RP is oper in CustomSyntax
 
     You = you_NP ;
 
@@ -171,8 +171,8 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
           det : Det = mkDet card ;
       in Syntax.mkAdv <tcomp : Syntax.Prep> (mkNP det time) ;
 
-    Day_Unit = mkCN Lexicon.day_N ;
-    Month_Unit = mkCN CustomSyntax.month_N ;
+    Day_Unit = mkCN Lexicon.day_N ;          -- day_N is fun/lin in RGL
+    Month_Unit = mkCN CustomSyntax.monthN ;  -- monthN is oper in CustomSyntax
     Year_Unit = mkCN Lexicon.year_N ;
 
   lincat
@@ -185,9 +185,11 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     ConsTComparison = CustomSyntax.ConsPrep ;
     ConjTComparison = CustomSyntax.ConjPrep ;
     -- Chi has changed lincat and defs of Prep, so all must be from CustomSyntax
-    BEFORE = CustomSyntax.within_Prep | CustomSyntax.before_Prep ;
+    BEFORE = CustomSyntax.withinPrep   -- internal oper defined in CustomSyntax{Eng,Chi,May}
+           | CustomSyntax.before_Prep ; -- comes from RGL, re-exported by CustomSyntax{Eng,Chi,May}.
+                                        -- In addition, its lincat and lin has been changed in CustomSyntaxChi.
     AFTER = CustomSyntax.after_Prep ;
-    BY = CustomSyntax.by8time_Prep ;
+    BY = CustomSyntax.by8timePrep ;
     ON = CustomSyntax.on_Prep ;
     VAGUE = CustomSyntax.vaguePrep ;
 

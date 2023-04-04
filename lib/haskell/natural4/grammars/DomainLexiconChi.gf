@@ -20,6 +20,7 @@ concrete DomainLexiconChi of DomainLexicon = NL4BaseChi **
     PDPC = mkCN (mkN "个 人 资 料 保 护 委 员 会") ; --obtained from zaobao.com
     data_breach = mkCN (mkN ("数据泄露")) ;
     public = mkAP (mkA ("公 共")) ;
+    public_agency = mkCN (mkN "公众的代理行") ; -- TODO check, just copy and paste from unreliable source
     notifiable = mkAP (mkA ("应 通 报 的")) ;
     -- aware = mkAP (mkA "发现") ;
     NDB_Qualification = mkNP (mkN "NDB Qualification") ;

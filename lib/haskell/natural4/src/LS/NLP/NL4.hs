@@ -45,6 +45,8 @@ type GAP = Tree GAP_
 data GAP_
 type GAction = Tree GAction_
 data GAction_
+type GAdA = Tree GAdA_
+data GAdA_
 type GAdv = Tree GAdv_
 data GAdv_
 type GCN = Tree GCN_
@@ -182,6 +184,8 @@ data Tree :: * -> * where
   LexAP :: String -> Tree GAP_
   GACTION :: GVP -> Tree GAction_
   GrecoverUnparsedAction :: GString -> Tree GAction_
+  Gonly_AdA :: Tree GAdA_
+  GAdAdv :: GAdA -> GAdv -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
@@ -267,6 +271,7 @@ data Tree :: * -> * where
   Gfrom_Prep :: Tree GPrep_
   Gon_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
+  Gwithin_Prep :: Tree GPrep_
   GConjPrePostQS :: GString -> GString -> GConj -> GListQS -> Tree GQS_
   GConjQS :: GConj -> GListQS -> Tree GQS_
   GConjPrePostS :: GString -> GString -> GConj -> GListS -> Tree GS_
@@ -369,6 +374,8 @@ instance Eq (Tree a) where
     (LexAP x,LexAP y) -> x == y
     (GACTION x1,GACTION y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedAction x1,GrecoverUnparsedAction y1) -> and [ x1 == y1 ]
+    (Gonly_AdA,Gonly_AdA) -> and [ ]
+    (GAdAdv x1 x2,GAdAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -454,6 +461,7 @@ instance Eq (Tree a) where
     (Gfrom_Prep,Gfrom_Prep) -> and [ ]
     (Gon_Prep,Gon_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
+    (Gwithin_Prep,Gwithin_Prep) -> and [ ]
     (GConjPrePostQS x1 x2 x3 x4,GConjPrePostQS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjQS x1 x2,GConjQS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPrePostS x1 x2 x3 x4,GConjPrePostS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -577,12 +585,24 @@ instance Gf GAction where
 
       _ -> error ("no Action " ++ show t)
 
+instance Gf GAdA where
+  gf Gonly_AdA = mkApp (mkCId "only_AdA") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "only_AdA" -> Gonly_AdA 
+
+
+      _ -> error ("no AdA " ++ show t)
+
 instance Gf GAdv where
+  gf (GAdAdv x1 x2) = mkApp (mkCId "AdAdv") [gf x1, gf x2]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "AdAdv" -> GAdAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
 
@@ -991,6 +1011,7 @@ instance Gf GPrep where
   gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
   gf Gon_Prep = mkApp (mkCId "on_Prep") []
   gf Gto_Prep = mkApp (mkCId "to_Prep") []
+  gf Gwithin_Prep = mkApp (mkCId "within_Prep") []
 
   fg t =
     case unApp t of
@@ -1001,6 +1022,7 @@ instance Gf GPrep where
       Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
       Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 
       Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
+      Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep 
 
 
       _ -> error ("no Prep " ++ show t)
@@ -1433,6 +1455,7 @@ instance Compos Tree where
     Gensuing x1 -> r Gensuing `a` f x1
     GACTION x1 -> r GACTION `a` f x1
     GrecoverUnparsedAction x1 -> r GrecoverUnparsedAction `a` f x1
+    GAdAdv x1 x2 -> r GAdAdv `a` f x1 `a` f x2
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2

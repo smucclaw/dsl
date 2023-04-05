@@ -22,7 +22,7 @@ import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
 import LS.XPile.Markdown
-import LS.XPile.Maude qualified as Maude
+import LS.XPile.Maude.Maude qualified as MaudeRules
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 
@@ -74,7 +74,7 @@ main = do
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
-      (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
+      (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", MaudeRules.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
@@ -200,6 +200,9 @@ main = do
 
     when (SFL4.toVue rc) $ do
       putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
+
+    when (SFL4.only opts == "maude") $
+      rules |> MaudeRules.rules2maudeStr |> putStrLn 
 
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime

@@ -1,0 +1,50 @@
+START qid("Assessment"),
+
+RULE qid("Assessment")
+EVERY qid("Organisation")
+MUST qid("assess if it is a Notifiable Data Breach")
+WITHIN 30 DAY
+HENCE qid("Notification")
+LEST qid("PDPC query with demand"),
+
+RULE qid("PDPC query with demand")
+PARTY qid("the PDPC")
+MAY qid("query You")
+HENCE qid("Respond to PDPC"),
+
+RULE qid("Respond to PDPC")
+PARTY qid("You")
+MUST qid("respond to the PDPC"),
+
+qid("Notification") MEANS (qid("Notify PDPC") AND qid("Notify Individuals")),
+
+RULE qid("Notify PDPC")
+PARTY qid("You")
+MUST qid("NOTIFY the PDPC")
+WITHIN 3 DAY
+HENCE qid("PDPC prohibit notify individuals"),
+
+RULE qid("PDPC prohibit notify individuals")
+PARTY qid("the PDPC")
+MAY qid("NOTIFY you")
+HENCE qid("Cannot notify individuals"),
+
+RULE qid("Cannot notify individuals")
+PARTY qid("You")
+SHANT qid("NOTIFY each of the Notifiable Individuals"),
+
+RULE qid("Notify Individuals")
+PARTY qid("You")
+MUST qid("NOTIFY each of the Notifiable Individuals")
+WITHIN 3 DAY
+LEST qid("Notify and explain"),
+
+RULE qid("Notify and explain")
+PARTY qid("You")
+MUST qid("notify each of the Notifiable Individuals"),
+
+qid("You") MEANS qid("Organisation"),
+
+qid("NDB") MEANS qid("it is a Notifiable Data Breach"),
+
+qid("the PDPC Exclusion List") MEANS qid("with a list of individuals to exclude from notification")

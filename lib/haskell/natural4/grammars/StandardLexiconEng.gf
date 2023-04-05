@@ -1,4 +1,4 @@
-concrete StandardLexiconEng of StandardLexicon = NL4BaseEng ** 
+concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
   open
     SyntaxEng
   , ParadigmsEng
@@ -9,6 +9,13 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
   -- Collection of "basic" words that we expect to appear across multiple documents in legal domain
   -- Very ad hoc at the moment, should consult a proper legal corpus, analyse valencies and complement types etc.
   -- This module should be the really high quality stuff
+
+  -- Words from closed classes, like prepositions etc.
+  lin
+    within_Prep = mkPrep "within" ;
+    only_AdA = mkAdA "only" ;
+
+  -- Open classes, like nouns, verbs etc.
   lin
     organisation = mkCN (mkN ("organisation"|"Organisation")) ;
     agency = mkCN (mkN ("agency"|"Agency")) ;
@@ -17,7 +24,8 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
     demand = mkV2 "demand" ;
     perform = mkV2 "perform" ;
     become = mkV2 IrregEng.become_V ;
-    assess = mkVS (mkV "assess") ; 
+    become_aware = mkVS (partV IrregEng.become_V  "aware") ;
+    assess = mkVS (mkV "assess") ;
 
     apply = mkVP (mkV "apply") ;
     occur = mkVP (mkV "occur") ;
@@ -31,40 +39,21 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
       s = npStr np ++ "caused by" ;
       qs = "Is the" ++ npStr np ++ "caused by"
       } ;
-    NP_caused_NP_to_VP_Prep_PrePost np water escape from = 
+    NP_caused_NP_to_VP_Prep_PrePost np water escape from =
       let cl : Cl = mkCl <np : NP> (mkVP cause_V2V <water : NP> <escape : VP>) ;
-          cls : ClSlash = mkClSlash cl <from : Prep> ; 
+          cls : ClSlash = mkClSlash cl <from : Prep> ;
           qcl : QCl = hackQCl cls ;
           ss : SSlash = mkSSlash (mkTemp pastTense simultaneousAnt) positivePol cls ;
           qs : QS = mkQS pastTense qcl ;
-      in {s = ss.s ++ ss.c2 ; qs = (mkUtt qs).s} ;    
+      in {s = ss.s ++ ss.c2 ; qs = (mkUtt qs).s} ;
 
   oper
     cause_V2V : V2V = mkV2V (mkV "cause") noPrep to_Prep ;
 
 -- hack: just to get "does NP cause water to escape from", not "whom does NP cause water to escape from"
-    hackQCl : ClSlash -> QCl = \clSlash -> mkQCl emptyIP clSlash ; 
+    hackQCl : ClSlash -> QCl = \clSlash -> mkQCl emptyIP clSlash ;
 
-    emptyIP : IP = whatSg_IP ** {s = \\_ => []} ; 
+    emptyIP : IP = whatSg_IP ** {s = \\_ => []} ;
 
------------------------------------------------------------------------------
--- Time units, currencies, …
-lin
-    Jan = ss "Jan" ;
-    Feb = ss "Feb" ;
-    Mar = ss "Mar" ;
-    Apr = ss "Apr" ;
-    May = ss "May" ;
-    Jun = ss "Jun" ;
-    Jul = ss "Jul" ;
-    Aug = ss "Aug" ;
-    Sep = ss "Sep" ;
-    Oct = ss "Oct" ;
-    Nov = ss "Nov" ;
-    Dec = ss "Dec" ;
-
-    Day_Unit = mkCN (mkN "day") ;
-    Month_Unit = mkCN (mkN "month") ;
-    Year_Unit = mkCN (mkN "year") ;
 
 }

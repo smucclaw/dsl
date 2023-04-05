@@ -432,9 +432,9 @@ pHornlike = pHornlike' True
 -- this tries to give the behaviour of the ambitious parser but in a someStructure parser.
 pHornlike' :: Bool -> Parser Rule
 pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") $ do
-  (rlabel, srcref) <- debugName "pHornlike pSrcRef" (slPretendEmpty pSrcRef)
+  rlabel <- optional pRuleLabel
   let dKeyword = if needDkeyword
-                 then Just <$> choice [ pToken Decide ] -- [TODO] try allowing DEFINE in future, for things like simple-constitutive-1
+                 then Just <$> choice [ pToken Decide ]
                  else Nothing <$ pure ()
   let permutepart = debugName "pHornlike / permute" $ permute $ (,,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
@@ -452,7 +452,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
                        , given = given
                        , giveth
                        , clauses = addWhen topwhen clauses
-                       , upon = upon, rlabel = rlabel, srcref = srcref
+                       , upon = upon, rlabel = rlabel
                        }
   where
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
@@ -522,7 +522,7 @@ pRelPred = debugName "pRelPred" $ do
 -- foo IS bar OTHERWISE         Just Leaf __OTHERWISE__                becomes a default case, which feels like a fact, but isn't.
 whenCase :: Parser (Maybe BoolStructR)
 whenCase = debugName "whenCase" $ do
-  try (whenIf *> (Just <$> pBSR))
+  try (whenIf *> (Just <$> pBSR)) -- we don't have a someIndentation here because we want to preserve any GoDeepers for the prePost parsing.
 --  <|> Nothing <$ debugName "Otherwise" (pToken Otherwise)
   <|> Just (AA.mkLeaf (RPMT [MTT "OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
 
@@ -537,15 +537,23 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 -- RelationalPredicates come in four forms. See Types.hs for documentation.
 -- We add the ability to do nested hornlike rules inline, in the midst of some of these forms,
 -- which is how you get support for the MEANS stuff that shows up sometimes in the middle of a relationalpredicate.
+-- We would like to parse two kinds of paramtexts -- one has to have multiple lines (otherwise it gets treated as an rpMT), and is tested first. This parser currently doesn't work on input of the form
+-- @
+--     Foo IS Bar
+--            to Baz
+-- @
+-- which should parse to an RPBoolStruct containing an RPParamText.
+-- The other kind of paramtext may have a typesig, and has to appear on only one line. This does work.
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-  try ( debugName "slRelPred/RPConstraint"  rpConstraint )
-    <|> try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
-    <|> try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIsWhose pBSR slMultiTerm) -- special case, do the mustNestHorn here and then repeat the nonesthorn below.
-    -- we don't really have a rpParamText per se, do we? this is why line 78 and 79 of the pdpadbno are commented out.
-    <|> try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
-    <|> try ( debugName "slRelPred/RPMT"          rpMT )
+  choice [ try ( debugName "slRelPred/RPConstraint"  rpConstraint )
+         , try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
+         , try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIsWhose pBSR slMultiTerm) -- special case, do the mustNestHorn here and then repeat the nonesthorn below.
+
+         , try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
+    -- this doesn't work. [TODO]. Or maybe we wait to replace all this with the PTree alternative.
+    -- , try ( debugName "RPParamText (sans typesig, requiring multiline)" rpMultiParamText )  
     -- <|> try ( debugName "slRelPred/RPParamText (to MT) (without typesig)" $ do
     --             pt <- slParamText
     --             if NE.length pt == 1
@@ -553,9 +561,13 @@ slRelPred = debugName "slRelPred" $ do
     --               else return $ RPParamText pt
     --         )
 
+    -- parsing a multiterm is the catch-all
+         , try ( debugName "slRelPred/RPMT"          rpMT )
+         ]
 -- nuParamText :: SLParser ParamText
 -- nuParamText = sameDepth slKeyValuesAka
 
+-- | this variant allows paramtexts over a single line, with type signatures and TYPICALLY
 rpParamTextWithTypesig :: SLParser RelationalPredicate
 rpParamTextWithTypesig = do
   pt <- slParamText
@@ -563,15 +575,29 @@ rpParamTextWithTypesig = do
     then return $ RPParamText pt
     else empty
 
+-- | this variant allows paramtexts over multiple lines, but without type signatures or TYPICALLY (i think)
+rpMultiParamText :: SLParser RelationalPredicate
+rpMultiParamText = do
+  pt@(tm :| tms) <- liftSL pParamText
+  guard (not $ null tms)
+  return (RPParamText pt)
+
  
 rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
 
+-- | parse an RPConstraint, optionally with an inline MEANS.
+-- we pass to nestedHorn the base parser for RPConstraint, which 
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = nestedHorn rpHead id meansIs pBSR (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
 
+-- | parse a RelationalPredicate BoolStructR
 rpBoolStructR :: SLParser RelationalPredicate
-rpBoolStructR = RPBoolStructR $*| slMultiTerm |>| tok2rel |>| pBSR
+rpBoolStructR = debugName "rpBoolStructR calling slMultiTerm / IS / pBSR" $
+  RPBoolStructR
+  $*| debugName "rpBoolStructR/slMultiTerm" slMultiTerm
+  |>| debugName "rpBoolStructR/tok2rel"     tok2rel
+  |>| debugName "rpBoolStructR/pBSR"        pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 
 
@@ -609,7 +635,9 @@ pBoolStructPT = prePostParse pParamText
 pParamText :: Parser ParamText
 pParamText = pParamTextSameDepthOK
 
-pParamText' :: Bool -> Parser ParamText
+-- | parse a paramtext. usually an action expression of some kind, possibly over multiple lines.
+pParamText' :: Bool -- ^ is it important that the subsequent lines be indented relative to the first?
+            -> Parser ParamText
 pParamText' mustIndent = do
   debugName ("pParamText " <> if mustIndent then "(subsequent lines must be indented)" else "(subsequent lines may be at same depth)") $
     (:|)
@@ -618,13 +646,17 @@ pParamText' mustIndent = do
     (try (someIndentation (sameMany pKeyValuesAka)) -- maybe the subsequent lines are indented; consume the indentation first.
      <|> if mustIndent then pure [] else
            manyIndentation (sameMany pKeyValuesAka))      -- consuming the indentation first is important because sameMany can over-return success on nothing.
+    -- this does feel accidentally quadratic though
 
+-- | passthrough to `pParamText'` with mustIndent true
 pParamTextMustIndent :: Parser ParamText
 pParamTextMustIndent = pParamText' True
 
+-- | passthrough to `pParamText'` with mustIndent false
 pParamTextSameDepthOK :: Parser ParamText
 pParamTextSameDepthOK = pParamText' False
 
+-- | currently unused, i think, but this is meant to be the next evolution of paramtext, because we want to allow NL-like, arbitrary syntax trees
 pPTree :: Parser PTree
 pPTree = debugName "pPTtree tree" $ do
   try pTreeOneWord <|> pTreeSomeWords
@@ -687,10 +719,10 @@ pMultiTermAka :: Parser MultiTerm
 pMultiTermAka = debugName "pMultiTermAka" $ pAKA slMultiTerm id
 
 -- head of nonempty list
-pSingleTermAka :: Parser KVsPair
+pSingleTermAka :: Parser TypedMulti
 pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
 
-pSingleTerm :: Parser KVsPair
+pSingleTerm :: Parser TypedMulti
 pSingleTerm = debugName "pSingleTerm" $ (pure . MTT <$> pAnyText) `optIndentedTuple` pTypeSig
 
 -- [TODO] rewrite this in terms of slKeyValuesAka
@@ -698,7 +730,7 @@ slParamText :: SLParser ParamText
 slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
 -- so it turns out we usually don't even ever get here because a TYPICALLY gets handled by slAKA
-slTypedMulti :: SLParser KVsPair
+slTypedMulti :: SLParser TypedMulti
 slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
   (l,ts,typicalval) <- (,,)
     $*| slMultiTerm
@@ -740,18 +772,18 @@ slOneOf = do
     |>| pParamText
 
 -- a nonempty list, with an optional type signature and an optional AKA; single line. for multiline see pParamText above
-pKeyValuesAka :: Parser KVsPair
+pKeyValuesAka :: Parser TypedMulti
 pKeyValuesAka = debugName "pKeyValuesAka" $ finishSL slKeyValuesAka
 
-slKeyValuesAka :: SLParser KVsPair
+slKeyValuesAka :: SLParser TypedMulti
 slKeyValuesAka = debugNameSL "slKeyValuesAka" $ slAKA slKeyValues (toList . fst)
 
-pKeyValues :: Parser KVsPair
+pKeyValues :: Parser TypedMulti
 pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
 
 -- | a ParamText key value pair is simply a (key : [v1,v2,v3]).
 -- we use nestedHorn to allow a MEANS under the v1.
-slKeyValues :: SLParser KVsPair
+slKeyValues :: SLParser TypedMulti
 slKeyValues = debugNameSL "slKeyValues" $ do
   (lhs, (rhs, typesig))   <- try (
     (,) -- key followed by values, and the values can sit on top of a MEANS
@@ -832,17 +864,17 @@ mustNestHorn, nestedHorn
   -> (MultiTerm -> RuleName)    -- ^ turn the thing into the inner Hornlike's RuleName
   -> Parser MyToken     -- ^ the connector, usually meansIs
   -> Parser BoolStructR -- ^ parser for the thing after the connector, usually pBSR
-  -> SLParser a
+  -> SLParser a         -- ^ if the pBSR fails, forgot about all the above and just do a basic parse; this may be something like RPConstraint also
   -> SLParser a
 nestedHorn toMT toRN connector pbsr basesl =
   try (mustNestHorn toMT toRN connector pbsr basesl)
-    <|> noNested
+    <|> noNestedplain
   where
-    noNested = debugName "noNested horn clause, defaulting to base" basesl
+    noNestedplain = debugName "noNested horn clause, defaulting to base" basesl
 
-
+-- | parser for a horn clause with an inline MEANS
 mustNestHorn toMT toRN connector pbsr basesl =
-  debugNameSL "trying hasNested" $ do
+  debugNameSL "trying hasNested to match an inline MEANS" $ do
   srcref   <- liftSL getSrcRef
               |-- (\n -> debugPrint $ "mustNestHorn before basesl: " ++ show n ++ " UnDeepers")
   (subj, meansTok, bsr) <- (,,)
@@ -869,8 +901,10 @@ meansIs,meansIsWhose :: Parser MyToken
 meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]
 meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
 
+-- | the main parser for a BoolStruct of RelationalPredicates.
 pBSR :: Parser BoolStructR
-pBSR = debugName "pBSR" $ prePostParse pRelPred
+pBSR = debugName "pBSR" $
+  try (debugName "pBSR/prePostParse" (prePostParse pRelPred))
 
 -- | convert all decision logic in a rule to BoolStructR format.
 --   the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.

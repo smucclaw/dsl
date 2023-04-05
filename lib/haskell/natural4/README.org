@@ -31,7 +31,7 @@ In the ~dsl/lib/haskell/anyall/~ directory, run
 
 * Install the ~Natural4~ Library
 
-In the ~dsl/lib/haskell/natural/~ directory, run
+In the ~dsl/lib/haskell/natural4/~ directory, run
 
 #+begin_src bash
   stack install
@@ -39,7 +39,7 @@ In the ~dsl/lib/haskell/natural/~ directory, run
 
 * Running Tests
 
-In the ~dsl/lib/haskell/natural/~ directory, when you run
+In the ~dsl/lib/haskell/natural4/~ directory, when you run
 
 #+begin_src bash
   stack test
@@ -49,7 +49,7 @@ You should get a screenful of green.
 
 * Validating the Installation
 
-In the ~dsl/lib/haskell/natural/~ directory, if you run
+In the ~dsl/lib/haskell/natural4/~ directory, if you run
 
 #+begin_src bash
   stack run -- --workdir=workdir test/casestudypdpadbno-latest.csv

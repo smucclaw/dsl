@@ -1,4 +1,6 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 import qualified LS as SFL4
@@ -20,9 +22,11 @@ import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
 import LS.XPile.Markdown
+import LS.XPile.Maude.Maude qualified as MaudeRules
 import LS.XPile.NaturalLanguage
+import LS.XPile.GFTrees
 
-import LS.NLP.NLG (nlg,myNLGEnv)
+import LS.NLP.NLG (nlg,myNLGEnv, allLangs, getLang, printLangs)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -44,7 +48,11 @@ main :: IO ()
 main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
-  nlgEnv   <- unsafeInterleaveIO myNLGEnv
+  nlgLangs <- unsafeInterleaveIO allLangs
+  strLangs <- unsafeInterleaveIO $ printLangs allLangs
+  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv (getLang "NL4Eng") -- Only load the NLG environment if we need it.
+--  putStrLn "main: doing dumpRules"
+  allNLGEnv <- unsafeInterleaveIO $ mapM myNLGEnv nlgLangs
   rules    <- SFL4.dumpRules opts
   iso8601  <- now8601
   let toworkdir   = not $ null $ SFL4.workdir opts
@@ -59,14 +67,47 @@ main = do
       (toepilogFN,  asEpilog)  = (workuuid <> "/" <> "epilog",   sfl4ToEpilog rules)
       (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs",     translate2PS nlgEnv rules)
+      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
+      (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  markdown nlgEnv rules)
+      (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   rules2String l4i rules)
+      (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", MaudeRules.rules2maudeStr rules)
+      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
+                                   [ "-- original rules:\n"
+                                   , TL.unpack (pShowNoColor rules)
+
+                                   , "-- variable-substitution expanded AnyAll rules\n"
+                                   , TL.unpack (pShowNoColor $ [ r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
+                                                               | r@SFL4.Hornlike{} <- rules
+                                                               ])
+
+                                   , "\n\n-- class hierarchy:\n"
+                                   , TL.unpack (pShowNoColor (SFL4.classtable l4i))
+
+                                   , "\n\n-- symbol table:\n"
+                                   , TL.unpack (pShowNoColor (SFL4.scopetable l4i))
+
+                                   , "-- getAndOrTrees"
+                                   , unlines $ (\r -> "\n-- " <> show (SFL4.ruleLabelName r) <> "\n" <>
+                                                 TL.unpack (pShowNoColor $ getAndOrTree l4i 1 r)) <$> rules
+
+                                   , "-- traverse toList of the getAndOrTrees"
+                                   , unlines $ TL.unpack . pShowNoColor . traverse DF.toList . getAndOrTree l4i 1 <$> rules
+
+                                   , "-- onlyTheItems"
+                                   , TL.unpack $ pShowNoColor (onlyTheItems l4i)
+
+                                   , "-- ItemsByRule"
+                                   , TL.unpack $ pShowNoColor (SFL4.itemsByRule l4i rules)
+
+                                   ])
+
+
+
 
   -- if --workdir is specified, and there are no --only, then we run all the things
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
@@ -83,12 +124,14 @@ main = do
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr
+    when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
+    when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
@@ -129,7 +172,8 @@ main = do
     when (SFL4.only opts == "petri")  $ putStrLn asPetri
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
-    when (SFL4.asJSON rc) $ putStrLn $ asJSONstr
+    when (SFL4.asJSON rc) $ putStrLn asJSONstr
+
     when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
       naturalLangSents <- mapM (nlg nlgEnv) rules
       mapM_ (putStrLn . Text.unpack) naturalLangSents
@@ -158,6 +202,9 @@ main = do
 
     when (SFL4.toVue rc) $ do
       putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
+
+    when (SFL4.only opts == "maude") $
+      rules |> MaudeRules.rules2maudeStr |> putStrLn 
 
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime

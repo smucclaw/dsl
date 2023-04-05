@@ -141,6 +141,7 @@ toToken "HOLDS" =  pure Holds
 
 -- regulative chains
 toToken "HENCE" = pure Hence
+toToken "THUS"  = pure Hence
 
 -- mutable state variables are modified by UPON THEN ELSE
 toToken     "THEN" = pure Then
@@ -169,7 +170,8 @@ toToken "AN"     = pure A_An
 toToken "THE"    = pure A_An
 
 toToken "DECLARE"   = pure Declare
-toToken "DEFINE"    = pure Define
+toToken "DEFINE"    = pure Define -- [TODO] rephrase DEFINE to support DECIDE and possibly overloaded DATA?
+toToken "DATA"      = pure Define
 toToken "DECIDE"    = pure Decide
 toToken "ONEOF"    = pure OneOf
 toToken "ONE OF"    = pure OneOf

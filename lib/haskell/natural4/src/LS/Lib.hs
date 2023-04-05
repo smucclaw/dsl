@@ -78,9 +78,11 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
                    , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
+                   , togftrees      :: w ::: Bool   <!> "True"  <?> "nlg trees"
                    , togrounds :: w ::: Bool   <!> "True"  <?> "ground terms"
                    , tots      :: w ::: Bool   <!> "True"  <?> "typescript"
                    , tonl      :: w ::: Bool   <!> "True"  <?> "natural language"
+                   , tomaude    :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
 
                    , dbug :: w ::: Bool <!> "False"
@@ -115,7 +117,7 @@ getConfig o = do
         , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
         , toNLG = maybe False (read :: String -> Bool) mpn
         , toBabyL4  = only o == "babyl4" || only o == "corel4"
-        , toASP     = only o == "asp" 
+        , toASP     = only o == "asp"
         , toProlog  = only o == "prolog"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"
@@ -405,10 +407,11 @@ pRulesOnly = do
                *> manyIndentation (sameDepth (try pRule))
                <* optional dnl)
          )
+    <* semicolonBetweenRules
     <* eof
 
-semicolonBetweenRules :: Parser (Maybe MyToken)
-semicolonBetweenRules = optional (manyIndentation (Semicolon <$ some (pToken Semicolon)))
+semicolonBetweenRules :: Parser [MyToken]
+semicolonBetweenRules = many (manyIndentation (Semicolon <$ some (pToken Semicolon)))
 
 pRules = pRulesOnly
 
@@ -622,6 +625,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                                                    )
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
+      gvn     = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)
       toreturn = Regulative
                  { subj     = entityname
                  , rkeyword  = RParty
@@ -636,7 +640,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
                  , upon     = listToMaybe (snd <$> rbupon  rulebody)
-                 , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
+                 , given    = gvn    -- given
                  , having   = rbhaving rulebody
                  , wwhere   = rbwhere rulebody
                  , defaults = []
@@ -655,17 +659,24 @@ pRegRuleSugary = debugName "pRegRuleSugary" $ do
 -- IF      a potato is available
 --    AND  the potato is not green
 
+stackGiven :: Maybe ParamText -> Rule -> Rule
+stackGiven gvn r@Regulative  {..} = r { given = gvn <> given }
+stackGiven gvn r@Hornlike    {..} = r { given = gvn <> given }
+stackGiven gvn r@TypeDecl    {..} = r { given = gvn <> given }
+stackGiven gvn r@Constitutive{..} = r { given = gvn <> given }
+stackGiven _   r                  = r
+
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" $ do
   let keynamewho = (,) <$> pActor [REvery,RParty,RTokAll]
                    <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
   rulebody <- permutationsReg keynamewho
-  henceLimb                   <- optional $ pHenceLest Hence
-  lestLimb                    <- optional $ pHenceLest Lest
+  let gvn     = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)
+      poscond = snd <$> mergePBRS (rbpbrs   rulebody)
+      negcond = snd <$> mergePBRS (rbpbrneg rulebody)
+  henceLimb                   <- optional $ stackGiven gvn <$> pHenceLest Hence
+  lestLimb                    <- optional $ stackGiven gvn <$> pHenceLest Lest
   myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
-
-  let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
-  let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
 
   let toreturn = Regulative
                  { subj     = snd $ rbkeyname rulebody
@@ -680,8 +691,8 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
                  , rlabel   = Nothing -- rule label
                  , lsource  = Nothing -- legal source
                  , srcref   = Nothing -- internal SrcRef
-                 , upon     = listToMaybe (snd <$> rbupon  rulebody)    -- given
-                 , given    = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)    -- given
+                 , upon     = listToMaybe (snd <$> rbupon  rulebody)
+                 , given    = gvn
                  , having   = rbhaving rulebody
                  , wwhere   = rbwhere rulebody
                  , defaults = []
@@ -701,7 +712,7 @@ pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
-      try (debugName "pHenceLest -> innerRule -> pRegRule" pRegRule)
+      try (debugName "pHenceLest -> innerRule -> pRule" pRule)
       <|> RuleAlias <$> (optional (pToken Goto) *> someDeep pMTExpr)
 
 pTemporal :: Parser (Maybe (TemporalConstraint Text.Text))

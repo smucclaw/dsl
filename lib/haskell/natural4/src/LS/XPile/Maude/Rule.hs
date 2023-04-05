@@ -100,8 +100,7 @@ rule2doc
       We continue along the happy path by removing empty docs and vcat'ing
       everything together.
     -}
-      ruleActorAction <> deadline <> henceLestClauses
-        |$> vcat
+      vcat <$> ruleActorAction <> deadline <> henceLestClauses
     where
       ruleActorAction = sequenceA [ruleName', rkeywordActor, deonticAction]
       ruleName' = pure $ "RULE" <+> text2qid ruleName

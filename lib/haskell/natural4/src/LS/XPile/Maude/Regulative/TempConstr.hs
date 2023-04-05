@@ -26,12 +26,6 @@ tempConstr2doc ::
   Maybe (TemporalConstraint T.Text) ->
   Ap (Validate (Doc ann1)) (Maybe (Doc ann2))
 tempConstr2doc = traverse $ \case
-  {-
-    Note that traverse is effectively an effectful fmap, meaning that the
-    function used for traversal can throw exceptions, which will short-circuit
-    traverse.
-  -}
-  -- _ :: TemporalConstraint T.Text -> Ap (Either s) (Doc ann)
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)

@@ -13,6 +13,7 @@ abstract DomainLexicon = NL4Base ** {
        , notification
        , PDPC
        , data_breach
+       , public_agency
        : CN ;
       public, notifiable : AP ;
       NDB_Qualification : NP ;

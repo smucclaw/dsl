@@ -20,6 +20,7 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     PDPC = mkCN (mkN "PDPC") ;
     data_breach = mkCN (mkN ("pelanggaran data"|"Pelanggaran Data")) ;
     public = mkAP (mkA ("awam"|"Awam")) ;
+    public_agency = mkCN (mkN "agensi awam") ;
     notifiable = mkAP (mkA ("boleh dimaklumkan"|"Boleh Dimaklumkan")) ;
     aware = mkAP (mkA "sedar") ;
     NDB_Qualification = mkNP (mkN "Kelayakan NDB") ;

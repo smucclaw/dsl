@@ -9,6 +9,13 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
   -- Collection of "basic" words that we expect to appear across multiple documents in legal domain
   -- Very ad hoc at the moment, should consult a proper legal corpus, analyse valencies and complement types etc.
   -- This module should be the really high quality stuff
+
+  -- Words from closed classes, like prepositions etc.
+  lin
+    within_Prep = mkPrep "within" ;
+    only_AdA = mkAdA "only" ;
+
+  -- Open classes, like nouns, verbs etc.
   lin
     organisation = mkCN (mkN ("organisation"|"Organisation")) ;
     agency = mkCN (mkN ("agency"|"Agency")) ;

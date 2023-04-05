@@ -9,6 +9,13 @@ concrete StandardLexiconChi of StandardLexicon = NL4BaseChi **
   -- Collection of "basic" words that we expect to appear across multiple documents in legal domain
   -- Very ad hoc at the moment, should consult a proper legal corpus, analyse valencies and complement types etc.
   -- This module should be the really high quality stuff
+
+  -- Words from closed classes, like prepositions etc.
+  lin
+    within_Prep = withinPrep ;
+    only_AdA = lin AdA only_Predet ;
+
+  -- Open classes, like nouns, verbs etc.
   lin
     organisation = mkCN (mkN ("organisation"|"Organisation")) ;
     agency = mkCN (mkN ("机 构")) ;

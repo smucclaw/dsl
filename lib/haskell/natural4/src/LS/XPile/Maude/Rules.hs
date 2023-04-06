@@ -40,9 +40,7 @@ rules2doc rules =
     |> concatWith (<.>)
   where
     -- Find the first regulative rule and extracts its rule name.
-    -- This returns a Maybe because there may not be any regulative rule.
-    -- In such cases, we simply return mempty, the empty doc.
-    -- Otherwise, we turn it into a quoted symbol and prepend START.
+    -- If such a rule exists, we turn it into a quoted symbol and prepend START.
     startRule =
       rules
         |> mapMaybe rule2maybeStartRuleLabel

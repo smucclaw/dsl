@@ -5,13 +5,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-
-  Work-in-progress transpiler to Maude.
-  Note that since we do all the parsing and transpilation within Maude itself,
-  all we do here is convert the list of rules to a textual, string
-  representation that Maude can parse.
--}
-
 module LS.XPile.Maude.Rule
   ( rule2doc,
   )
@@ -32,11 +25,16 @@ import LS.Types
     RelationalPredicate (RPBoolStructR, RPMT),
   )
 import LS.XPile.Maude.Regulative.HenceLest
-  ( HenceLest (..),
-    HenceLestClause (..),
+  ( HenceLest(..),
+    HenceLestClause(..),
     henceLest2doc,
   )
 import LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
+    ( DeonticAction(..),
+      RkeywordActor(..),
+      rkeywordActor2doc,
+      deonticAction2doc,
+    )
 import LS.XPile.Maude.Regulative.TempConstr (tempConstr2doc)
 import LS.XPile.Maude.Utils
   ( multiExprs2qid,
@@ -121,7 +119,7 @@ rule2doc
           |> wither henceLest2doc
 
 rule2doc DefNameAlias {name, detail} =
-  pure $ nameDetails2means name [detail]
+  pure $ mkMeans name [detail]
 
 {-
   clauses =
@@ -135,15 +133,18 @@ rule2doc
     { keyword = Means,
       clauses = [HC {hHead = RPBoolStructR mtExpr RPis (All _ leaves)}]
     } =
-    leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
+    leaves |> traverse leaf2mtt |$> mkMeans mtExpr
     where
       leaf2mtt (Leaf (RPMT mtt)) = pure mtt
       leaf2mtt _ = throwDefaultErr
 
 rule2doc _ = throwDefaultErr
 
-nameDetails2means :: MultiTerm -> [MultiTerm] -> Doc ann
-nameDetails2means name details =
+{-
+  mkMeans "A" ["B", "C", "D"] = "A MEANS (B AND C AND D)"
+-}
+mkMeans :: MultiTerm -> [MultiTerm] -> Doc ann
+mkMeans name details =
   hsep [name', "MEANS", details']
   where
     name' = multiExprs2qid name

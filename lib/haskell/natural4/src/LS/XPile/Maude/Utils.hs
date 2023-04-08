@@ -77,4 +77,4 @@ multiExprs2qid :: IsList t => t MTExpr -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> Fold.toList |> mt2text |> text2qid
 
 text2qid :: T.Text -> Doc ann
-text2qid x = ["qid(\"", x, "\")"] |> mconcat |> pretty
+text2qid x = pretty $ "qid(\"" <> x <> "\")"

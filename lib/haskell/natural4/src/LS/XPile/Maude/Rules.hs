@@ -1,7 +1,6 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module LS.XPile.Maude.Rules
   ( rules2maudeStr,

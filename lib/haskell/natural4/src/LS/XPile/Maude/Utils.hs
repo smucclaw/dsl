@@ -1,15 +1,9 @@
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -25,6 +19,7 @@ where
 import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
 import Data.Coerce (coerce)
 import Data.Foldable qualified as Fold
+import Data.Kind (Type, Constraint)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
@@ -66,7 +61,13 @@ infixl 0 |$>
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = flip fmap
 
-type IsList t = (Foldable t, (t == NonEmpty || t == []) ~ True)
+type IsList :: (Type -> Type) -> Constraint
+type IsList t =
+  ( Foldable t,
+    forall a. Show a => Show (t a),
+    forall a. Ord a => Ord (t a),
+    (t == NonEmpty || t == []) ~ True
+  )
 
 {-
   Note that (mt2text :: MultiTerm -> Text) and that Multiterm = [MTExpr], but

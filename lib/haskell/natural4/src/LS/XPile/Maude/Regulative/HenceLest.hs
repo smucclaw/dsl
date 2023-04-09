@@ -1,8 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTSyntax #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module LS.XPile.Maude.Regulative.HenceLest
   ( HenceLest(..),
@@ -12,13 +10,14 @@ module LS.XPile.Maude.Regulative.HenceLest
 where
 
 import Control.Monad.Validate (Validate)
+import Data.Kind (Type)
 import Data.Monoid (Ap)
 import Data.Traversable (for)
 import LS.Rule (Rule (RuleAlias))
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, viaShow, (<+>))
 
-data HenceLest where
+data HenceLest :: Type where
   HENCE :: HenceLest
   LEST :: HenceLest
   deriving (Eq, Ord, Read, Show)
@@ -26,7 +25,7 @@ data HenceLest where
 -- instance Pretty HenceLest where
 --   pretty = viaShow
 
-data HenceLestClause where
+data HenceLestClause :: Type where
   HenceLestClause ::
     { henceLest :: HenceLest,
       clause :: Maybe Rule

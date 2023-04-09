@@ -1,9 +1,6 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -17,6 +14,7 @@ module LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
 where
 
 import Control.Monad.Validate (Validate)
+import Data.Kind (Type)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (Ap)
 import Data.Text qualified as T
@@ -54,7 +52,7 @@ rkeywordActor2doc
 
 rkeywordActor2doc _ = throwDefaultErr
 
-data DeonticAction where
+data DeonticAction :: Type where
   DeonticAction ::
     { deontic :: Deontic,
       action :: ParamText

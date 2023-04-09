@@ -1,3 +1,6 @@
+{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module LS.XPile.Maude.Maude
   ( rules2maudeStr,
   )

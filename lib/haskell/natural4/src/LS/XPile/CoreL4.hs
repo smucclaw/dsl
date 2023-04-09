@@ -32,7 +32,8 @@ import qualified Data.List.NonEmpty as NE
 -- import Text.Pretty.Simple (pShow, pShowNoColor)
 -- import qualified Data.Text.Lazy as TL
 -- import Control.Monad (guard, join)
-import Data.Either (rights, isRight)
+import Data.Either (rights, isRight, fromRight)
+import Control.Monad.Except
 -- import qualified Data.Traversable as DT
 
 import Text.Regex.TDFA
@@ -48,6 +49,8 @@ import LS.Tokens (undeepers)
 import qualified Text.XML.HXT.Core as HXT
 
 import Debug.Trace (trace)
+
+type ExprM a = Either String (Expr a)
 
 -- output to Core L4 for further transformation
 
@@ -200,41 +203,40 @@ varNameToVarNoType cont vn
   | vn ==  head cont = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
   | otherwise = varNameToVarNoType (tail cont) vn
 
-varsToExprNoType :: [Var t] -> Expr t
-varsToExprNoType (v:vs) = --
-  -- error
-  applyVarsNoType v vs
-varsToExprNoType [] = error "internal error (varsToExprNoType [])"
+varsToExprNoType :: [Var t] -> ExprM t
+varsToExprNoType (v:vs) = pure $ applyVarsNoType v vs
+varsToExprNoType [] = throwError "internal error (varsToExprNoType [])"
 
-multiTermToExprNoType :: [String] -> MultiTerm -> Expr ()
+multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
-multiTermToExprNoType cont mt =
-  case map (mtExprToExprNoType cont) mt of
-    ((VarE t v) : args) -> funArgsToAppNoType (VarE t v) args
-    [e] -> e
-    _ -> error "non-variable name in function position"
+multiTermToExprNoType cont mt = do
+  boo <- mapM (mtExprToExprNoType cont) mt
+  case boo of
+    ((VarE t v) : args) -> pure $ funArgsToAppNoType (VarE t v) args
+    [e] -> pure e
+    _ -> throwError "non-variable name in function position"
 
 
-mtExprToExprNoType :: [String] -> MTExpr -> Expr ()
-mtExprToExprNoType cont (MTT t) = VarE () (varNameToVarNoType cont (T.unpack t))
-mtExprToExprNoType _ (MTI i) = ValE () (IntV i)
-mtExprToExprNoType _ (MTF i) = ValE () (FloatV i)
-mtExprToExprNoType _ (MTB i) = ValE () (BoolV i)
+mtExprToExprNoType :: [String] -> MTExpr -> ExprM ()
+mtExprToExprNoType cont (MTT t) = pure $ VarE () (varNameToVarNoType cont (T.unpack t))
+mtExprToExprNoType _ (MTI i) = pure $ ValE () (IntV i)
+mtExprToExprNoType _ (MTF i) = pure $ ValE () (FloatV i)
+mtExprToExprNoType _ (MTB i) = pure $ ValE () (BoolV i)
 
 
-rpRelToBComparOp :: RPRel -> BinOp
+rpRelToBComparOp :: RPRel -> Either String BinOp
 rpRelToBComparOp cop = case cop of
-  RPis -> error "rpRelToBComparOp: erroring on RPis"
-  RPhas -> error "rpRelToBComparOp: erroring on RPhas"
-  RPeq -> BCompar BCeq
-  RPlt -> BCompar BClt
-  RPlte -> BCompar BClte
-  RPgt -> BCompar BCgt
-  RPgte -> BCompar BCgte
-  RPelem -> error "rpRelToBComparOp: erroring on RPelem"
-  RPnotElem -> error "rpRelToBComparOp: erroring on RPnotElem"
-  RPnot -> error "rpRelToBComparOp: erroring on RPnot"
-  RPTC _ -> error "rpRelToBComparOp: erroring on RPTC"
+  RPis       -> throwError "rpRelToBComparOp: erroring on RPis"
+  RPhas      -> throwError "rpRelToBComparOp: erroring on RPhas"
+  RPeq       -> pure $ BCompar BCeq
+  RPlt       -> pure $ BCompar BClt
+  RPlte      -> pure $ BCompar BClte
+  RPgt       -> pure $ BCompar BCgt
+  RPgte      -> pure $ BCompar BCgte
+  RPelem     -> throwError "rpRelToBComparOp: erroring on RPelem"
+  RPnotElem  -> throwError "rpRelToBComparOp: erroring on RPnotElem"
+  RPnot      -> throwError "rpRelToBComparOp: erroring on RPnot"
+  RPTC _     -> throwError "rpRelToBComparOp: erroring on RPTC"
 
 conjExprNoType :: Expr () -> Expr () -> Expr ()
 conjExprNoType = BinOpE () (BBool BBand)
@@ -253,37 +255,43 @@ disjsExprNoType [e] = e
 disjsExprNoType (e:es) = disjExprNoType e (disjsExprNoType es)
 -- END helper functions
 
-boolStructRToExpr :: [String] -> BoolStructR -> Expr ()
+boolStructRToExpr :: [String] -> BoolStructR -> ExprM ()
 boolStructRToExpr cont bs = case bs of
   Leaf rp -> relationalPredicateToExpr cont rp
-  All _m_la bss -> conjsExprNoType (map (boolStructRToExpr cont) bss)
-  Any _m_la bss -> disjsExprNoType (map (boolStructRToExpr cont) bss)
-  Not bs' -> UnaOpE () (UBool UBnot) (boolStructRToExpr cont bs')
+  All _m_la bss -> conjsExprNoType <$> mapM (boolStructRToExpr cont) bss
+  Any _m_la bss -> disjsExprNoType <$> mapM (boolStructRToExpr cont) bss
+  Not bs' -> UnaOpE () (UBool UBnot) <$> boolStructRToExpr cont bs'
 
-relationalPredicateToExpr :: [String] -> RelationalPredicate -> Expr ()
+relationalPredicateToExpr :: [String] -> RelationalPredicate -> ExprM ()
 relationalPredicateToExpr cont rp = case rp of
+  -- [TODO] use throwError here
   RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
+                    pure $
                     ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
 
   RPMT mts -> multiTermToExprNoType cont mts
   RPConstraint mts RPis mts' -> multiTermToExprNoType cont (mts' ++ mts)
   RPConstraint mts rr mts' ->
-    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType cont mts) (multiTermToExprNoType cont mts')
+    let bop = rpRelToBComparOp rr
+    in
+      bop >>=
+      (\r -> BinOpE () r <$> multiTermToExprNoType cont mts <*> multiTermToExprNoType cont mts')
+
   RPBoolStructR mts rr bs ->
     -- TODO: translate bs
-    BinOpE () (rpRelToBComparOp rr) (multiTermToExprNoType cont mts) falseVNoType
-  RPnary rr rp' -> error "relationalPredicateToExpr: erroring on RPnary"
+    rpRelToBComparOp rr >>= (\r -> BinOpE () r <$> multiTermToExprNoType cont mts <*> pure falseVNoType)
+  RPnary rr rp' -> throwError "relationalPredicateToExpr: erroring on RPnary"
 
 
 -- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
 -- i.e. precondOfHornClauses :: [HornClause2] -> [String] -> Expr ()
-precondOfHornClauses :: [String] -> [HornClause2] -> Expr ()
+precondOfHornClauses :: [String] -> [HornClause2] -> ExprM ()
 precondOfHornClauses cont [HC _hh (Just hb)] = boolStructRToExpr cont hb
-precondOfHornClauses _ _ = trueVNoType
+precondOfHornClauses _ _ = pure trueVNoType
 
-postcondOfHornClauses :: [String] -> [HornClause2] -> Expr ()
+postcondOfHornClauses :: [String] -> [HornClause2] -> ExprM ()
 postcondOfHornClauses cont [HC hh _hb] = relationalPredicateToExpr cont hh
-postcondOfHornClauses _ _ = trueVNoType
+postcondOfHornClauses _ _ = pure trueVNoType
 
 sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = []
@@ -294,7 +302,7 @@ sfl4ToCorel4Rule h@Hornlike{..} =
             -- TODO: the following produces an error: Prelude.tail: empty list
             -- has been temporarily commented out 
             -- given2classdecls given ++
-            [rule]
+            rule
   where
     cont = createContext h
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
@@ -310,29 +318,37 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    rule = RuleTLE Rule
-      { annotOfRule    = ()
-      , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-      , instrOfRule    = []
-      , varDeclsOfRule = []
-      , precondOfRule  = precondOfHornClauses cont clauses
-      -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
-      , postcondOfRule = postcondOfHornClauses cont clauses
-      }
+    rule =
+      let preCond = precondOfHornClauses cont clauses
+          postCond = postcondOfHornClauses cont clauses
+      in
+        if isRight preCond && isRight postCond
+        then pure $
+             RuleTLE Rule
+             { annotOfRule    = ()
+             , nameOfRule     = rlabel <&> rl2text <&> T.unpack
+             , instrOfRule    = []
+             , varDeclsOfRule = []
+             , precondOfRule  = fromRight (error "no precond") preCond
+             -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
+             , postcondOfRule = fromRight (error "no postcond") postCond
+             }
+        else []
 
 
-sfl4ToCorel4Rule Constitutive{ } = error "sfl4ToCorel4Rule: erroring on Constitutive"
+sfl4ToCorel4Rule Constitutive{ } = trace "sfl4ToCorel4Rule: erroring on Constitutive" $
+                                   mempty
 sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
 sfl4ToCorel4Rule DefNameAlias { } = []
-sfl4ToCorel4Rule (RuleAlias _) = error "sfl4ToCorel4Rule: erroring on RuleAlias"   -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled  = error "sfl4ToCorel4Rule: erroring on RegFulfilled"
-sfl4ToCorel4Rule RegBreach     = error "sfl4ToCorel4Rule: erroring on RegBreach"
-sfl4ToCorel4Rule Scenario {}   = error "sfl4ToCorel4Rule: erroring on Scenario"
-sfl4ToCorel4Rule DefTypically {} = []
-sfl4ToCorel4Rule RuleGroup {}  = error "sfl4ToCorel4Rule: erroring on RuleGroup"
-sfl4ToCorel4Rule (NotARule _)            = error "sfl4ToCorel4Rule: erroring on NotARule"
+sfl4ToCorel4Rule (RuleAlias _) = trace "sfl4ToCorel4Rule: erroring on RuleAlias" mempty   -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule RegFulfilled  = trace "sfl4ToCorel4Rule: erroring on RegFulfilled" mempty
+sfl4ToCorel4Rule RegBreach     = trace "sfl4ToCorel4Rule: erroring on RegBreach" mempty
+sfl4ToCorel4Rule Scenario {}   = trace "sfl4ToCorel4Rule: erroring on Scenario" mempty
+sfl4ToCorel4Rule DefTypically {} = mempty
+sfl4ToCorel4Rule RuleGroup {}  = trace "sfl4ToCorel4Rule: erroring on RuleGroup" mempty
+sfl4ToCorel4Rule (NotARule _)  = trace "sfl4ToCorel4Rule: erroring on NotARule" mempty
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr
@@ -966,7 +982,7 @@ testrules = [ defaultHorn
 extractGiven :: SFL4.Rule -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
 extractGiven Hornlike{given=Nothing}        = []
 extractGiven Hornlike{given=Just paramtext} = NE.toList paramtext
-extractGiven _                              = error "not a Hornlike rule, not extracting given"
+extractGiven _                              = trace "not a Hornlike rule, not extracting given" mempty
 
 -- typedMultitoMTExprs :: TypedMulti -> MultiTerm
 typedMultitoMTExprs :: (NE.NonEmpty MTExpr, Maybe TypeSig) -> [MTExpr]

@@ -1,0 +1,30 @@
+#!/usr/bin/perl -l
+
+# usage:
+# ┌─[mengwong@solo-8] - [~/src/smucclaw/dsl/lib/haskell/natural4] - [2023-04-09 04:40:28]
+# └─[0] <git:(runtime-errors-in-corel4 98c0eb8c✱✈) > ~/src/smucclaw/dsl/bin/import-graph src/LS/XPile/*.hs src/LS/*.hs src/LS.hs > doc/imports.dot
+
+use File::Basename;
+our %gr = ();
+
+while (<>) {
+  next unless my ($importee) = /^import\s+(?:qualified +)?(\S+)/;
+  push @{$gr{myrename($ARGV)}}, $importee;
+}
+
+sub myrename {
+  local $_ = shift;
+  s/^src\///;
+  tr(/)(.);
+  s/\.hs$//;
+  return $_;
+}
+
+print ("digraph imports {");
+while (my ($k,$v) = each %gr) {
+  for my $vv (@$v) {
+    next if $vv !~ /^(LS|L4)/;
+    print (qq(  "$k" -> "$vv";));
+  }
+}
+print ("}");

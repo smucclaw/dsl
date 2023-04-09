@@ -61,11 +61,11 @@ infixl 0 |$>
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = flip fmap
 
-{-# NOINLINE (|$>) #-}
+-- {-# NOINLINE (|$>) #-}
 
-{-# RULES
-  "|$>"    forall f g xs.  xs |$> f |$> g = xs |$> (g . f)
-#-}
+-- {-# RULES
+--   "|$>"    forall f g xs.  xs |$> f |$> g = xs |$> (g . f)
+-- #-}
 
 type IsList :: (Type -> Type) -> Constraint
 type IsList t =

@@ -116,7 +116,7 @@ nlg' thl env rule = case rule of
                     Nothing -> pure mempty
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
-      print "hornlike"
+      -- print "hornlike"
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
           parseBodyHC cl = case hBody cl of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
@@ -157,9 +157,9 @@ ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> text
     Hornlike {clauses} -> do
-      print "---"
-      print $ ruleQnTrees env alias rule
-      print "---"
+      -- print "---"
+      -- print $ ruleQnTrees env alias rule
+      -- print "---"
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias

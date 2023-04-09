@@ -64,6 +64,7 @@ main = do
       (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
       (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
+      (toepilogFN,  asEpilog)  = (workuuid <> "/" <> "epilog",   sfl4ToEpilog rules)
       (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
@@ -119,6 +120,7 @@ main = do
     when (SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "skipping babyl4"
     when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
+    when (SFL4.toepilog  opts) $ mywritefile True toepilogFN   iso8601 "lp"   asEpilog
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr

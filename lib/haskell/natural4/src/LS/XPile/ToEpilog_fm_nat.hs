@@ -1,4 +1,4 @@
-module LS.XPile.ToASP where
+module LS.XPile.ToEpilog_fm_nat where
 
 import Prettyprinter
 import Prettyprinter.Render.Text (putDoc)
@@ -16,6 +16,7 @@ import Data.List (nub)
 import Data.Foldable (find)
 import L4.KeyValueMap (ValueKVM)
 import qualified Data.Set as Set
+--import ToEpilog (TranslationMode(FixedCode))
 
 data ASPRule t = ASPRule {
                      nameOfASPRule :: String
@@ -176,7 +177,7 @@ varTovarDecl :: Var t -> VarDecl t
 varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT 
 varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT   
 
-data TranslationMode = AccordingToR | CausedByR | ExplainsR | VarSubs1R | VarSubs2R | VarSubs3R | AccordingToE String | LegallyHoldsE | QueryE | VarSubs4R | RawL4 | AddFacts
+data TranslationMode = AccordingToR | CausedByR | ExplainsR | VarSubs1R | VarSubs2R | VarSubs3R | AccordingToE String | LegallyHoldsE | QueryE | VarSubs4R | RawL4 | AddFacts | FixedCode
 class ShowASP x where
     showASP :: TranslationMode -> x -> Doc ann
 class ShowOppClause x where
@@ -267,7 +268,7 @@ instance Show t => ShowOppClause (OpposesClause t) where
 instance Show t => ShowASP (ASPRule t) where
     showASP AccordingToR (ASPRule rn _env _vds preconds postcond) =
         showASP (AccordingToE rn) postcond <+> pretty ":-" <+>
-            hsep (punctuate comma (map (showASP LegallyHoldsE) preconds)) <>  pretty "."
+            hsep (punctuate (pretty "&") (map (showASP LegallyHoldsE) preconds))
 
 {-     showASP ExplainsSkolemR (ASPRule rn vds preconds postcond)=
                              let new_rn = rn
@@ -329,6 +330,24 @@ instance Show t => ShowASP (ASPRule t) where
                     pretty ("createSub(subInst" ++ "_" ++ _rn ++ toBrackets _vds ++ "," ++ "_N" ++ ").")
                     )
             preconds)
+    
+    showASP FixedCode (ASPRule _rn _env _vds preconds postcond) =
+      vsep ([ pretty "defeated(R2,C2):-overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)"
+            , pretty "opposes(C1,C2):-opposes(C2,C1)"
+            , pretty "legally_enforces(R,C):-according_to(R,C) & ~defeated(R,C) "
+            , pretty "legally_holds(C):-legally_enforces(R,C)"
+            , pretty "legally_holds(contradiction_entailed):-opposes(C1,C2) & legally_holds(C1) & legally_holds(C2)"
+            , pretty "caused_by(pos,overrides(R1,R2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,according_to(R2,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,legally_enforces(R1,C1),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,opposes(C1,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
+            , pretty "caused_by(pos,according_to(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)"
+            , pretty "caused_by(neg,defeated(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)"
+            , pretty "caused_by(pos,legally_enforces(R,C),legally_holds(C),0):-legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)"
+            , pretty "justify(X,0):-caused_by(pos,X,Y,0)"
+            , pretty "directedEdge(Sgn,X,Y):-caused_by(Sgn,X,Y,0)"
+            , pretty "justify(X,0):-gen_graph(X)" ])
+        
 
 
     showASP AddFacts (ASPRule _rn _env _vds _preconds postcond) =
@@ -375,16 +394,16 @@ instance Show t => ShowASP (ASPRule t) where
                             pretty "pos," <+>
                             showASP LegallyHoldsE pc <> pretty "," <+>
                             showASP (AccordingToE rn) postcond <> pretty "," <+>
-                            pretty "_N+1"
+                            pretty "0"
                             ) <+>
                         pretty ":-" <+>
-                        showASP (AccordingToE rn) postcond <> pretty "," <+>
-                        hsep (punctuate comma (map (showASP LegallyHoldsE) preconds)) <>  pretty "," <+>
+                        showASP (AccordingToE rn) postcond <> pretty "&" <+>
+                        hsep (punctuate (pretty "&") (map (showASP LegallyHoldsE) preconds)) <>  pretty "&" <+>
                         pretty "justify" <>
                         parens (
                             showASP (AccordingToE rn) postcond <>  pretty "," <+>
-                            pretty "_N") <>
-                        pretty "."
+                            pretty "0") 
+                
                     )
             preconds)
     showASP _ _ = pretty ""  -- not implemented
@@ -419,11 +438,11 @@ astToASP prg = do
 
     -- putStrLn "ASP rules:"
     putDoc $ vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line
-    putDoc $ vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line
-    putDoc $ vsep (map (showASP AddFacts) aspRulesFact) <> line <> line
-    putDoc $ vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line
-    putDoc $ vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line
-    putDoc $ vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line
+    --putDoc $ vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line
+    --putDoc $ vsep (map (showASP AddFacts) aspRulesFact) <> line <> line
+    --putDoc $ vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line
+    --putDoc $ vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line
+    --putDoc $ vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line
     -- putDoc $ vsep (map (showASP VarSubs2R) aspRules) <> line <> line
     -- putDoc $ vsep (map (showASP ExplainsR) aspRules) <> line <> line
     -- putDoc $ vsep (map (showASP ExplainsR) skolemizedASPRules) <> line <> line
@@ -447,11 +466,11 @@ astToDoc prg =
 
     -- putStrLn "ASP rules:"
     vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
-    vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line <>
+    -- vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line <>
     vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line <>
     vsep (map showOppClause oppClauses) <> line
 

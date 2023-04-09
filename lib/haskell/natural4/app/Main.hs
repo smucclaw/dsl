@@ -115,9 +115,9 @@ main = do
 
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
-    when (SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
+    when (      SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
     when (not $ SFL4.tocorel4  opts) $ putStrLn "skipping corel4"
-    when (SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
+    when (      SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "skipping babyl4"
     when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
     when (SFL4.toepilog  opts) $ mywritefile True toepilogFN   iso8601 "lp"   asEpilog

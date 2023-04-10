@@ -28,7 +28,7 @@ import LS.Types
     RegKeywords (REvery, RParty),
   )
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
-import Prettyprinter (Doc, Pretty (pretty), (<+>))
+import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
 data RkeywordActor where
@@ -80,5 +80,5 @@ rkeywordDeonticActorAction2doc rkeywordDeontic ((actorAction, _) :| _) =
   pure [di|#{rkeywordDeontic'} #{actorAction'}|]
   where
     rkeywordDeontic' =
-      rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper |> pretty
+      rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper
     actorAction' = multiExprs2qid actorAction

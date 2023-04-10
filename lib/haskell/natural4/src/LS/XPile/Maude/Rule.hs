@@ -45,7 +45,7 @@ import LS.XPile.Maude.Utils
     throwDefaultErr,
     (|$>),
   )
-import Prettyprinter (Doc, hsep, vcat, (<+>))
+import Prettyprinter (Doc, vcat, hsep)
 import Witherable (wither)
 import Prettyprinter.Interpolate (di)
 

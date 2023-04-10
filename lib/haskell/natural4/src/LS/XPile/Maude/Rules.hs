@@ -20,7 +20,7 @@ import Flow ((|>))
 import LS.Rule (Rule (..))
 import LS.XPile.Maude.Rule (rule2doc)
 import LS.XPile.Maude.Utils (text2qid, (|$>))
-import Prettyprinter (Doc, concatWith, line, (<+>))
+import Prettyprinter (Doc, concatWith)
 import Prettyprinter.Interpolate (di)
 
 -- Main function to transpile rules to plaintext natural4 for Maude.

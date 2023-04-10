@@ -20,7 +20,7 @@ import LS.Types
     TemporalConstraint (TemporalConstraint),
   )
 import LS.XPile.Maude.Utils (throwDefaultErr)
-import Prettyprinter (Doc, Pretty (pretty), hsep)
+import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
 tempConstr2doc ::

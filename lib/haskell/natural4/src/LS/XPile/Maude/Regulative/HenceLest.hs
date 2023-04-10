@@ -15,7 +15,7 @@ import Data.Monoid (Ap)
 import Data.Traversable (for)
 import LS.Rule (Rule (RuleAlias))
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
-import Prettyprinter (Doc, viaShow, (<+>))
+import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
 data HenceLest where

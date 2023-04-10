@@ -1,6 +1,8 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.Rule
   ( rule2doc,
@@ -11,27 +13,30 @@ import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Validate (Validate)
 import Data.Foldable qualified as Fold
 import Data.List (intersperse)
+import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
 import Data.Monoid (Ap (Ap))
+import Data.Sequences as Seq (IsSequence)
 import Flow ((.>), (|>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
   ( HornClause (..),
+    MTExpr,
     MultiTerm,
     MyToken (Means),
     RPRel (RPis),
     RelationalPredicate (RPBoolStructR, RPMT),
   )
 import LS.XPile.Maude.Regulative.HenceLest
-  ( HenceLest(..),
-    HenceLestClause(..),
+  ( HenceLest (..),
+    HenceLestClause (..),
     henceLest2doc,
   )
 import LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
-    ( DeonticAction(..),
-      RkeywordActor(..),
-      rkeywordActor2doc,
-      deonticAction2doc,
-    )
+  ( DeonticAction (..),
+    RkeywordActor (..),
+    deonticAction2doc,
+    rkeywordActor2doc,
+  )
 import LS.XPile.Maude.Regulative.TempConstr (tempConstr2doc)
 import LS.XPile.Maude.Utils
   ( multiExprs2qid,
@@ -140,13 +145,15 @@ rule2doc _ = throwDefaultErr
 {-
   mkMeans "A" ["B", "C", "D"] = "A MEANS (B AND C AND D)"
 -}
-mkMeans :: MultiTerm -> [MultiTerm] -> Doc ann
+mkMeans ::
+  (IsSequence t, Element t ~ MultiTerm) => MultiTerm -> t -> Doc ann
 mkMeans name details =
   hsep [name', "MEANS", details']
   where
     name' = multiExprs2qid name
     details' =
       details
+        |> otoList
         |$> multiExprs2qid
         |> intersperse "AND"
         |> hsep
@@ -155,5 +162,5 @@ mkMeans name details =
     parenthesizeIf True x = mconcat ["(", x, ")"]
     parenthesizeIf False x = x
 
-    lengthMoreThanOne (_ : _ : _) = True
+    lengthMoreThanOne ((`ocompareLength` 1) -> LT) = True
     lengthMoreThanOne _ = False

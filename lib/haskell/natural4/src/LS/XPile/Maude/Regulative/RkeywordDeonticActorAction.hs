@@ -27,7 +27,7 @@ import LS.Types
     ParamText,
     RegKeywords (REvery, RParty),
   )
-import LS.XPile.Maude.Utils (IsList, multiExprs2qid, throwDefaultErr)
+import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, Pretty (pretty), (<+>))
 
 data RkeywordActor where

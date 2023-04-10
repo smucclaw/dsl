@@ -72,6 +72,7 @@ dependencies:
 - explainable
 - witherable
 - monad-validate
+- mono-traversable
 
 ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 

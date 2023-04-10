@@ -1,6 +1,7 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module LS.XPile.Maude.Rules
   ( rules2maudeStr,
@@ -11,7 +12,9 @@ import Control.Monad.Validate (Validate, runValidate)
 import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Maybe (mapMaybe)
+import Data.MonoTraversable (Element, otoList)
 import Data.Monoid (Ap (Ap))
+import Data.Sequences as Seq (IsSequence)
 import Flow ((|>))
 import LS.Rule (Rule (..))
 import LS.XPile.Maude.Rule (rule2doc)
@@ -19,14 +22,14 @@ import LS.XPile.Maude.Utils (text2qid, (|$>))
 import Prettyprinter (Doc, concatWith, line, (<+>))
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
-rules2maudeStr :: [Rule] -> String
+rules2maudeStr :: (IsSequence t, Element t ~ Rule) => t -> String
 rules2maudeStr rules = rules |> rules2doc |> show
 
 {-
   This function happily swallows up rules that don't transpile properly and
   only outputs those that do to plaintext.
 -}
-rules2doc :: [Rule] -> Doc ann
+rules2doc :: (IsSequence t, Element t ~ Rule) => t -> Doc ann
 rules2doc rules =
   startRule <> transpiledRules
     -- TODO:
@@ -41,13 +44,15 @@ rules2doc rules =
     -- Find the first regulative rule and extracts its rule name.
     -- If such a rule exists, we turn it into a quoted symbol and prepend START.
     startRule =
-      rules
+      rules'
         |> mapMaybe rule2maybeStartRuleLabel
         |> take 1
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules |$> rule2doc
+    transpiledRules = rules' |$> rule2doc
+
+    rules' = otoList rules
 
     rule2maybeStartRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
       "START" <+> text2qid ruleName |> pure |> Just

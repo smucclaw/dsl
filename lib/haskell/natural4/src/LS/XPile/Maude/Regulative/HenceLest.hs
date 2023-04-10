@@ -1,23 +1,24 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.XPile.Maude.Regulative.HenceLest
-  ( HenceLest(..),
-    HenceLestClause(..),
+  ( HenceLest (..),
+    HenceLestClause (..),
     henceLest2doc,
   )
 where
 
 import Control.Monad.Validate (Validate)
-import Data.Kind (Type)
 import Data.Monoid (Ap)
 import Data.Traversable (for)
 import LS.Rule (Rule (RuleAlias))
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, viaShow, (<+>))
+import Prettyprinter.Interpolate (di)
 
-data HenceLest :: Type where
+data HenceLest where
   HENCE :: HenceLest
   LEST :: HenceLest
   deriving (Eq, Ord, Read, Show)
@@ -25,7 +26,7 @@ data HenceLest :: Type where
 -- instance Pretty HenceLest where
 --   pretty = viaShow
 
-data HenceLestClause :: Type where
+data HenceLestClause where
   HenceLestClause ::
     { henceLest :: HenceLest,
       clause :: Maybe Rule
@@ -39,10 +40,7 @@ henceLest2doc ::
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
     (RuleAlias clause) ->
-      pure $ henceLest' <+> clause'
-      where
-        henceLest' = viaShow henceLest
-        clause' = multiExprs2qid clause
+      pure [di|#{henceLest} #{multiExprs2qid clause}|]
 
     _  -> throwDefaultErr
 

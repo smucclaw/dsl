@@ -73,6 +73,8 @@ dependencies:
 - witherable
 - monad-validate
 - mono-traversable
+- string-interpolate
+- prettyprinter-interp
 
 ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 

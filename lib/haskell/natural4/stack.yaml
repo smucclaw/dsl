@@ -27,6 +27,7 @@ extra-deps:
 - ../anyall
 - ../explainable
 - monad-validate-1.2.0.1
+- prettyprinter-interp-0.2.0.0
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)
 # you may prefer to do something like this:

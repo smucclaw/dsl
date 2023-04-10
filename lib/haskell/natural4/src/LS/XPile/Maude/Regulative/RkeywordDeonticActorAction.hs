@@ -1,6 +1,7 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -14,7 +15,6 @@ module LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
 where
 
 import Control.Monad.Validate (Validate)
-import Data.Kind (Type)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (Ap)
 import Data.Text qualified as T
@@ -29,6 +29,7 @@ import LS.Types
   )
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc, Pretty (pretty), (<+>))
+import Prettyprinter.Interpolate (di)
 
 data RkeywordActor where
   RkeywordActor ::
@@ -52,7 +53,7 @@ rkeywordActor2doc
 
 rkeywordActor2doc _ = throwDefaultErr
 
-data DeonticAction :: Type where
+data DeonticAction where
   DeonticAction ::
     { deontic :: Deontic,
       action :: ParamText
@@ -76,7 +77,7 @@ rkeywordDeonticActorAction2doc ::
   NonEmpty (NonEmpty MTExpr, b) ->
   Ap (Validate (Doc ann1)) (Doc ann2)
 rkeywordDeonticActorAction2doc rkeywordDeontic ((actorAction, _) :| _) =
-  pure $ rkeywordDeontic' <+> actorAction'
+  pure [di|#{rkeywordDeontic'} #{actorAction'}|]
   where
     rkeywordDeontic' =
       rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper |> pretty

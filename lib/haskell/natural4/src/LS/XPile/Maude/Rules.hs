@@ -1,6 +1,7 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module LS.XPile.Maude.Rules
@@ -20,6 +21,7 @@ import LS.Rule (Rule (..))
 import LS.XPile.Maude.Rule (rule2doc)
 import LS.XPile.Maude.Utils (text2qid, (|$>))
 import Prettyprinter (Doc, concatWith, line, (<+>))
+import Prettyprinter.Interpolate (di)
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
 rules2maudeStr :: (IsSequence t, Element t ~ Rule) => t -> String
@@ -55,7 +57,7 @@ rules2doc rules =
     rules' = otoList rules
 
     rule2maybeStartRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
-      "START" <+> text2qid ruleName |> pure |> Just
+      Just $ pure [di|START #{text2qid ruleName}|]
     rule2maybeStartRuleLabel _ = Nothing
 
-    x <.> y = mconcat [x, ",", line, line, y]
+    x <.> y = [di|#{x},\n\n#{y}|]

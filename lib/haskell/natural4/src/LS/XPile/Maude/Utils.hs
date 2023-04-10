@@ -3,6 +3,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -28,6 +29,7 @@ import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import Prettyprinter (Doc, Pretty (pretty))
+import Prettyprinter.Interpolate (di)
 
 {-
   The idea is that given a (Validate e :: Type -> Type) and a monoid
@@ -54,7 +56,7 @@ deriving via Validate e instance
   Semigroup e => MonadValidate e (Ap (Validate e))
 
 throwDefaultErr :: Ap (Validate (Doc ann)) a
-throwDefaultErr = refute "Not supported."
+throwDefaultErr = refute [di|Not supported.|]
 
 infixl 0 |$>
 
@@ -84,4 +86,4 @@ multiExprs2qid :: (SemiSequence t, Element t ~ MTExpr) => t -> Doc ann
 multiExprs2qid multiExprs = multiExprs |> otoList |> mt2text |> text2qid
 
 text2qid :: T.Text -> Doc ann
-text2qid x = pretty $ "qid(\"" <> x <> "\")"
+text2qid x = [di|qid("#{x}")|]

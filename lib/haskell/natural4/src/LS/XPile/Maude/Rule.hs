@@ -1,6 +1,7 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -11,8 +12,8 @@ where
 
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Validate (Validate)
-import Data.Foldable qualified as Fold
 import Data.List (intersperse)
+import Data.Maybe (maybeToList)
 import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
 import Data.Monoid (Ap (Ap))
 import Data.Sequences as Seq (IsSequence)
@@ -46,6 +47,7 @@ import LS.XPile.Maude.Utils
   )
 import Prettyprinter (Doc, hsep, vcat, (<+>))
 import Witherable (wither)
+import Prettyprinter.Interpolate (di)
 
 {-
   Based on experiments being run here:
@@ -103,13 +105,13 @@ rule2doc
       vcat <$> ruleActorAction <> deadline <> henceLestClauses
     where
       ruleActorAction = sequenceA [ruleName', rkeywordActor, deonticAction]
-      ruleName' = pure $ "RULE" <+> text2qid ruleName
+      ruleName' = pure [di|RULE #{text2qid ruleName}|]
       rkeywordActor =
         RkeywordActor {rkeyword, actor} |> rkeywordActor2doc -- |$> pure
       deonticAction =
         DeonticAction {deontic, action} |> deonticAction2doc -- |$> pure
 
-      deadline = temporal |> tempConstr2doc |$> Fold.toList
+      deadline = temporal |> tempConstr2doc |$> maybeToList
 
       henceLestClauses =
         -- wither is an effectful mapMaybes, so that this maps henceLest2doc
@@ -148,18 +150,18 @@ rule2doc _ = throwDefaultErr
 mkMeans ::
   (IsSequence t, Element t ~ MultiTerm) => MultiTerm -> t -> Doc ann
 mkMeans name details =
-  hsep [name', "MEANS", details']
+  [di|#{name'} MEANS #{details'}|]
   where
     name' = multiExprs2qid name
     details' =
       details
         |> otoList
         |$> multiExprs2qid
-        |> intersperse "AND"
+        |> intersperse [di|AND|]
         |> hsep
         |> parenthesizeIf (lengthMoreThanOne details)
 
-    parenthesizeIf True x = mconcat ["(", x, ")"]
+    parenthesizeIf True x = [di|(#{x})|]
     parenthesizeIf False x = x
 
     lengthMoreThanOne ((`ocompareLength` 1) -> LT) = True

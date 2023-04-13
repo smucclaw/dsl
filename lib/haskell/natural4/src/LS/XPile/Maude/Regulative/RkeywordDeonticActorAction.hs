@@ -1,9 +1,7 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -29,8 +27,9 @@ import LS.Types
     ParamText,
     RegKeywords (REvery, RParty),
   )
-import LS.XPile.Maude.Utils (IsList, multiExprs2qid, throwDefaultErr)
-import Prettyprinter (Doc, Pretty (pretty), (<+>))
+import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
+import Prettyprinter (Doc)
+import Prettyprinter.Interpolate (di)
 
 data RkeywordActor where
   RkeywordActor ::
@@ -78,8 +77,8 @@ rkeywordDeonticActorAction2doc ::
   NonEmpty (NonEmpty MTExpr, b) ->
   Ap (Validate (Doc ann1)) (Doc ann2)
 rkeywordDeonticActorAction2doc rkeywordDeontic ((actorAction, _) :| _) =
-  pure $ rkeywordDeontic' <+> actorAction'
+  pure [di|#{rkeywordDeontic'} #{actorAction'}|]
   where
     rkeywordDeontic' =
-      rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper |> pretty
+      rkeywordDeontic |> show |> T.pack |> T.tail |> T.toUpper
     actorAction' = multiExprs2qid actorAction

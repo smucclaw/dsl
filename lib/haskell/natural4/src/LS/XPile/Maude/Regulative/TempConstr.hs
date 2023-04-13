@@ -1,9 +1,8 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.Regulative.TempConstr
@@ -13,6 +12,7 @@ where
 
 import Control.Monad.Validate (Validate)
 import Data.Monoid (Ap)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Flow ((.>))
 import LS.Types
@@ -20,7 +20,8 @@ import LS.Types
     TemporalConstraint (TemporalConstraint),
   )
 import LS.XPile.Maude.Utils (throwDefaultErr)
-import Prettyprinter (Doc, Pretty (pretty), hsep)
+import Prettyprinter (Doc)
+import Prettyprinter.Interpolate (di)
 
 tempConstr2doc ::
   Maybe (TemporalConstraint T.Text) ->
@@ -29,13 +30,12 @@ tempConstr2doc = traverse $ \case
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)
-      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+      (T.toUpper .> (`elem` [[i|DAY|], [i|DAYS|]]) -> True)
     ) ->
-      pure $ hsep [tComparison', n', "DAY"]
+      pure [di|#{tComparison'} #{n} DAY|]
       where
-        n' = pretty n
         tComparison' = case tComparison of
-          TOn -> "ON"
-          TBefore -> "WITHIN"
+          TOn -> [di|ON|]
+          TBefore -> [di|WITHIN|]
 
   _ -> throwDefaultErr

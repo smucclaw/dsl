@@ -12,6 +12,13 @@ packages:
   original:
     hackage: monad-validate-1.2.0.1
 - completed:
+    hackage: prettyprinter-interp-0.2.0.0@sha256:45299b61bd6c27d594c1a72b5a8dd5734e791a59828725e4f4e420f3cc37232b,2016
+    pantry-tree:
+      sha256: 2e5ee99fc904a487b1bd94f31db28705b15b0eebcfd7f46879439fbf7313faa1
+      size: 300
+  original:
+    hackage: prettyprinter-interp-0.2.0.0
+- completed:
     name: baby-l4
     pantry-tree:
       sha256: c594edb18f1dfc843083741a05ac84c5abd0b6160554ea3902a4673b22f3bcbd

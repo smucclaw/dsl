@@ -1,16 +1,9 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
-{-
-  Work-in-progress transpiler to Maude.
-  Note that since we do all the parsing and transpilation within Maude itself,
-  all we do here is convert the list of rules to a textual, string
-  representation that Maude can parse.
--}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.Rule
   ( rule2doc,
@@ -19,13 +12,16 @@ where
 
 import AnyAll (BoolStruct (All, Leaf))
 import Control.Monad.Validate (Validate)
-import Data.Foldable qualified as Fold
 import Data.List (intersperse)
+import Data.Maybe (maybeToList)
+import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
 import Data.Monoid (Ap (Ap))
+import Data.Sequences as Seq (IsSequence)
 import Flow ((.>), (|>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
   ( HornClause (..),
+    MTExpr,
     MultiTerm,
     MyToken (Means),
     RPRel (RPis),
@@ -37,6 +33,11 @@ import LS.XPile.Maude.Regulative.HenceLest
     henceLest2doc,
   )
 import LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
+  ( DeonticAction (..),
+    RkeywordActor (..),
+    deonticAction2doc,
+    rkeywordActor2doc,
+  )
 import LS.XPile.Maude.Regulative.TempConstr (tempConstr2doc)
 import LS.XPile.Maude.Utils
   ( multiExprs2qid,
@@ -44,8 +45,9 @@ import LS.XPile.Maude.Utils
     throwDefaultErr,
     (|$>),
   )
-import Prettyprinter (Doc, hsep, vcat, (<+>))
+import Prettyprinter (Doc, vcat, hsep)
 import Witherable (wither)
+import Prettyprinter.Interpolate (di)
 
 {-
   Based on experiments being run here:
@@ -103,13 +105,13 @@ rule2doc
       vcat <$> ruleActorAction <> deadline <> henceLestClauses
     where
       ruleActorAction = sequenceA [ruleName', rkeywordActor, deonticAction]
-      ruleName' = pure $ "RULE" <+> text2qid ruleName
+      ruleName' = pure [di|RULE #{text2qid ruleName}|]
       rkeywordActor =
         RkeywordActor {rkeyword, actor} |> rkeywordActor2doc -- |$> pure
       deonticAction =
         DeonticAction {deontic, action} |> deonticAction2doc -- |$> pure
 
-      deadline = temporal |> tempConstr2doc |$> Fold.toList
+      deadline = temporal |> tempConstr2doc |$> maybeToList
 
       henceLestClauses =
         -- wither is an effectful mapMaybes, so that this maps henceLest2doc
@@ -121,7 +123,7 @@ rule2doc
           |> wither henceLest2doc
 
 rule2doc DefNameAlias {name, detail} =
-  pure $ nameDetails2means name [detail]
+  pure $ mkMeans name [detail]
 
 {-
   clauses =
@@ -135,27 +137,32 @@ rule2doc
     { keyword = Means,
       clauses = [HC {hHead = RPBoolStructR mtExpr RPis (All _ leaves)}]
     } =
-    leaves |> traverse leaf2mtt |$> nameDetails2means mtExpr
+    leaves |> traverse leaf2mtt |$> mkMeans mtExpr
     where
       leaf2mtt (Leaf (RPMT mtt)) = pure mtt
       leaf2mtt _ = throwDefaultErr
 
 rule2doc _ = throwDefaultErr
 
-nameDetails2means :: MultiTerm -> [MultiTerm] -> Doc ann
-nameDetails2means name details =
-  hsep [name', "MEANS", details']
+{-
+  mkMeans "A" ["B", "C", "D"] = "A MEANS (B AND C AND D)"
+-}
+mkMeans ::
+  (IsSequence t, Element t ~ MultiTerm) => MultiTerm -> t -> Doc ann
+mkMeans name details =
+  [di|#{name'} MEANS #{details'}|]
   where
     name' = multiExprs2qid name
     details' =
       details
+        |> otoList
         |$> multiExprs2qid
-        |> intersperse "AND"
+        |> intersperse [di|AND|]
         |> hsep
         |> parenthesizeIf (lengthMoreThanOne details)
 
-    parenthesizeIf True x = mconcat ["(", x, ")"]
+    parenthesizeIf True x = [di|(#{x})|]
     parenthesizeIf False x = x
 
-    lengthMoreThanOne (_ : _ : _) = True
+    lengthMoreThanOne ((`ocompareLength` 1) -> LT) = True
     lengthMoreThanOne _ = False

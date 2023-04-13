@@ -162,7 +162,7 @@ ruleToASPRule r =
                 (fromMaybe (error $
                             "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" ++
                             show r ++ "\n" ++
-                            "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option."
+                            "To exclude the ToEpilog transpiler from a --workdir run, run natural4-exe with the --toepilog option."
                            ) $
                  nameOfRule r)
                 globalvars -- filterGlobalVars (map fv (postcond : preconds))

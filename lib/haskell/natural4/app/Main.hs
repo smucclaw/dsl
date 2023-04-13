@@ -116,9 +116,11 @@ main = do
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     when (      SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
-    when (not $ SFL4.tocorel4  opts) $ putStrLn "skipping corel4"
+    when (not $ SFL4.tocorel4  opts) $ putStrLn "natural4: skipping corel4"
     when (      SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
-    when (not $ SFL4.tobabyl4  opts) $ putStrLn "skipping babyl4"
+    when (not $ SFL4.tobabyl4  opts) $ putStrLn "natural4: skipping babyl4"
+    when (not $ SFL4.toasp     opts) $ putStrLn "natural4: skipping asp"
+    when (SFL4.toasp     opts) $ putStrLn "natural4: will output asASP"
     when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
     when (SFL4.toepilog  opts) $ mywritefile True toepilogFN   iso8601 "lp"   asEpilog
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
@@ -151,7 +153,7 @@ main = do
                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
-           , let (fname, ext) = (take 20 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
+           , let (fname, ext) = (take 127 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 

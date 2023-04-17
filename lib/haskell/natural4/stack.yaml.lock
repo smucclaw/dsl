@@ -89,7 +89,7 @@ packages:
     hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 snapshots:
 - completed:
-    sha256: 14ca51a9a597c32dd7804c10d079feea3d0ae40c5fbbb346cbd67b3ae49f6d01
-    size: 649598
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/17.yaml
-  original: lts-20.17
+    sha256: 9fa4bece7acfac1fc7930c5d6e24606004b09e80aa0e52e9f68b148201008db9
+    size: 649606
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/18.yaml
+  original: lts-20.18

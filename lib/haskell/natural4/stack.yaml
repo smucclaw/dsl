@@ -9,7 +9,7 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-20.17
+resolver: lts-20.18
 
 packages:
 - .

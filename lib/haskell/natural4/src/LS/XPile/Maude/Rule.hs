@@ -164,5 +164,5 @@ mkMeans name details =
     parenthesizeIf True x = [di|(#{x})|]
     parenthesizeIf False x = x
 
-    lengthMoreThanOne ((`ocompareLength` 1) -> LT) = True
+    lengthMoreThanOne ((`ocompareLength` 1) -> GT) = True
     lengthMoreThanOne _ = False

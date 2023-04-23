@@ -224,6 +224,99 @@ SubChild {
 #+end_example
 
 
+** Relational Predicates
+
+*** Syntax
+
+#+begin_src text
+  IF foo                           :- foo.
+
+  IF foo IS bar                    :- bar(foo).
+
+  IF  foo IS bar                   :- bar(foo), quux(baz).
+  AND baz IS quux
+
+  IF foo IS bar AND baz            :- bar(foo), baz(foo).
+#+end_src
+
+| L4                    | prolog                  | internally                                                      | thoughts |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF foo                | foo                     | Leaf $ RPMT (MTT "foo")                                         |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF foo IS bar         | bar(foo)                | Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")                |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF  foo IS bar        | bar(foo), baz           | All [ Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")          |          |
+| AND baz               |                         | .   , Leaf $ RPMT (MTT "baz") ]                                 |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF  foo IS bar        | bar(foo), quux(baz)     | All [ Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")          |          |
+| AND baz IS quux       |                         | .   , Leaf $ RPConstraint (MTT "baz") RPis (MTT "quux") ]       |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF foo IS bar AND baz | bar(foo), baz(foo)      | All [ Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")          |          |
+|                       |                         | .   , Leaf $ RPConstraint (MTT "foo") RPis (MTT "baz")          |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF foo IS     bar     | bar(foo), baz(foo)      | as above                                                        |          |
+| .         AND baz     |                         |                                                                 |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+| IF foo IS     bar     | bar(foo), ( baz(foo)    | All [ Any [ Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")    |          |
+| .         AND baz     | .         ; quux(foo) ) | .         , Leaf $ RPConstraint (MTT "foo") RPis (MTT "baz") ]  |          |
+| .          OR quux    |                         | .   , Leaf       $ RPConstraint (MTT "foo") RPis (MTT "quux") ] |          |
+|-----------------------+-------------------------+-----------------------------------------------------------------+----------|
+
+but this begins to be problematic.
+
+Now, so far, we have been imprecise about the types in the RelationalPredicate. Actually the parameters are lists of MTExprs:
+
+| IF foo IS     bar         | bar(foo)        | All [ Leaf $ RPConstraint [MTT "foo"]        RPis [MTT "bar"]        |
+| .         AND baz IS quux | , quux(foo.baz) | .   , Leaf $ RPConstraint [MTT "foo", MTT "bar"] RPis [MTT "quux"] ] |
+|                           |                 |                                                                      |
+
+But, the semantics are that baz is an attribute of foo.
+
+So we really want to say something like
+
+#+begin_src haskell
+  RPConstraint [MTT "foo", MTT ".", MTT "bar"] RPis [MTT "quux"]
+#+end_src
+
+or perhaps
+
+#+begin_src haskell
+  RPConstraint [MTT "foo's", MTT "bar"] RPis [MTT "quux"]
+#+end_src
+
+In more detailed Prolog dict syntax this is actually something more like
+
+#+begin_src prolog
+  bar(foo), foo{baz: X}, quux(X)
+#+end_src
+
+We infer that foo has some (row-polymorphic) type
+
+#+begin_src haskell
+  newtype Foo = Foo { baz :: Maybe R }
+#+end_src
+
+The extensibility model is not fully thought out, I need help with this. Maybe we use GADT syntax. Assuming everything that we can valuate is in the ~Valuable~ typeclass:
+
+#+begin_src haskell
+  class Valuable x where
+    evaluate x
+#+end_src
+
+We could GADT it:
+
+#+begin_src haskell
+  data Foo a where
+    Foo :: Valuable a => {
+      baz :: Maybe a
+    } -> Foo a
+#+end_src
+
+We can't just mechanically transform in a purely recursive fashion. Instead we have to pay attention to the parent when constructing the BoolStrct! The implementation in the parser remains [TODO].
+
+Indeed, the work with the record hierarchy of ~foo's bar~ attribute management also remains to be implemented. Maybe we can get this done on a future Monday.
+
+
 ** validation
 
 OOP has the idea of *constructors* which instantiate a particular value into a class. Maybe something like ~init()~ or ~new()~

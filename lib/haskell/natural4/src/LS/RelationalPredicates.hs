@@ -8,7 +8,7 @@ This module provides parser and utility functions for the RelationalPredicate gr
 
 = Why Relational Predicates?
 
-L4 follows in the logic programming tradition, which uses first-order logic to organize information.
+L4 follows in the logic programming tradition, which uses first-order logic.
 
 L4's controlled natural language interface attempts to give a
 user-friendly gloss to predicate syntax, but under the hood, if you

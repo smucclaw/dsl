@@ -318,6 +318,20 @@ Maybe the transformation is as simple as promoting the inner BoolStructR up one 
 
 Indeed, the work with the record hierarchy of ~foo's bar~ attribute management also remains to be implemented. Maybe we can get this done on a future Monday.
 
+*** Other Key Questions
+
+**** How do we disambiguate literals from predicates?
+
+e.g.
+
+~IF foo IS literalString~
+
+~IF foo IS 500~
+
+~IF foo IS predicate~
+
+suggestion: look up the symbol table to see if ~predicate~ is defined as the head of a ~DECIDE~ or ~MEANS~
+
 
 ** validation
 

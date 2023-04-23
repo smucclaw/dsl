@@ -314,6 +314,8 @@ We could GADT it:
 
 We can't just mechanically transform in a purely recursive fashion. Instead we have to pay attention to the parent when constructing the BoolStrct! The implementation in the parser remains [TODO].
 
+Maybe the transformation is as simple as promoting the inner BoolStructR up one level and prepending the parent class scope into the LHS of all RPConstraints (and maybe other RelationalPredicates).
+
 Indeed, the work with the record hierarchy of ~foo's bar~ attribute management also remains to be implemented. Maybe we can get this done on a future Monday.
 
 

@@ -14,7 +14,7 @@ import Explainable
 import Explainable.MathLang
 import Explainable.TaxDSL
 
-import Control.Monad.Trans.RWS
+import Control.Monad.Trans.RWS.CPS
 import Data.Tree
 import Control.Monad
 

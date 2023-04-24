@@ -1,0 +1,3068 @@
+* Scenarios
+fromList [("1a",fromList [("extraordinary income",fromList [("Agriculture",270000.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",100.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",6000.0),("Other",100000.0),("Rents",2150.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",30000.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",100.0),("Independent",0.0),("Other",0.0),("Rents",72150.0),("Trade",0.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]),("1b",fromList [("extraordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",6000.0),("Other",60000.0),("Rents",2150.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",20000.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",100.0),("Independent",0.0),("Other",0.0),("Rents",72150.0),("Trade",0.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]),("2",fromList [("extraordinary income",fromList [("Agriculture",270000.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",100.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",6000.0),("Other",0.0),("Rents",2150.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",30000.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",100.0),("Independent",0.0),("Other",0.0),("Rents",72150.0),("Trade",0.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]),("test case 1",fromList [("extraordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",25000.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",47150.0),("Trade",0.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]),("test case 2",fromList [("extraordinary income",fromList [("Agriculture",0.0),("Capital",225000.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",45000.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",5350.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",3200.0),("Trade",0.0)])]),("test case 3",fromList [("extraordinary income",fromList [("Agriculture",0.0),("Capital",225000.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",45000.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",5350.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",3200.0),("Trade",0.0)])]),("test case 3 - fired",fromList [("extraordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",130000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",22000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]),("test case 3 - unfired",fromList [("extraordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("ordinary income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",22000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)]),("special expenses",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",0.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])])]
+* running scenario: 1a
+** executing tax_2_3: 1a
+*** addCol net income = [300000.0,0.0,0.0,200.0,-6000.0,-100000.0,70000.0,0.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 300000.0
+
+****** row Agriculture
+- starting with ordinary income (30000.0)
+- plus extraordinary income (270000.0) = 300000.0
+- less ordinary expenses (0.0) = 300000.0
+- less special expenses (0.0) = 300000.0
+
+
+
+***** Capital = 0.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Employment = 0.0
+
+****** row Employment
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Exempt Capital = 200.0
+
+****** row Exempt Capital
+- starting with ordinary income (100.0)
+- plus extraordinary income (100.0) = 200.0
+- less ordinary expenses (0.0) = 200.0
+- less special expenses (0.0) = 200.0
+
+
+
+***** Independent = -6000.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (6000.0) = -6000.0
+- less special expenses (0.0) = -6000.0
+
+
+
+***** Other = -100000.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (100000.0) = -100000.0
+- less special expenses (0.0) = -100000.0
+
+
+
+***** Rents = 70000.0
+
+****** row Rents
+- starting with ordinary income (72150.0)
+- plus extraordinary income (0.0) = 72150.0
+- less ordinary expenses (2150.0) = 70000.0
+- less special expenses (0.0) = 70000.0
+
+
+
+***** Trade = 0.0
+
+****** row Trade
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+
+** xplainE: 100991.016
+*** toplevel: xpl = 100991.016
+*** tax_2_3 computation determines net income is 100991.016
+
+**** progDirectM 2023
+
+***** taxable income exceeds 62810
+
+****** x computation 3
+
+******* 100991.016: which we obtain by taking
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 264200.0
+110964.0
+toplevel / subtraction: 9972.98
+#+end_example
+******** 110964.0: which we obtain by multiplying
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 264200.0
+#+end_example
+********* 0.42: a leaf value
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+#+end_example
+
+********* by
+
+
+********* 264200.0: a leaf value
+
+#+begin_example
+0.42
+toplevel / subtraction / multiplication: 264200.0
+#+end_example
+
+
+******** minus
+
+
+******** 9972.98: a leaf value
+
+#+begin_example
+110964.0
+toplevel / subtraction: 9972.98
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 264200.0 = sum of 8 elements
+- 300000.0
+- 0.0
+- 0.0
+- 200.0
+- -6000.0
+- -100000.0
+- 70000.0
+- 0.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 300000.0
+Val 0.0
+Val 0.0
+Val 200.0
+Val (-6000.0)
+Val (-100000.0)
+Val 70000.0
+Val 0.0
+#+end_example
+
+****** 300000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 300000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 200.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 200.0
+#+end_example
+
+****** -6000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -6000.0
+#+end_example
+
+****** -100000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -100000.0
+#+end_example
+
+****** 70000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 70000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+
+
+
+result = 100991.016
+** executing section_34_1: 1a
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     270000                0                  30000            0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  0                0               
+Exempt Capital  100                   0                  100              0               
+Independent     0                     6000               0                0               
+Other           0                     100000             0                0               
+Rents           0                     2150               72150            0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     270000                30000         
+Capital         0                     0             
+Employment      0                     0             
+Exempt Capital  100                   100           
+Independent     0                     -6000         
+Other           0                     -100000       
+Rents           0                     70000         
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     270000                -1768                   
+Capital         0                     0                       
+Employment      0                     0                       
+Exempt Capital  100                   -6                      
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     -4126                   
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  270000                -5894                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  0               54000                 12857            12857         64283                     270000                -5894                     270000              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       0 RTI is negative  1 RTI taxation  1 revised RTI taxation due to sentence 3  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  1                  0               62020                                     54000                 12857            12857         64283                     270000                -5894                     270000              
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       0 RTI is negative  1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  1                  62020           54000                 12857            12857         64283                     270000                -5894                     270000              
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       0 RTI is negative  total tax payable  total taxable income
+total  1                  126303             270000              
+
+#+end_example
+
+* running scenario: 1b
+** executing tax_2_3: 1b
+*** addCol net income = [20000.0,0.0,0.0,100.0,-6000.0,-60000.0,70000.0,0.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 20000.0
+
+****** row Agriculture
+- starting with ordinary income (20000.0)
+- plus extraordinary income (0.0) = 20000.0
+- less ordinary expenses (0.0) = 20000.0
+- less special expenses (0.0) = 20000.0
+
+
+
+***** Capital = 0.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Employment = 0.0
+
+****** row Employment
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Exempt Capital = 100.0
+
+****** row Exempt Capital
+- starting with ordinary income (100.0)
+- plus extraordinary income (0.0) = 100.0
+- less ordinary expenses (0.0) = 100.0
+- less special expenses (0.0) = 100.0
+
+
+
+***** Independent = -6000.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (6000.0) = -6000.0
+- less special expenses (0.0) = -6000.0
+
+
+
+***** Other = -60000.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (60000.0) = -60000.0
+- less special expenses (0.0) = -60000.0
+
+
+
+***** Rents = 70000.0
+
+****** row Rents
+- starting with ordinary income (72150.0)
+- plus extraordinary income (0.0) = 72150.0
+- less ordinary expenses (2150.0) = 70000.0
+- less special expenses (0.0) = 70000.0
+
+
+
+***** Trade = 0.0
+
+****** row Trade
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+
+** xplainE: 3034.7292
+*** toplevel: xpl = 3034.7292
+*** tax_2_3 computation determines net income is 3034.7292
+
+**** progDirectM 2023
+
+***** taxable income exceeds 15999
+
+****** x computation 2
+
+******* 3034.7292: which we obtain by adding
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.8101
+156.01717
+toplevel / addition / multiplication / addition: 2397.0
+2553.017
+toplevel / addition / multiplication: 0.8101
+2068.1992
+toplevel / addition: 966.53
+#+end_example
+******** 2068.1992: which we obtain by multiplying
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.8101
+156.01717
+toplevel / addition / multiplication / addition: 2397.0
+2553.017
+toplevel / addition / multiplication: 0.8101
+#+end_example
+********* 2553.017: which we obtain by adding
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.8101
+156.01717
+toplevel / addition / multiplication / addition: 2397.0
+#+end_example
+********** 156.01717: which we obtain by multiplying
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.8101
+#+end_example
+*********** 192.59: a leaf value
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+#+end_example
+
+*********** by
+
+
+*********** 0.8101: a leaf value
+
+#+begin_example
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.8101
+#+end_example
+
+
+********** to
+
+
+********** 2397.0: a leaf value
+
+#+begin_example
+156.01717
+toplevel / addition / multiplication / addition: 2397.0
+#+end_example
+
+
+********* by
+
+
+********* 0.8101: a leaf value
+
+#+begin_example
+2553.017
+toplevel / addition / multiplication: 0.8101
+#+end_example
+
+
+******** to
+
+
+******** 966.53: a leaf value
+
+#+begin_example
+2068.1992
+toplevel / addition: 966.53
+#+end_example
+
+
+
+****** y computation 1
+
+******* 0.8101: which we obtain by dividing
+
+#+begin_example
+toplevel / division / subtraction: 24100.0
+24100.0
+toplevel / division / subtraction: 15999.0
+8101.0
+toplevel / division: 10000.0
+#+end_example
+******** 8101.0: which we obtain by taking
+
+#+begin_example
+toplevel / division / subtraction: 24100.0
+24100.0
+toplevel / division / subtraction: 15999.0
+#+end_example
+********* 24100.0: a leaf value
+
+#+begin_example
+toplevel / division / subtraction: 24100.0
+#+end_example
+
+********* minus
+
+
+********* 15999.0: a leaf value
+
+#+begin_example
+24100.0
+toplevel / division / subtraction: 15999.0
+#+end_example
+
+
+******** by
+
+
+******** 10000.0: a leaf value
+
+#+begin_example
+8101.0
+toplevel / division: 10000.0
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 24100.0 = sum of 8 elements
+- 20000.0
+- 0.0
+- 0.0
+- 100.0
+- -6000.0
+- -60000.0
+- 70000.0
+- 0.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 20000.0
+Val 0.0
+Val 0.0
+Val 100.0
+Val (-6000.0)
+Val (-60000.0)
+Val 70000.0
+Val 0.0
+#+end_example
+
+****** 20000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 20000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 100.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 100.0
+#+end_example
+
+****** -6000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -6000.0
+#+end_example
+
+****** -60000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -60000.0
+#+end_example
+
+****** 70000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 70000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+
+
+
+result = 3034.7292
+** executing section_34_1: 1b
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  20000            0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  0                0               
+Exempt Capital  0                     0                  100              0               
+Independent     0                     6000               0                0               
+Other           0                     60000              0                0               
+Rents           0                     2150               72150            0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     20000         
+Capital         0                     0             
+Employment      0                     0             
+Exempt Capital  0                     100           
+Independent     0                     -6000         
+Other           0                     -60000        
+Rents           0                     70000         
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     5350                    
+Capital         0                     0                       
+Employment      0                     0                       
+Exempt Capital  0                     27                      
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     18724                   
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  0                     24073                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  3027            24073                 3027             0             0                         0                     24073                     24073               
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  3027            24073                 3027             0             0                         0                     24073                     24073               
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  3027            24073                 3027             0             0                         0                     24073                     24073               
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  3027               24073               
+
+#+end_example
+
+* running scenario: 2
+** executing tax_2_3: 2
+*** addCol net income = [300000.0,0.0,0.0,200.0,-6000.0,0.0,70000.0,0.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 300000.0
+
+****** row Agriculture
+- starting with ordinary income (30000.0)
+- plus extraordinary income (270000.0) = 300000.0
+- less ordinary expenses (0.0) = 300000.0
+- less special expenses (0.0) = 300000.0
+
+
+
+***** Capital = 0.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Employment = 0.0
+
+****** row Employment
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Exempt Capital = 200.0
+
+****** row Exempt Capital
+- starting with ordinary income (100.0)
+- plus extraordinary income (100.0) = 200.0
+- less ordinary expenses (0.0) = 200.0
+- less special expenses (0.0) = 200.0
+
+
+
+***** Independent = -6000.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (6000.0) = -6000.0
+- less special expenses (0.0) = -6000.0
+
+
+
+***** Other = 0.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Rents = 70000.0
+
+****** row Rents
+- starting with ordinary income (72150.0)
+- plus extraordinary income (0.0) = 72150.0
+- less ordinary expenses (2150.0) = 70000.0
+- less special expenses (0.0) = 70000.0
+
+
+
+***** Trade = 0.0
+
+****** row Trade
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+
+** xplainE: 145582.27
+*** toplevel: xpl = 145582.27
+*** tax_2_3 computation determines net income is 145582.27
+
+**** progDirectM 2023
+
+***** taxable income exceeds 277825
+
+****** x computation 4
+
+******* 145582.27: which we obtain by taking
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.45
+0.45
+toplevel / subtraction / multiplication: 364200.0
+163890.0
+toplevel / subtraction: 18307.73
+#+end_example
+******** 163890.0: which we obtain by multiplying
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.45
+0.45
+toplevel / subtraction / multiplication: 364200.0
+#+end_example
+********* 0.45: a leaf value
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.45
+#+end_example
+
+********* by
+
+
+********* 364200.0: a leaf value
+
+#+begin_example
+0.45
+toplevel / subtraction / multiplication: 364200.0
+#+end_example
+
+
+******** minus
+
+
+******** 18307.73: a leaf value
+
+#+begin_example
+163890.0
+toplevel / subtraction: 18307.73
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 364200.0 = sum of 8 elements
+- 300000.0
+- 0.0
+- 0.0
+- 200.0
+- -6000.0
+- 0.0
+- 70000.0
+- 0.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 300000.0
+Val 0.0
+Val 0.0
+Val 200.0
+Val (-6000.0)
+Val 0.0
+Val 70000.0
+Val 0.0
+#+end_example
+
+****** 300000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 300000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 200.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 200.0
+#+end_example
+
+****** -6000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -6000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 70000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 70000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+
+
+
+result = 145582.27
+** executing section_34_1: 2
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     270000                0                  30000            0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  0                0               
+Exempt Capital  100                   0                  100              0               
+Independent     0                     6000               0                0               
+Other           0                     0                  0                0               
+Rents           0                     2150               72150            0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     270000                30000         
+Capital         0                     0             
+Employment      0                     0             
+Exempt Capital  100                   100           
+Independent     0                     -6000         
+Other           0                     0             
+Rents           0                     70000         
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     270000                28202                   
+Capital         0                     0                       
+Employment      0                     0                       
+Exempt Capital  100                   94                      
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     65804                   
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  270000                94006                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  29510           148006                52190            22680         113400                    270000                94006                     364006              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  29510           148006                52190            22680         113400                    270000                94006                     364006              
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  29510           148006                52190            22680         113400                    270000                94006                     364006              
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  142910             364006              
+
+#+end_example
+
+* running scenario: test case 1
+** executing tax_2_3: test case 1
+*** addCol net income = [0.0,0.0,0.0,0.0,0.0,0.0,72150.0,0.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 0.0
+
+****** row Agriculture
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Capital = 0.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Employment = 0.0
+
+****** row Employment
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Exempt Capital = 0.0
+
+****** row Exempt Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Independent = 0.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Other = 0.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Rents = 72150.0
+
+****** row Rents
+- starting with ordinary income (47150.0)
+- plus extraordinary income (25000.0) = 72150.0
+- less ordinary expenses (0.0) = 72150.0
+- less special expenses (0.0) = 72150.0
+
+
+
+***** Trade = 0.0
+
+****** row Trade
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+
+** xplainE: 20330.02
+*** toplevel: xpl = 20330.02
+*** tax_2_3 computation determines net income is 20330.02
+
+**** progDirectM 2023
+
+***** taxable income exceeds 62810
+
+****** x computation 3
+
+******* 20330.02: which we obtain by taking
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 72150.0
+30303.0
+toplevel / subtraction: 9972.98
+#+end_example
+******** 30303.0: which we obtain by multiplying
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 72150.0
+#+end_example
+********* 0.42: a leaf value
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+#+end_example
+
+********* by
+
+
+********* 72150.0: a leaf value
+
+#+begin_example
+0.42
+toplevel / subtraction / multiplication: 72150.0
+#+end_example
+
+
+******** minus
+
+
+******** 9972.98: a leaf value
+
+#+begin_example
+30303.0
+toplevel / subtraction: 9972.98
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 72150.0 = sum of 8 elements
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 72150.0
+- 0.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 72150.0
+Val 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 72150.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 72150.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+
+
+
+result = 20330.02
+** executing section_34_1: test case 1
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  0                0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           25000                 0                  47150            0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         0                     0             
+Employment      0                     0             
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           25000                 47150         
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         0                     0                       
+Employment      0                     0                       
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           25000                 47150                   
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  25000                 47150                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  10302           52150                 12149            1847          9233                      25000                 47150                     72150               
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  10302           52150                 12149            1847          9233                      25000                 47150                     72150               
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  10302           52150                 12149            1847          9233                      25000                 47150                     72150               
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  19535              72150               
+
+#+end_example
+
+* running scenario: test case 2
+** executing tax_2_3: test case 2
+*** addCol net income = [0.0,225000.0,0.0,0.0,0.0,0.0,-48200.0,5350.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 0.0
+
+****** row Agriculture
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Capital = 225000.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (225000.0) = 225000.0
+- less ordinary expenses (0.0) = 225000.0
+- less special expenses (0.0) = 225000.0
+
+
+
+***** Employment = 0.0
+
+****** row Employment
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Exempt Capital = 0.0
+
+****** row Exempt Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Independent = 0.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Other = 0.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Rents = -48200.0
+
+****** row Rents
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (45000.0) = -45000.0
+- less special expenses (3200.0) = -48200.0
+
+
+
+***** Trade = 5350.0
+
+****** row Trade
+- starting with ordinary income (5350.0)
+- plus extraordinary income (0.0) = 5350.0
+- less ordinary expenses (0.0) = 5350.0
+- less special expenses (0.0) = 5350.0
+
+
+
+
+** xplainE: 66530.016
+*** toplevel: xpl = 66530.016
+*** tax_2_3 computation determines net income is 66530.016
+
+**** progDirectM 2023
+
+***** taxable income exceeds 62810
+
+****** x computation 3
+
+******* 66530.016: which we obtain by taking
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 182150.0
+76503.0
+toplevel / subtraction: 9972.98
+#+end_example
+******** 76503.0: which we obtain by multiplying
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 182150.0
+#+end_example
+********* 0.42: a leaf value
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+#+end_example
+
+********* by
+
+
+********* 182150.0: a leaf value
+
+#+begin_example
+0.42
+toplevel / subtraction / multiplication: 182150.0
+#+end_example
+
+
+******** minus
+
+
+******** 9972.98: a leaf value
+
+#+begin_example
+76503.0
+toplevel / subtraction: 9972.98
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 182150.0 = sum of 8 elements
+- 0.0
+- 225000.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- -48200.0
+- 5350.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 0.0
+Val 225000.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val (-48200.0)
+Val 5350.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 225000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 225000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** -48200.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -48200.0
+#+end_example
+
+****** 5350.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 5350.0
+#+end_example
+
+
+
+
+result = 66530.016
+** executing section_34_1: test case 2
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         225000                0                  0                0               
+Employment      0                     0                  0                0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     45000              0                3200            
+Trade           0                     0                  5350             0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         225000                0             
+Employment      0                     0             
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           0                     -48200        
+Trade           0                     5350          
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         225000                0                       
+Employment      0                     0                       
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     0                       
+Trade           0                     -42850                  
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  225000                -42850                  
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  0               45000                 9538             9538          47689                     225000                -42850                    225000              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       0 RTI is negative  1 RTI taxation  1 revised RTI taxation due to sentence 3  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  1                  0               33339                                     45000                 9538             9538          47689                     225000                -42850                    225000              
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       0 RTI is negative  1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  1                  33339           45000                 9538             9538          47689                     225000                -42850                    225000              
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       0 RTI is negative  total tax payable  total taxable income
+total  1                  81028              225000              
+
+#+end_example
+
+* running scenario: test case 3
+** executing tax_2_3: test case 3
+*** addCol net income = [0.0,225000.0,0.0,0.0,0.0,0.0,-48200.0,5350.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 0.0
+
+****** row Agriculture
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Capital = 225000.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (225000.0) = 225000.0
+- less ordinary expenses (0.0) = 225000.0
+- less special expenses (0.0) = 225000.0
+
+
+
+***** Employment = 0.0
+
+****** row Employment
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Exempt Capital = 0.0
+
+****** row Exempt Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Independent = 0.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Other = 0.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Rents = -48200.0
+
+****** row Rents
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (45000.0) = -45000.0
+- less special expenses (3200.0) = -48200.0
+
+
+
+***** Trade = 5350.0
+
+****** row Trade
+- starting with ordinary income (5350.0)
+- plus extraordinary income (0.0) = 5350.0
+- less ordinary expenses (0.0) = 5350.0
+- less special expenses (0.0) = 5350.0
+
+
+
+
+** xplainE: 66530.016
+*** toplevel: xpl = 66530.016
+*** tax_2_3 computation determines net income is 66530.016
+
+**** progDirectM 2023
+
+***** taxable income exceeds 62810
+
+****** x computation 3
+
+
+
+GIVEN PROBLEM:
+  0.42 * 182150 - 9972.98
+
+
+SOLUTION:
+  0.42 * 182150 - 9972.98 ==> 66530
+
+
+EXPLAINED SOLUTION: (the explanation is the Effect)
+******* 66530.016: which we obtain by taking
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 182150.0
+76503.0
+toplevel / subtraction: 9972.98
+#+end_example
+******** 76503.0: which we obtain by multiplying
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 182150.0
+#+end_example
+********* 0.42: a leaf value
+********* by
+********* 182150.0: a leaf value
+******** minus
+******** 9972.98: a leaf value
+
+**** squashToTotals
+
+***** 182150.0 = sum of 8 elements
+- 0.0
+- 225000.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- -48200.0
+- 5350.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 0.0
+Val 225000.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val (-48200.0)
+Val 5350.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 225000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 225000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** -48200.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: -48200.0
+#+end_example
+
+****** 5350.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 5350.0
+#+end_example
+
+
+
+
+result = 66530.016
+** executing section_34_1: test case 3
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         225000                0                  0                0               
+Employment      0                     0                  0                0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     45000              0                3200            
+Trade           0                     0                  5350             0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         225000                0             
+Employment      0                     0             
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           0                     -48200        
+Trade           0                     5350          
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         225000                0                       
+Employment      0                     0                       
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     0                       
+Trade           0                     -42850                  
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  225000                -42850                  
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  0               45000                 9538             9538          47689                     225000                -42850                    225000              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       0 RTI is negative  1 RTI taxation  1 revised RTI taxation due to sentence 3  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  1                  0               33339                                     45000                 9538             9538          47689                     225000                -42850                    225000              
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       0 RTI is negative  1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  1                  33339           45000                 9538             9538          47689                     225000                -42850                    225000              
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       0 RTI is negative  total tax payable  total taxable income
+total  1                  81028              225000              
+
+#+end_example
+
+* running scenario: test case 3 - fired
+** executing tax_2_3: test case 3 - fired
+*** addCol net income = [0.0,0.0,152000.0,0.0,0.0,0.0,0.0,0.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 0.0
+
+****** row Agriculture
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Capital = 0.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Employment = 152000.0
+
+****** row Employment
+- starting with ordinary income (22000.0)
+- plus extraordinary income (130000.0) = 152000.0
+- less ordinary expenses (0.0) = 152000.0
+- less special expenses (0.0) = 152000.0
+
+
+
+***** Exempt Capital = 0.0
+
+****** row Exempt Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Independent = 0.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Other = 0.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Rents = 0.0
+
+****** row Rents
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Trade = 0.0
+
+****** row Trade
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+
+** xplainE: 53867.016
+*** toplevel: xpl = 53867.016
+*** tax_2_3 computation determines net income is 53867.016
+
+**** progDirectM 2023
+
+***** taxable income exceeds 62810
+
+****** x computation 3
+
+******* 53867.016: which we obtain by taking
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 152000.0
+63839.996
+toplevel / subtraction: 9972.98
+#+end_example
+******** 63839.996: which we obtain by multiplying
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+0.42
+toplevel / subtraction / multiplication: 152000.0
+#+end_example
+********* 0.42: a leaf value
+
+#+begin_example
+toplevel / subtraction / multiplication: 0.42
+#+end_example
+
+********* by
+
+
+********* 152000.0: a leaf value
+
+#+begin_example
+0.42
+toplevel / subtraction / multiplication: 152000.0
+#+end_example
+
+
+******** minus
+
+
+******** 9972.98: a leaf value
+
+#+begin_example
+63839.996
+toplevel / subtraction: 9972.98
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 152000.0 = sum of 8 elements
+- 0.0
+- 0.0
+- 152000.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 0.0
+Val 0.0
+Val 152000.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 152000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 152000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+
+
+
+result = 53867.016
+** executing section_34_1: test case 3 - fired
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      130000                0                  22000            0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     0                  0                0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         0                     0             
+Employment      130000                22000         
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           0                     0             
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         0                     0                       
+Employment      130000                22000                   
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     0                       
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  130000                22000                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            48000                 10609            8135          40675                     130000                22000                     152000              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            48000                 10609            8135          40675                     130000                22000                     152000              
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            48000                 10609            8135          40675                     130000                22000                     152000              
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  43150              152000              
+
+#+end_example
+
+* running scenario: test case 3 - unfired
+** executing tax_2_3: test case 3 - unfired
+*** addCol net income = [0.0,0.0,22000.0,0.0,0.0,0.0,0.0,0.0]
+**** adding 1 new column ("net income") with 8 rows
+
+***** Agriculture = 0.0
+
+****** row Agriculture
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Capital = 0.0
+
+****** row Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Employment = 22000.0
+
+****** row Employment
+- starting with ordinary income (22000.0)
+- plus extraordinary income (0.0) = 22000.0
+- less ordinary expenses (0.0) = 22000.0
+- less special expenses (0.0) = 22000.0
+
+
+
+***** Exempt Capital = 0.0
+
+****** row Exempt Capital
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Independent = 0.0
+
+****** row Independent
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Other = 0.0
+
+****** row Other
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Rents = 0.0
+
+****** row Rents
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+***** Trade = 0.0
+
+****** row Trade
+- starting with ordinary income (0.0)
+- plus extraordinary income (0.0) = 0.0
+- less ordinary expenses (0.0) = 0.0
+- less special expenses (0.0) = 0.0
+
+
+
+
+** xplainE: 2474.3252
+*** toplevel: xpl = 2474.3252
+*** tax_2_3 computation determines net income is 2474.3252
+
+**** progDirectM 2023
+
+***** taxable income exceeds 15999
+
+****** x computation 2
+
+******* 2474.3252: which we obtain by adding
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.6001
+115.57325
+toplevel / addition / multiplication / addition: 2397.0
+2512.5732
+toplevel / addition / multiplication: 0.6001
+1507.7952
+toplevel / addition: 966.53
+#+end_example
+******** 1507.7952: which we obtain by multiplying
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.6001
+115.57325
+toplevel / addition / multiplication / addition: 2397.0
+2512.5732
+toplevel / addition / multiplication: 0.6001
+#+end_example
+********* 2512.5732: which we obtain by adding
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.6001
+115.57325
+toplevel / addition / multiplication / addition: 2397.0
+#+end_example
+********** 115.57325: which we obtain by multiplying
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.6001
+#+end_example
+*********** 192.59: a leaf value
+
+#+begin_example
+toplevel / addition / multiplication / addition / multiplication: 192.59
+#+end_example
+
+*********** by
+
+
+*********** 0.6001: a leaf value
+
+#+begin_example
+192.59
+toplevel / addition / multiplication / addition / multiplication: 0.6001
+#+end_example
+
+
+********** to
+
+
+********** 2397.0: a leaf value
+
+#+begin_example
+115.57325
+toplevel / addition / multiplication / addition: 2397.0
+#+end_example
+
+
+********* by
+
+
+********* 0.6001: a leaf value
+
+#+begin_example
+2512.5732
+toplevel / addition / multiplication: 0.6001
+#+end_example
+
+
+******** to
+
+
+******** 966.53: a leaf value
+
+#+begin_example
+1507.7952
+toplevel / addition: 966.53
+#+end_example
+
+
+
+****** y computation 1
+
+******* 0.6001: which we obtain by dividing
+
+#+begin_example
+toplevel / division / subtraction: 22000.0
+22000.0
+toplevel / division / subtraction: 15999.0
+6001.0
+toplevel / division: 10000.0
+#+end_example
+******** 6001.0: which we obtain by taking
+
+#+begin_example
+toplevel / division / subtraction: 22000.0
+22000.0
+toplevel / division / subtraction: 15999.0
+#+end_example
+********* 22000.0: a leaf value
+
+#+begin_example
+toplevel / division / subtraction: 22000.0
+#+end_example
+
+********* minus
+
+
+********* 15999.0: a leaf value
+
+#+begin_example
+22000.0
+toplevel / division / subtraction: 15999.0
+#+end_example
+
+
+******** by
+
+
+******** 10000.0: a leaf value
+
+#+begin_example
+6001.0
+toplevel / division: 10000.0
+#+end_example
+
+
+
+
+
+**** squashToTotals
+
+***** 22000.0 = sum of 8 elements
+- 0.0
+- 0.0
+- 22000.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+
+****** base MathList with 8 elements
+
+#+begin_example
+Val 0.0
+Val 0.0
+Val 22000.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+Val 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 22000.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 22000.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+****** 0.0: a leaf value
+
+#+begin_example
+toplevel / listfold sum: 0.0
+#+end_example
+
+
+
+
+result = 2474.3252
+** executing section_34_1: test case 3 - unfired
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  22000            0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     0                  0                0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         0                     0             
+Employment      0                     22000         
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           0                     0             
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         0                     0                       
+Employment      0                     22000                   
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     0                       
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  0                     22000                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            22000                 2474             0             0                         0                     22000                     22000               
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            22000                 2474             0             0                         0                     22000                     22000               
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            22000                 2474             0             0                         0                     22000                     22000               
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  2474               22000               
+
+#+end_example
+
+* which tax method shall we use to deal with extraordinary income in test case 3?
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      130000                0                  22000            0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     0                  0                0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         0                     0             
+Employment      130000                22000         
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           0                     0             
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         0                     0                       
+Employment      130000                22000                   
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     0                       
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  130000                22000                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            48000                 10609            8135          40675                     130000                22000                     152000              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            48000                 10609            8135          40675                     130000                22000                     152000              
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            48000                 10609            8135          40675                     130000                22000                     152000              
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  43150              152000              
+
+#+end_example
+
+** executing section 34.1
+RUNNING - metaFsc preNetIncome
+RUNNING - offsetLosses
+RUNNING - squashCats
+RUNNING - extraordinary
+RUNNING - sentence3
+ERROR - runReplaceSc: sanity check failed on keys 1 revised RTI taxation due to sentence 3
+RUNNING - totalPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  22000            0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     0                  0                0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                extraordinary income  pre-net income
+Agriculture     0                     0             
+Capital         0                     0             
+Employment      0                     22000         
+Exempt Capital  0                     0             
+Independent     0                     0             
+Other           0                     0             
+Rents           0                     0             
+Trade           0                     0             
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                extraordinary income  remaining taxable income
+Agriculture     0                     0                       
+Capital         0                     0                       
+Employment      0                     22000                   
+Exempt Capital  0                     0                       
+Independent     0                     0                       
+Other           0                     0                       
+Rents           0                     0                       
+Trade           0                     0                       
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+       extraordinary income  remaining taxable income
+total  0                     22000                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            22000                 2474             0             0                         0                     22000                     22000               
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            22000                 2474             0             0                         0                     22000                     22000               
+
+#+end_example
+
+*** step 7
+
+#+begin_example
+       1 RTI taxation  2 RTI plus one fifth  3 tax on RTI+.2  4 difference  5 extraordinary taxation  extraordinary income  remaining taxable income  total taxable income
+total  2474            22000                 2474             0             0                         0                     22000                     22000               
+
+#+end_example
+
+*** step 8
+
+#+begin_example
+       total tax payable  total taxable income
+total  2474               22000               
+
+#+end_example
+
+** executing section 2.3
+RUNNING - metaFsc squashIncomes
+130000.0
+RETURNING - metaFsc squashIncomes
+RUNNING - metaFsc netIncome
+fromList [("net income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",152000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]
+RETURNING - metaFsc netIncome
+RUNNING - offsetLosses_2_3_3
+fromList [("net income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",152000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]
+RUNNING - offsetLosses_2_3_3 printed sc
+RUNNING - squashCats
+RUNNING - ordinaryPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      130000                0                  22000            0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     0                  0                0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                combined income  special expenses
+Agriculture     0                0               
+Capital         0                0               
+Employment      152000           0               
+Exempt Capital  0                0               
+Independent     0                0               
+Other           0                0               
+Rents           0                0               
+Trade           0                0               
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                net income
+Agriculture     0         
+Capital         0         
+Employment      152000    
+Exempt Capital  0         
+Independent     0         
+Other           0         
+Rents           0         
+Trade           0         
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+                total taxable income
+Agriculture     0                   
+Capital         0                   
+Employment      152000              
+Exempt Capital  0                   
+Independent     0                   
+Other           0                   
+Rents           0                   
+Trade           0                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       total taxable income
+total  152000              
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       total tax payable  total taxable income
+total  53867              152000              
+
+#+end_example
+
+** executing section 2.3
+RUNNING - metaFsc squashIncomes
+RETURNING - metaFsc squashIncomes
+RUNNING - metaFsc netIncome
+fromList [("net income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",22000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]
+RETURNING - metaFsc netIncome
+RUNNING - offsetLosses_2_3_3
+fromList [("net income",fromList [("Agriculture",0.0),("Capital",0.0),("Employment",22000.0),("Exempt Capital",0.0),("Independent",0.0),("Other",0.0),("Rents",0.0),("Trade",0.0)])]
+RUNNING - offsetLosses_2_3_3 printed sc
+RUNNING - squashCats
+RUNNING - ordinaryPayable
+*** step 1
+
+#+begin_example
+                extraordinary income  ordinary expenses  ordinary income  special expenses
+Agriculture     0                     0                  0                0               
+Capital         0                     0                  0                0               
+Employment      0                     0                  22000            0               
+Exempt Capital  0                     0                  0                0               
+Independent     0                     0                  0                0               
+Other           0                     0                  0                0               
+Rents           0                     0                  0                0               
+Trade           0                     0                  0                0               
+
+#+end_example
+
+*** step 2
+
+#+begin_example
+                combined income  special expenses
+Agriculture     0                0               
+Capital         0                0               
+Employment      22000            0               
+Exempt Capital  0                0               
+Independent     0                0               
+Other           0                0               
+Rents           0                0               
+Trade           0                0               
+
+#+end_example
+
+*** step 3
+
+#+begin_example
+                net income
+Agriculture     0         
+Capital         0         
+Employment      22000     
+Exempt Capital  0         
+Independent     0         
+Other           0         
+Rents           0         
+Trade           0         
+
+#+end_example
+
+*** step 4
+
+#+begin_example
+                total taxable income
+Agriculture     0                   
+Capital         0                   
+Employment      22000               
+Exempt Capital  0                   
+Independent     0                   
+Other           0                   
+Rents           0                   
+Trade           0                   
+
+#+end_example
+
+*** step 5
+
+#+begin_example
+       total taxable income
+total  22000               
+
+#+end_example
+
+*** step 6
+
+#+begin_example
+       total tax payable  total taxable income
+total  2474               22000               
+
+#+end_example
+
+* we choose EOFifth
+- effectiveEOTaxMethod :: we need to determine if there is aggregation of income. let's see if the different treatments matter. we will compare 34.1 with 2.3, considering the actual (test case3 - fired) and hypothetical (test case3 - unfired) scenarios
+- aggregationOfIncome :: in the actual scenario, total taxable income is 152000.0 (and total tax payable is = 43149.77)
+- aggregationOfIncome :: in the hypo   scenario, total taxable income is 22000.0 (and total tax payable is = 2474.3252)
+- aggregationOfIncome :: actual > hypo, returning true
+- squashIncomes :: for Employment, extraordinary 130000.0 + ordinary 22000.0 - expenses 0.0 = pre-net 152000.0
+- offsetLosses_2_3_3 :: sum of the positive incomes 152000.0 exceeds 100000
+- offsetLosses_2_3_3 :: so we will limit deductions to half of the sum of the negative incomes 0.0 = 0.0
+- offsetLosses_2_3_3 :: and apply them pro rata to the positive incomes
+- offsetLosses_2_3_3 :: reductio = 1.0
+- offsetLosses_2_3_3 :: Employment 152000.0 is positive, multiplying by 1.0 = 152000.0
+- offsetLosses_2_3_3 :: sum of the positive incomes 22000.0 is less than 100000
+- offsetLosses_2_3_3 :: so we will not limit deductions to half of the sum of the negative incomes; the deductible amount will be 0.0
+- offsetLosses_2_3_3 :: we will apply deductions pro rata to the positive incomes
+- offsetLosses_2_3_3 :: reductio = 1.0
+- offsetLosses_2_3_3 :: Employment 22000.0 is positive, multiplying by 1.0 = 22000.0
+- aggregationOfIncome :: in the actual scenario, total taxable income is 152000.0 (and total tax payable is = 53867.016)
+- aggregationOfIncome :: in the hypo   scenario, total taxable income is 22000.0 (and total tax payable is = 2474.3252)
+- aggregationOfIncome :: actual > hypo, returning true
+- effectiveEOTaxMethod :: under treatment section 34.1, there is aggregation of income.
+- effectiveEOTaxMethod :: under treatment section 2.3, there is aggregation of income.
+- effectiveEOTaxMethod :: there is aggregation of income, so the one-fifths method is indicated.
+

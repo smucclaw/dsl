@@ -8,7 +8,7 @@ import Data.List ( sort, isPrefixOf, nub )
 import Text.PrettyPrint.Boxes
     ( emptyBox, hsep, render, vcat, Box )
 import qualified Text.PrettyPrint.Boxes as BX
-import Control.Monad.Trans.RWS
+import Control.Monad.Trans.RWS.CPS
 import Data.Tree
 import Data.Bifunctor
 

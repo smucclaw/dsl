@@ -6,7 +6,7 @@ module Explainable.MathLang where
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
 import Control.Monad (forM_, mapAndUnzipM)
-import Control.Monad.Trans.RWS
+import Control.Monad.Trans.RWS.CPS
 import Data.Tree
 import Data.Bifunctor
 import Explainable

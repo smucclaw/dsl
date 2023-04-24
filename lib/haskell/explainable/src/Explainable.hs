@@ -4,7 +4,7 @@
 module Explainable where
 
 import qualified Data.Map as Map
-import Control.Monad.Trans.RWS
+import Control.Monad.Trans.RWS.CPS
 import Data.Tree
 import Data.List ( intercalate )
 import Data.Ord ()

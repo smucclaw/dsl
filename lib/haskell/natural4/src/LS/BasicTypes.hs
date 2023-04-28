@@ -100,6 +100,7 @@ toToken "HAVING" = pure Having
 toToken "MEANS" =  pure Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
 toToken "INCLUDES" =  pure Includes
 toToken "IS" =     pure Is
+toToken "ARE" =    pure Is
 
 -- boolean connectors
 toToken "OR" =     pure Or

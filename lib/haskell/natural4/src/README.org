@@ -226,6 +226,46 @@ SubChild {
 
 ** Relational Predicates
 
+*** BNF
+
+#+begin_src bnfc :tangle L4BNFC/natural4.bnfc
+  IfPart.          IfPart               ::= "IF" BSRAny;
+  BSRAny.          BoolStructR          ::= [BSRAny] "OR"  BoolStructR;
+  BSRLeaf.         BoolStructR2         ::= BSRLeaf;
+  BSRAll.          BoolStructR1         ::= [BSRAll] "AND" BoolStructR;
+  coercions BoolStructR 2;
+
+  LeafNoLabel.      BSRLeaf2             ::= RelationalPredicate;
+  LeafPostLabel.    BSRLeaf1             ::= BSRLeaf "POST" MultiTerm;
+  LeafPreLabel.     BSRLeaf              ::= "PRE" MultiTerm BoolStructR;
+  coercions BSRLeaf 3;
+
+  BSRAnyList.      BSRAny               ::= BoolStructR;
+  separator nonempty BSRAny "OR" ;
+
+  BSRAllList.      BSRAll               ::= BoolStructR;
+  separator nonempty BSRAll "AND" ;
+
+  RPConstraint.    RelationalPredicate  ::= MultiTerm "IS" MultiTerm;
+  RPBoolStructR.   RelationalPredicate  ::= MultiTerm "IS" BoolStructR;
+  RPMT.            RelationalPredicate  ::= MultiTerm;
+
+  RPis.            RPRel                ::= "IS";
+
+  MultiTerm.      MultiTerm   ::= [MTExpr];
+  MTExpr.         MTExpr      ::= MTT;
+
+  MTT.            MTT         ::= PIdent;
+  MTN.            MTN         ::= PInteger;
+
+  separator nonempty MTExpr "" ;
+
+  -- with position information
+  position token PIdent   (letter (letter|digit|'_'|'\'')*) ;
+  position token PInteger (digit  (       digit|' '     )*) ;
+#+end_src
+
+
 *** Syntax
 
 #+begin_src text
@@ -244,6 +284,7 @@ SubChild {
 | IF foo                | foo                     | Leaf $ RPMT (MTT "foo")                                         |          |
 |-----------------------+-------------------------+-----------------------------------------------------------------+----------|
 | IF foo IS bar         | bar(foo)                | Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")                |          |
+| IF Color IS red       | red(Color)              |                                                                 |          |
 |-----------------------+-------------------------+-----------------------------------------------------------------+----------|
 | IF  foo IS bar        | bar(foo), baz           | All [ Leaf $ RPConstraint (MTT "foo") RPis (MTT "bar")          |          |
 | AND baz               |                         | .   , Leaf $ RPMT (MTT "baz") ]                                 |          |
@@ -266,7 +307,7 @@ but this begins to be problematic.
 
 Now, so far, we have been imprecise about the types in the RelationalPredicate. Actually the parameters are lists of MTExprs:
 
-| IF foo IS     bar         | bar(foo)        | All [ Leaf $ RPConstraint [MTT "foo"]        RPis [MTT "bar"]        |
+| IF foo IS     bar         | bar(foo)        | All [ Leaf $ RPConstraint [MTT "foo"]            RPis [MTT "bar"]    |
 | .         AND baz IS quux | , quux(foo.baz) | .   , Leaf $ RPConstraint [MTT "foo", MTT "bar"] RPis [MTT "quux"] ] |
 |                           |                 |                                                                      |
 
@@ -331,6 +372,105 @@ e.g.
 ~IF foo IS predicate~
 
 suggestion: look up the symbol table to see if ~predicate~ is defined as the head of a ~DECIDE~ or ~MEANS~
+
+| if Alice is the child of Bob and Carol | child(alice, bob) AND child(alice,carol)          | IF,alice,IS,child,OF,bob,AND,carol   |
+|                                        | child(alice, 'bob_and_carol')                     | IF,alice,IS,child,OF,bob,and,carol   |
+|                                        | child(alice, bob) OR child(alice,carol)           | IF,alice,IS,child,OF,bob,UNION,carol |
+|                                        | child(alice, Parents), sort([bob,carol], Parents) | IF,alice,IS,child,OF,bob,WITH,carol  |
+
+
+#+begin_src haskell
+  -- child(alice, bob)
+  SimpleRule { nameOfSimpleRule = "about alice"
+             , varDeclsOfSimpleRule = [ ]
+             , precondOfSimpleRule = [ AppE { annotOfExpr = ()
+                                            , funOfExprAppE = AppE { annotOfExpr = ()
+                                                                   , funOfExprAppE = VarE { annotOfExpr = ()
+                                                                                          , varOfExprVarE = GlobalVar { nameOfVar = QVarName { annotOfQVarName = ()
+                                                                                                                                             , nameOfQVarName = "child" }
+                                                                                                                      }
+                                                                                          }
+                                                                   , argOfExprAppE = VarE { annotOfExpr = ()
+                                                                                          , varOfExprVarE = GlobalVar { nameOfVar = QVarName { annotOfQVarName = ()
+                                                                                                                                             , nameOfQVarName = "alice" }
+                                                                                                                      }
+                                                                                          }
+                                                                   }
+                                            , argOfExprAppE = VarE { annotOfExpr = ()
+                                                                   , varOfExprVarE = GlobalVar { nameOfVar = QVarName { annotOfQVarName = ()
+                                                                                                                      , nameOfQVarName = "bob" }
+                                                                                               }
+                                                                   }
+                                            }
+                                     ]
+             , postcondOfSimpleRule = _
+             }
+  
+#+end_src
+
+
+and what are the semantics of this anyway?
+- child(alice, [bob, carol])
+naively suggests that Bob and Carol loved each other very much and had a baby named Alice.
+
+are these the same?
+- child(alice, 'bob and carol')
+- child(alice, 'carol and bob')
+
+
+what are the values of:
+- child(alice, [bob]) :: sadly, Carol dies and Bob is now a single parent.
+- child(alice, [carol]) :: sadly, Bob dies and Carol is now a single parent.
+
+suppose bob divorces carol and remarries eddie
+
+would it be true that
+- child(alice, [eddie])
+- child(alice, [bob, eddie])
+?
+
+would it be true that
+- child(alice, [carol, eddie])
+?
+
+transformation rule: we drop [OF]
+
+This becomes
+
+RPConstraint [MTT "alice"] RPis (RPConstraint [MTT "child"] RPof [MTT "bob", MTT "carol"])
+
+which transforms according to the rules
+
+RPConstraint X RPis RPConstraint Y RPof Zs -> Y(X, Zs)
+
+
+
+
+*** Some Examples
+
+**** Example of car and colour
+
+#+begin_src text
+  qualifies
+     MEANS Car IS blue
+     AND   Day IS tuesday
+#+end_src
+
+#+begin_src prolog :tangle L4BNFC/bluecar.pl
+  qualifies(Car, Day) :- blue(Car), tuesday(Day).
+
+  blue(Car) :- blue = Car.colour.
+
+  mycar(Car) :- Car = car{ colour: blue
+                         , name: "sbs1234a"
+                         , engineSize: volume{ value: 1.6, unit:  litres }
+                         }.
+
+  tuesday(Day) :- Day = tuesday.
+
+  tuesday(tuesday).
+#+end_src
+
 
 
 ** validation
@@ -703,6 +843,38 @@ That function needs to handle the following cases:
 - label's last word is to the right of the first word below
 
 Yes, it's possible for labels to have multiple words; or just a single word. We treat the single-word case as a trivial case of the multi-word case.
+
+
+* Process Algebras and State Transitions
+
+** Obligation
+
+*** If they perform the obligation:
+
+IF-FULFILLED
+
+*** If they fail to perform the obligation:
+
+IF-VIOLATED
+
+*** What if the obligation is a negative obligation?
+
+THOU SHALT (NOT KILL)
+
+
+
+** Permission
+
+*** If they do the permitted action:
+
+**** And someone else has to respond in some way that they wouldn't have had to otherwise:
+
+*** If they do not do the permitted action:
+
+** Prohibition
+
+*** If they violate the prohibition:
+
 
 
 * infrastructure

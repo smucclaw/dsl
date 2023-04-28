@@ -249,6 +249,19 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
                          | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
+
+-- THIS IS THE WAY:
+                         | RPFun (FSym String) [RelationalPredicate]
+                         -- RPFun (FSum)             [RPMT [MTN 1], RPMT [MTN 2]] -- (sum [1, 2]) -- sexps -- before type checking
+                         -- RPFun (FPlus)            [RPMT [MTN 3], RPMT [MTN 5]]
+                         -- RPFun (FAp  FFPlus       [RPMT [MTN 3], RPMT [MTN 5]]
+                         -- RPFun (FAp (FF2 (+))     [RPMT [MTN 3], RPMT [MTN 5]]
+                         -- RPFun (FAp (FF1 (3 (+))) [RPMT [MTN 5]]
+                         -- RPFun FNum               [RPMT [MTN 8]]
+
+                         -- RPFun (FOther "ceilPlus100") [RPMT [MTN 1], RPMT [MTN 2]] -- (sum [1, 2]) -- sexps -- before type checking
+
+                         | RPBind TypedMulti RelationalPredicate -- myvar := myrp
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
@@ -256,6 +269,21 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
+
+data FSym a = FSym a
+            | FSum
+            | FProduct
+            | FPlus
+            | FMinus
+            | FTimes
+            | FDivReal
+            | FDivInt
+            | FNum
+            | FString
+            | FVar     String
+            | FFold   (FSym a) a [a]
+            | FId
+  deriving (Eq, Ord, Show, Generic, ToJSON)
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT (MTT <$> a)

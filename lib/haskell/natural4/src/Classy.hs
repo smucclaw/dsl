@@ -1,10 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
--- {-# OPTIONS_GHC -ddump-splices -dsuppress-uniques #-}
+{-# OPTIONS_GHC -ddump-splices -dsuppress-uniques #-}
 
 module Classy where
 
 import Control.Lens
- -- we use a little lens magic
+
 data Point = Point
  { _x     :: Int
  , _y     :: Int

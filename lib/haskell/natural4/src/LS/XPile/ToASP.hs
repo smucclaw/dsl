@@ -196,32 +196,37 @@ ruleToASPRule r =
         postcond = fst <$> postcondNeg
 
         negpreds :: Either (Doc ann) [(Var t, Var t, Int)]
-        negpreds = (postcondNeg, precondsNeg)
-          |> sequenceT
-          |$> uncurry (:)
-          |$> mapMaybe snd
+        negpreds =
+          (postcondNeg, precondsNeg)
+            |> sequenceT
+            |$> uncurry (:)
+            |$> mapMaybe snd
 
         allVars :: Either (Doc ann) (Set.Set (Var t))
-        allVars = (postcond, preconds)
-          |> sequenceT
-          |$> uncurry (:)
-          |$> (Set.unions . map fv)
+        allVars =
+          (postcond, preconds)
+            |> sequenceT
+            |$> uncurry (:)
+            |$> (Set.unions . map fv)
 
         globalvars :: Either (Doc ann) [VarDecl t]
-        globalvars = allVars
-          |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
+        globalvars =
+          allVars
+            |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
 
         localvars :: Either (Doc ann) [VarDecl t]
-        localvars = allVars
-          |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
+        localvars =
+          allVars
+            |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
         ruleName :: Either (Doc ann) String
-        ruleName = r
-          |> nameOfRule
-          |> maybe2either
-              (pretty $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" <>
-                show r <> "\n" <>
-                "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
+        ruleName =
+          r
+            |> nameOfRule
+            |> maybe2either
+                (pretty $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" <>
+                  show r <> "\n" <>
+                  "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
         maybe2either x Nothing = Left x
         maybe2either _ (Just x) = Right x
@@ -258,7 +263,7 @@ class ShowASP x where
   showASP :: TranslationMode -> x -> Doc ann
 
 class ShowOppClause x where
-    showOppClause :: x -> Doc ann
+  showOppClause :: x -> Doc ann
 
 aspPrintConfig :: [PrintConfig]
 aspPrintConfig = [PrintVarCase CapitalizeLocalVar, PrintCurried MultiArg]

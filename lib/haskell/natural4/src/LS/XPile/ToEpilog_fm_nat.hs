@@ -191,24 +191,28 @@ ruleToASPRule r =
         postcond = fst <$> postcondNeg
 
         negpreds :: Either (Doc ann) [(Var t, Var t, Int)]
-        negpreds = (postcondNeg, precondsNeg)
-          |> sequenceT
-          |$> uncurry (:)
-          |$> mapMaybe snd
+        negpreds =
+          (postcondNeg, precondsNeg)
+            |> sequenceT
+            |$> uncurry (:)
+            |$> mapMaybe snd
 
         allVars :: Either (Doc ann) (Set.Set (Var t))
-        allVars = (postcond, preconds)
-          |> sequenceT
-          |$> uncurry (:)
-          |$> (Set.unions . map fv)
+        allVars =
+          (postcond, preconds)
+            |> sequenceT
+            |$> uncurry (:)
+            |$> (Set.unions . map fv)
 
         globalvars :: Either (Doc ann) [VarDecl t]
-        globalvars = allVars
-          |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
+        globalvars =
+          allVars
+            |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
 
         localvars :: Either (Doc ann) [VarDecl t]
-        localvars = allVars
-          |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
+        localvars =
+          allVars
+            |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
         ruleName :: Either (Doc ann) String
         ruleName = r

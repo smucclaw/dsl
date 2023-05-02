@@ -1,0 +1,34 @@
+IfPart.          IfPart               ::= "IF" BSRAny;
+BSRAny.          BoolStructR          ::= [BSRAny] "OR"  BoolStructR;
+BSRLeaf.         BoolStructR2         ::= BSRLeaf;
+BSRAll.          BoolStructR1         ::= [BSRAll] "AND" BoolStructR;
+coercions BoolStructR 2;
+
+LeafNoLabel.      BSRLeaf2             ::= RelationalPredicate;
+LeafPostLabel.    BSRLeaf1             ::= BSRLeaf "POST" MultiTerm;
+LeafPreLabel.     BSRLeaf              ::= "PRE" MultiTerm BoolStructR;
+coercions BSRLeaf 3;
+
+BSRAnyList.      BSRAny               ::= BoolStructR;
+separator nonempty BSRAny "OR" ;
+
+BSRAllList.      BSRAll               ::= BoolStructR;
+separator nonempty BSRAll "AND" ;
+
+RPConstraint.    RelationalPredicate  ::= MultiTerm "IS" MultiTerm;
+RPBoolStructR.   RelationalPredicate  ::= MultiTerm "IS" BoolStructR;
+RPMT.            RelationalPredicate  ::= MultiTerm;
+
+RPis.            RPRel                ::= "IS";
+
+MultiTerm.      MultiTerm   ::= [MTExpr];
+MTExpr.         MTExpr      ::= MTT;
+
+MTT.            MTT         ::= PIdent;
+MTN.            MTN         ::= PInteger;
+
+separator nonempty MTExpr "" ;
+
+-- with position information
+position token PIdent   (letter (letter|digit|'_'|'\'')*) ;
+position token PInteger (digit  (       digit|' '     )*) ;

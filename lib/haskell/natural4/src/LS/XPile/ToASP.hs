@@ -22,7 +22,16 @@ import L4.PrintProg
     showL4,
   )
 import L4.Syntax
-import L4.SyntaxManipulation (appToFunArgs, applyVars, applyVarsNoType, decomposeBinop, funArgsToAppNoType, fv, globalVarsOfProgram, isLocalVar)
+import L4.SyntaxManipulation
+  ( appToFunArgs,
+    applyVars,
+    applyVarsNoType,
+    decomposeBinop,
+    funArgsToAppNoType,
+    fv,
+    globalVarsOfProgram,
+    isLocalVar,
+  )
 import LS.XPile.Maude.Utils ((|$>))
 import Prettyprinter
   ( Doc,
@@ -187,10 +196,16 @@ ruleToASPRule r =
         postcond = fst <$> postcondNeg
 
         negpreds :: Either (Doc ann) [(Var t, Var t, Int)]
-        negpreds = liftA2 (:) postcondNeg precondsNeg |$> mapMaybe snd
+        negpreds = (postcondNeg, precondsNeg)
+          |> sequenceT
+          |$> uncurry (:)
+          |$> mapMaybe snd
 
         allVars :: Either (Doc ann) (Set.Set (Var t))
-        allVars = liftA2 (:) postcond preconds |$> (Set.unions . map fv)
+        allVars = (postcond, preconds)
+          |> sequenceT
+          |$> uncurry (:)
+          |$> (Set.unions . map fv)
 
         globalvars :: Either (Doc ann) [VarDecl t]
         globalvars = allVars
@@ -200,9 +215,6 @@ ruleToASPRule r =
         localvars = allVars
           |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
-        maybe2either x Nothing = Left x
-        maybe2either _ (Just x) = Right x
-
         ruleName :: Either (Doc ann) String
         ruleName = r
           |> nameOfRule
@@ -211,10 +223,10 @@ ruleToASPRule r =
                 show r <> "\n" <>
                 "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
-        uncurry5 f (a, b, c, d, e) = f a b c d e
+        maybe2either x Nothing = Left x
+        maybe2either _ (Just x) = Right x
 
-        -- f ruleName =
-        --   (ASPRule ruleName globalvars localvars preconds postcond, negpreds)
+        uncurry5 f (a, b, c, d, e) = f a b c d e
     in
       (ruleName, globalvars, localvars, preconds, postcond)
         |> sequenceT
@@ -503,13 +515,25 @@ astToDoc prg =
     let rules = rulesOfProgram prg 
     -- putStrLn "Simplified L4 rules:"
     -- putDoc $ vsep (map (showL4 []) rules) <> line
-    -- aspRulesWithNegs :: Either (Doc ann) [(ASPRule t, [(Var t, Var t, Int)])]
+        aspRulesWithNegs :: Either (Doc ann) [(ASPRule t, [(Var t, Var t, Int)])]
         aspRulesWithNegs = traverse ruleToASPRule rules
+
+        aspRules :: Either (Doc ann) [ASPRule t]
         aspRules = map fst <$> aspRulesWithNegs 
+
+        aspRulesNoFact :: Either (Doc ann) [ASPRule t]
         aspRulesNoFact = removeFacts <$> aspRules
+
+        aspRulesFact :: Either (Doc ann) [ASPRule t]
         aspRulesFact = keepFacts <$> aspRules 
+
+        skolemizedASPRules :: Either (Doc ann) [ASPRule t]
         skolemizedASPRules = map skolemizeASPRule <$> aspRulesNoFact  -- TODO: not used ??
+
+        oppClausePrednames :: Either (Doc ann) [(Var t, Var t, Int)]
         oppClausePrednames = nub . concatMap snd <$> aspRulesWithNegs
+
+        oppClauses :: Either (Doc ann) [OpposesClause t]
         oppClauses = map genOppClauseNoType <$> oppClausePrednames 
 
         toDoc :: ([ASPRule t], [ASPRule t], [OpposesClause t]) -> Doc ann

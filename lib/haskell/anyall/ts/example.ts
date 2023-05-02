@@ -2,26 +2,33 @@ import StdinSchema from "./types"
 
 let mustSing : StdinSchema = {
     marking: {
-      "walk":  { getDefault: { "Right": true } },
-      "run":   { getDefault: { "Right": true } },
-      "sink":  { getDefault: { "Right": false } },
-      "swim":  { getDefault: { "Right": false } },
-      "eat":   { getDefault: { "Left":  false } },
-      "drink": { getDefault: { "Right": false } },
+      "walk":  { "Right": true  },
+      "run":   { "Right": true  },
+      "sink":  { "Right": false },
+      "swim":  { "Right": false },
+      "eat":   { "Left":  false },
+      "drink": { "Right": false },
   },
-  andOrTree: {
-    nodetype: "all",
-    pre: "all of",
-    children: [
-	{ leaf: "walk" },
-	{ nodetype: "not", children: [{ nodetype: "any" , pre: "either"
-					, children: [ { leaf: "sink" }, { leaf: "swim" } ]
-				      }] },
-	{ nodetype: "all" , pre: "both"
-	  , children: [ { leaf: "eat" }, { leaf: "drink" } ]
-	}
-    ]
-  }
+    andOrTree: {
+	tag: "All",
+	contents: [
+	    { tag: "Pre", contents: "all of:" },
+	    [ { tag: "Leaf", contents: "walk" },
+	      { tag: "Not", contents:
+		{ tag: "Any", contents:
+		  [ { tag: "Pre", contents: "either" },
+		    [ { contents: "sink", tag: "Leaf" },
+		      { contents: "swim", tag: "Leaf" }
+		    ]
+		  ]
+		}
+	      },
+	      { tag: "All" , contents: [ { tag: "Pre", contents: "both" },
+	      				 [ { contents: "eat",   tag: "Leaf" },
+	      				   { contents: "drink", tag: "Leaf" } ] ] }
+	    ]
+	    ]
+    }
 }
 
 console.log(JSON.stringify(mustSing));

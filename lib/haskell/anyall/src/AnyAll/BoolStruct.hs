@@ -19,6 +19,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Checkers
 import Data.List (sort)
 import Control.Applicative
+import Debug.Trace
 
 data BoolStruct lbl a =
     Leaf                       a
@@ -145,11 +146,18 @@ instance FromJSON (StdinSchema T.Text) where
   parseJSON = withObject "StdinSchema" $ \o -> do
     markingO <- o .: "marking"
     aotreeO  <- o .: "andOrTree"
-    let marking = parseMaybe parseJSON markingO
-        aotree  = parseMaybe parseJSON aotreeO
+    let marking = parseEither parseJSON markingO
+        aotree  = parseEither parseJSON aotreeO
+    
     return $ StdinSchema
-      (fromJust marking :: Marking T.Text)
-      (fromMaybe (Leaf "ERROR: unable to parse andOrTree from input") aotree)
+      (case marking of
+         Left err -> trace ("AnyAll/BoolStruct ERROR parsing marking: " ++ err) $
+                     Marking mempty
+         Right m  -> Marking m)
+      (case aotree of
+         Left err -> Leaf ("ERROR: " <> T.pack err)
+         Right m  -> m
+      )
 
 
 instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)

@@ -7,18 +7,17 @@ interface withDefault<T> {
 }
 export default interface StdinSchema {
   marking: {
-    [nodeLabel: `${string}`]: withDefault<boolean>;
+    [nodeLabel: `${string}`]: myEither<boolean>;
   },
   andOrTree: LeafNode | AnyNode | AllNode | NotNode
 }
-export class LeafNode {
-  leaf: string
-}
+export class LeafNode    { contents: string; tag: "Leaf"; }
+export class PreNode     { contents: string; tag: "Pre"; }
+export class PrePostNode { contents: string; tag: "PrePost"; }
+
 abstract class SubTree {
-  children: (LeafNode | AnyNode | AllNode | NotNode)[];
-  pre?: string;
-  prepost?: string
+    contents: (PreNode | (LeafNode | AnyNode | AllNode | NotNode)[])[];
 }
-export class AnyNode extends SubTree { nodetype: "any"  }
-export class AllNode extends SubTree { nodetype: "all"  }
-export class NotNode extends SubTree { nodetype: "not"  }
+export class AnyNode extends SubTree { tag: "Any"  }
+export class AllNode extends SubTree { tag: "All"  }
+export class NotNode { contents: (LeafNode | AnyNode | AllNode | NotNode); tag: "Not" }

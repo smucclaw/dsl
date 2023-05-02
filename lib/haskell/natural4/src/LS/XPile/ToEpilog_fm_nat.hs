@@ -1,21 +1,37 @@
+{-# LANGUAGE GHC2021 #-}
+
 module LS.XPile.ToEpilog_fm_nat where
 
-import Prettyprinter
-import Prettyprinter.Render.Text (putDoc)
-import L4.Syntax
-import L4.PrintProg
-    ( showL4,
-      PrintCurried(MultiArg),
-      PrintConfig(PrintVarCase, PrintCurried),
-      PrintVarCase(CapitalizeLocalVar),
-      capitalise )
 -- import RuleTransfo (ruleDisjL, clarify) -- TODO: Not needed here, and module RuleTransfo not visible here
-import Data.Maybe (fromJust, mapMaybe, fromMaybe)
-import L4.SyntaxManipulation (decomposeBinop, appToFunArgs, applyVars, globalVarsOfProgram, funArgsToAppNoType, applyVarsNoType, fv, isLocalVar)
-import Data.List (nub)
+
+import Control.Applicative (Applicative (liftA2))
 import Data.Foldable (find)
+import Data.List (nub)
+import Data.Maybe (fromJust, fromMaybe, mapMaybe)
+import Data.Set qualified as Set
+import Data.Tuple.Sequence (SequenceT (sequenceT))
+import Flow ((|>))
 import L4.KeyValueMap (ValueKVM)
-import qualified Data.Set as Set
+import L4.PrintProg
+  ( PrintConfig (PrintCurried, PrintVarCase),
+    PrintCurried (MultiArg),
+    PrintVarCase (CapitalizeLocalVar),
+    capitalise,
+    showL4,
+  )
+import L4.Syntax
+import L4.SyntaxManipulation (appToFunArgs, applyVars, applyVarsNoType, decomposeBinop, funArgsToAppNoType, fv, globalVarsOfProgram, isLocalVar)
+import LS.XPile.Maude.Utils ((|$>))
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    hsep,
+    line,
+    parens,
+    punctuate,
+    vsep,
+    (<+>),
+  )
 --import ToEpilog (TranslationMode(FixedCode))
 
 data ASPRule t = ASPRule {
@@ -25,7 +41,6 @@ data ASPRule t = ASPRule {
                    , precondOfASPRule :: [Expr t]
                    , postcondOfASPRule :: Expr t }
   deriving (Eq, Ord, Show, Read)
-
 
 -- Skolemized ASP rules code
 --Additional function when starting at natural4. 
@@ -137,49 +152,95 @@ data OpposesClause t = OpposesClause {
 negationVarname :: QVarName t -> QVarName t
 negationVarname (QVarName t vn) = QVarName t ("not"++vn)
 
-
-negationPredicate :: Expr t -> (Expr t, Maybe (Var t, Var t, Int))
+negationPredicate :: Expr t -> Either (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
 negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
     let (f, args) = appToFunArgs [] e in
         case f of
             VarE t posvar@(GlobalVar vn) ->
                 let negvar = GlobalVar (negationVarname vn)
-                in (funArgsToAppNoType (VarE t negvar) args, Just (posvar, negvar, length args))
-            _ -> error "negationPredicate: ill-formed negation"
-negationPredicate e = (e, Nothing)
+                in Right (funArgsToAppNoType (VarE t negvar) args, Just (posvar, negvar, length args))
+            _ -> Left $ pretty "negationPredicate: ill-formed negation"
+negationPredicate e = Right (e, Nothing)
 
-ruleToASPRule :: (Show t, Ord t) => Rule t -> (ASPRule t, [(Var t, Var t, Int)])
+ruleToASPRule ::
+  forall ann t.
+  (Show t, Ord t) =>
+  Rule t ->
+  Either (Doc ann) (ASPRule t, [(Var t, Var t, Int)])
 ruleToASPRule r =
-    let precondsNeg = map negationPredicate (decomposeBinop (BBool BBand)(precondOfRule r))
-        postcondNeg = negationPredicate (postcondOfRule r)
-        preconds = map fst precondsNeg
-        postcond = fst postcondNeg
-        negpreds = mapMaybe snd (postcondNeg : precondsNeg)
-        allVars = Set.unions (map fv (postcond : preconds))
-        globalvars = map varTovarDecl (Set.toList(Set.filter (not . isLocalVar) allVars))
-        localvars = map varTovarDecl (Set.toList(Set.filter isLocalVar allVars))
-    in  ( ASPRule
-                (fromMaybe (error $
-                            "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" ++
-                            show r ++ "\n" ++
-                            "To exclude the ToEpilog transpiler from a --workdir run, run natural4-exe with the --toepilog option."
-                           ) $
-                 nameOfRule r)
-                globalvars -- filterGlobalVars (map fv (postcond : preconds))
-                localvars  -- filterLocalVars (map (fv (postcond : preconds)))
-                preconds   -- filterGlobalVars [] = []
-                postcond   -- filterGlobalVars (GlobalVar x : xs) = (GlobalVar x) : filterGlobalVars xs 
-        , negpreds)        -- filterGlobalVars (LocalVar x n :xs) = filterGlobalVars xs 
+    let precondsNeg :: Either (Doc ann) [(Expr t, Maybe (Var t, Var t, Int))]
+        precondsNeg =
+          traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule r))
+
+        postcondNeg :: Either (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
+        postcondNeg = negationPredicate $ postcondOfRule r
+
+        preconds :: Either (Doc ann) [Expr t]
+        preconds = map fst <$> precondsNeg
+
+        postcond :: Either (Doc ann) (Expr t)
+        postcond = fst <$> postcondNeg
+
+        negpreds :: Either (Doc ann) [(Var t, Var t, Int)]
+        negpreds = liftA2 (:) postcondNeg precondsNeg |$> mapMaybe snd
+
+        allVars :: Either (Doc ann) (Set.Set (Var t))
+        allVars = liftA2 (:) postcond preconds |$> (Set.unions . map fv)
+
+        globalvars :: Either (Doc ann) [VarDecl t]
+        globalvars = allVars
+          |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
+
+        localvars :: Either (Doc ann) [VarDecl t]
+        localvars = allVars
+          |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
+
+        maybe2either x Nothing = Left x
+        maybe2either _ (Just x) = Right x
+
+        ruleName :: Either (Doc ann) String
+        ruleName = r
+          |> nameOfRule
+          |> maybe2either
+              (pretty $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" <>
+                show r <> "\n" <>
+                "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
+
+        uncurry5 f (a, b, c, d, e) = f a b c d e
+
+        -- f ruleName =
+        --   (ASPRule ruleName globalvars localvars preconds postcond, negpreds)
+    in
+      (ruleName, globalvars, localvars, preconds, postcond)
+        |> sequenceT
+        |$> uncurry5 ASPRule
+        |> (, negpreds)
+        |> sequenceT
 
 --varTovarDecl :: Var (Tp()) -> VarDecl (Tp())
 --varTovarDecl :: Var t -> VarDecl t
 varTovarDecl :: Var t -> VarDecl t
-varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT 
-varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT   
+varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT
+varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT
 
-data TranslationMode = AccordingToR | CausedByR | ExplainsR | VarSubs1R | VarSubs2R | VarSubs3R | AccordingToE String | LegallyHoldsE | QueryE | VarSubs4R | RawL4 | AddFacts | FixedCode
+data TranslationMode
+  = AccordingToR
+  | CausedByR
+  | ExplainsR
+  | VarSubs1R
+  | VarSubs2R
+  | VarSubs3R
+  | AccordingToE String
+  | LegallyHoldsE
+  | QueryE
+  | VarSubs4R
+  | RawL4
+  | AddFacts
+  | FixedCode
+
 class ShowASP x where
     showASP :: TranslationMode -> x -> Doc ann
+
 class ShowOppClause x where
     showOppClause :: x -> Doc ann
 
@@ -330,9 +391,9 @@ instance Show t => ShowASP (ASPRule t) where
                     pretty ("createSub(subInst" ++ "_" ++ _rn ++ toBrackets _vds ++ "," ++ "_N" ++ ").")
                     )
             preconds)
-    
+
     showASP FixedCode (ASPRule _rn _env _vds preconds postcond) =
-      vsep ([ pretty "defeated(R2,C2):-overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)"
+      vsep [ pretty "defeated(R2,C2):-overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)"
             , pretty "opposes(C1,C2):-opposes(C2,C1)"
             , pretty "legally_enforces(R,C):-according_to(R,C) & ~defeated(R,C) "
             , pretty "legally_holds(C):-legally_enforces(R,C)"
@@ -346,8 +407,8 @@ instance Show t => ShowASP (ASPRule t) where
             , pretty "caused_by(pos,legally_enforces(R,C),legally_holds(C),0):-legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)"
             , pretty "justify(X,0):-caused_by(pos,X,Y,0)"
             , pretty "directedEdge(Sgn,X,Y):-caused_by(Sgn,X,Y,0)"
-            , pretty "justify(X,0):-gen_graph(X)" ])
-        
+            , pretty "justify(X,0):-gen_graph(X)" ]
+
 
 
     showASP AddFacts (ASPRule _rn _env _vds _preconds postcond) =
@@ -402,8 +463,8 @@ instance Show t => ShowASP (ASPRule t) where
                         pretty "justify" <>
                         parens (
                             showASP (AccordingToE rn) postcond <>  pretty "," <+>
-                            pretty "0") 
-                
+                            pretty "0")
+
                     )
             preconds)
     showASP _ _ = pretty ""  -- not implemented
@@ -422,58 +483,63 @@ genOppClauseNoType (posvar, negvar, n) =
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
 -- This could possibly be remedied with NoType versions of these tactics
-astToASP :: (Eq t, Ord t, Show t) => Program t -> IO ()
-astToASP prg = do
+-- astToASP :: (Eq t, Ord t, Show t) => Program t -> IO ()
+-- astToASP prg = do
+--     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
+--     let rules = rulesOfProgram prg
+--     -- putStrLn "Simplified L4 rules:"
+--     -- putDoc $ vsep (map (showL4 []) rules) <> line
+--     let aspRulesWithNegs = map (ruleToASPRule ) rules
+--     let aspRules = map fst aspRulesWithNegs
+--     let aspRulesNoFact = removeFacts aspRules
+--     let aspRulesFact = keepFacts aspRules
+--     let skolemizedASPRules = map skolemizeASPRule aspRulesNoFact  -- TODO: not used ??
+--     let oppClausePrednames = nub (concatMap snd aspRulesWithNegs)
+--     let oppClauses = map genOppClauseNoType oppClausePrednames
+
+--     -- putStrLn "ASP rules:"
+--     putDoc $ vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line
+--     --putDoc $ vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line
+--     --putDoc $ vsep (map (showASP AddFacts) aspRulesFact) <> line <> line
+--     --putDoc $ vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line
+--     --putDoc $ vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line
+--     --putDoc $ vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line
+--     -- putDoc $ vsep (map (showASP VarSubs2R) aspRules) <> line <> line
+--     -- putDoc $ vsep (map (showASP ExplainsR) aspRules) <> line <> line
+--     -- putDoc $ vsep (map (showASP ExplainsR) skolemizedASPRules) <> line <> line
+--     putDoc $ vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line
+--     putDoc $ vsep (map showOppClause oppClauses) <> line
+
+astToDoc :: forall ann t. (Show t, Ord t, Eq t) => Program t -> Doc ann
+astToDoc prg =
     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
     let rules = rulesOfProgram prg
     -- putStrLn "Simplified L4 rules:"
     -- putDoc $ vsep (map (showL4 []) rules) <> line
-    let aspRulesWithNegs = map (ruleToASPRule ) rules
-    let aspRules = map fst aspRulesWithNegs
-    let aspRulesNoFact = removeFacts aspRules
-    let aspRulesFact = keepFacts aspRules
-    let skolemizedASPRules = map skolemizeASPRule aspRulesNoFact  -- TODO: not used ??
-    let oppClausePrednames = nub (concatMap snd aspRulesWithNegs)
-    let oppClauses = map genOppClauseNoType oppClausePrednames
+    -- aspRulesWithNegs :: Either (Doc ann) [(ASPRule t, [(Var t, Var t, Int)])]
+        aspRulesWithNegs = traverse ruleToASPRule rules
+        aspRules = map fst <$> aspRulesWithNegs
+        aspRulesNoFact = removeFacts <$> aspRules
+        aspRulesFact = keepFacts <$> aspRules
+        skolemizedASPRules = map skolemizeASPRule <$> aspRulesNoFact  -- TODO: not used ??
+        oppClausePrednames = nub . concatMap snd <$> aspRulesWithNegs
+        oppClauses = map genOppClauseNoType <$> oppClausePrednames
 
-    -- putStrLn "ASP rules:"
-    putDoc $ vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line
-    --putDoc $ vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line
-    --putDoc $ vsep (map (showASP AddFacts) aspRulesFact) <> line <> line
-    --putDoc $ vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line
-    --putDoc $ vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line
-    --putDoc $ vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line
-    -- putDoc $ vsep (map (showASP VarSubs2R) aspRules) <> line <> line
-    -- putDoc $ vsep (map (showASP ExplainsR) aspRules) <> line <> line
-    -- putDoc $ vsep (map (showASP ExplainsR) skolemizedASPRules) <> line <> line
-    putDoc $ vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line
-    putDoc $ vsep (map showOppClause oppClauses) <> line
-
--- TODO: redundant with the above. Define astToASP as putDoc (astToDoc prg)
-astToDoc :: (Show t, Ord t, Eq t) => Program t -> Doc ann
-astToDoc prg =
-    -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
-    let rules = rulesOfProgram prg in
-    -- putStrLn "Simplified L4 rules:"
-    -- putDoc $ vsep (map (showL4 []) rules) <> line
-    let aspRulesWithNegs = map ruleToASPRule rules in
-    let aspRules = map fst aspRulesWithNegs in
-    let aspRulesNoFact = removeFacts aspRules in
-    let aspRulesFact = keepFacts aspRules in
-    let skolemizedASPRules = map skolemizeASPRule aspRulesNoFact in -- TODO: not used ??
-    let oppClausePrednames = nub (concatMap snd aspRulesWithNegs) in
-    let oppClauses = map genOppClauseNoType oppClausePrednames in
-
-    -- putStrLn "ASP rules:"
-    vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line <>
-    -- vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
-    -- vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
-    -- vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line <>
-    -- vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line <>
-    -- vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line <>
-    vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line <>
-    vsep (map showOppClause oppClauses) <> line
-
+        toDoc :: ([ASPRule t], [ASPRule t], [OpposesClause t]) -> Doc ann
+        toDoc (aspRulesNoFact, aspRulesFact, oppClauses) =
+          vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line <>
+          vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line <>
+          vsep (map showOppClause oppClauses) <> line
+    in
+      (aspRulesNoFact, aspRulesFact, oppClauses)
+        |> ( sequenceT ::
+               ( Either (Doc ann) [ASPRule t],
+                 Either (Doc ann) [ASPRule t],
+                 Either (Doc ann) [OpposesClause t]
+               ) ->
+               Either (Doc ann) ([ASPRule t], [ASPRule t], [OpposesClause t])
+           )
+        |> either (const mempty) toDoc
 
 -- TODO: details to be filled in
 proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()
@@ -483,7 +549,7 @@ proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
 -- Additional functions to write var substitution code
 
 preconToVarStrList :: Expr t ->[VarDecl t] -> [String]
-preconToVarStrList precon vardecls = varDeclToVarStrList(map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
+preconToVarStrList precon vardecls = varDeclToVarStrList (map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
 
 varDeclToVarStrList :: [VarDecl t] -> [String]
 

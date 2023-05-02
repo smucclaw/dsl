@@ -23,6 +23,7 @@ import L4.PrintProg
   )
 import L4.Syntax
 import L4.SyntaxManipulation (appToFunArgs, applyVars, applyVarsNoType, decomposeBinop, funArgsToAppNoType, fv, globalVarsOfProgram, isLocalVar)
+import LS.XPile.Maude.Utils ((|$>))
 import Prettyprinter
   ( Doc,
     Pretty (pretty),
@@ -34,7 +35,6 @@ import Prettyprinter
     vsep,
     (<+>),
   )
-import LS.XPile.Maude.Utils ((|$>))
 
 data ASPRule t = ASPRule {
                      nameOfASPRule :: String
@@ -167,13 +167,18 @@ negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
             _ -> Left $ pretty "negationPredicate: ill-formed negation"
 negationPredicate e = Right (e, Nothing)
 
-ruleToASPRule :: forall ann t. (Show t, Ord t) => Rule t -> Either (Doc ann) (ASPRule t, [(Var t, Var t, Int)])
+ruleToASPRule ::
+  forall ann t.
+  (Show t, Ord t) =>
+  Rule t ->
+  Either (Doc ann) (ASPRule t, [(Var t, Var t, Int)])
 ruleToASPRule r =
     let precondsNeg :: Either (Doc ann) [(Expr t, Maybe (Var t, Var t, Int))]
-        precondsNeg = traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule r))
+        precondsNeg =
+          traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule r))
 
         postcondNeg :: Either (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
-        postcondNeg = negationPredicate (postcondOfRule r)
+        postcondNeg = negationPredicate $ postcondOfRule r
 
         preconds :: Either (Doc ann) [Expr t]
         preconds = map fst <$> precondsNeg
@@ -182,18 +187,18 @@ ruleToASPRule r =
         postcond = fst <$> postcondNeg
 
         negpreds :: Either (Doc ann) [(Var t, Var t, Int)]
-        negpreds = liftA2 (:) postcondNeg precondsNeg <&> mapMaybe snd
+        negpreds = liftA2 (:) postcondNeg precondsNeg |$> mapMaybe snd
 
         allVars :: Either (Doc ann) (Set.Set (Var t))
-        allVars = liftA2 (:) postcond preconds <&> (Set.unions . map fv)
+        allVars = liftA2 (:) postcond preconds |$> (Set.unions . map fv)
 
         globalvars :: Either (Doc ann) [VarDecl t]
         globalvars = allVars
-          <&> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
+          |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
 
         localvars :: Either (Doc ann) [VarDecl t]
         localvars = allVars
-          <&> map varTovarDecl . Set.toList . Set.filter isLocalVar
+          |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
         maybe2either x Nothing = Left x
         maybe2either _ (Just x) = Right x
@@ -239,6 +244,7 @@ data TranslationMode
 
 class ShowASP x where
   showASP :: TranslationMode -> x -> Doc ann
+
 class ShowOppClause x where
     showOppClause :: x -> Doc ann
 

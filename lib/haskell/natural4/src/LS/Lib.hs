@@ -594,9 +594,9 @@ pGivens = debugName "pGivens" $ do
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" $ do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
-  return $ manyIndentation $ choice
-                [ try (\r -> r { rlabel = maybeLabel }) <$> pRegRuleNormal
-                , try (\r -> r { rlabel = maybeLabel }) <$> pRegRuleSugary
+  manyIndentation $ choice
+                [ try $ (\r -> r { rlabel = maybeLabel }) <$> pRegRuleNormal
+                , try $ (\r -> r { rlabel = maybeLabel }) <$> pRegRuleSugary
                 , try (pToken Fulfilled >> return RegFulfilled)
                 , try (pToken Breach    >> return RegBreach)
                 ]

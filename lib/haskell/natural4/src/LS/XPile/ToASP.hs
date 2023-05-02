@@ -2,28 +2,39 @@
 
 module LS.XPile.ToASP where
 
-import Prettyprinter
-import Prettyprinter.Render.Text (putDoc)
-import L4.Syntax
-import L4.PrintProg
-    ( showL4,
-      PrintCurried(MultiArg),
-      PrintConfig(PrintVarCase, PrintCurried),
-      PrintVarCase(CapitalizeLocalVar),
-      capitalise )
 -- import RuleTransfo (ruleDisjL, clarify) -- TODO: Not needed here, and module RuleTransfo not visible here
-import Data.Maybe (fromJust, mapMaybe, fromMaybe)
-import L4.SyntaxManipulation (decomposeBinop, appToFunArgs, applyVars, globalVarsOfProgram, funArgsToAppNoType, applyVarsNoType, fv, isLocalVar)
-import Data.List (nub)
+
+import Control.Applicative (Applicative (..))
+import Data.Either (fromRight, rights)
 import Data.Foldable (find)
-import Data.Tuple.Sequence ( SequenceT(sequenceT) )
-import L4.KeyValueMap (ValueKVM)
-import qualified Data.Set as Set
-import Data.Either (rights, fromRight)
-import Flow ((|>))
 import Data.Functor ((<&>))
-import Control.Applicative (Applicative(..))
-import Control.Monad (liftM5, liftM3)
+import Data.List (nub)
+import Data.Maybe (fromJust, fromMaybe, mapMaybe)
+import Data.Set qualified as Set
+import Data.Tuple.All (SequenceT (sequenceT))
+import Flow ((|>))
+import L4.KeyValueMap (ValueKVM)
+import L4.PrintProg
+  ( PrintConfig (PrintCurried, PrintVarCase),
+    PrintCurried (MultiArg),
+    PrintVarCase (CapitalizeLocalVar),
+    capitalise,
+    showL4,
+  )
+import L4.Syntax
+import L4.SyntaxManipulation (appToFunArgs, applyVars, applyVarsNoType, decomposeBinop, funArgsToAppNoType, fv, globalVarsOfProgram, isLocalVar)
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    comma,
+    hsep,
+    line,
+    parens,
+    punctuate,
+    vsep,
+    (<+>),
+  )
+import LS.XPile.Maude.Utils ((|$>))
 
 data ASPRule t = ASPRule {
                      nameOfASPRule :: String
@@ -165,27 +176,27 @@ ruleToASPRule r =
         postcondNeg = negationPredicate (postcondOfRule r)
 
         preconds :: Either (Doc ann) [Expr t]
-        preconds = fmap (map fst) precondsNeg
+        preconds = map fst <$> precondsNeg
 
         postcond :: Either (Doc ann) (Expr t)
         postcond = fst <$> postcondNeg
 
         negpreds :: Either (Doc ann) [(Var t, Var t, Int)]
         negpreds = liftA2 (:) postcondNeg precondsNeg <&> mapMaybe snd
-          -- mapMaybe snd (postcondNeg : precondsNeg)
 
         allVars :: Either (Doc ann) (Set.Set (Var t))
         allVars = liftA2 (:) postcond preconds <&> (Set.unions . map fv)
-          -- Set.unions (map fv (postcond : preconds))
+
         globalvars :: Either (Doc ann) [VarDecl t]
-        globalvars = allVars <&> (map varTovarDecl . Set.toList . Set.filter (not . isLocalVar))
+        globalvars = allVars
+          <&> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
 
         localvars :: Either (Doc ann) [VarDecl t]
-        localvars = allVars <&> (map varTovarDecl . Set.toList . Set.filter isLocalVar)
+        localvars = allVars
+          <&> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
         maybe2either x Nothing = Left x
         maybe2either _ (Just x) = Right x
-        -- (Applicative f, Traversable b) => (a -> f b) -> t a -> f (t b)
 
         ruleName :: Either (Doc ann) String
         ruleName = r
@@ -195,9 +206,16 @@ ruleToASPRule r =
                 show r <> "\n" <>
                 "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
+        uncurry5 f (a, b, c, d, e) = f a b c d e
+
         -- f ruleName =
         --   (ASPRule ruleName globalvars localvars preconds postcond, negpreds)
-    in sequenceT (liftM5 ASPRule ruleName globalvars localvars preconds postcond, negpreds)
+    in
+      (ruleName, globalvars, localvars, preconds, postcond)
+        |> sequenceT
+        |$> uncurry5 ASPRule
+        |> (, negpreds)
+        |> sequenceT
 
 --varTovarDecl :: Var (Tp()) -> VarDecl (Tp())
 --varTovarDecl :: Var t -> VarDecl t
@@ -205,9 +223,22 @@ varTovarDecl :: Var t -> VarDecl t
 varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT
 varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT
 
-data TranslationMode = AccordingToR | CausedByR | ExplainsR | VarSubs1R | VarSubs2R | VarSubs3R | AccordingToE String | LegallyHoldsE | QueryE | VarSubs4R | RawL4 | AddFacts
+data TranslationMode
+  = AccordingToR
+  | CausedByR
+  | ExplainsR
+  | VarSubs1R
+  | VarSubs2R
+  | VarSubs3R
+  | AccordingToE String
+  | LegallyHoldsE
+  | QueryE
+  | VarSubs4R
+  | RawL4
+  | AddFacts
+
 class ShowASP x where
-    showASP :: TranslationMode -> x -> Doc ann
+  showASP :: TranslationMode -> x -> Doc ann
 class ShowOppClause x where
     showOppClause :: x -> Doc ann
 
@@ -460,7 +491,7 @@ genOppClauseNoType (posvar, negvar, n) =
 --     putDoc $ vsep (map showOppClause oppClauses) <> line
 
 -- TODO: redundant with the above. Define astToASP as putDoc (astToDoc prg)
-astToDoc :: (Show t, Ord t, Eq t) => Program t -> Doc ann
+astToDoc :: forall ann t. (Show t, Ord t, Eq t) => Program t -> Doc ann
 astToDoc prg =
     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
     let rules = rulesOfProgram prg 
@@ -475,7 +506,8 @@ astToDoc prg =
         oppClausePrednames = nub . concatMap snd <$> aspRulesWithNegs
         oppClauses = map genOppClauseNoType <$> oppClausePrednames 
 
-        toDoc aspRulesNoFact aspRulesFact oppClauses =
+        toDoc :: ([ASPRule t], [ASPRule t], [OpposesClause t]) -> Doc ann
+        toDoc (aspRulesNoFact, aspRulesFact, oppClauses) =
           vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line <>
           vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
           vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
@@ -485,9 +517,16 @@ astToDoc prg =
           vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line <>
           vsep (map showOppClause oppClauses) <> line
     in
-      liftM3 toDoc aspRulesNoFact aspRulesFact oppClauses
-        |> fromRight mempty
-        
+      (aspRulesNoFact, aspRulesFact, oppClauses)
+        |> ( sequenceT ::
+               ( Either (Doc ann) [ASPRule t],
+                 Either (Doc ann) [ASPRule t],
+                 Either (Doc ann) [OpposesClause t]
+               ) ->
+               Either (Doc ann) ([ASPRule t], [ASPRule t], [OpposesClause t])
+           )
+        |> either (const mempty) toDoc
+
     -- putStrLn "ASP rules:"
 
 -- TODO: details to be filled in

@@ -215,12 +215,13 @@ ruleToASPRule r =
             |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
         ruleName :: Either (Doc ann) String
-        ruleName = r
-          |> nameOfRule
-          |> maybe2either
-              (pretty $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" <>
-                show r <> "\n" <>
-                "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
+        ruleName =
+          r
+            |> nameOfRule
+            |> maybe2either
+                (pretty $ "ToASP: ruleToASPRule: nameOfRule is a Nothing :-(\n" <>
+                  show r <> "\n" <>
+                  "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
         maybe2either x Nothing = Left x
         maybe2either _ (Just x) = Right x

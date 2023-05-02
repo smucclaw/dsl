@@ -19,7 +19,7 @@ import Data.Foldable (find)
 import Data.Tuple.Sequence ( SequenceT(sequenceT) )
 import L4.KeyValueMap (ValueKVM)
 import qualified Data.Set as Set
-import Data.Either (rights)
+import Data.Either (rights, fromRight)
 import Flow ((|>))
 import Data.Functor ((<&>))
 import Control.Applicative (Applicative(..))
@@ -486,9 +486,7 @@ astToDoc prg =
           vsep (map showOppClause oppClauses) <> line
     in
       liftM3 toDoc aspRulesNoFact aspRulesFact oppClauses
-        -- Return a Doc ann that is either an error message (left) or an
-        -- actual output (right)
-        |> either id id
+        |> fromRight mempty
         
     -- putStrLn "ASP rules:"
 

@@ -55,7 +55,8 @@ import LS as SFL4
 import LS.PrettyPrinter
 import LS.Tokens (undeepers)
 import LS.Utils (mapThenSwallowErrs, (|$>))
-import LS.XPile.CoreL4.LogicProgram
+import LS.XPile.CoreL4.LogicProgram.LogicProgram
+    ( LPType(..), LogicProgram, babyL4ToLogicProgram )
 -- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
 -- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
 import Prettyprinter
@@ -76,25 +77,25 @@ sfl4Dummy = DummySRng "From spreadsheet"
 sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
 
-sfl4ToLp ::
+sfl4ToLogicProgramStr ::
   forall (lpType :: LPType).
   (Pretty (LogicProgram lpType ())) =>
   [SFL4.Rule] ->
   String
-sfl4ToLp rules =
+sfl4ToLogicProgramStr rules =
   rules
     |> mapThenSwallowErrs sfl4ToCorel4Rule
     |> concat
     |> Program ()
-    |> astToLp @lpType
+    |> babyL4ToLogicProgram @lpType
     |> pretty
     |> show
 
 sfl4ToASP :: [SFL4.Rule] -> String
-sfl4ToASP = sfl4ToLp @ASP
+sfl4ToASP = sfl4ToLogicProgramStr @ASP
 
 sfl4ToEpilog :: [SFL4.Rule] -> String
-sfl4ToEpilog = sfl4ToLp @Epilog
+sfl4ToEpilog = sfl4ToLogicProgramStr @Epilog
 
 -- sfl4ToASP :: [SFL4.Rule] -> String
 -- sfl4ToASP rs =

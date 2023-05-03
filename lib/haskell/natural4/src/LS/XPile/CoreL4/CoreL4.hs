@@ -11,8 +11,8 @@ import Prettyprinter
 import AnyAll
 import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
-import qualified LS.XPile.CoreL4.ToASP as ASP
-import qualified LS.XPile.CoreL4.ToEpilog_fm_nat as Epilog
+import qualified LS.XPile.CoreL4.Old.ToASP as ASP
+import qualified LS.XPile.CoreL4.Old.ToEpilog_fm_nat as Epilog
 
 import ToDMN.FromL4 (genXMLTreeNoType)
 

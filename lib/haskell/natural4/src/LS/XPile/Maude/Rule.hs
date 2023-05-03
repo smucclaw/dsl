@@ -17,7 +17,7 @@ import Data.Maybe (maybeToList)
 import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
 import Data.Monoid (Ap (Ap))
 import Data.Sequences as Seq (IsSequence)
-import Flow ((.>), (|>))
+import Flow ((|>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
   ( HornClause (..),
@@ -43,8 +43,8 @@ import LS.XPile.Maude.Utils
   ( multiExprs2qid,
     text2qid,
     throwDefaultErr,
-    (|$>),
   )
+import LS.Utils ( (|$>) )
 import Prettyprinter (Doc, vcat, hsep)
 import Witherable (wither)
 import Prettyprinter.Interpolate (di)

@@ -11,11 +11,9 @@ module LS.XPile.Maude.Rule
 where
 
 import AnyAll (BoolStruct (All, Leaf))
-import Control.Monad.Validate (Validate)
 import Data.List (intersperse)
 import Data.Maybe (maybeToList)
 import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
-import Data.Monoid (Ap (Ap))
 import Data.Sequences as Seq (IsSequence)
 import Flow ((|>))
 import LS.Rule (Rule (..), rkeyword)
@@ -44,7 +42,7 @@ import LS.XPile.Maude.Utils
     text2qid,
     throwDefaultErr,
   )
-import LS.Utils ( (|$>) )
+import LS.Utils ( (|$>), MonoidValidate )
 import Prettyprinter (Doc, vcat, hsep)
 import Witherable (wither)
 import Prettyprinter.Interpolate (di)
@@ -78,7 +76,7 @@ import Prettyprinter.Interpolate (di)
 --     symtab = []
 
 -- Main function that transpiles individual rules.
-rule2doc :: Rule -> Ap (Validate (Doc ann1)) (Doc ann2)
+rule2doc :: Rule -> MonoidValidate (Doc ann1) (Doc ann2)
 rule2doc
   Regulative
     { rlabel = Just (_, _, ruleName),

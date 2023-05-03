@@ -10,10 +10,9 @@ module LS.XPile.Maude.Regulative.HenceLest
   )
 where
 
-import Control.Monad.Validate (Validate)
-import Data.Monoid (Ap)
 import Data.Traversable (for)
 import LS.Rule (Rule (RuleAlias))
+import LS.Utils (MonoidValidate)
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
@@ -36,7 +35,7 @@ data HenceLestClause where
 
 henceLest2doc ::
   HenceLestClause ->
-  Ap (Validate (Doc ann1)) (Maybe (Doc ann2))
+  MonoidValidate (Doc ann1) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
     (RuleAlias clause) ->

@@ -14,9 +14,7 @@ module LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
   )
 where
 
-import Control.Monad.Validate (Validate)
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Monoid (Ap)
 import Data.Text qualified as T
 import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
@@ -27,6 +25,7 @@ import LS.Types
     ParamText,
     RegKeywords (REvery, RParty),
   )
+import LS.Utils (MonoidValidate)
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
@@ -43,7 +42,7 @@ data RkeywordActor where
   - PARTY/EVERY (some paramText denoting the actor)
   - MUST/MAY/SHANT (some paramText denoting the action)
 -}
-rkeywordActor2doc :: RkeywordActor -> Ap (Validate (Doc ann1)) (Doc ann2)
+rkeywordActor2doc :: RkeywordActor -> MonoidValidate (Doc ann1) (Doc ann2)
 rkeywordActor2doc
   RkeywordActor
     { rkeyword = rkeyword@((`elem` [REvery, RParty]) -> True),
@@ -61,7 +60,7 @@ data DeonticAction where
     DeonticAction
   deriving (Eq, Ord, Show)
 
-deonticAction2doc :: DeonticAction -> Ap (Validate (Doc ann1)) (Doc ann2)
+deonticAction2doc :: DeonticAction -> MonoidValidate (Doc ann1) (Doc ann2)
 deonticAction2doc
   DeonticAction
     { deontic = deontic@((`elem` [DMust, DMay, DShant]) -> True),
@@ -75,7 +74,7 @@ rkeywordDeonticActorAction2doc ::
   (Show a, (a == RegKeywords || a == Deontic) ~ True) =>
   a ->
   NonEmpty (NonEmpty MTExpr, b) ->
-  Ap (Validate (Doc ann1)) (Doc ann2)
+  MonoidValidate (Doc ann1) (Doc ann2)
 rkeywordDeonticActorAction2doc rkeywordDeontic ((actorAction, _) :| _) =
   pure [di|#{rkeywordDeontic'} #{actorAction'}|]
   where

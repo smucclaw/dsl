@@ -9,10 +9,9 @@ module LS.XPile.CoreL4.LogicProgram.LogicProgram
   )
 where
 
-import Control.Monad.Validate (MonadValidate (refute), Validate)
+import Control.Monad.Validate (MonadValidate (refute))
 import Data.List (nub, partition)
 import Data.Maybe (mapMaybe)
-import Data.Monoid (Ap (Ap))
 import Data.Set qualified as Set
 import Data.Tuple.All (Curry (uncurryN), SequenceT (sequenceT))
 import Flow ((|>))
@@ -27,7 +26,7 @@ import L4.SyntaxManipulation
     fv,
     isLocalVar,
   )
-import LS.Utils (mapThenSwallowErrs, maybe2validate, (|$>))
+import LS.Utils (mapThenSwallowErrs, maybe2validate, (|$>), MonoidValidate)
 import LS.XPile.CoreL4.LogicProgram.Common
   ( LPRule (LPRule, precondOfLPRule),
     LPType (..),
@@ -98,46 +97,46 @@ ruleToLPRule ::
   forall ann lpType t.
   (Show t, Ord t) =>
   Rule t ->
-  Ap (Validate (Doc ann)) (LPRule lpType t, [(Var t, Var t, Int)])
+  MonoidValidate (Doc ann) (LPRule lpType t, [(Var t, Var t, Int)])
 ruleToLPRule rule =
-  let precondsNeg :: Ap (Validate (Doc ann)) [(Expr t, Maybe (Var t, Var t, Int))]
+  let precondsNeg :: MonoidValidate (Doc ann) [(Expr t, Maybe (Var t, Var t, Int))]
       precondsNeg =
         traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule rule))
 
-      postcondNeg :: Ap (Validate (Doc ann)) (Expr t, Maybe (Var t, Var t, Int))
+      postcondNeg :: MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
       postcondNeg = negationPredicate $ postcondOfRule rule
 
-      preconds :: Ap (Validate (Doc ann)) [Expr t]
+      preconds :: MonoidValidate (Doc ann) [Expr t]
       preconds = map fst <$> precondsNeg
 
-      postcond :: Ap (Validate (Doc ann)) (Expr t)
+      postcond :: MonoidValidate (Doc ann) (Expr t)
       postcond = fst <$> postcondNeg
 
-      negpreds :: Ap (Validate (Doc ann)) [(Var t, Var t, Int)]
+      negpreds :: MonoidValidate (Doc ann) [(Var t, Var t, Int)]
       negpreds =
         (postcondNeg, precondsNeg)
           |> sequenceT
           |$> uncurry (:)
           |$> mapMaybe snd
 
-      allVars :: Ap (Validate (Doc ann)) (Set.Set (Var t))
+      allVars :: MonoidValidate (Doc ann) (Set.Set (Var t))
       allVars =
         (postcond, preconds)
           |> sequenceT
           |$> uncurry (:)
           |$> Set.unions . map fv
 
-      globalvars :: Ap (Validate (Doc ann)) [VarDecl t]
+      globalvars :: MonoidValidate (Doc ann) [VarDecl t]
       globalvars =
         allVars
           |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
 
-      localvars :: Ap (Validate (Doc ann)) [VarDecl t]
+      localvars :: MonoidValidate (Doc ann) [VarDecl t]
       localvars =
         allVars
           |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
-      ruleName :: Ap (Validate (Doc ann)) String
+      ruleName :: MonoidValidate (Doc ann) String
       ruleName =
         rule
           |> nameOfRule
@@ -146,7 +145,7 @@ ruleToLPRule rule =
                 viaShow rule <> "\n" <>
                 "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
  
-      lpRule :: Ap (Validate (Doc ann)) (LPRule lpType t)
+      lpRule :: MonoidValidate (Doc ann) (LPRule lpType t)
       lpRule =
         (ruleName, globalvars, localvars, preconds, postcond)
           |> sequenceT
@@ -162,7 +161,7 @@ varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT
 negationVarname :: QVarName t -> QVarName t
 negationVarname (QVarName t vn) = QVarName t ("not"++vn)
 
-negationPredicate :: Expr t -> Ap (Validate (Doc ann)) (Expr t, Maybe (Var t, Var t, Int))
+negationPredicate :: Expr t -> MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
 negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
   let (f, args) = appToFunArgs [] e in
       case f of

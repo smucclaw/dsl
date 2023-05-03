@@ -9,16 +9,14 @@ module LS.XPile.Maude.Rules
   )
 where
 
-import Control.Monad.Validate (Validate, runValidate)
 import Data.Coerce (coerce)
 import Data.Either (rights)
 import Data.Maybe (mapMaybe)
 import Data.MonoTraversable (Element, otoList)
-import Data.Monoid (Ap (Ap))
 import Data.Sequences as Seq (IsSequence)
 import Flow ((|>))
 import LS.Rule (Rule (..))
-import LS.Utils ((|$>))
+import LS.Utils ((|$>), swallowErrs)
 import LS.XPile.Maude.Rule (rule2doc)
 import LS.XPile.Maude.Utils (text2qid)
 import Prettyprinter (Doc, concatWith)
@@ -39,9 +37,7 @@ rules2doc rules =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |> (coerce :: [Ap (Validate a) b] -> [Validate a b])
-    |$> runValidate
-    |> rights
+    |> swallowErrs 
     |> concatWith (<.>)
   where
     -- Find the first regulative rule and extracts its rule name.

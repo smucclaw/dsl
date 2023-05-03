@@ -10,8 +10,6 @@ module LS.XPile.Maude.Regulative.TempConstr
   )
 where
 
-import Control.Monad.Validate (Validate)
-import Data.Monoid (Ap)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Flow ((.>))
@@ -19,13 +17,14 @@ import LS.Types
   ( TComparison (TBefore, TOn),
     TemporalConstraint (TemporalConstraint),
   )
+import LS.Utils (MonoidValidate)
 import LS.XPile.Maude.Utils (throwDefaultErr)
 import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
 tempConstr2doc ::
   Maybe (TemporalConstraint T.Text) ->
-  Ap (Validate (Doc ann1)) (Maybe (Doc ann2))
+  MonoidValidate (Doc ann1) (Maybe (Doc ann2))
 tempConstr2doc = traverse $ \case
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)

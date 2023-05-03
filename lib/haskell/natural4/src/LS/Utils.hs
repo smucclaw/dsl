@@ -4,8 +4,10 @@
 module LS.Utils
   ( (|$>),
     maybe2validate,
+    mapThenRunValidate,
     mapThenSwallowErrs,
-    swallowErrs
+    swallowErrs,
+    MonoidValidate
   )
 where
 
@@ -15,7 +17,7 @@ import Control.Monad.Validate
     runValidate,
   )
 import Data.Coerce (coerce)
-import Data.Either (rights)
+import Data.Either (rights, partitionEithers)
 import Data.Monoid (Ap (Ap))
 import Flow ((|>))
 
@@ -48,11 +50,16 @@ infixl 0 |$>
 deriving via Validate e instance
   Semigroup e => MonadValidate e (Ap (Validate e))
 
+type MonoidValidate e a = Ap (Validate e) a
+
 maybe2validate :: MonadValidate e m => e -> Maybe a -> m a
 maybe2validate errVal = maybe (refute errVal) pure
 
-mapThenSwallowErrs :: (a -> Ap (Validate e) b) -> [a] -> [b]
-mapThenSwallowErrs f xs = xs |$> f |> coerce |$> runValidate |> rights
+mapThenRunValidate :: (a -> MonoidValidate e b) -> [a] -> [Either e b]
+mapThenRunValidate f xs = xs |$> f |> coerce |$> runValidate
+
+mapThenSwallowErrs :: (a -> MonoidValidate e b) -> [a] -> [b]
+mapThenSwallowErrs f xs = xs |> mapThenRunValidate f |> rights
 
 swallowErrs :: [Ap (Validate a) b] -> [b]
 swallowErrs = mapThenSwallowErrs id

@@ -603,10 +603,10 @@ toBrackets2 [x] = "(" ++ x ++ ")"
 toBrackets2 (x:xs) = "(" ++ x ++ "," ++ tail (toBrackets2 xs)
 
 
-toBrackets3 :: [VarDecl t] -> String
-toBrackets3 [] = "()"
-toBrackets3 [VarDecl t vn u] = "(" ++ vn ++ ")"
-toBrackets3 ((VarDecl t vn u):xs) = "(" ++ vn ++ "," ++ tail (toBrackets xs)
+-- toBrackets3 :: [VarDecl t] -> String
+-- toBrackets3 [] = "()"
+-- toBrackets3 [VarDecl t vn u] = "(" ++ vn ++ ")"
+-- toBrackets3 ((VarDecl t vn u):xs) = "(" ++ vn ++ "," ++ tail (toBrackets xs)
 
 
 --skolemize2 :: Eq t1 => [VarDecl t1] -> [VarDecl t1] -> Expr t2 -> String -> String

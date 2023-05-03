@@ -2,12 +2,22 @@
 {-# LANGUAGE DerivingVia #-}
 
 module LS.Utils
-  ( (|$>)
+  ( (|$>),
+    maybe2validate,
+    mapThenSwallowErrs,
+    swallowErrs
   )
 where
 
-import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
+import Control.Monad.Validate
+  ( MonadValidate (refute),
+    Validate,
+    runValidate,
+  )
+import Data.Coerce (coerce)
+import Data.Either (rights)
 import Data.Monoid (Ap (Ap))
+import Flow ((|>))
 
 infixl 0 |$>
 
@@ -37,3 +47,12 @@ infixl 0 |$>
 -}
 deriving via Validate e instance
   Semigroup e => MonadValidate e (Ap (Validate e))
+
+maybe2validate :: MonadValidate e m => e -> Maybe a -> m a
+maybe2validate errVal = maybe (refute errVal) pure
+
+mapThenSwallowErrs :: (a -> Ap (Validate e) b) -> [a] -> [b]
+mapThenSwallowErrs f xs = xs |$> f |> coerce |$> runValidate |> rights
+
+swallowErrs :: [Ap (Validate a) b] -> [b]
+swallowErrs = mapThenSwallowErrs id

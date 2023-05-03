@@ -1,55 +1,70 @@
 {-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
 
-module LS.XPile.CoreL4.CoreL4 where
-
-import Prettyprinter
+module LS.XPile.CoreL4.CoreL4
+  ( sfl4ToBabyl4,
+    sfl4ToCorel4,
+    sfl4ToASP,
+    sfl4ToEpilog,
+    sfl4ToDMN,
+  )
+where
 
 import AnyAll
-import LS.PrettyPrinter
-import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
-import qualified LS.XPile.CoreL4.Old.ToASP as ASP
-import qualified LS.XPile.CoreL4.Old.ToEpilog_fm_nat as Epilog
-
-import ToDMN.FromL4 (genXMLTreeNoType)
-
-import L4.Annotation
-import LS as SFL4
+-- TODO, to be reconsidered
 
 -- import Data.Function ( (&) )
-import Data.Functor ( (<&>) )
+
 -- import Control.Arrow ( (>>>) )
 
-import qualified Data.Map as Map
-import qualified Data.Text as T
-import Data.Maybe (catMaybes, fromMaybe, isJust, fromJust)
-import qualified Data.List.NonEmpty as NE
 -- import           Data.List.NonEmpty (NonEmpty((:|)))
 -- import Text.Pretty.Simple (pShow, pShowNoColor)
 -- import qualified Data.Text.Lazy as TL
 -- import Control.Monad (guard, join)
-import Data.Either (rights, isRight, fromRight)
-import Control.Monad.Except
+
 -- import qualified Data.Traversable as DT
 
-import Text.Regex.TDFA
-import Data.List (nub, intercalate, (\\), isPrefixOf, elemIndex)
-import qualified Data.Foldable as DF
-import Data.Map ((!))
-
 -- TODO: the following is only for testing purposes, can be removed later
-import L4.PrintProg (showL4, PrintSystem (L4Style), PrintConfig (PrintSystem))
-import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
-import LS.Tokens (undeepers)
 
-import qualified Text.XML.HXT.Core as HXT
-
+import Control.Applicative (Applicative (liftA2))
+import Control.Monad.Validate (MonadValidate (refute), Validate)
+import Data.Either (fromRight, isRight, rights)
+import Data.Foldable qualified as DF
+import Data.Functor ((<&>))
+import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\))
+import Data.List.NonEmpty qualified as NE
+import Data.Map ((!))
+import Data.Map qualified as Map
+import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing)
+import Data.Monoid (Ap (Ap))
+import Data.Text qualified as T
+import Data.Tuple.All (SequenceT (sequenceT))
 import Debug.Trace (trace)
+import Flow ((|>))
+import L4.Annotation
+import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
+import L4.Syntax as L4 hiding (All, falseVNoType, trueVNoType)
+import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
+import LS as SFL4
+import LS.PrettyPrinter
+import LS.Tokens (undeepers)
+import LS.Utils (mapThenSwallowErrs, (|$>))
+import LS.XPile.CoreL4.LogicProgram
+-- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
+-- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
+import Prettyprinter
+import Text.Regex.TDFA
+import Text.XML.HXT.Core qualified as HXT
+import ToDMN.FromL4 (genXMLTreeNoType)
 
-type ExprM a = Either String (Expr a)
+-- type ExprM a = Either String (Expr a)
+type ExprM ann a = Ap (Validate (Doc ann)) (Expr a)
 
 -- output to Core L4 for further transformation
 
@@ -61,20 +76,40 @@ sfl4Dummy = DummySRng "From spreadsheet"
 sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
 
+sfl4ToLp ::
+  forall (lpType :: LPType).
+  (Pretty (LogicProgram lpType ())) =>
+  [SFL4.Rule] ->
+  String
+sfl4ToLp rules =
+  rules
+    |> mapThenSwallowErrs sfl4ToCorel4Rule
+    |> concat
+    |> Program ()
+    |> astToLp @lpType
+    |> pretty
+    |> show
+
 sfl4ToASP :: [SFL4.Rule] -> String
-sfl4ToASP rs =
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
-  let prg = Program () rulesTransformed in
-  let doc = ASP.astToDoc prg in
-    -- trace ("asp" ++ (show $ showL4 [] prg)) $
-    show doc
+sfl4ToASP = sfl4ToLp @ASP
 
 sfl4ToEpilog :: [SFL4.Rule] -> String
-sfl4ToEpilog rs =
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
-  let prg = Program () rulesTransformed in
-  let doc = Epilog.astToDoc prg in
-    show doc
+sfl4ToEpilog = sfl4ToLp @Epilog
+
+-- sfl4ToASP :: [SFL4.Rule] -> String
+-- sfl4ToASP rs =
+--   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
+--   let prg = Program () rulesTransformed in
+--   let doc = ASP.astToDoc prg in
+--     -- trace ("asp" ++ (show $ showL4 [] prg)) $
+--     show doc
+
+-- sfl4ToEpilog :: [SFL4.Rule] -> String
+-- sfl4ToEpilog rs =
+--   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
+--   let prg = Program () rulesTransformed in
+--   let doc = Epilog.astToDoc prg in
+--     show doc
 
 -- destructure (Rule t) from this
 -- data TopLevelElement t = RuleTLE (Rule t) | ...
@@ -82,11 +117,17 @@ sfl4ToEpilog rs =
 
 -- sfl4ToDMN :: HXT.ArrowXml cat => [SFL4.Rule] -> cat a HXT.XmlTree
 sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
-sfl4ToDMN rs =
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rs
-      prg = Program () rulesTransformed
-  -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
-  in genXMLTreeNoType prg
+sfl4ToDMN rules =
+  rules
+    |> mapThenSwallowErrs sfl4ToCorel4Rule
+    |> concat
+    |> Program ()
+    |> genXMLTreeNoType
+
+  -- let rulesTransformed = rs |$> sfl4ToCorel4Rule |> apVals2rights
+  --     prg = Program () rulesTransformed
+  -- -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
+  -- in genXMLTreeNoType prg
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
@@ -175,6 +216,12 @@ pptle (RuleTLE Rule { nameOfRule }) =
       "" $
       -- Otherwise if the rule has a name, we turn it into
       -- rule <RULE_NAME>
+      
+      -- Otherwise if the rule has a name, we turn it into
+      -- rule <RULE_NAME>
+      
+      -- Otherwise if the rule has a name, we turn it into
+      -- rule <RULE_NAME>
       nameOfRule
       <&> (\x -> ["rule <", x, ">"])
       <&> foldMap pretty
@@ -202,40 +249,40 @@ varNameToVarNoType cont vn
   | vn ==  head cont = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
   | otherwise = varNameToVarNoType (tail cont) vn
 
-varsToExprNoType :: [Var t] -> ExprM t
+varsToExprNoType :: [Var t] -> ExprM ann t
 varsToExprNoType (v:vs) = pure $ applyVarsNoType v vs
-varsToExprNoType [] = throwError "internal error (varsToExprNoType [])"
+varsToExprNoType [] = refute "internal error (varsToExprNoType [])"
 
-multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ()
+multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
 multiTermToExprNoType cont mt = do
   boo <- mapM (mtExprToExprNoType cont) mt
   case boo of
     ((VarE t v) : args) -> pure $ funArgsToAppNoType (VarE t v) args
     [e] -> pure e
-    _ -> throwError "non-variable name in function position"
+    _ -> refute "non-variable name in function position"
 
 
-mtExprToExprNoType :: [String] -> MTExpr -> ExprM ()
+mtExprToExprNoType :: [String] -> MTExpr -> ExprM ann ()
 mtExprToExprNoType cont (MTT t) = pure $ VarE () (varNameToVarNoType cont (T.unpack t))
 mtExprToExprNoType _ (MTI i) = pure $ ValE () (IntV i)
 mtExprToExprNoType _ (MTF i) = pure $ ValE () (FloatV i)
 mtExprToExprNoType _ (MTB i) = pure $ ValE () (BoolV i)
 
 
-rpRelToBComparOp :: RPRel -> Either String BinOp
+rpRelToBComparOp :: RPRel -> Ap (Validate (Doc ann)) BinOp
 rpRelToBComparOp cop = case cop of
-  RPis       -> throwError "rpRelToBComparOp: erroring on RPis"
-  RPhas      -> throwError "rpRelToBComparOp: erroring on RPhas"
+  RPis       -> refute "rpRelToBComparOp: erroring on RPis"
+  RPhas      -> refute "rpRelToBComparOp: erroring on RPhas"
   RPeq       -> pure $ BCompar BCeq
   RPlt       -> pure $ BCompar BClt
   RPlte      -> pure $ BCompar BClte
   RPgt       -> pure $ BCompar BCgt
   RPgte      -> pure $ BCompar BCgte
-  RPelem     -> throwError "rpRelToBComparOp: erroring on RPelem"
-  RPnotElem  -> throwError "rpRelToBComparOp: erroring on RPnotElem"
-  RPnot      -> throwError "rpRelToBComparOp: erroring on RPnot"
-  RPTC _     -> throwError "rpRelToBComparOp: erroring on RPTC"
+  RPelem     -> refute "rpRelToBComparOp: erroring on RPelem"
+  RPnotElem  -> refute "rpRelToBComparOp: erroring on RPnotElem"
+  RPnot      -> refute "rpRelToBComparOp: erroring on RPnot"
+  RPTC _     -> refute "rpRelToBComparOp: erroring on RPTC"
 
 conjExprNoType :: Expr () -> Expr () -> Expr ()
 conjExprNoType = BinOpE () (BBool BBand)
@@ -254,16 +301,16 @@ disjsExprNoType [e] = e
 disjsExprNoType (e:es) = disjExprNoType e (disjsExprNoType es)
 -- END helper functions
 
-boolStructRToExpr :: [String] -> BoolStructR -> ExprM ()
+boolStructRToExpr :: [String] -> BoolStructR -> ExprM ann ()
 boolStructRToExpr cont bs = case bs of
   Leaf rp -> relationalPredicateToExpr cont rp
   All _m_la bss -> conjsExprNoType <$> mapM (boolStructRToExpr cont) bss
   Any _m_la bss -> disjsExprNoType <$> mapM (boolStructRToExpr cont) bss
   Not bs' -> UnaOpE () (UBool UBnot) <$> boolStructRToExpr cont bs'
 
-relationalPredicateToExpr :: [String] -> RelationalPredicate -> ExprM ()
+relationalPredicateToExpr :: [String] -> RelationalPredicate -> ExprM ann ()
 relationalPredicateToExpr cont rp = case rp of
-  -- [TODO] use throwError here
+  -- [TODO] use refute here
   RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
                     pure $
                     ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
@@ -279,21 +326,21 @@ relationalPredicateToExpr cont rp = case rp of
   RPBoolStructR mts rr bs ->
     -- TODO: translate bs
     rpRelToBComparOp rr >>= (\r -> BinOpE () r <$> multiTermToExprNoType cont mts <*> pure falseVNoType)
-  RPnary rr rp' -> throwError "relationalPredicateToExpr: erroring on RPnary"
+  RPnary rr rp' -> refute "relationalPredicateToExpr: erroring on RPnary"
 
 
 -- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
 -- i.e. precondOfHornClauses :: [HornClause2] -> [String] -> Expr ()
-precondOfHornClauses :: [String] -> [HornClause2] -> ExprM ()
+precondOfHornClauses :: [String] -> [HornClause2] -> ExprM ann ()
 precondOfHornClauses cont [HC _hh (Just hb)] = boolStructRToExpr cont hb
 precondOfHornClauses _ _ = pure trueVNoType
 
-postcondOfHornClauses :: [String] -> [HornClause2] -> ExprM ()
+postcondOfHornClauses :: [String] -> [HornClause2] -> ExprM ann ()
 postcondOfHornClauses cont [HC hh _hb] = relationalPredicateToExpr cont hh
 postcondOfHornClauses _ _ = pure trueVNoType
 
-sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
-sfl4ToCorel4Rule Regulative{} = []
+sfl4ToCorel4Rule :: SFL4.Rule -> Ap (Validate (Doc ann)) [TopLevelElement ()]
+sfl4ToCorel4Rule Regulative{} = refute "Regulative rules are not supported."
 
 sfl4ToCorel4Rule h@Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
@@ -301,9 +348,8 @@ sfl4ToCorel4Rule h@Hornlike{..} =
             -- TODO: the following produces an error: Prelude.tail: empty list
             -- has been temporarily commented out 
             -- given2classdecls given ++
-            rule
+  liftA2 prePostCondsToRuleTLE preCond postCond
   where
-    cont = createContext h
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
     given2classdecls (Just pt) =
@@ -317,38 +363,59 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    rule =
-      let preCond = precondOfHornClauses cont clauses
-          postCond = postcondOfHornClauses cont clauses
-      in
-        if isRight preCond && isRight postCond
-        then pure $
-             RuleTLE Rule
-             { annotOfRule    = ()
-             , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-             , instrOfRule    = []
-             , varDeclsOfRule = []
-             , precondOfRule  = fromRight (error "no precond") preCond
-             -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
-             , postcondOfRule = fromRight (error "no postcond") postCond
-             }
-        else []
+    [preCond, postCond] =
+      [uncurry]
+        <*> [precondOfHornClauses, postcondOfHornClauses]
+        <*> replicate 2 (context, clauses)
+    
+    context = createContext h
+
+    prePostCondsToRuleTLE preCond postCond =
+      pure $ RuleTLE Rule
+        { annotOfRule    = ()
+        , nameOfRule     = rlabel |$> rl2text |$> T.unpack
+        , instrOfRule    = []
+        , varDeclsOfRule = []
+        , precondOfRule = preCond
+        -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
+        , postcondOfRule = postCond
+        }
+
+    -- rule =
+    --     (precond, postcond)
+    --       |> sequenceT
+    --       |$> \case (precond, postcond) ->
+    --                   undefined
+
+      -- let preCond = precondOfHornClauses cont clauses
+      --     postCond = postcondOfHornClauses cont clauses
+      -- in
+      --   if isRight preCond && isRight postCond
+      --   then pure $
+      --        RuleTLE Rule
+      --        { annotOfRule    = ()
+      --        , nameOfRule     = rlabel <&> rl2text <&> T.unpack
+      --        , instrOfRule    = []
+      --        , varDeclsOfRule = []
+      --        , precondOfRule  = fromRight (error "no precond") preCond
+      --        -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
+      --        , postcondOfRule = fromRight (error "no postcond") postCond
+      --        }
+      --   else []
 
 
-sfl4ToCorel4Rule Constitutive{ } = trace "sfl4ToCorel4Rule: erroring on Constitutive" $
-                                   mempty
-sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
+sfl4ToCorel4Rule Constitutive{ } = refute "sfl4ToCorel4Rule: erroring on Constitutive"
+sfl4ToCorel4Rule TypeDecl{..} = pure [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
-                                                         , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias { } = []
-sfl4ToCorel4Rule (RuleAlias _) = trace "sfl4ToCorel4Rule: erroring on RuleAlias" mempty   -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled  = trace "sfl4ToCorel4Rule: erroring on RegFulfilled" mempty
-sfl4ToCorel4Rule RegBreach     = trace "sfl4ToCorel4Rule: erroring on RegBreach" mempty
-sfl4ToCorel4Rule Scenario {}   = trace "sfl4ToCorel4Rule: erroring on Scenario" mempty
+                                                         , defOfClassDecl   = ClassDef [] []})]
+sfl4ToCorel4Rule DefNameAlias { } = mempty
+sfl4ToCorel4Rule (RuleAlias _) = refute "sfl4ToCorel4Rule: erroring on RuleAlias"  -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule RegFulfilled  = refute "sfl4ToCorel4Rule: erroring on RegFulfilled"
+sfl4ToCorel4Rule RegBreach     = refute "sfl4ToCorel4Rule: erroring on RegBreach"
+sfl4ToCorel4Rule Scenario {}   = refute "sfl4ToCorel4Rule: erroring on Scenario"
 sfl4ToCorel4Rule DefTypically {} = mempty
-sfl4ToCorel4Rule RuleGroup {}  = trace "sfl4ToCorel4Rule: erroring on RuleGroup" mempty
-sfl4ToCorel4Rule (NotARule _)  = trace "sfl4ToCorel4Rule: erroring on NotARule" mempty
-
+sfl4ToCorel4Rule RuleGroup {}  = refute "sfl4ToCorel4Rule: erroring on RuleGroup"
+sfl4ToCorel4Rule (NotARule _)  = refute "sfl4ToCorel4Rule: erroring on NotARule"
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr
 -- where the RPMT elements of the BooLStructR are nullary, unary, or binary operators depending on how many elements are in the list
@@ -531,7 +598,7 @@ prettyDefnCs rname cs =
   | cl <- cs
   , let clHead = hHead cl
         clBody = hBody cl
-  , clBody == Nothing
+  , isNothing clBody
 
   -- [TODO] we had some code that detected which word of (Foo IS Bar) was previously
   -- encountered, and which was new. The new word (suppose it's Bar) would be the
@@ -640,6 +707,8 @@ prettyClasses ct =
   ]
   | (classpath, (ctype, children)) <- SFL4.classGraph ct []
   , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
+                    -- snake_inner <$> reverse classpath
+                    -- snake_inner <$> reverse classpath
                    snake_inner . MTT <$> reverse classpath
         c_name' = untaint $ head classpath
         c_name = pretty c_name'
@@ -736,9 +805,13 @@ prettyClasses ct =
 -- runTestrules :: IO()
 runTestrules :: [Doc ann]
 runTestrules =
-  let rls = testrules in
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rls in
-    map (showL4 [PrintSystem L4Style]) rulesTransformed
+  testrules
+    |> mapThenSwallowErrs sfl4ToCorel4Rule
+    |> concat
+    |$> showL4 [PrintSystem L4Style]
+  -- let rls = testrules in
+  -- let rulesTransformed = mapThenSwallowErrs sfl4ToCorel4Rule rls in
+  --   map (showL4 [PrintSystem L4Style]) rulesTransformed
 
   {-
 >>> runTestrules

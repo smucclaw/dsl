@@ -99,13 +99,13 @@ ruleToLPRule ::
   (Show t, Ord t) =>
   Rule t ->
   Ap (Validate (Doc ann)) (LPRule lpType t, [(Var t, Var t, Int)])
-ruleToLPRule r =
+ruleToLPRule rule =
   let precondsNeg :: Ap (Validate (Doc ann)) [(Expr t, Maybe (Var t, Var t, Int))]
       precondsNeg =
-        traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule r))
+        traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule rule))
 
       postcondNeg :: Ap (Validate (Doc ann)) (Expr t, Maybe (Var t, Var t, Int))
-      postcondNeg = negationPredicate $ postcondOfRule r
+      postcondNeg = negationPredicate $ postcondOfRule rule
 
       preconds :: Ap (Validate (Doc ann)) [Expr t]
       preconds = map fst <$> precondsNeg
@@ -125,7 +125,7 @@ ruleToLPRule r =
         (postcond, preconds)
           |> sequenceT
           |$> uncurry (:)
-          |$> (Set.unions . map fv)
+          |$> Set.unions . map fv
 
       globalvars :: Ap (Validate (Doc ann)) [VarDecl t]
       globalvars =
@@ -139,18 +139,19 @@ ruleToLPRule r =
 
       ruleName :: Ap (Validate (Doc ann)) String
       ruleName =
-        r
+        rule
           |> nameOfRule
           |> maybe2validate
               ("ToASP: ruleToLPRule: nameOfRule is a Nothing :-(\n" <>
-                viaShow r <> "\n" <>
+                viaShow rule <> "\n" <>
                 "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
-  in
-    (ruleName, globalvars, localvars, preconds, postcond)
-      |> sequenceT
-      |$> uncurryN LPRule
-      |> (, negpreds)
-      |> sequenceT
+ 
+      lpRule :: Ap (Validate (Doc ann)) (LPRule lpType t)
+      lpRule =
+        (ruleName, globalvars, localvars, preconds, postcond)
+          |> sequenceT
+          |$> uncurryN LPRule
+  in sequenceT (lpRule, negpreds)
 
 --varTovarDecl :: Var (Tp()) -> VarDecl (Tp())
 --varTovarDecl :: Var t -> VarDecl t

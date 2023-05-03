@@ -26,6 +26,12 @@ infixl 0 |$>
 (|$>) :: Functor f => f a -> (a -> b) -> f b
 (|$>) = flip fmap
 
+{-# NOINLINE (|$>) #-}
+
+{-# RULES
+  "|$>" forall f g xs.  xs |$> f |$> g = xs |$> (g . f)
+#-}
+
 {-
   The idea is that given a (Validate e :: Type -> Type) and a monoid
   (a :: Type), we want to equip (Validate e a) with a monoid

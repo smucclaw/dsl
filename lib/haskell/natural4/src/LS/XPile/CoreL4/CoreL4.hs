@@ -33,7 +33,7 @@ import AnyAll
 -- TODO: the following is only for testing purposes, can be removed later
 
 import Control.Applicative (Applicative (liftA2))
-import Control.Monad.Validate (MonadValidate (refute), Validate)
+import Control.Monad.Validate (MonadValidate (refute))
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as DF
 import Data.Functor ((<&>))
@@ -54,7 +54,7 @@ import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS as SFL4
 import LS.PrettyPrinter
 import LS.Tokens (undeepers)
-import LS.Utils (mapThenSwallowErrs, (|$>))
+import LS.Utils (mapThenSwallowErrs, (|$>), MonoidValidate)
 import LS.XPile.CoreL4.LogicProgram.LogicProgram
     ( LPType(..), LogicProgram, babyL4ToLogicProgram )
 -- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
@@ -65,7 +65,7 @@ import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
 
 -- type ExprM a = Either String (Expr a)
-type ExprM ann a = Ap (Validate (Doc ann)) (Expr a)
+type ExprM ann a = MonoidValidate (Doc ann) (Expr a)
 
 -- output to Core L4 for further transformation
 
@@ -76,6 +76,12 @@ sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
+
+sfl4ToASP :: [SFL4.Rule] -> String
+sfl4ToASP = sfl4ToLogicProgramStr @ASP
+
+sfl4ToEpilog :: [SFL4.Rule] -> String
+sfl4ToEpilog = sfl4ToLogicProgramStr @Epilog
 
 sfl4ToLogicProgramStr ::
   forall (lpType :: LPType).
@@ -90,12 +96,6 @@ sfl4ToLogicProgramStr rules =
     |> babyL4ToLogicProgram @lpType
     |> pretty
     |> show
-
-sfl4ToASP :: [SFL4.Rule] -> String
-sfl4ToASP = sfl4ToLogicProgramStr @ASP
-
-sfl4ToEpilog :: [SFL4.Rule] -> String
-sfl4ToEpilog = sfl4ToLogicProgramStr @Epilog
 
 -- sfl4ToASP :: [SFL4.Rule] -> String
 -- sfl4ToASP rs =
@@ -257,7 +257,7 @@ varsToExprNoType [] = refute "internal error (varsToExprNoType [])"
 multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
 multiTermToExprNoType cont mt = do
-  boo <- mapM (mtExprToExprNoType cont) mt
+  boo <- traverse (mtExprToExprNoType cont) mt
   case boo of
     ((VarE t v) : args) -> pure $ funArgsToAppNoType (VarE t v) args
     [e] -> pure e
@@ -271,7 +271,7 @@ mtExprToExprNoType _ (MTF i) = pure $ ValE () (FloatV i)
 mtExprToExprNoType _ (MTB i) = pure $ ValE () (BoolV i)
 
 
-rpRelToBComparOp :: RPRel -> Ap (Validate (Doc ann)) BinOp
+rpRelToBComparOp :: RPRel -> MonoidValidate (Doc ann) BinOp
 rpRelToBComparOp cop = case cop of
   RPis       -> refute "rpRelToBComparOp: erroring on RPis"
   RPhas      -> refute "rpRelToBComparOp: erroring on RPhas"
@@ -305,16 +305,17 @@ disjsExprNoType (e:es) = disjExprNoType e (disjsExprNoType es)
 boolStructRToExpr :: [String] -> BoolStructR -> ExprM ann ()
 boolStructRToExpr cont bs = case bs of
   Leaf rp -> relationalPredicateToExpr cont rp
-  All _m_la bss -> conjsExprNoType <$> mapM (boolStructRToExpr cont) bss
-  Any _m_la bss -> disjsExprNoType <$> mapM (boolStructRToExpr cont) bss
+  All _m_la bss -> conjsExprNoType <$> traverse (boolStructRToExpr cont) bss
+  Any _m_la bss -> disjsExprNoType <$> traverse (boolStructRToExpr cont) bss
   Not bs' -> UnaOpE () (UBool UBnot) <$> boolStructRToExpr cont bs'
 
 relationalPredicateToExpr :: [String] -> RelationalPredicate -> ExprM ann ()
 relationalPredicateToExpr cont rp = case rp of
   -- [TODO] use refute here
-  RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
-                    pure $
-                    ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
+ -- RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
+  --                   pure $
+  --                   ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
+  RPParamText ne -> refute $ "CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> viaShow ne
 
   RPMT mts -> multiTermToExprNoType cont mts
   RPConstraint mts RPis mts' -> multiTermToExprNoType cont (mts' ++ mts)
@@ -340,7 +341,7 @@ postcondOfHornClauses :: [String] -> [HornClause2] -> ExprM ann ()
 postcondOfHornClauses cont [HC hh _hb] = relationalPredicateToExpr cont hh
 postcondOfHornClauses _ _ = pure trueVNoType
 
-sfl4ToCorel4Rule :: SFL4.Rule -> Ap (Validate (Doc ann)) [TopLevelElement ()]
+sfl4ToCorel4Rule :: SFL4.Rule -> MonoidValidate (Doc ann) [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = refute "Regulative rules are not supported."
 
 sfl4ToCorel4Rule h@Hornlike{..} =

@@ -32,12 +32,6 @@ import Prettyprinter.Interpolate (di)
 throwDefaultErr :: Ap (Validate (Doc ann)) a
 throwDefaultErr = refute [di|Not supported.|]
 
--- {-# NOINLINE (|$>) #-}
-
--- {-# RULES
---   "|$>"    forall f g xs.  xs |$> f |$> g = xs |$> (g . f)
--- #-}
-
 -- type IsList :: (Type -> Type) -> Constraint
 -- type IsList t =
 --   ( Foldable t,

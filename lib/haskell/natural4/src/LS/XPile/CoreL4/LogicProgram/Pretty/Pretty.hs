@@ -1,6 +1,5 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.CoreL4.LogicProgram.Pretty.Pretty () where
 
@@ -17,7 +16,7 @@ import LS.XPile.CoreL4.LogicProgram.Common
     EpilogProgram,
     EpilogRule,
     LPRule (LPRule),
-    LogicProgram (LogicProgram, lpRulesFact, lpRulesNoFact, oppClauses),
+    LogicProgram(..),
     OpposesClause (OpposesClause)
   )
 import LS.XPile.CoreL4.LogicProgram.Skolemize (toBrackets)
@@ -281,7 +280,6 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
                         parens (
                             pretty (AccordingToE rn postcond) <>  "," <+>
                             "0")
-
                     )
             preconds)
 
@@ -305,7 +303,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
   pretty translationMode = prettyLPRuleCommon translationMode
 
 instance Show t => Pretty (ASPProgram t) where
-  pretty (LogicProgram {..}) =
+  pretty (LogicProgram {lpRulesNoFact, lpRulesFact, oppClauses}) =
     vsep (map (pretty . AccordingToR) lpRulesNoFact) <> line <> line <>
     vsep (map (pretty . VarSubs1R) lpRulesNoFact) <> line <> line <>
     vsep (map (pretty . AddFacts) lpRulesFact) <> line <> line <>
@@ -316,7 +314,7 @@ instance Show t => Pretty (ASPProgram t) where
     vsep (map pretty oppClauses) <> line
 
 instance Show t => Pretty (EpilogProgram t) where
-  pretty (LogicProgram {..}) =
+  pretty (LogicProgram {lpRulesNoFact, lpRulesFact, oppClauses}) =
     vsep (map (pretty . AccordingToR) lpRulesNoFact) <> line <> line <>
     vsep (map (pretty . CausedByR) lpRulesNoFact) <> line <> line <>
     vsep (map pretty oppClauses) <> line

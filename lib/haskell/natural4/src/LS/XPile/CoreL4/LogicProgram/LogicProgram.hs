@@ -36,6 +36,9 @@ import LS.XPile.CoreL4.LogicProgram.Common
 import LS.XPile.CoreL4.LogicProgram.Pretty.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
+import Control.Applicative (Applicative(liftA2))
+import Control.Monad (join)
+import Data.Bifunctor (Bifunctor(bimap))
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
@@ -83,13 +86,16 @@ genOppClauseNoType (posvar, negvar, n) =
 proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()
 proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
 
-isFact :: Expr t -> Bool
-isFact (ValE _ (BoolV True)) = True
-isFact _ = False
+-- isFact :: Expr t -> Bool
+-- isFact (ValE _ (BoolV True)) = True
+-- isFact _ = False
 
 isHeadOfPrecondFact :: LPRule lpType t -> Bool
 isHeadOfPrecondFact
   (LPRule {precondOfLPRule = precond : _}) = isFact precond
+  where
+    isFact (ValE _ (BoolV True)) = True
+    isFact _ = False
 
 isHeadOfPrecondFact _ = False
 
@@ -101,7 +107,11 @@ ruleToLPRule ::
 ruleToLPRule rule =
   let precondsNeg :: MonoidValidate (Doc ann) [(Expr t, Maybe (Var t, Var t, Int))]
       precondsNeg =
-        traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule rule))
+        rule
+          |> precondOfRule
+          |> decomposeBinop (BBool BBand)
+          |> traverse negationPredicate 
+      -- traverse negationPredicate (decomposeBinop (BBool BBand) (precondOfRule rule))
 
       postcondNeg :: MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
       postcondNeg = negationPredicate $ postcondOfRule rule
@@ -113,28 +123,30 @@ ruleToLPRule rule =
       postcond = fst <$> postcondNeg
 
       negpreds :: MonoidValidate (Doc ann) [(Var t, Var t, Int)]
-      negpreds =
-        (postcondNeg, precondsNeg)
-          |> sequenceT
-          |$> uncurry (:)
-          |$> mapMaybe snd
+      negpreds = liftA2 (:) postcondNeg precondsNeg |$> mapMaybe snd
 
-      allVars :: MonoidValidate (Doc ann) (Set.Set (Var t))
-      allVars =
-        (postcond, preconds)
-          |> sequenceT
-          |$> uncurry (:)
-          |$> Set.unions . map fv
+      allVarDecls :: MonoidValidate (Doc ann) ([VarDecl t], [VarDecl t])
+      allVarDecls =
+        liftA2 (:) postcond preconds
+          -- Find and union over the free variables of each rule.
+          |$> foldMap (Set.toList . fv)
+          -- Partition into local and global vars.
+          |$> partition isLocalVar
+          -- Convert the vars to var declarations.
+          |$> join bimap (map varTovarDecl)
 
-      globalvars :: MonoidValidate (Doc ann) [VarDecl t]
-      globalvars =
-        allVars
-          |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
+      localvars = fst <$> allVarDecls
+      globalvars = snd <$> allVarDecls
 
-      localvars :: MonoidValidate (Doc ann) [VarDecl t]
-      localvars =
-        allVars
-          |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
+      -- globalvars :: MonoidValidate (Doc ann) [VarDecl t]
+      -- globalvars =
+      --   allVars
+      --     |$> map varTovarDecl . Set.toList . Set.filter (not . isLocalVar)
+
+      -- localvars :: MonoidValidate (Doc ann) [VarDecl t]
+      -- localvars =
+      --   allVars
+      --     |$> map varTovarDecl . Set.toList . Set.filter isLocalVar
 
       ruleName :: MonoidValidate (Doc ann) String
       ruleName =
@@ -144,7 +156,7 @@ ruleToLPRule rule =
               ("ToASP: ruleToLPRule: nameOfRule is a Nothing :-(\n" <>
                 viaShow rule <> "\n" <>
                 "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
- 
+
       lpRule :: MonoidValidate (Doc ann) (LPRule lpType t)
       lpRule =
         (ruleName, globalvars, localvars, preconds, postcond)

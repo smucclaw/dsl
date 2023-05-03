@@ -8,10 +8,10 @@
 {-# LANGUAGE TypeOperators #-}
 
 module LS.XPile.Maude.Utils
-  ( (|$>),
-    throwDefaultErr,
+  ( throwDefaultErr,
     multiExprs2qid,
-    text2qid
+    text2qid,
+    (|$>)
   )
 where
 
@@ -28,6 +28,7 @@ import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
+import LS.Utils ((|$>))
 import Prettyprinter (Doc, Pretty (pretty))
 import Prettyprinter.Interpolate (di)
 
@@ -57,11 +58,6 @@ deriving via Validate e instance
 
 throwDefaultErr :: Ap (Validate (Doc ann)) a
 throwDefaultErr = refute [di|Not supported.|]
-
-infixl 0 |$>
-
-(|$>) :: Functor f => f a -> (a -> b) -> f b
-(|$>) = flip fmap
 
 -- {-# NOINLINE (|$>) #-}
 

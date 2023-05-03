@@ -1,15 +1,17 @@
 {-# LANGUAGE GHC2021 #-}
 
-module LS.XPile.ToEpilog_fm_nat where
+module LS.XPile.CoreL4.ToASP where
 
 -- import RuleTransfo (ruleDisjL, clarify) -- TODO: Not needed here, and module RuleTransfo not visible here
 
-import Control.Applicative (Applicative (liftA2))
+import Control.Applicative (Applicative (..))
+import Data.Either (fromRight, rights)
 import Data.Foldable (find)
+import Data.Functor ((<&>))
 import Data.List (nub)
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Data.Set qualified as Set
-import Data.Tuple.Sequence (SequenceT (sequenceT))
+import Data.Tuple.All (SequenceT (sequenceT), Curry (uncurryN))
 import Flow ((|>))
 import L4.KeyValueMap (ValueKVM)
 import L4.PrintProg
@@ -30,10 +32,11 @@ import L4.SyntaxManipulation
     globalVarsOfProgram,
     isLocalVar,
   )
-import LS.XPile.Maude.Utils ((|$>))
+import LS.Utils ( (|$>) )
 import Prettyprinter
   ( Doc,
     Pretty (pretty),
+    comma,
     hsep,
     line,
     parens,
@@ -41,14 +44,14 @@ import Prettyprinter
     vsep,
     (<+>),
   )
---import ToEpilog (TranslationMode(FixedCode))
 
-data ASPRule t = ASPRule {
-                     nameOfASPRule :: String
-                   , globalVarDeclsOfASPRule :: [VarDecl t]
-                   , localVarDeclsOfASPRule :: [VarDecl t]
-                   , precondOfASPRule :: [Expr t]
-                   , postcondOfASPRule :: Expr t }
+data ASPRule t = ASPRule
+  { nameOfASPRule :: String,
+    globalVarDeclsOfASPRule :: [VarDecl t],
+    localVarDeclsOfASPRule :: [VarDecl t],
+    precondOfASPRule :: [Expr t],
+    postcondOfASPRule :: Expr t
+  }
   deriving (Eq, Ord, Show, Read)
 
 -- Skolemized ASP rules code
@@ -79,6 +82,7 @@ skolemizeASPRule r = ASPRule (skolemizedASPRuleName r)  (skolemizeASPRuleGlobals
 findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
 findVarDecl varname decls = find (\d -> varname == nameOfVarDecl d) decls
 
+-- when exactly is this error triggered?
 convertVarExprToDecl :: [VarDecl t2] -> Expr t ->VarDecl t2
 convertVarExprToDecl decls (VarE _ v) = fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
                                         findVarDecl (nameOfQVarName (nameOfVar v)) decls
@@ -161,6 +165,7 @@ data OpposesClause t = OpposesClause {
 negationVarname :: QVarName t -> QVarName t
 negationVarname (QVarName t vn) = QVarName t ("not"++vn)
 
+
 negationPredicate :: Expr t -> Either (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
 negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
     let (f, args) = appToFunArgs [] e in
@@ -226,11 +231,10 @@ ruleToASPRule r =
         maybe2either x Nothing = Left x
         maybe2either _ (Just x) = Right x
 
-        uncurry5 f (a, b, c, d, e) = f a b c d e
     in
       (ruleName, globalvars, localvars, preconds, postcond)
         |> sequenceT
-        |$> uncurry5 ASPRule
+        |$> uncurryN ASPRule
         |> (, negpreds)
         |> sequenceT
 
@@ -253,13 +257,12 @@ data TranslationMode
   | VarSubs4R
   | RawL4
   | AddFacts
-  | FixedCode
 
 class ShowASP x where
-    showASP :: TranslationMode -> x -> Doc ann
+  showASP :: TranslationMode -> x -> Doc ann
 
 class ShowOppClause x where
-    showOppClause :: x -> Doc ann
+  showOppClause :: x -> Doc ann
 
 aspPrintConfig :: [PrintConfig]
 aspPrintConfig = [PrintVarCase CapitalizeLocalVar, PrintCurried MultiArg]
@@ -346,7 +349,7 @@ instance Show t => ShowOppClause (OpposesClause t) where
 instance Show t => ShowASP (ASPRule t) where
     showASP AccordingToR (ASPRule rn _env _vds preconds postcond) =
         showASP (AccordingToE rn) postcond <+> pretty ":-" <+>
-            hsep (punctuate (pretty "&") (map (showASP LegallyHoldsE) preconds))
+            hsep (punctuate comma (map (showASP LegallyHoldsE) preconds)) <>  pretty "."
 
 {-     showASP ExplainsSkolemR (ASPRule rn vds preconds postcond)=
                              let new_rn = rn
@@ -409,24 +412,6 @@ instance Show t => ShowASP (ASPRule t) where
                     )
             preconds)
 
-    showASP FixedCode (ASPRule _rn _env _vds preconds postcond) =
-      vsep [ pretty "defeated(R2,C2):-overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)"
-            , pretty "opposes(C1,C2):-opposes(C2,C1)"
-            , pretty "legally_enforces(R,C):-according_to(R,C) & ~defeated(R,C) "
-            , pretty "legally_holds(C):-legally_enforces(R,C)"
-            , pretty "legally_holds(contradiction_entailed):-opposes(C1,C2) & legally_holds(C1) & legally_holds(C2)"
-            , pretty "caused_by(pos,overrides(R1,R2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
-            , pretty "caused_by(pos,according_to(R2,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
-            , pretty "caused_by(pos,legally_enforces(R1,C1),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
-            , pretty "caused_by(pos,opposes(C1,C2),defeated(R2,C2),0):-defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)"
-            , pretty "caused_by(pos,according_to(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)"
-            , pretty "caused_by(neg,defeated(R,C),legally_enforces(R,C),0):-legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)"
-            , pretty "caused_by(pos,legally_enforces(R,C),legally_holds(C),0):-legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)"
-            , pretty "justify(X,0):-caused_by(pos,X,Y,0)"
-            , pretty "directedEdge(Sgn,X,Y):-caused_by(Sgn,X,Y,0)"
-            , pretty "justify(X,0):-gen_graph(X)" ]
-
-
 
     showASP AddFacts (ASPRule _rn _env _vds _preconds postcond) =
         vsep (map (\pc ->
@@ -472,16 +457,16 @@ instance Show t => ShowASP (ASPRule t) where
                             pretty "pos," <+>
                             showASP LegallyHoldsE pc <> pretty "," <+>
                             showASP (AccordingToE rn) postcond <> pretty "," <+>
-                            pretty "0"
+                            pretty "_N+1"
                             ) <+>
                         pretty ":-" <+>
-                        showASP (AccordingToE rn) postcond <> pretty "&" <+>
-                        hsep (punctuate (pretty "&") (map (showASP LegallyHoldsE) preconds)) <>  pretty "&" <+>
+                        showASP (AccordingToE rn) postcond <> pretty "," <+>
+                        hsep (punctuate comma (map (showASP LegallyHoldsE) preconds)) <>  pretty "," <+>
                         pretty "justify" <>
                         parens (
                             showASP (AccordingToE rn) postcond <>  pretty "," <+>
-                            pretty "0")
-
+                            pretty "_N") <>
+                        pretty "."
                     )
             preconds)
     showASP _ _ = pretty ""  -- not implemented
@@ -516,21 +501,22 @@ genOppClauseNoType (posvar, negvar, n) =
 
 --     -- putStrLn "ASP rules:"
 --     putDoc $ vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line
---     --putDoc $ vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line
---     --putDoc $ vsep (map (showASP AddFacts) aspRulesFact) <> line <> line
---     --putDoc $ vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line
---     --putDoc $ vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line
---     --putDoc $ vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line
+--     putDoc $ vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line
+--     putDoc $ vsep (map (showASP AddFacts) aspRulesFact) <> line <> line
+--     putDoc $ vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line
+--     putDoc $ vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line
+--     putDoc $ vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line
 --     -- putDoc $ vsep (map (showASP VarSubs2R) aspRules) <> line <> line
 --     -- putDoc $ vsep (map (showASP ExplainsR) aspRules) <> line <> line
 --     -- putDoc $ vsep (map (showASP ExplainsR) skolemizedASPRules) <> line <> line
 --     putDoc $ vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line
 --     putDoc $ vsep (map showOppClause oppClauses) <> line
 
+-- TODO: redundant with the above. Define astToASP as putDoc (astToDoc prg)
 astToDoc :: forall ann t. (Show t, Ord t, Eq t) => Program t -> Doc ann
 astToDoc prg =
     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
-    let rules = rulesOfProgram prg
+    let rules = rulesOfProgram prg 
     -- putStrLn "Simplified L4 rules:"
     -- putDoc $ vsep (map (showL4 []) rules) <> line
         aspRulesWithNegs :: Either (Doc ann) [(ASPRule t, [(Var t, Var t, Int)])]
@@ -557,6 +543,11 @@ astToDoc prg =
         toDoc :: ([ASPRule t], [ASPRule t], [OpposesClause t]) -> Doc ann
         toDoc (aspRulesNoFact, aspRulesFact, oppClauses) =
           vsep (map (showASP AccordingToR) aspRulesNoFact) <> line <> line <>
+          vsep (map (showASP VarSubs1R) aspRulesNoFact) <> line <> line <>
+          vsep (map (showASP AddFacts) aspRulesFact) <> line <> line <>
+          vsep (map (showASP VarSubs3R) aspRulesNoFact) <> line <> line <>
+          vsep (map (showASP VarSubs2R) aspRulesNoFact) <> line <> line <>
+          vsep (map (showASP VarSubs4R) aspRulesNoFact) <> line <> line <>
           vsep (map (showASP CausedByR) aspRulesNoFact) <> line <> line <>
           vsep (map showOppClause oppClauses) <> line
     in
@@ -569,6 +560,8 @@ astToDoc prg =
                Either (Doc ann) ([ASPRule t], [ASPRule t], [OpposesClause t])
            )
         |> either (const mempty) toDoc
+
+    -- putStrLn "ASP rules:"
 
 -- TODO: details to be filled in
 proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()

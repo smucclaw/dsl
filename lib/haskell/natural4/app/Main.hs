@@ -1,6 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 import qualified LS as SFL4
@@ -11,7 +10,7 @@ import Data.Time.ISO8601
 import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 
-import LS.XPile.CoreL4
+import LS.XPile.CoreL4.CoreL4
 import LS.Interpreter
 
 import qualified LS.XPile.Uppaal as Uppaal

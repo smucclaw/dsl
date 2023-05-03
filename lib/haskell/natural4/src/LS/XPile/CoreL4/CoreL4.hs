@@ -1,19 +1,18 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE TupleSections #-}
 
 {-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
 
-module LS.XPile.CoreL4 where
+module LS.XPile.CoreL4.CoreL4 where
 
 import Prettyprinter
 
 import AnyAll
 import LS.PrettyPrinter
 import L4.Syntax as L4 hiding (All, trueVNoType, falseVNoType) -- TODO, to be reconsidered
-import qualified LS.XPile.ToASP as ASP
-import qualified LS.XPile.ToEpilog_fm_nat as Epilog
+import qualified LS.XPile.CoreL4.ToASP as ASP
+import qualified LS.XPile.CoreL4.ToEpilog_fm_nat as Epilog
 
 import ToDMN.FromL4 (genXMLTreeNoType)
 

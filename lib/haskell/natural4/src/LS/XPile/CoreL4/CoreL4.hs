@@ -83,6 +83,13 @@ sfl4ToASP = sfl4ToLogicProgramStr @ASP
 sfl4ToEpilog :: [SFL4.Rule] -> String
 sfl4ToEpilog = sfl4ToLogicProgramStr @Epilog
 
+sfl4ToUntypedBabyL4 :: [SFL4.Rule] -> Program ()
+sfl4ToUntypedBabyL4 rules =
+  rules
+    |> mapThenSwallowErrs sfl4ToCorel4Rule
+    |> concat
+    |> Program ()
+
 sfl4ToLogicProgramStr ::
   forall (lpType :: LPType).
   (Pretty (LogicProgram lpType ())) =>
@@ -90,9 +97,7 @@ sfl4ToLogicProgramStr ::
   String
 sfl4ToLogicProgramStr rules =
   rules
-    |> mapThenSwallowErrs sfl4ToCorel4Rule
-    |> concat
-    |> Program ()
+    |> sfl4ToUntypedBabyL4
     |> babyL4ToLogicProgram @lpType
     |> pretty
     |> show
@@ -120,9 +125,7 @@ sfl4ToLogicProgramStr rules =
 sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
 sfl4ToDMN rules =
   rules
-    |> mapThenSwallowErrs sfl4ToCorel4Rule
-    |> concat
-    |> Program ()
+    |> sfl4ToUntypedBabyL4
     |> genXMLTreeNoType
 
   -- let rulesTransformed = rs |$> sfl4ToCorel4Rule |> apVals2rights
@@ -350,7 +353,7 @@ sfl4ToCorel4Rule h@Hornlike{..} =
             -- TODO: the following produces an error: Prelude.tail: empty list
             -- has been temporarily commented out 
             -- given2classdecls given ++
-  liftA2 prePostCondsToRuleTLE preCond postCond
+  liftA2 prePostCondsToRuleTLE precond postcond
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
@@ -365,13 +368,11 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    [preCond, postCond] =
+    [precond, postcond] =
       [uncurry]
         <*> [precondOfHornClauses, postcondOfHornClauses]
-        <*> replicate 2 (context, clauses)
-    
-    context = createContext h
-
+        <*> replicate 2 (createContext h, clauses)
+ 
     prePostCondsToRuleTLE preCond postCond =
       pure $ RuleTLE Rule
         { annotOfRule    = ()
@@ -382,12 +383,6 @@ sfl4ToCorel4Rule h@Hornlike{..} =
         -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
         , postcondOfRule = postCond
         }
-
-    -- rule =
-    --     (precond, postcond)
-    --       |> sequenceT
-    --       |$> \case (precond, postcond) ->
-    --                   undefined
 
       -- let preCond = precondOfHornClauses cont clauses
       --     postCond = postcondOfHornClauses cont clauses
@@ -405,12 +400,18 @@ sfl4ToCorel4Rule h@Hornlike{..} =
       --        }
       --   else []
 
-
-sfl4ToCorel4Rule Constitutive{ } = refute "sfl4ToCorel4Rule: erroring on Constitutive"
-sfl4ToCorel4Rule TypeDecl{..} = pure [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
-                                                         , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
-                                                         , defOfClassDecl   = ClassDef [] []})]
-sfl4ToCorel4Rule DefNameAlias { } = mempty
+sfl4ToCorel4Rule Constitutive {} = refute "sfl4ToCorel4Rule: erroring on Constitutive"
+sfl4ToCorel4Rule TypeDecl {..} =
+  pure
+    [ ClassDeclTLE
+        ( ClassDecl
+            { annotOfClassDecl = (),
+              nameOfClassDecl = ClsNm $ T.unpack (mt2text name),
+              defOfClassDecl = ClassDef [] []
+            }
+        )
+    ]
+sfl4ToCorel4Rule DefNameAlias {} = mempty
 sfl4ToCorel4Rule (RuleAlias _) = refute "sfl4ToCorel4Rule: erroring on RuleAlias"  -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled  = refute "sfl4ToCorel4Rule: erroring on RegFulfilled"
 sfl4ToCorel4Rule RegBreach     = refute "sfl4ToCorel4Rule: erroring on RegBreach"

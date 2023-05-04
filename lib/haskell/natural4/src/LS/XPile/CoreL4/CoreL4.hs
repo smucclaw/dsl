@@ -368,9 +368,9 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    [precond, postcond] = trace (xs |> mapThenRunValidate id |> show) xs
+    -- [precond, postcond] = trace (xs |> mapThenRunValidate id |> show) xs
 
-    xs =
+    [precond, postcond] =
       [uncurry]
         <*> [precondOfHornClauses, postcondOfHornClauses]
         <*> replicate 2 (createContext h, clauses)

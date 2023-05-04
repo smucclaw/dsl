@@ -2,6 +2,15 @@
 {-# LANGUAGE DataKinds #-}
 
 module LS.XPile.CoreL4.LogicProgram.Common
+  ( LPType (..),
+    LPRule (..),
+    ASPRule,
+    EpilogRule,
+    LogicProgram (..),
+    ASPProgram,
+    EpilogProgram,
+    OpposesClause (..),
+  )
 where
 
 import L4.PrintProg

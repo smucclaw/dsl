@@ -36,7 +36,7 @@ import LS.XPile.CoreL4.LogicProgram.Common
   ( LPRule (..),
     LPType (..),
     LogicProgram (..),
-    OpposesClause (OpposesClause),
+    OpposesClause (..),
   )
 import LS.XPile.CoreL4.LogicProgram.Pretty.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
@@ -71,7 +71,7 @@ babyL4ToLogicProgram prg =
 
         oppClauses :: [OpposesClause t]
         oppClauses = map genOppClauseNoType oppClausePrednames
-    in LogicProgram {lpRulesNoFact, lpRulesFact, oppClauses}
+    in LogicProgram {..}
 
 genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
 genOppClause (posvar, negvar, n) =

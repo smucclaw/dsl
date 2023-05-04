@@ -40,7 +40,7 @@ skolemizeLPRule r = LPRule (skolemizedLPRuleName r)  (skolemizeLPRuleGlobals r) 
 findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
 findVarDecl varname decls = find (\d -> varname == nameOfVarDecl d) decls
 
--- when exactly is this error triggered?
+-- Jo Hsi: when exactly is this error triggered?
 convertVarExprToDecl :: [VarDecl t2] -> Expr t ->VarDecl t2
 convertVarExprToDecl decls (VarE _ v) = fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
                                         findVarDecl (nameOfQVarName (nameOfVar v)) decls
@@ -92,15 +92,15 @@ varDeclToExprTup (VarDecl x y z) = (varDeclToExpr (VarDecl x y z), VarDecl x y z
 
 -- Matching function
 
-match :: (Eq t, Show t) => t -> [(t, p)] -> p
-match x (y:ys) = if x == fst y
-     then snd y
-     else match x ys
-match x [] = error ("looking for " ++ show x)
+-- match :: (Eq t, Show t) => t -> [(t, p)] -> p
+-- match x (y:ys) = if x == fst y
+--      then snd y
+--      else match x ys
+-- match x [] = error ("looking for " ++ show x)
 
 -- var expr to var decl, takes in a var expr and returns its corresponding var decl
-varExprToDecl :: (Eq t, Show t) => Expr t -> [VarDecl t] -> VarDecl t
-varExprToDecl expr listdec = match expr (map varDeclToExprTup listdec)
+-- varExprToDecl :: (Eq t, Show t) => Expr t -> [VarDecl t] -> VarDecl t
+-- varExprToDecl expr listdec = match expr (map varDeclToExprTup listdec)
 
 -- Expression data structure in Syntax.hs
 -- many additional functions in SyntaxManipuation.hs

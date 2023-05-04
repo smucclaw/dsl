@@ -54,9 +54,17 @@ import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS as SFL4
 import LS.PrettyPrinter
 import LS.Tokens (undeepers)
-import LS.Utils (mapThenSwallowErrs, (|$>), MonoidValidate, mapThenRunValidate)
+import LS.Utils
+  ( MonoidValidate,
+    mapThenSwallowErrs,
+    (|$>),
+  )
 import LS.XPile.CoreL4.LogicProgram.LogicProgram
-    ( LPType(..), LogicProgram, babyL4ToLogicProgram )
+  ( LPType (..),
+    LogicProgram,
+    babyL4ToLogicProgram,
+  )
+
 -- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
 -- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
 import Prettyprinter
@@ -368,12 +376,11 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    -- [precond, postcond] = trace (xs |> mapThenRunValidate id |> show) xs
 
     [precond, postcond] =
       [uncurry]
         <*> [precondOfHornClauses, postcondOfHornClauses]
-        <*> replicate 2 (createContext h, clauses)
+        <*> [(createContext h, clauses)]
  
     prePostCondsToRuleTLE preCond postCond =
       pure $ RuleTLE Rule

@@ -1,0 +1,18 @@
+packages: .
+
+-- our fork removes dependency on system-filepath
+source-repository-package
+ type: git
+ location: https://github.com/smucclaw/optparse-generic
+ tag: 65aec52d6d2000d1ec3efbc9f04dfe4321b31cc1
+                  
+
+-- wait, why did we need our fork of svg-builder again? to allow a later base, that's why.
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/svg-builder
+  tag: 6a1ef4da55667a620a67cf61612a2ae48f83d315
+                  
+
+optional-packages: ../explainable
+

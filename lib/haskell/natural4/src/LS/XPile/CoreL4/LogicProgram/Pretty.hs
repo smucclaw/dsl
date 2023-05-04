@@ -1,5 +1,6 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.CoreL4.LogicProgram.Pretty () where
@@ -17,16 +18,16 @@ import LS.XPile.CoreL4.LogicProgram.Common
     EpilogProgram,
     EpilogRule,
     LPRule (LPRule),
-    LogicProgram(..),
-    OpposesClause (OpposesClause)
+    LogicProgram (..),
+    OpposesClause (OpposesClause),
   )
--- import LS.XPile.CoreL4.LogicProgram.Skolemize (toBrackets)
 import LS.XPile.CoreL4.LogicProgram.Pretty.Utils
   ( my_str_trans_list,
     preconToVarStrList,
     skolemize2,
+    toBrackets,
     toBrackets2,
-    varDeclToVarStrList, toBrackets,
+    varDeclToVarStrList,
   )
 import Prettyprinter
   ( Doc,
@@ -36,9 +37,11 @@ import Prettyprinter
     line,
     parens,
     punctuate,
+    viaShow,
     vsep,
-    (<+>), viaShow,
+    (<+>),
   )
+import Prettyprinter.Interpolate (diii)
 
 data TranslationMode t
   = AccordingToR t
@@ -65,52 +68,74 @@ aspPrintConfig = [PrintVarCase CapitalizeLocalVar, PrintCurried MultiArg]
 
 instance Show t => Pretty (OpposesClause t) where
   pretty (OpposesClause pos neg) =
-    "opposes" <>
-      parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
-    ":-" <+>
-        pretty (AccordingToE "R" pos) <> "." <> line <>
-    "opposes" <>
-      parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
-    ":-" <+>
-      pretty (AccordingToE "R" neg) <> "." <> line <>
+    [diii|
+      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
+        #{AccordingToE "R" pos}.
+      
+      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
+        #{AccordingToE "R" neg}.
 
-    "opposes" <>
-      parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
+        #{LegallyHoldsE pos}.
 
-    ":-" <+>
-      pretty (LegallyHoldsE pos) <> "." <> line <>
+      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
+        #{LegallyHoldsE neg}.
 
-    "opposes" <>
-      parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
+        query(#{RawL4 pos}, _N).
 
-    ":-" <+>
-      pretty (LegallyHoldsE neg) <> "." <> line <>
+      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
+        query(#{RawL4 neg}, _N).
+    |]
+    -- "opposes" <>
+    --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+    -- ":-" <+>
+    --     pretty (AccordingToE "R" pos) <> "." <> line <>
+    -- "opposes" <>
+    --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+    -- ":-" <+>
+    --   pretty (AccordingToE "R" neg) <> "." <> line <>
 
-    "opposes" <>
-      parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+    -- "opposes" <>
+    --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
 
-    ":-" <+>
-    "query" <>
-    parens (
-            pretty (RawL4 pos) <+>
-            "," <>
-            "_N"
-            ) <> "." <> line <>
+    -- ":-" <+>
+    --   pretty (LegallyHoldsE pos) <> "." <> line <>
 
-    "opposes" <>
-      parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+    -- "opposes" <>
+    --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
 
-    ":-" <+>
-    "query" <>
-    parens (
-            pretty (RawL4 neg) <+>
-            "," <>
-            "_N"
-            ) <> "."
+    -- ":-" <+>
+    --   pretty (LegallyHoldsE neg) <> "." <> line <>
+
+    -- "opposes" <>
+    --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+
+    -- ":-" <+>
+    -- "query" <>
+    -- parens (
+    --         pretty (RawL4 pos) <+>
+    --         "," <>
+    --         "_N"
+    --         ) <> "." <> line <>
+
+    -- "opposes" <>
+    --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
+
+    -- ":-" <+>
+    -- "query" <>
+    -- parens (
+    --         pretty (RawL4 neg) <+>
+    --         "," <>
+    --         "_N"
+    --         ) <> "."
 
 instance Show t => Pretty (TranslationMode (Expr t)) where
     pretty (AccordingToE rn e) =
-      "according_to" <> parens (pretty rn <> "," <+> pretty (RawL4 e))
+      [diii|
+        according_to(#{rn}, #{RawL4 e})
+      |]
+      -- "according_to" <> parens (pretty rn <> "," <+> pretty (RawL4 e))
 
     -- predicates (App expressions) are written wrapped into legally_holds,
     -- whereas any other expressions are written as is.
@@ -118,11 +143,19 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
     --   "legally_holds" <> parens (showASP RawL4 e)
 
     pretty (LegallyHoldsE e) =
-      "legally_holds" <> parens (pretty $ RawL4 e)
+      [diii|
+        legally_holds(#{RawL4 e})
+      |]
+      -- "legally_holds" <> parens (pretty $ RawL4 e)
+
     -- showASP QueryE e@AppE{} =
     --   "query" <> parens (showASP RawL4 e <> "," <> "L")
+
     pretty (QueryE e) =
-      "query" <> parens (pretty (RawL4 e) <> "," <> "L")
+      [diii|
+        query(#{RawL4 e}, L)
+      |]
+      -- "query" <> parens (pretty (RawL4 e) <> "," <> "L")
 
     -- showASP LegallyHoldsE e =
     --     showASP RawL4 e
@@ -167,16 +200,20 @@ prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
 -- TODO: weird: var pc not used in map
 prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\pc ->
-                ("createSub(subInst" <> "_" <> viaShow _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
-                ":-" <+>
-                "query" <>
-                parens (
-                        pretty (RawL4 postcond) <+>
-                        "," <>
-                        "_N"
-                        ) <>
-                ", _N < M, max_ab_lvl(M)" <>
-                "."
+                 [diii|
+                  createSub(subInst_#{_rn}#{skolemize2 (_vds <> _env) _vds postcond _rn}, _N+1) :-
+                    query(#{RawL4 postcond}), _N, _N < M, max_ab_lvl(M).
+                 |]
+                -- ("createSub(subInst" <> "_" <> viaShow _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
+                -- ":-" <+>
+                -- "query" <>
+                -- parens (
+                --         pretty (RawL4 postcond) <+>
+                --         "," <>
+                --         "_N"
+                --         ) <>
+                -- ", _N < M, max_ab_lvl(M)" <>
+                -- "."
                 )
         [head preconds])
 

@@ -1,4 +1,6 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.XPile.CoreL4.LogicProgram.Pretty.Utils
   ( my_str_trans_list,
@@ -11,6 +13,7 @@ module LS.XPile.CoreL4.LogicProgram.Pretty.Utils
 where
 
 import Data.List (intersperse)
+import Data.String.Interpolate (i)
 import Flow ((|>))
 import L4.PrintProg (capitalise)
 import L4.Syntax (Expr, VarDecl (VarDecl))
@@ -20,6 +23,7 @@ import LS.XPile.CoreL4.LogicProgram.Skolemize
   ( convertVarExprToDecl,
   )
 import Prettyprinter (Doc, Pretty (pretty), concatWith)
+import Prettyprinter.Interpolate (di)
 
 -- Additional functions to write var substitution code
 
@@ -42,7 +46,7 @@ varDeclToVarStrList = map $ \ (VarDecl _t vn _u) -> capitalise vn
 my_str_trans :: [String] -> String -> String
 my_str_trans s t = if elem t s
       then t
-else "V" ++ "_" ++ t
+else [i|V_#{t}|]
 
 my_str_trans_list :: [String] -> [String] -> [String]
 my_str_trans_list s = map $ my_str_trans s
@@ -63,8 +67,8 @@ toBrackets2 xs =
     |> concatWith (<.>) -- "x1, x2, ..., xn"
     |> parenthesize     -- "(x1, x2, ..., xn)"
   where
-    x <.> y = x <> ", " <> y
-    parenthesize x = "(" <> x <> ")"
+    x <.> y = [di|#{x}, #{y}|]
+    parenthesize x = [di|(#{x})|]
 
 -- toBrackets2 [] = "()"
 -- toBrackets2 [x] = "(" ++ x ++ ")"

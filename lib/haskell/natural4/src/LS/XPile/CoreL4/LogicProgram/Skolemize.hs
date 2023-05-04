@@ -51,7 +51,7 @@ skolemizedLPRuleVardecls (LPRule {..}) =
     |> appToFunArgs []
     |> snd
     |> mapThenSwallowErrs (convertVarExprToDecl localVarDecls)
-    |> genSkolemList localVarDecls globalVarDecls ruleName
+    |> (\x -> genSkolemList localVarDecls globalVarDecls x ruleName)
 
   -- genSkolemList (localVarDecls rule) (map (convertVarExprToDecl (localVarDecls rule)) (snd (appToFunArgs [] (postcond rule)))) (globalVarDecls rule) (ruleName rule)
 
@@ -91,7 +91,7 @@ transformPrecond precon postcon vardecls vardeclsGlobal ruleid = do
   let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
       -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
       postconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
-      new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec ruleid vardeclsGlobal
+      new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
       new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
    in new_precond
 
@@ -114,9 +114,8 @@ genSkolem (VarDecl t vn u) y w z
   | otherwise = VarDecl t "extVar" u
 
 -- List version of genSkolem
--- genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
-genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t] -> [VarDecl t]
-genSkolemList x y z w = [genSkolem xs y w z | xs <- x]
+genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
+genSkolemList x y w z = [genSkolem xs y w z | xs <- x]
 
 toBrackets :: [VarDecl t] -> String
 toBrackets [] = "()"

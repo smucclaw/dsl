@@ -93,12 +93,7 @@ proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
 -- isFact _ = False
 
 isHeadOfPrecondFact :: LPRule lpType t -> Bool
-isHeadOfPrecondFact
-  (LPRule {preconds = precond : _}) = isFact precond
-  where
-    isFact (ValE _ (BoolV True)) = True
-    isFact _ = False
-
+isHeadOfPrecondFact (LPRule {preconds = (ValE _(BoolV True)) : _}) = True
 isHeadOfPrecondFact _ = False
 
 ruleToLPRule ::

@@ -20,13 +20,13 @@ import LS.XPile.CoreL4.LogicProgram.Common
     LogicProgram(..),
     OpposesClause (OpposesClause)
   )
-import LS.XPile.CoreL4.LogicProgram.Skolemize (toBrackets)
+-- import LS.XPile.CoreL4.LogicProgram.Skolemize (toBrackets)
 import LS.XPile.CoreL4.LogicProgram.Pretty.Utils
   ( my_str_trans_list,
     preconToVarStrList,
     skolemize2,
     toBrackets2,
-    varDeclToVarStrList,
+    varDeclToVarStrList, toBrackets,
   )
 import Prettyprinter
   ( Doc,
@@ -37,7 +37,7 @@ import Prettyprinter
     parens,
     punctuate,
     vsep,
-    (<+>),
+    (<+>), viaShow,
   )
 
 data TranslationMode t
@@ -172,7 +172,7 @@ prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
 -- TODO: weird: var pc not used in map
 prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\pc ->
-                pretty ("createSub(subInst" <> "_" <> show _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
+                ("createSub(subInst" <> "_" <> viaShow _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
                 ":-" <+>
                 "query" <>
                 parens (
@@ -195,7 +195,7 @@ prettyLPRuleCommon (VarSubs1R (LPRule _rn _env _vds preconds postcond)) =
                     "_N"
                     ) <+>
                 ":-" <+>
-                pretty ("createSub(subInst" ++ "_" ++ _rn ++ toBrackets _vds ++ "," ++ "_N" ++ ").")
+                ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets _vds <> "," <> "_N" <> ").")
                 )
         preconds)
 
@@ -213,20 +213,20 @@ prettyLPRuleCommon (AddFacts (LPRule _rn _env _vds _preconds postcond)) =
 
 prettyLPRuleCommon (VarSubs2R (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\pc ->
-                pretty ("createSub(subInst" ++ "_" ++ _rn ++ toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds ++ _env)) (varDeclToVarStrList (_vds))) ++ "," ++ "_N" ++ ")")
+                ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds ++ _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
                       <+>
                 ":-" <+>
-                pretty ("createSub(subInst" ++ "_" ++ _rn ++ toBrackets2 (my_str_trans_list [] (varDeclToVarStrList (_vds))) ++ "," ++ "_N" ++ ")" ++ ",") <+>
+                ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
                 pretty (LegallyHoldsE pc) <> "."
                 )
         (postcond : preconds))
 
 prettyLPRuleCommon (VarSubs4R (LPRule rn _env _vds preconds postcond)) =
     vsep (map (\pc ->
-                pretty ("createSub(subInst" ++ "_" ++ rn ++ toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds ++ _env)) (varDeclToVarStrList (_vds))) ++ "," ++ "_N" ++ ")")
+                ("createSub(subInst" <> "_" <> viaShow rn <> toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds <> _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
                       <+>
                 ":-" <+>
-                pretty ("createSub(subInst" ++ "_" ++ rn ++ toBrackets2 (my_str_trans_list [] (varDeclToVarStrList (_vds))) ++ "," ++ "_N" ++ ")" ++ ",") <+>
+                ("createSub(subInst" <> "_" <> viaShow rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
                 pretty (QueryE pc) <> "."
                 )
         (postcond : preconds))

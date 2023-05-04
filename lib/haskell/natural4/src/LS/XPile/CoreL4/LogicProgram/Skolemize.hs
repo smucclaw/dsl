@@ -3,7 +3,6 @@
 
 module LS.XPile.CoreL4.LogicProgram.Skolemize
   ( convertVarExprToDecl,
-    toBrackets,
     skolemizeLPRule,
   )
 where
@@ -30,6 +29,7 @@ import LS.Utils
   )
 import LS.XPile.CoreL4.LogicProgram.Common (LPRule (..))
 import Prettyprinter (Doc, viaShow)
+import Data.List (intersperse)
 
 -- Skolemized LP rules code
 --Additional function when starting at natural4. 
@@ -117,10 +117,6 @@ genSkolem (VarDecl t vn u) y w z
 genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
 genSkolemList x y w z = [genSkolem xs y w z | xs <- x]
 
-toBrackets :: [VarDecl t] -> String
-toBrackets [] = "()"
-toBrackets [VarDecl _t vn _u] = "(" ++ capitalise vn ++ ")"
-toBrackets ((VarDecl _t vn _u):xs) = "(" ++ capitalise vn ++ "," ++ tail (toBrackets xs)
 
 -- var to var expr
 mkVarE :: Var t -> Expr t

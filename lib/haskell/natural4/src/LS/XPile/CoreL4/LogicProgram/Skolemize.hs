@@ -1,15 +1,20 @@
 module LS.XPile.CoreL4.LogicProgram.Skolemize
+  ( convertVarExprToDecl,
+    toBrackets,
+    skolemizeLPRule
+  )
 where
 
 import Data.Foldable (find)
 import Data.Maybe (fromMaybe)
 import L4.PrintProg (capitalise)
 import L4.Syntax
-    ( VarDecl(VarDecl, nameOfVarDecl),
-      Expr(VarE, varOfExprVarE, annotOfExpr),
-      Var(GlobalVar, nameOfVar),
-      QVarName(QVarName, nameOfQVarName, annotOfQVarName),
-      VarName )
+  ( Expr (VarE, annotOfExpr, varOfExprVarE),
+    QVarName (QVarName, annotOfQVarName, nameOfQVarName),
+    Var (GlobalVar, nameOfVar),
+    VarDecl (VarDecl, nameOfVarDecl),
+    VarName,
+  )
 import L4.SyntaxManipulation (appToFunArgs, funArgsToAppNoType)
 import LS.XPile.CoreL4.LogicProgram.Common ( LPRule(..) )
 

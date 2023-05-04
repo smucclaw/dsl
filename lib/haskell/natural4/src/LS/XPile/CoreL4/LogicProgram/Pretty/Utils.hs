@@ -12,11 +12,12 @@ import LS.XPile.CoreL4.LogicProgram.Skolemize
     ( convertVarExprToDecl )
 import L4.PrintProg ( capitalise )
 import L4.SyntaxManipulation ( appToFunArgs )
+import LS.Utils (mapThenSwallowErrs)
 
 -- Additional functions to write var substitution code
 
-preconToVarStrList :: Expr t ->[VarDecl t] -> [String]
-preconToVarStrList precon vardecls = varDeclToVarStrList(map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
+preconToVarStrList :: Expr t -> [VarDecl t] -> [String]
+preconToVarStrList precon vardecls = varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
 
 varDeclToVarStrList :: [VarDecl t] -> [String]
 varDeclToVarStrList [] = []
@@ -51,4 +52,4 @@ toBrackets2 (x:xs) = "(" ++ x ++ "," ++ tail (toBrackets2 xs)
 
 --skolemize2 :: Eq t1 => [VarDecl t1] -> [VarDecl t1] -> Expr t2 -> String -> String
 skolemize2 :: [VarDecl t1] -> [VarDecl t2] -> Expr t3 -> String -> String
-skolemize2 vardecs localvar postc rulename =  toBrackets2 (my_str_trans_list2 (varDeclToVarStrList localvar) (varDeclToVarStrList ((map (convertVarExprToDecl vardecs) (snd (appToFunArgs [] postc))))) rulename)
+skolemize2 vardecs localvar postc rulename =  toBrackets2 (my_str_trans_list2 (varDeclToVarStrList localvar) (varDeclToVarStrList ((mapThenSwallowErrs (convertVarExprToDecl vardecs) (snd (appToFunArgs [] postc))))) rulename)

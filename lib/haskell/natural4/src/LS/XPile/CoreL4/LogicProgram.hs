@@ -14,9 +14,9 @@ where
 import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))
+import Data.Foldable qualified as Fold
 import Data.List (nub, partition)
 import Data.Maybe (mapMaybe)
-import Data.Set qualified as Set
 import Data.Tuple.All (Curry (uncurryN), SequenceT (sequenceT))
 import Flow ((|>))
 import L4.KeyValueMap (ValueKVM)
@@ -58,7 +58,7 @@ babyL4ToLogicProgram program =
 
       (lpRulesFact, lpRulesNoFact) =
         lpRulesWithNegs
-          |> map fst                           -- Grab all the lpRules
+          |> map fst                        -- Grab all the lpRules
           |> partition isHeadOfPrecondFact  -- Split into Fact and NoFact
 
       -- skolemizedLPRules :: [LPRule lpType t]
@@ -126,7 +126,7 @@ ruleToLPRule rule = do
 
       (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t])
         = postcond : preconds                -- [pre and post conds]
-          |> foldMap (Set.toList . fv)       -- [free variables]
+          |> foldMap (Fold.toList . fv)       -- [free variables]
           |> partition isLocalVar            -- (local vars, global vars)
           |> join bimap (map varTovarDecl)   -- (local var decls, global var decls)
 

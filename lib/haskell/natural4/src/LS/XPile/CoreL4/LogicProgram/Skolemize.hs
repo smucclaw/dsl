@@ -1,12 +1,17 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module LS.XPile.CoreL4.LogicProgram.Skolemize
   ( convertVarExprToDecl,
     toBrackets,
-    skolemizeLPRule
+    skolemizeLPRule,
   )
 where
 
+import Control.Monad.Validate (MonadValidate (refute))
 import Data.Foldable (find)
 import Data.Maybe (fromMaybe)
+import Flow ((|>))
 import L4.PrintProg (capitalise)
 import L4.Syntax
   ( Expr (VarE, annotOfExpr, varOfExprVarE),
@@ -16,7 +21,15 @@ import L4.Syntax
     VarName,
   )
 import L4.SyntaxManipulation (appToFunArgs, funArgsToAppNoType)
-import LS.XPile.CoreL4.LogicProgram.Common ( LPRule(..) )
+import LS.Utils
+  ( MonoidValidate,
+    mapThenSwallowErrs,
+    maybe2validate,
+    swallowErrs,
+    (|$>),
+  )
+import LS.XPile.CoreL4.LogicProgram.Common (LPRule (..))
+import Prettyprinter (Doc, viaShow)
 
 -- Skolemized LP rules code
 --Additional function when starting at natural4. 
@@ -33,8 +46,14 @@ skolemizedLPRulePrecond r = [transformPrecond precon (postcond r) (localVarDecls
 --skolemizedLPRuleVardecls r = genSkolemList (localVarDeclsOfLPRule r) ([varExprToDecl expr (localVarDeclsOfLPRule r) | expr <- snd (appToFunArgs [] (postcondOfLPRule r))]) (nameOfLPRule r)
 
 skolemizedLPRuleVardecls :: Eq t => LPRule lpType t -> [VarDecl t]
-skolemizedLPRuleVardecls r =
-  genSkolemList (localVarDecls r) (map (convertVarExprToDecl (localVarDecls r)) (snd (appToFunArgs [] (postcond r)))) (globalVarDecls r) (ruleName r)
+skolemizedLPRuleVardecls (LPRule {..}) =
+  postcond
+    |> appToFunArgs []
+    |> snd
+    |> mapThenSwallowErrs (convertVarExprToDecl localVarDecls)
+    |> genSkolemList localVarDecls globalVarDecls ruleName
+
+  -- genSkolemList (localVarDecls rule) (map (convertVarExprToDecl (localVarDecls rule)) (snd (appToFunArgs [] (postcond rule)))) (globalVarDecls rule) (ruleName rule)
 
 -- skolemizeLPRule :: LPRule t -> LPRule t
 
@@ -46,10 +65,18 @@ findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
 findVarDecl varname decls = find (\d -> varname == nameOfVarDecl d) decls
 
 -- Jo Hsi: when exactly is this error triggered?
-convertVarExprToDecl :: [VarDecl t2] -> Expr t ->VarDecl t2
-convertVarExprToDecl decls (VarE _ v) = fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
-                                        findVarDecl (nameOfQVarName (nameOfVar v)) decls
-convertVarExprToDecl _decls _ = error "trying to convert a non-variable expression to a declaration"
+convertVarExprToDecl :: [VarDecl t2] -> Expr t -> MonoidValidate (Doc ann) (VarDecl t2)
+convertVarExprToDecl decls (VarE _ var) =
+  decls
+    |> findVarDecl varName
+    |> maybe2validate ("convertVarExprToDecl: couldn't find " <> viaShow varName)
+  where
+    varName = nameOfQVarName $ nameOfVar var
+
+  -- fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
+  -- findVarDecl (nameOfQVarName (nameOfVar v)) decls
+
+convertVarExprToDecl _decls _ = refute "trying to convert a non-variable expression to a declaration"
 
 --transformPrecond :: Expr t -> Expr t ->[VarDecl t] -> String -> Expr t
 -- Takes in precon, lifts to var decl, transforms var decl, pushes back down to var expr, doesn't typecheck
@@ -57,16 +84,24 @@ convertVarExprToDecl _decls _ = error "trying to convert a non-variable expressi
 -- Need to change this !!! First : Check if precon occurs among vardecls, then check if postcon occurs among vardecls
 
 transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
-transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
-                    -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
-                let preconvar_dec = map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
-                    -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
-                    postconvar_dec = map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
-                    new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
-                    new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
+transformPrecond precon postcon vardecls vardeclsGlobal ruleid = do
+  -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
+  let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
+      -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
+      postconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
+      new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec ruleid vardeclsGlobal
+      new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
+   in new_precond
 
-                in new_precond
-
+-- transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
+-- transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
+--   -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
+--   let preconvar_dec = map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
+--       -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
+--       postconvar_dec = map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
+--       new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
+--       new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
+--    in new_precond
 
 --genSkolem ::  VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
 -- Takes in an existing precondition var_decl, list of postcon var_decls, list of global varDecls and returns skolemized precon var_decl
@@ -77,8 +112,9 @@ genSkolem (VarDecl t vn u) y w z
   | otherwise = VarDecl t "extVar" u
 
 -- List version of genSkolem
-genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
-genSkolemList x y w z = [genSkolem xs y w z | xs <- x]
+-- genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
+genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t] -> [VarDecl t]
+genSkolemList x y z w = [genSkolem xs y w z | xs <- x]
 
 toBrackets :: [VarDecl t] -> String
 toBrackets [] = "()"

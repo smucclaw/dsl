@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    commit: 65aec52d6d2000d1ec3efbc9f04dfe4321b31cc1
+    git: https://github.com/smucclaw/optparse-generic.git
+    name: optparse-generic
+    pantry-tree:
+      sha256: 0146ca8d46f4fc4a615f06176c16b18c9d03c34628b9f989e612c98ea4031bf4
+      size: 841
+    version: 1.4.9
+  original:
+    commit: 65aec52d6d2000d1ec3efbc9f04dfe4321b31cc1
+    git: https://github.com/smucclaw/optparse-generic.git
 snapshots:
 - completed:
     sha256: 9fa4bece7acfac1fc7930c5d6e24606004b09e80aa0e52e9f68b148201008db9

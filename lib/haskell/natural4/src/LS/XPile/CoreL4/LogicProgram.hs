@@ -131,7 +131,7 @@ ruleToLPRule rule = do
         = mapMaybe snd $ postcondNeg : precondsNeg
 
       (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t])
-        = postcond : preconds -- [pre and post conds]
+        = postcond : preconds                -- [pre and post conds]
           |> foldMap (Set.toList . fv)       -- [free variables]
           |> partition isLocalVar            -- (local vars, global vars)
           |> join bimap (map varTovarDecl)   -- (local var decls, global var decls)

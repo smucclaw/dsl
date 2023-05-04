@@ -11,7 +11,6 @@ module LS.XPile.CoreL4.LogicProgram
   )
 where
 
-import Control.Applicative (Applicative (liftA2))
 import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))

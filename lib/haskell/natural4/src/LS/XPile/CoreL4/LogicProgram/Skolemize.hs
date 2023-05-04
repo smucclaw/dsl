@@ -35,17 +35,17 @@ import Data.List (intersperse)
 --Additional function when starting at natural4. 
 --addinVarDecls :: LPRule -> LPRule
 
-skolemizeLPRuleGlobals :: LPRule lpType t -> [VarDecl t]
+skolemizeLPRuleGlobals :: LPRule lpLang t -> [VarDecl t]
 skolemizeLPRuleGlobals = globalVarDecls
-skolemizedLPRuleName :: LPRule lpType t -> String
+skolemizedLPRuleName :: LPRule lpLang t -> String
 skolemizedLPRuleName = ruleName
-skolemizedLPRulePostcond :: LPRule lpType t -> Expr t
+skolemizedLPRulePostcond :: LPRule lpLang t -> Expr t
 skolemizedLPRulePostcond = postcond
-skolemizedLPRulePrecond :: Eq t => LPRule lpType t -> [Expr t]
+skolemizedLPRulePrecond :: Eq t => LPRule lpLang t -> [Expr t]
 skolemizedLPRulePrecond r = [transformPrecond precon (postcond r) (localVarDecls r ++ globalVarDecls r) (globalVarDecls r) (ruleName r) | precon <- preconds r]
 --skolemizedLPRuleVardecls r = genSkolemList (localVarDeclsOfLPRule r) ([varExprToDecl expr (localVarDeclsOfLPRule r) | expr <- snd (appToFunArgs [] (postcondOfLPRule r))]) (nameOfLPRule r)
 
-skolemizedLPRuleVardecls :: Eq t => LPRule lpType t -> [VarDecl t]
+skolemizedLPRuleVardecls :: Eq t => LPRule lpLang t -> [VarDecl t]
 skolemizedLPRuleVardecls (LPRule {..}) =
   postcond
     |> appToFunArgs []
@@ -57,7 +57,7 @@ skolemizedLPRuleVardecls (LPRule {..}) =
 
 -- skolemizeLPRule :: LPRule t -> LPRule t
 
-skolemizeLPRule :: Eq t => LPRule lpType t -> LPRule lpType t
+skolemizeLPRule :: Eq t => LPRule lpLang t -> LPRule lpLang t
 skolemizeLPRule r = LPRule (skolemizedLPRuleName r)  (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
 
 

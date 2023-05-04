@@ -134,11 +134,6 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
     pretty (RawL4 e) = showL4 aspPrintConfig e
     pretty _ = mempty   -- not implemented
 
--- prettyLpRule ::
---   (Show t, Pretty (LPRule lpType t)) =>
---   TranslationMode ->
---   LPRule lpType t ->
---   Doc ann
 {-     showASP ExplainsSkolemR (LPRule rn vds preconds postcond)=
                           let new_rn = rn
                               new_vds = skolemizedLPRuleVardecls (LPRule rn vds preconds postcond)
@@ -147,7 +142,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
                           in showASP ExplainsR (LPRule rn new_vds new_preconds postcond)
 -}
 
-prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpType t) -> Doc ann
+prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpLang t) -> Doc ann
 prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\pc ->
                 "explains" <>

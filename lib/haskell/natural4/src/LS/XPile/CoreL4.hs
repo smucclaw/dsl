@@ -60,7 +60,7 @@ import LS.Utils
     (|$>),
   )
 import LS.XPile.CoreL4.LogicProgram
-  ( LPType (..),
+  ( LPLang (..),
     LogicProgram,
     babyL4ToLogicProgram,
   )
@@ -99,14 +99,14 @@ sfl4ToUntypedBabyL4 rules =
     |> Program ()
 
 sfl4ToLogicProgramStr ::
-  forall (lpType :: LPType).
-  (Pretty (LogicProgram lpType ())) =>
+  forall (lpLang :: LPLang).
+  (Pretty (LogicProgram lpLang ())) =>
   [SFL4.Rule] ->
   String
 sfl4ToLogicProgramStr rules =
   rules
     |> sfl4ToUntypedBabyL4
-    |> babyL4ToLogicProgram @lpType
+    |> babyL4ToLogicProgram @lpLang
     |> pretty
     |> show
 

@@ -6,7 +6,7 @@
 
 module LS.XPile.CoreL4.LogicProgram
   ( babyL4ToLogicProgram,
-    LPType (..),
+    LPLang (..),
     LogicProgram,
   )
 where
@@ -33,7 +33,7 @@ import L4.SyntaxManipulation
 import LS.Utils (MonoidValidate, mapThenSwallowErrs, maybe2validate, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Common
   ( LPRule (..),
-    LPType (..),
+    LPLang (..),
     LogicProgram (..),
     OpposesClause (..),
   )
@@ -45,15 +45,15 @@ import Prettyprinter (Doc, Pretty (pretty), viaShow)
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
 -- This could possibly be remedied with NoType versions of these tactics
 babyL4ToLogicProgram ::
-  forall (lpType :: LPType) ann t.
+  forall (lpLang :: LPLang) ann t.
   (Show t, Ord t, Eq t) =>
   Program t ->
-  LogicProgram lpType t
+  LogicProgram lpLang t
 babyL4ToLogicProgram program =
   -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
   -- putStrLn "Simplified L4 rules:"
   -- putDoc $ vsep (map (showL4 []) rules) <> line
-  let lpRulesWithNegs :: [(LPRule lpType t, [(Var t, Var t, Int)])]
+  let lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])]
         = program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
 
       (lpRulesFact, lpRulesNoFact) =
@@ -61,7 +61,7 @@ babyL4ToLogicProgram program =
           |> map fst                        -- Grab all the lpRules
           |> partition isHeadOfPrecondFact  -- Split into Fact and NoFact
 
-      -- skolemizedLPRules :: [LPRule lpType t]
+      -- skolemizedLPRules :: [LPRule lpLang t]
       -- skolemizedLPRules = map skolemizeLPRule lpRulesNoFact  -- TODO: not used ??
 
       oppClauses :: [OpposesClause t]
@@ -91,15 +91,15 @@ proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
 -- isFact (ValE _ (BoolV True)) = True
 -- isFact _ = False
 
-isHeadOfPrecondFact :: LPRule lpType t -> Bool
+isHeadOfPrecondFact :: LPRule lpLang t -> Bool
 isHeadOfPrecondFact (LPRule {preconds = (ValE _(BoolV True)) : _}) = True
 isHeadOfPrecondFact _ = False
 
 ruleToLPRule ::
-  forall (lpType :: LPType) ann t.
+  forall (lpLang :: LPLang) ann t.
   (Show t, Ord t) =>
   Rule t ->
-  MonoidValidate (Doc ann) (LPRule lpType t, [(Var t, Var t, Int)])
+  MonoidValidate (Doc ann) (LPRule lpLang t, [(Var t, Var t, Int)])
 ruleToLPRule rule = do
   precondsNeg :: [(Expr t, Maybe (Var t, Var t, Int))]
     <- rule

@@ -18,18 +18,18 @@ import LS.XPile.CoreL4.LogicProgram.Common ( LPRule(..) )
 --addinVarDecls :: LPRule -> LPRule
 
 skolemizeLPRuleGlobals :: LPRule lpType t -> [VarDecl t]
-skolemizeLPRuleGlobals = globalVarDeclsOfLPRule
+skolemizeLPRuleGlobals = globalVarDecls
 skolemizedLPRuleName :: LPRule lpType t -> String
-skolemizedLPRuleName = nameOfLPRule
+skolemizedLPRuleName = ruleName
 skolemizedLPRulePostcond :: LPRule lpType t -> Expr t
-skolemizedLPRulePostcond = postcondOfLPRule
+skolemizedLPRulePostcond = postcond
 skolemizedLPRulePrecond :: Eq t => LPRule lpType t -> [Expr t]
-skolemizedLPRulePrecond r = [transformPrecond precon (postcondOfLPRule r) (localVarDeclsOfLPRule r ++ globalVarDeclsOfLPRule r) (globalVarDeclsOfLPRule r) (nameOfLPRule r) | precon <- precondOfLPRule r]
+skolemizedLPRulePrecond r = [transformPrecond precon (postcond r) (localVarDecls r ++ globalVarDecls r) (globalVarDecls r) (ruleName r) | precon <- preconds r]
 --skolemizedLPRuleVardecls r = genSkolemList (localVarDeclsOfLPRule r) ([varExprToDecl expr (localVarDeclsOfLPRule r) | expr <- snd (appToFunArgs [] (postcondOfLPRule r))]) (nameOfLPRule r)
 
 skolemizedLPRuleVardecls :: Eq t => LPRule lpType t -> [VarDecl t]
 skolemizedLPRuleVardecls r =
-  genSkolemList (localVarDeclsOfLPRule r) (map (convertVarExprToDecl (localVarDeclsOfLPRule r)) (snd (appToFunArgs [] (postcondOfLPRule r)))) (globalVarDeclsOfLPRule r) (nameOfLPRule r)
+  genSkolemList (localVarDecls r) (map (convertVarExprToDecl (localVarDecls r)) (snd (appToFunArgs [] (postcond r)))) (globalVarDecls r) (ruleName r)
 
 -- skolemizeLPRule :: LPRule t -> LPRule t
 

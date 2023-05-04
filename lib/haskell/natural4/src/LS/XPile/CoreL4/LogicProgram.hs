@@ -94,7 +94,7 @@ proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
 
 isHeadOfPrecondFact :: LPRule lpType t -> Bool
 isHeadOfPrecondFact
-  (LPRule {precondOfLPRule = precond : _}) = isFact precond
+  (LPRule {preconds = precond : _}) = isFact precond
   where
     isFact (ValE _ (BoolV True)) = True
     isFact _ = False
@@ -113,10 +113,10 @@ ruleToLPRule rule = do
       |> decomposeBinop (BBool BBand)
       |> traverse negationPredicate
 
-  postcondNeg@(postcondOfLPRule, _) :: (Expr t, Maybe (Var t, Var t, Int))
+  postcondNeg@(postcond, _) :: (Expr t, Maybe (Var t, Var t, Int))
     <- negationPredicate $ postcondOfRule rule
 
-  nameOfLPRule :: String
+  ruleName :: String
     <- rule
       |> nameOfRule
       |> maybe2validate
@@ -124,14 +124,14 @@ ruleToLPRule rule = do
             viaShow rule <> "\n" <>
             "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
-  let precondOfLPRule :: [Expr t]
+  let preconds :: [Expr t]
         = map fst precondsNeg
 
       negPreds :: [(Var t, Var t, Int)]
         = mapMaybe snd $ postcondNeg : precondsNeg
 
-      (localVarDeclsOfLPRule :: [VarDecl t], globalVarDeclsOfLPRule :: [VarDecl t])
-        = postcondOfLPRule : precondOfLPRule -- [pre and post conds]
+      (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t])
+        = postcond : preconds -- [pre and post conds]
           |> foldMap (Set.toList . fv)       -- [free variables]
           |> partition isLocalVar            -- (local vars, global vars)
           |> join bimap (map varTovarDecl)   -- (local var decls, global var decls)

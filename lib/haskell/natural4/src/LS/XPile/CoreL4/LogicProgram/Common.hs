@@ -26,16 +26,16 @@ data LPType
   deriving (Eq, Ord, Read, Show)
 
 {-
-  Logic program rules and logic programs are type families indexed by:
+  Logic program rules and logic programs are types indexed by:
   - a type in the (closed) type universe LPType, ie ASP or Epilog
   - a babyl4 type annotation t 
 -}
 data LPRule (lpType :: LPType) t = LPRule
-  { nameOfLPRule :: String,
-    globalVarDeclsOfLPRule :: [VarDecl t],
-    localVarDeclsOfLPRule :: [VarDecl t],
-    precondOfLPRule :: [Expr t],
-    postcondOfLPRule :: Expr t
+  { ruleName :: String,
+    globalVarDecls :: [VarDecl t],
+    localVarDecls :: [VarDecl t],
+    preconds :: [Expr t],
+    postcond :: Expr t
   }
   deriving (Eq, Ord, Read, Show)
 

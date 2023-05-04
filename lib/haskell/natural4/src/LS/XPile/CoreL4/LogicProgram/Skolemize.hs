@@ -69,14 +69,16 @@ convertVarExprToDecl :: [VarDecl t2] -> Expr t -> MonoidValidate (Doc ann) (VarD
 convertVarExprToDecl decls (VarE _ var) =
   decls
     |> findVarDecl varName
-    |> maybe2validate ("convertVarExprToDecl: couldn't find " <> viaShow varName)
+    |> maybe2validate
+        ("convertVarExprToDecl: couldn't find " <> viaShow varName)
   where
     varName = nameOfQVarName $ nameOfVar var
 
-  -- fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
-  -- findVarDecl (nameOfQVarName (nameOfVar v)) decls
+convertVarExprToDecl _decls _ =
+  refute "trying to convert a non-variable expression to a declaration"
 
-convertVarExprToDecl _decls _ = refute "trying to convert a non-variable expression to a declaration"
+-- fromMaybe (error $ "convertVarExprToDecl: couldn't find " ++ nameOfQVarName (nameOfVar v)) $
+-- findVarDecl (nameOfQVarName (nameOfVar v)) decls
 
 --transformPrecond :: Expr t -> Expr t ->[VarDecl t] -> String -> Expr t
 -- Takes in precon, lifts to var decl, transforms var decl, pushes back down to var expr, doesn't typecheck

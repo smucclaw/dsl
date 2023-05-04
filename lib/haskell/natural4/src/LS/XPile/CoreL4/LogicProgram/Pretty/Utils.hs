@@ -19,7 +19,7 @@ import LS.Utils (mapThenSwallowErrs, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Skolemize
   ( convertVarExprToDecl,
   )
-import Prettyprinter (Doc, Pretty (pretty))
+import Prettyprinter (Doc, Pretty (pretty), concatWith)
 
 -- Additional functions to write var substitution code
 
@@ -59,11 +59,11 @@ my_str_trans_list2 s t u = [my_str_trans2 r t u | r <- s]
 toBrackets2 :: Pretty a => [a] -> Doc ann
 toBrackets2 xs =
   xs
-    |$> pretty
-    |> intersperse ","
-    |> mconcat
-    |> parenthesize
+    |$> pretty          -- ["x1", "x2", ..., "xn"]
+    |> concatWith (<.>) -- "x1, x2, ..., xn"
+    |> parenthesize     -- "(x1, x2, ..., xn)"
   where
+    x <.> y = x <> ", " <> y
     parenthesize x = "(" <> x <> ")"
 
 -- toBrackets2 [] = "()"

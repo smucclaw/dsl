@@ -37,7 +37,7 @@ import LS.XPile.CoreL4.LogicProgram.Common
     LogicProgram (..),
     OpposesClause (..),
   )
-import LS.XPile.CoreL4.LogicProgram.Pretty.Pretty ()
+import LS.XPile.CoreL4.LogicProgram.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
 

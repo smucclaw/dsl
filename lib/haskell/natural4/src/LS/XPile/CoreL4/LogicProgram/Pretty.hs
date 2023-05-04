@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module LS.XPile.CoreL4.LogicProgram.Pretty.Pretty () where
+module LS.XPile.CoreL4.LogicProgram.Pretty () where
 
 import L4.PrintProg
   ( PrintConfig (PrintCurried, PrintVarCase),

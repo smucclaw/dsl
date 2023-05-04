@@ -33,7 +33,7 @@ import AnyAll
 -- TODO: the following is only for testing purposes, can be removed later
 
 import Control.Applicative (Applicative (liftA2))
-import Control.Monad.Validate (MonadValidate (refute))
+import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as DF
 import Data.Functor ((<&>))
@@ -54,7 +54,7 @@ import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS as SFL4
 import LS.PrettyPrinter
 import LS.Tokens (undeepers)
-import LS.Utils (mapThenSwallowErrs, (|$>), MonoidValidate)
+import LS.Utils (mapThenSwallowErrs, (|$>), MonoidValidate, mapThenRunValidate)
 import LS.XPile.CoreL4.LogicProgram.LogicProgram
     ( LPType(..), LogicProgram, babyL4ToLogicProgram )
 -- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
@@ -368,7 +368,9 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    [precond, postcond] =
+    [precond, postcond] = trace (xs |> mapThenRunValidate id |> show) xs
+
+    xs =
       [uncurry]
         <*> [precondOfHornClauses, postcondOfHornClauses]
         <*> replicate 2 (createContext h, clauses)

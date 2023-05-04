@@ -128,7 +128,7 @@ ruleToLPRule rule = do
         = map fst precondsNeg
 
       negPreds :: [(Var t, Var t, Int)]
-        = postcondNeg : precondsNeg |> mapMaybe snd
+        = mapMaybe snd $ postcondNeg : precondsNeg
 
       (localVarDeclsOfLPRule :: [VarDecl t], globalVarDeclsOfLPRule :: [VarDecl t])
         = postcondOfLPRule : precondOfLPRule -- [pre and post conds]

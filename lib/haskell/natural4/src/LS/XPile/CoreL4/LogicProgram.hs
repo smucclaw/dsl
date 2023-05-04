@@ -4,14 +4,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module LS.XPile.CoreL4.LogicProgram.LogicProgram
+module LS.XPile.CoreL4.LogicProgram
   ( babyL4ToLogicProgram,
     LPType (..),
     LogicProgram,
   )
 where
 
+import Control.Applicative (Applicative (liftA2))
+import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
+import Data.Bifunctor (Bifunctor (bimap))
 import Data.List (nub, partition)
 import Data.Maybe (mapMaybe)
 import Data.Set qualified as Set
@@ -28,7 +31,7 @@ import L4.SyntaxManipulation
     fv,
     isLocalVar,
   )
-import LS.Utils (mapThenSwallowErrs, maybe2validate, (|$>), MonoidValidate)
+import LS.Utils (MonoidValidate, mapThenSwallowErrs, maybe2validate, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Common
   ( LPRule (..),
     LPType (..),
@@ -38,9 +41,6 @@ import LS.XPile.CoreL4.LogicProgram.Common
 import LS.XPile.CoreL4.LogicProgram.Pretty.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
-import Control.Applicative (Applicative(liftA2))
-import Control.Monad (join)
-import Data.Bifunctor (Bifunctor(bimap))
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)

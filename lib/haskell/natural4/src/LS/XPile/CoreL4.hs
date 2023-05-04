@@ -7,7 +7,7 @@
 
 {-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
 
-module LS.XPile.CoreL4.CoreL4
+module LS.XPile.CoreL4
   ( sfl4ToBabyl4,
     sfl4ToCorel4,
     sfl4ToASP,
@@ -59,7 +59,7 @@ import LS.Utils
     mapThenSwallowErrs,
     (|$>),
   )
-import LS.XPile.CoreL4.LogicProgram.LogicProgram
+import LS.XPile.CoreL4.LogicProgram
   ( LPType (..),
     LogicProgram,
     babyL4ToLogicProgram,

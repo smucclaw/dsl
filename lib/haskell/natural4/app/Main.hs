@@ -10,7 +10,7 @@ import Data.Time.ISO8601
 import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 
-import LS.XPile.CoreL4.CoreL4
+import LS.XPile.CoreL4
 import LS.Interpreter
 
 import qualified LS.XPile.Uppaal as Uppaal
@@ -21,7 +21,7 @@ import LS.XPile.VueJSON
 import LS.XPile.Typescript
 import LS.XPile.Purescript
 import LS.XPile.Markdown
-import LS.XPile.Maude.Maude qualified as Maude
+import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 

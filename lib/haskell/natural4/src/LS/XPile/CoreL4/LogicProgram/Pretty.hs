@@ -68,24 +68,26 @@ aspPrintConfig = [PrintVarCase CapitalizeLocalVar, PrintCurried MultiArg]
 
 instance Show t => Pretty (OpposesClause t) where
   pretty (OpposesClause pos neg) =
-    [diii|
-      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
-        #{AccordingToE "R" pos}.
+    let pos' = pretty $ RawL4 pos
+        neg' = pretty $ RawL4 neg
+    in [diii|
+      opposes(#{pos'}, #{neg'}) :-
+        #{pretty $ AccordingToE "R" pos}.
       
-      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
-        #{AccordingToE "R" neg}.
+      opposes(#{pos'}, #{neg'}) :-
+        #{pretty $ AccordingToE "R" neg}.
 
-      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
-        #{LegallyHoldsE pos}.
+      opposes(#{pos'}, #{RawL4 neg'}) :-
+        #{pretty $ LegallyHoldsE pos}.
 
-      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
-        #{LegallyHoldsE neg}.
+      opposes(#{pos'}, #{neg'}) :-
+        #{pretty $ LegallyHoldsE neg}.
 
-      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
-        query(#{RawL4 pos}, _N).
+      opposes(#{pos'}, #{neg'}) :-
+        query(#{pos'}, _N).
 
-      opposes(#{RawL4 pos}, #{RawL4 neg}) :-
-        query(#{RawL4 neg}, _N).
+      opposes(#{pos'}, #{neg'}) :-
+        query(#{neg'}, _N).
     |]
     -- "opposes" <>
     --   parens (pretty (RawL4 pos) <> "," <+> pretty (RawL4 neg)) <+>
@@ -133,7 +135,7 @@ instance Show t => Pretty (OpposesClause t) where
 instance Show t => Pretty (TranslationMode (Expr t)) where
     pretty (AccordingToE rn e) =
       [diii|
-        according_to(#{rn}, #{RawL4 e})
+        according_to(#{rn}, #{pretty $ RawL4 e})
       |]
       -- "according_to" <> parens (pretty rn <> "," <+> pretty (RawL4 e))
 
@@ -144,7 +146,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
 
     pretty (LegallyHoldsE e) =
       [diii|
-        legally_holds(#{RawL4 e})
+        legally_holds(#{pretty $ RawL4 e})
       |]
       -- "legally_holds" <> parens (pretty $ RawL4 e)
 
@@ -153,7 +155,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
 
     pretty (QueryE e) =
       [diii|
-        query(#{RawL4 e}, L)
+        query(#{pretty $ RawL4 e}, L)
       |]
       -- "query" <> parens (pretty (RawL4 e) <> "," <> "L")
 
@@ -177,23 +179,27 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
 
 prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpLang t) -> Doc ann
 prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\pc ->
-                "explains" <>
-                parens (
-                    pretty (RawL4 pc) <> "," <+>
-                    pretty (RawL4 postcond) <+>
-                    "," <>
-                    "_N+1"
-                    ) <+>
-                ":-" <+>
-                "query" <>
-                parens (
-                        pretty (RawL4 postcond) <+>
-                        "," <>
-                        "_N"
-                        ) <>
-                "_N < M, max_ab_lvl(M)" <>
-                "."
+    vsep (map (\precond ->
+                [diii|
+                  explains(#{pretty $ RawL4 precond}, #{pretty $ RawL4 postcond}, _N + 1) :-
+                    query(#{pretty $ RawL4 postcond}, _N), _N < M, max_ab_lvl(M).
+                |]
+                -- "explains" <>
+                -- parens (
+                --     pretty (RawL4 pc) <> "," <+>
+                --     pretty (RawL4 postcond) <+>
+                --     "," <>
+                --     "_N+1"
+                --     ) <+>
+                -- ":-" <+>
+                -- "query" <>
+                -- parens (
+                --         pretty (RawL4 postcond) <+>
+                --         "," <>
+                --         "_N"
+                --         ) <>
+                -- "_N < M, max_ab_lvl(M)" <>
+                -- "."
                 )
         preconds)
 
@@ -218,38 +224,45 @@ prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
         [head preconds])
 
 prettyLPRuleCommon (VarSubs1R (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\pc ->
-                "explains" <>
-                parens (
-                    pretty (RawL4 pc) <> "," <+>
-                    pretty (RawL4 postcond) <+>
-                    "," <>
-                    "_N"
-                    ) <+>
-                ":-" <+>
-                ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets _vds <> "," <> "_N" <> ").")
+    vsep (map (\precond ->
+                [diii|
+                  explains(#{pretty $ RawL4 precond}, #{pretty $ RawL4 postcond}, _N) :-
+                    createSub(subInst_#{_rn}#{toBrackets _vds}, _N).
+                |]
+                -- "explains" <>
+                -- parens (
+                --     pretty (RawL4 precond) <> "," <+>
+                --     pretty (RawL4 postcond) <+>
+                --     "," <>
+                --     "_N"
+                --     ) <+>
+                -- ":-" <+>
+                -- ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets _vds <> "," <> "_N" <> ").")
                 )
         preconds)
 
 prettyLPRuleCommon (AddFacts (LPRule _rn _env _vds _preconds postcond)) =
-    vsep (map (\pc ->
-                "user_input" <>
-                parens (
-                    pretty (RawL4 pc) <> "," <+>
-                    pretty _rn
+    vsep (map (\postcond ->
+                  [diii|
+                    user_input(#{pretty $ RawL4 postcond}, #{_rn}).
+                  |]
+                -- "user_input" <>
+                -- parens (
+                --     pretty (RawL4 precond) <> "," <+>
+                --     pretty _rn
 
-                    ) <>
-                "."
+                --     ) <>
+                -- "."
                 )
         [postcond])
 
 prettyLPRuleCommon (VarSubs2R (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\pc ->
-                ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds ++ _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
+    vsep (map (\cond ->
+                ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds ++ _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
                       <+>
                 ":-" <+>
                 ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
-                pretty (LegallyHoldsE pc) <> "."
+                pretty (LegallyHoldsE cond) <> "."
                 )
         (postcond : preconds))
 

@@ -29,7 +29,6 @@ import LS.Utils
   )
 import LS.XPile.CoreL4.LogicProgram.Common (LPRule (..))
 import Prettyprinter (Doc, viaShow)
-import Data.List (intersperse)
 
 -- Skolemized LP rules code
 --Additional function when starting at natural4. 

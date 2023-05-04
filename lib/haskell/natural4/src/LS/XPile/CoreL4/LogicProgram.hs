@@ -46,32 +46,32 @@ import Prettyprinter (Doc, Pretty (pretty), viaShow)
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
 -- This could possibly be remedied with NoType versions of these tactics
 babyL4ToLogicProgram ::
-  forall lpType t.
+  forall (lpType :: LPType) ann t.
   (Show t, Ord t, Eq t) =>
   Program t ->
   LogicProgram lpType t
-babyL4ToLogicProgram prg =
-    -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
-    let rules = rulesOfProgram prg
-    -- putStrLn "Simplified L4 rules:"
-    -- putDoc $ vsep (map (showL4 []) rules) <> line
-        lpRulesWithNegs :: [(LPRule lpType t, [(Var t, Var t, Int)])]
-        lpRulesWithNegs = mapThenSwallowErrs ruleToLPRule rules
+babyL4ToLogicProgram program =
+  -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
+  -- putStrLn "Simplified L4 rules:"
+  -- putDoc $ vsep (map (showL4 []) rules) <> line
+  let lpRulesWithNegs :: [(LPRule lpType t, [(Var t, Var t, Int)])]
+        = program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
 
-        lpRules :: [LPRule lpType t]
-        lpRules = map fst lpRulesWithNegs
+      (lpRulesFact, lpRulesNoFact) =
+        lpRulesWithNegs
+          |> map fst                           -- Grab all the lpRules
+          |> partition isHeadOfPrecondFact  -- Split into Fact and NoFact
 
-        (lpRulesFact, lpRulesNoFact) = partition isHeadOfPrecondFact lpRules 
+      -- skolemizedLPRules :: [LPRule lpType t]
+      -- skolemizedLPRules = map skolemizeLPRule lpRulesNoFact  -- TODO: not used ??
 
-        skolemizedLPRules :: [LPRule lpType t]
-        skolemizedLPRules = map skolemizeLPRule lpRulesNoFact  -- TODO: not used ??
-
-        oppClausePrednames :: [(Var t, Var t, Int)]
-        oppClausePrednames = lpRulesWithNegs |> foldMap snd |> nub
-
-        oppClauses :: [OpposesClause t]
-        oppClauses = map genOppClauseNoType oppClausePrednames
-    in LogicProgram {..}
+      oppClauses :: [OpposesClause t]
+        = lpRulesWithNegs
+            -- Get all the oppClausePredNames, ie [(Var t, Var t, Int)], removing duplicates.
+            |> foldMap snd |> nub
+            -- Turn them into OpposesClauses
+            |> map genOppClauseNoType
+  in LogicProgram {..}
 
 genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
 genOppClause (posvar, negvar, n) =

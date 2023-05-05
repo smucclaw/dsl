@@ -2,6 +2,7 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.CoreL4.LogicProgram
@@ -32,14 +33,15 @@ import L4.SyntaxManipulation
   )
 import LS.Utils (MonoidValidate, mapThenSwallowErrs, maybe2validate, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Common
-  ( LPRule (..),
-    LPLang (..),
+  ( LPLang (..),
+    LPRule (..),
     LogicProgram (..),
     OpposesClause (..),
   )
 import LS.XPile.CoreL4.LogicProgram.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
+import Prettyprinter.Interpolate (diii)
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
@@ -74,14 +76,14 @@ babyL4ToLogicProgram program =
 
 genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
 genOppClause (posvar, negvar, n) =
-    let args = zipWith (\ vn i -> LocalVar (QVarName IntegerT (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
-    in OpposesClause (applyVars posvar args) (applyVars negvar args)
+  let args = zipWith (\ vn i -> LocalVar (QVarName IntegerT (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
+  in OpposesClause (applyVars posvar args) (applyVars negvar args)
 
 genOppClauseNoType :: (Var t, Var t, Int) -> OpposesClause t
 genOppClauseNoType (posvar, negvar, n) =
-    let vart = annotOfQVarName (nameOfVar posvar) in
-    let args = zipWith (\ vn i -> LocalVar (QVarName vart (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
-    in OpposesClause (applyVarsNoType posvar args) (applyVarsNoType negvar args)
+  let vart = annotOfQVarName (nameOfVar posvar) in
+  let args = zipWith (\ vn i -> LocalVar (QVarName vart (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
+  in OpposesClause (applyVarsNoType posvar args) (applyVarsNoType negvar args)
 
 -- TODO: details to be filled in
 proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()
@@ -114,9 +116,14 @@ ruleToLPRule rule = do
     rule
       |> nameOfRule
       |> maybe2validate
-          ("ToASP: ruleToLPRule: nameOfRule is a Nothing :-(\n" <>
-            viaShow rule <> "\n" <>
-            "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
+          [diii|
+            Error in logic program transpiler: ruleToLPRule: nameOfRule is a Nothing.
+            #{viaShow rule}
+            To exclude the ASP (resp Epilog) transpiler from a --workdir run, run natural4-exe with --toasp (resp --toepilog)
+          |]
+            -- ("ToASP: ruleToLPRule: nameOfRule is a Nothing :-(\n" <>
+            -- viaShow rule <> "\n" <>
+            -- "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
   let preconds :: [Expr t] =
         map fst precondsNeg
@@ -126,7 +133,7 @@ ruleToLPRule rule = do
 
       (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t]) =
         postcond : preconds                 -- [pre and post conds]
-          |> foldMap (Fold.toList . fv)     -- [free variables]
+          |> foldMap (Fold.toList . fv)     -- [free variables] (We convert to a list to enable list fusion)
           |> partition isLocalVar           -- (local vars, global vars)
           |> join bimap (map varTovarDecl)  -- (local var decls, global var decls)
 

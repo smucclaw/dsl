@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module LS.XPile.CoreL4.LogicProgram.Pretty () where
 

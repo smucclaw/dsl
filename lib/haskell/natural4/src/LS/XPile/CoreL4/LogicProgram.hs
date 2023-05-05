@@ -53,8 +53,8 @@ babyL4ToLogicProgram program =
   -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
   -- putStrLn "Simplified L4 rules:"
   -- putDoc $ vsep (map (showL4 []) rules) <> line
-  let lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])]
-        = program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
+  let lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])] =
+        program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
 
       (lpRulesFact, lpRulesNoFact) =
         lpRulesWithNegs
@@ -64,12 +64,12 @@ babyL4ToLogicProgram program =
       -- skolemizedLPRules :: [LPRule lpLang t]
       -- skolemizedLPRules = map skolemizeLPRule lpRulesNoFact  -- TODO: not used ??
 
-      oppClauses :: [OpposesClause t]
-        = lpRulesWithNegs
-            -- Get all the oppClausePredNames, ie [(Var t, Var t, Int)], removing duplicates.
-            |> foldMap snd |> nub
-            -- Turn them into OpposesClauses
-            |> map genOppClauseNoType
+      oppClauses :: [OpposesClause t] =
+        lpRulesWithNegs
+          -- Get all the oppClausePredNames, ie [(Var t, Var t, Int)], removing duplicates.
+          |> foldMap snd |> nub
+          -- Turn them into OpposesClauses
+          |> map genOppClauseNoType
   in LogicProgram {..}
 
 genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
@@ -101,34 +101,34 @@ ruleToLPRule ::
   Rule t ->
   MonoidValidate (Doc ann) (LPRule lpLang t, [(Var t, Var t, Int)])
 ruleToLPRule rule = do
-  precondsNeg :: [(Expr t, Maybe (Var t, Var t, Int))]
-    <- rule
+  precondsNeg :: [(Expr t, Maybe (Var t, Var t, Int))] <-
+    rule
       |> precondOfRule
       |> decomposeBinop (BBool BBand)
       |> traverse negationPredicate
 
-  postcondNeg@(postcond, _) :: (Expr t, Maybe (Var t, Var t, Int))
-    <- negationPredicate $ postcondOfRule rule
+  postcondNeg@(postcond, _) :: (Expr t, Maybe (Var t, Var t, Int)) <-
+    negationPredicate $ postcondOfRule rule
 
-  ruleName :: String
-    <- rule
+  ruleName :: String <-
+    rule
       |> nameOfRule
       |> maybe2validate
           ("ToASP: ruleToLPRule: nameOfRule is a Nothing :-(\n" <>
             viaShow rule <> "\n" <>
             "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
-  let preconds :: [Expr t]
-        = map fst precondsNeg
+  let preconds :: [Expr t] =
+        map fst precondsNeg
 
-      negPreds :: [(Var t, Var t, Int)]
-        = mapMaybe snd $ postcondNeg : precondsNeg
+      negPreds :: [(Var t, Var t, Int)] =
+        mapMaybe snd $ postcondNeg : precondsNeg
 
-      (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t])
-        = postcond : preconds                -- [pre and post conds]
-          |> foldMap (Fold.toList . fv)       -- [free variables]
-          |> partition isLocalVar            -- (local vars, global vars)
-          |> join bimap (map varTovarDecl)   -- (local var decls, global var decls)
+      (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t]) =
+        postcond : preconds                 -- [pre and post conds]
+          |> foldMap (Fold.toList . fv)     -- [free variables]
+          |> partition isLocalVar           -- (local vars, global vars)
+          |> join bimap (map varTovarDecl)  -- (local var decls, global var decls)
 
   pure (LPRule {..}, negPreds)
 

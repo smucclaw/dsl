@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.CoreL4.LogicProgram.Skolemize
@@ -29,6 +30,7 @@ import LS.Utils
   )
 import LS.XPile.CoreL4.LogicProgram.Common (LPRule (..))
 import Prettyprinter (Doc, viaShow)
+import Prettyprinter.Interpolate (__di)
 
 -- Skolemized LP rules code
 --Additional function when starting at natural4. 
@@ -68,8 +70,7 @@ convertVarExprToDecl :: [VarDecl t2] -> Expr t -> MonoidValidate (Doc ann) (VarD
 convertVarExprToDecl decls (VarE _ var) =
   decls
     |> findVarDecl varName
-    |> maybe2validate
-        ("convertVarExprToDecl: couldn't find " <> viaShow varName)
+    |> maybe2validate [__di|convertVarExprToDecl: couldn't find #{varName}|]
   where
     varName = nameOfQVarName $ nameOfVar var
 
@@ -85,7 +86,7 @@ convertVarExprToDecl _decls _ =
 -- Need to change this !!! First : Check if precon occurs among vardecls, then check if postcon occurs among vardecls
 
 transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
-transformPrecond precon postcon vardecls vardeclsGlobal ruleid = do
+transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
   -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
   let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
       -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]

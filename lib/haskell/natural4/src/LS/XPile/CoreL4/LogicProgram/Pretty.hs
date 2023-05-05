@@ -78,7 +78,7 @@ instance Show t => Pretty (OpposesClause t) where
     in [__di|
       opposes(#{pos'}, #{neg'}) :-
         #{pretty $ AccordingToE "R" pos}.
-      
+
       opposes(#{pos'}, #{neg'}) :-
         #{pretty $ AccordingToE "R" neg}.
 

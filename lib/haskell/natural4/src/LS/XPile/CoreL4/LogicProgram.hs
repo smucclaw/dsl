@@ -41,7 +41,7 @@ import LS.XPile.CoreL4.LogicProgram.Common
 import LS.XPile.CoreL4.LogicProgram.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
-import Prettyprinter.Interpolate (diii)
+import Prettyprinter.Interpolate (__di)
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
@@ -116,7 +116,7 @@ ruleToLPRule rule = do
     rule
       |> nameOfRule
       |> maybe2validate
-          [diii|
+          [__di|
             Error in logic program transpiler: ruleToLPRule: nameOfRule is a Nothing.
             #{viaShow rule}
             To exclude the ASP (resp Epilog) transpiler from a --workdir run, run natural4-exe with --toasp (resp --toepilog)

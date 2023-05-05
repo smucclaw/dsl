@@ -212,57 +212,67 @@ prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
 
 -- TODO: weird: var pc not used in map
 prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\pc ->
-                 [diii|
-                  createSub(subInst_#{_rn}#{skolemize2 (_vds <> _env) _vds postcond _rn}, _N+1) :-
-                    query(#{pretty postcond}, _N),
-                    _N < M, max_ab_lvl(M).
-                 |]
-                -- ("createSub(subInst" <> "_" <> viaShow _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
-                -- ":-" <+>
-                -- "query" <>
-                -- parens (
-                --         pretty (RawL4 postcond) <+>
-                --         "," <>
-                --         "_N"
-                --         ) <>
-                -- ", _N < M, max_ab_lvl(M)" <>
-                -- "."
-                )
-        [head preconds])
+  case preconds of
+    precond : _ ->
+      [diii|
+        createSub(subInst_#{_rn}#{skolemize2 (_vds <> _env) _vds postcond _rn}, _N + 1) :-
+          query(#{pretty postcond}, _N),
+          _N < M, max_ab_lvl(M).
+      |]
+    _ -> mempty
+
+    -- vsep (map (\pc ->
+
+    --             -- ("createSub(subInst" <> "_" <> viaShow _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
+    --             -- ":-" <+>
+    --             -- "query" <>
+    --             -- parens (
+    --             --         pretty (RawL4 postcond) <+>
+    --             --         "," <>
+    --             --         "_N"
+    --             --         ) <>
+    --             -- ", _N < M, max_ab_lvl(M)" <>
+    --             -- "."
+    --             )
+    --     [head preconds])
 
 prettyLPRuleCommon (VarSubs1R (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\precond ->
-                [diii|
-                  explains(#{pretty precond}, #{pretty postcond}, _N) :-
-                    createSub(subInst_#{_rn}#{toBrackets _vds}, _N).
-                |]
-                -- "explains" <>
-                -- parens (
-                --     pretty (RawL4 precond) <> "," <+>
-                --     pretty (RawL4 postcond) <+>
-                --     "," <>
-                --     "_N"
-                --     ) <+>
-                -- ":-" <+>
-                -- ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets _vds <> "," <> "_N" <> ").")
-                )
-        preconds)
+  vsep $
+    flip map preconds $
+      \precond ->
+        [diii|
+          explains(#{pretty precond}, #{pretty postcond}, _N) :-
+            createSub(subInst_#{_rn}#{toBrackets _vds}, _N).
+        |]
+
+    -- vsep (map (\precond ->
+    --             -- "explains" <>
+    --             -- parens (
+    --             --     pretty (RawL4 precond) <> "," <+>
+    --             --     pretty (RawL4 postcond) <+>
+    --             --     "," <>
+    --             --     "_N"
+    --             --     ) <+>
+    --             -- ":-" <+>
+    --             -- ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets _vds <> "," <> "_N" <> ").")
+    --             )
+    --     preconds)
 
 prettyLPRuleCommon (AddFacts (LPRule _rn _env _vds _preconds postcond)) =
-    vsep (map (\postcond ->
-                  [diii|
-                    user_input(#{pretty postcond}, #{_rn}).
-                  |]
-                -- "user_input" <>
-                -- parens (
-                --     pretty (RawL4 precond) <> "," <+>
-                --     pretty _rn
+  [diii|
+    user_input(#{pretty postcond}, #{_rn}).
+  |]
+    -- vsep (map (\postcond ->
 
-                --     ) <>
-                -- "."
-                )
-        [postcond])
+    --             -- "user_input" <>
+    --             -- parens (
+    --             --     pretty (RawL4 precond) <> "," <+>
+    --             --     pretty _rn
+
+    --             --     ) <>
+    --             -- "."
+    --             )
+    --     [postcond])
 
 prettyLPRuleCommon (VarSubs2R (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\cond ->

@@ -104,9 +104,9 @@ ruleToLPRule ::
   MonoidValidate (Doc ann) (LPRule lpLang t, [(Var t, Var t, Int)])
 ruleToLPRule rule = do
   precondsNeg :: [(Expr t, Maybe (Var t, Var t, Int))] <-
-    rule
-      |> precondOfRule
-      |> decomposeBinop (BBool BBand)
+    rule                               -- (precond_1 && ... && precond_n) => postcond
+      |> precondOfRule                 -- (precond_1 && ... && precond_n) 
+      |> decomposeBinop (BBool BBand)  -- [precond_1, ..., precond_n] 
       |> traverse negationPredicate
 
   postcondNeg@(postcond, _) :: (Expr t, Maybe (Var t, Var t, Int)) <-

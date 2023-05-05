@@ -44,7 +44,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
-import Prettyprinter.Interpolate (diii)
+import Prettyprinter.Interpolate (__di)
 
 data TranslationMode t
   = AccordingToR t
@@ -76,7 +76,7 @@ instance Show t => Pretty (OpposesClause t) where
   pretty (OpposesClause pos neg) =
     let pos' = pretty pos
         neg' = pretty neg
-    in [diii|
+    in [__di|
       opposes(#{pos'}, #{neg'}) :-
         #{pretty $ AccordingToE "R" pos}.
       
@@ -140,7 +140,7 @@ instance Show t => Pretty (OpposesClause t) where
 
 instance Show t => Pretty (TranslationMode (Expr t)) where
     pretty (AccordingToE rn e) =
-      [diii|
+      [__di|
         according_to(#{rn}, #{pretty e})
       |]
       -- "according_to" <> parens (pretty rn <> "," <+> pretty (RawL4 e))
@@ -151,7 +151,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
     --   "legally_holds" <> parens (showASP RawL4 e)
 
     pretty (LegallyHoldsE e) =
-      [diii|
+      [__di|
         legally_holds(#{pretty e})
       |]
       -- "legally_holds" <> parens (pretty $ RawL4 e)
@@ -160,7 +160,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
     --   "query" <> parens (showASP RawL4 e <> "," <> "L")
 
     pretty (QueryE e) =
-      [diii|
+      [__di|
         query(#{pretty e}, L)
       |]
       -- "query" <> parens (pretty (RawL4 e) <> "," <> "L")
@@ -186,7 +186,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
 prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpLang t) -> Doc ann
 prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\precond ->
-                [diii|
+                [__di|
                   explains(#{pretty precond}, #{pretty postcond}, _N + 1) :-
                     query(#{pretty postcond}, _N),
                     _N < M, max_ab_lvl(M).
@@ -214,7 +214,7 @@ prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
 prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
   case preconds of
     precond : _ ->
-      [diii|
+      [__di|
         createSub(subInst_#{_rn}#{skolemize2 (_vds <> _env) _vds postcond _rn}, _N + 1) :-
           query(#{pretty postcond}, _N),
           _N < M, max_ab_lvl(M).
@@ -240,7 +240,7 @@ prettyLPRuleCommon (VarSubs1R (LPRule _rn _env _vds preconds postcond)) =
   vsep $
     flip map preconds $
       \precond ->
-        [diii|
+        [__di|
           explains(#{pretty precond}, #{pretty postcond}, _N) :-
             createSub(subInst_#{_rn}#{toBrackets _vds}, _N).
         |]
@@ -259,7 +259,7 @@ prettyLPRuleCommon (VarSubs1R (LPRule _rn _env _vds preconds postcond)) =
     --     preconds)
 
 prettyLPRuleCommon (AddFacts (LPRule _rn _env _vds _preconds postcond)) =
-  [diii|
+  [__di|
     user_input(#{pretty postcond}, #{_rn}).
   |]
     -- vsep (map (\postcond ->
@@ -276,7 +276,7 @@ prettyLPRuleCommon (AddFacts (LPRule _rn _env _vds _preconds postcond)) =
 
 prettyLPRuleCommon (VarSubs2R (LPRule _rn _env _vds preconds postcond)) =
     vsep (map (\cond ->
-                  [diii|
+                  [__di|
                     createSub(subInst_#{_rn}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds <> _env)) (varDeclToVarStrList _vds))}, _N) :-
                       createSub(subInst_#{_rn}#{toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds))}, _N), #{pretty $ LegallyHoldsE cond}.
                   |]
@@ -290,7 +290,7 @@ prettyLPRuleCommon (VarSubs2R (LPRule _rn _env _vds preconds postcond)) =
 
 prettyLPRuleCommon (VarSubs4R (LPRule rn _env _vds preconds postcond)) =
     vsep (map (\cond ->
-                  [diii|
+                  [__di|
                     createSub(subInst_#{rn}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds <> _env)) (varDeclToVarStrList _vds))}, _N) :-
                       createSub(subInst_#{rn}#{toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds))}, _N),
                       #{pretty $ QueryE cond}.
@@ -307,9 +307,9 @@ prettyLPRuleCommon _ = mempty -- not implemented
 
 instance Show t => Pretty (TranslationMode (ASPRule t)) where
   pretty (AccordingToR (LPRule rn _env _vds preconds postcond)) =
-    [diii|
+    [__di|
       #{pretty $ AccordingToE rn postcond} :-
-        #{hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds))}.
+        #{hsep (punctuate ", " (map (pretty . LegallyHoldsE) preconds))}.
     |]
     -- pretty (AccordingToE rn postcond) <+> ":-" <+>
     --   hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds)) <> "."
@@ -318,7 +318,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
     let accordingToPostcond = pretty $ AccordingToE rn postcond
     in
       vsep (map (\precond ->
-                  [diii|
+                  [__di|
                     caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, _N + 1) :-
                       #{accordingToPostcond},
                       #{hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds))},
@@ -346,9 +346,9 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
 
 instance Show t => Pretty (TranslationMode (EpilogRule t)) where
   pretty (AccordingToR (LPRule rn _env _vds preconds postcond)) =
-    [diii|
+    [__di|
       #{pretty $ AccordingToE rn postcond} :-
-        #{hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))}
+        #{hsep (punctuate " &" (map (pretty . LegallyHoldsE) preconds))}
     |]
     -- pretty (AccordingToE rn postcond) <+> ":-" <+>
     --   hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))
@@ -357,7 +357,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
     let accordingToPostcond = pretty $ AccordingToE rn postcond
     in
         vsep (map (\precond ->
-                    [diii|
+                    [__di|
                       caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
                         #{accordingToPostcond} &
                         #{hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))} &
@@ -381,7 +381,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
             preconds)
 
   pretty (FixedCode (LPRule _rn _env _vds preconds postcond)) =
-    [diii|
+    [__di|
       defeated(R2,C2) :-
         overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)
 
@@ -426,17 +426,41 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
 
 instance Show t => Pretty (ASPProgram t) where
   pretty (LogicProgram {..}) =
-    vsep (map (pretty . AccordingToR) lpRulesNoFact) <> line <> line <>
-    vsep (map (pretty . VarSubs1R) lpRulesNoFact) <> line <> line <>
-    vsep (map (pretty . AddFacts) lpRulesFact) <> line <> line <>
-    vsep (map (pretty . VarSubs3R) lpRulesNoFact) <> line <> line <>
-    vsep (map (pretty . VarSubs2R) lpRulesNoFact) <> line <> line <>
-    vsep (map (pretty . VarSubs4R) lpRulesNoFact) <> line <> line <>
-    vsep (map (pretty . CausedByR) lpRulesNoFact) <> line <> line <>
-    vsep (map pretty oppClauses) <> line
+    [__di|
+      #{vsep (map (pretty . AccordingToR) lpRulesNoFact)}
+
+      #{vsep (map (pretty . VarSubs1R) lpRulesNoFact)}
+
+      #{vsep (map (pretty . AddFacts) lpRulesFact)}
+
+      #{vsep (map (pretty . VarSubs3R) lpRulesNoFact)}
+
+      #{vsep (map (pretty . VarSubs2R) lpRulesNoFact)}
+
+      #{vsep (map (pretty . VarSubs4R) lpRulesNoFact)}
+
+      #{vsep (map (pretty . CausedByR) lpRulesNoFact)}
+
+      #{vsep (map pretty oppClauses)}
+    |]
+    -- vsep (map (pretty . AccordingToR) lpRulesNoFact) <> line <> line <>
+    -- vsep (map (pretty . VarSubs1R) lpRulesNoFact) <> line <> line <>
+    -- vsep (map (pretty . AddFacts) lpRulesFact) <> line <> line <>
+    -- vsep (map (pretty . VarSubs3R) lpRulesNoFact) <> line <> line <>
+    -- vsep (map (pretty . VarSubs2R) lpRulesNoFact) <> line <> line <>
+    -- vsep (map (pretty . VarSubs4R) lpRulesNoFact) <> line <> line <>
+    -- vsep (map (pretty . CausedByR) lpRulesNoFact) <> line <> line <>
+    -- vsep (map pretty oppClauses) <> line
 
 instance Show t => Pretty (EpilogProgram t) where
   pretty (LogicProgram {..}) =
-    vsep (map (pretty . AccordingToR) lpRulesNoFact) <> line <> line <>
-    vsep (map (pretty . CausedByR) lpRulesNoFact) <> line <> line <>
-    vsep (map pretty oppClauses) <> line
+    [__di|
+      #{vsep (map (pretty . AccordingToR) lpRulesNoFact)}
+
+      #{vsep (map (pretty . CausedByR) lpRulesNoFact)}
+
+      #{vsep (map pretty oppClauses)}
+    |]
+    -- vsep (map (pretty . AccordingToR) lpRulesNoFact) <> line <> line <>
+    -- vsep (map (pretty . CausedByR) lpRulesNoFact) <> line <> line <>
+    -- vsep (map pretty oppClauses) <> line

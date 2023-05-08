@@ -353,21 +353,21 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
   pretty (AccordingToR (LPRule rn _env _vds preconds postcond)) =
     [__di|
       #{pretty $ AccordingToE rn postcond} :-
-        #{hsep (punctuate " &" (map (pretty . LegallyHoldsE) preconds))}
+        #{hsep (punctuate " & " (map (pretty . LegallyHoldsE) preconds))}
     |]
     -- pretty (AccordingToE rn postcond) <+> ":-" <+>
     --   hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))
 
   pretty (CausedByR (LPRule rn _env _vds preconds postcond)) =
     vsep $ do
-    let accordingToPostcond = pretty $ AccordingToE rn postcond
-    precond <- preconds
-    pure [__di|
-      caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
-        #{accordingToPostcond} &
-        #{hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))} &
-        justify(#{accordingToPostcond}, 0).
-    |]
+      let accordingToPostcond = pretty $ AccordingToE rn postcond
+      precond <- preconds
+      pure [__di|
+        caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
+          #{accordingToPostcond} &
+          #{hsep (punctuate " & " (map (pretty . LegallyHoldsE) preconds))} &
+          justify(#{accordingToPostcond}, 0).
+      |]
         -- vsep (map (\precond ->
         --             "caused_by" <>
         --                 parens (

@@ -68,7 +68,21 @@ import LS.XPile.CoreL4.LogicProgram
 -- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
 -- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
 import Prettyprinter
-import Text.Regex.TDFA
+    ( viaShow,
+      Pretty(pretty),
+      Doc,
+      (<+>),
+      emptyDoc,
+      encloseSep,
+      hsep,
+      line,
+      vsep,
+      angles,
+      colon,
+      dquotes,
+      equals,
+      parens )
+import Text.Regex.TDFA ( AllTextMatches(getAllTextMatches), (=~) )
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
 

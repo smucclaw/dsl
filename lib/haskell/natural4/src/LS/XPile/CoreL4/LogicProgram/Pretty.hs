@@ -184,30 +184,32 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
 
 prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpLang t) -> Doc ann
 prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\precond ->
-                [__di|
-                  explains(#{pretty precond}, #{pretty postcond}, _N + 1) :-
-                    query(#{pretty postcond}, _N),
-                    _N < M, max_ab_lvl(M).
-                |]
-                -- "explains" <>
-                -- parens (
-                --     pretty (RawL4 pc) <> "," <+>
-                --     pretty (RawL4 postcond) <+>
-                --     "," <>
-                --     "_N+1"
-                --     ) <+>
-                -- ":-" <+>
-                -- "query" <>
-                -- parens (
-                --         pretty (RawL4 postcond) <+>
-                --         "," <>
-                --         "_N"
-                --         ) <>
-                -- "_N < M, max_ab_lvl(M)" <>
-                -- "."
-                )
-        preconds)
+  vsep $ do
+    precond <- preconds
+    pure [__di|
+      explains(#{pretty precond}, #{pretty postcond}, _N + 1) :-
+        query(#{pretty postcond}, _N),
+        _N < M, max_ab_lvl(M).
+    |]
+    -- vsep (map (\precond ->
+    --             "explains" <>
+    --             parens (
+    --                 pretty (RawL4 pc) <> "," <+>
+    --                 pretty (RawL4 postcond) <+>
+    --                 "," <>
+    --                 "_N+1"
+    --                 ) <+>
+    --             ":-" <+>
+    --             "query" <>
+    --             parens (
+    --                     pretty (RawL4 postcond) <+>
+    --                     "," <>
+    --                     "_N"
+    --                     ) <>
+    --             "_N < M, max_ab_lvl(M)" <>
+    --             "."
+    --             )
+    --     preconds)
 
 -- TODO: weird: var pc not used in map
 prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
@@ -221,7 +223,6 @@ prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
     _ -> mempty
 
     -- vsep (map (\pc ->
-
     --             -- ("createSub(subInst" <> "_" <> viaShow _rn <> skolemize2 (_vds <> _env) _vds postcond _rn <> "," <> "_N+1" <> ")") <+>
     --             -- ":-" <+>
     --             -- "query" <>
@@ -236,13 +237,12 @@ prettyLPRuleCommon (VarSubs3R (LPRule _rn _env _vds preconds postcond)) =
     --     [head preconds])
 
 prettyLPRuleCommon (VarSubs1R (LPRule _rn _env _vds preconds postcond)) =
-  vsep $
-    flip map preconds $
-      \precond ->
-        [__di|
-          explains(#{pretty precond}, #{pretty postcond}, _N) :-
-            createSub(subInst_#{_rn}#{toBrackets _vds}, _N).
-        |]
+  vsep $ do
+    precond <- preconds
+    pure [__di|
+      explains(#{pretty precond}, #{pretty postcond}, _N) :-
+        createSub(subInst_#{_rn}#{toBrackets _vds}, _N).
+    |]
 
     -- vsep (map (\precond ->
     --             -- "explains" <>
@@ -274,33 +274,38 @@ prettyLPRuleCommon (AddFacts (LPRule _rn _env _vds _preconds postcond)) =
     --     [postcond])
 
 prettyLPRuleCommon (VarSubs2R (LPRule _rn _env _vds preconds postcond)) =
-    vsep (map (\cond ->
-                  [__di|
-                    createSub(subInst_#{_rn}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds <> _env)) (varDeclToVarStrList _vds))}, _N) :-
-                      createSub(subInst_#{_rn}#{toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds))}, _N), #{pretty $ LegallyHoldsE cond}.
-                  |]
-                -- ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds ++ _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
-                --       <+>
-                -- ":-" <+>
-                -- ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
-                -- pretty (LegallyHoldsE cond) <> "."
-                )
-        (postcond : preconds))
+  vsep $ do
+    cond <- postcond : preconds
+    pure [__di|
+      createSub(subInst_#{_rn}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds <> _env)) (varDeclToVarStrList _vds))}, _N) :-
+        createSub(subInst_#{_rn}#{toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds))}, _N), #{pretty $ LegallyHoldsE cond}.
+    |]
+    -- vsep (map (\cond ->
+
+    --             ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds ++ _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
+    --                   <+>
+    --             ":-" <+>
+    --             ("createSub(subInst" <> "_" <> viaShow _rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
+    --             pretty (LegallyHoldsE cond) <> "."
+    --             )
+    --     (postcond : preconds))
 
 prettyLPRuleCommon (VarSubs4R (LPRule rn _env _vds preconds postcond)) =
-    vsep (map (\cond ->
-                  [__di|
-                    createSub(subInst_#{rn}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds <> _env)) (varDeclToVarStrList _vds))}, _N) :-
-                      createSub(subInst_#{rn}#{toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds))}, _N),
-                      #{pretty $ QueryE cond}.
-                  |]
-                -- ("createSub(subInst" <> "_" <> viaShow rn <> toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds <> _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
-                --       <+>
-                -- ":-" <+>
-                -- ("createSub(subInst" <> "_" <> viaShow rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
-                -- pretty (QueryE pc) <> "."
-                )
-        (postcond : preconds))
+  vsep $ do
+    cond <- postcond : preconds 
+    pure [__di|
+      createSub(subInst_#{rn}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond (_vds <> _env)) (varDeclToVarStrList _vds))}, _N) :-
+        createSub(subInst_#{rn}#{toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds))}, _N),
+        #{pretty $ QueryE cond}.
+    |]
+    -- vsep (map (\cond ->
+    --             ("createSub(subInst" <> "_" <> viaShow rn <> toBrackets2 (my_str_trans_list (preconToVarStrList pc (_vds <> _env)) (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")")
+    --                   <+>
+    --             ":-" <+>
+    --             ("createSub(subInst" <> "_" <> viaShow rn <> toBrackets2 (my_str_trans_list [] (varDeclToVarStrList _vds)) <> "," <> "_N" <> ")" <> ",") <+>
+    --             pretty (QueryE pc) <> "."
+    --             )
+    --     (postcond : preconds))
 
 prettyLPRuleCommon _ = mempty -- not implemented
 
@@ -314,32 +319,33 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
     --   hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds)) <> "."
 
   pretty (CausedByR (LPRule rn _env _vds preconds postcond)) =
-    let accordingToPostcond = pretty $ AccordingToE rn postcond
-    in
-      vsep (map (\precond ->
-                  [__di|
-                    caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, _N + 1) :-
-                      #{accordingToPostcond},
-                      #{hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds))},
-                      justify(#{accordingToPostcond}, _N).
-                  |]
-                  -- "caused_by" <>
-                  --     parens (
-                  --         "pos," <+>
-                  --         pretty (LegallyHoldsE pc) <> "," <+>
-                  --         pretty (AccordingToE rn postcond) <> "," <+>
-                  --         "_N+1"
-                  --         ) <+>
-                  --     ":-" <+>
-                  --     pretty (AccordingToE rn postcond) <> "," <+>
-                  --     hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds)) <>  "," <+>
-                  --     "justify" <>
-                  --     parens (
-                  --         pretty (AccordingToE rn postcond) <>  "," <+>
-                  --         "_N") <>
-                  --     "."
-                  )
-          preconds)
+    vsep $ do
+      let accordingToPostcond = pretty $ AccordingToE rn postcond
+      precond <- preconds
+      pure [__di|
+        caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, _N + 1) :-
+          #{accordingToPostcond},
+          #{hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds))},
+          justify(#{accordingToPostcond}, _N).
+      |]
+      -- vsep (map (\precond ->
+      --             "caused_by" <>
+      --                 parens (
+      --                     "pos," <+>
+      --                     pretty (LegallyHoldsE pc) <> "," <+>
+      --                     pretty (AccordingToE rn postcond) <> "," <+>
+      --                     "_N+1"
+      --                     ) <+>
+      --                 ":-" <+>
+      --                 pretty (AccordingToE rn postcond) <> "," <+>
+      --                 hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds)) <>  "," <+>
+      --                 "justify" <>
+      --                 parens (
+      --                     pretty (AccordingToE rn postcond) <>  "," <+>
+      --                     "_N") <>
+      --                 "."
+      --             )
+      --     preconds)
 
   pretty translationMode = prettyLPRuleCommon translationMode
 
@@ -353,31 +359,32 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
     --   hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))
 
   pretty (CausedByR (LPRule rn _env _vds preconds postcond)) =
+    vsep $ do
     let accordingToPostcond = pretty $ AccordingToE rn postcond
-    in
-        vsep (map (\precond ->
-                    [__di|
-                      caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
-                        #{accordingToPostcond} &
-                        #{hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))} &
-                        justify(#{accordingToPostcond}, 0).
-                    |]
-                    -- "caused_by" <>
-                    --     parens (
-                    --         "pos," <+>
-                    --         pretty (LegallyHoldsE pc) <> "," <+>
-                    --         pretty (AccordingToE rn postcond) <> "," <+>
-                    --         "0"
-                    --         ) <+>
-                    --     ":-" <+>
-                    --     pretty (AccordingToE rn postcond) <> "&" <+>
-                    --     hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds)) <>  "&" <+>
-                    --      "justify" <>
-                    --     parens (
-                    --         pretty (AccordingToE rn postcond) <>  "," <+>
-                    --         "0")
-                    )
-            preconds)
+    precond <- preconds
+    pure [__di|
+      caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
+        #{accordingToPostcond} &
+        #{hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))} &
+        justify(#{accordingToPostcond}, 0).
+    |]
+        -- vsep (map (\precond ->
+        --             "caused_by" <>
+        --                 parens (
+        --                     "pos," <+>
+        --                     pretty (LegallyHoldsE pc) <> "," <+>
+        --                     pretty (AccordingToE rn postcond) <> "," <+>
+        --                     "0"
+        --                     ) <+>
+        --                 ":-" <+>
+        --                 pretty (AccordingToE rn postcond) <> "&" <+>
+        --                 hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds)) <>  "&" <+>
+        --                  "justify" <>
+        --                 parens (
+        --                     pretty (AccordingToE rn postcond) <>  "," <+>
+        --                     "0")
+        --             )
+        --     preconds)
 
   pretty (FixedCode (LPRule _rn _env _vds preconds postcond)) =
     [__di|

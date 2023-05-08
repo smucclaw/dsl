@@ -1,5 +1,4 @@
 {-# LANGUAGE GHC2021 #-}
-{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}

@@ -45,7 +45,14 @@ skolemizedLPRuleName = ruleName
 skolemizedLPRulePostcond :: LPRule lpLang t -> Expr t
 skolemizedLPRulePostcond = postcond
 skolemizedLPRulePrecond :: Eq t => LPRule lpLang t -> [Expr t]
-skolemizedLPRulePrecond r = [transformPrecond precon (postcond r) (localVarDecls r ++ globalVarDecls r) (globalVarDecls r) (ruleName r) | precon <- preconds r]
+skolemizedLPRulePrecond (LPRule {..}) = do
+  let varDecls = localVarDecls <> globalVarDecls
+  precond <- preconds
+  pure $ transformPrecond precond postcond varDecls globalVarDecls ruleName
+
+  -- transformprecond precon (postcond r)
+-- [transformPrecond precon (postcond r) (localVarDecls r ++ globalVarDecls r) (globalVarDecls r) (ruleName r) | precon <- preconds r]
+
 --skolemizedLPRuleVardecls r = genSkolemList (localVarDeclsOfLPRule r) ([varExprToDecl expr (localVarDeclsOfLPRule r) | expr <- snd (appToFunArgs [] (postcondOfLPRule r))]) (nameOfLPRule r)
 
 skolemizedLPRuleVardecls :: Eq t => LPRule lpLang t -> [VarDecl t]
@@ -99,7 +106,6 @@ transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
     exprToVarDecls expr =
       mapThenSwallowErrs
         (convertVarExprToDecl vardecls) (snd $ appToFunArgs [] expr)
-
 
   -- -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
   -- let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))

@@ -38,24 +38,31 @@ preconToVarStrList :: Expr t -> [VarDecl t] -> [String]
 preconToVarStrList precon vardecls = varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
 
 varDeclToVarStrList :: [VarDecl t] -> [String]
-varDeclToVarStrList = map $ \ (VarDecl _t vn _u) -> capitalise vn
+varDeclToVarStrList varDecls = do
+  VarDecl _t vn _u <- varDecls
+  pure $ capitalise vn
 
 -- varDeclToVarStrList [] = []
 -- varDeclToVarStrList ((VarDecl t vn u) : xs) = capitalise vn : varDeclToVarStrList xs
 
 my_str_trans :: [String] -> String -> String
-my_str_trans s t = if elem t s
-      then t
-else [i|V_#{t}|]
+my_str_trans s t
+  | t `elem` s = t
+  | otherwise = [i|V_#{t}]
+-- my_str_trans s t = if elem t s
+--       then t
+-- else [i|V_#{t}|]
 
 my_str_trans_list :: [String] -> [String] -> [String]
 my_str_trans_list s = map $ my_str_trans s
 
 my_str_trans2 :: String -> [String] -> String -> String
-my_str_trans2 v postc rulen  =
-    if v `elem` postc
-    then v
-    else "extVar"
+my_str_trans2 v postc rulen
+  | v `elem` postc = v
+  | otherwise = "extVar"
+    -- if v `elem` postc
+    -- then v
+    -- else "extVar"
 
 my_str_trans_list2 :: [String] -> [String] -> String -> [String]
 my_str_trans_list2 s t u = [my_str_trans2 r t u | r <- s]
@@ -81,4 +88,4 @@ toBrackets2 xs =
 
 --skolemize2 :: Eq t1 => [VarDecl t1] -> [VarDecl t1] -> Expr t2 -> String -> String
 skolemize2 :: [VarDecl t1] -> [VarDecl t2] -> Expr t3 -> String -> Doc ann
-skolemize2 vardecs localvar postc rulename =  toBrackets2 (my_str_trans_list2 (varDeclToVarStrList localvar) (varDeclToVarStrList ((mapThenSwallowErrs (convertVarExprToDecl vardecs) (snd (appToFunArgs [] postc))))) rulename)
+skolemize2 vardecs localvar postc rulename =  toBrackets2 (my_str_trans_list2 (varDeclToVarStrList localvar) (varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecs) (snd (appToFunArgs [] postc)))) rulename)

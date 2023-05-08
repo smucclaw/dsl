@@ -16,7 +16,7 @@ module LS.XPile.CoreL4
   )
 where
 
-import AnyAll
+import AnyAll ( BoolStruct(Leaf, Any, Not, All), haskellStyle )
 -- TODO, to be reconsidered
 
 -- import Data.Function ( (&) )
@@ -47,7 +47,7 @@ import Data.Text qualified as T
 import Data.Tuple.All (SequenceT (sequenceT))
 import Debug.Trace (trace)
 import Flow ((|>))
-import L4.Annotation
+import L4.Annotation ( SRng(DummySRng) )
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
 import L4.Syntax as L4
     ( Expr(BinOpE, VarE, ValE, UnaOpE),
@@ -121,6 +121,15 @@ import LS.Types as SFL4
       clsParent,
       enumLabels_ )
 import LS.PrettyPrinter
+    ( commentWith,
+      inPredicateForm,
+      myrender,
+      prettySimpleType,
+      snake_case,
+      snake_inner,
+      untaint,
+      ParamText3(PT3),
+      RP1(RP1) )
 import LS.Tokens (undeepers)
 import LS.Utils
   ( MonoidValidate,
@@ -136,7 +145,21 @@ import LS.XPile.CoreL4.LogicProgram
 -- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
 -- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
 import Prettyprinter
-import Text.Regex.TDFA
+    ( Doc,
+      (<+>),
+      emptyDoc,
+      encloseSep,
+      hsep,
+      line,
+      viaShow,
+      vsep,
+      angles,
+      colon,
+      dquotes,
+      equals,
+      parens,
+      Pretty(pretty) )
+import Text.Regex.TDFA ( AllTextMatches(getAllTextMatches), (=~) )
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
 

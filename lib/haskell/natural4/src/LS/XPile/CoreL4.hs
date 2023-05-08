@@ -49,9 +49,77 @@ import Debug.Trace (trace)
 import Flow ((|>))
 import L4.Annotation
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
-import L4.Syntax as L4 hiding (All, falseVNoType, trueVNoType)
+import L4.Syntax as L4
+    ( Expr(BinOpE, VarE, ValE, UnaOpE),
+      ClassDecl(ClassDecl, defOfClassDecl, annotOfClassDecl,
+                nameOfClassDecl),
+      ClassName(ClsNm, stringOfClassName),
+      Program(..),
+      TopLevelElement(ClassDeclTLE, RuleTLE),
+      Rule(Rule, postcondOfRule, annotOfRule, nameOfRule, instrOfRule,
+           varDeclsOfRule, precondOfRule),
+      Val(BoolV, IntV, FloatV),
+      Var(LocalVar, GlobalVar),
+      QVarName(QVarName),
+      VarName,
+      BBoolOp(BBor, BBand),
+      BComparOp(BCgte, BCeq, BClt, BClte, BCgt),
+      BinOp(BBool, BCompar),
+      UnaOp(UBool),
+      ClassDef(ClassDef),
+      UBoolOp(UBnot) )
 import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
-import LS as SFL4
+import LS.Interpreter as SFL4
+    ( l4interpret, classGraph, allCTkeys, getCTkeys, getAttrTypesIn )
+import LS.PrettyPrinter as SFL4
+    ( ParamText3(PT3),
+      RP1(RP1),
+      inPredicateForm,
+      snake_case,
+      snake_inner,
+      untaint,
+      prettySimpleType,
+      commentWith,
+      myrender )
+import LS.RelationalPredicates as SFL4
+    ( partitionExistentials, bsr2pt )
+import LS.Rule as SFL4
+    ( Interpreted(classtable),
+      Rule(Regulative, Constitutive, DefNameAlias, RuleAlias,
+           RegFulfilled, RegBreach, Scenario, DefTypically, RuleGroup,
+           NotARule, TypeDecl, Hornlike, given, giveth, enums, has, name,
+           super, keyword, upon, clauses, rlabel, lsource, srcref, defaults,
+           symtab),
+      ruleLabelName,
+      rl2text,
+      defaultHorn,
+      hasClauses )
+import LS.Types as SFL4
+    ( MyToken(Decide, Define),
+      SrcRef(SrcRef, version, url, short, srcrow, srccol),
+      ScopeTabs,
+      ClsTab(..),
+      InterpreterOptions(enums2decls),
+      TypeSig(..),
+      RuleName,
+      ParamType(TOne, TOptional),
+      RelationalPredicate(..),
+      HornClause2,
+      HornClause(HC, hBody, hHead),
+      ParamText,
+      MultiTerm,
+      MTExpr(..),
+      RPRel(..),
+      BoolStructR,
+      mtexpr2text,
+      mt2text,
+      mkRpmt,
+      defaultInterpreterOptions,
+      getUnderlyingType,
+      unCT,
+      getSymType,
+      clsParent,
+      enumLabels_ )
 import LS.PrettyPrinter
 import LS.Tokens (undeepers)
 import LS.Utils

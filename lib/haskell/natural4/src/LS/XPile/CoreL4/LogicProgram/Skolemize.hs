@@ -1,3 +1,4 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -38,12 +39,13 @@ import Prettyprinter.Interpolate (__di)
 --Additional function when starting at natural4. 
 --addinVarDecls :: LPRule -> LPRule
 
-skolemizeLPRuleGlobals :: LPRule lpLang t -> [VarDecl t]
-skolemizeLPRuleGlobals = globalVarDecls
-skolemizedLPRuleName :: LPRule lpLang t -> String
-skolemizedLPRuleName = ruleName
-skolemizedLPRulePostcond :: LPRule lpLang t -> Expr t
-skolemizedLPRulePostcond = postcond
+-- skolemizeLPRuleGlobals :: LPRule lpLang t -> [VarDecl t]
+-- skolemizeLPRuleGlobals (LPRule {globalVarDecls}) = globalVarDecls
+-- skolemizedLPRuleName :: LPRule lpLang t -> String
+-- skolemizedLPRuleName (LPRule {ruleName})= ruleName
+-- skolemizedLPRulePostcond :: LPRule lpLang t -> Expr t
+-- skolemizedLPRulePostcond (LPRule {postcond}) = postcond
+
 skolemizedLPRulePrecond :: Eq t => LPRule lpLang t -> [Expr t]
 skolemizedLPRulePrecond (LPRule {..}) = do
   let varDecls = localVarDecls <> globalVarDecls
@@ -68,7 +70,17 @@ skolemizedLPRuleVardecls (LPRule {..}) =
 -- skolemizeLPRule :: LPRule t -> LPRule t
 
 skolemizeLPRule :: Eq t => LPRule lpLang t -> LPRule lpLang t
-skolemizeLPRule r = LPRule (skolemizedLPRuleName r)  (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
+skolemizeLPRule
+  lpRule@( LPRule
+             { ruleName,
+               localVarDecls,
+               globalVarDecls,
+               postcond
+             }
+           ) =
+    LPRule {preconds = skolemizedLPRulePrecond lpRule, ..}
+    -- ruleName = skolemizedLPRuleName r
+    -- (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
 
 
 findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)

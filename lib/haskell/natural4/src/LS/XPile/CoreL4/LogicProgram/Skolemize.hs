@@ -8,7 +8,9 @@ module LS.XPile.CoreL4.LogicProgram.Skolemize
   )
 where
 
+import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
+import Data.Bifunctor (Bifunctor (bimap))
 import Data.Foldable (find)
 import Data.Maybe (fromMaybe)
 import Flow ((|>))
@@ -87,13 +89,25 @@ convertVarExprToDecl _decls _ =
 
 transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
 transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
-  -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
-  let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
-      -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
-      postconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
-      new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
-      new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
-   in new_precond
+    ruleid
+      |> genSkolemList preconvar_dec postconvar_dec vardeclsGlobal
+      |> map varDeclToExpr                                  -- new_preconvar_dec
+      |> funArgsToAppNoType (fst $ appToFunArgs [] precon)  -- new_precond
+  where
+    (preconvar_dec, postconvar_dec) =
+        (precon, postcon) |> join bimap exprToVarDecls
+    exprToVarDecls expr =
+      mapThenSwallowErrs
+        (convertVarExprToDecl vardecls) (snd $ appToFunArgs [] expr)
+
+
+  -- -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
+  -- let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
+  --     -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
+  --     postconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
+  --     new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
+  --     new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
+  --  in new_precond
 
 -- transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
 -- transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
@@ -108,10 +122,17 @@ transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
 --genSkolem ::  VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
 -- Takes in an existing precondition var_decl, list of postcon var_decls, list of global varDecls and returns skolemized precon var_decl
 genSkolem :: Eq t => VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
-genSkolem (VarDecl t vn u) y w z
-  | VarDecl t vn u `elem` w = VarDecl t  vn u
-  | VarDecl t vn u `elem` y = VarDecl t (capitalise vn) u
-  | otherwise = VarDecl t "extVar" u
+genSkolem varDecl@(VarDecl t vn u) y w z =
+  VarDecl t newVarName u
+  where
+    newVarName
+      | varDecl `elem` w = vn
+      | varDecl `elem` y = capitalise vn
+      | otherwise = "extVar"
+
+  -- | varDecl `elem` w = VarDecl t vn u
+  -- | varDecl `elem` y = VarDecl t (capitalise vn) u
+  -- | otherwise = VarDecl t "extVar" u
 
 -- List version of genSkolem
 genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]

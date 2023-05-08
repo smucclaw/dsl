@@ -157,7 +157,7 @@ varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT
 varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT
 
 negationVarname :: QVarName t -> QVarName t
-negationVarname (QVarName t vn) = QVarName t ("not"++vn)
+negationVarname (QVarName t vn) = QVarName t [i|not#{vn}|] -- ("not"++vn)
 
 negationPredicate :: Expr t -> MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
 negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =

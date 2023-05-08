@@ -11,19 +11,20 @@ import LS.NLP.NLG
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as Text
+import Text.Pandoc.Writers.Docx
+import Text.Pandoc.Readers.Markdown (readMarkdown)
+
+import Text.Pandoc (Format(..), handleError, runIO, Extension (..), ReaderOptions(..), Pandoc, def, handleError)
+import qualified Data.ByteString.Lazy.Char8 as ByteString
+
 -- import Debug.Trace (trace)
 
-markdown :: NLGEnv -> [Rule] -> IO String
-markdown env rl = do
-  nl <- mapM (nlg env) rl
-  print $ concatMap Text.unpack nl
-  print "---"
-  return $ concatMap Text.unpack nl
+doc :: [Rule] -> IO ByteString.ByteString
+doc rl = do runIO (writeDocx def =<< readMarkdown def (Text.pack $ bsMarkdown rl)) >>= handleError
 
-bsMarkdown :: [Rule] -> IO String
-bsMarkdown rl = do
-  let txt = Text.unwords $ bs rl
-  return $ Text.unpack txt
+
+bsMarkdown :: [Rule] -> String
+bsMarkdown rl = Text.unpack $ Text.unwords $ bs rl
 
 rpFilter :: RelationalPredicate -> MultiTerm
 rpFilter (RPParamText pt) = pt2multiterm pt

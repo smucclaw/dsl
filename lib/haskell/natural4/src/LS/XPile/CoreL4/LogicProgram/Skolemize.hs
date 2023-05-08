@@ -122,7 +122,7 @@ transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
 --genSkolem ::  VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
 -- Takes in an existing precondition var_decl, list of postcon var_decls, list of global varDecls and returns skolemized precon var_decl
 genSkolem :: Eq t => VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
-genSkolem varDecl@(VarDecl t vn u) y w z =
+genSkolem varDecl@(VarDecl t vn u) y w _ =
   VarDecl t newVarName u
   where
     newVarName

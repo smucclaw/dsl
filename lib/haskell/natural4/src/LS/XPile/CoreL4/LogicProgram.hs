@@ -41,6 +41,7 @@ import LS.XPile.CoreL4.LogicProgram.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
 import Prettyprinter.Interpolate (__di)
+import Data.String.Interpolate (i)
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
@@ -73,27 +74,38 @@ babyL4ToLogicProgram program =
           |> map genOppClauseNoType
   in LogicProgram {..}
 
-genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
-genOppClause (posvar, negvar, n) =
-  let args = zipWith (\ vn i -> LocalVar (QVarName IntegerT (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
-  in OpposesClause (applyVars posvar args) (applyVars negvar args)
+-- genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
+-- genOppClause (posvar, negvar, n) = OpposesClause {..}
+--   where
+--     (posLit, negLit) = join bimap (`applyVars` args) (posvar, negvar)
+--     args =
+--       [LocalVar (QVarName IntegerT [i|V#{index}|]) index | index <- [0 .. n - 1]]
+
+-- let args = zipWith (\ vn i -> LocalVar (QVarName IntegerT (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
+-- in OpposesClause (applyVars posvar args) (applyVars negvar args)
 
 genOppClauseNoType :: (Var t, Var t, Int) -> OpposesClause t
-genOppClauseNoType (posvar, negvar, n) =
-  let vart = annotOfQVarName (nameOfVar posvar) in
-  let args = zipWith (\ vn i -> LocalVar (QVarName vart (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
-  in OpposesClause (applyVarsNoType posvar args) (applyVarsNoType negvar args)
+genOppClauseNoType (posvar, negvar, n) = OpposesClause {..}
+  where
+    (posLit, negLit) = join bimap (`applyVarsNoType` args) (posvar, negvar)
+    args =
+      [LocalVar (QVarName vart [i|V#{index}|]) index | index <- [0 .. n - 1]]
+    vart = annotOfQVarName $ nameOfVar posvar
+
+  -- let vart = annotOfQVarName (nameOfVar posvar) in
+  -- let args = zipWith (\ vn i -> LocalVar (QVarName vart (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
+  -- in OpposesClause (applyVarsNoType posvar args) (applyVarsNoType negvar args)
 
 -- TODO: details to be filled in
-proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()
-proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
+-- proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()
+-- proveAssertionASP p v asrt = putStrLn "ASP solver implemented"
 
 -- isFact :: Expr t -> Bool
 -- isFact (ValE _ (BoolV True)) = True
 -- isFact _ = False
 
 isHeadOfPrecondFact :: LPRule lpLang t -> Bool
-isHeadOfPrecondFact (LPRule {preconds = (ValE _(BoolV True)) : _}) = True
+isHeadOfPrecondFact (LPRule {preconds = (ValE _ (BoolV True)) : _}) = True
 isHeadOfPrecondFact _ = False
 
 ruleToLPRule ::

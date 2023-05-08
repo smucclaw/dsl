@@ -83,14 +83,13 @@ skolemizeLPRule
     -- (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
 
 
-findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
-findVarDecl varname decls = find (\d -> varname == nameOfVarDecl d) decls
+-- findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
+-- findVarDecl varname = find (\d -> varname == nameOfVarDecl d)
 
--- Jo Hsi: when exactly is this error triggered?
 convertVarExprToDecl :: [VarDecl t2] -> Expr t -> MonoidValidate (Doc ann) (VarDecl t2)
 convertVarExprToDecl decls (VarE _ var) =
   decls
-    |> findVarDecl varName
+    |> find ((varName ==) . nameOfVarDecl)
     |> maybe2validate [__di|convertVarExprToDecl: couldn't find #{varName}|]
   where
     varName = nameOfQVarName $ nameOfVar var

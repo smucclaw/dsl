@@ -1,4 +1,5 @@
 import StdinSchema from "./types"
+import { mustSingTree } from "./mustsing"
 
 let mustSing : StdinSchema = {
     marking: {
@@ -8,27 +9,8 @@ let mustSing : StdinSchema = {
       "swim":  { "Right": false },
       "eat":   { "Left":  false },
       "drink": { "Right": false },
-  },
-    andOrTree: {
-	tag: "All",
-	contents: [
-	    { tag: "Pre", contents: "all of:" },
-	    [ { tag: "Leaf", contents: "walk" },
-	      { tag: "Not", contents:
-		{ tag: "Any", contents:
-		  [ { tag: "Pre", contents: "either" },
-		    [ { contents: "sink", tag: "Leaf" },
-		      { contents: "swim", tag: "Leaf" }
-		    ]
-		  ]
-		}
-	      },
-	      { tag: "All" , contents: [ { tag: "Pre", contents: "both" },
-	      				 [ { contents: "eat",   tag: "Leaf" },
-	      				   { contents: "drink", tag: "Leaf" } ] ] }
-	    ]
-	    ]
-    }
+    },
+    andOrTree: mustSingTree
 }
 
 console.log(JSON.stringify(mustSing));

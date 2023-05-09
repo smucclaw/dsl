@@ -15,9 +15,11 @@ import Text.Pandoc.Writers.Docx
 import Text.Pandoc.Readers.Markdown (readMarkdown)
 import Text.Pandoc.PDF (makePDF)
 import Text.Pandoc.Writers.LaTeX (writeLaTeX)
+import Text.Pandoc.Templates as Template
 
-import Text.Pandoc (Format(..), handleError, runIO, runIOorExplode, Extension (..), ReaderOptions(..), Pandoc, def, renderError)
+import Text.Pandoc (Format(..), handleError, runIO, runIOorExplode, Extension (..), ReaderOptions(..), Pandoc, def, renderError, writerTemplate, getTemplate, compileTemplate)
 import qualified Data.ByteString.Lazy.Char8 as ByteString
+import Paths_natural4
 
 -- import Debug.Trace (trace)
 
@@ -26,7 +28,10 @@ doc rl = do runIO (writeDocx def =<< readMarkdown def (Text.pack $ bsMarkdown rl
 
 pdf :: [Rule] -> IO ByteString.ByteString
 pdf rl = do
-    pdf <- runIOorExplode (makePDF "xelatex" [] writeLaTeX def =<< readMarkdown def (Text.pack $ bsMarkdown rl))
+    templ <- getDataFileName "src/LS/XPile/templates/default.latex"
+    template <- runIOorExplode $ getTemplate templ
+    Right pandTemplate <- compileTemplate "" template :: IO (Either String (Template Text.Text))
+    pdf <- runIOorExplode (makePDF "xelatex" [] writeLaTeX (def {writerTemplate = Just pandTemplate}) =<< readMarkdown def (Text.pack $ bsMarkdown rl))
     case pdf of
         Right p -> return p
         Left err -> do

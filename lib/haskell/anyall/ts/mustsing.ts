@@ -9,8 +9,8 @@ export const mustSingTree : AllNode = {
 	  { tag: "Not", contents:
 	    { tag: "Any", contents:
 	      [ { tag: "Pre", contents: "either" },
-		[ { contents: "sink", tag: "Leaf" },
-		  { contents: "swim", tag: "Leaf" }
+		[ { contents: "swim", tag: "Leaf" },
+		  { contents: "sink", tag: "Leaf" }
 		]
 	      ]
 	    }

@@ -8,7 +8,8 @@
 
 module AnyAll.SVGLadder (module AnyAll.SVGLadder) where
 
-import Data.List (foldl')
+import Data.List (foldl', sortBy)
+import Data.Function  (on)
 
 import AnyAll.Types hiding ((<>))
 
@@ -513,7 +514,7 @@ combineOr sc elems =
       & boxDims.dimWidth .~  maximum (boxWidth . dimensions . fst <$> elems)
       & boxDims.dimHeight .~ childheights
     addElementToColumn = columnLayouter sc mybbox
-    (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter elems
+    (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter (reorderByConnectivity elems)
 
 -- | re-order a list of elements. The elements could be in a disjunctive or conjunctive context -- we would do the same in both cases.
 -- But if re-ordering an and-list would be too confusing, then `combineAndS` doesn't need to call this; only `combineOrS` needs to call this.
@@ -523,8 +524,20 @@ combineOr sc elems =
 -- we would reorder that to be @[True, Unknown, False, False]@
 -- In the opposite case, where elements have to be false to connect (e.g. @Not Leaf@) if we have a bunch of @[Unknown, False, True, False]@
 -- we would reorder that to be @[False, False, Unknown, True]@
-reorderByConnectivity :: Scale -> [BoxedSVG] -> [BoxedSVG]
-reorderByConnectivity _sc elems = elems
+reorderByConnectivity :: [BoxedSVG] -> [BoxedSVG]
+reorderByConnectivity = sortBy (f `on` connect . fst)
+  where
+    f :: Connect -> Connect -> Ordering
+    Just True  `f` Just False = LT
+    Just False `f` Just True  = GT
+
+    Just True  `f` Nothing    = LT
+    Nothing    `f` Just True  = GT
+
+    Nothing    `f` Just False = LT
+    Just False `f` Nothing    = GT
+
+    _          `f` _          = EQ
 
 combineAnd :: Scale -> [BoxedSVG] -> BoxedSVG
 combineAnd sc elems =
@@ -643,6 +656,10 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
     contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
     rawChildren = drawItemFull sc negContext <$> childqs
 
+-- | the low-level boolean logic of when to connect.
+-- In a negContext, draw the topline if the inner value is a False.
+-- Not in a negContext, draw the topline if the inner value is a True.
+-- we repeat this logic in the drawLeafR function.
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
 deriveBoxCap negContext m =
   case extractSoft m of
@@ -786,14 +803,17 @@ drawLeafR caption = do
   dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
   boxCap <- drawBoxCapR caption -- line goes across if it connects
-  -- connection <- do
-    -- negContext <- asks negContext
-    -- m <- asks markingR
-    -- XOR?
-    --     case extractSoft m of
+  negContext <- asks negContext
+  m          <- asks markingR
+  let connection =
+        case (m, negContext) of
+          (Default (Left Nothing),  _ )  -> Nothing
+          (Default (Right Nothing), _ )  -> Nothing
+          (Default (Left l),        r )  -> (/=) <$> l <*> pure r
+          (Default (Right l),       r )  -> (/=) <$> l <*> pure r
+
   put
-    (dbox & boxDims .~ dims
---      & boxConnect .~ connection
+    (dbox & boxDims .~ dims & boxConnect .~ connection
     ,
       rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
           <> boxContent

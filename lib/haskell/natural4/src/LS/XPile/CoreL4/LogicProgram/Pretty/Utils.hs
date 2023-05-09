@@ -48,7 +48,8 @@ varDeclToVarStrList varDecls = do
 my_str_trans :: [String] -> String -> String
 my_str_trans s t
   | t `elem` s = t
-  | otherwise = [i|V_#{t}]
+  | otherwise = [i|V_#{t}|]
+
 -- my_str_trans s t = if elem t s
 --       then t
 -- else [i|V_#{t}|]
@@ -60,6 +61,7 @@ my_str_trans2 :: String -> [String] -> String -> String
 my_str_trans2 v postc rulen
   | v `elem` postc = v
   | otherwise = "extVar"
+
     -- if v `elem` postc
     -- then v
     -- else "extVar"

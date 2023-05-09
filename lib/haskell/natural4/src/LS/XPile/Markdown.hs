@@ -13,8 +13,10 @@ import qualified Data.Map as Map
 import qualified Data.Text as Text
 import Text.Pandoc.Writers.Docx
 import Text.Pandoc.Readers.Markdown (readMarkdown)
+import Text.Pandoc.PDF (makePDF)
+import Text.Pandoc.Writers.LaTeX (writeLaTeX)
 
-import Text.Pandoc (Format(..), handleError, runIO, Extension (..), ReaderOptions(..), Pandoc, def, handleError)
+import Text.Pandoc (Format(..), handleError, runIO, runIOorExplode, Extension (..), ReaderOptions(..), Pandoc, def, renderError)
 import qualified Data.ByteString.Lazy.Char8 as ByteString
 
 -- import Debug.Trace (trace)
@@ -22,6 +24,13 @@ import qualified Data.ByteString.Lazy.Char8 as ByteString
 doc :: [Rule] -> IO ByteString.ByteString
 doc rl = do runIO (writeDocx def =<< readMarkdown def (Text.pack $ bsMarkdown rl)) >>= handleError
 
+pdf :: [Rule] -> IO ByteString.ByteString
+pdf rl = do
+    pdf <- runIOorExplode (makePDF "xelatex" [] writeLaTeX def =<< readMarkdown def (Text.pack $ bsMarkdown rl))
+    case pdf of
+        Right p -> return p
+        Left err -> do
+            return err
 
 bsMarkdown :: [Rule] -> String
 bsMarkdown rl = Text.unpack $ Text.unwords $ bs rl

@@ -12,7 +12,7 @@ where
 import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))
-import Data.Foldable (find)
+import Data.Foldable qualified as Fold
 import Data.Maybe (fromMaybe)
 import Flow ((|>))
 import L4.PrintProg (capitalise)
@@ -89,7 +89,7 @@ skolemizeLPRule
 convertVarExprToDecl :: [VarDecl t2] -> Expr t -> MonoidValidate (Doc ann) (VarDecl t2)
 convertVarExprToDecl decls (VarE _ var) =
   decls
-    |> find ((varName ==) . nameOfVarDecl)
+    |> Fold.find ((varName ==) . nameOfVarDecl)
     |> maybe2validate [__di|convertVarExprToDecl: couldn't find #{varName}|]
   where
     varName = nameOfQVarName $ nameOfVar var
@@ -107,16 +107,17 @@ convertVarExprToDecl _decls _ =
 
 transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
 transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
-    ruleid
-      |> genSkolemList preconvar_dec postconvar_dec vardeclsGlobal
-      |> map varDeclToExpr                                  -- new_preconvar_dec
-      |> funArgsToAppNoType (fst $ appToFunArgs [] precon)  -- new_precond
+  ruleid
+    |> genSkolemList preconvar_dec postconvar_dec vardeclsGlobal
+    |> map varDeclToExpr -- new_preconvar_dec
+    |> funArgsToAppNoType (fst $ appToFunArgs [] precon) -- new_precond
   where
     (preconvar_dec, postconvar_dec) =
-        (precon, postcon) |> join bimap exprToVarDecls
+      (precon, postcon) |> join bimap exprToVarDecls
     exprToVarDecls expr =
       mapThenSwallowErrs
-        (convertVarExprToDecl vardecls) (snd $ appToFunArgs [] expr)
+        (convertVarExprToDecl vardecls)
+        (snd $ appToFunArgs [] expr)
 
   -- -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
   -- let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))

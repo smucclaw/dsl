@@ -58,7 +58,7 @@ my_str_trans_list :: [String] -> [String] -> [String]
 my_str_trans_list s = map $ my_str_trans s
 
 my_str_trans2 :: String -> [String] -> String -> String
-my_str_trans2 v postc rulen
+my_str_trans2 v postc _
   | v `elem` postc = v
   | otherwise = "extVar"
 

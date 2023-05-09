@@ -63,8 +63,12 @@ data BBox = BBox
   { dimensions :: BoxDimensions
   , margins    :: Margins
   , ports      :: Ports
+  , connect    :: Connect
   }
   deriving (Eq, Show)
+
+-- similar to a Default, but looking at the overall value of a connection
+type Connect = Maybe Bool
 
 data BoxDimensions = BoxDimensions
   { boxWidth :: Length
@@ -91,6 +95,9 @@ boxMargins = lens margins (\x y -> x { margins = y })
 
 boxDims :: Lens' BBox BoxDimensions
 boxDims = lens dimensions (\x y -> x { dimensions = y })
+
+boxConnect :: Lens' BBox Connect
+boxConnect = lens connect (\x y -> x { connect = y })
 
 dimWidth :: Lens' BoxDimensions Length
 dimWidth = lens boxWidth (\x y -> x { boxWidth = y })
@@ -124,8 +131,9 @@ defaultBBox Full  = defaultBBox'
 defaultBBox' :: BBox
 defaultBBox' = BBox
   { dimensions = defaultDimensions
-  , margins = defaultMargins
-  , ports = defaultPorts
+  , margins    = defaultMargins
+  , ports      = defaultPorts
+  , connect    = defaultConnect
   }
 
 defaultDimensions = BoxDimensions
@@ -148,6 +156,17 @@ defaultMargins = Margins
   , _topMargin = 0
   , _bottomMargin = 0
   }
+
+-- | Does a bounding box connect?
+-- This is similar to the idea of a marking, but after Not-processing;
+-- so we only really care if the overall value, of the Marking * Leaf, is true;
+-- if the leaf is a Not, then we look for Default Left False or Default Right False;
+-- if the leaf is not a Not, then we look for either Default Left True or Default Right True.
+-- if the contents of the bounding box are an Any or an All we evaluate over all of the children.
+-- This is used for display purposes; a bounding box has an overall connect value as well.
+defaultConnect :: Connect
+defaultConnect = Nothing
+
 
 -- default stroke colour for the connecting lines between boxes
 defaultStroke_ :: T.Text
@@ -496,6 +515,16 @@ combineOr sc elems =
     addElementToColumn = columnLayouter sc mybbox
     (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter elems
 
+-- | re-order a list of elements. The elements could be in a disjunctive or conjunctive context -- we would do the same in both cases.
+-- But if re-ordering an and-list would be too confusing, then `combineAndS` doesn't need to call this; only `combineOrS` needs to call this.
+-- And that would be fine.
+-- We want the non-connecting elements to go to the top and the known-non-connecting elements go to the bottom.
+-- In the simple case, where elements have to be true, if we have a bunch of @[Unknown, False, True, False]@
+-- we would reorder that to be @[True, Unknown, False, False]@
+-- In the opposite case, where elements have to be false to connect (e.g. @Not Leaf@) if we have a bunch of @[Unknown, False, True, False]@
+-- we would reorder that to be @[False, False, Unknown, True]@
+reorderByConnectivity :: Scale -> [BoxedSVG] -> [BoxedSVG]
+reorderByConnectivity _sc elems = elems
 
 combineAnd :: Scale -> [BoxedSVG] -> BoxedSVG
 combineAnd sc elems =
@@ -756,14 +785,22 @@ drawLeafR caption = do
   (boxStroke, boxFill) <- getBoxColorsR
   dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
-  boxCap <- drawBoxCapR caption
+  boxCap <- drawBoxCapR caption -- line goes across if it connects
+  -- connection <- do
+    -- negContext <- asks negContext
+    -- m <- asks markingR
+    -- XOR?
+    --     case extractSoft m of
   put
     (dbox & boxDims .~ dims
+--      & boxConnect .~ connection
     ,
       rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
           <> boxContent
           <> boxCap
     )
+            
+
 
 box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement
 box c x y w h =

@@ -7,7 +7,7 @@ let mustSing : StdinSchema = {
 	"eat": { "Left": false }, // let's assume eat = false
 	"drink": { "Left": true }, // let's assume eat = false
       "walk":  { "Left": true  }, // we assume that everybody walks
-      "swim":  { "Left": true },   // we assume that most people do swim
+      "swim":  { "Right": true },   // we assume that most people do swim
   },
 }
 

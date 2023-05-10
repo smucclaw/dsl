@@ -19,8 +19,8 @@ import L4.PrintProg (capitalise)
 import L4.Syntax
   ( Expr (VarE, annotOfExpr, varOfExprVarE),
     QVarName (QVarName, annotOfQVarName, nameOfQVarName),
-    Var (GlobalVar, nameOfVar),
-    VarDecl (VarDecl, nameOfVarDecl),
+    Var (..),
+    VarDecl (..),
     VarName,
   )
 import L4.SyntaxManipulation (appToFunArgs, funArgsToAppNoType)
@@ -154,18 +154,30 @@ genSkolem varDecl@(VarDecl t vn u) y w _ =
 
 -- List version of genSkolem
 genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
-genSkolemList x y w z = [genSkolem xs y w z | xs <- x]
+genSkolemList xs y w z = [genSkolem x y w z | x <- xs]
 
 
 -- var to var expr
-mkVarE :: Var t -> Expr t
-mkVarE v = VarE {annotOfExpr =  annotOfQVarName (nameOfVar v), varOfExprVarE = v}
---Takes in a var_decl and turns it into a var_expr
-varDeclToExpr :: VarDecl t -> Expr t
-varDeclToExpr (VarDecl x y _z) = mkVarE (GlobalVar (QVarName x y))
+-- mkVarE :: Var t -> Expr t
+-- mkVarE v = VarE {annotOfExpr = annotOfQVarName (nameOfVar v), varOfExprVarE = v}
 
-varDeclToExprTup :: VarDecl t -> (Expr t, VarDecl t)
-varDeclToExprTup (VarDecl x y z) = (varDeclToExpr (VarDecl x y z), VarDecl x y z)
+-- Takes in a var_decl and turns it into a var_expr
+varDeclToExpr :: VarDecl t -> Expr t
+varDeclToExpr VarDecl {annotOfVarDecl, nameOfVarDecl} =
+  QVarName {annotOfQVarName = annotOfVarDecl, nameOfQVarName = nameOfVarDecl}
+    |> GlobalVar
+    |> mkVarE
+  where
+    mkVarE var@GlobalVar {nameOfVar} =
+      VarE
+        { annotOfExpr = annotOfQVarName nameOfVar,
+          varOfExprVarE = var
+        }
+
+-- varDeclToExpr (VarDecl x y _z) = mkVarE (GlobalVar (QVarName x y))
+
+-- varDeclToExprTup :: VarDecl t -> (Expr t, VarDecl t)
+-- varDeclToExprTup (VarDecl x y z) = (varDeclToExpr (VarDecl x y z), VarDecl x y z)
 
 -- Matching function
 

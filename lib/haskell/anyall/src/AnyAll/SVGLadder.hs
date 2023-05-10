@@ -450,6 +450,7 @@ columnLayouter sc parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
       (defaultBBox sc)
         & boxDims.dimHeight .~ bbold ^. bboxHeight + bbnew ^. bboxHeight + lrVgap
         & boxDims.dimWidth .~ max (bbold ^. bboxWidth) (bbnew ^. bboxWidth)
+        & boxConnect .~ (connect bbold `mergeConnects` connect bbnew)
     svg =
       old
         <> move (0, bbold ^. bboxHeight + lrVgap) new
@@ -496,6 +497,8 @@ outboundCurve sc parentbbox bbold bbnew =
         (parentbbox ^. bboxWidth - (bbnew ^. boxMargins.rightMargin))
         (bbold ^. bboxHeight + lrVgap + portR bbnew myScale)
 
+-- | disjunctive combination of child nodes. (non-monadic)
+-- If any of the child nodes provides a connection, this parent node is deemed also connected.
 combineOr :: Scale -> [BoxedSVG] -> BoxedSVG
 combineOr sc elems =
   ( childbbox
@@ -513,31 +516,43 @@ combineOr sc elems =
     mybbox = (defaultBBox sc)
       & boxDims.dimWidth .~  maximum (boxWidth . dimensions . fst <$> elems)
       & boxDims.dimHeight .~ childheights
+    reorderedChildren = reorderByConnectivity elems
+    addElementToColumn :: BoxedSVG -> BoxedSVG -> BoxedSVG
     addElementToColumn = columnLayouter sc mybbox
-    (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter (reorderByConnectivity elems)
+    (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter reorderedChildren
 
 -- | re-order a list of elements. The elements could be in a disjunctive or conjunctive context -- we would do the same in both cases.
--- But if re-ordering an and-list would be too confusing, then `combineAndS` doesn't need to call this; only `combineOrS` needs to call this.
+-- But if re-ordering an and-list would be too confusing, then `combineAnd` doesn't need to call this; only `combineOr` needs to call this.
 -- And that would be fine.
 -- We want the non-connecting elements to go to the top and the known-non-connecting elements go to the bottom.
--- In the simple case, where elements have to be true, if we have a bunch of @[Unknown, False, True, False]@
+reorderByConnectivity :: [BoxedSVG] -> [BoxedSVG]
+reorderByConnectivity = sortBy (orderConnects `on` connect . fst)
+
+-- | -- In the simple case, where elements have to be true, if we have a bunch of @[Unknown, False, True, False]@
 -- we would reorder that to be @[True, Unknown, False, False]@
 -- In the opposite case, where elements have to be false to connect (e.g. @Not Leaf@) if we have a bunch of @[Unknown, False, True, False]@
 -- we would reorder that to be @[False, False, Unknown, True]@
-reorderByConnectivity :: [BoxedSVG] -> [BoxedSVG]
-reorderByConnectivity = sortBy (f `on` connect . fst)
-  where
-    f :: Connect -> Connect -> Ordering
-    Just True  `f` Just False = LT
-    Just False `f` Just True  = GT
 
-    Just True  `f` Nothing    = LT
-    Nothing    `f` Just True  = GT
+orderConnects :: Connect -> Connect -> Ordering
+Just True  `orderConnects` Just False = LT
+Just False `orderConnects` Just True  = GT
 
-    Nothing    `f` Just False = LT
-    Just False `f` Nothing    = GT
+Just True  `orderConnects` Nothing    = LT
+Nothing    `orderConnects` Just True  = GT
 
-    _          `f` _          = EQ
+Nothing    `orderConnects` Just False = LT
+Just False `orderConnects` Nothing    = GT
+
+_          `orderConnects` _          = EQ
+
+-- | if we are combining two bounding boxes, which connection wins?
+mergeConnects :: Connect -> Connect -> Connect
+mergeConnects (Just True) _  = Just True
+mergeConnects _ (Just True)  = Just True
+mergeConnects (Just False) _ = Just False
+mergeConnects _ (Just False) = Just False
+mergeConnects _ _ = Nothing
+
 
 combineAnd :: Scale -> [BoxedSVG] -> BoxedSVG
 combineAnd sc elems =

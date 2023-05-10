@@ -462,8 +462,7 @@ inboundCurve sc parentbbox bbold bbnew =
   path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_in") : pathcolors)
   where
     parentPortIn = portL parentbbox myScale + lrVgap
-    pathcolors = [ Stroke_ <<- defaultStroke_
-                 , Fill_ <<- "none"]
+    pathcolors = (Fill_ <<- "none") : curveColour sc bbnew
     myScale = getScale sc
     lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     leftMargin' = myScale ^. aavscaleMargins.leftMargin
@@ -477,13 +476,18 @@ inboundCurve sc parentbbox bbold bbnew =
         (bbnew ^. boxMargins.leftMargin)
         (bbold ^. bboxHeight + lrVgap + portL bbnew myScale)
 
+-- | the stroke colour and width for a curve from a child to its parent; it depends on whether the child is connected or not
+curveColour :: Scale -> BBox -> [Attribute]
+curveColour sc bb
+  | connect bb == Just True = [ Stroke_ <<- "black",        Stroke_width_ <<- "2px" ]
+  | otherwise               = [ Stroke_ <<- defaultStroke_, Stroke_width_ <<- "1px" ]
+
 outboundCurve :: Scale -> BBox -> BBox -> BBox -> SVGElement
 outboundCurve sc parentbbox bbold bbnew =
   path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_out") : pathcolors)
   where
     parentPortOut = portR parentbbox myScale + lrVgap
-    pathcolors = [ Stroke_ <<- defaultStroke_
-                 , Fill_ <<- "none"]
+    pathcolors = (Fill_ <<- "none") : curveColour sc bbnew
     myScale = getScale sc
     lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     rightMargin' = myScale ^. aavscaleMargins.rightMargin
@@ -499,6 +503,8 @@ outboundCurve sc parentbbox bbold bbnew =
 
 -- | disjunctive combination of child nodes. (non-monadic)
 -- If any of the child nodes provides a connection, this parent node is deemed also connected.
+-- We sort the child bboxes according to connectivity: connects at top, disconnects at bottom, unknowns in between.
+-- See the original bbox spec for details.
 combineOr :: Scale -> [BoxedSVG] -> BoxedSVG
 combineOr sc elems =
   ( childbbox

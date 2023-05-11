@@ -51,28 +51,29 @@ babyL4ToLogicProgram ::
   (Show t, Ord t, Eq t) =>
   Program t ->
   LogicProgram lpLang t
-babyL4ToLogicProgram program =
-  -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
-  -- putStrLn "Simplified L4 rules:"
-  -- putDoc $ vsep (map (showL4 []) rules) <> line
-  let lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])] =
-        program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
+babyL4ToLogicProgram program = LogicProgram {..}
+  where
+    -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
+    -- putStrLn "Simplified L4 rules:"
+    -- putDoc $ vsep (map (showL4 []) rules) <> line
+    lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])] =
+      program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
 
-      (lpRulesFact, lpRulesNoFact) =
-        lpRulesWithNegs
-          |> map fst                        -- Grab all the lpRules
-          |> partition isHeadOfPrecondFact  -- Split into Fact and NoFact
+    (lpRulesFact, lpRulesNoFact) =
+      lpRulesWithNegs
+        |> map fst -- Grab all the lpRules
+        |> partition isHeadOfPrecondFact -- Split into Fact and NoFact
 
-      -- skolemizedLPRules :: [LPRule lpLang t]
-      -- skolemizedLPRules = map skolemizeLPRule lpRulesNoFact  -- TODO: not used ??
+    -- skolemizedLPRules :: [LPRule lpLang t]
+    -- skolemizedLPRules = map skolemizeLPRule lpRulesNoFact  -- TODO: not used ??
 
-      oppClauses :: [OpposesClause t] =
-        lpRulesWithNegs
-          -- Get all the oppClausePredNames, ie [(Var t, Var t, Int)], removing duplicates.
-          |> foldMap snd |> nub
-          -- Turn them into OpposesClauses
-          |> map genOppClauseNoType
-  in LogicProgram {..}
+    oppClauses :: [OpposesClause t] =
+      lpRulesWithNegs
+        -- Get all the oppClausePredNames, ie [(Var t, Var t, Int)], removing duplicates.
+        |> foldMap snd
+        |> nub
+        -- Turn them into OpposesClauses
+        |> map genOppClauseNoType
 
 -- genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
 -- genOppClause (posvar, negvar, n) = OpposesClause {..}

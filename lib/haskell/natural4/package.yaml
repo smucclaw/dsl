@@ -75,6 +75,7 @@ dependencies:
   - mono-traversable
   - string-interpolate
   - prettyprinter-interp
+  - tuple
   - pandoc
   - pandoc-types
 

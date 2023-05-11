@@ -480,7 +480,7 @@ inboundCurve sc parentbbox bbold bbnew =
 curveColour :: Scale -> BBox -> [Attribute]
 curveColour sc bb
   | connect bb == Just True = [ Stroke_ <<- "black",        Stroke_width_ <<- "2px" ]
-  | otherwise               = [ Stroke_ <<- defaultStroke_, Stroke_width_ <<- "1px" ]
+  | otherwise               = [ Stroke_ <<- defaultStroke_                          ]
 
 outboundCurve :: Scale -> BBox -> BBox -> BBox -> SVGElement
 outboundCurve sc parentbbox bbold bbnew =

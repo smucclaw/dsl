@@ -143,6 +143,23 @@ toToken "HOLDS" =  pure Holds
 toToken "HENCE" = pure Hence
 toToken "THUS"  = pure Hence
 
+-- alternative formulations intended to be closer to natural language
+-- for the obligation case
+toToken "IF FULFILLED"      = pure Hence
+toToken "IF NOT FULFILLED"  = pure Lest
+toToken "IF VIOLATED"       = pure Lest
+-- for the permission case
+toToken "IF EXERCISED"      = pure Hence
+toToken "IF EXERCIZED"      = pure Hence
+toToken "IF NOT EXERCISED"  = pure Lest
+toToken "IF NOT EXERCIZED"  = pure Lest
+-- for the prohibition case
+toToken "IF PROHIBITION VIOLATED"      = pure Lest
+toToken "IF PROHIBITION NOT VIOLATED"  = pure Hence
+toToken "IF NOT PROHIBITION VIOLATED"  = pure Hence
+toToken "IF NOT VIOLATED"              = pure Hence
+
+
 -- mutable state variables are modified by UPON THEN ELSE
 toToken     "THEN" = pure Then
 toToken     "ELSE" = pure Else

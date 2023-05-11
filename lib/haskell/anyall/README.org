@@ -602,4 +602,11 @@ How does one center-align a column of text boxes?
 
 In SVG we can use the ~alignment-baseline~ attribute which makes things easier.
 
+* Interactivity
+
+As users answer questions we want to be able to redraw and redisplay the diagram.
+
+At each step the diagram should reorganize as described in the original PDF specification, such that eventually the "true path" bubbles to the top.
+
+The "flipbook" example, in ~ts/flipbook-?.ts~, gives an impression of what happens as the end-user answers questions step by step. The underlying tree doesn't change; only the marking does.
 

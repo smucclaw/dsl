@@ -1,0 +1,4 @@
+#+begin_src shell
+┌─[20230509-16:16:32]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/anyall]
+└─[0] <git:(20230504-tutorial-script 61bea807✱✈) > tsc ts/*.ts && for i in ts/flipbook-*.js; do node $i  | stack run -- --only svg | tee out/`basename $i .js`.svg; done
+#+end_src

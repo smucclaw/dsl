@@ -19,6 +19,7 @@ concrete CustomSyntaxChi of CustomSyntax =
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
+      , ByVP
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]
@@ -199,10 +200,10 @@ concrete CustomSyntaxChi of CustomSyntax =
     thePl = thePl_Det ;
     aSg = theSg_Det ;
     your = mkDet youSg_Pron ;
+    about_Prep = mkPrepChi "about" [] ; -- TODO
 
   oper
     whoRP : RP = which_RP ;
-    aboutPrep : LinPrep = mkPrepChi "about" [] ; -- TODO
     withinPrep : LinPrep = mkPrepChi [] "内";
     uponPrep : Prep = mkPrep "什么时候" [] ; -- this is only used in a lin that expects a real Prep, confusingly enough
     by8timePrep : LinPrep = mkPrepChi "前" [] ;

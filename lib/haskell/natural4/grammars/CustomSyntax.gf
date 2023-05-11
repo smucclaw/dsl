@@ -22,6 +22,7 @@ abstract CustomSyntax =
         , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
         , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
     --      , GenRP -- nice to have in the future?
+        , ByVP
         , S, PredVPS
         , NP, GerundNP
         ]  ** {
@@ -68,4 +69,6 @@ abstract CustomSyntax =
     thePl : Det ;
     aSg : Det ;
     your : Det ;
+
+    about_Prep : Prep ;
 }

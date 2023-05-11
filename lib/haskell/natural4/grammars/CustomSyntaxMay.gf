@@ -22,6 +22,7 @@ concrete CustomSyntaxMay of CustomSyntax =
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
+      , ByVP
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]
@@ -103,10 +104,10 @@ concrete CustomSyntaxMay of CustomSyntax =
     thePl = thePl_Det ;
     aSg = aSg_Det ;
     your = mkDet youSg_Pron ;
+    about_Prep = R.mkPrep "tentang" ;
 
 oper
     whoRP : RP = which_RP ;
-    aboutPrep : Prep = R.mkPrep "tentang" ;
     uponPrep : Prep = R.mkPrep "semasa" ;
     by8timePrep : Prep = R.mkPrep "sebelum" ;
     withinPrep : Prep = R.mkPrep "dalam lingkungan" ;

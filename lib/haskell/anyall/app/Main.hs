@@ -54,7 +54,7 @@ main = do
       mytree = {- addJust $ -} andOrTree myright
 
   when (only opts == "json") $
-    putStrLn $ toString $ encodePretty mytree
+    putStrLn $ toString $ encodePretty myright
 
   when (only opts == "tree") $
     ppQTree mytree (getDefault <$> (getMarking $ marking myright))

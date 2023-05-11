@@ -8,7 +8,8 @@
 
 module AnyAll.SVGLadder (module AnyAll.SVGLadder) where
 
-import Data.List (foldl')
+import Data.List (foldl', sortBy)
+import Data.Function  (on)
 
 import AnyAll.Types hiding ((<>))
 
@@ -63,8 +64,12 @@ data BBox = BBox
   { dimensions :: BoxDimensions
   , margins    :: Margins
   , ports      :: Ports
+  , connect    :: Connect
   }
   deriving (Eq, Show)
+
+-- similar to a Default, but looking at the overall value of a connection
+type Connect = Maybe Bool
 
 data BoxDimensions = BoxDimensions
   { boxWidth :: Length
@@ -91,6 +96,9 @@ boxMargins = lens margins (\x y -> x { margins = y })
 
 boxDims :: Lens' BBox BoxDimensions
 boxDims = lens dimensions (\x y -> x { dimensions = y })
+
+boxConnect :: Lens' BBox Connect
+boxConnect = lens connect (\x y -> x { connect = y })
 
 dimWidth :: Lens' BoxDimensions Length
 dimWidth = lens boxWidth (\x y -> x { boxWidth = y })
@@ -124,8 +132,9 @@ defaultBBox Full  = defaultBBox'
 defaultBBox' :: BBox
 defaultBBox' = BBox
   { dimensions = defaultDimensions
-  , margins = defaultMargins
-  , ports = defaultPorts
+  , margins    = defaultMargins
+  , ports      = defaultPorts
+  , connect    = defaultConnect
   }
 
 defaultDimensions = BoxDimensions
@@ -148,6 +157,17 @@ defaultMargins = Margins
   , _topMargin = 0
   , _bottomMargin = 0
   }
+
+-- | Does a bounding box connect?
+-- This is similar to the idea of a marking, but after Not-processing;
+-- so we only really care if the overall value, of the Marking * Leaf, is true;
+-- if the leaf is a Not, then we look for Default Left False or Default Right False;
+-- if the leaf is not a Not, then we look for either Default Left True or Default Right True.
+-- if the contents of the bounding box are an Any or an All we evaluate over all of the children.
+-- This is used for display purposes; a bounding box has an overall connect value as well.
+defaultConnect :: Connect
+defaultConnect = Nothing
+
 
 -- default stroke colour for the connecting lines between boxes
 defaultStroke_ :: T.Text
@@ -430,6 +450,7 @@ columnLayouter sc parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
       (defaultBBox sc)
         & boxDims.dimHeight .~ bbold ^. bboxHeight + bbnew ^. bboxHeight + lrVgap
         & boxDims.dimWidth .~ max (bbold ^. bboxWidth) (bbnew ^. bboxWidth)
+        & boxConnect .~ (connect bbold `mergeConnects` connect bbnew)
     svg =
       old
         <> move (0, bbold ^. bboxHeight + lrVgap) new
@@ -441,8 +462,7 @@ inboundCurve sc parentbbox bbold bbnew =
   path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_in") : pathcolors)
   where
     parentPortIn = portL parentbbox myScale + lrVgap
-    pathcolors = [ Stroke_ <<- defaultStroke_
-                 , Fill_ <<- "none"]
+    pathcolors = (Fill_ <<- "none") : curveColour sc bbnew
     myScale = getScale sc
     lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     leftMargin' = myScale ^. aavscaleMargins.leftMargin
@@ -456,13 +476,18 @@ inboundCurve sc parentbbox bbold bbnew =
         (bbnew ^. boxMargins.leftMargin)
         (bbold ^. bboxHeight + lrVgap + portL bbnew myScale)
 
+-- | the stroke colour and width for a curve from a child to its parent; it depends on whether the child is connected or not
+curveColour :: Scale -> BBox -> [Attribute]
+curveColour sc bb
+  | connect bb == Just True = [ Stroke_ <<- "black",        Stroke_width_ <<- "2px" ]
+  | otherwise               = [ Stroke_ <<- defaultStroke_                          ]
+
 outboundCurve :: Scale -> BBox -> BBox -> BBox -> SVGElement
 outboundCurve sc parentbbox bbold bbnew =
   path_ ((D_ <<- startPosition <> bezierCurve) : (Class_ <<- "v_connector_out") : pathcolors)
   where
     parentPortOut = portR parentbbox myScale + lrVgap
-    pathcolors = [ Stroke_ <<- defaultStroke_
-                 , Fill_ <<- "none"]
+    pathcolors = (Fill_ <<- "none") : curveColour sc bbnew
     myScale = getScale sc
     lrVgap = myScale ^. aavscaleHorizontalLayout.gapVertical
     rightMargin' = myScale ^. aavscaleMargins.rightMargin
@@ -476,6 +501,10 @@ outboundCurve sc parentbbox bbold bbnew =
         (parentbbox ^. bboxWidth - (bbnew ^. boxMargins.rightMargin))
         (bbold ^. bboxHeight + lrVgap + portR bbnew myScale)
 
+-- | disjunctive combination of child nodes. (non-monadic)
+-- If any of the child nodes provides a connection, this parent node is deemed also connected.
+-- We sort the child bboxes according to connectivity: connects at top, disconnects at bottom, unknowns in between.
+-- See the original bbox spec for details.
 combineOr :: Scale -> [BoxedSVG] -> BoxedSVG
 combineOr sc elems =
   ( childbbox
@@ -493,8 +522,42 @@ combineOr sc elems =
     mybbox = (defaultBBox sc)
       & boxDims.dimWidth .~  maximum (boxWidth . dimensions . fst <$> elems)
       & boxDims.dimHeight .~ childheights
+    reorderedChildren = reorderByConnectivity elems
+    addElementToColumn :: BoxedSVG -> BoxedSVG -> BoxedSVG
     addElementToColumn = columnLayouter sc mybbox
-    (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter elems
+    (childbbox, children) = foldl' addElementToColumn (defaultBBox sc, mempty) $ hAlign HCenter reorderedChildren
+
+-- | re-order a list of elements. The elements could be in a disjunctive or conjunctive context -- we would do the same in both cases.
+-- But if re-ordering an and-list would be too confusing, then `combineAnd` doesn't need to call this; only `combineOr` needs to call this.
+-- And that would be fine.
+-- We want the non-connecting elements to go to the top and the known-non-connecting elements go to the bottom.
+reorderByConnectivity :: [BoxedSVG] -> [BoxedSVG]
+reorderByConnectivity = sortBy (orderConnects `on` connect . fst)
+
+-- | -- In the simple case, where elements have to be true, if we have a bunch of @[Unknown, False, True, False]@
+-- we would reorder that to be @[True, Unknown, False, False]@
+-- In the opposite case, where elements have to be false to connect (e.g. @Not Leaf@) if we have a bunch of @[Unknown, False, True, False]@
+-- we would reorder that to be @[False, False, Unknown, True]@
+
+orderConnects :: Connect -> Connect -> Ordering
+Just True  `orderConnects` Just False = LT
+Just False `orderConnects` Just True  = GT
+
+Just True  `orderConnects` Nothing    = LT
+Nothing    `orderConnects` Just True  = GT
+
+Nothing    `orderConnects` Just False = LT
+Just False `orderConnects` Nothing    = GT
+
+_          `orderConnects` _          = EQ
+
+-- | if we are combining two bounding boxes, which connection wins?
+mergeConnects :: Connect -> Connect -> Connect
+mergeConnects (Just True) _  = Just True
+mergeConnects _ (Just True)  = Just True
+mergeConnects (Just False) _ = Just False
+mergeConnects _ (Just False) = Just False
+mergeConnects _ _ = Nothing
 
 
 combineAnd :: Scale -> [BoxedSVG] -> BoxedSVG
@@ -614,6 +677,10 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
     contextR = DrawConfig sc negContext m (defaultBBox sc) (getScale sc) (if sc == Tiny then textBoxLengthTiny else textBoxLengthFull)
     rawChildren = drawItemFull sc negContext <$> childqs
 
+-- | the low-level boolean logic of when to connect.
+-- In a negContext, draw the topline if the inner value is a False.
+-- Not in a negContext, draw the topline if the inner value is a True.
+-- we repeat this logic in the drawLeafR function.
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
 deriveBoxCap negContext m =
   case extractSoft m of
@@ -756,14 +823,25 @@ drawLeafR caption = do
   (boxStroke, boxFill) <- getBoxColorsR
   dims@BoxDimensions{boxWidth=boxWidth, boxHeight=boxHeight} <- deriveBoxSize caption
   boxContent <- drawBoxContentR caption
-  boxCap <- drawBoxCapR caption
+  boxCap <- drawBoxCapR caption -- line goes across if it connects
+  negContext <- asks negContext
+  m          <- asks markingR
+  let connection =
+        case (m, negContext) of
+          (Default (Left Nothing),  _ )  -> Nothing
+          (Default (Right Nothing), _ )  -> Nothing
+          (Default (Left l),        r )  -> (/=) <$> l <*> pure r
+          (Default (Right l),       r )  -> (/=) <$> l <*> pure r
+
   put
-    (dbox & boxDims .~ dims
+    (dbox & boxDims .~ dims & boxConnect .~ connection
     ,
       rect_ [X_ <<-* 0, Y_ <<-* 0, Width_ <<-* boxWidth, Height_ <<-* boxHeight, Stroke_ <<- boxStroke, Fill_ <<- boxFill, Class_ <<- "textbox"]
           <> boxContent
           <> boxCap
     )
+            
+
 
 box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement
 box c x y w h =

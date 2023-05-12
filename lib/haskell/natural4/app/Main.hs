@@ -140,7 +140,7 @@ main = do
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" asMD
     when (SFL4.todoc     opts) $ writeBSfile True todocFN iso8601 "docx" =<< asDoc
-    when (SFL4.topdf     opts) $ writeBSfile True topdfFN iso8601 "pdf" =<< asPDF
+    -- when (SFL4.topdf     opts) $ writeBSfile True topdfFN iso8601 "pdf" =<< asPDF
     when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601

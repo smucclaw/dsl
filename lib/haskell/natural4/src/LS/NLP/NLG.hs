@@ -155,9 +155,11 @@ nlg' thl env rule = case rule of
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
   case rule of
-    Regulative {subj,who,cond,upon} -> text
+    Regulative {subj,who,cond,upon} -> do
+      print "reg"
+      text
     Hornlike {clauses} -> do
-      -- print "---"
+      print "horn"
       -- print $ ruleQnTrees env alias rule
       -- print "---"
       text

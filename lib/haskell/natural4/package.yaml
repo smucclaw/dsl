@@ -10,9 +10,6 @@ extra-source-files:
   - README.org
   - ChangeLog.md
 
-data-files:
-  - src/LS/XPile/templates/default.latex
-
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
 # category:            Web
@@ -75,8 +72,6 @@ dependencies:
   - mono-traversable
   - string-interpolate
   - prettyprinter-interp
-  - pandoc
-  - pandoc-types
 
 ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 

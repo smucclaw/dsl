@@ -538,7 +538,6 @@ data RunConfig = RC { debug     :: Bool
                     , toProlog  :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
-                    , toPDF     :: Bool
                     , saveAKA   :: Bool
                     , wantNotRules :: Bool
                     , toGrounds :: Bool
@@ -572,7 +571,6 @@ defaultRC = RC
         , toChecklist = False
         , runNLGtests = False
         , toHTML = False
-        , toPDF = False
         }
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack

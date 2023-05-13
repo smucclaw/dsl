@@ -11,34 +11,40 @@ import LS.NLP.NLG
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as Text
-import Text.Pandoc.Writers.Docx
-import Text.Pandoc.Readers.Markdown (readMarkdown)
-import Text.Pandoc.PDF (makePDF)
-import Text.Pandoc.Writers.LaTeX (writeLaTeX)
-import Text.Pandoc.Templates as Template
+import Control.Monad (liftM2)
 
-import Text.Pandoc (Format(..), handleError, runIO, runIOorExplode, Extension (..), ReaderOptions(..), Pandoc, def, renderError, writerTemplate, getTemplate, compileTemplate)
 import qualified Data.ByteString.Lazy.Char8 as ByteString
 import Paths_natural4
 
 -- import Debug.Trace (trace)
 
-doc :: [Rule] -> IO ByteString.ByteString
-doc rl = do runIO (writeDocx def =<< readMarkdown def (Text.pack $ bsMarkdown rl)) >>= handleError
+-- doc :: [NLGEnv] -> [Rule] -> IO ByteString.ByteString
+-- doc env rl = do
+--   txt <- bsnlg env rl
+--   runIO (writeDocx def =<< readMarkdown def txt) >>= handleError
 
-pdf :: [Rule] -> IO ByteString.ByteString
-pdf rl = do
-    templ <- getDataFileName "src/LS/XPile/templates/default.latex"
-    template <- runIOorExplode $ getTemplate templ
-    Right pandTemplate <- compileTemplate "" template :: IO (Either String (Template Text.Text))
-    pdf <- runIOorExplode (makePDF "xelatex" [] writeLaTeX (def {writerTemplate = Just pandTemplate}) =<< readMarkdown def (Text.pack $ bsMarkdown rl))
-    case pdf of
-        Right p -> return p
-        Left err -> do
-            return err
+-- pdf :: [NLGEnv] -> [Rule] -> IO ByteString.ByteString
+-- pdf env rl = do
+--     txt <- bsnlg env rl
+--     templ <- getDataFileName "src/LS/XPile/templates/default.latex"
+--     template <- runIOorExplode $ getTemplate templ
+--     Right pandTemplate <- compileTemplate "" template :: IO (Either String (Template Text.Text))
+--     pdf <- runIOorExplode (makePDF "xelatex" [] writeLaTeX (def {writerTemplate = Just pandTemplate}) =<< readMarkdown def txt)
+--     case pdf of
+--         Right p -> return p
+--         Left err -> do
+--             return err
 
-bsMarkdown :: [Rule] -> String
-bsMarkdown rl = Text.unpack $ Text.unwords $ bs rl
+bsMarkdown :: [NLGEnv] -> [Rule] -> IO String
+bsMarkdown envs rl = fmap (Text.unpack . Text.intercalate "  ") (sequence [eachnlg env rl | env <- envs])
+
+eachnlg :: NLGEnv -> [Rule] -> IO Text.Text
+eachnlg env rl = do
+  txt <- mapM (nlg env) rl
+  return $ Text.unwords txt
+
+-- bsMarkdown :: [Rule] -> String
+-- bsMarkdown rl = Text.unpack $ Text.unwords $ bs rl
 
 rpFilter :: RelationalPredicate -> MultiTerm
 rpFilter (RPParamText pt) = pt2multiterm pt
@@ -65,8 +71,3 @@ bs2mt (AA.All _ x)  = concatMap bs2mt x
 bs2mt (AA.Any _ x)  = concatMap bs2mt x
 bs2mt (AA.Not x)    =           bs2mt x
 bs2mt (AA.Leaf rp)  =           rpFilter rp
-
--- Leaf (RPConstraint [MTT "Loss or Damage"] RPis [MTT "caused by",MTT "birds"])]
-
--- All Nothing [Any (Just (Pre "Loss or Damage caused by")) [Leaf (RPMT [MTT "rodents"]),Leaf (RPMT [MTT "insects"]),Leaf (RPMT [MTT "vermin"]),Leaf (RPMT [MTT "birds"])],
--- Not (Any Nothing [All Nothing [Leaf (RPConstraint [MTT "Loss or Damage"] RPis [MTT "to Contents"]),Leaf (RPConstraint [MTT "Loss or Damage"] RPis [MTT "caused by",MTT "birds"])]

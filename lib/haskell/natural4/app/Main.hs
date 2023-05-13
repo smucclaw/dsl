@@ -40,9 +40,6 @@ import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Data.Foldable as DF
 import qualified Text.XML.HXT.Core as HXT
 import LS.XPile.DumpRule
-import Text.Pandoc.Writers.Docx (writeDocx)
-import Text.Pandoc.Readers.Markdown (readMarkdown)
-import Text.Pandoc (Format(..), Extension (..), ReaderOptions(..), Pandoc, def)
 
 
 myTraceM :: String -> IO ()
@@ -75,9 +72,7 @@ main = do
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown rules)
-      (todocFN, asDoc)     = (workuuid <> "/" <> "doc",  doc rules)
-      (topdfFN, asPDF)     = (workuuid <> "/" <> "pdf",  pdf rules)
+      (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGEnv rules)
       tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
@@ -138,9 +133,7 @@ main = do
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" asMD
-    -- when (SFL4.todoc     opts) $ writeBSfile True todocFN iso8601 "docx" =<< asDoc
-    -- when (SFL4.topdf     opts) $ writeBSfile True topdfFN iso8601 "pdf" =<< asPDF
+    when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
     when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
@@ -175,7 +168,7 @@ main = do
   -- natural4-exe --workdir workdir --only md inputfile.csv
   -- will produce only the workdir output file
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (not $ null $ SFL4.only opts)) $ do
-    when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" asMD
+    when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
 
   -- when workdir is not specified, --only will dump to STDOUT
   when (not toworkdir) $ do

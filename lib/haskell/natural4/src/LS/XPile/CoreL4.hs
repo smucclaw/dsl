@@ -183,11 +183,13 @@ sfl4ToEpilog :: [SFL4.Rule] -> String
 sfl4ToEpilog = sfl4ToLogicProgramStr @Epilog
 
 sfl4ToUntypedBabyL4 :: [SFL4.Rule] -> Program ()
-sfl4ToUntypedBabyL4 rules =
-  rules
-    |> mapThenSwallowErrs sfl4ToCorel4Rule
-    |> concat
-    |> Program ()
+sfl4ToUntypedBabyL4 rules = Program {..}
+  where
+    annotOfProgram = ()
+    elementsOfProgram =
+      rules
+        |> mapThenSwallowErrs sfl4ToCorel4Rule
+        |> mconcat
 
 sfl4ToLogicProgramStr ::
   forall (lpLang :: LPLang).

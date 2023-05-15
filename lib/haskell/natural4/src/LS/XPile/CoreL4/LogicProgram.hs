@@ -61,7 +61,7 @@ babyL4ToLogicProgram program = LogicProgram {..}
 
     (lpRulesFact, lpRulesNoFact) =
       lpRulesWithNegs
-        |> map fst -- Grab all the lpRules
+        |$> fst -- Grab all the lpRules
         |> partition isHeadOfPrecondFact -- Split into Fact and NoFact
 
     -- skolemizedLPRules :: [LPRule lpLang t]
@@ -106,7 +106,7 @@ genOppClauseNoType (posvar, negvar, n) = OpposesClause {..}
 -- isFact _ = False
 
 isHeadOfPrecondFact :: LPRule lpLang t -> Bool
-isHeadOfPrecondFact (LPRule {preconds = (ValE _ (BoolV True)) : _}) = True
+isHeadOfPrecondFact LPRule {preconds = (ValE _ (BoolV True)) : _} = True
 isHeadOfPrecondFact _ = False
 
 ruleToLPRule ::
@@ -114,19 +114,17 @@ ruleToLPRule ::
   (Show t, Ord t) =>
   Rule t ->
   MonoidValidate (Doc ann) (LPRule lpLang t, [(Var t, Var t, Int)])
-ruleToLPRule rule = do
+ruleToLPRule rule@Rule {..} = do
   precondsNeg :: [(Expr t, Maybe (Var t, Var t, Int))] <-
-    rule                               -- (precond_1 && ... && precond_n) => postcond
-      |> precondOfRule                 -- (precond_1 && ... && precond_n) 
+    precondOfRule                 -- (precond_1 && ... && precond_n) 
       |> decomposeBinop (BBool BBand)  -- [precond_1, ..., precond_n] 
       |> traverse negationPredicate
 
   postcondNeg@(postcond, _) :: (Expr t, Maybe (Var t, Var t, Int)) <-
-    negationPredicate $ postcondOfRule rule
+    negationPredicate postcondOfRule
 
   ruleName :: String <-
-    rule
-      |> nameOfRule
+    nameOfRule
       |> maybe2validate
           [__di|
             Error in logic program transpiler: ruleToLPRule: nameOfRule is a Nothing.

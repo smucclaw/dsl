@@ -28,7 +28,7 @@ import L4.SyntaxManipulation
     decomposeBinop,
     funArgsToAppNoType,
     fv,
-    isLocalVar,
+    isLocalVar, funArgsToApp,
   )
 import LS.Utils (MonoidValidate, mapThenSwallowErrs, maybe2validate, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Common
@@ -160,15 +160,26 @@ varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT
 negationVarname :: QVarName t -> QVarName t
 negationVarname (QVarName t vn) = QVarName t [i|not#{vn}|] -- ("not"++vn)
 
-negationPredicate :: Expr t -> MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
-negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
-  let (f, args) = appToFunArgs [] e in
-      case f of
-          VarE t posvar@(GlobalVar vn) ->
-              let negvar = GlobalVar (negationVarname vn)
-              in pure (funArgsToAppNoType (VarE t negvar) args, Just (posvar, negvar, length args))
-          _ -> refute "negationPredicate: ill-formed negation"
+negationPredicate ::
+  Expr t -> MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
+negationPredicate (UnaOpE _ (UBool UBnot) e@AppE {}) =
+  case appToFunArgs [] e of
+    (VarE t posvar@(GlobalVar vn), args) -> pure (appExpr, triple)
+      where
+        negvar = GlobalVar $ negationVarname vn
+        appExpr = funArgsToAppNoType (VarE t negvar) args
+        triple = Just (posvar, negvar, Fold.length args)
+    _ -> refute "negationPredicate: ill-formed negation"
+
 negationPredicate e = pure (e, Nothing)
+
+-- negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
+--   let (f, args) = appToFunArgs [] e in
+--       case f of
+--           VarE t posvar@(GlobalVar vn) ->
+--               let negvar = GlobalVar (negationVarname vn)
+--               in pure (funArgsToAppNoType (VarE t negvar) args, Just (posvar, negvar, length args))
+--           _ -> refute "negationPredicate: ill-formed negation"
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)

@@ -75,12 +75,15 @@ instance Show t => Pretty (OpposesClause t) where
   pretty (OpposesClause pos neg) =
     let pos' = pretty pos
         neg' = pretty neg
+        [accordingToPos, accordingToNeg] = do
+          posNeg <- [pos, neg]
+          [pretty $ AccordingToE "R" posNeg]
     in [__di|
       opposes(#{pos'}, #{neg'}) :-
-        #{pretty $ AccordingToE "R" pos}.
+        #{accordingToPos}.
 
       opposes(#{pos'}, #{neg'}) :-
-        #{pretty $ AccordingToE "R" neg}.
+        #{accordingToNeg}.
 
       opposes(#{pos'}, #{neg'}) :-
         #{pretty $ LegallyHoldsE pos}.

@@ -19,7 +19,7 @@ import LS.XPile.CoreL4.LogicProgram.Common
     ASPRule,
     EpilogProgram,
     EpilogRule,
-    LPRule (LPRule),
+    LPRule (..),
     LogicProgram (..),
     OpposesClause (OpposesClause),
   )
@@ -53,8 +53,8 @@ data TranslationMode t
   | VarSubs2R t
   | VarSubs3R t
   | AccordingToE
-      { accordingToStr :: String,
-        accordingToItem :: t
+      { ruleName :: String,
+        postCond :: t
       }
   | LegallyHoldsE t
   | QueryE t
@@ -138,9 +138,9 @@ instance Show t => Pretty (OpposesClause t) where
     --         ) <> "."
 
 instance Show t => Pretty (TranslationMode (Expr t)) where
-    pretty (AccordingToE rn e) =
+    pretty (AccordingToE {..}) =
       [__di|
-        according_to(#{rn}, #{pretty e})
+        according_to(#{ruleName}, #{pretty postCond})
       |]
       -- "according_to" <> parens (pretty rn <> "," <+> pretty (RawL4 e))
 
@@ -318,9 +318,9 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
     -- pretty (AccordingToE rn postcond) <+> ":-" <+>
     --   hsep (punctuate comma (map (pretty . LegallyHoldsE) preconds)) <> "."
 
-  pretty (CausedByR (LPRule rn _env _vds preconds postcond)) =
+  pretty (CausedByR (LPRule ruleName _env _vds preconds postCond)) =
     vsep $ do
-      let accordingToPostcond = pretty $ AccordingToE rn postcond
+      let accordingToPostcond = pretty AccordingToE {..}
       precond <- preconds
       pure [__di|
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, _N + 1) :-
@@ -350,17 +350,19 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
   pretty translationMode = prettyLPRuleCommon translationMode
 
 instance Show t => Pretty (TranslationMode (EpilogRule t)) where
-  pretty (AccordingToR (LPRule rn _env _vds preconds postcond)) =
-    [__di|
-      #{pretty $ AccordingToE rn postcond} :-
+  pretty (AccordingToR (LPRule ruleName _env _vds preconds postCond)) =
+    let accordingToPostcond = pretty AccordingToE {..}
+    in [__di|
+      #{accordingToPostcond} :-
         #{hsep (punctuate " & " (map (pretty . LegallyHoldsE) preconds))}
     |]
-    -- pretty (AccordingToE rn postcond) <+> ":-" <+>
+
+-- pretty (AccordingToE rn postcond) <+> ":-" <+>
     --   hsep (punctuate "&" (map (pretty . LegallyHoldsE) preconds))
 
-  pretty (CausedByR (LPRule rn _env _vds preconds postcond)) =
+  pretty (CausedByR (LPRule ruleName _env _vds preconds postCond)) =
     vsep $ do
-      let accordingToPostcond = pretty $ AccordingToE rn postcond
+      let accordingToPostcond = pretty AccordingToE {..}
       precond <- preconds
       pure [__di|
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-

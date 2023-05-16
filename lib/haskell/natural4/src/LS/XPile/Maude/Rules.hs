@@ -33,19 +33,18 @@ rules2maudeStr rules = rules |> rules2doc |> show
 -}
 rules2doc :: (IsSequence t, Element t ~ Rule) => t -> Doc ann
 rules2doc rules =
-  startRule <> transpiledRules
+  startRule <> swallowErrs transpiledRules
     -- TODO:
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-    |> swallowErrs 
     |> concatWith (<.>)
   where
     -- Find the first regulative rule and extracts its rule name.
     -- If such a rule exists, we turn it into a quoted symbol and prepend START.
     startRule =
       rules'
-        |> mapMaybe rule2regRuleName
+        |> mapMaybe regRule2ruleName
         |> take 1
         |$> ruleName2startRule
 
@@ -55,10 +54,10 @@ rules2doc rules =
 
     rules' = otoList rules
 
-    rule2regRuleName Regulative {rlabel = Just (_, _, ruleName)} =
+    regRule2ruleName Regulative {rlabel = Just (_, _, ruleName)} =
       Just ruleName
-    rule2regRuleName _ = Nothing
+    regRule2ruleName _ = Nothing
 
-    ruleName2startRule ruleName = pure [di|START #{text2qid ruleName}|]
+    ruleName2startRule ruleName = [di|START #{text2qid ruleName}|]
 
     x <.> y = [di|#{x},\n\n#{y}|]

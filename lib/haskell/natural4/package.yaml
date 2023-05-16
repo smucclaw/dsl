@@ -10,6 +10,9 @@ extra-source-files:
   - README.org
   - ChangeLog.md
 
+data-files:
+  - grammars/NL4.pgf
+
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
 # category:            Web

@@ -11,6 +11,7 @@ where
 
 import Data.Coerce (coerce)
 import Data.Either (rights)
+import Data.Foldable qualified as Fold
 import Data.Maybe (mapMaybe)
 import Data.MonoTraversable (Element, otoList)
 import Data.Sequences as Seq (IsSequence)
@@ -44,17 +45,20 @@ rules2doc rules =
     -- If such a rule exists, we turn it into a quoted symbol and prepend START.
     startRule =
       rules'
-        |> mapMaybe rule2maybeStartRuleLabel
+        |> mapMaybe rule2regRuleName
         |> take 1
+        |$> ruleName2startRule
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = rules' |$> rule2doc
+    transpiledRules = map rule2doc rules'
 
     rules' = otoList rules
 
-    rule2maybeStartRuleLabel Regulative {rlabel = Just (_, _, ruleName)} =
-      Just $ pure [di|START #{text2qid ruleName}|]
-    rule2maybeStartRuleLabel _ = Nothing
+    rule2regRuleName Regulative {rlabel = Just (_, _, ruleName)} =
+      Just ruleName
+    rule2regRuleName _ = Nothing
+
+    ruleName2startRule ruleName = pure [di|START #{text2qid ruleName}|]
 
     x <.> y = [di|#{x},\n\n#{y}|]

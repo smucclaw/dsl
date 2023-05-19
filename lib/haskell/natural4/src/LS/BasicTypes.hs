@@ -70,11 +70,20 @@ data MyToken = Every | Party | TokAll
              | SetPlus | SetLess -- set union and subtraction
              | Where -- like in Haskell
              | Semicolon -- rule separator
+             | Notwithstanding | SubjectTo | Except
   deriving (Ord, Eq, Show, Generic, ToJSON)
 
 -- the Rule types employ these tokens, which are meaningful to L4.
 --
 toToken :: Text.Text -> [MyToken]
+
+-- priorities for meta-rules
+toToken "NOTWITHSTANDING" =  pure Notwithstanding
+toToken "SUBJECT TO"      =  pure SubjectTo
+toToken "SUBJECTTO"       =  pure SubjectTo
+toToken "SUBJECTO"        =  pure SubjectTo
+toToken "EXCEPT"          =  pure Except
+toToken "EXCEPTING"       =  pure Except
 
 -- start a regulative rule
 toToken "EVERY" =  pure Every

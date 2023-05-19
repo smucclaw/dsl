@@ -125,6 +125,7 @@ toToken "WITHIN" = pure Before  -- <=
 toToken "AFTER"  = pure After   -- >
 toToken "BY"     = pure By
 toToken "ON"     = pure On      -- ==
+toToken "AT"     = pure On      -- ==
 toToken "EVENTUALLY" = pure Eventually
 
 -- the rest of the regulative rule

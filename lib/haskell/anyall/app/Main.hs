@@ -50,8 +50,9 @@ main = do
     exitFailure
   when (only opts == "native") $ print myinput
 
-  let (Right myright) = myinput
-      mytree = {- addJust $ -} andOrTree myright
+  let (Right myright0) = myinput
+      mytree = {- addJust $ -} nnf $ andOrTree myright0
+      myright = myright0 { andOrTree = mytree }
 
   when (only opts == "json") $
     putStrLn $ toString $ encodePretty myright

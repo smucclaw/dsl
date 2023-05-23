@@ -21,6 +21,7 @@ concrete CustomSyntaxEng of CustomSyntax =
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
+      , ByVP
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]
@@ -104,10 +105,11 @@ concrete CustomSyntaxEng of CustomSyntax =
     aSg = aSg_Det ;
     your = mkDet youSg_Pron ;
 
+    about_Prep = ParadigmsEng.mkPrep "about" ;
+
   oper
 
     whoRP : RP = ExtraEng.who_RP ;
-    aboutPrep : Prep = ParadigmsEng.mkPrep "about" ;
     withinPrep : Prep = ParadigmsEng.mkPrep "within" ;
     vaguePrep : Prep = ParadigmsEng.noPrep ;
     uponPrep : Prep = ParadigmsEng.mkPrep "upon" ;

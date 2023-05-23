@@ -179,8 +179,10 @@ main = do
     when (SFL4.asJSON rc) $ putStrLn asJSONstr
 
     when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
-      naturalLangSents <- mapM (nlg nlgEnv) rules
-      mapM_ (putStrLn . Text.unpack) naturalLangSents
+      mapM_ (\env -> do
+        naturalLangSents <- mapM (nlg env) rules
+        mapM_ (putStrLn . Text.unpack) naturalLangSents)
+        allNLGEnv
 
     when (SFL4.toBabyL4 rc) $ putStrLn $ asCoreL4
 

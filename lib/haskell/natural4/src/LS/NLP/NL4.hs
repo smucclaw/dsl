@@ -186,6 +186,7 @@ data Tree :: * -> * where
   GrecoverUnparsedAction :: GString -> Tree GAction_
   Gonly_AdA :: Tree GAdA_
   GAdAdv :: GAdA -> GAdv -> Tree GAdv_
+  GByVP :: GVP -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
@@ -265,6 +266,7 @@ data Tree :: * -> * where
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
   GrecoverUnparsedPrePost :: GString -> Tree GPrePost_
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
+  Gabout_Prep :: Tree GPrep_
   Gafter_Prep :: Tree GPrep_
   Gbefore_Prep :: Tree GPrep_
   Gfor_Prep :: Tree GPrep_
@@ -376,6 +378,7 @@ instance Eq (Tree a) where
     (GrecoverUnparsedAction x1,GrecoverUnparsedAction y1) -> and [ x1 == y1 ]
     (Gonly_AdA,Gonly_AdA) -> and [ ]
     (GAdAdv x1 x2,GAdAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GByVP x1,GByVP y1) -> and [ x1 == y1 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -455,6 +458,7 @@ instance Eq (Tree a) where
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPrePost x1,GrecoverUnparsedPrePost y1) -> and [ x1 == y1 ]
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Gabout_Prep,Gabout_Prep) -> and [ ]
     (Gafter_Prep,Gafter_Prep) -> and [ ]
     (Gbefore_Prep,Gbefore_Prep) -> and [ ]
     (Gfor_Prep,Gfor_Prep) -> and [ ]
@@ -597,12 +601,14 @@ instance Gf GAdA where
 
 instance Gf GAdv where
   gf (GAdAdv x1 x2) = mkApp (mkCId "AdAdv") [gf x1, gf x2]
+  gf (GByVP x1) = mkApp (mkCId "ByVP") [gf x1]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdAdv" -> GAdAdv (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "ByVP" -> GByVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
 
@@ -1005,6 +1011,7 @@ instance Gf GPrePost where
 
 instance Gf GPrep where
   gf (GConjPrep x1 x2) = mkApp (mkCId "ConjPrep") [gf x1, gf x2]
+  gf Gabout_Prep = mkApp (mkCId "about_Prep") []
   gf Gafter_Prep = mkApp (mkCId "after_Prep") []
   gf Gbefore_Prep = mkApp (mkCId "before_Prep") []
   gf Gfor_Prep = mkApp (mkCId "for_Prep") []
@@ -1016,6 +1023,7 @@ instance Gf GPrep where
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjPrep" -> GConjPrep (fg x1) (fg x2)
+      Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep 
       Just (i,[]) | i == mkCId "after_Prep" -> Gafter_Prep 
       Just (i,[]) | i == mkCId "before_Prep" -> Gbefore_Prep 
       Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
@@ -1456,6 +1464,7 @@ instance Compos Tree where
     GACTION x1 -> r GACTION `a` f x1
     GrecoverUnparsedAction x1 -> r GrecoverUnparsedAction `a` f x1
     GAdAdv x1 x2 -> r GAdAdv `a` f x1 `a` f x2
+    GByVP x1 -> r GByVP `a` f x1
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2

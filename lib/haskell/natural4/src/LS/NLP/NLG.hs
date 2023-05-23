@@ -72,10 +72,30 @@ getLevel l = case l of
   MyHence i -> i
   MyLest i -> i
 
-debugNesting :: RecursionLevel -> (Text.Text, Text.Text)
-debugNesting TopLevel = (Text.pack "", Text.pack "")
-debugNesting (MyHence _) = (Text.pack "Follow by:", Text.pack "")
-debugNesting (MyLest _) = (Text.pack "In case of failure:", Text.pack "")
+debugNesting :: Language -> RecursionLevel -> (Text.Text, Text.Text)
+debugNesting lang level = (getPrefix lang level, Text.pack "")
+  where
+    getPrefix _ TopLevel = Text.pack ""
+    getPrefix lang (MyHence _)
+      | isChinese lang = Text.pack "在此之后，做:"
+      | isMalay lang = Text.pack "Tindakan seterusnya:"
+      | otherwise = Text.pack "Follow by:"
+    getPrefix lang (MyLest _)
+      | isChinese lang = Text.pack "万一失败，"
+      | isMalay lang = Text.pack "Dalam kes kegagalan:"
+      | otherwise = Text.pack "In case of failure:"
+
+getIf :: Language -> Text.Text
+getIf lang
+  | isChinese lang = ". 如果 "
+  | isMalay lang = ". Jika "
+  | otherwise = ". If "
+
+getWhen :: Language -> Text.Text
+getWhen lang
+  | isChinese lang = "于"
+  | isMalay lang = "ketika"
+  | otherwise = "when"
 
 nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg = nlg' TopLevel
@@ -101,7 +121,7 @@ nlg' thl env rule = case rule of
           condText = case cond of
                       Just c ->
                         let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
-                         in ". If " <> gfLin env condExpr <> ", "
+                         in getIf (gfLang env) <> gfLin env condExpr <> ", "
                       Nothing -> mempty
           ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> tcText <> condText, suffix]
       lestText <- case lest of
@@ -122,7 +142,7 @@ nlg' thl env rule = case rule of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
             Nothing -> mempty
           bodyLins = parseBodyHC <$> clauses
-      pure $ Text.unlines $ headLins <> ["when"] <> bodyLins
+      pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
           ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
@@ -130,7 +150,7 @@ nlg' thl env rule = case rule of
     DefNameAlias {} -> pure mempty
     _ -> pure $ "NLG.hs is under construction, we don't support yet " <> Text.pack (show rule)
   where
-    (prefix,suffix) = debugNesting thl
+    (prefix,suffix) = debugNesting (gfLang env) thl
     i = getLevel thl + 2
     pad x = Text.replicate i " " <> x
 

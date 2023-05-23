@@ -138,6 +138,9 @@ squeezeTrees _ _ = Nothing
 isChinese :: Language -> Bool
 isChinese l = l == mkCId "NL4Chi"
 
+isMalay :: Language -> Bool
+isMalay l = l == mkCId "NL4May"
+
 aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
 aggregateBoolStruct l bs =
   if False -- isChinese l

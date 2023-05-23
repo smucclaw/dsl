@@ -19,6 +19,7 @@ concrete CustomSyntaxChi of CustomSyntax =
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
+      , ByVP
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]
@@ -175,7 +176,7 @@ concrete CustomSyntaxChi of CustomSyntax =
     ComplV2S v2 np s = mkVP <lin V2S v2 : V2S> <lin NP np : NP> <lin S s : S> ; -- already in RGL, just a shortcut
     ComplV2 v2 np = mkVP <lin V2 v2 : V2> <lin NP np : NP>  ;
     ComplVSif vs s =
-      let if_S : SS = mkUtt (SyntaxChi.mkAdv if_Subj s) ;
+      let if_S : SS = mkUtt (SyntaxChi.mkAdv (mkSubj "是否") s) ;
           vp : VP = R.predV <lin V vs : V> [] ;
        in lin VP (R.insertObj if_S vp) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;
@@ -199,10 +200,10 @@ concrete CustomSyntaxChi of CustomSyntax =
     thePl = thePl_Det ;
     aSg = theSg_Det ;
     your = mkDet youSg_Pron ;
+    about_Prep = mkPrepChi "about" [] ; -- TODO
 
   oper
     whoRP : RP = which_RP ;
-    aboutPrep : LinPrep = mkPrepChi "about" [] ; -- TODO
     withinPrep : LinPrep = mkPrepChi [] "内";
     uponPrep : Prep = mkPrep "什么时候" [] ; -- this is only used in a lin that expects a real Prep, confusingly enough
     by8timePrep : LinPrep = mkPrepChi "前" [] ;

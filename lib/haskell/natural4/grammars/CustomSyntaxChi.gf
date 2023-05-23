@@ -176,7 +176,7 @@ concrete CustomSyntaxChi of CustomSyntax =
     ComplV2S v2 np s = mkVP <lin V2S v2 : V2S> <lin NP np : NP> <lin S s : S> ; -- already in RGL, just a shortcut
     ComplV2 v2 np = mkVP <lin V2 v2 : V2> <lin NP np : NP>  ;
     ComplVSif vs s =
-      let if_S : SS = mkUtt (SyntaxChi.mkAdv if_Subj s) ;
+      let if_S : SS = mkUtt (SyntaxChi.mkAdv (mkSubj "是否") s) ;
           vp : VP = R.predV <lin V vs : V> [] ;
        in lin VP (R.insertObj if_S vp) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;

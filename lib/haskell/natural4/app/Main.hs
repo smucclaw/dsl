@@ -52,13 +52,13 @@ main = do
   rc       <- SFL4.getConfig opts
   nlgLangs <- unsafeInterleaveIO allLangs
   strLangs <- unsafeInterleaveIO $ printLangs allLangs
-  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv (getLang "NL4Eng") -- Only load the NLG environment if we need it.
 --  putStrLn "main: doing dumpRules"
-  allNLGEnv <- unsafeInterleaveIO $ mapM myNLGEnv nlgLangs
   rules    <- SFL4.dumpRules opts
+  let l4i  = l4interpret SFL4.defaultInterpreterOptions rules
   iso8601  <- now8601
+  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv l4i (getLang "NL4Eng") -- Only load the NLG environment if we need it.
+  allNLGEnv <- unsafeInterleaveIO $ mapM (myNLGEnv l4i) nlgLangs
   let toworkdir   = not $ null $ SFL4.workdir opts
-      l4i         = l4interpret SFL4.defaultInterpreterOptions rules
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)

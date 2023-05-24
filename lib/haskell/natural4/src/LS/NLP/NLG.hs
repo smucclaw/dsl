@@ -9,8 +9,10 @@ module LS.NLP.NLG where
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
 import LS.Types
-import LS.Rule (Rule(..))
+import LS.Interpreter (expandBSR, expandClauses)
+import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
+import Data.Map (keys, elems)
 import Data.Maybe (catMaybes)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
@@ -19,6 +21,7 @@ import Paths_natural4
 import Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
+import Debug.Trace (trace)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -26,6 +29,7 @@ data NLGEnv = NLGEnv
   , gfParse :: Type -> Text.Text -> [Expr]
   , gfLin :: Expr -> Text.Text
   , verbose :: Bool
+  , interpreted :: Interpreted
   }
 
 allLangs :: IO [Language]
@@ -42,8 +46,8 @@ getLang str = case readLanguage str of
     Nothing -> error $ "language " <> str <> " not found"
     Just l -> l
 
-myNLGEnv :: Language -> IO NLGEnv
-myNLGEnv lang = do
+myNLGEnv :: Interpreted -> Language -> IO NLGEnv
+myNLGEnv l4i lang = do
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
@@ -51,7 +55,7 @@ myNLGEnv lang = do
   let eng = getLang "NL4Eng"
       myParse typ txt = parse gr eng typ (Text.unpack txt)
   let myLin = rmBIND . Text.pack . linearize gr lang
-  pure $ NLGEnv gr lang myParse myLin verbose
+  pure $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""
@@ -148,6 +152,7 @@ nlg' thl env rule = case rule of
           ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
       pure $ Text.strip ruleTextDebug
     DefNameAlias {} -> pure mempty
+    DefTypically {} -> pure mempty
     _ -> pure $ "NLG.hs is under construction, we don't support yet " <> Text.pack (show rule)
   where
     (prefix,suffix) = debugNesting (gfLang env) thl
@@ -406,3 +411,27 @@ msg :: String -> Text.Text -> String
 msg typ txt = "parse" <> typ <> ": failed to parse " <> Text.unpack txt
 
 -----------------------------------------------------------------------------
+-- Expand a set of rules
+
+expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
+expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
+  where
+    l4i = interpreted env
+    rnames = keys `concatMap` elems (scopetable l4i)
+    uniqrs = [r | r <- rules, ruleName r `notElem` rnames ]
+
+expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
+expandRuleForNLG l4i depth rule = case rule of
+  Regulative{} -> rule {
+    who = expandBSR l4i depth <$> who rule
+
+    -- TODO: how to get rid of rule alias appearing before the rule? e.g.
+    -- "PDPC prohibit notify individuals" the PDPC may NOTIFY you with a list of individuals to exclude from notification …
+    --
+  -- , hence = ???
+  -- , lest = ???
+  }
+  Hornlike {} -> rule {
+    clauses = expandClauses l4i depth $ clauses rule
+  }
+  _ -> rule

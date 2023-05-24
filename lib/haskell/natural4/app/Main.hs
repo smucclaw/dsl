@@ -26,7 +26,7 @@ import LS.XPile.Maude.Maude qualified as Maude
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 
-import LS.NLP.NLG (nlg,myNLGEnv, allLangs, getLang, printLangs)
+import LS.NLP.NLG (nlg, myNLGEnv, allLangs, getLang, printLangs, expandRulesForNLG)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -180,7 +180,10 @@ main = do
 
     when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
       mapM_ (\env -> do
-        naturalLangSents <- mapM (nlg env) rules
+        -- using expandRulesForNLG for demo purposes here
+        -- I think it's better suited for questions, not full NLG
+        -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
+        naturalLangSents <- mapM (nlg env) (expandRulesForNLG env rules)
         mapM_ (putStrLn . Text.unpack) naturalLangSents)
         allNLGEnv
 

@@ -419,7 +419,7 @@ expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
     l4i = interpreted env
     rnames = keys `concatMap` elems (scopetable l4i)
     usedrules = getExpandedRuleNames l4i `concatMap` rules
-    uniqrs = trace (show usedrules <> "----" <> show (map ruleName rules)) [r | r <- rules, ruleName r `notElem` rnames ]
+    uniqrs = trace (show usedrules <> "----" <> show (map ruleName rules)) [r | r <- rules, ruleName r `notElem` usedrules ]
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
 getExpandedRuleNames l4i rule = case rule of

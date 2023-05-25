@@ -262,8 +262,10 @@ data Tree :: * -> * where
   Gnum :: GSub1000000 -> Tree GNumeral_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
+  GNP_PrePost :: GNP -> Tree GPrePost_
   GNP_caused_NP_to_VP_Prep_PrePost :: GNP -> GNP -> GVP -> GPrep -> Tree GPrePost_
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
+  GV2_PrePost :: GV2 -> Tree GPrePost_
   GrecoverUnparsedPrePost :: GString -> Tree GPrePost_
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
   Gabout_Prep :: Tree GPrep_
@@ -355,6 +357,7 @@ data Tree :: * -> * where
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   LexVS :: String -> Tree GVS_
   LexVV :: String -> Tree GVV_
+  GAPWho :: GAP -> Tree GWho_
   GConjPrePostWho :: GPrePost -> GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjPreWho :: GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjWho :: GConj -> GListWho -> Tree GWho_
@@ -454,8 +457,10 @@ instance Eq (Tree a) where
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
     (GNEG,GNEG) -> and [ ]
     (GPOS,GPOS) -> and [ ]
+    (GNP_PrePost x1,GNP_PrePost y1) -> and [ x1 == y1 ]
     (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4,GNP_caused_NP_to_VP_Prep_PrePost y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
+    (GV2_PrePost x1,GV2_PrePost y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedPrePost x1,GrecoverUnparsedPrePost y1) -> and [ x1 == y1 ]
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (Gabout_Prep,Gabout_Prep) -> and [ ]
@@ -547,6 +552,7 @@ instance Eq (Tree a) where
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexVS x,LexVS y) -> x == y
     (LexVV x,LexVV y) -> x == y
+    (GAPWho x1,GAPWho y1) -> and [ x1 == y1 ]
     (GConjPrePostWho x1 x2 x3 x4,GConjPrePostWho y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjPreWho x1 x2 x3,GConjPreWho y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -996,14 +1002,18 @@ instance Gf GPol where
       _ -> error ("no Pol " ++ show t)
 
 instance Gf GPrePost where
+  gf (GNP_PrePost x1) = mkApp (mkCId "NP_PrePost") [gf x1]
   gf (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4) = mkApp (mkCId "NP_caused_NP_to_VP_Prep_PrePost") [gf x1, gf x2, gf x3, gf x4]
   gf (GNP_caused_by_PrePost x1) = mkApp (mkCId "NP_caused_by_PrePost") [gf x1]
+  gf (GV2_PrePost x1) = mkApp (mkCId "V2_PrePost") [gf x1]
   gf (GrecoverUnparsedPrePost x1) = mkApp (mkCId "recoverUnparsedPrePost") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "NP_PrePost" -> GNP_PrePost (fg x1)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "NP_caused_NP_to_VP_Prep_PrePost" -> GNP_caused_NP_to_VP_Prep_PrePost (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "NP_caused_by_PrePost" -> GNP_caused_by_PrePost (fg x1)
+      Just (i,[x1]) | i == mkCId "V2_PrePost" -> GV2_PrePost (fg x1)
       Just (i,[x1]) | i == mkCId "recoverUnparsedPrePost" -> GrecoverUnparsedPrePost (fg x1)
 
 
@@ -1362,6 +1372,7 @@ instance Gf GVV where
       _ -> error ("no VV " ++ show t)
 
 instance Gf GWho where
+  gf (GAPWho x1) = mkApp (mkCId "APWho") [gf x1]
   gf (GConjPrePostWho x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostWho") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjPreWho x1 x2 x3) = mkApp (mkCId "ConjPreWho") [gf x1, gf x2, gf x3]
   gf (GConjWho x1 x2) = mkApp (mkCId "ConjWho") [gf x1, gf x2]
@@ -1370,6 +1381,7 @@ instance Gf GWho where
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "APWho" -> GAPWho (fg x1)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostWho" -> GConjPrePostWho (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreWho" -> GConjPreWho (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ConjWho" -> GConjWho (fg x1) (fg x2)
@@ -1493,8 +1505,10 @@ instance Compos Tree where
     GGerundNP x1 -> r GGerundNP `a` f x1
     GMassNP x1 -> r GMassNP `a` f x1
     Gnum x1 -> r Gnum `a` f x1
+    GNP_PrePost x1 -> r GNP_PrePost `a` f x1
     GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4 -> r GNP_caused_NP_to_VP_Prep_PrePost `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GNP_caused_by_PrePost x1 -> r GNP_caused_by_PrePost `a` f x1
+    GV2_PrePost x1 -> r GV2_PrePost `a` f x1
     GrecoverUnparsedPrePost x1 -> r GrecoverUnparsedPrePost `a` f x1
     GConjPrep x1 x2 -> r GConjPrep `a` f x1 `a` f x2
     GConjPrePostQS x1 x2 x3 x4 -> r GConjPrePostQS `a` f x1 `a` f x2 `a` f x3 `a` f x4
@@ -1555,6 +1569,7 @@ instance Compos Tree where
     GConjVPS x1 x2 -> r GConjVPS `a` f x1 `a` f x2
     GMayHave x1 -> r GMayHave `a` f x1
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
+    GAPWho x1 -> r GAPWho `a` f x1
     GConjPrePostWho x1 x2 x3 x4 -> r GConjPrePostWho `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjPreWho x1 x2 x3 -> r GConjPreWho `a` f x1 `a` f x2 `a` f x3
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2

@@ -423,19 +423,30 @@ expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
 getExpandedRuleNames l4i rule = case rule of
-  Regulative {} -> concat $ maybeToList $ getExpanded l4i 1 <$> who rule
+  Regulative {} -> concat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
+  Hornlike {} -> getNamesHC l4i `concatMap` clauses rule
   _ -> []
 
+  where
+    getNamesBSR :: Interpreted -> Int -> BoolStructR -> [RuleName]
+    getNamesBSR l4i depth (AA.Leaf rp)  =
+      case expandRP l4i (depth + 1) rp of
+        RPBoolStructR mt1 RPis _bsr -> [mt1]
+        o                           -> []
+    getNamesBSR l4i depth (AA.Not item)   = getNamesBSR l4i (depth + 1) item
+    getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
+    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
 
-getExpanded :: Interpreted -> Int -> BoolStructR -> [RuleName]
-getExpanded l4i depth (AA.Leaf rp)  =
-  case expandRP l4i (depth + 1) rp of
-    RPBoolStructR mt1 RPis _bsr -> [mt1]
-    o                           -> []
-getExpanded l4i depth (AA.Not item)   = getExpanded l4i (depth + 1) item
-getExpanded l4i depth (AA.All lbl xs) = getExpanded l4i (depth + 1) `concatMap` xs
-getExpanded l4i depth (AA.Any lbl xs) = getExpanded l4i (depth + 1) `concatMap` xs
+    getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
+    getNamesRP l4i depth (RPConstraint  mt1 RPis _mt2) = [mt1]
+    getNamesRP l4i depth (RPBoolStructR mt1 RPis _bsr) = [mt1]
+    getNamesRP _l4i _depth _x                          = []
 
+    getNamesHC :: Interpreted -> HornClause2 -> [RuleName]
+    getNamesHC l4i clause = trace (show (headNames<>bodyNames)) (headNames <> bodyNames)
+     where
+      headNames = getNamesRP l4i 1 $ hHead clause
+      bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
 
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
 expandRuleForNLG l4i depth rule = case rule of

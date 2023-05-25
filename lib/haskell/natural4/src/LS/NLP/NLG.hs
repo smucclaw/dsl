@@ -9,11 +9,11 @@ module LS.NLP.NLG where
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
 import LS.Types
-import LS.Interpreter (expandBSR, expandClauses)
+import LS.Interpreter (expandBSR, expandRP, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
 import Data.Map (keys, elems)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, maybeToList)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
@@ -418,7 +418,24 @@ expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
   where
     l4i = interpreted env
     rnames = keys `concatMap` elems (scopetable l4i)
-    uniqrs = [r | r <- rules, ruleName r `notElem` rnames ]
+    usedrules = getExpandedRuleNames l4i `concatMap` rules
+    uniqrs = trace (show usedrules <> "----" <> show (map ruleName rules)) [r | r <- rules, ruleName r `notElem` rnames ]
+
+getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
+getExpandedRuleNames l4i rule = case rule of
+  Regulative {} -> concat $ maybeToList $ getExpanded l4i 1 <$> who rule
+  _ -> []
+
+
+getExpanded :: Interpreted -> Int -> BoolStructR -> [RuleName]
+getExpanded l4i depth (AA.Leaf rp)  =
+  case expandRP l4i (depth + 1) rp of
+    RPBoolStructR mt1 RPis _bsr -> [mt1]
+    o                           -> []
+getExpanded l4i depth (AA.Not item)   = getExpanded l4i (depth + 1) item
+getExpanded l4i depth (AA.All lbl xs) = getExpanded l4i (depth + 1) `concatMap` xs
+getExpanded l4i depth (AA.Any lbl xs) = getExpanded l4i (depth + 1) `concatMap` xs
+
 
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
 expandRuleForNLG l4i depth rule = case rule of

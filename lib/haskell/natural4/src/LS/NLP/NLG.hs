@@ -12,6 +12,7 @@ import LS.Types
 import LS.Interpreter (expandBSR, expandRP, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
+import Control.Monad (when)
 import Data.Map (keys, elems)
 import Data.Maybe (catMaybes, maybeToList)
 import qualified Data.Text as Text
@@ -113,7 +114,8 @@ nlg' thl env rule = case rule of
           whoSubjExpr = case who of
                         Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
                         Nothing -> subjExpr
-          ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+          ruleTree = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+          ruleText = gfLin env ruleTree
           uponText = case upon of  -- TODO: doesn't work once we add another language
                       Just u ->
                         let uponExpr = gf $ GadvUPON $ parseUpon env u
@@ -138,6 +140,7 @@ nlg' thl env rule = case rule of
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
+      when (verbose env) $ putStrLn $ showExpr [] ruleTree
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
       -- print "hornlike"

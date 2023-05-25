@@ -9,6 +9,11 @@ concrete DomainLexiconChi of DomainLexicon = NL4BaseChi **
   -- must sing
     person = mkCN person_N ;
     walk = mkVP walk_V ;
+    beverage = mkCN (mkN "饮料") ;
+    alcoholic = mkAP (mkA "酒") ;
+    non_alcoholic = mkAP (mkA "软饮料") ;
+
+    consume = drink_V2 ;
     eat = mkVP <lin V eat_V2 : V> ;
     drink = mkVP <lin V drink_V2 : V> ;
     sing = mkVP sing_V ;

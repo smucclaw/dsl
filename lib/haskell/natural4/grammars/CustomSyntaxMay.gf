@@ -107,6 +107,9 @@ concrete CustomSyntaxMay of CustomSyntax =
     about_Prep = R.mkPrep "tentang" ;
 
 oper
+    emptyNP : NP = it_NP ** {s = \\_ => []} ;
+    emptyPlNP : NP = they_NP ** {s = \\_ => []} ;
+
     whoRP : RP = which_RP ;
     uponPrep : Prep = R.mkPrep "semasa" ;
     by8timePrep : Prep = R.mkPrep "sebelum" ;

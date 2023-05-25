@@ -108,6 +108,8 @@ concrete CustomSyntaxEng of CustomSyntax =
     about_Prep = ParadigmsEng.mkPrep "about" ;
 
   oper
+    emptyNP : NP = it_NP ** {s = \\_ => []} ;
+    emptyPlNP : NP = they_NP ** {s = \\_ => []} ;
 
     whoRP : RP = ExtraEng.who_RP ;
     withinPrep : Prep = ParadigmsEng.mkPrep "within" ;

@@ -5,6 +5,9 @@ abstract DomainLexicon = NL4Base ** {
     fun
     -- must sing
       person : CN ;
+      beverage : CN ;
+      consume : V2 ;
+      alcoholic, non_alcoholic : AP ;
       walk, eat, drink, sing : VP ; -- VP = intransitive verb
 
     -- PDPA

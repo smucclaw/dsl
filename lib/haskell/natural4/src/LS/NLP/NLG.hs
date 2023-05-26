@@ -143,7 +143,7 @@ nlg' thl env rule = case rule of
       when (verbose env) $ putStrLn $ showExpr [] ruleTree
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
-      -- print "hornlike"
+      when (verbose env) $ print "hornlike"
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
           parseBodyHC cl = case hBody cl of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
@@ -184,12 +184,13 @@ ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.Optiona
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      print "reg"
+      when (verbose env) $ print "reg"
       text
     Hornlike {clauses} -> do
-      print "horn"
-      -- print $ ruleQnTrees env alias rule
-      -- print "---"
+      when (verbose env) $ do
+        print "horn"
+        print $ ruleQnTrees env alias rule
+        print "---"
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
@@ -420,9 +421,8 @@ expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
 expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
   where
     l4i = interpreted env
-    rnames = keys `concatMap` elems (scopetable l4i)
     usedrules = getExpandedRuleNames l4i `concatMap` rules
-    uniqrs = trace (show usedrules <> "----" <> show (map ruleName rules)) [r | r <- rules, ruleName r `notElem` usedrules ]
+    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
 getExpandedRuleNames l4i rule = case rule of
@@ -446,7 +446,7 @@ getExpandedRuleNames l4i rule = case rule of
     getNamesRP _l4i _depth _x                          = []
 
     getNamesHC :: Interpreted -> HornClause2 -> [RuleName]
-    getNamesHC l4i clause = trace (show (headNames<>bodyNames)) (headNames <> bodyNames)
+    getNamesHC l4i clause = headNames <> bodyNames
      where
       headNames = getNamesRP l4i 1 $ hHead clause
       bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause

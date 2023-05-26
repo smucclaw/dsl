@@ -441,8 +441,8 @@ getExpandedRuleNames l4i rule = case rule of
     getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
 
     getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
-    getNamesRP l4i depth (RPConstraint  mt1 RPis _mt2) = [mt1]
-    getNamesRP l4i depth (RPBoolStructR mt1 RPis _bsr) = [mt1]
+    getNamesRP l4i depth (RPConstraint  mt1 RPis mt2) = [mt2]
+    getNamesRP l4i depth (RPBoolStructR mt1 RPis bsr) = getNamesBSR l4i depth bsr
     getNamesRP _l4i _depth _x                          = []
 
     getNamesHC :: Interpreted -> HornClause2 -> [RuleName]

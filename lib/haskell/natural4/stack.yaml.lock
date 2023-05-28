@@ -21,14 +21,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: ddb3067f9902bb1c9e05f40c6469b222b1c41382c5ccaa0f35bd53d930767a98
+      sha256: 881182b831bfa11f99a43ac208e55a83eb075e49f42f49d7d2e42056fd7b0f11
       size: 12537
-    sha256: 352b21f7a741fba9c113cde8472cd216677464c691cd2dda1a31324932ace207
-    size: 3188791
-    url: https://github.com/smucclaw/baby-l4/archive/acf6b93872f75c50c953dc4550be10c986706338.tar.gz
+    sha256: 50fa535d8949e7bc741540f3bc8aad1936b1746bedebbee4991878d7f375ec69
+    size: 3188768
+    url: https://github.com/smucclaw/baby-l4/archive/beab5552fe3d563802c3c5143ca62df84aa11caa.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/acf6b93872f75c50c953dc4550be10c986706338.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/beab5552fe3d563802c3c5143ca62df84aa11caa.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -89,7 +89,7 @@ packages:
     hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 snapshots:
 - completed:
-    sha256: dcf4fc28f12d805480ddbe8eb8c370e11db12f0461d0110a4240af27ac88d725
-    size: 650255
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/22.yaml
-  original: lts-20.22
+    sha256: 4c972e067bae16b95961dbfdd12e07f1ee6c8fffabbfa05c3d65100b03f548b7
+    size: 650253
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/23.yaml
+  original: lts-20.23

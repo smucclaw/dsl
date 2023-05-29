@@ -103,6 +103,7 @@ tests:
       - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
       - natural4
+      - filemanip
 
 benchmarks:
   natural4-bench:

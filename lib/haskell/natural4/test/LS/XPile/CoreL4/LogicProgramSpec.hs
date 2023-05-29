@@ -1,5 +1,5 @@
 {-# LANGUAGE GHC2021 #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -9,15 +9,15 @@ module LS.XPile.CoreL4.LogicProgramSpec
   )
 where
 
-import Control.Monad.Cont (MonadIO (liftIO))
 import Data.Map qualified as Map
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
 import LS.XPile.CoreL4 ( sfl4ToASP, sfl4ToEpilog )
-import LS.XPile.CoreL4.LogicProgram.Common
+import LS.XPile.CoreL4.LogicProgram.Common ( LPLang )
 import Options.Generic (Unwrapped)
+import System.FilePath
 import System.FilePath.Find as Find
 import Test.Hspec
   ( Spec,
@@ -40,10 +40,10 @@ import System.Directory
 --     dstream = False
 
 testCasesDir :: FilePath
-testCasesDir = "test/TestCases/LogicProgram"
+testCasesDir = "test" </> "TestCases" </> "LogicProgram"
 
 data LPTestCase = LPTestCase
-  { name :: T.Text,
+  { dirName :: T.Text,
     natural4InputFile :: T.Text,
     expectedOutputs :: Map.Map LPLang T.Text
   }
@@ -53,7 +53,7 @@ spec :: Spec
 spec = do
   describe "ASP transpiler" $ do
     it "Motor insurance" $ do
-      csvFile : _ <- Find.find always (extension ==? ".csv") (testCasesDir <> "/motor-insurance")
+      csvFile : _ <- Find.find always (extension ==? ".csv") (testCasesDir </> "motor-insurance")
 
       let file = NoLabel [csvFile]
           dbug = False

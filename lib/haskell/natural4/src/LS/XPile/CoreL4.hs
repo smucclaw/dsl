@@ -10,6 +10,7 @@
 module LS.XPile.CoreL4
   ( sfl4ToBabyl4,
     sfl4ToCorel4,
+    sfl4ToLogicProgramStr,
     sfl4ToASP,
     sfl4ToEpilog,
     sfl4ToDMN,

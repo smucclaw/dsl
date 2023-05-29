@@ -102,7 +102,6 @@ testcase2spec lpLang LPTestCase {..} =
 
     let (xpiled, expectedOutput) =
           (xpileFn rules, expectedOutput)
-            |> join bimap removeSpaces
-        removeSpaces = filter $ not . isSpace
+            |> join bimap (filter $ not . isSpace)
 
     xpiled `shouldBe` expectedOutput

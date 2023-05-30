@@ -1,9 +1,11 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-missing-fields #-}
 
 module LS.XPile.CoreL4.LogicProgramSpec
   ( spec
@@ -13,11 +15,11 @@ where
 import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (bimap, first))
 import Data.Char (isSpace)
-import Data.Foldable (traverse_)
+import Data.Foldable (for_, traverse_)
 import Data.HashMap.Strict qualified as HM
-import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.Maybe (fromMaybe, listToMaybe)
+import Data.String.Interpolate (i)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS (Rule)
@@ -26,19 +28,18 @@ import LS.Lib (NoLabel (..), Opts (..))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog, sfl4ToLogicProgramStr)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
 import Options.Generic (Unwrapped)
-import System.Directory
-import System.FilePath
+import System.FilePath ( (</>) )
 import System.FilePath.Find as Find
+    ( (==?), always, fileName, find )
 import Test.Hspec
   ( Spec,
     describe,
-    hspec,
     it,
     pending,
     shouldBe,
   )
 
-testcases :: HS.HashSet LPTestcase
+testcases :: [LPTestcase]
 testcases =
   [ LPTestcase
       { dir = "motor-insurance",
@@ -48,12 +49,9 @@ testcases =
   ]
 
 spec :: Spec
-spec = do
-  describe "ASP transpiler" $
-    traverse_ (testcase2spec ASP) testcases
-
-  describe "Epilog transpiler" $
-    traverse_ (testcase2spec Epilog) testcases
+spec = for_ ([ASP, Epilog] :: [LPLang]) $ \lpLang ->
+  describe [i|Testing #{lpLang} transpiler|] $
+    traverse_ (testcase2spec lpLang) testcases
 
 data LPTestcase = LPTestcase
   { dir :: FilePath,
@@ -64,26 +62,10 @@ data LPTestcase = LPTestcase
 
 instance Hashable LPTestcase
 
-testcase2specs :: LPTestcase -> HM.HashMap LPLang Spec
-testcase2specs testcase = HM.fromList $ do
-  lpLang <- [ASP, Epilog]
-  pure (lpLang, testcase2spec lpLang testcase)
-
 testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestcase {..} =
   it dir $ do
-    let findFile :: FilePath -> IO (Maybe FilePath)
-        findFile file =
-          listToMaybe <$> Find.find always (fileName ==? file) dir'
-        dir' :: FilePath = "test" </> "Testcases" </> "LogicProgram" </> dir
-        expectedOutputFile :: FilePath =
-          expectedOutputFiles |> HM.lookup lpLang |> fromMaybe ""
-        xpileFn :: [Rule] -> String =
-          case lpLang of
-            ASP -> sfl4ToASP
-            Epilog -> sfl4ToEpilog
-
-    Just csvFile <- findFile csvFile
+    Just csvFile <- findFileWithName csvFile
     rules :: [Rule] <-
       LS.dumpRules
         Opts
@@ -92,10 +74,24 @@ testcase2spec lpLang LPTestcase {..} =
             dstream = False
           }
 
-    Just expectedOutputFile <- findFile expectedOutputFile
+    Just expectedOutputFile <- findFileWithName expectedOutputFile
     expectedOutput :: String <- readFile expectedOutputFile
 
     (rules, expectedOutput)
-      |> first xpileFn
+      |> first rules2lp
       |> join bimap (filter $ not . isSpace)
       |> uncurry shouldBe
+  where
+    findFileWithName :: FilePath -> IO (Maybe FilePath)
+    findFileWithName file =
+      listToMaybe <$> Find.find always (fileName ==? file) dir'
+
+    dir' :: FilePath = "test" </> "Testcases" </> "LogicProgram" </> dir
+
+    expectedOutputFile :: FilePath =
+      expectedOutputFiles |> HM.lookup lpLang |> fromMaybe ""
+
+    rules2lp :: [Rule] -> String =
+      case lpLang of
+        ASP -> sfl4ToASP
+        Epilog -> sfl4ToEpilog

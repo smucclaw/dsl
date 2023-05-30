@@ -85,7 +85,7 @@ testcase2spec lpLang LPTestCase {..} =
         findFile file =
           Find.find always (fileName ==? file) (testcasesDir </> dir)
             |$> listToMaybe
-        testcasesDir = "test" </> "Testcases" </> "LogicProgram"
+        testcasesDir :: FilePath = "test" </> "Testcases" </> "LogicProgram"
         expectedOutputFile :: String =
           expectedOutputFiles |> HM.lookup lpLang |> maybe "" show
         xpileFn :: [Rule] -> String =

@@ -48,7 +48,7 @@ import Prettyprinter.Interpolate (__di)
 -- skolemizedLPRulePostcond (LPRule {postcond}) = postcond
 
 skolemizedLPRulePrecond :: Eq t => LPRule lpLang t -> [Expr t]
-skolemizedLPRulePrecond (LPRule {..}) = do
+skolemizedLPRulePrecond LPRule {..} = do
   let varDecls = localVarDecls <> globalVarDecls
   precond <- preconds
   pure $ transformPrecond precond postcond varDecls globalVarDecls ruleName
@@ -59,12 +59,12 @@ skolemizedLPRulePrecond (LPRule {..}) = do
 --skolemizedLPRuleVardecls r = genSkolemList (localVarDeclsOfLPRule r) ([varExprToDecl expr (localVarDeclsOfLPRule r) | expr <- snd (appToFunArgs [] (postcondOfLPRule r))]) (nameOfLPRule r)
 
 skolemizedLPRuleVardecls :: Eq t => LPRule lpLang t -> [VarDecl t]
-skolemizedLPRuleVardecls (LPRule {..}) =
+skolemizedLPRuleVardecls LPRule {..} =
   postcond
     |> appToFunArgs []
     |> snd
     |> mapThenSwallowErrs (convertVarExprToDecl localVarDecls)
-    |> (\x -> genSkolemList localVarDecls globalVarDecls x ruleName)
+    |> (\x -> genSkolemList localVarDecls x globalVarDecls ruleName)
 
   -- genSkolemList (localVarDecls rule) (map (convertVarExprToDecl (localVarDecls rule)) (snd (appToFunArgs [] (postcond rule)))) (globalVarDecls rule) (ruleName rule)
 

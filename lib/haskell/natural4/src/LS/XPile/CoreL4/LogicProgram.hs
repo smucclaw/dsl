@@ -144,7 +144,8 @@ ruleToLPRule rule@Rule {..} = do
 
       (localVarDecls :: [VarDecl t], globalVarDecls :: [VarDecl t]) =
         postcond : preconds                 -- [pre and post conds]
-          |> foldMap (Fold.toList . fv)     -- [free variables] (We convert to a list to enable list fusion)
+          |> foldMap fv                     -- {free variables}
+          |> Fold.toList                    -- [free varaibles]
           |> partition isLocalVar           -- (local vars, global vars)
           |> join bimap (map varTovarDecl)  -- (local var decls, global var decls)
 

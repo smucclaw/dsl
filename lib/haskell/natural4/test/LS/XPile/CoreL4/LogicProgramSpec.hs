@@ -52,7 +52,7 @@ spec :: Spec
 spec =
   for_ ([ASP, Epilog] :: [LPLang]) $ \lpLang ->
     describe [i|Testing #{lpLang} transpiler|] $
-      traverse_ (testcase2spec lpLang) testcases
+      for_ testcases $ testcase2spec lpLang
 
 data LPTestcase = LPTestcase
   { dir :: FilePath,

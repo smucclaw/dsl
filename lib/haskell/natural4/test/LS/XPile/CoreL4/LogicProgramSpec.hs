@@ -65,9 +65,9 @@ spec = do
       pending
 
 data LPTestcase = LPTestCase
-  { dirName :: String,
-    csvFile :: String,
-    expectedOutputFiles :: HM.HashMap LPLang String
+  { dir :: FilePath,
+    csvFile :: FilePath,
+    expectedOutputFiles :: HM.HashMap LPLang FilePath
   }
   deriving (Eq, Ord, Read, Show)
 
@@ -78,11 +78,11 @@ testcase2specs testcase = HM.fromList $ do
 
 testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestCase {..} =
-  it dirName $ do
-    let findFile fileName' =
-          Find.find always (fileName ==? fileName') (testcasesDir </> dirName)
+  it dir $ do
+    let findFile file =
+          Find.find always (fileName ==? file) $ testcasesDir </> dir
         testcasesDir = "test" </> "Testcases" </> "LogicProgram"
-        expectedOutputFile =
+        expectedLpLangFile =
           expectedOutputFiles |> HM.lookup lpLang |> maybe "" show
         xpileFn = case lpLang of
           ASP -> sfl4ToASP
@@ -97,8 +97,8 @@ testcase2spec lpLang LPTestCase {..} =
             dstream = False
           }
 
-    expectedOutputFile : _ <- findFile expectedOutputFile
-    expectedOutput <- readFile expectedOutputFile
+    expectedLpLangFile : _ <- findFile expectedLpLangFile
+    expectedOutput <- readFile expectedLpLangFile
 
     (rules, expectedOutput)
       |> first xpileFn

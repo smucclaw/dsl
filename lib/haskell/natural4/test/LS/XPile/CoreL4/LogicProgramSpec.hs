@@ -71,6 +71,19 @@ instance Hashable LPTestcase
 testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestcase {..} =
   it dir $ do
+    let findFileWithName :: FilePath -> IO (Maybe FilePath)
+        findFileWithName file =
+          listToMaybe <$> Find.find always (fileName ==? file) dir'
+
+        dir' :: FilePath = "test" </> "Testcases" </> "LogicProgram" </> dir
+
+        expectedOutputFile :: FilePath =
+          expectedOutputFiles |> HM.lookup lpLang |> fromMaybe ""
+
+        rules2lp :: [Rule] -> String = case lpLang of
+          ASP -> sfl4ToASP
+          Epilog -> sfl4ToEpilog
+
     Just csvFile <- findFileWithName csvFile
     rules :: [Rule] <-
       LS.dumpRules
@@ -83,23 +96,7 @@ testcase2spec lpLang LPTestcase {..} =
     Just expectedOutputFile <- findFileWithName expectedOutputFile
     expectedOutput :: String <- readFile expectedOutputFile
 
-    let (logicProgram, expectedOutput') =
-          (rules, expectedOutput)
-            |> first rules2lp
-            |> join bimap (filter $ not . isSpace)
-
-    logicProgram `shouldBe` expectedOutput'
-  where
-    findFileWithName :: FilePath -> IO (Maybe FilePath)
-    findFileWithName file =
-      listToMaybe <$> Find.find always (fileName ==? file) dir'
-
-    dir' :: FilePath = "test" </> "Testcases" </> "LogicProgram" </> dir
-
-    expectedOutputFile :: FilePath =
-      expectedOutputFiles |> HM.lookup lpLang |> fromMaybe ""
-
-    rules2lp :: [Rule] -> String =
-      case lpLang of
-        ASP -> sfl4ToASP
-        Epilog -> sfl4ToEpilog
+    (rules, expectedOutput)
+      |> first rules2lp
+      |> join bimap (filter $ not . isSpace)
+      |> uncurry shouldBe

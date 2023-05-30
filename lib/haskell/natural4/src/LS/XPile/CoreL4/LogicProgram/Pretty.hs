@@ -372,7 +372,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
           #{accordingToPostcond} &
           #{hsep (punctuate " & " (map (pretty . LegallyHoldsE) preconds))} &
-          justify(#{accordingToPostcond}, 0).
+          justify(#{accordingToPostcond}, 0)
       |]
         -- vsep (map (\precond ->
         --             "caused_by" <>

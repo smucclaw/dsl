@@ -81,13 +81,14 @@ testcase2specs testcase = HM.fromList $ do
 testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestCase {..} =
   it dir $ do
-    let findFile file =
+    let findFile :: FilePath -> IO (Maybe FilePath)
+        findFile file =
           Find.find always (fileName ==? file) (testcasesDir </> dir)
             |$> listToMaybe
         testcasesDir = "test" </> "Testcases" </> "LogicProgram"
-        expectedOutputFile =
+        expectedOutputFile :: String =
           expectedOutputFiles |> HM.lookup lpLang |> maybe "" show
-        xpileFn = case lpLang of
+        xpileFn :: [Rule] -> String = case lpLang of
           ASP -> sfl4ToASP
           Epilog -> sfl4ToEpilog
 
@@ -101,7 +102,7 @@ testcase2spec lpLang LPTestCase {..} =
           }
 
     Just expectedOutputFile <- findFile expectedOutputFile
-    expectedOutput <- readFile expectedOutputFile
+    expectedOutput :: String <- readFile expectedOutputFile
 
     (rules, expectedOutput)
       |> first xpileFn

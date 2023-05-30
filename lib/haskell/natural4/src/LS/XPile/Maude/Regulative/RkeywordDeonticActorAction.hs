@@ -19,6 +19,7 @@ import Data.Text qualified as T
 import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
 import Flow ((|>))
+import GHC.Generics (Generic)
 import LS.Types
   ( Deontic (DMay, DMust, DShant),
     MTExpr,
@@ -30,12 +31,11 @@ import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
-data RkeywordActor where
-  RkeywordActor ::
-    { rkeyword :: RegKeywords,
-      actor :: ParamText
-    } ->
-    RkeywordActor
+data RkeywordActor = RkeywordActor
+  { rkeyword :: RegKeywords,
+    actor :: ParamText
+  }
+  deriving (Eq, Generic, Ord, Show)
 
 {-
   This function handles things like:
@@ -52,13 +52,11 @@ rkeywordActor2doc
 
 rkeywordActor2doc _ = throwDefaultErr
 
-data DeonticAction where
-  DeonticAction ::
-    { deontic :: Deontic,
-      action :: ParamText
-    } ->
-    DeonticAction
-  deriving (Eq, Ord, Show)
+data DeonticAction = DeonticAction
+  { deontic :: Deontic,
+    action :: ParamText
+  }
+  deriving (Eq, Generic, Ord, Show)
 
 deonticAction2doc :: DeonticAction -> MonoidValidate (Doc ann1) (Doc ann2)
 deonticAction2doc

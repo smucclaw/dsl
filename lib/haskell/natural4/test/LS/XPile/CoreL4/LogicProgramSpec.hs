@@ -12,9 +12,9 @@ module LS.XPile.CoreL4.LogicProgramSpec
 where
 
 import Control.Monad (join)
-import Data.Bifunctor (Bifunctor (bimap))
+import Data.Bifunctor (Bifunctor (bimap, first))
 import Data.Char (isSpace)
-import Data.Map qualified as Map
+import Data.HashMap.Strict qualified as HM
 import Flow ((|>))
 import LS (Rule)
 import LS qualified
@@ -67,12 +67,12 @@ spec = do
 data LPTestcase = LPTestCase
   { dirName :: String,
     csvFile :: String,
-    expectedOutputFiles :: Map.Map LPLang String
+    expectedOutputFiles :: HM.HashMap LPLang String
   }
   deriving (Eq, Ord, Read, Show)
 
-testcase2specs :: LPTestcase -> Map.Map LPLang Spec
-testcase2specs testcase = Map.fromList $ do
+testcase2specs :: LPTestcase -> HM.HashMap LPLang Spec
+testcase2specs testcase = HM.fromList $ do
   lpLang <- [ASP, Epilog]
   pure (lpLang, testcase2spec lpLang testcase)
 
@@ -83,7 +83,7 @@ testcase2spec lpLang LPTestCase {..} =
           Find.find always (fileName ==? fileName') (testcasesDir </> dirName)
         testcasesDir = "test" </> "Testcases" </> "LogicProgram"
         expectedOutputFile =
-          expectedOutputFiles |> Map.lookup lpLang |> maybe "" show
+          expectedOutputFiles |> HM.lookup lpLang |> maybe "" show
         xpileFn = case lpLang of
           ASP -> sfl4ToASP
           Epilog -> sfl4ToEpilog
@@ -100,8 +100,7 @@ testcase2spec lpLang LPTestCase {..} =
     expectedOutputFile : _ <- findFile expectedOutputFile
     expectedOutput <- readFile expectedOutputFile
 
-    let (xpiled, expectedOutput) =
-          (xpileFn rules, expectedOutput)
-            |> join bimap (filter $ not . isSpace)
-
-    xpiled `shouldBe` expectedOutput
+    (rules, expectedOutput)
+      |> first xpileFn
+      |> join bimap (filter $ not . isSpace)
+      |> uncurry shouldBe

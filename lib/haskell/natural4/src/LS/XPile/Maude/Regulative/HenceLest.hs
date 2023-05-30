@@ -10,7 +10,9 @@ module LS.XPile.Maude.Regulative.HenceLest
   )
 where
 
+import Data.Hashable (Hashable)
 import Data.Traversable (for)
+import GHC.Generics (Generic)
 import LS.Rule (Rule (RuleAlias))
 import LS.Utils (MonoidValidate)
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
@@ -20,7 +22,9 @@ import Prettyprinter.Interpolate (di)
 data HenceLest where
   HENCE :: HenceLest
   LEST :: HenceLest
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
+
+instance Hashable HenceLest
 
 -- instance Pretty HenceLest where
 --   pretty = viaShow
@@ -31,7 +35,7 @@ data HenceLestClause where
       clause :: Maybe Rule
     } ->
     HenceLestClause
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Generic, Ord, Show)
 
 henceLest2doc ::
   HenceLestClause ->

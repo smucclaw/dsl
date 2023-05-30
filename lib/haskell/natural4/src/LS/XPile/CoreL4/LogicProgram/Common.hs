@@ -14,6 +14,8 @@ module LS.XPile.CoreL4.LogicProgram.Common
   )
 where
 
+import Data.Hashable (Hashable)
+import GHC.Generics (Generic)
 import L4.PrintProg
   ( PrintConfig (..),
     PrintCurried (..),
@@ -24,7 +26,9 @@ import L4.Syntax (Expr, VarDecl)
 data LPLang
   = ASP
   | Epilog
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
+
+instance Hashable LPLang
 
 {-
   Logic program rules and logic programs are types indexed by:
@@ -38,7 +42,7 @@ data LPRule (lpLang :: LPLang) t = LPRule
     preconds :: [Expr t],
     postcond :: Expr t
   }
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 type ASPRule = LPRule ASP
 type EpilogRule = LPRule Epilog
@@ -57,4 +61,4 @@ data OpposesClause t = OpposesClause
   { posLit :: Expr t,
     negLit :: Expr t
   }
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)

@@ -149,10 +149,6 @@ genSkolem varDecl@(VarDecl t vn u) y w _ =
       | varDecl `elem` y = capitalise vn
       | otherwise = "extVar"
 
-  -- | varDecl `elem` w = VarDecl t vn u
-  -- | varDecl `elem` y = VarDecl t (capitalise vn) u
-  -- | otherwise = VarDecl t "extVar" u
-
 -- List version of genSkolem
 genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
 genSkolemList xs y w z = [genSkolem x y w z | x <- xs]

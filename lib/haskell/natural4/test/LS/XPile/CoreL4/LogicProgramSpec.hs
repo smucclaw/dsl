@@ -88,9 +88,10 @@ testcase2spec lpLang LPTestCase {..} =
         testcasesDir = "test" </> "Testcases" </> "LogicProgram"
         expectedOutputFile :: String =
           expectedOutputFiles |> HM.lookup lpLang |> maybe "" show
-        xpileFn :: [Rule] -> String = case lpLang of
-          ASP -> sfl4ToASP
-          Epilog -> sfl4ToEpilog
+        xpileFn :: [Rule] -> String =
+          case lpLang of
+            ASP -> sfl4ToASP
+            Epilog -> sfl4ToEpilog
 
     Just csvFile <- findFile csvFile
     rules :: [Rule] <-

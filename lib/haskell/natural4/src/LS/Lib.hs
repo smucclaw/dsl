@@ -22,40 +22,155 @@ This includes some top-leve parsers like pRules and pBoolStruct.
 module LS.Lib where
 
 -- import qualified Data.Tree      as Tree
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as LT
 -- import Data.Text.Encoding (decodeUtf8)
-import Text.Megaparsec
-import Data.ByteString.Lazy (ByteString)
-import qualified Data.Csv as Cassava
-import qualified Data.Vector as V
-import Data.Vector ((!), (!?))
-import Text.Pretty.Simple (pPrintString, pStringNoColor)
+
 import qualified AnyAll as AA
-import qualified Text.PrettyPrint.Boxes as Box
-import           Text.PrettyPrint.Boxes hiding ((<>))
-import System.Environment (lookupEnv)
-import qualified Data.ByteString.Lazy as BS
-import qualified Data.List.Split as DLS
-import Text.Parser.Permutation
-import qualified Data.List.NonEmpty as NE
-import Options.Generic
-import Data.Maybe (listToMaybe, maybeToList)
-
-import LS.Types
-import LS.Tokens
-import LS.Parser
-import LS.Rule
-import LS.RelationalPredicates
-import LS.Error ( errorBundlePrettyCustom )
-import Control.Monad.Writer.Lazy
-
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
-import Data.List (transpose)
-import Data.Void (Void)
-import Data.Either (rights)
+
 import Control.Monad.Combinators.Expr
+import Control.Monad.Writer.Lazy
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as BS
+import Data.Coerce (coerce)
+import qualified Data.Csv as Cassava
+import Data.Either (rights)
+import Data.List (transpose)
+import qualified Data.List.NonEmpty as NE
+import qualified Data.List.Split as DLS
+import Data.Maybe (listToMaybe, maybeToList)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LT
+import Data.Vector ((!), (!?))
+import qualified Data.Vector as V
+import Data.Void (Void)
+import LS.Error (errorBundlePrettyCustom)
+import LS.Parser
+    ( binary,
+      expr,
+      prefix,
+      MyBoolStruct,
+      MyItem(MyLabel, MyAll, MyLeaf, MyAny, MyNot) )
+import LS.RelationalPredicates
+    ( addneg,
+      c2hornlike,
+      mergePBRS,
+      pBSR,
+      pBoolConnector,
+      pConstitutiveRule,
+      pHornlike,
+      pHornlike',
+      pKeyValuesAka,
+      pNameParens,
+      pOneOf,
+      pParamText,
+      pParamTextMustIndent,
+      pRelationalPredicate,
+      preambleBoolStructR,
+      preambleParamText,
+      rpSameNextLineWhen,
+      slKeyValuesAka,
+      whenCase )
+import LS.Rule
+    ( defaultHorn,
+      pXLocation,
+      pYLocation,
+      runMyParser,
+      Expect(ExpRP),
+      Parser,
+      Rule(NotARule, RuleGroup, Scenario, RegFulfilled, RegBreach,
+           Hornlike, TypeDecl, Constitutive, Regulative, RuleAlias, name,
+           scgiven, expect, clauses, giveth, enums, has, super, letbind,
+           keyword, subj, rkeyword, who, cond, deontic, action, temporal,
+           hence, lest, rlabel, lsource, srcref, upon, given, having, wwhere,
+           defaults, symtab),
+      RuleBody(..) )
+import LS.Tokens
+    ( asks,
+      ($>|),
+      dnl,
+      getTokenNonDeep,
+      liftSLOptional,
+      manyDeep,
+      manyIndentation,
+      myTraceM,
+      pDeontic,
+      pMTExpr,
+      pNumber,
+      pOtherVal,
+      pRuleLabel,
+      pToken,
+      pTokenish,
+      pretendEmpty,
+      sameDepth,
+      someDeep,
+      someIndentation,
+      tellIdFirst,
+      (|&|),
+      (|*|),
+      (|><),
+      (|>|),
+      IsParser(debugName) )
+import LS.Types
+    ( renderToken,
+      toToken,
+      MyStream(MyStream, unMyStream),
+      MyToken(When, EOF, GoDeeper, UnDeeper, SOF, EOL, Empty, TokTrue,
+              TokFalse, Semicolon, Declare, Has, Define, ScenarioTok, Expect,
+              Fulfilled, Breach, Who, Which, Whose, Hence, Lest, Goto,
+              Eventually, Before, After, By, On, Do, If, Upon, Given, Having,
+              Where, Unless, And, Or, MPNot),
+      RawStanza,
+      WithPos(..),
+      mkTC,
+      mt2pt,
+      multiterm2pt,
+      noLSource,
+      noLabel,
+      noSrcRef,
+      BoolStructP,
+      BoolStructR,
+      Deontic,
+      HornClause(HC, hHead, hBody),
+      HornClause2,
+      MultiTerm,
+      ParamText,
+      Preamble,
+      RPRel(RPis),
+      RegKeywords(..),
+      RelationalPredicate(RPBoolStructR, RPParamText),
+      RunConfig(..),
+      SrcRef(SrcRef),
+      TComparison(TVague),
+      TemporalConstraint(..) )
+import Options.Generic
+    ( Generic,
+      type (:::),
+      type (<!>),
+      type (<?>),
+      ParseFields(..),
+      ParseRecord,
+      Wrapped,
+      Unwrapped )
+import System.Environment (lookupEnv)
+import Text.Megaparsec
+    ( (<|>),
+      ParseErrorBundle,
+      SourcePos(SourcePos, sourceLine, sourceColumn),
+      mkPos,
+      pos1,
+      unPos,
+      optional,
+      (<?>),
+      anySingle,
+      choice,
+      many,
+      some,
+      MonadParsec(lookAhead, notFollowedBy, eof, try) )
+import Text.Parser.Permutation ( (<$$>), (<|?>), (<||>), permute )
+import Text.Pretty.Simple (pPrintString, pStringNoColor)
+import Text.PrettyPrint.Boxes ( nullBox, render )
+import qualified Text.PrettyPrint.Boxes as Box
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
@@ -91,15 +206,17 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , dstream :: w ::: Bool <!> "False"
                    }
   deriving (Generic)
+
 instance ParseRecord (Opts Wrapped)
 deriving instance Show (Opts Unwrapped)
 
 -- technique for getting varargs argv https://github.com/Gabriel439/Haskell-Optparse-Generic-Library/issues/65
-newtype NoLabel a = NoLabel a  deriving (Generic, Show)
+newtype NoLabel a = NoLabel a
+  deriving (Generic, Show)
 
 instance ParseFields a => ParseRecord (NoLabel a)
 instance ParseFields a => ParseFields (NoLabel a) where
-  parseFields msg _ _ def = fmap NoLabel (parseFields msg Nothing Nothing def)
+  parseFields msg _ _ def = coerce $ parseFields msg Nothing Nothing def
 
 
 
@@ -137,8 +254,8 @@ parseRules o = do
   runConfig <- getConfig o
   let files = getNoLabel $ file o
   if null files
-    then parseSTDIN runConfig { sourceURL="STDIN" }
-    else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
+  then parseSTDIN runConfig { sourceURL="STDIN" }
+  else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
 
   where
     getNoLabel (NoLabel x) = x

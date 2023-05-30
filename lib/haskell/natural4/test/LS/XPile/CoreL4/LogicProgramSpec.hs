@@ -13,10 +13,11 @@ where
 import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (bimap, first))
 import Data.Char (isSpace)
+import Data.Foldable (traverse_)
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
-import Data.Maybe (listToMaybe, fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS (Rule)
@@ -37,7 +38,7 @@ import Test.Hspec
     shouldBe,
   )
 
-testcases :: [LPTestcase]
+testcases :: HS.HashSet LPTestcase
 testcases =
   [ LPTestcase
       { dir = "motor-insurance",
@@ -48,12 +49,11 @@ testcases =
 
 spec :: Spec
 spec = do
-  describe "ASP transpiler" $ do
-    testcase2spec ASP (head testcases)
+  describe "ASP transpiler" $
+    traverse_ (testcase2spec ASP) testcases
 
-  describe "Epilog transpiler" $ do
-    it "pending"
-      pending
+  describe "Epilog transpiler" $
+    traverse_ (testcase2spec Epilog) testcases
 
 data LPTestcase = LPTestcase
   { dir :: FilePath,

@@ -25,7 +25,7 @@ import GHC.Generics (Generic)
 import LS (Rule)
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
-import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog, sfl4ToLogicProgramStr)
+import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
 import Options.Generic (Unwrapped)
 import System.FilePath ( (</>) )

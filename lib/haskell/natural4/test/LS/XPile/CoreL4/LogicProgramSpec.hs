@@ -15,10 +15,12 @@ import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (bimap, first))
 import Data.Char (isSpace)
 import Data.HashMap.Strict qualified as HM
+import Data.Maybe (listToMaybe)
 import Flow ((|>))
 import LS (Rule)
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
+import LS.Utils ((|$>))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog, sfl4ToLogicProgramStr)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
 import Options.Generic (Unwrapped)
@@ -80,15 +82,16 @@ testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestCase {..} =
   it dir $ do
     let findFile file =
-          Find.find always (fileName ==? file) $ testcasesDir </> dir
+          Find.find always (fileName ==? file) (testcasesDir </> dir)
+            |$> listToMaybe
         testcasesDir = "test" </> "Testcases" </> "LogicProgram"
-        expectedLpLangFile =
+        expectedOutputFile =
           expectedOutputFiles |> HM.lookup lpLang |> maybe "" show
         xpileFn = case lpLang of
           ASP -> sfl4ToASP
           Epilog -> sfl4ToEpilog
 
-    csvFile : _ <- findFile csvFile
+    Just csvFile <- findFile csvFile
     rules :: [Rule] <-
       LS.dumpRules
         Opts
@@ -97,8 +100,8 @@ testcase2spec lpLang LPTestCase {..} =
             dstream = False
           }
 
-    expectedLpLangFile : _ <- findFile expectedLpLangFile
-    expectedOutput <- readFile expectedLpLangFile
+    Just expectedOutputFile <- findFile expectedOutputFile
+    expectedOutput <- readFile expectedOutputFile
 
     (rules, expectedOutput)
       |> first xpileFn

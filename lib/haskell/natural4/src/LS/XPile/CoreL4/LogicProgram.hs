@@ -74,7 +74,7 @@ babyL4ToLogicProgram program = LogicProgram {..}
         |> foldMap snd
         |> nub
         -- Turn them into OpposesClauses
-        |> map genOppClauseNoType
+        |$> genOppClauseNoType
 
 -- genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
 -- genOppClause (posvar, negvar, n) = OpposesClause {..}
@@ -136,8 +136,7 @@ ruleToLPRule rule@Rule {..} = do
             -- viaShow rule <> "\n" <>
             -- "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
-  let preconds :: [Expr t] =
-        map fst precondsNeg
+  let preconds :: [Expr t] = fst <$> precondsNeg
 
       negPreds :: [(Var t, Var t, Int)] =
         mapMaybe snd $ postcondNeg : precondsNeg

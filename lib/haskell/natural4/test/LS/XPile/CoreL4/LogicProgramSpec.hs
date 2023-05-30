@@ -78,12 +78,12 @@ testcase2spec lpLang LPTestcase {..} =
     Just expectedOutputFile <- findFileWithName expectedOutputFile
     expectedOutput :: String <- readFile expectedOutputFile
 
-    let (logicProgram, expectedOutput) =
+    let (logicProgram, expectedOutput') =
           (rules, expectedOutput)
             |> first rules2lp
             |> join bimap (filter $ not . isSpace)
 
-    logicProgram `shouldBe` expectedOutput
+    logicProgram `shouldBe` expectedOutput'
   where
     findFileWithName :: FilePath -> IO (Maybe FilePath)
     findFileWithName file =

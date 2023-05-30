@@ -49,9 +49,10 @@ import Prettyprinter.Interpolate (__di)
 
 skolemizedLPRulePrecond :: Eq t => LPRule lpLang t -> [Expr t]
 skolemizedLPRulePrecond LPRule {..} = do
-  let varDecls = localVarDecls <> globalVarDecls
   precond <- preconds
   pure $ transformPrecond precond postcond varDecls globalVarDecls ruleName
+  where
+    varDecls = localVarDecls <> globalVarDecls
 
   -- transformprecond precon (postcond r)
 -- [transformPrecond precon (postcond r) (localVarDecls r ++ globalVarDecls r) (globalVarDecls r) (ruleName r) | precon <- preconds r]

@@ -9,12 +9,12 @@ module LS.NLP.NLG where
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
 import LS.Types
-import LS.Interpreter (expandBSR, expandRP, expandClauses)
+import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
 import Control.Monad (when)
-import Data.Map (keys, elems)
-import Data.Maybe (catMaybes, maybeToList)
+import Data.Map (keys, elems, lookup, toList)
+import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
@@ -451,18 +451,44 @@ getExpandedRuleNames l4i rule = case rule of
       headNames = getNamesRP l4i 1 $ hHead clause
       bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
 
+-- This is used for creating questions from the rule, so we only expand
+-- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
 expandRuleForNLG l4i depth rule = case rule of
   Regulative{} -> rule {
     who = expandBSR l4i depth <$> who rule
-
-    -- TODO: how to get rid of rule alias appearing before the rule? e.g.
-    -- "PDPC prohibit notify individuals" the PDPC may NOTIFY you with a list of individuals to exclude from notification …
-    --
-  -- , hence = ???
-  -- , lest = ???
+  , cond = expandBSR l4i depth <$> cond rule
+  , upon = expandPT l4i depth <$> upon rule
+  , hence = expandRuleForNLG l4i depth <$> hence rule
+  , lest = expandRuleForNLG l4i depth <$> lest rule
   }
   Hornlike {} -> rule {
     clauses = expandClauses l4i depth $ clauses rule
   }
+  Constitutive {} -> rule {
+    cond = expandBSR l4i depth <$> cond rule
+  }
   _ -> rule
+
+-- I suspect that original intention was to not include expansions in UPON?
+-- But in any case, here is a function that is applied in expandRuleForNLG to expand the UPON field.
+-- There's a test case for this in NLGSpec ("test expandRulesForNLG for pdpa1 with added UPON expansion")
+expandPT :: Interpreted -> Int -> ParamText -> ParamText
+expandPT l4i depth pt = maybe pt ptFromRP expanded
+  where
+    ptAsMt = [MTT $ pt2text pt]
+    fallbackPTfromRP = mt2pt . rp2mt
+    ptFromRP (RPParamText pt)         = pt
+    ptFromRP (RPMT mt)                = mt2pt mt
+    ptFromRP (RPConstraint _ RPis mt) = mt2pt mt
+    ptFromRP rp@(RPBoolStructR _ RPis bsr@(AA.Leaf _)) = mt2pt [MTT $ bsr2text bsr] -- Only works if the BSR is a leaf; otherwise we lose structure when trying to convert a BSR into ParamText
+    ptFromRP rp = trace ("ptFromRP: encountered " <> show rp) $ fallbackPTfromRP rp
+
+    expanded = listToMaybe
+                [ outrp
+                | (_scopename, symtab) <- Data.Map.toList (scopetable l4i)
+                , (_mytype, cs) <- maybeToList $ Data.Map.lookup ptAsMt symtab
+                , c <- cs
+                , let outs = expandClause l4i depth c
+                , outrp <- outs
+                ]

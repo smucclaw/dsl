@@ -7,7 +7,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.CoreL4.LogicProgramSpec
-  ( spec
+  ( spec,
   )
 where
 
@@ -16,6 +16,7 @@ import Data.Bifunctor (Bifunctor (bimap, first))
 import Data.Char (isSpace)
 import Data.Foldable (for_, traverse_)
 import Data.HashMap.Strict qualified as HM
+import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.String.Interpolate (i)
@@ -27,9 +28,13 @@ import LS.Lib (NoLabel (..), Opts (..))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
 import Options.Generic (Unwrapped)
-import System.FilePath ( (</>) )
+import System.FilePath ((</>))
 import System.FilePath.Find as Find
-    ( (==?), always, fileName, find )
+  ( always,
+    fileName,
+    find,
+    (==?),
+  )
 import Test.Hspec
   ( Spec,
     describe,
@@ -38,7 +43,7 @@ import Test.Hspec
     shouldBe,
   )
 
-testcases :: [LPTestcase]
+testcases :: HS.HashSet LPTestcase
 testcases =
   [ LPTestcase
       { dir = "motor-insurance",

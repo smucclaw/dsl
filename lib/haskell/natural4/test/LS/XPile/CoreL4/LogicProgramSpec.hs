@@ -37,16 +37,6 @@ import Test.Hspec
     shouldBe,
   )
 
--- testCsvFiles :: Opts Unwrapped
--- testCsvFiles = Opts {..}
---   where
---     file = NoLabel csvFileNames
---     csvFileNames =
---       [ [i|test/motor_Insurance.csv|]
---       ]
---     dbug = False
---     dstream = False
-
 testcases :: [LPTestcase]
 testcases =
   [ LPTestcase
@@ -60,16 +50,6 @@ spec :: Spec
 spec = do
   describe "ASP transpiler" $ do
     testcase2spec ASP (head testcases)
-    --   csvFile : _ <- Find.find always (extension ==? ".csv") (testcasesDir </> "motor-insurance")
-
-    --   let file = NoLabel [csvFile]
-    --       dbug = False
-    --       dstream = False
-    --       opts :: Opts Unwrapped = Opts {..}
-
-    --   rules <- LS.dumpRules opts
-    --   rules |> sfl4ToASP |> filter (not . isSpace) |> print
-      -- print $ sfl4ToASP rules
 
   describe "Epilog transpiler" $ do
     it "pending"
@@ -111,11 +91,6 @@ testcase2spec lpLang LPTestcase {..} =
             dbug = False,
             dstream = False
           }
-
-    -- print $ expectedOutputFile
-
-    -- Find.find always (fileName ==? "asp.lp") dir'
-    --   >>= print
 
     Just expectedOutputFile <- findFile expectedOutputFile
     expectedOutput :: String <- readFile expectedOutputFile

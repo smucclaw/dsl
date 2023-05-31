@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.CoreL4.LogicProgram.Pretty () where
 
@@ -18,6 +19,7 @@ import L4.PrintProg
     ShowL4 (showL4),
   )
 import L4.Syntax (Expr)
+import LS.Utils ((|$>))
 import LS.XPile.CoreL4.LogicProgram.Common
   ( ASPProgram,
     ASPRule,
@@ -75,28 +77,28 @@ instance Show t => Pretty (Expr t) where
 instance Show t => Pretty (OpposesClause t) where
   pretty OpposesClause {..} =
     [__di|
-      opposes(#{pos'}, #{neg'}) :-
-        #{accordingToPos}.
+      opposes(#{posLit'}, #{negLit'}) :-
+        #{accordingToPosLit}.
 
-      opposes(#{pos'}, #{neg'}) :-
-        #{accordingToNeg}.
+      opposes(#{posLit'}, #{negLit'}) :-
+        #{accordingToNegLit}.
 
-      opposes(#{pos'}, #{neg'}) :-
+      opposes(#{posLit'}, #{negLit'}) :-
         #{pretty $ LegallyHoldsE posLit}.
 
-      opposes(#{pos'}, #{neg'}) :-
+      opposes(#{posLit'}, #{negLit'}) :-
         #{pretty $ LegallyHoldsE negLit}.
 
-      opposes(#{pos'}, #{neg'}) :-
-        query(#{pos'}, _N).
+      opposes(#{posLit'}, #{negLit'}) :-
+        query(#{posLit'}, _N).
 
-      opposes(#{pos'}, #{neg'}) :-
-        query(#{neg'}, _N).
+      opposes(#{posLit'}, #{negLit'}) :-
+        query(#{negLit'}, _N).
     |]
     where
-      pos' = pretty posLit
-      neg' = pretty negLit
-      (accordingToPos, accordingToNeg) =
+      posLit' = pretty posLit
+      negLit' = pretty negLit
+      (accordingToPosLit, accordingToNegLit) =
         (posLit, negLit) |> join bimap (pretty . AccordingToE "R")
 
 instance Show t => Pretty (TranslationMode (Expr t)) where
@@ -136,7 +138,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
   pretty (AccordingToR LPRule {ruleName, preconds, postcond}) =
     [__di|
       #{accordingToPostcond} :-
-        #{hsep $ punctuate ", " $ pretty . LegallyHoldsE <$> preconds}.
+        #{hsep $ punctuate ", " $ pretty <$> LegallyHoldsE <$> preconds}.
     |]
     where
       accordingToPostcond = pretty AccordingToE {..}
@@ -147,7 +149,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
       pure [__di|
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, _N + 1) :-
           #{accordingToPostcond},
-          #{hsep $ punctuate comma $ pretty . LegallyHoldsE <$> preconds},
+          #{hsep $ punctuate comma $ pretty <$> LegallyHoldsE <$> preconds},
           justify(#{accordingToPostcond}, _N).
       |]
     where
@@ -177,17 +179,14 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
       varDecls = localVarDecls <> globalVarDecls
 
 -- TODO: weird: var pc not used in map
-  pretty (VarSubs3R LPRule {..}) =
-    case preconds of
-      precond : _ ->
-        [__di|
-          createSub(subInst_#{ruleName}#{skolemize2 varDecls localVarDecls postcond ruleName}, _N + 1) :-
-            query(#{pretty postcond}, _N),
-            _N < M, max_ab_lvl(M).
-        |]
-        where
-          varDecls = localVarDecls <> globalVarDecls
-      _ -> mempty
+  pretty (VarSubs3R LPRule {preconds = not . null -> True, ..}) =
+    [__di|
+      createSub(subInst_#{ruleName}#{skolemize2 varDecls localVarDecls postcond ruleName}, _N + 1) :-
+        query(#{pretty postcond}, _N),
+        _N < M, max_ab_lvl(M).
+    |]
+    where
+      varDecls = localVarDecls <> globalVarDecls
 
   pretty (VarSubs4R LPRule {..}) =
     vsep $ do
@@ -206,7 +205,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
   pretty (AccordingToR LPRule {ruleName, preconds, postcond}) =
     [__di|
       #{accordingToPostcond} :-
-        #{hsep $ punctuate " & " $ pretty . LegallyHoldsE <$> preconds}
+        #{hsep $ punctuate " & " $ pretty <$> LegallyHoldsE <$> preconds}
     |]
     where
       accordingToPostcond = pretty AccordingToE {..}
@@ -217,7 +216,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
       pure [__di|
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-
           #{accordingToPostcond} &
-          #{hsep $ punctuate " & " $ pretty . LegallyHoldsE <$> preconds} &
+          #{hsep $ punctuate " & " $ pretty <$> LegallyHoldsE <$> preconds} &
           justify(#{accordingToPostcond}, 0)
       |]
     where
@@ -270,29 +269,33 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
 instance Show t => Pretty (ASPProgram t) where
   pretty LogicProgram {..} =
     [__di|
-      #{vsep $ pretty . AccordingToR <$> lpRulesNoFact}
+      #{vsepPretty AccordingToR lpRulesNoFact}
 
-      #{vsep $ pretty . VarSubs1R <$> lpRulesNoFact}
+      #{vsepPretty VarSubs1R lpRulesNoFact}
 
-      #{vsep $ pretty . AddFacts <$> lpRulesFact}
+      #{vsepPretty AddFacts lpRulesFact}
 
-      #{vsep $ pretty . VarSubs3R <$> lpRulesNoFact}
+      #{vsepPretty VarSubs3R lpRulesNoFact}
 
-      #{vsep $ pretty . VarSubs2R <$> lpRulesNoFact}
+      #{vsepPretty VarSubs2R lpRulesNoFact}
 
-      #{vsep $ pretty . VarSubs4R <$> lpRulesNoFact}
+      #{vsepPretty VarSubs4R lpRulesNoFact}
 
-      #{vsep $ pretty . CausedByR <$> lpRulesNoFact}
+      #{vsepPretty CausedByR lpRulesNoFact}
 
-      #{vsep $ pretty <$> oppClauses}
+      #{vsepPretty id oppClauses}
     |]
 
 instance Show t => Pretty (EpilogProgram t) where
   pretty LogicProgram {..} =
     [__di|
-      #{vsep $ pretty . AccordingToR <$> lpRulesNoFact}
+      #{vsepPretty AccordingToR lpRulesNoFact}
 
-      #{vsep $ pretty . CausedByR <$> lpRulesNoFact}
+      #{vsepPretty CausedByR lpRulesNoFact}
 
-      #{vsep $ pretty <$> oppClauses}
+      #{vsepPretty id oppClauses}
     |]
+
+vsepPretty :: Pretty b => (a -> b) -> [a] -> Doc ann
+vsepPretty translationMode lpRules =
+  lpRules |$> translationMode |$> pretty |> vsep

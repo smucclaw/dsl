@@ -42,6 +42,12 @@ spec = do
         let mustsing5Expanded = expandRulesForNLG envMustSing mustsing5Rules
         mustsing5Expanded `shouldBe` mustsing5ExpandedGold
 
+  envPDPA <- runIO $ myNLGEnv pdpa1withUnexpandedUponInterp (mkCId "NL4Eng")
+  describe "test expandRulesForNLG for pdpa1 with added UPON expansion" $ do
+    it "should change pdpa1 with added UPON expansion" $ do
+        let pdpa1Expanded = expandRulesForNLG envPDPA pdpa1withUnexpandedUpon
+        pdpa1Expanded `shouldBe` pdpa1withExpandedUponGold
+
 rodentsRules = [ Hornlike
     { name = [ MTT "Loss or Damage" ]
     , super = Nothing
@@ -190,6 +196,113 @@ mustsing5Rules = [ Regulative
   ]
 
 mustsing5ExpandedGold = [Regulative {subj = Leaf ((MTT "Person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [Leaf (RPMT [MTT "walks"]),Any Nothing [All Nothing [Any (Just (PrePost "consumes" "beverage")) [Leaf (RPMT [MTT "an alcoholic"]),Leaf (RPMT [MTT "non-alcoholic"])],Any (Just (Pre "whether")) [Leaf (RPMT [MTT "in part"]),Leaf (RPMT [MTT "in whole"])]],Leaf (RPMT [MTT "eats"])]]), cond = Nothing, deontic = DMust, action = Leaf ((MTT "sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/MustSing5.csv", short = "test/MustSing5.csv", srcrow = 2, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}]
+
+pdpa1withExpandedUponGold = [ Regulative
+    { subj = Leaf
+        (
+            ( MTT "Organisation" :| [], Nothing ) :| []
+        ), rkeyword = REvery, who = Just
+        ( Not
+            ( Leaf ( RPMT [ MTT "is", MTT "a Public Agency" ] ) )
+        ), cond = Just
+        ( Any Nothing
+            [ Leaf
+                ( RPConstraint
+                    [ MTT "the data breach occurs" ] ( RPTC TOn )
+                    [ MTT "1 Feb 2022" ]
+                ), Leaf
+                ( RPConstraint
+                    [ MTT "the data breach occurs" ] ( RPTC TAfter )
+                    [ MTT "1 Feb 2022" ]
+                )
+            ]
+        ), deontic = DMust, action = Leaf
+        (
+            ( MTT "assess" :|
+                [ MTT "if it is a Notifiable Data Breach" ], Nothing
+            ) :|
+            [
+                ( MTT "by" :|
+                    [ MTT "performing", MTT "NDB Qualification" ], Nothing
+                )
+            ]
+        ), temporal = Just
+        ( TemporalConstraint TBefore ( Just 30 ) "days" ), hence = Just
+        ( RuleAlias [ MTT "Notification" ] ), lest = Just
+        ( Regulative
+            { subj = Leaf
+                (
+                    ( MTT "the PDPC" :| [], Nothing ) :| []
+                ), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMay, action = Leaf
+                (
+                    ( MTT "demand" :|
+                        [ MTT "an explanation for your inaction" ], Nothing
+                    ) :| []
+                ), temporal = Nothing, hence = Just
+                ( Regulative
+                    { subj = Leaf
+                        (
+                            ( MTT "You" :| [], Nothing ) :| []
+                        ), rkeyword = RParty, who = Nothing, cond = Nothing, deontic = DMust, action = Leaf
+                        (
+                            ( MTT "respond" :| [], Nothing ) :|
+                            [
+                                ( MTT "to" :| [ MTT "the PDPC" ], Nothing ),
+                                ( MTT "about" :|
+                                    [ MTT "your inaction" ], Nothing
+                                )
+                            ]
+                        ), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just
+                        ( SrcRef
+                            { url = "test/Parsing/pdpa/pdpadbno-1.csv", short = "test/Parsing/pdpa/pdpadbno-1.csv", srcrow = 3, srccol = 13, version = Nothing
+                            }
+                        ), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []
+                    }
+                ), lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just
+                ( SrcRef
+                    { url = "test/Parsing/pdpa/pdpadbno-1.csv", short = "test/Parsing/pdpa/pdpadbno-1.csv", srcrow = 2, srccol = 11, version = Nothing
+                    }
+                ), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []
+            }
+        ), rlabel = Just
+        ( "§", 2, "Assess" ), lsource = Nothing, srcref = Just
+        ( SrcRef
+            { url = "test/Parsing/pdpa/pdpadbno-1.csv", short = "test/Parsing/pdpa/pdpadbno-1.csv", srcrow = 1, srccol = 1, version = Nothing
+            }
+        ), upon = Just
+        (
+            ( MTT "becoming aware a data breach may have occurred" :| [], Nothing
+            ) :| []
+        ), given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []
+    }, DefNameAlias
+    { name =
+        [ MTT "You" ], detail =
+        [ MTT "Organisation" ], nlhint = Nothing, srcref = Just
+        ( SrcRef
+            { url = "test/Parsing/pdpa/pdpadbno-1.csv", short = "test/Parsing/pdpa/pdpadbno-1.csv", srcrow = 2, srccol = 3, version = Nothing
+            }
+        )
+    }, Hornlike
+    { name =
+        [ MTT "becoming aware" ], super = Nothing, keyword = Means, given = Nothing, giveth = Nothing, upon = Nothing, clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "becoming aware" ] RPis
+                ( Leaf
+                    ( RPMT
+                        [ MTT "becoming aware", MTT "a data breach may have occurred"
+                        ]
+                    )
+                ), hBody = Nothing
+            }
+        ], rlabel = Nothing, lsource = Nothing, srcref = Just
+        ( SrcRef
+            { url = "test/Parsing/pdpa/pdpadbno-1.csv", short = "test/Parsing/pdpa/pdpadbno-1.csv", srcrow = 6, srccol = 7, version = Nothing
+            }
+        ), defaults = [], symtab = []
+    }
+  ]
+
 
 qualifiesBSR :: BoolStructR
 qualifiesBSR = All Nothing
@@ -407,32 +520,265 @@ notRodentsBSR = All Nothing
       )
   ]
 
+pdpa1withUnexpandedUpon = [ Regulative
+    { subj = Leaf
+        (
+            ( MTT "Organisation" :| []
+            , Nothing
+            ) :| []
+        )
+    , rkeyword = REvery
+    , who = Just
+        ( Not
+            ( Leaf
+                ( RPMT
+                    [ MTT "is"
+                    , MTT "a Public Agency"
+                    ]
+                )
+            )
+        )
+    , cond = Just
+        ( Any Nothing
+            [ Leaf
+                ( RPConstraint
+                    [ MTT "the data breach occurs" ] ( RPTC TOn )
+                    [ MTT "1 Feb 2022" ]
+                )
+            , Leaf
+                ( RPConstraint
+                    [ MTT "the data breach occurs" ] ( RPTC TAfter )
+                    [ MTT "1 Feb 2022" ]
+                )
+            ]
+        )
+    , deontic = DMust
+    , action = Leaf
+        (
+            ( MTT "assess" :|
+                [ MTT "if it is a Notifiable Data Breach" ]
+            , Nothing
+            ) :|
+            [
+                ( MTT "by" :|
+                    [ MTT "performing"
+                    , MTT "NDB Qualification"
+                    ]
+                , Nothing
+                )
+            ]
+        )
+    , temporal = Just
+        ( TemporalConstraint TBefore
+            ( Just 30 ) "days"
+        )
+    , hence = Just
+        ( RuleAlias
+            [ MTT "Notification" ]
+        )
+    , lest = Just
+        ( Regulative
+            { subj = Leaf
+                (
+                    ( MTT "the PDPC" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , rkeyword = RParty
+            , who = Nothing
+            , cond = Nothing
+            , deontic = DMay
+            , action = Leaf
+                (
+                    ( MTT "demand" :|
+                        [ MTT "an explanation for your inaction" ]
+                    , Nothing
+                    ) :| []
+                )
+            , temporal = Nothing
+            , hence = Just
+                ( Regulative
+                    { subj = Leaf
+                        (
+                            ( MTT "You" :| []
+                            , Nothing
+                            ) :| []
+                        )
+                    , rkeyword = RParty
+                    , who = Nothing
+                    , cond = Nothing
+                    , deontic = DMust
+                    , action = Leaf
+                        (
+                            ( MTT "respond" :| []
+                            , Nothing
+                            ) :|
+                            [
+                                ( MTT "to" :|
+                                    [ MTT "the PDPC" ]
+                                , Nothing
+                                )
+                            ,
+                                ( MTT "about" :|
+                                    [ MTT "your inaction" ]
+                                , Nothing
+                                )
+                            ]
+                        )
+                    , temporal = Nothing
+                    , hence = Nothing
+                    , lest = Nothing
+                    , rlabel = Nothing
+                    , lsource = Nothing
+                    , srcref = Just
+                        ( SrcRef
+                            { url = "test/Parsing/pdpa/pdpadbno-1.csv"
+                            , short = "test/Parsing/pdpa/pdpadbno-1.csv"
+                            , srcrow = 3
+                            , srccol = 13
+                            , version = Nothing
+                            }
+                        )
+                    , upon = Nothing
+                    , given = Nothing
+                    , having = Nothing
+                    , wwhere = []
+                    , defaults = []
+                    , symtab = []
+                    }
+                )
+            , lest = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Parsing/pdpa/pdpadbno-1.csv"
+                    , short = "test/Parsing/pdpa/pdpadbno-1.csv"
+                    , srcrow = 2
+                    , srccol = 11
+                    , version = Nothing
+                    }
+                )
+            , upon = Nothing
+            , given = Nothing
+            , having = Nothing
+            , wwhere = []
+            , defaults = []
+            , symtab = []
+            }
+        )
+    , rlabel = Just
+        ( "§"
+        , 2
+        , "Assess"
+        )
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Parsing/pdpa/pdpadbno-1.csv"
+            , short = "test/Parsing/pdpa/pdpadbno-1.csv"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , upon = Just
+        (
+            ( MTT "becoming aware" :| []
+            , Nothing
+            ) :| []
+        )
+    , given = Nothing
+    , having = Nothing
+    , wwhere = []
+    , defaults = []
+    , symtab = []
+    }
+  , DefNameAlias
+    { name =
+        [ MTT "You" ]
+    , detail =
+        [ MTT "Organisation" ]
+    , nlhint = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Parsing/pdpa/pdpadbno-1.csv"
+            , short = "test/Parsing/pdpa/pdpadbno-1.csv"
+            , srcrow = 2
+            , srccol = 3
+            , version = Nothing
+            }
+        )
+    }
+  , Hornlike
+    { name =
+        [ MTT "becoming aware" ]
+    , super = Nothing
+    , keyword = Means
+    , given = Nothing
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "becoming aware" ] RPis becomingAwareBSR
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Parsing/pdpa/pdpadbno-1.csv"
+            , short = "test/Parsing/pdpa/pdpadbno-1.csv"
+            , srcrow = 6
+            , srccol = 7
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+  ]
+
+becomingAwareBSR :: BoolStructR
+becomingAwareBSR = Leaf
+                    ( RPMT
+                        [ MTT "becoming aware", MTT "a data breach may have occurred" ]
+                    )
+
+pdpa1withUnexpandedUponInterp :: Interpreted
+pdpa1withUnexpandedUponInterp = L4I
+    { classtable = CT Data.Map.empty
+    , scopetable = fromList
+        [ ([ MTT "becoming aware" ]
+           , fromList [
+              ( [MTT "becoming aware"]
+              ,
+                ( (Nothing, []), [ HC { hHead = RPBoolStructR [MTT "becoming aware"] RPis
+                                                    becomingAwareBSR
+                                      , hBody = Nothing}
+                                  ]
+                )
+              )       ]
+            )
+        ]
+    , origrules = pdpa1withUnexpandedUpon
+    }
+
 mustsing5Interp :: Interpreted
 mustsing5Interp = L4I
     { classtable = CT Data.Map.empty
     , scopetable = fromList
-        [
-            (
-                [ MTT "Qualifies" ]
-            , fromList
-                [
-                    (
-                        [ MTT "Qualifies" ]
-                    ,
-                        (
-                            ( Nothing
-                            , []
-                            )
-                        ,
-                            [ HC
-                                { hHead = RPBoolStructR
-                                    [ MTT "Qualifies" ] RPis qualifiesBSR
-                                , hBody = Nothing
-                                }
-                            ]
-                        )
-                    )
-                ]
+        [ ([ MTT "Qualifies" ]
+           , fromList [
+              ( [MTT "Qualifies"]
+              ,
+                ( (Nothing, []), [ HC { hHead = RPBoolStructR [MTT "Qualifies"] RPis qualifiesBSR
+                                      , hBody = Nothing}
+                                  ]
+                )
+              )       ]
             )
         ,
             (

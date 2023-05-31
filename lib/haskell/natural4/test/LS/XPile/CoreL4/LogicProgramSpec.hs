@@ -28,7 +28,6 @@ import LS.Lib (NoLabel (..), Opts (..))
 import LS.Utils ((|$>))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
-import Options.Generic (Unwrapped)
 import System.FilePath ((</>))
 import System.FilePath.Find as Find
   ( always,

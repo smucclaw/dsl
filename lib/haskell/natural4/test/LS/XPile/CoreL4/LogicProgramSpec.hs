@@ -40,7 +40,6 @@ import Test.Hspec
   ( Spec,
     describe,
     it,
-    pending,
     shouldBe,
   )
 

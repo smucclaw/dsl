@@ -90,6 +90,29 @@ Along the way it discusses the internal structure of our compiler codebase.
 
 9. /For VS Code users:/ proceed to the instructions at [[https://github.com/haskell/vscode-haskell][vscode-haskell]].
 
+*** Use Docker
+
+The compiler can also be built within a docker container. It can be built with 
+
+#+begin_example
+  docker build -t natural4:dev .
+#+end_example
+
+It can be ran with your local files with
+#+begin_example
+  docker run -v "$PWD":/usr/src/app -w /usr/src/app/lib/haskell/natural4 natural4:dev stack run -- ...
+#+end_example
+
+Where ~...~ is dependent on your usecase for the compiler. The above command mounts the current directory with ~-v~, from ~$PWD~ to ~/usr/src/app~, essentially "mounting" this folder onto the docker container. The ~-w~ tells docker to run the command in said folder. Continue with ~stack run -- ...~.
+
+For a more concrete example, we can use the example below.
+
+#+begin_example
+  docker run -v "$PWD":/usr/src/app -w /usr/src/app/lib/haskell/natural4 natural4:dev stack run -- --workdir=workdir --toasp --tomd test/mustsing-latest.csv
+#+end_example
+
+You should see the ~workdir~ created in ~/usr/src/app/lib/haskell/natural4~.
+
 *** Installation
 
 After your Haskell setup is working well enough to run ~stack~,

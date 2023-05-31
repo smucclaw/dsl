@@ -18,18 +18,33 @@ import Data.Bifunctor (Bifunctor (bimap))
 import Data.Foldable qualified as Fold
 import Data.List (nub, partition)
 import Data.Maybe (mapMaybe)
-import Data.Tuple.All (Curry (uncurryN), SequenceT (sequenceT))
+import Data.String.Interpolate (i)
 import Flow ((|>))
 import L4.KeyValueMap (ValueKVM)
 import L4.Syntax
+  ( BBoolOp (BBand),
+    BinOp (BBool),
+    Expr (AppE, UnaOpE, ValE, VarE),
+    Program,
+    QVarName (QVarName, annotOfQVarName),
+    Rule (..),
+    Tp (OkT),
+    UBoolOp (UBnot),
+    UnaOp (UBool),
+    Val (BoolV),
+    Var (GlobalVar, LocalVar, nameOfVar),
+    VarDecl (VarDecl),
+    rulesOfProgram,
+  )
 import L4.SyntaxManipulation
   ( appToFunArgs,
     applyVars,
     applyVarsNoType,
     decomposeBinop,
+    funArgsToApp,
     funArgsToAppNoType,
     fv,
-    isLocalVar, funArgsToApp,
+    isLocalVar,
   )
 import LS.Utils (MonoidValidate, mapThenSwallowErrs, maybe2validate, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Common
@@ -42,7 +57,6 @@ import LS.XPile.CoreL4.LogicProgram.Pretty ()
 import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
 import Prettyprinter (Doc, Pretty (pretty), viaShow)
 import Prettyprinter.Interpolate (__di)
-import Data.String.Interpolate (i)
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)
@@ -146,7 +160,7 @@ ruleToLPRule rule@Rule {..} = do
           |> foldMap fv                     -- {free variables}
           |> Fold.toList                    -- [free varaibles]
           |> partition isLocalVar           -- (local vars, global vars)
-          |> join bimap (map varTovarDecl)  -- (local var decls, global var decls)
+          |> join bimap (varTovarDecl <$>)  -- (local var decls, global var decls)
 
   pure (LPRule {..}, negPreds)
 

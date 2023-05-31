@@ -3,10 +3,10 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
-{-| transpiler to CoreL4 (BabyL4). See the `baby-l4` repository. -}
-
+-- | transpiler to CoreL4 (BabyL4). See the `baby-l4` repository.
 module LS.XPile.CoreL4
   ( sfl4ToBabyl4,
     sfl4ToCorel4,
@@ -16,7 +16,7 @@ module LS.XPile.CoreL4
   )
 where
 
-import AnyAll ( BoolStruct(Leaf, Any, Not, All), haskellStyle )
+import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 -- TODO, to be reconsidered
 
 -- import Data.Function ( (&) )
@@ -36,101 +36,151 @@ import Control.Applicative (Applicative (liftA2))
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as DF
+-- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
+-- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
+
+import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Map ((!))
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing)
+import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe)
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
 import Data.Tuple.All (SequenceT (sequenceT))
 import Debug.Trace (trace)
 import Flow ((|>))
-import L4.Annotation ( SRng(DummySRng) )
+import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
 import L4.Syntax as L4
-    ( Expr(BinOpE, VarE, ValE, UnaOpE),
-      ClassDecl(ClassDecl, defOfClassDecl, annotOfClassDecl,
-                nameOfClassDecl),
-      ClassName(ClsNm, stringOfClassName),
-      Program(..),
-      TopLevelElement(ClassDeclTLE, RuleTLE),
-      Rule(Rule, postcondOfRule, annotOfRule, nameOfRule, instrOfRule,
-           varDeclsOfRule, precondOfRule),
-      Val(BoolV, IntV, FloatV),
-      Var(LocalVar, GlobalVar),
-      QVarName(QVarName),
-      VarName,
-      BBoolOp(BBor, BBand),
-      BComparOp(BCgte, BCeq, BClt, BClte, BCgt),
-      BinOp(BBool, BCompar),
-      UnaOp(UBool),
-      ClassDef(ClassDef),
-      UBoolOp(UBnot) )
+  ( BBoolOp (BBand, BBor),
+    BComparOp (BCeq, BCgt, BCgte, BClt, BClte),
+    BinOp (BBool, BCompar),
+    ClassDecl
+      ( ClassDecl,
+        annotOfClassDecl,
+        defOfClassDecl,
+        nameOfClassDecl
+      ),
+    ClassDef (ClassDef),
+    ClassName (ClsNm, stringOfClassName),
+    Expr (BinOpE, UnaOpE, ValE, VarE),
+    Program (..),
+    QVarName (QVarName),
+    Rule
+      ( Rule,
+        annotOfRule,
+        instrOfRule,
+        nameOfRule,
+        postcondOfRule,
+        precondOfRule,
+        varDeclsOfRule
+      ),
+    TopLevelElement (ClassDeclTLE, RuleTLE),
+    UBoolOp (UBnot),
+    UnaOp (UBool),
+    Val (BoolV, FloatV, IntV),
+    Var (GlobalVar, LocalVar),
+    VarName,
+  )
 import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS.Interpreter as SFL4
-    ( l4interpret, classGraph, allCTkeys, getCTkeys, getAttrTypesIn )
-import LS.PrettyPrinter as SFL4
-    ( ParamText3(PT3),
-      RP1(RP1),
-      inPredicateForm,
-      snake_case,
-      snake_inner,
-      untaint,
-      prettySimpleType,
-      commentWith,
-      myrender )
-import LS.RelationalPredicates as SFL4
-    ( partitionExistentials, bsr2pt )
-import LS.Rule as SFL4
-    ( Interpreted(classtable),
-      Rule(Regulative, Constitutive, DefNameAlias, RuleAlias,
-           RegFulfilled, RegBreach, Scenario, DefTypically, RuleGroup,
-           NotARule, TypeDecl, Hornlike, given, giveth, enums, has, name,
-           super, keyword, upon, clauses, rlabel, lsource, srcref, defaults,
-           symtab),
-      ruleLabelName,
-      rl2text,
-      defaultHorn,
-      hasClauses )
-import LS.Types as SFL4
-    ( MyToken(Decide, Define),
-      SrcRef(SrcRef, version, url, short, srcrow, srccol),
-      ScopeTabs,
-      ClsTab(..),
-      InterpreterOptions(enums2decls),
-      TypeSig(..),
-      RuleName,
-      ParamType(TOne, TOptional),
-      RelationalPredicate(..),
-      HornClause2,
-      HornClause(HC, hBody, hHead),
-      ParamText,
-      MultiTerm,
-      MTExpr(..),
-      RPRel(..),
-      BoolStructR,
-      mtexpr2text,
-      mt2text,
-      mkRpmt,
-      defaultInterpreterOptions,
-      getUnderlyingType,
-      unCT,
-      getSymType,
-      clsParent,
-      enumLabels_ )
+  ( allCTkeys,
+    classGraph,
+    getAttrTypesIn,
+    getCTkeys,
+    l4interpret,
+  )
 import LS.PrettyPrinter
-    ( commentWith,
-      inPredicateForm,
-      myrender,
-      prettySimpleType,
-      snake_case,
-      snake_inner,
-      untaint,
-      ParamText3(PT3),
-      RP1(RP1) )
+  ( ParamText3 (PT3),
+    RP1 (RP1),
+    commentWith,
+    inPredicateForm,
+    myrender,
+    prettySimpleType,
+    snake_case,
+    snake_inner,
+    untaint,
+  )
+import LS.PrettyPrinter as SFL4
+  ( ParamText3 (PT3),
+    RP1 (RP1),
+    commentWith,
+    inPredicateForm,
+    myrender,
+    prettySimpleType,
+    snake_case,
+    snake_inner,
+    untaint,
+  )
+import LS.RelationalPredicates as SFL4
+  ( bsr2pt,
+    partitionExistentials,
+  )
+import LS.Rule as SFL4
+  ( Interpreted (classtable),
+    Rule
+      ( Constitutive,
+        DefNameAlias,
+        DefTypically,
+        Hornlike,
+        NotARule,
+        RegBreach,
+        RegFulfilled,
+        Regulative,
+        RuleAlias,
+        RuleGroup,
+        Scenario,
+        TypeDecl,
+        clauses,
+        defaults,
+        enums,
+        given,
+        giveth,
+        has,
+        keyword,
+        lsource,
+        name,
+        rlabel,
+        srcref,
+        super,
+        symtab,
+        upon
+      ),
+    defaultHorn,
+    hasClauses,
+    rl2text,
+    ruleLabelName,
+  )
 import LS.Tokens (undeepers)
+import LS.Types as SFL4
+  ( BoolStructR,
+    ClsTab (..),
+    HornClause (HC, hBody, hHead),
+    HornClause2,
+    InterpreterOptions (enums2decls),
+    MTExpr (..),
+    MultiTerm,
+    MyToken (Decide, Define),
+    ParamText,
+    ParamType (TOne, TOptional),
+    RPRel (..),
+    RelationalPredicate (..),
+    RuleName,
+    ScopeTabs,
+    SrcRef (SrcRef, short, srccol, srcrow, url, version),
+    TypeSig (..),
+    clsParent,
+    defaultInterpreterOptions,
+    enumLabels_,
+    getSymType,
+    getUnderlyingType,
+    mkRpmt,
+    mt2text,
+    mtexpr2text,
+    unCT,
+  )
 import LS.Utils
   ( MonoidValidate,
     mapThenSwallowErrs,
@@ -141,25 +191,23 @@ import LS.XPile.CoreL4.LogicProgram
     LogicProgram,
     babyL4ToLogicProgram,
   )
-
--- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
--- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
 import Prettyprinter
-    ( Doc,
-      (<+>),
-      emptyDoc,
-      encloseSep,
-      hsep,
-      line,
-      viaShow,
-      vsep,
-      angles,
-      colon,
-      dquotes,
-      equals,
-      parens,
-      Pretty(pretty) )
-import Text.Regex.TDFA ( AllTextMatches(getAllTextMatches), (=~) )
+  ( Doc,
+    Pretty (pretty),
+    angles,
+    colon,
+    dquotes,
+    emptyDoc,
+    encloseSep,
+    equals,
+    hsep,
+    line,
+    parens,
+    vsep,
+    (<+>),
+  )
+import Prettyprinter.Interpolate (__di)
+import Text.Regex.TDFA (AllTextMatches (getAllTextMatches), (=~))
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
 
@@ -437,7 +485,7 @@ relationalPredicateToExpr cont rp = case rp of
  -- RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
   --                   pure $
   --                   ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
-  RPParamText ne -> refute $ "CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> viaShow ne
+  RPParamText ne -> refute [__di|CoreL4: relationalPredicateToExpr: erroring on RPParamText #{ne}|]
 
   RPMT mts -> multiTermToExprNoType cont mts
   RPConstraint mts RPis mts' -> multiTermToExprNoType cont (mts' ++ mts)
@@ -619,7 +667,7 @@ hc2decls r
                                  , let varType = rightToMaybe =<< underlyingm
                                  , isJust varType
                                  ]
-          declType = fmap pretty $ catMaybes $ flip Map.lookup typeMap <$> pfs
+          declType = pretty <$> mapMaybe (`Map.lookup` typeMap) pfs
     ]
   where
     mapFst f (x,y) = (f x,y)
@@ -822,16 +870,16 @@ prettyClasses ct =
   ("## allCTkeys:" <+> hsep (pretty <$> allCTkeys ct)) :
   "### explicitly defined classes" :
   concat [
-  [ if null mytype && Map.null (unCT children) && null enumDecls
-    then "###" <+> "type annotation for" <+> c_name <+> "is blank, is not enum, and has no children; not emitting a class" <+> uc_name
-    else vsep [ if Map.null (unCT children) && null enumDecls
-                then "###" <+> lc_name <+> "is a" <+> viaShow mytype <> "; without children; we know it is a decl dealt with by my parent function call"
-                else "class" <+> uc_name <> extends
-              , "###" <+> "children length = " <> viaShow (Map.size (unCT children))
-              , "###" <+> "c_name = " <> viaShow c_name
-              , "###" <+> "dot_name = " <> viaShow dot_name
-              , "###" <+> "ctype = " <> viaShow ctype
-              , "###" <+> "mytype = " <> viaShow mytype
+  [ if null mytype && null (unCT children) && null enumDecls
+    then [__di|\#\#\# type annotation for #{c_name} is blank, is not enum, and has no children; not emitting a class" #{uc_name}|]
+    else vsep [ if null (unCT children) && null enumDecls
+                then [__di|i\#\#\# #{lc_name} is a #{mytype}; without children; we know it is a decl dealt with by my parent function call|]
+                else [__di|class #{uc_name} extends|]
+              , [__di|\#\#\# children length = #{Fold.length $ unCT children}|]
+              , [__di|\#\#\# c_name = #{c_name}|]
+              , [__di|\#\#\# dot_name = #{dot_name}|]
+              , [__di|\#\#\# ctype = #{ctype}|]
+              , [__di|\#\#\# mytype = #{mytype}|]
               ]
   , if null childDecls then emptyDoc else vsep (commentShow "### class attributes are typed using decl:" children : childDecls)
   , if null enumDecls  then emptyDoc else vsep ("### members of enums are typed using decl" : enumDecls)
@@ -920,7 +968,7 @@ prettyClasses ct =
     superClassesNotExplicitlyDefined =
       let
         knownClasses = getCTkeys ct
-        superClasses = nub $ catMaybes $ clsParent ct <$> knownClasses
+        superClasses = nub $ mapMaybe (clsParent ct) knownClasses
       in vsep $ ("### superclasses not explicitly defined" :
                  ( ("class" <+>) . pretty <$> (superClasses \\ knownClasses) ))
          ++ ["###"]

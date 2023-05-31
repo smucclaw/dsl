@@ -2,6 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.CoreL4.LogicProgram.Pretty.Utils
   ( my_str_trans_list,
@@ -17,7 +18,7 @@ import Data.List (intersperse)
 import Data.String.Interpolate (i)
 import Flow ((|>))
 import L4.PrintProg (capitalise)
-import L4.Syntax (Expr, VarDecl (VarDecl))
+import L4.Syntax (Expr, VarDecl (nameOfVarDecl))
 import L4.SyntaxManipulation (appToFunArgs)
 import LS.Utils (mapThenSwallowErrs, (|$>))
 import LS.XPile.CoreL4.LogicProgram.Skolemize
@@ -39,29 +40,25 @@ preconToVarStrList :: Expr t -> [VarDecl t] -> [String]
 preconToVarStrList precon vardecls = varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
 
 varDeclToVarStrList :: [VarDecl t] -> [String]
-varDeclToVarStrList varDecls = do
-  VarDecl _t vn _u <- varDecls
-  pure $ capitalise vn
+varDeclToVarStrList varDecls = varDecls |$> nameOfVarDecl |$> capitalise
 
 -- varDeclToVarStrList [] = []
 -- varDeclToVarStrList ((VarDecl t vn u) : xs) = capitalise vn : varDeclToVarStrList xs
 
 my_str_trans :: [String] -> String -> String
-my_str_trans s t
-  | t `elem` s = t
-  | otherwise = [i|V_#{t}|]
+my_str_trans s t@((`elem` s) -> True) = t
+my_str_trans _ t = [i|V_#{t}|]
 
 -- my_str_trans s t = if elem t s
 --       then t
 -- else [i|V_#{t}|]
 
 my_str_trans_list :: [String] -> [String] -> [String]
-my_str_trans_list s = map $ my_str_trans s
+my_str_trans_list = (<$>) . my_str_trans
 
 my_str_trans2 :: String -> [String] -> String -> String
-my_str_trans2 v postc _
-  | v `elem` postc = v
-  | otherwise = "extVar"
+my_str_trans2 v ((v `elem`) -> True) _ = v
+my_str_trans2 _ _ _ = "extVar"
 
     -- if v `elem` postc
     -- then v

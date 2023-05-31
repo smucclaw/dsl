@@ -1,7 +1,11 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Main
+  ( main
+  )
+where
+
 import LS qualified as SFL4
 import Control.Monad.State ( when )
 import Data.List ( partition )

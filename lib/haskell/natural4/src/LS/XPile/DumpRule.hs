@@ -3,16 +3,21 @@ module LS.XPile.DumpRule
   )
 where
 
-import LS.Rule
-    ( hasClauses,
-      ruleLabelName,
-      Interpreted(scopetable, classtable),
-      Rule(clauses) )
 import qualified Data.Foldable as DF
 import qualified Data.Text.Lazy as TL
-import Text.Pretty.Simple ( pShowNoColor )
 import LS.Interpreter
-    ( expandClauses, getAndOrTree, itemsByRule, onlyTheItems )
+  ( expandClauses,
+    getAndOrTree,
+    itemsByRule,
+    onlyTheItems,
+  )
+import LS.Rule
+  ( Interpreted (classtable, scopetable),
+    Rule (clauses),
+    hasClauses,
+    ruleLabelName,
+  )
+import Text.Pretty.Simple (pShowNoColor)
 
 rules2String :: Interpreted -> [Rule] -> String
 rules2String l4i rules =

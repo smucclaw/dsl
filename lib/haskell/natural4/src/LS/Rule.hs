@@ -4,19 +4,28 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+
 module LS.Rule where
 
 import LS.Types
 import qualified Data.Text as Text
 import Text.Megaparsec
+    ( (<|>),
+      SourcePos(SourcePos),
+      (<?>),
+      runParser,
+      unPos,
+      MonadParsec(token, eof),
+      ErrorItem(Tokens),
+      ParseErrorBundle )
 import Data.List.NonEmpty ( NonEmpty )
 import Data.Void (Void)
 import qualified Data.Set           as Set
-import Control.Monad
+import Control.Monad ( when )
 import qualified AnyAll as AA
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
-import GHC.Generics
+import GHC.Generics ( Generic )
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Bifunctor (second)
 

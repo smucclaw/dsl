@@ -2,44 +2,45 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
-import qualified LS as SFL4
-import Control.Monad.State
-import Control.Applicative
-import Data.List
-import Data.Time.ISO8601
-import Options.Generic
+import LS qualified as SFL4
+import Control.Monad.State ( when )
+import Data.List ( partition )
+import Data.Time.ISO8601 ( formatISO8601Millis )
+import Options.Generic ( unwrapRecord )
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 
 import LS.XPile.CoreL4
+    ( sfl4ToASP, sfl4ToBabyl4, sfl4ToCorel4, sfl4ToDMN, sfl4ToEpilog )
 import LS.Interpreter
+    ( expandClauses, getAndOrTree, l4interpret, musings, onlyTheItems )
 
-import qualified LS.XPile.Uppaal as Uppaal
+import LS.XPile.Uppaal qualified as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
-import LS.XPile.Petri
-import qualified LS.XPile.SVG as AAS
+import LS.XPile.Petri ( toPetri, (|>) )
+import LS.XPile.SVG qualified as AAS
 import LS.XPile.VueJSON
-import LS.XPile.Typescript
-import LS.XPile.Purescript
-import LS.XPile.Markdown
+    ( checklist, groundrules, itemRPToItemJSON, toVueRules )
+import LS.XPile.Typescript ( asTypescript )
+import LS.XPile.Purescript ( translate2PS )
+import LS.XPile.Markdown ( bsMarkdown )
 import LS.XPile.Maude qualified as Maude
-import LS.XPile.NaturalLanguage
-import LS.XPile.GFTrees
+import LS.XPile.NaturalLanguage ( toNatLang )
+import LS.XPile.GFTrees ( printTrees )
 
 import LS.NLP.NLG (nlg,myNLGEnv, allLangs, getLang, printLangs)
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as TL
-import qualified Data.Map  as Map
+import Data.Text qualified as Text
+import Data.Text.Lazy qualified as TL
+import Data.Map qualified as Map
 import Data.ByteString.Lazy.UTF8 (toString)
-import qualified Data.ByteString.Lazy as ByteString (writeFile, ByteString)
+import Data.ByteString.Lazy qualified as ByteString (writeFile, ByteString)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import AnyAll.BoolStruct (alwaysLabeled)
-import qualified Data.Foldable as DF
-import qualified Text.XML.HXT.Core as HXT
-import LS.XPile.DumpRule
+import Data.Foldable qualified as DF
+import Text.XML.HXT.Core qualified as HXT
 
 
 myTraceM :: String -> IO ()

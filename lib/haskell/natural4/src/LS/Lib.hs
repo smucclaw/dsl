@@ -32,7 +32,6 @@ import Control.Monad.Combinators.Expr
 import Control.Monad.Writer.Lazy
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BS
-import Data.Coerce (coerce)
 import qualified Data.Csv as Cassava
 import Data.Either (rights)
 import Data.List (transpose)
@@ -128,7 +127,7 @@ newtype NoLabel a = NoLabel a
 
 instance ParseFields a => ParseRecord (NoLabel a)
 instance ParseFields a => ParseFields (NoLabel a) where
-  parseFields msg _ _ def = coerce $ parseFields msg Nothing Nothing def
+  parseFields msg _ _ def = NoLabel <$> parseFields msg Nothing Nothing def
 
 
 

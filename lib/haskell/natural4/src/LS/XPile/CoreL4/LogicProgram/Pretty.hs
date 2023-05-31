@@ -100,27 +100,27 @@ instance Show t => Pretty (OpposesClause t) where
         (posLit, negLit) |> join bimap (pretty . AccordingToE "R")
 
 instance Show t => Pretty (TranslationMode (Expr t)) where
-    pretty AccordingToE {..} =
-      [__di|
-        according_to(#{ruleName}, #{pretty postcond})
-      |]
+  pretty AccordingToE {..} =
+    [__di|
+      according_to(#{ruleName}, #{pretty postcond})
+    |]
 
     -- predicates (App expressions) are written wrapped into legally_holds,
     -- whereas any other expressions are written as is.
     -- showASP LegallyHoldsE e@AppE{} =
     --   "legally_holds" <> parens (showASP RawL4 e)
 
-    pretty (LegallyHoldsE e) =
-      [__di|
-        legally_holds(#{pretty e})
-      |]
+  pretty (LegallyHoldsE e) =
+    [__di|
+      legally_holds(#{pretty e})
+    |]
 
-    pretty (QueryE e) =
-      [__di|
-        query(#{pretty e}, L)
-      |]
+  pretty (QueryE e) =
+    [__di|
+      query(#{pretty e}, L)
+    |]
 
-    pretty _ = mempty   -- not implemented
+  pretty _ = mempty   -- not implemented
 
 -- prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpLang t) -> Doc ann
 -- prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =

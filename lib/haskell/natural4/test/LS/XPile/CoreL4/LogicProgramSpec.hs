@@ -47,12 +47,18 @@ import Test.Hspec
 
 testcases :: HS.HashSet LPTestcase
 testcases =
-  [ LPTestcase
-      { dir = "motor-insurance",
-        csvFile = "motor-insurance.csv",
-        expectedOutputFiles = [(ASP, "asp.lp"), (Epilog, "epilog.lp")]
-      }
+  [ "motor-insurance",
+    "rodents-and-vermin"
   ]
+    |$> dir2testcase
+    |> HS.fromList
+  where
+    dir2testcase dir =
+      LPTestcase
+        { dir,
+          csvFile = [i|#{dir}.csv|],
+          expectedOutputFiles = [(ASP, "asp.lp"), (Epilog, "epilog.lp")]
+        }
 
 spec :: Spec
 spec =

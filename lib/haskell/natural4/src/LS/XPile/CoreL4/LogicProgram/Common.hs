@@ -52,7 +52,7 @@ data LogicProgram (lpLang :: LPLang) t = LogicProgram
     lpRulesFact :: [LPRule lpLang t],
     oppClauses :: [OpposesClause t]
   }
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 type ASPProgram = LogicProgram ASP
 type EpilogProgram = LogicProgram Epilog

@@ -1,9 +1,9 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 
@@ -26,6 +26,7 @@ import GHC.Generics (Generic)
 import LS (Rule)
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
+import LS.Utils ((|$>))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
 import Options.Generic (Unwrapped)
@@ -90,9 +91,9 @@ testcase2spec lpLang LPTestcase {..} =
   where
     findFileWithName :: FilePath -> IO (Maybe FilePath)
     findFileWithName file =
-      listToMaybe <$> Find.find always (fileName ==? file) dir'
-
-    dir' = "test" </> "Testcases" </> "LogicProgram" </> dir
+      "test" </> "Testcases" </> "LogicProgram" </> dir
+        |> Find.find always (fileName ==? file)
+        |$> listToMaybe
 
     expectedOutputFile :: FilePath =
       expectedOutputFiles |> HM.lookup lpLang |> fromMaybe ""

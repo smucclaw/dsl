@@ -64,8 +64,7 @@ data TranslationMode t
   | QueryE t
   | VarSubs4R t
   | AddFacts t
-  | -- FixedCode was originally used by the ToEpilog transpiler.
-    FixedCode t
+  -- | FixedCode t
   deriving (Eq, Generic, Ord, Read, Show)
 
 instance Hashable t => Hashable (TranslationMode t)
@@ -224,47 +223,47 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
     where
       accordingToPostcond = pretty AccordingToE {..}
 
-  pretty (FixedCode LPRule {}) =
-    [__di|
-      defeated(R2,C2) :-
-        overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)
+  -- pretty (FixedCode _) =
+  --   [__di|
+  --     defeated(R2,C2) :-
+  --       overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2)
 
-      opposes(C1,C2) :- opposes(C2,C1)
+  --     opposes(C1,C2) :- opposes(C2,C1)
 
-      legally_enforces(R,C) :- according_to(R,C) & ~defeated(R,C)
+  --     legally_enforces(R,C) :- according_to(R,C) & ~defeated(R,C)
 
-      legally_holds(C) :- legally_enforces(R,C)
+  --     legally_holds(C) :- legally_enforces(R,C)
 
-      legally_holds(contradiction_entailed) :-
-        opposes(C1,C2) & legally_holds(C1) & legally_holds(C2)
+  --     legally_holds(contradiction_entailed) :-
+  --       opposes(C1,C2) & legally_holds(C1) & legally_holds(C2)
 
-      caused_by(pos,overrides(R1,R2),defeated(R2,C2),0) :-
-        defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
+  --     caused_by(pos,overrides(R1,R2),defeated(R2,C2),0) :-
+  --       defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
 
-      caused_by(pos,according_to(R2,C2),defeated(R2,C2),0) :-
-        defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
+  --     caused_by(pos,according_to(R2,C2),defeated(R2,C2),0) :-
+  --       defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
 
-      caused_by(pos,legally_enforces(R1,C1),defeated(R2,C2),0) :-
-        defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
+  --     caused_by(pos,legally_enforces(R1,C1),defeated(R2,C2),0) :-
+  --       defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
 
-      caused_by(pos,opposes(C1,C2),defeated(R2,C2),0) :-
-        defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
+  --     caused_by(pos,opposes(C1,C2),defeated(R2,C2),0) :-
+  --       defeated(R2,C2) & overrides(R1,R2) & according_to(R2,C2) & legally_enforces(R1,C1) & opposes(C1,C2) & justify(defeated(R2,C2),0)
 
-      caused_by(pos,according_to(R,C),legally_enforces(R,C),0) :-
-        legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)
+  --     caused_by(pos,according_to(R,C),legally_enforces(R,C),0) :-
+  --       legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)
 
-      caused_by(neg,defeated(R,C),legally_enforces(R,C),0) :-
-        legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)
+  --     caused_by(neg,defeated(R,C),legally_enforces(R,C),0) :-
+  --       legally_enforces(R,C) & according_to(R,C) & ~defeated(R,C) & justify(legally_enforces(R,C),0)
 
-      caused_by(pos,legally_enforces(R,C),legally_holds(C),0) :-
-        legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)
+  --     caused_by(pos,legally_enforces(R,C),legally_holds(C),0) :-
+  --       legally_holds(C) & legally_enforces(R,C) & justify(legally_holds(C),0)
 
-      justify(X,0) :- caused_by(pos,X,Y,0)
+  --     justify(X,0) :- caused_by(pos,X,Y,0)
 
-      directedEdge(Sgn,X,Y) :- caused_by(Sgn,X,Y,0)
+  --     directedEdge(Sgn,X,Y) :- caused_by(Sgn,X,Y,0)
 
-      justify(X,0) :- gen_graph(X)
-    |]
+  --     justify(X,0) :- gen_graph(X)
+  --   |]
 
   pretty _ = mempty
 

@@ -50,8 +50,7 @@ testcases =
   [ "motor-insurance",
     "rodents-and-vermin"
   ]
-    |$> dir2testcase
-    |> HS.fromList
+    |> HS.map dir2testcase
   where
     dir2testcase dir =
       LPTestcase

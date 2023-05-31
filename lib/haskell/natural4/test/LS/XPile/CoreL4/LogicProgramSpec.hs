@@ -23,7 +23,6 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import Data.String.Interpolate (i)
 import Flow ((|>))
 import GHC.Generics (Generic)
-import LS (Rule)
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
 import LS.Utils ((|$>))
@@ -78,7 +77,7 @@ testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestcase {..} =
   it dir $ do
     Just csvFile <- findFileWithName csvFile
-    rules :: [Rule] <-
+    rules :: [LS.Rule] <-
       LS.dumpRules
         Opts
           { file = NoLabel [csvFile],
@@ -90,7 +89,7 @@ testcase2spec lpLang LPTestcase {..} =
     expectedOutput :: String <- readFile expectedOutputFile
 
     (rules, expectedOutput)
-      |> first rules2lp
+      |> first rules2lpStr
       |> join bimap (filter $ not . isSpace)
       |> uncurry shouldBe
   where
@@ -103,6 +102,6 @@ testcase2spec lpLang LPTestcase {..} =
     expectedOutputFile :: FilePath =
       expectedOutputFiles |> HM.lookup lpLang |> fromMaybe ""
 
-    rules2lp :: [Rule] -> String = case lpLang of
+    rules2lpStr = case lpLang of
       ASP -> sfl4ToASP
       Epilog -> sfl4ToEpilog

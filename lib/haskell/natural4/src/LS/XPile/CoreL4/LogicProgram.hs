@@ -100,10 +100,6 @@ genOppClauseNoType (posvar, negvar, n) = OpposesClause {..}
       [LocalVar (QVarName vart [i|V#{index}|]) index | index <- [0 .. n - 1]]
     vart = annotOfQVarName $ nameOfVar posvar
 
-  -- let vart = annotOfQVarName (nameOfVar posvar) in
-  -- let args = zipWith (\ vn i -> LocalVar (QVarName vart (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
-  -- in OpposesClause (applyVarsNoType posvar args) (applyVarsNoType negvar args)
-
 -- TODO: details to be filled in
 -- proveAssertionASP :: Show t => Program t -> ValueKVM  -> Assertion t -> IO ()
 -- proveAssertionASP p v asrt = putStrLn "ASP solver implemented"

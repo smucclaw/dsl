@@ -35,10 +35,6 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 import Control.Applicative (Applicative (liftA2))
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Either (fromRight, isRight, rights)
-import Data.Foldable qualified as DF
--- import LS.XPile.CoreL4.Old.ToASP qualified as ASP
--- import LS.XPile.CoreL4.Old.ToEpilog_fm_nat qualified as Epilog
-
 import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\))
@@ -655,7 +651,7 @@ hc2decls r
   --    <> "### xform 2:"        <+> viaShow (inPredicateForm <$> headRP : maybe [] DF.toList hBod) <> Prettyprinter.line
   --    <> "### typemap:"        <+> viaShow typeMap <> Prettyprinter.line
     | c@(HC headRP hBod) <- clauses r
-    , pf:pfs <- inPredicateForm <$> headRP : maybe [] DF.toList hBod
+    , pf:pfs <- inPredicateForm <$> headRP : maybe [] Fold.toList hBod
     , T.take 3 (mtexpr2text pf) /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx

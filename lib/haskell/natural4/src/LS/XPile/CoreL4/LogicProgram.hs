@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.CoreL4.LogicProgram
   ( babyL4ToLogicProgram,
@@ -22,20 +23,21 @@ import Data.String.Interpolate (i)
 import Flow ((|>))
 import L4.KeyValueMap (ValueKVM)
 import L4.Syntax
-  ( BBoolOp (BBand),
-    BinOp (BBool),
-    Expr (AppE, UnaOpE, ValE, VarE),
-    Program,
-    QVarName (QVarName, annotOfQVarName),
-    Rule (..),
-    Tp (OkT),
-    UBoolOp (UBnot),
-    UnaOp (UBool),
-    Val (BoolV),
-    Var (GlobalVar, LocalVar, nameOfVar),
-    VarDecl (VarDecl),
-    rulesOfProgram,
-  )
+    ( Expr(ValE, VarE, UnaOpE, AppE, unaOpOfExprUnaOpE,
+           subEOfExprUnaOpE),
+      Tp(OkT),
+      Program,
+      Rule(..),
+      VarDecl(VarDecl),
+      Val(BoolV),
+      Var(GlobalVar, LocalVar, nameOfVar),
+      QVarName(..),
+      BBoolOp(BBand),
+      BinOp(BBool),
+      UnaOp(UBool),
+      rulesOfProgram,
+      UBoolOp(UBnot),
+      Expr(subEOfExprUnaOpE) )
 import L4.SyntaxManipulation
   ( appToFunArgs,
     applyVars,
@@ -90,16 +92,6 @@ babyL4ToLogicProgram program = LogicProgram {..}
         -- Turn them into OpposesClauses
         |$> genOppClauseNoType
 
--- genOppClause :: (Var (Tp ()), Var (Tp ()), Int) -> OpposesClause (Tp ())
--- genOppClause (posvar, negvar, n) = OpposesClause {..}
---   where
---     (posLit, negLit) = join bimap (`applyVars` args) (posvar, negvar)
---     args =
---       [LocalVar (QVarName IntegerT [i|V#{index}|]) index | index <- [0 .. n - 1]]
-
--- let args = zipWith (\ vn i -> LocalVar (QVarName IntegerT (vn ++ show i)) i) (replicate n "V") [0 .. n-1]
--- in OpposesClause (applyVars posvar args) (applyVars negvar args)
-
 genOppClauseNoType :: (Var t, Var t, Int) -> OpposesClause t
 genOppClauseNoType (posvar, negvar, n) = OpposesClause {..}
   where
@@ -146,9 +138,6 @@ ruleToLPRule rule@Rule {..} = do
             #{viaShow rule}
             To exclude the ASP (resp Epilog) transpiler from a --workdir run, run natural4-exe with --toasp (resp --toepilog)
           |]
-            -- ("ToASP: ruleToLPRule: nameOfRule is a Nothing :-(\n" <>
-            -- viaShow rule <> "\n" <>
-            -- "To exclude the ToASP transpiler from a --workdir run, run natural4-exe with the --toasp option.")
 
   let preconds :: [Expr t] = fst <$> precondsNeg
 
@@ -164,26 +153,31 @@ ruleToLPRule rule@Rule {..} = do
 
   pure (LPRule {..}, negPreds)
 
---varTovarDecl :: Var (Tp()) -> VarDecl (Tp())
---varTovarDecl :: Var t -> VarDecl t
 varTovarDecl :: Var t -> VarDecl t
-varTovarDecl (GlobalVar (QVarName a vn)) = VarDecl a vn OkT
-varTovarDecl (LocalVar (QVarName a vn) _ind) = VarDecl a vn OkT
+varTovarDecl (GlobalVar QVarName {..}) =
+  VarDecl annotOfQVarName nameOfQVarName OkT
+varTovarDecl (LocalVar {nameOfVar = QVarName {..}}) =
+  VarDecl annotOfQVarName nameOfQVarName OkT
 
 negationVarname :: QVarName t -> QVarName t
-negationVarname (QVarName t vn) = QVarName t [i|not#{vn}|] -- ("not"++vn)
+negationVarname QVarName {..} =
+  QVarName {nameOfQVarName = [i|not#{nameOfQVarName}|], ..}
 
 negationPredicate ::
   Expr t -> MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
-negationPredicate (UnaOpE _ (UBool UBnot) e@AppE {}) =
-  case appToFunArgs [] e of
-    (VarE t posvar@(GlobalVar vn), args) -> pure (appExpr, triple)
-      where
-        negvar = GlobalVar $ negationVarname vn
-        appExpr = funArgsToAppNoType (VarE t negvar) args
-        triple = Just (posvar, negvar, Fold.length args)
-    _ -> refute "negationPredicate: ill-formed negation"
-
+negationPredicate
+  UnaOpE
+    { unaOpOfExprUnaOpE = UBool UBnot,
+      subEOfExprUnaOpE = e@AppE {}
+    } =
+    case appToFunArgs [] e of
+      (VarE t posvar@(GlobalVar vn), args) ->
+        pure (appExpr, triple)
+        where
+          negvar = GlobalVar $ negationVarname vn
+          appExpr = funArgsToAppNoType (VarE t negvar) args
+          triple = Just (posvar, negvar, Fold.length args)
+      _ -> refute "negationPredicate: ill-formed negation"
 negationPredicate e = pure (e, Nothing)
 
 -- negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =

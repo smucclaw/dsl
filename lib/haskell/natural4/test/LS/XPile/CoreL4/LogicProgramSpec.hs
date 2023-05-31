@@ -15,7 +15,7 @@ where
 import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (bimap, first))
 import Data.Char (isSpace)
-import Data.Foldable (for_, traverse_)
+import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)

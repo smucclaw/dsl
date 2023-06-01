@@ -1,6 +1,6 @@
 concrete NL4BaseEng of NL4Base =
      CustomSyntaxEng
-  ** NL4BaseFunctor - [You]
+  ** NL4BaseFunctor - [You, APWho]
   with
       (Syntax=SyntaxEng)
     , (Extend=ExtendEng)
@@ -31,6 +31,11 @@ concrete NL4BaseEng of NL4Base =
     Jan = ss "Jan" ; Feb = ss "Feb" ; Mar = ss "Mar" ; Apr = ss "Apr" ;
     May = ss "May" ; Jun = ss "Jun" ; Jul = ss "Jul" ; Aug = ss "Aug" ;
     Sep = ss "Sep" ; Oct = ss "Oct" ; Nov = ss "Nov" ; Dec = ss "Dec" ;
+
+-----------------------------------------------------------------------------
+-- Hack to get AP parsed into VPS
+    -- : AP -> Who ; -- hack
+    APWho alcoholic = lin VPS {s = \\_o,a => {fin = alcoholic.s ! a ; inf = []}} ;
 
 -----------------------------------------------------------------------------
 -- Instead of crashing, every category should have a dummy constructor where to put a string

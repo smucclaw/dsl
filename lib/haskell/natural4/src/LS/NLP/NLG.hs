@@ -9,9 +9,12 @@ module LS.NLP.NLG where
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
 import LS.Types
-import LS.Rule (Rule(..))
+import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
+import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
-import Data.Maybe (catMaybes)
+import Control.Monad (when)
+import Data.Map (keys, elems, lookup, toList)
+import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
@@ -19,6 +22,7 @@ import Paths_natural4
 import Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
+import Debug.Trace (trace)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -26,6 +30,7 @@ data NLGEnv = NLGEnv
   , gfParse :: Type -> Text.Text -> [Expr]
   , gfLin :: Expr -> Text.Text
   , verbose :: Bool
+  , interpreted :: Interpreted
   }
 
 allLangs :: IO [Language]
@@ -42,8 +47,8 @@ getLang str = case readLanguage str of
     Nothing -> error $ "language " <> str <> " not found"
     Just l -> l
 
-myNLGEnv :: Language -> IO NLGEnv
-myNLGEnv lang = do
+myNLGEnv :: Interpreted -> Language -> IO NLGEnv
+myNLGEnv l4i lang = do
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
@@ -51,7 +56,7 @@ myNLGEnv lang = do
   let eng = getLang "NL4Eng"
       myParse typ txt = parse gr eng typ (Text.unpack txt)
   let myLin = rmBIND . Text.pack . linearize gr lang
-  pure $ NLGEnv gr lang myParse myLin verbose
+  pure $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""
@@ -109,7 +114,8 @@ nlg' thl env rule = case rule of
           whoSubjExpr = case who of
                         Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
                         Nothing -> subjExpr
-          ruleText = gfLin env $ gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+          ruleTree = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+          ruleText = gfLin env ruleTree
           uponText = case upon of  -- TODO: doesn't work once we add another language
                       Just u ->
                         let uponExpr = gf $ GadvUPON $ parseUpon env u
@@ -134,9 +140,10 @@ nlg' thl env rule = case rule of
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
+      when (verbose env) $ putStrLn $ showExpr [] ruleTree
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
-      -- print "hornlike"
+      when (verbose env) $ print "hornlike"
       let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
           parseBodyHC cl = case hBody cl of
             Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
@@ -148,6 +155,7 @@ nlg' thl env rule = case rule of
           ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
       pure $ Text.strip ruleTextDebug
     DefNameAlias {} -> pure mempty
+    DefTypically {} -> pure mempty
     _ -> pure $ "NLG.hs is under construction, we don't support yet " <> Text.pack (show rule)
   where
     (prefix,suffix) = debugNesting (gfLang env) thl
@@ -176,12 +184,13 @@ ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.Optiona
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      print "reg"
+      when (verbose env) $ print "reg"
       text
     Hornlike {clauses} -> do
-      print "horn"
-      -- print $ ruleQnTrees env alias rule
-      -- print "---"
+      when (verbose env) $ do
+        print "horn"
+        print $ ruleQnTrees env alias rule
+        print "---"
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
@@ -406,3 +415,80 @@ msg :: String -> Text.Text -> String
 msg typ txt = "parse" <> typ <> ": failed to parse " <> Text.unpack txt
 
 -----------------------------------------------------------------------------
+-- Expand a set of rules
+
+expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
+expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
+  where
+    l4i = interpreted env
+    usedrules = getExpandedRuleNames l4i `concatMap` rules
+    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
+
+getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
+getExpandedRuleNames l4i rule = case rule of
+  Regulative {} -> concat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
+  Hornlike {} -> getNamesHC l4i `concatMap` clauses rule
+  _ -> []
+
+  where
+    getNamesBSR :: Interpreted -> Int -> BoolStructR -> [RuleName]
+    getNamesBSR l4i depth (AA.Leaf rp)  =
+      case expandRP l4i (depth + 1) rp of
+        RPBoolStructR mt1 RPis _bsr -> [mt1]
+        o                           -> []
+    getNamesBSR l4i depth (AA.Not item)   = getNamesBSR l4i (depth + 1) item
+    getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
+    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
+
+    getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
+    getNamesRP l4i depth (RPConstraint  mt1 RPis mt2) = [mt2]
+    getNamesRP l4i depth (RPBoolStructR mt1 RPis bsr) = getNamesBSR l4i depth bsr
+    getNamesRP _l4i _depth _x                          = []
+
+    getNamesHC :: Interpreted -> HornClause2 -> [RuleName]
+    getNamesHC l4i clause = headNames <> bodyNames
+     where
+      headNames = getNamesRP l4i 1 $ hHead clause
+      bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
+
+-- This is used for creating questions from the rule, so we only expand
+-- the fields that are used in ruleQuestions
+expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
+expandRuleForNLG l4i depth rule = case rule of
+  Regulative{} -> rule {
+    who = expandBSR l4i depth <$> who rule
+  , cond = expandBSR l4i depth <$> cond rule
+  , upon = expandPT l4i depth <$> upon rule
+  , hence = expandRuleForNLG l4i depth <$> hence rule
+  , lest = expandRuleForNLG l4i depth <$> lest rule
+  }
+  Hornlike {} -> rule {
+    clauses = expandClauses l4i depth $ clauses rule
+  }
+  Constitutive {} -> rule {
+    cond = expandBSR l4i depth <$> cond rule
+  }
+  _ -> rule
+
+-- I suspect that original intention was to not include expansions in UPON?
+-- But in any case, here is a function that is applied in expandRuleForNLG to expand the UPON field.
+-- There's a test case for this in NLGSpec ("test expandRulesForNLG for pdpa1 with added UPON expansion")
+expandPT :: Interpreted -> Int -> ParamText -> ParamText
+expandPT l4i depth pt = maybe pt ptFromRP expanded
+  where
+    ptAsMt = [MTT $ pt2text pt]
+    fallbackPTfromRP = mt2pt . rp2mt
+    ptFromRP (RPParamText pt)         = pt
+    ptFromRP (RPMT mt)                = mt2pt mt
+    ptFromRP (RPConstraint _ RPis mt) = mt2pt mt
+    ptFromRP rp@(RPBoolStructR _ RPis bsr@(AA.Leaf _)) = mt2pt [MTT $ bsr2text bsr] -- Only works if the BSR is a leaf; otherwise we lose structure when trying to convert a BSR into ParamText
+    ptFromRP rp = trace ("ptFromRP: encountered " <> show rp) $ fallbackPTfromRP rp
+
+    expanded = listToMaybe
+                [ outrp
+                | (_scopename, symtab) <- Data.Map.toList (scopetable l4i)
+                , (_mytype, cs) <- maybeToList $ Data.Map.lookup ptAsMt symtab
+                , c <- cs
+                , let outs = expandClause l4i depth c
+                , outrp <- outs
+                ]

@@ -43,7 +43,7 @@ import Test.Hspec
 
 testcases :: HS.HashSet LPTestcase
 testcases =
-  [ "motor-insurance",
+  [ "motor-insurance-0",
     "rodents-and-vermin"
   ]
     |> HS.map dir2testcase

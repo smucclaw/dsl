@@ -215,5 +215,18 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
     MkYear = cc4 ;
 
+-----------------------------------------------------------------------------
+-- Very specific things, yet uncategorised
+    -- : AP -> Who ; -- hack
+    APWho alcoholic = Extend.MkVPS presSimul POS (mkVP alcoholic) ;
+
+    -- : V2 -> PrePost ; -- consumes
+    V2_PrePost consume =
+      let consumes : SS = mkUtt (mkS (mkCl emptyNP (mkVP consume emptyNP))) ;
+          consume : SS = mkUtt (mkS (mkCl emptyPlNP (mkVP consume emptyNP))) ;
+       in {s = consumes.s ; qs = consume.s} ;
+
+    -- : NP -> PrePost ; -- beverage
+    NP_PrePost beverage = {s,qs = (mkUtt beverage).s} ;
 }
 

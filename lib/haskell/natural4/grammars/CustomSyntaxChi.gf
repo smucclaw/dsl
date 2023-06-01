@@ -178,7 +178,7 @@ concrete CustomSyntaxChi of CustomSyntax =
     ComplVSif vs s =
       let if_S : SS = mkUtt (SyntaxChi.mkAdv (mkSubj "是否") s) ;
           vp : VP = R.predV <lin V vs : V> [] ;
-       in lin VP (R.insertObj if_S vp) ;
+       in lin VP (R.insertObj (R.mkNP if_S.s) vp) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;
 
     AdjCN ap cn = {s = ap.s ! R.Attr ++ cn.s ; c = cn.c} ;
@@ -229,6 +229,7 @@ concrete CustomSyntaxChi of CustomSyntax =
       {s = "是" ; sn = [] ; pp = [] ; ds = [] ; dp = [] ; ep = [] ; neg = "不"} ; ---
 
     emptyNP : NP = it_NP ** {s = []} ;
+    emptyPlNP : NP = they_NP ** {s = []} ;
 
 
 }

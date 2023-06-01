@@ -11,6 +11,11 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
   lin
   -- must sing
       person = mkCN (mkN ("person"|"Person")) ;
+      beverage = mkCN (mkN "beverage") ;
+      alcoholic = mkAP (mkA ("alcoholic" | "an alcoholic")) ; -- just to make it parse
+      non_alcoholic = mkAP (mkA "non-alcoholic") ;
+
+      consume = mkV2 "consume" ;
       walk = mkVP (mkV "walk") ;
       eat = mkVP IrregEng.eat_V ;
       drink = mkVP IrregEng.drink_V ;

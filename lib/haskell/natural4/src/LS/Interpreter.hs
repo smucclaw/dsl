@@ -552,14 +552,14 @@ expandTrace fname dpth toSay toShow =
 -- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
 -- for now we just scan across the entire ruleset to see if it matches.
 expandRP :: Interpreted -> Int -> RelationalPredicate -> RelationalPredicate
-expandRP l4i depth (RPMT                   mt2)   = expandMT  l4i (depth + 1) mt2
-expandRP l4i depth (RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) (mt1 ++ MTT (rel2txt RPis) : mt2)
+expandRP l4i depth og@(RPMT                   mt2)   = expandMT  l4i (depth + 1) og mt2
+expandRP l4i depth og@(RPConstraint  mt1 RPis mt2)   = expandMT  l4i (depth + 1) og (mt1 ++ MTT (rel2txt RPis) : mt2)
 expandRP l4i depth (RPBoolStructR mt1 RPis bsr)   = RPBoolStructR mt1 RPis (expandBSR' l4i (depth + 1) bsr)
 expandRP _l4i _depth x                            = x
 
 -- | Search the scopetable's symbol tables for a given multiterm. Expand its clauses, and return the expanded.
-expandMT :: Interpreted -> Int -> MultiTerm -> RelationalPredicate
-expandMT l4i depth mt0 =
+expandMT :: Interpreted -> Int -> RelationalPredicate -> MultiTerm -> RelationalPredicate
+expandMT l4i depth ogRP mt0 =
   let expanded = listToMaybe
                  [ outrp
                  | (_scopename, symtab) <- Map.toList (scopetable l4i)
@@ -568,7 +568,7 @@ expandMT l4i depth mt0 =
                  , let outs = expandClause l4i depth c
                  , outrp <- outs
                  ]
-  in fromMaybe (RPMT mt0) expanded
+  in fromMaybe ogRP expanded
 
 -- | Expand a horn clause that may have both head and body containing stuff we want to fill.
 -- Despite the name, this is not directly related to expandClauses.

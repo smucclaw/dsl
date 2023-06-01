@@ -62,7 +62,7 @@ namesAndQ env rl =
   where
     name = map ruleLabelName rl
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
-    questStruct = map (ruleQuestions env alias) rl -- [AA.OptionallyLabeledBoolStruct Text.Text]
+    questStruct = map (ruleQuestions env alias) (expandRulesForNLG env rl) -- [AA.OptionallyLabeledBoolStruct Text.Text]
 
 combine :: [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
 combine [] [] = []

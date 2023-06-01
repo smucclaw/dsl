@@ -9,6 +9,12 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
   -- must sing
     person = mkCN (mkN "seseorang") ;
     walk = mkVP (mkV "jalan") ;
+    beverage = mkCN (mkN "minuman") ;
+    alcoholic = mkAP (mkA "beralkohol") ;
+    non_alcoholic = mkAP (mkA "bukan alkohol") ;
+
+    consume = drink_V2 ;
+
     eat = mkVP <lin V eat_V2 : V> ;
     drink = mkVP <lin V drink_V2 : V> ;
     sing = mkVP (mkV "nyanyi") ;

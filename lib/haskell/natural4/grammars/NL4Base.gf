@@ -113,6 +113,11 @@ abstract NL4Base = CustomSyntax ** {
     MkYear : (x1,_,_,x4: YearComponent) -> Year ;
     Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9 : YearComponent ;
 
+-----------------------------------------------------------------------------
+-- Very specific things, yet uncategorised
+    V2_PrePost : V2 -> PrePost ; -- consumes
+    NP_PrePost : NP -> PrePost ; -- beverage
+    APWho : AP -> Who ; -- alcoholic into a VP
 
 -----------------------------------------------------------------------------
 -- Instead of crashing, every category should have a dummy constructor where to put a string

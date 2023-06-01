@@ -6,44 +6,66 @@ module Main
   )
 where
 
-import LS qualified as SFL4
-import Control.Monad.State ( when )
-import Data.List ( partition )
-import Data.Time.ISO8601 ( formatISO8601Millis )
-import Options.Generic ( unwrapRecord )
-import Text.Pretty.Simple (pPrint, pShowNoColor)
-
-import LS.XPile.CoreL4
-    ( sfl4ToASP, sfl4ToBabyl4, sfl4ToCorel4, sfl4ToDMN, sfl4ToEpilog )
-import LS.Interpreter
-    ( expandClauses, getAndOrTree, l4interpret, musings, onlyTheItems )
-
-import LS.XPile.Uppaal qualified as Uppaal
-import LS.XPile.Prolog ( sfl4ToProlog )
-import LS.XPile.Petri ( toPetri, (|>) )
-import LS.XPile.SVG qualified as AAS
-import LS.XPile.VueJSON
-    ( checklist, groundrules, itemRPToItemJSON, toVueRules )
-import LS.XPile.Typescript ( asTypescript )
-import LS.XPile.Purescript ( translate2PS )
-import LS.XPile.Markdown ( bsMarkdown )
-import LS.XPile.Maude qualified as Maude
-import LS.XPile.NaturalLanguage ( toNatLang )
-import LS.XPile.GFTrees ( printTrees )
-
-import LS.NLP.NLG (nlg, myNLGEnv, allLangs, getLang, printLangs, expandRulesForNLG)
+import AnyAll.BoolStruct (alwaysLabeled)
+import AnyAll.SVGLadder (defaultAAVConfig)
+import Control.Monad.State (when)
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.ByteString.Lazy qualified as ByteString (ByteString, writeFile)
+import Data.ByteString.Lazy.UTF8 (toString)
+import Data.Foldable qualified as DF
+import Data.List (partition)
+import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as TL
-import Data.Map qualified as Map
-import Data.ByteString.Lazy.UTF8 (toString)
-import Data.ByteString.Lazy qualified as ByteString (writeFile, ByteString)
-import Data.Aeson.Encode.Pretty (encodePretty)
-import System.IO.Unsafe (unsafeInterleaveIO)
-import System.Directory (createDirectoryIfMissing, createFileLink, renameFile)
 import Data.Time.Clock (getCurrentTime)
-import AnyAll.SVGLadder (defaultAAVConfig)
-import AnyAll.BoolStruct (alwaysLabeled)
-import Data.Foldable qualified as DF
+import Data.Time.ISO8601 (formatISO8601Millis)
+import LS qualified as SFL4
+import LS.Interpreter
+  ( expandClauses,
+    getAndOrTree,
+    l4interpret,
+    musings,
+    onlyTheItems,
+  )
+import LS.NLP.NLG
+  ( allLangs,
+    expandRulesForNLG,
+    getLang,
+    myNLGEnv,
+    nlg,
+    printLangs,
+  )
+import LS.XPile.CoreL4
+  ( sfl4ToASP,
+    sfl4ToBabyl4,
+    sfl4ToCorel4,
+    sfl4ToDMN,
+    sfl4ToEpilog,
+  )
+import LS.XPile.GFTrees (printTrees)
+import LS.XPile.Markdown (bsMarkdown)
+import LS.XPile.Maude qualified as Maude
+import LS.XPile.NaturalLanguage (toNatLang)
+import LS.XPile.Petri (toPetri, (|>))
+import LS.XPile.Prolog (sfl4ToProlog)
+import LS.XPile.Purescript (translate2PS)
+import LS.XPile.SVG qualified as AAS
+import LS.XPile.Typescript (asTypescript)
+import LS.XPile.Uppaal qualified as Uppaal
+import LS.XPile.VueJSON
+  ( checklist,
+    groundrules,
+    itemRPToItemJSON,
+    toVueRules,
+  )
+import Options.Generic (unwrapRecord)
+import System.Directory
+  ( createDirectoryIfMissing,
+    createFileLink,
+    renameFile,
+  )
+import System.IO.Unsafe (unsafeInterleaveIO)
+import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
 
 

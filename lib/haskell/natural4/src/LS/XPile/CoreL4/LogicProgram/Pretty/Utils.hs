@@ -32,26 +32,15 @@ import Prettyprinter.Interpolate (di)
 toBrackets :: [VarDecl t] -> Doc ann
 toBrackets varDecls = varDecls |> varDeclToVarStrList |> toBrackets2
 
--- toBrackets [] = "()"
--- toBrackets [VarDecl _t vn _u] = "(" ++ capitalise vn ++ ")"
--- toBrackets ((VarDecl _t vn _u):xs) = "(" ++ capitalise vn ++ "," ++ tail (toBrackets xs)
-
 preconToVarStrList :: Expr t -> [VarDecl t] -> [String]
 preconToVarStrList precon vardecls = varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
 
 varDeclToVarStrList :: [VarDecl t] -> [String]
 varDeclToVarStrList varDecls = varDecls |$> nameOfVarDecl |$> capitalise
 
--- varDeclToVarStrList [] = []
--- varDeclToVarStrList ((VarDecl t vn u) : xs) = capitalise vn : varDeclToVarStrList xs
-
 my_str_trans :: [String] -> String -> String
 my_str_trans s t@((`elem` s) -> True) = t
 my_str_trans _ t = [i|V_#{t}|]
-
--- my_str_trans s t = if elem t s
---       then t
--- else [i|V_#{t}|]
 
 my_str_trans_list :: [String] -> [String] -> [String]
 my_str_trans_list = (<$>) . my_str_trans
@@ -59,10 +48,6 @@ my_str_trans_list = (<$>) . my_str_trans
 my_str_trans2 :: String -> [String] -> String -> String
 my_str_trans2 v ((v `elem`) -> True) _ = v
 my_str_trans2 _ _ _ = "extVar"
-
-    -- if v `elem` postc
-    -- then v
-    -- else "extVar"
 
 my_str_trans_list2 :: [String] -> [String] -> String -> [String]
 my_str_trans_list2 s t u = [my_str_trans2 r t u | r <- s]
@@ -76,10 +61,6 @@ toBrackets2 xs =
   where
     x <.> y = [di|#{x}, #{y}|]
     parenthesize x = [di|(#{x})|]
-
--- toBrackets2 [] = "()"
--- toBrackets2 [x] = "(" ++ x ++ ")"
--- toBrackets2 (x:xs) = "(" ++ x ++ "," ++ tail (toBrackets2 xs)
 
 -- toBrackets3 :: [VarDecl t] -> String
 -- toBrackets3 [] = "()"

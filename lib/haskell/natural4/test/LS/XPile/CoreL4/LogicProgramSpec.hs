@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-missing-fields #-}
 
 module LS.XPile.CoreL4.LogicProgramSpec
   ( spec,
@@ -29,7 +28,7 @@ import LS.Utils ((|$>))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
 import System.FilePath ((</>))
-import System.FilePath.Find as Find
+import System.FilePath.Find
   ( always,
     fileName,
     find,
@@ -58,9 +57,11 @@ testcases =
 
 spec :: Spec
 spec =
-  for_ ([ASP, Epilog] :: [LPLang]) $ \lpLang ->
+  for_ lpLangs $ \lpLang ->
     describe [i|Testing #{lpLang} transpiler|] $
       for_ testcases $ testcase2spec lpLang
+  where
+    lpLangs :: [LPLang] = [ASP, Epilog]
 
 data LPTestcase = LPTestcase
   { dir :: FilePath,
@@ -86,15 +87,17 @@ testcase2spec lpLang LPTestcase {..} =
     Just expectedOutputFile <- findFileWithName expectedOutputFile
     expectedOutput :: String <- readFile expectedOutputFile
 
-    (rules, expectedOutput)
-      |> first rules2lpStr
-      |> join bimap (filter $ not . isSpace)
-      |> uncurry shouldBe
+    let (logicProgram, expectedOutput') =
+          (rules, expectedOutput)
+            |> first rules2lpStr
+            |> join bimap (filter $ not . isSpace)
+
+    logicProgram `shouldBe` expectedOutput'
   where
     findFileWithName :: FilePath -> IO (Maybe FilePath)
     findFileWithName file =
       "test" </> "Testcases" </> "LogicProgram" </> dir
-        |> Find.find always (fileName ==? file)
+        |> find always (fileName ==? file)
         |$> listToMaybe
 
     expectedOutputFile :: FilePath =

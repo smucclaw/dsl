@@ -14,6 +14,15 @@ DECIDE,isBreakdownSituation,,,,s,,,,
 WHEN,isVehicleInSituation,,,,s,veh,,,,
 AND,gotStolen,,,,,veh
 
+
+§,rule_VehicleBreakdown_,,,,,,,,,
+GIVEN,s,IS,A,Situation,,,,,,
+,veh,IS,A,Vehicle,,,,,,
+DECIDE,isBreakdownSituation,,,,s,,lv1,,
+WHEN,isVehicleInSituation,,,,s,veh,,,,
+AND,gotStolen,,lv2,,veh
+
+
 §,rule_VehicleBreakdown,,,,,,,,,
 GIVEN,s,IS,A,Situation,,,,,,
 ,veh,IS,A,Vehicle,,,,,,

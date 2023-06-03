@@ -6,7 +6,7 @@ module Main where
 import qualified LS as SFL4
 import Control.Monad.State
 import Control.Applicative
-import Data.List
+import Data.List (partition, intercalate)
 import Data.Time.ISO8601
 import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
@@ -132,8 +132,7 @@ main = do
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ do
-      mywritefile True topursFN     iso8601 "purs" asPursstr
-      when (not (null asPursErr)) $ mapM_ (putStrLn . ("Purescript: " ++)) asPursErr
+      mywritefile2 True topursFN     iso8601 "purs" asPursstr asPursErr
     when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
@@ -168,8 +167,7 @@ main = do
 
     when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
         let (asCheckl, asChecklErr) = xpRWS $ checklist nlgEnv rc rules
-        mywritefile True tochecklFN   iso8601 "txt" (show asCheckl)
-        mapM_ (putStrLn . ("Checklist: " ++)) asChecklErr
+        mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
     putStrLn "natural4: output to workdir done"
 
   -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
@@ -205,7 +203,6 @@ main = do
 
     when (SFL4.toChecklist rc) $ do
       let (checkls, checklsErr) = xpRWS $ checklist nlgEnv rc rules
-      mapM_ (putStrLn . ("Checklist: " ++)) checklsErr
       pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint asProlog
@@ -236,6 +233,7 @@ writeBSfile doLink dirname filename ext s = do
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 
 
+-- | output only "stdout" to outfile
 mywritefile :: Bool -> FilePath -> FilePath -> String -> String -> IO ()
 mywritefile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
@@ -243,6 +241,18 @@ mywritefile doLink dirname filename ext s = do
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
   writeFile mypath s
   when doLink $ myMkLink (filename <> "." <> ext) mylink
+
+-- | output both "stdout" to outfile and "stderr" to outfile.err
+mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> IO ()
+mywritefile2 doLink dirname filename ext s e = do
+  createDirectoryIfMissing True dirname
+  let mypath1    = dirname <> "/" <> filename <> "." <> ext
+      mypath2    = dirname <> "/" <> filename <> "." <> "err"
+      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  writeFile mypath2 (intercalate "\n" e)
+  writeFile mypath1 s
+  when doLink $ myMkLink (filename <> "." <> ext) mylink
+
 
 mywritefileDMN :: Bool -> FilePath -> FilePath -> String -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree -> IO ()
 mywritefileDMN doLink dirname filename ext xmltree = do

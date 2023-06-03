@@ -35,6 +35,8 @@ import qualified Data.Char as Char
 
 import qualified Text.RawString.QQ as QQ
 
+import LS.XPile.RWS
+
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
 -- in future: also ship out a Marking which represents the TYPICALLY values
@@ -72,6 +74,8 @@ combine (b:bs) (q:qs) =
   ((fst b), (snd b) ++ (snd q)) : combine bs qs
 
 
+-- [TODO] shouldn't this recurse down into the All and Any structures?
+-- something like fixNot AA.Any k xs = AA.Any k (fixNot <$> xs)
 fixNot :: BoolStructT -> BoolStructT
 fixNot (AA.Leaf x) = AA.Leaf x
 fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
@@ -145,9 +149,10 @@ asPurescript env rl =
            ]
           )
 
-translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> String
-translate2PS nlgEnv eng rules =
-  psPrefix
+translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileRWS String
+translate2PS nlgEnv eng rules = do
+  tell ["sample transpiler error coming from Purescript"]
+  return $ psPrefix
     <> ((tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules))))
     <> "\n\n"
     <> psSuffix

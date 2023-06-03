@@ -64,11 +64,11 @@ main = do
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
-      (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
+      (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpRWS (sfl4ToCorel4 rules))
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
-      (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
-      (toepilogFN,  asEpilog)  = (workuuid <> "/" <> "epilog",   sfl4ToEpilog rules)
-      (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
+      (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpRWS $ sfl4ToASP rules)
+      (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpRWS $ sfl4ToEpilog rules)
+      (todmnFN,     (asDMN, asDMNErr))        = (workuuid <> "/" <> "dmn",      xpRWS $ sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
                                                (<>)
@@ -121,14 +121,14 @@ main = do
 
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
-    when (      SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
+    when (      SFL4.tocorel4  opts) $ mywritefile2 True tocorel4FN   iso8601 "l4"   (commentIfError "--" asCoreL4) asCoreL4Err
     when (not $ SFL4.tocorel4  opts) $ putStrLn "natural4: skipping corel4"
     when (      SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "natural4: skipping babyl4"
     when (not $ SFL4.toasp     opts) $ putStrLn "natural4: skipping asp"
     when (SFL4.toasp     opts) $ putStrLn "natural4: will output asASP"
-    when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
-    when (SFL4.toepilog  opts) $ mywritefile True toepilogFN   iso8601 "lp"   asEpilog
+    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN      iso8601 "lp"   (commentIfError "%%" asASP)    asASPErr
+    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN   iso8601 "lp"   (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ do
@@ -192,7 +192,7 @@ main = do
         mapM_ (putStrLn . Text.unpack) naturalLangSents)
         allNLGEnv
 
-    when (SFL4.toBabyL4 rc) $ putStrLn $ asCoreL4
+    when (SFL4.toBabyL4 rc) $ putStrLn $ commentIfError "--" asCoreL4
 
     when (SFL4.toUppaal rc) $ do
       pPrint $ Uppaal.toL4TA rules
@@ -273,3 +273,9 @@ snakeScrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++
                 Text.unpack $
                 Text.replace " " "_" $
                 Text.intercalate "-" x
+
+-- | if the return value of an xpRWS is a Left, dump to output file with the error message commented; otherwise dump the regular output.
+commentIfError :: String -> Either String String -> String
+commentIfError comment (Left x) = comment ++ " " ++ x
+commentIfError _      (Right x) = x
+

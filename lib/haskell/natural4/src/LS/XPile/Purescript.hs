@@ -25,7 +25,6 @@ import LS.NLP.NLG
 import LS.NLP.NL4Transformations
 import LS.Interpreter
 import Control.Monad (guard, liftM, join, when, unless)
-import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.List as DL
 import Data.Map ((!))
 import Data.Bifunctor (second)
@@ -107,7 +106,7 @@ biggestQ env rl = do
       sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
   return $
     if not (null sorted)
-    then pure ((Map.fromList (onlyqs)) ! (fst $ DL.head sorted))
+    then pure ((Map.fromList (onlyqs)) ! (fst $ DL.head sorted)) -- [TODO] DL.head is unsafe, rephrase
     else []
 
 biggestS :: NLGEnv -> [Rule] -> XPileRWS [BoolStructT]

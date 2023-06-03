@@ -31,9 +31,9 @@ import qualified Data.List.NonEmpty as NE
 -- import           Data.List.NonEmpty (NonEmpty((:|)))
 -- import Text.Pretty.Simple (pShow, pShowNoColor)
 -- import qualified Data.Text.Lazy as TL
--- import Control.Monad (guard, join)
+import Control.Monad (guard, join)
 import Data.Either (rights, isRight, fromRight)
-import Control.Monad.Except
+import Control.Monad.Except ( MonadError(throwError) )
 -- import qualified Data.Traversable as DT
 
 import Text.Regex.TDFA
@@ -49,7 +49,7 @@ import LS.Tokens (undeepers)
 import qualified Text.XML.HXT.Core as HXT
 
 import Debug.Trace (trace)
-
+import LS.XPile.RWS ( tell, XPileRWS, XPileRWSE, xpReturn, xpError, xpRWS )
 type ExprM a = Either String (Expr a)
 
 -- output to Core L4 for further transformation
@@ -62,37 +62,40 @@ sfl4Dummy = DummySRng "From spreadsheet"
 sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
 
-sfl4ToASP :: [SFL4.Rule] -> String
-sfl4ToASP rs =
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
-  let prg = Program () rulesTransformed in
-  let doc = ASP.astToDoc prg in
-    -- trace ("asp" ++ (show $ showL4 [] prg)) $
-    show doc
+sfl4ToASP :: [SFL4.Rule] -> XPileRWSE String
+sfl4ToASP rs = do
+  let (rulesTransformed, errs) = xpRWS $ mapM sfl4ToCorel4Rule rs
+      prg = Program () (concat $ rights rulesTransformed)
+      doc = ASP.astToDoc prg
+                   -- trace ("asp" ++ (show $ showL4 [] prg)) $
+  tell errs
+  xpReturn (show doc)
 
-sfl4ToEpilog :: [SFL4.Rule] -> String
-sfl4ToEpilog rs =
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
-  let prg = Program () rulesTransformed in
-  let doc = Epilog.astToDoc prg in
-    show doc
+sfl4ToEpilog :: [SFL4.Rule] -> XPileRWSE String
+sfl4ToEpilog rs = do
+  let (rulesTransformed, errs) = xpRWS $ mapM sfl4ToCorel4Rule rs
+      prg = Program () (concat $ rights rulesTransformed)
+      doc = Epilog.astToDoc prg
+  tell errs
+  xpReturn $ show doc
 
 -- destructure (Rule t) from this
 -- data TopLevelElement t = RuleTLE (Rule t) | ...
 -- not actually necessary
 
 -- sfl4ToDMN :: HXT.ArrowXml cat => [SFL4.Rule] -> cat a HXT.XmlTree
-sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
-sfl4ToDMN rs =
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rs
-      prg = Program () rulesTransformed
+sfl4ToDMN :: [SFL4.Rule] -> XPileRWS (HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree)
+sfl4ToDMN rs = do
+  let (rulesTransformed, errs) = xpRWS $ mapM sfl4ToCorel4Rule rs
+      prg = Program () (concat $ rights rulesTransformed)
   -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
-  in genXMLTreeNoType prg
+  tell errs
+  return $ genXMLTreeNoType prg
 
-sfl4ToCorel4 :: [SFL4.Rule] -> String
+sfl4ToCorel4 :: [SFL4.Rule] -> XPileRWSE String
 sfl4ToCorel4 rs =
   let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
-   -- sTable = scopetable interpreted
+      -- sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
       pBoilerplate = myrender $ prettyBoilerplate cTable
@@ -111,7 +114,7 @@ sfl4ToCorel4 rs =
                           , ""
                           ]
 
-  in unlines $ nubstrings $ concatMap lines
+  in xpReturn $ unlines $ nubstrings $ concatMap lines
   ( [ -- "#\n# outputted via L4.Program types\n#\n\n"
       -- , ppCorel4 . sfl4ToCorel4Program $ rs
       "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
@@ -293,8 +296,8 @@ postcondOfHornClauses :: [String] -> [HornClause2] -> ExprM ()
 postcondOfHornClauses cont [HC hh _hb] = relationalPredicateToExpr cont hh
 postcondOfHornClauses _ _ = pure trueVNoType
 
-sfl4ToCorel4Rule :: SFL4.Rule -> [TopLevelElement ()]
-sfl4ToCorel4Rule Regulative{} = []
+sfl4ToCorel4Rule :: SFL4.Rule -> XPileRWSE [TopLevelElement ()]
+sfl4ToCorel4Rule Regulative{} = tell ["sfl4ToCorel4Rule: Regulative rule unsupported, returning empty"] >> xpReturn []
 
 sfl4ToCorel4Rule h@Hornlike{..} =
             -- pull any type annotations out of the "given" paramtext as ClassDeclarations
@@ -302,7 +305,7 @@ sfl4ToCorel4Rule h@Hornlike{..} =
             -- TODO: the following produces an error: Prelude.tail: empty list
             -- has been temporarily commented out 
             -- given2classdecls given ++
-            rule
+  rule
   where
     cont = createContext h
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
@@ -318,13 +321,11 @@ sfl4ToCorel4Rule h@Hornlike{..} =
                 ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
-    rule =
+    rule = do
       let preCond = precondOfHornClauses cont clauses
           postCond = postcondOfHornClauses cont clauses
-      in
-        if isRight preCond && isRight postCond
-        then pure $
-             RuleTLE Rule
+      if isRight preCond && isRight postCond
+      then xpReturn $ pure $ RuleTLE Rule
              { annotOfRule    = ()
              , nameOfRule     = rlabel <&> rl2text <&> T.unpack
              , instrOfRule    = []
@@ -333,22 +334,21 @@ sfl4ToCorel4Rule h@Hornlike{..} =
              -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
              , postcondOfRule = fromRight (error "no postcond") postCond
              }
-        else []
+      else tell ["sfl4ToCorel4Rule: preCond and postCond were problematic, returning empty"] >> xpReturn []
 
 
-sfl4ToCorel4Rule Constitutive{ } = trace "sfl4ToCorel4Rule: erroring on Constitutive" $
-                                   mempty
-sfl4ToCorel4Rule TypeDecl{..} = [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
+sfl4ToCorel4Rule Constitutive{ } = tell ["sfl4ToCorel4Rule: erroring on Constitutive"] >> xpReturn mempty
+sfl4ToCorel4Rule TypeDecl{..} = xpReturn [ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
                                                          , nameOfClassDecl  = ClsNm $ T.unpack (mt2text name)
                                                          , defOfClassDecl   = ClassDef [] []}) ]
-sfl4ToCorel4Rule DefNameAlias { } = []
-sfl4ToCorel4Rule (RuleAlias _) = trace "sfl4ToCorel4Rule: erroring on RuleAlias" mempty   -- internal softlink to a constitutive rule label = _
-sfl4ToCorel4Rule RegFulfilled  = trace "sfl4ToCorel4Rule: erroring on RegFulfilled" mempty
-sfl4ToCorel4Rule RegBreach     = trace "sfl4ToCorel4Rule: erroring on RegBreach" mempty
-sfl4ToCorel4Rule Scenario {}   = trace "sfl4ToCorel4Rule: erroring on Scenario" mempty
-sfl4ToCorel4Rule DefTypically {} = mempty
-sfl4ToCorel4Rule RuleGroup {}  = trace "sfl4ToCorel4Rule: erroring on RuleGroup" mempty
-sfl4ToCorel4Rule (NotARule _)  = trace "sfl4ToCorel4Rule: erroring on NotARule" mempty
+sfl4ToCorel4Rule DefNameAlias { } = tell [ "sfl4ToCorel4Rule: not handling DefNameAlias"] >> xpReturn mempty
+sfl4ToCorel4Rule (RuleAlias _)   = tell [ "sfl4ToCorel4Rule: not handling RuleAlias"    ] >> xpReturn mempty   -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule RegFulfilled    = tell [ "sfl4ToCorel4Rule: not handling RegFulfilled" ] >> xpReturn mempty
+sfl4ToCorel4Rule RegBreach       = tell [ "sfl4ToCorel4Rule: not handling RegBreach"    ] >> xpReturn mempty
+sfl4ToCorel4Rule Scenario {}     = tell [ "sfl4ToCorel4Rule: not handling Scenario"     ] >> xpReturn mempty
+sfl4ToCorel4Rule DefTypically {} = tell [ "sfl4ToCorel4Rule: not handling DefTypically" ] >> xpReturn mempty
+sfl4ToCorel4Rule RuleGroup {}    = tell [ "sfl4ToCorel4Rule: not handling RuleGroup" ] >> xpReturn mempty
+sfl4ToCorel4Rule (NotARule _)    = tell [ "sfl4ToCorel4Rule: not handling NotARule"  ] >> xpReturn mempty
 
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr
@@ -737,9 +737,9 @@ prettyClasses ct =
 -- runTestrules :: IO()
 runTestrules :: [Doc ann]
 runTestrules =
-  let rls = testrules in
-  let rulesTransformed = concatMap sfl4ToCorel4Rule rls in
-    map (showL4 [PrintSystem L4Style]) rulesTransformed
+  let rls = testrules
+      (rulesTransformed, errs) = xpRWS $ mapM sfl4ToCorel4Rule rls
+  in map (showL4 [PrintSystem L4Style]) (concat $ rights rulesTransformed)
 
   {-
 >>> runTestrules

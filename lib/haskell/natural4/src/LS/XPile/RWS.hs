@@ -30,7 +30,7 @@ type XPileRWS = RWS
 -- And that error will appear in the output file, commented.
 --
 -- Normal output then gets returned via `xpReturn`.
-type 87XPileRWSE a = XPileRWS (Either String a)
+type XPileRWSE a = XPileRWS (Either String a)
                 
 -- | the caller calls @(output, err) = xpRWS asOutput@
 --

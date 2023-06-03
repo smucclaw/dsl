@@ -729,7 +729,9 @@ prettyClasses ct =
                  ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
          ++ ["###"]
 
+    ucfirst "" = ""
     ucfirst x = T.toUpper (T.singleton $ T.head x) <> T.tail x
+    lcfirst "" = ""
     lcfirst x = T.toLower (T.singleton $ T.head x) <> T.tail x
 
 

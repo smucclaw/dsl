@@ -24,6 +24,8 @@ import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
 import LS.XPile.RWS
 
+import Debug.Trace
+
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
   , gfLang :: Language
@@ -184,13 +186,14 @@ ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileRWS [AA.O
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      tell ["reg"] -- [TODO] turn this into a LS.XPile.RWS.tell
+      when (verbose env) $ do
+        tell ["reg"]
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
-        print "horn"
-        print $ ruleQnTrees env alias rule
-        print "---"
+        tell ["horn"
+             , show $ ruleQnTrees env alias rule
+             , "---"]
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias

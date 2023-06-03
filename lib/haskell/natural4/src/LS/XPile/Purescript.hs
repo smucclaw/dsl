@@ -102,19 +102,26 @@ biggestQ env rl = do
   q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
   let flattened = (\(x,ys) ->
         (x, [AA.extractLeaves y | y <- ys])) <$> q
-      onlyqs = (\(x, y) -> (x, (justQuestions (head y) (map fixNot $ tail y)))) <$> q
-      sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
-  return $
-    if not (null sorted)
-    then pure ((Map.fromList (onlyqs)) ! (fst $ DL.head sorted)) -- [TODO] DL.head is unsafe, rephrase
-    else []
+
+      onlyqs = [ (x, justQuestions yh (map fixNot yt))
+               | (x, y) <- q
+               , Just (yh, yt) <- [DL.uncons y] ]
+
+      sorted = DL.reverse $ DL.sortOn DL.length flattened
+  if not (null sorted)
+    then case fst (DL.head sorted) `Map.lookup` Map.fromList onlyqs of
+           Nothing -> tell ["biggestQ didn't work, couldn't find " ++ show (fst (DL.head sorted)) ++ " in dict"] >> return []
+           Just x  -> return [x]
+    else return []
 
 biggestS :: NLGEnv -> [Rule] -> XPileRWS [BoolStructT]
 biggestS env rl = do
   q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
   let flattened = (\(x,ys) ->
         (x, [AA.extractLeaves y | y <- ys])) <$> q
-      onlys = (\(x, y) -> (x, (justStatements (head y) (map fixNot $ tail y)))) <$> q
+      onlys = [ (x, justStatements yh (map fixNot yt))
+              | (x,y) <- q
+              , Just (yh, yt) <- [DL.uncons y] ]
       sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
   return $
     if not (null sorted)
@@ -126,8 +133,9 @@ asPurescript env rl = do
   tell ["** asPurescript running for gfLang=" <> showLanguage (gfLang env)]
   c' <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
   let guts = [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                       , alwaysLabeled (justQuestions (head bs) (map fixNot (tail bs))))
+                       , alwaysLabeled (justQuestions hbs (map fixNot tbs)))
              | (names,bs) <- c'
+             , Just (hbs, tbs) <- [DL.uncons bs]
              ]
   
   return $ (show . vsep)

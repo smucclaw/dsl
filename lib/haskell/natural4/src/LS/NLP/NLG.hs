@@ -22,7 +22,7 @@ import Paths_natural4
 import Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
-import Debug.Trace (trace)
+import LS.XPile.RWS
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -180,11 +180,12 @@ nlg' thl env rule = case rule of
 -- +-----------------+-----------------------------------------------------+
 
 
-ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileRWS [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
+  tell ["ruleQuestions stderr"]
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ print "reg"
+      tell ["reg"] -- [TODO] turn this into a LS.XPile.RWS.tell
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
@@ -243,8 +244,9 @@ mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
 -- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
 -- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
-nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion :: NLGEnv -> Rule -> XPileRWS [Text.Text]
 nlgQuestion env rl = do
+  tell ["nlgQuestion stderr"]
   questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList questionsInABoolStruct
 

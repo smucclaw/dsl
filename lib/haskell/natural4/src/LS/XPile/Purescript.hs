@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MonadComprehensions, ParallelListComp #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -23,7 +24,7 @@ import qualified Data.Map as Map
 import LS.NLP.NLG
 import LS.NLP.NL4Transformations
 import LS.Interpreter
-import Control.Monad (guard)
+import Control.Monad (guard, liftM)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.List as DL
 import Data.Map ((!))
@@ -60,7 +61,7 @@ namesAndStruct rl =
 
 namesAndQ :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
 namesAndQ env rl =
-  [ (name, unsafePerformIO q) | q <- questStruct]
+  [ (name, fst $ xpRWS q) | q <- questStruct]
   where
     name = map ruleLabelName rl
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
@@ -114,8 +115,10 @@ biggestS env rl = do
   guard (not $ null sorted)
   return ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
 
-asPurescript :: NLGEnv -> [Rule] -> String
-asPurescript env rl =
+asPurescript :: NLGEnv -> [Rule] -> XPileRWS String
+asPurescript env rl = do
+  tell ["** asPurescript running for gfLang=" <> showLanguage (gfLang env)]
+  return $
      show (vsep
            [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
            , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable " <>
@@ -152,12 +155,13 @@ asPurescript env rl =
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileRWS String
 translate2PS nlgEnv eng rules = do
   tell ["sample transpiler error coming from Purescript"]
-  return $ psPrefix
-    <> ((tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules))))
-    <> "\n\n"
-    <> psSuffix
-    <> "\n\n"
-    <> (DL.intercalate "\n\n" $ [asPurescript l rules | l <- nlgEnv])
+  mconcat <$> sequence
+    [ pure (psPrefix
+            <> (tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules)))
+            <> "\n\n"
+            <> psSuffix
+            <> "\n\n")
+    , DL.intercalate "\n\n" <$> sequence [asPurescript l rules | l <- nlgEnv] ]
 
 psPrefix :: String -- the stuff at the top of the purescript output
 psPrefix = [QQ.r|

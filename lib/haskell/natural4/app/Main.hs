@@ -167,8 +167,9 @@ main = do
 
 
     when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
-        asCheckl <- show <$> checklist nlgEnv rc rules
-        mywritefile True tochecklFN   iso8601 "txt" asCheckl
+        let (asCheckl, asChecklErr) = xpRWS $ checklist nlgEnv rc rules
+        mywritefile True tochecklFN   iso8601 "txt" (show asCheckl)
+        mapM_ (putStrLn . ("Checklist: " ++)) asChecklErr
     putStrLn "natural4: output to workdir done"
 
   -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
@@ -203,7 +204,8 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toChecklist rc) $ do
-      checkls <- checklist nlgEnv rc rules
+      let (checkls, checklsErr) = xpRWS $ checklist nlgEnv rc rules
+      mapM_ (putStrLn . ("Checklist: " ++)) checklsErr
       pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint asProlog

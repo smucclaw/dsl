@@ -12,6 +12,8 @@ import LS.NLP.NLG
 import AnyAll.Types
 import AnyAll.BoolStruct
 
+import LS.XPile.RWS
+
 import Data.Maybe (maybeToList)
 import Data.List (nub, groupBy)
 import qualified Data.Text as Text
@@ -28,13 +30,13 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
     globalrules = [ r
                   | r@DefTypically{} <- rs ]
 
-checklist :: NLGEnv -> RunConfig -> [Rule] -> IO Grounds
+checklist :: NLGEnv -> RunConfig -> [Rule] -> XPileRWS Grounds
 checklist env _ rs = do
    qs <- nlgQuestion env `mapM` rs
    let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
    pure $ sequence nonEmptyQs
 
-multiChecklist :: [NLGEnv] -> RunConfig -> [Rule] -> IO Grounds
+multiChecklist :: [NLGEnv] -> RunConfig -> [Rule] -> XPileRWS Grounds
 multiChecklist env rc rs = do
   qs <- sequence [checklist e rc rs | e <- env]
   pure $ concat qs
@@ -116,14 +118,14 @@ defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 
 -- this is to be read as an "external requirement interface"
 
-groundsToChecklist :: NLGEnv -> Grounds -> IO Grounds
+groundsToChecklist :: NLGEnv -> Grounds -> XPileRWS Grounds
 groundsToChecklist env mts = sequence [
   case mtGroup of
     [multiterm] -> groundToChecklist env multiterm
     _ -> return $ pickOneOf mtGroup
   | mtGroup <- groupBy groupSingletons mts
   ]
-groundToChecklist :: NLGEnv -> MultiTerm -> IO MultiTerm
+groundToChecklist :: NLGEnv -> MultiTerm -> XPileRWS MultiTerm
 groundToChecklist env mt = do
 {-  let txt = Text.unwords mt
   uds <- parseUD env txt

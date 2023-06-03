@@ -24,7 +24,7 @@ import qualified Data.Map as Map
 import LS.NLP.NLG
 import LS.NLP.NL4Transformations
 import LS.Interpreter
-import Control.Monad (guard, liftM)
+import Control.Monad (guard, liftM, join, when, unless)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.List as DL
 import Data.Map ((!))
@@ -53,26 +53,29 @@ textMT :: [RuleName] -> [T.Text]
 textMT rl = map mt2text rl
 
 -- two boolstructT: one question and one phrase
-namesAndStruct :: [Rule] -> [([RuleName], [BoolStructT])]
-namesAndStruct rl =
+namesAndStruct :: [Rule] -> XPileRWS [([RuleName], [BoolStructT])]
+namesAndStruct rl = pure
   [ (names, [bs]) | (names, bs) <- qaHornsT interp]
   where
     interp = l4interpret defaultInterpreterOptions rl
 
-namesAndQ :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
-namesAndQ env rl =
-  [ (name, fst $ xpRWS q) | q <- questStruct]
+namesAndQ :: NLGEnv -> [Rule] -> XPileRWS [([RuleName], [BoolStructT])]
+namesAndQ env rl = do
+  sequence [ [ (name, q') | q' <- q ]
+           | q <- questStruct ]
   where
     name = map ruleLabelName rl
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
     questStruct = map (ruleQuestions env alias) (expandRulesForNLG env rl) -- [AA.OptionallyLabeledBoolStruct Text.Text]
 
-combine :: [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
-combine [] [] = []
-combine (b:bs) [] = []
-combine [] (q:qs) = []
+combine :: [([RuleName], [BoolStructT])]
+        -> [([RuleName], [BoolStructT])]
+        -> XPileRWS [([RuleName], [BoolStructT])]
+combine [] [] = pure []
+combine (b:bs) [] = pure []
+combine [] (q:qs) = pure []
 combine (b:bs) (q:qs) =
-  ((fst b), (snd b) ++ (snd q)) : combine bs qs
+  (:) <$> pure ((fst b), (snd b) ++ (snd q)) <*> combine bs qs
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?
@@ -95,50 +98,52 @@ justStatements xs y = xs
 labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
 labelQs x = map alwaysLabeled x
 
-biggestQ :: NLGEnv -> [Rule] -> [BoolStructT]
+biggestQ :: NLGEnv -> [Rule] -> XPileRWS [BoolStructT]
 biggestQ env rl = do
-  let q = combine (namesAndStruct rl) (namesAndQ env rl)
-      flattened = (\(x,ys) ->
+  q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let flattened = (\(x,ys) ->
         (x, [AA.extractLeaves y | y <- ys])) <$> q
       onlyqs = (\(x, y) -> (x, (justQuestions (head y) (map fixNot $ tail y)))) <$> q
       sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
-  guard (not $ null sorted)
-  return ((Map.fromList (onlyqs)) ! (fst $ DL.head sorted))
+  return $
+    if not (null sorted)
+    then pure ((Map.fromList (onlyqs)) ! (fst $ DL.head sorted))
+    else []
 
-biggestS :: NLGEnv -> [Rule] -> [BoolStructT]
+biggestS :: NLGEnv -> [Rule] -> XPileRWS [BoolStructT]
 biggestS env rl = do
-  let q = combine (namesAndStruct rl) (namesAndQ env rl)
-      flattened = (\(x,ys) ->
+  q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let flattened = (\(x,ys) ->
         (x, [AA.extractLeaves y | y <- ys])) <$> q
       onlys = (\(x, y) -> (x, (justStatements (head y) (map fixNot $ tail y)))) <$> q
       sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
-  guard (not $ null sorted)
-  return ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
+  return $
+    if not (null sorted)
+    then pure ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
+    else []
 
 asPurescript :: NLGEnv -> [Rule] -> XPileRWS String
 asPurescript env rl = do
   tell ["** asPurescript running for gfLang=" <> showLanguage (gfLang env)]
-  return $
-     show (vsep
+  c' <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let guts = [ toTuple ( T.intercalate " / " (mt2text <$> names)
+                       , alwaysLabeled (justQuestions (head bs) (map fixNot (tail bs))))
+             | (names,bs) <- c'
+             ]
+  
+  return $ (show . vsep)
            [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable " <>
-             (pretty $ TL.unpack (
-                 pShowNoColor
-                   [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                            , alwaysLabeled (justQuestions (head bs) (map fixNot (tail bs))))
-                   | (names,bs) <- (combine (namesAndStruct rl) (namesAndQ env rl))
-                   ]
-                 )
-             )
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable "
+           , (pretty . TL.unpack . pShowNoColor $ guts )
            , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> "Marking :: Marking"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable " <>
-             (pretty . TL.unpack
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable "
+           , (pretty . TL.unpack
               . TL.replace "False" "false"
               . TL.replace "True" "true"
               . pShowNoColor $
               fmap toTuple . Map.toList . AA.getMarking $
               getMarkings (l4interpret defaultInterpreterOptions rl)
-             )
+                  )
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements :: Object.Object (Item String)"
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
           --   (pretty $ TL.unpack (
@@ -150,14 +155,14 @@ asPurescript env rl = do
           --       )
           --   )
            ]
-          )
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileRWS String
 translate2PS nlgEnv eng rules = do
   tell ["sample transpiler error coming from Purescript"]
+  bigQ <- biggestQ eng rules
   mconcat <$> sequence
     [ pure (psPrefix
-            <> (tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules)))
+            <> (tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) bigQ))
             <> "\n\n"
             <> psSuffix
             <> "\n\n")

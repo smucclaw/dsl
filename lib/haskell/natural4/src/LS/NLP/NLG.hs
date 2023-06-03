@@ -182,7 +182,6 @@ nlg' thl env rule = case rule of
 
 ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileRWS [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
-  tell ["ruleQuestions stderr"]
   case rule of
     Regulative {subj,who,cond,upon} -> do
       tell ["reg"] -- [TODO] turn this into a LS.XPile.RWS.tell
@@ -246,7 +245,6 @@ mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
 
 nlgQuestion :: NLGEnv -> Rule -> XPileRWS [Text.Text]
 nlgQuestion env rl = do
-  tell ["nlgQuestion stderr"]
   questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList questionsInABoolStruct
 

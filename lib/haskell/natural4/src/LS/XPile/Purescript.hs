@@ -161,7 +161,7 @@ psPrefix = [QQ.r|
 -- Do not edit by hand.
 -- Instead, revise the toolchain starting at smucclaw/dsl/lib/haskell/natural4/app/Main.hs
 
-module RuleLib.PDPADBNO where
+module RuleLib.Interview where
 
 import Prelude
 import Data.Either
@@ -172,16 +172,16 @@ import Foreign.Object as Object
 
 import AnyAll.Types
 
-schedule1_part1 :: Item String
-schedule1_part1 =
+interviewRules :: Item String
+interviewRules =
 
   |]
 
 
 psSuffix :: String -- at the bottom of the purescript output
 psSuffix = [QQ.r|
-schedule1_part1_nl :: NLDict
-schedule1_part1_nl =
+interviewRules_nl :: NLDict
+interviewRules_nl =
   Map.fromFoldable
     [ ]
     |]

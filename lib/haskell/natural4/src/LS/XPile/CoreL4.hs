@@ -336,11 +336,16 @@ sfl4ToCorel4Program l4i
 -- [TODO] we could also go from the output of Interpreter, e.g. with qaHorns*
 
 ppCorel4 :: L4.Program () -> String
-ppCorel4 p =
-  T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram p)
+ppCorel4 Program {elementsOfProgram} =
+  elementsOfProgram |$> pptle |> vsep |> myrender |> T.unpack
+  -- T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram)
 
 pptle :: TopLevelElement () -> Doc ann
-pptle (ClassDeclTLE cdcl) = "class" <+> snake_inner (MTT . T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
+pptle (ClassDeclTLE ClassDecl {nameOfClassDecl}) =
+  [__di|
+    class #{nameOfClassDecl |> stringOfClassName |> T.pack |> MTT |> snake_inner}
+  |]
+  -- "class" <+> snake_inner (MTT . T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
 
 pptle (RuleTLE Rule { nameOfRule }) =
   vsep [nameOfRule']
@@ -390,9 +395,9 @@ varsToExprNoType [] = refute "internal error (varsToExprNoType [])"
 multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
 multiTermToExprNoType cont mt = do
-  boo <- traverse (mtExprToExprNoType cont) mt
-  case boo of
-    (VarE t v : args) -> pure $ funArgsToAppNoType (VarE t v) args
+  expr <- traverse (mtExprToExprNoType cont) mt
+  case expr of
+    VarE t v : args -> pure $ funArgsToAppNoType (VarE t v) args
     [e] -> pure e
     _ -> refute "non-variable name in function position"
 
@@ -431,8 +436,8 @@ boolStructRToExpr cont anyAll =
     |> traverse (boolStructRToExpr cont)
     -- Transform the BoolStructR into the corresponding BabyL4 expr.
     |$> \case
-          (null -> True) -> trueVNoType
-          exprs -> foldr1 (BinOpE () (BBool bbOp)) exprs
+      (null -> True) -> trueVNoType
+      exprs -> foldr1 (BinOpE () (BBool bbOp)) exprs
   where
     (bbOp, bss) = case anyAll of
       All _m_ls bss -> (BBand, bss)
@@ -440,7 +445,9 @@ boolStructRToExpr cont anyAll =
 
 relationalPredicateToExpr :: [String] -> RelationalPredicate -> ExprM ann ()
 relationalPredicateToExpr cont (RPParamText ne) =
-  refute [__di|CoreL4: relationalPredicateToExpr: erroring on RPParamText #{ne}|]
+  refute [__di|
+    CoreL4: relationalPredicateToExpr: erroring on RPParamText #{ne}
+  |]
 
 relationalPredicateToExpr cont (RPMT mts) =
   multiTermToExprNoType cont mts
@@ -641,52 +648,71 @@ prettyDecls previously rs =
 -- for p : Policy
 -- HelpLimit p 7
 
-
-
-
-
-
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
-  vsep $ concat
-  [ -- global symtab as facts
-    [ "fact" <+> angles (snake_case scopename)
-    , commentShow "#" symtab'
-    ]
-  | (scopename , symtab') <- Map.toList sctabs
-  , (_mt, (_symtype,_vals)) <- Map.toList symtab'
-  ]
+  vsep $ do
+    (scopename , symtab') <- Map.toList sctabs
+    (_mt, (_symtype,_vals)) <- Map.toList symtab'
+    -- global symtab as facts
+    pure [__di|
+      fact #{angles $ snake_case scopename}
+      #{commentShow "#" symtab'}
+    |]
+
+  -- [ -- global symtab as facts
+  --   [ "fact" <+> angles (snake_case scopename)
+  --   , commentShow "#" symtab'
+  --   ]
+  -- | (scopename , symtab') <- Map.toList sctabs
+  -- , (_mt, (_symtype,_vals)) <- Map.toList symtab'
+  -- ]
 
 -- | enums are exhaustive and disjoint
 prettyBoilerplate :: ClsTab -> Doc ann
 prettyBoilerplate ct@(CT ch) =
-  vsep $ concat [
-  [ "fact" <+> angles (c_name <> "Exhaustive")
-  , "for x:" <+> c_name
-  , encloseSep "" "" " || " $ (\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList
-  , ""
-  , "fact" <+> angles (c_name <> "Disj")
-  , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList
-  , ""
-  ]
-  | className <- getCTkeys ct
-  , Just (ctype, _) <- [Map.lookup className ch]
-  , (Just (InlineEnum TOne nelist),_) <- [ctype]
-  , let c_name = snake_inner (MTT className)
-        enumList = enumLabels_ nelist
-  ]
+  vsep $ do
+    className <- getCTkeys ct
+    className
+      |> (`Map.lookup` ch)
+      |> maybe mempty
+        ( \(_ctype@(Just (InlineEnum TOne nelist), _), _) ->
+            let c_name = snake_inner (MTT className)
+                enumList = enumLabels_ nelist
+            in pure [__di|
+              fact #{angles $ c_name <> "Exhaustive"}
+              for x:#{c_name} #{encloseSep "" "" " || " ((\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList)}
+
+              fact #{angles $ c_name <> "Disj"}
+              #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList)}
+            |]
+        )
   where
+    -- [ "fact" <+> angles (c_name <> "Exhaustive")
+    -- , "for x:" <+> c_name
+    -- , encloseSep "" "" " || " $ (\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList
+    -- , ""
+    -- , "fact" <+> angles (c_name <> "Disj")
+    -- , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList
+    -- , ""
+    -- ]
+    -- \| className <- getCTkeys ct
+    -- , Just (ctype, _) <- [Map.lookup className ch]
+    -- , (Just (InlineEnum TOne nelist),_) <- [ctype]
+    -- , let c_name = snake_inner (MTT className)
+    --       enumList = enumLabels_ nelist
+    -- ]
     pairwise :: [a] -> [(a, a)]
     pairwise xs =
-      xs                    -- [x0, x1 ...]
-        |> tails            -- [[x0, x1 ...], [x1 ...], ...]
-        |> mapMaybe uncons  -- [(x0, [x1 ... xn]) ... ]
+      xs -- [x0, x1 ...]
+        |> tails -- [[x0, x1 ...], [x1 ...], ...]
+        |> mapMaybe uncons -- [(x0, [x1 ... xn]) ... ]
         -- This does NOT play nice with infinite lists in that if xs is infinite,
         -- then tail is also always infinite, so that the order type is > ω.
         -- Consequently, some pairs may never get enumerated over.
         |> foldMap (\(x, tail) -> [(x, y) | y <- tail])
-    -- pairwise [] = []
-    -- pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
+
+-- pairwise [] = []
+-- pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
 
 -- | print arithmetic elements as defn
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
@@ -697,7 +723,7 @@ commentShow c x = commentWith c (T.lines (T.pack (show x)))
 
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
 prettyDefnCs rname cs = do
-  cl@SFL4.HC {hHead, hBody} <- cs
+  cl@SFL4.HC {hHead = hHead@(RPConstraint lhs RPis rhs), hBody} <- cs
   guard $ isNothing hBody
   -- [TODO] we had some code that detected which word of (Foo IS Bar) was previously
   -- encountered, and which was new. The new word (suppose it's Bar) would be the
@@ -707,8 +733,7 @@ prettyDefnCs rname cs = do
   -- [TODO] convert "age < 16 years" to "age_in_years < 16"
   -- OR just convert to "age < 16"
 
-  let RPConstraint lhs RPis rhs = hHead
-      rhss = T.unpack (mt2text rhs)
+  let rhss = T.unpack (mt2text rhs)
       myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
                                                           ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
                                           :: String)) :: [String]

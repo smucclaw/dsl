@@ -400,7 +400,7 @@ multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 multiTermToExprNoType cont mt = do
   expr <- traverse (mtExprToExprNoType cont) mt
   case expr of
-    VarE t v : args -> pure $ funArgsToAppNoType (VarE t v) args
+    var@(VarE t v) : args -> pure $ funArgsToAppNoType var args
     [e] -> pure e
     _ -> refute "non-variable name in function position"
 

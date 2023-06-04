@@ -65,7 +65,7 @@ import L4.Syntax as L4
     ClassName (ClsNm, stringOfClassName),
     Expr (BinOpE, UnaOpE, ValE, VarE),
     Program (..),
-    QVarName (QVarName),
+    QVarName (..),
     Rule
       ( Rule,
         annotOfRule,
@@ -79,7 +79,7 @@ import L4.Syntax as L4
     UBoolOp (UBnot),
     UnaOp (UBool),
     Val (BoolV, FloatV, IntV),
-    Var (GlobalVar, LocalVar),
+    Var (..),
     VarName,
   )
 import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
@@ -389,10 +389,16 @@ falseVNoType = ValE () (BoolV False)
 -- ASP TODO: add env (var list) as a second arg, and look up varname in env
 -- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
 varNameToVarNoType :: [String] -> VarName -> Var ()
-varNameToVarNoType cont vn
-  | null cont = GlobalVar (QVarName () vn)
-  | vn ==  head cont = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
-  | otherwise = varNameToVarNoType (tail cont) vn
+varNameToVarNoType [] vn =
+  GlobalVar $ QVarName {nameOfQVarName = vn, annotOfQVarName = ()}
+
+varNameToVarNoType cont@(head:_) vn@((== head) -> True) =
+  LocalVar {..}
+  where
+    nameOfVar = QVarName {nameOfQVarName = vn, annotOfQVarName = ()}
+    indexOfVar = cont |> elemIndex vn |> fromMaybe 0
+
+varNameToVarNoType (_:tail) vn = varNameToVarNoType tail vn
 
 varsToExprNoType :: [Var t] -> ExprM ann t
 varsToExprNoType (v:vs) = pure $ applyVarsNoType v vs
@@ -403,7 +409,7 @@ multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 multiTermToExprNoType cont mt = do
   boo <- traverse (mtExprToExprNoType cont) mt
   case boo of
-    ((VarE t v) : args) -> pure $ funArgsToAppNoType (VarE t v) args
+    (VarE t v : args) -> pure $ funArgsToAppNoType (VarE t v) args
     [e] -> pure e
     _ -> refute "non-variable name in function position"
 

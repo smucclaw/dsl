@@ -385,8 +385,8 @@ falseVNoType = ValE () (BoolV False)
 
 varNameToVarNoType :: [String] -> VarName -> Var ()
 varNameToVarNoType context nameOfQVarName =
-  context
-    |> elemIndex nameOfQVarName
+  nameOfQVarName
+    |> (`elemIndex` context)
     |> maybe (GlobalVar qVarName) (LocalVar qVarName)
   where
     qVarName = QVarName {annotOfQVarName = (), ..}

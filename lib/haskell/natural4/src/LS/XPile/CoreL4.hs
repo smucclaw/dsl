@@ -37,7 +37,7 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 import Control.Applicative (Applicative (liftA2))
 import Control.Monad (guard, join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
-import Data.Bifunctor (Bifunctor (bimap))
+import Data.Bifunctor (Bifunctor (..))
 import Data.Coerce (coerce)
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as Fold
@@ -612,7 +612,7 @@ hc2decls r
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
           typeMap = Map.fromList [ (varName, fromJust varType) -- safe due to isJust test below
-                                 | (varName, mtypesig) <- maybe [] (fmap (mapFst NE.head) . NE.toList) localEnv
+                                 | (varName, mtypesig) <- maybe [] (fmap (first NE.head) . NE.toList) localEnv
                                  , let underlyingm = getUnderlyingType <$> mtypesig
                                  , isJust underlyingm
                                  , isRight $ fromJust underlyingm
@@ -622,7 +622,6 @@ hc2decls r
           declType = pretty <$> mapMaybe (`Map.lookup` typeMap) pfs
     ]
   where
-    mapFst f (x,y) = (f x,y)
     rightToMaybe (Left _) = Nothing
     rightToMaybe (Right x) = Just x
 hc2decls _ = emptyDoc

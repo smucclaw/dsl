@@ -35,7 +35,7 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 -- TODO: the following is only for testing purposes, can be removed later
 
 import Control.Applicative (Applicative (liftA2))
-import Control.Monad (join)
+import Control.Monad (guard, join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Coerce (coerce)
@@ -48,6 +48,7 @@ import Data.Map ((!))
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.Monoid (Ap (Ap), Endo (..))
+import Data.Sequence qualified as Seq
 import Data.Text qualified as T
 import Data.Tuple.All (SequenceT (sequenceT))
 import Debug.Trace (trace)
@@ -695,13 +696,36 @@ commentShow :: Show a => T.Text -> a -> Doc ann
 commentShow c x = commentWith c (T.lines (T.pack (show x)))
 
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
-prettyDefnCs rname cs =
-  [
-    if null myterms
+prettyDefnCs rname cs = do
+  cl@SFL4.HC {hHead, hBody} <- cs
+  guard $ isNothing hBody
+  -- [TODO] we had some code that detected which word of (Foo IS Bar) was previously
+  -- encountered, and which was new. The new word (suppose it's Bar) would be the
+  -- predicate, so it would turn into (Bar Foo).
+  -- And that would work whether the input was (Foo IS Bar) or (Bar IS Foo).
+
+  -- [TODO] convert "age < 16 years" to "age_in_years < 16"
+  -- OR just convert to "age < 16"
+
+  let RPConstraint lhs RPis rhs = hHead
+      rhss = T.unpack (mt2text rhs)
+      myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
+                                                          ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
+                                          :: String)) :: [String]
+      intypes = Seq.replicate (length myterms) "Integer"
+      replacements =
+        [ T.replace (T.pack t) (T.pack $ show n)
+        | (t, n) <- zip (nub myterms) x123 ]
+      outstr = chain replacements $ mt2text rhs
+      returntype = "Integer"
+
+  pure $ if null myterms
     then
-      "fact" <+> angles rname <> Prettyprinter.line <>
-      commentShow "#" cl <>
-      pretty (RP1 clHead)
+      [__di|
+        fact #{angles rname}
+        #{commentShow "#" cl}
+        #{pretty $ RP1 hHead}
+      |]
     else
       "defn" <+>
       -- we assume the lhs is "p something" so we get rid of the p
@@ -711,38 +735,13 @@ prettyDefnCs rname cs =
       -- each integer index becomes an x y z a b c d etc
       -- perhaps wiser if we use x1 x2 x3 instead of x y z
       -- them we output it all back with the input terms rewritten to x1 x2 x3
-      encloseSep "" "" " -> " (intypes ++ [ returntype ])
+      encloseSep "" "" " -> " (Fold.toList $ intypes Seq.|> returntype)
       <+> equals <+>
       encloseSep "" "" " -> " ([ "\\" <> idx <+> colon <+> typ
-                               | (typ,idx) <- zip intypes x123
-                               ] ++ [ pretty outstr ])
+                                | (typ,idx) <- zip (Fold.toList intypes) x123
+                                ] ++ [ pretty outstr ])
       <> Prettyprinter.line <> commentShow "#" cl
     -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
-  | cl <- cs
-  , let clHead = hHead cl
-        clBody = hBody cl
-  , isNothing clBody
-
-  -- [TODO] we had some code that detected which word of (Foo IS Bar) was previously
-  -- encountered, and which was new. The new word (suppose it's Bar) would be the
-  -- predicate, so it would turn into (Bar Foo).
-  -- And that would work whether the input was (Foo IS Bar) or (Bar IS Foo).
-
-  -- [TODO] convert "age < 16 years" to "age_in_years < 16"
-  -- OR just convert to "age < 16"
-
-  , (RPConstraint lhs RPis rhs) <- [clHead]
-  , let rhss = T.unpack (mt2text rhs)
-  , let myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
-                                                          ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
-                                          :: String)) :: [String]
-        intypes = replicate (length myterms) "Integer"
-        replacements =
-          [ T.replace (T.pack t) (T.pack $ show n)
-          | (t, n) <- zip (nub myterms) x123 ]
-        outstr = chain replacements $ mt2text rhs
-        returntype = "Integer"
-  ]
   where
     -- Right to left composition via the endomorphism monoid
     chain :: [a -> a] -> a -> a

@@ -42,7 +42,7 @@ import Data.Coerce (coerce)
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
-import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\), tails, uncons)
+import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Map ((!))
 import Data.Map qualified as Map
@@ -253,21 +253,6 @@ sfl4ToLogicProgramStr rules =
     |> pretty
     |> show
 
--- sfl4ToASP :: [SFL4.Rule] -> String
--- sfl4ToASP rs =
---   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
---   let prg = Program () rulesTransformed in
---   let doc = ASP.astToDoc prg in
---     -- trace ("asp" ++ (show $ showL4 [] prg)) $
---     show doc
-
--- sfl4ToEpilog :: [SFL4.Rule] -> String
--- sfl4ToEpilog rs =
---   let rulesTransformed = concatMap sfl4ToCorel4Rule rs in
---   let prg = Program () rulesTransformed in
---   let doc = Epilog.astToDoc prg in
---     show doc
-
 -- destructure (Rule t) from this
 -- data TopLevelElement t = RuleTLE (Rule t) | ...
 -- not actually necessary
@@ -275,14 +260,7 @@ sfl4ToLogicProgramStr rules =
 -- sfl4ToDMN :: HXT.ArrowXml cat => [SFL4.Rule] -> cat a HXT.XmlTree
 sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
 sfl4ToDMN rules =
-  rules
-    |> sfl4ToUntypedBabyL4
-    |> genXMLTreeNoType
-
-  -- let rulesTransformed = rs |$> sfl4ToCorel4Rule |> apVals2rights
-  --     prg = Program () rulesTransformed
-  -- -- in trace ("dmn" ++ (show $ showL4 [] prg)) $ genXMLTree prg
-  -- in genXMLTreeNoType prg
+  rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
 sfl4ToCorel4 :: [SFL4.Rule] -> String
 sfl4ToCorel4 rs =
@@ -954,9 +932,6 @@ runTestrules =
     |> mapThenSwallowErrs sfl4ToCorel4Rule
     |> mconcat
     |$> showL4 [PrintSystem L4Style]
-  -- let rls = testrules in
-  -- let rulesTransformed = mapThenSwallowErrs sfl4ToCorel4Rule rls in
-  --   map (showL4 [PrintSystem L4Style]) rulesTransformed
 
   {-
 >>> runTestrules

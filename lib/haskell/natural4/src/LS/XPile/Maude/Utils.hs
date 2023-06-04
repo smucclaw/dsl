@@ -20,8 +20,8 @@ import Data.Kind (Constraint, Type)
 import Data.List.NonEmpty (NonEmpty)
 import Data.MonoTraversable (Element, MonoFoldable (otoList))
 import Data.Monoid (Ap (Ap))
-import Data.Sequences as Seq (SemiSequence)
-import Data.Text qualified as T
+import Data.Sequences (SemiSequence)
+import Data.Text (Text)
 import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
 import Flow ((|>))
@@ -50,5 +50,5 @@ multiExprs2qid :: (SemiSequence t, Element t ~ MTExpr) => t -> Doc ann
 multiExprs2qid (otoList -> multiExprs :: [MTExpr]) =
   multiExprs |> mt2text |> text2qid
 
-text2qid :: T.Text -> Doc ann
+text2qid :: Text -> Doc ann
 text2qid x = [di|qid("#{x}")|]

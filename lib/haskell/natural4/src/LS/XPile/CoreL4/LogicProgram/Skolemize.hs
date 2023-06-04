@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.CoreL4.LogicProgram.Skolemize
   ( convertVarExprToDecl,
@@ -15,7 +16,7 @@ import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Foldable qualified as Fold
 import Data.Maybe (fromMaybe)
-import Flow ((|>))
+import Flow ((.>), (|>))
 import L4.PrintProg (capitalise)
 import L4.Syntax
   ( Expr (VarE, annotOfExpr, varOfExprVarE),
@@ -50,7 +51,7 @@ import Prettyprinter.Interpolate (__di)
 skolemizedLPRulePrecond :: Eq t => LPRule lpLang t -> [Expr t]
 skolemizedLPRulePrecond LPRule {..} = do
   precond <- preconds
-  pure $ transformPrecond precond postcond varDecls globalVarDecls ruleName
+  [transformPrecond precond postcond varDecls globalVarDecls ruleName]
   where
     varDecls = localVarDecls <> globalVarDecls
 
@@ -65,36 +66,23 @@ skolemizedLPRuleVardecls LPRule {..} =
     |> appToFunArgs []
     |> snd
     |> mapThenSwallowErrs (convertVarExprToDecl localVarDecls)
-    |> (\x -> genSkolemList localVarDecls x globalVarDecls ruleName)
+    |> \x -> genSkolemList localVarDecls x globalVarDecls ruleName
 
   -- genSkolemList (localVarDecls rule) (map (convertVarExprToDecl (localVarDecls rule)) (snd (appToFunArgs [] (postcond rule)))) (globalVarDecls rule) (ruleName rule)
 
 -- skolemizeLPRule :: LPRule t -> LPRule t
 
 skolemizeLPRule :: Eq t => LPRule lpLang t -> LPRule lpLang t
-skolemizeLPRule
-  lpRule@( LPRule
-             { ruleName,
-               localVarDecls,
-               globalVarDecls,
-               postcond
-             }
-           ) =
-    LPRule {preconds = skolemizedLPRulePrecond lpRule, ..}
-    -- ruleName = skolemizedLPRuleName r
-    -- (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
-
-
--- findVarDecl :: VarName -> [VarDecl t2] -> Maybe (VarDecl t2)
--- findVarDecl varname = find (\d -> varname == nameOfVarDecl d)
+skolemizeLPRule lpRule =
+  lpRule {preconds = skolemizedLPRulePrecond lpRule}
+  -- ruleName = skolemizedLPRuleName r
+  -- (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
 
 convertVarExprToDecl :: [VarDecl t2] -> Expr t -> MonoidValidate (Doc ann) (VarDecl t2)
-convertVarExprToDecl decls (VarE _ var) =
+convertVarExprToDecl decls (VarE _ (nameOfVar .> nameOfQVarName -> varName)) =
   decls
     |> Fold.find ((varName ==) . nameOfVarDecl)
     |> maybe2validate [__di|convertVarExprToDecl: couldn't find #{varName}|]
-  where
-    varName = nameOfQVarName $ nameOfVar var
 
 convertVarExprToDecl _decls _ =
   refute "trying to convert a non-variable expression to a declaration"
@@ -111,7 +99,7 @@ transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [C
 transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
   ruleid
     |> genSkolemList preconvar_dec postconvar_dec vardeclsGlobal
-    |> map varDeclToExpr -- new_preconvar_dec
+    |$> varDeclToExpr -- new_preconvar_dec
     |> funArgsToAppNoType (fst $ appToFunArgs [] precon) -- new_precond
   where
     (preconvar_dec, postconvar_dec) =
@@ -121,34 +109,15 @@ transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
         (convertVarExprToDecl vardecls)
         (snd $ appToFunArgs [] expr)
 
-  -- -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
-  -- let preconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
-  --     -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
-  --     postconvar_dec = mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
-  --     new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
-  --     new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
-  --  in new_precond
-
--- transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
--- transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
---   -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] precon)]
---   let preconvar_dec = map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon))
---       -- [varExprToDecl expr vardecls | expr <- snd (appToFunArgs [] postcon)]
---       postconvar_dec = map (convertVarExprToDecl vardecls) (snd (appToFunArgs [] postcon))
---       new_preconvar_dec = genSkolemList preconvar_dec postconvar_dec vardeclsGlobal ruleid
---       new_precond = funArgsToAppNoType (fst (appToFunArgs [] precon)) (map varDeclToExpr new_preconvar_dec)
---    in new_precond
-
 --genSkolem ::  VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
 -- Takes in an existing precondition var_decl, list of postcon var_decls, list of global varDecls and returns skolemized precon var_decl
 genSkolem :: Eq t => VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
-genSkolem varDecl@(VarDecl t vn u) y w _ =
-  VarDecl t newVarName u
-  where
-    newVarName
-      | varDecl `elem` w = vn
-      | varDecl `elem` y = capitalise vn
-      | otherwise = "extVar"
+genSkolem varDecl _ ((varDecl `elem`) -> True) _ = varDecl
+
+genSkolem varDecl@VarDecl {nameOfVarDecl} ((varDecl `elem`) -> True) _ _ =
+  varDecl {nameOfVarDecl = capitalise nameOfVarDecl}
+
+genSkolem varDecl _ _ _ = varDecl {nameOfVarDecl = "extVar"}
 
 -- List version of genSkolem
 genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
@@ -162,15 +131,15 @@ genSkolemList xs y w z = [genSkolem x y w z | x <- xs]
 -- Takes in a var_decl and turns it into a var_expr
 varDeclToExpr :: VarDecl t -> Expr t
 varDeclToExpr VarDecl {annotOfVarDecl, nameOfVarDecl} =
-  QVarName {annotOfQVarName = annotOfVarDecl, nameOfQVarName = nameOfVarDecl}
-    |> GlobalVar
-    |> mkVarE
+  VarE {..}
   where
-    mkVarE var@GlobalVar {nameOfVar} =
-      VarE
-        { annotOfExpr = annotOfQVarName nameOfVar,
-          varOfExprVarE = var
-        }
+    annotOfExpr = annotOfVarDecl
+    varOfExprVarE =
+      GlobalVar $
+        QVarName
+          { annotOfQVarName = annotOfVarDecl,
+            nameOfQVarName = nameOfVarDecl
+          }
 
 -- varDeclToExpr (VarDecl x y _z) = mkVarE (GlobalVar (QVarName x y))
 

@@ -42,9 +42,7 @@ henceLest2doc ::
   MonoidValidate (Doc ann1) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
-    (RuleAlias clause) ->
-      pure [di|#{henceLest} #{multiExprs2qid clause}|]
-
+    RuleAlias clause -> pure [di|#{henceLest} #{multiExprs2qid clause}|]
     _  -> throwDefaultErr
 
 {-

@@ -76,7 +76,7 @@ babyL4ToLogicProgram program = LogicProgram {..}
     lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])] =
       program |> rulesOfProgram |> mapThenSwallowErrs ruleToLPRule
 
-    (lpRulesFact, lpRulesNoFact) =
+    (lpRulesFact :: [LPRule lpLang t], lpRulesNoFact :: [LPRule lpLang t]) =
       lpRulesWithNegs
         |$> fst -- Grab all the lpRules
         |> partition isHeadOfPrecondFact -- Split into Fact and NoFact
@@ -97,7 +97,8 @@ genOppClauseNoType (posvar, negvar, n) = OpposesClause {..}
   where
     (posLit, negLit) = join bimap (`applyVarsNoType` args) (posvar, negvar)
     args =
-      [LocalVar (QVarName vart [i|V#{index}|]) index | index <- [0 .. n - 1]]
+      [LocalVar (QVarName vart [i|V#{index}|]) index
+      | index <- [0 .. n - 1]]
     vart = annotOfQVarName $ nameOfVar posvar
 
 -- TODO: details to be filled in
@@ -156,8 +157,8 @@ varTovarDecl (LocalVar {nameOfVar = QVarName {..}}) =
   VarDecl annotOfQVarName nameOfQVarName OkT
 
 negationVarname :: QVarName t -> QVarName t
-negationVarname QVarName {..} =
-  QVarName {nameOfQVarName = [i|not#{nameOfQVarName}|], ..}
+negationVarname qVarName@QVarName {nameOfQVarName} =
+  qVarName {nameOfQVarName = [i|not#{nameOfQVarName}|]}
 
 negationPredicate ::
   Expr t -> MonoidValidate (Doc ann) (Expr t, Maybe (Var t, Var t, Int))
@@ -168,21 +169,12 @@ negationPredicate
     } =
     case appToFunArgs [] e of
       (VarE t posvar@(GlobalVar vn), args) ->
-        pure (appExpr, triple)
+        pure (appExpr, Just (posvar, negvar, length args))
         where
-          negvar = GlobalVar $ negationVarname vn
           appExpr = funArgsToAppNoType (VarE t negvar) args
-          triple = Just (posvar, negvar, Fold.length args)
+          negvar = GlobalVar $ negationVarname vn
       _ -> refute "negationPredicate: ill-formed negation"
 negationPredicate e = pure (e, Nothing)
-
--- negationPredicate (UnaOpE _ (UBool UBnot) e@AppE{}) =
---   let (f, args) = appToFunArgs [] e in
---       case f of
---           VarE t posvar@(GlobalVar vn) ->
---               let negvar = GlobalVar (negationVarname vn)
---               in pure (funArgsToAppNoType (VarE t negvar) args, Just (posvar, negvar, length args))
---           _ -> refute "negationPredicate: ill-formed negation"
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())
 -- The price to pay: No more preprocessing of rules (simplification with clarify and ruleDisjL)

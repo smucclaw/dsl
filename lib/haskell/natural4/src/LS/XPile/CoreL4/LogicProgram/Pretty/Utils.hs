@@ -33,7 +33,12 @@ toBrackets :: [VarDecl t] -> Doc ann
 toBrackets varDecls = varDecls |> varDeclToVarStrList |> toBrackets2
 
 preconToVarStrList :: Expr t -> [VarDecl t] -> [String]
-preconToVarStrList precon vardecls = varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecls) (snd (appToFunArgs [] precon)))
+preconToVarStrList
+  (appToFunArgs [] -> (_, precondArgs))
+  varDecls =
+    precondArgs
+      |> mapThenSwallowErrs (convertVarExprToDecl varDecls)
+      |> varDeclToVarStrList
 
 varDeclToVarStrList :: [VarDecl t] -> [String]
 varDeclToVarStrList varDecls = varDecls |$> nameOfVarDecl |$> capitalise

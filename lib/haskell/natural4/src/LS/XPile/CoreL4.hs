@@ -624,7 +624,7 @@ hc2decls r
   where
     rightToMaybe (Left _) = Nothing
     rightToMaybe (Right x) = Just x
-hc2decls _ = emptyDoc
+hc2decls _ = mempty
 
 
 prettyTypedMulti :: ParamText -> Doc ann

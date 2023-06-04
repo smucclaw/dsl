@@ -510,15 +510,14 @@ sfl4ToCorel4Rule h@Hornlike {..} =
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
     given2classdecls (Just (Fold.toList -> pt)) =
-      flip foldMap pt $ \case
+      flip mapMaybe pt $ \case
         (snd -> Just (SimpleType TOne s1)) ->
-          [ ClassDeclTLE ClassDecl
+          Just $ ClassDeclTLE ClassDecl
               { annotOfClassDecl = (),
                 nameOfClassDecl = ClsNm (T.unpack s1),
                 defOfClassDecl = ClassDef [] []
               }
-          ]
-        _ -> []
+        _ -> Nothing
 
       -- catMaybes [ case ts of
       --               Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = ()

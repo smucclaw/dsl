@@ -1,6 +1,7 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -435,11 +436,13 @@ boolStructRToExpr cont (Not bs') =
   UnaOpE () (UBool UBnot) <$> boolStructRToExpr cont bs'
 
 boolStructRToExpr cont anyAll =
-  bss |> traverse (boolStructRToExpr cont) |$> conjsExprNoType 
+  bss
+    |> traverse (boolStructRToExpr cont)
+    -- Transform the BoolStructR into the corresponding BabyL4 expr.
+    |$> \case
+          (null -> True) -> trueVNoType
+          exprs -> foldr1 (BinOpE () (BBool bbOp)) exprs
   where
-    conjsExprNoType :: Foldable t => t (Expr ()) -> Expr ()
-    conjsExprNoType (null -> True) = trueVNoType
-    conjsExprNoType exprs = foldr1 (BinOpE () (BBool bbOp)) exprs
     (bbOp, bss) = case anyAll of
       All _m_ls bss -> (BBand, bss)
       Any _m_ls bss -> (BBor, bss)

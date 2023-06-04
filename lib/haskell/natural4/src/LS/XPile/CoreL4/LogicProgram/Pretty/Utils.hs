@@ -69,4 +69,15 @@ toBrackets2 xs =
 
 --skolemize2 :: Eq t1 => [VarDecl t1] -> [VarDecl t1] -> Expr t2 -> String -> String
 skolemize2 :: [VarDecl t1] -> [VarDecl t2] -> Expr t3 -> String -> Doc ann
-skolemize2 vardecs localvar postc rulename =  toBrackets2 (my_str_trans_list2 (varDeclToVarStrList localvar) (varDeclToVarStrList (mapThenSwallowErrs (convertVarExprToDecl vardecs) (snd (appToFunArgs [] postc)))) rulename)
+skolemize2
+  varDecls
+  localVars
+  (appToFunArgs [] -> (_, postcondArgs))
+  ruleName =
+    toBrackets2 $ my_str_trans_list2 localVars' varDecls' ruleName
+    where
+      varDecls' :: [String] =
+        postcondArgs
+          |> mapThenSwallowErrs (convertVarExprToDecl varDecls)
+          |> varDeclToVarStrList
+      localVars' :: [String] = varDeclToVarStrList localVars

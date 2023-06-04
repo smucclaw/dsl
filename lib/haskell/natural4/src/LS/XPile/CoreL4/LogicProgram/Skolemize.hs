@@ -61,20 +61,18 @@ skolemizedLPRulePrecond LPRule {..} = do
 --skolemizedLPRuleVardecls r = genSkolemList (localVarDeclsOfLPRule r) ([varExprToDecl expr (localVarDeclsOfLPRule r) | expr <- snd (appToFunArgs [] (postcondOfLPRule r))]) (nameOfLPRule r)
 
 skolemizedLPRuleVardecls :: Eq t => LPRule lpLang t -> [VarDecl t]
-skolemizedLPRuleVardecls LPRule {..} =
-  postcond
-    |> appToFunArgs []
-    |> snd
-    |> mapThenSwallowErrs (convertVarExprToDecl localVarDecls)
-    |> \x -> genSkolemList localVarDecls x globalVarDecls ruleName
+skolemizedLPRuleVardecls
+  LPRule {postcond = appToFunArgs [] -> (_, postcondArgs), ..} =
+    postcondArgs
+      |> mapThenSwallowErrs (convertVarExprToDecl localVarDecls)
+      |> \x -> genSkolemList localVarDecls x globalVarDecls ruleName
 
   -- genSkolemList (localVarDecls rule) (map (convertVarExprToDecl (localVarDecls rule)) (snd (appToFunArgs [] (postcond rule)))) (globalVarDecls rule) (ruleName rule)
 
 -- skolemizeLPRule :: LPRule t -> LPRule t
 
 skolemizeLPRule :: Eq t => LPRule lpLang t -> LPRule lpLang t
-skolemizeLPRule lpRule =
-  lpRule {preconds = skolemizedLPRulePrecond lpRule}
+skolemizeLPRule lpRule = lpRule {preconds = skolemizedLPRulePrecond lpRule}
   -- ruleName = skolemizedLPRuleName r
   -- (skolemizeLPRuleGlobals r) (skolemizedLPRuleVardecls r) (skolemizedLPRulePrecond r) (skolemizedLPRulePostcond r)
 
@@ -95,23 +93,27 @@ convertVarExprToDecl _decls _ =
 -- because transformed predicates (ie function applications) have type Expr (Tp()) rather than Expr t
 -- Need to change this !!! First : Check if precon occurs among vardecls, then check if postcon occurs among vardecls
 
-transformPrecond :: Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
-transformPrecond precon postcon vardecls vardeclsGlobal ruleid =
-  ruleid
-    |> genSkolemList preconvar_dec postconvar_dec vardeclsGlobal
-    |$> varDeclToExpr -- new_preconvar_dec
-    |> funArgsToAppNoType (fst $ appToFunArgs [] precon) -- new_precond
-  where
-    (preconvar_dec, postconvar_dec) =
-      (precon, postcon) |> join bimap exprToVarDecls
-    exprToVarDecls expr =
-      mapThenSwallowErrs
-        (convertVarExprToDecl vardecls)
-        (snd $ appToFunArgs [] expr)
+transformPrecond ::
+  Eq t => Expr t -> Expr t -> [VarDecl t] -> [VarDecl t] -> [Char] -> Expr t
+transformPrecond
+  (appToFunArgs [] -> (precondFun, precondArgs))
+  (appToFunArgs [] -> (_, postcondArgs))
+  varDecls
+  varDeclsGlobal
+  ruleid =
+    ruleid
+      |> genSkolemList precondVarDecls postcondVarDecls varDeclsGlobal
+      |$> varDeclToExpr -- new_preconvar_dec
+      |> funArgsToAppNoType precondFun -- new_precond
+    where
+      (precondVarDecls, postcondVarDecls) =
+        (precondArgs, postcondArgs)
+          |> join bimap (mapThenSwallowErrs $ convertVarExprToDecl varDecls)
 
 --genSkolem ::  VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
 -- Takes in an existing precondition var_decl, list of postcon var_decls, list of global varDecls and returns skolemized precon var_decl
-genSkolem :: Eq t => VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
+genSkolem ::
+  Eq t => VarDecl t -> [VarDecl t] -> [VarDecl t] -> String -> VarDecl t
 genSkolem varDecl _ ((varDecl `elem`) -> True) _ = varDecl
 
 genSkolem varDecl@VarDecl {nameOfVarDecl} ((varDecl `elem`) -> True) _ _ =

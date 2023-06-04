@@ -718,7 +718,7 @@ prettyBoilerplate ct@(CT ch) =
 --     defn minincome  : Integer -> Integer = \x : Integer -> 15000 + 4000 * x
 
 commentShow :: Show a => T.Text -> a -> Doc ann
-commentShow c x = commentWith c (T.lines (T.pack (show x)))
+commentShow c x = commentWith c $ T.lines $ T.pack $ show x
 
 prettyDefnCs :: Doc ann -> [SFL4.HornClause2] -> [Doc ann]
 prettyDefnCs rname cs = do
@@ -738,7 +738,7 @@ prettyDefnCs rname cs = do
                                           :: String)) :: [String]
       intypes = Seq.replicate (length myterms) "Integer"
       replacements =
-        [ T.replace (T.pack t) (T.pack $ show n)
+        [ T.replace (T.pack t) $ T.pack $ show n
         | (t, n) <- zip (nub myterms) x123 ]
       outstr = chain replacements $ mt2text rhs
       returntype = "Integer"

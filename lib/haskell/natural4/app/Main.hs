@@ -14,7 +14,7 @@ import Text.Pretty.Simple (pPrint, pShowNoColor)
 import LS.XPile.CoreL4
 import LS.Interpreter
 
-import LS.XPile.RWS
+import LS.XPile.Logging
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.Petri
@@ -64,16 +64,16 @@ main = do
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
-      (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpRWS (sfl4ToCorel4 rules))
+      (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
-      (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpRWS $ sfl4ToASP rules)
-      (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpRWS $ sfl4ToEpilog rules)
-      (todmnFN,     (asDMN, asDMNErr))        = (workuuid <> "/" <> "dmn",      xpRWS $ sfl4ToDMN rules)
+      (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
+      (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
+      (todmnFN,     (asDMN, asDMNErr))        = (workuuid <> "/" <> "dmn",      xpLog $ sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
                                                (<>)
-                                               <$> xpRWS (translate2PS allNLGEnv nlgEnv rules)
-                                               <*> xpRWS (pure ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")))
+                                               <$> xpLog (translate2PS allNLGEnv nlgEnv rules)
+                                               <*> xpLog (pure ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")))
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
@@ -166,7 +166,7 @@ main = do
 
 
     when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
-        let (asCheckl, asChecklErr) = xpRWS $ checklist nlgEnv rc rules
+        let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnv rc rules
         mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
     putStrLn "natural4: output to workdir done"
 
@@ -202,7 +202,7 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toChecklist rc) $ do
-      let (checkls, checklsErr) = xpRWS $ checklist nlgEnv rc rules
+      let (checkls, checklsErr) = xpLog $ checklist nlgEnv rc rules
       pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint asProlog
@@ -274,7 +274,7 @@ snakeScrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++
                 Text.replace " " "_" $
                 Text.intercalate "-" x
 
--- | if the return value of an xpRWS is a Left, dump to output file with the error message commented; otherwise dump the regular output.
+-- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
 commentIfError :: String -> Either String String -> String
 commentIfError comment (Left x) = comment ++ " " ++ x
 commentIfError _      (Right x) = x

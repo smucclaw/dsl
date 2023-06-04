@@ -35,7 +35,9 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 -- TODO: the following is only for testing purposes, can be removed later
 
 import Control.Applicative (Applicative (liftA2))
+import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
+import Data.Bifunctor (Bifunctor (bimap))
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
@@ -43,7 +45,7 @@ import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Map ((!))
 import Data.Map qualified as Map
-import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe)
+import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.Monoid (Ap (Ap))
 import Data.Text qualified as T
 import Data.Tuple.All (SequenceT (sequenceT))
@@ -497,32 +499,41 @@ postcondOfHornClauses _ _ = pure trueVNoType
 sfl4ToCorel4Rule :: SFL4.Rule -> MonoidValidate (Doc ann) [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = refute "Regulative rules are not supported."
 
-sfl4ToCorel4Rule h@Hornlike{..} =
-            -- pull any type annotations out of the "given" paramtext as ClassDeclarations
-            -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
-            -- TODO: the following produces an error: Prelude.tail: empty list
-            -- has been temporarily commented out 
-            -- given2classdecls given ++
+sfl4ToCorel4Rule h@Hornlike {..} =
+  -- pull any type annotations out of the "given" paramtext as ClassDeclarations
+  -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
+  -- TODO: the following produces an error: Prelude.tail: empty list
+  -- has been temporarily commented out
+  -- given2classdecls given ++
   liftA2 prePostCondsToRuleTLE precond postcond
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
-    given2classdecls (Just pt) =
-      catMaybes [ case ts of
-                    Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
-                                                                                , nameOfClassDecl =  ClsNm (T.unpack s1)
-                                                                                , defOfClassDecl = ClassDef [] []
-                                                                                } )
-                    _                         -> Nothing
-                | ts <- snd <$> NE.toList pt
-                ]
+    given2classdecls (Just (Fold.toList -> pt)) =
+      flip foldMap pt $ \case
+        (snd -> Just (SimpleType TOne s1)) ->
+          [ ClassDeclTLE ClassDecl
+              { annotOfClassDecl = (),
+                nameOfClassDecl = ClsNm (T.unpack s1),
+                defOfClassDecl = ClassDef [] []
+              }
+          ]
+        _ -> []
+
+      -- catMaybes [ case ts of
+      --               Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
+      --                                                                           , nameOfClassDecl =  ClsNm (T.unpack s1)
+      --                                                                           , defOfClassDecl = ClassDef [] []
+      --                                                                           } )
+      --               _                         -> Nothing
+      --           | ts <- snd <$> NE.toList pt
+      --           ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
 
-    [precond, postcond] = do
-      let context = createContext h
-      condOfHornClauses <- [precondOfHornClauses, postcondOfHornClauses]
-      [condOfHornClauses context clauses]
+    (precond, postcond) =
+      (precondOfHornClauses, postcondOfHornClauses)
+        |> join bimap (\f -> f (createContext h) clauses)
 
     prePostCondsToRuleTLE preCond postCond =
       pure $ RuleTLE Rule
@@ -736,7 +747,7 @@ prettyDefnCs rname cs =
     else
       "defn" <+>
       -- we assume the lhs is "p something" so we get rid of the p
-      pretty (mt2text (tail lhs)) <+> colon <+>
+      pretty (mt2text $ tail lhs) <+> colon <+>
       -- rip out "p's dependents" and "dependents p" from the input rhs
       -- nub and zip map them to integer indices
       -- each integer index becomes an x y z a b c d etc
@@ -960,7 +971,7 @@ runTestrules :: [Doc ann]
 runTestrules =
   testrules
     |> mapThenSwallowErrs sfl4ToCorel4Rule
-    |> concat
+    |> mconcat
     |$> showL4 [PrintSystem L4Style]
   -- let rls = testrules in
   -- let rulesTransformed = mapThenSwallowErrs sfl4ToCorel4Rule rls in
@@ -1214,7 +1225,7 @@ typedMultitoMTExprs :: (NE.NonEmpty MTExpr, Maybe TypeSig) -> [MTExpr]
 typedMultitoMTExprs (mtexprs, _) = NE.toList mtexprs
 
 destructMTT :: MTExpr -> String
-destructMTT (MTT x) = T.unpack x
+destructMTT (MTT (T.unpack -> x)) = x
 destructMTT _       = error "nothing to destructure; not an MTT"
 
 createContext :: SFL4.Rule -> [String]

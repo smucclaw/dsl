@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- | transpiler to CoreL4 (BabyL4). See the `baby-l4` repository.
 module LS.XPile.CoreL4
@@ -365,30 +366,6 @@ pptle (RuleTLE Rule { nameOfRule }) =
       "" $
       -- Otherwise if the rule has a name, we turn it into
       -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-      
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-      
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
-
-      -- Otherwise if the rule has a name, we turn it into
-      -- rule <RULE_NAME>
       nameOfRule
       <&> (\x -> ["rule <", x, ">"])
       <&> foldMap pretty
@@ -436,65 +413,64 @@ mtExprToExprNoType _ (MTI i) = pure $ ValE () (IntV i)
 mtExprToExprNoType _ (MTF i) = pure $ ValE () (FloatV i)
 mtExprToExprNoType _ (MTB i) = pure $ ValE () (BoolV i)
 
-
 rpRelToBComparOp :: RPRel -> MonoidValidate (Doc ann) BinOp
-rpRelToBComparOp cop = case cop of
-  RPis       -> refute "rpRelToBComparOp: erroring on RPis"
-  RPhas      -> refute "rpRelToBComparOp: erroring on RPhas"
-  RPeq       -> pure $ BCompar BCeq
-  RPlt       -> pure $ BCompar BClt
-  RPlte      -> pure $ BCompar BClte
-  RPgt       -> pure $ BCompar BCgt
-  RPgte      -> pure $ BCompar BCgte
-  RPelem     -> refute "rpRelToBComparOp: erroring on RPelem"
-  RPnotElem  -> refute "rpRelToBComparOp: erroring on RPnotElem"
-  RPnot      -> refute "rpRelToBComparOp: erroring on RPnot"
-  RPTC _     -> refute "rpRelToBComparOp: erroring on RPTC"
+rpRelToBComparOp RPis = refute "rpRelToBComparOp: erroring on RPis"
+rpRelToBComparOp RPhas = refute "rpRelToBComparOp: erroring on RPhas"
+rpRelToBComparOp RPeq = pure $ BCompar BCeq
+rpRelToBComparOp RPlt = pure $ BCompar BClt
+rpRelToBComparOp RPlte = pure $ BCompar BClte
+rpRelToBComparOp RPgt = pure $ BCompar BCgt
+rpRelToBComparOp RPgte = pure $ BCompar BCgte
+rpRelToBComparOp RPelem = refute "rpRelToBComparOp: erroring on RPelem"
+rpRelToBComparOp RPnotElem = refute "rpRelToBComparOp: erroring on RPnotElem"
+rpRelToBComparOp RPnot = refute "rpRelToBComparOp: erroring on RPnot"
+rpRelToBComparOp RPTC {}  = refute "rpRelToBComparOp: erroring on RPTC"
 
-conjExprNoType :: Expr () -> Expr () -> Expr ()
-conjExprNoType = BinOpE () (BBool BBand)
-
-disjExprNoType :: Expr () -> Expr () -> Expr ()
-disjExprNoType = BinOpE () (BBool BBor)
-
-conjsExprNoType :: [Expr ()] -> Expr ()
-conjsExprNoType [] = trueVNoType
-conjsExprNoType [e] = e
-conjsExprNoType (e:es) = conjExprNoType e (conjsExprNoType es)
-
-disjsExprNoType :: [Expr ()] -> Expr ()
-disjsExprNoType [] = falseVNoType
-disjsExprNoType [e] = e
-disjsExprNoType (e:es) = disjExprNoType e (disjsExprNoType es)
 -- END helper functions
 
 boolStructRToExpr :: [String] -> BoolStructR -> ExprM ann ()
-boolStructRToExpr cont bs = case bs of
-  Leaf rp -> relationalPredicateToExpr cont rp
-  All _m_la bss -> conjsExprNoType <$> traverse (boolStructRToExpr cont) bss
-  Any _m_la bss -> disjsExprNoType <$> traverse (boolStructRToExpr cont) bss
-  Not bs' -> UnaOpE () (UBool UBnot) <$> boolStructRToExpr cont bs'
+boolStructRToExpr cont (Leaf rp) = relationalPredicateToExpr cont rp
+
+boolStructRToExpr cont (Not bs') =
+  UnaOpE () (UBool UBnot) <$> boolStructRToExpr cont bs'
+
+boolStructRToExpr cont anyAll =
+  bss |> traverse (boolStructRToExpr cont) |$> conjsExprNoType 
+  where
+    conjsExprNoType :: Foldable t => t (Expr ()) -> Expr ()
+    conjsExprNoType (null -> True) = trueVNoType
+    conjsExprNoType exprs = foldr1 (BinOpE () (BBool bbOp)) exprs
+    (bbOp, bss) = case anyAll of
+      All _m_ls bss -> (BBand, bss)
+      Any _m_ls bss -> (BBor, bss)
 
 relationalPredicateToExpr :: [String] -> RelationalPredicate -> ExprM ann ()
-relationalPredicateToExpr cont rp = case rp of
-  -- [TODO] use refute here
- -- RPParamText ne -> trace ("CoreL4: relationalPredicateToExpr: erroring on RPParamText " <> show ne) $
-  --                   pure $
-  --                   ValE () (StringV $ "ERROR relationalPredicateToExpr not implemented for " ++ show ne)
-  RPParamText ne -> refute [__di|CoreL4: relationalPredicateToExpr: erroring on RPParamText #{ne}|]
+relationalPredicateToExpr cont (RPParamText ne) =
+  refute [__di|CoreL4: relationalPredicateToExpr: erroring on RPParamText #{ne}|]
 
-  RPMT mts -> multiTermToExprNoType cont mts
-  RPConstraint mts RPis mts' -> multiTermToExprNoType cont (mts' ++ mts)
-  RPConstraint mts rr mts' ->
-    let bop = rpRelToBComparOp rr
-    in
-      bop >>=
-      (\r -> BinOpE () r <$> multiTermToExprNoType cont mts <*> multiTermToExprNoType cont mts')
+relationalPredicateToExpr cont (RPMT mts) =
+  multiTermToExprNoType cont mts
 
-  RPBoolStructR mts rr bs ->
+relationalPredicateToExpr cont (RPConstraint mts RPis mts') =
+  multiTermToExprNoType cont $ mts' <> mts
+
+relationalPredicateToExpr cont (RPConstraint mts rr mts') = do
+  bop <- rpRelToBComparOp rr
+  multiTermToExprNoType cont mts
+    |$> BinOpE () bop
+    |> (<*> multiTermToExprNoType cont mts')
+  -- (BinOpE () bop <$> multiTermToExprNoType cont mts) <*> multiTermToExprNoType cont mts'
+
+relationalPredicateToExpr cont (RPBoolStructR mts rr bs) = do
+  r <- rpRelToBComparOp rr
     -- TODO: translate bs
-    rpRelToBComparOp rr >>= (\r -> BinOpE () r <$> multiTermToExprNoType cont mts <*> pure falseVNoType)
-  RPnary rr rp' -> refute "relationalPredicateToExpr: erroring on RPnary"
+  multiTermToExprNoType cont mts
+    |$> BinOpE () r
+    |> (<*> pure falseVNoType)
+  -- rpRelToBComparOp rr >>= (\r -> BinOpE () r <$> multiTermToExprNoType cont mts <*> pure falseVNoType)
+
+relationalPredicateToExpr cont (RPnary {}) =
+  refute "relationalPredicateToExpr: erroring on RPnary"
 
 
 -- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
@@ -576,13 +552,13 @@ sfl4ToCorel4Rule TypeDecl {..} =
         )
     ]
 sfl4ToCorel4Rule DefNameAlias {} = mempty
-sfl4ToCorel4Rule (RuleAlias _) = refute "sfl4ToCorel4Rule: erroring on RuleAlias"  -- internal softlink to a constitutive rule label = _
+sfl4ToCorel4Rule RuleAlias {} = refute "sfl4ToCorel4Rule: erroring on RuleAlias"  -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled  = refute "sfl4ToCorel4Rule: erroring on RegFulfilled"
 sfl4ToCorel4Rule RegBreach     = refute "sfl4ToCorel4Rule: erroring on RegBreach"
 sfl4ToCorel4Rule Scenario {}   = refute "sfl4ToCorel4Rule: erroring on Scenario"
 sfl4ToCorel4Rule DefTypically {} = mempty
 sfl4ToCorel4Rule RuleGroup {}  = refute "sfl4ToCorel4Rule: erroring on RuleGroup"
-sfl4ToCorel4Rule (NotARule _)  = refute "sfl4ToCorel4Rule: erroring on NotARule"
+sfl4ToCorel4Rule NotARule {}   = refute "sfl4ToCorel4Rule: erroring on NotARule"
 -- we need some function to convert a HornClause2 to an Expr
 -- in practice, a BoolStructR to an Expr
 -- where the RPMT elements of the BooLStructR are nullary, unary, or binary operators depending on how many elements are in the list
@@ -749,15 +725,7 @@ prettyDefnCs rname cs =
     else
       "defn" <+>
       -- we assume the lhs is "p something" so we get rid of the p
-      
-      -- we assume the lhs is "p something" so we get rid of the p
       pretty (mt2text (tail lhs)) <+> colon <+>
-      -- rip out "p's dependents" and "dependents p" from the input rhs
-      -- nub and zip map them to integer indices
-      -- each integer index becomes an x y z a b c d etc
-      -- perhaps wiser if we use x1 x2 x3 instead of x y z
-      -- them we output it all back with the input terms rewritten to x1 x2 x3
-      
       -- rip out "p's dependents" and "dependents p" from the input rhs
       -- nub and zip map them to integer indices
       -- each integer index becomes an x y z a b c d etc
@@ -882,13 +850,6 @@ prettyClasses ct =
   ]
   | (classpath, (ctype, children)) <- SFL4.classGraph ct []
   , let dot_name = encloseSep "" "" "." $ -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
-                    -- snake_inner <$> reverse classpath
                     -- snake_inner <$> reverse classpath
                    snake_inner . MTT <$> reverse classpath
         c_name' = untaint $ head classpath

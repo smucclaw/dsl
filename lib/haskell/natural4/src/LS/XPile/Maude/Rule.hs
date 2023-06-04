@@ -1,5 +1,6 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -15,7 +16,7 @@ import Data.List (intersperse)
 import Data.Maybe (maybeToList)
 import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
 import Data.Sequences as Seq (IsSequence)
-import Flow ((|>))
+import Flow ((|>), (.>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
   ( HornClause (..),
@@ -117,7 +118,7 @@ rule2doc
         -- throwing out all the (Right Nothing).
         -- Note that this is effectful in that we short-circuit when we
         --- encounter a Left.
-        [HenceLestClause HENCE hence, HenceLestClause LEST lest]
+        [HenceLestClause] <*> [HENCE, LEST] <*> [hence, lest]
           |> wither henceLest2doc
 
 rule2doc DefNameAlias {name, detail} =
@@ -135,10 +136,14 @@ rule2doc
     { keyword = Means,
       clauses = [HC {hHead = RPBoolStructR mtExpr RPis (All _ leaves)}]
     } =
-    leaves |> traverse leaf2mtt |$> mkMeans mtExpr
-    where
-      leaf2mtt (Leaf (RPMT mtt)) = pure mtt
-      leaf2mtt _ = throwDefaultErr
+    leaves
+      |> traverse
+        -- Convert each leaf into a mtt
+        ( \case
+            Leaf (RPMT mtt) -> pure mtt
+            _ -> throwDefaultErr
+        )
+      |$> mkMeans mtExpr
 
 rule2doc _ = throwDefaultErr
 
@@ -147,20 +152,20 @@ rule2doc _ = throwDefaultErr
 -}
 mkMeans ::
   (IsSequence t, Element t ~ MultiTerm) => MultiTerm -> t -> Doc ann
-mkMeans name details =
+mkMeans name (otoList -> details :: [MultiTerm]) =
   [di|#{name'} MEANS #{details'}|]
   where
     name' = multiExprs2qid name
     details' =
       details
-        |> otoList
         |$> multiExprs2qid
-        |> intersperse "AND"
-        |> hsep
-        |> parenthesizeIf (lengthMoreThanOne details)
+        |> \case
+          [qid] -> qid
+          qids -> [di|(#{hsep $ intersperse "AND" qids})|]
+        -- |> parenthesizeIf (lengthMoreThanOne details)
 
-    parenthesizeIf True x = [di|(#{x})|]
-    parenthesizeIf False x = x
+    -- parenthesizeIf True x = [di|(#{x})|]
+    -- parenthesizeIf False x = x
 
-    lengthMoreThanOne ((`ocompareLength` 1) -> GT) = True
-    lengthMoreThanOne _ = False
+    -- lengthMoreThanOne ((`ocompareLength` 1) -> GT) = True
+    -- lengthMoreThanOne _ = False

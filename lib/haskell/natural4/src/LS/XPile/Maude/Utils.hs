@@ -5,6 +5,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.Utils
   ( throwDefaultErr,
@@ -46,7 +47,8 @@ throwDefaultErr = refute [di|Not supported.|]
   NonEmpty MTExpr.
 -}
 multiExprs2qid :: (SemiSequence t, Element t ~ MTExpr) => t -> Doc ann
-multiExprs2qid multiExprs = multiExprs |> otoList |> mt2text |> text2qid
+multiExprs2qid (otoList -> multiExprs :: [MTExpr]) =
+  multiExprs |> mt2text |> text2qid
 
 text2qid :: T.Text -> Doc ann
 text2qid x = [di|qid("#{x}")|]

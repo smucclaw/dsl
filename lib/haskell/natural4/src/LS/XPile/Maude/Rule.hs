@@ -155,7 +155,7 @@ mkMeans name details =
       details
         |> otoList
         |$> multiExprs2qid
-        |> intersperse [di|AND|]
+        |> intersperse "AND"
         |> hsep
         |> parenthesizeIf (lengthMoreThanOne details)
 

@@ -23,18 +23,19 @@ import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
 tempConstr2doc ::
+  forall ann1 ann2.
   Maybe (TemporalConstraint T.Text) ->
   MonoidValidate (Doc ann1) (Maybe (Doc ann2))
 tempConstr2doc = traverse $ \case
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)
-      (T.toUpper .> (`elem` [[i|DAY|], [i|DAYS|]]) -> True)
+      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) ->
       pure [di|#{tComparison'} #{n} DAY|]
       where
-        tComparison' = case tComparison of
-          TOn -> [di|ON|]
-          TBefore -> [di|WITHIN|]
+        tComparison' :: Doc ann2 = case tComparison of
+          TOn -> "ON"
+          TBefore -> "WITHIN"
 
   _ -> throwDefaultErr

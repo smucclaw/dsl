@@ -50,7 +50,7 @@ rules2doc rules =
 
     -- Transpile the rules to docs and collect all those that transpiled
     -- correctly, while ignoring erraneous ones.
-    transpiledRules = map rule2doc rules'
+    transpiledRules = rule2doc <$> rules'
 
     rules' = otoList rules
 

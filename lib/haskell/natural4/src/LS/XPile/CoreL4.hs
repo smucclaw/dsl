@@ -376,17 +376,20 @@ falseVNoType = ValE () (BoolV False)
 -- depending on contextual information when available
 -- ASP TODO: add env (var list) as a second arg, and look up varname in env
 -- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
+
+-- varNameToVarNoType_ :: [String] -> VarName -> Var ()
+-- varNameToVarNoType_ cont vn
+--   | null cont = GlobalVar (QVarName () vn)
+--   | vn == head cont = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
+--   | otherwise = varNameToVarNoType (tail cont) vn
+
 varNameToVarNoType :: [String] -> VarName -> Var ()
-varNameToVarNoType [] vn =
-  GlobalVar $ QVarName {nameOfQVarName = vn, annotOfQVarName = ()}
-
-varNameToVarNoType cont@(head:_) vn@((== head) -> True) =
-  LocalVar {..}
+varNameToVarNoType context nameOfQVarName =
+  context
+    |> elemIndex nameOfQVarName
+    |> maybe (GlobalVar qVarName) (LocalVar qVarName)
   where
-    nameOfVar = QVarName {nameOfQVarName = vn, annotOfQVarName = ()}
-    indexOfVar = cont |> elemIndex vn |> fromMaybe 0
-
-varNameToVarNoType (_:tail) vn = varNameToVarNoType tail vn
+    qVarName = QVarName {annotOfQVarName = (), ..}
 
 varsToExprNoType :: [Var t] -> ExprM ann t
 varsToExprNoType (v:vs) = pure $ applyVarsNoType v vs

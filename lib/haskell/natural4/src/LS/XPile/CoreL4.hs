@@ -407,12 +407,14 @@ multiTermToExprNoType cont mt = do
     [e] -> pure e
     _ -> refute "non-variable name in function position"
 
-
 mtExprToExprNoType :: [String] -> MTExpr -> ExprM ann ()
-mtExprToExprNoType cont (MTT t) = pure $ VarE () (varNameToVarNoType cont (T.unpack t))
-mtExprToExprNoType _ (MTI i) = pure $ ValE () (IntV i)
-mtExprToExprNoType _ (MTF i) = pure $ ValE () (FloatV i)
-mtExprToExprNoType _ (MTB i) = pure $ ValE () (BoolV i)
+mtExprToExprNoType cont (MTT (T.unpack -> t)) =
+  pure $ VarE () $ varNameToVarNoType cont t
+mtExprToExprNoType _ mtExpr =
+  pure $ ValE () $ case mtExpr of
+    MTI i -> IntV i
+    MTF i -> FloatV i
+    MTB i -> BoolV i
 
 rpRelToBComparOp :: RPRel -> MonoidValidate (Doc ann) BinOp
 rpRelToBComparOp RPis = refute "rpRelToBComparOp: erroring on RPis"

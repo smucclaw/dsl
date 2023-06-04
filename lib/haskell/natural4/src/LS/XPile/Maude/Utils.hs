@@ -25,11 +25,11 @@ import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
-import LS.Utils ()
+import LS.Utils (MonoidValidate)
 import Prettyprinter (Doc, Pretty (pretty))
 import Prettyprinter.Interpolate (di)
 
-throwDefaultErr :: Ap (Validate (Doc ann)) a
+throwDefaultErr :: MonoidValidate (Doc ann) a
 throwDefaultErr = refute [di|Not supported.|]
 
 -- type IsList :: (Type -> Type) -> Constraint

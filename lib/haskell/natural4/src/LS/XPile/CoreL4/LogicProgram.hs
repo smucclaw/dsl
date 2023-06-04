@@ -109,7 +109,7 @@ genOppClauseNoType (posvar, negvar, n) = OpposesClause {..}
 -- isFact _ = False
 
 isHeadOfPrecondFact :: LPRule lpLang t -> Bool
-isHeadOfPrecondFact LPRule {preconds = (ValE _ (BoolV True)) : _} = True
+isHeadOfPrecondFact LPRule {preconds = ValE _ (BoolV True) : _} = True
 isHeadOfPrecondFact _ = False
 
 ruleToLPRule ::

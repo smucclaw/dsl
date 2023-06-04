@@ -38,19 +38,20 @@ import Control.Applicative (Applicative (liftA2))
 import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Bifunctor (Bifunctor (bimap))
+import Data.Coerce (coerce)
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
-import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\))
+import Data.List (elemIndex, intercalate, isPrefixOf, nub, (\\), tails, uncons)
 import Data.List.NonEmpty qualified as NE
 import Data.Map ((!))
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
-import Data.Monoid (Ap (Ap))
+import Data.Monoid (Ap (Ap), Endo (..))
 import Data.Text qualified as T
 import Data.Tuple.All (SequenceT (sequenceT))
 import Debug.Trace (trace)
-import Flow ((|>))
+import Flow ((.>), (|>))
 import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
 import L4.Syntax as L4
@@ -171,6 +172,7 @@ import LS.Types as SFL4
     ScopeTabs,
     SrcRef (SrcRef, short, srccol, srcrow, url, version),
     TypeSig (..),
+    TypedMulti,
     clsParent,
     defaultInterpreterOptions,
     enumLabels_,
@@ -485,7 +487,6 @@ relationalPredicateToExpr cont (RPBoolStructR mts rr bs) = do
 relationalPredicateToExpr cont (RPnary {}) =
   refute "relationalPredicateToExpr: erroring on RPnary"
 
-
 -- ASP TODO: add env as a second arg, where env is a list of locally declared var names extracted from given clause
 -- i.e. precondOfHornClauses :: [HornClause2] -> [String] -> Expr ()
 precondOfHornClauses :: [String] -> [HornClause2] -> ExprM ann ()
@@ -499,66 +500,47 @@ postcondOfHornClauses _ _ = pure trueVNoType
 sfl4ToCorel4Rule :: SFL4.Rule -> MonoidValidate (Doc ann) [TopLevelElement ()]
 sfl4ToCorel4Rule Regulative{} = refute "Regulative rules are not supported."
 
-sfl4ToCorel4Rule h@Hornlike {..} =
+sfl4ToCorel4Rule hornLike@Hornlike {rlabel, clauses} =
   -- pull any type annotations out of the "given" paramtext as ClassDeclarations
   -- we do not pull type annotations out of the "upon" paramtext because that's an event so we need a different kind of toplevel -- maybe a AutomatonTLE?
   -- TODO: the following produces an error: Prelude.tail: empty list
   -- has been temporarily commented out
-  -- given2classdecls given ++
-  liftA2 prePostCondsToRuleTLE precond postcond
+  [precondOfHornClauses, postcondOfHornClauses]
+    |> traverse (`uncurry` (hornlikeToContext hornLike, clauses))
+    |$> \[precondOfRule, postcondOfRule] ->
+      [ RuleTLE Rule
+          { annotOfRule = (),
+            nameOfRule = rlabel |$> rl2text |$> T.unpack,
+            instrOfRule = [],
+            varDeclsOfRule = [],
+            precondOfRule,
+            -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
+            postcondOfRule
+          }
+      ]
   where
     given2classdecls :: Maybe ParamText -> [TopLevelElement ()]
     given2classdecls Nothing = []
     given2classdecls (Just (Fold.toList -> pt)) =
       flip mapMaybe pt $ \case
-        (snd -> Just (SimpleType TOne s1)) ->
+        (_, Just (SimpleType TOne s1)) ->
           Just $ ClassDeclTLE ClassDecl
             { annotOfClassDecl = (),
               nameOfClassDecl = ClsNm (T.unpack s1),
               defOfClassDecl = ClassDef [] []
             }
         _ -> Nothing
-    -- ASP TODO: localContext = extractLocalsFromGiven given
+    -- ASP TODO: localContext = given2classdecls given
     -- account also for the case where there are no givens in horn clause
 
-    (precond, postcond) =
-      (precondOfHornClauses, postcondOfHornClauses)
-        |> join bimap (\f -> f (createContext h) clauses)
-
-    prePostCondsToRuleTLE preCond postCond =
-      pure $ RuleTLE Rule
-        { annotOfRule    = ()
-        , nameOfRule     = rlabel |$> rl2text |$> T.unpack
-        , instrOfRule    = []
-        , varDeclsOfRule = []
-        , precondOfRule = preCond
-        -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
-        , postcondOfRule = postCond
-        }
-
-      -- let preCond = precondOfHornClauses cont clauses
-      --     postCond = postcondOfHornClauses cont clauses
-      -- in
-      --   if isRight preCond && isRight postCond
-      --   then pure $
-      --        RuleTLE Rule
-      --        { annotOfRule    = ()
-      --        , nameOfRule     = rlabel <&> rl2text <&> T.unpack
-      --        , instrOfRule    = []
-      --        , varDeclsOfRule = []
-      --        , precondOfRule  = fromRight (error "no precond") preCond
-      --        -- ASP TODO: , precondOfRule  = precondOfHornClauses localContext clauses
-      --        , postcondOfRule = fromRight (error "no postcond") postCond
-      --        }
-      --   else []
-
-sfl4ToCorel4Rule Constitutive {} = refute "sfl4ToCorel4Rule: erroring on Constitutive"
-sfl4ToCorel4Rule TypeDecl {..} =
+sfl4ToCorel4Rule Constitutive {} =
+  refute "sfl4ToCorel4Rule: erroring on Constitutive"
+sfl4ToCorel4Rule TypeDecl {name} =
   pure
     [ ClassDeclTLE
         ( ClassDecl
             { annotOfClassDecl = (),
-              nameOfClassDecl = ClsNm $ T.unpack (mt2text name),
+              nameOfClassDecl = ClsNm $ T.unpack $ mt2text name,
               defOfClassDecl = ClassDef [] []
             }
         )
@@ -716,8 +698,16 @@ prettyBoilerplate ct@(CT ch) =
   ]
   where
     pairwise :: [a] -> [(a, a)]
-    pairwise [] = []
-    pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
+    pairwise xs =
+      xs                    -- [x0, x1 ...]
+        |> tails            -- [[x0, x1 ...], [x1 ...], ...]
+        |> mapMaybe uncons  -- [(x0, [x1 ... xn]) ... ]
+        -- This does NOT play nice with infinite lists in that if xs is infinite,
+        -- then tail is also always infinite, so that the order type is > ω.
+        -- Consequently, some pairs may never get enumerated over.
+        |> foldMap (\(x, tail) -> [(x, y) | y <- tail])
+    -- pairwise [] = []
+    -- pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
 
 -- | print arithmetic elements as defn
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x
@@ -769,16 +759,17 @@ prettyDefnCs rname cs =
                                                           ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
                                           :: String)) :: [String]
         intypes = replicate (length myterms) "Integer"
-        replacements = [ T.replace (T.pack t) (T.pack $ show n)
-                       | (t,n) <- zip (nub myterms) x123 ]
-        outstr = chain replacements (mt2text rhs)
+        replacements =
+          [ T.replace (T.pack t) (T.pack $ show n)
+          | (t, n) <- zip (nub myterms) x123 ]
+        outstr = chain replacements $ mt2text rhs
         returntype = "Integer"
-
   ]
   where
+    -- Right to left composition via the endomorphism monoid
     chain :: [a -> a] -> a -> a
-    chain = foldr (.) id
-    x123 = (\n -> "x" <> pretty n) <$> ([1..] :: [Int])
+    chain = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
+    x123 = [(1 :: Int)..] |$> \n -> [__di|x#{n}|]
 
 prettyDefns :: [SFL4.Rule] -> Doc ann
 prettyDefns rs =
@@ -1195,7 +1186,6 @@ testrules = [ defaultHorn
     , defaults = []
     , symtab = []
     }
-
   ]
 
 -- New stuff
@@ -1205,18 +1195,20 @@ testrules = [ defaultHorn
 -- given :: Maybe (NonEmpty (NonEmpty MTExpr, Maybe TypeSig))
 
 -- extractGiven :: SFL4.Rule -> [TypedMulti]
-extractGiven :: SFL4.Rule -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
-extractGiven Hornlike{given=Nothing}        = []
-extractGiven Hornlike{given=Just paramtext} = NE.toList paramtext
-extractGiven _                              = trace "not a Hornlike rule, not extracting given" mempty
+-- extractGiven :: SFL4.Rule -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
+-- extractGiven Hornlike {given=Nothing}        = []
+-- extractGiven Hornlike {given=Just paramtext} = NE.toList paramtext
+-- extractGiven _                              = trace "not a Hornlike rule, not extracting given" mempty
 
--- typedMultitoMTExprs :: TypedMulti -> MultiTerm
-typedMultitoMTExprs :: (NE.NonEmpty MTExpr, Maybe TypeSig) -> [MTExpr]
-typedMultitoMTExprs (mtexprs, _) = NE.toList mtexprs
-
-destructMTT :: MTExpr -> String
-destructMTT (MTT (T.unpack -> x)) = x
-destructMTT _       = error "nothing to destructure; not an MTT"
-
-createContext :: SFL4.Rule -> [String]
-createContext hlike = map destructMTT (concatMap typedMultitoMTExprs (extractGiven hlike))
+hornlikeToContext :: SFL4.Rule -> [String]
+hornlikeToContext Hornlike {given = Just (Fold.toList -> given)} =
+  (given :: [(NE.NonEmpty MTExpr, Maybe TypeSig)])
+    -- extract the MTExprs from given
+    |> foldMap (fst .> Fold.toList)
+    |> mapMaybe
+      -- destructMTT
+      ( \case
+          MTT (T.unpack -> x) -> Just x
+          _ -> Nothing
+      )
+hornlikeToContext _ = []

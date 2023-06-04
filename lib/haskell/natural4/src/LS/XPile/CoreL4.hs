@@ -914,12 +914,12 @@ prettyClasses ct =
          ]
     -- guard to exclude certain forms which should not appear in the output
   , case (ctype,children) of
-      ((Nothing, []),                 CT m) | m == Map.empty -> False | otherwise -> True
-      ((Just (SimpleType TOne _), []),CT m) | m == Map.empty -> False | otherwise -> True
+      ((Nothing, []),                 CT m) -> not $ null m
+      ((Just (SimpleType TOne _), []),CT m) -> not $ null m
       _                                   -> True -- commentShow "# ctype:" ctype
       -- [TODO] and how do we treat enum types?
   ]
-  ++ [ superClassesNotExplicitlyDefined
+  <> [ superClassesNotExplicitlyDefined
      , typesNotExplicitlyDefined ]
 
   where -- [TODO] -- move this to the Interpreter

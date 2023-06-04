@@ -513,20 +513,11 @@ sfl4ToCorel4Rule h@Hornlike {..} =
       flip mapMaybe pt $ \case
         (snd -> Just (SimpleType TOne s1)) ->
           Just $ ClassDeclTLE ClassDecl
-              { annotOfClassDecl = (),
-                nameOfClassDecl = ClsNm (T.unpack s1),
-                defOfClassDecl = ClassDef [] []
-              }
+            { annotOfClassDecl = (),
+              nameOfClassDecl = ClsNm (T.unpack s1),
+              defOfClassDecl = ClassDef [] []
+            }
         _ -> Nothing
-
-      -- catMaybes [ case ts of
-      --               Just (SimpleType TOne s1) -> Just $ ClassDeclTLE (ClassDecl { annotOfClassDecl = ()
-      --                                                                           , nameOfClassDecl =  ClsNm (T.unpack s1)
-      --                                                                           , defOfClassDecl = ClassDef [] []
-      --                                                                           } )
-      --               _                         -> Nothing
-      --           | ts <- snd <$> NE.toList pt
-      --           ]
     -- ASP TODO: localContext = extractLocalsFromGiven given
     -- account also for the case where there are no givens in horn clause
 

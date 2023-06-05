@@ -582,7 +582,7 @@ directToCore r@Hornlike{keyword}
       | (c,cnum) <- zip (clauses r) [1..]
       , (HC _headRP hBod) <- [c]
       , let needClauseNumbering = length (clauses r) > 1
-      , let rname = prettyRuleName cnum needClauseNumbering (ruleLabelName r)
+      , let rname = prettyRuleName cnum needClauseNumbering $ ruleLabelName r
       ]
   | otherwise = "# DEFINE rules unsupported at the moment"
 -- fact <rulename> multiterm

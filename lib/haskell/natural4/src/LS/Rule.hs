@@ -16,8 +16,41 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
+import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Types
+    ( liftMyToken,
+      MyStream,
+      MyToken(Means),
+      WithPos(WithPos, tokenVal, pos),
+      bsp2text,
+      dlToList,
+      mkLeafPT,
+      mkLeafR,
+      mt2text,
+      multiterm2pt,
+      rpHead,
+      BoolStructP,
+      BoolStructR,
+      ClsTab,
+      DList,
+      Deontic(DMust),
+      Depth,
+      HornClause(HC),
+      HornClause2,
+      MTExpr(MTT),
+      MultiTerm,
+      ParamText,
+      PlainParser,
+      Preamble,
+      RegKeywords(REvery),
+      RelationalPredicate(RPParamText),
+      RuleName,
+      RunConfig(debug, parseCallStack),
+      ScopeTabs,
+      SrcRef(..),
+      TemporalConstraint,
+      TypeSig )
 import Text.Megaparsec
   ( ErrorItem (Tokens),
     MonadParsec (eof, token),
@@ -159,10 +192,11 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
 -- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
 
 ruleLabelName :: Rule -> RuleName
-ruleLabelName r = maybe (ruleName r) (\x-> [MTT $ rl2text x]) (getRlabel r)
+ruleLabelName rule =
+  rule |> getRlabel |> maybe (ruleName rule) (\x -> [MTT $ rl2text x]) 
 
 getRlabel :: Rule -> Maybe RuleLabel
-getRlabel Regulative{rlabel}    = rlabel
+getRlabel Regulative {rlabel}   = rlabel
 getRlabel Constitutive {rlabel} = rlabel
 getRlabel Hornlike {rlabel}     = rlabel
 getRlabel TypeDecl {rlabel}     = rlabel
@@ -173,14 +207,19 @@ getRlabel RuleGroup {rlabel}    = rlabel
 -- getRlabel r@(RuleAlias a)   = Nothing
 -- getRlabel r@RegFulfilled    = Nothing
 -- getRlabel r@RegBreach       = Nothing
-getRlabel _                 = Nothing
+getRlabel _                     = Nothing
 
 ruleName :: Rule -> RuleName
-ruleName Regulative {subj} = [MTT $ bsp2text subj]
-ruleName (RuleAlias rn) = rn
-ruleName RegFulfilled = [MTT "FULFILLED"]
-ruleName RegBreach    = [MTT "BREACH"]
-ruleName x = name x
+ruleName Regulative {subj}    = [MTT $ bsp2text subj]
+ruleName (RuleAlias ruleName) = ruleName
+ruleName RegFulfilled         = [MTT "FULFILLED"]
+ruleName RegBreach            = [MTT "BREACH"]
+ruleName Constitutive {name}  = name
+ruleName Hornlike {name}      = name
+ruleName TypeDecl {name}      = name
+ruleName DefNameAlias {name}  = name
+ruleName DefTypically {name}  = name
+ruleName _                    = []
 
 type RuleLabel = (Text.Text   --  "§"
                  ,Int         --   1

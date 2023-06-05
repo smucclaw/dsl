@@ -13,13 +13,14 @@ import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
 import Control.Monad (when)
-import Data.Map (keys, elems, lookup, toList)
+import Data.HashMap.Strict (keys, elems, lookup, toList)
+import qualified Data.HashMap.Strict as Map
 import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
 import Paths_natural4
-import Data.Foldable as F
+import qualified Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
 import Debug.Trace (trace)
@@ -486,8 +487,8 @@ expandPT l4i depth pt = maybe pt ptFromRP expanded
 
     expanded = listToMaybe
                 [ outrp
-                | (_scopename, symtab) <- Data.Map.toList (scopetable l4i)
-                , (_mytype, cs) <- maybeToList $ Data.Map.lookup ptAsMt symtab
+                | (_scopename, symtab) <- Map.toList (scopetable l4i)
+                , (_mytype, cs) <- maybeToList $ Map.lookup ptAsMt symtab
                 , c <- cs
                 , let outs = expandClause l4i depth c
                 , outrp <- outs

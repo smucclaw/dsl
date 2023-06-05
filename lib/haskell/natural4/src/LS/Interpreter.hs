@@ -23,7 +23,7 @@ import qualified AnyAll as AA
 import Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import Prettyprinter
 import Text.Pretty.Simple
 import Debug.Trace
@@ -34,7 +34,7 @@ import Data.Tuple (swap)
 import Data.List (find)
 import qualified Data.List as DL
 import Data.Bifunctor (first)
-import Data.Map ((!))
+import Data.HashMap.Strict ((!))
 import Data.Tree
 import Control.Applicative ((<|>))
 
@@ -347,7 +347,7 @@ getAttrTypesIn ct classname =
                               ]
 
 
-type RuleIDMap = Map.Map Rule Int
+type RuleIDMap = Map.HashMap Rule Int
 
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
@@ -385,7 +385,7 @@ relPredRefsAll l4i rs ridmap =
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
 relPredRefs :: Interpreted -> [Rule] -> RuleIDMap -> Rule -> [LEdge RuleGraphEdgeLabel]
 relPredRefs _l4i rs ridmap r =
-  let headElements :: Map.Map MultiTerm Rule -- does this get recomputed each time or cached?
+  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
       -- given a term, see which rule defines it
       headElements = Map.fromList $
                      [ (headName,r')

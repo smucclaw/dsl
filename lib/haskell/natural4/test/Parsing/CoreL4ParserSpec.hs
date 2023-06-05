@@ -1,4 +1,6 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Parsing.CoreL4ParserSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
@@ -14,6 +16,7 @@ import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Test.Hspec.Megaparsec (shouldParse)
+import Data.List (sort)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
@@ -130,7 +133,7 @@ spec  = do
         (parseOther (do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
-                            tA = getCTkeys <$> thisAttributes classH "Class2"
+                            tA = sort . getCTkeys <$> thisAttributes classH "Class2"
                         return $ tA))
         (Just ["bar address","firstname","lastname","office address","work address"], [])
 
@@ -138,7 +141,7 @@ spec  = do
         (parseOther (do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
-                            eA = getCTkeys <$> extendedAttributes classH "Class2"
+                            eA = sort . getCTkeys <$> extendedAttributes classH "Class2"
                         return $ eA))
         (Just ["bar address","firstname","id","lastname","office address","work address"], [])
 

@@ -19,14 +19,14 @@ import qualified Data.Text.Lazy as TL
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll as AA
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import LS.NLP.NLG
 import LS.NLP.NL4Transformations
 import LS.Interpreter
 import Control.Monad (guard)
 import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.List as DL
-import Data.Map ((!))
+import Data.HashMap.Strict ((!))
 import Data.Bifunctor (second)
 import Data.Maybe (listToMaybe)
 import Data.List.Split (chunk)

@@ -5,7 +5,7 @@ import Test.Hspec
 import LS.Types
 import LS.Rule
 import AnyAll
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import LS.Interpreter
 
 spec :: Spec

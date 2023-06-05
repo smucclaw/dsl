@@ -25,7 +25,7 @@ import LS.Interpreter
 
 -- import Data.Functor ( (<&>) )
 
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 -- import qualified Data.Text as T
 -- import Data.Maybe (catMaybes, fromMaybe, isJust)
 -- import qualified Data.List.NonEmpty as NE

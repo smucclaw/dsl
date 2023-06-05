@@ -15,7 +15,7 @@ import Data.Aeson.KeyMap hiding (mapMaybe)
 import Data.Aeson.Types (Parser, parse, parseMaybe)
 import qualified Data.ByteString.Lazy as B
 import Data.Hashable (Hashable)
-import qualified Data.Map.Strict as Map
+import qualified Data.HashMap.Strict as Map
 import Data.Maybe
 import Data.String (IsString)
 import qualified Data.Text as T
@@ -98,7 +98,7 @@ instance (FromJSON a) => FromJSON (Default a)
 asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString
 asJSONDefault = encode
 
-newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
+newtype Marking a = Marking { getMarking :: Map.HashMap a (Default Bool) }
   deriving (Eq, Ord, Show, Generic)
 
 instance Hashable a => Hashable (Marking a)
@@ -164,18 +164,18 @@ getSV sv1 (Q sv2 (Simply x) pp m)
   | otherwise  = Nothing
 getSV _ _ = Nothing
 
-getAsks :: (ToJSONKey a, Ord a) => QTree a -> Map.Map a (Default Bool)
+getAsks :: (ToJSONKey a, Hashable a) => QTree a -> Map.HashMap a (Default Bool)
 getAsks qt = Map.fromList $ catMaybes $ getSV Ask <$> flatten qt
 
-getAsksJSON :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
+getAsksJSON :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getAsksJSON = encode . getAsks
 
-getViews :: (ToJSONKey a, Ord a) => QTree a -> Map.Map a (Default Bool)
+getViews :: (ToJSONKey a, Hashable a) => QTree a -> Map.HashMap a (Default Bool)
 getViews qt = Map.fromList $ catMaybes $ getSV View <$> flatten qt
 
-getViewsJSON :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
+getViewsJSON :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getViewsJSON = encode . getViews
 
-getForUI :: (ToJSONKey a, Ord a) => QTree a -> B.ByteString
+getForUI :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getForUI qt = encode (Map.fromList [("view" :: T.Text, getViews qt)
                                    ,("ask" :: T.Text, getAsks qt)])

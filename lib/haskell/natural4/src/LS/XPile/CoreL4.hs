@@ -44,8 +44,8 @@ import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
-import Data.Map ((!))
-import Data.Map qualified as Map
+import Data.HashMap.Strict ((!))
+import Data.HashMap.Strict qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.Monoid (Ap (Ap), Endo (..))
 import Data.Sequence qualified as Seq
@@ -642,7 +642,7 @@ prettyDecls :: T.Text -> [SFL4.Rule] -> Doc ann
 prettyDecls previously rs =
   let previousDecls = Map.fromList $ (,""::String) . T.takeWhile (/= ':') <$> filter ("decl " `T.isPrefixOf`) (T.lines previously)
       predDecls = Map.fromList $ T.breakOn ":" <$> T.lines (myrender $ vsep (hc2decls <$> rs))
-  in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls Map.\\ previousDecls)
+  in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls `Map.difference` previousDecls)
 
 
 -- [TODO]

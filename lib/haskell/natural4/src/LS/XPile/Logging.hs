@@ -66,64 +66,77 @@ https://gist.github.com/mengwong/73af81ad600a533f12ef42fc655fed0f
 
 -}
 
-module LS.XPile.Logging (XPileLog, XPileLogE, xpLog, mutter, mutters, xpReturn, xpError) where
+module LS.XPile.Logging (XPileLog, XPileLogE, xpLog, mutter, mutters, xpReturn, xpError, XPileLogW) where
 
 import Control.Monad.RWS ( evalRWS, MonadWriter(tell), RWS
                          , evalRWST, RWST )
 import Data.Map as Map ( Map )
 
--- | typical usage (see `LS.XPile.Purescript.translate2PS` for an example):
+-- | typical usage
 --
--- @module Transpiler@ defines an @asOutput :: XPileLog T.Text@
+-- the caller (e.g. @app/Main@) calls @(output, err) = xpLog asOutput@.
 --
--- the @asOoutput@ function can @tell [String]@
+-- In the tuple, we find a list of strings in @err@.
 --
--- and it returns its output using pure or returne
+-- In the simple case, the @asOutput@ could be simple: @output@ is a @String@.
+-- (see `LS.XPile.Purescript.translate2PS` for an example).
 --
--- the reader and state usually go unused, but if you want
--- to jot down your scribbles, you can use a Map String String
--- or define your own type along these lines
-type XPileLog = RWS
-                (Map String String) -- ^ reader
-                [String]            -- ^ writer
-                (Map String String) -- ^ state
+xpLog :: XPileLog a -> (a, XPileLogW)
+xpLog x = evalRWS x mempty mempty
 
--- | This library supports two major modes of logging. In the course of
--- normal operation, you can stream output to the equivalent of STDERR by
+-- | In a more complex case, @output@ is an @Either [String] String@
+-- with @MonadError@ semantics.
+-- (see `LS.XPile.CoreL4.sfl4ToCoreL4` for an example).
+-- 
+-- To set that up, we use `XPileLogE` instead of `XPileLog`. The @E@
+-- stands for @Either@. We deliberately use the same type for the
+-- Either Left as for the stderr stream. So the Either Left can return
+-- a list of errors; this anticipates monad-validate.
+type XPileLogE a = XPileLog (Either XPileLogW a)
+
+-- * The underlying types are not exported by this module, except XPileLogW.
+--
+-- the reader and state usually go unused, but we set them to String
+-- in case you need that. You can also define your own type along
+-- these lines.
+type XPileLog  = RWS XPileLogR XPileLogW XPileLogS
+type XPileLogR = Map String String
+type XPileLogW = [XPileLogW'];       type XPileLogW' = String
+type XPileLogS = Map String String
+
+-- | This library supports two major modes of logging. In the course
+-- of normal operation, you can stream to the equivalent of STDERR by
 -- calling `mutter`; this is a @tell@, and the caller can take stock
 -- at the end and output all the mutterings to the timestap.err file.
 -- And if there are warnings along the way you could use this
 -- mechanism. In the future a more sophisticated Writer could even
--- distinguish different loglevels.
+-- distinguish different loglevels. For now, use this for printf
+-- debugging.
 
-mutter :: String -> XPileLog ()
-mutter s = tell [s]
+mutter :: XPileLogW' -> XPileLog ()
+mutter = tell . pure
 
-mutters :: [String] -> XPileLog ()
+-- | use `mutter` for single and `mutters` for plural muttering
+mutters :: XPileLogW -> XPileLog ()
 mutters = tell
 
 -- | But if there is a need to throw an unrecoverable error, then
--- return a Left value, by using `xpLeft`. And that error will appear
+-- return a Left value, by using `xpError`. And that error will appear
 -- in the actual output file, commented.
---
--- Normal output then gets returned via `xpReturn`.
-type XPileLogE a = XPileLog (Either String a)
-                
--- | the caller calls @(output, err) = xpLog asOutput@
---
--- The err is a list of strings morally equivalent to STDERR
--- the output is passed through.
---
--- This function is usually called in `app/Main.hs`
-xpLog :: XPileLog a -> (a, [String])
-xpLog x = evalRWS x mempty mempty
 
+xpError, xpLeft :: XPileLogW -> XPileLogE a
+xpError = xpLeft
+
+-- | xpLeft is the underlying mechanism, private to this module, so
+-- can be swapped out if one day we change the underlying.
+xpLeft  = pure . Left
+
+-- | Normal output then gets returned via `xpReturn`.
 xpReturn, xpRight :: a -> XPileLogE a
 xpReturn = xpRight
+
+-- | xpRight is the underlying mechanism for xpReturn.
 xpRight = pure . Right
 
-xpError, xpLeft :: String -> XPileLogE a
-xpError = xpLeft
-xpLeft = pure . Left
-
+                
 

@@ -127,8 +127,8 @@ main = do
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "natural4: skipping babyl4"
     when (not $ SFL4.toasp     opts) $ putStrLn "natural4: skipping asp"
     when (SFL4.toasp     opts) $ putStrLn "natural4: will output asASP"
-    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN      iso8601 "lp"   (commentIfError "%%" asASP)    asASPErr
-    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN   iso8601 "lp"   (commentIfError "%%" asEpilog) asEpilogErr
+    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN     iso8601 "lp"   (commentIfError "%%" asASP)    asASPErr
+    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"   (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ do
@@ -275,7 +275,7 @@ snakeScrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++
                 Text.intercalate "-" x
 
 -- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
-commentIfError :: String -> Either String String -> String
-commentIfError comment (Left x) = comment ++ " " ++ x
+commentIfError :: String -> Either XPileLogW String -> String
+commentIfError comment (Left x) = concatMap ((comment ++ " ") ++) x
 commentIfError _      (Right x) = x
 

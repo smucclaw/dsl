@@ -29,13 +29,13 @@ instance Hashable HenceLest
 -- instance Pretty HenceLest where
 --   pretty = viaShow
 
-data HenceLestClause where
-  HenceLestClause ::
-    { henceLest :: HenceLest,
-      clause :: Maybe Rule
-    } ->
-    HenceLestClause
+data HenceLestClause = HenceLestClause
+  { henceLest :: HenceLest,
+    clause :: Maybe Rule
+  }
   deriving (Eq, Generic, Ord, Show)
+
+instance Hashable HenceLestClause
 
 henceLest2doc ::
   HenceLestClause ->

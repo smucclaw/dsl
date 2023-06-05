@@ -10,28 +10,31 @@
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
 
-module LS.Types ( module LS.BasicTypes
-                , module LS.Types) where
+module LS.Types
+  ( module LS.BasicTypes,
+    module LS.Types,
+  )
+where
 
-import qualified Data.Text as Text
-import Text.Megaparsec
-import qualified Data.List.NonEmpty as NE
-import Data.List.NonEmpty (NonEmpty ((:|)), toList, fromList)
-import Data.Void (Void)
-import qualified Data.Set           as Set
-import Control.Monad
-import qualified AnyAll as AA
-import Control.Monad.Reader (ReaderT (runReaderT), asks)
-import Data.Aeson (ToJSON)
-import GHC.Generics
-import qualified Data.Tree as Tree
-import qualified Data.Map as Map
-
-import LS.BasicTypes
-import Control.Monad.Writer.Lazy (WriterT (runWriterT))
-import Data.Monoid (Endo (Endo))
-import Data.Bifunctor (second)
 import AnyAll (mkLeaf)
+import qualified AnyAll as AA
+import Control.Monad
+import Control.Monad.Reader (ReaderT (runReaderT), asks)
+import Control.Monad.Writer.Lazy (WriterT (runWriterT))
+import Data.Aeson (ToJSON)
+import Data.Bifunctor (second)
+import Data.Hashable (Hashable)
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Map as Map
+import Data.Monoid (Endo (Endo))
+import qualified Data.Set as Set
+import qualified Data.Text as Text
+import qualified Data.Tree as Tree
+import Data.Void (Void)
+import GHC.Generics (Generic)
+import LS.BasicTypes
+import Text.Megaparsec
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -53,6 +56,8 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
+instance Hashable RPRel
+
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
 data MTExpr = MTT Text.Text -- ^ Text string
@@ -62,6 +67,8 @@ data MTExpr = MTT Text.Text -- ^ Text string
 --            | MTC Text.Text -- ^ Currency money
 --            | MTD Text.Text -- ^ Date
             deriving (Eq, Ord, Show, Generic, ToJSON)
+
+instance Hashable MTExpr
 
 -- | the parser returns a list of MTExpr, to be parsed further at some later point
 type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
@@ -168,6 +175,8 @@ data RegKeywords =
   REvery | RParty | RTokAll
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
+instance Hashable RegKeywords
+
 class HasToken a where
   tokenOf :: a -> MyToken
 
@@ -183,6 +192,8 @@ data HornClause a = HC
   , hBody :: Maybe a
   }
   deriving (Eq, Ord, Show, Generic, ToJSON)
+
+instance Hashable a => Hashable (HornClause a)
 
 type HornClause2 = HornClause BoolStructR
 
@@ -256,6 +267,8 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
+
+instance Hashable RelationalPredicate
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT (MTT <$> a)
@@ -343,18 +356,27 @@ noDeem = Nothing
 data ParamType = TOne | TOptional | TList0 | TList1
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
+instance Hashable ParamType
+
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
                  deriving (Eq, Ord, Show, Generic, ToJSON)
 
+instance Hashable TComparison
+
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
                           deriving (Eq, Ord, Show, Generic, ToJSON)
+
+instance Hashable a => Hashable (TemporalConstraint a)
+
 type RuleName   = MultiTerm
 type EntityType = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
              deriving (Eq, Ord, Show, Generic, ToJSON)
+
+instance Hashable TypeSig
 
 -- for use by the interpreter
 
@@ -493,6 +515,8 @@ bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (
 data Deontic = DMust | DMay | DShant
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
+instance Hashable Deontic
+
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
                      , srcrow   :: Int
@@ -501,6 +525,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      }
               deriving (Eq, Ord, Show, Generic, ToJSON)
 
+instance Hashable SrcRef
 
 mkTComp :: MyToken -> Maybe TComparison
 mkTComp Before     = Just TBefore

@@ -14,6 +14,7 @@ module LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
   )
 where
 
+import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as T
 import Data.Type.Bool (type (||))
@@ -37,6 +38,8 @@ data RkeywordActor = RkeywordActor
   }
   deriving (Eq, Generic, Ord, Show)
 
+instance Hashable RkeywordActor
+
 {-
   This function handles things like:
   - PARTY/EVERY (some paramText denoting the actor)
@@ -57,6 +60,8 @@ data DeonticAction = DeonticAction
     action :: ParamText
   }
   deriving (Eq, Generic, Ord, Show)
+
+instance Hashable DeonticAction
 
 deonticAction2doc :: DeonticAction -> MonoidValidate (Doc ann1) (Doc ann2)
 deonticAction2doc

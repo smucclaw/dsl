@@ -9,22 +9,22 @@
 
 module AnyAll.Types where
 
-import Debug.Trace (traceM, trace)
-import Data.Tree
+import Data.Aeson
+import Data.Aeson.Key (toText)
+import Data.Aeson.KeyMap hiding (mapMaybe)
+import Data.Aeson.Types (Parser, parse, parseMaybe)
+import qualified Data.ByteString.Lazy as B
+import Data.Hashable (Hashable)
+import qualified Data.Map.Strict as Map
 import Data.Maybe
 import Data.String (IsString)
-import qualified Data.Map.Strict      as Map
-import qualified Data.ByteString.Lazy as B
-import qualified Data.Text            as T
-import qualified Data.Text.Lazy       as TL
-import qualified Data.Vector          as V
-import Text.Pretty.Simple (pShowNoColor)
-
-import Data.Aeson
-import Data.Aeson.Types (parseMaybe, parse, Parser)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import Data.Tree
+import qualified Data.Vector as V
+import Debug.Trace (trace, traceM)
 import GHC.Generics
-import Data.Aeson.KeyMap hiding (mapMaybe)
-import Data.Aeson.Key (toText)
+import Text.Pretty.Simple (pShowNoColor)
 
 data Label a =
     Pre a
@@ -32,6 +32,7 @@ data Label a =
   deriving (Eq, Show, Generic, Ord)
 instance ToJSON a => ToJSON (Label a)
 instance FromJSON a => FromJSON (Label a)
+instance Hashable a => Hashable (Label a)
 
 labelFirst :: Label p -> p
 labelFirst (Pre x      ) = x
@@ -52,6 +53,8 @@ data Hardness = Soft -- use Left defaults
               | Hard -- require Right input
   deriving (Eq, Ord, Show, Generic)
 
+instance Hashable Hardness
+
 type AnswerToExplain = Bool
 
 data BinExpr a b =
@@ -62,6 +65,7 @@ data BinExpr a b =
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
+instance (Hashable a, Hashable b) => Hashable (BinExpr a b)
 
 instance Semigroup t => Semigroup (Label t) where
   (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2) -- this is semantically incorrect, can we improve it?
@@ -74,6 +78,7 @@ strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
 
 data AndOr a = And | Or | Simply a | Neg deriving (Eq, Ord, Show, Generic)
 instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
+instance Hashable a => Hashable (AndOr a)
 
 -- | Left: no user input; default value from system.
 --
@@ -82,6 +87,8 @@ instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
 -- using data instead of newtype because it makes it easier to prettyprint to Purescript via Show
 newtype Default a = Default (Either (Maybe a) (Maybe a))
   deriving (Eq, Ord, Show, Generic)
+
+instance Hashable a => Hashable (Default a)
 
 getDefault :: Default a -> Either (Maybe a) (Maybe a)
 getDefault (Default x) = x
@@ -93,6 +100,8 @@ asJSONDefault = encode
 
 newtype Marking a = Marking { getMarking :: Map.Map a (Default Bool) }
   deriving (Eq, Ord, Show, Generic)
+
+instance Hashable a => Hashable (Marking a)
 
 type TextMarking = Marking T.Text
 
@@ -113,12 +122,15 @@ parseMarking = withObject "marking" $ \o -> do
 
 data ShouldView = View | Hide | Ask deriving (Eq, Ord, Show, Generic)
 instance ToJSON ShouldView; instance FromJSON ShouldView
+instance Hashable ShouldView
 
 data Q a = Q { shouldView :: ShouldView
              , andOr      :: AndOr a
              , prePost    :: Maybe (Label a)
              , mark       :: Default Bool
              } deriving (Eq, Ord, Show, Generic)
+
+instance Hashable a => Hashable (Q a)
 
 ask2hide :: Q a -> Q a
 ask2hide q@Q{shouldView=Ask} = q{shouldView=Hide}

@@ -8,18 +8,20 @@
 {-# LANGUAGE LambdaCase #-}
 
 module AnyAll.BoolStruct where
-import qualified Data.Text as T
+
 import AnyAll.Types
+import Control.Applicative
 import Data.Aeson
-import Data.Tree
-import GHC.Generics
 import Data.Aeson.Types
+import Data.Hashable (Hashable)
+import Data.List (sort)
 import Data.Maybe
+import qualified Data.Text as T
+import Data.Tree
+import Debug.Trace
+import GHC.Generics
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
-import Data.List (sort)
-import Control.Applicative
-import Debug.Trace
 
 data BoolStruct lbl a =
     Leaf                       a
@@ -27,6 +29,8 @@ data BoolStruct lbl a =
   | Any lbl [BoolStruct lbl a]
   | Not             (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+
+instance (Hashable lbl, Hashable a) => Hashable (BoolStruct lbl a)
 
 mkLeaf :: a -> BoolStruct lbl a
 mkLeaf = Leaf

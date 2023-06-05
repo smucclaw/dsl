@@ -22,6 +22,38 @@ import L4.PrintProg
     PrintVarCase (..),
   )
 import L4.Syntax
+  ( BArithOp (..),
+    BBoolOp (..),
+    BComparOp (..),
+    BinOp (..),
+    ClassName (ClsNm),
+    Expr
+      ( AppE,
+        BinOpE,
+        CastE,
+        FldAccE,
+        FunE,
+        IfThenElseE,
+        ListE,
+        QuantifE,
+        TupleE,
+        UnaOpE,
+        ValE,
+        VarE
+      ),
+    FieldName (FldNm),
+    ListOp (..),
+    QVarName (QVarName),
+    Quantif (..),
+    Tp (ClassT, ErrT, FunT, KindT, OkT, TupleT),
+    UArithOp (..),
+    UBoolOp (..),
+    UTemporalOp (..),
+    UnaOp (..),
+    Val (..),
+    Var (GlobalVar, LocalVar),
+    VarDecl (VarDecl),
+  )
 
 data LPLang
   = ASP
@@ -69,6 +101,7 @@ data OpposesClause t = OpposesClause
 
 instance Hashable t => Hashable (OpposesClause t)
 
+-- Derive Generic and Hashable instances for some Babyl4 types.
 deriving instance Generic (QVarName t)
 deriving instance Generic (Var t)
 deriving instance Generic Val

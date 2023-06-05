@@ -677,16 +677,18 @@ prettyBoilerplate ct@(CT ch) =
     className
       |> (`Map.lookup` ch)
       |> maybe mempty
-        ( \(_ctype@(Just (InlineEnum TOne nelist), _), _) ->
-            let c_name = snake_inner (MTT className)
-                enumList = enumLabels_ nelist
-            in pure [__di|
-              fact #{angles $ c_name <> "Exhaustive"}
-              for x:#{c_name} #{encloseSep "" "" " || " ((\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList)}
+        ( \case
+            (_ctype@(Just (InlineEnum TOne nelist), _), _) ->
+              let c_name = snake_inner (MTT className)
+                  enumList = enumLabels_ nelist
+               in pure [__di|
+                  fact #{angles $ c_name <> "Exhaustive"}
+                  for x:#{c_name} #{encloseSep "" "" " || " ((\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList)}
 
-              fact #{angles $ c_name <> "Disj"}
-              #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList)}
-            |]
+                  fact #{angles $ c_name <> "Disj"}
+                  #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList)}
+                |]
+            _ -> mempty
         )
   where
     -- [ "fact" <+> angles (c_name <> "Exhaustive")
@@ -1202,8 +1204,9 @@ testrules = [ defaultHorn
 -- extractGiven _                              = trace "not a Hornlike rule, not extracting given" mempty
 
 hornlikeToContext :: SFL4.Rule -> [String]
-hornlikeToContext Hornlike {given = Just (Fold.toList -> given)} =
-  (given :: [(NE.NonEmpty MTExpr, Maybe TypeSig)])
+hornlikeToContext Hornlike {given} =
+  (given :: Maybe (NE.NonEmpty (NE.NonEmpty MTExpr, Maybe TypeSig)))
+    |> maybe [] Fold.toList
     -- extract the MTExprs from given
     |> foldMap (fst .> Fold.toList)
     |> mapMaybe
@@ -1212,4 +1215,3 @@ hornlikeToContext Hornlike {given = Just (Fold.toList -> given)} =
           MTT (T.unpack -> x) -> Just x
           _ -> Nothing
       )
-hornlikeToContext _ = []

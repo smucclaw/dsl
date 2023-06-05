@@ -653,21 +653,13 @@ prettyDecls previously rs =
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
   vsep $ do
-    (scopename , symtab') <- Map.toList sctabs
-    (_mt, (_symtype,_vals)) <- Map.toList symtab'
+    (scopename, symtab') <- Map.toList sctabs
+    -- (_mt, (_symtype, _vals)) <- Map.toList symtab'
     -- global symtab as facts
     pure [__di|
       fact #{angles $ snake_case scopename}
       #{commentShow "#" symtab'}
     |]
-
-  -- [ -- global symtab as facts
-  --   [ "fact" <+> angles (snake_case scopename)
-  --   , commentShow "#" symtab'
-  --   ]
-  -- | (scopename , symtab') <- Map.toList sctabs
-  -- , (_mt, (_symtype,_vals)) <- Map.toList symtab'
-  -- ]
 
 -- | enums are exhaustive and disjoint
 prettyBoilerplate :: ClsTab -> Doc ann
@@ -707,9 +699,9 @@ prettyBoilerplate ct@(CT ch) =
     -- ]
     pairwise :: [a] -> [(a, a)]
     pairwise xs =
-      xs -- [x0, x1 ...]
-        |> tails -- [[x0, x1 ...], [x1 ...], ...]
-        |> mapMaybe uncons -- [(x0, [x1 ... xn]) ... ]
+      xs                   -- [x0, x1 ...]
+        |> tails           -- [[x0, x1 ...], [x1 ...], ...]
+        |> mapMaybe uncons -- [(x0, [x1 ... xn]) ...]
         -- This does NOT play nice with infinite lists in that if xs is infinite,
         -- then tail is also always infinite, so that the order type is > ω.
         -- Consequently, some pairs may never get enumerated over.
@@ -772,7 +764,7 @@ prettyDefnCs rname cs = do
       <> Prettyprinter.line <> commentShow "#" cl
     -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
   where
-    -- Right to left composition via the endomorphism monoid
+    -- Function composition via the endomorphism monoid
     chain :: [a -> a] -> a -> a
     chain = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
     x123 = [(1 :: Int)..] |$> \n -> [__di|x#{n}|]

@@ -1,33 +1,33 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module LS.Rule where
 
-import LS.Types
-import qualified Data.Text as Text
-import Text.Megaparsec
-    ( (<|>),
-      SourcePos(SourcePos),
-      (<?>),
-      runParser,
-      unPos,
-      MonadParsec(token, eof),
-      ErrorItem(Tokens),
-      ParseErrorBundle )
-import Data.List.NonEmpty ( NonEmpty )
-import Data.Void (Void)
-import qualified Data.Set           as Set
-import Control.Monad ( when )
-import qualified AnyAll as AA
+import AnyAll qualified as AA
+import Control.Monad (when)
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
-import Data.Aeson (ToJSON)
-import GHC.Generics ( Generic )
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
+import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Void (Void)
+import GHC.Generics (Generic)
+import LS.Types
+import Text.Megaparsec
+  ( ErrorItem (Tokens),
+    MonadParsec (eof, token),
+    ParseErrorBundle,
+    SourcePos (SourcePos),
+    runParser,
+    unPos,
+    (<?>),
+    (<|>),
+  )
 
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
@@ -162,12 +162,12 @@ ruleLabelName :: Rule -> RuleName
 ruleLabelName r = maybe (ruleName r) (\x-> [MTT $ rl2text x]) (getRlabel r)
 
 getRlabel :: Rule -> Maybe RuleLabel
-getRlabel r@Regulative{}    = rlabel r
-getRlabel r@Constitutive {} = rlabel r
-getRlabel r@Hornlike {}     = rlabel r
-getRlabel r@TypeDecl {}     = rlabel r
-getRlabel r@Scenario {}     = rlabel r
-getRlabel r@RuleGroup {}    = rlabel r
+getRlabel Regulative{rlabel}    = rlabel
+getRlabel Constitutive {rlabel} = rlabel
+getRlabel Hornlike {rlabel}     = rlabel
+getRlabel TypeDecl {rlabel}     = rlabel
+getRlabel Scenario {rlabel}     = rlabel
+getRlabel RuleGroup {rlabel}    = rlabel
 -- getRlabel r@DefNameAlias {} = Nothing
 -- getRlabel r@DefTypically {} = Nothing
 -- getRlabel r@(RuleAlias a)   = Nothing
@@ -176,7 +176,7 @@ getRlabel r@RuleGroup {}    = rlabel r
 getRlabel _                 = Nothing
 
 ruleName :: Rule -> RuleName
-ruleName Regulative { subj  = x } = [MTT $ bsp2text x]
+ruleName Regulative {subj} = [MTT $ bsp2text subj]
 ruleName (RuleAlias rn) = rn
 ruleName RegFulfilled = [MTT "FULFILLED"]
 ruleName RegBreach    = [MTT "BREACH"]

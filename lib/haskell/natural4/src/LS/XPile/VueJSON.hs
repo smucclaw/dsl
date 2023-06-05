@@ -21,6 +21,7 @@ import qualified Data.Text as Text
 import qualified Data.Map as Map
 import qualified Data.Text as T
 
+import LS.XPile.Logging
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> Grounds
@@ -154,10 +155,23 @@ quaero [x] = [Text.unwords $ quaero $ Text.words x]
 quaero (x:xs) = Text.toTitle x : init xs ++ [last xs <> "?"]
 quaero xs = xs
 
-toVueRules :: [Rule] -> BoolStructR
+toVueRules :: [Rule] -> [(RuleName, XPileLogE BoolStructR)]
 -- [TODO] is there something in RelationalPredicates or elsewhere that knows how to extract the Item from an HC2. there is a lot going on so we need to sort out the semantics first.
-toVueRules [Hornlike {clauses=[HC {hBody=Just t}]}] = t
-toVueRules _ = error "toVueRules cannot handle a list of more than one rule"
+-- clearly this is not ready for primetime, we need to get this transpiler at least as functional as the Purescript outputter that it is meant to replace.
+toVueRules rs = [ (ruleLabelName r, toVueRule r) | r <- rs ]
+
+
+toVueRule :: Rule -> XPileLogE BoolStructR
+toVueRule r@(Hornlike {clauses=[HC {hBody=Just t}]}) = do
+  mutter "branch 1: handling Hornlike rule"
+  xpReturn t
+toVueRule (Regulative {}) = do
+  mutter "branch 2: this goes to stderr and is a more principled alternative to Debug.Trace"
+  xpError ["toVueRules not handling a Regulative rule"]
+toVueRule _ = do
+  mutter "branch 3: this goes to stderr and is a more principled alternative to Debug.Trace"
+  xpError ["toVueRules not handling any other type of rule"]
+
 
 -- define custom types here for things we care about in purescript
 

@@ -42,6 +42,7 @@ import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Data.Foldable as DF
 import qualified Text.XML.HXT.Core as HXT
 import LS.XPile.DumpRule
+import Data.Bifunctor (first)
 
 
 myTraceM :: String -> IO ()
@@ -69,7 +70,9 @@ main = do
       (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
       (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
       (todmnFN,     (asDMN, asDMNErr))        = (workuuid <> "/" <> "dmn",      xpLog $ sfl4ToDMN rules)
-      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
+      (tojsonFN,    asJSONstr)    = (workuuid <> "/" <> "json",        toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
+      (tovuejsonFN, asVueJSONrules) = (workuuid <> "/" <> "vuejson",     fmap xpLog <$> toVueRules rules)
+
       (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
                                                (<>)
                                                <$> xpLog (translate2PS allNLGEnv nlgEnv rules)
@@ -127,10 +130,21 @@ main = do
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "natural4: skipping babyl4"
     when (not $ SFL4.toasp     opts) $ putStrLn "natural4: skipping asp"
     when (SFL4.toasp     opts) $ putStrLn "natural4: will output asASP"
-    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN     iso8601 "lp"   (commentIfError "%%" asASP)    asASPErr
-    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"   (commentIfError "%%" asEpilog) asEpilogErr
+    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN     iso8601 "lp"      (commentIfError "%%" asASP)    asASPErr
+    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"      (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+
+    when (SFL4.tovuejson opts) $ do
+      let toWriteVue =  [ ("// " ++ Text.unpack (SFL4.mt2text rname) ++ "\n" ++
+                            (commentIfError "//!!" out') ++ "\n"
+                          , err)
+                        | (rname, (out, err)) <- asVueJSONrules
+                        , let out' = (toString . encodePretty . itemRPToItemJSON) <$> out
+                        ]
+          
+      mywritefile2 True tovuejsonFN  iso8601 "vuejson" (concatMap fst toWriteVue) (concatMap snd toWriteVue)
+
     when (SFL4.topurs    opts) $ do
       mywritefile2 True topursFN     iso8601 "purs" asPursstr asPursErr
     when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
@@ -213,9 +227,6 @@ main = do
     when (SFL4.only opts == "native")  $ pPrint rules
     when (SFL4.only opts == "classes") $ pPrint (SFL4.classtable l4i)
     when (SFL4.only opts == "symtab")  $ pPrint (SFL4.scopetable l4i)
-
-    when (SFL4.toVue rc) $ do
-      putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
 
     when (SFL4.only opts == "maude") $
       rules |> Maude.rules2maudeStr |> putStrLn

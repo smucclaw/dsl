@@ -25,6 +25,7 @@ import LS.XPile.Markdown
 import LS.XPile.Maude.Maude qualified as Maude
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
+import LS.XPile.RuleJSON
 
 import LS.NLP.NLG (nlg, myNLGEnv, allLangs, getLang, printLangs, expandRulesForNLG)
 import qualified Data.Text as Text
@@ -70,7 +71,8 @@ main = do
       (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
       (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
-      (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
+      (torljsonFN,    asRlJSONstr) = (workuuid <> "/" <> "rljson", rlsToJSON nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
+      (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv ((expandRulesForNLG nlgEnv rules)))
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGEnv rules)
@@ -128,7 +130,8 @@ main = do
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
     when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr
-    when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
+    when (SFL4.rlsToJSON opts) $ mywritefile True torljsonFN   iso8601 "json" asRlJSONstr
+    when (SFL4.togftrees opts) $ mywritefile True togftreesFN  iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
@@ -183,7 +186,8 @@ main = do
         -- using expandRulesForNLG for demo purposes here
         -- I think it's better suited for questions, not full NLG
         -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
-        naturalLangSents <- mapM (nlg env) (expandRulesForNLG env rules)
+        naturalLangSents <- mapM (nlg env) rules
+        -- (expandRulesForNLG env rules)
         mapM_ (putStrLn . Text.unpack) naturalLangSents)
         allNLGEnv
 

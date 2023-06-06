@@ -15,7 +15,6 @@ module LS.XPile.RuleJSON where
 import LS
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TLE
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
 import qualified AnyAll.BoolStruct as AA
@@ -31,66 +30,12 @@ import Data.Map ((!))
 import Data.Bifunctor (second)
 import Data.Maybe (listToMaybe)
 import Data.List.Split (chunk)
+import PGF
 import qualified Data.Char as Char
-import qualified Data.Aeson as Aeson
-import Data.Aeson ((.=), object, toJSON, Value)
+import qualified Data.HashMap.Strict as HashMap
 
-import Data.List (foldl')
 
 import qualified Text.RawString.QQ as QQ
-
-
-rlToBST :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
-rlToBST env rl = [(name, unsafePerformIO q) | q <- quest]
-  where
-    name = map ruleLabelName rl
-    alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
-    quest = map (ruleQuestions env alias) rl
-
-bsToJSON :: AA.OptionallyLabeledBoolStruct T.Text -> AA.BoolStruct (AA.Label T.Text) T.Text
-bsToJSON (AA.Leaf b) = AA.mkLeaf b
-bsToJSON (AA.All Nothing items) = AA.mkAll (AA.Pre "all of the following") (map bsToJSON items)
-bsToJSON (AA.All (Just pre@(AA.Pre _)) items) = AA.All pre (map bsToJSON items)
-bsToJSON (AA.All (Just pp@(AA.PrePost _ _)) items) = AA.All pp (map bsToJSON items)
-bsToJSON (AA.Any Nothing items) = AA.mkAny (AA.Pre "any of the following") (map bsToJSON items)
-bsToJSON (AA.Any (Just pre@(AA.Pre _)) items) = AA.mkAny pre (map bsToJSON items)
-bsToJSON (AA.Any (Just pp@(AA.PrePost _ _)) items) = AA.mkAny pp (map bsToJSON items)
-bsToJSON (AA.Not item) = AA.mkNot (bsToJSON item)
-
-ruleToRuleJSON :: NLGEnv -> [Rule] -> [(String, AA.BoolStruct (AA.Label T.Text) T.Text)]
-ruleToRuleJSON env rl = [(T.unpack $ mt2text rn, bsToJSON bst) | ([rn], [bst]) <- rlToBST env rl]
-
-data Tree = Leaf T.Text | Any T.Text [Tree] | All T.Text [Tree]
-  deriving Show
-newtype TreeList = TreeList [Tree]
-
-instance Aeson.ToJSON Tree where
-  toJSON (Leaf leaf) = object ["Leaf" .= leaf]
-  toJSON (Any label trees) = object ["Any" .= toJSON trees]
-  toJSON (All label trees) = object ["All" .= toJSON trees]
-
-instance Read Tree where
-  readsPrec _ input = [(fromString input, "")]
-
-
-fromString :: String -> Tree
-fromString input =
-  case reads input of
-    [(tree, "")] -> tree
-    _ -> error "Invalid input"
-
-toNestedMap :: [(String, AA.BoolStruct (AA.Label T.Text) T.Text)] -> Map.Map T.Text (Map.Map T.Text Value)
-toNestedMap pairs = Map.singleton "root" $ Map.fromList $ map toMap pairs
-  where
-    toMap :: (String, AA.BoolStruct (AA.Label T.Text) T.Text) -> (T.Text, Value)
-    toMap (key, value) = (T.pack key, toJSON value)
-
-mapToString :: Map.Map T.Text (Map.Map T.Text Value) -> String
-mapToString = TL.unpack . TL.replace "\"" "'" . pShowNoColor
-
-rlsToJSON :: NLGEnv -> [Rule] -> String
-rlsToJSON env rs = mapToString $ toNestedMap $ ruleToRuleJSON env rs
-
 
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
@@ -110,58 +55,90 @@ rlsToJSON env rs = mapToString $ toNestedMap $ ruleToRuleJSON env rs
 
 
 
--- rlToBST :: NLGEnv -> [Rule] ->  [([RuleName], [BoolStructT])]
--- rlToBST env rl = [(name, unsafePerformIO q) | q <- quest]
---   where
---     name = map ruleLabelName rl
---     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
---     quest = map (ruleQuestions env alias) rl
+rlToBST :: NLGEnv -> [Rule] ->  [([RuleName], [BoolStructT])]
+rlToBST env rl = [(name, unsafePerformIO q) | q <- quest]
+  where
+    name = map ruleLabelName rl
+    alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
+    quest = map (ruleQuestions env alias) rl
 
--- bsToJSON :: AA.OptionallyLabeledBoolStruct T.Text -> AA.BoolStruct (AA.Label T.Text) T.Text
--- bsToJSON (AA.Leaf b) = AA.mkLeaf (b)
--- bsToJSON (AA.All Nothing items) = AA.mkAll (AA.Pre "all of the following") (map bsToJSON items)
--- bsToJSON (AA.All (Just pre@(AA.Pre _)) items) = AA.All pre (map bsToJSON items)
--- bsToJSON (AA.All (Just pp@(AA.PrePost _ _)) items) = AA.All pp (map bsToJSON items)
--- bsToJSON (AA.Any Nothing items) = AA.mkAny (AA.Pre "any of the following") (map bsToJSON items)
--- bsToJSON (AA.Any (Just pre@(AA.Pre _)) items) = AA.mkAny pre (map bsToJSON items)
--- bsToJSON (AA.Any (Just pp@(AA.PrePost _ _)) items) = AA.mkAny pp (map bsToJSON items)
--- bsToJSON (AA.Not item) = AA.mkNot (bsToJSON item)
+-- labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
+-- labelQs x = map AA.alwaysLabeled x
 
--- ruleToRuleJSON :: NLGEnv -> [Rule] -> [(String, AA.BoolStruct (AA.Label T.Text) T.Text)]
--- ruleToRuleJSON env rl = [(T.unpack $ mt2text rn, bsToJSON bst) | ([rn], [bst]) <- rlToBST env rl]
 
--- data Tree = Leaf T.Text | Any T.Text [Tree] | All T.Text [Tree]
---   deriving Show
+bsToJSON :: AA.OptionallyLabeledBoolStruct T.Text -> AA.BoolStruct (AA.Label T.Text) T.Text
+bsToJSON (AA.Leaf b) = AA.mkLeaf (b)
+bsToJSON (AA.All Nothing items) = AA.mkAll (AA.Pre "all of the following") (map bsToJSON items)
+bsToJSON (AA.All (Just pre@(AA.Pre _)) items) = AA.All pre (map bsToJSON items)
+bsToJSON (AA.All (Just pp@(AA.PrePost _ _)) items) = AA.All pp (map bsToJSON items)
+bsToJSON (AA.Any Nothing items) = AA.mkAny (AA.Pre "any of the following") (map bsToJSON items)
+bsToJSON (AA.Any (Just pre@(AA.Pre _)) items) = AA.mkAny pre (map bsToJSON items)
+bsToJSON (AA.Any (Just pp@(AA.PrePost _ _)) items) = AA.mkAny pp (map bsToJSON items)
+bsToJSON (AA.Not item) = AA.mkNot (bsToJSON item)
 
--- instance Read Tree where
---   readsPrec _ input = [(fromString input, "")]
+ruleToRuleJSON :: NLGEnv -> [Rule] -> [Map.Map String (AA.BoolStruct (AA.Label T.Text) T.Text)]
+ruleToRuleJSON env rl  = [Map.fromList [(T.unpack $ mt2text rn, bsToJSON bst)] | ([rn],[bst]) <- rlToBST env rl]
 
--- fromString :: String -> Tree
--- fromString input =
---   case reads input of
---     [(tree, "")] -> tree
---     _ -> error "Invalid input"
+-- strings
 
--- newtype TreeList = TreeList [Tree]
+convertToString :: TL.Text -> TL.Text
+convertToString str = mapToString (parseValue str)
 
--- instance ToJSON Tree where
---   toJSON (Leaf leaf) = object ["Leaf" .= leaf]
---   toJSON (Any label trees) = object ["Any" .= toJSON trees]
---   toJSON (All label trees) = object ["All" .= toJSON trees]
+parseValue :: TL.Text -> [(TL.Text, TL.Text)]
+parseValue str =
+  let parseResult = TL.lines str
+  in fmap (\x -> (x, "")) parseResult
 
--- instance ToJSON TreeList where
---   toJSON (TreeList trees) = toJSON trees
+mapToString :: [(TL.Text, TL.Text)] -> TL.Text
+mapToString pairs = "{" <> TL.intercalate "," (map keyValueToString pairs) <> "}"
 
--- convertToJSON :: String -> Value
--- convertToJSON tree = toJSON $ fromString tree
 
--- toNestedMap :: [(String, AA.BoolStruct (AA.Label T.Text) T.Text)] -> Map.Map T.Text (Map.Map T.Text Value)
--- toNestedMap pairs = Map.singleton "root" $ Map.fromList $ map toMap pairs
---   where
---     toMap (key, value) = (T.pack key, toJSON value)
+keyValueToString :: (TL.Text, TL.Text) -> TL.Text
+keyValueToString (key, value) = "\"" <> key <> "\":" <> value
+--
 
--- mapToString :: Map.Map T.Text (Map.Map T.Text Value) -> String
--- mapToString = TL.unpack . TL.replace "\"" "'" . pShowNoColor
+rlsToJSON :: NLGEnv -> [Rule] -> String
+rlsToJSON env rs =  TL.unpack $ convertToString $ (pShowNoColor $ mconcat $ ruleToRuleJSON env rs)
 
--- rlsToJSON :: NLGEnv -> [Rule] -> String
--- rlsToJSON env rs = mapToString $ toNestedMap $ ruleToRuleJSON env rs
+
+
+
+    -- <> "\n\n"
+    -- <> psSuffix
+    -- <> "\n\n"
+    -- <> ([asPurescript l rules | l <- nlgEnv])
+
+-- psPrefix :: String -- the stuff at the top of the purescript output
+-- psPrefix = [QQ.r|
+
+-- -- This file was automatically generated by natural4.
+-- -- Do not edit by hand.
+-- -- Instead, revise the toolchain starting at smucclaw/dsl/lib/haskell/natural4/app/Main.hs
+
+-- module RuleLib.PDPADBNO where
+
+-- import Prelude
+-- import Data.Either
+-- import Data.Maybe
+-- import Data.Tuple
+-- import Data.Map as Map
+-- import Foreign.Object as Object
+
+-- import AnyAll.Types
+
+-- schedule1_part1 :: Item String
+-- schedule1_part1 =
+
+--   |]
+
+
+-- psSuffix :: String -- at the bottom of the purescript output
+-- psSuffix = [QQ.r|
+-- schedule1_part1_nl :: NLDict
+-- schedule1_part1_nl =
+--   Map.fromFoldable
+--     [ ]
+--     |]
+
+-- type RuleJSON = Map.Map String (AA.BoolStruct (AA.Label T.Text) T.Text)
+

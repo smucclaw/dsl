@@ -118,7 +118,8 @@ rule2doc
         -- throwing out all the (Right Nothing).
         -- Note that this is effectful in that we short-circuit when we
         --- encounter a Left.
-        [HenceLestClause] <*> [HENCE, LEST] <*> [hence, lest]
+        [(HENCE, hence), (LEST, lest)] 
+          |$> uncurry HenceLestClause
           |> wither henceLest2doc
 
 rule2doc DefNameAlias {name, detail} =

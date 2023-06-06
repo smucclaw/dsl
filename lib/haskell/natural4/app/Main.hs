@@ -6,7 +6,7 @@ module Main where
 import qualified LS as SFL4
 import Control.Monad.State
 import Control.Applicative
-import Data.List (partition, intercalate)
+import Data.List (partition, intercalate, isPrefixOf)
 import Data.Time.ISO8601
 import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
@@ -136,18 +136,32 @@ main = do
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
 
     when (SFL4.tovuejson opts) $ do
-      let toWriteVue =  [ ("// " ++ Text.unpack (SFL4.mt2text rname) ++ "\n" ++
-                            (commentIfError "//!!" out') ++ "\n"
+      -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
+      let toWriteVue =  [ ( case out' of
+                              Right _ -> (show $ Text.unpack (SFL4.mt2text rname)) ++ ": \n"
+                              Left  _ -> "" -- this little section is inelegant
+                            ++ commentIfError "// !! error" out' ++ ", \n"
                           , err)
                         | (rname, (out, err)) <- asVueJSONrules
                         , let out' = (toString . encodePretty . itemRPToItemJSON) <$> out
                         ]
+
+          vuePrefix = -- "# this is vuePrefix from natural4/app/Main.hs\n\n" ++
+                      "{"
+          vueSuffix = "}"
+                      -- ++ "\n\n# this is vueSuffix from natural4/app/Main.hs"
+
+          jsonProhibitsComments :: String -> String
+          jsonProhibitsComments = unlines . filter (not . ("//" `isPrefixOf`)) . lines
           
-      mywritefile2 True tovuejsonFN  iso8601 "vuejson" (concatMap fst toWriteVue) (concatMap snd toWriteVue)
+      mywritefile2 True tovuejsonFN  iso8601 "vuejson"
+        (jsonProhibitsComments $
+         intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
+        (concatMap snd toWriteVue)
 
     when (SFL4.topurs    opts) $ do
       mywritefile2 True topursFN     iso8601 "purs" asPursstr asPursErr
-    when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
+    when (SFL4.togftrees opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr

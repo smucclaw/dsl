@@ -361,7 +361,7 @@ stanzaAsStream rs =
   where
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
-      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
+      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF]) -- [TODO] this may be a source of slowness. Consider switching to Text, and if that doesn't help, to Data.Array?
     eofPos = SourcePos "" pos1 pos1
     withEOF = WithPos eofPos 1 Nothing EOF
     withSOF = WithPos eofPos 1 Nothing SOF

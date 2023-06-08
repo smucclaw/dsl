@@ -134,7 +134,6 @@ main = do
     when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"      (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
-
     when (SFL4.tovuejson opts) $ do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
       let toWriteVue =  [ ( case out' of
@@ -153,8 +152,8 @@ main = do
 
           jsonProhibitsComments :: String -> String
           jsonProhibitsComments = unlines . filter (not . ("//" `isPrefixOf`)) . lines
-          
-      mywritefile2 True tovuejsonFN  iso8601 "vuejson"
+
+      mywritefile2 True tovuejsonFN iso8601 "vuejson"
         (jsonProhibitsComments $
          intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
         (concatMap snd toWriteVue)

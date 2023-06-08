@@ -326,6 +326,7 @@ data Tree :: * -> * where
   GpresAnt :: Tree GTemp_
   GpresSimul :: Tree GTemp_
   GTemporalConstraint :: GTComparison -> GDigits -> GTimeUnit -> Tree GTemporal_
+  GTemporalConstraintNoDigits :: GTComparison -> GTimeUnit -> Tree GTemporal_
   GRegulative :: GSubj -> GDeontic -> GAction -> Tree GText_
   GadvUPON :: GUpon -> Tree GText_
   GqCOND :: GCond -> Tree GText_
@@ -339,6 +340,7 @@ data Tree :: * -> * where
   GDay_Unit :: Tree GTimeUnit_
   GMonth_Unit :: Tree GTimeUnit_
   GYear_Unit :: Tree GTimeUnit_
+  GrecoverUnparsedTimeUnit :: GString -> Tree GTimeUnit_
   GUPON :: GVP -> Tree GUpon_
   GrecoverUnparsedUpon :: GString -> Tree GUpon_
   LexV2 :: String -> Tree GV2_
@@ -521,6 +523,7 @@ instance Eq (Tree a) where
     (GpresAnt,GpresAnt) -> and [ ]
     (GpresSimul,GpresSimul) -> and [ ]
     (GTemporalConstraint x1 x2 x3,GTemporalConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GTemporalConstraintNoDigits x1 x2,GTemporalConstraintNoDigits y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRegulative x1 x2 x3,GRegulative y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GadvUPON x1,GadvUPON y1) -> and [ x1 == y1 ]
     (GqCOND x1,GqCOND y1) -> and [ x1 == y1 ]
@@ -534,6 +537,7 @@ instance Eq (Tree a) where
     (GDay_Unit,GDay_Unit) -> and [ ]
     (GMonth_Unit,GMonth_Unit) -> and [ ]
     (GYear_Unit,GYear_Unit) -> and [ ]
+    (GrecoverUnparsedTimeUnit x1,GrecoverUnparsedTimeUnit y1) -> and [ x1 == y1 ]
     (GUPON x1,GUPON y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedUpon x1,GrecoverUnparsedUpon y1) -> and [ x1 == y1 ]
     (LexV2 x,LexV2 y) -> x == y
@@ -1233,10 +1237,12 @@ instance Gf GTemp where
 
 instance Gf GTemporal where
   gf (GTemporalConstraint x1 x2 x3) = mkApp (mkCId "TemporalConstraint") [gf x1, gf x2, gf x3]
+  gf (GTemporalConstraintNoDigits x1 x2) = mkApp (mkCId "TemporalConstraintNoDigits") [gf x1, gf x2]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "TemporalConstraint" -> GTemporalConstraint (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2]) | i == mkCId "TemporalConstraintNoDigits" -> GTemporalConstraintNoDigits (fg x1) (fg x2)
 
 
       _ -> error ("no Temporal " ++ show t)
@@ -1273,12 +1279,14 @@ instance Gf GTimeUnit where
   gf GDay_Unit = mkApp (mkCId "Day_Unit") []
   gf GMonth_Unit = mkApp (mkCId "Month_Unit") []
   gf GYear_Unit = mkApp (mkCId "Year_Unit") []
+  gf (GrecoverUnparsedTimeUnit x1) = mkApp (mkCId "recoverUnparsedTimeUnit") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[]) | i == mkCId "Day_Unit" -> GDay_Unit 
       Just (i,[]) | i == mkCId "Month_Unit" -> GMonth_Unit 
       Just (i,[]) | i == mkCId "Year_Unit" -> GYear_Unit 
+      Just (i,[x1]) | i == mkCId "recoverUnparsedTimeUnit" -> GrecoverUnparsedTimeUnit (fg x1)
 
 
       _ -> error ("no TimeUnit " ++ show t)
@@ -1545,6 +1553,7 @@ instance Compos Tree where
     GrecoverUnparsedSubj x1 -> r GrecoverUnparsedSubj `a` f x1
     GConjTComparison x1 x2 -> r GConjTComparison `a` f x1 `a` f x2
     GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
+    GTemporalConstraintNoDigits x1 x2 -> r GTemporalConstraintNoDigits `a` f x1 `a` f x2
     GRegulative x1 x2 x3 -> r GRegulative `a` f x1 `a` f x2 `a` f x3
     GadvUPON x1 -> r GadvUPON `a` f x1
     GqCOND x1 -> r GqCOND `a` f x1
@@ -1555,6 +1564,7 @@ instance Compos Tree where
     GsCOND x1 -> r GsCOND `a` f x1
     GsUPON x1 x2 -> r GsUPON `a` f x1 `a` f x2
     GsWHO x1 x2 -> r GsWHO `a` f x1 `a` f x2
+    GrecoverUnparsedTimeUnit x1 -> r GrecoverUnparsedTimeUnit `a` f x1
     GUPON x1 -> r GUPON `a` f x1
     GrecoverUnparsedUpon x1 -> r GrecoverUnparsedUpon `a` f x1
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2

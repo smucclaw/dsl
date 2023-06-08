@@ -138,7 +138,7 @@ nlg' thl env rule = case rule of
                          in gfLin env uponExpr <> ", "
                       Nothing -> mempty
           tcText = case temporal of
-                      Just t -> " " <> (gfLin env $ gf $ parseTemporal env t)
+                      Just t -> " " <> gfLin env (gf $ parseTemporal env t)
                       Nothing -> mempty
           condText = case cond of
                       Just c ->
@@ -156,15 +156,22 @@ nlg' thl env rule = case rule of
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
-      when (verbose env) $ putStrLn $ showExpr [] ruleTree
+      when (verbose env) $ do
+        putStrLn "nlg': regulative"
+        putStrLn $ "    " <> showExpr [] ruleTree
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
-      when (verbose env) $ print "hornlike"
-      let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+      let headTrees = gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+          headLins = gfLin env <$> headTrees
           parseBodyHC cl = case hBody cl of
-            Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
-            Nothing -> mempty
-          bodyLins = parseBodyHC <$> clauses
+            Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
+            Nothing -> []
+          bodyTrees = concatMap parseBodyHC clauses
+          bodyLins = gfLin env <$> bodyTrees
+      when (verbose env) $ do
+        putStrLn "nlg': hornlike"
+        putStrLn $ unlines $ ["   head: " <> showExpr [] t | t <- headTrees]
+        putStrLn $ unlines $ ["   body: " <> showExpr [] t | t <- bodyTrees]
       pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
@@ -200,11 +207,11 @@ ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.Optiona
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ print "reg"
+      when (verbose env) $ print "ruleQuestions: regulative"
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
-        print "horn"
+        print "ruleQuestions: hornlike"
         print $ ruleQnTrees env alias rule
         print "---"
       text

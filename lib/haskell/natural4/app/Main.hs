@@ -6,7 +6,7 @@ module Main where
 import qualified LS as SFL4
 import Control.Monad.State
 import Control.Applicative
-import Data.List
+import Data.List (partition, intercalate)
 import Data.Time.ISO8601
 import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
@@ -14,6 +14,7 @@ import Text.Pretty.Simple (pPrint, pShowNoColor)
 import LS.XPile.CoreL4
 import LS.Interpreter
 
+import LS.XPile.Logging
 import qualified LS.XPile.Uppaal as Uppaal
 import LS.XPile.Prolog ( sfl4ToProlog )
 import LS.XPile.Petri
@@ -63,13 +64,16 @@ main = do
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
-      (tocorel4FN,  asCoreL4)  = (workuuid <> "/" <> "corel4",   sfl4ToCorel4 rules)
+      (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
       (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
-      (toaspFN,     asASP)     = (workuuid <> "/" <> "asp",      sfl4ToASP rules)
-      (toepilogFN,  asEpilog)  = (workuuid <> "/" <> "epilog",   sfl4ToEpilog rules)
-      (todmnFN,     asDMN)     = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
+      (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
+      (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
+      (todmnFN,     (asDMN, asDMNErr))        = (workuuid <> "/" <> "dmn",      xpLog $ sfl4ToDMN rules)
       (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
-      (topursFN,    asPursstr) = (workuuid <> "/" <> "purs", translate2PS allNLGEnv nlgEnv rules <> "\n\n" <> "allLang = [\"" <> strLangs <> "\"]")
+      (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
+                                               (<>)
+                                               <$> xpLog (translate2PS allNLGEnv nlgEnv rules)
+                                               <*> xpLog (pure ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")))
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
@@ -117,17 +121,18 @@ main = do
 
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
-    when (      SFL4.tocorel4  opts) $ mywritefile True tocorel4FN   iso8601 "l4"   asCoreL4
+    when (      SFL4.tocorel4  opts) $ mywritefile2 True tocorel4FN   iso8601 "l4"   (commentIfError "--" asCoreL4) asCoreL4Err
     when (not $ SFL4.tocorel4  opts) $ putStrLn "natural4: skipping corel4"
     when (      SFL4.tobabyl4  opts) $ mywritefile True tobabyl4FN   iso8601 "l4"   asBabyL4
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "natural4: skipping babyl4"
     when (not $ SFL4.toasp     opts) $ putStrLn "natural4: skipping asp"
     when (SFL4.toasp     opts) $ putStrLn "natural4: will output asASP"
-    when (SFL4.toasp     opts) $ mywritefile True toaspFN      iso8601 "lp"   asASP
-    when (SFL4.toepilog  opts) $ mywritefile True toepilogFN   iso8601 "lp"   asEpilog
+    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN     iso8601 "lp"   (commentIfError "%%" asASP)    asASPErr
+    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"   (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
-    when (SFL4.topurs    opts) $ mywritefile True topursFN     iso8601 "purs" asPursstr
+    when (SFL4.topurs    opts) $ do
+      mywritefile2 True topursFN     iso8601 "purs" asPursstr asPursErr
     when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
@@ -161,8 +166,8 @@ main = do
 
 
     when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
-        asCheckl <- show <$> checklist nlgEnv rc rules
-        mywritefile True tochecklFN   iso8601 "txt" asCheckl
+        let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnv rc rules
+        mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
     putStrLn "natural4: output to workdir done"
 
   -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
@@ -187,7 +192,7 @@ main = do
         mapM_ (putStrLn . Text.unpack) naturalLangSents)
         allNLGEnv
 
-    when (SFL4.toBabyL4 rc) $ putStrLn $ asCoreL4
+    when (SFL4.toBabyL4 rc) $ putStrLn $ commentIfError "--" asCoreL4
 
     when (SFL4.toUppaal rc) $ do
       pPrint $ Uppaal.toL4TA rules
@@ -197,7 +202,7 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toChecklist rc) $ do
-      checkls <- checklist nlgEnv rc rules
+      let (checkls, checklsErr) = xpLog $ checklist nlgEnv rc rules
       pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint asProlog
@@ -228,6 +233,7 @@ writeBSfile doLink dirname filename ext s = do
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 
 
+-- | output only "stdout" to outfile
 mywritefile :: Bool -> FilePath -> FilePath -> String -> String -> IO ()
 mywritefile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
@@ -235,6 +241,18 @@ mywritefile doLink dirname filename ext s = do
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
   writeFile mypath s
   when doLink $ myMkLink (filename <> "." <> ext) mylink
+
+-- | output both "stdout" to outfile and "stderr" to outfile.err
+mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> IO ()
+mywritefile2 doLink dirname filename ext s e = do
+  createDirectoryIfMissing True dirname
+  let mypath1    = dirname <> "/" <> filename <> "." <> ext
+      mypath2    = dirname <> "/" <> filename <> "." <> "err"
+      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  writeFile mypath2 (intercalate "\n" e)
+  writeFile mypath1 s
+  when doLink $ myMkLink (filename <> "." <> ext) mylink
+
 
 mywritefileDMN :: Bool -> FilePath -> FilePath -> String -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree -> IO ()
 mywritefileDMN doLink dirname filename ext xmltree = do
@@ -255,3 +273,9 @@ snakeScrub x = fst $ partition (`elem` ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++
                 Text.unpack $
                 Text.replace " " "_" $
                 Text.intercalate "-" x
+
+-- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
+commentIfError :: String -> Either XPileLogW String -> String
+commentIfError comment (Left x) = concatMap ((comment ++ " ") ++) x
+commentIfError _      (Right x) = x
+

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MonadComprehensions, ParallelListComp #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -23,8 +24,7 @@ import qualified Data.Map as Map
 import LS.NLP.NLG
 import LS.NLP.NL4Transformations
 import LS.Interpreter
-import Control.Monad (guard)
-import System.IO.Unsafe (unsafePerformIO)
+import Control.Monad (guard, liftM, join, when, unless)
 import qualified Data.List as DL
 import Data.Map ((!))
 import Data.Bifunctor (second)
@@ -34,6 +34,8 @@ import PGF
 import qualified Data.Char as Char
 
 import qualified Text.RawString.QQ as QQ
+
+import LS.XPile.Logging
 
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
@@ -50,28 +52,33 @@ textMT :: [RuleName] -> [T.Text]
 textMT rl = map mt2text rl
 
 -- two boolstructT: one question and one phrase
-namesAndStruct :: [Rule] -> [([RuleName], [BoolStructT])]
-namesAndStruct rl =
+namesAndStruct :: [Rule] -> XPileLog [([RuleName], [BoolStructT])]
+namesAndStruct rl = pure
   [ (names, [bs]) | (names, bs) <- qaHornsT interp]
   where
     interp = l4interpret defaultInterpreterOptions rl
 
-namesAndQ :: NLGEnv -> [Rule] -> [([RuleName], [BoolStructT])]
-namesAndQ env rl =
-  [ (name, unsafePerformIO q) | q <- questStruct]
+namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
+namesAndQ env rl = do
+  sequence [ [ (name, q') | q' <- q ]
+           | q <- questStruct ]
   where
     name = map ruleLabelName rl
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
     questStruct = map (ruleQuestions env alias) (expandRulesForNLG env rl) -- [AA.OptionallyLabeledBoolStruct Text.Text]
 
-combine :: [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])] -> [([RuleName], [BoolStructT])]
-combine [] [] = []
-combine (b:bs) [] = []
-combine [] (q:qs) = []
+combine :: [([RuleName], [BoolStructT])]
+        -> [([RuleName], [BoolStructT])]
+        -> XPileLog [([RuleName], [BoolStructT])]
+combine [] [] = pure []
+combine (b:bs) [] = pure []
+combine [] (q:qs) = pure []
 combine (b:bs) (q:qs) =
-  ((fst b), (snd b) ++ (snd q)) : combine bs qs
+  (:) <$> pure ((fst b), (snd b) ++ (snd q)) <*> combine bs qs
 
 
+-- [TODO] shouldn't this recurse down into the All and Any structures?
+-- something like fixNot AA.Any k xs = AA.Any k (fixNot <$> xs)
 fixNot :: BoolStructT -> BoolStructT
 fixNot (AA.Leaf x) = AA.Leaf x
 fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
@@ -90,48 +97,60 @@ justStatements xs y = xs
 labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
 labelQs x = map alwaysLabeled x
 
-biggestQ :: NLGEnv -> [Rule] -> [BoolStructT]
+biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
-  let q = combine (namesAndStruct rl) (namesAndQ env rl)
-      flattened = (\(x,ys) ->
+  q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let flattened = (\(x,ys) ->
         (x, [AA.extractLeaves y | y <- ys])) <$> q
-      onlyqs = (\(x, y) -> (x, (justQuestions (head y) (map fixNot $ tail y)))) <$> q
-      sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
-  guard (not $ null sorted)
-  return ((Map.fromList (onlyqs)) ! (fst $ DL.head sorted))
 
-biggestS :: NLGEnv -> [Rule] -> [BoolStructT]
+      onlyqs = [ (x, justQuestions yh (map fixNot yt))
+               | (x, y) <- q
+               , Just (yh, yt) <- [DL.uncons y] ]
+
+      sorted = DL.reverse $ DL.sortOn DL.length flattened
+  if not (null sorted)
+    then case fst (DL.head sorted) `Map.lookup` Map.fromList onlyqs of
+           Nothing -> mutter ("biggestQ didn't work, couldn't find " ++ show (fst (DL.head sorted)) ++ " in dict") >> return []
+           Just x  -> return [x]
+    else return []
+
+biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
-  let q = combine (namesAndStruct rl) (namesAndQ env rl)
-      flattened = (\(x,ys) ->
+  q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let flattened = (\(x,ys) ->
         (x, [AA.extractLeaves y | y <- ys])) <$> q
-      onlys = (\(x, y) -> (x, (justStatements (head y) (map fixNot $ tail y)))) <$> q
+      onlys = [ (x, justStatements yh (map fixNot yt))
+              | (x,y) <- q
+              , Just (yh, yt) <- [DL.uncons y] ]
       sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
-  guard (not $ null sorted)
-  return ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
+  return $
+    if not (null sorted)
+    then pure ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
+    else []
 
-asPurescript :: NLGEnv -> [Rule] -> String
-asPurescript env rl =
-     show (vsep
+asPurescript :: NLGEnv -> [Rule] -> XPileLog String
+asPurescript env rl = do
+  mutter ("** asPurescript running for gfLang=" <> showLanguage (gfLang env))
+  c' <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let guts = [ toTuple ( T.intercalate " / " (mt2text <$> names)
+                       , alwaysLabeled (justQuestions hbs (map fixNot tbs)))
+             | (names,bs) <- c'
+             , Just (hbs, tbs) <- [DL.uncons bs]
+             ]
+  
+  return $ (show . vsep)
            [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable " <>
-             (pretty $ TL.unpack (
-                 pShowNoColor
-                   [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                            , alwaysLabeled (justQuestions (head bs) (map fixNot (tail bs))))
-                   | (names,bs) <- (combine (namesAndStruct rl) (namesAndQ env rl))
-                   ]
-                 )
-             )
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable "
+           , (pretty . TL.unpack . pShowNoColor $ guts )
            , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> "Marking :: Marking"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable " <>
-             (pretty . TL.unpack
+           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable "
+           , (pretty . TL.unpack
               . TL.replace "False" "false"
               . TL.replace "True" "true"
               . pShowNoColor $
               fmap toTuple . Map.toList . AA.getMarking $
               getMarkings (l4interpret defaultInterpreterOptions rl)
-             )
+                  )
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements :: Object.Object (Item String)"
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
           --   (pretty $ TL.unpack (
@@ -143,16 +162,18 @@ asPurescript env rl =
           --       )
           --   )
            ]
-          )
 
-translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> String
-translate2PS nlgEnv eng rules =
-  psPrefix
-    <> ((tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) (biggestQ eng rules))))
-    <> "\n\n"
-    <> psSuffix
-    <> "\n\n"
-    <> (DL.intercalate "\n\n" $ [asPurescript l rules | l <- nlgEnv])
+translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLog String
+translate2PS nlgEnv eng rules = do
+  mutter "sample transpiler error coming from Purescript"
+  bigQ <- biggestQ eng rules
+  mconcat <$> sequence
+    [ pure (psPrefix
+            <> (tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) bigQ))
+            <> "\n\n"
+            <> psSuffix
+            <> "\n\n")
+    , DL.intercalate "\n\n" <$> sequence [asPurescript l rules | l <- nlgEnv] ]
 
 psPrefix :: String -- the stuff at the top of the purescript output
 psPrefix = [QQ.r|
@@ -161,7 +182,7 @@ psPrefix = [QQ.r|
 -- Do not edit by hand.
 -- Instead, revise the toolchain starting at smucclaw/dsl/lib/haskell/natural4/app/Main.hs
 
-module RuleLib.PDPADBNO where
+module RuleLib.Interview where
 
 import Prelude
 import Data.Either
@@ -172,16 +193,16 @@ import Foreign.Object as Object
 
 import AnyAll.Types
 
-schedule1_part1 :: Item String
-schedule1_part1 =
+interviewRules :: Item String
+interviewRules =
 
   |]
 
 
 psSuffix :: String -- at the bottom of the purescript output
 psSuffix = [QQ.r|
-schedule1_part1_nl :: NLDict
-schedule1_part1_nl =
+interviewRules_nl :: NLDict
+interviewRules_nl =
   Map.fromFoldable
     [ ]
     |]

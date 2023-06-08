@@ -22,7 +22,9 @@ import Paths_natural4
 import Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
-import Debug.Trace (trace)
+import LS.XPile.Logging
+
+import Debug.Trace
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -180,17 +182,18 @@ nlg' thl env rule = case rule of
 -- +-----------------+-----------------------------------------------------+
 
 
-ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ print "reg"
+      when (verbose env) $ do
+        mutter "reg"
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
-        print "horn"
-        print $ ruleQnTrees env alias rule
-        print "---"
+        mapM_ mutter ["horn"
+                     , show $ ruleQnTrees env alias rule
+                     , "---"]
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
@@ -243,7 +246,7 @@ mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
 -- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
 -- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
-nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion :: NLGEnv -> Rule -> XPileLog [Text.Text]
 nlgQuestion env rl = do
   questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList questionsInABoolStruct

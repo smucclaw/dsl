@@ -7,6 +7,7 @@ import PGF (Language, mkCId)
 import qualified AnyAll as AA
 import Data.Maybe (fromMaybe)
 import Data.Foldable (toList)
+import Debug.Trace (trace)
 
 flipPolarity :: forall a . Tree a -> Tree a
 flipPolarity GPOS = GNEG
@@ -51,10 +52,12 @@ bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.All (Just (AA.Pre pre)) xs -> conjPre pre GAND $ mkList $ f <$> xs
     AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
     AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GAND $ mkList $ f <$> xs
-    AA.Not _ -> error $ "bs2gf: not expecting NOT in " <> show bs'
+    AA.Not unexpectedBS -> trace unexpectedNegationMsg $ bs2gf conj conjPre conjPrePost mkList unexpectedBS
+--    AA.Not _ -> error unexpectedNegationMsg
   where
     f = bs2gf conj conjPre conjPrePost mkList
     bs' = bsNeg2textNeg bs
+    unexpectedNegationMsg = "bs2gf: not expecting NOT in " <> show bs'
 
 bsWho2gfWho :: BoolStructWho -> GWho
 bsWho2gfWho = bs2gf GConjWho GConjPreWho GConjPrePostWho GListWho

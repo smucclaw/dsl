@@ -139,6 +139,8 @@ main = do
       let toWriteVue =  [ ( case out' of
                               Right _ -> (show $ Text.unpack (SFL4.mt2text rname)) ++ ": \n"
                               Left  _ -> "" -- this little section is inelegant
+                              -- If   error, dump // "!! error"
+                              -- Else dump out' ++ ', \n"
                             ++ commentIfError "// !! error" out' ++ ", \n"
                           , err)
                         | (rname, (out, err)) <- asVueJSONrules
@@ -153,9 +155,17 @@ main = do
           jsonProhibitsComments :: String -> String
           jsonProhibitsComments = unlines . filter (not . ("//" `isPrefixOf`)) . lines
 
+          -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
+          removeLastComma :: String -> String
+          removeLastComma unlined = 
+            if length lined > 3 -- only if there's a valid json in there
+               then unlines $ take (length lined - 3) lined ++ ["}"] ++ drop (length lined - 2) lined
+               else unlined
+            where lined = lines unlined
+
       mywritefile2 True tovuejsonFN iso8601 "vuejson"
-        (jsonProhibitsComments $
-         intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
+        (removeLastComma $ jsonProhibitsComments $
+           intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
         (concatMap snd toWriteVue)
 
     when (SFL4.topurs    opts) $ do

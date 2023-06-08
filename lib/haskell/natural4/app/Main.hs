@@ -6,7 +6,7 @@ module Main where
 import qualified LS as SFL4
 import Control.Monad.State
 import Control.Applicative
-import Data.List (partition, intercalate)
+import Data.List (partition, intercalate, isPrefixOf)
 import Data.Time.ISO8601
 import Options.Generic
 import Text.Pretty.Simple (pPrint, pShowNoColor)
@@ -42,6 +42,7 @@ import AnyAll.BoolStruct (alwaysLabeled)
 import qualified Data.Foldable as DF
 import qualified Text.XML.HXT.Core as HXT
 import LS.XPile.DumpRule
+import Data.Bifunctor (first)
 
 
 myTraceM :: String -> IO ()
@@ -69,7 +70,9 @@ main = do
       (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
       (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
       (todmnFN,     (asDMN, asDMNErr))        = (workuuid <> "/" <> "dmn",      xpLog $ sfl4ToDMN rules)
-      (tojsonFN,    asJSONstr) = (workuuid <> "/" <> "json",     toString $ encodePretty             (alwaysLabeled $ onlyTheItems l4i))
+      (tojsonFN,    asJSONstr)    = (workuuid <> "/" <> "json",        toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
+      (tovuejsonFN, asVueJSONrules) = (workuuid <> "/" <> "vuejson",     fmap xpLog <$> toVueRules rules)
+
       (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
                                                (<>)
                                                <$> xpLog (translate2PS allNLGEnv nlgEnv rules)
@@ -127,13 +130,47 @@ main = do
     when (not $ SFL4.tobabyl4  opts) $ putStrLn "natural4: skipping babyl4"
     when (not $ SFL4.toasp     opts) $ putStrLn "natural4: skipping asp"
     when (SFL4.toasp     opts) $ putStrLn "natural4: will output asASP"
-    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN     iso8601 "lp"   (commentIfError "%%" asASP)    asASPErr
-    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"   (commentIfError "%%" asEpilog) asEpilogErr
+    when (SFL4.toasp     opts) $ mywritefile2 True toaspFN     iso8601 "lp"      (commentIfError "%%" asASP)    asASPErr
+    when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"      (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+    when (SFL4.tovuejson opts) $ do
+      -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
+      let toWriteVue =  [ ( case out' of
+                              Right _ -> (show $ Text.unpack (SFL4.mt2text rname)) ++ ": \n"
+                              Left  _ -> "" -- this little section is inelegant
+                              -- If   error, dump // "!! error"
+                              -- Else dump out' ++ ', \n"
+                            ++ commentIfError "// !! error" out' ++ ", \n"
+                          , err)
+                        | (rname, (out, err)) <- asVueJSONrules
+                        , let out' = (toString . encodePretty . itemRPToItemJSON) <$> out
+                        ]
+
+          vuePrefix = -- "# this is vuePrefix from natural4/app/Main.hs\n\n" ++
+                      "{"
+          vueSuffix = "}"
+                      -- ++ "\n\n# this is vueSuffix from natural4/app/Main.hs"
+
+          jsonProhibitsComments :: String -> String
+          jsonProhibitsComments = unlines . filter (not . ("//" `isPrefixOf`)) . lines
+
+          -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
+          removeLastComma :: String -> String
+          removeLastComma unlined = 
+            if length lined > 3 -- only if there's a valid json in there
+               then unlines $ take (length lined - 3) lined ++ ["}"] ++ drop (length lined - 2) lined
+               else unlined
+            where lined = lines unlined
+
+      mywritefile2 True tovuejsonFN iso8601 "vuejson"
+        (removeLastComma $ jsonProhibitsComments $
+           intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
+        (concatMap snd toWriteVue)
+
     when (SFL4.topurs    opts) $ do
       mywritefile2 True topursFN     iso8601 "purs" asPursstr asPursErr
-    when (SFL4.togftrees    opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
+    when (SFL4.togftrees opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
@@ -213,9 +250,6 @@ main = do
     when (SFL4.only opts == "native")  $ pPrint rules
     when (SFL4.only opts == "classes") $ pPrint (SFL4.classtable l4i)
     when (SFL4.only opts == "symtab")  $ pPrint (SFL4.scopetable l4i)
-
-    when (SFL4.toVue rc) $ do
-      putStrLn $ toString $ encodePretty $ itemRPToItemJSON $ toVueRules rules
 
     when (SFL4.only opts == "maude") $
       rules |> Maude.rules2maudeStr |> putStrLn

@@ -8,7 +8,7 @@
 module Main where
 
 import AnyAll
-import qualified Data.Map.Strict        as Map
+import qualified Data.HashMap.Strict        as Map
 import qualified Data.Text         as T
 import qualified Data.ByteString.Lazy as B
 import Data.ByteString.Lazy.UTF8 (toString)

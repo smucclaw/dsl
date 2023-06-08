@@ -13,18 +13,21 @@ import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
 import Control.Monad (when)
+import Data.HashMap.Strict (keys, elems, lookup, toList)
+import qualified Data.HashMap.Strict as Map
+import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
-import Data.Map (keys, elems, lookup, toList)
-import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
 import Paths_natural4
-import Data.Foldable as F
+import qualified Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
-import Debug.Trace (trace)
+import LS.XPile.Logging
+
+import Debug.Trace
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -203,17 +206,18 @@ nlg' thl env rule = case rule of
 -- +-----------------+-----------------------------------------------------+
 
 
-ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ print "ruleQuestions: regulative"
+      when (verbose env) $ do
+        mutter "ruleQuestions: regulative"
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
-        print "ruleQuestions: hornlike"
-        print $ ruleQnTrees env alias rule
-        print "---"
+        mapM_ mutter ["ruleQuestions: horn"
+                     , show $ ruleQnTrees env alias rule
+                     , "---"]
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
@@ -266,7 +270,7 @@ mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
 -- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
 -- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
-nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion :: NLGEnv -> Rule -> XPileLog [Text.Text]
 nlgQuestion env rl = do
   questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList questionsInABoolStruct
@@ -519,8 +523,8 @@ expandPT l4i depth pt = maybe pt ptFromRP expanded
 
     expanded = listToMaybe
                 [ outrp
-                | (_scopename, symtab) <- Data.Map.toList (scopetable l4i)
-                , (_mytype, cs) <- maybeToList $ Data.Map.lookup ptAsMt symtab
+                | (_scopename, symtab) <- Map.toList (scopetable l4i)
+                , (_mytype, cs) <- maybeToList $ Map.lookup ptAsMt symtab
                 , c <- cs
                 , let outs = expandClause l4i depth c
                 , outrp <- outs

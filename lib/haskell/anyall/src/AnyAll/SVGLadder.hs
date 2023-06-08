@@ -16,7 +16,7 @@ import AnyAll.Types hiding ((<>))
 import Data.String
 import Graphics.Svg
 import qualified Data.Text as T
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import Data.Tree
 import Debug.Trace
 import           Data.Text.Lazy                   (toStrict, Text)

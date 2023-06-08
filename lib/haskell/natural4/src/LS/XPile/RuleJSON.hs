@@ -16,7 +16,7 @@ import LS
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Prettyprinter
-import Text.Pretty.Simple (pShowNoColor)
+import Text.Pretty.Simple (pShowNoColor, pString)
 import qualified AnyAll.BoolStruct as AA
 import qualified AnyAll as AA
 import qualified Data.Map as Map
@@ -28,12 +28,12 @@ import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.List as DL
 import Data.Map ((!))
 import Data.Bifunctor (second)
-import Data.Maybe (listToMaybe)
+import Data.Maybe (listToMaybe, fromMaybe)
 import Data.List.Split (chunk)
-import PGF
 import qualified Data.Char as Char
-import qualified Data.HashMap.Strict as HashMap
-
+import Data.List (intercalate, stripPrefix)
+import Control.Applicative ((<|>))
+import Data.Map.Strict (Map, fromList)
 
 import qualified Text.RawString.QQ as QQ
 
@@ -79,28 +79,16 @@ bsToJSON (AA.Not item) = AA.mkNot (bsToJSON item)
 ruleToRuleJSON :: NLGEnv -> [Rule] -> [Map.Map String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 ruleToRuleJSON env rl  = [Map.fromList [(T.unpack $ mt2text rn, bsToJSON bst)] | ([rn],[bst]) <- rlToBST env rl]
 
--- strings
 
-convertToString :: TL.Text -> TL.Text
-convertToString str = mapToString (parseValue str)
+-- my shitty parser
 
-parseValue :: TL.Text -> [(TL.Text, TL.Text)]
-parseValue str =
-  let parseResult = TL.lines str
-  in fmap (\x -> (x, "")) parseResult
-
-mapToString :: [(TL.Text, TL.Text)] -> TL.Text
-mapToString pairs = "{" <> TL.intercalate "," (map keyValueToString pairs) <> "}"
-
-
-keyValueToString :: (TL.Text, TL.Text) -> TL.Text
-keyValueToString (key, value) = "\"" <> key <> "\":" <> value
+convertList :: [String] -> String
+convertList items =
+  "[" ++ intercalate ", " (map (\item -> "\"" ++ item ++ "\"") items) ++ "]"
 --
 
 rlsToJSON :: NLGEnv -> [Rule] -> String
-rlsToJSON env rs =  TL.unpack $ convertToString $ (pShowNoColor $ mconcat $ ruleToRuleJSON env rs)
-
-
+rlsToJSON env rs = convertList $ words $ TL.unpack $ pShowNoColor $ mconcat $ rlToBST env rs
 
 
     -- <> "\n\n"

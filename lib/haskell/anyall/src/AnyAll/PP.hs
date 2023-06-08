@@ -9,7 +9,7 @@ import Control.Monad (forM_)
 import Data.Maybe
 import Data.Tree
 import Data.String (IsString)
-import Data.Map.Strict as Map
+import Data.HashMap.Strict as Map
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import qualified Data.ByteString.Lazy   as B
@@ -73,7 +73,7 @@ docQ1 m (Node (Q sv  Or        Nothing                v) c) = markbox v sv <+> "
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
-ppQTree :: OptionallyLabeledBoolStruct T.Text -> Map.Map T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
+ppQTree :: OptionallyLabeledBoolStruct T.Text -> Map.HashMap T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
 ppQTree i mm = do
   let m = Marking (Default <$> mm)
       hardresult = hardnormal m i

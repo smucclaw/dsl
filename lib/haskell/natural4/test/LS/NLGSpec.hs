@@ -8,7 +8,7 @@ import LS.NLP.NLG
 import LS.NLP.NL4
 import Parsing.PDPASpec (expected_pdpadbno1)
 import AnyAll( BoolStruct(..), Label(..) )
-import Data.Map (fromList, empty)
+import Data.HashMap.Strict as Map (fromList, empty)
 import LS.Types
 import LS.Rule
 import PGF (mkCId)
@@ -761,7 +761,7 @@ becomingAwareBSR = Leaf
 
 pdpa1withUnexpandedUponInterp :: Interpreted
 pdpa1withUnexpandedUponInterp = L4I
-    { classtable = CT Data.Map.empty
+    { classtable = CT Map.empty
     , scopetable = fromList
         [ ([ MTT "becoming aware" ]
            , fromList [
@@ -780,7 +780,7 @@ pdpa1withUnexpandedUponInterp = L4I
 
 mustsing5Interp :: Interpreted
 mustsing5Interp = L4I
-    { classtable = CT Data.Map.empty
+    { classtable = CT Map.empty
     , scopetable = fromList
         [ ([ MTT "Qualifies" ]
            , fromList [
@@ -819,7 +819,7 @@ mustsing5Interp = L4I
 
 rodentsInterp :: Interpreted
 rodentsInterp = L4I
-    { classtable = CT Data.Map.empty
+    { classtable = CT Map.empty
     , scopetable = fromList
         [
             (

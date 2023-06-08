@@ -10,10 +10,11 @@ module LS.XPile.Maude.Regulative.HenceLest
   )
 where
 
-import Control.Monad.Validate (Validate)
-import Data.Monoid (Ap)
+import Data.Hashable (Hashable)
 import Data.Traversable (for)
+import GHC.Generics (Generic)
 import LS.Rule (Rule (RuleAlias))
+import LS.Utils (MonoidValidate)
 import LS.XPile.Maude.Utils (multiExprs2qid, throwDefaultErr)
 import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
@@ -21,27 +22,27 @@ import Prettyprinter.Interpolate (di)
 data HenceLest where
   HENCE :: HenceLest
   LEST :: HenceLest
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Generic, Ord, Read, Show)
+
+instance Hashable HenceLest
 
 -- instance Pretty HenceLest where
 --   pretty = viaShow
 
-data HenceLestClause where
-  HenceLestClause ::
-    { henceLest :: HenceLest,
-      clause :: Maybe Rule
-    } ->
-    HenceLestClause
-  deriving (Eq, Ord, Show)
+data HenceLestClause = HenceLestClause
+  { henceLest :: HenceLest,
+    clause :: Maybe Rule
+  }
+  deriving (Eq, Generic, Ord, Show)
+
+instance Hashable HenceLestClause
 
 henceLest2doc ::
   HenceLestClause ->
-  Ap (Validate (Doc ann1)) (Maybe (Doc ann2))
+  MonoidValidate (Doc ann1) (Maybe (Doc ann2))
 henceLest2doc HenceLestClause {henceLest, clause} =
    for clause $ \case
-    (RuleAlias clause) ->
-      pure [di|#{henceLest} #{multiExprs2qid clause}|]
-
+    RuleAlias clause -> pure [di|#{henceLest} #{multiExprs2qid clause}|]
     _  -> throwDefaultErr
 
 {-

@@ -5,7 +5,7 @@ import Test.Hspec
 import LS.Types
 import AnyAll
 import Data.List.NonEmpty
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import LS.RelationalPredicates
 
 spec :: Spec

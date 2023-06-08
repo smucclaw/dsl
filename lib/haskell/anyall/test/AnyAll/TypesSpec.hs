@@ -3,15 +3,16 @@ module AnyAll.TypesSpec (spec) where
 
 import Test.Hspec
 import Data.Aeson (decode, encode)
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import AnyAll.Types
 import Test.QuickCheck
 import qualified Data.Text as T
 import Test.QuickCheck.Instances.Text
 
-type MarkingMap = Map.Map T.Text (Default Bool)
+type MarkingMap = Map.HashMap T.Text (Default Bool)
 
-markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.Map T.Text (Default Bool)
+markingMap :: Either (Maybe Bool) (Maybe Bool) -> MarkingMap
+  -- Map.Map T.Text (Default Bool)
 markingMap payload = Map.singleton "key" (Default payload)
 
 instance Arbitrary (ShouldView) where

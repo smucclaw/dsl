@@ -25,11 +25,13 @@ import LS.NLP.NLG
 import LS.NLP.NL4Transformations
 import LS.Interpreter
 import Control.Monad (guard, liftM, join, when, unless)
+import Control.Applicative (liftA2)
 import qualified Data.List as DL
 import Data.HashMap.Strict ((!))
 import Data.Bifunctor (second)
 import Data.Maybe (listToMaybe)
 import Data.List.Split (chunk)
+import Data.Either (lefts, rights)
 import PGF
 import qualified Data.Char as Char
 
@@ -128,7 +130,7 @@ biggestS env rl = do
     then pure ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
     else []
 
-asPurescript :: NLGEnv -> [Rule] -> XPileLog String
+asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   mutter ("** asPurescript running for gfLang=" <> showLanguage (gfLang env))
   c' <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
@@ -138,7 +140,7 @@ asPurescript env rl = do
              , Just (hbs, tbs) <- [DL.uncons bs]
              ]
   
-  return $ (show . vsep)
+  xpReturn $ (show . vsep)
            [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
            , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable "
            , (pretty . TL.unpack . pShowNoColor $ guts )
@@ -163,17 +165,18 @@ asPurescript env rl = do
           --   )
            ]
 
-translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLog String
+translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnv eng rules = do
-  mutter "sample transpiler error coming from Purescript"
-  bigQ <- biggestQ eng rules
-  mconcat <$> sequence
-    [ pure (psPrefix
-            <> (tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) bigQ))
-            <> "\n\n"
-            <> psSuffix
-            <> "\n\n")
-    , DL.intercalate "\n\n" <$> sequence [asPurescript l rules | l <- nlgEnv] ]
+  bigQ   <- biggestQ eng rules
+  let topBit = (psPrefix
+                 <> (tail . init) (TL.unpack ((pShowNoColor . map alwaysLabeled) bigQ))
+                 <> "\n\n"
+                 <> psSuffix
+                 <> "\n\n")
+  bottomBit <- sequence [asPurescript l rules | l <- nlgEnv]
+  -- [TODO] make this work
+  -- mutters (concat $ lefts bottomBit) >>
+  xpReturn $ topBit ++ unlines (rights bottomBit)
 
 psPrefix :: String -- the stuff at the top of the purescript output
 psPrefix = [QQ.r|

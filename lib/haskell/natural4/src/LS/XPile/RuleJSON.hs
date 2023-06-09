@@ -34,6 +34,9 @@ import qualified Data.Char as Char
 import Data.List (intercalate, stripPrefix)
 import Control.Applicative ((<|>))
 import Data.Map.Strict (Map, fromList)
+import Text.Read (readMaybe)
+import Data.List.Split (splitOn)
+import Text.ParserCombinators.ReadP
 
 import qualified Text.RawString.QQ as QQ
 
@@ -81,14 +84,53 @@ ruleToRuleJSON env rl  = [Map.fromList [(T.unpack $ mt2text rn, bsToJSON bst)] |
 
 
 -- my shitty parser
+parseString :: String -> String
+parseString = convertToJSON . removeInvalidChars
 
-convertList :: [String] -> String
-convertList items =
-  "[" ++ intercalate ", " (map (\item -> "\"" ++ item ++ "\"") items) ++ "]"
+removeInvalidChars :: String -> String
+removeInvalidChars = filter (\c -> Char.isAlpha c || c `elem` (" ?\",[]" :: String))
+
+convertToJSON :: String -> String
+convertToJSON str = "{" ++ convert str ++ "}"
+
+convert :: String -> String
+convert [] = ""
+convert ('[':rest) = "[" ++ convert rest
+convert (']':rest) = "]" ++ convert rest
+convert (',':rest) = "," ++ convert rest
+convert ('"':rest) = "\"" ++ convert rest
+convert ('?':rest) = convert rest
+convert (c:rest) = c : convert rest
+
+parseleaf :: String -> String
+parseleaf str = "{\"Leaf\":\"" ++ str ++ "\"}"
+
+parseany :: String -> String
+parseany str = "{\"Any\":[" ++ intercalate "," (map parseleaf (splitOn' ',' str)) ++ "]}"
+
+parseall :: String -> String
+parseall str = "{\"All\":[" ++ intercalate "," (map parsenode (splitOn' ' ' str)) ++ "]}"
+
+parsenode :: String -> String
+parsenode ('[':rest) = parseall rest
+parsenode str
+  | head str == '(' = parsenode (tail str)
+  | head str == '"' = parseleaf (init str)
+  | head str == 'A' = parseany (drop 5 (init str))
+  | head str == 'M' = parseall (drop 5 (init str))
+  | otherwise = str
+
+splitOn' :: Char -> String -> [String]
+splitOn' _ [] = []
+splitOn' delim str =
+  let (first, rest) = break (== delim) str
+   in first : splitOn' delim (drop 1 rest)
 --
 
 rlsToJSON :: NLGEnv -> [Rule] -> String
-rlsToJSON env rs = convertList $ words $ TL.unpack $ pShowNoColor $ mconcat $ rlToBST env rs
+rlsToJSON env rs = parseString $ show $ mconcat $ rlToBST env rs
+    -- "([[MTT \"Person\"]],[All Nothing [Leaf \"does the person walk?\",Any Nothing [Leaf \"does the person eat?\",Leaf \"does the person drink?\"]]])"
+
 
 
     -- <> "\n\n"

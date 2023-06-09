@@ -52,5 +52,7 @@ lin
     recoverUnparsedSubj string = symb string ;
 
     recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
-}
 
+    recoverUnparsedTimeUnit string = mkCN <LexiconMay.day_N ** {s = \\_ => "·" ++ string.s} : N> ;
+
+}

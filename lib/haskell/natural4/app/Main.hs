@@ -26,7 +26,7 @@ import LS.XPile.Maude.Maude qualified as Maude
 import LS.XPile.NaturalLanguage
 import LS.XPile.GFTrees
 
-import LS.NLP.NLG (nlg, myNLGEnv, allLangs, getLang, printLangs, expandRulesForNLG)
+import LS.NLP.NLG (nlg, myNLGEnv, allLangs, langEng, printLangs, expandRulesForNLG)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import qualified Data.Map  as Map
@@ -56,7 +56,8 @@ main = do
   rules    <- SFL4.dumpRules opts
   let l4i  = l4interpret SFL4.defaultInterpreterOptions rules
   iso8601  <- now8601
-  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv l4i (getLang "NL4Eng") -- Only load the NLG environment if we need it.
+  eng <- langEng
+  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv l4i eng -- Only load the NLG environment if we need it.
   allNLGEnv <- unsafeInterleaveIO $ mapM (myNLGEnv l4i) nlgLangs
   let toworkdir   = not $ null $ SFL4.workdir opts
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts

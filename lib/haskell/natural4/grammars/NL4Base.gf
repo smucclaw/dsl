@@ -85,11 +85,6 @@ abstract NL4Base = CustomSyntax ** {
       -> TimeUnit     -- ad hoc, defined below (TODO: should this )
       -> Temporal ;
 
-    TemporalConstraintNoDigits  -- TemporalConstraint in Haskell has Maybe Int
-      : TComparison
-      -> TimeUnit
-      -> Temporal ;
-
     Day_Unit
     , Month_Unit
     , Year_Unit : TimeUnit ;
@@ -135,7 +130,6 @@ abstract NL4Base = CustomSyntax ** {
       recoverUnparsedUpon : String -> Upon ;
       recoverUnparsedSubj : String -> Subj ;
       recoverUnparsedAction : String -> Action ;
-      recoverUnparsedTimeUnit : String -> TimeUnit ;
 
       recoverRPis : String -> String -> Constraint ;
 

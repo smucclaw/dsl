@@ -128,5 +128,7 @@ lin
     recoverUnparsedSubj string = symb string ;
 
     recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
+
+    recoverUnparsedTimeUnit string = mkCN <LexiconChi.day_N ** {s = "·" ++ string.s} : N> ;
 }
 

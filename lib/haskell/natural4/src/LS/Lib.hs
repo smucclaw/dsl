@@ -101,7 +101,8 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , toasp     :: w ::: Bool   <!> "True"  <?> "in ASP syntax"
                    , toepilog  :: w ::: Bool   <!> "True"  <?> "in Epilog syntax"
                    , todmn     :: w ::: Bool   <!> "True"  <?> "in DMN syntax"
-                   , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for Vue / Purescript to pick up"
+                   , tojson    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as raw JSON"
+                   , tovuejson :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as JSON for the web app (currently Vue) to pick up"
                    , topurs    :: w ::: Bool   <!> "True"  <?> "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
                    , tomd      :: w ::: Bool   <!> "True"  <?> "nlg markdown"
                    , togftrees      :: w ::: Bool   <!> "True"  <?> "nlg trees"
@@ -388,7 +389,7 @@ stanzaAsStream rs =
   where
     parenthesize :: [WithPos MyToken] -> [WithPos MyToken]
     parenthesize mys =
-      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF])
+      tail . concat $ zipWith insertParen (withSOF:mys) (mys ++ [withEOF]) -- [TODO] this may be a source of slowness. Consider switching to Text, and if that doesn't help, to Data.Array?
     eofPos = SourcePos "" pos1 pos1
     withEOF = WithPos eofPos 1 Nothing EOF
     withSOF = WithPos eofPos 1 Nothing SOF

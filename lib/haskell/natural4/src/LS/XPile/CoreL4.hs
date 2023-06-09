@@ -194,6 +194,7 @@ import LS.XPile.CoreL4.LogicProgram
     LogicProgram,
     babyL4ToLogicProgram,
   )
+import LS.XPile.Logging
 import Prettyprinter
   ( Doc,
     Pretty (pretty),
@@ -227,11 +228,11 @@ sfl4Dummy = DummySRng "From spreadsheet"
 sfl4ToBabyl4 :: Interpreted -> String
 sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
 
-sfl4ToASP :: [SFL4.Rule] -> String
-sfl4ToASP = sfl4ToLogicProgramStr @ASP
+sfl4ToASP :: [SFL4.Rule] -> XPileLogE String
+sfl4ToASP = xpReturn . sfl4ToLogicProgramStr @ASP
 
-sfl4ToEpilog :: [SFL4.Rule] -> String
-sfl4ToEpilog = sfl4ToLogicProgramStr @Epilog
+sfl4ToEpilog :: [SFL4.Rule] -> XPileLogE String
+sfl4ToEpilog = xpReturn . sfl4ToLogicProgramStr @Epilog
 
 sfl4ToUntypedBabyL4 :: [SFL4.Rule] -> Program ()
 sfl4ToUntypedBabyL4 rules = Program {..}
@@ -263,10 +264,10 @@ sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
 sfl4ToDMN rules =
   rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
-sfl4ToCorel4 :: [SFL4.Rule] -> String
+sfl4ToCorel4 :: [SFL4.Rule] -> XPileLogE String
 sfl4ToCorel4 rs =
   let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
-   -- sTable = scopetable interpreted
+      -- sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
       pBoilerplate = myrender $ prettyBoilerplate cTable
@@ -285,7 +286,7 @@ sfl4ToCorel4 rs =
                           , ""
                           ]
 
-  in unlines $ nubstrings $ concatMap lines
+  in xpReturn $ unlines $ nubstrings $ concatMap lines
   ( [ -- "#\n# outputted via L4.Program types\n#\n\n"
       -- , ppCorel4 . sfl4ToCorel4Program $ rs
       "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
@@ -940,7 +941,9 @@ prettyClasses ct =
                  ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
          ++ ["###"]
 
+    ucfirst "" = ""
     ucfirst x = T.toUpper (T.singleton $ T.head x) <> T.tail x
+    lcfirst "" = ""
     lcfirst x = T.toLower (T.singleton $ T.head x) <> T.tail x
 
 

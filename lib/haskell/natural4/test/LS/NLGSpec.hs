@@ -12,6 +12,7 @@ import Data.HashMap.Strict as Map (fromList, empty)
 import LS.Types
 import LS.Rule
 import PGF (mkCId)
+import LS.XPile.Logging (xpLog)
 
 spec :: Spec
 spec = do
@@ -29,7 +30,7 @@ spec = do
 
   describe "test PDPA" $ do
     it "Should return questions about PDPA" $ do
-      questions <- ruleQuestions env Nothing (head expected_pdpadbno1)
+      let questions = fst $ xpLog $ ruleQuestions env Nothing (head expected_pdpadbno1)
       questions `shouldBe` [Not (Leaf "is the organisation a public agency?"), Leaf "does the data breach occur on or after 1 Feb 2022?", Leaf "has the organisation become aware that a data breach may have occurred?"]
 
   envMustSing <- runIO $ myNLGEnv mustsing5Interp eng

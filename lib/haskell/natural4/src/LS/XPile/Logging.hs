@@ -66,11 +66,29 @@ https://gist.github.com/mengwong/73af81ad600a533f12ef42fc655fed0f
 
 -}
 
-module LS.XPile.Logging (XPileLog, XPileLogE, xpLog, mutter, mutters, xpReturn, xpError, XPileLogW) where
+module LS.XPile.Logging
+  ( XPileLog,
+    XPileLogE,
+    xpLog,
+    mutter,
+    mutters,
+    xpReturn,
+    xpError,
+    XPileLogW,
+    fromxpLogE
+  )
+where
 
-import Control.Monad.RWS ( evalRWS, MonadWriter(tell), RWS
-                         , evalRWST, RWST )
-import Data.Map as Map ( Map )
+import Control.Monad.RWS
+  ( MonadWriter (tell),
+    RWS,
+    RWST,
+    evalRWS,
+    evalRWST,
+  )
+import Data.Either (fromRight)
+import Data.HashMap.Strict as Map (HashMap)
+import Flow ((|>))
 
 -- | typical usage
 --
@@ -100,9 +118,9 @@ type XPileLogE a = XPileLog (Either XPileLogW a)
 -- in case you need that. You can also define your own type along
 -- these lines.
 type XPileLog  = RWS XPileLogR XPileLogW XPileLogS
-type XPileLogR = Map String String
+type XPileLogR = HashMap String String
 type XPileLogW = [XPileLogW'];       type XPileLogW' = String
-type XPileLogS = Map String String
+type XPileLogS = HashMap String String
 
 -- | This library supports two major modes of logging. In the course
 -- of normal operation, you can stream to the equivalent of STDERR by
@@ -138,5 +156,5 @@ xpReturn = xpRight
 -- | xpRight is the underlying mechanism for xpReturn.
 xpRight = pure . Right
 
-                
-
+fromxpLogE :: Monoid a => XPileLogE a -> a
+fromxpLogE xpLogE = xpLogE |> xpLog |> fst |> fromRight mempty

@@ -171,9 +171,6 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
           det : Det = mkDet card ;
       in Syntax.mkAdv <tcomp : Syntax.Prep> (mkNP det time) ;
 
-    -- : TComparison -> TimeUnit -> Temporal ;  -- the digits correspond to a Maybe Int in haskell
-    TemporalConstraintNoDigits tcomp time = Syntax.mkAdv <tcomp : Syntax.Prep> (mkNP aSg_Det time) ;
-
     Day_Unit = mkCN Lexicon.day_N ;          -- day_N is fun/lin in RGL
     Month_Unit = mkCN CustomSyntax.monthN ;  -- monthN is oper in CustomSyntax
     Year_Unit = mkCN Lexicon.year_N ;

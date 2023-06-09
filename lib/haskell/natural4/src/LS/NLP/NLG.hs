@@ -16,8 +16,6 @@ import Control.Monad (when)
 import Data.HashMap.Strict (keys, elems, lookup, toList)
 import qualified Data.HashMap.Strict as Map
 import Data.Maybe (catMaybes, maybeToList, listToMaybe)
-import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
@@ -44,43 +42,24 @@ allLangs = do
   gr <- readPGF grammarFile
   pure $ languages gr
 
-langEng :: IO (XPileLogE Language)
-langEng = do
-  grammarFile <- getDataFileName $ gfPath "NL4.pgf"
-  gr <- readPGF grammarFile
-  pure $ getLang "NL4Eng" gr
-
 printLangs :: IO [Language] -> IO String
 printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
-getLang :: String -> PGF -> XPileLogE Language
-getLang str gr = case (readLanguage str, languages gr) of
-  (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
-    -> if l `elem` langs
-         then xpReturn l
-              -- Expected case: language looks valid and is in grammar
-         else xpError [fallbackMsg $ show l']
-              -- Language is valid but not in grammar, warn and fall back to another language
-  (Nothing, l':_) -- Language not valid, warn and fall back to another language
-    -> xpError [fallbackMsg $ show l']
-  (_, []) -- The PGF has no languages, truly unexpected and fatal
-    -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
-  where
-    fallbackMsg fblang = unwords ["language", str, "not found, falling back to", fblang]
+getLang :: String -> Language
+getLang str = case readLanguage str of
+    Nothing -> error $ "language " <> str <> " not found"
+    Just l -> l
 
-myNLGEnv :: Interpreted -> Language -> IO (XPileLogE NLGEnv)
+myNLGEnv :: Interpreted -> Language -> IO NLGEnv
 myNLGEnv l4i lang = do
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  (eng, engErr) <- xpLog <$> langEng
-  case eng of
-    Left  engL -> return $ mutters engErr >> xpError engL
-    Right engR -> do
-      let myParse typ txt = parse gr engR typ (Text.unpack txt)
-          myLin = rmBIND . Text.pack . linearize gr lang
-      return $ xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
+  let eng = getLang "NL4Eng"
+      myParse typ txt = parse gr eng typ (Text.unpack txt)
+  let myLin = rmBIND . Text.pack . linearize gr lang
+  pure $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""
@@ -146,7 +125,7 @@ nlg' thl env rule = case rule of
                          in gfLin env uponExpr <> ", "
                       Nothing -> mempty
           tcText = case temporal of
-                      Just t -> " " <> gfLin env (gf $ parseTemporal env t)
+                      Just t -> " " <> (gfLin env $ gf $ parseTemporal env t)
                       Nothing -> mempty
           condText = case cond of
                       Just c ->
@@ -164,22 +143,15 @@ nlg' thl env rule = case rule of
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
-      when (verbose env) $ do
-        putStrLn "nlg': regulative"
-        putStrLn $ "    " <> showExpr [] ruleTree
+      when (verbose env) $ putStrLn $ showExpr [] ruleTree
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
     Hornlike {clauses} -> do
-      let headTrees = gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
-          headLins = gfLin env <$> headTrees
+      when (verbose env) $ print "hornlike"
+      let headLins = gfLin env . gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
           parseBodyHC cl = case hBody cl of
-            Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
-            Nothing -> []
-          bodyTrees = concatMap parseBodyHC clauses
-          bodyLins = gfLin env <$> bodyTrees
-      when (verbose env) $ do
-        putStrLn "nlg': hornlike"
-        putStrLn $ unlines $ ["   head: " <> showExpr [] t | t <- headTrees]
-        putStrLn $ unlines $ ["   body: " <> showExpr [] t | t <- bodyTrees]
+            Just bs -> gfLin env $ gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs
+            Nothing -> mempty
+          bodyLins = parseBodyHC <$> clauses
       pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
@@ -216,11 +188,11 @@ ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
       when (verbose env) $ do
-        mutter "ruleQuestions: regulative"
+        mutter "reg"
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
-        mapM_ mutter ["ruleQuestions: horn"
+        mapM_ mutter ["horn"
                      , show $ ruleQnTrees env alias rule
                      , "---"]
       text
@@ -334,22 +306,22 @@ parseDate mt = case Text.words $ mt2text mt of
   -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement, call ComplV2
   -- "assess" :| [ "if it is a Notifiable Data Breach" ] -> assess : VS, S complement, call ComplS2
 parseAction :: NLGEnv -> BoolStructP -> GAction
-parseAction env bsp = fg tree
-  where
-    txt = bsp2text bsp
-    tree :| _ = parseAny "Action" env txt
+parseAction env bsp = let txt = bsp2text bsp in
+  case parseAny "Action" env txt of
+    [] -> error $ msg "Action" txt
+    x:_ -> fg x
 
 parseSubj :: NLGEnv -> BoolStructP -> GSubj
-parseSubj env bsp = fg tree
-  where
-    txt = bsp2text bsp
-    tree :| _ = parseAny "Subj" env txt
+parseSubj env bsp = let txt = bsp2text bsp in
+  case parseAny "Subj" env txt of
+    [] -> error $ msg "Subj" txt
+    x:_ -> fg x
 
 parseWho :: NLGEnv -> RelationalPredicate -> GWho
-parseWho env rp = fg tree
-  where
-    txt = rp2text rp
-    tree :| _ = parseAny "Who" env txt
+parseWho env rp = let txt = rp2text rp in
+  case parseAny "Who" env txt of
+    [] -> error $ msg "Who" txt
+    x:_ -> fg x
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
 parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
@@ -357,16 +329,16 @@ parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
     cond = parseCond env (RPMT c)
     tc = parseTComparison t
     date = parseDate d
-parseCond env rp = fg tree
-  where
-    txt = rp2text rp
-    tree :| _ = parseAny "Cond" env txt
+parseCond env rp = let txt = rp2text rp in
+    case parseAny "Cond" env txt of
+      [] -> error $ msg "Cond" txt
+      x:_ -> fg x
 
 parseUpon :: NLGEnv -> ParamText -> GUpon
-parseUpon env pt = fg tree
-  where
-    txt = pt2text pt
-    tree :| _ = parseAny "Upon" env txt
+parseUpon env pt = let txt = pt2text pt in
+  case parseAny "Upon" env txt of
+    [] -> error $ msg "Upon" txt
+    x:_ -> fg x
 
 parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
 parseTemporal env (TemporalConstraint t (Just int) text) = GTemporalConstraint tc digits unit
@@ -381,17 +353,14 @@ parseTemporal env (TemporalConstraint t (Just int) text) = GTemporalConstraint t
       [dig] -> GIDig dig
       xs -> foldr GIIDig (GIDig (last xs)) (init xs)
 
-parseTemporal _ (TemporalConstraint t Nothing text) = GTemporalConstraintNoDigits tc unit
-  where
-    tc = parseTComparison t
-    unit = parseTimeUnit text
+parseTemporal _ (TemporalConstraint tc Nothing text) = undefined
 
 parseTimeUnit :: Text.Text -> GTimeUnit
 parseTimeUnit text = case take 3 $ Text.unpack $ Text.toLower text of
   "day" -> GDay_Unit
   "mon" -> GMonth_Unit
   "yea" -> GYear_Unit
-  _xs -> trace ("NLG.hs: unrecognised time unit: " <> Text.unpack text) (GrecoverUnparsedTimeUnit (tString text))
+  xs -> error $ "unrecognised unit of time: " <> Text.unpack text
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
 parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
@@ -403,6 +372,8 @@ parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
+    tString :: Text.Text -> GString
+    tString = GString . Text.unpack
 parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
   _ -> GrecoverRPis (tString aTxt) (tString bTxt)
@@ -415,47 +386,38 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
     tString :: Text.Text -> GString
     tString = GString . Text.unpack
 
-parseConstraint env rp = fg tree
-  where
-    txt = rp2text rp
-    tree :| _ = parseAny "Constraint" env txt
+parseConstraint env rp = let txt = rp2text rp in
+  case parseAny "Constraint" env txt of
+    [] -> error $ msg "Constraint" txt
+    x:_ -> fg x
 
 parsePrePost :: NLGEnv -> Text.Text -> GPrePost
-parsePrePost env txt = fg tree
-  where
-    tree :| _ = parseAny "PrePost" env txt
+parsePrePost env txt =
+  case parseAny "PrePost" env txt of
+    [] -> GrecoverUnparsedPrePost $ GString $ Text.unpack txt
+    x:_ -> fg x
 
 -- TODO: later if grammar is ambiguous, should we rank trees here?
-parseAny :: String -> NLGEnv -> Text.Text -> NonEmpty Expr
+parseAny :: String -> NLGEnv -> Text.Text -> [Expr]
 parseAny cat env txt = res
   where
-    typ = case (readType cat, categories (gfGrammar env)) of
-            (Just t, cats) -> if t `elem` [mkType [] c [] | c <- cats]
-                                then t
-                                else typeError cat cats
-            (Nothing, cats) -> typeError cat cats
+    typ = case readType cat of
+            Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
+            Just t -> t
     res = case gfParse env typ txt of
-            -- [] -> parseError cat --- Alternative, if we don't want to use recoverUnparsedX
-            [] -> NE.fromList [mkApp (mkCId $ "recoverUnparsed"<>cat) [mkStr $ Text.unpack txt]]
-            xs -> NE.fromList xs
+            [] -> [mkApp (mkCId $ "recoverUnparsed"<>cat) [mkStr $ Text.unpack txt]]
+            xs -> xs
 
 parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
 parseAnyNoRecover cat env = gfParse env typ
   where
-    typ = case (readType cat, categories (gfGrammar env)) of
-            (Just t, cats) -> if t `elem` [mkType [] c [] | c <- cats]
-                                then t
-                                else typeError cat cats
-            (Nothing, cats) -> typeError cat cats
+    typ = case readType cat of
+            Nothing -> error $ unwords ["category", cat, "not found among", show $ categories (gfGrammar env)]
+            Just t -> t
 
--- parseError :: String -> Text.Text -> a
--- parseError cat txt = error $ unwords ["parse"<>cat, "failed to parse", Text.unpack txt]
+msg :: String -> Text.Text -> String
+msg typ txt = "parse" <> typ <> ": failed to parse " <> Text.unpack txt
 
-typeError :: String -> [CId] -> a
-typeError cat actualCats = error $ unwords ["category", cat, "not a valid GF cat, use one of these instead:", show actualCats]
-
-tString :: Text.Text -> GString
-tString = GString . Text.unpack
 -----------------------------------------------------------------------------
 -- Expand a set of rules
 

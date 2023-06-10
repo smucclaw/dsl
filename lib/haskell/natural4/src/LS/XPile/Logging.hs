@@ -66,8 +66,10 @@ https://gist.github.com/mengwong/73af81ad600a533f12ef42fc655fed0f
 
 -}
 
-module LS.XPile.Logging (XPileLog, XPileLogE, xpLog, mutter, mutters, xpReturn, xpError, XPileLogW) where
+module LS.XPile.Logging (XPileLog, XPileLogE, xpLog, mutter, mutters, xpReturn, xpError, XPileLogW
+                        , fmapE ) where
 
+import Data.Bifunctor (second)
 import Control.Monad.RWS ( evalRWS, MonadWriter(tell), RWS
                          , evalRWST, RWST )
 import Data.Map as Map ( Map )
@@ -138,5 +140,6 @@ xpReturn = xpRight
 -- | xpRight is the underlying mechanism for xpReturn.
 xpRight = pure . Right
 
-                
-
+-- | fmap over the right value of an XPileLogE
+fmapE :: (a -> a) -> XPileLogE a -> XPileLogE a
+fmapE f = fmap (second f)

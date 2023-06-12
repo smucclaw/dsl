@@ -66,7 +66,7 @@ concrete NL4BaseEng of NL4Base =
 
   lin recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
 
-
+  lin recoverUnparsedTimeUnit string = mkCN <LexiconEng.day_N ** {s = \\_,_ => "·" ++ string.s} : N> ;
 
 }
 

@@ -10,8 +10,10 @@ import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import Control.Monad.State (when)
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Bifunctor (first)
 import Data.ByteString.Lazy qualified as ByteString (ByteString, writeFile)
 import Data.ByteString.Lazy.UTF8 (toString)
+import Data.Either (lefts, rights)
 import Data.Foldable qualified as DF
 import Data.List (partition, intercalate, isPrefixOf)
 import Data.Map qualified as Map
@@ -77,20 +79,91 @@ main :: IO ()
 main = do
   opts     <- unwrapRecord "mp"
   rc       <- SFL4.getConfig opts
-  nlgLangs <- unsafeInterleaveIO allLangs
-  strLangs <- unsafeInterleaveIO $ printLangs allLangs
 --  putStrLn "main: doing dumpRules"
   rules    <- SFL4.dumpRules opts
   let l4i  = l4interpret SFL4.defaultInterpreterOptions rules
   iso8601  <- now8601
-  eng <- langEng
-
-  (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog $ myNLGEnv l4i eng -- Only load the NLG environment if we need it.
-  (allNLGEnv, allNLGEnvErr) <- xpLog <$> unsafeInterleaveIO $ sequence $ mapM (myNLGEnv l4i) nlgLangs
 
   let toworkdir   = not $ null $ SFL4.workdir opts
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
-      (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
+
+  -- Bits that have to do with natural language processing and generation
+  nlgLangs <- unsafeInterleaveIO allLangs
+  strLangs <- unsafeInterleaveIO $ printLangs allLangs
+  (engE,engErr) <- xpLog <$> langEng
+  -- [NOTE] the Production Haskell book gives better ways to integrate Logging with IO
+  case engE of
+    Left err -> putStrLn $ unlines $ "natural4: encountered error when obtaining langEng" : err
+    Right eng -> do
+      (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
+      (allNLGEnv, allNLGEnvErr) <- unsafeInterleaveIO $ do
+        xps <- mapM (myNLGEnv l4i) nlgLangs
+        return (xpLog $ sequence xps)
+
+    -- codepath that depends on nlgEnv succeeding
+      case nlgEnv of
+        Left  err     -> putStrLn $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
+        Right nlgEnvR -> do
+
+          when (SFL4.toChecklist rc) $ do
+            let (checkls, checklsErr) = xpLog $ checklist nlgEnvR rc rules
+            pPrint checkls
+  
+          when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
+            let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnvR rc rules
+                tochecklFN              =  workuuid <> "/" <> "checkl"
+            mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
+
+          when (SFL4.togftrees opts) $ do
+            let (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnvR rules)
+            mywritefile True togftreesFN iso8601 "gftrees" asGftrees
+
+          let allNLGEnvErrors = concat $ lefts allNLGEnv
+          when (not $ null allNLGEnvErrors) $ do
+            putStrLn "natural4: encountered error while obtaining allNLGEnv"
+            mapM_ putStrLn allNLGEnvErrors
+
+          let allNLGEnvR = rights allNLGEnv
+
+          when (SFL4.tomd      opts) $ do
+            let (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGEnvR rules)
+            mywritefile True tomarkdownFN iso8601 "md" =<< asMD
+
+          -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
+          -- natural4-exe --workdir workdir --only md inputfile.csv
+          -- will produce only the workdir output file
+            when (toworkdir && not (null $ SFL4.uuiddir opts) && (not $ null $ SFL4.only opts)) $ do
+              when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
+
+          when (SFL4.topurs    opts) $ do
+            let (topursFN,    (asPursstr, asPursErr)) =
+                  (workuuid <> "/" <> "purs"
+                  , xpLog $ flip fmapE 
+                    (translate2PS allNLGEnvR nlgEnvR rules)
+                    (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]"))
+                  )
+
+            mywritefile2 True topursFN     iso8601 "purs" (commentIfError "--" asPursstr) asPursErr
+
+
+
+          when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
+            sequence_ $ map (\env -> do
+                      -- using expandRulesForNLG for demo purposes here
+                      -- I think it's better suited for questions, not full NLG
+                      -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
+                      naturalLangSents <- mapM (nlg env) (expandRulesForNLG env rules)
+                      mapM_ (putStrLn . Text.unpack) naturalLangSents)
+              allNLGEnvR
+
+
+
+
+
+
+  -- end of the section that deals with NLG
+
+  let (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
       (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
       (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
@@ -101,17 +174,8 @@ main = do
       (tojsonFN,    asJSONstr)    = (workuuid <> "/" <> "json",        toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
       (tovuejsonFN, asVueJSONrules) = (workuuid <> "/" <> "vuejson",     fmap xpLog <$> toVueRules rules)
 
-      (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
-                                               (<>)
-                                               <$> xpLog (case nlgEnv of
-                                                            Left  _       -> (nlgEnv, nlgEnvErr)
-                                                            Right nlgEnvR -> translate2PS allNLGEnv nlgEnvR rules)
-                                               <*> xpLog (pure ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")))
-      (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGEnv rules)
-      tochecklFN               =  workuuid <> "/" <> "checkl"
       (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
       (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
@@ -198,15 +262,11 @@ main = do
            intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
         (concatMap snd toWriteVue)
 
-    when (SFL4.topurs    opts) $ do
-      mywritefile2 True topursFN     iso8601 "purs" asPursstr asPursErr
-    when (SFL4.togftrees opts) $ mywritefile True togftreesFN iso8601 "gftrees" asGftrees
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    when (SFL4.tomd      opts) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
     when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
@@ -232,16 +292,7 @@ main = do
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
 
 
-    when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
-        let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnv rc rules
-        mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
     putStrLn "natural4: output to workdir done"
-
-  -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
-  -- natural4-exe --workdir workdir --only md inputfile.csv
-  -- will produce only the workdir output file
-  when (toworkdir && not (null $ SFL4.uuiddir opts) && (not $ null $ SFL4.only opts)) $ do
-    when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
 
   -- when workdir is not specified, --only will dump to STDOUT
   when (not toworkdir) $ do
@@ -249,15 +300,6 @@ main = do
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
     when (SFL4.asJSON rc) $ putStrLn asJSONstr
-
-    when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
-      mapM_ (\env -> do
-        -- using expandRulesForNLG for demo purposes here
-        -- I think it's better suited for questions, not full NLG
-        -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
-        naturalLangSents <- mapM (nlg env) (expandRulesForNLG env rules)
-        mapM_ (putStrLn . Text.unpack) naturalLangSents)
-        allNLGEnv
 
     when (SFL4.toBabyL4 rc) $ putStrLn $ commentIfError "--" asCoreL4
 
@@ -267,10 +309,6 @@ main = do
 
     when (SFL4.toGrounds rc) $ do
       pPrint $ groundrules rc rules
-
-    when (SFL4.toChecklist rc) $ do
-      let (checkls, checklsErr) = xpLog $ checklist nlgEnv rc rules
-      pPrint checkls
 
     when (SFL4.toProlog rc) $ pPrint asProlog
 

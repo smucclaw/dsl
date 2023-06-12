@@ -74,11 +74,13 @@ module LS.XPile.Logging
     mutters,
     xpReturn,
     xpError,
-    XPileLogW,
+    XPileLogW
+                        , fmapE ,
     fromxpLogE
   )
 where
 
+import Data.Bifunctor (second)
 import Control.Monad.RWS
   ( MonadWriter (tell),
     RWS,
@@ -155,6 +157,10 @@ xpReturn = xpRight
 
 -- | xpRight is the underlying mechanism for xpReturn.
 xpRight = pure . Right
+
+-- | fmap over the right value of an XPileLogE
+fmapE :: (a -> a) -> XPileLogE a -> XPileLogE a
+fmapE f = fmap (second f)
 
 fromxpLogE :: Monoid a => XPileLogE a -> a
 fromxpLogE xpLogE = xpLogE |> xpLog |> fst |> fromRight mempty

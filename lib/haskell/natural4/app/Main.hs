@@ -30,7 +30,7 @@ import LS.Interpreter
 import LS.NLP.NLG
   ( allLangs,
     expandRulesForNLG,
-    getLang,
+    langEng,
     myNLGEnv,
     nlg,
     printLangs,
@@ -83,8 +83,11 @@ main = do
   rules    <- SFL4.dumpRules opts
   let l4i  = l4interpret SFL4.defaultInterpreterOptions rules
   iso8601  <- now8601
-  nlgEnv   <- unsafeInterleaveIO $ myNLGEnv l4i (getLang "NL4Eng") -- Only load the NLG environment if we need it.
-  allNLGEnv <- unsafeInterleaveIO $ mapM (myNLGEnv l4i) nlgLangs
+  eng <- langEng
+
+  (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog $ myNLGEnv l4i eng -- Only load the NLG environment if we need it.
+  (allNLGEnv, allNLGEnvErr) <- xpLog <$> unsafeInterleaveIO $ sequence $ mapM (myNLGEnv l4i) nlgLangs
+
   let toworkdir   = not $ null $ SFL4.workdir opts
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
       (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
@@ -100,7 +103,9 @@ main = do
 
       (topursFN,    (asPursstr, asPursErr)) = (workuuid <> "/" <> "purs",
                                                (<>)
-                                               <$> xpLog (translate2PS allNLGEnv nlgEnv rules)
+                                               <$> xpLog (case nlgEnv of
+                                                            Left  _       -> (nlgEnv, nlgEnvErr)
+                                                            Right nlgEnvR -> translate2PS allNLGEnv nlgEnvR rules)
                                                <*> xpLog (pure ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")))
       (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnv rules)
       (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))

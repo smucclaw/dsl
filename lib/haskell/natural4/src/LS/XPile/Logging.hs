@@ -74,8 +74,8 @@ module LS.XPile.Logging
     mutters,
     xpReturn,
     xpError,
-    XPileLogW
-                        , fmapE ,
+    XPileLogW,
+    fmapE,
     fromxpLogE
   )
 where
@@ -162,5 +162,7 @@ xpRight = pure . Right
 fmapE :: (a -> a) -> XPileLogE a -> XPileLogE a
 fmapE f = fmap (second f)
 
+-- | Convenience function to silently swallow errors
+-- by turning lefts into mempty.
 fromxpLogE :: Monoid a => XPileLogE a -> a
 fromxpLogE xpLogE = xpLogE |> xpLog |> fst |> fromRight mempty

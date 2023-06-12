@@ -49,7 +49,9 @@ rules2doc (otoList -> rules :: [Rule]) =
     startRule :: [Doc ann] =
       transpiledRulesWithRegRuleNames
         |> mapMaybe (
-            \(ruleName@(Just _), runMonoidValidate -> Right _) -> ruleName
+            \case
+              (ruleName@(Just _), runMonoidValidate -> Right _) -> ruleName
+              _ -> Nothing
           )
         |> take 1
         |$> \ruleName -> [di|START #{text2qid ruleName}|]

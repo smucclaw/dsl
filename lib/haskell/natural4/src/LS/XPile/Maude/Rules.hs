@@ -19,11 +19,14 @@ import Data.MonoTraversable (Element, otoList)
 import Data.Sequences as Seq (IsSequence)
 import Flow ((|>))
 import LS.Rule (Rule (..))
-import LS.Utils ((|$>), swallowErrs)
+import LS.Utils ((|$>), swallowErrs, runMonoidValidate)
 import LS.XPile.Maude.Rule (rule2doc)
 import LS.XPile.Maude.Utils (text2qid)
 import Prettyprinter (Doc, concatWith)
 import Prettyprinter.Interpolate (di)
+import Control.Monad.Validate (runValidate)
+import Data.Monoid (Ap (..))
+import Data.Bifunctor (Bifunctor(..))
 
 -- Main function to transpile rules to plaintext natural4 for Maude.
 rules2maudeStr :: (IsSequence t, Element t ~ Rule) => t -> String
@@ -39,22 +42,29 @@ rules2doc (otoList -> rules :: [Rule]) =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-  concatWith (<.>) $ startRule <> transpiledRules
+  concatWith (<.>) $ startRule <> validTranspiledRules
   where
-    -- Find the first regulative rule and extracts its rule name.
+    -- Find the name of the first regulative rule which got transpiled correctly.
     -- If such a rule exists, we turn it into a quoted symbol and prepend START.
     startRule :: [Doc ann] =
-      rules
-        |> mapMaybe
-          ( \case
-              Regulative {rlabel = Just (_, _, ruleName)} -> Just ruleName
-              _ -> Nothing
+      transpiledRulesWithRegRuleNames
+        |> mapMaybe (
+            \(ruleName@(Just _), runMonoidValidate -> Right _) -> ruleName
           )
         |> take 1
         |$> \ruleName -> [di|START #{text2qid ruleName}|]
 
-    -- Transpile the rules to docs and collect all those that transpiled
-    -- correctly, while ignoring erraneous ones.
-    transpiledRules = swallowErrs $ rule2doc <$> rules
+    -- Transpile all rules to plaintext, keeping track of the names of regulative
+    -- rules.
+    transpiledRulesWithRegRuleNames = do
+      rule <- rules
+      let regRuleName = case rule of
+            Regulative {rlabel = Just (_, _, ruleName)} -> Just ruleName
+            _ -> Nothing
+      pure (regRuleName, rule2doc rule)
+
+    -- Swallow errors to obtain all the rules which transpiled correctly.
+    validTranspiledRules =
+      transpiledRulesWithRegRuleNames |$> snd |> swallowErrs
 
     x <.> y = [di|#{x},\n\n#{y}|]

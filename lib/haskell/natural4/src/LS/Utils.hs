@@ -7,6 +7,7 @@ module LS.Utils
     maybe2validate,
     mapThenRunValidate,
     mapThenSwallowErrs,
+    runMonoidValidate,
     swallowErrs,
     MonoidValidate
   )
@@ -15,7 +16,7 @@ where
 import Control.Monad.Validate
   ( MonadValidate (refute),
     Validate,
-    runValidate,
+    runValidate
   )
 import Data.Coerce (coerce)
 import Data.Either (rights, partitionEithers)
@@ -68,5 +69,8 @@ mapThenRunValidate f xs = xs |$> f |> coerce |$> runValidate
 mapThenSwallowErrs :: (a -> MonoidValidate e b) -> [a] -> [b]
 mapThenSwallowErrs f xs = xs |> mapThenRunValidate f |> rights
 
-swallowErrs :: [Ap (Validate a) b] -> [b]
+swallowErrs :: [MonoidValidate e a] -> [a]
 swallowErrs = mapThenSwallowErrs id
+
+runMonoidValidate :: MonoidValidate e a -> Either e a
+runMonoidValidate x = x |> coerce |> runValidate 

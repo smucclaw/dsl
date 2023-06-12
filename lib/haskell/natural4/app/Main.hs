@@ -114,11 +114,11 @@ main = do
                 tochecklFN              =  workuuid <> "/" <> "checkl"
             mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
 
-          when (SFL4.togftrees opts)  $do
+          when (SFL4.togftrees opts) $ do
             let (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnvR rules)
             mywritefile True togftreesFN iso8601 "gftrees" asGftrees
 
-          let allNLGEnvErrors = lefts allNLGEnv
+          let allNLGEnvErrors = concat $ lefts allNLGEnv
           when (not $ null allNLGEnvErrors) $ do
             putStrLn "natural4: encountered error while obtaining allNLGEnv"
             mapM_ putStrLn allNLGEnvErrors
@@ -126,7 +126,7 @@ main = do
           let allNLGEnvR = rights allNLGEnv
 
           when (SFL4.tomd      opts) $ do
-            let (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGenvR rules)
+            let (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGEnvR rules)
             mywritefile True tomarkdownFN iso8601 "md" =<< asMD
 
           -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
@@ -148,13 +148,13 @@ main = do
 
 
           when (SFL4.toNLG rc && null (SFL4.only opts)) $ do
-            mapM_ (\env -> do
+            sequence_ $ map (\env -> do
                       -- using expandRulesForNLG for demo purposes here
                       -- I think it's better suited for questions, not full NLG
                       -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
                       naturalLangSents <- mapM (nlg env) (expandRulesForNLG env rules)
                       mapM_ (putStrLn . Text.unpack) naturalLangSents)
-            allNLGenvR
+              allNLGEnvR
 
 
 

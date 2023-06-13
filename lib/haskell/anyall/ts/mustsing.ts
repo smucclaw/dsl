@@ -16,16 +16,18 @@ export const mustSingTree : AllNode = {
 	    }
 	  },
 	  { tag: "Any",
-	    contents: [ { tag: "Pre", contents: "either" },
-	      		[ { contents: "eat",   tag: "Leaf" },
-	      		  { tag: "Any",
-			    contents: [ { tag: "Pre", contents: "drink" },
-					[ { tag: "Leaf", contents: "alcoholic" },
-					  { tag: "Leaf", contents: "non-alcoholic" }
-					  ]
-				      ]}
-			  ]
-		      ]
+	    contents:
+	    [ { tag: "Pre", contents: "either" },
+	      [ { contents: "eat",   tag: "Leaf" },
+	      	{ tag: "Any",
+		  contents:
+		  [ { tag: "Pre", contents: "drink" },
+		    [ { tag: "Leaf", contents: "alcoholic" },
+		      { tag: "Leaf", contents: "non-alcoholic" }
+		    ]
+		  ]}
+	      ]
+	    ]
 	  }
 	]
     ]

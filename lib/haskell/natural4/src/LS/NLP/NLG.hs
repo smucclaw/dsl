@@ -13,18 +13,21 @@ import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
 import Control.Monad (when)
+import Data.HashMap.Strict (keys, elems, lookup, toList)
+import qualified Data.HashMap.Strict as Map
+import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
-import Data.Map (keys, elems, lookup, toList)
-import Data.Maybe (catMaybes, maybeToList, listToMaybe)
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
 import Paths_natural4
-import Data.Foldable as F
+import qualified Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
-import Debug.Trace (trace)
+import LS.XPile.Logging
+
+import Debug.Trace
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -41,7 +44,7 @@ allLangs = do
   gr <- readPGF grammarFile
   pure $ languages gr
 
-langEng :: IO Language
+langEng :: IO (XPileLogE Language)
 langEng = do
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
@@ -50,29 +53,34 @@ langEng = do
 printLangs :: IO [Language] -> IO String
 printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
-getLang :: String -> PGF -> Language
+getLang :: String -> PGF -> XPileLogE Language
 getLang str gr = case (readLanguage str, languages gr) of
   (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
     -> if l `elem` langs
-         then l -- Expected case: language looks valid and is in grammar
-         else trace (fallbackMsg $ show l') l' -- Language is valid but not in grammar, warn and fall back to another language
+         then xpReturn l
+              -- Expected case: language looks valid and is in grammar
+         else xpError [fallbackMsg $ show l']
+              -- Language is valid but not in grammar, warn and fall back to another language
   (Nothing, l':_) -- Language not valid, warn and fall back to another language
-    -> trace (fallbackMsg $ show l') l'
+    -> xpError [fallbackMsg $ show l']
   (_, []) -- The PGF has no languages, truly unexpected and fatal
-    -> error "NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"
+    -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
   where
     fallbackMsg fblang = unwords ["language", str, "not found, falling back to", fblang]
 
-myNLGEnv :: Interpreted -> Language -> IO NLGEnv
+myNLGEnv :: Interpreted -> Language -> IO (XPileLogE NLGEnv)
 myNLGEnv l4i lang = do
   mpn <- lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  eng <- langEng
-  let myParse typ txt = parse gr eng typ (Text.unpack txt)
-      myLin = rmBIND . Text.pack . linearize gr lang
-  pure $ NLGEnv gr lang myParse myLin verbose l4i
+  (eng, engErr) <- xpLog <$> langEng
+  case eng of
+    Left  engL -> return $ mutters engErr >> xpError engL
+    Right engR -> do
+      let myParse typ txt = parse gr engR typ (Text.unpack txt)
+          myLin = rmBIND . Text.pack . linearize gr lang
+      return $ xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""
@@ -203,17 +211,18 @@ nlg' thl env rule = case rule of
 -- +-----------------+-----------------------------------------------------+
 
 
-ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> IO [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ print "ruleQuestions: regulative"
+      when (verbose env) $ do
+        mutter "ruleQuestions: regulative"
       text
     Hornlike {clauses} -> do
       when (verbose env) $ do
-        print "ruleQuestions: hornlike"
-        print $ ruleQnTrees env alias rule
-        print "---"
+        mapM_ mutter ["ruleQuestions: horn"
+                     , show $ ruleQnTrees env alias rule
+                     , "---"]
       text
     Constitutive {cond} -> text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
@@ -266,7 +275,7 @@ mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
 -- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
 -- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
-nlgQuestion :: NLGEnv -> Rule -> IO [Text.Text]
+nlgQuestion :: NLGEnv -> Rule -> XPileLog [Text.Text]
 nlgQuestion env rl = do
   questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
   pure $ concatMap F.toList questionsInABoolStruct
@@ -519,8 +528,8 @@ expandPT l4i depth pt = maybe pt ptFromRP expanded
 
     expanded = listToMaybe
                 [ outrp
-                | (_scopename, symtab) <- Data.Map.toList (scopetable l4i)
-                , (_mytype, cs) <- maybeToList $ Data.Map.lookup ptAsMt symtab
+                | (_scopename, symtab) <- Map.toList (scopetable l4i)
+                , (_mytype, cs) <- maybeToList $ Map.lookup ptAsMt symtab
                 , c <- cs
                 , let outs = expandClause l4i depth c
                 , outrp <- outs

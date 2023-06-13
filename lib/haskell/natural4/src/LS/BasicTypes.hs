@@ -16,15 +16,32 @@ These are largely:
 -}
 
 module LS.BasicTypes where
-import Data.Proxy
-import qualified Data.Text as Text
-import Text.Megaparsec
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List as DL
-import qualified Data.Vector as V
+
 import Data.Aeson (ToJSON)
-import GHC.Generics
 import Data.Char (toUpper)
+import Data.Hashable (Hashable)
+import qualified Data.List as DL
+import qualified Data.List.NonEmpty as NE
+import Data.Proxy (Proxy (..))
+import qualified Data.Text as Text
+import qualified Data.Vector as V
+import GHC.Generics (Generic)
+import Text.Megaparsec
+  ( PosState
+      ( PosState,
+        pstateInput,
+        pstateLinePrefix,
+        pstateOffset,
+        pstateSourcePos,
+        pstateTabWidth
+      ),
+    SourcePos (sourceLine),
+    Stream (..),
+    TraversableStream (reachOffset),
+    VisualStream (..),
+    initialPos,
+  )
+
 -- import Data.List (intercalate)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
@@ -71,6 +88,8 @@ data MyToken = Every | Party | TokAll
              | Where -- like in Haskell
              | Semicolon -- rule separator
   deriving (Ord, Eq, Show, Generic, ToJSON)
+
+instance Hashable MyToken
 
 -- the Rule types employ these tokens, which are meaningful to L4.
 --

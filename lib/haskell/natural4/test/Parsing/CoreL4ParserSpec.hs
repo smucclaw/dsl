@@ -1,19 +1,24 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Parsing.CoreL4ParserSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
-import Text.Megaparsec
-import LS.Lib
-import LS.Interpreter
+
 import AnyAll hiding (asJSON)
-import LS.BasicTypes
-import LS.Types
-import LS.Rule
-import LS.XPile.CoreL4
-import Test.Hspec
 import qualified Data.ByteString.Lazy as BS
+import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import LS.BasicTypes ( MyStream, MyToken(Decide) )
+import LS.Interpreter
+import LS.Lib
+import LS.Rule
+import LS.Types
+import LS.XPile.CoreL4
+import LS.XPile.Logging (fromxpLogE)
+import Test.Hspec
 import Test.Hspec.Megaparsec (shouldParse)
+import Text.Megaparsec
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
@@ -39,7 +44,7 @@ spec  = do
         let testfile = "seca"
         testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
         let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
-        (fmap sfl4ToCorel4 <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
+        (fmap (fromxpLogE . sfl4ToCorel4) <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
 
       filetest "class-1" "type definitions"
         (parseR pRules)
@@ -130,7 +135,7 @@ spec  = do
         (parseOther (do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
-                            tA = getCTkeys <$> thisAttributes classH "Class2"
+                            tA = sort . getCTkeys <$> thisAttributes classH "Class2"
                         return $ tA))
         (Just ["bar address","firstname","lastname","office address","work address"], [])
 
@@ -138,7 +143,7 @@ spec  = do
         (parseOther (do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
-                            eA = getCTkeys <$> extendedAttributes classH "Class2"
+                            eA = sort . getCTkeys <$> extendedAttributes classH "Class2"
                         return $ eA))
         (Just ["bar address","firstname","id","lastname","office address","work address"], [])
 

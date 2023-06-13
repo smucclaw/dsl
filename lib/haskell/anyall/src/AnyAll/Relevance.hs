@@ -2,18 +2,18 @@
 
 module AnyAll.Relevance where
 
-import AnyAll.Types
 import AnyAll.BoolStruct
-import qualified Data.Map.Strict as Map
-import Data.Map.Strict (lookup)
-import Data.List (any, all)
-import Debug.Trace
-import Control.Monad (when, guard)
-import Data.Maybe (isJust)
+import AnyAll.Types
+import Control.Monad (guard, when)
 import Data.Either
+import Data.HashMap.Strict (lookup)
+import qualified Data.HashMap.Strict as Map
+import Data.Hashable (Hashable)
+import Data.List (all, any)
+import Data.Maybe (isJust)
+import qualified Data.Text as T
 import Data.Tree
-import qualified Data.Text       as T
-
+import Debug.Trace
 import Explainable
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
@@ -48,7 +48,7 @@ deriveInitVis parentValue selfValue selfValueHard
 -- which of my descendants are dispositive? i.e. contribute to the final result.
 -- TODO: this probably needs to be pruned some
 
-dispositive :: Ord a => Hardness -> Marking a -> BoolStruct l a -> [BoolStruct l a]
+dispositive :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> [BoolStruct l a]
 dispositive sh marking self =
   let selfValue  = evaluate sh marking self
       recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
@@ -59,7 +59,7 @@ dispositive sh marking self =
        Not       item  -> recurse [item]
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
-evaluate :: Ord a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
+evaluate :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
 evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              Just (Default (Left  (Just x))) -> Just x

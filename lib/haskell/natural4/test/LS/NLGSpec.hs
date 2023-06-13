@@ -1,48 +1,132 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.NLGSpec where
 
-import Test.Hspec
-import Data.List.NonEmpty (NonEmpty(..))
+import AnyAll (BoolStruct (..), Label (..))
+import Data.HashMap.Strict as Map (empty, fromList)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.String.Interpolate (i)
+import LS.NLP.NL4 (Tree (GqCONSTR, GqPREPOST))
 import LS.NLP.NLG
-import LS.NLP.NL4
-import Parsing.PDPASpec (expected_pdpadbno1)
-import AnyAll( BoolStruct(..), Label(..) )
-import Data.Map (fromList, empty)
-import LS.Types
+  ( NLGEnv,
+    expandRulesForNLG,
+    linBStext,
+    mkConstraintText,
+    myNLGEnv,
+    ruleQuestions,
+  )
 import LS.Rule
+  ( Interpreted (..),
+    Rule
+      ( DefNameAlias,
+        DefTypically,
+        Hornlike,
+        Regulative,
+        RuleAlias,
+        action,
+        clauses,
+        cond,
+        defaults,
+        deontic,
+        detail,
+        given,
+        giveth,
+        having,
+        hence,
+        keyword,
+        lest,
+        lsource,
+        name,
+        nlhint,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        super,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+  )
+import LS.Types
+  ( BoolStructR,
+    ClsTab (CT),
+    Deontic (DMay, DMust, DShant),
+    HornClause (HC, hBody, hHead),
+    MTExpr (MTI, MTT),
+    MyToken (Decide, Means),
+    RPRel (RPTC, RPgt, RPis),
+    RegKeywords (REvery, RParty),
+    RelationalPredicate (RPBoolStructR, RPConstraint, RPMT),
+    SrcRef (SrcRef, short, srccol, srcrow, url, version),
+    TComparison (TAfter, TBefore, TOn),
+    TemporalConstraint (TemporalConstraint),
+  )
+import LS.XPile.Logging (fromxpLogE, xpLog)
 import PGF (mkCId)
+import Parsing.PDPASpec (expected_pdpadbno1)
+import Test.Hspec
+  ( Spec,
+    describe,
+    expectationFailure,
+    it,
+    runIO,
+    shouldBe,
+  )
 
 spec :: Spec
 spec = do
   let eng = mkCId "NL4Eng"
-  env <- runIO $ myNLGEnv rodentsInterp eng
-  describe "test rodents" $ do
-    it "Should return questions about rodent damage" $ do
-        let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR rodentsBSR
-        questions `shouldBe` All Nothing [Any (Just (Pre "Is the Loss or Damage caused by")) [Leaf "rodents?",Leaf "insects?",Leaf "vermin?",Leaf "birds?"],Not (Any Nothing [All Nothing [Leaf "is Loss or Damage to contents?",Leaf "is Loss or Damage caused by birds?"],All Nothing [Leaf "is Loss or Damage ensuing loss?",Leaf "is Loss or Damage covered?",Not (Any Nothing [Leaf "does any other exclusion apply?",Any (Just (Pre "did an animal cause water to escape from")) [Leaf "a household appliance?",Leaf "a swimming pool?",Leaf "a plumbing, heating, or air conditioning system?"]])]])]
+  (env, _) <- xpLog <$> runIO (myNLGEnv rodentsInterp eng)
+  case env of
+    Left xpLogW ->
+      it [i|rodentsInterp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
+    Right env -> do
+      describe "test rodents" $ do
+        it "Should return questions about rodent damage" $ do
+            let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR rodentsBSR
+            questions `shouldBe` All Nothing [Any (Just (Pre "Is the Loss or Damage caused by")) [Leaf "rodents?",Leaf "insects?",Leaf "vermin?",Leaf "birds?"],Not (Any Nothing [All Nothing [Leaf "is Loss or Damage to contents?",Leaf "is Loss or Damage caused by birds?"],All Nothing [Leaf "is Loss or Damage ensuing loss?",Leaf "is Loss or Damage covered?",Not (Any Nothing [Leaf "does any other exclusion apply?",Any (Just (Pre "did an animal cause water to escape from")) [Leaf "a household appliance?",Leaf "a swimming pool?",Leaf "a plumbing, heating, or air conditioning system?"]])]])]
 
-  describe "test not bird" $ do
-    it "Should return questions about not bird damage" $ do
-        let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR notRodentsBSR
-        questions `shouldBe` All Nothing [Any (Just (Pre "Is the Loss or Damage caused by")) [Leaf "rodents?",Leaf "insects?",Leaf "vermin?",Leaf "birds?"],Not (Any Nothing [All Nothing [Leaf "is Loss or Damage to contents?",Leaf "isn't Loss or Damage caused by birds?"],All Nothing [Leaf "is Loss or Damage ensuing loss?",Leaf "is Loss or Damage covered?",Not (Any Nothing [Leaf "does any other exclusion apply?",Any (Just (Pre "did an animal cause water to escape from")) [Leaf "a household appliance?",Leaf "a swimming pool?",Leaf "a plumbing, heating, or air conditioning system?"]])]])]
+      describe "test not bird" $ do
+        it "Should return questions about not bird damage" $ do
+            let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR notRodentsBSR
+            questions `shouldBe` All Nothing [Any (Just (Pre "Is the Loss or Damage caused by")) [Leaf "rodents?",Leaf "insects?",Leaf "vermin?",Leaf "birds?"],Not (Any Nothing [All Nothing [Leaf "is Loss or Damage to contents?",Leaf "isn't Loss or Damage caused by birds?"],All Nothing [Leaf "is Loss or Damage ensuing loss?",Leaf "is Loss or Damage covered?",Not (Any Nothing [Leaf "does any other exclusion apply?",Any (Just (Pre "did an animal cause water to escape from")) [Leaf "a household appliance?",Leaf "a swimming pool?",Leaf "a plumbing, heating, or air conditioning system?"]])]])]
 
-  describe "test PDPA" $ do
-    it "Should return questions about PDPA" $ do
-      questions <- ruleQuestions env Nothing (head expected_pdpadbno1)
-      questions `shouldBe` [Not (Leaf "is the organisation a public agency?"), Leaf "does the data breach occur on or after 1 Feb 2022?", Leaf "has the organisation become aware that a data breach may have occurred?"]
+      describe "test PDPA" $ do
+        it "Should return questions about PDPA" $ do
+          let questions = fst $ xpLog $ ruleQuestions env Nothing (head expected_pdpadbno1)
+          questions `shouldBe` [Not (Leaf "is the organisation a public agency?"), Leaf "does the data breach occur on or after 1 Feb 2022?", Leaf "has the organisation become aware that a data breach may have occurred?"]
 
-  envMustSing <- runIO $ myNLGEnv mustsing5Interp eng
-  testShouldChange "mustsing5" envMustSing mustsing5Rules mustsing5ExpandedGold
+      (envMustSing, _) <- xpLog <$> runIO (myNLGEnv mustsing5Interp eng)
+      case envMustSing of
+        Left xpLogW ->
+          it [i|mustsing5Interp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
+        Right envMustSing ->
+          testShouldChange "mustsing5" envMustSing mustsing5Rules mustsing5ExpandedGold
 
-  envPDPA <- runIO $ myNLGEnv pdpa1withUnexpandedUponInterp eng
-  testShouldChange "pdpa1 with added UPON expansion" envPDPA pdpa1withUnexpandedUpon pdpa1withExpandedUponGold
+      (envPDPA, _) <- xpLog <$> runIO (myNLGEnv pdpa1withUnexpandedUponInterp eng)
+      case envPDPA of
+        Left xpLogW ->
+          it [i|pdpa1withUnexpandedUponInterp nlgEnv is a left of: #{xpLogW}|] $
+            expectationFailure ""
+        Right envPDPA -> do
+          testShouldChange
+            "pdpa1 with added UPON expansion" envPDPA
+            pdpa1withUnexpandedUpon pdpa1withExpandedUponGold
 
-  envPDPAFull <- runIO $ myNLGEnv pdpafullInterp eng
-  testShouldChange "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
+          (envPDPAFull, _) <- xpLog <$> runIO (myNLGEnv pdpafullInterp eng)
+          case envPDPAFull of
+            Left xpLogW ->
+              it [i|pdpafullInterp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
+            Right envPDPAFull ->
+              testShouldChange
+                "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
 
-  testNoChange "rodentsandvermin" env rodentsRules
-  testNoChange "pdpadbno-1 (original)" envPDPA expected_pdpadbno1
+          testNoChange "rodentsandvermin" env rodentsRules
+          testNoChange "pdpadbno-1 (original)" envPDPA expected_pdpadbno1
 
 ---------------------------------------------------------------
 
@@ -761,7 +845,7 @@ becomingAwareBSR = Leaf
 
 pdpa1withUnexpandedUponInterp :: Interpreted
 pdpa1withUnexpandedUponInterp = L4I
-    { classtable = CT Data.Map.empty
+    { classtable = CT Map.empty
     , scopetable = fromList
         [ ([ MTT "becoming aware" ]
            , fromList [
@@ -780,7 +864,7 @@ pdpa1withUnexpandedUponInterp = L4I
 
 mustsing5Interp :: Interpreted
 mustsing5Interp = L4I
-    { classtable = CT Data.Map.empty
+    { classtable = CT Map.empty
     , scopetable = fromList
         [ ([ MTT "Qualifies" ]
            , fromList [
@@ -819,7 +903,7 @@ mustsing5Interp = L4I
 
 rodentsInterp :: Interpreted
 rodentsInterp = L4I
-    { classtable = CT Data.Map.empty
+    { classtable = CT Map.empty
     , scopetable = fromList
         [
             (

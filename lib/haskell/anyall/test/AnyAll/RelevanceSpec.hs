@@ -6,12 +6,12 @@ import Data.Tree
 import Test.Hspec
 import AnyAll.Types
 import AnyAll.Relevance
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as Map
 import AnyAll.BoolStruct
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck.Instances.Text
 
-markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.Map T.Text (Default Bool)
+markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.HashMap T.Text (Default Bool)
 markingMap payload = Map.singleton "key" (Default payload)
 
 type WireBoolStruct = BoolStruct (Maybe (Label T.Text)) T.Text
@@ -43,9 +43,10 @@ spec = do
 
     describe "leaf" $ do
       let
-        mrf =  Marking {getMarking = Map.singleton "key1" (Default $ Right $ Just False)}
-        mlf =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just False)}
-        mlt =  Marking {getMarking = Map.singleton "key1" (Default $ Left $ Just True)}
+        key1 = "key1"  :: T.Text
+        mrf =  Marking {getMarking = Map.singleton key1 (Default $ Right $ Just False)}
+        mlf =  Marking {getMarking = Map.singleton key1 (Default $ Left $ Just False)}
+        mlt =  Marking {getMarking = Map.singleton key1 (Default $ Left $ Just True)}
       it "Hard (Right True) (Just True) (leaf key)" $ do
         relevant Hard m (Just True) (mkLeaf "key1")
           `shouldBe`
@@ -113,7 +114,7 @@ spec = do
     let
       ma =
         Map.fromList
-          [ ("key1", Default $ Right $ Just True),
+          [ ("key1" :: T.Text, Default $ Right $ Just True),
             ("key2", Default $ Right $ Just True)
           ]
 
@@ -194,7 +195,7 @@ spec = do
     let
       ma =
         Map.fromList
-          [ ("key1", Default $ Right $ Just True),
+          [ ("key1" :: T.Text, Default $ Right $ Just True),
             ("key2", Default $ Right $ Just True)
           ]
 

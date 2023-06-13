@@ -25,6 +25,8 @@ description: natural4 parses a Legal Spreadsheet's CSV and transpiles to multipl
 dependencies:
   - base >= 4.7 && < 5
   - containers
+  - unordered-containers
+  - hashable
   - flow
   - text
   - hspec
@@ -75,6 +77,7 @@ dependencies:
   - mono-traversable
   - string-interpolate
   - prettyprinter-interp
+  - tuple
 
 ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 
@@ -102,6 +105,8 @@ tests:
       - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
       - natural4
+      - filepath
+      - filemanip
 
 benchmarks:
   natural4-bench:

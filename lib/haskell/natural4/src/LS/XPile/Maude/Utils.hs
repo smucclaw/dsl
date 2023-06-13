@@ -1,15 +1,14 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.Utils
-  ( (|$>),
-    throwDefaultErr,
+  ( throwDefaultErr,
     multiExprs2qid,
     text2qid
   )
@@ -17,57 +16,22 @@ where
 
 import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
 import Data.Coerce (coerce)
-import Data.Foldable qualified as Fold
 import Data.Kind (Constraint, Type)
 import Data.List.NonEmpty (NonEmpty)
 import Data.MonoTraversable (Element, MonoFoldable (otoList))
 import Data.Monoid (Ap (Ap))
-import Data.Sequences as Seq (SemiSequence)
-import Data.Text qualified as T
+import Data.Sequences (SemiSequence)
+import Data.Text (Text)
 import Data.Type.Bool (type (||))
 import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
+import LS.Utils (MonoidValidate)
 import Prettyprinter (Doc, Pretty (pretty))
 import Prettyprinter.Interpolate (di)
 
-{-
-  The idea is that given a (Validate e :: Type -> Type) and a monoid
-  (a :: Type), we want to equip (Validate e a) with a monoid
-  structure that combines errors (~ lefts) using the applicative operator <*> of
-  (Validate e) and non-errorneous values (~ rights) using the monoid <> of a.
-
-  We use the Ap newtype as defined in Data.Monoid for this.
-  Suppose (m :: Type -> Type) is an applicative type constructor and
-  (a :: Type) is a monoid.
-  (Ap m a) lifts the monoid structure of a up into the applicative m, so that
-  the <> operator of (Ap m a) behaves as a combination of <*> on m and <> on a.
-
-  In the case of m = Validate e, the <> op of
-    (Ap (Validate e) a) ~ Validate e a
-  combines errors using <*> and non-erroneous values using the <> of a.
-
-  Now, this standalone deriving via thing enables (Ap (Validate e)) to inherit the
-  MonadValidate structure of (Validate e), so that we can refute (~ throwError)
-  directly into (Ap (Validate e) a) without needing to first refute into
-  (Validate e a) and then use an Ap constructor to lift it to the newtype Ap.
--}
-deriving via Validate e instance
-  Semigroup e => MonadValidate e (Ap (Validate e))
-
-throwDefaultErr :: Ap (Validate (Doc ann)) a
+throwDefaultErr :: MonoidValidate (Doc ann) a
 throwDefaultErr = refute [di|Not supported.|]
-
-infixl 0 |$>
-
-(|$>) :: Functor f => f a -> (a -> b) -> f b
-(|$>) = flip fmap
-
--- {-# NOINLINE (|$>) #-}
-
--- {-# RULES
---   "|$>"    forall f g xs.  xs |$> f |$> g = xs |$> (g . f)
--- #-}
 
 -- type IsList :: (Type -> Type) -> Constraint
 -- type IsList t =
@@ -83,7 +47,8 @@ infixl 0 |$>
   NonEmpty MTExpr.
 -}
 multiExprs2qid :: (SemiSequence t, Element t ~ MTExpr) => t -> Doc ann
-multiExprs2qid multiExprs = multiExprs |> otoList |> mt2text |> text2qid
+multiExprs2qid (otoList -> multiExprs :: [MTExpr]) =
+  multiExprs |> mt2text |> text2qid
 
-text2qid :: T.Text -> Doc ann
+text2qid :: Text -> Doc ann
 text2qid x = [di|qid("#{x}")|]

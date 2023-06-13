@@ -15,7 +15,7 @@ module LS.XPile.RuleJSON where
 import LS
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import Prettyprinter
+import Prettyprinter hiding (space)
 import Text.Pretty.Simple (pShowNoColor, pString)
 import qualified AnyAll.BoolStruct as AA
 import qualified AnyAll as AA
@@ -37,7 +37,7 @@ import Data.Map.Strict (Map, fromList)
 import Text.Read (readMaybe)
 import Data.List.Split (splitOn)
 import Text.ParserCombinators.ReadP
-
+import Data.Functor.Identity (runIdentity)
 import qualified Text.RawString.QQ as QQ
 
 -- | extract the tree-structured rules from Interpreter
@@ -65,72 +65,61 @@ rlToBST env rl = [(name, unsafePerformIO q) | q <- quest]
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
     quest = map (ruleQuestions env alias) rl
 
--- labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
--- labelQs x = map AA.alwaysLabeled x
-
-
 bsToJSON :: AA.OptionallyLabeledBoolStruct T.Text -> AA.BoolStruct (AA.Label T.Text) T.Text
-bsToJSON (AA.Leaf b) = AA.mkLeaf (b)
-bsToJSON (AA.All Nothing items) = AA.mkAll (AA.Pre "all of the following") (map bsToJSON items)
+bsToJSON (AA.Leaf b) = AA.Leaf (b)
+bsToJSON (AA.All Nothing items) = AA.All (AA.Pre "all") (map bsToJSON items)
 bsToJSON (AA.All (Just pre@(AA.Pre _)) items) = AA.All pre (map bsToJSON items)
 bsToJSON (AA.All (Just pp@(AA.PrePost _ _)) items) = AA.All pp (map bsToJSON items)
-bsToJSON (AA.Any Nothing items) = AA.mkAny (AA.Pre "any of the following") (map bsToJSON items)
-bsToJSON (AA.Any (Just pre@(AA.Pre _)) items) = AA.mkAny pre (map bsToJSON items)
-bsToJSON (AA.Any (Just pp@(AA.PrePost _ _)) items) = AA.mkAny pp (map bsToJSON items)
-bsToJSON (AA.Not item) = AA.mkNot (bsToJSON item)
+bsToJSON (AA.Any Nothing items) = AA.Any (AA.Pre "any") (map bsToJSON items)
+bsToJSON (AA.Any (Just pre@(AA.Pre _)) items) = AA.Any pre (map bsToJSON items)
+bsToJSON (AA.Any (Just pp@(AA.PrePost _ _)) items) = AA.Any pp (map bsToJSON items)
+bsToJSON (AA.Not item) = AA.Not (bsToJSON item)
 
 ruleToRuleJSON :: NLGEnv -> [Rule] -> [Map.Map String (AA.BoolStruct (AA.Label T.Text) T.Text)]
-ruleToRuleJSON env rl  = [Map.fromList [(T.unpack $ mt2text rn, bsToJSON bst)] | ([rn],[bst]) <- rlToBST env rl]
-
+ruleToRuleJSON env rl = [Map.fromList [(T.unpack $ mt2text rn, bsToJSON bst)] | ([rn],[bst]) <- rlToBST env rl]
 
 -- my shitty parser
-parseString :: String -> String
-parseString = convertToJSON . removeInvalidChars
+convertString str = convert (words str)
+  where
+    convert :: [String] -> String
+    convert ("{\"Person\",All":rest) = "{\"Person\":{\"All\":[" ++ (convertAll rest) ++ "]}}"
+    convert ("{\"Person\",Any":rest) = "{\"Person\":{\"Any\":[" ++ convertAll rest
+    convert (word:rest) = word ++ convert rest
+    convert [] = ""
 
-removeInvalidChars :: String -> String
-removeInvalidChars = filter (\c -> Char.isAlpha c || c `elem` (" ?\",[]" :: String))
+    convertAll :: [String] -> String
+    convertAll ("{Pre":"\"all\"":all:rest) = "{\"All\":" ++ show all ++ "}" ++ convertAll rest
+    convertAll ("[Leaf":rest) = "{\"Leaf\":" ++ recurseUntilComma rest
+    convertAll ("Any":rest) = ",{\"Any\":[" ++ convertAll rest ++ "]}" ++ convertAll (drop 1 $ dropWhile (/= "]") rest)
+    convertAll ("All":rest) = ",{\"All\":[" ++ convertAll rest ++ "]}" ++ convertAll (drop 1 $ dropWhile (/= "]") rest)
+    convertAll ("]":_) = "]"
+    convertAll (_:rest) = convertAll rest
+    convertAll [] = ""
 
-convertToJSON :: String -> String
-convertToJSON str = "{" ++ convert str ++ "}"
+    recurseUntilComma :: [String] -> String
+    recurseUntilComma (x:xs)
+      | elem ',' x = (head (splitOn "," x) ++ "}") ++ convertAll ((unwords $ tail (splitOn "," x)) : xs)
+      | otherwise = (x ++ " ") ++ recurseUntilComma xs
+    recurseUntilComma [] = []
 
-convert :: String -> String
-convert [] = ""
-convert ('[':rest) = "[" ++ convert rest
-convert (']':rest) = "]" ++ convert rest
-convert (',':rest) = "," ++ convert rest
-convert ('"':rest) = "\"" ++ convert rest
-convert ('?':rest) = convert rest
-convert (c:rest) = c : convert rest
 
-parseleaf :: String -> String
-parseleaf str = "{\"Leaf\":\"" ++ str ++ "\"}"
+convertChar :: Char -> String
+convertChar '(' = "{"
+convertChar ')' = "}"
+convertChar '[' = "["
+convertChar ']' = "]"
+convertChar '"' = "\""
+convertChar ',' = ","
+convertChar c   = [c]
 
-parseany :: String -> String
-parseany str = "{\"Any\":[" ++ intercalate "," (map parseleaf (splitOn' ',' str)) ++ "]}"
+convertList :: [String] -> String
+convertList = intercalate ","
 
-parseall :: String -> String
-parseall str = "{\"All\":[" ++ intercalate "," (map parsenode (splitOn' ' ' str)) ++ "]}"
-
-parsenode :: String -> String
-parsenode ('[':rest) = parseall rest
-parsenode str
-  | head str == '(' = parsenode (tail str)
-  | head str == '"' = parseleaf (init str)
-  | head str == 'A' = parseany (drop 5 (init str))
-  | head str == 'M' = parseall (drop 5 (init str))
-  | otherwise = str
-
-splitOn' :: Char -> String -> [String]
-splitOn' _ [] = []
-splitOn' delim str =
-  let (first, rest) = break (== delim) str
-   in first : splitOn' delim (drop 1 rest)
 --
 
 rlsToJSON :: NLGEnv -> [Rule] -> String
-rlsToJSON env rs = parseString $ show $ mconcat $ rlToBST env rs
+rlsToJSON env rs = convertString $ tail $ init $ concatMap convertChar $ unwords $ tail $ words $ show $ mconcat $ ruleToRuleJSON env rs
     -- "([[MTT \"Person\"]],[All Nothing [Leaf \"does the person walk?\",Any Nothing [Leaf \"does the person eat?\",Leaf \"does the person drink?\"]]])"
-
 
 
     -- <> "\n\n"

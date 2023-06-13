@@ -43,7 +43,7 @@ rules2doc (otoList -> rules :: [Rule]) =
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling
     -- those erraneous rules.
-  concatWith (<.>) $ startRule <> transpiledRules
+  concatWith (<.>) $ startRule <> validTranspiledRules
   where
     -- Find the name of the first regulative rule which got transpiled correctly.
     -- If such a rule exists, we turn it into a quoted symbol and prepend START.
@@ -56,8 +56,10 @@ rules2doc (otoList -> rules :: [Rule]) =
     -- Transpile all rules to plaintext, keeping track of the original rule.
     transpiledRulesPairs = [(rule, rule2doc rule) | rule <- rules]
 
-    transpiledRules = mapThenSwallowErrs snd transpiledRulesPairs
+    -- Grab all the rules which transpiled correctly.
+    validTranspiledRules = mapThenSwallowErrs snd transpiledRulesPairs
 
+    -- Obtain all the names of rules that got transpiled correctly.
     validRegRuleToRuleName ::
       (Rule, MonoidValidate e a) -> Maybe T.Text
     validRegRuleToRuleName

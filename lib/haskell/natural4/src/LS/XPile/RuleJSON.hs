@@ -90,6 +90,7 @@ convertString str = convert (words str)
     convertAll :: [String] -> String
     convertAll ("{Pre":"\"all\"":all:rest) = "{\"All\":" ++ show all ++ "}" ++ convertAll rest
     convertAll ("[Leaf":rest) = "{\"Leaf\":" ++ recurseUntilComma rest
+    convertAll ("Leaf":rest) = ",{\"Leaf\":" ++ recurseUntilComma rest
     convertAll ("Any":rest) = ",{\"Any\":[" ++ convertAll rest ++ "]}" ++ convertAll (drop 1 $ dropWhile (/= "]") rest)
     convertAll ("All":rest) = ",{\"All\":[" ++ convertAll rest ++ "]}" ++ convertAll (drop 1 $ dropWhile (/= "]") rest)
     convertAll ("]":_) = "]"
@@ -99,6 +100,7 @@ convertString str = convert (words str)
     recurseUntilComma :: [String] -> String
     recurseUntilComma (x:xs)
       | elem ',' x = (head (splitOn "," x) ++ "}") ++ convertAll ((unwords $ tail (splitOn "," x)) : xs)
+      | elem ']' x = (head (splitOn "]" x) ++ "}") ++ convertAll ((unwords $ tail (splitOn "}" x)) : xs)
       | otherwise = (x ++ " ") ++ recurseUntilComma xs
     recurseUntilComma [] = []
 

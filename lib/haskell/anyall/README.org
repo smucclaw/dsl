@@ -3,9 +3,14 @@
 The And/Or Tree is a classic data structure in CS.
 
 Our implementation equips it with
-- a visualization engine (SVG)
+- an Unknown alternative to True and False values, making this technically a ternary logic
+- a Not combinator, as fanservice for the De Morgan crowd
+- the idea of default values
+
+And also:
+- a visualization engine (SVG); see the ladder-diagram repo for an HTML visualization
+- a relevance calculus that paints elements of the tree for use in a user interface according to their dispositivity
 - a natural language target producing traditional conjunctive and disjunctive lists
-- a relevance calculus that paints elements of the tree for use in a user interface
 
 #+begin_quote
 If, when, why, what?
@@ -15,7 +20,7 @@ And which do you choose, a hard or soft option?
 -- C. Lowe & N. Tennant, 1985
 #+end_quote
 
-* Usage (CLI)
+* Quickstart (CLI)
 
 Compile the typescript to javascript (you may need to ~npm i -g typescript~):
 #+begin_src bash
@@ -87,33 +92,12 @@ The main API to drawing SVGs with AnyAll looks like this:
 
 You now have an SVGElement which is Showable. Dump it to disk and do with it what you will.
 
-* CLI Documentation
+* TypeScript Examples: the MustSing Flipbook
 
-** Input example:
-
-#+begin_src typescript :tangle ts/example.ts
-  import StdinSchema from "./types"
-
-  let mustSing : StdinSchema = {
-    marking: {
-      "walk": { byDefault: true },
-    },
-    andOrTree: {
-      nodetype: "all",
-      pre: "all of",
-      children: [
-        { leaf: "walk" },
-        { leaf: "run" },
-        { nodetype: "any"
-        , pre: "either"
-        , children: [ { leaf: "eat" }, { leaf: "drink" } ]
-        }
-      ]
-    }
-  }
-
-  console.log(JSON.stringify(mustSing));
-#+end_src
+In the ~ts/~ directory, see
+- ~types.ts~ setting up the types
+- ~mustsing.ts~ setting up the tree
+- ~flipbook-?~ for increasingly complex markings against the tree
 
 ** Input schema:
 
@@ -295,44 +279,74 @@ This syntax follows the ~Data.Tree~ format, so the node details are in an object
   ]
 #+end_src
 
-* Relevance Calculus
+* Introduction to Concepts; and the Relevance Calculus
 
-Given a tree, we ~evaluate~ its tentative value.
+Given a tree, we ~evaluate~ it to an overall value.
 
-This happens under some evaluation strategy, either Hard (relying on human input only) or Soft (using defaults as well).
+This happens under an evaluation strategy, either:
+- Hard (relying on human input only), or
+- Soft (taking into account default values as well).
 
-Certain children are dispositive if they determine the value of the parent. In other words, if we short-circuit evaluation, /why/ did we short-circuit it? We can label each child as dispositive or not.
+*Dispositivity* is important. Children are dispositive if they suffice to determine the value of the parent.
 
-| evaluation strategy | Item | Item Predicate   | E B | B | value      | dispositive children   |
-|---------------------+------+------------------+-----+---+------------+------------------------|
-| Soft                | Leaf | Left Just True   | T . | T | Just True  | -                      |
-| Soft                | Leaf | Left Just False  | F . | F | Just False | -                      |
-| Soft                | Leaf | Left Nothing     | 0 . | 0 | Nothing    | -                      |
-| Soft                | Leaf | Right Just True  | . T | T | Just True  | -                      |
-| Soft                | Leaf | Right Just False | . F | F | Just False | -                      |
-| Soft                | Leaf | Right Nothing    | . 0 | 0 | Nothing    | -                      |
-| Hard                | Leaf | Left Just True   | T . | 0 | Nothing    | -                      |
-| Hard                | Leaf | Left Just False  | F . | 0 | Nothing    | -                      |
-| Hard                | Leaf | Left Nothing     | 0 . | 0 | Nothing    | -                      |
-| Hard                | Leaf | Right Just True  | . T | T | Just True  | -                      |
-| Hard                | Leaf | Right Just False | . F | F | Just False | -                      |
-| Hard                | Leaf | Right Nothing    | . 0 | 0 | Nothing    | -                      |
-| -                   | Any  | any Just True    | .T. | T | Just True  | filter =True children  |
-| -                   | Any  | all Just False   | FFF | F | Just False | filter =False children |
-| -                   | Any  | -                | FT. | 0 | Nothing    | -                      |
-| -                   | All  | any Just False   | .F. | F | Just False | filter =False children |
-| -                   | All  | all Just True    | TTT | T | Just True  | filter =True children  |
-| -                   | All  | -                | FT. | 0 | Nothing    | -                      |
+Often, when we short-circuit evaluation, we want to know: /why/ did we short-circuit it? We can label each child as dispositive or not, and focus user attention on the dispositive children.
 
-So, how does this affect what we display?
+For example, if a tree is constructed as ~A or B or C~, in other words ~Any [ A, B, C ]~, and if we know that the node ~B~ is ~True~, then we can short-circuit, and resolve the parent to true, because ~B~ is dispositive. In a user interface, we might display the value of B, since that was what the user explicitly clicked as True; and we might gray out ~A~ and ~C~ because their values are no longer of interest.
+
+Another example. If a tree is constructed as ~D and E and F~, in other words ~All [ D, E, F ]~, and if we know that the node ~F~ is false, then we can short-circuit, and resolve the parent to false, because the ~F~ is dispositive.
+
+The valuations of the nodes ~A B C D E F~ are called in our system
+"Markings" but could equally well be called a "Context", a "Variable
+Store", a "State", or a "Symbol Table".
+
+The following truth table shows how evaluation proceeds under different sort/hard strategies and concrete values. We use ~?~ to indicate an unknown value, expressed as a ~Nothing :: Maybe Bool~.
+
+| evaluation strategy | Item | Value            | Either | result | result     | which children          |
+|                     |      |                  | (Maybe | Maybe  |            | are dispositive?        |
+|                     |      |                  | Bool)  | Bool   |            |                         |
+|---------------------+------+------------------+--------+--------+------------+-------------------------|
+| Soft                | Leaf | Left Just True   | T .    | T      | Just True  | -                       |
+| Soft                | Leaf | Left Just False  | F .    | F      | Just False | -                       |
+| Soft                | Leaf | Left Nothing     | ? .    | ?      | Nothing    | -                       |
+| Soft                | Leaf | Right Just True  | . T    | T      | Just True  | -                       |
+| Soft                | Leaf | Right Just False | . F    | F      | Just False | -                       |
+| Soft                | Leaf | Right Nothing    | . ?    | ?      | Nothing    | -                       |
+|---------------------+------+------------------+--------+--------+------------+-------------------------|
+| Hard                | Leaf | Left Just True   | T .    | ?      | Nothing    | -                       |
+| Hard                | Leaf | Left Just False  | F .    | ?      | Nothing    | -                       |
+| Hard                | Leaf | Left Nothing     | ? .    | ?      | Nothing    | -                       |
+| Hard                | Leaf | Right Just True  | . T    | T      | Just True  | -                       |
+| Hard                | Leaf | Right Just False | . F    | F      | Just False | -                       |
+| Hard                | Leaf | Right Nothing    | . ?    | ?      | Nothing    | -                       |
+|---------------------+------+------------------+--------+--------+------------+-------------------------|
+| -                   | Any  | any Just True    | .T.    | T      | Just True  | filter ==True children  |
+| -                   | Any  | all Just False   | FFF    | F      | Just False | filter ==False children |
+| -                   | Any  | -                | ?F?    | ?      | Nothing    | -                       |
+| -                   | All  | any Just False   | .F.    | F      | Just False | filter ==False children |
+| -                   | All  | all Just True    | TTT    | T      | Just True  | filter ==True children  |
+| -                   | All  | -                | ?T?    | ?      | Nothing    | -                       |
+
+So, how does this affect what we display to the user?
+
+The "visibility" status of a given node is typed as a ~ShouldView~, whose values are ~Ask | View | Hide~.
+
+| ShouldView Value | User Interface                                                                              |
+|------------------+---------------------------------------------------------------------------------------------|
+| Ask              | Invite user input: Yes/No/Maybe. This node could be dispositive, so ask the user to answer. |
+|------------------+---------------------------------------------------------------------------------------------|
+| View             | Show the user what the current value is. Allow them to change it -- especially if           |
+|                  | the value was a default and not user-provided.                                              |
+|------------------+---------------------------------------------------------------------------------------------|
+| Hide             | Hide the element, as it is not of interest. Or maybe show the title but hide the answer.    |
+|                  | Basically, minimize it.                                                                     |
 
 Each Leaf item has a "first approximation" preference for ~ShouldView~ (~View|Hide|Ask~).
 
 That preference gets overridden by the parent because the parent knows more about the context. For example, if a parent node is hidden, then every subtree could be hidden too.
 
-Each child may be a Leaf or itself a subtree of Any/All. We evaluate the child value and mark its 'a' with the appropriate ShouldView.
+Each child may be a Leaf or itself a subtree of Any/All. We evaluate the child value and mark it with the appropriate ShouldView.
 
-Along the way we convert it from our native notation ~Item a~ to a more conventional ~Data.Tree~ format.
+In this implementation, along the way we convert it from our native notation ~Item a~ to a more conventional ~Data.Tree~ format.
 
 The display style may be one of the following:
 - terse :: we hide as much as we can. This minimizes cognitive complexity.
@@ -347,14 +361,14 @@ The display style may be one of the following:
 | Any  | T          | -          | Hide              | no longer relevant                                             |                            |
 | Any  | F          | F          | View              | user input, so show                                            |                            |
 | Any  | F          | -          | Hide              |                                                                | this case should not occur |
-| Any  | 0          | . _        | View              | they selected something, so show it                            |                            |
-| Any  | 0          | -          | Ask               | not yet decided, so let them choose                            |                            |
+| Any  | ?          | . _        | View              | they selected something, so show it                            |                            |
+| Any  | ?          | -          | Ask               | not yet decided, so let them choose                            |                            |
 | All  | T          | T          | View              | dispositive, so show                                           |                            |
 | All  | T          | F          | View              |                                                                | this case should not occur |
 | All  | F          | F          | View              | dispositive, so show                                           |                            |
 | All  | F          | -          | Hide              |                                                                | this case should not occur |
-| All  | 0          | . _        | View              | they selected something, so show it                            |                            |
-| All  | 0          | -          | Ask               | not yet decided, so let them choose                            |                            |
+| All  | ?          | . _        | View              | they selected something, so show it                            |                            |
+| All  | ?          | -          | Ask               | not yet decided, so let them choose                            |                            |
 
 in terms of display UI, View and Ask are both shown, and are editable, but "ask" keeps it in the active area, while "view" scrolls it off the top of the screen.
 
@@ -362,6 +376,12 @@ in terms of display UI, View and Ask are both shown, and are editable, but "ask"
 
 See:
 - https://github.com/smucclaw/sandbox/blob/default/jacobtan/Rule34-logic-gates/rule34-haskell/src/SandboxBuilder.hs#L8
+
+* Alternative Implemenations
+
+See the ~ladder-diagram~ repo, which does everything in HTML and CSS instead of SVG.
+
+and also the ~vue-pure-pdpa~ repo which has a Purescript implementation of the above logic under ~src/AnyAll/~
 
 * TODO Things we are gradually getting smart enough to do
 
@@ -610,3 +630,4 @@ At each step the diagram should reorganize as described in the original PDF spec
 
 The "flipbook" example, in ~ts/flipbook-?.ts~, gives an impression of what happens as the end-user answers questions step by step. The underlying tree doesn't change; only the marking does.
 
+Interactivity has been illustrated in the ~ladder-diagram~ repo.

@@ -25,8 +25,8 @@ import Test.QuickCheck.Checkers
 
 data BoolStruct lbl a =
     Leaf                       a
-  | All lbl [BoolStruct lbl a]
-  | Any lbl [BoolStruct lbl a]
+  | All lbl [BoolStruct lbl a] -- and
+  | Any lbl [BoolStruct lbl a] --  or
   | Not             (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 

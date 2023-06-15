@@ -146,7 +146,7 @@ asPurescript env rl = do
 
   guts <- sequence [
     do
-      mutter $ "*** names\n" ++ show ( mt2text <$> names )
+      mutter $ "*** names: " ++ show ( mt2text <$> names )
       mutter $ "**** fixedNot\n" ++ show fixedNot
       mutter $ "**** jq\n" ++ show jq
       mutter $ "**** labeled\n" ++ show labeled

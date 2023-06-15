@@ -142,14 +142,14 @@ asPurescript env rl = do
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
   c' <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
-  mutter $ "c'       = " ++ show c'
+  mutter $ "*** c'" ++ show c'
 
   guts <- sequence [
     do
-      mutter $ "names    = " ++ show ( mt2text <$> names )
-      mutter $ "fixedNot = " ++ show fixedNot
-      mutter $ "jq       = " ++ show jq
-      mutter $ "labeled  = " ++ show labeled
+      mutter $ "*** names\n" ++ show ( mt2text <$> names )
+      mutter $ "*** fixedNot\n" ++ show fixedNot
+      mutter $ "*** jq\n" ++ show jq
+      mutter $ "*** labeled\n" ++ show labeled
       xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
 
     | (names,bs) <- c'

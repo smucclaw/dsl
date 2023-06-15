@@ -147,6 +147,8 @@ asPurescript env rl = do
   guts <- sequence [
     do
       mutter $ "*** names: " ++ show ( mt2text <$> names )
+      mutter $ "**** hbs = head boolstruct\n" ++ show hbs
+      mutter $ "**** tbs = tail boolstruct\n" ++ show tbs
       mutter $ "**** fixedNot\n" ++ show fixedNot
       mutter $ "**** jq\n" ++ show jq
       mutter $ "**** labeled\n" ++ show labeled

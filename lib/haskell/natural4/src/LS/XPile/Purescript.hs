@@ -181,7 +181,7 @@ translate2PS nlgEnv eng rules = do
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
   -- [TODO] make this work
   -- mutters (concat $ lefts bottomBit) >>
-  xpReturn $ topBit <> unlines (rights bottomBit)
+  xpReturn $ topBit <> "\n" <> unlines (rights bottomBit)
 
 interviewRulesRHS2topBit :: String -> String
 interviewRulesRHS2topBit interviewRulesRHS =

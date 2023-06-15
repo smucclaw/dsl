@@ -38,8 +38,8 @@ import LS.Utils ((|$>))
 import LS.XPile.Logging
 import PGF
 import Prettyprinter
+import Prettyprinter.Interpolate (__di)
 import Text.Pretty.Simple (pShowNoColor)
-import qualified Text.RawString.QQ as QQ
 
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
@@ -142,20 +142,20 @@ asPurescript env rl = do
              , Just (hbs, tbs) <- [DL.uncons bs]
              ]
 
-  xpReturn $ (show . vsep)
-           [ (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " :: " <> "Object.Object (Item String)"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> " = " <> "Object.fromFoldable "
-           , (pretty . TL.unpack . pShowNoColor $ guts )
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <> "Marking :: Marking"
-           , (pretty $ map Char.toLower $ showLanguage $ gfLang env) <>  "Marking = Marking $ Map.fromFoldable "
-           , (pretty . TL.unpack
-              . TL.replace "False" "false"
-              . TL.replace "True" "true"
-              . pShowNoColor $
-              fmap toTuple . Map.toList . AA.getMarking $
-              getMarkings (l4interpret defaultInterpreterOptions rl)
-                  )
-          -- , (pretty $ showLanguage $ gfLang env) <> "Statements :: Object.Object (Item String)"
+  xpReturn $ show
+    [__di|
+      #{pretty $ map Char.toLower $ showLanguage $ gfLang env} :: Object.Object (Item String)
+      #{pretty $ map Char.toLower $ showLanguage $ gfLang env} = Object.fromFoldable
+        #{pretty . TL.unpack . pShowNoColor $ guts}
+      #{pretty $ map Char.toLower $ showLanguage $ gfLang env} Marking :: Marking
+      #{pretty $ map Char.toLower $ showLanguage $ gfLang env} Marking = Marking $ Map.fromFoldable
+        #{pretty . TL.unpack
+                 . TL.replace "False" "false"
+                 . TL.replace "True" "true"
+                 . pShowNoColor $
+                fmap toTuple . Map.toList . AA.getMarking $
+                getMarkings (l4interpret defaultInterpreterOptions rl)}
+      #{pretty $ showLanguage $ gfLang env} Statements :: Object.Object (Item String)
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
           --   (pretty $ TL.unpack (
           --       pShowNoColor
@@ -165,7 +165,7 @@ asPurescript env rl = do
           --         ]
           --       )
           --   )
-           ]
+    |]
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnv eng rules = do
@@ -181,7 +181,7 @@ translate2PS nlgEnv eng rules = do
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
   -- [TODO] make this work
   -- mutters (concat $ lefts bottomBit) >>
-  xpReturn $ topBit <> "\n" <> unlines (rights bottomBit)
+  xpReturn $ topBit <> "\n\n" <> unlines (rights bottomBit)
 
 interviewRulesRHS2topBit :: String -> String
 interviewRulesRHS2topBit interviewRulesRHS =

@@ -56,8 +56,6 @@ dependencies:
   - parser-combinators
   - fgl
   - graphviz
-  - wordnet
-  - edit-distance
   - extra
   - lens
   - QuickCheck

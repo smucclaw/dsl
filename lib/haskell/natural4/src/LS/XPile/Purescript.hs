@@ -55,7 +55,7 @@ toTuple :: (a,b) -> Tuple a b
 toTuple (x,y) = Tuple x y
 
 textMT :: [RuleName] -> [T.Text]
-textMT rl = map mt2text rl
+textMT = map mt2text
 
 -- two boolstructT: one question and one phrase
 namesAndStruct :: [Rule] -> XPileLog [([RuleName], [BoolStructT])]

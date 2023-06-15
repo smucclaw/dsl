@@ -23,9 +23,11 @@ import qualified Data.Char as Char
 import Data.Either (lefts, rights)
 import Data.HashMap.Strict ((!))
 import qualified Data.HashMap.Strict as Map
+import Data.List (sortOn)
 import qualified Data.List as DL
 import Data.List.Split (chunk)
 import Data.Maybe (listToMaybe)
+import qualified Data.Ord
 import Data.String.Interpolate (i, __i)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -89,21 +91,21 @@ fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
 fixNot y = y
 
 justQuestions :: BoolStructT -> [BoolStructT] -> BoolStructT
-justQuestions (AA.All Nothing a) q = (AA.All Nothing (q))
-justQuestions (AA.Any Nothing a) q = (AA.Any Nothing (q))
+justQuestions (AA.All Nothing a) q = AA.All Nothing q
+justQuestions (AA.Any Nothing a) q = AA.Any Nothing q
 justQuestions xs y = xs
 
 justStatements :: BoolStructT -> [BoolStructT] -> BoolStructT
-justStatements (AA.All Nothing a) q = (AA.All Nothing (a))
-justStatements (AA.Any Nothing a) q = (AA.Any Nothing (a))
+justStatements (AA.All Nothing a) q = AA.All Nothing a
+justStatements (AA.Any Nothing a) q = AA.Any Nothing a
 justStatements xs y = xs
 
 labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
-labelQs x = map alwaysLabeled x
+labelQs = map alwaysLabeled
 
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
-  q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
 
@@ -111,7 +113,7 @@ biggestQ env rl = do
                | (x, y) <- q
                , Just (yh, yt) <- [DL.uncons y] ]
 
-      sorted = DL.reverse $ DL.sortOn DL.length flattened
+      sorted = sortOn (Data.Ord.Down . DL.length) flattened
   if not (null sorted)
     then case fst (DL.head sorted) `Map.lookup` Map.fromList onlyqs of
            Nothing -> mutter ("biggestQ didn't work, couldn't find " ++ show (fst (DL.head sorted)) ++ " in dict") >> return []
@@ -120,40 +122,41 @@ biggestQ env rl = do
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
-  q <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
       onlys = [ (x, justStatements yh (map fixNot yt))
               | (x,y) <- q
               , Just (yh, yt) <- [DL.uncons y] ]
-      sorted = DL.reverse $ DL.sortOn (DL.length) (flattened)
+      sorted = sortOn (Data.Ord.Down . DL.length) flattened
   return $
     if not (null sorted)
-    then pure ((Map.fromList (onlys)) ! (fst $ DL.head sorted))
+    then pure $ Map.fromList onlys ! fst (DL.head sorted)
     else []
 
 asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
-  mutter ("** asPurescript running for gfLang=" <> showLanguage (gfLang env))
-  c' <- join $ combine <$> (namesAndStruct rl) <*> (namesAndQ env rl)
+  let nlgEnvStr = env |> gfLang |> showLanguage
+  mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
+  c' <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
   let guts = [ toTuple ( T.intercalate " / " (mt2text <$> names)
                        , alwaysLabeled (justQuestions hbs (map fixNot tbs)))
              | (names,bs) <- c'
              , Just (hbs, tbs) <- [DL.uncons bs]
              ]
+      nlgEnvStrLower = Char.toLower <$> nlgEnvStr
 
   xpReturn $ show
     [__di|
-      #{pretty $ map Char.toLower $ showLanguage $ gfLang env} :: Object.Object (Item String)
-      #{pretty $ map Char.toLower $ showLanguage $ gfLang env} = Object.fromFoldable
-        #{pretty . TL.unpack . pShowNoColor $ guts}
-      #{pretty $ map Char.toLower $ showLanguage $ gfLang env}Marking :: Marking
-      #{pretty $ map Char.toLower $ showLanguage $ gfLang env}Marking = Marking $ Map.fromFoldable
-        #{pretty . TL.unpack
-                 . TL.replace "False" "false"
-                 . TL.replace "True" "true"
-                 . pShowNoColor $
-                fmap toTuple . Map.toList . AA.getMarking $
+      #{nlgEnvStrLower} :: Object.Object (Item String)
+      #{nlgEnvStrLower} = Object.fromFoldable
+        #{pShowNoColor guts}
+      #{nlgEnvStrLower}Marking :: Marking
+      #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
+        #{TL.replace "False" "false"
+          . TL.replace "True" "true"
+          . pShowNoColor $
+              fmap toTuple . Map.toList . AA.getMarking $
                 getMarkings (l4interpret defaultInterpreterOptions rl)}
     |]
           -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
@@ -181,7 +184,11 @@ translate2PS nlgEnv eng rules = do
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
   -- [TODO] make this work
   -- mutters (concat $ lefts bottomBit) >>
-  xpReturn $ topBit <> "\n\n" <> unlines (rights bottomBit)
+  xpReturn [__i|
+    #{topBit}
+
+    #{unlines $ rights bottomBit}
+  |]
 
 interviewRulesRHS2topBit :: String -> String
 interviewRulesRHS2topBit interviewRulesRHS =

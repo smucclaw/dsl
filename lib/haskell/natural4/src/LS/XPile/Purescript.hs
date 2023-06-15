@@ -142,7 +142,7 @@ asPurescript env rl = do
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
   c' <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
-  mutter $ "*** c'" ++ show c'
+  mutter $ "*** c'\n" ++ show c'
 
   guts <- sequence [
     do

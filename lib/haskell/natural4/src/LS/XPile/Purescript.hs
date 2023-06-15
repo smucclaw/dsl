@@ -64,14 +64,22 @@ namesAndStruct rl = pure
   where
     interp = l4interpret defaultInterpreterOptions rl
 
+-- | for each rule, construct the questions for that rule;
+-- and then jam them together with all the names for all the rules???
 namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env rl = do
-  sequence [ [ (name, q') | q' <- q ]
-           | q <- questStruct ]
+  mutter $ "*** namesAndQ: name = " ++ show name
+  questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
+  let wut = concat [ [ (name, q)
+                     | q' <- q ]
+                   | q <- questStruct ]
+  mutter $ "*** wut the heck are we returning?"
+  mutter (show wut)
+  return wut
   where
     name = map ruleLabelName rl
     alias = listToMaybe [ (you,org) | DefNameAlias you org _ _ <- rl]
-    questStruct = map (ruleQuestions env alias) (expandRulesForNLG env rl) -- [AA.OptionallyLabeledBoolStruct Text.Text]
+    -- [AA.OptionallyLabeledBoolStruct Text.Text]
 
 combine :: [([RuleName], [BoolStructT])]
         -> [([RuleName], [BoolStructT])]

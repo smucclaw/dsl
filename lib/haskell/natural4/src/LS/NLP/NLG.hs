@@ -211,7 +211,10 @@ nlg' thl env rule = case rule of
 -- +-----------------+-----------------------------------------------------+
 
 
-ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions :: NLGEnv
+              -> Maybe (MultiTerm,MultiTerm)
+              -> Rule
+              -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
@@ -228,10 +231,10 @@ ruleQuestions env alias rule = do
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
     where
-      text = pure $ fmap (linBStext env) (concat $ ruleQnTrees env alias rule)
+      text = pure $ fmap (linBStext env) (ruleQnTrees env alias rule)
 
 
-ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [[BoolStructGText]]
+ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [BoolStructGText]
 ruleQnTrees env alias rule = do
   let (youExpr, orgExpr) =
         case alias of
@@ -247,15 +250,15 @@ ruleQnTrees env alias rule = do
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
           qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
-      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+      catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
-      return $ catMaybes bodyTrees
+      catMaybes bodyTrees
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-      return $ catMaybes [qCondTrees]
-    DefNameAlias {} -> pure []
-    _ -> pure []
+      catMaybes [qCondTrees]
+    DefNameAlias {} -> []
+    _ -> []
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)

@@ -24,7 +24,7 @@ import Prettyprinter
 
 
 trees :: NLGEnv -> [Rule] -> [BoolStructGText]
-trees env rl = concat $ concatMap (ruleQnTrees env alias) rl
+trees env rl = concatMap (ruleQnTrees env alias) rl
   where
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
 

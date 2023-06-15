@@ -218,4 +218,5 @@ interviewRulesRHS2topBit interviewRulesRHS =
     interviewRules_nl =
       Map.fromFoldable
         [ ]
+
   |]

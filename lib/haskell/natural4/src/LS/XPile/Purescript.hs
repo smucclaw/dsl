@@ -90,6 +90,7 @@ fixNot (AA.Leaf x) = AA.Leaf x
 fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
 fixNot y = y
 
+-- | this throws away the first argument, in favour of the second. Not sure about this ...
 justQuestions :: BoolStructT -> [BoolStructT] -> BoolStructT
 justQuestions (AA.All Nothing a) q = AA.All Nothing q
 justQuestions (AA.Any Nothing a) q = AA.Any Nothing q
@@ -137,14 +138,31 @@ biggestS env rl = do
 asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
+  let l4i = l4interpret defaultInterpreterOptions rl
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
+
   c' <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
-  let guts = [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                       , alwaysLabeled (justQuestions hbs (map fixNot tbs)))
-             | (names,bs) <- c'
-             , Just (hbs, tbs) <- [DL.uncons bs]
-             ]
-      nlgEnvStrLower = Char.toLower <$> nlgEnvStr
+  mutter $ "c'       = " ++ show c'
+
+  guts <- sequence [
+    do
+      mutter $ "names    = " ++ show ( mt2text <$> names )
+      mutter $ "fixedNot = " ++ show fixedNot
+      mutter $ "jq       = " ++ show jq
+      mutter $ "labeled  = " ++ show labeled
+      xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
+
+    | (names,bs) <- c'
+    , Just (hbs, tbs) <- [DL.uncons bs]
+    , let fixedNot = map fixNot tbs
+          jq       = justQuestions hbs fixedNot
+          labeled  = alwaysLabeled jq
+    ]
+  let nlgEnvStrLower = Char.toLower <$> nlgEnvStr
+      listOfMarkings = Map.toList . AA.getMarking $ getMarkings l4i
+
+  mutter "*** Markings"
+  mutters [ "**** " ++ T.unpack (fst m) ++ "\n" ++ show (snd m) | m <- listOfMarkings]
 
   xpReturn $ show
     [__di|
@@ -156,8 +174,7 @@ asPurescript env rl = do
         #{TL.replace "False" "false"
           . TL.replace "True" "true"
           . pShowNoColor $
-              fmap toTuple . Map.toList . AA.getMarking $
-                getMarkings (l4interpret defaultInterpreterOptions rl)}
+              fmap toTuple listOfMarkings}
     |]
           -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>

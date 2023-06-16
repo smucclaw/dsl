@@ -39,8 +39,6 @@ import LS.NLP.NLG
 import LS.Utils ((|$>))
 import LS.XPile.Logging
 import PGF
-import Prettyprinter
-import Prettyprinter.Interpolate (__di)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | extract the tree-structured rules from Interpreter
@@ -146,8 +144,8 @@ asPurescript env rl = do
              ]
       nlgEnvStrLower = Char.toLower <$> nlgEnvStr
 
-  xpReturn $ show
-    [__di|
+  xpReturn
+    [__i|
       #{nlgEnvStrLower} :: Object.Object (Item String)
       #{nlgEnvStrLower} = Object.fromFoldable
         #{pShowNoColor guts}

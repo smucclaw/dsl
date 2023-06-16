@@ -6,7 +6,7 @@
 
 {-| transpiler to Petri net visualizer -}
 
-module LS.XPile.Petri(module LS.XPile.Petri) where
+module LS.XPile.Petri where
 
 -- import           System.IO.Unsafe (unsafePerformIO)
 

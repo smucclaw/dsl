@@ -1,13 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-{-| example of a simple transpiler
-
--}
-
-{-# LANGUAGE ImportQualifiedPost #-}
+-- | example of a simple transpiler
 
 module LS.XPile.NaturalLanguage where
 

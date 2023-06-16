@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module LS.TypesSpec (spec) where
 
-import Test.Hspec
-import LS.Types
-import Data.List.NonEmpty
 import AnyAll
+import Data.List.NonEmpty
+import LS.Types
+import Test.Hspec
 
 spec :: Spec
 spec = do

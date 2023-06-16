@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {-| transpiler from NaturaL4 to Prolog. This module useful as a point of
@@ -10,13 +11,13 @@ For more information see also `RelationalPredicates`.
 
 module LS.XPile.Prolog where
 
+import AnyAll
+import Data.List.NonEmpty as NE
+import Data.Map qualified as Map
+import Data.Text qualified as Text
+import Data.Tree
 import LS as SFL4
 import Language.Prolog
-import qualified Data.Text as Text
-import qualified Data.Map as Map
-import Data.List.NonEmpty as NE
-import AnyAll
-import Data.Tree
 
 prologExamples :: [Clause]
 prologExamples =

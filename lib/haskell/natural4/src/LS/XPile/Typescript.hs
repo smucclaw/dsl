@@ -1,6 +1,5 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
 
 {-| transpiler to Typescript -}
 
@@ -12,26 +11,27 @@ module LS.XPile.Typescript where
 -- not suitable because L4 allows users to define their own types which are not known to Haskell's type system.
 
 -- import Debug.Trace
-import Prettyprinter
 
 -- import AnyAll
-import LS.PrettyPrinter 
+
 -- import L4.Syntax as CoreL4
 
-import LS.Types as SFL4
-import LS.Rule as SFL4R
 -- import L4.Annotation
-import LS.Interpreter
 
 -- import Data.Functor ( (<&>) )
 
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
 -- import qualified Data.Text as T
 -- import Data.Maybe (catMaybes, fromMaybe, isJust)
 -- import qualified Data.List.NonEmpty as NE
-import Data.List (nub, intercalate)
+import Data.List (intercalate, nub)
 import Data.Maybe (isJust)
-import qualified Data.Tree as DT
+import Data.Tree qualified as DT
+import LS.Interpreter
+import LS.PrettyPrinter
+import LS.Rule as SFL4R
+import LS.Types as SFL4
+import Prettyprinter
 
 asTypescript :: [SFL4R.Rule] -> Doc ann
 asTypescript rs =

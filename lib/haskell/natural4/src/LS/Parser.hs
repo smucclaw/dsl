@@ -1,7 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-|
@@ -15,11 +14,11 @@ module LS.Parser where
 import LS.Types
 import LS.Rule
 import LS.Tokens
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 
 import Control.Monad.Combinators.Expr
 import Text.Megaparsec
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.List.NonEmpty (NonEmpty ((:|)))
 
 data MyItem lbl a =

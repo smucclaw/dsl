@@ -91,12 +91,12 @@ main = do
   -- Bits that have to do with natural language processing and generation
   nlgLangs <- unsafeInterleaveIO allLangs
   strLangs <- unsafeInterleaveIO $ printLangs allLangs
-  (engE,engErr) <- xpLog <$> (pure (mutter "* calling langEng") *> langEng)
+  (engE,engErr) <- xpLog <$> langEng
   -- [NOTE] the Production Haskell book gives better ways to integrate Logging with IO
   case engE of
     Left err -> putStrLn $ unlines $ "natural4: encountered error when obtaining langEng" : err
     Right eng -> do
-      (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> (pure (mutter "* making nlgEnv") >> myNLGEnv l4i eng) -- Only load the NLG environment if we need it.
+      (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
       (allNLGEnv, allNLGEnvErr) <- unsafeInterleaveIO $ do
         xps <- mapM (myNLGEnv l4i) nlgLangs
         return (xpLog $ sequence xps)

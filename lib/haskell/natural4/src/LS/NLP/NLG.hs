@@ -48,23 +48,27 @@ langEng :: IO (XPileLogE Language)
 langEng = do
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  pure $ getLang "NL4Eng" gr
+  pure $ do
+    mutter "*** langEng reading NL4.pgf, calling getLang NL4Eng"
+    getLang "NL4Eng" gr
 
 printLangs :: IO [Language] -> IO String
 printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
 getLang :: String -> PGF -> XPileLogE Language
-getLang str gr = case (readLanguage str, languages gr) of
-  (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
-    -> if l `elem` langs
-         then xpReturn l
-              -- Expected case: language looks valid and is in grammar
-         else xpError [fallbackMsg $ show l']
-              -- Language is valid but not in grammar, warn and fall back to another language
-  (Nothing, l':_) -- Language not valid, warn and fall back to another language
-    -> xpError [fallbackMsg $ show l']
-  (_, []) -- The PGF has no languages, truly unexpected and fatal
-    -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
+getLang str gr = do
+  mutter $ "*** getLang " ++ str
+  case (readLanguage str, languages gr) of
+    (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
+      -> if l `elem` langs
+           then xpReturn l
+                -- Expected case: language looks valid and is in grammar
+           else xpError [fallbackMsg $ show l']
+                -- Language is valid but not in grammar, warn and fall back to another language
+    (Nothing, l':_) -- Language not valid, warn and fall back to another language
+      -> xpError [fallbackMsg $ show l']
+    (_, []) -- The PGF has no languages, truly unexpected and fatal
+      -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
   where
     fallbackMsg fblang = unwords ["language", str, "not found, falling back to", fblang]
 
@@ -76,11 +80,13 @@ myNLGEnv l4i lang = do
   gr <- readPGF grammarFile
   (eng, engErr) <- xpLog <$> langEng
   case eng of
-    Left  engL -> return $ mutters engErr >> xpError engL
+    Left  engL -> return $ mutter "** myNLGEnv" >> mutters engErr >> xpError engL
     Right engR -> do
       let myParse typ txt = parse gr engR typ (Text.unpack txt)
           myLin = rmBIND . Text.pack . linearize gr lang
-      return $ xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
+      return $ do
+        mutter "** myNLGEnv"
+        xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""

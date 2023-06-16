@@ -8,15 +8,38 @@ to Prolog.
 For more information see also `RelationalPredicates`.
 -}
 
-module LS.XPile.Prolog where
+module LS.XPile.Prolog
+  ( sfl4ToProlog,
+    bsp2struct,
+    vart,
+  )
+where
 
-import LS as SFL4
-import Language.Prolog
+import LS.Rule as SFL4
+    ( Rule(Hornlike, TypeDecl, name, clauses, enums, has, super) )
+import LS.Types as SFL4
+    ( mt2text,
+      mtexpr2text,
+      pt2text,
+      rel2txt,
+      untypePT,
+      BoolStructP,
+      BoolStructR,
+      EntityType,
+      HornClause(hBody, hHead),
+      HornClause2,
+      MTExpr(..),
+      ParamText,
+      ParamType(TList1, TOne, TOptional, TList0),
+      RPRel,
+      RelationalPredicate(..),
+      TypeSig(..) )
+import Language.Prolog ( Term(Struct), Clause(Clause), var )
 import qualified Data.Text as Text
 import qualified Data.Map as Map
-import Data.List.NonEmpty as NE
-import AnyAll
-import Data.Tree
+import Data.List.NonEmpty as NE ( NonEmpty(..), toList )
+import AnyAll ( BoolStruct(Any, Leaf, Not, All) )
+import Data.Tree ()
 
 prologExamples :: [Clause]
 prologExamples =

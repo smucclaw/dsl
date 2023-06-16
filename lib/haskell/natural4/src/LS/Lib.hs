@@ -19,7 +19,23 @@ Parser functions not organized into their own separate modules elsewhere.
 This includes some top-leve parsers like pRules and pBoolStruct.
 -}
 
-module LS.Lib where
+module LS.Lib
+  ( NoLabel (..),
+    Opts (..),
+    getConfig,
+    dumpRules,
+    pToplevel,
+    pScenarioRule,
+    pExpect,
+    pGivens,
+    pRules,
+    pTypeDeclaration,
+    exampleStream,
+    exampleStreams,
+    exprP,
+    pDoAction
+  )
+where
 
 -- import qualified Data.Tree      as Tree
 -- import Data.Text.Encoding (decodeUtf8)
@@ -28,8 +44,8 @@ import qualified AnyAll as AA
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
 
-import Control.Monad.Combinators.Expr
-import Control.Monad.Writer.Lazy
+import Control.Monad.Combinators.Expr (makeExprParser)
+import Control.Monad.Writer.Lazy (MonadIO, join, when)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.Csv as Cassava
@@ -45,15 +61,141 @@ import qualified Data.Vector as V
 import Data.Void (Void)
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
-    ( binary,
-      expr,
-      prefix,
-      MyBoolStruct,
-      MyItem(MyLabel, MyAll, MyLeaf, MyAny, MyNot) )
+  ( MyBoolStruct,
+    MyItem (MyAll, MyAny, MyLabel, MyLeaf, MyNot),
+    binary,
+    expr,
+    prefix,
+  )
 import LS.RelationalPredicates
+  ( addneg,
+    c2hornlike,
+    mergePBRS,
+    pBSR,
+    pBoolConnector,
+    pConstitutiveRule,
+    pHornlike,
+    pHornlike',
+    pKeyValuesAka,
+    pNameParens,
+    pOneOf,
+    pParamText,
+    pParamTextMustIndent,
+    pRelationalPredicate,
+    preambleBoolStructR,
+    preambleParamText,
+    rpSameNextLineWhen,
+    slKeyValuesAka,
+    whenCase,
+  )
 import LS.Rule
+  ( Expect (ExpRP),
+    Parser,
+    Rule
+      ( Constitutive,
+        Hornlike,
+        NotARule,
+        RegBreach,
+        RegFulfilled,
+        Regulative,
+        RuleAlias,
+        RuleGroup,
+        Scenario,
+        TypeDecl,
+        action,
+        clauses,
+        cond,
+        defaults,
+        deontic,
+        enums,
+        expect,
+        given,
+        giveth,
+        has,
+        having,
+        hence,
+        keyword,
+        lest,
+        letbind,
+        lsource,
+        name,
+        rkeyword,
+        rlabel,
+        scgiven,
+        srcref,
+        subj,
+        super,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    RuleBody (..),
+    defaultHorn,
+    pXLocation,
+    pYLocation,
+    runMyParser,
+  )
 import LS.Tokens
+  ( IsParser (debugName),
+    asks,
+    dnl,
+    getTokenNonDeep,
+    liftSLOptional,
+    manyDeep,
+    manyIndentation,
+    myTraceM,
+    pDeontic,
+    pMTExpr,
+    pNumber,
+    pOtherVal,
+    pRuleLabel,
+    pToken,
+    pTokenish,
+    pretendEmpty,
+    sameDepth,
+    someDeep,
+    someIndentation,
+    tellIdFirst,
+    ($>|),
+    (|&|),
+    (|*|),
+    (|><),
+    (|>|),
+  )
 import LS.Types
+    ( renderToken,
+      toToken,
+      MyStream(MyStream, unMyStream),
+      MyToken(When, EOF, GoDeeper, UnDeeper, SOF, EOL, Empty, TokTrue,
+              TokFalse, Semicolon, Declare, Has, Define, ScenarioTok, Expect,
+              Fulfilled, Breach, Who, Which, Whose, Hence, Lest, Goto,
+              Eventually, Before, After, By, On, Do, If, Upon, Given, Having,
+              Where, Unless, And, Or, MPNot),
+      RawStanza,
+      WithPos(..),
+      mkTC,
+      mt2pt,
+      multiterm2pt,
+      noLSource,
+      noLabel,
+      noSrcRef,
+      BoolStructP,
+      BoolStructR,
+      Deontic,
+      HornClause(HC, hHead, hBody),
+      HornClause2,
+      MultiTerm,
+      ParamText,
+      Preamble,
+      RPRel(RPis),
+      RegKeywords(..),
+      RelationalPredicate(RPBoolStructR, RPParamText),
+      RunConfig(..),
+      SrcRef(SrcRef),
+      TComparison(TVague),
+      TemporalConstraint(..) )
 import Options.Generic
     ( Generic,
       type (:::),

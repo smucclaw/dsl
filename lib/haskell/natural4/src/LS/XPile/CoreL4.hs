@@ -194,7 +194,7 @@ import LS.XPile.CoreL4.LogicProgram
     LogicProgram,
     babyL4ToLogicProgram,
   )
-import LS.XPile.Logging
+import LS.XPile.Logging ( xpReturn, XPileLogE )
 import Prettyprinter
   ( Doc,
     Pretty (pretty),

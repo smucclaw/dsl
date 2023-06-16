@@ -2,21 +2,39 @@
 
 {-| transpiler to Uppaal, work in progress. -}
 
-module LS.XPile.Uppaal where
+module LS.XPile.Uppaal
+  ( toL4TA,
+    taSysToString
+  )
+where
 
 
 import L4.Syntax as CoreL4
-
 import LS.Types as SFL4
+    ( mt2text,
+      pt2text,
+      rp2text,
+      BoolStructP,
+      BoolStructR,
+      ParamText,
+      RelationalPredicate,
+      TComparison(TOn, TBefore, TAfter, TBy),
+      TemporalConstraint(TemporalConstraint) )
 import LS.Rule as SFL4R
+    ( Rule(RuleAlias, Regulative, cond, hence, rlabel, temporal, upon),
+      RuleLabel )
 import qualified Data.Set as Set
 -- import L4.Annotation
 import Data.Text (unpack)
 import qualified Data.Text as TL
 import qualified AnyAll as AA
 import L4.PrintProg
+    ( PrintConfig(PrintSystem),
+      PrintSystem(UppaalStyle),
+      ShowL4(showL4) )
 -- import qualified Data.ByteString.Char8 as T
 import L4.SyntaxManipulation
+    ( conjsExpr, disjsExpr, fv, mkVarE, notExpr )
 import Data.Maybe (fromMaybe)
 
 type Ann = ()

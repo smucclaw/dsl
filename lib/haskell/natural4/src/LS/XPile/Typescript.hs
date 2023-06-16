@@ -13,15 +13,31 @@ module LS.XPile.Typescript where
 
 -- import Debug.Trace
 import Prettyprinter
+    ( Doc,
+      comma,
+      (<+>),
+      encloseSep,
+      hang,
+      indent,
+      line,
+      list,
+      nest,
+      viaShow,
+      vsep,
+      colon,
+      dquotes,
+      equals,
+      lbrace,
+      rbrace,
+      semi,
+      space,
+      Pretty(pretty) )
 
 -- import AnyAll
-import LS.PrettyPrinter 
+
 -- import L4.Syntax as CoreL4
 
-import LS.Types as SFL4
-import LS.Rule as SFL4R
 -- import L4.Annotation
-import LS.Interpreter
 
 -- import Data.Functor ( (<&>) )
 
@@ -29,9 +45,49 @@ import qualified Data.HashMap.Strict as Map
 -- import qualified Data.Text as T
 -- import Data.Maybe (catMaybes, fromMaybe, isJust)
 -- import qualified Data.List.NonEmpty as NE
-import Data.List (nub, intercalate)
+import Data.List (intercalate, nub)
 import Data.Maybe (isJust)
 import qualified Data.Tree as DT
+import LS.Interpreter
+  ( attrType,
+    getCTkeys,
+    globalFacts,
+    l4interpret,
+    topsortedClasses,
+  )
+import LS.PrettyPrinter
+  ( ParamText4 (PT4, PT5),
+    prettyMaybeType,
+    prettySimpleType,
+    snake_case,
+    snake_inner,
+    vvsep,
+    (<//>),
+    (</>),
+  )
+import LS.Rule as SFL4R
+  ( Interpreted (classtable, scopetable),
+    Rule,
+  )
+import LS.Types as SFL4
+  ( ClsTab (CT),
+    HornClause (HC, hHead),
+    HornClause2,
+    MTExpr (MTT),
+    ParamText,
+    ParamType (TOne, TOptional),
+    RelationalPredicate
+      ( RPBoolStructR,
+        RPConstraint,
+        RPMT,
+        RPParamText,
+        RPnary
+      ),
+    TypeSig (SimpleType),
+    clsParent,
+    defaultInterpreterOptions,
+    getSymType,
+  )
 
 asTypescript :: [SFL4R.Rule] -> Doc ann
 asTypescript rs =

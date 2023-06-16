@@ -13,24 +13,101 @@ This module also provides a family of SLParser combinators ("Same Line").
 
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
-import qualified Data.Set           as Set
-import qualified Data.Text as Text
-import Text.Megaparsec
-import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT), MonadReader)
+import Control.Applicative (Alternative, liftA2)
+import Control.Monad.Reader
+  (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
 import Control.Monad.Writer.Lazy
+  ( MonadPlus,
+    MonadTrans (lift),
+    Sum (..),
+    WriterT (..),
+    censor,
+    mapWriterT,
+    replicateM_,
+    when,
+  )
+import Data.Functor.Identity (Identity)
 import Data.List (intercalate)
-
-import LS.Types
-import LS.Rule
-import Debug.Trace (traceM)
-import Control.Applicative (liftA2, Alternative)
-import Data.Void (Void)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (isNothing)
+import qualified Data.Set as Set
+import qualified Data.Text as Text
+import Data.Void (Void)
+import Debug.Trace (traceM)
+import LS.Error (onelineErrorMsg)
+import LS.Rule
+  ( Parser,
+    Rule,
+    RuleLabel,
+    pGetTokenPos,
+    pTokenMatch,
+    pXLocation,
+    pYLocation,
+    whenDebug,
+  )
+import LS.Types
+  ( DList,
+    Deontic (..),
+    HasToken (..),
+    MTExpr (..),
+    MultiTerm,
+    MyStream (MyStream, unMyStream),
+    MyToken
+      ( A_An,
+        EOL,
+        GoDeeper,
+        Is,
+        May,
+        Must,
+        Other,
+        RuleMarker,
+        Shant,
+        TNumber,
+        TokEQ,
+        TokFalse,
+        TokGT,
+        TokGTE,
+        TokIn,
+        TokLT,
+        TokLTE,
+        TokNotIn,
+        TokTrue,
+        UnDeeper
+      ),
+    RunConfig (debug, parseCallStack, sourceURL),
+    SrcRef (SrcRef),
+    WithPos (WithPos, pos, tokenVal),
+    increaseNestLevel,
+    nestLevel,
+    singeltonDL,
+  )
+import Text.Megaparsec
+  ( MonadParsec
+      ( eof,
+        lookAhead,
+        notFollowedBy,
+        token,
+        try,
+        updateParserState
+      ),
+    ParseError,
+    Parsec,
+    ParsecT,
+    SourcePos (sourceColumn, sourceLine),
+    State (State, stateInput),
+    Stream,
+    between,
+    choice,
+    count,
+    many,
+    optional,
+    some,
+    unPos,
+    (<?>),
+    (<|>),
+  )
 import Text.Megaparsec.Debug (dbg)
 import qualified Text.Megaparsec.Internal as MPInternal
-import Data.List.NonEmpty (NonEmpty)
-import Data.Functor.Identity (Identity)
-import LS.Error (onelineErrorMsg)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken

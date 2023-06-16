@@ -13,15 +13,15 @@ explanation.
 
 -}
 
-module LS.Verdict where
+module LS.Verdict
+  ()
+where
 
-import           LS.Interpreter
-import           LS.Rule
-
-import qualified AnyAll                 as AA
-
-import           Explainable
-import           Explainable.MathLang
+import qualified AnyAll as AA
+import Explainable ()
+import Explainable.MathLang ()
+import LS.Interpreter ()
+import LS.Rule (Interpreted)
 
 -- | User input takes the form of a Marking -- see AnyAll for more on what that means.
 type RuntimeInput = AA.TextMarking

@@ -1,7 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GHC2021 #-}
 
 {-| transpiler to SVG visualization of the AnyAll and/or trees.
 
@@ -11,16 +8,15 @@ Largely a wrapper. Most of the functionality is in the anyall lib.
 
 module LS.XPile.GFTrees where
 
-import LS
-import LS.NLP.NLG
-import LS.NLP.NL4Transformations
-
-import qualified Data.Text as T
-import qualified AnyAll as AA
-import qualified Data.Map as Map
-import Data.Maybe (listToMaybe, catMaybes, mapMaybe)
+import AnyAll qualified as AA
+import Data.Map qualified as Map
+import Data.Maybe (catMaybes, listToMaybe, mapMaybe)
+import Data.Text qualified as T
+import LS.NLP.NL4Transformations (BoolStructGText)
+import LS.NLP.NLG (NLGEnv, ruleQnTrees)
+import LS.Rule (Rule (DefNameAlias))
+import Prettyprinter (Pretty (pretty))
 import Text.Pretty.Simple (pShowNoColor)
-import Prettyprinter
 
 
 trees :: NLGEnv -> [Rule] -> [BoolStructGText]

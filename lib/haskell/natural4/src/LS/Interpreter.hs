@@ -16,26 +16,88 @@ Typical usage: an XPile module is handed the output of `l4interpret`, and  makes
 module LS.Interpreter where
 
 import LS.Types
+    ( MyToken(Define, Means, Decide, Is),
+      bsp2text,
+      clsParent,
+      getSymType,
+      getUnderlyingType,
+      mt2text,
+      pt2multiterm,
+      rel2txt,
+      rp2bodytexts,
+      rp2text,
+      thisAttributes,
+      unCT,
+      BoolStructR,
+      BoolStructT,
+      ClsTab(..),
+      EntityType,
+      HornClause(HC, hBody, hHead),
+      HornClause2,
+      Inferrable,
+      InterpreterOptions,
+      MTExpr(MTT, MTB, MTF),
+      MultiTerm,
+      ParamText,
+      RPRel(RPis),
+      RelationalPredicate(..),
+      RuleName,
+      ScopeTabs,
+      SymTab,
+      TypeSig,
+      TypedClass,
+      TypedMulti )
 import LS.Rule
+    ( getDecisionHeads,
+      getRlabel,
+      hasClauses,
+      hasGiven,
+      hasGiveth,
+      rl2text,
+      ruleLabelName,
+      ruleName,
+      Interpreted(..),
+      Rule(TypeDecl, Regulative, RuleAlias, DefTypically, Hornlike, has,
+           clauses, symtab, wwhere, having, upon, lsource, rlabel, lest,
+           hence, temporal, action, deontic, cond, who, rkeyword, subj,
+           srcref, defaults, given, giveth, keyword, name, super) )
 import LS.RelationalPredicates
-import LS.PrettyPrinter
+    ( aaLeaves, getBSR, partitionExistentials )
+import LS.PrettyPrinter ( (</>), tildes, vvsep )
 import qualified AnyAll as AA
-import Data.List.NonEmpty as NE
+import Data.List.NonEmpty as NE ( fromList, singleton, toList )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.HashMap.Strict as Map
 import Prettyprinter
-import Text.Pretty.Simple
-import Debug.Trace
+    ( Doc, (<+>), emptyDoc, hsep, viaShow, vsep, Pretty(pretty) )
+import Text.Pretty.Simple ( pShowNoColor )
+import Debug.Trace ( trace )
 import Control.Monad (guard)
 import Data.Maybe
+    ( catMaybes,
+      fromJust,
+      fromMaybe,
+      isJust,
+      listToMaybe,
+      mapMaybe,
+      maybeToList )
 import Data.Graph.Inductive
+    ( Gr,
+      LEdge,
+      delEdge,
+      indeg,
+      lab,
+      nodes,
+      prettify,
+      topsort,
+      Graph(mkGraph) )
 import Data.Tuple (swap)
 import Data.List (find)
 import qualified Data.List as DL
 import Data.Bifunctor (first)
 import Data.HashMap.Strict ((!))
-import Data.Tree
+import Data.Tree ( Tree(Node) )
 import Control.Applicative ((<|>))
 
 -- | interpret the parsed rules based on some configuration options.

@@ -1,10 +1,9 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
@@ -18,7 +17,7 @@ where
 
 import AnyAll (mkLeaf)
 import qualified AnyAll as AA
-import Control.Monad
+import Control.Monad ()
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
@@ -35,7 +34,7 @@ import qualified Data.Tree as Tree
 import Data.Void (Void)
 import GHC.Generics (Generic)
 import LS.BasicTypes
-import Text.Megaparsec
+import Text.Megaparsec ( Parsec )
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value

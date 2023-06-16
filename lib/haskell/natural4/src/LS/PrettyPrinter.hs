@@ -7,20 +7,73 @@ This is similar to instantiating into Show, but it all happens within Prettyprin
 The pretty-printing then gets used by the transpilers.
 -}
 
-module LS.PrettyPrinter where
+module LS.PrettyPrinter
+  ( (</>),
+    (<//>),
+    tildes,
+    vvsep,
+    ParamText3 (..),
+    ParamText4 (..),
+    RP1 (..),
+    commentWith,
+    inPredicateForm,
+    myrender,
+    prettySimpleType,
+    snake_case,
+    snake_inner,
+    untaint,
+    prettyMaybeType
+  )
+where
 
 import qualified Data.Traversable as DT
 import qualified Data.Foldable as DF
 import qualified Data.Text as T
 import LS.Types
-import LS.Rule
+    ( mtexpr2text,
+      pt2text,
+      rel2op,
+      rel2txt,
+      ClsTab(CT),
+      MTExpr(..),
+      MultiTerm,
+      ParamText,
+      ParamType(TList1, TOne, TOptional, TList0),
+      RPRel(RPhas, RPis),
+      RelationalPredicate(..),
+      TypeSig(..),
+      TypedMulti )
+import LS.Rule ( Interpreted(scopetable, classtable) )
 import qualified AnyAll as AA
 import Prettyprinter
+    ( Doc,
+      comma,
+      layoutPretty,
+      (<+>),
+      defaultLayoutOptions,
+      encloseSep,
+      hcat,
+      hsep,
+      line,
+      nest,
+      viaShow,
+      vsep,
+      brackets,
+      colon,
+      dquotes,
+      equals,
+      lbrace,
+      parens,
+      rbrace,
+      squotes,
+      LayoutOptions(layoutPageWidth),
+      PageWidth(Unbounded),
+      Pretty(pretty) )
 import Data.List (intersperse)
 -- import qualified Data.Map as Map
 import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
-import Debug.Trace
-import Prettyprinter.Render.Text
+import Debug.Trace ( trace )
+import Prettyprinter.Render.Text ( renderStrict )
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where

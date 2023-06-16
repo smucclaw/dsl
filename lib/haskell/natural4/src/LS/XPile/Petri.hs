@@ -6,7 +6,11 @@
 
 {-| transpiler to Petri net visualizer -}
 
-module LS.XPile.Petri(module LS.XPile.Petri) where
+module LS.XPile.Petri
+  ( toPetri,
+    (|>)
+  )
+where
 
 import qualified Data.Text     as Text
 import           Data.Text              (Text)
@@ -17,11 +21,41 @@ import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, 
 import           Control.Monad (forM_, when)
 import           Data.List (nub)
 import           Control.Monad.State.Strict (State, MonadState (get, put), runState, gets)
-import           Control.Applicative.Combinators
+import Control.Applicative.Combinators ( (<|>) )
 
 import Data.GraphViz
+    ( Attributes,
+      LNodeCluster,
+      GraphID(Str),
+      Attribute,
+      GlobalAttributes(GraphAttrs, NodeAttrs),
+      DotGraph,
+      GraphvizParams(..),
+      graphToDot,
+      color,
+      fillColor,
+      fontColor,
+      shape,
+      toLabel,
+      NodeCluster(N, C),
+      X11Color(Green, Black, White, Brown),
+      RankType(SameRank),
+      Shape(DiamondShape, Circle, BoxShape),
+      PrintDot(unqtDot) )
 import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.PatriciaTree
+    ( delEdge,
+      delNode,
+      insEdge,
+      insNode,
+      lab,
+      labfilter,
+      nodes,
+      pre,
+      suc,
+      Context,
+      Graph(nodeRange, mkGraph),
+      Node )
+import Data.Graph.Inductive.PatriciaTree ( Gr )
 import Data.GraphViz.Printing (renderDot)
 import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment, Rank, TailPort)
                                          , StyleItem(..), StyleName(..)
@@ -30,7 +64,26 @@ import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Com
 
 
 import LS
-import AnyAll as AA
+    ( bsr2textnl,
+      mt2text,
+      mtexpr2text,
+      pt2text,
+      tc2nl,
+      BoolStructP,
+      Deontic(DShant, DMust, DMay),
+      HasToken(tokenOf),
+      NatLang(..),
+      ParamText,
+      RegKeywords(REvery),
+      rl2text,
+      Rule(RegFulfilled, RegBreach, RuleAlias, Regulative, subj, symtab,
+           defaults, wwhere, having, given, upon, srcref, lsource, rlabel,
+           lest, hence, temporal, action, deontic, cond, who, rkeyword),
+      expandRule,
+      getRuleByLabel,
+      RuleSet,
+      myTraceM )
+import AnyAll as AA ( BoolStruct(Leaf, All) )
 
 
 --------------------------------------------------------------------------------

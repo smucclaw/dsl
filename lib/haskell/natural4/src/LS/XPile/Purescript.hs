@@ -1,3 +1,4 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MonadComprehensions, ParallelListComp #-}
@@ -12,35 +13,46 @@ Largely a wrapper. Most of the functionality is in the anyall lib.
 
 -}
 
-module LS.XPile.Purescript where
+module LS.XPile.Purescript
+  ( translate2PS,
+  )
+where
 
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
 import Control.Applicative (liftA2)
 import Control.Monad (guard, join, liftM, unless, when)
 import Data.Bifunctor (second)
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Either (lefts, rights)
 import Data.HashMap.Strict ((!))
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
-import qualified Data.List as DL
+import Data.List qualified as DL
 import Data.List.Split (chunk)
 import Data.Maybe (listToMaybe)
-import qualified Data.Ord
+import Data.Ord qualified
 import Data.String.Interpolate (i, __i)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
 import Flow ((|>))
-import LS
-import LS.Interpreter
+import LS.Interpreter (getMarkings, l4interpret, qaHornsT)
 import LS.NLP.NL4Transformations
 import LS.NLP.NLG
+  ( NLGEnv (gfLang),
+    expandRulesForNLG,
+    ruleQuestions,
+  )
+import LS.Rule (Rule (DefNameAlias), ruleLabelName)
+import LS.Types
+  ( BoolStructT,
+    RuleName,
+    defaultInterpreterOptions,
+    mt2text,
+  )
 import LS.Utils ((|$>))
-import LS.XPile.Logging
-import PGF
-import Prettyprinter
-import Prettyprinter.Interpolate (__di)
+import LS.XPile.Logging (XPileLog, XPileLogE, mutter, xpReturn)
+import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | extract the tree-structured rules from Interpreter
@@ -146,8 +158,8 @@ asPurescript env rl = do
              ]
       nlgEnvStrLower = Char.toLower <$> nlgEnvStr
 
-  xpReturn $ show
-    [__di|
+  xpReturn
+    [__i|
       #{nlgEnvStrLower} :: Object.Object (Item String)
       #{nlgEnvStrLower} = Object.fromFoldable
         #{pShowNoColor guts}

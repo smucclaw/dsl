@@ -3,18 +3,27 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module LS.XPile.Markdown where
+module LS.XPile.Markdown
+  ( bsMarkdown
+  )
+where
 
-import LS
+import LS.RelationalPredicates ( getBSR )
+import LS.Rule ( Rule )
 import LS.Types
-import LS.NLP.NLG
+    ( mt2text,
+      pt2multiterm,
+      BoolStructR,
+      MultiTerm,
+      RelationalPredicate(..) )
+import LS.NLP.NLG ( nlg, NLGEnv )
 import qualified AnyAll as AA
 import qualified Data.Map as Map
 import qualified Data.Text as Text
 import Control.Monad (liftM2)
 
 import qualified Data.ByteString.Lazy.Char8 as ByteString
-import Paths_natural4
+import Paths_natural4 ()
 
 -- import Debug.Trace (trace)
 

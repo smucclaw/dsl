@@ -7,13 +7,16 @@
 
 -}
 
-module LS.XPile.NaturalLanguage where
+module LS.XPile.NaturalLanguage
+  ( toNatLang
+  )
+where
 
-import LS
-import AnyAll as AA
+import LS.Interpreter ( qaHornsT )
+import AnyAll as AA ()
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import LS.Rule
+import LS.Rule ( Interpreted )
 -- import Debug.Trace (trace)
 
 toNatLang :: Interpreted -> String

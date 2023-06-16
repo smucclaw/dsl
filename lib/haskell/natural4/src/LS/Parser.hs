@@ -1,7 +1,6 @@
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-|
@@ -12,15 +11,70 @@ This module imports Control.Monad.Combinators.Expr which is the basis for the Bo
 -}
 module LS.Parser where
 
-import LS.Types
-import LS.Rule
-import LS.Tokens
-import qualified AnyAll as AA
-
+import AnyAll qualified as AA
 import Control.Monad.Combinators.Expr
-import Text.Megaparsec
-import qualified Data.Text as Text
+  ( Operator (InfixR, Postfix, Prefix),
+    makeExprParser,
+  )
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Text qualified as Text
+import LS.Rule (Parser)
+import LS.Tokens
+  ( IsParser (debugName, debugPrint),
+    SLParser,
+    dnl,
+    godeeper,
+    liftSL,
+    manyDeep,
+    mkSL,
+    pMTExpr,
+    pOtherVal,
+    pToken,
+    pTokenOneOf,
+    runSL,
+    slMultiTerm,
+    someIndentation,
+    someLiftSL,
+    undeepers,
+    ($*|),
+    (+>|),
+    (->|),
+    (/+=),
+    (|*|),
+    (|--),
+    (|-|),
+    (|<$),
+    (|<*),
+    (|<|),
+    (|><),
+    (|>>),
+  )
+import LS.Types
+  ( BoolStructT,
+    MTExpr (MTT),
+    MultiTerm,
+    MyToken
+      ( And,
+        GoDeeper,
+        MPNot,
+        Or,
+        SetLess,
+        SetPlus,
+        Typically,
+        UnDeeper,
+        Unless
+      ),
+    PrependHead,
+    mt2text,
+  )
+import Text.Megaparsec
+  ( MonadParsec (lookAhead, notFollowedBy, try),
+    choice,
+    manyTill,
+    some,
+    (<?>),
+    (<|>),
+  )
 
 data MyItem lbl a =
     MyLeaf                a

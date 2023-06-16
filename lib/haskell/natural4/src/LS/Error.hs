@@ -14,24 +14,44 @@ Show parser errors with more helpful context.
 
 module LS.Error where
 
+import Control.Arrow ((>>>))
+import Data.Function ((&))
 import qualified Data.List.NonEmpty as NE
-import Data.Proxy
-import Text.Megaparsec.Pos
-import Text.Megaparsec
-
-import qualified Text.PrettyPrint.Boxes as Box
-import           Text.PrettyPrint.Boxes hiding ((<>))
-import Data.Function
-
-import LS.BasicTypes (MyStream (unMyStream, MyStream) , myStreamInput, MyToken (Other), WithPos (tokenVal, pos), renderToken)
-import Data.Vector (imap, foldl1')
+import Data.Proxy (Proxy (..))
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LT
-import Control.Arrow ((>>>))
-import Data.Void (Void)
-import qualified Data.Set as Set
+import Data.Vector (foldl1', imap)
 import qualified Data.Vector as V
+import Data.Void (Void)
+import LS.BasicTypes
+  ( MyStream (MyStream, unMyStream),
+    MyToken (Other),
+    WithPos (pos, tokenVal),
+    myStreamInput,
+    renderToken
+  )
+import Text.Megaparsec
+  ( ErrorFancy (..),
+    ErrorItem (..),
+    ParseError (..),
+    ParseErrorBundle (..),
+    PosState (pstateInput, pstateSourcePos),
+    ShowErrorComponent (..),
+    Stream (Token),
+    TraversableStream (reachOffset),
+    VisualStream (..),
+    errorOffset,
+    parseErrorTextPretty,
+  )
+import Text.Megaparsec.Pos
+  ( SourcePos (sourceColumn, sourceLine),
+    sourcePosPretty,
+    unPos,
+  )
 import Text.Pretty.Simple (pStringNoColor)
+import Text.PrettyPrint.Boxes (hsep, vcat)
+import qualified Text.PrettyPrint.Boxes as Box
 
 -- custom version of https://hackage.haskell.org/package/megaparsec-9.2.0/docs/src/Text.Megaparsec.Error.html#errorBundlePretty
 errorBundlePrettyCustom ::

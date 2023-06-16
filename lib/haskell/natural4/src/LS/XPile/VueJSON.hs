@@ -5,23 +5,94 @@
 
 -- [TODO] refactor and rename this module so that we distinguish Purescript from JSON.
 
-module LS.XPile.VueJSON where
+module LS.XPile.VueJSON
+  ( checklist,
+    groundrules,
+    itemRPToItemJSON,
+    toVueRules,
+  )
+where
 
-import LS
-import LS.NLP.NLG
-import AnyAll.Types
 import AnyAll.BoolStruct
-
-import LS.XPile.Logging
-
-import Data.Maybe (maybeToList)
-import Data.List (nub, groupBy)
-import qualified Data.Text as Text
+  ( BoolStruct (All, Any, Leaf, Not),
+    BoolStructLT,
+    mkAll,
+    mkAny,
+    mkLeaf,
+    mkNot,
+  )
+import AnyAll.Types (Label (Pre, PrePost))
+import Data.List (groupBy, nub)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 import qualified Data.Map as Map
+import Data.Maybe (maybeToList)
 import qualified Data.Text as T
-
+import qualified Data.Text as Text
+import LS.NLP.NLG (NLGEnv, nlgQuestion)
+import LS.RelationalPredicates (aaLeavesFilter)
+import LS.Rule
+  ( Rule
+      ( Constitutive,
+        DefNameAlias,
+        DefTypically,
+        Hornlike,
+        NotARule,
+        RegBreach,
+        RegFulfilled,
+        Regulative,
+        RuleAlias,
+        RuleGroup,
+        Scenario,
+        TypeDecl,
+        action,
+        clauses,
+        cond,
+        defaults,
+        deontic,
+        given,
+        giveth,
+        having,
+        hence,
+        keyword,
+        lest,
+        lsource,
+        name,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        super,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    ruleLabelName,
+    ruleName,
+  )
+import LS.Types
+  ( BoolStructR,
+    HornClause (HC, hBody, hHead),
+    MTExpr (MTT),
+    MultiTerm,
+    ParamText,
+    RelationalPredicate (..),
+    RuleName,
+    RunConfig (extendedGrounds, toVue),
+    bsp2text,
+    mt2text,
+    mtexpr2text,
+    rp2text,
+    rpHead,
+  )
 import LS.XPile.Logging
+  ( XPileLog,
+    XPileLogE,
+    mutter,
+    xpError,
+    xpReturn,
+  )
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> Grounds

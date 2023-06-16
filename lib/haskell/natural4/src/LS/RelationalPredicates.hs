@@ -204,25 +204,210 @@ We don't have a first-class way of talking about implication at the moment -- th
 
 -}
 
-module LS.RelationalPredicates where
+module LS.RelationalPredicates
+  ( pParamText,
+    pHornlike,
+    pHornlike',
+    pRelationalPredicate,
+    pBoolConnector,
+    pBSR,
+    preambleParamText,
+    addneg,
+    mergePBRS,
+    preambleBoolStructR,
+    rpSameNextLineWhen,
+    pNameParens,
+    pKeyValuesAka,
+    pParamTextMustIndent,
+    c2hornlike,
+    pConstitutiveRule,
+    slKeyValuesAka,
+    pOneOf,
+    whenCase,
+    partitionExistentials,
+    getBSR,
+    aaLeaves,
+    aaLeavesFilter,
+    bsr2pt,
+    pBoolStructPT,
+    pRelPred
+  )
+where
 
-import Text.Megaparsec
-import Control.Monad.Writer.Lazy
-import Text.Parser.Permutation
 import qualified AnyAll as AA
-import qualified Data.List.NonEmpty as NE
-import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..)  )
-import qualified Data.Foldable as DF
-import Data.Maybe (fromMaybe, catMaybes, maybeToList)
-import Data.Semigroup (sconcat)
-import Data.Maybe (mapMaybe)
-import qualified Data.Text as T
-
-import LS.Types
-import LS.Rule
-import LS.Tokens
-import LS.Parser
 import AnyAll.BoolStruct (mkLeaf)
+import Control.Monad.Writer.Lazy (MonadWriter (tell), guard, join)
+import qualified Data.Foldable as DF
+import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
+import qualified Data.List.NonEmpty as NE
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe, maybeToList)
+import Data.Semigroup (sconcat)
+import qualified Data.Text as T
+import LS.Parser (prePostParse)
+import LS.Rule
+  ( Parser,
+    Rule
+      ( Constitutive,
+        DefNameAlias,
+        DefTypically,
+        Hornlike,
+        Regulative,
+        action,
+        clauses,
+        cond,
+        defaults,
+        deontic,
+        given,
+        giveth,
+        having,
+        hence,
+        keyword,
+        lest,
+        letbind,
+        lsource,
+        name,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        super,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    defaultHorn,
+    multiterm2bsr,
+    pXLocation,
+    pYLocation,
+  )
+import LS.Tokens
+  ( IsParser (debugName, debugPrint),
+    MonadReader (local),
+    SLParser,
+    asks,
+    debugNameSL,
+    dnl,
+    finishSL,
+    liftSL,
+    manyIndentation,
+    myTraceM,
+    optIndentedTuple,
+    pAnyText,
+    pMTExpr,
+    pOtherVal,
+    pRuleLabel,
+    pToken,
+    sameDepth,
+    sameMany,
+    slMultiTerm,
+    someDeep,
+    someIndentation,
+    someLiftSL,
+    tellIdFirst,
+    undeepers,
+    ($*|),
+    ($>|),
+    (->|),
+    (|&|),
+    (|*|),
+    (|--),
+    (|-|),
+    (|<$),
+    (|<<|),
+    (|><),
+    (|>|),
+    (|?|),
+  )
+import LS.Types
+  ( BoolStructP,
+    BoolStructR,
+    HornClause (HC, hBody),
+    HornClause2,
+    MTExpr (MTT),
+    MultiTerm,
+    MyToken
+      ( A_An,
+        After,
+        Aka,
+        And,
+        Before,
+        By,
+        Decide,
+        EOL,
+        Eventually,
+        Given,
+        Giveth,
+        Has,
+        If,
+        Includes,
+        Is,
+        List0,
+        List1,
+        MPNot,
+        Means,
+        On,
+        One,
+        OneOf,
+        Optional,
+        Or,
+        Otherwise,
+        TokEQ,
+        TokGT,
+        TokGTE,
+        TokIn,
+        TokLT,
+        TokLTE,
+        TokNotIn,
+        TypeSeparator,
+        Typically,
+        Unless,
+        Upon,
+        When,
+        Who,
+        Whose
+      ),
+    PTree,
+    ParamText,
+    ParamType (TList0, TList1, TOne, TOptional),
+    Preamble,
+    RPRel
+      ( RPTC,
+        RPelem,
+        RPeq,
+        RPgt,
+        RPgte,
+        RPhas,
+        RPis,
+        RPlt,
+        RPlte,
+        RPnotElem
+      ),
+    RelationalPredicate (..),
+    RuleName,
+    RunConfig (saveAKA, sourceURL),
+    SrcRef (SrcRef),
+    TComparison (TAfter, TBefore, TBy, TOn, TVague),
+    TypeSig (..),
+    TypedMulti,
+    bsp2text,
+    mkPTree,
+    noLSource,
+    pt2multiterm,
+    rp2mt,
+    rpHead,
+    singeltonDL,
+  )
+import Text.Megaparsec
+  ( MonadParsec (lookAhead, try),
+    choice,
+    empty,
+    optional,
+    some,
+    (<|>),
+  )
+import Text.Parser.Permutation (permute, (<$$>), (<|?>))
 
 
 -- * parse RelationalPredicates
@@ -234,14 +419,14 @@ pRelationalPredicate = pRelPred
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel
 tok2rel = choice
-    [ RPis      <$ pToken Is      
+    [ RPis      <$ pToken Is
     , RPhas     <$ pToken Has
-    , RPeq      <$ pToken TokEQ   
-    , RPlt      <$ pToken TokLT   
-    , RPlte     <$ pToken TokLTE  
-    , RPgt      <$ pToken TokGT   
-    , RPgte     <$ pToken TokGTE  
-    , RPelem    <$ pToken TokIn   
+    , RPeq      <$ pToken TokEQ
+    , RPlt      <$ pToken TokLT
+    , RPlte     <$ pToken TokLTE
+    , RPgt      <$ pToken TokGT
+    , RPgte     <$ pToken TokGTE
+    , RPelem    <$ pToken TokIn
     , RPnotElem <$ pToken TokNotIn
     , RPTC TBefore <$ pToken Before
     , RPTC TAfter  <$ pToken After
@@ -304,7 +489,7 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mts rp else []
     rp2mts (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
     rp2mts (RPnary        _rprel rps)    = [rp2mt rps]
 
-  
+
 -- this is probably going to need cleanup
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
@@ -436,7 +621,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
   let dKeyword = if needDkeyword
                  then Just <$> choice [ pToken Decide ]
                  else Nothing <$ pure ()
-  let permutepart = debugName "pHornlike / permute" $ permute $ (,,,,)
+  let permutepart = debugName "pHornlike / permute" $ permute $     (,,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
                someStructure dKeyword -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
              -- )
@@ -582,7 +767,7 @@ rpMultiParamText = do
   guard (not $ null tms)
   return (RPParamText pt)
 
- 
+
 rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
 
@@ -689,7 +874,7 @@ pt2typesigs pt = mapMaybe snd (toList pt)
 hasTypeSig :: ParamText -> Bool
 hasTypeSig ((_,Nothing) :| _) = False
 hasTypeSig ((_,_      ) :| _) = True
-    
+
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do

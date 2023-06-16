@@ -9,18 +9,31 @@ Largely a wrapper. Most of the functionality is in the `AnyAll` lib.
 
 -}
 
-module LS.XPile.SVG where
+module LS.XPile.SVG
+  ( asAAsvg )
+where
 
-import LS
 import AnyAll as AA
-import qualified Data.Map as Map
+  ( AAVConfig (cscale),
+    BoolStruct (Leaf, Not),
+    QTree,
+    SVGElement,
+    Scale (Full, Tiny),
+    makeSvg,
+    q2svg',
+    softnormal,
+  )
+import qualified Data.HashMap.Strict as Map
 import qualified Data.Text as T
+import LS.Interpreter (getMarkings, qaHornsT)
+import LS.Rule (Interpreted, Rule)
+import LS.Types (BoolStructT, RuleName)
 -- import Debug.Trace (trace)
 
 -- | extract the tree-structured rules from Interpreter
 -- for each rule, print as svg according to options we were given
 
-asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.Map RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
+asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.HashMap RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
 asAAsvg aavc l4i _rs =
   Map.fromList [ ( concat names
                  , (svgtiny, svgfull, bs, qtree) )

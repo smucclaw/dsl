@@ -207,8 +207,10 @@ translate2PS nlgEnv eng rules = do
   mutter $ "** translate2PS: running against " ++ show (length rules) ++ " rules"
   mutter $ "*** nlgEnv has " ++ show (length nlgEnv) ++ " elements"
   mutter $ "*** eng.gfLang = " ++ show (gfLang eng)
-  mutter $ "calling biggestQ"
+  mutter $ "** calling biggestQ"
   bigQ <- biggestQ eng rules
+  mutter $ "** got back bigQ"
+  mutter $ show bigQ
   let topBit =
         bigQ
           |$> alwaysLabeled
@@ -218,6 +220,8 @@ translate2PS nlgEnv eng rules = do
           |> tail
           |> interviewRulesRHS2topBit
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
+  mutter $ "** topBit =";    mutter $ show topBit
+  mutter $ "** bottomBit ="; mutter $ show bottomBit
   -- [TODO] make this work
   -- mutters (concat $ lefts bottomBit) >>
   xpReturn [__i|

@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -15,28 +16,28 @@ Typical usage: an XPile module is handed the output of `l4interpret`, and  makes
 
 module LS.Interpreter where
 
-import LS.Types
-import LS.Rule
-import LS.RelationalPredicates
-import LS.PrettyPrinter
-import qualified AnyAll as AA
+import AnyAll qualified as AA
+import Control.Applicative ((<|>))
+import Control.Monad (guard)
+import Data.Bifunctor (first)
+import Data.Graph.Inductive
+import Data.HashMap.Strict ((!))
+import Data.HashMap.Strict qualified as Map
+import Data.List (find)
+import Data.List qualified as DL
 import Data.List.NonEmpty as NE
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.HashMap.Strict as Map
+import Data.Maybe
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
+import Data.Tree
+import Data.Tuple (swap)
+import Debug.Trace
+import LS.PrettyPrinter
+import LS.RelationalPredicates
+import LS.Rule
+import LS.Types
 import Prettyprinter
 import Text.Pretty.Simple
-import Debug.Trace
-import Control.Monad (guard)
-import Data.Maybe
-import Data.Graph.Inductive
-import Data.Tuple (swap)
-import Data.List (find)
-import qualified Data.List as DL
-import Data.Bifunctor (first)
-import Data.HashMap.Strict ((!))
-import Data.Tree
-import Control.Applicative ((<|>))
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream

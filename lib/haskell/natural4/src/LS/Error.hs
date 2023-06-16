@@ -1,10 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 {-|
 
@@ -14,24 +11,22 @@ Show parser errors with more helpful context.
 
 module LS.Error where
 
-import qualified Data.List.NonEmpty as NE
-import Data.Proxy
-import Text.Megaparsec.Pos
-import Text.Megaparsec
-
-import qualified Text.PrettyPrint.Boxes as Box
-import           Text.PrettyPrint.Boxes hiding ((<>))
-import Data.Function
-
-import LS.BasicTypes (MyStream (unMyStream, MyStream) , myStreamInput, MyToken (Other), WithPos (tokenVal, pos), renderToken)
-import Data.Vector (imap, foldl1')
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as LT
 import Control.Arrow ((>>>))
+import Data.Function
+import Data.List.NonEmpty qualified as NE
+import Data.Proxy
+import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Text.Lazy qualified as LT
+import Data.Vector (foldl1', imap)
+import Data.Vector qualified as V
 import Data.Void (Void)
-import qualified Data.Set as Set
-import qualified Data.Vector as V
+import LS.BasicTypes (MyStream (MyStream, unMyStream), MyToken (Other), WithPos (pos, tokenVal), myStreamInput, renderToken)
+import Text.Megaparsec
+import Text.Megaparsec.Pos
 import Text.Pretty.Simple (pStringNoColor)
+import Text.PrettyPrint.Boxes hiding ((<>))
+import Text.PrettyPrint.Boxes qualified as Box
 
 -- custom version of https://hackage.haskell.org/package/megaparsec-9.2.0/docs/src/Text.Megaparsec.Error.html#errorBundlePretty
 errorBundlePrettyCustom ::

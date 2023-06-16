@@ -1,6 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-|
@@ -206,23 +206,21 @@ We don't have a first-class way of talking about implication at the moment -- th
 
 module LS.RelationalPredicates where
 
-import Text.Megaparsec
+import AnyAll qualified as AA
+import AnyAll.BoolStruct (mkLeaf)
 import Control.Monad.Writer.Lazy
-import Text.Parser.Permutation
-import qualified AnyAll as AA
-import qualified Data.List.NonEmpty as NE
-import Data.List.NonEmpty ( fromList, toList, nonEmpty, NonEmpty(..)  )
-import qualified Data.Foldable as DF
-import Data.Maybe (fromMaybe, catMaybes, maybeToList)
+import Data.Foldable qualified as DF
+import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe, maybeToList)
 import Data.Semigroup (sconcat)
-import Data.Maybe (mapMaybe)
-import qualified Data.Text as T
-
-import LS.Types
+import Data.Text qualified as T
+import LS.Parser
 import LS.Rule
 import LS.Tokens
-import LS.Parser
-import AnyAll.BoolStruct (mkLeaf)
+import LS.Types
+import Text.Megaparsec
+import Text.Parser.Permutation
 
 
 -- * parse RelationalPredicates
@@ -234,14 +232,14 @@ pRelationalPredicate = pRelPred
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel
 tok2rel = choice
-    [ RPis      <$ pToken Is      
+    [ RPis      <$ pToken Is
     , RPhas     <$ pToken Has
-    , RPeq      <$ pToken TokEQ   
-    , RPlt      <$ pToken TokLT   
-    , RPlte     <$ pToken TokLTE  
-    , RPgt      <$ pToken TokGT   
-    , RPgte     <$ pToken TokGTE  
-    , RPelem    <$ pToken TokIn   
+    , RPeq      <$ pToken TokEQ
+    , RPlt      <$ pToken TokLT
+    , RPlte     <$ pToken TokLTE
+    , RPgt      <$ pToken TokGT
+    , RPgte     <$ pToken TokGTE
+    , RPelem    <$ pToken TokIn
     , RPnotElem <$ pToken TokNotIn
     , RPTC TBefore <$ pToken Before
     , RPTC TAfter  <$ pToken After
@@ -278,7 +276,7 @@ partitionExistentials c = -- [TODO] can we restructure this to use the actual `p
 bsr2pt :: BoolStructR -> Maybe ParamText
 bsr2pt bsr =
   let ptlist = [ pt | RPParamText pt <- DF.toList bsr ]
-  in if ptlist == []
+  in if null ptlist
      then Nothing
      else Just $ sconcat $ fromList ptlist
 -- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
@@ -304,7 +302,7 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mts rp else []
     rp2mts (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
     rp2mts (RPnary        _rprel rps)    = [rp2mt rps]
 
-  
+
 -- this is probably going to need cleanup
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
 addneg Nothing  Nothing   = Nothing
@@ -436,7 +434,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
   let dKeyword = if needDkeyword
                  then Just <$> choice [ pToken Decide ]
                  else Nothing <$ pure ()
-  let permutepart = debugName "pHornlike / permute" $ permute $ (,,,,)
+  let permutepart = debugName "pHornlike / permute" $ permute $                         (,,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
                someStructure dKeyword -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
              -- )
@@ -582,7 +580,7 @@ rpMultiParamText = do
   guard (not $ null tms)
   return (RPParamText pt)
 
- 
+
 rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
 
@@ -689,7 +687,7 @@ pt2typesigs pt = mapMaybe snd (toList pt)
 hasTypeSig :: ParamText -> Bool
 hasTypeSig ((_,Nothing) :| _) = False
 hasTypeSig ((_,_      ) :| _) = True
-    
+
 
 pTypeSig :: Parser TypeSig
 pTypeSig = debugName "pTypeSig" $ do

@@ -1,10 +1,12 @@
+{-# LANGUAGE ImportQualifiedPost #-}
+
 module LS.XPile.DumpRule
   ( rules2String
   )
 where
 
-import qualified Data.Foldable as DF
-import qualified Data.Text.Lazy as TL
+import Data.Foldable qualified as DF
+import Data.Text.Lazy qualified as TL
 import LS.Interpreter
   ( expandClauses,
     getAndOrTree,

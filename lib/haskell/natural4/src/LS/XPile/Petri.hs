@@ -1,36 +1,37 @@
+{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
 {-| transpiler to Petri net visualizer -}
 
 module LS.XPile.Petri(module LS.XPile.Petri) where
 
-import qualified Data.Text     as Text
-import           Data.Text              (Text)
-import qualified Data.Text.Lazy as LT
-import qualified Data.List.NonEmpty as NE
-import           Data.Maybe                  (fromMaybe, listToMaybe, fromJust, isJust, maybeToList)
 -- import           System.IO.Unsafe (unsafePerformIO)
-import           Control.Monad (forM_, when)
-import           Data.List (nub)
-import           Control.Monad.State.Strict (State, MonadState (get, put), runState, gets)
-import           Control.Applicative.Combinators
 
-import Data.GraphViz
+import AnyAll as AA
+import Control.Applicative.Combinators
+import Control.Monad (forM_, when)
+import Control.Monad.State.Strict (MonadState (get, put), State, gets, runState)
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
+import Data.GraphViz
+import Data.GraphViz.Attributes.Complete
+  ( Attribute (Comment, Compound, FontName, Height, Rank, Style, TailPort),
+    CompassPoint (..),
+    PortPos (..),
+    StyleItem (..),
+    StyleName (..),
+  )
 import Data.GraphViz.Printing (renderDot)
-import Data.GraphViz.Attributes.Complete (Attribute(Height, Style, FontName, Compound, Comment, Rank, TailPort)
-                                         , StyleItem(..), StyleName(..)
-                                         , CompassPoint(..)
-                                         , PortPos(..))
-
-
+import Data.List (nub)
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromJust, fromMaybe, isJust, listToMaybe, maybeToList)
+import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Text.Lazy qualified as LT
 import LS
-import AnyAll as AA
 
 
 --------------------------------------------------------------------------------

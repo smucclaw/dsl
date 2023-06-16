@@ -1,17 +1,9 @@
+{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE TypeOperators      #-}
-{-# LANGUAGE FlexibleInstances  #-}  -- One more extension.
-{-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Parser functions not organized into their own separate modules elsewhere.
@@ -24,64 +16,67 @@ module LS.Lib where
 -- import qualified Data.Tree      as Tree
 -- import Data.Text.Encoding (decodeUtf8)
 
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
 
 import Control.Monad.Combinators.Expr
 import Control.Monad.Writer.Lazy
 import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as BS
-import qualified Data.Csv as Cassava
+import Data.ByteString.Lazy qualified as BS
+import Data.Csv qualified as Cassava
 import Data.Either (rights)
 import Data.List (transpose)
-import qualified Data.List.NonEmpty as NE
-import qualified Data.List.Split as DLS
+import Data.List.NonEmpty qualified as NE
+import Data.List.Split qualified as DLS
 import Data.Maybe (listToMaybe, maybeToList)
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as LT
+import Data.Text qualified as Text
+import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import Data.Void (Void)
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
-    ( binary,
-      expr,
-      prefix,
-      MyBoolStruct,
-      MyItem(MyLabel, MyAll, MyLeaf, MyAny, MyNot) )
+  ( MyBoolStruct,
+    MyItem (MyAll, MyAny, MyLabel, MyLeaf, MyNot),
+    binary,
+    expr,
+    prefix,
+  )
 import LS.RelationalPredicates
 import LS.Rule
 import LS.Tokens
 import LS.Types
 import Options.Generic
-    ( Generic,
-      type (:::),
-      type (<!>),
-      type (<?>),
-      ParseFields(..),
-      ParseRecord,
-      Wrapped,
-      Unwrapped )
+  ( Generic,
+    ParseFields (..),
+    ParseRecord,
+    Unwrapped,
+    Wrapped,
+    type (:::),
+    type (<!>),
+    type (<?>),
+  )
 import System.Environment (lookupEnv)
 import Text.Megaparsec
-    ( (<|>),
-      ParseErrorBundle,
-      SourcePos(SourcePos, sourceLine, sourceColumn),
-      mkPos,
-      pos1,
-      unPos,
-      optional,
-      (<?>),
-      anySingle,
-      choice,
-      many,
-      some,
-      MonadParsec(lookAhead, notFollowedBy, eof, try) )
-import Text.Parser.Permutation ( (<$$>), (<|?>), (<||>), permute )
+  ( MonadParsec (eof, lookAhead, notFollowedBy, try),
+    ParseErrorBundle,
+    SourcePos (SourcePos, sourceColumn, sourceLine),
+    anySingle,
+    choice,
+    many,
+    mkPos,
+    optional,
+    pos1,
+    some,
+    unPos,
+    (<?>),
+    (<|>),
+  )
+import Text.Parser.Permutation (permute, (<$$>), (<|?>), (<||>))
 import Text.Pretty.Simple (pPrintString, pStringNoColor)
-import Text.PrettyPrint.Boxes ( nullBox, render )
-import qualified Text.PrettyPrint.Boxes as Box
+import Text.PrettyPrint.Boxes (nullBox, render)
+import Text.PrettyPrint.Boxes qualified as Box
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit

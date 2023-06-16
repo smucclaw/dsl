@@ -8,6 +8,7 @@ where
 
 import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)
+import Control.Monad (liftM)
 import Control.Monad.State (when)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Bifunctor (first)
@@ -90,12 +91,12 @@ main = do
   -- Bits that have to do with natural language processing and generation
   nlgLangs <- unsafeInterleaveIO allLangs
   strLangs <- unsafeInterleaveIO $ printLangs allLangs
-  (engE,engErr) <- xpLog <$> langEng
+  (engE,engErr) <- xpLog <$> (pure (mutter "* calling langEng") *> langEng)
   -- [NOTE] the Production Haskell book gives better ways to integrate Logging with IO
   case engE of
     Left err -> putStrLn $ unlines $ "natural4: encountered error when obtaining langEng" : err
     Right eng -> do
-      (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
+      (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> (pure (mutter "* making nlgEnv") >> myNLGEnv l4i eng) -- Only load the NLG environment if we need it.
       (allNLGEnv, allNLGEnvErr) <- unsafeInterleaveIO $ do
         xps <- mapM (myNLGEnv l4i) nlgLangs
         return (xpLog $ sequence xps)
@@ -138,12 +139,13 @@ main = do
           when (SFL4.topurs    opts) $ do
             let (topursFN,    (asPursstr, asPursErr)) =
                   (workuuid <> "/" <> "purs"
-                  , xpLog $ flip fmapE 
+                  , xpLog $ mutter "* main calling translate2PS" >>
+                    flip fmapE 
                     (translate2PS allNLGEnvR nlgEnvR rules)
                     (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]"))
                   )
 
-            mywritefile2 True topursFN     iso8601 "purs" (commentIfError "--" asPursstr) asPursErr
+            mywritefile2 True topursFN     iso8601 "purs" (commentIfError "-- ! -- " asPursstr) (engErr <> allNLGEnvErr <> asPursErr)
 
 
 

@@ -59,8 +59,10 @@ textMT = map mt2text
 
 -- two boolstructT: one question and one phrase
 namesAndStruct :: [Rule] -> XPileLog [([RuleName], [BoolStructT])]
-namesAndStruct rl = pure
-  [ (names, [bs]) | (names, bs) <- qaHornsT interp]
+namesAndStruct rl = do
+  mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
+  mutter "calling qaHornsT against l4i"
+  pure [ (names, [bs]) | (names, bs) <- qaHornsT interp]
   where
     interp = l4interpret defaultInterpreterOptions rl
 
@@ -74,7 +76,7 @@ namesAndQ env rl = do
                      | q' <- q ]
                    | q <- questStruct ]
   mutter $ "*** wut the heck are we returning?"
-  mutter (show wut)
+  mutters ["- " ++ show w | w <- wut]
   return wut
   where
     name = map ruleLabelName rl
@@ -114,6 +116,7 @@ labelQs = map alwaysLabeled
 
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
+  mutter $ "*** biggestQ: running"
   q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
@@ -131,6 +134,7 @@ biggestQ env rl = do
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
+  mutter $ "*** biggestS running"
   q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
@@ -146,6 +150,7 @@ biggestS env rl = do
 asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
+  -- [TODO] why don't we stick l4i in the env instead of recalculating it each time?
   let l4i = l4interpret defaultInterpreterOptions rl
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
@@ -199,6 +204,10 @@ asPurescript env rl = do
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnv eng rules = do
+  mutter $ "** translate2PS: running against " ++ show (length rules) ++ " rules"
+  mutter $ "*** nlgEnv has " ++ show (length nlgEnv) ++ " elements"
+  mutter $ "*** eng.gfLang = " ++ show (gfLang eng)
+  mutter $ "calling biggestQ"
   bigQ <- biggestQ eng rules
   let topBit =
         bigQ

@@ -16,8 +16,8 @@ import Data.ByteString.Lazy qualified as ByteString (ByteString, writeFile)
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Either (lefts, rights)
 import Data.Foldable qualified as DF
-import Data.List (partition, intercalate, isPrefixOf)
-import Data.Map qualified as Map
+import Data.HashMap.Strict qualified as Map
+import Data.List (intercalate, isPrefixOf, partition)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as TL
 import Data.Time.Clock (getCurrentTime)

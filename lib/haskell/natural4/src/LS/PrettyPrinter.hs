@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} -- the job of this module is to create orphan instances
 
@@ -9,17 +10,17 @@ The pretty-printing then gets used by the transpilers.
 
 module LS.PrettyPrinter where
 
-import qualified Data.Traversable as DT
-import qualified Data.Foldable as DF
-import qualified Data.Text as T
-import LS.Types
-import LS.Rule
-import qualified AnyAll as AA
-import Prettyprinter
+import AnyAll qualified as AA
+import Data.Foldable qualified as DF
 import Data.List (intersperse)
 -- import qualified Data.Map as Map
-import Data.List.NonEmpty as NE ( NonEmpty((:|)), toList, head, tail )
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
+import Data.Text qualified as T
+import Data.Traversable qualified as DT
 import Debug.Trace
+import LS.Rule
+import LS.Types
+import Prettyprinter
 import Prettyprinter.Render.Text
 
 -- | Pretty MTExpr

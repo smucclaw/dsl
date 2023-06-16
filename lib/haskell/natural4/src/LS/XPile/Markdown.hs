@@ -1,19 +1,17 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module LS.XPile.Markdown where
 
-import LS
-import LS.Types
-import LS.NLP.NLG
-import qualified AnyAll as AA
-import qualified Data.Map as Map
-import qualified Data.Text as Text
+import AnyAll qualified as AA
 import Control.Monad (liftM2)
-
-import qualified Data.ByteString.Lazy.Char8 as ByteString
+import Data.ByteString.Lazy.Char8 qualified as ByteString
+import Data.Map qualified as Map
+import Data.Text qualified as Text
+import LS
+import LS.NLP.NLG
+import LS.Types
 import Paths_natural4
 
 -- import Debug.Trace (trace)

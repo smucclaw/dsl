@@ -1,3 +1,4 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -7,20 +8,16 @@
 
 module LS.XPile.VueJSON where
 
+import AnyAll.BoolStruct
+import AnyAll.Types
+import Data.List (groupBy, nub)
+-- import Data.Graph.Inductive.Internal.Thread (threadList)
+import Data.Map qualified as Map
+import Data.Maybe (maybeToList)
+import Data.Text qualified as T
+import Data.Text qualified as Text
 import LS
 import LS.NLP.NLG
-import AnyAll.Types
-import AnyAll.BoolStruct
-
-import LS.XPile.Logging
-
-import Data.Maybe (maybeToList)
-import Data.List (nub, groupBy)
-import qualified Data.Text as Text
--- import Data.Graph.Inductive.Internal.Thread (threadList)
-import qualified Data.Map as Map
-import qualified Data.Text as T
-
 import LS.XPile.Logging
 
 -- https://en.wikipedia.org/wiki/Ground_expression

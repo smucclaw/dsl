@@ -1,23 +1,23 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE GHC2021 #-}
 
 {-| transpiler to Uppaal, work in progress. -}
 
 module LS.XPile.Uppaal where
 
-
-import L4.Syntax as CoreL4
-
-import LS.Types as SFL4
-import LS.Rule as SFL4R
-import qualified Data.Set as Set
 -- import L4.Annotation
-import Data.Text (unpack)
-import qualified Data.Text as TL
-import qualified AnyAll as AA
-import L4.PrintProg
+
+import AnyAll qualified as AA
 -- import qualified Data.ByteString.Char8 as T
-import L4.SyntaxManipulation
+
 import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
+import Data.Text (unpack)
+import Data.Text qualified as TL
+import L4.PrintProg
+import L4.Syntax as CoreL4
+import L4.SyntaxManipulation
+import LS.Rule as SFL4R
+import LS.Types as SFL4
 
 type Ann = ()
 

@@ -1,12 +1,14 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module LS.RelationalPredicatesSpec where
 
-import Test.Hspec
-import LS.Types
 import AnyAll
+import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty
-import qualified Data.HashMap.Strict as Map
 import LS.RelationalPredicates
+import LS.Types
+import Test.Hspec
 
 spec :: Spec
 spec = do

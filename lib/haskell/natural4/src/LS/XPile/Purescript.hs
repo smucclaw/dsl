@@ -1,9 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE MonadComprehensions, ParallelListComp #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MonadComprehensions #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-| transpiler to SVG visualization of the AnyAll and/or trees.
@@ -14,23 +15,23 @@ Largely a wrapper. Most of the functionality is in the anyall lib.
 
 module LS.XPile.Purescript where
 
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
 import Control.Applicative (liftA2)
 import Control.Monad (guard, join, liftM, unless, when)
 import Data.Bifunctor (second)
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Data.Either (lefts, rights)
 import Data.HashMap.Strict ((!))
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
-import qualified Data.List as DL
+import Data.List qualified as DL
 import Data.List.Split (chunk)
 import Data.Maybe (listToMaybe)
-import qualified Data.Ord
+import Data.Ord qualified
 import Data.String.Interpolate (i, __i)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
 import Flow ((|>))
 import LS
 import LS.Interpreter
@@ -39,8 +40,6 @@ import LS.NLP.NLG
 import LS.Utils ((|$>))
 import LS.XPile.Logging
 import PGF
-import Prettyprinter
-import Prettyprinter.Interpolate (__di)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | extract the tree-structured rules from Interpreter
@@ -179,8 +178,8 @@ asPurescript env rl = do
   mutter "*** Markings"
   mutters [ "**** " ++ T.unpack (fst m) ++ "\n" ++ show (snd m) | m <- listOfMarkings]
 
-  xpReturn $ show
-    [__di|
+  xpReturn
+    [__i|
       #{nlgEnvStrLower} :: Object.Object (Item String)
       #{nlgEnvStrLower} = Object.fromFoldable
         #{pShowNoColor guts}
@@ -258,4 +257,6 @@ interviewRulesRHS2topBit interviewRulesRHS =
     interviewRules_nl =
       Map.fromFoldable
         [ ]
+
   |]
+

@@ -1,18 +1,14 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-{-| example of a simple transpiler
-
--}
+-- | example of a simple transpiler
 
 module LS.XPile.NaturalLanguage where
 
-import LS
 import AnyAll as AA
-import qualified Data.Map as Map
-import qualified Data.Text as T
+import Data.Map qualified as Map
+import Data.Text qualified as T
+import LS
 import LS.Rule
 -- import Debug.Trace (trace)
 

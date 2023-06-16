@@ -1,10 +1,11 @@
+{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use camelCase" #-}
-{-# LANGUAGE DeriveFunctor #-}
 
 {-|
 Foundational types imported by all other modules.

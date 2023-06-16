@@ -1,12 +1,14 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module LS.InterpreterSpec where
 
-import Test.Hspec
-import LS.Types
-import LS.Rule
 import AnyAll
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
 import LS.Interpreter
+import LS.Rule
+import LS.Types
+import Test.Hspec
 
 spec :: Spec
 spec = do

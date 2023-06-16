@@ -1,13 +1,15 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module LS.BasicTypesSpec (spec) where
 
-import Test.Hspec
-import LS.Types
-import Data.List.NonEmpty
 import AnyAll
-import Test.QuickCheck
-import qualified Data.Text as T
+import Data.List.NonEmpty
+import Data.Text qualified as T
 import Data.Text.Arbitrary
+import LS.Types
+import Test.Hspec
+import Test.QuickCheck
 import Test.QuickCheck.Arbitrary.Generic
 
 instance Arbitrary MyToken where

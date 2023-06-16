@@ -50,7 +50,6 @@ import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, 
 import Data.Monoid (Ap (Ap), Endo (..))
 import Data.Sequence qualified as Seq
 import Data.Text qualified as T
-import Data.Tuple.All (SequenceT (sequenceT))
 import Debug.Trace (trace)
 import Flow ((.>), (|>))
 import L4.Annotation (SRng (DummySRng))

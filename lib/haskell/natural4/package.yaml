@@ -50,22 +50,17 @@ dependencies:
   - gf
   - optparse-generic
   - prolog
-  - typed-process
-  - stm
   - replace-megaparsec
   - parser-combinators
   - fgl
   - graphviz
   - extra
-  - lens
   - QuickCheck
   - generic-arbitrary
-  - async
   - time
   - iso8601-time
   - directory
   - fgl
-  - raw-strings-qq
   - regex-tdfa
   - baby-l4
   - quickcheck-text
@@ -75,7 +70,6 @@ dependencies:
   - mono-traversable
   - string-interpolate
   - prettyprinter-interp
-  - tuple
 
 ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 

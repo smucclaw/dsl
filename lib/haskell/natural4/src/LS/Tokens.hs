@@ -1,6 +1,5 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
 
 {-|
 This module provides token-level parsers, (though the tokens themselves are defined in BasicTypes).

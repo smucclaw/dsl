@@ -231,10 +231,16 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
        in {s = consumes.s ; qs = consume.s} ;
 
     -- : NP -> PrePost ; -- beverage
-    NP_PrePost beverage = {s,qs = (mkUtt beverage).s} ;
+    NP_PrePost beverage = {
+      s = (mkUtt beverage).s ;
+      qs = (mkUtt (mkQS (mkQCl (ExistNP beverage)))).s
+      } ;
 
     -- : AP -> PrePost ; -- any unauthorised
-    AP_PrePost ap = {s,qs = (mkUtt ap).s} ;
+    AP_PrePost ap = {
+      s = (mkUtt ap).s ;
+      qs = (mkUtt (mkQS (mkQCl (ExistNP (mkNP (mkCN ap emptyCN)))))).s
+      } ;
 
     -- : Adv -> PrePost ; -- of personal data
     Adv_PrePost adv = {s,qs = (mkUtt adv).s} ;

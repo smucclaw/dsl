@@ -27,6 +27,7 @@ concrete CustomSyntaxChi of CustomSyntax =
       SyntaxChi
     , ParadigmsChi
     , ExtendChi
+    , LexiconChi
     , (R=ResChi)
     , (Co=Coordination)
     , Prelude
@@ -229,6 +230,7 @@ concrete CustomSyntaxChi of CustomSyntax =
     adjcopula : R.Verb =
       {s = "是" ; sn = [] ; pp = [] ; ds = [] ; dp = [] ; ep = [] ; neg = "不"} ; ---
 
+    emptyCN : CN = <mkCN cat_N : CN> ** {s = []} ;
     emptyNP : NP = it_NP ** {s = []} ;
     emptyPlNP : NP = they_NP ** {s = []} ;
 

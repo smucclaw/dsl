@@ -161,7 +161,12 @@ mutterdhs :: (Show a) => Int -> XPileLogW' -> a -> XPileLog ()
 mutterdhs d s hs = mutterdhsf d s show hs
 
 -- | with a custom show function, such as pShowNoColor
-mutterdhsf :: (Show a) => Int -> XPileLogW' -> (a -> String) -> a -> XPileLog ()
+mutterdhsf :: (Show a)
+           => Int                 -- ^ depth
+           -> XPileLogW'          -- ^ org title string
+           -> (a -> String)       -- ^ show or (T.unpack pShowNoColor)
+           -> a                   -- ^ Haskell value
+           -> XPileLog ()
 mutterdhsf d s f hs = do
   mutterd d s
   mutter "#+BEGIN_SRC haskell"

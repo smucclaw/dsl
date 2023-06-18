@@ -263,11 +263,12 @@ translate2PS nlgEnv eng rules = do
           |> init
           |> tail
           |> interviewRulesRHS2topBit
+  mutterdhsf 2 "topBit =" pShowNoColorS topBit
+
+  -- bottomBit
+  mutterd 2 "constructing bottomBit by calling asPurescript over rules"
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
-  mutterdhsf 2 "topBit" pShowNoColorS topBit
   mutterdhsf 2 "bottomBit without running rights" pShowNoColorS bottomBit
-  -- [TODO] make this work
-  -- mutters (concat $ lefts bottomBit) >>
   mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
   xpReturn [__i|
     #{topBit}

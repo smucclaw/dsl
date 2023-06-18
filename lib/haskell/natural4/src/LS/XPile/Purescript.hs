@@ -84,7 +84,7 @@ namesAndStruct l4i rl = do
 -- and then jam them together with all the names for all the rules???
 namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env rl = do
-  mutter $ "*** namesAndQ: name = " ++ show name
+  mutterdhsf 3 "namesAndQ: name" show name
   questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
   let wut = concat [ [ (name, q)
                      | q' <- q ]
@@ -254,10 +254,11 @@ translate2PS nlgEnv eng rules = do
           |> tail
           |> interviewRulesRHS2topBit
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
-  mutter $ "** topBit =";    mutter $ show topBit
-  mutter $ "** bottomBit ="; mutter $ show bottomBit
+  mutterdhsf 2 "topBit" pShowNoColorS topBit
+  mutterdhsf 2 "bottomBit without running rights" pShowNoColorS bottomBit
   -- [TODO] make this work
   -- mutters (concat $ lefts bottomBit) >>
+  mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
   xpReturn [__i|
     #{topBit}
 

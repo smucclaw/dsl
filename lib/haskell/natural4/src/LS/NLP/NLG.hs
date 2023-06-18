@@ -81,7 +81,7 @@ import qualified Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
 import LS.XPile.Logging
-    ( xpError, xpReturn, mutter, XPileLogE, XPileLog, xpLog, mutters )
+    ( xpError, xpReturn, mutter, XPileLogE, XPileLog, xpLog, mutters, mutterd, mutterdhsf )
 
 import Debug.Trace ( trace )
 

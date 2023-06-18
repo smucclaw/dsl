@@ -22,7 +22,9 @@ import LS.NLP.NL4Transformations
       pastTense,
       isChinese,
       isMalay,
-      aggregateBoolStruct )
+      aggregateBoolStruct,
+      pushPrePostIntoMain
+    )
 import LS.Types
     ( TemporalConstraint(..),
       TComparison(..),

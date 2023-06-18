@@ -14,7 +14,7 @@ concrete CustomSyntaxEng of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralEng [
-      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
+      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
     , VV, must_VV
     ]
   , ExtendEng [

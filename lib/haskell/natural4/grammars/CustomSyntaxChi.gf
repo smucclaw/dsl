@@ -97,6 +97,7 @@ concrete CustomSyntaxChi of CustomSyntax =
       on_Prep = mkPrepChi "在" [] ;
       before_Prep = mkPrepChi "在" "之前" ;
       after_Prep = mkPrepChi "在" "之后" ;
+      possess_Prep = mkPrepChi [] "的" ;
       PrepNP prep np = SyntaxChi.mkAdv <prep : SyntaxChi.Prep> np ;
 -----------------------------------------------------------------------------
 -- List instances for cats that don't have one in the RGL

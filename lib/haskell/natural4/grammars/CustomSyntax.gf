@@ -14,7 +14,7 @@ abstract CustomSyntax =
         , S, QS, Conj
         ]
   , Structural [
-        Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
+        Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
         , VV, must_VV
         ]
   , Extend [

@@ -222,6 +222,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 -- Very specific things, yet uncategorised
     -- : AP -> Who ; -- hack
     APWho alcoholic = Extend.MkVPS presSimul POS (mkVP alcoholic) ;
+    AdvWho in_part = Extend.MkVPS presSimul POS (mkVP in_part) ;
 
     -- : V2 -> PrePost ; -- consumes
     V2_PrePost consume =
@@ -232,6 +233,12 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     -- : NP -> PrePost ; -- beverage
     NP_PrePost beverage = {s,qs = (mkUtt beverage).s} ;
 
-    recoverUnparsedAdv string = lin Adv string ; -- override for Chi
+    -- : AP -> PrePost ; -- any unauthorised
+    AP_PrePost ap = {s,qs = (mkUtt ap).s} ;
+
+    -- : Adv -> PrePost ; -- of personal data
+    Adv_PrePost adv = {s,qs = (mkUtt adv).s} ;
+
+    recoverUnparsedAdv string = lin Adv (cc2 {s="·"} string) ; -- override for Chi
 }
 

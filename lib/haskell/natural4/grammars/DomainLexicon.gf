@@ -9,6 +9,7 @@ abstract DomainLexicon = NL4Base ** {
       consume : V2 ;
       alcoholic, non_alcoholic : AP ;
       walk, eat, drink, sing : VP ; -- VP = intransitive verb
+      in_part, in_whole : Adv ;
 
     -- PDPA
       explanation
@@ -17,9 +18,17 @@ abstract DomainLexicon = NL4Base ** {
        , PDPC
        , data_breach
        , public_agency
+       , access
+       , use
+       , disclosure
+       , copying
+       , modification
+       , disposal
+       , personal_data
        : CN ;
-      public, notifiable : AP ;
+      public, notifiable, any_unauthorised : AP ;
       NDB_Qualification : NP ;
+
 
   -- rodents and vermin
       Loss_or_Damage : NP ;

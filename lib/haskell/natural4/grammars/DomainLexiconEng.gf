@@ -20,6 +20,8 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       eat = mkVP IrregEng.eat_V ;
       drink = mkVP IrregEng.drink_V ;
       sing = mkVP IrregEng.sing_V ;
+      in_part = ParadigmsEng.mkAdv "in part" ;
+      in_whole = ParadigmsEng.mkAdv "in whole" ;
 
   -- pdpa
       explanation = mkCN (mkN "explanation") ;
@@ -27,6 +29,14 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       notification = mkCN (mkN ("notification"|"Notification")) ;
       PDPC = mkCN (mkN "PDPC") ;
       data_breach = mkCN (mkN ("data breach"|"Data Breach")) ;
+      access = mkCN (mkN "access") ;
+      use = mkCN (mkN "use") ;
+      disclosure = mkCN (mkN "disclosure") ;
+      copying = mkCN (mkN "copying") ;
+      modification = mkCN (mkN "modification") ;
+      disposal = mkCN (mkN "disposal") ;
+      personal_data = mkCN (mkN "personal data") ;
+      any_unauthorised = mkAP (mkA "any unauthorised") ;
       public = mkAP (mkA ("public"|"Public")) ;
       public_agency = mkCN (mkN "public agency") ;
       notifiable = mkAP (mkA ("notifiable"|"Notifiable")) ;

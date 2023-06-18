@@ -15,7 +15,7 @@ concrete CustomSyntaxMay of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralMay [
-      Prep, for_Prep, from_Prep, on_Prep, after_Prep
+      Prep, for_Prep, from_Prep, on_Prep, after_Prep, possess_Prep
     , VV, must_VV
     ]
   , ExtendMay [

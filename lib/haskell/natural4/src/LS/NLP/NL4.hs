@@ -189,6 +189,7 @@ data Tree :: * -> * where
   GByVP :: GVP -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
+  GrecoverUnparsedAdv :: GString -> Tree GAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
   GUseN :: GN -> Tree GCN_
   LexCN :: String -> Tree GCN_
@@ -386,6 +387,7 @@ instance Eq (Tree a) where
     (GByVP x1,GByVP y1) -> and [ x1 == y1 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GrecoverUnparsedAdv x1,GrecoverUnparsedAdv y1) -> and [ x1 == y1 ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseN x1,GUseN y1) -> and [ x1 == y1 ]
     (LexCN x,LexCN y) -> x == y
@@ -614,6 +616,7 @@ instance Gf GAdv where
   gf (GByVP x1) = mkApp (mkCId "ByVP") [gf x1]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
+  gf (GrecoverUnparsedAdv x1) = mkApp (mkCId "recoverUnparsedAdv") [gf x1]
 
   fg t =
     case unApp t of
@@ -621,6 +624,7 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "ByVP" -> GByVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "recoverUnparsedAdv" -> GrecoverUnparsedAdv (fg x1)
 
 
       _ -> error ("no Adv " ++ show t)
@@ -1487,6 +1491,7 @@ instance Compos Tree where
     GByVP x1 -> r GByVP `a` f x1
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
+    GrecoverUnparsedAdv x1 -> r GrecoverUnparsedAdv `a` f x1
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GUseN x1 -> r GUseN `a` f x1
     GCompAP x1 -> r GCompAP `a` f x1

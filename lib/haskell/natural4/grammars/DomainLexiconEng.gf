@@ -13,7 +13,7 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       person = mkCN (mkN ("person"|"Person")) ;
       beverage = mkCN (mkN "beverage") ;
       alcoholic = mkAP (mkA ("alcoholic" | "an alcoholic")) ; -- just to make it parse
-      non_alcoholic = mkAP (mkA "non-alcoholic") ;
+      non_alcoholic = mkAP (mkA ("non-alcoholic"|"a non-alcoholic")) ;
 
       consume = mkV2 "consume" ;
       walk = mkVP (mkV "walk") ;

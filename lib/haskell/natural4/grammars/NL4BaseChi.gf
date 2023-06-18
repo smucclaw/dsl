@@ -6,6 +6,7 @@ concrete NL4BaseChi of NL4Base =
     , qUPON, sUPON -- change tense
     , ConjConstraint -- Conj has different lincat
     , MkDate -- different order
+    , recoverUnparsedAdv -- different lincat
     ]
   with
       (Syntax=SyntaxChi)
@@ -130,5 +131,7 @@ lin
     recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
 
     recoverUnparsedTimeUnit string = mkCN <LexiconChi.day_N ** {s = "·" ++ string.s} : N> ;
+
+    recoverUnparsedAdv string = LexiconChi.today_Adv ** {s = string.s} ;
 }
 

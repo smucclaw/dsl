@@ -139,4 +139,6 @@ abstract NL4Base = CustomSyntax ** {
 
       recoverRPis : String -> String -> Constraint ;
 
+      recoverUnparsedAdv : String -> Adv ;
+
 }

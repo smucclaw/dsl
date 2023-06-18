@@ -326,7 +326,7 @@ linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Te
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)
 
 mkWhoText :: NLGEnv -> (GPrePost -> GText) -> (GWho -> GText) -> BoolStructR -> BoolStructGText
-mkWhoText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseWhoBS env bsr
+mkWhoText env f g bsr = pushPrePostIntoMain $ mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseWhoBS env bsr
 
 mkCondText :: NLGEnv -> (GPrePost -> GText) -> (GCond -> GText) -> BoolStructR -> BoolStructGText
 mkCondText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseCondBS env bsr

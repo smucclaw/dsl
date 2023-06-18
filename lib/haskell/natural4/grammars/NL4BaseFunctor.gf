@@ -231,5 +231,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
     -- : NP -> PrePost ; -- beverage
     NP_PrePost beverage = {s,qs = (mkUtt beverage).s} ;
+
+    recoverUnparsedAdv string = lin Adv string ; -- override for Chi
 }
 

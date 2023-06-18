@@ -78,6 +78,7 @@ namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])
 namesAndStruct l4i rl = do
   mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
   mutter "calling qaHornsT against l4i"
+  mutterdhsf 3 "we know qaHornsT returns" pShowNoColorS (qaHornsT l4i)
   mutterRuleNameAndBS [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
 
 -- | for each rule, construct the questions for that rule;
@@ -89,7 +90,7 @@ namesAndQ env rl = do
   let wut = concat [ [ (name, q)
                      | q' <- q ]
                    | q <- questStruct ]
-  mutter $ "*** wut the heck are we returning? like, " ++ show (length w) ++ " things."
+  mutter $ "*** wut the heck are we returning? like, " ++ show (length wut) ++ " things."
   sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where
@@ -101,7 +102,7 @@ namesAndQ env rl = do
 combine :: [([RuleName], [BoolStructT])]
         -> [([RuleName], [BoolStructT])]
         -> XPileLog [([RuleName], [BoolStructT])]
-combine x y = combine' 3 x y
+combine = combine' 3
 
 combine' :: Int -- ^ depth
          -> [([RuleName], [BoolStructT])]

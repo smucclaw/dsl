@@ -17,7 +17,7 @@ module LS.XPile.Purescript where
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
 import Control.Applicative (liftA2)
-import Control.Monad (guard, join, liftM, unless, when)
+import Control.Monad (guard, join, liftM, unless, when, forM_)
 import Data.Bifunctor (second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
@@ -41,7 +41,7 @@ import LS.NLP.NLG
     ( NLGEnv(gfLang, interpreted), ruleQuestions, expandRulesForNLG )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-    ( xpReturn, mutter, XPileLogE, XPileLog, mutters )
+    ( xpReturn, mutter, XPileLogE, XPileLog, mutters, mutterd, mutterd1, mutterd2 )
 import PGF ( showLanguage )
 import Text.Pretty.Simple (pShowNoColor)
 
@@ -63,12 +63,22 @@ toTuple (x,y) = Tuple x y
 textMT :: [RuleName] -> [T.Text]
 textMT = map mt2text
 
+
+mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
+                    -> XPileLog [([RuleName], [BoolStructT])]
+mutterRuleNameAndBS rnbss = do
+  mutter "*** rulename, bs pairs:"
+  forM_ rnbss $ \(names, bs) -> do
+    mutter $ "**** " ++ T.unpack ( T.intercalate " / " (mt2text <$> names))
+    mutter $ show bs
+  return rnbss
+
 -- two boolstructT: one question and one phrase
 namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndStruct l4i rl = do
   mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
   mutter "calling qaHornsT against l4i"
-  pure [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
+  mutterRuleNameAndBS [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
 
 -- | for each rule, construct the questions for that rule;
 -- and then jam them together with all the names for all the rules???
@@ -87,14 +97,31 @@ namesAndQ env rl = do
     alias = listToMaybe [ (you,org) | DefNameAlias you org _ _ <- rl]
     -- [AA.OptionallyLabeledBoolStruct Text.Text]
 
+-- | not sure why this is throwing away information
 combine :: [([RuleName], [BoolStructT])]
         -> [([RuleName], [BoolStructT])]
         -> XPileLog [([RuleName], [BoolStructT])]
-combine [] [] = pure []
-combine (b:bs) [] = pure []
-combine [] (q:qs) = pure []
-combine (b:bs) (q:qs) =
-  (:) <$> pure ((fst b), (snd b) ++ (snd q)) <*> combine bs qs
+combine x y = combine' 3 x y
+
+combine' :: Int -- ^ depth
+         -> [([RuleName], [BoolStructT])]
+         -> [([RuleName], [BoolStructT])]
+         -> XPileLog [([RuleName], [BoolStructT])]
+
+combine' d [] []     = mutter "*** combine: case 1, nil" >> pure []
+combine' d (b:bs) [] = mutter "*** combine: case 2, nil" >> pure []
+combine' d [] (q:qs) = mutter "*** combine: case 3, nil" >> pure []
+combine' d (b:bs) (q:qs) = do
+  mutterd  d     "combine: case 4, non-nil"
+  mutterd1 d "input"
+  mutterd2 d "fst b"
+  mutter (show (fst b))
+  mutterd2 d "snd b ++"
+  mutter (show (snd b))
+  mutterd2 d "snd q"
+  mutter (show (snd q))
+
+  (:) <$> pure (fst b, snd b ++ snd q) <*> combine' (d+1) bs qs
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?
@@ -154,11 +181,14 @@ biggestS env rl = do
 asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
-  -- [TODO] why don't we stick l4i in the env instead of recalculating it each time?
-  let l4i = interpreted env
+  let l4i       = env |> interpreted
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
-  c' <- join $ combine <$> namesAndStruct l4i rl <*> namesAndQ env rl
+  mutter "*** building namesAndStruct\n"
+  nAS <- namesAndStruct l4i rl
+  mutter "*** building namesAndQ\n"
+  nAQ <- namesAndQ      env rl
+  c'  <- combine nAS nAQ
   mutter $ "*** c'\n" ++ show c'
 
   guts <- sequence [

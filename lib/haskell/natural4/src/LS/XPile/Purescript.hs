@@ -17,7 +17,7 @@ module LS.XPile.Purescript where
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
 import Control.Applicative (liftA2)
-import Control.Monad (guard, join, liftM, unless, when)
+import Control.Monad (guard, join, liftM, unless, when, forM_)
 import Data.Bifunctor (second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
@@ -32,13 +32,17 @@ import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Flow ((|>))
-import LS
-import LS.Interpreter
-import LS.NLP.NL4Transformations
+import LS.Interpreter ( qaHornsT, getMarkings )
+import LS.Rule ( Rule(DefNameAlias), ruleLabelName, Interpreted(..) )
+import LS.Types
+    ( RuleName, BoolStructT, mt2text, defaultInterpreterOptions )
+import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
+    ( NLGEnv(gfLang, interpreted), ruleQuestions, expandRulesForNLG )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-import PGF
+    ( xpReturn, mutter, XPileLogE, XPileLog, mutters, mutterd, mutterd1, mutterd2, mutterdhs, mutterdhsf )
+import PGF ( showLanguage )
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | extract the tree-structured rules from Interpreter
@@ -46,39 +50,81 @@ import Text.Pretty.Simple (pShowNoColor)
 -- in future: also ship out a Marking which represents the TYPICALLY values
 -- far future: construct a JSON with everything in it, and get the Purescript to read the JSON, so we are more interoperable with non-FP languages
 
+
+-- | shim for Purescript tuples which use slightly different syntax
 data Tuple a b = Tuple a b
   deriving (Show, Eq, Ord)
 
+-- | output Haskell tuples to Purescript
 toTuple :: (a,b) -> Tuple a b
 toTuple (x,y) = Tuple x y
 
+-- | RuleName to text multiterm
 textMT :: [RuleName] -> [T.Text]
 textMT = map mt2text
 
--- two boolstructT: one question and one phrase
-namesAndStruct :: [Rule] -> XPileLog [([RuleName], [BoolStructT])]
-namesAndStruct rl = pure
-  [ (names, [bs]) | (names, bs) <- qaHornsT interp]
-  where
-    interp = l4interpret defaultInterpreterOptions rl
 
+mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
+                    -> XPileLog [([RuleName], [BoolStructT])]
+mutterRuleNameAndBS rnbss = do
+  mutterd 3 "rulename, bs pairs:"
+  forM_ rnbss $ \(names, bs) -> do
+    mutterdhsf 4 (T.unpack (T.intercalate " / " (mt2text <$> names)))
+      pShowNoColorS bs
+  return rnbss
+
+-- two boolstructT: one question and one phrase
+namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
+namesAndStruct l4i rl = do
+  mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
+  mutter "calling qaHornsT against l4i"
+  mutterdhsf 3 "we know qaHornsT returns" pShowNoColorS (qaHornsT l4i)
+  mutterRuleNameAndBS [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
+
+-- | for each rule, construct the questions for that rule;
+-- and then jam them together with all the names for all the rules???
 namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env rl = do
-  sequence [ [ (name, q') | q' <- q ]
-           | q <- questStruct ]
+  mutterdhsf 3 "namesAndQ: name" show name
+  mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
+  questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
+  mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
+  let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
+                     | q' <- q ]
+                   | q <- questStruct ]
+  mutter $ "*** wut the heck are we returning? like, " ++ show (length wut) ++ " things."
+  sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
+  return wut
   where
     name = map ruleLabelName rl
     alias = listToMaybe [ (you,org) | DefNameAlias you org _ _ <- rl]
-    questStruct = map (ruleQuestions env alias) (expandRulesForNLG env rl) -- [AA.OptionallyLabeledBoolStruct Text.Text]
+    -- [AA.OptionallyLabeledBoolStruct Text.Text]
 
+-- | not sure why this is throwing away information
 combine :: [([RuleName], [BoolStructT])]
         -> [([RuleName], [BoolStructT])]
         -> XPileLog [([RuleName], [BoolStructT])]
-combine [] [] = pure []
-combine (b:bs) [] = pure []
-combine [] (q:qs) = pure []
-combine (b:bs) (q:qs) =
-  (:) <$> pure ((fst b), (snd b) ++ (snd q)) <*> combine bs qs
+combine = combine' 3
+
+combine' :: Int -- ^ depth
+         -> [([RuleName], [BoolStructT])]
+         -> [([RuleName], [BoolStructT])]
+         -> XPileLog [([RuleName], [BoolStructT])]
+
+combine' d [] []     = mutter "*** combine: case 1, nil" >> pure []
+combine' d (b:bs) [] = mutter "*** combine: case 2, nil" >> pure []
+combine' d [] (q:qs) = mutter "*** combine: case 3, nil" >> pure []
+combine' d (b:bs) (q:qs) = do
+  mutterd  d "combine: case 4, non-nil"
+  mutterd1 d "input"
+  mutterdhsf (d+2) "fst b"    pShowNoColorS (fst b)
+  mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
+  mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
+  (:) <$> pure (fst b, snd b <> snd q) <*> combine' (d+1) bs qs
+
+-- | helper function; basically a better show, from the pretty-simple package
+pShowNoColorS :: (Show a) => a -> String
+pShowNoColorS = TL.unpack . pShowNoColor
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?
@@ -88,6 +134,7 @@ fixNot (AA.Leaf x) = AA.Leaf x
 fixNot (AA.Not (AA.Leaf x)) = AA.Leaf x
 fixNot y = y
 
+-- | this throws away the first argument, in favour of the second. Not sure about this ...
 justQuestions :: BoolStructT -> [BoolStructT] -> BoolStructT
 justQuestions (AA.All Nothing a) q = AA.All Nothing q
 justQuestions (AA.Any Nothing a) q = AA.Any Nothing q
@@ -103,7 +150,8 @@ labelQs = map alwaysLabeled
 
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
-  q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
+  mutter $ "*** biggestQ: running"
+  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
 
@@ -120,7 +168,8 @@ biggestQ env rl = do
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
-  q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
+  mutter $ "*** biggestS running"
+  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
       onlys = [ (x, justStatements yh (map fixNot yt))
@@ -135,27 +184,56 @@ biggestS env rl = do
 asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
+  let l4i       = env |> interpreted
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
-  c' <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
-  let guts = [ toTuple ( T.intercalate " / " (mt2text <$> names)
-                       , alwaysLabeled (justQuestions hbs (map fixNot tbs)))
-             | (names,bs) <- c'
-             , Just (hbs, tbs) <- [DL.uncons bs]
-             ]
-      nlgEnvStrLower = Char.toLower <$> nlgEnvStr
+
+  mutterd 3 "building namesAndStruct"
+  nAS <- namesAndStruct l4i rl
+  mutterd 3 "building namesAndQ"
+  nAQ <- namesAndQ      env rl
+  c'  <- combine nAS nAQ
+  mutterdhsf 3 "c'" pShowNoColorS c'
+
+  guts <- sequence [
+    do
+      mutterdhsf 3 "names: " show ( mt2text <$> names )
+      mutterdhsf 4 "hbs = head boolstruct" show hbs
+      mutterdhsf 4 "tbs = tail boolstruct" show tbs
+      mutterdhsf 4 "fixedNot" show fixedNot
+      mutterdhsf 4 "jq" show jq
+      mutterdhsf 4 "labeled" show labeled
+      -- return as an Either
+      xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
+
+    | (names,bs) <- c'
+    , Just (hbs, tbs) <- [DL.uncons bs]
+    , let fixedNot = map fixNot tbs
+          jq       = justQuestions hbs fixedNot
+          labeled  = alwaysLabeled jq
+    ]
+
+  let nlgEnvStrLower = Char.toLower <$> nlgEnvStr
+      listOfMarkings = Map.toList . AA.getMarking $ getMarkings l4i
+      gutsRights = rights guts
+      gutsLefts  = lefts  guts
+
+  mutterdhsf 3 "Guts, Lefts (fatal errors)"        pShowNoColorS gutsLefts
+  mutterdhsf 3 "Guts, Rights (successful results)" pShowNoColorS gutsRights
+
+  mutter "*** Markings"
+  mutters [ "**** " ++ T.unpack (fst m) ++ "\n" ++ show (snd m) | m <- listOfMarkings]
 
   xpReturn
     [__i|
       #{nlgEnvStrLower} :: Object.Object (Item String)
       #{nlgEnvStrLower} = Object.fromFoldable
-        #{pShowNoColor guts}
+        #{pShowNoColor gutsRights}
       #{nlgEnvStrLower}Marking :: Marking
       #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
         #{TL.replace "False" "false"
           . TL.replace "True" "true"
           . pShowNoColor $
-              fmap toTuple . Map.toList . AA.getMarking $
-                getMarkings (l4interpret defaultInterpreterOptions rl)}
+              fmap toTuple listOfMarkings}
     |]
           -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
@@ -170,7 +248,13 @@ asPurescript env rl = do
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnv eng rules = do
+  mutter $ "** translate2PS: running against " ++ show (length rules) ++ " rules"
+  mutter $ "*** nlgEnv has " ++ show (length nlgEnv) ++ " elements"
+  mutter $ "*** eng.gfLang = " ++ show (gfLang eng)
+  mutter $ "** calling biggestQ"
   bigQ <- biggestQ eng rules
+  mutter $ "** got back bigQ"
+  mutter $ show bigQ
   let topBit =
         bigQ
           |$> alwaysLabeled
@@ -179,9 +263,13 @@ translate2PS nlgEnv eng rules = do
           |> init
           |> tail
           |> interviewRulesRHS2topBit
+  mutterdhsf 2 "topBit =" pShowNoColorS topBit
+
+  -- bottomBit
+  mutterd 2 "constructing bottomBit by calling asPurescript over rules"
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
-  -- [TODO] make this work
-  -- mutters (concat $ lefts bottomBit) >>
+  mutterdhsf 2 "bottomBit without running rights" pShowNoColorS bottomBit
+  mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
   xpReturn [__i|
     #{topBit}
 
@@ -218,3 +306,4 @@ interviewRulesRHS2topBit interviewRulesRHS =
         [ ]
 
   |]
+

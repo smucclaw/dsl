@@ -8,10 +8,65 @@ module LS.NLP.NLG where
 
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
+    ( BoolStructConstraint,
+      BoolStructCond,
+      BoolStructWho,
+      BoolStructGText,
+      flipPolarity,
+      bsWho2gfWho,
+      bsCond2gfCond,
+      bsConstraint2gfConstraint,
+      mapBSLabel,
+      introduceSubj,
+      referSubj,
+      pastTense,
+      isChinese,
+      isMalay,
+      aggregateBoolStruct )
 import LS.Types
+    ( TemporalConstraint(..),
+      TComparison(..),
+      RuleName,
+      RelationalPredicate(RPBoolStructR, RPParamText, RPMT,
+                          RPConstraint),
+      RPRel(RPis, RPTC),
+      ParamText,
+      MultiTerm,
+      MTExpr(MTT),
+      HornClause2,
+      HornClause(hBody, hHead),
+      Deontic(..),
+      BoolStructR,
+      BoolStructP,
+      rp2text,
+      rp2mt,
+      pt2text,
+      mt2text,
+      mt2pt,
+      mkLeafPT,
+      bsr2text,
+      bsp2text )
 import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
-import LS.Rule (Rule(..), Interpreted(..), ruleName)
+import LS.Rule (Rule(..), Interpreted(..), ruleName, ruleLabelName)
 import PGF
+    ( categories,
+      languages,
+      parse,
+      readPGF,
+      mkCId,
+      readLanguage,
+      showLanguage,
+      mkApp,
+      mkStr,
+      showExpr,
+      linearize,
+      mkType,
+      readType,
+      CId,
+      Language,
+      PGF,
+      Expr,
+      Type )
 import Control.Monad (when)
 import Data.HashMap.Strict (keys, elems, lookup, toList)
 import qualified Data.HashMap.Strict as Map
@@ -21,13 +76,14 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
-import Paths_natural4
+import Paths_natural4 ( getDataFileName )
 import qualified Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
 import LS.XPile.Logging
+    ( xpError, xpReturn, mutter, XPileLogE, XPileLog, xpLog, mutters, mutterd, mutterdhsf )
 
-import Debug.Trace
+import Debug.Trace ( trace )
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -48,23 +104,27 @@ langEng :: IO (XPileLogE Language)
 langEng = do
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  pure $ getLang "NL4Eng" gr
+  pure $ do
+    mutter "*** langEng reading NL4.pgf, calling getLang NL4Eng"
+    getLang "NL4Eng" gr
 
 printLangs :: IO [Language] -> IO String
 printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
 getLang :: String -> PGF -> XPileLogE Language
-getLang str gr = case (readLanguage str, languages gr) of
-  (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
-    -> if l `elem` langs
-         then xpReturn l
-              -- Expected case: language looks valid and is in grammar
-         else xpError [fallbackMsg $ show l']
-              -- Language is valid but not in grammar, warn and fall back to another language
-  (Nothing, l':_) -- Language not valid, warn and fall back to another language
-    -> xpError [fallbackMsg $ show l']
-  (_, []) -- The PGF has no languages, truly unexpected and fatal
-    -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
+getLang str gr = do
+  mutter $ "*** getLang " ++ str
+  case (readLanguage str, languages gr) of
+    (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
+      -> if l `elem` langs
+           then xpReturn l
+                -- Expected case: language looks valid and is in grammar
+           else xpError [fallbackMsg $ show l']
+                -- Language is valid but not in grammar, warn and fall back to another language
+    (Nothing, l':_) -- Language not valid, warn and fall back to another language
+      -> xpError [fallbackMsg $ show l']
+    (_, []) -- The PGF has no languages, truly unexpected and fatal
+      -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
   where
     fallbackMsg fblang = unwords ["language", str, "not found, falling back to", fblang]
 
@@ -76,11 +136,13 @@ myNLGEnv l4i lang = do
   gr <- readPGF grammarFile
   (eng, engErr) <- xpLog <$> langEng
   case eng of
-    Left  engL -> return $ mutters engErr >> xpError engL
+    Left  engL -> return $ mutter "** myNLGEnv" >> mutters engErr >> xpError engL
     Right engR -> do
       let myParse typ txt = parse gr engR typ (Text.unpack txt)
           myLin = rmBIND . Text.pack . linearize gr lang
-      return $ xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
+      return $ do
+        mutter "** myNLGEnv"
+        xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""
@@ -211,27 +273,30 @@ nlg' thl env rule = case rule of
 -- +-----------------+-----------------------------------------------------+
 
 
-ruleQuestions :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
+ruleQuestions :: NLGEnv
+              -> Maybe (MultiTerm,MultiTerm)
+              -> Rule
+              -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ do
-        mutter "ruleQuestions: regulative"
-      text
+      mutterdhsf 4 "ruleQuestions: regulative" show (ruleLabelName rule)
+      mutterdhsf 4 "ruleQuestions: regulative returning text" show text
+      return text
     Hornlike {clauses} -> do
-      when (verbose env) $ do
-        mapM_ mutter ["ruleQuestions: horn"
-                     , show $ ruleQnTrees env alias rule
-                     , "---"]
-      text
-    Constitutive {cond} -> text
+      mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show (ruleQnTrees env alias rule)
+      mutterdhsf 4 "ruleQuestions: horn; returning text" show text
+      return text
+    Constitutive {cond} -> do
+      mutterdhsf 4 "ruleQuestions: constitutive; returning text" show text
+      return text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
     where
-      text = pure $ fmap (linBStext env) (concat $ ruleQnTrees env alias rule)
+      text = fmap (linBStext env) (ruleQnTrees env alias rule)
 
 
-ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [[BoolStructGText]]
+ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [BoolStructGText]
 ruleQnTrees env alias rule = do
   let (youExpr, orgExpr) =
         case alias of
@@ -247,15 +312,15 @@ ruleQnTrees env alias rule = do
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
           qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
-      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+      catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
-      return $ catMaybes bodyTrees
+      catMaybes bodyTrees
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-      return $ catMaybes [qCondTrees]
-    DefNameAlias {} -> pure []
-    _ -> pure []
+      catMaybes [qCondTrees]
+    DefNameAlias {} -> []
+    _ -> []
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)

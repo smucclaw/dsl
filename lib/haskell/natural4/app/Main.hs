@@ -8,6 +8,7 @@ where
 
 import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)
+import Control.Monad (liftM)
 import Control.Monad.State (when)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Bifunctor (first)
@@ -138,12 +139,13 @@ main = do
           when (SFL4.topurs    opts) $ do
             let (topursFN,    (asPursstr, asPursErr)) =
                   (workuuid <> "/" <> "purs"
-                  , xpLog $ flip fmapE 
+                  , xpLog $ mutter "* main calling translate2PS" >>
+                    flip fmapE 
                     (translate2PS allNLGEnvR nlgEnvR rules)
                     (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]"))
                   )
 
-            mywritefile2 True topursFN     iso8601 "purs" (commentIfError "--" asPursstr) asPursErr
+            mywritefile2 True topursFN     iso8601 "purs" (commentIfError "-- ! -- " asPursstr) (engErr <> allNLGEnvErr <> asPursErr)
 
 
 

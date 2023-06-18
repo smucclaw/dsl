@@ -32,13 +32,17 @@ import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Flow ((|>))
-import LS
-import LS.Interpreter
-import LS.NLP.NL4Transformations
+import LS.Interpreter ( qaHornsT, getMarkings )
+import LS.Rule ( Rule(DefNameAlias), ruleLabelName, Interpreted(..) )
+import LS.Types
+    ( RuleName, BoolStructT, mt2text, defaultInterpreterOptions )
+import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
+    ( NLGEnv(gfLang, interpreted), ruleQuestions, expandRulesForNLG )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-import PGF
+    ( xpReturn, mutter, XPileLogE, XPileLog, mutters )
+import PGF ( showLanguage )
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | extract the tree-structured rules from Interpreter
@@ -46,23 +50,25 @@ import Text.Pretty.Simple (pShowNoColor)
 -- in future: also ship out a Marking which represents the TYPICALLY values
 -- far future: construct a JSON with everything in it, and get the Purescript to read the JSON, so we are more interoperable with non-FP languages
 
+
+-- | shim for Purescript tuples which use slightly different syntax
 data Tuple a b = Tuple a b
   deriving (Show, Eq, Ord)
 
+-- | output Haskell tuples to Purescript
 toTuple :: (a,b) -> Tuple a b
 toTuple (x,y) = Tuple x y
 
+-- | RuleName to text multiterm
 textMT :: [RuleName] -> [T.Text]
 textMT = map mt2text
 
 -- two boolstructT: one question and one phrase
-namesAndStruct :: [Rule] -> XPileLog [([RuleName], [BoolStructT])]
-namesAndStruct rl = do
+namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
+namesAndStruct l4i rl = do
   mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
   mutter "calling qaHornsT against l4i"
-  pure [ (names, [bs]) | (names, bs) <- qaHornsT interp]
-  where
-    interp = l4interpret defaultInterpreterOptions rl
+  pure [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
 
 -- | for each rule, construct the questions for that rule;
 -- and then jam them together with all the names for all the rules???
@@ -115,7 +121,7 @@ labelQs = map alwaysLabeled
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
   mutter $ "*** biggestQ: running"
-  q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
+  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
 
@@ -133,7 +139,7 @@ biggestQ env rl = do
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
   mutter $ "*** biggestS running"
-  q <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
+  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
   let flattened = (\(x,ys) ->
         (x, [ AA.extractLeaves y | y <- ys])) <$> q
       onlys = [ (x, justStatements yh (map fixNot yt))
@@ -149,10 +155,10 @@ asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
   -- [TODO] why don't we stick l4i in the env instead of recalculating it each time?
-  let l4i = l4interpret defaultInterpreterOptions rl
+  let l4i = interpreted env
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
-  c' <- join $ combine <$> namesAndStruct rl <*> namesAndQ env rl
+  c' <- join $ combine <$> namesAndStruct l4i rl <*> namesAndQ env rl
   mutter $ "*** c'\n" ++ show c'
 
   guts <- sequence [

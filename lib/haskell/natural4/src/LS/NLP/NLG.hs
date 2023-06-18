@@ -8,10 +8,65 @@ module LS.NLP.NLG where
 
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
+    ( BoolStructConstraint,
+      BoolStructCond,
+      BoolStructWho,
+      BoolStructGText,
+      flipPolarity,
+      bsWho2gfWho,
+      bsCond2gfCond,
+      bsConstraint2gfConstraint,
+      mapBSLabel,
+      introduceSubj,
+      referSubj,
+      pastTense,
+      isChinese,
+      isMalay,
+      aggregateBoolStruct )
 import LS.Types
+    ( TemporalConstraint(..),
+      TComparison(..),
+      RuleName,
+      RelationalPredicate(RPBoolStructR, RPParamText, RPMT,
+                          RPConstraint),
+      RPRel(RPis, RPTC),
+      ParamText,
+      MultiTerm,
+      MTExpr(MTT),
+      HornClause2,
+      HornClause(hBody, hHead),
+      Deontic(..),
+      BoolStructR,
+      BoolStructP,
+      rp2text,
+      rp2mt,
+      pt2text,
+      mt2text,
+      mt2pt,
+      mkLeafPT,
+      bsr2text,
+      bsp2text )
 import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
 import LS.Rule (Rule(..), Interpreted(..), ruleName)
 import PGF
+    ( categories,
+      languages,
+      parse,
+      readPGF,
+      mkCId,
+      readLanguage,
+      showLanguage,
+      mkApp,
+      mkStr,
+      showExpr,
+      linearize,
+      mkType,
+      readType,
+      CId,
+      Language,
+      PGF,
+      Expr,
+      Type )
 import Control.Monad (when)
 import Data.HashMap.Strict (keys, elems, lookup, toList)
 import qualified Data.HashMap.Strict as Map
@@ -21,13 +76,14 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as Text
 import qualified AnyAll as AA
 import System.Environment (lookupEnv)
-import Paths_natural4
+import Paths_natural4 ( getDataFileName )
 import qualified Data.Foldable as F
 import Data.List (intercalate)
 import qualified Data.Char as Char (toLower)
 import LS.XPile.Logging
+    ( xpError, xpReturn, mutter, XPileLogE, XPileLog, xpLog, mutters )
 
-import Debug.Trace
+import Debug.Trace ( trace )
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF

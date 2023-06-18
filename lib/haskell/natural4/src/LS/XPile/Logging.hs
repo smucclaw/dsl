@@ -72,6 +72,9 @@ module LS.XPile.Logging
     xpLog,
     mutter,
     mutters,
+    mutterd,
+    mutterd1,
+    mutterd2,
     xpReturn,
     xpError,
     XPileLogW,
@@ -139,6 +142,18 @@ mutter = tell . pure
 -- | use `mutter` for single and `mutters` for plural muttering
 mutters :: XPileLogW -> XPileLog ()
 mutters = tell
+
+-- | prefix with stars for org purposes
+mutterd :: Int -> String -> XPileLog ()
+mutterd d s = do
+  let stars = replicate d '*'
+  mutter (stars ++ " " ++ s)
+  return ()
+
+mutterd1 d = mutterd (d+1)
+mutterd2 d = mutterd (d+2)
+mutterd3 d = mutterd (d+3)
+
 
 -- | But if there is a need to throw an unrecoverable error, then
 -- return a Left value, by using `xpError`. And that error will appear

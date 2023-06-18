@@ -89,7 +89,7 @@ namesAndQ env rl = do
   mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
   questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
   mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
-  let wut = concat [ [ (name, q)
+  let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
                      | q' <- q ]
                    | q <- questStruct ]
   mutter $ "*** wut the heck are we returning? like, " ++ show (length wut) ++ " things."
@@ -202,6 +202,7 @@ asPurescript env rl = do
       mutterdhsf 4 "fixedNot" show fixedNot
       mutterdhsf 4 "jq" show jq
       mutterdhsf 4 "labeled" show labeled
+      -- return as an Either
       xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
 
     | (names,bs) <- c'
@@ -210,8 +211,14 @@ asPurescript env rl = do
           jq       = justQuestions hbs fixedNot
           labeled  = alwaysLabeled jq
     ]
+
   let nlgEnvStrLower = Char.toLower <$> nlgEnvStr
       listOfMarkings = Map.toList . AA.getMarking $ getMarkings l4i
+      gutsRights = rights guts
+      gutsLefts  = lefts  guts
+
+  mutterdhsf 3 "Guts, Lefts (fatal errors)"        pShowNoColorS gutsLefts
+  mutterdhsf 3 "Guts, Rights (successful results)" pShowNoColorS gutsRights
 
   mutter "*** Markings"
   mutters [ "**** " ++ T.unpack (fst m) ++ "\n" ++ show (snd m) | m <- listOfMarkings]
@@ -220,7 +227,7 @@ asPurescript env rl = do
     [__i|
       #{nlgEnvStrLower} :: Object.Object (Item String)
       #{nlgEnvStrLower} = Object.fromFoldable
-        #{pShowNoColor guts}
+        #{pShowNoColor gutsRights}
       #{nlgEnvStrLower}Marking :: Marking
       #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
         #{TL.replace "False" "false"

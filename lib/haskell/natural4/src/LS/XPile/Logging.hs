@@ -75,6 +75,8 @@ module LS.XPile.Logging
     mutterd,
     mutterd1,
     mutterd2,
+    mutterdhs,
+    mutterdhsf,
     xpReturn,
     xpError,
     XPileLogW,
@@ -144,7 +146,7 @@ mutters :: XPileLogW -> XPileLog ()
 mutters = tell
 
 -- | prefix with stars for org purposes
-mutterd :: Int -> String -> XPileLog ()
+mutterd,mutterd1,mutterd2,mutterd3 :: Int -> XPileLogW' -> XPileLog ()
 mutterd d s = do
   let stars = replicate d '*'
   mutter (stars ++ " " ++ s)
@@ -153,6 +155,18 @@ mutterd d s = do
 mutterd1 d = mutterd (d+1)
 mutterd2 d = mutterd (d+2)
 mutterd3 d = mutterd (d+3)
+
+-- | output haskell source to org-mode
+mutterdhs :: (Show a) => Int -> XPileLogW' -> a -> XPileLog ()
+mutterdhs d s hs = mutterdhsf d s show hs
+
+-- | with a custom show function, such as pShowNoColor
+mutterdhsf :: (Show a) => Int -> XPileLogW' -> (a -> String) -> a -> XPileLog ()
+mutterdhsf d s f hs = do
+  mutterd d s
+  mutter "#+BEGIN_SRC haskell"
+  mutter (f hs)
+  mutter "#+END_SRC"
 
 
 -- | But if there is a need to throw an unrecoverable error, then

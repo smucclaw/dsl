@@ -41,7 +41,7 @@ import LS.NLP.NLG
     ( NLGEnv(gfLang, interpreted), ruleQuestions, expandRulesForNLG )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-    ( xpReturn, mutter, XPileLogE, XPileLog, mutters, mutterd, mutterd1, mutterd2 )
+    ( xpReturn, mutter, XPileLogE, XPileLog, mutters, mutterd, mutterd1, mutterd2, mutterdhs, mutterdhsf )
 import PGF ( showLanguage )
 import Text.Pretty.Simple (pShowNoColor)
 
@@ -112,16 +112,15 @@ combine' d [] []     = mutter "*** combine: case 1, nil" >> pure []
 combine' d (b:bs) [] = mutter "*** combine: case 2, nil" >> pure []
 combine' d [] (q:qs) = mutter "*** combine: case 3, nil" >> pure []
 combine' d (b:bs) (q:qs) = do
-  mutterd  d     "combine: case 4, non-nil"
+  mutterd  d "combine: case 4, non-nil"
   mutterd1 d "input"
-  mutterd2 d "fst b"
-  mutter (show (fst b))
-  mutterd2 d "snd b ++"
-  mutter (show (snd b))
-  mutterd2 d "snd q"
-  mutter (show (snd q))
-
-  (:) <$> pure (fst b, snd b ++ snd q) <*> combine' (d+1) bs qs
+  mutterdhsf (d+2) "fst b"    pShowNoColorS (fst b)
+  mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
+  mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
+  (:) <$> pure (fst b, snd b <> snd q) <*> combine' (d+1) bs qs
+  where
+    pShowNoColorS :: (Show a) => a -> String
+    pShowNoColorS = TL.unpack . pShowNoColor
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?

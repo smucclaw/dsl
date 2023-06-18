@@ -72,6 +72,11 @@ module LS.XPile.Logging
     xpLog,
     mutter,
     mutters,
+    mutterd,
+    mutterd1,
+    mutterd2,
+    mutterdhs,
+    mutterdhsf,
     xpReturn,
     xpError,
     XPileLogW,
@@ -139,6 +144,35 @@ mutter = tell . pure
 -- | use `mutter` for single and `mutters` for plural muttering
 mutters :: XPileLogW -> XPileLog ()
 mutters = tell
+
+-- | prefix with stars for org purposes
+mutterd,mutterd1,mutterd2,mutterd3 :: Int -> XPileLogW' -> XPileLog ()
+mutterd d s = do
+  let stars = replicate d '*'
+  mutter (stars ++ " " ++ s)
+  return ()
+
+mutterd1 d = mutterd (d+1)
+mutterd2 d = mutterd (d+2)
+mutterd3 d = mutterd (d+3)
+
+-- | output haskell source to org-mode
+mutterdhs :: (Show a) => Int -> XPileLogW' -> a -> XPileLog ()
+mutterdhs d s hs = mutterdhsf d s show hs
+
+-- | with a custom show function, such as pShowNoColor
+mutterdhsf :: (Show a)
+           => Int                 -- ^ depth
+           -> XPileLogW'          -- ^ org title string
+           -> (a -> String)       -- ^ show or (T.unpack pShowNoColor)
+           -> a                   -- ^ Haskell value
+           -> XPileLog ()
+mutterdhsf d s f hs = do
+  mutterd d s
+  mutter "#+BEGIN_SRC haskell"
+  mutter (f hs)
+  mutter "#+END_SRC"
+
 
 -- | But if there is a need to throw an unrecoverable error, then
 -- return a Left value, by using `xpError`. And that error will appear

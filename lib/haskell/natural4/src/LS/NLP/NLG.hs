@@ -47,7 +47,7 @@ import LS.Types
       bsr2text,
       bsp2text )
 import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
-import LS.Rule (Rule(..), Interpreted(..), ruleName)
+import LS.Rule (Rule(..), Interpreted(..), ruleName, ruleLabelName)
 import PGF
     ( categories,
       languages,
@@ -280,20 +280,20 @@ ruleQuestions :: NLGEnv
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      when (verbose env) $ do
-        mutter "ruleQuestions: regulative"
-      text
+      mutterdhsf 4 "ruleQuestions: regulative" show (ruleLabelName rule)
+      mutterdhsf 4 "ruleQuestions: regulative returning text" show text
+      return text
     Hornlike {clauses} -> do
-      when (verbose env) $ do
-        mapM_ mutter ["ruleQuestions: horn"
-                     , show $ ruleQnTrees env alias rule
-                     , "---"]
-      text
-    Constitutive {cond} -> text
+      mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show (ruleQnTrees env alias rule)
+      mutterdhsf 4 "ruleQuestions: horn; returning text" show text
+      return text
+    Constitutive {cond} -> do
+      mutterdhsf 4 "ruleQuestions: constitutive; returning text" show text
+      return text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
     where
-      text = pure $ fmap (linBStext env) (ruleQnTrees env alias rule)
+      text = fmap (linBStext env) (ruleQnTrees env alias rule)
 
 
 ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [BoolStructGText]

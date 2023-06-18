@@ -86,7 +86,9 @@ namesAndStruct l4i rl = do
 namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env rl = do
   mutterdhsf 3 "namesAndQ: name" show name
+  mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
   questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
+  mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
   let wut = concat [ [ (name, q)
                      | q' <- q ]
                    | q <- questStruct ]

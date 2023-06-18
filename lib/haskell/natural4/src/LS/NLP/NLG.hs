@@ -273,7 +273,12 @@ nlg' thl env rule = case rule of
 -- |                 |               (RPMT ["2"]) :: RelationalPredicate   |
 -- | output          | Have there been more than two claims?               |
 -- +-----------------+-----------------------------------------------------+
-
+--
+-- there is some semantic difficulty here.
+-- qaHorns* returns expanded boolstructs which could be the result of multiple rules.
+-- but the ruleQuestions function here takes a rule as an argument.
+-- so maybe a qaHorns approach doesn't want to use ruleQuestions directly, but should
+-- instead call the underlying things like linBStext.
 
 ruleQuestions :: NLGEnv
               -> Maybe (MultiTerm,MultiTerm)
@@ -298,6 +303,9 @@ ruleQuestions env alias rule = do
     where
       text = fmap (linBStext env) (ruleQnTrees env alias rule)
 
+-- | like ruleQuestions, this function is rule-oriented; it returns a list of
+-- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which
+-- in turn are trees of GText_s. Which takes us into PGF territory.
 
 ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [BoolStructGText]
 ruleQnTrees env alias rule = do
@@ -324,6 +332,8 @@ ruleQnTrees env alias rule = do
       catMaybes [qCondTrees]
     DefNameAlias {} -> []
     _ -> []
+
+-- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)

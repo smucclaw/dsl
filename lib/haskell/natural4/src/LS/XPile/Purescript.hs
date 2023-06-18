@@ -18,7 +18,7 @@ import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
 import Control.Applicative (liftA2)
 import Control.Monad (guard, join, liftM, unless, when, forM_)
-import Data.Bifunctor (second)
+import Data.Bifunctor (first, second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
 import Data.HashMap.Strict ((!))
@@ -63,13 +63,15 @@ toTuple (x,y) = Tuple x y
 textMT :: [RuleName] -> [T.Text]
 textMT = map mt2text
 
+slashNames :: [RuleName] -> String
+slashNames names = T.unpack (T.intercalate " / " (mt2text <$> names))
 
 mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
                     -> XPileLog [([RuleName], [BoolStructT])]
 mutterRuleNameAndBS rnbss = do
   mutterd 3 "rulename, bs pairs:"
   forM_ rnbss $ \(names, bs) -> do
-    mutterdhsf 4 (T.unpack (T.intercalate " / " (mt2text <$> names)))
+    mutterdhsf 4 (slashNames names)
       pShowNoColorS bs
   return rnbss
 
@@ -189,10 +191,15 @@ asPurescript env rl = do
 
   mutterd 3 "building namesAndStruct"
   nAS <- namesAndStruct l4i rl
+  mutterdhsf 3 "built namesAndStruct" pShowNoColorS nAS
+
   mutterd 3 "building namesAndQ"
   nAQ <- namesAndQ      env rl
+  mutterdhsf 3 "built namesAndQ" pShowNoColorS nAQ
+
+  mutterd 3 "combining nAS and nAQ to form c'"
   c'  <- combine nAS nAQ
-  mutterdhsf 3 "c'" pShowNoColorS c'
+  mutterdhsf 3 "c' =" pShowNoColorS c'
 
   guts <- sequence [
     do
@@ -251,6 +258,8 @@ translate2PS nlgEnv eng rules = do
   mutter $ "** translate2PS: running against " ++ show (length rules) ++ " rules"
   mutter $ "*** nlgEnv has " ++ show (length nlgEnv) ++ " elements"
   mutter $ "*** eng.gfLang = " ++ show (gfLang eng)
+
+  -- topBit
   mutter $ "** calling biggestQ"
   bigQ <- biggestQ eng rules
   mutter $ "** got back bigQ"
@@ -265,6 +274,17 @@ translate2PS nlgEnv eng rules = do
           |> interviewRulesRHS2topBit
   mutterdhsf 2 "topBit =" pShowNoColorS topBit
 
+  -- middle Bit
+  mutterd 2 "trying the new approach based on qaHornsT without any NLG transformations at all"
+  let qaHT = [ (names, bs) | (names, bs) <- qaHornsT (interpreted eng)]
+  
+  let qaHTBit = qaHT
+                |$> first slashNames
+                |$> second alwaysLabeled
+                |$> toTuple
+
+  mutterdhsf 3 "qaHTBit =" pShowNoColorS qaHTBit
+
   -- bottomBit
   mutterd 2 "constructing bottomBit by calling asPurescript over rules"
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
@@ -272,6 +292,9 @@ translate2PS nlgEnv eng rules = do
   mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
   xpReturn [__i|
     #{topBit}
+
+    interviewRules2 :: Array (Tuple String (Item String))
+    interviewRules2 = #{qaHTBit}
 
     #{unlines $ rights bottomBit}
   |]

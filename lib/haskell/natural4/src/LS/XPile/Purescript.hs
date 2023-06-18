@@ -67,10 +67,10 @@ textMT = map mt2text
 mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
                     -> XPileLog [([RuleName], [BoolStructT])]
 mutterRuleNameAndBS rnbss = do
-  mutter "*** rulename, bs pairs:"
+  mutterd 3 "rulename, bs pairs:"
   forM_ rnbss $ \(names, bs) -> do
-    mutter $ "**** " ++ T.unpack ( T.intercalate " / " (mt2text <$> names))
-    mutter $ show bs
+    mutterdhsf 4 (T.unpack (T.intercalate " / " (mt2text <$> names)))
+      pShowNoColorS bs
   return rnbss
 
 -- two boolstructT: one question and one phrase
@@ -118,9 +118,10 @@ combine' d (b:bs) (q:qs) = do
   mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
   mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
   (:) <$> pure (fst b, snd b <> snd q) <*> combine' (d+1) bs qs
-  where
-    pShowNoColorS :: (Show a) => a -> String
-    pShowNoColorS = TL.unpack . pShowNoColor
+
+-- | helper function; basically a better show, from the pretty-simple package
+pShowNoColorS :: (Show a) => a -> String
+pShowNoColorS = TL.unpack . pShowNoColor
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?
@@ -183,21 +184,21 @@ asPurescript env rl = do
   let l4i       = env |> interpreted
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
-  mutter "*** building namesAndStruct\n"
+  mutterd 3 "building namesAndStruct"
   nAS <- namesAndStruct l4i rl
-  mutter "*** building namesAndQ\n"
+  mutterd 3 "building namesAndQ"
   nAQ <- namesAndQ      env rl
   c'  <- combine nAS nAQ
-  mutter $ "*** c'\n" ++ show c'
+  mutterdhsf 3 "c'" pShowNoColorS c'
 
   guts <- sequence [
     do
-      mutter $ "*** names: " ++ show ( mt2text <$> names )
-      mutter $ "**** hbs = head boolstruct\n" ++ show hbs
-      mutter $ "**** tbs = tail boolstruct\n" ++ show tbs
-      mutter $ "**** fixedNot\n" ++ show fixedNot
-      mutter $ "**** jq\n" ++ show jq
-      mutter $ "**** labeled\n" ++ show labeled
+      mutterdhsf 3 "names: " show ( mt2text <$> names )
+      mutterdhsf 4 "hbs = head boolstruct" show hbs
+      mutterdhsf 4 "tbs = tail boolstruct" show tbs
+      mutterdhsf 4 "fixedNot" show fixedNot
+      mutterdhsf 4 "jq" show jq
+      mutterdhsf 4 "labeled" show labeled
       xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
 
     | (names,bs) <- c'

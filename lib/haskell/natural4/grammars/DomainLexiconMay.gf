@@ -18,16 +18,26 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     eat = mkVP <lin V eat_V2 : V> ;
     drink = mkVP <lin V drink_V2 : V> ;
     sing = mkVP (mkV "nyanyi") ;
+    in_part = ParadigmsMay.mkAdv "sebahagiannya" ;
+    in_whole = ParadigmsMay.mkAdv "secara keseluruhannya" ;
 
   -- pdpa
     explanation = mkCN (mkN "penjelasan") ;
     inaction = mkCN (mkN "tidak bertindak") ;
-    notification = mkCN (mkN ("pemberitahuan"|"Pemberitahuan")) ;
+    notification = mkCN (mkN "pemberitahuan") ;
     PDPC = mkCN (mkN "PDPC") ;
-    data_breach = mkCN (mkN ("pelanggaran data"|"Pelanggaran Data")) ;
-    public = mkAP (mkA ("awam"|"Awam")) ;
+    data_breach = mkCN (mkN "pelanggaran data") ;
+    access = mkCN (mkN "access") ;
+    use = mkCN (mkN "use") ;
+    disclosure = mkCN (mkN "disclosure") ;
+    copying = mkCN (mkN "copying") ;
+    modification = mkCN (mkN "modification") ;
+    disposal = mkCN (mkN "disposal") ;
+    personal_data = mkCN (mkN "personal data") ;
+    any_unauthorised = mkAP (mkA "any unauthorised") ;
+    public = mkAP (mkA "awam") ;
     public_agency = mkCN (mkN "agensi awam") ;
-    notifiable = mkAP (mkA ("boleh dimaklumkan"|"Boleh Dimaklumkan")) ;
+    notifiable = mkAP (mkA "boleh dimaklumkan") ;
     aware = mkAP (mkA "sedar") ;
     NDB_Qualification = mkNP (mkN "Kelayakan NDB") ;
 

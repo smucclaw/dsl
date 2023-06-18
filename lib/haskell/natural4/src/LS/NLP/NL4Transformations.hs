@@ -29,7 +29,6 @@ pushPrePostIntoMain bsgt = case bsgt of
 
     tryTransformWhole :: BoolStructGText -> BoolStructGText
     tryTransformWhole bs = case bs of
-      -- Case 1: All as main, Any inner
       All pp
           ( Any
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
@@ -38,15 +37,9 @@ pushPrePostIntoMain bsgt = case bsgt of
               , Leaf (GqWHO ( GTHE _ ) ( GAPWho non_alcoholic ))
               ]
           :  Any
-            ( Just
-                ( Pre (GqPREPOST
-                    ( GrecoverUnparsedPrePost whether ))
-                )
-            )
-            [ Leaf (GqWHO ( GTHE person2 )
-                ( GrecoverUnparsedWho in_part ))
-            , Leaf (GqWHO ( GTHE _ )
-                ( GrecoverUnparsedWho in_whole ))
+            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
+            [ Leaf (GqWHO ( GTHE person2 ) ( GAdvWho in_part ))
+            , Leaf (GqWHO ( GTHE _ ) ( GAdvWho in_whole ))
             ]
           : restOfInnerRules ) ->
         All pp
@@ -59,16 +52,18 @@ pushPrePostIntoMain bsgt = case bsgt of
                 Nothing
                 [ Leaf $ GqWHO ( GTHE person2 )
                                ( GWHO GpresSimul GPOS
-                                     (hackStrVP in_part
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))))
+                                     (GAdvVP
+                                        (GComplV2 consume (GDetCN GtheSg beverage ))
+                                        in_part))
                 , Leaf $ GqWHO ( GTHE person2 )
                                ( GWHO GpresSimul GPOS
-                                      (hackStrVP in_whole
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))))
+                                      (GAdvVP
+                                        (GComplV2 consume (GDetCN GtheSg beverage ))
+                                         in_whole))
                 ]
             : restOfInnerRules )
-     -- Case 2: Any as main, Any as inner
-      Any pp
+     -- like above, but body of 2nd is recoverUnparsed
+      All pp
           ( Any
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
                                (GqPREPOST ( GNP_PrePost ( GMassNP beverage )))))
@@ -76,13 +71,10 @@ pushPrePostIntoMain bsgt = case bsgt of
               , Leaf (GqWHO ( GTHE _ ) ( GAPWho non_alcoholic ))
               ]
           :  Any
-            ( Just
-                ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))) -- TODO: prepare for cases where PrePost is parsed
+            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))) -- TODO: prepare for cases where PrePost is parsed
             )
-            [ Leaf (GqWHO ( GTHE person2 )
-                ( GrecoverUnparsedWho in_part ))
-            , Leaf (GqWHO ( GTHE _ )
-                ( GrecoverUnparsedWho in_whole ))
+            [ Leaf (GqWHO ( GTHE person2 ) ( GrecoverUnparsedWho in_part ))
+            , Leaf (GqWHO ( GTHE _ ) ( GrecoverUnparsedWho in_whole ))
             ]
           : restOfInnerRules ) ->
         Any pp

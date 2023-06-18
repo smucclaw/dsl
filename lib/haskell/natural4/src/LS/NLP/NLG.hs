@@ -293,6 +293,7 @@ ruleQuestions env alias rule = do
       mutterdhsf 4 "ruleQuestions: constitutive; returning text" show text
       return text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
+    DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
     where
       text = fmap (linBStext env) (ruleQnTrees env alias rule)

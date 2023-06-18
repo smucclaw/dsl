@@ -101,6 +101,11 @@ spec = do
           let questions = fst $ xpLog $ ruleQuestions env Nothing (head expected_pdpadbno1)
           questions `shouldBe` [Not (Leaf "is the organisation a public agency?"), Leaf "does the data breach occur on or after 1 Feb 2022?", Leaf "has the organisation become aware that a data breach may have occurred?"]
 
+      describe "test questions from MustSing5 after rule expansion" $ do
+        it "should return questions about alcoholic and non-alcoholic beverages" $ do
+            let questions = fst $ xpLog $ ruleQuestions env Nothing (head mustsing5ExpandedGold)
+            questions `shouldBe` [All Nothing [Leaf "does the person walk?",Any Nothing [All Nothing [Any Nothing [Leaf "does the person consume an alcoholic beverage?",Leaf "does the person consume a non-alcoholic beverage?"],Any Nothing [Leaf "does the person consume the beverage in part?",Leaf "does the person consume the beverage in whole?"]],Leaf "does the person eat?"]]]
+
       (envMustSing, _) <- xpLog <$> runIO (myNLGEnv mustsing5Interp eng)
       case envMustSing of
         Left xpLogW ->

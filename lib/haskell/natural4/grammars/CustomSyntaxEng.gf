@@ -14,7 +14,7 @@ concrete CustomSyntaxEng of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralEng [
-      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep
+      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
     , VV, must_VV
     ]
   , ExtendEng [
@@ -30,6 +30,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     , ParadigmsEng
     , ExtendEng
     , SymbolicEng
+    , LexiconEng
     , (ExtraEng=ExtraEng)
     , (R=ResEng)
     , (Co=Coordination)
@@ -108,6 +109,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     about_Prep = ParadigmsEng.mkPrep "about" ;
 
   oper
+    emptyCN : CN = <mkCN cat_N : CN> ** {s = \\_,_ => []} ;
     emptyNP : NP = it_NP ** {s = \\_ => []} ;
     emptyPlNP : NP = they_NP ** {s = \\_ => []} ;
 

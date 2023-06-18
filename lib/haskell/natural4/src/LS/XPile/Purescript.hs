@@ -89,8 +89,8 @@ namesAndQ env rl = do
   let wut = concat [ [ (name, q)
                      | q' <- q ]
                    | q <- questStruct ]
-  mutter $ "*** wut the heck are we returning?"
-  mutters ["- " ++ show w | w <- wut]
+  mutter $ "*** wut the heck are we returning? like, " ++ show (length w) ++ " things."
+  sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where
     name = map ruleLabelName rl

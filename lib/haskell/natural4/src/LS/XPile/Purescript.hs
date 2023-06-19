@@ -38,7 +38,7 @@ import Flow ((|>))
 import LS.Interpreter (getMarkings, qaHornsT)
 import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
-  ( NLGEnv (gfLang, interpreted),
+  ( NLGEnv (..),
     expandRulesForNLG,
     ruleQuestions,
     ruleQuestionsNamed,
@@ -309,12 +309,12 @@ translate2PS nlgEnvs eng rules = do
   -------------------------------------------------------------
   mutterd 2 "trying the new approach based on qaHornsT"
   qaHornsAllLangs :: [Either XPileLogW String] <- 
-    for nlgEnvs $ \nlgEnv -> do
-      let nlgEnvStr = nlgEnv |> gfLang |> showLanguage
-          l4i       = nlgEnv |> interpreted
-          nlgEnvStrLower = Char.toLower <$> nlgEnvStr
-          listOfMarkings = Map.toList . AA.getMarking $ getMarkings l4i
+    for nlgEnvs $ \nlgEnv@(NLGEnv {gfLang}) -> do
+      let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
+          l4i       = interpreted nlgEnv
+          listOfMarkings = l4i |> getMarkings |> AA.getMarking |> Map.toList
 
+      -- The Right may contain duplicates, so we need to nub later.
       hornByLang :: Either XPileLogW [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)] <-
         qaHornsByLang rules nlgEnv
 

@@ -6,6 +6,7 @@ concrete NL4BaseChi of NL4Base =
     , qUPON, sUPON -- change tense
     , ConjConstraint -- Conj has different lincat
     , MkDate -- different order
+    , recoverUnparsedAdv -- different lincat
     ]
   with
       (Syntax=SyntaxChi)
@@ -105,14 +106,14 @@ lin
 -- Instead of crashing, every category should have a dummy constructor where to put a string
   lin
     recoverUnparsedPrePost string = {
-      s = "·" ++ string.s ; -- if PrePost isn't parsed, use the original string
-      qs = "Adakah perkara berikut berlaku:" ++ string.s -- make a question in an awkward way
+      s = string.s ; -- if PrePost isn't parsed, use the original string
+      qs = string.s -- make a question in an awkward way
       } ;
 
     -- : String -> String -> Constraint ;
     recoverRPis damage toContents = {
-      s = "·" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
-      qs = "Is" ++ damage.s ++ toContents.s ++ bindQM
+      s = damage.s ++ "是" ++ toContents.s ; -- if constraint isn't parsed, use the original string
+      qs = damage.s ++ "是" ++ toContents.s ++ "吗" ++ bindQM
       } ;
     recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
 
@@ -129,6 +130,8 @@ lin
 
     recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
 
-    recoverUnparsedTimeUnit string = mkCN <LexiconChi.day_N ** {s = "·" ++ string.s} : N> ;
+    recoverUnparsedTimeUnit string = mkCN <LexiconChi.day_N ** {s = string.s} : N> ;
+
+    recoverUnparsedAdv string = LexiconChi.today_Adv ** {s = string.s} ;
 }
 

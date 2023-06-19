@@ -15,7 +15,7 @@ concrete CustomSyntaxMay of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralMay [
-      Prep, for_Prep, from_Prep, on_Prep, after_Prep
+      Prep, for_Prep, from_Prep, on_Prep, after_Prep, possess_Prep
     , VV, must_VV
     ]
   , ExtendMay [
@@ -31,6 +31,7 @@ concrete CustomSyntaxMay of CustomSyntax =
     , ParadigmsMay
     , ExtendMay
     , SymbolicMay
+    , LexiconMay
     , (R=ResMay)
     , (Co=Coordination)
     , Prelude
@@ -107,6 +108,7 @@ concrete CustomSyntaxMay of CustomSyntax =
     about_Prep = R.mkPrep "tentang" ;
 
 oper
+    emptyCN : CN = <mkCN cat_N : CN> ** {s = \\_ => []} ;
     emptyNP : NP = it_NP ** {s = \\_ => []} ;
     emptyPlNP : NP = they_NP ** {s = \\_ => []} ;
 

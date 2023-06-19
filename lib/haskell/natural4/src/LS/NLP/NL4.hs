@@ -189,6 +189,9 @@ data Tree :: * -> * where
   GByVP :: GVP -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
+  Gin_part :: Tree GAdv_
+  Gin_whole :: Tree GAdv_
+  GrecoverUnparsedAdv :: GString -> Tree GAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
   GUseN :: GN -> Tree GCN_
   LexCN :: String -> Tree GCN_
@@ -262,6 +265,8 @@ data Tree :: * -> * where
   Gnum :: GSub1000000 -> Tree GNumeral_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
+  GAP_PrePost :: GAP -> Tree GPrePost_
+  GAdv_PrePost :: GAdv -> Tree GPrePost_
   GNP_PrePost :: GNP -> Tree GPrePost_
   GNP_caused_NP_to_VP_Prep_PrePost :: GNP -> GNP -> GVP -> GPrep -> Tree GPrePost_
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
@@ -274,6 +279,7 @@ data Tree :: * -> * where
   Gfor_Prep :: Tree GPrep_
   Gfrom_Prep :: Tree GPrep_
   Gon_Prep :: Tree GPrep_
+  Gpossess_Prep :: Tree GPrep_
   Gto_Prep :: Tree GPrep_
   Gwithin_Prep :: Tree GPrep_
   GConjPrePostQS :: GString -> GString -> GConj -> GListQS -> Tree GQS_
@@ -360,6 +366,7 @@ data Tree :: * -> * where
   LexVS :: String -> Tree GVS_
   LexVV :: String -> Tree GVV_
   GAPWho :: GAP -> Tree GWho_
+  GAdvWho :: GAdv -> Tree GWho_
   GConjPrePostWho :: GPrePost -> GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjPreWho :: GPrePost -> GConj -> GListWho -> Tree GWho_
   GConjWho :: GConj -> GListWho -> Tree GWho_
@@ -386,6 +393,9 @@ instance Eq (Tree a) where
     (GByVP x1,GByVP y1) -> and [ x1 == y1 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (Gin_part,Gin_part) -> and [ ]
+    (Gin_whole,Gin_whole) -> and [ ]
+    (GrecoverUnparsedAdv x1,GrecoverUnparsedAdv y1) -> and [ x1 == y1 ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseN x1,GUseN y1) -> and [ x1 == y1 ]
     (LexCN x,LexCN y) -> x == y
@@ -459,6 +469,8 @@ instance Eq (Tree a) where
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
     (GNEG,GNEG) -> and [ ]
     (GPOS,GPOS) -> and [ ]
+    (GAP_PrePost x1,GAP_PrePost y1) -> and [ x1 == y1 ]
+    (GAdv_PrePost x1,GAdv_PrePost y1) -> and [ x1 == y1 ]
     (GNP_PrePost x1,GNP_PrePost y1) -> and [ x1 == y1 ]
     (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4,GNP_caused_NP_to_VP_Prep_PrePost y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
@@ -471,6 +483,7 @@ instance Eq (Tree a) where
     (Gfor_Prep,Gfor_Prep) -> and [ ]
     (Gfrom_Prep,Gfrom_Prep) -> and [ ]
     (Gon_Prep,Gon_Prep) -> and [ ]
+    (Gpossess_Prep,Gpossess_Prep) -> and [ ]
     (Gto_Prep,Gto_Prep) -> and [ ]
     (Gwithin_Prep,Gwithin_Prep) -> and [ ]
     (GConjPrePostQS x1 x2 x3 x4,GConjPrePostQS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -557,6 +570,7 @@ instance Eq (Tree a) where
     (LexVS x,LexVS y) -> x == y
     (LexVV x,LexVV y) -> x == y
     (GAPWho x1,GAPWho y1) -> and [ x1 == y1 ]
+    (GAdvWho x1,GAdvWho y1) -> and [ x1 == y1 ]
     (GConjPrePostWho x1 x2 x3 x4,GConjPrePostWho y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjPreWho x1 x2 x3,GConjPreWho y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjWho x1 x2,GConjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -614,6 +628,9 @@ instance Gf GAdv where
   gf (GByVP x1) = mkApp (mkCId "ByVP") [gf x1]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
+  gf Gin_part = mkApp (mkCId "in_part") []
+  gf Gin_whole = mkApp (mkCId "in_whole") []
+  gf (GrecoverUnparsedAdv x1) = mkApp (mkCId "recoverUnparsedAdv") [gf x1]
 
   fg t =
     case unApp t of
@@ -621,6 +638,9 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "ByVP" -> GByVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
+      Just (i,[]) | i == mkCId "in_part" -> Gin_part 
+      Just (i,[]) | i == mkCId "in_whole" -> Gin_whole 
+      Just (i,[x1]) | i == mkCId "recoverUnparsedAdv" -> GrecoverUnparsedAdv (fg x1)
 
 
       _ -> error ("no Adv " ++ show t)
@@ -1006,6 +1026,8 @@ instance Gf GPol where
       _ -> error ("no Pol " ++ show t)
 
 instance Gf GPrePost where
+  gf (GAP_PrePost x1) = mkApp (mkCId "AP_PrePost") [gf x1]
+  gf (GAdv_PrePost x1) = mkApp (mkCId "Adv_PrePost") [gf x1]
   gf (GNP_PrePost x1) = mkApp (mkCId "NP_PrePost") [gf x1]
   gf (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4) = mkApp (mkCId "NP_caused_NP_to_VP_Prep_PrePost") [gf x1, gf x2, gf x3, gf x4]
   gf (GNP_caused_by_PrePost x1) = mkApp (mkCId "NP_caused_by_PrePost") [gf x1]
@@ -1014,6 +1036,8 @@ instance Gf GPrePost where
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "AP_PrePost" -> GAP_PrePost (fg x1)
+      Just (i,[x1]) | i == mkCId "Adv_PrePost" -> GAdv_PrePost (fg x1)
       Just (i,[x1]) | i == mkCId "NP_PrePost" -> GNP_PrePost (fg x1)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "NP_caused_NP_to_VP_Prep_PrePost" -> GNP_caused_NP_to_VP_Prep_PrePost (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "NP_caused_by_PrePost" -> GNP_caused_by_PrePost (fg x1)
@@ -1031,6 +1055,7 @@ instance Gf GPrep where
   gf Gfor_Prep = mkApp (mkCId "for_Prep") []
   gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
   gf Gon_Prep = mkApp (mkCId "on_Prep") []
+  gf Gpossess_Prep = mkApp (mkCId "possess_Prep") []
   gf Gto_Prep = mkApp (mkCId "to_Prep") []
   gf Gwithin_Prep = mkApp (mkCId "within_Prep") []
 
@@ -1043,6 +1068,7 @@ instance Gf GPrep where
       Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
       Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
       Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 
+      Just (i,[]) | i == mkCId "possess_Prep" -> Gpossess_Prep 
       Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
       Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep 
 
@@ -1381,6 +1407,7 @@ instance Gf GVV where
 
 instance Gf GWho where
   gf (GAPWho x1) = mkApp (mkCId "APWho") [gf x1]
+  gf (GAdvWho x1) = mkApp (mkCId "AdvWho") [gf x1]
   gf (GConjPrePostWho x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostWho") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjPreWho x1 x2 x3) = mkApp (mkCId "ConjPreWho") [gf x1, gf x2, gf x3]
   gf (GConjWho x1 x2) = mkApp (mkCId "ConjWho") [gf x1, gf x2]
@@ -1390,6 +1417,7 @@ instance Gf GWho where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "APWho" -> GAPWho (fg x1)
+      Just (i,[x1]) | i == mkCId "AdvWho" -> GAdvWho (fg x1)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostWho" -> GConjPrePostWho (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreWho" -> GConjPreWho (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ConjWho" -> GConjWho (fg x1) (fg x2)
@@ -1487,6 +1515,7 @@ instance Compos Tree where
     GByVP x1 -> r GByVP `a` f x1
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
+    GrecoverUnparsedAdv x1 -> r GrecoverUnparsedAdv `a` f x1
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
     GUseN x1 -> r GUseN `a` f x1
     GCompAP x1 -> r GCompAP `a` f x1
@@ -1513,6 +1542,8 @@ instance Compos Tree where
     GGerundNP x1 -> r GGerundNP `a` f x1
     GMassNP x1 -> r GMassNP `a` f x1
     Gnum x1 -> r Gnum `a` f x1
+    GAP_PrePost x1 -> r GAP_PrePost `a` f x1
+    GAdv_PrePost x1 -> r GAdv_PrePost `a` f x1
     GNP_PrePost x1 -> r GNP_PrePost `a` f x1
     GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4 -> r GNP_caused_NP_to_VP_Prep_PrePost `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GNP_caused_by_PrePost x1 -> r GNP_caused_by_PrePost `a` f x1
@@ -1580,6 +1611,7 @@ instance Compos Tree where
     GMayHave x1 -> r GMayHave `a` f x1
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GAPWho x1 -> r GAPWho `a` f x1
+    GAdvWho x1 -> r GAdvWho `a` f x1
     GConjPrePostWho x1 x2 x3 x4 -> r GConjPrePostWho `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjPreWho x1 x2 x3 -> r GConjPreWho `a` f x1 `a` f x2 `a` f x3
     GConjWho x1 x2 -> r GConjWho `a` f x1 `a` f x2

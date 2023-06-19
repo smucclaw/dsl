@@ -17,13 +17,22 @@ concrete DomainLexiconChi of DomainLexicon = NL4BaseChi **
     eat = mkVP <lin V eat_V2 : V> ;
     drink = mkVP <lin V drink_V2 : V> ;
     sing = mkVP sing_V ;
-
+    in_part = ParadigmsChi.mkAdv "部分地" ;
+    in_whole = ParadigmsChi.mkAdv "总的来说" ;
   -- pdpa
     explanation = mkCN (mkN "说 法") ;
     inaction = mkCN (mkN "不 作 为") ; --indirectly obtained from zaobao.com, specifically the term "democratic inaction"
     notification = mkCN (mkN ("通 知")) ;
     PDPC = mkCN (mkN "个 人 资 料 保 护 委 员 会") ; --obtained from zaobao.com
     data_breach = mkCN (mkN ("数据泄露")) ;
+    access = mkCN (mkN "access") ;
+    use = mkCN (mkN "use") ;
+    disclosure = mkCN (mkN "disclosure") ;
+    copying = mkCN (mkN "copying") ;
+    modification = mkCN (mkN "modification") ;
+    disposal = mkCN (mkN "disposal") ;
+    personal_data = mkCN (mkN "personal data") ;
+    any_unauthorised = mkAP (mkA "any unauthorised") ;
     public = mkAP (mkA ("公 共")) ;
     public_agency = mkCN (mkN "公众的代理行") ; -- TODO check, just copy and paste from unreliable source
     notifiable = mkAP (mkA ("应 通 报 的")) ;

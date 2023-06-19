@@ -1,6 +1,6 @@
 concrete NL4BaseEng of NL4Base =
      CustomSyntaxEng
-  ** NL4BaseFunctor - [You, APWho]
+  ** NL4BaseFunctor - [You, APWho, AdvWho]
   with
       (Syntax=SyntaxEng)
     , (Extend=ExtendEng)
@@ -36,6 +36,7 @@ concrete NL4BaseEng of NL4Base =
 -- Hack to get AP parsed into VPS
     -- : AP -> Who ; -- hack
     APWho alcoholic = lin VPS {s = \\_o,a => {fin = alcoholic.s ! a ; inf = []}} ;
+    AdvWho in_part = lin VPS {s = \\_o,a => {fin = in_part.s ; inf = []}} ;
 
 -----------------------------------------------------------------------------
 -- Instead of crashing, every category should have a dummy constructor where to put a string

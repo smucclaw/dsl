@@ -122,7 +122,10 @@ abstract NL4Base = CustomSyntax ** {
 -- Very specific things, yet uncategorised
     V2_PrePost : V2 -> PrePost ; -- consumes
     NP_PrePost : NP -> PrePost ; -- beverage
-    APWho : AP -> Who ; -- alcoholic into a VP
+    AP_PrePost : AP -> PrePost ; -- any unauthorised
+    Adv_PrePost : Adv -> PrePost ; -- of personal data
+    APWho : AP -> Who ; -- alcoholic
+    AdvWho : Adv -> Who ; -- in whole
 
 -----------------------------------------------------------------------------
 -- Instead of crashing, every category should have a dummy constructor where to put a string
@@ -138,5 +141,7 @@ abstract NL4Base = CustomSyntax ** {
       recoverUnparsedTimeUnit : String -> TimeUnit ;
 
       recoverRPis : String -> String -> Constraint ;
+
+      recoverUnparsedAdv : String -> Adv ;
 
 }

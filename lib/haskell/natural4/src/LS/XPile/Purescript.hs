@@ -270,7 +270,7 @@ asPurescript env rl = do
         . TL.replace "True" "true"
         . pShowNoColor $
             fmap toTuple listOfMarkings}
-    |]
+  |]
           -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
           --   (pretty $ TL.unpack (
@@ -285,7 +285,7 @@ asPurescript env rl = do
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnv eng rules = do
   mutter [__i|** translate2PS: running against #{length rules} rules|]
-  mutter [i|*** nlgEnv has " #{length nlgEnv} elements|]
+  mutter [i|*** nlgEnv has #{length nlgEnv} elements|]
   mutter [i|*** eng.gfLang = #{gfLang eng}|]
 
   -------------------------------------------------------------
@@ -321,14 +321,22 @@ translate2PS nlgEnv eng rules = do
   bottomBit <- traverse (`asPurescript` rules) nlgEnv
   mutterdhsf 2 "bottomBit without running rights" pShowNoColorS bottomBit
   mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
+
+  -- Stitch the top, middle and bottom bits together.
+  -- INARI: can we put like list comprehension here so it goes through all the langs?
+  -- [
+  -- | (nlgEnvStr, tuple) <- qaHornsRights
+  -- ]
+
   xpReturn [__i|
     #{topBit}
 
-    interviewRules2 :: Array (Tuple String (Item String))
-    interviewRules2 = #{qaHornsRights}
+    interviewRules2 :: Map.Map String (Item String)
+    interviewRules2 = Map.fromList #{qaHornsRights}
 
     #{unlines $ rights bottomBit}
   |]
+
 
 
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]

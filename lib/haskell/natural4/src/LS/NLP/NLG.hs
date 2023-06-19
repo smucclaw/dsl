@@ -287,8 +287,7 @@ ruleQuestions :: NLGEnv
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      mutterdhsf 4 "ruleQuestions: regulative" show (ruleLabelName rule)
-      mutterdhsf 4 "ruleQuestions: regulative returning text" show text
+      mutterdhsf 4 ("ruleQuestions: regulative " ++ show (ruleLabelName rule))  show text
       return text
     Hornlike {clauses} -> do
       mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show (ruleQnTrees env alias rule)
@@ -302,6 +301,15 @@ ruleQuestions env alias rule = do
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
     where
       text = fmap (linBStext env) (ruleQnTrees env alias rule)
+
+ruleQuestionsNamed :: NLGEnv
+                   -> Maybe (MultiTerm, MultiTerm)
+                   -> Rule
+                   -> XPileLog (RuleName, [AA.OptionallyLabeledBoolStruct Text.Text])
+ruleQuestionsNamed env alias rule = do
+  let rn = ruleLabelName rule
+  rq    <- ruleQuestions env alias rule
+  return (rn, rq)
 
 -- | like ruleQuestions, this function is rule-oriented; it returns a list of
 -- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which

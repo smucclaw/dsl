@@ -1,5 +1,6 @@
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MonadComprehensions #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -17,32 +18,53 @@ module LS.XPile.Purescript where
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
 import Control.Applicative (liftA2)
-import Control.Monad (guard, join, liftM, unless, when, forM, forM_)
-import Data.Bifunctor (first, second)
+import Control.Monad (guard, join, liftM, unless, when)
+import Data.Bifunctor (Bifunctor (..), first, second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
+import Data.Foldable (for_)
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
 import Data.List qualified as DL
 import Data.List.Split (chunk)
-import Data.Maybe (listToMaybe, catMaybes)
+import Data.Maybe (catMaybes, listToMaybe)
 import Data.Ord qualified
 import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
+import Data.Traversable (for)
 import Flow ((|>))
-import LS.Interpreter ( qaHornsT, getMarkings )
-import LS.Rule ( Rule(DefNameAlias), ruleLabelName, Interpreted(..) )
-import LS.Types
-    ( RuleName, BoolStructT, mt2text, defaultInterpreterOptions )
+import LS.Interpreter (getMarkings, qaHornsT)
 import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
-    ( NLGEnv(gfLang, interpreted), ruleQuestions, ruleQuestionsNamed, expandRulesForNLG )
+  ( NLGEnv (gfLang, interpreted),
+    expandRulesForNLG,
+    ruleQuestions,
+    ruleQuestionsNamed,
+  )
+import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)
+import LS.Types
+  ( BoolStructT,
+    RuleName,
+    defaultInterpreterOptions,
+    mt2text,
+  )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-    ( xpReturn, xpError, mutter, XPileLogE, XPileLog, mutters, mutterd, mutterd1, mutterd2, mutterdhs, mutterdhsf )
-import PGF ( showLanguage )
+  ( XPileLog,
+    XPileLogE,
+    mutter,
+    mutterd,
+    mutterd1,
+    mutterd2,
+    mutterdhs,
+    mutterdhsf,
+    mutters,
+    xpError,
+    xpReturn,
+  )
+import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | extract the tree-structured rules from Interpreter
@@ -70,7 +92,7 @@ mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
                     -> XPileLog [([RuleName], [BoolStructT])]
 mutterRuleNameAndBS rnbss = do
   mutterd 3 "rulename, bs pairs:"
-  forM_ rnbss $ \(names, bs) -> do
+  for_ rnbss $ \(names, bs) -> do
     mutterdhsf 4 (slashNames names)
       pShowNoColorS bs
   return rnbss
@@ -154,39 +176,41 @@ biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
   mutter $ "*** biggestQ: running"
   q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
-  let flattened = (\(x,ys) ->
-        (x, [ AA.extractLeaves y | y <- ys])) <$> q
+  let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
 
-      onlyqs = [ (x, justQuestions yh (map fixNot yt))
+      onlyqs = Map.fromList [ (x, justQuestions yh (map fixNot yt))
                | (x, y) <- q
-               , Just (yh, yt) <- [DL.uncons y] ]
+               , let Just (yh, yt) = DL.uncons y ]
 
       sorted = sortOn (Data.Ord.Down . DL.length) flattened
-  if not (null sorted)
-    then case fst (DL.head sorted) `Map.lookup` Map.fromList onlyqs of
-           Nothing -> mutter ("biggestQ didn't work, couldn't find " ++ show (fst (DL.head sorted)) ++ " in dict") >> return []
-           Just x  -> return [x]
-    else return []
+  case (null sorted, fst (DL.head sorted) `Map.lookup` onlyqs) of
+    (True, _) -> pure []
+    (_, Nothing) -> do
+      mutter [i|biggestQ didn't work, couldn't find #{fst $ DL.head sorted} in dict|]
+      pure []
+    (_, Just x) -> pure [x]
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
   mutter $ "*** biggestS running"
   q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
-  let flattened = (\(x,ys) ->
-        (x, [ AA.extractLeaves y | y <- ys])) <$> q
-      onlys = [ (x, justStatements yh (map fixNot yt))
-              | (x,y) <- q
-              , Just (yh, yt) <- [DL.uncons y] ]
+  let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
+
+      onlys = Map.fromList
+        [ (x, justStatements yh (map fixNot yt))
+        | (x,y) <- q
+        , let Just (yh, yt) = DL.uncons y ]
+
       sorted = sortOn (Data.Ord.Down . DL.length) flattened
   return $
-    if not (null sorted)
-    then pure $ Map.fromList onlys ! fst (DL.head sorted)
-    else []
+    if null sorted
+      then []
+      else pure $ onlys ! fst (DL.head sorted)
 
 asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
-  let l4i       = env |> interpreted
+      l4i       = env |> interpreted
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
   mutterd 3 "building namesAndStruct"
@@ -213,8 +237,8 @@ asPurescript env rl = do
       xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
 
     | (names,bs) <- c'
-    , Just (hbs, tbs) <- [DL.uncons bs]
-    , let fixedNot = map fixNot tbs
+    , let Just (hbs, tbs) = DL.uncons bs
+          fixedNot = map fixNot tbs
           jq       = justQuestions hbs fixedNot
           labeled  = alwaysLabeled jq
     ]
@@ -228,19 +252,24 @@ asPurescript env rl = do
   mutterdhsf 3 "Guts, Rights (successful results)" pShowNoColorS gutsRights
 
   mutter "*** Markings"
-  mutters [ "**** " ++ T.unpack (fst m) ++ "\n" ++ show (snd m) | m <- listOfMarkings]
-
-  xpReturn
+  mutters [
     [__i|
-      #{nlgEnvStrLower} :: Object.Object (Item String)
-      #{nlgEnvStrLower} = Object.fromFoldable
-        #{pShowNoColor gutsRights}
-      #{nlgEnvStrLower}Marking :: Marking
-      #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
-        #{TL.replace "False" "false"
-          . TL.replace "True" "true"
-          . pShowNoColor $
-              fmap toTuple listOfMarkings}
+      **** #{fst m}
+      #{snd m}
+    |]
+    | m <- listOfMarkings
+    ]
+
+  xpReturn [__i|
+    #{nlgEnvStrLower} :: Object.Object (Item String)
+    #{nlgEnvStrLower} = Object.fromFoldable
+      #{pShowNoColor gutsRights}
+    #{nlgEnvStrLower}Marking :: Marking
+    #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
+      #{TL.replace "False" "false"
+        . TL.replace "True" "true"
+        . pShowNoColor $
+            fmap toTuple listOfMarkings}
     |]
           -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
@@ -255,9 +284,9 @@ asPurescript env rl = do
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnv eng rules = do
-  mutter $ "** translate2PS: running against " ++ show (length rules) ++ " rules"
-  mutter $ "*** nlgEnv has " ++ show (length nlgEnv) ++ " elements"
-  mutter $ "*** eng.gfLang = " ++ show (gfLang eng)
+  mutter [__i|** translate2PS: running against #{length rules} rules|]
+  mutter [i|*** nlgEnv has " #{length nlgEnv} elements|]
+  mutter [i|*** eng.gfLang = #{gfLang eng}|]
 
   -------------------------------------------------------------
   -- topBit
@@ -270,9 +299,8 @@ translate2PS nlgEnv eng rules = do
         bigQ
           |$> alwaysLabeled
           |> pShowNoColor
-          |> TL.unpack
-          |> init
-          |> tail
+          |> TL.init
+          |> TL.tail
           |> interviewRulesRHS2topBit
   mutterdhsf 2 "topBit =" pShowNoColorS topBit
 
@@ -280,11 +308,9 @@ translate2PS nlgEnv eng rules = do
   -- middle Bit
   -------------------------------------------------------------
   mutterd 2 "trying the new approach based on qaHornsT"
-  qaHornsAllLangs <- forM nlgEnv (\langEnv -> do
+  qaHornsAllLangs <- for nlgEnv (\langEnv -> do
                                      hornByLang <- qaHornsByLang rules langEnv
-                                     case hornByLang of
-                                       Left err -> xpError err
-                                       Right tuple -> xpReturn (show (gfLang langEnv), tuple))
+                                     hornByLang |> either xpError (\tuple -> xpReturn (show $ gfLang langEnv, tuple)))
   let qaHornsRights = rights qaHornsAllLangs
   mutterdhsf 2 "qaHornsAllLangs" pShowNoColorS qaHornsRights
 
@@ -307,33 +333,34 @@ translate2PS nlgEnv eng rules = do
 
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 qaHornsByLang rules langEnv = do
-  let qaHT = [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
-      alias = listToMaybe [ (you,org) | DefNameAlias you org _ _ <- rules]
-      qaHornNames = concatMap fst qaHT
+  let qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
+      alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
+      qaHornNames = foldMap fst qaHT
   mutterdhsf 3 "qaHT fsts" show (fst <$> qaHT)
   mutterdhsf 3 "qaHornNames" show qaHornNames
   mutterd 3 "traversing ruleQuestionsNamed"
-  allRQs <- traverse (ruleQuestionsNamed langEnv alias) (expandRulesForNLG langEnv rules)
+  allRQs <- traverse (ruleQuestionsNamed langEnv alias) $ expandRulesForNLG langEnv rules
   -- first we see which of these actually returned anything useful
   mutterd 3 "all rulequestionsNamed returned"
-  measuredRQs <- forM allRQs (\(rn, asqn) -> do
-                                 mutterdhsf 4 (show rn) pShowNoColorS asqn
-                                 mutterd 4 $ "size of [BoolStruct] = " ++ show (length asqn)
-                                 if length asqn > 1
-                                   then xpReturn $ (rn, AA.All Nothing asqn)
-                                   else if length asqn == 1
-                                        then xpReturn (rn, head asqn)
-                                        else xpError ["ruleQuestion not of interest: " ++ show rn]
-                             )
+
+  measuredRQs <- for allRQs $ \(rn, asqn) -> do
+    mutterdhsf 4 (show rn) pShowNoColorS asqn
+    mutterd 4 [i|size of [BoolStruct] = #{length asqn}|]
+    case compare (length asqn) 1 of
+      GT -> xpReturn (rn, AA.All Nothing asqn)
+      EQ -> xpReturn (rn, head asqn)
+      _ -> xpError [[i|ruleQuestion not of interest: #{rn}|]]
+
   mutterdhsf 3 "measured RQs, rights (successes) ->" show (rights measuredRQs)
   mutterdhsf 3 "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
+
   -- now we filter for only those bits of questStruct whose names match the names from qaHorns.
-  wantedRQs <- forM (rights measuredRQs) (\(rn, asqn) -> do
-                                             if rn `elem` qaHornNames
-                                               then xpReturn (rn, asqn)
-                                               else xpError [show rn ++ " not named in qaHorns"])
+  wantedRQs <- for (rights measuredRQs) $ \case
+    (rn@((`elem` qaHornNames) -> True), asqn) -> xpReturn (rn, asqn)
+    (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
+
   mutterd 3 "wanted RQs, rights (successes) ->"
-  forM_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf 4 (show rn) pShowNoColorS asqn)
+  for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf 4 (show rn) pShowNoColorS asqn)
   mutterdhsf 3 "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
 
   let rqMap = Map.fromList (rights wantedRQs)
@@ -342,21 +369,20 @@ qaHornsByLang rules langEnv = do
         [ [ if Map.member n rqMap then Just (names, rqMap Map.! n) else Nothing
           | n <- names ]
         | names <- fst <$> qaHT ]
-        
+
   mutterdhsf 3 "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
-  
+
   let qaHTBit = qaHornsWithQuestions
-                |$> first slashNames
-                |$> second alwaysLabeled
+                |$> bimap slashNames alwaysLabeled
                 |$> toTuple
 
   mutterdhsf 3 "qaHTBit =" pShowNoColorS qaHTBit
   xpReturn qaHTBit
 
-interviewRulesRHS2topBit :: String -> String
+interviewRulesRHS2topBit :: TL.Text -> String
 interviewRulesRHS2topBit interviewRulesRHS =
   let interviewRulesRHS' = case interviewRulesRHS of
-        (null -> True) -> [i|Leaf ""|]
+        (TL.null -> True) -> [i|Leaf ""|]
         _ -> interviewRulesRHS
   in [__i|
     -- This file was automatically generated by natural4.

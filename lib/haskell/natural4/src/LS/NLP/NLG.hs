@@ -1,91 +1,104 @@
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE GHC2021 #-}
+-- {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE GADTs, NamedFieldPuns, FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module LS.NLP.NLG where
 
-
+import AnyAll qualified as AA
+import Control.Monad (when)
+import Data.Char qualified as Char (toLower)
+import Data.Foldable qualified as F
+import Data.HashMap.Strict (elems, keys, lookup, toList)
+import Data.HashMap.Strict qualified as Map
+import Data.List (intercalate)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe (catMaybes, listToMaybe, maybeToList)
+import Data.Text qualified as Text
+import Debug.Trace (trace)
+import LS.Interpreter (expandBSR, expandClause, expandClauses, expandRP)
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
-    ( BoolStructConstraint,
-      BoolStructCond,
-      BoolStructWho,
-      BoolStructGText,
-      flipPolarity,
-      bsWho2gfWho,
-      bsCond2gfCond,
-      bsConstraint2gfConstraint,
-      mapBSLabel,
-      introduceSubj,
-      referSubj,
-      pastTense,
-      isChinese,
-      isMalay,
-      aggregateBoolStruct,
-      pushPrePostIntoMain
-    )
+  ( BoolStructCond,
+    BoolStructConstraint,
+    BoolStructGText,
+    BoolStructWho,
+    aggregateBoolStruct,
+    bsCond2gfCond,
+    bsConstraint2gfConstraint,
+    bsWho2gfWho,
+    flipPolarity,
+    introduceSubj,
+    isChinese,
+    isMalay,
+    mapBSLabel,
+    pastTense,
+    pushPrePostIntoMain,
+    referSubj,
+  )
+import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName)
 import LS.Types
-    ( TemporalConstraint(..),
-      TComparison(..),
-      RuleName,
-      RelationalPredicate(RPBoolStructR, RPParamText, RPMT,
-                          RPConstraint),
-      RPRel(RPis, RPTC),
-      ParamText,
-      MultiTerm,
-      MTExpr(MTT),
-      HornClause2,
-      HornClause(hBody, hHead),
-      Deontic(..),
-      BoolStructR,
-      BoolStructP,
-      rp2text,
-      rp2mt,
-      pt2text,
-      mt2text,
-      mt2pt,
-      mkLeafPT,
-      bsr2text,
-      bsp2text )
-import LS.Interpreter (expandBSR, expandRP, expandClause, expandClauses)
-import LS.Rule (Rule(..), Interpreted(..), ruleName, ruleLabelName)
-import PGF
-    ( categories,
-      languages,
-      parse,
-      readPGF,
-      mkCId,
-      readLanguage,
-      showLanguage,
-      mkApp,
-      mkStr,
-      showExpr,
-      linearize,
-      mkType,
-      readType,
-      CId,
-      Language,
-      PGF,
-      Expr,
-      Type )
-import Control.Monad (when)
-import Data.HashMap.Strict (keys, elems, lookup, toList)
-import qualified Data.HashMap.Strict as Map
-import Data.Maybe (catMaybes, maybeToList, listToMaybe)
-import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Text as Text
-import qualified AnyAll as AA
-import System.Environment (lookupEnv)
-import Paths_natural4 ( getDataFileName )
-import qualified Data.Foldable as F
-import Data.List (intercalate)
-import qualified Data.Char as Char (toLower)
+  ( BoolStructP,
+    BoolStructR,
+    Deontic (..),
+    HornClause (hBody, hHead),
+    HornClause2,
+    MTExpr (MTT),
+    MultiTerm,
+    ParamText,
+    RPRel (RPTC, RPis),
+    RelationalPredicate
+      ( RPBoolStructR,
+        RPConstraint,
+        RPMT,
+        RPParamText
+      ),
+    RuleName,
+    TComparison (..),
+    TemporalConstraint (..),
+    bsp2text,
+    bsr2text,
+    mkLeafPT,
+    mt2pt,
+    mt2text,
+    pt2text,
+    rp2mt,
+    rp2text,
+  )
 import LS.XPile.Logging
-    ( xpError, xpReturn, mutter, XPileLogE, XPileLog, xpLog, mutters, mutterd, mutterdhsf )
-
-import Debug.Trace ( trace )
+  ( XPileLog,
+    XPileLogE,
+    mutter,
+    mutterd,
+    mutterdhsf,
+    mutters,
+    xpError,
+    xpLog,
+    xpReturn,
+  )
+import PGF
+  ( CId,
+    Expr,
+    Language,
+    PGF,
+    Type,
+    categories,
+    languages,
+    linearize,
+    mkApp,
+    mkCId,
+    mkStr,
+    mkType,
+    parse,
+    readLanguage,
+    readPGF,
+    readType,
+    showExpr,
+    showLanguage,
+  )
+import Paths_natural4 (getDataFileName)
+import System.Environment (lookupEnv)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF

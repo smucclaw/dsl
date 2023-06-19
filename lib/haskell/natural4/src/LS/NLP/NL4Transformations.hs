@@ -1,14 +1,16 @@
+{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE GADTs #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-{-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes #-}
 
 module LS.NLP.NL4Transformations where
+
+import AnyAll (BoolStruct (..), Label (..))
+import AnyAll qualified as AA
+import Data.Foldable (toList)
+import Data.Maybe (fromMaybe)
+import Debug.Trace (trace)
 import LS.NLP.NL4
 import PGF (Language, mkCId)
-import qualified AnyAll as AA
-import AnyAll (BoolStruct(..), Label(..))
-import Data.Maybe (fromMaybe)
-import Data.Foldable (toList)
-import Debug.Trace (trace)
 
 flipPolarity :: forall a . Tree a -> Tree a
 flipPolarity GPOS = GNEG

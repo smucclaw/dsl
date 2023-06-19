@@ -346,11 +346,11 @@ translate2PS nlgEnvs eng rules = do
 
   -- interviewRules2 :: Map.Map String (Item String)
   -- interviewRules2 = Map.fromList #{qaHornsRights}
-
+  let x <.> y = x <> "\n\n" <> y
   xpReturn [__i|
     #{topBit}
 
-    #{unlines $ rights qaHornsAllLangs}
+    #{foldr (<.>) mempty $ rights qaHornsAllLangs}
 
   |]
 --    #{unlines $ rights bottomBit}

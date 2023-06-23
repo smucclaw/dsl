@@ -359,35 +359,37 @@ translate2PS nlgEnvs eng rules = do
 
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 qaHornsByLang rules langEnv = do
+  mutterd 3 ("qaHornsByLang for language " ++ show (gfLang langEnv))
   let qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
       alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
       qaHornNames = foldMap fst qaHT
-  mutterdhsf 3 "qaHT fsts" show (fst <$> qaHT)
-  mutterdhsf 3 "qaHornNames" show qaHornNames
-  mutterd 3 "traversing ruleQuestionsNamed"
+      d = 4
+  mutterdhsf d "qaHT fsts" show (fst <$> qaHT)
+  mutterdhsf d "qaHornNames" show qaHornNames
+  mutterd d "traversing ruleQuestionsNamed"
   allRQs <- traverse (ruleQuestionsNamed langEnv alias) $ expandRulesForNLG langEnv rules
   -- first we see which of these actually returned anything useful
-  mutterd 3 "all rulequestionsNamed returned"
+  mutterd d "all rulequestionsNamed returned"
 
   measuredRQs <- for allRQs $ \(rn, asqn) -> do
-    mutterdhsf 4 (show rn) pShowNoColorS asqn
-    mutterd 4 [i|size of [BoolStruct] = #{length asqn}|]
+    mutterdhsf (d+1) (show rn) pShowNoColorS asqn
+    mutterd (d+1) [i|size of [BoolStruct] = #{length asqn}|]
     case compare (length asqn) 1 of
       GT -> xpReturn (rn, AA.All Nothing asqn)
       EQ -> xpReturn (rn, head asqn)
       _ -> xpError [[i|ruleQuestion not of interest: #{rn}|]]
 
-  mutterdhsf 3 "measured RQs, rights (successes) ->" show (rights measuredRQs)
-  mutterdhsf 3 "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
+  mutterdhsf d "measured RQs, rights (successes) ->" show (rights measuredRQs)
+  mutterdhsf d "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
 
   -- now we filter for only those bits of questStruct whose names match the names from qaHorns.
   wantedRQs <- for (rights measuredRQs) $ \case
     (rn@((`elem` qaHornNames) -> True), asqn) -> xpReturn (rn, asqn)
     (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
 
-  mutterd 3 "wanted RQs, rights (successes) ->"
+  mutterd d "wanted RQs, rights (successes) ->"
   for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf 4 (show rn) pShowNoColorS asqn)
-  mutterdhsf 3 "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
+  mutterdhsf d "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
 
   let rqMap = Map.fromList (rights wantedRQs)
 
@@ -396,13 +398,13 @@ qaHornsByLang rules langEnv = do
           | n <- names ]
         | names <- fst <$> qaHT ]
 
-  mutterdhsf 3 "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
+  mutterdhsf d "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
 
   let qaHTBit = qaHornsWithQuestions
                 |$> bimap slashNames alwaysLabeled
                 |$> toTuple
 
-  mutterdhsf 3 "qaHTBit =" pShowNoColorS qaHTBit
+  mutterdhsf d "qaHTBit =" pShowNoColorS qaHTBit
   xpReturn qaHTBit
 
 interviewRulesRHS2topBit :: TL.Text -> String

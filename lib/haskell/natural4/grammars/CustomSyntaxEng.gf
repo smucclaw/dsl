@@ -86,6 +86,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     ComplV2 v2 np = mkVP <lin V2 v2 : V2> <lin NP np : NP>  ;
     ComplVSif vs s = R.insertObj (\\_ => "if" ++ s.s) (R.predV <lin V vs : V>) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> | ExtendEng.ComplBareVS vs s ;
+    ComplVSwhen vs s = R.insertObj (\\_ => "when" ++ s.s) (R.predV <lin V vs : V>) ;
 
     MayHave occur =
       let vps : ExtendEng.VPS = MkVPS presAnt POS occur ;

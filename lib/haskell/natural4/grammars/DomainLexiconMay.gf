@@ -40,7 +40,9 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     notifiable = mkAP (mkA "boleh dimaklumkan") ;
     aware = mkAP (mkA "sedar") ;
     NDB_Qualification = mkNP (mkN "Kelayakan NDB") ;
-
+    liabilities = mkNP (mkN "liabiliti") ;
+    fall_due = MkVPS presSimul POS (mkVP (mkV "tiba masanya")) ;
+    unable = mkVS (mkV "tidak mampu membayar") ;
 
   -- rodents and vermin
     Loss_or_Damage = mkNP (mkN "Kerugian atau Kerosakan") ;

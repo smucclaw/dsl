@@ -26,8 +26,12 @@ abstract DomainLexicon = NL4Base ** {
        , disposal
        , personal_data
        : CN ;
-      public, notifiable, any_unauthorised : AP ;
-      NDB_Qualification : NP ;
+      public, notifiable, any_unauthorised, aware : AP ;
+      unable : VS ;
+      fall_due : VPS ;
+      NDB_Qualification
+      , liabilities
+      : NP ;
 
 
   -- rodents and vermin

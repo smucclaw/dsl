@@ -87,6 +87,10 @@ concrete CustomSyntaxMay of CustomSyntax =
       let if_S : Str = (SyntaxMay.mkAdv if_Subj <s : S>).s ;
           vp : VP = R.useV <lin V vs : V> ;
        in lin VP (R.insertObj if_S vp) ;
+    ComplVSwhen vs s =
+      let when_S : Str = (SyntaxMay.mkAdv when_Subj <s : S>).s ;
+          vp : VP = R.useV <lin V vs : V> ;
+       in lin VP (R.insertObj when_S vp) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> ;
 
     MayHave occur =

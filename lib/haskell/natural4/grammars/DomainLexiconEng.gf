@@ -42,6 +42,9 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       notifiable = mkAP (mkA ("notifiable"|"Notifiable")) ;
       aware = mkAP (mkA "aware") ;
       NDB_Qualification = mkNP (mkN "NDB Qualification") ;
+      liabilities = mkNP (mkN "liabilities") ;
+      fall_due = MkVPS presSimul POS (mkVP (mkV "fall due")) ;
+      unable = mkVS (mkV "unable to pay") ;
 
 
   -- rodents and vermin

@@ -2,7 +2,7 @@ abstract CustomSyntax =
     Numeral
   , Grammar [
           N, N2, CN, UseN, NP, Det, DetCN, MassNP
-        , V,  VV, V2, VS, VP
+        , V,  VV, V2, VS, VP, V2A
         , A, A2, AP, AdjCN, PositA
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
         , Prep, PrepNP, AdvVP
@@ -49,11 +49,13 @@ abstract CustomSyntax =
   fun
     ComplVAS : V2 -> AP -> S -> VP ; -- become aware (that) a data breach may have occurred
     ComplV2S : V2 -> NP -> S -> VP ; -- notify PDPC that a data breach has occurred
+                                     -- unable to pay (V2) liabilities (NP) (when_Subj they fall due) (S)
+
     ComplV2 : V2 -> NP -> VP ;
+    ComplVSwhen,
     ComplVSif,
     ComplVSthat : VS -> S -> VP ;
     MayHave : VP -> VPS ; -- getting "may have occurred" with pure RGL is a pain
-
     ReferenceNP : NP -> S ; -- it is NP — reference to a previous NP
 --      ExpletiveVP : VP -> S ; -- it is raining — dummy subject it (TODO: restrict usage of this and above from HS)
 

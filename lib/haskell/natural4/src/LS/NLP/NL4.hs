@@ -169,6 +169,8 @@ type GTense = Tree GTense_
 data GTense_
 type GV = Tree GV_
 data GV_
+type GV2A = Tree GV2A_
+data GV2A_
 type GString = Tree GString_
 data GString_
 type GInt = Tree GInt_
@@ -257,6 +259,7 @@ data Tree :: * -> * where
   Gbirds :: Tree GNP_
   Ghousehold_appliance :: Tree GNP_
   Ginsects :: Tree GNP_
+  Gliabilities :: Tree GNP_
   Gplumbing_heating_or_AC :: Tree GNP_
   Grodents :: Tree GNP_
   Gswimming_pool :: Tree GNP_
@@ -356,6 +359,7 @@ data Tree :: * -> * where
   GComplVAS :: GV2 -> GAP -> GS -> Tree GVP_
   GComplVSif :: GVS -> GS -> Tree GVP_
   GComplVSthat :: GVS -> GS -> Tree GVP_
+  GComplVSwhen :: GVS -> GS -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
   LexVP :: String -> Tree GVP_
   GMkVPI :: GVP -> Tree GVPI_
@@ -363,6 +367,7 @@ data Tree :: * -> * where
   GConjVPS :: GConj -> GListVPS -> Tree GVPS_
   GMayHave :: GVP -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
+  Gfall_due :: Tree GVPS_
   LexVS :: String -> Tree GVS_
   LexVV :: String -> Tree GVV_
   GAPWho :: GAP -> Tree GWho_
@@ -461,6 +466,7 @@ instance Eq (Tree a) where
     (Gbirds,Gbirds) -> and [ ]
     (Ghousehold_appliance,Ghousehold_appliance) -> and [ ]
     (Ginsects,Ginsects) -> and [ ]
+    (Gliabilities,Gliabilities) -> and [ ]
     (Gplumbing_heating_or_AC,Gplumbing_heating_or_AC) -> and [ ]
     (Grodents,Grodents) -> and [ ]
     (Gswimming_pool,Gswimming_pool) -> and [ ]
@@ -560,6 +566,7 @@ instance Eq (Tree a) where
     (GComplVAS x1 x2 x3,GComplVAS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GComplVSif x1 x2,GComplVSif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplVSthat x1 x2,GComplVSthat y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GComplVSwhen x1 x2,GComplVSwhen y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
     (LexVP x,LexVP y) -> x == y
     (GMkVPI x1,GMkVPI y1) -> and [ x1 == y1 ]
@@ -567,6 +574,7 @@ instance Eq (Tree a) where
     (GConjVPS x1 x2,GConjVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMayHave x1,GMayHave y1) -> and [ x1 == y1 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (Gfall_due,Gfall_due) -> and [ ]
     (LexVS x,LexVS y) -> x == y
     (LexVV x,LexVV y) -> x == y
     (GAPWho x1,GAPWho y1) -> and [ x1 == y1 ]
@@ -974,6 +982,7 @@ instance Gf GNP where
   gf Gbirds = mkApp (mkCId "birds") []
   gf Ghousehold_appliance = mkApp (mkCId "household_appliance") []
   gf Ginsects = mkApp (mkCId "insects") []
+  gf Gliabilities = mkApp (mkCId "liabilities") []
   gf Gplumbing_heating_or_AC = mkApp (mkCId "plumbing_heating_or_AC") []
   gf Grodents = mkApp (mkCId "rodents") []
   gf Gswimming_pool = mkApp (mkCId "swimming_pool") []
@@ -994,6 +1003,7 @@ instance Gf GNP where
       Just (i,[]) | i == mkCId "birds" -> Gbirds 
       Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance 
       Just (i,[]) | i == mkCId "insects" -> Ginsects 
+      Just (i,[]) | i == mkCId "liabilities" -> Gliabilities 
       Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC 
       Just (i,[]) | i == mkCId "rodents" -> Grodents 
       Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool 
@@ -1345,6 +1355,7 @@ instance Gf GVP where
   gf (GComplVAS x1 x2 x3) = mkApp (mkCId "ComplVAS") [gf x1, gf x2, gf x3]
   gf (GComplVSif x1 x2) = mkApp (mkCId "ComplVSif") [gf x1, gf x2]
   gf (GComplVSthat x1 x2) = mkApp (mkCId "ComplVSthat") [gf x1, gf x2]
+  gf (GComplVSwhen x1 x2) = mkApp (mkCId "ComplVSwhen") [gf x1, gf x2]
   gf (GUseComp x1) = mkApp (mkCId "UseComp") [gf x1]
   gf (LexVP x) = mkApp (mkCId x) []
 
@@ -1356,6 +1367,7 @@ instance Gf GVP where
       Just (i,[x1,x2,x3]) | i == mkCId "ComplVAS" -> GComplVAS (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "ComplVSif" -> GComplVSif (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplVSthat" -> GComplVSthat (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "ComplVSwhen" -> GComplVSwhen (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseComp" -> GUseComp (fg x1)
 
       Just (i,[]) -> LexVP (showCId i)
@@ -1376,6 +1388,7 @@ instance Gf GVPS where
   gf (GConjVPS x1 x2) = mkApp (mkCId "ConjVPS") [gf x1, gf x2]
   gf (GMayHave x1) = mkApp (mkCId "MayHave") [gf x1]
   gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
+  gf Gfall_due = mkApp (mkCId "fall_due") []
 
   fg t =
     case unApp t of
@@ -1383,6 +1396,7 @@ instance Gf GVPS where
       Just (i,[x1,x2]) | i == mkCId "ConjVPS" -> GConjVPS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "MayHave" -> GMayHave (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
+      Just (i,[]) | i == mkCId "fall_due" -> Gfall_due 
 
 
       _ -> error ("no VPS " ++ show t)
@@ -1503,6 +1517,14 @@ instance Gf GV where
 
 
 
+
+instance Gf GV2A where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
+
 instance Compos Tree where
   compos r a f t = case t of
     GConjAP x1 x2 -> r GConjAP `a` f x1 `a` f x2
@@ -1604,6 +1626,7 @@ instance Compos Tree where
     GComplVAS x1 x2 x3 -> r GComplVAS `a` f x1 `a` f x2 `a` f x3
     GComplVSif x1 x2 -> r GComplVSif `a` f x1 `a` f x2
     GComplVSthat x1 x2 -> r GComplVSthat `a` f x1 `a` f x2
+    GComplVSwhen x1 x2 -> r GComplVSwhen `a` f x1 `a` f x2
     GUseComp x1 -> r GUseComp `a` f x1
     GMkVPI x1 -> r GMkVPI `a` f x1
     GConjPrePostVPS x1 x2 x3 x4 -> r GConjPrePostVPS `a` f x1 `a` f x2 `a` f x3 `a` f x4

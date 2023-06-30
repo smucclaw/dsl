@@ -18,15 +18,12 @@ import LS.NLP.NL4Transformations
 import LS.NLP.NLG
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
+import LS.XPile.Logging (XPileLog)
+import Control.Monad (mapM, join)
 
 
-trees :: NLGEnv -> [Rule] -> [BoolStructGText]
-trees env rl = concatMap (ruleQnTrees env alias) rl
+gftrees :: NLGEnv -> [Rule] -> XPileLog [BoolStructGText]
+gftrees env rl = join <$> sequence (ruleQnTrees env alias <$> rl)
   where
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
 
-printTrees :: NLGEnv -> [Rule] -> String
-printTrees env rl =
-  show (
-    pretty $ pShowNoColor $ trees env rl
-  )

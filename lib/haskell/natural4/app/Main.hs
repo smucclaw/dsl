@@ -45,7 +45,7 @@ import LS.XPile.CoreL4
     sfl4ToDMN,
     sfl4ToEpilog,
   )
-import LS.XPile.GFTrees (printTrees)
+import LS.XPile.GFTrees (gftrees)
 import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
@@ -116,8 +116,9 @@ main = do
             mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
 
           when (SFL4.togftrees opts) $ do
-            let (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnvR rules)
-            mywritefile True togftreesFN iso8601 "gftrees" asGftrees
+            let (togftreesFN,    (asGftrees, asGftreesErr)) = (workuuid <> "/" <> "gftrees"
+                                                              , xpLog $ gftrees nlgEnvR rules)
+            mywritefile2 True togftreesFN iso8601 "gftrees" (pShowNoColorS asGftrees) asGftreesErr
 
           let allNLGEnvErrors = concat $ lefts allNLGEnv
           when (not $ null allNLGEnvErrors) $ do

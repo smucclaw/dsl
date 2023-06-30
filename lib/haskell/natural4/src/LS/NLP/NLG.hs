@@ -305,20 +305,27 @@ ruleQuestions :: NLGEnv
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      mutterdhsf 4 ("ruleQuestions: regulative " ++ show (ruleLabelName rule))  show text
-      return text
+      t <- text
+      mutterdhsf 4 ("ruleQuestions: regulative " ++ show (ruleLabelName rule))  pShowNoColorS t
+      text
     Hornlike {clauses} -> do
-      mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show (ruleQnTrees env alias rule)
-      mutterdhsf 4 "ruleQuestions: horn; returning text" show text
-      return text
+      rqn <- ruleQnTrees env alias rule
+      mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show rqn
+      t <- text
+      mutterdhsf 4 "ruleQuestions: horn; returning text" show t
+      text
     Constitutive {cond} -> do
-      mutterdhsf 4 "ruleQuestions: constitutive; returning text" show text
-      return text
+      t <- text
+      mutterdhsf 4 "ruleQuestions: constitutive; returning text" show t
+      text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
     where
-      text = fmap (linBStext env) (ruleQnTrees env alias rule)
+      text :: XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
+      text = do
+        t1 <- ruleQnTrees env alias rule
+        return ( linBStext env <$> t1 )
 
 ruleQuestionsNamed :: NLGEnv
                    -> Maybe (MultiTerm, MultiTerm)
@@ -333,8 +340,9 @@ ruleQuestionsNamed env alias rule = do
 -- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which
 -- in turn are trees of GText_s. Which takes us into PGF territory.
 
-ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [BoolStructGText]
+ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [BoolStructGText]
 ruleQnTrees env alias rule = do
+  mutterd 4 "ruleQnTrees: running"
   let (youExpr, orgExpr) =
         case alias of
           Just (you,org) ->
@@ -342,6 +350,8 @@ ruleQnTrees env alias rule = do
                 [y,o] -> (y,o) -- both are parsed
                 _ -> (GYou, GYou) -- dummy values
           Nothing -> (GYou, GYou) -- dummy values
+  mutterdhsf 4 "ruleQnTrees: youExpr = " pShowNoColorS youExpr
+  mutterdhsf 4 "ruleQnTrees: orgExpr = " pShowNoColorS orgExpr
   case rule of
     Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
@@ -349,15 +359,15 @@ ruleQnTrees env alias rule = do
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
           qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
-      catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
-      catMaybes bodyTrees
+      return $ catMaybes bodyTrees
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-      catMaybes [qCondTrees]
-    DefNameAlias {} -> []
-    _ -> []
+      return $ catMaybes [qCondTrees]
+    DefNameAlias {} -> return []
+    _ -> return []
 
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
 

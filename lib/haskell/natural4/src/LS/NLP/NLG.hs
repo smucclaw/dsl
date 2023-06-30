@@ -613,22 +613,20 @@ getExpandedRuleNames l4i rule = case rule of
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
 expandRuleForNLGE l4i depth rule = do
   case rule of
-    Regulative{} -> mutterd 4 "expandRuleForNLGE: running Regulative" >> do
+    Regulative{} -> mutterd depth "expandRuleForNLGE: running Regulative" >> do
       -- Maybe (XPileLogE BoolStructR)
       -- XPileLogE (Maybe BoolStructR)
-      let who1  = expandBSRM l4i depth <$> who rule
-          who2  = sequence who1
-          cond1 = expandBSRM l4i depth <$> cond rule
-          cond2 = sequence cond1
-      who3 <- who2
-      cond3 <- cond2
-
-      return $ rule {
-        who = who3
-        , cond = cond3
-        , upon = expandPT l4i depth <$> upon rule
-        , hence = expandRuleForNLG l4i depth <$> hence rule -- [TODO] upgrade this to the E form
-        , lest = expandRuleForNLG l4i depth <$> lest rule
+      who'   <- go (who rule)
+      cond'  <- go (cond rule)
+      hence' <- sequence $ expandRuleForNLGE l4i depth <$> hence rule
+      lest'  <- sequence $ expandRuleForNLGE l4i depth <$> lest  rule
+      upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon rule )
+      return $ rule
+        { who = who'
+        , cond = cond'
+        , upon = upon'
+        , hence = hence'
+        , lest = lest'
         }
     Hornlike {} -> mutterd 4 "expandRuleForNLGE: running Hornlike" >> return (
       rule { clauses = expandClauses l4i depth $ clauses rule } )
@@ -636,10 +634,8 @@ expandRuleForNLGE l4i depth rule = do
       rule { cond = expandBSR l4i depth <$> cond rule } )
     _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
   where
-    go :: ()
-    go = ()
-    -- [TODO] the who1/who2 cond1/cond2 business should be refactored into a helper function.
-
+    go xs = sequence $ expandBSRM l4i depth <$> xs
+    
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule

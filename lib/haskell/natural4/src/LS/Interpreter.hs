@@ -608,7 +608,7 @@ expandBSR' l4i depth (AA.Leaf rp)  =
   case expandRP l4i (depth + 1) rp of
     RPBoolStructR _mt1 RPis bsr -> bsr
     o                           -> AA.mkLeaf o
-expandBSR' l4i depth (AA.Not item)   = AA.nnf $ AA.mkNot     (expandBSR' l4i (depth + 1) item)
+expandBSR' l4i depth (AA.Not item)   = {- AA.nnf $ -} AA.mkNot     (expandBSR' l4i (depth + 1) item)
 expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
 expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
 

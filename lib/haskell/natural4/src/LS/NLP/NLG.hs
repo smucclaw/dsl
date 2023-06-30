@@ -567,9 +567,13 @@ expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
 expandRulesForNLGE env rules = do
   let depth = 4
   mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
-  let toreturn = expandRulesForNLG env rules
+  toreturn <- sequence (expandRuleForNLGE l4i (depth+1) <$> uniqrs)
   mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
   return toreturn
+  where
+    l4i = interpreted env
+    usedrules = getExpandedRuleNames l4i `concatMap` rules
+    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
 
 expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
 expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
@@ -609,26 +613,32 @@ getExpandedRuleNames l4i rule = case rule of
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
 expandRuleForNLGE l4i depth rule = do
   case rule of
-    Regulative{} -> do
+    Regulative{} -> mutterd 4 "expandRuleForNLGE: running Regulative" >> do
       -- Maybe (XPileLogE BoolStructR)
       -- XPileLogE (Maybe BoolStructR)
-      let who1 = expandBSRM l4i depth <$> who rule
-          who2 = sequence who1
+      let who1  = expandBSRM l4i depth <$> who rule
+          who2  = sequence who1
+          cond1 = expandBSRM l4i depth <$> cond rule
+          cond2 = sequence cond1
       who3 <- who2
+      cond3 <- cond2
+
       return $ rule {
         who = who3
+        , cond = cond3
         , upon = expandPT l4i depth <$> upon rule
-        , hence = expandRuleForNLG l4i depth <$> hence rule
+        , hence = expandRuleForNLG l4i depth <$> hence rule -- [TODO] upgrade this to the E form
         , lest = expandRuleForNLG l4i depth <$> lest rule
         }
-    Hornlike {} -> return $ rule {
-      clauses = expandClauses l4i depth $ clauses rule
-    }
-    Constitutive {} -> return $ rule {
-      cond = expandBSR l4i depth <$> cond rule
-    }
-    _ -> return rule
-
+    Hornlike {} -> mutterd 4 "expandRuleForNLGE: running Hornlike" >> return (
+      rule { clauses = expandClauses l4i depth $ clauses rule } )
+    Constitutive {} -> mutterd 4 "expandRuleForNLGE: running Constitutive" >> return (
+      rule { cond = expandBSR l4i depth <$> cond rule } )
+    _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
+  where
+    go :: ()
+    go = ()
+    -- [TODO] the who1/who2 cond1/cond2 business should be refactored into a helper function.
 
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions

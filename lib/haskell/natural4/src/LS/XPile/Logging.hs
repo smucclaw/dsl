@@ -1,3 +1,5 @@
+{-# LANGUAGE GHC2021 #-}
+
 {-| A module for wrapping transpilation errors and STDERR trace mumbling.
 
 This section explains the developer motivation for this library.
@@ -81,7 +83,8 @@ module LS.XPile.Logging
     xpError,
     XPileLogW,
     fmapE,
-    fromxpLogE
+    fromxpLogE,
+    pShowNoColorS
   )
 where
 
@@ -95,13 +98,15 @@ import Control.Monad.RWS
   )
 import Data.Either (fromRight)
 import Data.HashMap.Strict as Map (HashMap)
+import Data.Text.Lazy qualified as TL
 import Flow ((|>))
+import Text.Pretty.Simple (pShowNoColor)
 
 -- | typical usage
 --
 -- the caller (e.g. @app/Main@) calls @(output, err) = xpLog asOutput@.
 --
--- In the tuple, we find a list of strings in @err@.
+-- In the tuple, we find a list of strings in @err@. These are the things that are muttered.
 --
 -- In the simple case, the @asOutput@ could be simple: @output@ is a @String@.
 -- (see `LS.XPile.Purescript.translate2PS` for an example).
@@ -117,6 +122,9 @@ xpLog x = evalRWS x mempty mempty
 -- stands for @Either@. We deliberately use the same type for the
 -- Either Left as for the stderr stream. So the Either Left can return
 -- a list of errors; this anticipates monad-validate.
+--
+-- the Left is what gets xpError'ed.
+--
 type XPileLogE a = XPileLog (Either XPileLogW a)
 
 -- * The underlying types are not exported by this module, except XPileLogW.
@@ -200,3 +208,10 @@ fmapE f = fmap (second f)
 -- by turning lefts into mempty.
 fromxpLogE :: Monoid a => XPileLogE a -> a
 fromxpLogE xpLogE = xpLogE |> xpLog |> fst |> fromRight mempty
+
+
+-- | helper function; basically a better show, from the pretty-simple package
+pShowNoColorS :: (Show a) => a -> String
+pShowNoColorS = TL.unpack . pShowNoColor
+
+

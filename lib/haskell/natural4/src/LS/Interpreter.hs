@@ -32,7 +32,9 @@ import Data.Text.Lazy qualified as TL
 import Data.Tree
 import Data.Tuple (swap)
 import Debug.Trace
-import LS.XPile.Logging (mutterd, mutterdhsf)
+import LS.XPile.Logging (mutterd, mutterdhsf
+                        , XPileLogE, XPileLog
+                        , pShowNoColorS, xpReturn, xpError)
 import LS.PrettyPrinter
 import LS.RelationalPredicates
 import LS.Rule
@@ -588,9 +590,18 @@ expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) )
 expandClause _l4i _depth (HC   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
 expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
+
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
 expandBSR :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR  l4i depth x = expandTrace "expandBSR" depth (show x) $ AA.nnf $ expandBSR' l4i depth x
+
+-- | monadic version with logging turned on
+expandBSRM :: Interpreted -> Int -> BoolStructR -> XPileLog BoolStructR
+expandBSRM l4i depth x = do
+  mutterdhsf depth "expandBSR() called with" pShowNoColorS x
+  let toreturn = expandBSR l4i depth x
+  mutterdhsf depth "expandBSR() returning" pShowNoColorS toreturn
+  return toreturn
 
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth (AA.Leaf rp)  =

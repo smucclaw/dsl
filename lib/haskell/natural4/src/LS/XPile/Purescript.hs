@@ -40,6 +40,7 @@ import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
   ( NLGEnv (..),
     expandRulesForNLG,
+    expandRulesForNLGE,
     ruleQuestions,
     ruleQuestionsNamed,
   )
@@ -63,6 +64,7 @@ import LS.XPile.Logging
     mutters,
     xpError,
     xpReturn, XPileLogW,
+    pShowNoColorS
   )
 import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
@@ -111,7 +113,8 @@ namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env rl = do
   mutterdhsf 3 "namesAndQ: name" show name
   mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
-  questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
+  expandedRules <- expandRulesForNLGE env rl
+  questStruct <- traverse (ruleQuestions env alias) expandedRules
   mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
   let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
                      | q' <- q ]
@@ -145,10 +148,6 @@ combine' d (b:bs) (q:qs) = do
   mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
   mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
   (:) <$> pure (fst b, snd b <> snd q) <*> combine' (d+1) bs qs
-
--- | helper function; basically a better show, from the pretty-simple package
-pShowNoColorS :: (Show a) => a -> String
-pShowNoColorS = TL.unpack . pShowNoColor
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?
@@ -365,6 +364,7 @@ qaHornsByLang rules langEnv = do
       qaHornNames = foldMap fst qaHT
       d = 4
   mutterdhsf d "qaHT fsts" show (fst <$> qaHT)
+  mutterdhsf d "all qaHT" pShowNoColorS qaHT
   mutterdhsf d "qaHornNames" show qaHornNames
   mutterd d "traversing ruleQuestionsNamed"
   allRQs <- traverse (ruleQuestionsNamed langEnv alias) $ expandRulesForNLG langEnv rules
@@ -388,7 +388,7 @@ qaHornsByLang rules langEnv = do
     (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
 
   mutterd d "wanted RQs, rights (successes) ->"
-  for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf 4 (show rn) pShowNoColorS asqn)
+  for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf (d+1) (show rn) pShowNoColorS asqn)
   mutterdhsf d "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
 
   let rqMap = Map.fromList (rights wantedRQs)

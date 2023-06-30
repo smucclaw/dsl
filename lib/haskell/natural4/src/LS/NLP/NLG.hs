@@ -14,10 +14,14 @@ import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, listToMaybe, maybeToList)
+import Data.Maybe (catMaybes, listToMaybe, maybeToList, fromMaybe)
 import Data.Text qualified as Text
 import Debug.Trace (trace)
-import LS.Interpreter (expandBSR, expandClause, expandClauses, expandRP)
+import LS.Interpreter ( expandBSR
+                      , expandBSRM
+                      , expandClause
+                      , expandClauses
+                      , expandRP)
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
   ( BoolStructCond,
@@ -76,6 +80,7 @@ import LS.XPile.Logging
     xpError,
     xpLog,
     xpReturn,
+    pShowNoColorS
   )
 import PGF
   ( CId,
@@ -558,6 +563,14 @@ tString = GString . Text.unpack
 -----------------------------------------------------------------------------
 -- Expand a set of rules
 
+expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
+expandRulesForNLGE env rules = do
+  let depth = 4
+  mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
+  let toreturn = expandRulesForNLG env rules
+  mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
+  return toreturn
+
 expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
 expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
   where
@@ -591,6 +604,31 @@ getExpandedRuleNames l4i rule = case rule of
      where
       headNames = getNamesRP l4i 1 $ hHead clause
       bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
+
+
+expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
+expandRuleForNLGE l4i depth rule = do
+  case rule of
+    Regulative{} -> do
+      -- Maybe (XPileLogE BoolStructR)
+      -- XPileLogE (Maybe BoolStructR)
+      let who1 = expandBSRM l4i depth <$> who rule
+          who2 = sequence who1
+      who3 <- who2
+      return $ rule {
+        who = who3
+        , upon = expandPT l4i depth <$> upon rule
+        , hence = expandRuleForNLG l4i depth <$> hence rule
+        , lest = expandRuleForNLG l4i depth <$> lest rule
+        }
+    Hornlike {} -> return $ rule {
+      clauses = expandClauses l4i depth $ clauses rule
+    }
+    Constitutive {} -> return $ rule {
+      cond = expandBSR l4i depth <$> cond rule
+    }
+    _ -> return rule
+
 
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions

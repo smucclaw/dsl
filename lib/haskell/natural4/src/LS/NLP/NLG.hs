@@ -342,7 +342,7 @@ ruleQuestionsNamed env alias rule = do
 
 ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [BoolStructGText]
 ruleQnTrees env alias rule = do
-  mutterd 4 "ruleQnTrees: running"
+  mutterd 3 "ruleQnTrees: running"
   let (youExpr, orgExpr) =
         case alias of
           Just (you,org) ->
@@ -359,12 +359,21 @@ ruleQnTrees env alias rule = do
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
           qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
+      mutterdhsf 4 "Regulative/subjExpr"   show subjExpr
+      mutterdhsf 4 "Regulative/aliasExpr"  show aliasExpr
+      mutterdhsf 4 "Regulative/qWhoTrees"  show qWhoTrees
+      mutterdhsf 4 "Regulative/qCondTrees" show qCondTrees
+      mutterdhsf 4 "Regulative/qUponTrees" show qUponTrees
+
       return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
+      mutterdhsf 4 "Hornlike/bodyTrees" show bodyTrees
       return $ catMaybes bodyTrees
+
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
+      mutterdhsf 4 "Constitutive/qCOndTrees" show qCondTrees
       return $ catMaybes [qCondTrees]
     DefNameAlias {} -> return []
     _ -> return []

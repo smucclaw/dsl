@@ -312,15 +312,17 @@ ruleQuestions env alias rule = do
       rqn <- ruleQnTrees env alias rule
       mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show rqn
       t <- text
-      mutterdhsf 4 "ruleQuestions: horn; returning text" show t
+      mutterdhsf 4 "ruleQuestions: horn; returning linBStext" show t
       text
     Constitutive {cond} -> do
       t <- text
-      mutterdhsf 4 "ruleQuestions: constitutive; returning text" show t
+      mutterdhsf 4 "ruleQuestions: constitutive; returning linBStext" show t
       text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
+  -- [TODO] for our Logging exercise, see how to convert the _ case above to an xpError
+
     where
       text :: XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
       text = do

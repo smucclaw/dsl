@@ -46,7 +46,7 @@ import Data.List.NonEmpty qualified as NE
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
-import Data.Monoid (Ap (Ap), Endo (..))
+import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
 import Data.Text qualified as T
 import Debug.Trace (trace)
@@ -208,7 +208,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
-import Prettyprinter.Interpolate (__di)
+import Prettyprinter.Interpolate (__di, di)
 import Text.Regex.TDFA (AllTextMatches (getAllTextMatches), (=~))
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
@@ -259,8 +259,7 @@ sfl4ToLogicProgramStr rules =
 
 -- sfl4ToDMN :: HXT.ArrowXml cat => [SFL4.Rule] -> cat a HXT.XmlTree
 sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
-sfl4ToDMN rules =
-  rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
+sfl4ToDMN rules = rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
 sfl4ToCorel4 :: [SFL4.Rule] -> XPileLogE String
 sfl4ToCorel4 rs =
@@ -337,14 +336,12 @@ sfl4ToCorel4Program l4i
 ppCorel4 :: L4.Program () -> String
 ppCorel4 Program {elementsOfProgram} =
   elementsOfProgram |$> pptle |> vsep |> myrender |> T.unpack
-  -- T.unpack $ myrender (vsep $ pptle <$> elementsOfProgram)
 
 pptle :: TopLevelElement () -> Doc ann
 pptle (ClassDeclTLE ClassDecl {nameOfClassDecl}) =
   [__di|
     class #{nameOfClassDecl |> stringOfClassName |> T.pack |> MTT |> snake_inner}
   |]
-  -- "class" <+> snake_inner (MTT . T.pack . stringOfClassName . nameOfClassDecl $ cdcl)
 
 pptle (RuleTLE Rule { nameOfRule }) =
   vsep [nameOfRule']
@@ -358,14 +355,17 @@ pptle (RuleTLE Rule { nameOfRule }) =
       <&> (\x -> ["rule <", x, ">"])
       <&> foldMap pretty
 
-pptle tle                 = vsep ( "## pptle: UNIMPLEMENTED, showing Haskell source:"
-                                   : (pretty . ("## " <>) <$> lines (show tle)) )
+pptle tle                 =
+  [__di|
+    \#\# pptle: UNIMPLEMENTED, showing Haskell source:
+    \#\# #{lines $ show tle}
+  |]
 
 -- TODO: remove after import from BabyL4 works correctly
 trueVNoType :: Expr ()
-trueVNoType = ValE () (BoolV True)
+trueVNoType = ValE () $ BoolV True
 falseVNoType :: Expr ()
-falseVNoType = ValE () (BoolV False)
+falseVNoType = ValE () $ BoolV False
 
 -- TODO: BEGIN helper functions
 -- maybe move into BabyL4/SyntaxManipulations.hs
@@ -376,12 +376,6 @@ falseVNoType = ValE () (BoolV False)
 -- ASP TODO: add env (var list) as a second arg, and look up varname in env
 -- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
 
--- varNameToVarNoType_ :: [String] -> VarName -> Var ()
--- varNameToVarNoType_ cont vn
---   | null cont = GlobalVar (QVarName () vn)
---   | vn == head cont = LocalVar (QVarName () vn) (fromMaybe 0 (elemIndex vn cont))
---   | otherwise = varNameToVarNoType (tail cont) vn
-
 varNameToVarNoType :: [String] -> VarName -> Var ()
 varNameToVarNoType context nameOfQVarName =
   nameOfQVarName
@@ -391,8 +385,11 @@ varNameToVarNoType context nameOfQVarName =
     qVarName = QVarName {annotOfQVarName = (), ..}
 
 varsToExprNoType :: [Var t] -> ExprM ann t
-varsToExprNoType (v:vs) = pure $ applyVarsNoType v vs
-varsToExprNoType [] = refute "internal error (varsToExprNoType [])"
+varsToExprNoType vars =
+  vars
+    |> uncons
+    |$> uncurry applyVarsNoType
+    |> maybe (refute "internal error (varsToExprNoType [])") pure
 
 multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
@@ -682,20 +679,6 @@ prettyBoilerplate ct@(CT ch) =
             _ -> mempty
         )
   where
-    -- [ "fact" <+> angles (c_name <> "Exhaustive")
-    -- , "for x:" <+> c_name
-    -- , encloseSep "" "" " || " $ (\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList
-    -- , ""
-    -- , "fact" <+> angles (c_name <> "Disj")
-    -- , encloseSep "" "" " && " $ (\(x,y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList
-    -- , ""
-    -- ]
-    -- \| className <- getCTkeys ct
-    -- , Just (ctype, _) <- [Map.lookup className ch]
-    -- , (Just (InlineEnum TOne nelist),_) <- [ctype]
-    -- , let c_name = snake_inner (MTT className)
-    --       enumList = enumLabels_ nelist
-    -- ]
     pairwise :: [a] -> [(a, a)]
     pairwise xs =
       xs                   -- [x0, x1 ...]
@@ -766,7 +749,8 @@ prettyDefnCs rname cs = do
     -- Function composition via the endomorphism monoid
     chain :: [a -> a] -> a -> a
     chain = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
-    x123 = [(1 :: Int)..] |$> \n -> [__di|x#{n}|]
+
+    x123 = [[di|x#{n}|] | (n :: Int) <- [1..]]
 
 prettyDefns :: [SFL4.Rule] -> Doc ann
 prettyDefns rs =

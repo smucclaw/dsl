@@ -1,4 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 -- | example of a simple transpiler

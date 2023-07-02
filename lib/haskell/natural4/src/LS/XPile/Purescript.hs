@@ -1,4 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MonadComprehensions #-}

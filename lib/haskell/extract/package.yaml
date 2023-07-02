@@ -26,6 +26,8 @@ dependencies:
 - megaparsec
 - containers
 
+language: GHC2021
+
 ghc-options:
 - -Wdefault
 - -Wcompat

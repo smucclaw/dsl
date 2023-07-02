@@ -1,6 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE MultiWayIf #-}
-
 module Explainable.Lib where
 
 import qualified Data.Map as Map

@@ -1,4 +1,3 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {-| transpiler from NaturaL4 to Prolog. This module useful as a point of

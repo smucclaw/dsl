@@ -1,5 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
-
 {-| transpiler to Uppaal, work in progress. -}
 
 module LS.XPile.Uppaal where

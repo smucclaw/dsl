@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module LS.XPile.PrologSpec where
 
 import Test.Hspec

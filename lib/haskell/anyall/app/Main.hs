@@ -1,9 +1,5 @@
-{-# LANGUAGE DeriveGeneric      #-}   -- much of this due to optparse-generic
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE TypeOperators      #-}
-{-# LANGUAGE FlexibleInstances  #-}  -- One more extension.
-{-# LANGUAGE StandaloneDeriving #-}  -- To derive Show
 
 module Main where
 

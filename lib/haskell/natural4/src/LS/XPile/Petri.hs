@@ -104,7 +104,7 @@ import LS
     rl2text,
     tc2nl,
   )
-import LS.XPile.Logging
+import LS.XPile.Logging (XPileLogE, xpError, xpReturn, mutterd)
 
 
 --------------------------------------------------------------------------------
@@ -229,8 +229,8 @@ type PetriD = Petri Deet
 -- initially let's just draw the state diagram in a manner typical of GraphViz.
 -- see the README
 
-toPetri :: [Rule] -> XPileLog Text.Text
-toPetri rules =
+toPetri :: [Rule] -> XPileLogE String
+toPetri rules = do
   let petri1 = insrules rules startGraph
       rewritten = rules
                   |> connectRules petri1
@@ -239,11 +239,13 @@ toPetri rules =
                   |> mergePetri rules
                   |> elideNodes1 "consequently" (hasText "consequently")
                   |> elideNodesN "FromRuleAlias" (hasDeet FromRuleAlias)
-  in graphToDot (petriParams rewritten) rewritten
-     |> unqtDot
-     |> renderDot
-     |> LT.toStrict
-     |> pure
+  mutterd 1 "toPetri: running"
+  graphToDot (petriParams rewritten) rewritten
+    |> unqtDot
+    |> renderDot
+    |> LT.toStrict
+    |> Text.unpack
+    |> xpReturn
 
 elideNodes1 :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
 elideNodes1 = elideNodes True
@@ -541,6 +543,7 @@ do
 
 data GraphState = GS { lastNode :: Node, curentGraph :: PetriD }
 
+-- | pure imperative graph construction
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
   deriving newtype (Functor, Applicative, Monad)
 
@@ -594,23 +597,23 @@ getGraph :: GraphMonad PetriD
 getGraph = do
     GM $ gets curentGraph
 
--- we convert each rule to a list of nodes and edges which can be inserted into an existing graph
-r2fgl :: RuleSet -> Maybe Text -> Rule -> GraphMonad (Maybe Node)
-r2fgl _rs _defRL RegFulfilled   = pure Nothing
-r2fgl _rs _defRL RegBreach      = pure Nothing
+-- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
+r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLogE (GraphMonad (Maybe Node))
+r2fgl _rs _defRL RegFulfilled   = xpReturn $ pure Nothing
+r2fgl _rs _defRL RegBreach      = xpReturn $ pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl _rs _defRL (RuleAlias rn) = do
+r2fgl _rs _defRL (RuleAlias rn) = xpReturn $ do
   sg <- getGraph
   let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
   maybe (fmap Just . newNode $
          mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
 
-r2fgl rs defRL Regulative{..} = do
+r2fgl rs defRL Regulative{..} = xpReturn $ do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel
@@ -657,10 +660,10 @@ r2fgl rs defRL Regulative{..} = do
     let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
         temp = tc2nl NLen temporal
         actn = actionFragments action
-        oblLab = mkDecis (addnewlines [ deon
-                                      , mt2text . NE.toList . fst . NE.head $ head actn
-                                      , temp
-                                      ])
+        oblLab = mkDecis (Text.unlines [ deon
+                                       , mt2text . NE.toList . fst . NE.head $ head actn
+                                       , temp
+                                       ])
         successLab = mkTransA ([Temporal temp, IsLastHappy] ++ origRLdeet) $
                      -- vp2np
                      -- ( actionWord $ head $ actionFragments action) <> " " <>
@@ -710,7 +713,7 @@ r2fgl rs defRL Regulative{..} = do
     lestWord DShant = "violation"
 
 -- r2fgl rs r@Hornlike{} = pure Nothing
-r2fgl _rs _defRL _r = pure Nothing
+r2fgl _rs _defRL _r = xpReturn $ pure Nothing
 
 
 c2n :: Context a b -> Node
@@ -741,25 +744,9 @@ subj2nl :: NatLang -> BoolStructP -> Text.Text
 subj2nl NLen (AA.Leaf pt) = pt2text pt
 subj2nl _ bsp = "Petri/subj2nl: " <> Text.pack (show bsp)
 
-deonticTemporal :: Rule -> [(Text.Text, Text.Text)]
-deonticTemporal Regulative{..} =
-  let d = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
-      temp = Text.replace "  " " " $ tc2nl NLen temporal
-      actions = actionFragments action
-  in dTshow d temp <$> actions
-  where
-    dTshow :: Text -> Text -> ParamText -> (Text,Text)
-    dTshow deon temp actn =
-      let aW = actionWord actn
-          aLine1 = mt2text . NE.toList . fst . NE.head $ actn
-      in (aW, addnewlines [ deon
-                          , "(" <> temp <> ")"
-                          , aLine1 ])
-
-deonticTemporal _ = error "Petri/deonticTemporal called for a non-Regulative rule"
-
-addnewlines :: [Text] -> Text
-addnewlines = Text.intercalate "\\n"
+-- we previously had a function to 
+-- deonticTemporal :: Rule -> XPileLogE [(Text.Text, Text.Text)]
+-- if you ever need it, go look at commit 78d8f4ef058152861e08ff0209ea66251ce2f1b0
 
 -- the BoolStructP could be an AND  .. or an OR .. how do we represent all that in the petri net?
 -- for now let's only handle

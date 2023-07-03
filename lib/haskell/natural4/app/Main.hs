@@ -264,12 +264,12 @@ main = do
            intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
         (concatMap snd toWriteVue)
 
-    when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
-    when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  (Text.unpack  asPetri)
-    when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
-    when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
-    when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
+    when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
+    when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
+    when (SFL4.tots      opts) $ mywritefile  True totsFN       iso8601 "ts"   asTSstr
+    when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
+    when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
+    when (SFL4.tomaude   opts) $ mywritefile  True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
@@ -298,7 +298,7 @@ main = do
 
   -- when workdir is not specified, --only will dump to STDOUT
   when (not toworkdir) $ do
-    when (SFL4.only opts == "petri")  $ putStrLn (Text.unpack asPetri)
+    when (SFL4.only opts == "petri")  $ putStrLn (commentIfError "//" asPetri)
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
     when (SFL4.asJSON rc) $ putStrLn asJSONstr

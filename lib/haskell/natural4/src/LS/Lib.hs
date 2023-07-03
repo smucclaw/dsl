@@ -116,6 +116,19 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
 instance ParseRecord (Opts Wrapped)
 deriving instance Show (Opts Unwrapped)
 
+-- [TODO]
+-- | a convention for representing a transpiler's interface
+-- - what comment syntax do we use?
+-- - what file extension do we use?
+-- - what is the command line parameter?
+-- (this can also be a typeclass if we want.)
+data Transpiler = XPiler
+  { comment   :: ()
+  , extension :: ()
+  , cliParam  :: ()
+  }
+  deriving (Show)
+
 -- technique for getting varargs argv https://github.com/Gabriel439/Haskell-Optparse-Generic-Library/issues/65
 newtype NoLabel a = NoLabel a
   deriving (Generic, Show)

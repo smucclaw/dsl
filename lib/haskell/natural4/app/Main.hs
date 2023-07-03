@@ -165,22 +165,22 @@ main = do
 
   -- end of the section that deals with NLG
 
-  let (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
-      (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
-      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
+  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
+      (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
+      (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
-      (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
+      (tobabyl4FN,  asBabyL4)                 = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
       (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
       (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
-      (todmnFN,     asDMN)        = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
-      (tojsonFN,    asJSONstr)    = (workuuid <> "/" <> "json",        toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
-      (tovuejsonFN, asVueJSONrules) = (workuuid <> "/" <> "vuejson",     fmap xpLog <$> toVueRules rules)
+      (todmnFN,     asDMN)                    = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
+      (tojsonFN,    asJSONstr)                = (workuuid <> "/" <> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
+      (tovuejsonFN, asVueJSONrules)           = (workuuid <> "/" <> "vuejson",  fmap xpLog <$> toVueRules rules)
 
-      (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
-      (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
-      (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
-      (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
+      (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
+      (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
+      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
+      (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
+      (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
@@ -265,7 +265,7 @@ main = do
         (concatMap snd toWriteVue)
 
     when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
-    when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
+    when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  (Text.unpack  asPetri)
     when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
@@ -298,7 +298,7 @@ main = do
 
   -- when workdir is not specified, --only will dump to STDOUT
   when (not toworkdir) $ do
-    when (SFL4.only opts == "petri")  $ putStrLn asPetri
+    when (SFL4.only opts == "petri")  $ putStrLn (Text.unpack asPetri)
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
     when (SFL4.asJSON rc) $ putStrLn asJSONstr
@@ -346,7 +346,9 @@ mywritefile doLink dirname filename ext s = do
   writeFile mypath s
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 
--- | output both "stdout" to outfile and "stderr" to outfile.err
+-- | output both "stdout" to outfile and "stderr" to outfile.err.
+-- Note that if the "s" argument is itself an Either, we need to process a little bit to dump the Lefts as comments
+-- and the Rights as actual desired output.
 mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> IO ()
 mywritefile2 doLink dirname filename ext s e = do
   createDirectoryIfMissing True dirname

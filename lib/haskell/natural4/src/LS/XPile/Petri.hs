@@ -104,6 +104,7 @@ import LS
     rl2text,
     tc2nl,
   )
+import LS.XPile.Logging
 
 
 --------------------------------------------------------------------------------
@@ -228,7 +229,7 @@ type PetriD = Petri Deet
 -- initially let's just draw the state diagram in a manner typical of GraphViz.
 -- see the README
 
-toPetri :: [Rule] -> Text.Text
+toPetri :: [Rule] -> XPileLog Text.Text
 toPetri rules =
   let petri1 = insrules rules startGraph
       rewritten = rules
@@ -238,7 +239,11 @@ toPetri rules =
                   |> mergePetri rules
                   |> elideNodes1 "consequently" (hasText "consequently")
                   |> elideNodesN "FromRuleAlias" (hasDeet FromRuleAlias)
-  in LT.toStrict $ renderDot $ unqtDot $ graphToDot (petriParams rewritten) rewritten
+  in graphToDot (petriParams rewritten) rewritten
+     |> unqtDot
+     |> renderDot
+     |> LT.toStrict
+     |> pure
 
 elideNodes1 :: LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
 elideNodes1 = elideNodes True

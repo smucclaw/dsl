@@ -11,7 +11,7 @@ module LS.XPile.Petri where
 
 import AnyAll as AA (BoolStruct (All, Leaf))
 import Control.Applicative.Combinators ((<|>))
-import Control.Monad (forM_, when)
+import Control.Monad (forM_, when, liftM)
 import Control.Monad.State.Strict (MonadState (get, put), State, gets, runState)
 import Data.Graph.Inductive.Graph
   ( Context,
@@ -104,7 +104,7 @@ import LS
     rl2text,
     tc2nl,
   )
-import LS.XPile.Logging (XPileLogE, xpError, xpReturn, mutterd)
+import LS.XPile.Logging
 
 
 --------------------------------------------------------------------------------
@@ -231,8 +231,8 @@ type PetriD = Petri Deet
 
 toPetri :: [Rule] -> XPileLogE String
 toPetri rules = do
-  let petri1 = insrules rules startGraph
-      rewritten = rules
+  petri1 <- insrules rules startGraph
+  let rewritten = rules
                   |> connectRules petri1
                   |> reorder rules
                   |> condElimination rules
@@ -527,8 +527,15 @@ breachNode = 0
 getNodeByDeets :: PetriD -> [Deet] -> Maybe Node
 getNodeByDeets gr ds = listToMaybe $ nodes $ labfilter (hasDeets ds) gr
 
-insrules :: RuleSet -> PetriD -> PetriD
-insrules rs sg = runGM sg $ mapM (r2fgl rs Nothing) rs
+-- before: insrules :: RuleSet -> PetriD -> PetriD
+-- before: insrules rs sg = runGM sg $ mapM (r2fgl rs Nothing) rs
+
+
+-- | Insert the rules into an existing petri net. With logging.
+insrules :: RuleSet -> PetriD -> XPileLog PetriD
+insrules rs sg = do
+  combinedGraph <- mconcat <$> traverse (r2fgl rs Nothing) rs
+  return $ runGM sg combinedGraph
 
 {-
 
@@ -591,6 +598,7 @@ runGM gr (GM m) = cg
 -- runGM gr (GM m) = traceShow (neNodes res, neNodes cg) res
   where (_, n0) = nodeRange gr
         (_res, GS _ln cg) = runState m (GS n0 gr)
+        -- [TODO] why not execState
 
 -- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
 getGraph :: GraphMonad PetriD
@@ -598,22 +606,22 @@ getGraph = do
     GM $ gets curentGraph
 
 -- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
-r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLogE (GraphMonad (Maybe Node))
-r2fgl _rs _defRL RegFulfilled   = xpReturn $ pure Nothing
-r2fgl _rs _defRL RegBreach      = xpReturn $ pure Nothing
+r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLog (GraphMonad (Maybe Node))
+r2fgl _rs _defRL RegFulfilled   = return $ pure Nothing
+r2fgl _rs _defRL RegBreach      = return $ pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl _rs _defRL (RuleAlias rn) = xpReturn $ do
+r2fgl _rs _defRL (RuleAlias rn) = return $ do
   sg <- getGraph
   let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
   maybe (fmap Just . newNode $
          mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
 
-r2fgl rs defRL Regulative{..} = xpReturn $ do
+r2fgl rs defRL Regulative{..} = return $ do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel
@@ -673,11 +681,12 @@ r2fgl rs defRL Regulative{..} = xpReturn $ do
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
-    mbOnFailureN <- if deontic /= DMay then do
-        onFailureN <- newNode $ mkTrans $ lestWord deontic
-        newEdge' ( obligationN, onFailureN, swport)
-        pure (Just onFailureN)
-      else pure Nothing
+    mbOnFailureN <- case (deontic /= DMay, lestWord deontic) of
+                      (True, Right lWord) -> do
+                        onFailureN <- newNode $ mkTrans $ lWord
+                        newEdge' ( obligationN, onFailureN, swport)
+                        pure (Just onFailureN)
+                      _ -> pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
     newEdge' ( conN, obligationN, [] )
     newEdge' ( obligationN, onSuccessN, seport)
@@ -698,7 +707,7 @@ r2fgl rs defRL Regulative{..} = xpReturn $ do
     Nothing -> pure ()
 
   -- Return the first node
-  pure $ Just whoN
+  return $ pure $ Just whoN
   where
     -- vp2np :: Text -> Text
     -- vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
@@ -708,12 +717,12 @@ r2fgl rs defRL Regulative{..} = xpReturn $ do
     henceWord DMust  = "done"
     henceWord DMay   = "occurred"
     henceWord DShant = "avoided"
-    lestWord DMust  = "not done"
-    lestWord DMay   = error "a MAY has no LEST"  -- this should never arise
-    lestWord DShant = "violation"
+    lestWord DMust  = Right "not done"
+    lestWord DMay   = Left "a MAY has no LEST"  -- this should never arise
+    lestWord DShant = Right "violation"
 
 -- r2fgl rs r@Hornlike{} = pure Nothing
-r2fgl _rs _defRL _r = xpReturn $ pure Nothing
+r2fgl _rs _defRL _r = return $ pure Nothing
 
 
 c2n :: Context a b -> Node

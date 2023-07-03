@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module AnyAll.TypesSpec (spec) where
 
 import Test.Hspec

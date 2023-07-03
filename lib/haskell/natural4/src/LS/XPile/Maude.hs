@@ -1,5 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
-
 module LS.XPile.Maude
   ( rules2maudeStr,
   )

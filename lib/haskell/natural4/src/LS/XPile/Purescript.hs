@@ -1,7 +1,5 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MonadComprehensions #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}

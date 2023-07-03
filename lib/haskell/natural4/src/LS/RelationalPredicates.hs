@@ -1,4 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}

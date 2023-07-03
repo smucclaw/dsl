@@ -1,4 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE GADTs #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 

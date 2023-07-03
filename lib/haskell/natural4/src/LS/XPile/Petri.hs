@@ -11,6 +11,8 @@ module LS.XPile.Petri where
 
 import AnyAll as AA (BoolStruct (All, Leaf))
 import Control.Applicative.Combinators ((<|>))
+import Control.Monad.Identity (runIdentity)
+import Control.Monad.RWS (lift)
 import Control.Monad (forM_, when, liftM)
 import Control.Monad.State.Strict (MonadState (get, put), State, gets, runState)
 import Data.Graph.Inductive.Graph
@@ -534,7 +536,7 @@ getNodeByDeets gr ds = listToMaybe $ nodes $ labfilter (hasDeets ds) gr
 -- | Insert the rules into an existing petri net. With logging.
 insrules :: RuleSet -> PetriD -> XPileLog PetriD
 insrules rs sg = do
-  combinedGraph <- mconcat <$> traverse (r2fgl rs Nothing) rs
+  combinedGraph <- concatMap (r2fgl rs Nothing) rs
   return $ runGM sg combinedGraph
 
 {-
@@ -605,6 +607,10 @@ getGraph :: GraphMonad PetriD
 getGraph = do
     GM $ gets curentGraph
 
+-- | discards the stderr log
+runLog :: XPileLog a -> a
+runLog x = fst (xpLog x)
+
 -- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLog (GraphMonad (Maybe Node))
 r2fgl _rs _defRL RegFulfilled   = return $ pure Nothing
@@ -628,20 +634,20 @@ r2fgl rs defRL Regulative{..} = return $ do
         return [IsFirstNode,OrigRL (rl2text rl), IsParty]
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
-  myTraceM $ "Petri/r2fgl: rkeyword = " <> show rkeyword
+  -- mutterd 2 $ "Petri/r2fgl: rkeyword = " <> show rkeyword
   let everywho = Text.unwords ( ( if rkeyword == REvery
                                   then [ Text.pack (show (tokenOf rkeyword)) ]
                                   else [] )
                                 <> [ subj2nl NLen subj ] )
-  myTraceM $ "Petri/r2fgl: everywho = " <> show everywho
+  -- mutterd 2 $ "Petri/r2fgl: everywho = " <> show everywho
 
   let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
                                     Just _bsr  -> mkDecis everywho
       firstNodeLabel1 = addDeet firstNodeLabel0 IsParty
       firstNodeLabel = maybe firstNodeLabel1 (addDeets firstNodeLabel1) myLabel
  -- myTraceM $ "Petri: firstNodeLabel0 = " <> show firstNodeLabel0
-  myTraceM $ "Petri/r2fgl: firstNodeLabel1 = " <> show firstNodeLabel1
-  myTraceM $ "Petri/r2fgl: firstNodeLabel  = " <> show firstNodeLabel
+  -- mutterd 2 $ "Petri/r2fgl: firstNodeLabel1 = " <> show firstNodeLabel1
+  -- mutterd 2 $ "Petri/r2fgl: firstNodeLabel  = " <> show firstNodeLabel
   everyN <- case already of
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
@@ -683,7 +689,7 @@ r2fgl rs defRL Regulative{..} = return $ do
     onSuccessN <- newNode successLab
     mbOnFailureN <- case (deontic /= DMay, lestWord deontic) of
                       (True, Right lWord) -> do
-                        onFailureN <- newNode $ mkTrans $ lWord
+                        onFailureN <- newNode $ mkTrans lWord
                         newEdge' ( obligationN, onFailureN, swport)
                         pure (Just onFailureN)
                       _ -> pure Nothing
@@ -694,20 +700,22 @@ r2fgl rs defRL Regulative{..} = return $ do
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
-  henceN <- fromMaybe fulfilledNode <$> maybe (pure Nothing) (r2fgl rs (rl2text <$> rlabel <|> defRL)) hence
-  newEdge onSuccessN henceN []
+  let childOuts defaultNode outNode childRule =
+        case fmap (xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)) childRule of
+          Nothing -> newEdge onSuccessN defaultNode []
+          Just (childOut, childErr) -> do
+            childN <- childOut
+            case childN of
+              Nothing -> mempty
+              Just childE -> newEdge outNode childE []
 
-  lestN  <- fromMaybe breachNode <$> maybe (pure Nothing) (r2fgl rs (rl2text <$> rlabel <|> defRL)) lest
-  -- myTraceM $ "lestNEs: " <> show lestNEs
-  -- let sg3 = insertNE lestNEs  sg2
-      -- connect up the hence and lest bits
-      -- the "hence" transition from dtaE should plug in to the first node in our henceContexts
+  childOuts fulfilledNode onSuccessN hence
   case mbOnFailureN of
-    Just onFailureN -> newEdge onFailureN lestN []
+    Just onFailureN -> childOuts breachNode onFailureN lest
     Nothing -> pure ()
 
   -- Return the first node
-  return $ pure $ Just whoN
+  pure $ Just whoN
   where
     -- vp2np :: Text -> Text
     -- vp2np = unsafePerformIO . wnNounDerivations . Text.toLower

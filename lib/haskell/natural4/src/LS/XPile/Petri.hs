@@ -1,4 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -10,13 +9,45 @@ module LS.XPile.Petri where
 
 -- import           System.IO.Unsafe (unsafePerformIO)
 
-import AnyAll as AA
-import Control.Applicative.Combinators
+import AnyAll as AA (BoolStruct (All, Leaf))
+import Control.Applicative.Combinators ((<|>))
 import Control.Monad (forM_, when)
 import Control.Monad.State.Strict (MonadState (get, put), State, gets, runState)
 import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.PatriciaTree
+  ( Context,
+    Graph (mkGraph, nodeRange),
+    Node,
+    delEdge,
+    delNode,
+    insEdge,
+    insNode,
+    lab,
+    labfilter,
+    nodes,
+    pre,
+    suc,
+  )
+import Data.Graph.Inductive.PatriciaTree (Gr)
 import Data.GraphViz
+  ( Attribute,
+    Attributes,
+    DotGraph,
+    GlobalAttributes (GraphAttrs, NodeAttrs),
+    GraphID (Str),
+    GraphvizParams (..),
+    LNodeCluster,
+    NodeCluster (C, N),
+    PrintDot (unqtDot),
+    RankType (SameRank),
+    Shape (BoxShape, Circle, DiamondShape),
+    X11Color (Black, Brown, Green, White),
+    color,
+    fillColor,
+    fontColor,
+    graphToDot,
+    shape,
+    toLabel,
+  )
 import Data.GraphViz.Attributes.Complete
   ( Attribute (Comment, Compound, FontName, Height, Rank, Style, TailPort),
     CompassPoint (..),
@@ -32,6 +63,47 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import LS
+  ( BoolStructP,
+    Deontic (DMay, DMust, DShant),
+    HasToken (tokenOf),
+    NatLang (..),
+    ParamText,
+    RegKeywords (REvery),
+    Rule
+      ( RegBreach,
+        RegFulfilled,
+        Regulative,
+        RuleAlias,
+        action,
+        cond,
+        defaults,
+        deontic,
+        given,
+        having,
+        hence,
+        lest,
+        lsource,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    RuleSet,
+    bsr2textnl,
+    expandRule,
+    getRuleByLabel,
+    mt2text,
+    mtexpr2text,
+    myTraceM,
+    pt2text,
+    rl2text,
+    tc2nl,
+  )
 
 
 --------------------------------------------------------------------------------

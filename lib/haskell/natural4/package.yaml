@@ -71,6 +71,8 @@ dependencies:
   - string-interpolate
   - prettyprinter-interp
 
+language: GHC2021
+
 ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
 
 library:

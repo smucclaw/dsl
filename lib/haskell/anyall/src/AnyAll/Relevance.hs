@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
-
 module AnyAll.Relevance where
 
 import AnyAll.BoolStruct

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module AnyAll.BoolStructSpec where
 
 import Test.Hspec

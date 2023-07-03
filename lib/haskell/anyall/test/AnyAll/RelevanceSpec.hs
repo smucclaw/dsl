@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module AnyAll.RelevanceSpec where
 
-import qualified Data.Text as T
+import AnyAll.BoolStruct
+import AnyAll.Relevance
+import AnyAll.Types
+import Data.HashMap.Strict qualified as Map
+import Data.Text qualified as T
 import Data.Tree
 import Test.Hspec
-import AnyAll.Types
-import AnyAll.Relevance
-import qualified Data.HashMap.Strict as Map
-import AnyAll.BoolStruct
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck.Instances.Text
 

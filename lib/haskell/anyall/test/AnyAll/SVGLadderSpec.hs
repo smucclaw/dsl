@@ -3,28 +3,28 @@
 
 module AnyAll.SVGLadderSpec (spec) where
 
+import AnyAll (hardnormal)
+import AnyAll.BoolStruct
 import AnyAll.SVGLadder hiding (tl)
 import AnyAll.Types
-import AnyAll.BoolStruct
-import Data.Text (Text, splitOn, pack, replace)
-import qualified Data.Text.Lazy.IO as TIO
-import Graphics.Svg
-import Test.Hspec
-import qualified Data.Text.Lazy as TL (toStrict)
-import qualified Data.Set as Set
-import qualified Text.XML.Light as XML
-import Text.XML.Light.Output (showTopElement)
-import Text.XML.Light (Attr(attrKey))
-import qualified Data.ByteString.Lazy as B
-import Data.Aeson (eitherDecode)
-import AnyAll (hardnormal)
-import Data.Tree
-import Data.Sequence.Internal.Sorting (Queue(Q))
-import Control.Monad.Reader (runReader)
-import Test.Hspec.Golden
-import Lens.Micro.Platform
-import Data.ByteString.Lazy.Char8 (unpack)
 import Control.Monad.RWS
+import Control.Monad.Reader (runReader)
+import Data.Aeson (eitherDecode)
+import Data.ByteString.Lazy qualified as B
+import Data.ByteString.Lazy.Char8 (unpack)
+import Data.Sequence.Internal.Sorting (Queue (Q))
+import Data.Set qualified as Set
+import Data.Text (Text, pack, replace, splitOn)
+import Data.Text.Lazy qualified as TL (toStrict)
+import Data.Text.Lazy.IO qualified as TIO
+import Data.Tree
+import Graphics.Svg
+import Lens.Micro.Platform
+import Test.Hspec
+import Test.Hspec.Golden
+import Text.XML.Light (Attr (attrKey))
+import Text.XML.Light qualified as XML
+import Text.XML.Light.Output (showTopElement)
 
 data SVGRect = Rect {tl :: (Integer, Integer), br :: (Integer, Integer), fill :: Text, stroke :: Text}
 

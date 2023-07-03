@@ -49,7 +49,7 @@ import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
-import LS.XPile.Petri (toPetri, (|>))
+import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (sfl4ToProlog)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
@@ -322,7 +322,7 @@ main = do
     when (SFL4.only opts == "symtab")  $ pPrint (SFL4.scopetable l4i)
 
     when (SFL4.only opts == "maude") $
-      rules |> Maude.rules2maudeStr |> putStrLn
+      putStrLn $ Maude.rules2maudeStr $ rules
 
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime

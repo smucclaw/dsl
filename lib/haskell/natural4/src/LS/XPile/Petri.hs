@@ -10,11 +10,17 @@ module LS.XPile.Petri where
 -- import           System.IO.Unsafe (unsafePerformIO)
 
 import AnyAll as AA (BoolStruct (All, Leaf))
-import Control.Applicative.Combinators ((<|>))
+import Control.Applicative (Alternative ((<|>)))
+import Control.Monad (when)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS (lift)
-import Control.Monad (forM_, when, liftM)
-import Control.Monad.State.Strict (MonadState (get, put), State, gets, runState)
+import Control.Monad.State.Strict
+  ( MonadState (get, put),
+    State,
+    gets,
+    runState,
+  )
+import Data.Foldable (for_)
 import Data.Graph.Inductive.Graph
   ( Context,
     Graph (mkGraph, nodeRange),
@@ -64,6 +70,7 @@ import Data.Maybe (fromJust, fromMaybe, isJust, listToMaybe, maybeToList)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
+import Flow ((|>))
 import LS
   ( BoolStructP,
     Deontic (DMay, DMust, DShant),
@@ -106,6 +113,7 @@ import LS
     rl2text,
     tc2nl,
   )
+import LS.Utils ((|$>))
 import LS.XPile.Logging
 
 
@@ -124,14 +132,7 @@ data PNode a = PN { ntype  :: NType
 
 type Petri a = Gr (PNode a) PLabel
 
--- see also Data.Function (&)
--- see also Flow (|>)
--- https://hackage.haskell.org/package/flow-2.0.0.0/docs/Flow.html
-(|>) :: a -> (a -> b) -> b
-(|>) = flip ($)
-infixl 1 |>
-
-mkPlace,mkTrans,mkDecis :: Text -> (PNode a)
+mkPlace,mkTrans,mkDecis :: Text -> PNode a
 mkPlace x = PN Place x [] []
 mkTrans x = PN Trans x [] []
 mkDecis x = PN Decis x [] []
@@ -234,15 +235,17 @@ type PetriD = Petri Deet
 toPetri :: [Rule] -> XPileLogE String
 toPetri rules = do
   petri1 <- insrules rules startGraph
-  let rewritten = rules
-                  |> connectRules petri1
-                  |> reorder rules
-                  |> condElimination rules
-                  |> mergePetri rules
-                  |> elideNodes1 "consequently" (hasText "consequently")
-                  |> elideNodesN "FromRuleAlias" (hasDeet FromRuleAlias)
+  let rewritten =
+        petri1
+          |> (`connectRules` rules)
+          |> reorder rules
+          |> condElimination rules
+          |> mergePetri rules
+          |> elideNodes1 "consequently" (hasText "consequently")
+          |> elideNodesN "FromRuleAlias" (hasDeet FromRuleAlias)
   mutterd 1 "toPetri: running"
-  graphToDot (petriParams rewritten) rewritten
+  rewritten
+    |> graphToDot (petriParams rewritten)
     |> unqtDot
     |> renderDot
     |> LT.toStrict
@@ -260,7 +263,7 @@ elideNodesN = elideNodes False
 elideNodes :: Bool -> LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
 elideNodes limit1 desc pnpred og = runGM og $ do
   -- awkward phrasing, shouldn't there be some sort of concatM
-  forM_ [ do
+  for_ [ do
              newEdge' (x,    z, [Comment $ "after elision of " <> desc <> " intermediary"])
              delEdge' (x, y)
              delEdge' (   y, z)
@@ -272,13 +275,13 @@ elideNodes limit1 desc pnpred og = runGM og $ do
         , not limit1 || length outdegrees == 1
         , x   <- indegrees
         , z   <- outdegrees
-        ] $ id
+        ] id
   
 
 reorder :: [Rule] -> PetriD -> PetriD
 reorder _rules og = runGM og $ do
   -- x You if then must -> x if then you must
-  forM_ [ (x0, you1, if2, then3, must4)
+  for_ [ (x0, you1, if2, then3, must4)
         | you1  <- nodes $ labfilter (hasDeet IsParty) og
         , x0    <- pre og you1
         , if2   <- suc og you1   , maybe False (hasDeet IsCond) (lab og if2)
@@ -300,7 +303,7 @@ mergePetri' :: [Rule] -> PetriD -> Node -> PetriD
 mergePetri' rules og splitNode = runGM og $ do
   -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
   -- myTraceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
-  forM_ [ twins
+  for_ [ twins
         | let twins = suc og splitNode
         , length (nub $ fmap ntext <$> (lab og <$> twins)) == 1
         , length twins > 1
@@ -308,14 +311,14 @@ mergePetri' rules og splitNode = runGM og $ do
     let grandchildren = concatMap (suc og) twins
         survivor : excess = twins
         parents = pre og splitNode
-    forM_ twins         (\n -> delEdge' (splitNode,n))
-    forM_ twins         (\n -> forM_ grandchildren (\gc -> delEdge' (n,gc)))
-    forM_ grandchildren (\gc -> newEdge' (splitNode,gc,[Comment "due to mergePetri"]))
-    forM_ parents       (\n  -> do
+    for_ twins         (\n -> delEdge' (splitNode,n))
+    for_ twins         (\n -> for_ grandchildren (\gc -> delEdge' (n,gc)))
+    for_ grandchildren (\gc -> newEdge' (splitNode,gc,[Comment "due to mergePetri"]))
+    for_ parents       (\n  -> do
                             newEdge' (n, survivor, [Comment "due to mergePetri"])
                             delEdge' (n, splitNode)
                         )
-    forM_ excess        delNode'
+    for_ excess        delNode'
     newEdge' (survivor, splitNode, [Comment "due to mergePetri"])
 
     -- myTraceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
@@ -532,12 +535,17 @@ getNodeByDeets gr ds = listToMaybe $ nodes $ labfilter (hasDeets ds) gr
 -- before: insrules :: RuleSet -> PetriD -> PetriD
 -- before: insrules rs sg = runGM sg $ mapM (r2fgl rs Nothing) rs
 
-
 -- | Insert the rules into an existing petri net. With logging.
 insrules :: RuleSet -> PetriD -> XPileLog PetriD
-insrules rs sg = do
-  combinedGraph <- concatMap (r2fgl rs Nothing) rs
-  return $ runGM sg combinedGraph
+insrules rs sg =
+  rs                    -- [Rule]
+    |> traverse rule2GM -- XPileLog [GraphMonad (Maybe Node)]
+    |$> sequence        -- XPileLog (GraphMonad (Maybe Node))
+    |$> runGM sg        -- XPileLog PetriD
+  where
+    -- Effectful transpilation of a rule into a stateful graph monad.
+    rule2GM :: Rule -> XPileLog (GraphMonad (Maybe Node))
+    rule2GM = r2fgl rs Nothing
 
 {-
 
@@ -706,7 +714,7 @@ r2fgl rs defRL Regulative{..} = return $ do
           Just (childOut, childErr) -> do
             childN <- childOut
             case childN of
-              Nothing -> mempty
+              Nothing -> pure mempty
               Just childE -> newEdge outNode childE []
 
   childOuts fulfilledNode onSuccessN hence

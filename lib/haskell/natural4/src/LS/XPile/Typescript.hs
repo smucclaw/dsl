@@ -27,10 +27,66 @@ import Data.List (intercalate, nub)
 import Data.Maybe (isJust)
 import Data.Tree qualified as DT
 import LS.Interpreter
+  ( attrType,
+    getCTkeys,
+    globalFacts,
+    l4interpret,
+    topsortedClasses,
+  )
 import LS.PrettyPrinter
+  ( ParamText4 (PT4, PT5),
+    prettyMaybeType,
+    prettySimpleType,
+    snake_case,
+    snake_inner,
+    vvsep,
+    (<//>),
+    (</>),
+  )
 import LS.Rule as SFL4R
+  ( Interpreted (classtable, scopetable),
+    Rule,
+  )
 import LS.Types as SFL4
+  ( ClsTab (CT),
+    HornClause (HC, hHead),
+    HornClause2,
+    MTExpr (MTT),
+    ParamText,
+    ParamType (TOne, TOptional),
+    RelationalPredicate
+      ( RPBoolStructR,
+        RPConstraint,
+        RPMT,
+        RPParamText,
+        RPnary
+      ),
+    TypeSig (SimpleType),
+    clsParent,
+    defaultInterpreterOptions,
+    getSymType,
+  )
 import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    colon,
+    comma,
+    dquotes,
+    encloseSep,
+    equals,
+    hang,
+    indent,
+    lbrace,
+    line,
+    list,
+    nest,
+    rbrace,
+    semi,
+    space,
+    viaShow,
+    vsep,
+    (<+>),
+  )
 
 asTypescript :: [SFL4R.Rule] -> Doc ann
 asTypescript rs =

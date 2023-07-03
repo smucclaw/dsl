@@ -1,5 +1,3 @@
-{-# LANGUAGE ImportQualifiedPost #-}
-
 module LS.XPile.DumpRule
   ( rules2String
   )

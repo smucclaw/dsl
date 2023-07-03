@@ -1,10 +1,28 @@
-{-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes #-}
-{-# OPTIONS_GHC -Wno-all #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module LS.NLP.NL4 where
 
 import Control.Monad.Identity
-import Data.Monoid
-import PGF hiding (Tree)
+  ( Identity (Identity, runIdentity),
+    MonadPlus (..),
+    ap,
+  )
+import Data.Monoid ()
+import PGF
+  ( Expr,
+    mkApp,
+    mkCId,
+    mkFloat,
+    mkInt,
+    mkStr,
+    showCId,
+    showExpr,
+    unApp,
+    unFloat,
+    unInt,
+    unStr,
+  )
 
 ----------------------------------------------------
 -- automatic translation from GF to Haskell

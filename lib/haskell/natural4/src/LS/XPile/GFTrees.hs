@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ImportQualifiedPost #-}
 
 {-| transpiler to SVG visualization of the AnyAll and/or trees.
 

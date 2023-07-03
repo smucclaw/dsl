@@ -1,5 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
-
 -- | example of a simple transpiler
 
 module LS.XPile.NaturalLanguage where

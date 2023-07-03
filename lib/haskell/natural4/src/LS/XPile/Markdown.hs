@@ -1,17 +1,25 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.XPile.Markdown where
+module LS.XPile.Markdown
+  ( bsMarkdown )
+where
 
 import AnyAll qualified as AA
 import Control.Monad (liftM2)
 import Data.ByteString.Lazy.Char8 qualified as ByteString
 import Data.Map qualified as Map
 import Data.Text qualified as Text
-import LS
-import LS.NLP.NLG
+import LS.NLP.NLG (NLGEnv, nlg)
+import LS.RelationalPredicates (getBSR)
+import LS.Rule (Rule)
 import LS.Types
+  ( BoolStructR,
+    MultiTerm,
+    RelationalPredicate (..),
+    mt2text,
+    pt2multiterm,
+  )
 import Paths_natural4
 
 -- import Debug.Trace (trace)

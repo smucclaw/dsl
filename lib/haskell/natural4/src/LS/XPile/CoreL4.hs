@@ -624,7 +624,6 @@ hc2decls r
     rightToMaybe (Right x) = Just x
 hc2decls _ = mempty
 
-
 prettyTypedMulti :: ParamText -> Doc ann
 prettyTypedMulti pt = pretty $ PT3 pt
 
@@ -638,7 +637,6 @@ prettyDecls previously rs =
   let previousDecls = Map.fromList $ (,""::String) . T.takeWhile (/= ':') <$> filter ("decl " `T.isPrefixOf`) (T.lines previously)
       predDecls = Map.fromList $ T.breakOn ":" <$> T.lines (myrender $ vsep (hc2decls <$> rs))
   in pretty $ T.unlines $ uncurry (<>) <$> Map.toList (predDecls `Map.difference` previousDecls)
-
 
 -- [TODO]
 -- fact <helplimit>

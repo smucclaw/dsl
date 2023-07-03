@@ -10,13 +10,32 @@ For more information see also `RelationalPredicates`.
 
 module LS.XPile.Prolog where
 
-import AnyAll
-import Data.List.NonEmpty as NE
+import AnyAll (BoolStruct (All, Any, Leaf, Not))
+import Data.List.NonEmpty as NE (NonEmpty (..), toList)
 import Data.Map qualified as Map
 import Data.Text qualified as Text
-import Data.Tree
-import LS as SFL4
-import Language.Prolog
+import LS.Rule as SFL4
+  ( Rule (Hornlike, TypeDecl, clauses, enums, has, name, super),
+  )
+import LS.Types as SFL4
+  ( BoolStructP,
+    BoolStructR,
+    EntityType,
+    HornClause (hBody, hHead),
+    HornClause2,
+    MTExpr (..),
+    ParamText,
+    ParamType (TList0, TList1, TOne, TOptional),
+    RPRel,
+    RelationalPredicate (..),
+    TypeSig (..),
+    mt2text,
+    mtexpr2text,
+    pt2text,
+    rel2txt,
+    untypePT,
+  )
+import Language.Prolog (Clause (Clause), Term (Struct), var)
 
 prologExamples :: [Clause]
 prologExamples =

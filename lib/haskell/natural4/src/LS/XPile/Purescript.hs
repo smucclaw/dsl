@@ -1,7 +1,5 @@
-{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MonadComprehensions #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -38,7 +36,7 @@ import Flow ((|>))
 import LS.Interpreter (getMarkings, qaHornsT)
 import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
-  ( NLGEnv (gfLang, interpreted),
+  ( NLGEnv (..),
     expandRulesForNLG,
     ruleQuestions,
     ruleQuestionsNamed,
@@ -62,7 +60,7 @@ import LS.XPile.Logging
     mutterdhsf,
     mutters,
     xpError,
-    xpReturn,
+    xpReturn, XPileLogW,
   )
 import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
@@ -270,7 +268,7 @@ asPurescript env rl = do
         . TL.replace "True" "true"
         . pShowNoColor $
             fmap toTuple listOfMarkings}
-    |]
+  |]
           -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
           -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
           --   (pretty $ TL.unpack (
@@ -283,9 +281,9 @@ asPurescript env rl = do
           --   )
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
-translate2PS nlgEnv eng rules = do
+translate2PS nlgEnvs eng rules = do
   mutter [__i|** translate2PS: running against #{length rules} rules|]
-  mutter [i|*** nlgEnv has " #{length nlgEnv} elements|]
+  mutter [i|*** nlgEnvs has #{length nlgEnvs} elements|]
   mutter [i|*** eng.gfLang = #{gfLang eng}|]
 
   -------------------------------------------------------------
@@ -305,30 +303,56 @@ translate2PS nlgEnv eng rules = do
   mutterdhsf 2 "topBit =" pShowNoColorS topBit
 
   -------------------------------------------------------------
-  -- middle Bit
+  -- New bottomBit
   -------------------------------------------------------------
   mutterd 2 "trying the new approach based on qaHornsT"
-  qaHornsAllLangs <- for nlgEnv (\langEnv -> do
-                                     hornByLang <- qaHornsByLang rules langEnv
-                                     hornByLang |> either xpError (\tuple -> xpReturn (show $ gfLang langEnv, tuple)))
-  let qaHornsRights = rights qaHornsAllLangs
-  mutterdhsf 2 "qaHornsAllLangs" pShowNoColorS qaHornsRights
+  qaHornsAllLangs :: [Either XPileLogW String] <- 
+    for nlgEnvs $ \nlgEnv@(NLGEnv {gfLang}) -> do
+      let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
+          l4i       = interpreted nlgEnv
+          listOfMarkings = l4i |> getMarkings |> AA.getMarking |> Map.toList
+
+      -- The Right may contain duplicates, so we need to nub later.
+      hornByLang :: Either XPileLogW [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)] <-
+        qaHornsByLang rules nlgEnv
+
+      case hornByLang of
+        Left err -> xpError err
+        Right hornByLang -> xpReturn [__i|
+          #{nlgEnvStrLower} :: Object.Object (Item String)
+          #{nlgEnvStrLower} = Object.fromFoldable
+            #{pShowNoColor $ DL.nub hornByLang}
+
+          #{nlgEnvStrLower}Marking :: Marking
+          #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
+            #{TL.replace "False" "false"
+              . TL.replace "True" "true"
+              . pShowNoColor $
+                  fmap toTuple listOfMarkings}
+        |]
+  -- mutterdhsf 2 "qaHornsAllLangs" pShowNoColorS qaHornsRights
 
   -------------------------------------------------------------
   -- bottomBit
   -------------------------------------------------------------
-  mutterd 2 "constructing bottomBit by calling asPurescript over rules"
-  bottomBit <- traverse (`asPurescript` rules) nlgEnv
-  mutterdhsf 2 "bottomBit without running rights" pShowNoColorS bottomBit
-  mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
+  -- mutterd 2 "constructing bottomBit by calling asPurescript over rules"
+  -- bottomBit <- traverse (`asPurescript` rules) nlgEnvs
+  -- mutterdhsf 2 "bottomBit without running rights" pShowNoColorS bottomBit
+  -- mutterdhsf 2 "actual bottomBit output" pShowNoColorS (rights bottomBit)
+
+  -- Stitch the top, middle and bottom bits together.
+
+  -- interviewRules2 :: Map.Map String (Item String)
+  -- interviewRules2 = Map.fromList #{qaHornsRights}
+  let x <.> y = x <> "\n\n" <> y
   xpReturn [__i|
     #{topBit}
 
-    interviewRules2 :: Array (Tuple String (Item String))
-    interviewRules2 = #{qaHornsRights}
+    #{foldr (<.>) mempty $ rights qaHornsAllLangs}
 
-    #{unlines $ rights bottomBit}
   |]
+--    #{unlines $ rights bottomBit}
+
 
 
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]

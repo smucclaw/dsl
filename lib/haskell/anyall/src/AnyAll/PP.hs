@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module AnyAll.PP (ppQTree, hardnormal, softnormal, cStyle, haskellStyle) where
 

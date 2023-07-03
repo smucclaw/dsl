@@ -1,5 +1,4 @@
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE MultiWayIf #-}
 
 module Explainable.TaxDSL where
 

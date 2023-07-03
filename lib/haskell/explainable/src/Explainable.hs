@@ -1,16 +1,10 @@
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE MultiWayIf #-}
-
 module Explainable where
 
-import qualified Data.Map as Map
 import Control.Monad.Trans.RWS
 import Data.Tree
 import Data.List ( intercalate )
 import Data.Ord ()
-import Data.Maybe (mapMaybe)
-import Control.Monad (forM_, mapAndUnzipM)
-import Data.Bifunctor (first, second)
+import Data.Bifunctor (first)
 
 -- | Our ExplainableIO monad supports evaluation-with-explanation of expressions in our DSL.
 -- Normally, a DSL is /evaluated/: its expressions are reduced from types in the DSL to types in the host language.
@@ -116,7 +110,7 @@ xplainE r emptyState expr = do
   return (val, xpl, stab, wlog)
 
 -- | similar to xplainE but not in IO
-xplainE' :: (Show e) => r -> st -> ExplainableId r st e -> (e, XP, st, [String])
+xplainE' :: r -> st -> ExplainableId r st e -> (e, XP, st, [String])
 xplainE' r emptyState expr =
   let ((val,xpl), stab, wlog) = runRWS
                                 expr

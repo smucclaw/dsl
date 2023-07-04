@@ -22,7 +22,7 @@ import Control.Monad.State.Strict
     gets,
     runState,
   )
-import Data.Foldable (for_)
+import Data.Foldable (for_, traverse_)
 import Data.Graph.Inductive.Graph
   ( Context,
     Graph (mkGraph, nodeRange),
@@ -330,7 +330,7 @@ mergePetri' rules og splitNode = runGM og $ do
     -- myTraceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
     newPetri <- getGraph
     gs <- GM get
-    GM . put $ gs {curentGraph = mergePetri' rules newPetri splitNode }
+    GM . put $ gs {currentGraph = mergePetri' rules newPetri splitNode }
 
 condElimination :: [Rule] -> PetriD -> PetriD
 condElimination _rules og = runGM og $ do
@@ -419,7 +419,7 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
     --    entry node -> split node -> children of entry node
     splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
     newEdge' (entry,splitnode, [Comment "added by split from parent node"])
-    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"])
+    traverse_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"])
                    | headnode <- headsOfChildren ]
     -- Now we check how many tail nodes there are in successTails.
     -- If there's only 1, then there's no need to make a join node and link that up.
@@ -432,9 +432,9 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
     when (length successTails > 1) $ do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
       newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
-      mapM_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
+      traverse_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
       -- myTraceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
-      mapM_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
+      traverse_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
 
 hasText :: Text -> PNode a -> Bool
 hasText  x  (PN _ nt _ _) = x == nt
@@ -538,7 +538,7 @@ getNodeByDeets :: PetriD -> [Deet] -> Maybe Node
 getNodeByDeets gr ds = listToMaybe $ nodes $ labfilter (hasDeets ds) gr
 
 -- before: insrules :: RuleSet -> PetriD -> PetriD
--- before: insrules rs sg = runGM sg $ mapM (r2fgl rs Nothing) rs
+-- before: insrules rs sg = runGM sg $ traverse (r2fgl rs Nothing) rs
 
 -- | Insert the rules into an existing petri net. With logging.
 insrules :: RuleSet -> PetriD -> XPileLog PetriD
@@ -563,7 +563,7 @@ do
 
 -}
 
-data GraphState = GS { lastNode :: Node, curentGraph :: PetriD }
+data GraphState = GS { lastNode :: Node, currentGraph :: PetriD }
 
 -- | pure imperative graph construction
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
@@ -577,51 +577,51 @@ newtype GraphMonad a = GM { runGM_ :: State GraphState a }
 
 newNode :: PNodeD -> GraphMonad Node
 newNode lbl = do
-  gs@GS {lastNode = n, curentGraph = g} <- GM get
+  gs@GS {lastNode = n, currentGraph = g} <- GM get
   let n' = succ n
   -- myTraceM $ "newNode: " <> show n' <> " " <> show lbl
-  GM . put $ gs {lastNode = n' , curentGraph = insNode (n', lbl) g }
+  GM . put $ gs {lastNode = n' , currentGraph = insNode (n', lbl) g }
   return n'
 
 newEdge :: Node -> Node -> PLabel -> GraphMonad ()
 newEdge n1 n2 lbl = do
-  gs@GS {curentGraph = g} <- GM get
-  GM . put $ gs {curentGraph = insEdge (n1, n2, lbl) g }
+  gs@GS {currentGraph} <- GM get
+  GM . put $ gs {currentGraph = insEdge (n1, n2, lbl) currentGraph}
 
 newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
 newEdge' (a,b,c) = newEdge a b c
 
 overwriteNode :: Node -> PNodeD -> GraphMonad Node
 overwriteNode n pn = do
-  gs@GS {curentGraph = g} <- GM get
-  GM . put $ gs {curentGraph = insNode (n, pn) g }
-  return n
+  gs@GS {currentGraph} <- GM get
+  GM . put $ gs {currentGraph = insNode (n, pn) currentGraph}
+  pure n
 
 delEdge' :: (Node, Node) -> GraphMonad ()
 delEdge' (n1,n2) = do
-  gs@GS {curentGraph = g} <- GM get
-  GM . put $ gs {curentGraph = delEdge (n1, n2) g }
+  gs@GS {currentGraph} <- GM get
+  GM . put $ gs {currentGraph = delEdge (n1, n2) currentGraph}
 
 delNode' :: Node -> GraphMonad ()
 delNode' n1 = do
-  gs@GS {curentGraph = g} <- GM get
-  GM . put $ gs {curentGraph = delNode n1 g }
+  gs@GS {currentGraph} <- GM get
+  GM . put $ gs {currentGraph = delNode n1 currentGraph}
 
 -- runGM :: PetriD -> GraphMonad a -> a
 runGM :: PetriD -> GraphMonad a -> PetriD
 runGM gr (GM m) = cg
 -- runGM gr (GM m) = traceShow (neNodes res, neNodes cg) res
   where (_, n0) = nodeRange gr
-        (_res, GS _ln cg) = runState m (GS n0 gr)
+        (_res, GS _ln cg) = runState m $ GS n0 gr
         -- [TODO] why not execState
 
 -- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
 getGraph :: GraphMonad PetriD
-getGraph = GM $ gets curentGraph
+getGraph = GM $ gets currentGraph
 
 -- | discards the stderr log
 runLog :: XPileLog a -> a
-runLog x = fst (xpLog x)
+runLog = fst . xpLog
 
 -- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLog (GraphMonad (Maybe Node))
@@ -635,9 +635,9 @@ r2fgl _rs _defRL RegBreach      = pure $ pure Nothing
 r2fgl _rs _defRL (RuleAlias rn) = pure $ do
   sg <- getGraph
   let ntxt = mt2text rn
-  let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
+  let already = getNodeByDeets sg [IsFirstNode, OrigRL ntxt]
   maybe (fmap Just . newNode $
-         mkPlaceA [IsFirstNode,FromRuleAlias,OrigRL ntxt] ntxt ) (pure . Just) already
+         mkPlaceA [IsFirstNode, FromRuleAlias, OrigRL ntxt] ntxt ) (pure . Just) already
 
 r2fgl rs defRL Regulative{..} = return $ do
   sg <- getGraph
@@ -662,7 +662,7 @@ r2fgl rs defRL Regulative{..} = return $ do
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
   whoN  <- case who of Nothing  -> pure everyN
-                       Just bsr -> do whoN <- newNode $ mkTrans $ "who " <> bsr2textnl bsr
+                       Just bsr -> do whoN <- newNode $ mkTrans [i|who #{bsr2textnl bsr}|]
                                       newEdge everyN whoN []
                                       pure whoN
   upoN  <- case upon of Nothing -> pure whoN
@@ -674,14 +674,15 @@ r2fgl rs defRL Regulative{..} = return $ do
                               pure uponCondN
   conN  <- case cond of Nothing  -> pure upoN
                         Just bsr -> do
-                            ifN     <- newNode $ (addDeet $ mkDecis ("if " <> bsr2textnl bsr)) IsCond
+                            ifN     <- newNode $ (addDeet $ mkDecis [i|if #{bsr2textnl bsr}|]) IsCond
                             ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
                             newEdge' ( upoN,    ifN, [] )
                             newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
   (onSuccessN, mbOnFailureN) <- do
     myTraceM $ "Petri/r2fgl: action = " <> show action
-    let deon = case deontic of { DMust -> "must"; DMay -> "may"; DShant -> "shant" }
+    -- convert DMUST/DMAY/DSHANT into must/may/shant
+    let deon = deontic |> show |> Text.pack |> Text.toLower
         temp = tc2nl NLen temporal
         actn = actionFragments action
         oblLab = mkDecis (Text.unlines [ deon
@@ -692,8 +693,8 @@ r2fgl rs defRL Regulative{..} = return $ do
                      -- vp2np
                      -- ( actionWord $ head $ actionFragments action) <> " " <>
                      henceWord deontic
-    myTraceM $ "Petri/r2fgl: actn = " <> show actn
-    myTraceM $ "Petri/r2fgl: oblLab = " <> show actn
+    myTraceM [i|Petri/r2fgl: actn = #{actn}|]
+    myTraceM [i|Petri/r2fgl: oblLab = #{actn}|]
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
@@ -769,7 +770,6 @@ c2n (_, n, _nl, _) = n
 subj2nl :: NatLang -> BoolStructP -> Text.Text
 subj2nl NLen (AA.Leaf pt) = pt2text pt
 subj2nl _ bsp = [i|Petri/subj2nl: #{bsp}|]
-  -- "Petri/subj2nl: " <> Text.pack (show bsp)
 
 -- we previously had a function to 
 -- deonticTemporal :: Rule -> XPileLogE [(Text.Text, Text.Text)]

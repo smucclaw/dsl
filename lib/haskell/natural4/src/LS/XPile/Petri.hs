@@ -1,6 +1,8 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
 {-| transpiler to Petri net visualizer -}
@@ -67,10 +69,11 @@ import Data.GraphViz.Printing (renderDot)
 import Data.List (nub)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust, fromMaybe, isJust, listToMaybe, maybeToList)
+import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
-import Flow ((|>))
+import Flow ((.>), (|>))
 import LS
   ( BoolStructP,
     Deontic (DMay, DMust, DShant),
@@ -202,21 +205,23 @@ fmtcluster 2 = [NodeAttrs [ shape BoxShape
 fmtcluster 3 = [GraphAttrs [ Rank SameRank ] ]
 fmtcluster _ = []
 
-tcsd :: (Show a) => [a] -> [Attribute]
+tcsd :: Show a => [a] -> [Attribute]
 tcsd = fmap $ Comment . LT.fromStrict . Text.pack . show
 
 fmtPetriNode :: Show a => (Node, PNode a) -> [Attribute]
-fmtPetriNode (_n,PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls
-fmtPetriNode (_n,PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls
-fmtPetriNode (_n,PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
-fmtPetriNode (_n,PN Trans txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
-fmtPetriNode (_n,PN Decis txt lbls ds)             = toLabel txt : shape DiamondShape : tcsd ds ++ lbls
+fmtPetriNode (_n, PN Place txt@"FULFILLED" lbls ds) = toLabel txt : color Green        : tcsd ds ++ lbls
+fmtPetriNode (_n, PN Place txt@"BREACH"    lbls ds) = toLabel txt : color Brown        : tcsd ds ++ lbls
+fmtPetriNode (_n, PN Place txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
+fmtPetriNode (_n, PN Trans txt lbls ds)             = toLabel txt                      : tcsd ds ++ lbls
+fmtPetriNode (_n, PN Decis txt lbls ds)             = toLabel txt : shape DiamondShape : tcsd ds ++ lbls
 
 fmtPetriEdge :: Graph gr => gr (PNode a) PLabel -> (Node, Node, PLabel) -> [Attribute]
-fmtPetriEdge g (s,e,el) -- if the edge goes to BREACH then we paint the edge brown
-  | (ntext <$> lab g e) == Just "BREACH"                = color Brown : el
-  | (ntext <$> lab g e) == Just "FULFILLED" && s /= 0   = color Green : el
-  | otherwise                                           = el
+fmtPetriEdge g (s, e, el) =
+  -- if the edge goes to BREACH then we paint the edge brown
+  case (ntext <$> lab g e, s) of
+    (Just "BREACH", _) -> color Brown : el
+    (Just "Fulfilled", (/= 0) -> True) -> color Green : el
+    _ -> el
 
 -- code below was previously in XPile/SVG.hs which imported Petri.hs
 data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCond | IsThen | IsUpon
@@ -224,7 +229,7 @@ data Deet = IsFirstNode | IsLastHappy | FromRuleAlias | IsParty | IsDeon | IsCon
           | Temporal Text
           | IsInfra | IsSplit | IsJoin | IsOr | IsAnd
           | HideIfChildless
-          deriving (Eq,Show)
+          deriving (Eq, Show)
 
 type PNodeD = PNode Deet
 type PetriD = Petri Deet
@@ -276,7 +281,7 @@ elideNodes limit1 desc pnpred og = runGM og $ do
         , x   <- indegrees
         , z   <- outdegrees
         ] id
-  
+
 
 reorder :: [Rule] -> PetriD -> PetriD
 reorder _rules og = runGM og $ do
@@ -379,7 +384,7 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
       --               |
       --               v
       --              ...
-  let headsOfChildren = 
+  let headsOfChildren =
         sgs |> labfilter (hasDeet IsFirstNode)
             |> nodes
             |> filter (/= entry)
@@ -414,7 +419,7 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
     --    entry node -> split node -> children of entry node
     splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
     newEdge' (entry,splitnode, [Comment "added by split from parent node"])
-    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"]) 
+    mapM_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"])
                    | headnode <- headsOfChildren ]
     -- Now we check how many tail nodes there are in successTails.
     -- If there's only 1, then there's no need to make a join node and link that up.
@@ -460,7 +465,7 @@ connectRules sg rules =
 
   -- meng would like to clear up `x -> (FromRuleAlias) -> (y)` to `x -> (y)`
   -- because it is ugly to have `() -> ()`, that's not really a Petri net
-  
+
   let subgraphOfAliases = labfilter (hasDeet FromRuleAlias) sg
   -- another way to find it might be to look for head nodes that have no outdegrees
 
@@ -540,10 +545,10 @@ insrules :: RuleSet -> PetriD -> XPileLog PetriD
 insrules rs sg =
   rs                    -- [Rule]
     |> traverse rule2GM -- XPileLog [GraphMonad (Maybe Node)]
-    |$> sequence        -- XPileLog (GraphMonad (Maybe Node))
+    |$> sequenceA       -- XPileLog (GraphMonad (Maybe Node))
     |$> runGM sg        -- XPileLog PetriD
   where
-    -- Effectful transpilation of a rule into a stateful graph monad.
+    -- Effectful transpilation of a rule to a stateful graph monad.
     rule2GM :: Rule -> XPileLog (GraphMonad (Maybe Node))
     rule2GM = r2fgl rs Nothing
 
@@ -612,8 +617,7 @@ runGM gr (GM m) = cg
 
 -- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
 getGraph :: GraphMonad PetriD
-getGraph = do
-    GM $ gets curentGraph
+getGraph = GM $ gets curentGraph
 
 -- | discards the stderr log
 runLog :: XPileLog a -> a
@@ -621,14 +625,14 @@ runLog x = fst (xpLog x)
 
 -- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLog (GraphMonad (Maybe Node))
-r2fgl _rs _defRL RegFulfilled   = return $ pure Nothing
-r2fgl _rs _defRL RegBreach      = return $ pure Nothing
+r2fgl _rs _defRL RegFulfilled   = pure $ pure Nothing
+r2fgl _rs _defRL RegBreach      = pure $ pure Nothing
 -- what do we do with a RuleAlias? it only ever appears as the target of a Hence or a Lest,
 -- so we just wire it up to whatever existing rule has been labeled appropriately.
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl _rs _defRL (RuleAlias rn) = return $ do
+r2fgl _rs _defRL (RuleAlias rn) = pure $ do
   sg <- getGraph
   let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode,OrigRL ntxt]
@@ -643,9 +647,7 @@ r2fgl rs defRL Regulative{..} = return $ do
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
   -- mutterd 2 $ "Petri/r2fgl: rkeyword = " <> show rkeyword
-  let everywho = Text.unwords ( ( if rkeyword == REvery
-                                  then [ Text.pack (show (tokenOf rkeyword)) ]
-                                  else [] )
+  let everywho = Text.unwords ( ( [Text.pack (show (tokenOf rkeyword)) | rkeyword == REvery] )
                                 <> [ subj2nl NLen subj ] )
   -- mutterd 2 $ "Petri/r2fgl: everywho = " <> show everywho
 
@@ -660,7 +662,7 @@ r2fgl rs defRL Regulative{..} = return $ do
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
   whoN  <- case who of Nothing  -> pure everyN
-                       Just bsr -> do whoN <- newNode $ mkTrans $ "who " <> (bsr2textnl bsr)
+                       Just bsr -> do whoN <- newNode $ mkTrans $ "who " <> bsr2textnl bsr
                                       newEdge everyN whoN []
                                       pure whoN
   upoN  <- case upon of Nothing -> pure whoN
@@ -702,22 +704,24 @@ r2fgl rs defRL Regulative{..} = return $ do
                         pure (Just onFailureN)
                       _ -> pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
-    newEdge' ( conN, obligationN, [] )
-    newEdge' ( obligationN, onSuccessN, seport)
+    newEdge' (conN, obligationN, [] )
+    newEdge' (obligationN, onSuccessN, seport)
     pure (onSuccessN, mbOnFailureN)
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
-  let childOuts defaultNode outNode childRule =
-        case fmap (xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)) childRule of
-          Nothing -> newEdge onSuccessN defaultNode []
-          Just (childOut, childErr) -> do
-            childN <- childOut
-            case childN of
-              Nothing -> pure mempty
-              Just childE -> newEdge outNode childE []
+  let childOuts :: Node -> Node -> Maybe Rule -> GraphMonad ()
+      childOuts _ outNode
+        ((xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL) <$>) -> Just (childOut, _childErr)) = do
+          childN <- childOut
+          case childN of
+            Nothing -> pure ()
+            Just childE -> newEdge outNode childE []
+
+      childOuts defaultNode _ _ = newEdge onSuccessN defaultNode []
 
   childOuts fulfilledNode onSuccessN hence
+
   case mbOnFailureN of
     Just onFailureN -> childOuts breachNode onFailureN lest
     Nothing -> pure ()
@@ -762,12 +766,10 @@ c2n (_, n, _nl, _) = n
   lest                                     [lest]
 -}
 
-
-
-
 subj2nl :: NatLang -> BoolStructP -> Text.Text
 subj2nl NLen (AA.Leaf pt) = pt2text pt
-subj2nl _ bsp = "Petri/subj2nl: " <> Text.pack (show bsp)
+subj2nl _ bsp = [i|Petri/subj2nl: #{bsp}|]
+  -- "Petri/subj2nl: " <> Text.pack (show bsp)
 
 -- we previously had a function to 
 -- deonticTemporal :: Rule -> XPileLogE [(Text.Text, Text.Text)]
@@ -779,14 +781,9 @@ subj2nl _ bsp = "Petri/subj2nl: " <> Text.pack (show bsp)
     -- an AND situation
 
 actionFragments :: BoolStructP -> [ParamText]
-actionFragments (AA.All _ xs) = concatMap actionFragments xs
+actionFragments (AA.All _ xs) = foldMap actionFragments xs
 actionFragments (AA.Leaf x) = [x]
 actionFragments _           = []
 
 actionWord :: ParamText -> Text.Text
-actionWord = mtexpr2text . NE.head . fst . NE.head
-
-
-
-
- 
+actionWord = NE.head .> fst .> NE.head .> mtexpr2text

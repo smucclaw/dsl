@@ -743,7 +743,7 @@ r2fgl rs defRL Regulative{..} = return $ do
     lestWord DShant = Right "violation"
 
 -- r2fgl rs r@Hornlike{} = pure Nothing
-r2fgl _rs _defRL _r = return $ pure Nothing
+r2fgl _rs _defRL _r = pure $ pure Nothing
 
 
 c2n :: Context a b -> Node

@@ -1,7 +1,7 @@
 abstract CustomSyntax =
     Numeral
   , Grammar [
-          N, N2, CN, UseN, NP, Det, DetCN, MassNP
+          N, N2, CN, UseN, NP, Det, Pron, DetCN, MassNP, UsePron
         , V,  VV, V2, VS, V2S, VP, V2A
         , A, A2, AP, AdjCN, PositA
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
@@ -14,7 +14,7 @@ abstract CustomSyntax =
         , S, QS, Conj
         ]
   , Structural [
-        Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
+        Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep, they_Pron
         , VV, must_VV
         ]
   , Extend [
@@ -52,7 +52,7 @@ abstract CustomSyntax =
                                      -- unable to pay (V2) liabilities (NP) (when_Subj they fall due) (S)
 
     ComplV2 : V2 -> NP -> VP ;
-    ComplVSwhen,
+    ComplV2Swhen : V2S -> NP -> S -> VP ;
     ComplVSif,
     ComplVSthat : VS -> S -> VP ;
     MayHave : VP -> VPS ; -- getting "may have occurred" with pure RGL is a pain

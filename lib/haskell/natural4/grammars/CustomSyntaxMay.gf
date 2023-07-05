@@ -1,7 +1,7 @@
 concrete CustomSyntaxMay of CustomSyntax =
     NumeralMay
   , GrammarMay [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
+        N, N2, CN, UseN, NP, Det, Pron, DetCN, MassNP, UsePron
       , V, VV, V2, VS, V2S, VP, V2A
       , A, A2, AP, AdjCN, PositA
   --      , ProgrVP -- becoming aware
@@ -15,7 +15,7 @@ concrete CustomSyntaxMay of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralMay [
-      Prep, for_Prep, from_Prep, on_Prep, after_Prep, possess_Prep
+      Prep, for_Prep, from_Prep, on_Prep, after_Prep, possess_Prep, they_Pron
     , VV, must_VV
     ]
   , ExtendMay [

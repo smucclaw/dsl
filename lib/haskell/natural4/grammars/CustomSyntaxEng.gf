@@ -1,7 +1,7 @@
 concrete CustomSyntaxEng of CustomSyntax =
     NumeralEng
   , GrammarEng [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
+        N, N2, CN, UseN, NP, Det, Pron, DetCN, MassNP, UsePron
       , V, VV, V2, VS, V2S, VP, V2A
       , A, A2, AP, AdjCN, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency
@@ -14,7 +14,7 @@ concrete CustomSyntaxEng of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralEng [
-      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
+      Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep, they_Pron
     , VV, must_VV
     ]
   , ExtendEng [
@@ -86,7 +86,8 @@ concrete CustomSyntaxEng of CustomSyntax =
     ComplV2 v2 np = mkVP <lin V2 v2 : V2> <lin NP np : NP>  ;
     ComplVSif vs s = R.insertObj (\\_ => "if" ++ s.s) (R.predV <lin V vs : V>) ;
     ComplVSthat vs s = mkVP <lin VS vs : VS> <lin S s : S> | ExtendEng.ComplBareVS vs s ;
-    ComplVSwhen vs s = R.insertObj (\\_ => "when" ++ s.s) (R.predV <lin V vs : V>) ;
+    ComplV2Swhen v2s np s = R.insertObj (\\_ => "when" ++ s.s)
+                              (R.insertObj (\\_ => v2s.c2 ++ np.s ! R.NPAcc) (R.predV v2s)) ;
 
     MayHave occur =
       let vps : ExtendEng.VPS = MkVPS presAnt POS occur ;

@@ -43,10 +43,15 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       aware = mkAP (mkA "aware") ;
       NDB_Qualification = mkNP (mkN "NDB Qualification") ;
       liabilities = mkNP (mkN "liabilities") ;
-      fall_due = MkVPS presSimul POS (mkVP (mkV "fall due")) ;
+      fall_due = MkVPS presSimul POS (mkVP (partV (mkV "fall") "due")) ;
       unable = mkVS (mkV "unable to pay") ;
+      unable_to_VP_VP vp = mkVP unable_VV vp ;
+      pay_V2S = mkV2S IrregEng.pay_V noPrep ;
 
+oper
+  unable_VV : VV = mkVV (mkV "unable" "unable" "was unable" "has been unable" "being unable") ;
 
+lin
   -- rodents and vermin
       Loss_or_Damage = mkNP (mkN "Loss or Damage") ;
       Contents = mkNP aPl_Det (mkN ("content"|"Content")) ;

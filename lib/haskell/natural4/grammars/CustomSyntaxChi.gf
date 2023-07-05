@@ -1,7 +1,7 @@
 concrete CustomSyntaxChi of CustomSyntax =
     NumeralChi
   , GrammarChi [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
+        N, N2, CN, UseN, NP, Det, Pron, DetCN, MassNP, UsePron
       , V,  VV, V2, VS, V2S, VP, V2A
       , A, A2, AP, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompAdv -- is a public agency
@@ -13,7 +13,7 @@ concrete CustomSyntaxChi of CustomSyntax =
       , S, QS, Conj
       ]
   , StructuralChi [
-      VV, must_VV
+      VV, must_VV, they_Pron
     ]
   , ExtendChi [
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS

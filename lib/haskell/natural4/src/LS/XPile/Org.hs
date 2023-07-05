@@ -5,11 +5,34 @@
 
 module LS.XPile.Org (toOrg) where
 
-import LS
+import LS.Interpreter
+    ( qaHornsT,
+      ruleLocals,
+      getMarkings,
+      isRuleAlias,
+      qaHornsR,
+      groupedByAOTree,
+      expandBSR,
+      getAndOrTree,
+      exposedRoots,
+      globalFacts,
+      ruleDecisionGraph,
+      expandRule,
+      classGraph )
+import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
+import LS.RelationalPredicates ( partitionExistentials, getBSR )
+import LS.Rule
+    ( Interpreted(classtable, scopetable),
+      hasGiven,
+      hasClauses,
+      ruleLabelName,
+      Rule(clauses, given) )
+import LS.Types ( unCT )
 import LS.PrettyPrinter
 
 import Prettyprinter
-import Text.Pretty.Simple
+    ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc )
+import Text.Pretty.Simple ( pShowNoColor )
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.List (nub)

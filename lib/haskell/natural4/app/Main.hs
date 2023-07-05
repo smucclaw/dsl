@@ -44,6 +44,7 @@ import LS.XPile.CoreL4
     sfl4ToEpilog,
   )
 import LS.XPile.GFTrees (gftrees)
+import LS.XPile.IntroTrivial (toTrivial)
 import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
@@ -176,6 +177,8 @@ main = do
       (tojsonFN,    asJSONstr)                = (workuuid <> "/" <> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
       (tovuejsonFN, asVueJSONrules)           = (workuuid <> "/" <> "vuejson",  fmap xpLog <$> toVueRules rules)
 
+      (toIntro1FN,  asTrivial)                = (workuuid <> "/" <> "intro1",   toTrivial l4i)
+
       (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
@@ -230,6 +233,9 @@ main = do
     when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"      (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+
+    when (SFL4.tointro1  opts) $ mywritefile True toIntro1FN   iso8601 "txt"  asTrivial
+
     when (SFL4.tovuejson opts) $ do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
       let toWriteVue =  [ ( case out' of

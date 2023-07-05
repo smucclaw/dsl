@@ -2,7 +2,7 @@ abstract CustomSyntax =
     Numeral
   , Grammar [
           N, N2, CN, UseN, NP, Det, DetCN, MassNP
-        , V,  VV, V2, VS, VP, V2A
+        , V,  VV, V2, VS, V2S, VP, V2A
         , A, A2, AP, AdjCN, PositA
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
         , Prep, PrepNP, AdvVP

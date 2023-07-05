@@ -27,7 +27,8 @@ abstract DomainLexicon = NL4Base ** {
        , personal_data
        : CN ;
       public, notifiable, any_unauthorised, aware : AP ;
-      unable : VS ;
+      unable_to_VP_VP : VP -> VP ;
+      pay_V2S : V2S ;
       fall_due : VPS ;
       NDB_Qualification
       , liabilities

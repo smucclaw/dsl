@@ -2,7 +2,7 @@ concrete CustomSyntaxMay of CustomSyntax =
     NumeralMay
   , GrammarMay [
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
-      , V, VV, V2, VS, VP
+      , V, VV, V2, VS, V2S, VP, V2A
       , A, A2, AP, AdjCN, PositA
   --      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency

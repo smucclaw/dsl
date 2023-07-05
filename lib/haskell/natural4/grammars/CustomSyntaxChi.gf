@@ -2,7 +2,7 @@ concrete CustomSyntaxChi of CustomSyntax =
     NumeralChi
   , GrammarChi [
         N, N2, CN, UseN, NP, Det, DetCN, MassNP
-      , V, VV, V2, VS, VP, AdvVP
+      , V,  VV, V2, VS, V2S, VP, V2A
       , A, A2, AP, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompAdv -- is a public agency
       , AdA, AdAdv -- only (within the organisation)

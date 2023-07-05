@@ -37,6 +37,7 @@ import LS.NLP.NL4Transformations
     mapBSLabel,
     pastTense,
     pushPrePostIntoMain,
+    bsNeg2textNeg,
     referSubj,
   )
 import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName)
@@ -340,6 +341,7 @@ ruleQuestionsNamed env alias rule = do
 -- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which
 -- in turn are trees of GText_s. Which takes us into PGF territory.
 
+
 ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [BoolStructGText]
 ruleQnTrees env alias rule = do
   mutterd 3 "ruleQnTrees: running"
@@ -378,13 +380,19 @@ ruleQnTrees env alias rule = do
     DefNameAlias {} -> return []
     _ -> return []
 
+-- convert Rule to BoolStructR
+
+mkBSR :: Rule -> NLGEnv -> [([RuleName], BoolStructGText)]
+mkBSR rl env = [ (rn , (mkGFText bsr)) | (rn, bsr) <- qaHornsR l4i]
+
+
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
 
 linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)
 
 mkWhoText :: NLGEnv -> (GPrePost -> GText) -> (GWho -> GText) -> BoolStructR -> BoolStructGText
-mkWhoText env f g bsr = pushPrePostIntoMain $ mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseWhoBS env bsr
+mkWhoText env f g bsr = pushPrePostIntoMain $ bsNeg2textNeg $ mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseWhoBS env bsr
 
 mkCondText :: NLGEnv -> (GPrePost -> GText) -> (GCond -> GText) -> BoolStructR -> BoolStructGText
 mkCondText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseCondBS env bsr
@@ -654,7 +662,7 @@ expandRuleForNLGE l4i depth rule = do
     _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
   where
     go xs = sequence $ expandBSRM l4i depth <$> xs
-    
+
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule

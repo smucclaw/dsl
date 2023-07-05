@@ -26,7 +26,6 @@ import LS.Interpreter
   ( expandClauses,
     getAndOrTree,
     l4interpret,
-    musings,
     onlyTheItems,
   )
 import LS.NLP.NLG
@@ -49,6 +48,7 @@ import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
+import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (sfl4ToProlog)
 import LS.XPile.Purescript (translate2PS)
@@ -178,7 +178,7 @@ main = do
 
       (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
+      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines

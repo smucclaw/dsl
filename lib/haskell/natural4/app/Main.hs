@@ -48,6 +48,9 @@ import LS.XPile.IntroTrivial (toTrivial)
 import LS.XPile.IntroBasic   (toBasic)
 import LS.XPile.IntroReader  (toReader, defaultReaderEnv)
 import LS.XPile.IntroLog     (toLog)
+import LS.XPile.IntroShoehorn (toShoehorn)
+import LS.XPile.IntroBase     (toBase)
+
 import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
@@ -180,10 +183,12 @@ main = do
       (tojsonFN,    asJSONstr)                = (workuuid <> "/" <> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
       (tovuejsonFN, asVueJSONrules)           = (workuuid <> "/" <> "vuejson",  fmap xpLog <$> toVueRules rules)
 
-      (toIntro1FN,  asTrivial)                = (workuuid <> "/" <> "intro1",   toTrivial l4i)
-      (toIntro2FN,  asBasic)                  = (workuuid <> "/" <> "intro2",   toBasic   l4i)
-      (toIntro3FN,  asReader)                 = (workuuid <> "/" <> "intro3",   toReader  l4i defaultReaderEnv)
-      (toIntro4FN,  (asLog, asLogErr))        = (workuuid <> "/" <> "intro4",   xpLog $ toLog l4i defaultReaderEnv)
+      (toIntro1FN,  asTrivial)                   = (workuuid <> "/" <> "intro1",   toTrivial l4i)
+      (toIntro2FN,  asBasic)                     = (workuuid <> "/" <> "intro2",   toBasic   l4i)
+      (toIntro3FN,  asReader)                    = (workuuid <> "/" <> "intro3",   toReader  l4i defaultReaderEnv)
+      (toIntro4FN,  (asLog, asLogErr))           = (workuuid <> "/" <> "intro4",   xpLog $ toLog l4i defaultReaderEnv)
+      (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
+      (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
 
       (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
@@ -240,10 +245,13 @@ main = do
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
 
-    when (SFL4.tointro1  opts) $ mywritefile True toIntro1FN   iso8601 "txt"  asTrivial
-    when (SFL4.tointro2  opts) $ mywritefile True toIntro2FN   iso8601 "txt"  asBasic
-    when (SFL4.tointro3  opts) $ mywritefile True toIntro3FN   iso8601 "txt"  asReader
-    when (SFL4.tointro4  opts) $ mywritefile2 True toIntro4FN   iso8601 "txt"  asLog asLogErr
+    when (SFL4.tointro  opts) $ do
+      mywritefile  True toIntro1FN   iso8601 "txt"  asTrivial
+      mywritefile  True toIntro2FN   iso8601 "txt"  asBasic
+      mywritefile  True toIntro3FN   iso8601 "txt"  asReader
+      mywritefile2 True toIntro4FN   iso8601 "txt"  asLog        asLogErr
+      mywritefile2 True toIntro5FN   iso8601 "txt"  asShoehorn   asShoehornErr
+      mywritefile2 True toIntro6FN   iso8601 "txt"  asBase       asBaseErr
 
     when (SFL4.tovuejson opts) $ do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.

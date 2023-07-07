@@ -83,7 +83,9 @@ module LS.XPile.Logging
     mutterdhsf,
     xpReturn,
     xpError,
+    XPileLogR,
     XPileLogW,
+    XPileLogS,
     fmapE,
     fmapTE,
     fromxpLogE,
@@ -99,7 +101,7 @@ import Control.Monad.RWS
     evalRWS,
     evalRWST,
   )
-import Control.Monad.Identity
+import Control.Monad.Identity ( Identity )
 import Data.Either (fromRight)
 import Data.HashMap.Strict as Map (HashMap)
 import Data.Text.Lazy qualified as TL

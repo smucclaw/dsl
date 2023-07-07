@@ -106,10 +106,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tomaude    :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
 
-                   , tointro1  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 1 trivial"
-                   , tointro2  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 2 basic"
-                   , tointro3  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 3 reader"
-                   , tointro4  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 4 log, naively"
+                   , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"

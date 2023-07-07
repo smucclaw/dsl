@@ -47,6 +47,7 @@ import LS.XPile.GFTrees (gftrees)
 import LS.XPile.IntroTrivial (toTrivial)
 import LS.XPile.IntroBasic   (toBasic)
 import LS.XPile.IntroReader  (toReader, defaultReaderEnv)
+import LS.XPile.IntroLog     (toLog)
 import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
@@ -182,6 +183,7 @@ main = do
       (toIntro1FN,  asTrivial)                = (workuuid <> "/" <> "intro1",   toTrivial l4i)
       (toIntro2FN,  asBasic)                  = (workuuid <> "/" <> "intro2",   toBasic   l4i)
       (toIntro3FN,  asReader)                 = (workuuid <> "/" <> "intro3",   toReader  l4i defaultReaderEnv)
+      (toIntro4FN,  (asLog, asLogErr))        = (workuuid <> "/" <> "intro4",   xpLog $ toLog l4i defaultReaderEnv)
 
       (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
@@ -241,6 +243,7 @@ main = do
     when (SFL4.tointro1  opts) $ mywritefile True toIntro1FN   iso8601 "txt"  asTrivial
     when (SFL4.tointro2  opts) $ mywritefile True toIntro2FN   iso8601 "txt"  asBasic
     when (SFL4.tointro3  opts) $ mywritefile True toIntro3FN   iso8601 "txt"  asReader
+    when (SFL4.tointro4  opts) $ mywritefile2 True toIntro4FN   iso8601 "txt"  asLog asLogErr
 
     when (SFL4.tovuejson opts) $ do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.

@@ -3,7 +3,7 @@
 {-| a basic transpiler, part of the Introductory series
 -}
 
-module LS.XPile.IntroReader (toReader, defaultReaderEnv) where
+module LS.XPile.IntroReader (toReader, defaultReaderEnv, MyEnv(..)) where
 
 import LS.Interpreter       ( qaHornsT )
 import LS.PrettyPrinter     ( myrender, (</>), (<//>) )
@@ -28,8 +28,8 @@ inner l4i = do
   return $
     "* output from the IntroReader transpiler" </>
     "** the global environment is" <//> pretty (pShowNoColor genv) </>
-    "** the app environment is" <//> pretty (pShowNoColor aenv) </>
-    "** qaHornsT is" <//> pretty (pShowNoColor (qaHornsT l4i))
+    "** the app environment is"    <//> pretty (pShowNoColor aenv) </>
+    "** qaHornsT is"               <//> pretty (pShowNoColor (qaHornsT l4i))
 
 -- | we equip our basic transpiler with an environment reader
 

@@ -109,6 +109,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tointro1  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 1 trivial"
                    , tointro2  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 2 basic"
                    , tointro3  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 3 reader"
+                   , tointro4  :: w ::: Bool   <!> "True" <?> "introduction to transpilation -- 4 log, naively"
 
                    , dbug :: w ::: Bool <!> "False"
                    , extd :: w ::: Bool <!> "False" <?> "unhide grounds carrying typical values"

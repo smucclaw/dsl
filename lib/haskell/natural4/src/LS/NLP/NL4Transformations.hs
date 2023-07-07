@@ -63,37 +63,38 @@ pushPrePostIntoMain bsgt = case bsgt of
                                          in_whole))
                 ]
             : restOfInnerRules )
-     -- like above, but body of 2nd is recoverUnparsed
-      All pp
-          ( Any
+     -- like above, but with Not
+      Any pp
+          ( All
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
                                (GqPREPOST ( GNP_PrePost ( GMassNP beverage )))))
-              [ Leaf (GqWHO ( GTHE person1 ) ( GAPWho alcoholic ))
-              , Leaf (GqWHO ( GTHE _ ) ( GAPWho non_alcoholic ))
+              [ Not (Leaf (GqWHO ( GTHE person1 ) ( GAPWho alcoholic )))
+              , Not (Leaf (GqWHO ( GTHE _ ) ( GAPWho non_alcoholic )))
               ]
-          :  Any
-            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))) -- TODO: prepare for cases where PrePost is parsed
-            )
-            [ Leaf (GqWHO ( GTHE person2 ) ( GrecoverUnparsedWho in_part ))
-            , Leaf (GqWHO ( GTHE _ ) ( GrecoverUnparsedWho in_whole ))
+          :  All
+            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
+            [ Not (Leaf (GqWHO ( GTHE person2 ) ( GAdvWho in_part )))
+            , Not (Leaf (GqWHO ( GTHE _ ) ( GAdvWho in_whole )))
             ]
           : restOfInnerRules ) ->
         Any pp
-            ( Any
+            ( All
                 Nothing
-                [ Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN  alcoholic beverage ))))
-                , Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN  non_alcoholic beverage ))))
+                [ Not $ Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN alcoholic beverage ))))
+                , Not $ Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN non_alcoholic beverage ))))
                 ]
-          :  Any
+          :  All
                 Nothing
-                [ Leaf $ GqWHO ( GTHE person2 )
+                [ Not $ Leaf $ GqWHO ( GTHE person2 )
                                ( GWHO GpresSimul GPOS
-                                     (hackStrVP in_part
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))))
-                , Leaf $ GqWHO ( GTHE person2 )
+                                     (GAdvVP
+                                        (GComplV2 consume (GDetCN GtheSg beverage ))
+                                        in_part))
+                , Not $ Leaf $ GqWHO ( GTHE person2 )
                                ( GWHO GpresSimul GPOS
-                                      (hackStrVP in_whole
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))))
+                                      (GAdvVP
+                                        (GComplV2 consume (GDetCN GtheSg beverage ))
+                                         in_whole))
                 ]
             : restOfInnerRules )
       _ -> bs

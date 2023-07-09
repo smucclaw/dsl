@@ -37,7 +37,7 @@ extra-deps:
   commit: ab191cf0bc915579b841bfe0153591a601e48ae9
 
 - github: smucclaw/gf-core
-  commit: edb55df7b0c4892ba0bac2817b5f493921c20c36
+  commit: 6a36b486fae612798ec36873ccbbdbca73df4f6c
 
 - github: smucclaw/prolog
   commit: 1f793236846ad506eef1cf3acd8646334123088d
@@ -48,7 +48,7 @@ extra-deps:
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
-- cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+- cgi-3001.5.0.1
 - multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 
 allow-newer: true

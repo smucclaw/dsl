@@ -32,6 +32,9 @@ import Data.Text.Lazy qualified as TL
 import Data.Tree
 import Data.Tuple (swap)
 import Debug.Trace
+import LS.XPile.Logging (mutterd, mutterdhsf
+                        , XPileLogE, XPileLog
+                        , pShowNoColorS, xpReturn, xpError)
 import LS.PrettyPrinter
 import LS.RelationalPredicates
 import LS.Rule
@@ -83,112 +86,6 @@ qaHornsR l4i =
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]
-
--- | Talk a little bit about what we've interpreted.
--- The output of this function gets saved to the workdir's @org/@ directory
--- and can be viewed inside the @LATEST.org@ output file.
--- If you are working on the Interpreter and want to see what it is thinking,
--- this is a good place to add "printf debugging".
---
--- When you view the @LATEST.org@ output file, org-mode is recommended.
--- This comes naturally in Emacs. In VS Code you will need to install plugins.
-
-musings :: Interpreted -> [Rule] -> Doc ann
-musings l4i rs =
-  let cg = classGraph (classtable l4i) []
-      expandedRules = DL.nub $ concatMap (expandRule rs) rs
-      decisionGraph = ruleDecisionGraph l4i rs
-  in vvsep [ "* musings"
-           , "** Global Facts" </> srchs (globalFacts l4i)
-           , "** Class Hierarchy"
-           , vvsep [ vvsep [ "*** Class:" <+> pretty cname <>
-                             if null (Prelude.tail cname) then emptyDoc
-                             else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
-                           , if null cchild
-                             then emptyDoc
-                             else "**** extends" <+> maybe "" viaShow (fst . fst $ cchild) <+> "with new attributes"
-                                  </> srchs (snd cchild)
-                           , "**** deets" </> srchs cname
-                           ]
-                   | (cname, cchild) <- cg ]
-           , "** The entire classgraph"
-           , srchs cg
-           , "** Symbol Table"
-           , "we know about the following scopes"
-           , vvsep [ "*** Rule:" <+> hsep (pretty <$> rn) </>
-                     vvsep [ "**** symbol:" <+> tildes (pretty mt)
-                             </> srchs hc
-                             </> "**** typesig:" <+> tildes (viaShow its)
-
-                           | (mt, (its, hc)) <- Map.toList st ]
-                   | (rn, st) <- Map.toList $ scopetable l4i ]
-
-           , "** the Rule Decision Graph"
-           , example (pretty (prettify (first ruleLabelName decisionGraph)))
-
-           , "** Decision Roots"
-           , "rules which are not just RuleAlises, and which are not relied on by any other rule"
-           , srchs (ruleLabelName <$> exposedRoots l4i)
-
-           , "*** Nubbed, Exposed, Decision Roots"
-           , "maybe some of the decision roots are identical and don't need to be repeated; so we nub them"
-           , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
-                     </> vsep [ "-" <+> pretty (ruleLabelName r) | r <- uniqrs ]
-                     </> "***** grpval" </> srchs grpval
-                     </> "***** head uniqrs" </> srchs (DL.head uniqrs)
-                     </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ DL.head uniqrs)
-                     </> "***** getBSR [head uniqrs]" </> srchs (mapMaybe getBSR [DL.head uniqrs])
-                     </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> mapMaybe getBSR uniqrs)
-                     </> vvsep [ "****** uniq rules" </> srchs r
-                                 </> "******* givens" </> srchs (given r)
-                                 </> vvsep [ "******* horn clause" </> srchs c
-                                             </> "******** partitionExistentials"
-                                             </> srchs (partitionExistentials c)
-                                           | c <- clauses r ]
-                               | r <- uniqrs
-                               , hasClauses r
-                               , hasGiven r
-                               ]
-                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
-                                                          exposedRoots l4i      -- EXPOSED
-                                                         ) [1..]
-                   , not $ null uniqrs
-                   ]
-
-           , "** qaHornsR" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsR l4i ]
-           , "** qaHornsT" , vvsep [ "***" <+> viaShow (concat names) </> srchs boolstruct | (names, boolstruct) <- qaHornsT l4i ]
-           , "** expandedRules"
-           , if expandedRules == DL.nub rs
-             then "(ahem, they're actually the same as unexpanded, not showing)"
-             else vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs r | r <- expandedRules ]
-           , "** getAndOrTrees, direct"
-           , vvsep [ "***" <+> hsep (pretty <$> ruleLabelName r) </> srchs (getAndOrTree l4i 1 r) | r <- rs ]
-           , vvsep [ "** Things that are RuleAliases"
-                   , vsep [ "-" <+> pretty rlname
-                          | r <- rs -- this is AccidentallyQuadratic in a pathological case.
-                          , let rlname = ruleLabelName r
-                          , isRuleAlias l4i rlname ]
-                   ]
-           , vvsep [ "** default markings"
-                   , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"
-                   , srchs (getMarkings l4i)
-                   ]
-           , "** symbol tables (~scopetable l4i~)"
-           , vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (scopetable l4i) ]
-
-           , "** class tables (~classtable l4i~)" </> srchs (classtable l4i)
-           , vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (unCT $ classtable l4i) ]
-
-           , "** The original rules (~origrules l4i~)"
-           , vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r
-                   </> "**** local variables" </> srchs (ruleLocals l4i r)
-                   | r <- rs ]
-           ]
-  where
-    srchs :: (Show a) => a -> Doc ann
-    srchs = src "haskell" . pretty . pShowNoColor
-    src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
-    example  x = vsep [ "#+begin_example", x, "#+end_example" ]
 
 -- | interpret the parsed rules and construct the symbol tables
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
@@ -587,16 +484,25 @@ expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Just _bodybsr) )
 expandClause _l4i _depth (HC   (RPBoolStructR _mt  RPis  _bsr) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
 expandClause _l4i _depth _                                                        = [          ] -- [TODO] need to add support for RPnary
 
+
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
 expandBSR :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR  l4i depth x = expandTrace "expandBSR" depth (show x) $ AA.nnf $ expandBSR' l4i depth x
+
+-- | monadic version with logging turned on
+expandBSRM :: Interpreted -> Int -> BoolStructR -> XPileLog BoolStructR
+expandBSRM l4i depth x = do
+  mutterdhsf depth "expandBSR() called with" pShowNoColorS x
+  let toreturn = expandBSR l4i depth x
+  mutterdhsf depth "expandBSR() returning" pShowNoColorS toreturn
+  return toreturn
 
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth (AA.Leaf rp)  =
   case expandRP l4i (depth + 1) rp of
     RPBoolStructR _mt1 RPis bsr -> bsr
     o                           -> AA.mkLeaf o
-expandBSR' l4i depth (AA.Not item)   = AA.mkNot     (expandBSR' l4i (depth + 1) item)
+expandBSR' l4i depth (AA.Not item)   = {- AA.nnf $ -} AA.mkNot     (expandBSR' l4i (depth + 1) item)
 expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
 expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
 

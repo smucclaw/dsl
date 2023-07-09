@@ -6,10 +6,12 @@ module LS.NLGSpec where
 import AnyAll (BoolStruct (..), Label (..))
 import Data.HashMap.Strict as Map (empty, fromList)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i)
 import LS.NLP.NL4 (Tree (GqCONSTR, GqPREPOST))
+import LS.Interpreter (qaHornsR)
 import LS.NLP.NLG
-  ( NLGEnv,
+  ( NLGEnv(..),
     expandRulesForNLG,
     linBStext,
     mkConstraintText,
@@ -65,6 +67,7 @@ import LS.Types
     TComparison (TAfter, TBefore, TOn),
     TemporalConstraint (TemporalConstraint),
   )
+import LS.RelationalPredicates (getBSR)
 import LS.XPile.Logging (fromxpLogE, xpLog)
 import PGF (mkCId)
 import Parsing.PDPASpec (expected_pdpadbno1)
@@ -105,33 +108,29 @@ spec = do
             let questions = fst $ xpLog $ ruleQuestions env Nothing (head mustsing5ExpandedGold)
             questions `shouldBe` [All Nothing [Leaf "does the person walk?",Any Nothing [All Nothing [Any Nothing [Leaf "does the person consume an alcoholic beverage?",Leaf "does the person consume a non-alcoholic beverage?"],Any Nothing [Leaf "does the person consume the beverage in part?",Leaf "does the person consume the beverage in whole?"]],Leaf "does the person eat?"]]]
 
-      (envMustSing, _) <- xpLog <$> runIO (myNLGEnv mustsing5Interp eng)
-      case envMustSing of
-        Left xpLogW ->
-          it [i|mustsing5Interp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
-        Right envMustSing ->
-          testShouldChange "mustsing5" envMustSing mustsing5Rules mustsing5ExpandedGold
+      let envMustSing5 = env {interpreted = mustsing5Interp}
+      testShouldChange "mustsing5" envMustSing5 mustsing5Rules mustsing5ExpandedGold
 
-      (envPDPA, _) <- xpLog <$> runIO (myNLGEnv pdpa1withUnexpandedUponInterp eng)
-      case envPDPA of
-        Left xpLogW ->
-          it [i|pdpa1withUnexpandedUponInterp nlgEnv is a left of: #{xpLogW}|] $
-            expectationFailure ""
-        Right envPDPA -> do
-          testShouldChange
-            "pdpa1 with added UPON expansion" envPDPA
-            pdpa1withUnexpandedUpon pdpa1withExpandedUponGold
+      let envPDPA = env {interpreted = pdpa1withUnexpandedUponInterp}
+      testShouldChange
+        "pdpa1 with added UPON expansion" envPDPA
+        pdpa1withUnexpandedUpon pdpa1withExpandedUponGold
 
-          (envPDPAFull, _) <- xpLog <$> runIO (myNLGEnv pdpafullInterp eng)
-          case envPDPAFull of
-            Left xpLogW ->
-              it [i|pdpafullInterp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
-            Right envPDPAFull ->
-              testShouldChange
-                "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
+      let envPDPAFull = env {interpreted = pdpafullInterp}
+      testShouldChange "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
 
-          testNoChange "rodentsandvermin" env rodentsRules
-          testNoChange "pdpadbno-1 (original)" envPDPA expected_pdpadbno1
+      testNoChange "rodentsandvermin" env rodentsRules
+      testNoChange "pdpadbno-1 (original)" envPDPA expected_pdpadbno1
+
+
+      let envMustSing6 = env {interpreted = mustsing6Interp}
+      describe "expandRulesForNLG and qaHornsT propagate the NOT in not drinks the same way" $ do
+        let expandedNot = expandRulesForNLG envMustSing6 mustsing6Rules
+        let resultFromQaHornsR = qaHornsR mustsing6Interp
+        it "should be identical" $
+           map snd resultFromQaHornsR `shouldBe` mapMaybe getBSR expandedNot
+
+
 
 ---------------------------------------------------------------
 
@@ -189,7 +188,13 @@ rodentsRules = [ Hornlike
     }
   ]
 
-mustsing5Rules = [ Regulative
+mustsing5Rules = mustsingRules qualifiesBSRdrinks
+
+mustsing6Rules = mustsingRules qualifiesBSRnotdrink
+
+
+mustsingRules :: BoolStructR -> [Rule]
+mustsingRules variableBSR = [ Regulative
     { subj = Leaf
         (
             ( MTT "Person" :| []
@@ -276,7 +281,7 @@ mustsing5Rules = [ Regulative
     , clauses =
         [ HC
             { hHead = RPBoolStructR
-                [ MTT "Qualifies" ] RPis qualifiesBSR
+                [ MTT "Qualifies" ] RPis variableBSR
             , hBody = Nothing
             }
         ]
@@ -405,8 +410,8 @@ pdpa1withExpandedUponGold = [ Regulative
   ]
 
 
-qualifiesBSR :: BoolStructR
-qualifiesBSR = All Nothing
+qualifiesBSRdrinks :: BoolStructR
+qualifiesBSRdrinks = All Nothing
                     [ Leaf
                         ( RPMT
                             [ MTT "walks" ]
@@ -423,6 +428,26 @@ qualifiesBSR = All Nothing
                         ]
                     ]
 
+
+qualifiesBSRnotdrink :: BoolStructR
+qualifiesBSRnotdrink = All Nothing
+                    [ Leaf
+                        ( RPMT
+                            [ MTT "walks" ]
+                        )
+                    , Any Nothing
+                        [ Not
+                            ( Leaf
+                                ( RPMT
+                                    [ MTT "drinks" ]
+                                )
+                            )
+                        , Leaf
+                            ( RPMT
+                                [ MTT "eats" ]
+                            )
+                        ]
+                    ]
 
 drinksBSR :: BoolStructR
 drinksBSR = All Nothing
@@ -868,14 +893,19 @@ pdpa1withUnexpandedUponInterp = L4I
     }
 
 mustsing5Interp :: Interpreted
-mustsing5Interp = L4I
+mustsing5Interp = mustsingInterp qualifiesBSRdrinks
+mustsing6Interp :: Interpreted
+mustsing6Interp = mustsingInterp qualifiesBSRnotdrink
+
+mustsingInterp :: BoolStructR -> Interpreted
+mustsingInterp variableBSR = L4I
     { classtable = CT Map.empty
     , scopetable = fromList
         [ ([ MTT "Qualifies" ]
            , fromList [
               ( [MTT "Qualifies"]
               ,
-                ( (Nothing, []), [ HC { hHead = RPBoolStructR [MTT "Qualifies"] RPis qualifiesBSR
+                ( (Nothing, []), [ HC { hHead = RPBoolStructR [MTT "Qualifies"] RPis variableBSR
                                       , hBody = Nothing}
                                   ]
                 )

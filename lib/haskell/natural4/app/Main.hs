@@ -26,7 +26,6 @@ import LS.Interpreter
   ( expandClauses,
     getAndOrTree,
     l4interpret,
-    musings,
     onlyTheItems,
   )
 import LS.NLP.NLG
@@ -44,12 +43,20 @@ import LS.XPile.CoreL4
     sfl4ToDMN,
     sfl4ToEpilog,
   )
-import LS.XPile.GFTrees (printTrees)
+import LS.XPile.GFTrees (gftrees)
+import LS.XPile.IntroTrivial (toTrivial)
+import LS.XPile.IntroBasic   (toBasic)
+import LS.XPile.IntroReader  (toReader, defaultReaderEnv)
+import LS.XPile.IntroLog     (toLog)
+import LS.XPile.IntroShoehorn (toShoehorn)
+import LS.XPile.IntroBase     (toBase)
+
 import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
-import LS.XPile.Petri (toPetri, (|>))
+import LS.XPile.Org (toOrg)
+import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (sfl4ToProlog)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
@@ -115,8 +122,9 @@ main = do
             mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
 
           when (SFL4.togftrees opts) $ do
-            let (togftreesFN,    asGftrees) = (workuuid <> "/" <> "gftrees", printTrees nlgEnvR rules)
-            mywritefile True togftreesFN iso8601 "gftrees" asGftrees
+            let (togftreesFN,    (asGftrees, asGftreesErr)) = (workuuid <> "/" <> "gftrees"
+                                                              , xpLog $ gftrees nlgEnvR rules)
+            mywritefile2 True togftreesFN iso8601 "gftrees" (pShowNoColorS asGftrees) asGftreesErr
 
           let allNLGEnvErrors = concat $ lefts allNLGEnv
           when (not $ null allNLGEnvErrors) $ do
@@ -164,22 +172,29 @@ main = do
 
   -- end of the section that deals with NLG
 
-  let (toprologFN,  asProlog)  = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
-      (topetriFN,   asPetri)   = (workuuid <> "/" <> "petri",    Text.unpack $ toPetri rules)
-      (toaasvgFN,   asaasvg)   = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
+  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
+      (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
+      (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
-      (tobabyl4FN,  asBabyL4)  = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
+      (tobabyl4FN,  asBabyL4)                 = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
       (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
       (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
-      (todmnFN,     asDMN)        = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
-      (tojsonFN,    asJSONstr)    = (workuuid <> "/" <> "json",        toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
-      (tovuejsonFN, asVueJSONrules) = (workuuid <> "/" <> "vuejson",     fmap xpLog <$> toVueRules rules)
+      (todmnFN,     asDMN)                    = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
+      (tojsonFN,    asJSONstr)                = (workuuid <> "/" <> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
+      (tovuejsonFN, asVueJSONrules)           = (workuuid <> "/" <> "vuejson",  fmap xpLog <$> toVueRules rules)
 
-      (totsFN,      asTSstr)   = (workuuid <> "/" <> "ts",       show (asTypescript rules))
-      (togroundsFN, asGrounds) = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (toOrgFN,     asOrg)     = (workuuid <> "/" <> "org",      Text.unpack (SFL4.myrender (musings l4i rules)))
-      (toNL_FN,     asNatLang) = (workuuid <> "/" <> "natlang",  toNatLang l4i)
-      (toMaudeFN, asMaude) = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
+      (toIntro1FN,  asTrivial)                   = (workuuid <> "/" <> "intro1",   toTrivial l4i)
+      (toIntro2FN,  asBasic)                     = (workuuid <> "/" <> "intro2",   toBasic   l4i)
+      (toIntro3FN,  asReader)                    = (workuuid <> "/" <> "intro3",   toReader  l4i defaultReaderEnv)
+      (toIntro4FN,  (asLog, asLogErr))           = (workuuid <> "/" <> "intro4",   xpLog $ toLog l4i defaultReaderEnv)
+      (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
+      (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
+
+      (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
+      (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
+      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
+      (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
+      (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
@@ -229,6 +244,15 @@ main = do
     when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"      (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+
+    when (SFL4.tointro  opts) $ do
+      mywritefile  True toIntro1FN   iso8601 "txt"  asTrivial
+      mywritefile  True toIntro2FN   iso8601 "txt"  asBasic
+      mywritefile  True toIntro3FN   iso8601 "txt"  asReader
+      mywritefile2 True toIntro4FN   iso8601 "txt"  asLog        asLogErr
+      mywritefile2 True toIntro5FN   iso8601 "txt"  asShoehorn   asShoehornErr
+      mywritefile2 True toIntro6FN   iso8601 "txt"  asBase       asBaseErr
+
     when (SFL4.tovuejson opts) $ do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
       let toWriteVue =  [ ( case out' of
@@ -263,12 +287,12 @@ main = do
            intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
         (concatMap snd toWriteVue)
 
-    when (SFL4.toprolog  opts) $ mywritefile True toprologFN   iso8601 "pl"   asProlog
-    when (SFL4.topetri   opts) $ mywritefile True topetriFN    iso8601 "dot"  asPetri
-    when (SFL4.tots      opts) $ mywritefile True totsFN       iso8601 "ts"   asTSstr
-    when (SFL4.tonl      opts) $ mywritefile True toNL_FN      iso8601 "txt"  asNatLang
-    when (SFL4.togrounds opts) $ mywritefile True togroundsFN  iso8601 "txt"  asGrounds
-    when (SFL4.tomaude   opts) $ mywritefile True toMaudeFN iso8601 "natural4" asMaude
+    when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
+    when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
+    when (SFL4.tots      opts) $ mywritefile  True totsFN       iso8601 "ts"   asTSstr
+    when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
+    when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
+    when (SFL4.tomaude   opts) $ mywritefile  True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) $ do
       let dname = toaasvgFN <> "/" <> iso8601
       if null asaasvg
@@ -297,7 +321,7 @@ main = do
 
   -- when workdir is not specified, --only will dump to STDOUT
   when (not toworkdir) $ do
-    when (SFL4.only opts == "petri")  $ putStrLn asPetri
+    when (SFL4.only opts == "petri")  $ putStrLn (commentIfError "//" asPetri)
     when (SFL4.only opts == "aatree") $ mapM_ pPrint (getAndOrTree l4i 1 <$> rules)
 
     when (SFL4.asJSON rc) $ putStrLn asJSONstr
@@ -321,7 +345,7 @@ main = do
     when (SFL4.only opts == "symtab")  $ pPrint (SFL4.scopetable l4i)
 
     when (SFL4.only opts == "maude") $
-      rules |> Maude.rules2maudeStr |> putStrLn
+      putStrLn $ Maude.rules2maudeStr $ rules
 
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime
@@ -345,7 +369,9 @@ mywritefile doLink dirname filename ext s = do
   writeFile mypath s
   when doLink $ myMkLink (filename <> "." <> ext) mylink
 
--- | output both "stdout" to outfile and "stderr" to outfile.err
+-- | output both "stdout" to outfile and "stderr" to outfile.err.
+-- Note that if the "s" argument is itself an Either, we need to process a little bit to dump the Lefts as comments
+-- and the Rights as actual desired output.
 mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> IO ()
 mywritefile2 doLink dirname filename ext s e = do
   createDirectoryIfMissing True dirname

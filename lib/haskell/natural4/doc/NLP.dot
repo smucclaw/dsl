@@ -1,18 +1,18 @@
 strict digraph deps {
   node [colorscheme=set312, style=filled];
 
-   subgraph cluster_5 {
+   subgraph cluster_6 {
      label = "app/Main.hs";
-     "writeBSfile" [label= "writeBSfile", color=5];
-     "snakeScrub" [label= "snakeScrub", color=5];
-     "now8601" [label= "now8601", color=5];
-     "mywritefileDMN" [label= "mywritefileDMN", color=5];
-     "mywritefile2" [label= "mywritefile2", color=5];
-     "mywritefile" [label= "mywritefile", color=5];
-     "myTraceM" [label= "myTraceM", color=5];
-     "myMkLink" [label= "myMkLink", color=5];
-     "main" [label= "main", color=5];
-     "commentIfError" [label= "commentIfError", color=5];
+     "writeBSfile" [label= "writeBSfile", color=6];
+     "snakeScrub" [label= "snakeScrub", color=6];
+     "now8601" [label= "now8601", color=6];
+     "mywritefileDMN" [label= "mywritefileDMN", color=6];
+     "mywritefile2" [label= "mywritefile2", color=6];
+     "mywritefile" [label= "mywritefile", color=6];
+     "myTraceM" [label= "myTraceM", color=6];
+     "myMkLink" [label= "myMkLink", color=6];
+     "main" [label= "main", color=6];
+     "commentIfError" [label= "commentIfError", color=6];
    }
 
    subgraph cluster_1 {
@@ -29,6 +29,7 @@ strict digraph deps {
      label = "src/LS/NLP/NL4Transformations.hs";
      "squeezeTrees" [label= "squeezeTrees", color=2];
      "referSubj" [label= "referSubj", color=2];
+     "pushPrePostIntoMain" [label= "pushPrePostIntoMain", color=2];
      "pastTense" [label= "pastTense", color=2];
      "mergeConj" [label= "mergeConj", color=2];
      "mapBSLabel" [label= "mapBSLabel", color=2];
@@ -49,6 +50,7 @@ strict digraph deps {
      label = "src/LS/NLP/NLG.hs";
      "typeError" [label= "typeError", color=3];
      "tString" [label= "tString", color=3];
+     "ruleQuestionsNamed" [label= "ruleQuestionsNamed", color=3];
      "ruleQuestions" [label= "ruleQuestions", color=3];
      "ruleQnTrees" [label= "ruleQnTrees", color=3];
      "rmBIND" [label= "rmBIND", color=3];
@@ -86,11 +88,19 @@ strict digraph deps {
      "getLang" [label= "getLang", color=3];
      "getIf" [label= "getIf", color=3];
      "getExpandedRuleNames" [label= "getExpandedRuleNames", color=3];
+     "expandRulesForNLGE" [label= "expandRulesForNLGE", color=3];
      "expandRulesForNLG" [label= "expandRulesForNLG", color=3];
+     "expandRuleForNLGE" [label= "expandRuleForNLGE", color=3];
      "expandRuleForNLG" [label= "expandRuleForNLG", color=3];
      "expandPT" [label= "expandPT", color=3];
      "debugNesting" [label= "debugNesting", color=3];
      "allLangs" [label= "allLangs", color=3];
+   }
+
+   subgraph cluster_5 {
+     label = "src/LS/XPile/GFTrees.hs";
+     "trees" [label= "trees", color=5];
+     "printTrees" [label= "printTrees", color=5];
    }
 
    subgraph cluster_4 {
@@ -98,19 +108,35 @@ strict digraph deps {
      "translate2PS" [label= "translate2PS", color=4];
      "toTuple" [label= "toTuple", color=4];
      "textMT" [label= "textMT", color=4];
+     "slashNames" [label= "slashNames", color=4];
+     "qaHornsByLang" [label= "qaHornsByLang", color=4];
      "namesAndStruct" [label= "namesAndStruct", color=4];
      "namesAndQ" [label= "namesAndQ", color=4];
+     "mutterRuleNameAndBS" [label= "mutterRuleNameAndBS", color=4];
      "labelQs" [label= "labelQs", color=4];
      "justStatements" [label= "justStatements", color=4];
      "justQuestions" [label= "justQuestions", color=4];
      "interviewRulesRHS2topBit" [label= "interviewRulesRHS2topBit", color=4];
      "fixNot" [label= "fixNot", color=4];
+     "combine\'" [label= "combine\'", color=4];
      "combine" [label= "combine", color=4];
      "biggestS" [label= "biggestS", color=4];
      "biggestQ" [label= "biggestQ", color=4];
      "asPurescript" [label= "asPurescript", color=4];
    }
 
+"aggregateBoolStruct" -> "aggregateBoolStruct";
+"aggregateBoolStruct" -> "bsCond2gfCond";
+"aggregateBoolStruct" -> "bsConstraint2gfConstraint";
+"aggregateBoolStruct" -> "bsWho2gfWho";
+"aggregateBoolStruct" -> "flipPolarity";
+"aggregateBoolStruct" -> "introduceSubj";
+"aggregateBoolStruct" -> "isChinese";
+"aggregateBoolStruct" -> "isMalay";
+"aggregateBoolStruct" -> "mapBSLabel";
+"aggregateBoolStruct" -> "pastTense";
+"aggregateBoolStruct" -> "pushPrePostIntoMain";
+"aggregateBoolStruct" -> "referSubj";
 "aggregateBoolStruct" -> "squeezeTrees";
 "allLangs" -> "gfPath";
 "asPurescript" -> "asPurescript";
@@ -138,30 +164,32 @@ strict digraph deps {
 "bsNeg2textNeg" -> "bsNeg2textNeg";
 "bsNeg2textNeg" -> "flipPolarity";
 "bsWho2gfWho" -> "bs2gf";
-"combine" -> "combine";
+"combine" -> "combine\'";
+"combine\'" -> "combine\'";
 "composOp" -> "composOpM";
 "composOpMPlus" -> "composOpFold";
 "composOpM_" -> "composOpFold";
 "composOpMonoid" -> "composOpFold";
 "debugNesting" -> "isChinese";
 "debugNesting" -> "isMalay";
+"expandPT" -> "expandRulesForNLG";
+"expandPT" -> "expandRulesForNLGE";
+"expandPT" -> "ruleQuestions";
+"expandPT" -> "ruleQuestionsNamed";
 "expandRuleForNLG" -> "expandPT";
 "expandRuleForNLG" -> "expandRuleForNLG";
+"expandRuleForNLGE" -> "expandPT";
+"expandRuleForNLGE" -> "expandRuleForNLGE";
 "expandRulesForNLG" -> "expandRuleForNLG";
 "expandRulesForNLG" -> "getExpandedRuleNames";
+"expandRulesForNLGE" -> "expandRuleForNLGE";
+"expandRulesForNLGE" -> "getExpandedRuleNames";
 "flipPolarity" -> "composOp";
 "flipPolarity" -> "flipPolarity";
 "getIf" -> "isChinese";
 "getIf" -> "isMalay";
 "getWhen" -> "isChinese";
 "getWhen" -> "isMalay";
-"interviewRulesRHS2topBit" -> "allLangs";
-"interviewRulesRHS2topBit" -> "expandRulesForNLG";
-"interviewRulesRHS2topBit" -> "langEng";
-"interviewRulesRHS2topBit" -> "main";
-"interviewRulesRHS2topBit" -> "myNLGEnv";
-"interviewRulesRHS2topBit" -> "nlg";
-"interviewRulesRHS2topBit" -> "printLangs";
 "introduceSubj" -> "composOp";
 "introduceSubj" -> "introduceSubj";
 "langEng" -> "getLang";
@@ -179,6 +207,7 @@ strict digraph deps {
 "main" -> "nlg";
 "main" -> "now8601";
 "main" -> "printLangs";
+"main" -> "printTrees";
 "main" -> "snakeScrub";
 "main" -> "translate2PS";
 "mapBSLabel" -> "applyLabel";
@@ -196,14 +225,17 @@ strict digraph deps {
 "mkWhoText" -> "aggregateBoolStruct";
 "mkWhoText" -> "mapBSLabel";
 "mkWhoText" -> "parseWhoBS";
+"mkWhoText" -> "pushPrePostIntoMain";
+"mutterRuleNameAndBS" -> "slashNames";
 "myNLGEnv" -> "gfPath";
 "myNLGEnv" -> "langEng";
 "myNLGEnv" -> "rmBIND";
 "mywritefile" -> "myMkLink";
 "mywritefile2" -> "myMkLink";
 "mywritefileDMN" -> "myMkLink";
-"namesAndQ" -> "expandRulesForNLG";
+"namesAndQ" -> "expandRulesForNLGE";
 "namesAndQ" -> "ruleQuestions";
+"namesAndStruct" -> "mutterRuleNameAndBS";
 "nlg" -> "nlg\'";
 "nlgQuestion" -> "ruleQuestions";
 "nlg\'" -> "bsCond2gfCond";
@@ -254,6 +286,19 @@ strict digraph deps {
 "parseWhoBS" -> "parseWho";
 "pastTense" -> "composOp";
 "pastTense" -> "pastTense";
+"printTrees" -> "allLangs";
+"printTrees" -> "expandRulesForNLG";
+"printTrees" -> "langEng";
+"printTrees" -> "main";
+"printTrees" -> "myNLGEnv";
+"printTrees" -> "nlg";
+"printTrees" -> "printLangs";
+"printTrees" -> "trees";
+"pushPrePostIntoMain" -> "pushPrePostIntoMain";
+"qaHornsByLang" -> "expandRulesForNLG";
+"qaHornsByLang" -> "ruleQuestionsNamed";
+"qaHornsByLang" -> "slashNames";
+"qaHornsByLang" -> "toTuple";
 "referSubj" -> "composOp";
 "referSubj" -> "referSubj";
 "ruleQnTrees" -> "mkCondText";
@@ -264,8 +309,12 @@ strict digraph deps {
 "ruleQnTrees" -> "referSubj";
 "ruleQuestions" -> "linBStext";
 "ruleQuestions" -> "ruleQnTrees";
-"translate2PS" -> "asPurescript";
+"ruleQuestionsNamed" -> "ruleQuestions";
 "translate2PS" -> "biggestQ";
 "translate2PS" -> "interviewRulesRHS2topBit";
+"translate2PS" -> "qaHornsByLang";
+"translate2PS" -> "toTuple";
+"translate2PS" -> "translate2PS";
+"trees" -> "ruleQnTrees";
 "writeBSfile" -> "myMkLink";
 }

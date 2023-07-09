@@ -38,6 +38,7 @@ import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
   ( NLGEnv (..),
     expandRulesForNLG,
+    expandRulesForNLGE,
     ruleQuestions,
     ruleQuestionsNamed,
   )
@@ -61,6 +62,7 @@ import LS.XPile.Logging
     mutters,
     xpError,
     xpReturn, XPileLogW,
+    pShowNoColorS
   )
 import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
@@ -109,7 +111,8 @@ namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env rl = do
   mutterdhsf 3 "namesAndQ: name" show name
   mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
-  questStruct <- traverse (ruleQuestions env alias) (expandRulesForNLG env rl)
+  expandedRules <- expandRulesForNLGE env rl
+  questStruct <- traverse (ruleQuestions env alias) expandedRules
   mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
   let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
                      | q' <- q ]
@@ -143,10 +146,6 @@ combine' d (b:bs) (q:qs) = do
   mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
   mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
   (:) <$> pure (fst b, snd b <> snd q) <*> combine' (d+1) bs qs
-
--- | helper function; basically a better show, from the pretty-simple package
-pShowNoColorS :: (Show a) => a -> String
-pShowNoColorS = TL.unpack . pShowNoColor
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?
@@ -357,35 +356,38 @@ translate2PS nlgEnvs eng rules = do
 
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 qaHornsByLang rules langEnv = do
+  mutterd 3 ("qaHornsByLang for language " ++ show (gfLang langEnv))
   let qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
       alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
       qaHornNames = foldMap fst qaHT
-  mutterdhsf 3 "qaHT fsts" show (fst <$> qaHT)
-  mutterdhsf 3 "qaHornNames" show qaHornNames
-  mutterd 3 "traversing ruleQuestionsNamed"
+      d = 4
+  mutterdhsf d "qaHT fsts" show (fst <$> qaHT)
+  mutterdhsf d "all qaHT" pShowNoColorS qaHT
+  mutterdhsf d "qaHornNames" show qaHornNames
+  mutterd d "traversing ruleQuestionsNamed"
   allRQs <- traverse (ruleQuestionsNamed langEnv alias) $ expandRulesForNLG langEnv rules
   -- first we see which of these actually returned anything useful
-  mutterd 3 "all rulequestionsNamed returned"
+  mutterd d "all rulequestionsNamed returned"
 
   measuredRQs <- for allRQs $ \(rn, asqn) -> do
-    mutterdhsf 4 (show rn) pShowNoColorS asqn
-    mutterd 4 [i|size of [BoolStruct] = #{length asqn}|]
+    mutterdhsf (d+1) (show rn) pShowNoColorS asqn
+    mutterd (d+1) [i|size of [BoolStruct] = #{length asqn}|]
     case compare (length asqn) 1 of
       GT -> xpReturn (rn, AA.All Nothing asqn)
       EQ -> xpReturn (rn, head asqn)
       _ -> xpError [[i|ruleQuestion not of interest: #{rn}|]]
 
-  mutterdhsf 3 "measured RQs, rights (successes) ->" show (rights measuredRQs)
-  mutterdhsf 3 "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
+  mutterdhsf d "measured RQs, rights (successes) ->" show (rights measuredRQs)
+  mutterdhsf d "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
 
   -- now we filter for only those bits of questStruct whose names match the names from qaHorns.
   wantedRQs <- for (rights measuredRQs) $ \case
     (rn@((`elem` qaHornNames) -> True), asqn) -> xpReturn (rn, asqn)
     (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
 
-  mutterd 3 "wanted RQs, rights (successes) ->"
-  for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf 4 (show rn) pShowNoColorS asqn)
-  mutterdhsf 3 "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
+  mutterd d "wanted RQs, rights (successes) ->"
+  for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf (d+1) (show rn) pShowNoColorS asqn)
+  mutterdhsf d "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
 
   let rqMap = Map.fromList (rights wantedRQs)
 
@@ -394,13 +396,13 @@ qaHornsByLang rules langEnv = do
           | n <- names ]
         | names <- fst <$> qaHT ]
 
-  mutterdhsf 3 "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
+  mutterdhsf d "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
 
   let qaHTBit = qaHornsWithQuestions
                 |$> bimap slashNames alwaysLabeled
                 |$> toTuple
 
-  mutterdhsf 3 "qaHTBit =" pShowNoColorS qaHTBit
+  mutterdhsf d "qaHTBit =" pShowNoColorS qaHTBit
   xpReturn qaHTBit
 
 interviewRulesRHS2topBit :: TL.Text -> String

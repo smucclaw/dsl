@@ -28,73 +28,48 @@ pushPrePostIntoMain bsgt = case bsgt of
     hackStrVP :: GString -> GVP -> GVP
     hackStrVP in_part vp = GAdvVP vp (GrecoverUnparsedAdv in_part)
 
+    transformWho :: GV2 -> GCN -> GText -> GText
+    transformWho consume beverage (GqWHO person (GAPWho alcoholic)) =
+      GqWHO person (GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN alcoholic beverage))))
+    transformWho consume beverage (GqWHO person (GAdvWho in_part)) =
+      GqWHO person (GWHO GpresSimul GPOS (GAdvVP (GComplV2 consume (GDetCN GaSg beverage)) in_part))
+
     tryTransformWhole :: BoolStructGText -> BoolStructGText
     tryTransformWhole bs = case bs of
       All pp
           ( Any
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
                                (GqPREPOST ( GNP_PrePost ( GMassNP beverage )))))
-              [ Leaf (GqWHO ( GTHE person1 ) ( GAPWho alcoholic ))
-              , Leaf (GqWHO ( GTHE _ ) ( GAPWho non_alcoholic ))
-              ]
+              alcoholic_nonalcoholic
           :  Any
             ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
-            [ Leaf (GqWHO ( GTHE person2 ) ( GAdvWho in_part ))
-            , Leaf (GqWHO ( GTHE _ ) ( GAdvWho in_whole ))
-            ]
+            inpart_inwhole
           : restOfInnerRules ) ->
         All pp
             ( Any
-                Nothing
-                [ Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN alcoholic beverage ))))
-                , Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN non_alcoholic beverage ))))
-                ]
-          :  Any
-                Nothing
-                [ Leaf $ GqWHO ( GTHE person2 )
-                               ( GWHO GpresSimul GPOS
-                                     (GAdvVP
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))
-                                        in_part))
-                , Leaf $ GqWHO ( GTHE person2 )
-                               ( GWHO GpresSimul GPOS
-                                      (GAdvVP
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))
-                                         in_whole))
-                ]
+                Nothing (
+                   (transformWho consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
+            : Any
+                Nothing (
+                  (transformWho consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
-     -- like above, but body of 2nd is recoverUnparsed
-      All pp
-          ( Any
+
+      Any pp
+          ( All
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
                                (GqPREPOST ( GNP_PrePost ( GMassNP beverage )))))
-              [ Leaf (GqWHO ( GTHE person1 ) ( GAPWho alcoholic ))
-              , Leaf (GqWHO ( GTHE _ ) ( GAPWho non_alcoholic ))
-              ]
-          :  Any
-            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))) -- TODO: prepare for cases where PrePost is parsed
-            )
-            [ Leaf (GqWHO ( GTHE person2 ) ( GrecoverUnparsedWho in_part ))
-            , Leaf (GqWHO ( GTHE _ ) ( GrecoverUnparsedWho in_whole ))
-            ]
+              alcoholic_nonalcoholic
+          :  All
+            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
+            inpart_inwhole
           : restOfInnerRules ) ->
         Any pp
-            ( Any
-                Nothing
-                [ Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN  alcoholic beverage ))))
-                , Leaf $ GqWHO ( GTHE person1 ) ( GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN  non_alcoholic beverage ))))
-                ]
-          :  Any
-                Nothing
-                [ Leaf $ GqWHO ( GTHE person2 )
-                               ( GWHO GpresSimul GPOS
-                                     (hackStrVP in_part
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))))
-                , Leaf $ GqWHO ( GTHE person2 )
-                               ( GWHO GpresSimul GPOS
-                                      (hackStrVP in_whole
-                                        (GComplV2 consume (GDetCN GtheSg beverage ))))
-                ]
+            ( All
+                Nothing (
+                   (transformWho consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
+            : All
+                Nothing (
+                  (transformWho consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
       _ -> bs
 
@@ -166,6 +141,12 @@ applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
 applyLabel f (AA.Pre a) = AA.Pre (f a)
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
 
+mapBS :: (a -> b) -> AA.BoolStruct c a ->  AA.BoolStruct c b
+mapBS f bs = case bs of
+    AA.Leaf x -> AA.Leaf $ f x
+    AA.Any lbl xs -> AA.Any lbl (mapBS f <$> xs)
+    AA.All lbl xs -> AA.All lbl (mapBS f <$> xs)
+    AA.Not x -> AA.Not $ mapBS f x
 -----------------------------------------------------------------------------
 -- Generic useful transformations
 

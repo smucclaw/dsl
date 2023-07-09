@@ -1,0 +1,8 @@
+//,,live updates,TRUE,,devMode port,8500,,FALSE
+,,,,,,,,
+,,,,,,,,
+,DECIDE,foo,,,,,,
+,IF,bar,,,,,,
+,AND,,baz,,,,,
+,,OR,NOT,,quux,,,
+,,,,AND,NOT,quuux,,

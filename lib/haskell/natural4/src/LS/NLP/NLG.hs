@@ -12,10 +12,14 @@ import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, listToMaybe, maybeToList)
+import Data.Maybe (catMaybes, listToMaybe, maybeToList, fromMaybe)
 import Data.Text qualified as Text
 import Debug.Trace (trace)
-import LS.Interpreter (expandBSR, expandClause, expandClauses, expandRP)
+import LS.Interpreter ( expandBSR
+                      , expandBSRM
+                      , expandClause
+                      , expandClauses
+                      , expandRP)
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
   ( BoolStructCond,
@@ -74,6 +78,7 @@ import LS.XPile.Logging
     xpError,
     xpLog,
     xpReturn,
+    pShowNoColorS
   )
 import PGF
   ( CId,
@@ -298,20 +303,29 @@ ruleQuestions :: NLGEnv
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
-      mutterdhsf 4 ("ruleQuestions: regulative " ++ show (ruleLabelName rule))  show text
-      return text
+      t <- text
+      mutterdhsf 4 ("ruleQuestions: regulative " ++ show (ruleLabelName rule))  pShowNoColorS t
+      text
     Hornlike {clauses} -> do
-      mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show (ruleQnTrees env alias rule)
-      mutterdhsf 4 "ruleQuestions: horn; returning text" show text
-      return text
+      rqn <- ruleQnTrees env alias rule
+      mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show rqn
+      t <- text
+      mutterdhsf 4 "ruleQuestions: horn; returning linBStext" show t
+      text
     Constitutive {cond} -> do
-      mutterdhsf 4 "ruleQuestions: constitutive; returning text" show text
-      return text
+      t <- text
+      mutterdhsf 4 "ruleQuestions: constitutive; returning linBStext" show t
+      text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
+  -- [TODO] for our Logging exercise, see how to convert the _ case above to an xpError
+
     where
-      text = fmap (linBStext env) (ruleQnTrees env alias rule)
+      text :: XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
+      text = do
+        t1 <- ruleQnTrees env alias rule
+        return ( linBStext env <$> t1 )
 
 ruleQuestionsNamed :: NLGEnv
                    -> Maybe (MultiTerm, MultiTerm)
@@ -326,8 +340,9 @@ ruleQuestionsNamed env alias rule = do
 -- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which
 -- in turn are trees of GText_s. Which takes us into PGF territory.
 
-ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> [BoolStructGText]
+ruleQnTrees :: NLGEnv -> Maybe (MultiTerm,MultiTerm) -> Rule -> XPileLog [BoolStructGText]
 ruleQnTrees env alias rule = do
+  mutterd 3 "ruleQnTrees: running"
   let (youExpr, orgExpr) =
         case alias of
           Just (you,org) ->
@@ -335,6 +350,8 @@ ruleQnTrees env alias rule = do
                 [y,o] -> (y,o) -- both are parsed
                 _ -> (GYou, GYou) -- dummy values
           Nothing -> (GYou, GYou) -- dummy values
+  mutterdhsf 4 "ruleQnTrees: youExpr = " pShowNoColorS youExpr
+  mutterdhsf 4 "ruleQnTrees: orgExpr = " pShowNoColorS orgExpr
   case rule of
     Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
@@ -342,15 +359,24 @@ ruleQnTrees env alias rule = do
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
           qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
-      catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+      mutterdhsf 4 "Regulative/subjExpr"   show subjExpr
+      mutterdhsf 4 "Regulative/aliasExpr"  show aliasExpr
+      mutterdhsf 4 "Regulative/qWhoTrees"  show qWhoTrees
+      mutterdhsf 4 "Regulative/qCondTrees" show qCondTrees
+      mutterdhsf 4 "Regulative/qUponTrees" show qUponTrees
+
+      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
-      catMaybes bodyTrees
+      mutterdhsf 4 "Hornlike/bodyTrees" show bodyTrees
+      return $ catMaybes bodyTrees
+
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-      catMaybes [qCondTrees]
-    DefNameAlias {} -> []
-    _ -> []
+      mutterdhsf 4 "Constitutive/qCOndTrees" show qCondTrees
+      return $ catMaybes [qCondTrees]
+    DefNameAlias {} -> return []
+    _ -> return []
 
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
 
@@ -556,6 +582,18 @@ tString = GString . Text.unpack
 -----------------------------------------------------------------------------
 -- Expand a set of rules
 
+expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
+expandRulesForNLGE env rules = do
+  let depth = 4
+  mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
+  toreturn <- sequence (expandRuleForNLGE l4i (depth+1) <$> uniqrs)
+  mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
+  return toreturn
+  where
+    l4i = interpreted env
+    usedrules = getExpandedRuleNames l4i `concatMap` rules
+    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
+
 expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
 expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
   where
@@ -590,6 +628,33 @@ getExpandedRuleNames l4i rule = case rule of
       headNames = getNamesRP l4i 1 $ hHead clause
       bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
 
+
+expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
+expandRuleForNLGE l4i depth rule = do
+  case rule of
+    Regulative{} -> mutterd depth "expandRuleForNLGE: running Regulative" >> do
+      -- Maybe (XPileLogE BoolStructR)
+      -- XPileLogE (Maybe BoolStructR)
+      who'   <- go (who rule)
+      cond'  <- go (cond rule)
+      hence' <- sequence $ expandRuleForNLGE l4i depth <$> hence rule
+      lest'  <- sequence $ expandRuleForNLGE l4i depth <$> lest  rule
+      upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon rule )
+      return $ rule
+        { who = who'
+        , cond = cond'
+        , upon = upon'
+        , hence = hence'
+        , lest = lest'
+        }
+    Hornlike {} -> mutterd 4 "expandRuleForNLGE: running Hornlike" >> return (
+      rule { clauses = expandClauses l4i depth $ clauses rule } )
+    Constitutive {} -> mutterd 4 "expandRuleForNLGE: running Constitutive" >> return (
+      rule { cond = expandBSR l4i depth <$> cond rule } )
+    _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
+  where
+    go xs = sequence $ expandBSRM l4i depth <$> xs
+    
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule

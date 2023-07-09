@@ -32,14 +32,14 @@ packages:
 - completed:
     name: gf
     pantry-tree:
-      sha256: ab1b24b4d2c8f56f19dd8bf6e345c38cc2c7c5243e2c552ff2cb9ad472df7818
+      sha256: ddc00ca6074f3a72daa4e6370eebf4371cbd78feb34c0d2dae8610754be228db
       size: 67922
-    sha256: 27012d1bf5d626a4446ad04f877255409a4d215494a0901d5510fa7748662d20
-    size: 3499717
-    url: https://github.com/smucclaw/gf-core/archive/edb55df7b0c4892ba0bac2817b5f493921c20c36.tar.gz
-    version: 3.11.1
+    sha256: 062c2e69e46ef7c104cdf2617302c20f499ae6ec0a4753c2acf573beba5454e6
+    size: 3499648
+    url: https://github.com/smucclaw/gf-core/archive/6a36b486fae612798ec36873ccbbdbca73df4f6c.tar.gz
+    version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/edb55df7b0c4892ba0bac2817b5f493921c20c36.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/6a36b486fae612798ec36873ccbbdbca73df4f6c.tar.gz
 - completed:
     name: prolog
     pantry-tree:
@@ -74,12 +74,12 @@ packages:
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
-    hackage: cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+    hackage: cgi-3001.5.0.1@sha256:4eb5254d65fe00e91f46a8bab5467669e6e95f6a0eb73a048b70a4aab1a5892e,3458
     pantry-tree:
-      sha256: c6f1c2f201b196b43cd8d0537482796c9fd389b40c4be945ee66348d31f130bf
+      sha256: af3bcbb6a04372b059d0762c5b6f70aa626fdb7592f50ea302516ef8381db79a
       size: 993
   original:
-    hackage: cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+    hackage: cgi-3001.5.0.1
 - completed:
     hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
     pantry-tree:

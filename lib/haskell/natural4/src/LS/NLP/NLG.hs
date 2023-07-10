@@ -318,7 +318,7 @@ ruleQuestions env alias rule = do
       text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
-    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> show rule)]
+    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> ruleConstructor rule)]
   -- [TODO] for our Logging exercise, see how to convert the _ case above to an xpError
 
     where

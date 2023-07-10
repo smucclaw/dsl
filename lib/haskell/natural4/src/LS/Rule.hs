@@ -170,6 +170,21 @@ instance Hashable Rule
 
 type Parser = WriterT (DList Rule) PlainParser
 
+-- | the more responsible version of head . words . show
+ruleConstructor :: Rule -> String
+ruleConstructor Regulative{}   = "Regulative"
+ruleConstructor Constitutive{} = "Constitutive"
+ruleConstructor Hornlike{}     = "Hornlike"
+ruleConstructor TypeDecl{}     = "TypeDecl"
+ruleConstructor Scenario{}     = "Scenario"
+ruleConstructor DefNameAlias{} = "DefNameAlias"
+ruleConstructor DefTypically{} = "DefTypically"
+ruleConstructor RuleAlias{}    = "RuleAlias"
+ruleConstructor RuleGroup{}    = "RuleGroup"
+ruleConstructor RegFulfilled   = "RegFulfilled"
+ruleConstructor RegBreach      = "RegBreach"
+ruleConstructor _              = "NotARule"
+
 runMyParser :: ((a, [Rule]) -> b) -> RunConfig -> Parser a -> String -> MyStream -> Either (ParseErrorBundle MyStream Void) b
 runMyParser f rc p = runParser (runReaderT (f . second dlToList <$> runWriterT (p <* eof)) rc)
 

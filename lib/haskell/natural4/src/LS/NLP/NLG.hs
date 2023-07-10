@@ -39,7 +39,7 @@ import LS.NLP.NL4Transformations
     pushPrePostIntoMain,
     referSubj,
   )
-import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName)
+import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName, ruleConstructor)
 import LS.Types
   ( BoolStructP,
     BoolStructR,

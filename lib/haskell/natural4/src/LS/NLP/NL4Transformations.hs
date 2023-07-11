@@ -28,18 +28,18 @@ pushPrePostIntoMain bsgt = case bsgt of
     hackStrVP :: GString -> GVP -> GVP
     hackStrVP in_part vp = GAdvVP vp (GrecoverUnparsedAdv in_part)
 
-    transformWho :: GV2 -> GCN -> GText -> GText
+    transformWho :: GV2 -> GNP -> GText -> GText
     transformWho consume beverage (GqWHO person (GAPWho alcoholic)) =
-      GqWHO person (GWHO GpresSimul GPOS (GComplV2 consume (GDetCN GaSg (GAdjCN alcoholic beverage))))
+      GqWHO (referSubj person) (GWHO GpresSimul GPOS (GComplV2 consume (introduceNP (insertAP alcoholic beverage))))
     transformWho consume beverage (GqWHO person (GAdvWho in_part)) =
-      GqWHO person (GWHO GpresSimul GPOS (GAdvVP (GComplV2 consume (GDetCN GaSg beverage)) in_part))
+      GqWHO (referSubj person) (GWHO GpresSimul GPOS (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
 
     tryTransformWhole :: BoolStructGText -> BoolStructGText
     tryTransformWhole bs = case bs of
       All pp
           ( Any
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
-                               (GqPREPOST ( GNP_PrePost ( GMassNP beverage )))))
+                               (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  Any
             ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
@@ -57,7 +57,7 @@ pushPrePostIntoMain bsgt = case bsgt of
       Any pp
           ( All
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
-                               (GqPREPOST ( GNP_PrePost ( GMassNP beverage )))))
+                               (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  All
             ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
@@ -150,6 +150,7 @@ mapBS f bs = case bs of
 -----------------------------------------------------------------------------
 -- Generic useful transformations
 
+-- for Subj
 introduceSubj :: forall a . Tree a -> Tree a
 introduceSubj (GEVERY x) = GAN x
 introduceSubj (GPARTY x) = GAN x
@@ -160,6 +161,27 @@ referSubj (GEVERY x) = GTHE x
 referSubj (GPARTY x) = GTHE x
 referSubj (GAN x) = GTHE x
 referSubj x = composOp referSubj x
+
+-- for NP
+
+introduceNP :: forall a . Tree a -> Tree a
+introduceNP (GMassNP x) = GDetCN GaSg x
+introduceNP (GDetCN _ x) = GDetCN GaSg x
+introduceNP x = composOp introduceNP x
+
+referNP :: forall a . Tree a -> Tree a
+referNP (GMassNP x) = GDetCN GtheSg x
+referNP (GDetCN GaSg x) = GDetCN GtheSg x
+--referNP (GDetCN GaPl x) = GDetCN GthePl x
+referNP x = composOp referNP x
+
+insertAP :: forall a . GAP -> Tree a -> Tree a
+insertAP ap = go
+  where
+    go :: forall a . Tree a -> Tree a
+    go (GMassNP cn) = GMassNP (GAdjCN ap cn)
+    go cn@(GUseN n) = GAdjCN ap cn
+    go x = composOp go x
 
 pastTense :: forall a . Tree a -> Tree a
 pastTense (GMkVPS _ pol vp) = GMkVPS GpastSimul pol vp

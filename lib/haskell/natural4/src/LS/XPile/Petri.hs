@@ -680,9 +680,9 @@ r2fgl rs defRL Regulative{..} = return $ do
                             newEdge' ( ifN, ifCondN, [] )
                             pure ifCondN
   (onSuccessN, mbOnFailureN) <- do
-    myTraceM $ "Petri/r2fgl: action = " <> show action
+    myTraceM [i|Petri/r2fgl: action = #{action}|]
     -- convert DMUST/DMAY/DSHANT into must/may/shant
-    let deon = deontic |> show |> Text.pack |> Text.toLower
+    let deon = deontic |> show |> Text.pack |> Text.tail |> Text.toLower
         temp = tc2nl NLen temporal
         actn = actionFragments action
         oblLab = mkDecis (Text.unlines [ deon

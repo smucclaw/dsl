@@ -487,7 +487,7 @@ expandClause _l4i _depth _                                                      
 
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
 expandBSR :: Interpreted -> Int -> BoolStructR -> BoolStructR
-expandBSR  l4i depth x = expandTrace "expandBSR" depth (show x) $ AA.nnf $ expandBSR' l4i depth x
+expandBSR  l4i depth x = expandTrace "expandBSR" depth (show x) $ expandBSR' l4i depth x
 
 -- | monadic version with logging turned on
 expandBSRM :: Interpreted -> Int -> BoolStructR -> XPileLog BoolStructR

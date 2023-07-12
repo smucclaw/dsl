@@ -41,6 +41,8 @@ import LS.NLP.NLG
     expandRulesForNLGE,
     ruleQuestions,
     ruleQuestionsNamed,
+    parseSubj,
+    textViaQaHorns
   )
 import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)
 import LS.Types
@@ -305,7 +307,7 @@ translate2PS nlgEnvs eng rules = do
   -- New bottomBit
   -------------------------------------------------------------
   mutterd 2 "trying the new approach based on qaHornsT"
-  qaHornsAllLangs :: [Either XPileLogW String] <- 
+  qaHornsAllLangs :: [Either XPileLogW String] <-
     for nlgEnvs $ \nlgEnv@(NLGEnv {gfLang}) -> do
       let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
           l4i       = interpreted nlgEnv
@@ -357,9 +359,11 @@ translate2PS nlgEnvs eng rules = do
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 qaHornsByLang rules langEnv = do
   mutterd 3 ("qaHornsByLang for language " ++ show (gfLang langEnv))
-  let qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
-      alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
+  let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
+      subject = listToMaybe [ parseSubj langEnv person | Regulative{subj = person} <- rules]
+      qaHT = textViaQaHorns langEnv alias subject
       qaHornNames = foldMap fst qaHT
+      -- qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
       d = 4
   mutterdhsf d "qaHT fsts" show (fst <$> qaHT)
   mutterdhsf d "all qaHT" pShowNoColorS qaHT

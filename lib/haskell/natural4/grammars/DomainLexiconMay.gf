@@ -75,4 +75,19 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     leak_V : V = mkV "kebocoran" ;
     pool_N : N = mkN "kolam renang" ;
     appliance_N : N = mkN "perkakas rumah" ;
+
+
+  lin
+    sickness_or_injury = ConjCN or_Conj (BaseCN (mkCN (mkN "penyakit")) (mkCN (mkN "kecederaan"))) ;
+    us_hospital = mkCN (mkN ("hospital AS")) ;
+    policy_period = mkCN (mkN "tempoh polisi") ;
+    skydiving = mkCN (mkN "terjun udara") ;
+    military = mkCN (mkN "tentera") ;
+    firefighter = mkCN (mkN "bomba") ;
+    police = mkCN (mkN "polis") ;
+    result_from np = mkNP (mkCN (mkN2 (mkN "disebabkan oleh")) np) ;
+    stay_during_policy_period = mkNP (mkN "tinggal dalam tempoh polisi") ;
+    Int_or_older int =
+      let dummyAP : AP = mkAP (mkA "dummy")
+        in dummyAP ** {s = int.s ++ "atau lebih tua"} ;
 }

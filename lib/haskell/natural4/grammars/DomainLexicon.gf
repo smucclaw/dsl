@@ -61,4 +61,15 @@ abstract DomainLexicon = NL4Base ** {
 
 
 
+      sickness_or_injury
+      , us_hospital
+      , policy_period
+      , skydiving
+      , military
+      , firefighter
+      , police : CN ;
+      result_from : NP -> NP ;
+      stay_during_policy_period : NP ;
+
+      Int_or_older : Int -> AP ; -- 65 or older
 }

@@ -130,7 +130,15 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
       s = sStr (Extend.PredVPS np vps) ;
       qs = qsStr (Extend.SQuestVPS np vps) ++ bindQM
     } ;
-
+    RPleafVP vps = {
+      s = sStr (Extend.PredVPS (emptyNP|emptyPlNP) vps) ;
+      qs = qsStr (Extend.SQuestVPS it_NP vps) ++ bindQM
+    } ;
+    RPleafAP ap = {
+      s = (mkUtt ap).s ;
+--      qs = qsStr (Extend.SQuestVPS it_NP (MkVPS presSimul POS (mkVP ap))) ++ bindQM
+      qs = (mkUtt ap).s ++ bindQM
+    } ;
     BaseConstraint c d = {
       s = Coordination.twoStr c.s d.s ;
       qs = Coordination.twoStr c.qs d.qs

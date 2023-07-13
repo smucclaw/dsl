@@ -44,7 +44,7 @@ concrete NL4BaseEng of NL4Base =
 
   lin recoverUnparsedPrePost string = {
       s = "·" ++ string.s ; -- if PrePost isn't parsed, use the original string
-      qs = "Does the following hold:" ++ string.s -- make a question in an awkward way
+      qs = string.s -- rely on the the reader to connect the dots and make a question of the original string
       } ;
 
     -- : String -> String -> Constraint ;

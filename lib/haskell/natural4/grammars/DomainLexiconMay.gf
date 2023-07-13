@@ -89,5 +89,5 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     stay_during_policy_period = mkNP (mkN "tinggal dalam tempoh polisi") ;
     Int_or_older int =
       let dummyAP : AP = mkAP (mkA "dummy")
-        in dummyAP ** {s = int.s ++ "atau lebih tua"} ;
+        in dummyAP ** {s = "berusia" ++ int.s ++ "tahun ke atas"} ;
 }

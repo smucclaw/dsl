@@ -256,10 +256,16 @@ data Tree :: * -> * where
   Ganimal :: Tree GNP_
   Gany_other_exclusion :: Tree GNP_
   Gbirds :: Tree GNP_
+  Gcancelled :: Tree GNP_
+  Gclaim :: Tree GNP_
+  Gcondition :: Tree GNP_
   Ghousehold_appliance :: Tree GNP_
   Ginsects :: Tree GNP_
   Gplumbing_heating_or_AC :: Tree GNP_
+  Gpremium :: Tree GNP_
   Grodents :: Tree GNP_
+  Gsigned :: Tree GNP_
+  Gstay_overnight :: Tree GNP_
   Gswimming_pool :: Tree GNP_
   Gvermin :: Tree GNP_
   Gwater :: Tree GNP_
@@ -461,10 +467,16 @@ instance Eq (Tree a) where
     (Ganimal,Ganimal) -> and [ ]
     (Gany_other_exclusion,Gany_other_exclusion) -> and [ ]
     (Gbirds,Gbirds) -> and [ ]
+    (Gcancelled,Gcancelled) -> and [ ]
+    (Gclaim,Gclaim) -> and [ ]
+    (Gcondition,Gcondition) -> and [ ]
     (Ghousehold_appliance,Ghousehold_appliance) -> and [ ]
     (Ginsects,Ginsects) -> and [ ]
     (Gplumbing_heating_or_AC,Gplumbing_heating_or_AC) -> and [ ]
+    (Gpremium,Gpremium) -> and [ ]
     (Grodents,Grodents) -> and [ ]
+    (Gsigned,Gsigned) -> and [ ]
+    (Gstay_overnight,Gstay_overnight) -> and [ ]
     (Gswimming_pool,Gswimming_pool) -> and [ ]
     (Gvermin,Gvermin) -> and [ ]
     (Gwater,Gwater) -> and [ ]
@@ -976,10 +988,16 @@ instance Gf GNP where
   gf Ganimal = mkApp (mkCId "animal") []
   gf Gany_other_exclusion = mkApp (mkCId "any_other_exclusion") []
   gf Gbirds = mkApp (mkCId "birds") []
+  gf Gcancelled = mkApp (mkCId "cancelled") []
+  gf Gclaim = mkApp (mkCId "claim") []
+  gf Gcondition = mkApp (mkCId "condition") []
   gf Ghousehold_appliance = mkApp (mkCId "household_appliance") []
   gf Ginsects = mkApp (mkCId "insects") []
   gf Gplumbing_heating_or_AC = mkApp (mkCId "plumbing_heating_or_AC") []
+  gf Gpremium = mkApp (mkCId "premium") []
   gf Grodents = mkApp (mkCId "rodents") []
+  gf Gsigned = mkApp (mkCId "signed") []
+  gf Gstay_overnight = mkApp (mkCId "stay_overnight") []
   gf Gswimming_pool = mkApp (mkCId "swimming_pool") []
   gf Gvermin = mkApp (mkCId "vermin") []
   gf Gwater = mkApp (mkCId "water") []
@@ -996,10 +1014,16 @@ instance Gf GNP where
       Just (i,[]) | i == mkCId "animal" -> Ganimal 
       Just (i,[]) | i == mkCId "any_other_exclusion" -> Gany_other_exclusion 
       Just (i,[]) | i == mkCId "birds" -> Gbirds 
+      Just (i,[]) | i == mkCId "cancelled" -> Gcancelled 
+      Just (i,[]) | i == mkCId "claim" -> Gclaim 
+      Just (i,[]) | i == mkCId "condition" -> Gcondition 
       Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance 
       Just (i,[]) | i == mkCId "insects" -> Ginsects 
       Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC 
+      Just (i,[]) | i == mkCId "premium" -> Gpremium 
       Just (i,[]) | i == mkCId "rodents" -> Grodents 
+      Just (i,[]) | i == mkCId "signed" -> Gsigned 
+      Just (i,[]) | i == mkCId "stay_overnight" -> Gstay_overnight 
       Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool 
       Just (i,[]) | i == mkCId "vermin" -> Gvermin 
       Just (i,[]) | i == mkCId "water" -> Gwater 

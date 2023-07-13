@@ -59,6 +59,15 @@ concrete DomainLexiconMay of DomainLexicon = NL4BaseMay **
     any_other_exclusion = mkNP (mkN "sebarang pengecualian lain") ;
     escape = mkVP leak_V ;
 
+  -- org rules from eg on Wed
+      signed = (mkNP (mkN "ditandatangani")) ;
+      premium = (mkNP (mkN "telah membayar premium"))  ;
+      condition = mkNP (mkN "syarat telah dipenuhi") ;
+      cancelled = mkNP (mkN "dibatalkan") ;
+      claim = mkNP (mkN "tuntutan dibuat") ;
+      stay_overnight = mkNP (mkN "bermalam") ;
+
+
   oper
   -- Google translate or Wikipedia, TODO check these
     plumbing_N : N = mkN "sistem paip" ;

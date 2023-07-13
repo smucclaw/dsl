@@ -45,5 +45,20 @@ abstract DomainLexicon = NL4Base ** {
       water : NP ;
       escape : VP ;
 
+  --  org rules from eg on Wed
+      signed
+      , premium
+      , condition
+      , cancelled
+      , claim
+      , stay_overnight
+      : NP;
+
+    --  claim_made : v2 make -> np claim -> VP ;
+
+    --  , stayed : v2 stay -> ap overnight -> VP ;
+
+
+
 
 }

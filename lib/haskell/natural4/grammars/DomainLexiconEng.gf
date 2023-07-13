@@ -61,5 +61,12 @@ concrete DomainLexiconEng of DomainLexicon = NL4BaseEng **
       any_other_exclusion = mkNP (mkN "any other exclusion") ;
       escape = mkVP (mkV "escape") ;
 
+  -- org rules from eg on Wed
+      signed = (mkNP (mkN "is signed")) ;
+      premium = (mkNP (mkN "paid premium"))  ;
+      condition = mkNP (mkN "condition met") ;
+      cancelled = mkNP (mkN "cancelled") ;
+      claim = mkNP (mkN "claim made") ;
+      stay_overnight = mkNP (mkN ("stayed overnight" | "stay overnight")) ;
 
 }

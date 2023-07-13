@@ -1,28 +1,10 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE UndecidableInstances #-}
-
+{-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes #-}
+{-# OPTIONS_GHC -Wno-all #-}
 module LS.NLP.NL4 where
 
 import Control.Monad.Identity
-  ( Identity (Identity, runIdentity),
-    MonadPlus (..),
-    ap,
-  )
-import Data.Monoid ()
-import PGF
-  ( Expr,
-    mkApp,
-    mkCId,
-    mkFloat,
-    mkInt,
-    mkStr,
-    showCId,
-    showExpr,
-    unApp,
-    unFloat,
-    unInt,
-    unStr,
-  )
+import Data.Monoid
+import PGF hiding (Tree)
 
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
@@ -660,7 +642,7 @@ instance Gf GAdA where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "only_AdA" -> Gonly_AdA
+      Just (i,[]) | i == mkCId "only_AdA" -> Gonly_AdA 
 
 
       _ -> error ("no AdA " ++ show t)
@@ -680,8 +662,8 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "ByVP" -> GByVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "in_part" -> Gin_part
-      Just (i,[]) | i == mkCId "in_whole" -> Gin_whole
+      Just (i,[]) | i == mkCId "in_part" -> Gin_part 
+      Just (i,[]) | i == mkCId "in_whole" -> Gin_whole 
       Just (i,[x1]) | i == mkCId "recoverUnparsedAdv" -> GrecoverUnparsedAdv (fg x1)
 
 
@@ -740,8 +722,8 @@ instance Gf GConj where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AND" -> GAND
-      Just (i,[]) | i == mkCId "OR" -> GOR
+      Just (i,[]) | i == mkCId "AND" -> GAND 
+      Just (i,[]) | i == mkCId "OR" -> GOR 
 
 
       _ -> error ("no Conj " ++ show t)
@@ -798,9 +780,9 @@ instance Gf GDeontic where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "MAY" -> GMAY
-      Just (i,[]) | i == mkCId "MUST" -> GMUST
-      Just (i,[]) | i == mkCId "SHANT" -> GSHANT
+      Just (i,[]) | i == mkCId "MAY" -> GMAY 
+      Just (i,[]) | i == mkCId "MUST" -> GMUST 
+      Just (i,[]) | i == mkCId "SHANT" -> GSHANT 
 
 
       _ -> error ("no Deontic " ++ show t)
@@ -813,10 +795,10 @@ instance Gf GDet where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "aSg" -> GaSg
-      Just (i,[]) | i == mkCId "thePl" -> GthePl
-      Just (i,[]) | i == mkCId "theSg" -> GtheSg
-      Just (i,[]) | i == mkCId "your" -> Gyour
+      Just (i,[]) | i == mkCId "aSg" -> GaSg 
+      Just (i,[]) | i == mkCId "thePl" -> GthePl 
+      Just (i,[]) | i == mkCId "theSg" -> GtheSg 
+      Just (i,[]) | i == mkCId "your" -> Gyour 
 
 
       _ -> error ("no Det " ++ show t)
@@ -842,14 +824,14 @@ instance Gf GDigit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "n2" -> Gn2
-      Just (i,[]) | i == mkCId "n3" -> Gn3
-      Just (i,[]) | i == mkCId "n4" -> Gn4
-      Just (i,[]) | i == mkCId "n5" -> Gn5
-      Just (i,[]) | i == mkCId "n6" -> Gn6
-      Just (i,[]) | i == mkCId "n7" -> Gn7
-      Just (i,[]) | i == mkCId "n8" -> Gn8
-      Just (i,[]) | i == mkCId "n9" -> Gn9
+      Just (i,[]) | i == mkCId "n2" -> Gn2 
+      Just (i,[]) | i == mkCId "n3" -> Gn3 
+      Just (i,[]) | i == mkCId "n4" -> Gn4 
+      Just (i,[]) | i == mkCId "n5" -> Gn5 
+      Just (i,[]) | i == mkCId "n6" -> Gn6 
+      Just (i,[]) | i == mkCId "n7" -> Gn7 
+      Just (i,[]) | i == mkCId "n8" -> Gn8 
+      Just (i,[]) | i == mkCId "n9" -> Gn9 
 
 
       _ -> error ("no Digit " ++ show t)
@@ -1037,30 +1019,30 @@ instance Gf GNP where
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjNP" -> GConjNP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "Contents" -> GContents
+      Just (i,[]) | i == mkCId "Contents" -> GContents 
       Just (i,[x1,x2]) | i == mkCId "DetCN" -> GDetCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "GerundNP" -> GGerundNP (fg x1)
-      Just (i,[]) | i == mkCId "Loss_or_Damage" -> GLoss_or_Damage
+      Just (i,[]) | i == mkCId "Loss_or_Damage" -> GLoss_or_Damage 
       Just (i,[x1]) | i == mkCId "MassNP" -> GMassNP (fg x1)
-      Just (i,[]) | i == mkCId "NDB_Qualification" -> GNDB_Qualification
-      Just (i,[]) | i == mkCId "animal" -> Ganimal
-      Just (i,[]) | i == mkCId "any_other_exclusion" -> Gany_other_exclusion
-      Just (i,[]) | i == mkCId "birds" -> Gbirds
-      Just (i,[]) | i == mkCId "cancelled" -> Gcancelled
-      Just (i,[]) | i == mkCId "claim" -> Gclaim
-      Just (i,[]) | i == mkCId "condition" -> Gcondition
-      Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance
-      Just (i,[]) | i == mkCId "insects" -> Ginsects
-      Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC
-      Just (i,[]) | i == mkCId "premium" -> Gpremium
+      Just (i,[]) | i == mkCId "NDB_Qualification" -> GNDB_Qualification 
+      Just (i,[]) | i == mkCId "animal" -> Ganimal 
+      Just (i,[]) | i == mkCId "any_other_exclusion" -> Gany_other_exclusion 
+      Just (i,[]) | i == mkCId "birds" -> Gbirds 
+      Just (i,[]) | i == mkCId "cancelled" -> Gcancelled 
+      Just (i,[]) | i == mkCId "claim" -> Gclaim 
+      Just (i,[]) | i == mkCId "condition" -> Gcondition 
+      Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance 
+      Just (i,[]) | i == mkCId "insects" -> Ginsects 
+      Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC 
+      Just (i,[]) | i == mkCId "premium" -> Gpremium 
       Just (i,[x1]) | i == mkCId "result_from" -> Gresult_from (fg x1)
-      Just (i,[]) | i == mkCId "rodents" -> Grodents
-      Just (i,[]) | i == mkCId "signed" -> Gsigned
-      Just (i,[]) | i == mkCId "stay_during_policy_period" -> Gstay_during_policy_period
-      Just (i,[]) | i == mkCId "stay_overnight" -> Gstay_overnight
-      Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool
-      Just (i,[]) | i == mkCId "vermin" -> Gvermin
-      Just (i,[]) | i == mkCId "water" -> Gwater
+      Just (i,[]) | i == mkCId "rodents" -> Grodents 
+      Just (i,[]) | i == mkCId "signed" -> Gsigned 
+      Just (i,[]) | i == mkCId "stay_during_policy_period" -> Gstay_during_policy_period 
+      Just (i,[]) | i == mkCId "stay_overnight" -> Gstay_overnight 
+      Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool 
+      Just (i,[]) | i == mkCId "vermin" -> Gvermin 
+      Just (i,[]) | i == mkCId "water" -> Gwater 
 
 
       _ -> error ("no NP " ++ show t)
@@ -1081,8 +1063,8 @@ instance Gf GPol where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "NEG" -> GNEG
-      Just (i,[]) | i == mkCId "POS" -> GPOS
+      Just (i,[]) | i == mkCId "NEG" -> GNEG 
+      Just (i,[]) | i == mkCId "POS" -> GPOS 
 
 
       _ -> error ("no Pol " ++ show t)
@@ -1124,15 +1106,15 @@ instance Gf GPrep where
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjPrep" -> GConjPrep (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep
-      Just (i,[]) | i == mkCId "after_Prep" -> Gafter_Prep
-      Just (i,[]) | i == mkCId "before_Prep" -> Gbefore_Prep
-      Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep
-      Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep
-      Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep
-      Just (i,[]) | i == mkCId "possess_Prep" -> Gpossess_Prep
-      Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep
-      Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep
+      Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep 
+      Just (i,[]) | i == mkCId "after_Prep" -> Gafter_Prep 
+      Just (i,[]) | i == mkCId "before_Prep" -> Gbefore_Prep 
+      Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
+      Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
+      Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 
+      Just (i,[]) | i == mkCId "possess_Prep" -> Gpossess_Prep 
+      Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
+      Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep 
 
 
       _ -> error ("no Prep " ++ show t)
@@ -1172,7 +1154,7 @@ instance Gf GSub10 where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0" -> Gpot0 (fg x1)
-      Just (i,[]) | i == mkCId "pot01" -> Gpot01
+      Just (i,[]) | i == mkCId "pot01" -> Gpot01 
 
 
       _ -> error ("no Sub10 " ++ show t)
@@ -1189,8 +1171,8 @@ instance Gf GSub100 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0as1" -> Gpot0as1 (fg x1)
       Just (i,[x1]) | i == mkCId "pot1" -> Gpot1 (fg x1)
-      Just (i,[]) | i == mkCId "pot110" -> Gpot110
-      Just (i,[]) | i == mkCId "pot111" -> Gpot111
+      Just (i,[]) | i == mkCId "pot110" -> Gpot110 
+      Just (i,[]) | i == mkCId "pot111" -> Gpot111 
       Just (i,[x1,x2]) | i == mkCId "pot1plus" -> Gpot1plus (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "pot1to19" -> Gpot1to19 (fg x1)
 
@@ -1207,7 +1189,7 @@ instance Gf GSub1000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot1as2" -> Gpot1as2 (fg x1)
       Just (i,[x1]) | i == mkCId "pot2" -> Gpot2 (fg x1)
-      Just (i,[]) | i == mkCId "pot21" -> Gpot21
+      Just (i,[]) | i == mkCId "pot21" -> Gpot21 
       Just (i,[x1,x2]) | i == mkCId "pot2plus" -> Gpot2plus (fg x1) (fg x2)
 
 
@@ -1224,7 +1206,7 @@ instance Gf GSub1000000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot2as3" -> Gpot2as3 (fg x1)
       Just (i,[x1]) | i == mkCId "pot3" -> Gpot3 (fg x1)
-      Just (i,[]) | i == mkCId "pot31" -> Gpot31
+      Just (i,[]) | i == mkCId "pot31" -> Gpot31 
       Just (i,[x1]) | i == mkCId "pot3float" -> Gpot3float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot3plus" -> Gpot3plus (fg x1) (fg x2)
 
@@ -1242,7 +1224,7 @@ instance Gf GSub1000000000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot3as4" -> Gpot3as4 (fg x1)
       Just (i,[x1]) | i == mkCId "pot4" -> Gpot4 (fg x1)
-      Just (i,[]) | i == mkCId "pot41" -> Gpot41
+      Just (i,[]) | i == mkCId "pot41" -> Gpot41 
       Just (i,[x1]) | i == mkCId "pot4float" -> Gpot4float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot4plus" -> Gpot4plus (fg x1) (fg x2)
 
@@ -1260,7 +1242,7 @@ instance Gf GSub1000000000000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot4as5" -> Gpot4as5 (fg x1)
       Just (i,[x1]) | i == mkCId "pot5" -> Gpot5 (fg x1)
-      Just (i,[]) | i == mkCId "pot51" -> Gpot51
+      Just (i,[]) | i == mkCId "pot51" -> Gpot51 
       Just (i,[x1]) | i == mkCId "pot5float" -> Gpot5float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot5plus" -> Gpot5plus (fg x1) (fg x2)
 
@@ -1283,7 +1265,7 @@ instance Gf GSubj where
       Just (i,[x1]) | i == mkCId "PARTY" -> GPARTY (fg x1)
       Just (i,[x1,x2]) | i == mkCId "SubjWho" -> GSubjWho (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "THE" -> GTHE (fg x1)
-      Just (i,[]) | i == mkCId "You" -> GYou
+      Just (i,[]) | i == mkCId "You" -> GYou 
       Just (i,[x1]) | i == mkCId "recoverUnparsedSubj" -> GrecoverUnparsedSubj (fg x1)
 
 
@@ -1299,12 +1281,12 @@ instance Gf GTComparison where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AFTER" -> GAFTER
-      Just (i,[]) | i == mkCId "BEFORE" -> GBEFORE
-      Just (i,[]) | i == mkCId "BY" -> GBY
+      Just (i,[]) | i == mkCId "AFTER" -> GAFTER 
+      Just (i,[]) | i == mkCId "BEFORE" -> GBEFORE 
+      Just (i,[]) | i == mkCId "BY" -> GBY 
       Just (i,[x1,x2]) | i == mkCId "ConjTComparison" -> GConjTComparison (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "ON" -> GON
-      Just (i,[]) | i == mkCId "VAGUE" -> GVAGUE
+      Just (i,[]) | i == mkCId "ON" -> GON 
+      Just (i,[]) | i == mkCId "VAGUE" -> GVAGUE 
 
 
       _ -> error ("no TComparison " ++ show t)
@@ -1316,9 +1298,9 @@ instance Gf GTemp where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "pastSimul" -> GpastSimul
-      Just (i,[]) | i == mkCId "presAnt" -> GpresAnt
-      Just (i,[]) | i == mkCId "presSimul" -> GpresSimul
+      Just (i,[]) | i == mkCId "pastSimul" -> GpastSimul 
+      Just (i,[]) | i == mkCId "presAnt" -> GpresAnt 
+      Just (i,[]) | i == mkCId "presSimul" -> GpresSimul 
 
 
       _ -> error ("no Temp " ++ show t)
@@ -1371,9 +1353,9 @@ instance Gf GTimeUnit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "Day_Unit" -> GDay_Unit
-      Just (i,[]) | i == mkCId "Month_Unit" -> GMonth_Unit
-      Just (i,[]) | i == mkCId "Year_Unit" -> GYear_Unit
+      Just (i,[]) | i == mkCId "Day_Unit" -> GDay_Unit 
+      Just (i,[]) | i == mkCId "Month_Unit" -> GMonth_Unit 
+      Just (i,[]) | i == mkCId "Year_Unit" -> GYear_Unit 
       Just (i,[x1]) | i == mkCId "recoverUnparsedTimeUnit" -> GrecoverUnparsedTimeUnit (fg x1)
 
 

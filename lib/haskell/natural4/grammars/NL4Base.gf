@@ -64,6 +64,7 @@ abstract NL4Base = CustomSyntax ** {
 
       RPleafS : NP -> VPS -> Constraint ;
       RPleafNP : NP -> Constraint ; -- to pair with PrePost to get a full sentence ???
+      RPleafVP : VPS -> Constraint ;
       ConjConstraint : Conj -> [Constraint] -> Constraint ;
       ConjPreConstraint : PrePost -> Conj -> [Constraint] -> Constraint ;
       ConjPrePostConstraint : PrePost -> PrePost -> Conj -> [Constraint] -> Constraint ;

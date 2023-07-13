@@ -1,28 +1,10 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE UndecidableInstances #-}
-
+{-# LANGUAGE GADTs, FlexibleInstances, FlexibleContexts, UndecidableInstances, KindSignatures, RankNTypes #-}
+{-# OPTIONS_GHC -Wno-all #-}
 module LS.NLP.NL4 where
 
 import Control.Monad.Identity
-  ( Identity (Identity, runIdentity),
-    MonadPlus (..),
-    ap,
-  )
-import Data.Monoid ()
-import PGF
-  ( Expr,
-    mkApp,
-    mkCId,
-    mkFloat,
-    mkInt,
-    mkStr,
-    showCId,
-    showExpr,
-    unApp,
-    unFloat,
-    unInt,
-    unStr,
-  )
+import Data.Monoid
+import PGF hiding (Tree)
 
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
@@ -229,6 +211,7 @@ data Tree :: * -> * where
   GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GRPleafNP :: GNP -> Tree GConstraint_
   GRPleafS :: GNP -> GVPS -> Tree GConstraint_
+  GRPleafVP :: GVPS -> Tree GConstraint_
   GrecoverRPis :: GString -> GString -> Tree GConstraint_
   GrecoverUnparsedConstraint :: GString -> Tree GConstraint_
   GMkDate :: GDay -> GMonth -> GYear -> Tree GDate_
@@ -433,6 +416,7 @@ instance Eq (Tree a) where
     (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GRPleafNP x1,GRPleafNP y1) -> and [ x1 == y1 ]
     (GRPleafS x1 x2,GRPleafS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRPleafVP x1,GRPleafVP y1) -> and [ x1 == y1 ]
     (GrecoverRPis x1 x2,GrecoverRPis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GrecoverUnparsedConstraint x1,GrecoverUnparsedConstraint y1) -> and [ x1 == y1 ]
     (GMkDate x1 x2 x3,GMkDate y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -728,6 +712,7 @@ instance Gf GConstraint where
   gf (GConjPrePostConstraint x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostConstraint") [gf x1, gf x2, gf x3, gf x4]
   gf (GRPleafNP x1) = mkApp (mkCId "RPleafNP") [gf x1]
   gf (GRPleafS x1 x2) = mkApp (mkCId "RPleafS") [gf x1, gf x2]
+  gf (GRPleafVP x1) = mkApp (mkCId "RPleafVP") [gf x1]
   gf (GrecoverRPis x1 x2) = mkApp (mkCId "recoverRPis") [gf x1, gf x2]
   gf (GrecoverUnparsedConstraint x1) = mkApp (mkCId "recoverUnparsedConstraint") [gf x1]
 
@@ -738,6 +723,7 @@ instance Gf GConstraint where
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostConstraint" -> GConjPrePostConstraint (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "RPleafNP" -> GRPleafNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "RPleafS" -> GRPleafS (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "RPleafVP" -> GRPleafVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "recoverRPis" -> GrecoverRPis (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "recoverUnparsedConstraint" -> GrecoverUnparsedConstraint (fg x1)
 
@@ -1550,6 +1536,7 @@ instance Compos Tree where
     GConjPrePostConstraint x1 x2 x3 x4 -> r GConjPrePostConstraint `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GRPleafNP x1 -> r GRPleafNP `a` f x1
     GRPleafS x1 x2 -> r GRPleafS `a` f x1 `a` f x2
+    GRPleafVP x1 -> r GRPleafVP `a` f x1
     GrecoverRPis x1 x2 -> r GrecoverRPis `a` f x1 `a` f x2
     GrecoverUnparsedConstraint x1 -> r GrecoverUnparsedConstraint `a` f x1
     GMkDate x1 x2 x3 -> r GMkDate `a` f x1 `a` f x2 `a` f x3

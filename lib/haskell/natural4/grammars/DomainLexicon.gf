@@ -45,5 +45,31 @@ abstract DomainLexicon = NL4Base ** {
       water : NP ;
       escape : VP ;
 
+  --  org rules from eg on Wed
+      signed
+      , premium
+      , condition
+      , cancelled
+      , claim
+      , stay_overnight
+      : NP;
 
+    --  claim_made : v2 make -> np claim -> VP ;
+
+    --  , stayed : v2 stay -> ap overnight -> VP ;
+
+
+
+
+      sickness_or_injury
+      , us_hospital
+      , policy_period
+      , skydiving
+      , military
+      , firefighter
+      , police : CN ;
+      result_from : NP -> NP ;
+      stay_during_policy_period : NP ;
+
+      Int_or_older : Int -> AP ; -- 65 or older
 }

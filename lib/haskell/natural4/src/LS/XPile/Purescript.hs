@@ -174,20 +174,17 @@ labelQs = map alwaysLabeled
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
   mutter $ "*** biggestQ: running"
-  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
+  let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rl]
+  q <- traverse (ruleQuestionsNamed env alias) $ expandRulesForNLG env rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
-
-      onlyqs = Map.fromList [ (x, justQuestions yh (map fixNot yt))
-               | (x, y) <- q
-               , let Just (yh, yt) = DL.uncons y ]
-
+      onlyqs = Map.fromList q
       sorted = sortOn (Data.Ord.Down . DL.length) flattened
   case (null sorted, fst (DL.head sorted) `Map.lookup` onlyqs) of
     (True, _) -> pure []
     (_, Nothing) -> do
       mutter [i|biggestQ didn't work, couldn't find #{fst $ DL.head sorted} in dict|]
       pure []
-    (_, Just x) -> pure [x]
+    (_, Just x) -> pure x
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do

@@ -12,6 +12,7 @@ module LS.XPile.Petri where
 -- import           System.IO.Unsafe (unsafePerformIO)
 
 import AnyAll as AA (BoolStruct (All, Leaf))
+import Data.Bifunctor (first)
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad (when)
 import Control.Monad.Identity (runIdentity)
@@ -716,27 +717,21 @@ r2fgl rs defRL Regulative{..} = return $ do
     pure (onSuccessN, mbOnFailureN)
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
+  let r2fgl' = xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)
+  let (henceN', henceErr) = case hence of
+                              Just henceR -> first (fmap (fromMaybe fulfilledNode)) (r2fgl' henceR)
+                              Nothing     -> (pure fulfilledNode, [])
+  let ( lestN',  lestErr) = case lest of
+                              Just lestR  -> first (fmap (fromMaybe     breachNode)) (r2fgl' lestR)
+                              Nothing     -> (pure breachNode, [])
 
-  let childOuts :: Node -> Node -> Maybe Rule -> GraphMonad ()
-      childOuts _ outNode (Just r) = do
-        let (childOut, _childErr) = xpLog $ r2fgl rs (rl2text <$> rlabel <|> defRL) r
-        childN <- childOut
-        myTraceM [i|Petri/childouts: first pattern match, childN=#{childN}, outNode=#{outNode}|]
-        case childN of
-          Nothing -> pure ()
-          Just childE -> newEdge outNode childE []
+  henceN <- henceN'
+  lestN <- lestN'
 
-      childOuts defaultNode _ _ = do
-        myTraceM [i|Petri/childouts: second pattern match, defaultNode=#{defaultNode}, onSuccessN=#{onSuccessN}|]
-        newEdge onSuccessN defaultNode []
-
-  myTraceM [i|Petri/r2fgl: hence rule (#{hence}), drawing childOuts fulfilledNode=#{fulfilledNode} -- onSuccessN=#{onSuccessN}|]
-  childOuts fulfilledNode onSuccessN hence
-
-  myTraceM [i|Petri/r2fgl: lest rule (#{lest}), drawing childOuts breachNode=#{breachNode} -- mbOnFailureN=#{mbOnFailureN}|]
+  newEdge onSuccessN henceN []
   case mbOnFailureN of
-    Just onFailureN -> childOuts breachNode onFailureN lest
-    Nothing         -> pure ()
+    Just onFailureN -> newEdge onFailureN lestN []
+    Nothing -> pure ()
 
   -- Return the first node
   pure $ Just whoN

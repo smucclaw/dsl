@@ -23,5 +23,5 @@ import LS.Rule
 import LS.Types
 
 myTraceM :: Monad m => String -> m ()
-myTraceM x = when False $ traceM x
+myTraceM x = when True $ traceM x
 

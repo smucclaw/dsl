@@ -698,12 +698,18 @@ r2fgl rs defRL Regulative{..} = return $ do
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
+    myTraceM [i|Petri/r2fgl: deontic = #{deontic}|]
+    myTraceM [i|Petri/r2fgl: lestWord deontic = #{lestWord deontic}|]
     mbOnFailureN <- case (deontic /= DMay, lestWord deontic) of
                       (True, Right lWord) -> do
                         onFailureN <- newNode $ mkTrans lWord
+                        myTraceM [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|]
+                        myTraceM [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
                         newEdge' ( obligationN, onFailureN, swport)
                         pure (Just onFailureN)
-                      _ -> pure Nothing
+                      _ -> do
+                        myTraceM [i|Petri/r2fgl: mbOnFailureN: returning Nothing}|]
+                        pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
     newEdge' (conN, obligationN, [] )
     newEdge' (obligationN, onSuccessN, seport)
@@ -712,20 +718,25 @@ r2fgl rs defRL Regulative{..} = return $ do
   -- let sg1 = insertNE (dNE <> dtaNE) sg
 
   let childOuts :: Node -> Node -> Maybe Rule -> GraphMonad ()
-      childOuts _ outNode
-        ((xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL) <$>) -> Just (childOut, _childErr)) = do
-          childN <- childOut
-          case childN of
-            Nothing -> pure ()
-            Just childE -> newEdge outNode childE []
+      childOuts _ outNode (Just r) = do
+        let (childOut, _childErr) = xpLog $ r2fgl rs (rl2text <$> rlabel <|> defRL) r
+        childN <- childOut
+        myTraceM [i|Petri/childouts: first pattern match, childN=#{childN}, outNode=#{outNode}|]
+        case childN of
+          Nothing -> pure ()
+          Just childE -> newEdge outNode childE []
 
-      childOuts defaultNode _ _ = newEdge onSuccessN defaultNode []
+      childOuts defaultNode _ _ = do
+        myTraceM [i|Petri/childouts: second pattern match, defaultNode=#{defaultNode}, onSuccessN=#{onSuccessN}|]
+        newEdge onSuccessN defaultNode []
 
+  myTraceM [i|Petri/r2fgl: hence rule (#{hence}), drawing childOuts fulfilledNode=#{fulfilledNode} -- onSuccessN=#{onSuccessN}|]
   childOuts fulfilledNode onSuccessN hence
 
+  myTraceM [i|Petri/r2fgl: lest rule (#{lest}), drawing childOuts breachNode=#{breachNode} -- mbOnFailureN=#{mbOnFailureN}|]
   case mbOnFailureN of
     Just onFailureN -> childOuts breachNode onFailureN lest
-    Nothing -> pure ()
+    Nothing         -> pure ()
 
   -- Return the first node
   pure $ Just whoN

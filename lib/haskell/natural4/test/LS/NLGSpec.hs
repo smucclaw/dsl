@@ -9,7 +9,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i)
 import LS.NLP.NL4 (Tree (GqCONSTR, GqPREPOST))
-import LS.Interpreter (qaHornsR)
+import LS.Interpreter (qaHornsR, qaHornsT)
 import LS.NLP.NLG
   ( NLGEnv(..),
     expandRulesForNLG,
@@ -17,6 +17,8 @@ import LS.NLP.NLG
     mkConstraintText,
     myNLGEnv,
     ruleQuestions,
+    textViaQaHorns,
+    parseSubj
   )
 import LS.Rule
   ( Interpreted (..),
@@ -54,7 +56,7 @@ import LS.Rule
       ),
   )
 import LS.Types
-  ( BoolStructR,
+  ( BoolStructR, BoolStructT,
     ClsTab (CT),
     Deontic (DMay, DMust, DShant),
     HornClause (HC, hBody, hHead),
@@ -79,6 +81,7 @@ import Test.Hspec
     runIO,
     shouldBe,
   )
+import qualified Data.Text as Text
 
 spec :: Spec
 spec = do
@@ -124,13 +127,26 @@ spec = do
 
 
       let envMustSing6 = env {interpreted = mustsing6Interp}
-      describe "expandRulesForNLG and qaHornsT propagate the NOT in not drinks the same way" $ do
-        let expandedNot = expandRulesForNLG envMustSing6 mustsing6Rules
+
+      describe "qaHornsR propagates NOT" $ do
         let resultFromQaHornsR = qaHornsR mustsing6Interp
-        xit "should be identical" $
-           map snd resultFromQaHornsR `shouldBe` mapMaybe getBSR expandedNot
+        it "should have nots inside" $
+           resultFromQaHornsR `shouldBe` [([[MTT "Person"]],Leaf (RPMT [MTT "Person",MTT "Qualifies"])),([[MTT "Qualifies"]],All Nothing [Leaf (RPMT [MTT "walks"]),Any Nothing [Any Nothing [All (Just (PrePost "consumes" "beverage")) [Not (Leaf (RPMT [MTT "an alcoholic"])),Not (Leaf (RPMT [MTT "non-alcoholic"]))],All (Just (Pre "whether")) [Not (Leaf (RPMT [MTT "in part"])),Not (Leaf (RPMT [MTT "in whole"]))]],Leaf (RPMT [MTT "eats"])]])]
 
 
+      -- in MustSing5, the gold just happens to be the same as returned by ruleQuestions, so why not
+      let mustsing5ViaQaHorns = textViaQaHorns envMustSing5 Nothing (Just $ parseSubj env $ subj $ head mustsing5Rules)
+      let (mustsing5ViaRuleQuestions,_) = xpLog $ ruleQuestions envMustSing5 Nothing (head $ expandRulesForNLG envMustSing5 mustsing5Rules)
+      testViaQaHorns "mustsing5" (map snd mustsing5ViaQaHorns) (mustsing5ViaRuleQuestions <> [Leaf "Does the following hold: Person Qualifies"])
+
+      let mustsing6ViaQaHorns = textViaQaHorns envMustSing6 Nothing (Just $ parseSubj env $ subj $ head mustsing6Rules)
+      let (mustsing6ViaRuleQuestions,_) = xpLog $ ruleQuestions envMustSing6 Nothing (head $ expandRulesForNLG envMustSing6 mustsing6Rules)
+      testViaQaHorns "mustsing6" (map snd mustsing6ViaQaHorns) ([Leaf "Does the following hold: Person Qualifies"] <> mustsing6ViaRuleQuestions)
+
+      -- for Rodents, apparently ruleQuestions is genuinely buggy so compare it against a manually copied gold
+      let rodentsViaQaHorns = textViaQaHorns env Nothing (Just $ parseSubj env $ subj $ head rodentsRules)
+      let gold = [All Nothing [Any (Just (Pre "Is the Loss or Damage caused by")) [Leaf "rodents?",Leaf "insects?",Leaf "vermin?",Leaf "birds?"],All Nothing [Any Nothing [Not (Leaf "is Loss or Damage to contents?"),Not (Leaf "is Loss or Damage caused by birds?")],Any Nothing [Not (Leaf "is Loss or Damage ensuing loss?"),Not (Leaf "is Loss or Damage covered?"),Any Nothing [Leaf "does any other exclusion apply?",Any (Just (Pre "did an animal cause water to escape from")) [Leaf "a household appliance?",Leaf "a swimming pool?",Leaf "a plumbing, heating, or air conditioning system?"]]]]]]
+      testViaQaHorns "rodents" (map snd rodentsViaQaHorns) gold
 
 ---------------------------------------------------------------
 
@@ -147,6 +163,15 @@ testShouldChange description env ogrules exprules =
     it ("should change " <> description) $ do
         let expanded = expandRulesForNLG env ogrules
         expanded `shouldBe` exprules
+
+testViaQaHorns :: String -> [BoolStructT] -> [BoolStructT] -> Spec
+testViaQaHorns description qaHornsBST gold = do
+    describe ("textViaQaHorns should work for " <> description) $
+      it "should be the gold standard" $
+        qaHornsBST `shouldBe` gold
+
+---------------------------------------------------------------
+
 
 rodentsRules = [ Hornlike
     { name = [ MTT "Loss or Damage" ]
@@ -893,12 +918,11 @@ pdpa1withUnexpandedUponInterp = L4I
     }
 
 mustsing5Interp :: Interpreted
-mustsing5Interp = mustsingInterp qualifiesBSRdrinks
-mustsing6Interp :: Interpreted
-mustsing6Interp = mustsingInterp qualifiesBSRnotdrink
+mustsing5Interp = mustsingInterp qualifiesBSRdrinks mustsing5Rules
+mustsing6Interp = mustsingInterp qualifiesBSRnotdrink mustsing6Rules
 
-mustsingInterp :: BoolStructR -> Interpreted
-mustsingInterp variableBSR = L4I
+mustsingInterp :: BoolStructR -> [Rule] -> Interpreted
+mustsingInterp variableBSR variableOrigRules = L4I
     { classtable = CT Map.empty
     , scopetable = fromList
         [ ([ MTT "Qualifies" ]
@@ -934,7 +958,7 @@ mustsingInterp variableBSR = L4I
                     )
                 ]
             )
-        ] , origrules = mustsing5Rules}
+        ] , origrules = variableOrigRules }
 
 rodentsInterp :: Interpreted
 rodentsInterp = L4I

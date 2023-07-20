@@ -41,6 +41,8 @@ import LS.NLP.NLG
     expandRulesForNLGE,
     ruleQuestions,
     ruleQuestionsNamed,
+    parseSubj,
+    textViaQaHorns
   )
 import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)
 import LS.Types
@@ -172,20 +174,17 @@ labelQs = map alwaysLabeled
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
   mutter $ "*** biggestQ: running"
-  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
+  let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rl]
+  q <- traverse (ruleQuestionsNamed env alias) $ expandRulesForNLG env rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
-
-      onlyqs = Map.fromList [ (x, justQuestions yh (map fixNot yt))
-               | (x, y) <- q
-               , let Just (yh, yt) = DL.uncons y ]
-
+      onlyqs = Map.fromList q
       sorted = sortOn (Data.Ord.Down . DL.length) flattened
   case (null sorted, fst (DL.head sorted) `Map.lookup` onlyqs) of
     (True, _) -> pure []
     (_, Nothing) -> do
       mutter [i|biggestQ didn't work, couldn't find #{fst $ DL.head sorted} in dict|]
       pure []
-    (_, Just x) -> pure [x]
+    (_, Just x) -> pure x
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
@@ -305,7 +304,7 @@ translate2PS nlgEnvs eng rules = do
   -- New bottomBit
   -------------------------------------------------------------
   mutterd 2 "trying the new approach based on qaHornsT"
-  qaHornsAllLangs :: [Either XPileLogW String] <- 
+  qaHornsAllLangs :: [Either XPileLogW String] <-
     for nlgEnvs $ \nlgEnv@(NLGEnv {gfLang}) -> do
       let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
           l4i       = interpreted nlgEnv
@@ -357,9 +356,11 @@ translate2PS nlgEnvs eng rules = do
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 qaHornsByLang rules langEnv = do
   mutterd 3 ("qaHornsByLang for language " ++ show (gfLang langEnv))
-  let qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
-      alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
+  let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
+      subject = listToMaybe [ parseSubj langEnv person | Regulative{subj = person} <- rules]
+      qaHT = textViaQaHorns langEnv alias subject
       qaHornNames = foldMap fst qaHT
+      -- qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
       d = 4
   mutterdhsf d "qaHT fsts" show (fst <$> qaHT)
   mutterdhsf d "all qaHT" pShowNoColorS qaHT

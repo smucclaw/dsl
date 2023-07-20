@@ -19,7 +19,8 @@ import LS.Interpreter ( expandBSR
                       , expandBSRM
                       , expandClause
                       , expandClauses
-                      , expandRP)
+                      , expandRP
+                      , qaHornsR )
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
   ( BoolStructCond,
@@ -43,6 +44,7 @@ import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName, ruleConstr
 import LS.Types
   ( BoolStructP,
     BoolStructR,
+    BoolStructT,
     Deontic (..),
     HornClause (hBody, hHead),
     HornClause2,
@@ -296,10 +298,12 @@ nlg' thl env rule = case rule of
 -- so maybe a qaHorns approach doesn't want to use ruleQuestions directly, but should
 -- instead call the underlying things like linBStext.
 
+type Alias = Maybe (MultiTerm,MultiTerm)
+
 ruleQuestions :: NLGEnv
-              -> Maybe (MultiTerm,MultiTerm)
+              -> Alias
               -> Rule
-              -> XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
+              -> XPileLog [BoolStructT]
 ruleQuestions env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
@@ -322,7 +326,7 @@ ruleQuestions env alias rule = do
   -- [TODO] for our Logging exercise, see how to convert the _ case above to an xpError
 
     where
-      text :: XPileLog [AA.OptionallyLabeledBoolStruct Text.Text]
+      text :: XPileLog [BoolStructT]
       text = do
         t1 <- ruleQnTrees env alias rule
         return ( linBStext env <$> t1 )
@@ -330,7 +334,7 @@ ruleQuestions env alias rule = do
 ruleQuestionsNamed :: NLGEnv
                    -> Maybe (MultiTerm, MultiTerm)
                    -> Rule
-                   -> XPileLog (RuleName, [AA.OptionallyLabeledBoolStruct Text.Text])
+                   -> XPileLog (RuleName, [BoolStructT])
 ruleQuestionsNamed env alias rule = do
   let rn = ruleLabelName rule
   rq    <- ruleQuestions env alias rule
@@ -380,7 +384,38 @@ ruleQnTrees env alias rule = do
 
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
 
-linBStext :: NLGEnv -> BoolStructGText -> AA.OptionallyLabeledBoolStruct Text.Text
+
+----------------------------------------------------------------------
+
+textViaQaHorns :: NLGEnv -> Alias -> Maybe GSubj -> [([RuleName],  BoolStructT)]
+textViaQaHorns env alias subj = [ (rn, linBStext env $ mkGFtext env alias (referSubj <$> subj) bsr) | (rn, bsr) <- qaHornsR (interpreted env)]
+
+mkGFtext :: NLGEnv -> Alias -> Maybe GSubj -> BoolStructR -> BoolStructGText
+mkGFtext env alias subj bsr = case (whoParses, condParses) of
+  ([], []) -> mkConstraintText env GqPREPOST GqCONSTR bsr
+  ([], _:_) -> mkCondText env GqPREPOST GqCOND bsr
+  (_:_, _) -> case subj of
+                Just s -> mkWhoText env GqPREPOST (GqWHO s) bsr
+                Nothing -> mkConstraintText env GqPREPOST GqCONSTR bsr --- TODO
+  where
+    whoParses = parseWhoNoRecover env bsr
+    condParses = parseCondNoRecover env bsr
+
+parseWhoNoRecover :: NLGEnv -> BoolStructR -> [BoolStructWho]
+parseWhoNoRecover env = sequence . mapBSLabel (parsePrePost env) (parseVP env)
+  where
+    parseVP :: NLGEnv -> RelationalPredicate -> [GWho]
+    parseVP env rp = map fg $ parseAnyNoRecover "Who" env (rp2text rp)
+
+parseCondNoRecover :: NLGEnv -> BoolStructR -> [BoolStructCond]
+parseCondNoRecover env = sequence . mapBSLabel (parsePrePost env) (parseS env)
+  where
+    parseS :: NLGEnv -> RelationalPredicate -> [GCond]
+    parseS env rp = map fg $ parseAnyNoRecover "Cond" env (rp2text rp)
+
+----------------------------------------------------------------------
+
+linBStext :: NLGEnv -> BoolStructGText -> BoolStructT
 linBStext env = mapBSLabel (gfLin env . gf) (gfLin env . gf)
 
 mkWhoText :: NLGEnv -> (GPrePost -> GText) -> (GWho -> GText) -> BoolStructR -> BoolStructGText
@@ -395,7 +430,7 @@ mkConstraintText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env)
 mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> BoolStructGText
 mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
 
--- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> AA.OptionallyLabeledBoolStruct Text.Text
+-- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> BoolStructT
 -- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
 
 nlgQuestion :: NLGEnv -> Rule -> XPileLog [Text.Text]
@@ -654,7 +689,7 @@ expandRuleForNLGE l4i depth rule = do
     _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
   where
     go xs = sequence $ expandBSRM l4i depth <$> xs
-    
+
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule

@@ -920,6 +920,8 @@ tok2text = choice
     [ "IS"     <$ pToken Is
     , "&&"     <$ pToken TokAnd
     , "||"     <$ pToken TokOr
+    , "SUM"    <$ pToken TokSum
+    , "PRODUCT"<$ pToken TokProduct
     , "=="     <$ pToken TokEQ
     , "<"      <$ pToken TokLT
     , "<="     <$ pToken TokLTE

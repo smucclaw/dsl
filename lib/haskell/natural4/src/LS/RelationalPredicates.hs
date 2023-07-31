@@ -236,6 +236,8 @@ tok2rel = choice
     , RPeq      <$ pToken TokEQ
     , RPand     <$ pToken TokAnd
     , RPor      <$ pToken TokOr
+    , RPsum     <$ pToken TokSum
+    , RPproduct <$ pToken TokProduct
     , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
     , RPlte     <$ pToken TokLTE
     , RPgt      <$ pToken TokGT    -- serves double duty as MaxOflist when in RPnary position

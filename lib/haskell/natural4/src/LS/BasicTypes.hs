@@ -80,7 +80,7 @@ data MyToken = Every | Party | TokAll
              | Empty | EOL
              | RuleMarker Int Text.Text
              | Expect | ScenarioTok
-             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr
+             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr | TokSum | TokProduct
              | Otherwise
              | SOF | EOF
              | GoDeeper | UnDeeper
@@ -247,6 +247,8 @@ toToken ">="        = pure TokGTE
 toToken "="         = pure TokEQ
 toToken "&&"        = pure TokAnd
 toToken "||"        = pure TokOr
+toToken "SUM"       = pure TokSum
+toToken "PRODUCT"   = pure TokProduct
 toToken "=="        = pure TokEQ
 toToken "==="       = pure TokEQ
 toToken "IN"        = pure TokIn
@@ -378,6 +380,8 @@ renderToken :: MyToken -> String
 renderToken ScenarioTok = "SCENARIO"
 renderToken TokAll = "ALL"
 renderToken MPNot = "NOT"
+renderToken TokAnd = "&&"
+renderToken TokOr  = "||"
 renderToken TokLT = "<"
 renderToken TokLTE = "<="
 renderToken TokGT = ">"

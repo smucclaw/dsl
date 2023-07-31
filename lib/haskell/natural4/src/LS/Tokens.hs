@@ -305,7 +305,9 @@ sameOrNextLine pa pb =
 
 -- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
 
--- one or more P, monotonically moving to the right, returned in a list
+
+-- | one or more P, monotonically moving to the right, returned in a list.
+-- if you don't want moving to the right, but want the things all to fall at the same indentation level, just use `some` or `many`.
 someDeep :: (Show a) => Parser a -> Parser [a]
 someDeep p = debugName "someDeep"
   ( (:)
@@ -607,7 +609,7 @@ infixl 4 >*|
 
 p1 |>| p2 = do
   l <- p1
-  r <- debugNameSL "|>| calling $>>" $ ($>>) p2
+  r <- debugNameSL "|>| calling $>> to consume goDeeper" $ ($>>) p2
   return (l r)
 infixl 4 |>|
 

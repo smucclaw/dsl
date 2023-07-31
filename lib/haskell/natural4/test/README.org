@@ -3346,9 +3346,9 @@ see below alternative parse
 
 What if we take out the ANDs?
 
-| x | IS | max of | foo |
-|   |    |        | bar |
-|   |    |        | baz |
+| DECIDE | x | IS | > | foo |
+|        |   |    |   | bar |
+|        |   |    |   | baz |
 
 Here's another way to look at it:
 

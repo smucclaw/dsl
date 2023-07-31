@@ -231,7 +231,7 @@ pRelationalPredicate = pRelPred
 -- can we rephrase this as Either or Maybe so we only accept certain tokens as RPRels?
 tok2rel :: Parser RPRel
 tok2rel = choice
-    [ RPis      <$ pToken Is
+    [ parseIS
     , RPhas     <$ pToken Has
     , RPeq      <$ pToken TokEQ
     , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
@@ -246,6 +246,9 @@ tok2rel = choice
     , RPTC TOn     <$ pToken On
     , RPTC TVague  <$ pToken Eventually
     ]
+
+parseIS :: Parser RPRel
+parseIS = RPis      <$ pToken Is
 
 rpConstitutiveAsElement :: Rule -> BoolStructR
 rpConstitutiveAsElement = multiterm2bsr
@@ -587,7 +590,9 @@ rpMT          = RPMT          $*| slAKA slMultiTerm id
 -- | parse an RPConstraint, optionally with an inline MEANS.
 -- we pass to nestedHorn the base parser for RPConstraint, which 
 rpConstraint :: SLParser RelationalPredicate
-rpConstraint  = nestedHorn rpHead id meansIs pBSR (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
+rpConstraint  = nestedHorn rpHead id meansIs pBSR
+                (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
+                
 
 -- | parse a RelationalPredicate BoolStructR
 rpBoolStructR :: SLParser RelationalPredicate
@@ -598,6 +603,12 @@ rpBoolStructR = debugName "rpBoolStructR calling slMultiTerm / IS / pBSR" $
   |>| debugName "rpBoolStructR/pBSR"        pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 
+-- | parse a RelationalPredicate RPnary
+rpNary :: SLParser RelationalPredicate
+rpNary = debugName "rpNary calling rprel / rp" $
+  RPnary
+  $>| debugName "rpNary/tok2rel"     tok2rel
+  |*| debugName "rpNary/some slRelPred"   (some slRelPred)
 
 
 -- this used to be in LS/ParamText.hs
@@ -902,7 +913,7 @@ meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
 -- | the main parser for a BoolStruct of RelationalPredicates.
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $
-  try (debugName "pBSR/prePostParse" (prePostParse pRelPred))
+  try (debugName "pBSR/prePostParse" (prePostParse (try ( debugName "slRelPred/RPnary"  (finishSL rpNary) ) <|> pRelPred)))
 
 -- | convert all decision logic in a rule to BoolStructR format.
 --   the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.

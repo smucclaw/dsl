@@ -50,7 +50,7 @@ type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 -- | the relations in a RelationalPredicate
-data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
@@ -286,6 +286,8 @@ rel2txt RPgte     = ">="  -- "relGTE"
 rel2txt RPelem    = "IN"  -- "relIn"
 rel2txt RPnotElem = "NOT IN" -- "relNotIn"
 rel2txt RPnot     = "NOT"    -- "relNot"
+rel2txt RPand     = "&&"    -- "relAnd"
+rel2txt RPor      = "||"    -- "relOr"
 rel2txt (RPTC TBefore) = "BEFORE"
 rel2txt (RPTC TAfter ) = "AFTER"
 rel2txt (RPTC TBy    ) = "BY"
@@ -303,6 +305,8 @@ rel2op RPgte     = ">="
 rel2op RPelem    = "IN"
 rel2op RPnotElem = "NOT IN"
 rel2op RPnot     = "NOT"
+rel2op RPand     = "&&"
+rel2op RPor      = "||"
 rel2op (RPTC TBefore) = "BEFORE"
 rel2op (RPTC TAfter ) = "AFTER"
 rel2op (RPTC TBy    ) = "BY"

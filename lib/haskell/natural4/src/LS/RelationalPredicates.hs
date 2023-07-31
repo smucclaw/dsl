@@ -234,6 +234,8 @@ tok2rel = choice
     [ parseIS
     , RPhas     <$ pToken Has
     , RPeq      <$ pToken TokEQ
+    , RPand     <$ pToken TokAnd
+    , RPor      <$ pToken TokOr
     , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
     , RPlte     <$ pToken TokLTE
     , RPgt      <$ pToken TokGT    -- serves double duty as MaxOflist when in RPnary position

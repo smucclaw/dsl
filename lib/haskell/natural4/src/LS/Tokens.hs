@@ -918,6 +918,8 @@ pAnyText = tok2text <|> pOtherVal
 tok2text :: Parser Text.Text
 tok2text = choice
     [ "IS"     <$ pToken Is
+    , "&&"     <$ pToken TokAnd
+    , "||"     <$ pToken TokOr
     , "=="     <$ pToken TokEQ
     , "<"      <$ pToken TokLT
     , "<="     <$ pToken TokLTE

@@ -823,7 +823,7 @@ manyIndentation :: (Show a) => Parser a -> Parser a
 manyIndentation p =
   try (debugName "manyIndentation/leaf?" p)
   <|>
-  (debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p))
+  debugName "manyIndentation/deeper; calling someIndentation" (try $ someIndentation p)
 
 manyIndentation' :: Parser a -> Parser a
 manyIndentation' p =

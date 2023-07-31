@@ -81,6 +81,7 @@ data MyToken = Every | Party | TokAll
              | RuleMarker Int Text.Text
              | Expect | ScenarioTok
              | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr | TokSum | TokProduct
+             | Notwithstanding | Despite | SubjectTo
              | Otherwise
              | SOF | EOF
              | GoDeeper | UnDeeper
@@ -254,6 +255,11 @@ toToken "==="       = pure TokEQ
 toToken "IN"        = pure TokIn
 toToken "NOT IN"    = pure TokNotIn
 
+-- rule priority interactions and "defeasibility"
+toToken "SUBJECT TO" = pure SubjectTo
+toToken "DESPITE"    = pure Despite
+toToken "NOTWITHSTANDING" = pure Notwithstanding
+
 toToken "OTHERWISE" = pure Otherwise
 
 toToken "WHERE"     = pure Where
@@ -404,6 +410,8 @@ renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
 renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 
 renderToken Semicolon = ";;"
+
+renderToken SubjectTo = "SUBJECT TO"
 
 renderToken tok = map toUpper (show tok)
 

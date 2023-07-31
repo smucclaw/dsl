@@ -244,6 +244,7 @@ tok2rel = choice
     , RPgte     <$ pToken TokGTE
     , RPelem    <$ pToken TokIn
     , RPnotElem <$ pToken TokNotIn
+    , RPsubjectTo <$ pToken SubjectTo
     , RPTC TBefore <$ pToken Before
     , RPTC TAfter  <$ pToken After
     , RPTC TBy     <$ pToken By

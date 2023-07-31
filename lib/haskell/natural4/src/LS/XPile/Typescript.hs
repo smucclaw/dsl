@@ -179,7 +179,8 @@ asValue _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> col
 asValue _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
 asValue _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
 asValue  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i)
-asValue  l4i  hc2@HC { hHead = RPnary      _rprel rp }         = asValue l4i hc2 {hHead = rp}
+asValue  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
+asValue  l4i  hc2@HC { hHead = RPnary      _rprel rps }         = asValue l4i hc2 {hHead = head rps}
 
 asValuePT :: Interpreted -> [HornClause2] -> [Doc ann]
 asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $

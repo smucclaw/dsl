@@ -234,9 +234,9 @@ tok2rel = choice
     [ RPis      <$ pToken Is
     , RPhas     <$ pToken Has
     , RPeq      <$ pToken TokEQ
-    , RPlt      <$ pToken TokLT
+    , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
     , RPlte     <$ pToken TokLTE
-    , RPgt      <$ pToken TokGT
+    , RPgt      <$ pToken TokGT    -- serves double duty as MaxOflist when in RPnary position
     , RPgte     <$ pToken TokGTE
     , RPelem    <$ pToken TokIn
     , RPnotElem <$ pToken TokNotIn
@@ -299,7 +299,7 @@ aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mts rp else []
     rp2mts (RPParamText    pt)           = [pt2multiterm pt]
     rp2mts (RPConstraint  _mt1 _rpr mt2) = [mt2]
     rp2mts (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
-    rp2mts (RPnary        _rprel rps)    = [rp2mt rps]
+    rp2mts (RPnary        _rprel rps)    = rp2mt <$> rps
 
 
 -- this is probably going to need cleanup
@@ -504,7 +504,8 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     inferRuleName (RPMT mt)              = mt
     inferRuleName (RPConstraint  mt _ _) = mt
     inferRuleName (RPBoolStructR mt _ _) = mt
-    inferRuleName (RPnary     _rprel rp) = inferRuleName rp
+    inferRuleName (RPnary     _rprel []) = [MTT "unnamed RPnary"]
+    inferRuleName (RPnary     _rprel rp) = inferRuleName (head rp)
 
 rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
@@ -955,7 +956,7 @@ getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
             myPrependList pfix nelist = NE.fromList (pfix ++ NE.toList nelist)
         prependToRP ts (RPConstraint  mt1 rpr mt2) = RPConstraint  mt1 rpr ((MTT <$> ts) ++ mt2)
         prependToRP ts (RPBoolStructR mt1 rpr bsr) = RPBoolStructR mt1 rpr (prependToRP ts <$> bsr)
-        prependToRP ts (RPnary        rprel rps)   = RPnary        rprel   (prependToRP ts  $  rps)
+        prependToRP ts (RPnary        rprel rps)   = RPnary        rprel   (prependToRP ts <$> rps)
 
 getBSR _              = Nothing
 

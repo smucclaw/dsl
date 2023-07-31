@@ -218,7 +218,7 @@ instance PrependHead RelationalPredicate where
   prependHead s (RPMT mtes)             = RPMT (MTT s : mtes)
   prependHead s (RPConstraint l rr r)   = RPConstraint (MTT s : l) rr r
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (MTT s : l) rr it
-  prependHead s (RPnary rel rp)         = RPnary rel $ prependHead s rp
+  prependHead s (RPnary rel rps)        = RPnary rel (RPMT [MTT s] : rps)
 
 -- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
 --
@@ -257,7 +257,8 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
-                         | RPnary RPRel RelationalPredicate -- RPnary RPnot (RPnary RPis ["the sky", "blue"]
+                         | RPnary RPRel [RelationalPredicate] -- "NEVER GO FULL LISP!" "we went full Lisp".
+                           -- RPnary RPnot [RPnary RPis [MTT ["the sky"], MTT ["blue"]]
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
@@ -313,7 +314,7 @@ rp2mt (RPParamText    pt)            = pt2multiterm pt
 rp2mt (RPMT           mt)            = mt
 rp2mt (RPConstraint   mt1 rel mt2)   = mt1 ++ [MTT $ rel2txt rel] ++ mt2
 rp2mt (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [MTT $ rel2txt rel] ++ [MTT $ bsr2text bsr] -- [TODO] is there some better way to bsr2mtexpr?
-rp2mt (RPnary         rel rp)        = MTT (rel2txt rel) : rp2mt rp
+rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
 
 -- | pull out all the body leaves of RelationalRredicates as multiterms
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
@@ -338,7 +339,9 @@ rpHead (RPParamText    pt)            = pt2multiterm pt
 rpHead (RPMT           mt)            = mt
 rpHead (RPConstraint   mt1 _rel _mt2) = mt1
 rpHead (RPBoolStructR  mt1 _rel _bsr) = mt1
-rpHead (RPnary         rel rp)        = MTT (rel2op rel) : rpHead rp -- [TODO] this is lossy, why not keep it in relationalpredicate? can we MTR?
+-- [TODO] this is lossy, why not keep it in relationalpredicate? can we MTR?
+rpHead (RPnary         rel [])        = [ MTT (rel2op rel) ]
+rpHead (RPnary         rel (rp:_))    =   MTT (rel2op rel) : rpHead rp
 
 newtype RelName = RN { getName :: RuleName }
 

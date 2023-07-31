@@ -3328,6 +3328,7 @@ height(Person, tall(very)).
 
 | x | IS | max of | foo |
 |   |    | AND    | bar |
+|   |    | AND    | baz |
 
 Here's one way to look at it:
 
@@ -3343,16 +3344,26 @@ see below alternative parse
 :TABLE_EXPORT_FORMAT: orgtbl-to-csv
 :END:
 
+What if we take out the ANDs?
+
 | x | IS | max of | foo |
-|   |    | AND    | bar |
+|   |    |        | bar |
+|   |    |        | baz |
 
 Here's another way to look at it:
 
 #+begin_src haskell
-  RPnary (RPMax (RPMT [MTT ["foo"], MTT ["bar"]]))
+  RPnary (RPgt [RPMT [MTT ["foo"], MTT ["bar"], MTT ["baz"]]])
 #+end_src
 
 I think ([2023-07-31 Mon]) we need to reconceive relationalpredicates to be less special-casey.
+
+The prolog expression would be something like
+
+#+begin_src prolog
+  :- use_module(library(lists)).
+  myPred(X, FooBar) :- min_list(FooBar, X).
+#+end_src
 
 ** Ontology
 :PROPERTIES:

@@ -166,7 +166,7 @@ rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
 rp2grounds _rc _globalrules _r (RPMT mt) = [mt]
 rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
 rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds rc globalrules r (Just bsr)
-rp2grounds  rc  globalrules  r (RPnary     _rprel rp) = rp2grounds rc  globalrules  r rp
+rp2grounds  rc  globalrules  r (RPnary     _rprel rps) = concatMap (rp2grounds rc  globalrules  r) rps
 
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
 ignoreTypicalRP rc globalrules r =

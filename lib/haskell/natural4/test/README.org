@@ -3365,6 +3365,21 @@ The prolog expression would be something like
   myPred(X, FooBar) :- min_list(FooBar, X).
 #+end_src
 
+****** complex versions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpnary-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+What if we take out the ANDs?
+
+| DECIDE | x | IS | > | foo | foo2 |
+|        |   |    |   | bar |      |
+|        |   |    |   | <   | baz  |
+|        |   |    |   |     | quux |
+
+
+
 ** Ontology
 :PROPERTIES:
 :TABLE_EXPORT_FILE: examples/define-1.csv

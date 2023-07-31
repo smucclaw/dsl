@@ -548,8 +548,9 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 
 slRelPred :: SLParser RelationalPredicate
 slRelPred = debugName "slRelPred" $ do
-  choice [ try ( debugName "slRelPred/RPConstraint"  rpConstraint )
-         , try ( debugName "slRelPred/RPBoolStructR" rpBoolStructR )
+  choice [ try ( debugName "slRelPred/RPnary from IS" rpISnary )
+         , try ( debugName "slRelPred/RPConstraint"   rpConstraint )
+         , try ( debugName "slRelPred/RPBoolStructR"  rpBoolStructR )
          , try ( debugName "slRelPred/nested simpleHorn" $ RPMT <$> mustNestHorn id id meansIsWhose pBSR slMultiTerm) -- special case, do the mustNestHorn here and then repeat the nonesthorn below.
 
          , try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
@@ -603,13 +604,31 @@ rpBoolStructR = debugName "rpBoolStructR calling slMultiTerm / IS / pBSR" $
   |>| debugName "rpBoolStructR/pBSR"        pBSR
 -- then we start with entire relationalpredicates, and wrap them into BoolStructR
 
--- | parse a RelationalPredicate RPnary
+-- | special case of arithmetic value assignment
+-- @
+--     DECIDE x IS > foo
+--                   bar
+--                   baz
+-- @
+-- This becomes RPnary RPis [RPMT x, RPnary RPgt [RPMT (MTT ["foo"]), RPMT (MTT ["bar"]), RPMT (MTT ["baz"])]]
+
+rpISnary :: SLParser RelationalPredicate
+rpISnary = debugName "rpISnary" $ do
+  (lhs,_rptok,rhs) <- (,,)
+    $*| debugName "rpISnary/slMultiTerm" slMultiTerm
+    |>| parseIS
+    |*| debugName "rpISnary/rpnary" rpNary
+  return $ RPnary RPis [RPMT lhs, rhs]
+  
+
+-- | parse a RelationalPredicate RPnary.
+-- Note that once we are in the RPnary universe the subexpressions have to be rpNary or rpMT. No more boolstruct.
 rpNary :: SLParser RelationalPredicate
 rpNary = debugName "rpNary calling rprel / rp" $
   RPnary
   $>| debugName "rpNary/tok2rel"     tok2rel
-  |*| debugName "rpNary/some slRelPred"   (some slRelPred)
-
+  |>| debugName "rpNary/some slRelPred"  (some (try (finishSL rpNary) <|> finishSL (liftSL (RPMT <$> pMultiTerm))))
+  -- the finishSL is used to force a rewind to the starting column
 
 -- this used to be in LS/ParamText.hs
 
@@ -913,7 +932,7 @@ meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
 -- | the main parser for a BoolStruct of RelationalPredicates.
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $
-  try (debugName "pBSR/prePostParse" (prePostParse (try ( debugName "slRelPred/RPnary"  (finishSL rpNary) ) <|> pRelPred)))
+  try (debugName "pBSR/prePostParse" (prePostParse pRelPred))
 
 -- | convert all decision logic in a rule to BoolStructR format.
 --   the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.

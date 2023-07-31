@@ -3320,7 +3320,39 @@ alternatively
 height(Person, tall(very)).
 #+end_src
 
+***** RPBoolStructR MultiTerm RPRel BoolStructR
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpbsr-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
+| x | IS | max of | foo |
+|   |    | AND    | bar |
+
+Here's one way to look at it:
+
+#+begin_src haskell
+  RPBoolStructR (MTT ["x"]) RPis (All (Pre "max of") [ Leaf "foo", Leaf "bar" ])
+#+end_src
+
+see below alternative parse
+
+***** RPnary
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpnary-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| x | IS | max of | foo |
+|   |    | AND    | bar |
+
+Here's another way to look at it:
+
+#+begin_src haskell
+  RPnary (RPMax (RPMT [MTT ["foo"], MTT ["bar"]]))
+#+end_src
+
+I think ([2023-07-31 Mon]) we need to reconceive relationalpredicates to be less special-casey.
 
 ** Ontology
 :PROPERTIES:

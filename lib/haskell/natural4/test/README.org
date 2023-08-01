@@ -2930,6 +2930,468 @@ To handle this we may need to augment our types so that each bit of logic can be
 
 |   |   | 42 |   |   | 43 |   | my string |
 
+*** BoolStructR: BoolStructs and RelationalPredicates [2023-07-21 Fri]
+
+Every possible form of RelationalPredicate
+
+including the ones that recurse into BoolStructs
+
+**** RelationalPredicates
+
+***** Prolog Convention
+
+We define ~rp()~ to provide a meta-predicate convention allowing us to escape relational predicates without Prolog interpretation.
+
+For example, the traditional ~foo(bar, baz)~ becomes (all of these are equivalent)
+
+#+begin_src prolog
+rp(foo([], []), bar([], []), baz([], []), Annotations).
+rp(foo([]),     bar([]),     baz([])    , Annotations).
+rp(foo(),       bar(),       baz()      , Annotations).
+rp(foo,         bar,         baz        , Annotations).
+#+end_src
+
+~rp/2~ is the meta form of ~foo()~.
+
+~rp/3~ is the meta form of ~foo(bar)~.
+
+~rp/4~ is the meta form of ~foo(bar, baz)~.
+
+This is kind of like an RDF triple, btw: predicate subject object.
+
+#+begin_src prolog
+  rp(Predicate( [optional subTermP], PredicateAttributes,  Annotations),
+     Subject  ( [optional subTermS],   SubjectAttributes,  Annotations),
+     Object   ( [optional subTermO],    ObjectAttributes,  Annotations),
+                                                           Annotations
+    )
+#+end_src
+
+Generally, to achieve the Prolog version, we rewrite to Predicate(Subject, Object).
+
+In the table below, explicit commas between word terms indicate column divisions.
+
+This syntax allows us to use the reserved words ~any, all, not~ (familiar from AnyAll Boolstructs) to insert conjunctions and disjunctions at any point in a NL tree.
+
+| input                                              | FuncName aka Predicate    | Subject                              | Object                   |
+|----------------------------------------------------+---------------------------+--------------------------------------+--------------------------|
+| single term                                        | singleTerm                |                                      |                          |
+| multiple, terms, get, squashed                     | multipleTermsGetSquashed  |                                      |                          |
+| Person IS married                                  | married                   | Person                               |                          |
+| Person IS married to, bob                          | marriedTo                 | Person                               | bob                      |
+| Person WAS previously, married to, bob             | marriedTo([previously])   | Person                               | bob                      |
+| Person's, ball IS green                            | green                     | ball(Person)                         |                          |
+| Person's, newest, ball IS light, green             | green( [light])           | ball(Person, [newest])               |                          |
+| Person's, newest, ball IS (dark OR light), green   | green( [any(light,dark)]) | ball(Person, [newest])               |                          |
+| Person's, husband IS bob                           | bob                       | husband(Person)                      |                          |
+| Person's, first husband IS bob                     | bob                       | husband(Person, [first]))            |                          |
+| Person's, first AND only, husband IS bob           | bob                       | husband(Person, [all([first,only])]) |                          |
+| Person's hobby OR profession IS financial OR legal | any([financial,legal])    |                                      | any([profession, hobby]) |
+
+
+How do we deal with something like this:
+
+Person's hobby OR employment IS in the, financial OR legal, professions
+
+#+begin_src prolog
+  rp(any:[hobby(Person), employment(Person)],
+     bsr{pre:"in the", post:"professions", any:[financial, legal]})
+#+end_src
+
+We want to expand that, under the hood, to
+
+#+begin_src prolog
+  hobby(     Person, H), ( inTheProfession(financial, H) ; inTheProfession(legal, H ) ).
+  employment(Person, E), ( inTheProfession(financial, E) ; inTheProfession(legal, E ) ).
+#+end_src
+
+
+~any, all, not~ are reserved words
+
+class Person {
+  ball,
+  employer :: (HasAddress, Bankruptable) => employer,
+  husband,
+}
+
+
+
+We can dereference multiple layers:
+
+| input                                                      | Relation    | Subject                                         | SubjectAttrs | Object | ObjectAttrs |
+|------------------------------------------------------------+-------------+-------------------------------------------------+--------------+--------+-------------|
+| Person IS old                                              | old         | Person                                          | []           |        |             |
+| Person's employer IS bankrupt                              | bankrupt    | employer(Person)                                | []           |        |             |
+| Person's current employer's mailing address IS residential | residential | address(employer(Person, [current]), [mailing]) | []           |        |             |
+| Person's employer's address's city IS paris                | paris       | city(address(employer(Person)))                 | []           |        |             |
+
+The meta-interpreter is then responsible for destructuring the nested properties accordingly:
+
+
+We leave to Protege the kinds of ontological inferences like
+#+begin_example
+Alice was previously married to Bob & (and there are no other husbands since Bob) => Alice's previous husband is Bob
+#+end_example
+
+****** Annotations
+
+Annotations are used to decorate an ~rp~ predicate. Each element in the list of annotations is a Swipl dictionary, or the equivalent thereof in whatever dialect of Prolog is under consideration.
+
+The following annotations are known:
+- scope
+  - section
+    - ~doc~ literal
+    - X.Y.Z
+- srcref
+  - filename
+  - tabname
+  - line
+  - columnStart
+  - columnEnd
+- orig
+  - text
+
+Each annotation may repeat, e.g. the scopes in
+
+#+begin_src prolog
+  [ scope{ section:doc   },
+    scope{ section:"1.1" },
+    srcref{ filename: "legalSS",
+            tabname:  "mustsing-1",
+            line: 12,
+            columnStart: 4,
+            columnEnd: 8
+          }
+  ]
+#+end_src
+
+In a non-Swipl dialect of Prolog, dictionaries may be represented as regular Prolog terms, e.g.:
+
+#+begin_src prolog
+  [ scope(section(doc)),
+    scope(section("1.1")),
+    srcref(filename("legalSS"),
+            tabname("mustsing-1"),
+            line(12),
+            columnStart(4),
+            columnEnd(8)
+          )
+  ]
+#+end_src
+
+***** RPParamText 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpparamtext-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | cloudless | blue | sky |
+
+#+begin_src prolog
+cloudlessBlueSky().
+#+end_src
+
+***** RPParamText 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpparamtext-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | cloudless | blue    | sky |
+|    | with      | rainbow |     |
+
+#+begin_src prolog
+cloudlessBlueSky(with(rainbow)).
+#+end_src
+
+
+***** RPParamText 3
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpparamtext-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | cloudless | blue    | sky |     |
+|    | with      | rainbow | and | sun |
+|    | without   | moon    |     |     |
+
+#+begin_src prolog
+cloudlessBlueSky(with(rainbow, and, sun), without(moon)).
+#+end_src
+
+
+***** RPMT MultiTerm 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpmt-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+The same one-liner, but parsed as an RPMT
+
+| IF | cloudless | blue    | sky |     |
+
+#+begin_src prolog
+cloudlessBlueSky().
+#+end_src
+
+***** RPMT MultiTerm with number
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpmt-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+MultiTerms can be strings or numbers
+
+| IF | day | 7 |
+
+#+begin_src prolog
+day7().
+#+end_src
+
+
+***** RPMT MultiTerm with only number
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpmt-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+this is an error and should not parse
+
+| IF | 7 |
+
+#+begin_src prolog
+% EXPECT ERROR
+#+end_src
+
+***** RPConstraint MultiTerm RPRel MultiTerm
+
+****** RPConstraint MultiTerm/1 IS MultiTerm/1, 1 (lc lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-1-1-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | object | IS | property |
+
+#+begin_src prolog
+property(object).
+#+end_src
+
+****** RPConstraint MultiTerm/1 IS MultiTerm/1, 2 (lc lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-1-1-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | ball | IS | green |
+
+#+begin_src prolog
+green(ball).
+#+end_src
+
+****** RPConstraint MultiTerm/1 IS MultiTerm/1, 3 (uc lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-1-1-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Person | IS | married |
+
+#+begin_src prolog
+married(Person).
+#+end_src
+
+****** RPConstraint MultiTerm/1 IS MultiTerm/1, 4 (lc uc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-1-1-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | suspect | IS | Person |
+
+should we just prohibit this form?
+
+#+begin_src prolog
+suspect(Person).
+#+end_src
+
+
+****** RPConstraint MultiTerm/2 IS MultiTerm/1, 1 (uc lc, lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-2-1-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Alice's | ball | IS | green |
+
+#+begin_src prolog
+ball(Alice, [], Colour), Colour == green.
+#+end_src
+
+****** RPConstraint MultiTerm/2 IS MultiTerm/1, 2 (uc lc, lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-2-1-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Person | citizenship | IS | singapore |
+
+#+begin_src prolog
+citizenship(Person, [], Out), Out == singapore.
+#+end_src
+
+alternatively
+
+#+begin_src prolog
+citizenship(Person, [], Singapore).
+#+end_src
+
+******* Alternative Forms
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-2-1-2-b.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Person's | citizenship | IS | Singapore |
+
+****** RPConstraint MultiTerm/3 IS MultiTerm/1, 1 (uc lc lc, lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-3-1-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Alice's | green | ball | IS | round |
+
+#+begin_src prolog
+ball(Alice, [green], Out), Out == round.
+#+end_src
+
+****** RPConstraint MultiTerm/4 IS MultiTerm/1, 1 (uc lc lc, lc, lc)
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-3-1-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Alice's | new | green | ball | IS | round |
+
+#+begin_src prolog
+ball(Alice, [new, green], round).
+#+end_src
+
+***** RPConstraint MultiTerm/1 IS MultiTerm/2, 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-3.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | foo | IS | bar | baz |
+
+#+begin_src prolog
+baz(foo, baz).
+#+end_src
+
+****** RPConstraint MultiTerm/1 IS MultiTerm/2, 2
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | bob | IS | very | tall |
+
+#+begin_src prolog
+tall(bob, very).
+#+end_src
+
+****** RPConstraint MultiTerm/2 IS MultiTerm/2, 1
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpconstraint-4.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| IF | Person | height | IS | very | tall |
+
+#+begin_src prolog
+height(Person, Value), Value == tall(very).
+#+end_src
+
+alternatively
+
+#+begin_src prolog
+height(Person, tall(very)).
+#+end_src
+
+***** RPBoolStructR MultiTerm RPRel BoolStructR
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpbsr-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+| x | IS | max of | foo |
+|   |    | AND    | bar |
+|   |    | AND    | baz |
+
+Here's one way to look at it:
+
+#+begin_src haskell
+  RPBoolStructR (MTT ["x"]) RPis (All (Pre "max of") [ Leaf "foo", Leaf "bar" ])
+#+end_src
+
+see below alternative parse
+
+***** RPnary
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpnary-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+What if we take out the ANDs?
+
+| DECIDE | x | IS | > | foo |
+|        |   |    |   | bar |
+|        |   |    |   | baz |
+
+Here's another way to look at it:
+
+#+begin_src haskell
+  RPnary (RPgt [RPMT [MTT ["foo"], MTT ["bar"], MTT ["baz"]]])
+#+end_src
+
+I think ([2023-07-31 Mon]) we need to reconceive relationalpredicates to be less special-casey.
+
+The prolog expression would be something like
+
+#+begin_src prolog
+  :- use_module(library(lists)).
+  myPred(X, FooBar) :- min_list(FooBar, X).
+#+end_src
+
+****** complex versions
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/bsr-rpnary-2.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+What if we take out the ANDs?
+
+| DECIDE | x | IS | > | foo | foo2 |
+|        |   |    |   | bar |      |
+|        |   |    |   | <   | baz  |
+|        |   |    |   |     | quux |
+
+***** support for WHERE in hornlike rules
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/hornlike-where-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+
+What if we take out the ANDs?
+
+| DECIDE | x    | IS | >   | foo    | foo2 |
+|        |      |    |     | bar    |      |
+|        |      |    |     | <      | baz  |
+|        |      |    |     |        | quux |
+| WHERE  | poop | IS | not | coming | out  |
+
 ** Ontology
 :PROPERTIES:
 :TABLE_EXPORT_FILE: examples/define-1.csv

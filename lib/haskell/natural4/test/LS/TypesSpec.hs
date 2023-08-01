@@ -30,7 +30,7 @@ spec = do
       prependHead "head" rp `shouldBe` RPBoolStructR (MTT <$> ["head", "sky"]) RPis (Leaf $ mkRpmt ["sky", "is", "blue"])
     xit "PrependHead RPBoolStructR" $ do
       let
-        rp = RPnary RPnot (mkRpmt ["sky", "is", "blue"])
+        rp = RPnary RPnot [mkRpmt ["sky", "is", "blue"]]
       prependHead "head" rp `shouldBe` RPBoolStructR (MTT <$> ["head", "sky"]) RPis (Leaf $ mkRpmt ["sky", "is", "blue"])
 
   describe "rp2mt" $ do
@@ -54,7 +54,7 @@ spec = do
       rp2mt rp `shouldBe` (MTT <$> ["sky","IS","sky is blue"])
     it "rp2mt RPBoolStructR" $ do
       let
-        rp = RPnary RPnot (mkRpmt ["sky", "is", "blue"])
+        rp = RPnary RPnot [mkRpmt ["sky", "is", "blue"]]
       rp2mt rp `shouldBe` (MTT <$>["NOT", "sky", "is", "blue"])
 
   describe "rpHead" $ do
@@ -78,7 +78,7 @@ spec = do
       rpHead rp `shouldBe` (MTT <$> ["sky"])
     xit "rpHead RPBoolStructR" $ do
       let
-        rp = RPnary RPnot (mkRpmt ["sky", "is", "blue"])
+        rp = RPnary RPnot [mkRpmt ["sky", "is", "blue"]]
       rpHead rp `shouldBe` (MTT <$> ["relNot", "sky", "is", "blue"])
 
   describe "pt2text" $ do

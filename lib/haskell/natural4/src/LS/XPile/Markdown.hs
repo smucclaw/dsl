@@ -56,7 +56,7 @@ rpFilter :: RelationalPredicate -> MultiTerm
 rpFilter (RPParamText pt) = pt2multiterm pt
 rpFilter (RPConstraint mt1 rel mt2) = mt1 ++ mt2
 rpFilter (RPBoolStructR mt1 rel bsr) = mt1++ bs2mt bsr
-rpFilter (RPnary rel rp) = rpFilter rp
+rpFilter (RPnary rel rps) = concatMap rpFilter rps
 rpFilter (RPMT mt) = mt
 
 rl2bs :: [Rule] -> [BoolStructR]

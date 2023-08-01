@@ -80,7 +80,8 @@ data MyToken = Every | Party | TokAll
              | Empty | EOL
              | RuleMarker Int Text.Text
              | Expect | ScenarioTok
-             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ
+             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr | TokSum | TokProduct
+             | Notwithstanding | Despite | SubjectTo
              | Otherwise
              | SOF | EOF
              | GoDeeper | UnDeeper
@@ -240,15 +241,26 @@ toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
+toToken "MIN"       = pure TokLT;      toToken "MIN OF"    = pure TokLT
 toToken "=<"        = pure TokLTE
 toToken "<="        = pure TokLTE
 toToken ">"         = pure TokGT
+toToken "MAX"       = pure TokGT;      toToken "MAX OF"    = pure TokGT
 toToken ">="        = pure TokGTE
 toToken "="         = pure TokEQ
+toToken "&&"        = pure TokAnd
+toToken "||"        = pure TokOr
+toToken "SUM"       = pure TokSum;     toToken "SUM OF"     = pure TokSum
+toToken "PRODUCT"   = pure TokProduct; toToken "PRODUCT OF" = pure TokProduct
 toToken "=="        = pure TokEQ
 toToken "==="       = pure TokEQ
 toToken "IN"        = pure TokIn
 toToken "NOT IN"    = pure TokNotIn
+
+-- rule priority interactions and "defeasibility"
+toToken "SUBJECT TO" = pure SubjectTo
+toToken "DESPITE"    = pure Despite
+toToken "NOTWITHSTANDING" = pure Notwithstanding
 
 toToken "OTHERWISE" = pure Otherwise
 
@@ -376,6 +388,8 @@ renderToken :: MyToken -> String
 renderToken ScenarioTok = "SCENARIO"
 renderToken TokAll = "ALL"
 renderToken MPNot = "NOT"
+renderToken TokAnd = "&&"
+renderToken TokOr  = "||"
 renderToken TokLT = "<"
 renderToken TokLTE = "<="
 renderToken TokGT = ">"
@@ -398,6 +412,10 @@ renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
 renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 
 renderToken Semicolon = ";;"
+
+renderToken SubjectTo = "SUBJECT TO"
+renderToken TokSum = "SUM"
+renderToken TokProduct = "PRODUCT"
 
 renderToken tok = map toUpper (show tok)
 

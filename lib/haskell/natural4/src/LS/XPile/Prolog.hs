@@ -165,7 +165,7 @@ rp2goal (RPMT [x])           = pure $ varmt x
 rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack (mtexpr2text x)) (varmt <$> xs)
 rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct (Text.unpack $ mt2text lhs_) <$> [bsr2struct bsr]
 rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (varmt <$> mt1) ++ (varmt <$> mt2)
-rp2goal (RPnary      rprel rp) = pure $ Struct (rel2f rprel) $ rp2goal rp
+rp2goal (RPnary      rprel rps) = pure $ Struct (rel2f rprel) (concatMap rp2goal rps)
 
 rel2f :: RPRel -> String
 rel2f = Text.unpack . rel2txt

@@ -241,15 +241,17 @@ toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
+toToken "MIN"       = pure TokLT;      toToken "MIN OF"    = pure TokLT
 toToken "=<"        = pure TokLTE
 toToken "<="        = pure TokLTE
 toToken ">"         = pure TokGT
+toToken "MAX"       = pure TokGT;      toToken "MAX OF"    = pure TokGT
 toToken ">="        = pure TokGTE
 toToken "="         = pure TokEQ
 toToken "&&"        = pure TokAnd
 toToken "||"        = pure TokOr
-toToken "SUM"       = pure TokSum
-toToken "PRODUCT"   = pure TokProduct
+toToken "SUM"       = pure TokSum;     toToken "SUM OF"     = pure TokSum
+toToken "PRODUCT"   = pure TokProduct; toToken "PRODUCT OF" = pure TokProduct
 toToken "=="        = pure TokEQ
 toToken "==="       = pure TokEQ
 toToken "IN"        = pure TokIn

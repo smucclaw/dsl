@@ -211,7 +211,7 @@ import Control.Monad.Writer.Lazy
 import Data.Foldable qualified as DF
 import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, fromMaybe, mapMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe, maybeToList, isNothing)
 import Data.Semigroup (sconcat)
 import Data.Text qualified as T
 import LS.Parser
@@ -441,7 +441,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
   let dKeyword = if needDkeyword
                  then Just <$> choice [ pToken Decide ]
                  else Nothing <$ pure ()
-  let permutepart = debugName "pHornlike / permute" $ permute $                         (,,,,)
+  let permutepart = debugName "pHornlike / permute" $ permute $                         (,,,,,)
         <$$> -- (try ambitious <|> -- howerever, the ambitious parser is needed to handle "WHERE  foo IS bar" inserting a hornlike after a regulative.
                someStructure dKeyword -- we are trying to keep things more regular. to eliminate ambitious we need to add the unless/and/or machinery to someStructure, unless the pBSR is equal to it
              -- )
@@ -449,8 +449,11 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
         <|?> (Nothing, Just . snd <$> givethLimb)
         <|?> (Nothing, Just . snd <$> uponLimb)
         <|?> (Nothing, whenCase)
+        <|?> ([], mkWhere <$> someStructure (Just <$> pToken wKeyword))
         -- [TODO] refactor the rule-label logic to allow outdentation of rule label line relative to main part of the rule
-  ((keyword, name, clauses), given, giveth, upon, topwhen) <- permutepart
+  ( (keyword, name, clauses)
+    , given, giveth, upon, topwhen
+    , maybeWhere ) <- permutepart
   return $ defaultHorn { name = name
                        , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                        , keyword = fromMaybe Means keyword
@@ -458,8 +461,16 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
                        , giveth
                        , clauses = addWhen topwhen clauses
                        , upon = upon, rlabel = rlabel
+                       , wwhere = maybeWhere
+                       -- [TODO] attach srcrefs to the inner WHERE bindings; test for allowing multiple WHERE statements
                        }
   where
+    wKeyword = Where
+    mkWhere (whereKeyword, whereName, whereClauses) = 
+      [ defaultHorn { name    = whereName
+                    , keyword = fromMaybe wKeyword whereKeyword
+                    , clauses = whereClauses } ]
+
     addWhen :: Maybe BoolStructR -> [HornClause2] -> [HornClause2]
     addWhen mbsr hcs = [ -- trace ("addWhen running, appending to hBody = " <> show (hBody hc2)) $
                          -- trace ("addWhen running, appending the mbsr " <> show mbsr) $
@@ -494,14 +505,15 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     --   WHEN Z IS Q
 
     --        X IS Y WHEN Z IS Q -- samelinewhen
-    someStructure dKeyword = debugName "pHornlike/someStructure" $ do
-      keyword <- dKeyword -- usually testing for pToken Define or Decide or some such, but sometimes it's not needed, so dKeyword is a Nothing parser
-      relwhens <- (if keyword == Nothing then manyIndentation else someIndentation) $ sameDepth rpSameNextLineWhen
-      return (keyword
-             , inferRuleName (fst . head $ relwhens)
-             , [HC relPred whenpart
-               | (relPred, whenpart) <- relwhens ])
-
+    someStructure :: Parser (Maybe MyToken) -> Parser (Maybe MyToken, RuleName, [HornClause BoolStructR])
+    someStructure dKeyword = do
+      keyword  <- dKeyword -- usually testing for pToken Define or Decide or some such, but sometimes it's not needed, so dKeyword is a Nothing parser
+      debugName ("pHornlike/someStructure(" ++ show keyword ++ ")" ) $ do
+        relwhens <- (if isNothing keyword then manyIndentation else someIndentation) $ sameDepth rpSameNextLineWhen
+        return (keyword
+               , inferRuleName (fst . head $ relwhens)
+               , [HC relPred whenpart
+                 | (relPred, whenpart) <- relwhens ])
 
     givenLimb  = debugName "pHornlike/givenLimb"  $ preambleParamText [Given]
     givethLimb = debugName "pHornlike/givethLimb" $ preambleParamText [Giveth]

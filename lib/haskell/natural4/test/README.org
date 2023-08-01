@@ -3378,7 +3378,19 @@ What if we take out the ANDs?
 |        |   |    |   | <   | baz  |
 |        |   |    |   |     | quux |
 
+***** support for WHERE in hornlike rules
+:PROPERTIES:
+:TABLE_EXPORT_FILE: examples/hornlike-where-1.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
 
+What if we take out the ANDs?
+
+| DECIDE | x    | IS | >   | foo    | foo2 |
+|        |      |    |     | bar    |      |
+|        |      |    |     | <      | baz  |
+|        |      |    |     |        | quux |
+| WHERE  | poop | IS | not | coming | out  |
 
 ** Ontology
 :PROPERTIES:

@@ -109,7 +109,7 @@ data Rule = Regulative
             , clauses  :: [HornClause2]      -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
             , rlabel   :: Maybe RuleLabel
             , lsource  :: Maybe Text.Text
--- [TODO]   , wwhere   :: [Rule]
+            , wwhere   :: [Rule]
             , srcref   :: Maybe SrcRef
             , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
             , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
@@ -302,6 +302,7 @@ defaultHorn = Hornlike
   , giveth = Nothing
   , upon  = Nothing
   , clauses = []
+  , wwhere = []
   , rlabel = Nothing
   , lsource = Nothing
   , srcref = dummyRef

@@ -414,6 +414,8 @@ renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 renderToken Semicolon = ";;"
 
 renderToken SubjectTo = "SUBJECT TO"
+renderToken TokSum = "SUM"
+renderToken TokProduct = "PRODUCT"
 
 renderToken tok = map toUpper (show tok)
 

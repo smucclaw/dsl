@@ -453,7 +453,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
         -- [TODO] refactor the rule-label logic to allow outdentation of rule label line relative to main part of the rule
   ( (keyword, name, clauses)
     , given, giveth, upon, topwhen
-    , maybeWhere ) <- permutepart
+    , wwhere ) <- permutepart
   return $ defaultHorn { name = name
                        , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
                        , keyword = fromMaybe Means keyword
@@ -461,7 +461,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
                        , giveth
                        , clauses = addWhen topwhen clauses
                        , upon = upon, rlabel = rlabel
-                       , wwhere = maybeWhere
+                       , wwhere = wwhere
                        -- [TODO] attach srcrefs to the inner WHERE bindings; test for allowing multiple WHERE statements
                        }
   where

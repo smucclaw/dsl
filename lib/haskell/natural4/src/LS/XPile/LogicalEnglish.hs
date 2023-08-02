@@ -5,7 +5,7 @@
 
 module LS.XPile.LogicalEnglish (toLE) where
 
-import LS.Interpreter       ( qaHornsR, QAhorn(..) )
+import LS.Interpreter       ( qaHornsR, QAHorn(..) )
 import LS.PrettyPrinter     ( myrender, (</>), (<//>) )
 import LS.Rule              ( Interpreted(..) )
 import LS.XPile.Logging     ( XPileLogW, XPileLogS )

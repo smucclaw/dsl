@@ -33,7 +33,7 @@ import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
 import Flow ((|>))
-import LS.Interpreter (getMarkings, qaHornsT)
+import LS.Interpreter (getMarkings, qaHornsT, QAHorn(..))
 import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
   ( NLGEnv (..),
@@ -105,7 +105,7 @@ namesAndStruct l4i rl = do
   mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
   mutter "calling qaHornsT against l4i"
   mutterdhsf 3 "we know qaHornsT returns" pShowNoColorS (qaHornsT l4i)
-  mutterRuleNameAndBS [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
+  mutterRuleNameAndBS [ (names, [bs]) | QAHorn names qahead bs <- qaHornsT l4i]
 
 -- | for each rule, construct the questions for that rule;
 -- and then jam them together with all the names for all the rules???
@@ -359,10 +359,10 @@ qaHornsByLang rules langEnv = do
   let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
       subject = listToMaybe [ parseSubj langEnv person | Regulative{subj = person} <- rules]
       qaHT = textViaQaHorns langEnv alias subject
-      qaHornNames = foldMap fst qaHT
+      qaHornNames = foldMap qaRulename qaHT
       -- qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
       d = 4
-  mutterdhsf d "qaHT fsts" show (fst <$> qaHT)
+  mutterdhsf d "qaHT fsts" show (qaRulename <$> qaHT)
   mutterdhsf d "all qaHT" pShowNoColorS qaHT
   mutterdhsf d "qaHornNames" show qaHornNames
   mutterd d "traversing ruleQuestionsNamed"
@@ -395,7 +395,7 @@ qaHornsByLang rules langEnv = do
   let qaHornsWithQuestions = concatMap catMaybes
         [ [ if Map.member n rqMap then Just (names, rqMap Map.! n) else Nothing
           | n <- names ]
-        | names <- fst <$> qaHT ]
+        | names <- qaRulename <$> qaHT ]
 
   mutterdhsf d "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
 

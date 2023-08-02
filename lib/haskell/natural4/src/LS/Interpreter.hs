@@ -31,6 +31,7 @@ import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Tree
 import Data.Tuple (swap)
+import Data.Tuple.Extra (uncurry3, third3)
 import Debug.Trace
 import LS.XPile.Logging (mutterd, mutterdhsf
                         , XPileLogE, XPileLog
@@ -68,26 +69,27 @@ l4interpret iopts rs =
 --   * visualization of the decision logic
 --
 
-data QAhorn a = QAHorn
+-- * Horn clauses expanded and formatted for use in Q&A web interview.
+-- where `qaHornsT` returns a `BoolStructT`, `qaHornsR` returns a `BoolStructR`.
+
+data QAHorn a = QAHorn
   { qaRulename :: [RuleName]
   , qaHead     :: RelationalPredicate
   , qaBody     :: a }
   deriving (Eq, Show)
 
-qaHornsT :: Interpreted -> [QAhorn BoolStructT]
-qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
 
--- | where `qaHornsT` returns a `BoolStructT`, `qaHornsR` returns a `BoolStructR`.
---
--- The `T` version is used for applications that lie closer to the end-user's eyeballs.
---
--- The `R` version is used when the internal structure of the RelationalPredicates is still needed.
+-- | The `T` version is used for applications that lie closer to the end-user's eyeballs.
+qaHornsT :: Interpreted -> [QAHorn BoolStructT]
+qaHornsT l4i = (\qa -> qa { qaBody = fmap rp2text (qaBody qa) }) <$> qaHornsR l4i
 
-qaHornsR :: Interpreted -> [QAhorn BoolStructR]
+-- | The `R` version is used when the internal structure of the RelationalPredicates is still needed.
+
+qaHornsR :: Interpreted -> [QAHorn BoolStructR]
 qaHornsR l4i =
-     [ ( ruleLabelName <$> uniqrs
-       , RPMT (MTT ["head of horn clause, todo"])
-       , expanded)
+     [ uncurry3 QAHorn (ruleLabelName <$> uniqrs
+                     , RPMT ([MTT "head of horn clause, [TODO]"])
+                     , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
                            exposedRoots l4i      -- EXPOSED
      , not $ null grpval

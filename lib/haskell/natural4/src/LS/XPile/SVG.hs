@@ -22,7 +22,7 @@ asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.HashMap RuleName (SVGElemen
 asAAsvg aavc l4i _rs =
   Map.fromList [ ( concat names
                  , (svgtiny, svgfull, bs, qtree) )
-               | (names, bs) <- qaHornsT l4i
+               | QAHorn names qahead bs <- qaHornsT l4i
                , isInteresting bs
                , let qtree   = softnormal (getMarkings l4i) bs
                      svgtiny = makeSvg $ q2svg' aavc { cscale = Tiny } qtree

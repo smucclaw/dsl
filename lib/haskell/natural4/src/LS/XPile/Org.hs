@@ -19,7 +19,7 @@ import LS.Interpreter
       ruleDecisionGraph,
       expandRule,
       classGraph,
-      QAhorn(..),
+      QAHorn(..),
     )
 import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
@@ -120,8 +120,8 @@ musings l4i =
                    , not $ null uniqrs
                    ]
 
-           , "** qaHornsR" , vvsep [ "***" <+> viaShow (concat names) </> srchs hornhead </> srchs boolstruct | (names, hornhead, boolstruct) <- qaHornsR l4i ]
-           , "** qaHornsT" , vvsep [ "***" <+> viaShow (concat names) </> srchs hornhead </> srchs boolstruct | (names, hornhead, boolstruct) <- qaHornsT l4i ]
+           , "** qaHornsR" , vvsep [ "***" <+> viaShow (concat names) </> srchs hornhead </> srchs boolstruct | QAHorn names hornhead boolstruct <- qaHornsR l4i ]
+           , "** qaHornsT" , vvsep [ "***" <+> viaShow (concat names) </> srchs hornhead </> srchs boolstruct | QAHorn names hornhead boolstruct <- qaHornsT l4i ]
            , "** expandedRules"
            , if expandedRules == nub rs
              then "(ahem, they're actually the same as unexpanded, not showing)"

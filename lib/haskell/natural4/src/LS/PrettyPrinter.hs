@@ -16,12 +16,48 @@ import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
-import Debug.Trace
-import LS.Rule
-import LS.Types
-import Prettyprinter
-import Prettyprinter.Render.Text
+import Debug.Trace ( trace )
+import LS.Rule ( Interpreted(scopetable, classtable) )
 import Text.Pretty.Simple ( pShowNoColor )
+import LS.Types
+    ( MTExpr(..),
+      rel2txt,
+      MultiTerm,
+      RPRel(RPhas, RPis),
+      TypedMulti,
+      TypeSig(..),
+      ParamText,
+      RelationalPredicate(..),
+      ClsTab(CT),
+      ParamType(TList1, TOne, TOptional, TList0),
+      mtexpr2text,
+      pt2text,
+      rel2op )
+import Prettyprinter
+    ( Doc,
+      Pretty(pretty),
+      (<+>),
+      hsep,
+      viaShow,
+      vsep,
+      defaultLayoutOptions,
+      encloseSep,
+      hcat,
+      layoutPretty,
+      line,
+      nest,
+      LayoutOptions(layoutPageWidth),
+      PageWidth(Unbounded),
+      parens,
+      colon,
+      comma,
+      brackets,
+      dquotes,
+      equals,
+      lbrace,
+      rbrace,
+      squotes )
+import Prettyprinter.Render.Text ( renderStrict )
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -313,6 +349,12 @@ prettySimpleType _       _prty (InlineEnum pt1       s1) = "# InlineEnum unsuppo
 prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
 prettyMaybeType _ _inner Nothing   = ""
 prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
+
+
+srchs :: (Show a) => a -> Doc ann
+srchs = src "haskell" . pretty . pShowNoColor
+src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
+example  x = vsep [ "#+begin_example", x, "#+end_example" ]
 
 
 -- | comment a block of lines

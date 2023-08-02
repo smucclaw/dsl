@@ -26,8 +26,7 @@ import LS.Interpreter
 
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
-    ( Interpreted(classtable, scopetable),
-      Rule(..),
+    ( Interpreted(classtable, scopetable, origrules),
       hasGiven,
       hasClauses,
       ruleLabelName,

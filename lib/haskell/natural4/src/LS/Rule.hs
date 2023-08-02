@@ -12,6 +12,7 @@ import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Hashable (Hashable)
+import Data.Maybe (listToMaybe)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -344,6 +345,10 @@ hasGiveth _          = False
 hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
+
+getDecisionHeadRP :: Rule -> Maybe RelationalPredicate
+getDecisionHeadRP Hornlike{..} = listToMaybe [ hhead | HC hhead _hbody <- clauses ]
+getDecisionHeadRP _ = Nothing
 
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead

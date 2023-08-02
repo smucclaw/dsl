@@ -88,12 +88,15 @@ qaHornsT l4i = (\qa -> qa { qaBody = fmap rp2text (qaBody qa) }) <$> qaHornsR l4
 qaHornsR :: Interpreted -> [QAHorn BoolStructR]
 qaHornsR l4i =
      [ uncurry3 QAHorn (ruleLabelName <$> uniqrs
-                     , RPMT ([MTT "head of horn clause, [TODO]"])
-                     , expanded)
+                       , fromJust headRP
+                       , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
                            exposedRoots l4i      -- EXPOSED
      , not $ null grpval
-     , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
+     , let r = DL.head uniqrs
+           headRP = getDecisionHeadRP r
+     , isJust headRP
+     , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR r)
      ]
 
 -- | interpret the parsed rules and construct the symbol tables

@@ -68,7 +68,13 @@ l4interpret iopts rs =
 --   * visualization of the decision logic
 --
 
-qaHornsT :: Interpreted -> [([RuleName], BoolStructT)]
+data QAhorn a = QAHorn
+  { qaRulename :: [RuleName]
+  , qaHead     :: RelationalPredicate
+  , qaBody     :: a }
+  deriving (Eq, Show)
+
+qaHornsT :: Interpreted -> [QAhorn BoolStructT]
 qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
 
 -- | where `qaHornsT` returns a `BoolStructT`, `qaHornsR` returns a `BoolStructR`.
@@ -77,9 +83,10 @@ qaHornsT l4i = (fmap . fmap) rp2text <$> qaHornsR l4i
 --
 -- The `R` version is used when the internal structure of the RelationalPredicates is still needed.
 
-qaHornsR :: Interpreted -> [([RuleName], BoolStructR)]
+qaHornsR :: Interpreted -> [QAhorn BoolStructR]
 qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
+       , RPMT (MTT ["head of horn clause, todo"])
        , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
                            exposedRoots l4i      -- EXPOSED

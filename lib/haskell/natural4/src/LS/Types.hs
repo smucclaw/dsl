@@ -193,6 +193,7 @@ data HornClause a = HC
 
 instance Hashable a => Hashable (HornClause a)
 
+-- [TODO] we can rename this back to HornClause instead of HornClause2, this was just the second attempt at making it work.
 type HornClause2 = HornClause BoolStructR
 
 data IsPredicate = IP ParamText ParamText

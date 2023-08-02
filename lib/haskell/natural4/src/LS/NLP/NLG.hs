@@ -20,7 +20,9 @@ import LS.Interpreter ( expandBSR
                       , expandClause
                       , expandClauses
                       , expandRP
-                      , qaHornsR )
+                      , qaHornsR
+                      , QAhorn(..)
+                      )
 import LS.NLP.NL4
 import LS.NLP.NL4Transformations
   ( BoolStructCond,
@@ -387,8 +389,9 @@ ruleQnTrees env alias rule = do
 
 ----------------------------------------------------------------------
 
-textViaQaHorns :: NLGEnv -> Alias -> Maybe GSubj -> [([RuleName],  BoolStructT)]
-textViaQaHorns env alias subj = [ (rn, linBStext env $ mkGFtext env alias (referSubj <$> subj) bsr) | (rn, bsr) <- qaHornsR (interpreted env)]
+textViaQaHorns :: NLGEnv -> Alias -> Maybe GSubj -> [QAhorn BoolStructT]
+textViaQaHorns env alias subj = [ (rn, rp, linBStext env $ mkGFtext env alias (referSubj <$> subj) bsr)
+                                | (rn, rp, bsr) <- qaHornsR (interpreted env)]
 
 mkGFtext :: NLGEnv -> Alias -> Maybe GSubj -> BoolStructR -> BoolStructGText
 mkGFtext env alias subj bsr = case (whoParses, condParses) of

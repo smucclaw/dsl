@@ -55,6 +55,7 @@ import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
+import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (sfl4ToProlog)
@@ -193,6 +194,7 @@ main = do
       (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i)
+      (toLEFN ,     (asLE, asLEerr))          = (workuuid <> "/" <> "le",       toLE l4i defaultReaderEnv)
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
@@ -232,6 +234,7 @@ main = do
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (null $ SFL4.only opts)) $ do
 
+    when (SFL4.tole      opts) $ mywritefile2 True toLEFN      iso8601 "le"  asLE asLEerr
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     when (      SFL4.tocorel4  opts) $ mywritefile2 True tocorel4FN   iso8601 "l4"   (commentIfError "--" asCoreL4) asCoreL4Err

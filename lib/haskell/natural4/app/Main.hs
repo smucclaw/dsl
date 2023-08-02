@@ -192,7 +192,7 @@ main = do
 
       (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
+      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i)
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines

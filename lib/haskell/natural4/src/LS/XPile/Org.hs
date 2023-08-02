@@ -22,7 +22,8 @@ import LS.Interpreter
 import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
-    ( Interpreted(classtable, scopetable),
+
+    ( Interpreted(classtable, scopetable, origrules),
       hasGiven,
       hasClauses,
       ruleLabelName,
@@ -42,8 +43,8 @@ import Data.Text qualified as Text
 
 
 -- | org-mode output
-toOrg :: Interpreted -> [Rule] -> String
-toOrg l4i rs = Text.unpack (myrender (musings l4i rs))
+toOrg :: Interpreted -> String
+toOrg l4i = Text.unpack (myrender (musings l4i))
 
 -- | Talk a little bit about what we've interpreted.
 -- The output of this function gets saved to the workdir's @org/@ directory
@@ -54,9 +55,10 @@ toOrg l4i rs = Text.unpack (myrender (musings l4i rs))
 -- When you view the @LATEST.org@ output file, org-mode is recommended.
 -- This comes naturally in Emacs. In VS Code you will need to install plugins.
 
-musings :: Interpreted -> [Rule] -> Doc ann
-musings l4i rs =
+musings :: Interpreted -> Doc ann
+musings l4i =
   let cg = classGraph (classtable l4i) []
+      rs = origrules l4i
       expandedRules = nub $ concatMap (expandRule rs) rs
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"

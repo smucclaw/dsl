@@ -16,11 +16,47 @@ import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
-import Debug.Trace
-import LS.Rule
+import Debug.Trace ( trace )
+import LS.Rule ( Interpreted(scopetable, classtable) )
 import LS.Types
+    ( MTExpr(..),
+      rel2txt,
+      MultiTerm,
+      RPRel(RPhas, RPis),
+      TypedMulti,
+      TypeSig(..),
+      ParamText,
+      RelationalPredicate(..),
+      ClsTab(CT),
+      ParamType(TList1, TOne, TOptional, TList0),
+      mtexpr2text,
+      pt2text,
+      rel2op )
 import Prettyprinter
-import Prettyprinter.Render.Text
+    ( Doc,
+      Pretty(pretty),
+      (<+>),
+      hsep,
+      viaShow,
+      vsep,
+      defaultLayoutOptions,
+      encloseSep,
+      hcat,
+      layoutPretty,
+      line,
+      nest,
+      LayoutOptions(layoutPageWidth),
+      PageWidth(Unbounded),
+      parens,
+      colon,
+      comma,
+      brackets,
+      dquotes,
+      equals,
+      lbrace,
+      rbrace,
+      squotes )
+import Prettyprinter.Render.Text ( renderStrict )
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where

@@ -1,0 +1,4 @@
+DECIDE,x,IS,>,foo,foo
+,,,,bar,
+,,,,<,baz
+,,,,,quux

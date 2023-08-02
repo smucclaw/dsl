@@ -1,0 +1,5 @@
+DECIDE,x,IS,>,foo,foo2
+,,,,bar,
+,,,,<,baz
+,,,,,quux
+WHERE,poop,IS,not,coming,out

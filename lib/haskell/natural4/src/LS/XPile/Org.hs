@@ -22,7 +22,6 @@ import LS.Interpreter
 import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
-
     ( Interpreted(classtable, scopetable, origrules),
       hasGiven,
       hasClauses,
@@ -147,9 +146,5 @@ musings l4i =
                    </> "**** local variables" </> srchs (ruleLocals l4i r)
                    | r <- rs ]
            ]
-  where
-    srchs :: (Show a) => a -> Doc ann
-    srchs = src "haskell" . pretty . pShowNoColor
-    src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
-    example  x = vsep [ "#+begin_example", x, "#+end_example" ]
+
 

@@ -18,6 +18,7 @@ import Data.Text qualified as T
 import Data.Traversable qualified as DT
 import Debug.Trace ( trace )
 import LS.Rule ( Interpreted(scopetable, classtable) )
+import Text.Pretty.Simple ( pShowNoColor )
 import LS.Types
     ( MTExpr(..),
       rel2txt,
@@ -344,6 +345,12 @@ prettySimpleType _       _prty (InlineEnum pt1       s1) = "# InlineEnum unsuppo
 prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
 prettyMaybeType _ _inner Nothing   = ""
 prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
+
+
+srchs :: (Show a) => a -> Doc ann
+srchs = src "haskell" . pretty . pShowNoColor
+src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
+example  x = vsep [ "#+begin_example", x, "#+end_example" ]
 
 
 -- | comment a block of lines

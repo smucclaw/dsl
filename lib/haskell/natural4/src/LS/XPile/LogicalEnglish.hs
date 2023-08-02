@@ -6,17 +6,16 @@
 module LS.XPile.LogicalEnglish (toLE) where
 
 import LS.Interpreter       ( qaHornsR )
-import LS.PrettyPrinter     ( myrender, (</>), (<//>) )
-import LS.Rule              ( Interpreted(..) )
+import LS.PrettyPrinter     
+import LS.Rule              ( Interpreted(scopetable, origrules) )
 import LS.XPile.Logging     ( XPileLogW, XPileLogS )
 import LS.XPile.IntroReader ( MyEnv(..), defaultReaderEnv  )
-import Prettyprinter        ( Doc, pretty )
+import Prettyprinter        
 import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as Text
 import Data.Bifunctor       ( first )
+import Data.HashMap.Strict qualified as Map
 
-import           Data.Map (Map)
-import qualified Data.Map as Map
 
 import Control.Monad.Identity ( Identity )
 import Control.Monad.RWS ( ask, tell, RWST, evalRWS, evalRWST )
@@ -35,7 +34,21 @@ inner l4i = do
     "** the app environment is"    <//> pretty (pShowNoColor aenv)
   return $
     "* output from the LogicalEnglish transpiler" </>
-    "** qaHornsR is"               <//> pretty (pShowNoColor (qaHornsR l4i))
+    "** rules" </>
+    vvsep [ "*** Rule:" <+> hsep (pretty <$> rn) </>
+            vvsep [ "**** symbol:" <+> tildes (pretty mt)
+                    </> srchs hc
+                    </> "**** typesig:" <+> tildes (viaShow its)
+                  
+                  | (mt, (its, hc)) <- Map.toList st ]
+          | (rn, st) <- Map.toList $ scopetable l4i ]
+  
+
+-- LogicalEnglish wants us to say:
+leWants1 = "a ph can claim for an amount if the ph whatever"
+
+-- we should be able to get that out of the above hornclause hc now.
+    
 
 type MyLogT m = RWST MyEnv XPileLogW XPileLogS m
 type MyLog    = MyLogT Identity

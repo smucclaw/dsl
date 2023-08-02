@@ -104,8 +104,9 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , togrounds :: w ::: Bool   <!> "True"  <?> "ground terms"
                    , tots      :: w ::: Bool   <!> "True"  <?> "typescript"
                    , tonl      :: w ::: Bool   <!> "True"  <?> "natural language"
-                   , tomaude    :: w ::: Bool   <!> "True"  <?> "maude"
+                   , tomaude   :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
+                   , tole      :: w ::: Bool   <!> "True"  <?> "logical english"
 
                    , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 

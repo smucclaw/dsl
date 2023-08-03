@@ -242,6 +242,7 @@ tok2rel = choice
     , RPlte     <$ pToken TokLTE
     , RPgt      <$ pToken TokGT    -- serves double duty as MaxOflist when in RPnary position
     , RPgte     <$ pToken TokGTE
+    , RPmap     <$ pToken FMap
     , RPelem    <$ pToken TokIn
     , RPnotElem <$ pToken TokNotIn
     , RPsubjectTo <$ pToken SubjectTo

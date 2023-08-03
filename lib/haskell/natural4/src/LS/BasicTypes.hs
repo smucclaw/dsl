@@ -73,7 +73,7 @@ data MyToken = Every | Party | TokAll
              | Then | Else
              | TNumber Float
              | Other Text.Text
-             | Do
+             | Do | FMap
              | TokTrue | TokFalse
              | Aka -- also known as, for AKA Receiving Party
              | Typically -- to provide default values
@@ -225,6 +225,8 @@ toToken "LIST1"     = pure List1
 toToken "LIST OF"   = pure List1
 toToken "LISTOF"    = pure List1
 toToken "LIST"      = pure List1
+
+toToken "MAP"       = pure FMap
 
 toToken "AKA"       = pure Aka
 toToken "TYPICALLY" = pure Typically
@@ -416,6 +418,8 @@ renderToken Semicolon = ";;"
 renderToken SubjectTo = "SUBJECT TO"
 renderToken TokSum = "SUM"
 renderToken TokProduct = "PRODUCT"
+renderToken FMap = "MAP"
+
 
 renderToken tok = map toUpper (show tok)
 

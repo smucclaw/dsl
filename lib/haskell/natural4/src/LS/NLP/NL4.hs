@@ -140,6 +140,8 @@ type GSub1000000000000 = Tree GSub1000000000000_
 data GSub1000000000000_
 type GSubj = Tree GSubj_
 data GSubj_
+type GSubject = Tree GSubject_
+data GSubject_
 type GTComparison = Tree GTComparison_
 data GTComparison_
 type GTemp = Tree GTemp_
@@ -280,6 +282,7 @@ data Tree :: * -> * where
   GByVP :: GVP -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
+  GSubjS :: GSubj -> GS -> Tree GAdv_
   GWhileDoing :: GVP -> Tree GAdv_
   G_as_Adv :: Tree GAdv_
   G_at_Adv :: Tree GAdv_
@@ -317,14 +320,6 @@ data Tree :: * -> * where
   GrecoverUnparsedCond :: GString -> Tree GCond_
   GAND :: Tree GConj_
   GOR :: Tree GConj_
-  G_and_Conj :: Tree GConj_
-  G_before_Conj :: Tree GConj_
-  G_both_Conj :: Tree GConj_
-  G_but_Conj :: Tree GConj_
-  G_if_Conj :: Tree GConj_
-  G_or_Conj :: Tree GConj_
-  G_that_Conj :: Tree GConj_
-  G_when_Conj :: Tree GConj_
   GConjConstraint :: GConj -> GListConstraint -> Tree GConstraint_
   GConjPreConstraint :: GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
@@ -579,13 +574,23 @@ data Tree :: * -> * where
   Gpot51 :: Tree GSub1000000000000_
   Gpot5float :: GFloat -> Tree GSub1000000000000_
   Gpot5plus :: GSub1000 -> GSub1000000000 -> Tree GSub1000000000000_
-  GAN :: GCN -> Tree GSubj_
-  GEVERY :: GCN -> Tree GSubj_
-  GPARTY :: GCN -> Tree GSubj_
-  GSubjWho :: GSubj -> GWho -> Tree GSubj_
-  GTHE :: GCN -> Tree GSubj_
-  GYou :: Tree GSubj_
-  GrecoverUnparsedSubj :: GString -> Tree GSubj_
+  G_and_Subj :: Tree GSubj_
+  G_as_Subj :: Tree GSubj_
+  G_before_Subj :: Tree GSubj_
+  G_both_Subj :: Tree GSubj_
+  G_but_Subj :: Tree GSubj_
+  G_if_Subj :: Tree GSubj_
+  G_or_Subj :: Tree GSubj_
+  G_that_Subj :: Tree GSubj_
+  G_when_Subj :: Tree GSubj_
+  G_while_Subj :: Tree GSubj_
+  GAN :: GCN -> Tree GSubject_
+  GEVERY :: GCN -> Tree GSubject_
+  GPARTY :: GCN -> Tree GSubject_
+  GSubjWho :: GSubject -> GWho -> Tree GSubject_
+  GTHE :: GCN -> Tree GSubject_
+  GYou :: Tree GSubject_
+  GrecoverUnparsedSubj :: GString -> Tree GSubject_
   GAFTER :: Tree GTComparison_
   GBEFORE :: Tree GTComparison_
   GBY :: Tree GTComparison_
@@ -597,16 +602,16 @@ data Tree :: * -> * where
   GpresSimul :: Tree GTemp_
   GTemporalConstraint :: GTComparison -> GDigits -> GTimeUnit -> Tree GTemporal_
   GTemporalConstraintNoDigits :: GTComparison -> GTimeUnit -> Tree GTemporal_
-  GRegulative :: GSubj -> GDeontic -> GAction -> Tree GText_
+  GRegulative :: GSubject -> GDeontic -> GAction -> Tree GText_
   GadvUPON :: GUpon -> Tree GText_
   GqCOND :: GCond -> Tree GText_
   GqCONSTR :: GConstraint -> Tree GText_
   GqPREPOST :: GPrePost -> Tree GText_
-  GqUPON :: GSubj -> GUpon -> Tree GText_
-  GqWHO :: GSubj -> GWho -> Tree GText_
+  GqUPON :: GSubject -> GUpon -> Tree GText_
+  GqWHO :: GSubject -> GWho -> Tree GText_
   GsCOND :: GCond -> Tree GText_
-  GsUPON :: GSubj -> GUpon -> Tree GText_
-  GsWHO :: GSubj -> GWho -> Tree GText_
+  GsUPON :: GSubject -> GUpon -> Tree GText_
+  GsWHO :: GSubject -> GWho -> Tree GText_
   GDay_Unit :: Tree GTimeUnit_
   GMonth_Unit :: Tree GTimeUnit_
   GYear_Unit :: Tree GTimeUnit_
@@ -786,6 +791,7 @@ instance Eq (Tree a) where
     (GByVP x1,GByVP y1) -> and [ x1 == y1 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GSubjS x1 x2,GSubjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GWhileDoing x1,GWhileDoing y1) -> and [ x1 == y1 ]
     (G_as_Adv,G_as_Adv) -> and [ ]
     (G_at_Adv,G_at_Adv) -> and [ ]
@@ -823,14 +829,6 @@ instance Eq (Tree a) where
     (GrecoverUnparsedCond x1,GrecoverUnparsedCond y1) -> and [ x1 == y1 ]
     (GAND,GAND) -> and [ ]
     (GOR,GOR) -> and [ ]
-    (G_and_Conj,G_and_Conj) -> and [ ]
-    (G_before_Conj,G_before_Conj) -> and [ ]
-    (G_both_Conj,G_both_Conj) -> and [ ]
-    (G_but_Conj,G_but_Conj) -> and [ ]
-    (G_if_Conj,G_if_Conj) -> and [ ]
-    (G_or_Conj,G_or_Conj) -> and [ ]
-    (G_that_Conj,G_that_Conj) -> and [ ]
-    (G_when_Conj,G_when_Conj) -> and [ ]
     (GConjConstraint x1 x2,GConjConstraint y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreConstraint x1 x2 x3,GConjPreConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -1085,6 +1083,16 @@ instance Eq (Tree a) where
     (Gpot51,Gpot51) -> and [ ]
     (Gpot5float x1,Gpot5float y1) -> and [ x1 == y1 ]
     (Gpot5plus x1 x2,Gpot5plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (G_and_Subj,G_and_Subj) -> and [ ]
+    (G_as_Subj,G_as_Subj) -> and [ ]
+    (G_before_Subj,G_before_Subj) -> and [ ]
+    (G_both_Subj,G_both_Subj) -> and [ ]
+    (G_but_Subj,G_but_Subj) -> and [ ]
+    (G_if_Subj,G_if_Subj) -> and [ ]
+    (G_or_Subj,G_or_Subj) -> and [ ]
+    (G_that_Subj,G_that_Subj) -> and [ ]
+    (G_when_Subj,G_when_Subj) -> and [ ]
+    (G_while_Subj,G_while_Subj) -> and [ ]
     (GAN x1,GAN y1) -> and [ x1 == y1 ]
     (GEVERY x1,GEVERY y1) -> and [ x1 == y1 ]
     (GPARTY x1,GPARTY y1) -> and [ x1 == y1 ]
@@ -1431,6 +1439,7 @@ instance Gf GAdv where
   gf (GByVP x1) = mkApp (mkCId "ByVP") [gf x1]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
+  gf (GSubjS x1 x2) = mkApp (mkCId "SubjS") [gf x1, gf x2]
   gf (GWhileDoing x1) = mkApp (mkCId "WhileDoing") [gf x1]
   gf G_as_Adv = mkApp (mkCId "_as_Adv") []
   gf G_at_Adv = mkApp (mkCId "_at_Adv") []
@@ -1456,6 +1465,7 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "ByVP" -> GByVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "SubjS" -> GSubjS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "WhileDoing" -> GWhileDoing (fg x1)
       Just (i,[]) | i == mkCId "_as_Adv" -> G_as_Adv 
       Just (i,[]) | i == mkCId "_at_Adv" -> G_at_Adv 
@@ -1554,27 +1564,11 @@ instance Gf GCond where
 instance Gf GConj where
   gf GAND = mkApp (mkCId "AND") []
   gf GOR = mkApp (mkCId "OR") []
-  gf G_and_Conj = mkApp (mkCId "_and_Conj") []
-  gf G_before_Conj = mkApp (mkCId "_before_Conj") []
-  gf G_both_Conj = mkApp (mkCId "_both_Conj") []
-  gf G_but_Conj = mkApp (mkCId "_but_Conj") []
-  gf G_if_Conj = mkApp (mkCId "_if_Conj") []
-  gf G_or_Conj = mkApp (mkCId "_or_Conj") []
-  gf G_that_Conj = mkApp (mkCId "_that_Conj") []
-  gf G_when_Conj = mkApp (mkCId "_when_Conj") []
 
   fg t =
     case unApp t of
       Just (i,[]) | i == mkCId "AND" -> GAND 
       Just (i,[]) | i == mkCId "OR" -> GOR 
-      Just (i,[]) | i == mkCId "_and_Conj" -> G_and_Conj 
-      Just (i,[]) | i == mkCId "_before_Conj" -> G_before_Conj 
-      Just (i,[]) | i == mkCId "_both_Conj" -> G_both_Conj 
-      Just (i,[]) | i == mkCId "_but_Conj" -> G_but_Conj 
-      Just (i,[]) | i == mkCId "_if_Conj" -> G_if_Conj 
-      Just (i,[]) | i == mkCId "_or_Conj" -> G_or_Conj 
-      Just (i,[]) | i == mkCId "_that_Conj" -> G_that_Conj 
-      Just (i,[]) | i == mkCId "_when_Conj" -> G_when_Conj 
 
 
       _ -> error ("no Conj " ++ show t)
@@ -2394,6 +2388,34 @@ instance Gf GSub1000000000000 where
       _ -> error ("no Sub1000000000000 " ++ show t)
 
 instance Gf GSubj where
+  gf G_and_Subj = mkApp (mkCId "_and_Subj") []
+  gf G_as_Subj = mkApp (mkCId "_as_Subj") []
+  gf G_before_Subj = mkApp (mkCId "_before_Subj") []
+  gf G_both_Subj = mkApp (mkCId "_both_Subj") []
+  gf G_but_Subj = mkApp (mkCId "_but_Subj") []
+  gf G_if_Subj = mkApp (mkCId "_if_Subj") []
+  gf G_or_Subj = mkApp (mkCId "_or_Subj") []
+  gf G_that_Subj = mkApp (mkCId "_that_Subj") []
+  gf G_when_Subj = mkApp (mkCId "_when_Subj") []
+  gf G_while_Subj = mkApp (mkCId "_while_Subj") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "_and_Subj" -> G_and_Subj 
+      Just (i,[]) | i == mkCId "_as_Subj" -> G_as_Subj 
+      Just (i,[]) | i == mkCId "_before_Subj" -> G_before_Subj 
+      Just (i,[]) | i == mkCId "_both_Subj" -> G_both_Subj 
+      Just (i,[]) | i == mkCId "_but_Subj" -> G_but_Subj 
+      Just (i,[]) | i == mkCId "_if_Subj" -> G_if_Subj 
+      Just (i,[]) | i == mkCId "_or_Subj" -> G_or_Subj 
+      Just (i,[]) | i == mkCId "_that_Subj" -> G_that_Subj 
+      Just (i,[]) | i == mkCId "_when_Subj" -> G_when_Subj 
+      Just (i,[]) | i == mkCId "_while_Subj" -> G_while_Subj 
+
+
+      _ -> error ("no Subj " ++ show t)
+
+instance Gf GSubject where
   gf (GAN x1) = mkApp (mkCId "AN") [gf x1]
   gf (GEVERY x1) = mkApp (mkCId "EVERY") [gf x1]
   gf (GPARTY x1) = mkApp (mkCId "PARTY") [gf x1]
@@ -2413,7 +2435,7 @@ instance Gf GSubj where
       Just (i,[x1]) | i == mkCId "recoverUnparsedSubj" -> GrecoverUnparsedSubj (fg x1)
 
 
-      _ -> error ("no Subj " ++ show t)
+      _ -> error ("no Subject " ++ show t)
 
 instance Gf GTComparison where
   gf GAFTER = mkApp (mkCId "AFTER") []
@@ -2766,6 +2788,7 @@ instance Compos Tree where
     GByVP x1 -> r GByVP `a` f x1
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
+    GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
     GWhileDoing x1 -> r GWhileDoing `a` f x1
     GrecoverUnparsedAdv x1 -> r GrecoverUnparsedAdv `a` f x1
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2

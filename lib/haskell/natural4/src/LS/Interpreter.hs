@@ -199,6 +199,24 @@ topsortedClasses ct =
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
 
+-- | extract all Enum declarations recursing through class declarations, so we can hoist to top-level for, say, the Typescript transpiler.
+-- This is necessary to cover both the following situations:
+-- - DECLARE toplevelEnum                  IS ONEOF enum1 enum2
+-- - DECLARE class1 HAS attr1              IS ONEOF enum3 enum4
+-- - DECLARE class2 HAS attr2 HAS attr3    IS ONEOF enum5 enum6
+-- We return a list of rules rewritten into a standardized toplevel format, preserving the srcref information
+-- [TODO] rewrite this to generalize the hosting of (anonymous) inline classes
+extractEnums :: Interpreted -> [Rule]
+extractEnums l4i =
+  let rs = origrules l4i
+  in concatMap go rs
+  where
+    go :: Rule -> [Rule]
+    go r@TypeDecl{super = Just (InlineEnum enumtype enumtext)} =
+      [r]
+    go TypeDecl{has = has} = concatMap go has
+    go _ = []
+
 -- | Sometimes multiple rules will have the same decision content: X depends on Z; Y also depends on Z.
 -- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree (Z) to one or more rules (X and Y).
 groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]

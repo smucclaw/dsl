@@ -18,7 +18,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     Action = Extend.VPI ;
     Who = Extend.VPS ;
     [Who] = Extend.ListVPS ;
-    Subj = Syntax.NP ;
+    Subject = Syntax.NP ;
     Deontic = Syntax.VV ;
     Upon = Syntax.VP ;
 

@@ -24,7 +24,7 @@ abstract InsLex = NL4Base ** {
     _tsapp_N : N ;
     _work_N : N ;
     _planF_PN : PN ;
---    _while_Conj : Conj ;
+    _while_Subj : Subj ;
     _after_Prep : Prep ;
     _mean_as_V2 : V2 ;
     _Schedule_PN : PN ;
@@ -301,7 +301,7 @@ abstract InsLex = NL4Base ** {
     _vcjd_N : N ;
     _hence_Adv : Adv ;
     _with_Prep : Prep ;
-    _that_Conj : Conj ;
+    _that_Subj : Subj ;
     _cave_V : V ;
     _policyholder_N : N ;
     _middle_A : A ;
@@ -326,7 +326,7 @@ abstract InsLex = NL4Base ** {
     _recognise_V : V ;
     _HAS_PN : PN ;
     _diving_A : A ;
-    _before_Conj : Conj ;
+    _before_Subj : Subj ;
     _adjusted_A : A ;
     _MIN_PN : PN ;
     _Types_PN : PN ;
@@ -347,7 +347,7 @@ abstract InsLex = NL4Base ** {
     _head_N : N ;
     _upscaled_A : A ;
     _martial_A : A ;
-    _if_Conj : Conj ;
+    _if_Subj : Subj ;
     _valid_A : A ;
     _soon_Adv : Adv ;
     _strain_N : N ;
@@ -359,7 +359,7 @@ abstract InsLex = NL4Base ** {
     _c_N : N ;
     _Dismemberment_PN : PN ;
     _1013_N : N ;
-    _both_Conj : Conj ;
+    _both_Subj : Subj ;
     _v_N : N ;
     _include_V : V ;
     _unsound_A : A ;
@@ -378,7 +378,7 @@ abstract InsLex = NL4Base ** {
     _accepted_A : A ;
     _war_N : N ;
     _adjust_V : V ;
-    _or_Conj : Conj ;
+    _or_Subj : Subj ;
     _duty_N : N ;
     _finger_N : N ;
     _deduce_VS : VS ;
@@ -413,7 +413,7 @@ abstract InsLex = NL4Base ** {
     _hand_V : V ;
     _Legionnaires_PN : PN ;
     _contamination_N : N ;
-    _when_Conj : Conj ;
+    _when_Subj : Subj ;
     _section_N : N ;
     _Section_PN : PN ;
     _removal_N : N ;
@@ -470,7 +470,7 @@ abstract InsLex = NL4Base ** {
     _waterborne_A : A ;
     _p_N : N ;
     _damageevent_N : N ;
-    _and_Conj : Conj ;
+    _and_Subj : Subj ;
     _Policy_PN : PN ;
     _national_A : A ;
     _cover_as_V2 : V2 ;
@@ -526,7 +526,7 @@ abstract InsLex = NL4Base ** {
     _reckless_A : A ;
     _list_N : N ;
     _on_Prep : Prep ;
---    _as_Conj : Conj ;
+    _as_Subj : Subj ;
     _holder_N : N ;
     _assured_N : N ;
     _alive_A : A ;
@@ -546,7 +546,7 @@ abstract InsLex = NL4Base ** {
     _declare_V2 : V2 ;
     _initial_A : A ;
     _hunt_V : V ;
-    _but_Conj : Conj ;
+    _but_Subj : Subj ;
     _Assured_PN : PN ;
     _ADD_PN : PN ;
     _f_N : N ;

@@ -387,10 +387,10 @@ ruleQnTrees env alias rule = do
 
 ----------------------------------------------------------------------
 
-textViaQaHorns :: NLGEnv -> Alias -> Maybe GSubj -> [([RuleName],  BoolStructT)]
+textViaQaHorns :: NLGEnv -> Alias -> Maybe GSubject -> [([RuleName],  BoolStructT)]
 textViaQaHorns env alias subj = [ (rn, linBStext env $ mkGFtext env alias (referSubj <$> subj) bsr) | (rn, bsr) <- qaHornsR (interpreted env)]
 
-mkGFtext :: NLGEnv -> Alias -> Maybe GSubj -> BoolStructR -> BoolStructGText
+mkGFtext :: NLGEnv -> Alias -> Maybe GSubject -> BoolStructR -> BoolStructGText
 mkGFtext env alias subj bsr = case (whoParses, condParses) of
   ([], []) -> mkConstraintText env GqPREPOST GqCONSTR bsr
   ([], _:_) -> mkCondText env GqPREPOST GqCOND bsr
@@ -497,7 +497,7 @@ parseAction env bsp = fg tree
     txt = bsp2text bsp
     tree :| _ = parseAny "Action" env txt
 
-parseSubj :: NLGEnv -> BoolStructP -> GSubj
+parseSubj :: NLGEnv -> BoolStructP -> GSubject
 parseSubj env bsp = fg tree
   where
     txt = bsp2text bsp

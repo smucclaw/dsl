@@ -1,13 +1,14 @@
 concrete CustomSyntaxMay of CustomSyntax =
     NumeralMay
   , GrammarMay [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
+        N, N2, CN, PN, NP, UseN, UsePN, Det, DetCN, MassNP
       , V, VV, V2, VS, VP
-      , A, A2, AP, AdjCN, PositA
+      , A, A2, AP, AdjCN, PositA, ComplA2
   --      , ProgrVP -- becoming aware
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
-      , AdA, AdAdv -- only (within the organisation)
+      , AdA, AdAdv, Card, CAdv, AdN, AdNum, AdnCAdv
+        , Dig, Digits, NumDigits, IDig, IIDig, D_0, D_1, D_2, D_3, D_4, D_5, D_6, D_7, D_8, D_9 -- only (within the organisation)
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP
@@ -17,12 +18,13 @@ concrete CustomSyntaxMay of CustomSyntax =
   , StructuralMay [
       Prep, for_Prep, from_Prep, on_Prep, after_Prep, possess_Prep
     , VV, must_VV
+        , AdN, CAdv, less_CAdv, more_CAdv, at_least_AdN, at_most_AdN
     ]
   , ExtendMay [
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
-      , ByVP
+      , ByVP, N, CompoundN
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]

@@ -42,7 +42,7 @@ concrete StandardLexiconChi of StandardLexicon = NL4BaseChi **
 
     NP_caused_NP_to_VP_Prep_PrePost np water escape from =
       let cl : Cl = mkCl <np : NP> (mkVP cause_V2V <water : NP> <escape : VP>) ;
-          cls : ClSlash = mkClSlash cl <from : Prep> ;
+          cls : ClSlash = mkClSlash cl <from : CatChi.Prep> ;
           qcl : QCl = hackQCl cls ;
           ss : SSlash = mkSSlash (mkTemp pastTense simultaneousAnt) positivePol cls ;
           qs : QS = mkQS pastTense qcl ;

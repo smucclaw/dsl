@@ -5,6 +5,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     , Lexicon
     , CustomSyntax
     , Coordination
+    , Construction
     , Prelude
     in {
 
@@ -139,6 +140,11 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 --      qs = qsStr (Extend.SQuestVPS it_NP (MkVPS presSimul POS (mkVP ap))) ++ bindQM
       qs = (mkUtt ap).s ++ bindQM
     } ;
+    RPleafAdv adv = {
+      s = (mkUtt adv).s ;
+      qs = (mkUtt adv).s ++ bindQM
+    } ;
+
     BaseConstraint c d = {
       s = Coordination.twoStr c.s d.s ;
       qs = Coordination.twoStr c.qs d.qs
@@ -226,6 +232,14 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
     MkYear = cc4 ;
 
+    -- Ages
+    -- : Card -> VPS ;
+    Comparison_Card_Years card = MkVPS presSimul POS (Construction.has_age_VP card) ;
+
+    -- Generic comparisons
+    -- LessThan,
+    -- GreaterThan : NP -> VPS ;
+
 -----------------------------------------------------------------------------
 -- Very specific things, yet uncategorised
     -- : AP -> Who ; -- hack
@@ -252,6 +266,12 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
 
     -- : Adv -> PrePost ; -- of personal data
     Adv_PrePost adv = {s,qs = (mkUtt adv).s} ;
+
+    -- : S -> PrePost ; -- the vehicle is on its way
+    S_PrePost np vps = {
+      s = (mkUtt (PredVPS np vps)).s ;
+      qs = (mkUtt (SQuestVPS np vps)).s
+      } ;
 
     recoverUnparsedAdv string = lin Adv (cc2 {s="·"} string) ; -- override for Chi
 }

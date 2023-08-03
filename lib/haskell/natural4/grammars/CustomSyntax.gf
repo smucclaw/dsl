@@ -1,12 +1,13 @@
 abstract CustomSyntax =
     Numeral
   , Grammar [
-          N, N2, CN, UseN, NP, Det, DetCN, MassNP
+          N, N2, CN, PN, NP, UseN, UsePN, Det, DetCN, MassNP
         , V,  VV, V2, VS, VP
-        , A, A2, AP, AdjCN, PositA
+        , A, A2, AP, AdjCN, PositA, ComplA2
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
         , Prep, PrepNP, AdvVP
-        , AdA, AdAdv
+        , AdA, AdAdv, Card, CAdv, AdN, AdNum, AdnCAdv
+        , Dig, Digits, NumDigits, IDig, IIDig, D_0, D_1, D_2, D_3, D_4, D_5, D_6, D_7, D_8, D_9
         , ListAdv, BaseAdv, ConsAdv, ConjAdv
         , ListAP, BaseAP, ConsAP, ConjAP
         , ListNP, BaseNP, ConsNP, ConjNP
@@ -16,13 +17,14 @@ abstract CustomSyntax =
   , Structural [
         Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
         , VV, must_VV
+        , AdN, CAdv, less_CAdv, more_CAdv, at_least_AdN, at_most_AdN
         ]
   , Extend [
         VPS, MkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS
         , VPI, MkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
         , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
     --      , GenRP -- nice to have in the future?
-        , ByVP
+        , ByVP, N, CompoundN
         , S, PredVPS
         , NP, GerundNP
         ]  ** {
@@ -55,7 +57,9 @@ abstract CustomSyntax =
     MayHave : VP -> VPS ; -- getting "may have occurred" with pure RGL is a pain
 
     ReferenceNP : NP -> S ; -- it is NP — reference to a previous NP
+    WhileDoing : VP -> Adv ; -- while travelling in a public transport
 --      ExpletiveVP : VP -> S ; -- it is raining — dummy subject it (TODO: restrict usage of this and above from HS)
+    CNwhereS : CN -> NP -> VPS -> CN ; -- premise where school activities take place
 
     presAnt,   -- has occurred
     presSimul, -- occurs
@@ -68,6 +72,7 @@ abstract CustomSyntax =
     theSg : Det ;
     thePl : Det ;
     aSg : Det ;
+    aPl : Det ;
     your : Det ;
 
     about_Prep : Prep ;

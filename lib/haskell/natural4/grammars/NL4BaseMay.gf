@@ -6,6 +6,7 @@ concrete NL4BaseMay of NL4Base =
     , (Extend=ExtendMay)
     , (Symbolic=SymbolicMay)
     , (Lexicon=LexiconMay)
+    , (Construction=ConstructionMay)
     , (CustomSyntax=CustomSyntaxMay)
    ** open Coordination, Prelude, ParadigmsMay, (R=ResMay) in {
 

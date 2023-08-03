@@ -6,6 +6,7 @@ concrete NL4BaseEng of NL4Base =
     , (Extend=ExtendEng)
     , (Symbolic=SymbolicEng)
     , (Lexicon=LexiconEng)
+    , (Construction=ConstructionEng)
     , (CustomSyntax=CustomSyntaxEng)
    ** open Coordination, Prelude, ParadigmsEng, (R=ResEng) in {
 
@@ -51,6 +52,10 @@ concrete NL4BaseEng of NL4Base =
   lin recoverRPis damage toContents = {
       s = "·" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
       qs = "Is" ++ damage.s ++ toContents.s ++ bindQM
+      } ;
+  lin recoverRPmath gt age fifty = {
+      s = "·" ++ age.s ++ gt.s ++ fifty.s ; -- if constraint isn't parsed, use the original string
+      qs = "Is" ++ age.s ++ gt.s ++ fifty.s ++ bindQM
       } ;
   lin recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
 

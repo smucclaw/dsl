@@ -13,6 +13,7 @@ concrete NL4BaseChi of NL4Base =
     , (Extend=ExtendChi)
     , (Symbolic=SymbolicChi)
     , (Lexicon=LexiconChi)
+    , (Construction=ConstructionChi)
     , (CustomSyntax=CustomSyntaxChi)
    ** open Coordination, Prelude, ParadigmsChi, (R=ResChi) in {
 

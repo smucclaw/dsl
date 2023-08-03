@@ -245,3 +245,15 @@ Future extension: Maybe use ((initial)) to represent a start state
     "pa - is" -> FULFILLED                [color=green]
   }
 #+end_src
+
+* Alternatives
+
+https://hackage.haskell.org/package/gotyno-hs
+
+- https://hackage.haskell.org/package/hjsmin
+- https://hackage.haskell.org/package/language-javascript-0.7.0.0
+- https://hackage.haskell.org/package/language-ecmascript
+- 
+  
+  
+

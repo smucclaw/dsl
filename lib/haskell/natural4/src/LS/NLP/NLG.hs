@@ -5,7 +5,7 @@ module LS.NLP.NLG where
 
 import AnyAll qualified as AA
 import Control.Monad (when)
-import Data.Char qualified as Char (toLower)
+import Data.Char qualified as Char (toLower, isDigit)
 import Data.Foldable qualified as F
 import Data.HashMap.Strict (elems, keys, lookup, toList)
 import Data.HashMap.Strict qualified as Map
@@ -51,7 +51,7 @@ import LS.Types
     MTExpr (MTT),
     MultiTerm,
     ParamText,
-    RPRel (RPTC, RPis),
+    RPRel (..),
     RelationalPredicate
       ( RPBoolStructR,
         RPConstraint,
@@ -570,8 +570,73 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
-    tString :: Text.Text -> GString
-    tString = GString . Text.unpack
+parseConstraint env (RPConstraint a RPgt b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString ">") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is more than", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is greater than", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
+
+parseConstraint env (RPConstraint a RPlt b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is less than", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is less than", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
+
+parseConstraint env (RPConstraint a RPlte b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is at most", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is at most", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
+
+parseConstraint env (RPConstraint a RPgte b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is at least", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is at least", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
 
 parseConstraint env rp = fg tree
   where
@@ -614,6 +679,24 @@ typeError cat actualCats = error $ unwords ["category", cat, "not a valid GF cat
 
 tString :: Text.Text -> GString
 tString = GString . Text.unpack
+
+splitDigits :: Text.Text -> Text.Text
+splitDigits txt = Text.unwords (splitDigit <$> Text.words txt)
+  where
+    splitDigit d = if Text.all Char.isDigit d
+                    then Text.intercalate " &+ " (Text.groupBy (\x y -> False) d)
+                    else d
+
+tk, dp :: Int -> Text.Text -> Text.Text
+tk i = Text.pack . tk' i . Text.unpack
+dp i = Text.pack . dp' i . Text.unpack
+
+
+tk', dp' :: Int -> String -> String
+tk' i = reverse . drop i . reverse -- tk 2 "hello" == "hel"
+dp' i = reverse . take i . reverse -- dp 2 "hello" == "lo"
+
+
 -----------------------------------------------------------------------------
 -- Expand a set of rules
 

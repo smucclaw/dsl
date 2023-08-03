@@ -11,7 +11,7 @@ concrete CustomSyntaxChi of CustomSyntax =
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP
       , ListS, BaseS, ConsS, ConjS
-      , S, QS, Conj
+      , S, QS, Conj, Subj, SubjS
       ]
   , StructuralChi [
       VV, must_VV

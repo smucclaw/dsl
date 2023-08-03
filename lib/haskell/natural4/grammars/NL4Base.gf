@@ -12,39 +12,39 @@ abstract NL4Base = CustomSyntax ** {
     Action ;
     Who ;
     [Who]{2} ;
-    Subj ;
+    Subject ;
     Deontic ;
     Upon ;
   fun
     -- for fancy NLG
-    Regulative : Subj -> Deontic -> Action -> Text ;
+    Regulative : Subject -> Deontic -> Action -> Text ;
     advUPON : Upon -> Text ; -- actually include the word Upon
 
     -- for web forms
     qWHO,
-    sWHO : Subj -> Who -> Text ;
+    sWHO : Subject -> Who -> Text ;
     qUPON,  -- TODO rethink types when adding more langs
             -- TODO2 do we allow upon to take full sentence or just VP*?
-    sUPON : Subj -> Upon -> Text ;
+    sUPON : Subject -> Upon -> Text ;
     qCOND,
     sCOND : Cond -> Text ;
 
     -- general Regulative stuff
     EVERY,
     PARTY,
-    AN, THE : CN -> Subj ; -- EVERY Person
+    AN, THE : CN -> Subject ; -- EVERY Person
     WHO : Temp -> Pol -> VP -> Who ;    -- WHO walks
     ACTION : VP -> Action ;
 
     MUST, MAY, SHANT : Deontic ;
     AND, OR : Conj ;
 
-    SubjWho : Subj -> Who -> Subj ;
+    SubjWho : Subject -> Who -> Subject ;
     ConjWho : Conj -> [Who] -> Who ;
     ConjPreWho : PrePost -> Conj -> [Who] -> Who ; -- TODO need to find examples in the wild
     ConjPrePostWho : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
 
-    You : Subj ;
+    You : Subject ;
 
     UPON : VP -> Upon ; -- upon becoming
 
@@ -148,7 +148,7 @@ abstract NL4Base = CustomSyntax ** {
       recoverUnparsedWho : String -> Who ;
       recoverUnparsedCond : String -> Cond ;
       recoverUnparsedUpon : String -> Upon ;
-      recoverUnparsedSubj : String -> Subj ;
+      recoverUnparsedSubj : String -> Subject ;
       recoverUnparsedAction : String -> Action ;
       recoverUnparsedTimeUnit : String -> TimeUnit ;
 

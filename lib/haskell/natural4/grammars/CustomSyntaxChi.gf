@@ -1,11 +1,12 @@
 concrete CustomSyntaxChi of CustomSyntax =
     NumeralChi
   , GrammarChi [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
+        N, N2, CN, PN, NP, UseN, UsePN, Det, DetCN, MassNP
       , V, VV, V2, VS, VP, AdvVP
       , A, A2, AP, PositA
       , Comp, Adv, VP, UseComp, CompAP, CompAdv -- is a public agency
-      , AdA, AdAdv -- only (within the organisation)
+      , AdA, AdAdv, Card, CAdv, AdN, AdNum, AdnCAdv
+        , Dig, Digits, NumDigits, IDig, IIDig, D_0, D_1, D_2, D_3, D_4, D_5, D_6, D_7, D_8, D_9 -- only (within the organisation)
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP
@@ -14,12 +15,13 @@ concrete CustomSyntaxChi of CustomSyntax =
       ]
   , StructuralChi [
       VV, must_VV
+        , AdN, CAdv, less_CAdv, more_CAdv, at_least_AdN, at_most_AdN
     ]
   , ExtendChi [
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
-      , ByVP
+      , ByVP, N, CompoundN
       , S, PredVPS
       , NP, GerundNP -- by performing NDB qualification
       ]

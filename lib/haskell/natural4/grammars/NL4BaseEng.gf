@@ -57,22 +57,25 @@ concrete NL4BaseEng of NL4Base =
       s = "·" ++ age.s ++ gt.s ++ fifty.s ; -- if constraint isn't parsed, use the original string
       qs = "Is" ++ age.s ++ gt.s ++ fifty.s ++ bindQM
       } ;
-  lin recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
+  lin recoverUnparsedConstraint string = {
+      s = "·" ++ string.s ;
+      qs = string.s ++ bindQM
+      } ;
 
-  lin recoverUnparsedWho string = MkVPS presSimul POS (mkVP (invarV string.s)) ;
+  lin recoverUnparsedWho string = MkVPS presSimul POS (mkVP (invarUnparsedV string)) ;
 
   lin recoverUnparsedCond string = {
       s = lin S string ;
       qs = lin QS {s = \\_ => string.s}
       } ;
 
-  lin recoverUnparsedUpon string = mkVP (invarV string.s) ;
+  lin recoverUnparsedUpon string = mkVP (invarUnparsedV string) ;
 
-  lin recoverUnparsedSubj string = symb string ;
-
-  lin recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
+  lin recoverUnparsedAction string = MkVPI (mkVP (invarUnparsedV string)) ;
 
   lin recoverUnparsedTimeUnit string = mkCN <LexiconEng.day_N ** {s = \\_,_ => "·" ++ string.s} : N> ;
+
+  oper invarUnparsedV : SS -> V = \ss -> invarV ("·" ++ ss.s) ;
 
 }
 

@@ -1,7 +1,7 @@
 abstract CustomSyntax =
     Numeral
   , Grammar [
-          N, N2, CN, PN, NP, UseN, UsePN, Det, DetCN, MassNP
+          N, N2, CN, PN, NP, UseN, ComplN2, UsePN, Num, NumSg, NumPl, Det, DetCN, MassNP
         , V,  VV, V2, VS, VP
         , A, A2, AP, AdjCN, PositA, ComplA2
         , Comp, Adv, VP, UseComp, CompNP, CompAP, CompAdv -- is a public agency
@@ -13,11 +13,13 @@ abstract CustomSyntax =
         , ListNP, BaseNP, ConsNP, ConjNP
         , ListS, BaseS, ConsS, ConjS
         , S, QS, Conj, Subj, SubjS
+        , RS, RP, IdRP, RelCN
         ]
   , Structural [
         Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
         , VV, must_VV
         , AdN, CAdv, less_CAdv, more_CAdv, at_least_AdN, at_most_AdN
+        , Subj, because_Subj
         ]
   , Extend [
         VPS, MkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS
@@ -25,8 +27,8 @@ abstract CustomSyntax =
         , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
     --      , GenRP -- nice to have in the future?
         , ByVP, N, CompoundN
-        , S, PredVPS
-        , NP, GerundNP
+        , S, PredVPS, RelVPS
+        , NP, GerundNP, Num, GenModNP
         ]  ** {
 
 -----------------------------------------------------------------------------

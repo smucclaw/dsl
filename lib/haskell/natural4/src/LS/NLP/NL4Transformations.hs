@@ -28,17 +28,17 @@ pushPrePostIntoMain bsgt = case bsgt of
     hackStrVP :: GString -> GVP -> GVP
     hackStrVP in_part vp = GAdvVP vp (GrecoverUnparsedAdv in_part)
 
-    transformWho :: GV2 -> GNP -> GText -> GText
-    transformWho consume beverage (GqWHO person (GAPWho alcoholic)) =
-      GqWHO (referSubj person) (GWHO GpresSimul GPOS (GComplV2 consume (introduceNP (insertAP alcoholic beverage))))
-    transformWho consume beverage (GqWHO person (GAdvWho in_part)) =
-      GqWHO (referSubj person) (GWHO GpresSimul GPOS (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
+    transformWho :: GTemp -> GPol -> GV2 -> GNP -> GText -> GText
+    transformWho t p consume beverage (GqWHO person (GAPWho alcoholic)) =
+      GqWHO (referNP person) (GWHO t p (GComplV2 consume (introduceNP (insertAP alcoholic beverage))))
+    transformWho t p consume beverage (GqWHO person (GAdvWho in_part)) =
+      GqWHO (referNP person) (GWHO t p (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
 
     tryTransformWhole :: BoolStructGText -> BoolStructGText
     tryTransformWhole bs = case bs of
       All pp
           ( Any
-              ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
+              ( Just ( PrePost (GqPREPOST ( GV2_PrePost t p consume ) )
                                (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  Any
@@ -48,15 +48,15 @@ pushPrePostIntoMain bsgt = case bsgt of
         All pp
             ( Any
                 Nothing (
-                   (transformWho consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
+                   (transformWho t p consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
             : Any
                 Nothing (
-                  (transformWho consume beverage `mapBS`) <$> inpart_inwhole)
+                  (transformWho t p consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
 
       Any pp
           ( All
-              ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
+              ( Just ( PrePost (GqPREPOST ( GV2_PrePost t p consume ) )
                                (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  All
@@ -66,10 +66,10 @@ pushPrePostIntoMain bsgt = case bsgt of
         Any pp
             ( All
                 Nothing (
-                   (transformWho consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
+                   (transformWho t p consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
             : All
                 Nothing (
-                  (transformWho consume beverage `mapBS`) <$> inpart_inwhole)
+                  (transformWho t p consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
       _ -> bs
 
@@ -149,27 +149,16 @@ mapBS f bs = case bs of
     AA.Not x -> AA.Not $ mapBS f x
 -----------------------------------------------------------------------------
 -- Generic useful transformations
-
--- for Subj
-introduceSubj :: forall a . Tree a -> Tree a
-introduceSubj (GEVERY x) = GAN x
-introduceSubj (GPARTY x) = GAN x
-introduceSubj x = composOp introduceSubj x
-
-referSubj :: forall a . Tree a -> Tree a
-referSubj (GEVERY x) = GTHE x
-referSubj (GPARTY x) = GTHE x
-referSubj (GAN x) = GTHE x
-referSubj x = composOp referSubj x
-
 -- for NP
 
 introduceNP :: forall a . Tree a -> Tree a
+introduceNP (GEVERY x) = GDetCN GaSg x
 introduceNP (GMassNP x) = GDetCN GaSg x
 introduceNP (GDetCN _ x) = GDetCN GaSg x
 introduceNP x = composOp introduceNP x
 
 referNP :: forall a . Tree a -> Tree a
+referNP (GEVERY x) = GDetCN GtheSg x
 referNP (GMassNP x) = GDetCN GtheSg x
 referNP (GDetCN GaSg x) = GDetCN GtheSg x
 --referNP (GDetCN GaPl x) = GDetCN GthePl x

@@ -136,13 +136,19 @@ spec = do
 
 
       -- in MustSing5, the gold just happens to be the same as returned by ruleQuestions, so why not
-      let mustsing5ViaQaHorns = textViaQaHorns envMustSing5 Nothing (Just $ parseSubj env $ subj $ head mustsing5Rules)
-      let (mustsing5ViaRuleQuestions,_) = xpLog $ ruleQuestions envMustSing5 Nothing (head $ expandRulesForNLG envMustSing5 mustsing5Rules)
-      testViaQaHorns "mustsing5" (map snd mustsing5ViaQaHorns) (mustsing5ViaRuleQuestions <> [Leaf "Does the following hold: Person Qualifies"])
+      let mustsing5ViaQaHorns =
+            textViaQaHorns envMustSing5
+                           Nothing
+                          (Just $ parseSubj env $ subj $ head mustsing5Rules)
+      let (mustsing5ViaRuleQuestions,_) = xpLog $
+            ruleQuestions envMustSing5
+                          Nothing
+                          (head $ expandRulesForNLG envMustSing5 mustsing5Rules)
+      testViaQaHorns "mustsing5" (map snd mustsing5ViaQaHorns) (mustsing5ViaRuleQuestions <> [Leaf "Person Qualifies?"])
 
       let mustsing6ViaQaHorns = textViaQaHorns envMustSing6 Nothing (Just $ parseSubj env $ subj $ head mustsing6Rules)
       let (mustsing6ViaRuleQuestions,_) = xpLog $ ruleQuestions envMustSing6 Nothing (head $ expandRulesForNLG envMustSing6 mustsing6Rules)
-      testViaQaHorns "mustsing6" (map snd mustsing6ViaQaHorns) ([Leaf "Does the following hold: Person Qualifies"] <> mustsing6ViaRuleQuestions)
+      testViaQaHorns "mustsing6" (map snd mustsing6ViaQaHorns) ([Leaf "Person Qualifies?"] <> mustsing6ViaRuleQuestions)
 
       -- for Rodents, apparently ruleQuestions is genuinely buggy so compare it against a manually copied gold
       let rodentsViaQaHorns = textViaQaHorns env Nothing (Just $ parseSubj env $ subj $ head rodentsRules)

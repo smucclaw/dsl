@@ -18,7 +18,6 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     Action = Extend.VPI ;
     Who = Extend.VPS ;
     [Who] = Extend.ListVPS ;
-    Subject = Syntax.NP ;
     Deontic = Syntax.VV ;
     Upon = Syntax.VP ;
 
@@ -76,7 +75,7 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     --  : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
     ConjPrePostWho = CustomSyntax.ConjPrePostVPS ; -- fun/lin in CustomSyntax
 
-    -- : Subj -> Who -> Subj ;
+    -- : NP -> Who -> NP ;
     SubjWho subj who = mkNP subj (Extend.RelVPS CustomSyntax.whoRP who) ; -- who_RP is oper in CustomSyntax
 
     You = you_NP ;
@@ -202,9 +201,9 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     ConsTComparison = CustomSyntax.ConsPrep ;
     ConjTComparison = CustomSyntax.ConjPrep ;
     -- Chi has changed lincat and defs of Prep, so all must be from CustomSyntax
-    BEFORE = CustomSyntax.withinPrep   -- internal oper defined in CustomSyntax{Eng,Chi,May}
-           | CustomSyntax.before_Prep ; -- comes from RGL, re-exported by CustomSyntax{Eng,Chi,May}.
+    BEFORE = CustomSyntax.before_Prep   -- comes from RGL, re-exported by CustomSyntax{Eng,Chi,May}.
                                         -- In addition, its lincat and lin has been changed in CustomSyntaxChi.
+           | CustomSyntax.withinPrep ;  -- internal oper defined in CustomSyntax{Eng,Chi,May}
     AFTER = CustomSyntax.after_Prep ;
     BY = CustomSyntax.by8timePrep ;
     ON = CustomSyntax.on_Prep ;
@@ -246,10 +245,10 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
     APWho alcoholic = Extend.MkVPS presSimul POS (mkVP alcoholic) ;
     AdvWho in_part = Extend.MkVPS presSimul POS (mkVP in_part) ;
 
-    -- : V2 -> PrePost ; -- consumes
-    V2_PrePost consume =
-      let consumes : SS = mkUtt (mkS (mkCl emptyNP (mkVP consume emptyNP))) ;
-          consume : SS = mkUtt (mkS (mkCl emptyPlNP (mkVP consume emptyNP))) ;
+    -- : Temp -> Pol -> V2 -> PrePost ; -- consumes
+    V2_PrePost t p consume =
+      let consumes : SS = mkUtt (mkS t p (mkCl emptyNP (mkVP consume emptyNP))) ;
+          consume : SS = mkUtt (mkS t p (mkCl emptyPlNP (mkVP consume emptyNP))) ;
        in {s = consumes.s ; qs = consume.s} ;
 
     -- : NP -> PrePost ; -- beverage
@@ -272,6 +271,14 @@ incomplete concrete NL4BaseFunctor of NL4Base = CustomSyntax ** open
       s = (mkUtt (PredVPS np vps)).s ;
       qs = (mkUtt (SQuestVPS np vps)).s
       } ;
+
+    -- : NP -> Temp -> Pol -> V2 -> PrePost ; -- accident resulted from
+    SSlash_PrePost accident t p result_from =
+      let result_from_S : SS = mkUtt (mkS t p (mkCl accident (mkVP result_from emptyNP))) ;
+          result_from_QS : SS = mkUtt (mkQS t p (mkQCl (mkCl accident (mkVP result_from emptyNP)))) ;
+       in {s = result_from_S.s ; qs = result_from_QS.s} ;
+
+    recoverUnparsedNP string = symb (cc2 (ss "·") string) ;
 
     recoverUnparsedAdv string = lin Adv (cc2 {s="·"} string) ; -- override for Chi
 }

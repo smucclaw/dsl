@@ -124,6 +124,7 @@ tsClasses l4i =
                                  case attrType children attrname of
                                    Just t@(SimpleType TOptional _) -> " ?:" <+> prettySimpleType "ts" (snake_inner . MTT) t
                                    Just t@(SimpleType TOne      _) -> " :"  <+> prettySimpleType "ts" (snake_inner . MTT) t
+                                   Just t@(InlineEnum TOne      _) -> " :"  <+> snake_case [MTT attrname] <> "Enum"
                                    Just t                          -> " : " <+> prettySimpleType "ts" (snake_inner . MTT) t
                                    Nothing -> ""
                                  <> semi

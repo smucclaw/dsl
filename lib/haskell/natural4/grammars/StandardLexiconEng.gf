@@ -14,6 +14,7 @@ concrete StandardLexiconEng of StandardLexicon = NL4BaseEng **
   lin
     within_Prep = mkPrep "within" ;
     only_AdA = mkAdA "only" ;
+    due_to_A2 = mkA2 (mkA "due") to_Prep ;
 
   -- Open classes, like nouns, verbs etc.
   lin

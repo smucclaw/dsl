@@ -157,7 +157,7 @@ tsEnums l4i =
 
           -- but we also want to preserve the original strings for downstream use
           -- so we use the L4Orig convention
-        <//> "L4Orig.enums." <> snake_case className <+> equals <+> lbrace
+        <//> "L4Orig.enums['" <> snake_case className <> "']" <+> equals <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> colon <+> dquotes (pretty (mt2text [enumStr])) <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm

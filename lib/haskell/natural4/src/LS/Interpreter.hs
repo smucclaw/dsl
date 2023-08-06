@@ -11,7 +11,13 @@ In future, we may be so ambitious as to attempt some type checking and type infe
 
 See also documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
 
-Typical usage: an XPile module is handed the output of `l4interpret`, and  makes use of the values returned in the `l4i` object.
+Typical usage: an XPile module is handed the output of `l4interpret`, and makes use of the values returned in the `l4i` object.
+
+Sometimes it will access the original rules directly. It is preferable, however, that downstream transpilers should access via the Interpreter's API.
+
+The Interpreter can thereby handle expansion and other transformations in ways that are consistent across multiple transpilers.
+
+To view the various endpoints exposed by the Interpreter, see @org/LATEST.org@.
 
 -}
 
@@ -59,7 +65,7 @@ l4interpret iopts rs =
         , origrules  = rs
         }
 
--- | the fully expanded, exposed, decision roots of all rules in the ruleset,
+-- | Provide the fully expanded, exposed, decision roots of all rules in the ruleset,
 --   grouped ("nubbed") into rule groups (since multiple rules may have the same decision body).
 --
 --   This is used for:
@@ -88,7 +94,12 @@ qaHornsR l4i =
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]
 
--- | interpret the parsed rules and construct the symbol tables
+-- | interpret the parsed rules and construct the symbol tables. The
+-- output of this function is exposed in the `scopetable` attribute of
+-- the `l4i` record. We use the name "Scope" here because in the
+-- future we will organize the symbol tables according to section
+-- scope.
+
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
 symbolTable _iopts rs =
   Map.fromListWith (<>) (fromGivens <> fromDefines <> fromDecides)
@@ -128,7 +139,10 @@ symbolTable _iopts rs =
                         symtable = Map.fromList [(name r, ((super r,[]), clauses r))]
                   ]
 
--- | classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
+-- | A map of all the classes we know about.
+--
+-- Classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
+-- The output of this function is exposed in the `classtable` attribute of the `l4i` record.
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
   -- multiple DECLARE of the same class are allowed, so we have to merge.
@@ -143,9 +157,12 @@ classHierarchy rs =
   , let thisclass = mt2text (name r)
         classtype = (super r, [])
         attributes = classHierarchy (has r)
+  , (Just (SimpleType _ _), _) <- [classtype]
   ]
 
--- | redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
+-- | A graph of all the classes we know about.
+--
+-- redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
 classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
 classGraph (CT ch) ancestors = concat
   [ (nodePath, (_itypesig, childct)) : classGraph childct nodePath

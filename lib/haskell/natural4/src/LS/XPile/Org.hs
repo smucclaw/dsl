@@ -19,17 +19,21 @@ import LS.Interpreter
       ruleDecisionGraph,
       expandRule,
       classGraph,
-      defaultToSuperClass, defaultToSuperType,
+      extractEnums,
       )
 import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
     ( Interpreted(classtable, scopetable),
+      Rule(..),
       hasGiven,
       hasClauses,
       ruleLabelName,
       Rule(clauses, given) )
-import LS.Types ( unCT )
+import LS.Types ( unCT
+                , TypeSig (InlineEnum, SimpleType)
+                , ParamType (TOne, TOptional)
+                )
 import LS.PrettyPrinter
 
 import Prettyprinter
@@ -38,6 +42,7 @@ import Text.Pretty.Simple ( pShowNoColor )
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.List (nub)
+import qualified Data.List.NonEmpty as NE
 import Data.Bifunctor (first)
 import Data.Graph.Inductive (prettify)
 import Data.Text qualified as Text
@@ -76,6 +81,17 @@ musings l4i rs =
                    | (cname, cchild) <- cg ]
            , "** The entire classgraph"
            , srchs cg
+           
+           , "** Enums"
+           , vvsep [ "***" <+> snake_case className
+                   <//> vsep [ "-" <+> snake_case [enumStr]
+                             | (enumMultiTerm, _) <- NE.toList enumNEList
+                             , enumStr <- NE.toList enumMultiTerm
+                             ]
+                     | r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} <- extractEnums l4i
+                     , let className = ruleLabelName r
+                   ]
+
            , "** Symbol Table"
            , "we know about the following scopes"
            , vvsep [ "*** Rule:" <+> hsep (pretty <$> rn) </>

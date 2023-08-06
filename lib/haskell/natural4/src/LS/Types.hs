@@ -470,7 +470,7 @@ extendedAttributes o@(CT clstab) subclass = do
                  (Just (Just (CT ea))) -> ea
   return $ CT $ ct <> eAttrs
 
--- get out whatever type signature has been user defined or inferred.
+-- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
 getSymType (Just x, _)    = Just x
 getSymType (Nothing, x:_) = Just x

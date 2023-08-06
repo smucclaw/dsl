@@ -220,7 +220,6 @@ topsortedClasses ct =
 -- | Extract all Enum declarations recursing through class declarations, so we can hoist them to top-level for use by, say, the Typescript transpiler.
 --
 -- This covers the following situations:
---
 -- - DECLARE toplevelEnum                  IS ONEOF enum1 enum2
 --
 -- - DECLARE class1 HAS attr1              IS ONEOF enum3 enum4
@@ -228,7 +227,12 @@ topsortedClasses ct =
 -- - DECLARE class2 HAS attr2 HAS attr3    IS ONEOF enum5 enum6
 --
 -- - GIVEN x                               IS ONEOF x1 x2 x3      DECIDE ...
+--
 -- We return a list of rules rewritten into a standardized toplevel format, preserving the srcref information
+--
+-- There are probably a handful of other places inside a `Rule` where
+-- a `TypeSig` could appear, and we need to exhaustively traverse all
+-- of those places. Please add code as you find such places.
 extractEnums :: Interpreted -> [Rule]
 extractEnums l4i =
   let rs = origrules l4i
@@ -243,13 +247,16 @@ extractEnums l4i =
                                      , super = gEnum
                                      , srcref = srcref}
                    | (gName, gEnum@(Just (InlineEnum _ _))) <- NE.toList givens
+                   -- consider using getSymType in case the type is inferred, not explicit
                    , let nameEnum = (\case
                                         (MTT mtt) -> MTT $ mtt <> "Enum"
                                         x         -> x) <$> NE.toList gName
                    ]
     go _ = []
 
--- | Sometimes multiple rules will have the same decision content: X depends on Z; Y also depends on Z.
+-- | Group decision boolstructs into AndOrTrees that comprise multiple original rules.
+--
+-- Sometimes multiple rules will have the same decision content: X depends on Z; Y also depends on Z.
 -- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree (Z) to one or more rules (X and Y).
 groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
 groupedByAOTree l4i rs =
@@ -258,6 +265,7 @@ groupedByAOTree l4i rs =
 
 
 -- | The top-level decision roots which we expose to the web UI, and also visualize with SVGLadder.
+--
 -- We exclude rules which are the target of a GOTO RuleAlias, because those are just infrastructure.
 -- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
 -- We want the SVG Xpiler to reuse this code as authoritative.
@@ -304,8 +312,6 @@ getAttrTypesIn ct classname =
                               ]
 
 
-type RuleIDMap = Map.HashMap Rule Int
-
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
 -- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
@@ -317,6 +323,8 @@ type RuleIDMap = Map.HashMap Rule Int
 type RuleGraphEdgeLabel = ()
 type RuleGraph = Gr Rule RuleGraphEdgeLabel
 
+-- | used by `ruleDecisionGraph`; a map from a rule to a unique integer identifier for that rule, used in the `RuleGraph`
+type RuleIDMap = Map.HashMap Rule Int
 
 -- | which decision rules depend on which other decision rules?
 ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
@@ -335,6 +343,7 @@ relPredRefsAll l4i rs ridmap =
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known BSR heads from the entire ruleset.
+--
 -- in other words, if a rule R1 says something like (a WHEN b OR c), it defines a, and relies on b and c;
 -- if we find a rule R2 which defines (c MEANS c1 AND c2), then it defines c, and relies on c1 and c2.
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
@@ -364,8 +373,14 @@ relPredRefs _l4i rs ridmap r =
      ]
 
 
--- | All the rules which have no indegrees, as far as decisioning goes.
--- This is based solely on the rule graph.
+-- | Which rules are "top-level", "entry-point" rules?
+--
+-- Those are the rules we should put in front of the user.
+--
+-- They subsume (via the @expand*@ family of functions) other sub-rules.
+--
+-- Examine the rulegraph for rules which have no indegrees, as far as decisioning goes.
+
 decisionRoots :: RuleGraph -> [Rule]
 decisionRoots rg =
   let rg' = dereflexed
@@ -442,6 +457,8 @@ bsmtOfClauses l4i depth r
       in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
   | otherwise = []
 
+-- * Expansion of decision rules: we insert sub-rules into parent rules.
+
 -- | What does clause expansion mean?
 -- We walk through the RelationalPredicates found in the head and the body of HornClause.
 -- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
@@ -461,6 +478,7 @@ expandClauses' l4i depth hcs =
   in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
      toreturn
 
+-- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
 unleaf :: BoolStructR -> BoolStructR
 unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
 unleaf (AA.All  lbl xs) = AA.mkAll lbl (unleaf <$> xs)
@@ -556,6 +574,7 @@ expandBSRM l4i depth x = do
   mutterdhsf depth "expandBSR() returning" pShowNoColorS toreturn
   return toreturn
 
+-- | Do expansion, throwing away the LHS IS part of any `RPBoolStructR` elements we encounter.
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth (AA.Leaf rp)  =
   case expandRP l4i (depth + 1) rp of
@@ -565,6 +584,7 @@ expandBSR' l4i depth (AA.Not item)   = {- AA.nnf $ -} AA.mkNot     (expandBSR' l
 expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
 expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
 
+-- | unimplemented
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody _l4i = id
 
@@ -583,6 +603,9 @@ expandRulesByLabel rules txt =
   in -- trace ("expandRulesByLabel(" ++ show txt ++ ") about to return " ++ show (rlabel <$> toreturn))
      toreturn
 
+-- | Perform expansion of a single rule, in the context of a larger ruleset; return multiple expanded rules.
+--
+-- This supports the functionality of a rule being defined in terms of other rules, a la R1 MEANS R2 AND R3
 expandRule :: [Rule] -> Rule -> [Rule]
 expandRule _rules r@Regulative{} = [r]
 expandRule rules r@Hornlike{..} =
@@ -605,13 +628,18 @@ expandRule rules r@Hornlike{..} =
 expandRule _ _ = []
 
 
--- | used for purescript output -- this is the toplevel function called by Main
+-- | What are the leaf nodes -- "items" in AnyAll parlance -- that
+-- form the basis for the input widgets, or questions, in the end-user
+-- interview interface?
+--
+-- used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> BoolStructT
 onlyTheItems l4i =
   let myitem = AA.mkAll Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
       simplified = AA.simplifyBoolStruct myitem
   in simplified
 
+-- | subsidiary to the above function, look for only one item by name.
 onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> BoolStructT
 onlyItemNamed l4i rs wanteds =
   let ibr = itemsByRule l4i rs
@@ -621,15 +649,7 @@ onlyItemNamed l4i rs wanteds =
     then AA.mkLeaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
     else snd $ DL.head found
 
--- | let's hazard a guess that the item with the mostest is the thing we should put in front of the user.
-biggestItem :: Interpreted -> [Rule] -> Maybe BoolStructT
-biggestItem l4i rs = do
-  let ibr = itemsByRule l4i rs
-      flattened = (\(x,y) -> (x, AA.extractLeaves y)) <$> ibr
-      sorted = DL.reverse $ DL.sortOn (DL.length . snd) flattened
-  guard (not $ null sorted)
-  return ((Map.fromList ibr) ! (fst $ DL.head sorted))
-
+-- | return those Q&A leaf items arranged by the rule to which they contribute.
 itemsByRule :: Interpreted -> [Rule] -> [(RuleName, BoolStructT)]
 itemsByRule l4i rs =
   [ (ruleLabelName r, simplified)
@@ -642,6 +662,8 @@ itemsByRule l4i rs =
 -- | we must be certain it's always going to be an RPMT
 -- we extract so that it's easier to convert to JSON or to purescript Item Text
 -- [TODO] would it make sense for this to simply become extractRPMT2MT?
+-- We probably should extend this to other RelationalPredicate constructors like RPnary.
+-- Should we relocate this to the RelationalPredicate module?
 extractRPMT2Text :: RelationalPredicate -> T.Text
 extractRPMT2Text (RPMT ts) = mt2text ts
 extractRPMT2Text _         = error "extractRPMT2Text: expecting RPMT only, other constructors not supported."
@@ -649,21 +671,31 @@ extractRPMT2Text _         = error "extractRPMT2Text: expecting RPMT only, other
 ruleNameStr :: Rule -> String
 ruleNameStr r = T.unpack (mt2text (ruleLabelName r))
 
+-- | A RuleSet is a list of rules. We occasionally see this alias used here and there across the codebase.
 type RuleSet = [Rule]
 
+-- * the getRuleBy* family
+-- 
+-- | Retrieve a rule by name, using `ruleName`
 getRuleByName :: RuleSet -> RuleName -> Maybe Rule
 getRuleByName rs rn = find (\r -> ruleName r == rn) rs
 
+-- | Retrieve a rule by label, using `getRlabel`
+--
+-- note that this matches by `getRlabel` not by `ruleLabelName`
 getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
 getRuleByLabel rs t = find (\r -> (rl2text <$> getRlabel r) == Just t) rs
 
+-- | Retrieve a rule by either `getRlabel` or `ruleName`
+--
+-- Note that this is not exactly the same thing as `ruleLabelName`.
 getRuleByLabelName :: RuleSet -> T.Text -> Maybe Rule
 getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
                                       ||
                                       ruleName r == [MTT t]
                                ) rs
 
--- where every RelationalPredicate in the boolstruct is narrowed to RPMT only
+-- | Transform every RelationalPredicate in a `BoolStructR` to use only the data constructor `RPMT`.
 bsr2bsmt :: BoolStructR -> BoolStructR
 bsr2bsmt (AA.Leaf (RPMT mt)                      ) = AA.mkLeaf (RPMT mt)
 bsr2bsmt (AA.Leaf (RPParamText pt)               ) = AA.mkLeaf (RPMT $ pt2multiterm pt)

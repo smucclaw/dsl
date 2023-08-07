@@ -221,8 +221,11 @@ topsortedClasses ct =
 --
 -- This covers the following situations:
 -- - DECLARE toplevelEnum                  IS ONEOF enum1 enum2
+--
 -- - DECLARE class1 HAS attr1              IS ONEOF enum3 enum4
+--
 -- - DECLARE class2 HAS attr2 HAS attr3    IS ONEOF enum5 enum6
+--
 -- - GIVEN x                               IS ONEOF x1 x2 x3      DECIDE ...
 --
 -- We return a list of rules rewritten into a standardized toplevel format, preserving the srcref information
@@ -281,13 +284,22 @@ attrType (CT clstab) attrName = do
   getSymType t
 
 
--- | extract all inheritance relationships
+-- | extract all inheritance relationships.
+--
 getInheritances :: ClsTab -> [(EntityType, EntityType)]
 getInheritances ct =
   [ (child, parent)
   | child <- getCTkeys ct
-  , (Just parent) <- [clsParent ct child]
+  , let parent = defaultToSuperClass $ clsParent ct child
   ]
+
+-- | If a class was declared with no extension ("IS A") we assign it to DefaultSuperClass.
+defaultToSuperClass :: Maybe EntityType -> EntityType
+defaultToSuperClass = fromMaybe "DefaultSuperClass"
+
+-- | same thing but for typesigs
+defaultToSuperType :: Maybe TypeSig -> TypeSig
+defaultToSuperType = fromMaybe (SimpleType TOne (defaultToSuperClass Nothing))
 
 -- | recursively return all attribute types found under a given class, i think?
 getAttrTypesIn :: ClsTab -> EntityType -> [TypeSig]

@@ -220,7 +220,6 @@ topsortedClasses ct =
 -- | Extract all Enum declarations recursing through class declarations, so we can hoist them to top-level for use by, say, the Typescript transpiler.
 --
 -- This covers the following situations:
---
 -- - DECLARE toplevelEnum                  IS ONEOF enum1 enum2
 --
 -- - DECLARE class1 HAS attr1              IS ONEOF enum3 enum4

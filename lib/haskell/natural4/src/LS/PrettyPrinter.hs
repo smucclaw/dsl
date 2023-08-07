@@ -213,7 +213,11 @@ untaint :: T.Text -> T.Text
 untaint = T.replace " " "_" .
           T.replace "," "_" .
           T.replace "'" "_" .
-          T.replace "-" "_"
+          T.replace "%" "pct" .
+          T.replace "(" "_" .
+          T.replace ")" "_" .
+          T.replace "-" "_" .
+          T.replace "–" "_"
 --          T.replace "\’" "_" -- [TODO] we need to replace all non-low-unicode characters with underscores.
 
 

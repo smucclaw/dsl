@@ -22,9 +22,9 @@ module LS.XPile.Typescript where
 import Data.HashMap.Strict qualified as Map
 -- import qualified Data.Text as T
 -- import Data.Maybe (catMaybes, fromMaybe, isJust)
--- import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty as NE
 import Data.List (intercalate, nub)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 import Data.Tree qualified as DT
 import LS.Interpreter
   ( attrType,
@@ -32,6 +32,7 @@ import LS.Interpreter
     globalFacts,
     l4interpret,
     topsortedClasses,
+    extractEnums,
   )
 import LS.PrettyPrinter
   ( ParamText4 (PT4, PT5),
@@ -45,7 +46,8 @@ import LS.PrettyPrinter
   )
 import LS.Rule as SFL4R
   ( Interpreted (classtable, scopetable),
-    Rule,
+    Rule(..),
+    ruleLabelName
   )
 import LS.Types as SFL4
   ( ClsTab (CT),
@@ -61,10 +63,11 @@ import LS.Types as SFL4
         RPParamText,
         RPnary
       ),
-    TypeSig (SimpleType),
+    TypeSig (InlineEnum, SimpleType),
     clsParent,
     defaultInterpreterOptions,
     getSymType,
+    mt2text,
   )
 import Prettyprinter
   ( Doc,
@@ -92,10 +95,20 @@ asTypescript :: [SFL4R.Rule] -> Doc ann
 asTypescript rs =
   let l4i = l4interpret defaultInterpreterOptions rs
   in
-    vvsep [ tsClasses l4i
+    vvsep [ tsPrelude l4i
+          , tsEnums l4i
+          , tsClasses l4i
           , globalDefinitions l4i
           ]
 
+-- | a convention for preserving the original strings and data structures for downstream use
+tsPrelude :: Interpreted -> Doc ann
+tsPrelude l4i =
+  vsep [ "// tsPrelude"
+       , "export const L4Orig = { enums: { }, classes: { } }"
+       ]
+
+-- | output class declarations
 tsClasses :: Interpreted -> Doc ann
 tsClasses l4i =
   let ct@(CT ch) = classtable l4i
@@ -106,10 +119,12 @@ tsClasses l4i =
            (Just parent) -> " extends" <+> pretty parent
           -- attributes of the class are shown as decls
           <+> lbrace
+          -- <//> "  //" <+> viaShow csuper
           <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
                                    Just t@(SimpleType TOptional _) -> " ?:" <+> prettySimpleType "ts" (snake_inner . MTT) t
                                    Just t@(SimpleType TOne      _) -> " :"  <+> prettySimpleType "ts" (snake_inner . MTT) t
+                                   Just t@(InlineEnum TOne      _) -> " :"  <+> snake_case [MTT attrname] <> "Enum"
                                    Just t                          -> " : " <+> prettySimpleType "ts" (snake_inner . MTT) t
                                    Nothing -> ""
                                  <> semi
@@ -118,8 +133,39 @@ tsClasses l4i =
                                ] )
           <//> rbrace
         | className <- reverse $ topsortedClasses ct
-        , (Just (_ctype, children)) <- [Map.lookup className ch]
+        , (Just (csuper, children)) <- [Map.lookup className ch]
+        , case csuper of
+            (Just (SimpleType _ _), _) -> True
+            (Just (InlineEnum _ _), _) -> False -- we deal with enums separately below
+            _                          -> True
         ]
+
+-- | output enum declarations
+tsEnums :: Interpreted -> Doc ann
+tsEnums l4i =
+  vvsep ( showEnum <$> extractEnums l4i )
+  where
+    showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
+      let className = ruleLabelName r
+      in 
+        "enum" <+> snake_case className <+> lbrace
+        <//> indent 2 ( vsep [ snake_case [enumStr] <> comma
+                             | (enumMultiTerm, _) <- NE.toList enumNEList
+                             , enumStr <- NE.toList enumMultiTerm
+                             ] )
+        <//> rbrace
+
+          -- but we also want to preserve the original strings for downstream use
+          -- so we use the L4Orig convention
+        <//> "L4Orig.enums." <> snake_case className <+> equals <+> lbrace
+        <//> indent 2 ( vsep [ snake_case [enumStr] <> colon <+> dquotes (pretty (mt2text [enumStr])) <> comma
+                             | (enumMultiTerm, _) <- NE.toList enumNEList
+                             , enumStr <- NE.toList enumMultiTerm
+                             ] )
+        <//> rbrace
+
+  
+
 
 -- | all the symbols we know about, including those that show up in GIVEN, DEFINE, and DECIDE.
 -- This is probably not the best way to do it because we're commingling local and global variables here.

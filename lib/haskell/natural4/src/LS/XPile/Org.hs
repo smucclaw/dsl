@@ -18,7 +18,9 @@ import LS.Interpreter
       globalFacts,
       ruleDecisionGraph,
       expandRule,
-      classGraph )
+      classGraph,
+      defaultToSuperClass, defaultToSuperType,
+      )
 import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
@@ -67,7 +69,7 @@ musings l4i rs =
                              else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
                            , if null cchild
                              then emptyDoc
-                             else "**** extends" <+> maybe "" viaShow (fst . fst $ cchild) <+> "with new attributes"
+                             else "**** extends" <+> viaShow (defaultToSuperType $ fst . fst $ cchild) <+> "with new attributes"
                                   </> srchs (snd cchild)
                            , "**** deets" </> srchs cname
                            ]

@@ -259,13 +259,22 @@ attrType (CT clstab) attrName = do
   getSymType t
 
 
--- | extract all inheritance relationships
+-- | extract all inheritance relationships.
+--
 getInheritances :: ClsTab -> [(EntityType, EntityType)]
 getInheritances ct =
   [ (child, parent)
   | child <- getCTkeys ct
-  , (Just parent) <- [clsParent ct child]
+  , let parent = defaultToSuperClass $ clsParent ct child
   ]
+
+-- | If a class was declared with no extension ("IS A") we assign it to DefaultSuperClass.
+defaultToSuperClass :: Maybe EntityType -> EntityType
+defaultToSuperClass = fromMaybe "DefaultSuperClass"
+
+-- | same thing but for typesigs
+defaultToSuperType :: Maybe TypeSig -> TypeSig
+defaultToSuperType = fromMaybe (SimpleType TOne (defaultToSuperClass Nothing))
 
 -- | recursively return all attribute types found under a given class, i think?
 getAttrTypesIn :: ClsTab -> EntityType -> [TypeSig]

@@ -200,11 +200,16 @@ topsortedClasses ct =
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
 
--- | extract all Enum declarations recursing through class declarations, so we can hoist to top-level for, say, the Typescript transpiler.
--- This is necessary to cover both the following situations:
+-- | Extract all Enum declarations recursing through class declarations, so we can hoist them to top-level for use by, say, the Typescript transpiler.
+--
+-- This covers the following situations:
+--
 -- - DECLARE toplevelEnum                  IS ONEOF enum1 enum2
+--
 -- - DECLARE class1 HAS attr1              IS ONEOF enum3 enum4
+--
 -- - DECLARE class2 HAS attr2 HAS attr3    IS ONEOF enum5 enum6
+--
 -- - GIVEN x                               IS ONEOF x1 x2 x3      DECIDE ...
 -- We return a list of rules rewritten into a standardized toplevel format, preserving the srcref information
 extractEnums :: Interpreted -> [Rule]

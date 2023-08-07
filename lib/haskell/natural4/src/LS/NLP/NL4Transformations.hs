@@ -96,7 +96,7 @@ bsNeg2textNeg bs = case bs of
 -- textNeg2bsNeg :: BoolStructWho -> BoolStructWho
 
 -----------------------------------------------------------------------------
--- This is rather hard to read, but the alternative is to duplicate bs2gf for every single GF category
+-- This is rather hard to read, but the alternative is to duplicate bs2gf for every single GF cate(LexConj "OR")y
 
 type ConjFun list single = GConj -> Tree list -> Tree single
 type ConjPreFun list single = GPrePost -> GConj -> Tree list -> Tree single
@@ -106,12 +106,12 @@ type ListFun single list = [Tree single] -> Tree list
 bs2gf :: (Gf (Tree s)) => ConjFun l s -> ConjPreFun l s -> ConjPrePostFun l s -> ListFun s l -> BoolStructGF s -> Tree s
 bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.Leaf x -> x
-    AA.Any Nothing xs -> mergeConj $ conj GOR $ mkList $ f <$> xs
-    AA.All Nothing xs -> mergeConj $ conj GAND $ mkList $ f <$> xs
-    AA.Any (Just (AA.Pre pre)) xs -> conjPre pre GOR $ mkList $ f <$> xs
-    AA.All (Just (AA.Pre pre)) xs -> conjPre pre GAND $ mkList $ f <$> xs
-    AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
-    AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GAND $ mkList $ f <$> xs
+    AA.Any Nothing xs -> mergeConj $ conj (LexConj "OR") $ mkList $ f <$> xs
+    AA.All Nothing xs -> mergeConj $ conj (LexConj "AND") $ mkList $ f <$> xs
+    AA.Any (Just (AA.Pre pre)) xs -> conjPre pre (LexConj "OR") $ mkList $ f <$> xs
+    AA.All (Just (AA.Pre pre)) xs -> conjPre pre (LexConj "AND") $ mkList $ f <$> xs
+    AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post (LexConj "OR") $ mkList $ f <$> xs
+    AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post (LexConj "AND") $ mkList $ f <$> xs
     AA.Not unexpectedBS -> trace unexpectedNegationMsg $ bs2gf conj conjPre conjPrePost mkList unexpectedBS
 --    AA.Not _ -> error unexpectedNegationMsg
   where
@@ -227,6 +227,6 @@ aggregateBoolStruct l bs =
     then bs
     else
       (case bs of
-        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
-        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
+        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ concatMap toList xs
+        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ concatMap toList xs
         _ -> bs)

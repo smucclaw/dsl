@@ -190,82 +190,7 @@ type GFloat = Tree GFloat_
 data GFloat_
 
 data Tree :: * -> * where
-  G_accepted_A :: Tree GA_
-  G_accidental_A :: Tree GA_
-  G_active_A :: Tree GA_
-  G_add_A :: Tree GA_
-  G_adjusted_A :: Tree GA_
-  G_alive_A :: Tree GA_
-  G_basic_A :: Tree GA_
-  G_biological_A :: Tree GA_
-  G_chemical_A :: Tree GA_
-  G_claimable_A :: Tree GA_
-  G_commercial_A :: Tree GA_
-  G_competitive_A :: Tree GA_
-  G_current_A :: Tree GA_
-  G_dangerous_A :: Tree GA_
-  G_dead_A :: Tree GA_
-  G_disabled_A :: Tree GA_
-  G_double_A :: Tree GA_
-  G_due_A :: Tree GA_
-  G_equal_A :: Tree GA_
-  G_first_A :: Tree GA_
-  G_fractured_A :: Tree GA_
-  G_geographical_A :: Tree GA_
-  G_great_A :: Tree GA_
-  G_hfmd_A :: Tree GA_
-  G_high_A :: Tree GA_
-  G_human_A :: Tree GA_
-  G_incurable_A :: Tree GA_
-  G_infectious_A :: Tree GA_
-  G_initial_A :: Tree GA_
-  G_intentional_A :: Tree GA_
-  G_japanese_A :: Tree GA_
-  G_juvenile_A :: Tree GA_
-  G_less_A :: Tree GA_
-  G_little_A :: Tree GA_
-  G_logical_A :: Tree GA_
-  G_low_A :: Tree GA_
-  G_martial_A :: Tree GA_
-  G_maximum_A :: Tree GA_
-  G_medical_A :: Tree GA_
-  G_mental_A :: Tree GA_
-  G_middle_A :: Tree GA_
-  G_military_A :: Tree GA_
-  G_more_A :: Tree GA_
-  G_multiple_A :: Tree GA_
-  G_national_A :: Tree GA_
-  G_normal_A :: Tree GA_
-  G_nuclear_A :: Tree GA_
-  G_other_A :: Tree GA_
-  G_particular_A :: Tree GA_
-  G_past_A :: Tree GA_
-  G_payable_A :: Tree GA_
-  G_permanent_A :: Tree GA_
-  G_physical_A :: Tree GA_
-  G_possible_A :: Tree GA_
-  G_previous_A :: Tree GA_
-  G_private_A :: Tree GA_
-  G_professional_A :: Tree GA_
-  G_public_A :: Tree GA_
-  G_reckless_A :: Tree GA_
-  G_registered_A :: Tree GA_
-  G_relevant_A :: Tree GA_
-  G_subject_A :: Tree GA_
-  G_successful_A :: Tree GA_
-  G_surgical_A :: Tree GA_
-  G_third_A :: Tree GA_
-  G_total_A :: Tree GA_
-  G_traditional_A :: Tree GA_
-  G_triple_A :: Tree GA_
-  G_unlawful_A :: Tree GA_
-  G_unnecessary_A :: Tree GA_
-  G_unsound_A :: Tree GA_
-  G_unsuccessful_A :: Tree GA_
-  G_upscaled_A :: Tree GA_
-  G_valid_A :: Tree GA_
-  G_viral_A :: Tree GA_
-  G_waterborne_A :: Tree GA_
+  LexA :: String -> Tree GA_
   G_located_in_A2 :: Tree GA2_
   Gdue_to_A2 :: Tree GA2_
   GComplA2 :: GA2 -> GNP -> Tree GAP_
@@ -289,14 +214,21 @@ data Tree :: * -> * where
   GWhileDoing :: GVP -> Tree GAdv_
   G_as_Adv :: Tree GAdv_
   G_at_Adv :: Tree GAdv_
+  G_directly_Adv :: Tree GAdv_
   G_first_Adv :: Tree GAdv_
   G_fully_Adv :: Tree GAdv_
   G_hence_Adv :: Tree GAdv_
+  G_here_Adv :: Tree GAdv_
+  G_indirectly_Adv :: Tree GAdv_
   G_least_Adv :: Tree GAdv_
+  G_long_Adv :: Tree GAdv_
+  G_more_Adv :: Tree GAdv_
+  G_no_Adv :: Tree GAdv_
   G_on_its_way_Adv :: Tree GAdv_
   G_only_Adv :: Tree GAdv_
   G_permanently_Adv :: Tree GAdv_
   G_pland_Adv :: Tree GAdv_
+  G_so_Adv :: Tree GAdv_
   G_soon_Adv :: Tree GAdv_
   G_then_Adv :: Tree GAdv_
   G_totally_Adv :: Tree GAdv_
@@ -324,8 +256,7 @@ data Tree :: * -> * where
   GRPConstraint :: GCond -> GTComparison -> GDate -> Tree GCond_
   GWHEN :: GNP -> GTemp -> GPol -> GVP -> Tree GCond_
   GrecoverUnparsedCond :: GString -> Tree GCond_
-  GAND :: Tree GConj_
-  GOR :: Tree GConj_
+  LexConj :: String -> Tree GConj_
   GConjConstraint :: GConj -> GListConstraint -> Tree GConstraint_
   GConjPreConstraint :: GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
@@ -408,109 +339,7 @@ data Tree :: * -> * where
   GNumPl :: Tree GNum_
   GNumSg :: Tree GNum_
   Gnum :: GSub1000000 -> Tree GNumeral_
-  G_1012_PN :: Tree GPN_
-  G_1013_PN :: Tree GPN_
-  G_1014_PN :: Tree GPN_
-  G_333A_PN :: Tree GPN_
-  G_ADD_PN :: Tree GPN_
-  G_AIDS_PN :: Tree GPN_
-  G_Accident_PN :: Tree GPN_
-  G_Accidental_PN :: Tree GPN_
-  G_Accidents_PN :: Tree GPN_
-  G_Address_PN :: Tree GPN_
-  G_Adjustment_PN :: Tree GPN_
-  G_Assured_PN :: Tree GPN_
-  G_BSA_PN :: Tree GPN_
-  G_Benefit_PN :: Tree GPN_
-  G_Cap_PN :: Tree GPN_
-  G_Claim_PN :: Tree GPN_
-  G_CoV_PN :: Tree GPN_
-  G_Conditions_PN :: Tree GPN_
-  G_Date_PN :: Tree GPN_
-  G_Death_PN :: Tree GPN_
-  G_Details_PN :: Tree GPN_
-  G_Disease_PN :: Tree GPN_
-  G_Dismemberment_PN :: Tree GPN_
-  G_Event_PN :: Tree GPN_
-  G_Expense_PN :: Tree GPN_
-  G_Flu_PN :: Tree GPN_
-  G_H5N1_PN :: Tree GPN_
-  G_H7N9_PN :: Tree GPN_
-  G_H7N_PN :: Tree GPN_
-  G_H9N2_PN :: Tree GPN_
-  G_HAS_PN :: Tree GPN_
-  G_Head_PN :: Tree GPN_
-  G_Health_PN :: Tree GPN_
-  G_Influenza_PN :: Tree GPN_
-  G_Injury_PN :: Tree GPN_
-  G_Insurer_PN :: Tree GPN_
-  G_LA_PN :: Tree GPN_
-  G_LE_PN :: Tree GPN_
-  G_Leg_PN :: Tree GPN_
-  G_Legionnaires_PN :: Tree GPN_
-  G_Life_PN :: Tree GPN_
-  G_Limit_PN :: Tree GPN_
-  G_MAP_PN :: Tree GPN_
-  G_MIN_PN :: Tree GPN_
-  G_MR_PN :: Tree GPN_
-  G_M_PN :: Tree GPN_
-  G_Medicine_PN :: Tree GPN_
-  G_Melioidosis_PN :: Tree GPN_
-  G_Ministry_PN :: Tree GPN_
-  G_Mumps_PN :: Tree GPN_
-  G_N_PN :: Tree GPN_
-  G_Nipah_PN :: Tree GPN_
-  G_Ontology_PN :: Tree GPN_
-  G_PS_PN :: Tree GPN_
-  G_Plan14_PN :: Tree GPN_
-  G_PlanAF_PN :: Tree GPN_
-  G_PolicyHolder_PN :: Tree GPN_
-  G_Policy_PN :: Tree GPN_
-  G_RETURN_PN :: Tree GPN_
-  G_Reductions_PN :: Tree GPN_
-  G_Removal_PN :: Tree GPN_
-  G_Republic_PN :: Tree GPN_
-  G_SA_PN :: Tree GPN_
-  G_SG_PN :: Tree GPN_
-  G_Schedule_PN :: Tree GPN_
-  G_Section_PN :: Tree GPN_
-  G_Service_PN :: Tree GPN_
-  G_Singapore_PN :: Tree GPN_
-  G_Step_PN :: Tree GPN_
-  G_Subscribed_PN :: Tree GPN_
-  G_TABLE_PN :: Tree GPN_
-  G_Teeth_PN :: Tree GPN_
-  G_Triple_PN :: Tree GPN_
-  G_Type_PN :: Tree GPN_
-  G_Types_PN :: Tree GPN_
-  G_UPON_PN :: Tree GPN_
-  G_Wife_PN :: Tree GPN_
-  G_Yellow_PN :: Tree GPN_
-  G_addSA_PN :: Tree GPN_
-  G_benADD_PN :: Tree GPN_
-  G_benADDs_PN :: Tree GPN_
-  G_benRA_PN :: Tree GPN_
-  G_benTCM_PN :: Tree GPN_
-  G_circ_PN :: Tree GPN_
-  G_dTime_PN :: Tree GPN_
-  G_dType_PN :: Tree GPN_
-  G_diving_PN :: Tree GPN_
-  G_holder_PN :: Tree GPN_
-  G_motocross_PN :: Tree GPN_
-  G_p_PN :: Tree GPN_
-  G_plan3_PN :: Tree GPN_
-  G_plan4_PN :: Tree GPN_
-  G_planAF_PN :: Tree GPN_
-  G_planB_PN :: Tree GPN_
-  G_planC_PN :: Tree GPN_
-  G_planE_PN :: Tree GPN_
-  G_planF_PN :: Tree GPN_
-  G_policyHolder_PN :: Tree GPN_
-  G_qualifies_for_add_PN :: Tree GPN_
-  G_schema_PN :: Tree GPN_
-  G_sum_list_PN :: Tree GPN_
-  G_x_PN :: Tree GPN_
-  G_y_PN :: Tree GPN_
+  LexPN :: String -> Tree GPN_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
   GAP_PrePost :: GAP -> Tree GPrePost_
@@ -523,39 +352,7 @@ data Tree :: * -> * where
   GV2_PrePost :: GTemp -> GPol -> GV2 -> Tree GPrePost_
   GrecoverUnparsedPrePost :: GString -> Tree GPrePost_
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
-  G_across_Prep :: Tree GPrep_
-  G_after_Prep :: Tree GPrep_
-  G_as_Prep :: Tree GPrep_
-  G_at_Prep :: Tree GPrep_
-  G_between_Prep :: Tree GPrep_
-  G_by_Prep :: Tree GPrep_
-  G_during_Prep :: Tree GPrep_
-  G_for_Prep :: Tree GPrep_
-  G_from_Prep :: Tree GPrep_
-  G_in_Prep :: Tree GPrep_
-  G_into_Prep :: Tree GPrep_
-  G_involving_Prep :: Tree GPrep_
-  G_of_Prep :: Tree GPrep_
-  G_on_Prep :: Tree GPrep_
-  G_out_Prep :: Tree GPrep_
-  G_over_Prep :: Tree GPrep_
-  G_per_Prep :: Tree GPrep_
-  G_than_Prep :: Tree GPrep_
-  G_through_Prep :: Tree GPrep_
-  G_to_Prep :: Tree GPrep_
-  G_under_Prep :: Tree GPrep_
-  G_up_Prep :: Tree GPrep_
-  G_with_Prep :: Tree GPrep_
-  G_within_Prep :: Tree GPrep_
-  Gabout_Prep :: Tree GPrep_
-  Gafter_Prep :: Tree GPrep_
-  Gbefore_Prep :: Tree GPrep_
-  Gfor_Prep :: Tree GPrep_
-  Gfrom_Prep :: Tree GPrep_
-  Gon_Prep :: Tree GPrep_
-  Gpossess_Prep :: Tree GPrep_
-  Gto_Prep :: Tree GPrep_
-  Gwithin_Prep :: Tree GPrep_
+  LexPrep :: String -> Tree GPrep_
   GConjPrePostQS :: GString -> GString -> GConj -> GListQS -> Tree GQS_
   GConjQS :: GConj -> GListQS -> Tree GQS_
   GIdRP :: Tree GRP_
@@ -591,17 +388,7 @@ data Tree :: * -> * where
   Gpot51 :: Tree GSub1000000000000_
   Gpot5float :: GFloat -> Tree GSub1000000000000_
   Gpot5plus :: GSub1000 -> GSub1000000000 -> Tree GSub1000000000000_
-  G_and_Subj :: Tree GSubj_
-  G_as_Subj :: Tree GSubj_
-  G_before_Subj :: Tree GSubj_
-  G_both_Subj :: Tree GSubj_
-  G_but_Subj :: Tree GSubj_
-  G_if_Subj :: Tree GSubj_
-  G_or_Subj :: Tree GSubj_
-  G_that_Subj :: Tree GSubj_
-  G_when_Subj :: Tree GSubj_
-  G_while_Subj :: Tree GSubj_
-  Gbecause_Subj :: Tree GSubj_
+  LexSubj :: String -> Tree GSubj_
   GAFTER :: Tree GTComparison_
   GBEFORE :: Tree GTComparison_
   GBY :: Tree GTComparison_
@@ -639,6 +426,7 @@ data Tree :: * -> * where
   GComplVSif :: GVS -> GS -> Tree GVP_
   GComplVSthat :: GVS -> GS -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
+  GUseV :: GV -> Tree GVP_
   LexVP :: String -> Tree GVP_
   GMkVPI :: GVP -> Tree GVPI_
   GComparison_Card_Years :: GCard -> Tree GVPS_
@@ -665,82 +453,7 @@ data Tree :: * -> * where
 
 instance Eq (Tree a) where
   i == j = case (i,j) of
-    (G_accepted_A,G_accepted_A) -> and [ ]
-    (G_accidental_A,G_accidental_A) -> and [ ]
-    (G_active_A,G_active_A) -> and [ ]
-    (G_add_A,G_add_A) -> and [ ]
-    (G_adjusted_A,G_adjusted_A) -> and [ ]
-    (G_alive_A,G_alive_A) -> and [ ]
-    (G_basic_A,G_basic_A) -> and [ ]
-    (G_biological_A,G_biological_A) -> and [ ]
-    (G_chemical_A,G_chemical_A) -> and [ ]
-    (G_claimable_A,G_claimable_A) -> and [ ]
-    (G_commercial_A,G_commercial_A) -> and [ ]
-    (G_competitive_A,G_competitive_A) -> and [ ]
-    (G_current_A,G_current_A) -> and [ ]
-    (G_dangerous_A,G_dangerous_A) -> and [ ]
-    (G_dead_A,G_dead_A) -> and [ ]
-    (G_disabled_A,G_disabled_A) -> and [ ]
-    (G_double_A,G_double_A) -> and [ ]
-    (G_due_A,G_due_A) -> and [ ]
-    (G_equal_A,G_equal_A) -> and [ ]
-    (G_first_A,G_first_A) -> and [ ]
-    (G_fractured_A,G_fractured_A) -> and [ ]
-    (G_geographical_A,G_geographical_A) -> and [ ]
-    (G_great_A,G_great_A) -> and [ ]
-    (G_hfmd_A,G_hfmd_A) -> and [ ]
-    (G_high_A,G_high_A) -> and [ ]
-    (G_human_A,G_human_A) -> and [ ]
-    (G_incurable_A,G_incurable_A) -> and [ ]
-    (G_infectious_A,G_infectious_A) -> and [ ]
-    (G_initial_A,G_initial_A) -> and [ ]
-    (G_intentional_A,G_intentional_A) -> and [ ]
-    (G_japanese_A,G_japanese_A) -> and [ ]
-    (G_juvenile_A,G_juvenile_A) -> and [ ]
-    (G_less_A,G_less_A) -> and [ ]
-    (G_little_A,G_little_A) -> and [ ]
-    (G_logical_A,G_logical_A) -> and [ ]
-    (G_low_A,G_low_A) -> and [ ]
-    (G_martial_A,G_martial_A) -> and [ ]
-    (G_maximum_A,G_maximum_A) -> and [ ]
-    (G_medical_A,G_medical_A) -> and [ ]
-    (G_mental_A,G_mental_A) -> and [ ]
-    (G_middle_A,G_middle_A) -> and [ ]
-    (G_military_A,G_military_A) -> and [ ]
-    (G_more_A,G_more_A) -> and [ ]
-    (G_multiple_A,G_multiple_A) -> and [ ]
-    (G_national_A,G_national_A) -> and [ ]
-    (G_normal_A,G_normal_A) -> and [ ]
-    (G_nuclear_A,G_nuclear_A) -> and [ ]
-    (G_other_A,G_other_A) -> and [ ]
-    (G_particular_A,G_particular_A) -> and [ ]
-    (G_past_A,G_past_A) -> and [ ]
-    (G_payable_A,G_payable_A) -> and [ ]
-    (G_permanent_A,G_permanent_A) -> and [ ]
-    (G_physical_A,G_physical_A) -> and [ ]
-    (G_possible_A,G_possible_A) -> and [ ]
-    (G_previous_A,G_previous_A) -> and [ ]
-    (G_private_A,G_private_A) -> and [ ]
-    (G_professional_A,G_professional_A) -> and [ ]
-    (G_public_A,G_public_A) -> and [ ]
-    (G_reckless_A,G_reckless_A) -> and [ ]
-    (G_registered_A,G_registered_A) -> and [ ]
-    (G_relevant_A,G_relevant_A) -> and [ ]
-    (G_subject_A,G_subject_A) -> and [ ]
-    (G_successful_A,G_successful_A) -> and [ ]
-    (G_surgical_A,G_surgical_A) -> and [ ]
-    (G_third_A,G_third_A) -> and [ ]
-    (G_total_A,G_total_A) -> and [ ]
-    (G_traditional_A,G_traditional_A) -> and [ ]
-    (G_triple_A,G_triple_A) -> and [ ]
-    (G_unlawful_A,G_unlawful_A) -> and [ ]
-    (G_unnecessary_A,G_unnecessary_A) -> and [ ]
-    (G_unsound_A,G_unsound_A) -> and [ ]
-    (G_unsuccessful_A,G_unsuccessful_A) -> and [ ]
-    (G_upscaled_A,G_upscaled_A) -> and [ ]
-    (G_valid_A,G_valid_A) -> and [ ]
-    (G_viral_A,G_viral_A) -> and [ ]
-    (G_waterborne_A,G_waterborne_A) -> and [ ]
+    (LexA x,LexA y) -> x == y
     (G_located_in_A2,G_located_in_A2) -> and [ ]
     (Gdue_to_A2,Gdue_to_A2) -> and [ ]
     (GComplA2 x1 x2,GComplA2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -764,14 +477,21 @@ instance Eq (Tree a) where
     (GWhileDoing x1,GWhileDoing y1) -> and [ x1 == y1 ]
     (G_as_Adv,G_as_Adv) -> and [ ]
     (G_at_Adv,G_at_Adv) -> and [ ]
+    (G_directly_Adv,G_directly_Adv) -> and [ ]
     (G_first_Adv,G_first_Adv) -> and [ ]
     (G_fully_Adv,G_fully_Adv) -> and [ ]
     (G_hence_Adv,G_hence_Adv) -> and [ ]
+    (G_here_Adv,G_here_Adv) -> and [ ]
+    (G_indirectly_Adv,G_indirectly_Adv) -> and [ ]
     (G_least_Adv,G_least_Adv) -> and [ ]
+    (G_long_Adv,G_long_Adv) -> and [ ]
+    (G_more_Adv,G_more_Adv) -> and [ ]
+    (G_no_Adv,G_no_Adv) -> and [ ]
     (G_on_its_way_Adv,G_on_its_way_Adv) -> and [ ]
     (G_only_Adv,G_only_Adv) -> and [ ]
     (G_permanently_Adv,G_permanently_Adv) -> and [ ]
     (G_pland_Adv,G_pland_Adv) -> and [ ]
+    (G_so_Adv,G_so_Adv) -> and [ ]
     (G_soon_Adv,G_soon_Adv) -> and [ ]
     (G_then_Adv,G_then_Adv) -> and [ ]
     (G_totally_Adv,G_totally_Adv) -> and [ ]
@@ -799,8 +519,7 @@ instance Eq (Tree a) where
     (GRPConstraint x1 x2 x3,GRPConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GWHEN x1 x2 x3 x4,GWHEN y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GrecoverUnparsedCond x1,GrecoverUnparsedCond y1) -> and [ x1 == y1 ]
-    (GAND,GAND) -> and [ ]
-    (GOR,GOR) -> and [ ]
+    (LexConj x,LexConj y) -> x == y
     (GConjConstraint x1 x2,GConjConstraint y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreConstraint x1 x2 x3,GConjPreConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -883,109 +602,7 @@ instance Eq (Tree a) where
     (GNumPl,GNumPl) -> and [ ]
     (GNumSg,GNumSg) -> and [ ]
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
-    (G_1012_PN,G_1012_PN) -> and [ ]
-    (G_1013_PN,G_1013_PN) -> and [ ]
-    (G_1014_PN,G_1014_PN) -> and [ ]
-    (G_333A_PN,G_333A_PN) -> and [ ]
-    (G_ADD_PN,G_ADD_PN) -> and [ ]
-    (G_AIDS_PN,G_AIDS_PN) -> and [ ]
-    (G_Accident_PN,G_Accident_PN) -> and [ ]
-    (G_Accidental_PN,G_Accidental_PN) -> and [ ]
-    (G_Accidents_PN,G_Accidents_PN) -> and [ ]
-    (G_Address_PN,G_Address_PN) -> and [ ]
-    (G_Adjustment_PN,G_Adjustment_PN) -> and [ ]
-    (G_Assured_PN,G_Assured_PN) -> and [ ]
-    (G_BSA_PN,G_BSA_PN) -> and [ ]
-    (G_Benefit_PN,G_Benefit_PN) -> and [ ]
-    (G_Cap_PN,G_Cap_PN) -> and [ ]
-    (G_Claim_PN,G_Claim_PN) -> and [ ]
-    (G_CoV_PN,G_CoV_PN) -> and [ ]
-    (G_Conditions_PN,G_Conditions_PN) -> and [ ]
-    (G_Date_PN,G_Date_PN) -> and [ ]
-    (G_Death_PN,G_Death_PN) -> and [ ]
-    (G_Details_PN,G_Details_PN) -> and [ ]
-    (G_Disease_PN,G_Disease_PN) -> and [ ]
-    (G_Dismemberment_PN,G_Dismemberment_PN) -> and [ ]
-    (G_Event_PN,G_Event_PN) -> and [ ]
-    (G_Expense_PN,G_Expense_PN) -> and [ ]
-    (G_Flu_PN,G_Flu_PN) -> and [ ]
-    (G_H5N1_PN,G_H5N1_PN) -> and [ ]
-    (G_H7N9_PN,G_H7N9_PN) -> and [ ]
-    (G_H7N_PN,G_H7N_PN) -> and [ ]
-    (G_H9N2_PN,G_H9N2_PN) -> and [ ]
-    (G_HAS_PN,G_HAS_PN) -> and [ ]
-    (G_Head_PN,G_Head_PN) -> and [ ]
-    (G_Health_PN,G_Health_PN) -> and [ ]
-    (G_Influenza_PN,G_Influenza_PN) -> and [ ]
-    (G_Injury_PN,G_Injury_PN) -> and [ ]
-    (G_Insurer_PN,G_Insurer_PN) -> and [ ]
-    (G_LA_PN,G_LA_PN) -> and [ ]
-    (G_LE_PN,G_LE_PN) -> and [ ]
-    (G_Leg_PN,G_Leg_PN) -> and [ ]
-    (G_Legionnaires_PN,G_Legionnaires_PN) -> and [ ]
-    (G_Life_PN,G_Life_PN) -> and [ ]
-    (G_Limit_PN,G_Limit_PN) -> and [ ]
-    (G_MAP_PN,G_MAP_PN) -> and [ ]
-    (G_MIN_PN,G_MIN_PN) -> and [ ]
-    (G_MR_PN,G_MR_PN) -> and [ ]
-    (G_M_PN,G_M_PN) -> and [ ]
-    (G_Medicine_PN,G_Medicine_PN) -> and [ ]
-    (G_Melioidosis_PN,G_Melioidosis_PN) -> and [ ]
-    (G_Ministry_PN,G_Ministry_PN) -> and [ ]
-    (G_Mumps_PN,G_Mumps_PN) -> and [ ]
-    (G_N_PN,G_N_PN) -> and [ ]
-    (G_Nipah_PN,G_Nipah_PN) -> and [ ]
-    (G_Ontology_PN,G_Ontology_PN) -> and [ ]
-    (G_PS_PN,G_PS_PN) -> and [ ]
-    (G_Plan14_PN,G_Plan14_PN) -> and [ ]
-    (G_PlanAF_PN,G_PlanAF_PN) -> and [ ]
-    (G_PolicyHolder_PN,G_PolicyHolder_PN) -> and [ ]
-    (G_Policy_PN,G_Policy_PN) -> and [ ]
-    (G_RETURN_PN,G_RETURN_PN) -> and [ ]
-    (G_Reductions_PN,G_Reductions_PN) -> and [ ]
-    (G_Removal_PN,G_Removal_PN) -> and [ ]
-    (G_Republic_PN,G_Republic_PN) -> and [ ]
-    (G_SA_PN,G_SA_PN) -> and [ ]
-    (G_SG_PN,G_SG_PN) -> and [ ]
-    (G_Schedule_PN,G_Schedule_PN) -> and [ ]
-    (G_Section_PN,G_Section_PN) -> and [ ]
-    (G_Service_PN,G_Service_PN) -> and [ ]
-    (G_Singapore_PN,G_Singapore_PN) -> and [ ]
-    (G_Step_PN,G_Step_PN) -> and [ ]
-    (G_Subscribed_PN,G_Subscribed_PN) -> and [ ]
-    (G_TABLE_PN,G_TABLE_PN) -> and [ ]
-    (G_Teeth_PN,G_Teeth_PN) -> and [ ]
-    (G_Triple_PN,G_Triple_PN) -> and [ ]
-    (G_Type_PN,G_Type_PN) -> and [ ]
-    (G_Types_PN,G_Types_PN) -> and [ ]
-    (G_UPON_PN,G_UPON_PN) -> and [ ]
-    (G_Wife_PN,G_Wife_PN) -> and [ ]
-    (G_Yellow_PN,G_Yellow_PN) -> and [ ]
-    (G_addSA_PN,G_addSA_PN) -> and [ ]
-    (G_benADD_PN,G_benADD_PN) -> and [ ]
-    (G_benADDs_PN,G_benADDs_PN) -> and [ ]
-    (G_benRA_PN,G_benRA_PN) -> and [ ]
-    (G_benTCM_PN,G_benTCM_PN) -> and [ ]
-    (G_circ_PN,G_circ_PN) -> and [ ]
-    (G_dTime_PN,G_dTime_PN) -> and [ ]
-    (G_dType_PN,G_dType_PN) -> and [ ]
-    (G_diving_PN,G_diving_PN) -> and [ ]
-    (G_holder_PN,G_holder_PN) -> and [ ]
-    (G_motocross_PN,G_motocross_PN) -> and [ ]
-    (G_p_PN,G_p_PN) -> and [ ]
-    (G_plan3_PN,G_plan3_PN) -> and [ ]
-    (G_plan4_PN,G_plan4_PN) -> and [ ]
-    (G_planAF_PN,G_planAF_PN) -> and [ ]
-    (G_planB_PN,G_planB_PN) -> and [ ]
-    (G_planC_PN,G_planC_PN) -> and [ ]
-    (G_planE_PN,G_planE_PN) -> and [ ]
-    (G_planF_PN,G_planF_PN) -> and [ ]
-    (G_policyHolder_PN,G_policyHolder_PN) -> and [ ]
-    (G_qualifies_for_add_PN,G_qualifies_for_add_PN) -> and [ ]
-    (G_schema_PN,G_schema_PN) -> and [ ]
-    (G_sum_list_PN,G_sum_list_PN) -> and [ ]
-    (G_x_PN,G_x_PN) -> and [ ]
-    (G_y_PN,G_y_PN) -> and [ ]
+    (LexPN x,LexPN y) -> x == y
     (GNEG,GNEG) -> and [ ]
     (GPOS,GPOS) -> and [ ]
     (GAP_PrePost x1,GAP_PrePost y1) -> and [ x1 == y1 ]
@@ -998,39 +615,7 @@ instance Eq (Tree a) where
     (GV2_PrePost x1 x2 x3,GV2_PrePost y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GrecoverUnparsedPrePost x1,GrecoverUnparsedPrePost y1) -> and [ x1 == y1 ]
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (G_across_Prep,G_across_Prep) -> and [ ]
-    (G_after_Prep,G_after_Prep) -> and [ ]
-    (G_as_Prep,G_as_Prep) -> and [ ]
-    (G_at_Prep,G_at_Prep) -> and [ ]
-    (G_between_Prep,G_between_Prep) -> and [ ]
-    (G_by_Prep,G_by_Prep) -> and [ ]
-    (G_during_Prep,G_during_Prep) -> and [ ]
-    (G_for_Prep,G_for_Prep) -> and [ ]
-    (G_from_Prep,G_from_Prep) -> and [ ]
-    (G_in_Prep,G_in_Prep) -> and [ ]
-    (G_into_Prep,G_into_Prep) -> and [ ]
-    (G_involving_Prep,G_involving_Prep) -> and [ ]
-    (G_of_Prep,G_of_Prep) -> and [ ]
-    (G_on_Prep,G_on_Prep) -> and [ ]
-    (G_out_Prep,G_out_Prep) -> and [ ]
-    (G_over_Prep,G_over_Prep) -> and [ ]
-    (G_per_Prep,G_per_Prep) -> and [ ]
-    (G_than_Prep,G_than_Prep) -> and [ ]
-    (G_through_Prep,G_through_Prep) -> and [ ]
-    (G_to_Prep,G_to_Prep) -> and [ ]
-    (G_under_Prep,G_under_Prep) -> and [ ]
-    (G_up_Prep,G_up_Prep) -> and [ ]
-    (G_with_Prep,G_with_Prep) -> and [ ]
-    (G_within_Prep,G_within_Prep) -> and [ ]
-    (Gabout_Prep,Gabout_Prep) -> and [ ]
-    (Gafter_Prep,Gafter_Prep) -> and [ ]
-    (Gbefore_Prep,Gbefore_Prep) -> and [ ]
-    (Gfor_Prep,Gfor_Prep) -> and [ ]
-    (Gfrom_Prep,Gfrom_Prep) -> and [ ]
-    (Gon_Prep,Gon_Prep) -> and [ ]
-    (Gpossess_Prep,Gpossess_Prep) -> and [ ]
-    (Gto_Prep,Gto_Prep) -> and [ ]
-    (Gwithin_Prep,Gwithin_Prep) -> and [ ]
+    (LexPrep x,LexPrep y) -> x == y
     (GConjPrePostQS x1 x2 x3 x4,GConjPrePostQS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjQS x1 x2,GConjQS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GIdRP,GIdRP) -> and [ ]
@@ -1066,17 +651,7 @@ instance Eq (Tree a) where
     (Gpot51,Gpot51) -> and [ ]
     (Gpot5float x1,Gpot5float y1) -> and [ x1 == y1 ]
     (Gpot5plus x1 x2,Gpot5plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (G_and_Subj,G_and_Subj) -> and [ ]
-    (G_as_Subj,G_as_Subj) -> and [ ]
-    (G_before_Subj,G_before_Subj) -> and [ ]
-    (G_both_Subj,G_both_Subj) -> and [ ]
-    (G_but_Subj,G_but_Subj) -> and [ ]
-    (G_if_Subj,G_if_Subj) -> and [ ]
-    (G_or_Subj,G_or_Subj) -> and [ ]
-    (G_that_Subj,G_that_Subj) -> and [ ]
-    (G_when_Subj,G_when_Subj) -> and [ ]
-    (G_while_Subj,G_while_Subj) -> and [ ]
-    (Gbecause_Subj,Gbecause_Subj) -> and [ ]
+    (LexSubj x,LexSubj y) -> x == y
     (GAFTER,GAFTER) -> and [ ]
     (GBEFORE,GBEFORE) -> and [ ]
     (GBY,GBY) -> and [ ]
@@ -1114,6 +689,7 @@ instance Eq (Tree a) where
     (GComplVSif x1 x2,GComplVSif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplVSthat x1 x2,GComplVSthat y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
+    (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
     (LexVP x,LexVP y) -> x == y
     (GMkVPI x1,GMkVPI y1) -> and [ x1 == y1 ]
     (GComparison_Card_Years x1,GComparison_Card_Years y1) -> and [ x1 == y1 ]
@@ -1140,163 +716,12 @@ instance Eq (Tree a) where
     _ -> False
 
 instance Gf GA where
-  gf G_accepted_A = mkApp (mkCId "_accepted_A") []
-  gf G_accidental_A = mkApp (mkCId "_accidental_A") []
-  gf G_active_A = mkApp (mkCId "_active_A") []
-  gf G_add_A = mkApp (mkCId "_add_A") []
-  gf G_adjusted_A = mkApp (mkCId "_adjusted_A") []
-  gf G_alive_A = mkApp (mkCId "_alive_A") []
-  gf G_basic_A = mkApp (mkCId "_basic_A") []
-  gf G_biological_A = mkApp (mkCId "_biological_A") []
-  gf G_chemical_A = mkApp (mkCId "_chemical_A") []
-  gf G_claimable_A = mkApp (mkCId "_claimable_A") []
-  gf G_commercial_A = mkApp (mkCId "_commercial_A") []
-  gf G_competitive_A = mkApp (mkCId "_competitive_A") []
-  gf G_current_A = mkApp (mkCId "_current_A") []
-  gf G_dangerous_A = mkApp (mkCId "_dangerous_A") []
-  gf G_dead_A = mkApp (mkCId "_dead_A") []
-  gf G_disabled_A = mkApp (mkCId "_disabled_A") []
-  gf G_double_A = mkApp (mkCId "_double_A") []
-  gf G_due_A = mkApp (mkCId "_due_A") []
-  gf G_equal_A = mkApp (mkCId "_equal_A") []
-  gf G_first_A = mkApp (mkCId "_first_A") []
-  gf G_fractured_A = mkApp (mkCId "_fractured_A") []
-  gf G_geographical_A = mkApp (mkCId "_geographical_A") []
-  gf G_great_A = mkApp (mkCId "_great_A") []
-  gf G_hfmd_A = mkApp (mkCId "_hfmd_A") []
-  gf G_high_A = mkApp (mkCId "_high_A") []
-  gf G_human_A = mkApp (mkCId "_human_A") []
-  gf G_incurable_A = mkApp (mkCId "_incurable_A") []
-  gf G_infectious_A = mkApp (mkCId "_infectious_A") []
-  gf G_initial_A = mkApp (mkCId "_initial_A") []
-  gf G_intentional_A = mkApp (mkCId "_intentional_A") []
-  gf G_japanese_A = mkApp (mkCId "_japanese_A") []
-  gf G_juvenile_A = mkApp (mkCId "_juvenile_A") []
-  gf G_less_A = mkApp (mkCId "_less_A") []
-  gf G_little_A = mkApp (mkCId "_little_A") []
-  gf G_logical_A = mkApp (mkCId "_logical_A") []
-  gf G_low_A = mkApp (mkCId "_low_A") []
-  gf G_martial_A = mkApp (mkCId "_martial_A") []
-  gf G_maximum_A = mkApp (mkCId "_maximum_A") []
-  gf G_medical_A = mkApp (mkCId "_medical_A") []
-  gf G_mental_A = mkApp (mkCId "_mental_A") []
-  gf G_middle_A = mkApp (mkCId "_middle_A") []
-  gf G_military_A = mkApp (mkCId "_military_A") []
-  gf G_more_A = mkApp (mkCId "_more_A") []
-  gf G_multiple_A = mkApp (mkCId "_multiple_A") []
-  gf G_national_A = mkApp (mkCId "_national_A") []
-  gf G_normal_A = mkApp (mkCId "_normal_A") []
-  gf G_nuclear_A = mkApp (mkCId "_nuclear_A") []
-  gf G_other_A = mkApp (mkCId "_other_A") []
-  gf G_particular_A = mkApp (mkCId "_particular_A") []
-  gf G_past_A = mkApp (mkCId "_past_A") []
-  gf G_payable_A = mkApp (mkCId "_payable_A") []
-  gf G_permanent_A = mkApp (mkCId "_permanent_A") []
-  gf G_physical_A = mkApp (mkCId "_physical_A") []
-  gf G_possible_A = mkApp (mkCId "_possible_A") []
-  gf G_previous_A = mkApp (mkCId "_previous_A") []
-  gf G_private_A = mkApp (mkCId "_private_A") []
-  gf G_professional_A = mkApp (mkCId "_professional_A") []
-  gf G_public_A = mkApp (mkCId "_public_A") []
-  gf G_reckless_A = mkApp (mkCId "_reckless_A") []
-  gf G_registered_A = mkApp (mkCId "_registered_A") []
-  gf G_relevant_A = mkApp (mkCId "_relevant_A") []
-  gf G_subject_A = mkApp (mkCId "_subject_A") []
-  gf G_successful_A = mkApp (mkCId "_successful_A") []
-  gf G_surgical_A = mkApp (mkCId "_surgical_A") []
-  gf G_third_A = mkApp (mkCId "_third_A") []
-  gf G_total_A = mkApp (mkCId "_total_A") []
-  gf G_traditional_A = mkApp (mkCId "_traditional_A") []
-  gf G_triple_A = mkApp (mkCId "_triple_A") []
-  gf G_unlawful_A = mkApp (mkCId "_unlawful_A") []
-  gf G_unnecessary_A = mkApp (mkCId "_unnecessary_A") []
-  gf G_unsound_A = mkApp (mkCId "_unsound_A") []
-  gf G_unsuccessful_A = mkApp (mkCId "_unsuccessful_A") []
-  gf G_upscaled_A = mkApp (mkCId "_upscaled_A") []
-  gf G_valid_A = mkApp (mkCId "_valid_A") []
-  gf G_viral_A = mkApp (mkCId "_viral_A") []
-  gf G_waterborne_A = mkApp (mkCId "_waterborne_A") []
+  gf (LexA x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "_accepted_A" -> G_accepted_A 
-      Just (i,[]) | i == mkCId "_accidental_A" -> G_accidental_A 
-      Just (i,[]) | i == mkCId "_active_A" -> G_active_A 
-      Just (i,[]) | i == mkCId "_add_A" -> G_add_A 
-      Just (i,[]) | i == mkCId "_adjusted_A" -> G_adjusted_A 
-      Just (i,[]) | i == mkCId "_alive_A" -> G_alive_A 
-      Just (i,[]) | i == mkCId "_basic_A" -> G_basic_A 
-      Just (i,[]) | i == mkCId "_biological_A" -> G_biological_A 
-      Just (i,[]) | i == mkCId "_chemical_A" -> G_chemical_A 
-      Just (i,[]) | i == mkCId "_claimable_A" -> G_claimable_A 
-      Just (i,[]) | i == mkCId "_commercial_A" -> G_commercial_A 
-      Just (i,[]) | i == mkCId "_competitive_A" -> G_competitive_A 
-      Just (i,[]) | i == mkCId "_current_A" -> G_current_A 
-      Just (i,[]) | i == mkCId "_dangerous_A" -> G_dangerous_A 
-      Just (i,[]) | i == mkCId "_dead_A" -> G_dead_A 
-      Just (i,[]) | i == mkCId "_disabled_A" -> G_disabled_A 
-      Just (i,[]) | i == mkCId "_double_A" -> G_double_A 
-      Just (i,[]) | i == mkCId "_due_A" -> G_due_A 
-      Just (i,[]) | i == mkCId "_equal_A" -> G_equal_A 
-      Just (i,[]) | i == mkCId "_first_A" -> G_first_A 
-      Just (i,[]) | i == mkCId "_fractured_A" -> G_fractured_A 
-      Just (i,[]) | i == mkCId "_geographical_A" -> G_geographical_A 
-      Just (i,[]) | i == mkCId "_great_A" -> G_great_A 
-      Just (i,[]) | i == mkCId "_hfmd_A" -> G_hfmd_A 
-      Just (i,[]) | i == mkCId "_high_A" -> G_high_A 
-      Just (i,[]) | i == mkCId "_human_A" -> G_human_A 
-      Just (i,[]) | i == mkCId "_incurable_A" -> G_incurable_A 
-      Just (i,[]) | i == mkCId "_infectious_A" -> G_infectious_A 
-      Just (i,[]) | i == mkCId "_initial_A" -> G_initial_A 
-      Just (i,[]) | i == mkCId "_intentional_A" -> G_intentional_A 
-      Just (i,[]) | i == mkCId "_japanese_A" -> G_japanese_A 
-      Just (i,[]) | i == mkCId "_juvenile_A" -> G_juvenile_A 
-      Just (i,[]) | i == mkCId "_less_A" -> G_less_A 
-      Just (i,[]) | i == mkCId "_little_A" -> G_little_A 
-      Just (i,[]) | i == mkCId "_logical_A" -> G_logical_A 
-      Just (i,[]) | i == mkCId "_low_A" -> G_low_A 
-      Just (i,[]) | i == mkCId "_martial_A" -> G_martial_A 
-      Just (i,[]) | i == mkCId "_maximum_A" -> G_maximum_A 
-      Just (i,[]) | i == mkCId "_medical_A" -> G_medical_A 
-      Just (i,[]) | i == mkCId "_mental_A" -> G_mental_A 
-      Just (i,[]) | i == mkCId "_middle_A" -> G_middle_A 
-      Just (i,[]) | i == mkCId "_military_A" -> G_military_A 
-      Just (i,[]) | i == mkCId "_more_A" -> G_more_A 
-      Just (i,[]) | i == mkCId "_multiple_A" -> G_multiple_A 
-      Just (i,[]) | i == mkCId "_national_A" -> G_national_A 
-      Just (i,[]) | i == mkCId "_normal_A" -> G_normal_A 
-      Just (i,[]) | i == mkCId "_nuclear_A" -> G_nuclear_A 
-      Just (i,[]) | i == mkCId "_other_A" -> G_other_A 
-      Just (i,[]) | i == mkCId "_particular_A" -> G_particular_A 
-      Just (i,[]) | i == mkCId "_past_A" -> G_past_A 
-      Just (i,[]) | i == mkCId "_payable_A" -> G_payable_A 
-      Just (i,[]) | i == mkCId "_permanent_A" -> G_permanent_A 
-      Just (i,[]) | i == mkCId "_physical_A" -> G_physical_A 
-      Just (i,[]) | i == mkCId "_possible_A" -> G_possible_A 
-      Just (i,[]) | i == mkCId "_previous_A" -> G_previous_A 
-      Just (i,[]) | i == mkCId "_private_A" -> G_private_A 
-      Just (i,[]) | i == mkCId "_professional_A" -> G_professional_A 
-      Just (i,[]) | i == mkCId "_public_A" -> G_public_A 
-      Just (i,[]) | i == mkCId "_reckless_A" -> G_reckless_A 
-      Just (i,[]) | i == mkCId "_registered_A" -> G_registered_A 
-      Just (i,[]) | i == mkCId "_relevant_A" -> G_relevant_A 
-      Just (i,[]) | i == mkCId "_subject_A" -> G_subject_A 
-      Just (i,[]) | i == mkCId "_successful_A" -> G_successful_A 
-      Just (i,[]) | i == mkCId "_surgical_A" -> G_surgical_A 
-      Just (i,[]) | i == mkCId "_third_A" -> G_third_A 
-      Just (i,[]) | i == mkCId "_total_A" -> G_total_A 
-      Just (i,[]) | i == mkCId "_traditional_A" -> G_traditional_A 
-      Just (i,[]) | i == mkCId "_triple_A" -> G_triple_A 
-      Just (i,[]) | i == mkCId "_unlawful_A" -> G_unlawful_A 
-      Just (i,[]) | i == mkCId "_unnecessary_A" -> G_unnecessary_A 
-      Just (i,[]) | i == mkCId "_unsound_A" -> G_unsound_A 
-      Just (i,[]) | i == mkCId "_unsuccessful_A" -> G_unsuccessful_A 
-      Just (i,[]) | i == mkCId "_upscaled_A" -> G_upscaled_A 
-      Just (i,[]) | i == mkCId "_valid_A" -> G_valid_A 
-      Just (i,[]) | i == mkCId "_viral_A" -> G_viral_A 
-      Just (i,[]) | i == mkCId "_waterborne_A" -> G_waterborne_A 
 
-
+      Just (i,[]) -> LexA (showCId i)
       _ -> error ("no A " ++ show t)
 
 instance Gf GA2 where
@@ -1377,14 +802,21 @@ instance Gf GAdv where
   gf (GWhileDoing x1) = mkApp (mkCId "WhileDoing") [gf x1]
   gf G_as_Adv = mkApp (mkCId "_as_Adv") []
   gf G_at_Adv = mkApp (mkCId "_at_Adv") []
+  gf G_directly_Adv = mkApp (mkCId "_directly_Adv") []
   gf G_first_Adv = mkApp (mkCId "_first_Adv") []
   gf G_fully_Adv = mkApp (mkCId "_fully_Adv") []
   gf G_hence_Adv = mkApp (mkCId "_hence_Adv") []
+  gf G_here_Adv = mkApp (mkCId "_here_Adv") []
+  gf G_indirectly_Adv = mkApp (mkCId "_indirectly_Adv") []
   gf G_least_Adv = mkApp (mkCId "_least_Adv") []
+  gf G_long_Adv = mkApp (mkCId "_long_Adv") []
+  gf G_more_Adv = mkApp (mkCId "_more_Adv") []
+  gf G_no_Adv = mkApp (mkCId "_no_Adv") []
   gf G_on_its_way_Adv = mkApp (mkCId "_on_its_way_Adv") []
   gf G_only_Adv = mkApp (mkCId "_only_Adv") []
   gf G_permanently_Adv = mkApp (mkCId "_permanently_Adv") []
   gf G_pland_Adv = mkApp (mkCId "_pland_Adv") []
+  gf G_so_Adv = mkApp (mkCId "_so_Adv") []
   gf G_soon_Adv = mkApp (mkCId "_soon_Adv") []
   gf G_then_Adv = mkApp (mkCId "_then_Adv") []
   gf G_totally_Adv = mkApp (mkCId "_totally_Adv") []
@@ -1403,14 +835,21 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "WhileDoing" -> GWhileDoing (fg x1)
       Just (i,[]) | i == mkCId "_as_Adv" -> G_as_Adv 
       Just (i,[]) | i == mkCId "_at_Adv" -> G_at_Adv 
+      Just (i,[]) | i == mkCId "_directly_Adv" -> G_directly_Adv 
       Just (i,[]) | i == mkCId "_first_Adv" -> G_first_Adv 
       Just (i,[]) | i == mkCId "_fully_Adv" -> G_fully_Adv 
       Just (i,[]) | i == mkCId "_hence_Adv" -> G_hence_Adv 
+      Just (i,[]) | i == mkCId "_here_Adv" -> G_here_Adv 
+      Just (i,[]) | i == mkCId "_indirectly_Adv" -> G_indirectly_Adv 
       Just (i,[]) | i == mkCId "_least_Adv" -> G_least_Adv 
+      Just (i,[]) | i == mkCId "_long_Adv" -> G_long_Adv 
+      Just (i,[]) | i == mkCId "_more_Adv" -> G_more_Adv 
+      Just (i,[]) | i == mkCId "_no_Adv" -> G_no_Adv 
       Just (i,[]) | i == mkCId "_on_its_way_Adv" -> G_on_its_way_Adv 
       Just (i,[]) | i == mkCId "_only_Adv" -> G_only_Adv 
       Just (i,[]) | i == mkCId "_permanently_Adv" -> G_permanently_Adv 
       Just (i,[]) | i == mkCId "_pland_Adv" -> G_pland_Adv 
+      Just (i,[]) | i == mkCId "_so_Adv" -> G_so_Adv 
       Just (i,[]) | i == mkCId "_soon_Adv" -> G_soon_Adv 
       Just (i,[]) | i == mkCId "_then_Adv" -> G_then_Adv 
       Just (i,[]) | i == mkCId "_totally_Adv" -> G_totally_Adv 
@@ -1502,15 +941,12 @@ instance Gf GCond where
       _ -> error ("no Cond " ++ show t)
 
 instance Gf GConj where
-  gf GAND = mkApp (mkCId "AND") []
-  gf GOR = mkApp (mkCId "OR") []
+  gf (LexConj x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AND" -> GAND 
-      Just (i,[]) | i == mkCId "OR" -> GOR 
 
-
+      Just (i,[]) -> LexConj (showCId i)
       _ -> error ("no Conj " ++ show t)
 
 instance Gf GConstraint where
@@ -1896,217 +1332,12 @@ instance Gf GNumeral where
       _ -> error ("no Numeral " ++ show t)
 
 instance Gf GPN where
-  gf G_1012_PN = mkApp (mkCId "_1012_PN") []
-  gf G_1013_PN = mkApp (mkCId "_1013_PN") []
-  gf G_1014_PN = mkApp (mkCId "_1014_PN") []
-  gf G_333A_PN = mkApp (mkCId "_333A_PN") []
-  gf G_ADD_PN = mkApp (mkCId "_ADD_PN") []
-  gf G_AIDS_PN = mkApp (mkCId "_AIDS_PN") []
-  gf G_Accident_PN = mkApp (mkCId "_Accident_PN") []
-  gf G_Accidental_PN = mkApp (mkCId "_Accidental_PN") []
-  gf G_Accidents_PN = mkApp (mkCId "_Accidents_PN") []
-  gf G_Address_PN = mkApp (mkCId "_Address_PN") []
-  gf G_Adjustment_PN = mkApp (mkCId "_Adjustment_PN") []
-  gf G_Assured_PN = mkApp (mkCId "_Assured_PN") []
-  gf G_BSA_PN = mkApp (mkCId "_BSA_PN") []
-  gf G_Benefit_PN = mkApp (mkCId "_Benefit_PN") []
-  gf G_Cap_PN = mkApp (mkCId "_Cap_PN") []
-  gf G_Claim_PN = mkApp (mkCId "_Claim_PN") []
-  gf G_CoV_PN = mkApp (mkCId "_CoV_PN") []
-  gf G_Conditions_PN = mkApp (mkCId "_Conditions_PN") []
-  gf G_Date_PN = mkApp (mkCId "_Date_PN") []
-  gf G_Death_PN = mkApp (mkCId "_Death_PN") []
-  gf G_Details_PN = mkApp (mkCId "_Details_PN") []
-  gf G_Disease_PN = mkApp (mkCId "_Disease_PN") []
-  gf G_Dismemberment_PN = mkApp (mkCId "_Dismemberment_PN") []
-  gf G_Event_PN = mkApp (mkCId "_Event_PN") []
-  gf G_Expense_PN = mkApp (mkCId "_Expense_PN") []
-  gf G_Flu_PN = mkApp (mkCId "_Flu_PN") []
-  gf G_H5N1_PN = mkApp (mkCId "_H5N1_PN") []
-  gf G_H7N9_PN = mkApp (mkCId "_H7N9_PN") []
-  gf G_H7N_PN = mkApp (mkCId "_H7N_PN") []
-  gf G_H9N2_PN = mkApp (mkCId "_H9N2_PN") []
-  gf G_HAS_PN = mkApp (mkCId "_HAS_PN") []
-  gf G_Head_PN = mkApp (mkCId "_Head_PN") []
-  gf G_Health_PN = mkApp (mkCId "_Health_PN") []
-  gf G_Influenza_PN = mkApp (mkCId "_Influenza_PN") []
-  gf G_Injury_PN = mkApp (mkCId "_Injury_PN") []
-  gf G_Insurer_PN = mkApp (mkCId "_Insurer_PN") []
-  gf G_LA_PN = mkApp (mkCId "_LA_PN") []
-  gf G_LE_PN = mkApp (mkCId "_LE_PN") []
-  gf G_Leg_PN = mkApp (mkCId "_Leg_PN") []
-  gf G_Legionnaires_PN = mkApp (mkCId "_Legionnaires_PN") []
-  gf G_Life_PN = mkApp (mkCId "_Life_PN") []
-  gf G_Limit_PN = mkApp (mkCId "_Limit_PN") []
-  gf G_MAP_PN = mkApp (mkCId "_MAP_PN") []
-  gf G_MIN_PN = mkApp (mkCId "_MIN_PN") []
-  gf G_MR_PN = mkApp (mkCId "_MR_PN") []
-  gf G_M_PN = mkApp (mkCId "_M_PN") []
-  gf G_Medicine_PN = mkApp (mkCId "_Medicine_PN") []
-  gf G_Melioidosis_PN = mkApp (mkCId "_Melioidosis_PN") []
-  gf G_Ministry_PN = mkApp (mkCId "_Ministry_PN") []
-  gf G_Mumps_PN = mkApp (mkCId "_Mumps_PN") []
-  gf G_N_PN = mkApp (mkCId "_N_PN") []
-  gf G_Nipah_PN = mkApp (mkCId "_Nipah_PN") []
-  gf G_Ontology_PN = mkApp (mkCId "_Ontology_PN") []
-  gf G_PS_PN = mkApp (mkCId "_PS_PN") []
-  gf G_Plan14_PN = mkApp (mkCId "_Plan14_PN") []
-  gf G_PlanAF_PN = mkApp (mkCId "_PlanAF_PN") []
-  gf G_PolicyHolder_PN = mkApp (mkCId "_PolicyHolder_PN") []
-  gf G_Policy_PN = mkApp (mkCId "_Policy_PN") []
-  gf G_RETURN_PN = mkApp (mkCId "_RETURN_PN") []
-  gf G_Reductions_PN = mkApp (mkCId "_Reductions_PN") []
-  gf G_Removal_PN = mkApp (mkCId "_Removal_PN") []
-  gf G_Republic_PN = mkApp (mkCId "_Republic_PN") []
-  gf G_SA_PN = mkApp (mkCId "_SA_PN") []
-  gf G_SG_PN = mkApp (mkCId "_SG_PN") []
-  gf G_Schedule_PN = mkApp (mkCId "_Schedule_PN") []
-  gf G_Section_PN = mkApp (mkCId "_Section_PN") []
-  gf G_Service_PN = mkApp (mkCId "_Service_PN") []
-  gf G_Singapore_PN = mkApp (mkCId "_Singapore_PN") []
-  gf G_Step_PN = mkApp (mkCId "_Step_PN") []
-  gf G_Subscribed_PN = mkApp (mkCId "_Subscribed_PN") []
-  gf G_TABLE_PN = mkApp (mkCId "_TABLE_PN") []
-  gf G_Teeth_PN = mkApp (mkCId "_Teeth_PN") []
-  gf G_Triple_PN = mkApp (mkCId "_Triple_PN") []
-  gf G_Type_PN = mkApp (mkCId "_Type_PN") []
-  gf G_Types_PN = mkApp (mkCId "_Types_PN") []
-  gf G_UPON_PN = mkApp (mkCId "_UPON_PN") []
-  gf G_Wife_PN = mkApp (mkCId "_Wife_PN") []
-  gf G_Yellow_PN = mkApp (mkCId "_Yellow_PN") []
-  gf G_addSA_PN = mkApp (mkCId "_addSA_PN") []
-  gf G_benADD_PN = mkApp (mkCId "_benADD_PN") []
-  gf G_benADDs_PN = mkApp (mkCId "_benADDs_PN") []
-  gf G_benRA_PN = mkApp (mkCId "_benRA_PN") []
-  gf G_benTCM_PN = mkApp (mkCId "_benTCM_PN") []
-  gf G_circ_PN = mkApp (mkCId "_circ_PN") []
-  gf G_dTime_PN = mkApp (mkCId "_dTime_PN") []
-  gf G_dType_PN = mkApp (mkCId "_dType_PN") []
-  gf G_diving_PN = mkApp (mkCId "_diving_PN") []
-  gf G_holder_PN = mkApp (mkCId "_holder_PN") []
-  gf G_motocross_PN = mkApp (mkCId "_motocross_PN") []
-  gf G_p_PN = mkApp (mkCId "_p_PN") []
-  gf G_plan3_PN = mkApp (mkCId "_plan3_PN") []
-  gf G_plan4_PN = mkApp (mkCId "_plan4_PN") []
-  gf G_planAF_PN = mkApp (mkCId "_planAF_PN") []
-  gf G_planB_PN = mkApp (mkCId "_planB_PN") []
-  gf G_planC_PN = mkApp (mkCId "_planC_PN") []
-  gf G_planE_PN = mkApp (mkCId "_planE_PN") []
-  gf G_planF_PN = mkApp (mkCId "_planF_PN") []
-  gf G_policyHolder_PN = mkApp (mkCId "_policyHolder_PN") []
-  gf G_qualifies_for_add_PN = mkApp (mkCId "_qualifies_for_add_PN") []
-  gf G_schema_PN = mkApp (mkCId "_schema_PN") []
-  gf G_sum_list_PN = mkApp (mkCId "_sum_list_PN") []
-  gf G_x_PN = mkApp (mkCId "_x_PN") []
-  gf G_y_PN = mkApp (mkCId "_y_PN") []
+  gf (LexPN x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "_1012_PN" -> G_1012_PN 
-      Just (i,[]) | i == mkCId "_1013_PN" -> G_1013_PN 
-      Just (i,[]) | i == mkCId "_1014_PN" -> G_1014_PN 
-      Just (i,[]) | i == mkCId "_333A_PN" -> G_333A_PN 
-      Just (i,[]) | i == mkCId "_ADD_PN" -> G_ADD_PN 
-      Just (i,[]) | i == mkCId "_AIDS_PN" -> G_AIDS_PN 
-      Just (i,[]) | i == mkCId "_Accident_PN" -> G_Accident_PN 
-      Just (i,[]) | i == mkCId "_Accidental_PN" -> G_Accidental_PN 
-      Just (i,[]) | i == mkCId "_Accidents_PN" -> G_Accidents_PN 
-      Just (i,[]) | i == mkCId "_Address_PN" -> G_Address_PN 
-      Just (i,[]) | i == mkCId "_Adjustment_PN" -> G_Adjustment_PN 
-      Just (i,[]) | i == mkCId "_Assured_PN" -> G_Assured_PN 
-      Just (i,[]) | i == mkCId "_BSA_PN" -> G_BSA_PN 
-      Just (i,[]) | i == mkCId "_Benefit_PN" -> G_Benefit_PN 
-      Just (i,[]) | i == mkCId "_Cap_PN" -> G_Cap_PN 
-      Just (i,[]) | i == mkCId "_Claim_PN" -> G_Claim_PN 
-      Just (i,[]) | i == mkCId "_CoV_PN" -> G_CoV_PN 
-      Just (i,[]) | i == mkCId "_Conditions_PN" -> G_Conditions_PN 
-      Just (i,[]) | i == mkCId "_Date_PN" -> G_Date_PN 
-      Just (i,[]) | i == mkCId "_Death_PN" -> G_Death_PN 
-      Just (i,[]) | i == mkCId "_Details_PN" -> G_Details_PN 
-      Just (i,[]) | i == mkCId "_Disease_PN" -> G_Disease_PN 
-      Just (i,[]) | i == mkCId "_Dismemberment_PN" -> G_Dismemberment_PN 
-      Just (i,[]) | i == mkCId "_Event_PN" -> G_Event_PN 
-      Just (i,[]) | i == mkCId "_Expense_PN" -> G_Expense_PN 
-      Just (i,[]) | i == mkCId "_Flu_PN" -> G_Flu_PN 
-      Just (i,[]) | i == mkCId "_H5N1_PN" -> G_H5N1_PN 
-      Just (i,[]) | i == mkCId "_H7N9_PN" -> G_H7N9_PN 
-      Just (i,[]) | i == mkCId "_H7N_PN" -> G_H7N_PN 
-      Just (i,[]) | i == mkCId "_H9N2_PN" -> G_H9N2_PN 
-      Just (i,[]) | i == mkCId "_HAS_PN" -> G_HAS_PN 
-      Just (i,[]) | i == mkCId "_Head_PN" -> G_Head_PN 
-      Just (i,[]) | i == mkCId "_Health_PN" -> G_Health_PN 
-      Just (i,[]) | i == mkCId "_Influenza_PN" -> G_Influenza_PN 
-      Just (i,[]) | i == mkCId "_Injury_PN" -> G_Injury_PN 
-      Just (i,[]) | i == mkCId "_Insurer_PN" -> G_Insurer_PN 
-      Just (i,[]) | i == mkCId "_LA_PN" -> G_LA_PN 
-      Just (i,[]) | i == mkCId "_LE_PN" -> G_LE_PN 
-      Just (i,[]) | i == mkCId "_Leg_PN" -> G_Leg_PN 
-      Just (i,[]) | i == mkCId "_Legionnaires_PN" -> G_Legionnaires_PN 
-      Just (i,[]) | i == mkCId "_Life_PN" -> G_Life_PN 
-      Just (i,[]) | i == mkCId "_Limit_PN" -> G_Limit_PN 
-      Just (i,[]) | i == mkCId "_MAP_PN" -> G_MAP_PN 
-      Just (i,[]) | i == mkCId "_MIN_PN" -> G_MIN_PN 
-      Just (i,[]) | i == mkCId "_MR_PN" -> G_MR_PN 
-      Just (i,[]) | i == mkCId "_M_PN" -> G_M_PN 
-      Just (i,[]) | i == mkCId "_Medicine_PN" -> G_Medicine_PN 
-      Just (i,[]) | i == mkCId "_Melioidosis_PN" -> G_Melioidosis_PN 
-      Just (i,[]) | i == mkCId "_Ministry_PN" -> G_Ministry_PN 
-      Just (i,[]) | i == mkCId "_Mumps_PN" -> G_Mumps_PN 
-      Just (i,[]) | i == mkCId "_N_PN" -> G_N_PN 
-      Just (i,[]) | i == mkCId "_Nipah_PN" -> G_Nipah_PN 
-      Just (i,[]) | i == mkCId "_Ontology_PN" -> G_Ontology_PN 
-      Just (i,[]) | i == mkCId "_PS_PN" -> G_PS_PN 
-      Just (i,[]) | i == mkCId "_Plan14_PN" -> G_Plan14_PN 
-      Just (i,[]) | i == mkCId "_PlanAF_PN" -> G_PlanAF_PN 
-      Just (i,[]) | i == mkCId "_PolicyHolder_PN" -> G_PolicyHolder_PN 
-      Just (i,[]) | i == mkCId "_Policy_PN" -> G_Policy_PN 
-      Just (i,[]) | i == mkCId "_RETURN_PN" -> G_RETURN_PN 
-      Just (i,[]) | i == mkCId "_Reductions_PN" -> G_Reductions_PN 
-      Just (i,[]) | i == mkCId "_Removal_PN" -> G_Removal_PN 
-      Just (i,[]) | i == mkCId "_Republic_PN" -> G_Republic_PN 
-      Just (i,[]) | i == mkCId "_SA_PN" -> G_SA_PN 
-      Just (i,[]) | i == mkCId "_SG_PN" -> G_SG_PN 
-      Just (i,[]) | i == mkCId "_Schedule_PN" -> G_Schedule_PN 
-      Just (i,[]) | i == mkCId "_Section_PN" -> G_Section_PN 
-      Just (i,[]) | i == mkCId "_Service_PN" -> G_Service_PN 
-      Just (i,[]) | i == mkCId "_Singapore_PN" -> G_Singapore_PN 
-      Just (i,[]) | i == mkCId "_Step_PN" -> G_Step_PN 
-      Just (i,[]) | i == mkCId "_Subscribed_PN" -> G_Subscribed_PN 
-      Just (i,[]) | i == mkCId "_TABLE_PN" -> G_TABLE_PN 
-      Just (i,[]) | i == mkCId "_Teeth_PN" -> G_Teeth_PN 
-      Just (i,[]) | i == mkCId "_Triple_PN" -> G_Triple_PN 
-      Just (i,[]) | i == mkCId "_Type_PN" -> G_Type_PN 
-      Just (i,[]) | i == mkCId "_Types_PN" -> G_Types_PN 
-      Just (i,[]) | i == mkCId "_UPON_PN" -> G_UPON_PN 
-      Just (i,[]) | i == mkCId "_Wife_PN" -> G_Wife_PN 
-      Just (i,[]) | i == mkCId "_Yellow_PN" -> G_Yellow_PN 
-      Just (i,[]) | i == mkCId "_addSA_PN" -> G_addSA_PN 
-      Just (i,[]) | i == mkCId "_benADD_PN" -> G_benADD_PN 
-      Just (i,[]) | i == mkCId "_benADDs_PN" -> G_benADDs_PN 
-      Just (i,[]) | i == mkCId "_benRA_PN" -> G_benRA_PN 
-      Just (i,[]) | i == mkCId "_benTCM_PN" -> G_benTCM_PN 
-      Just (i,[]) | i == mkCId "_circ_PN" -> G_circ_PN 
-      Just (i,[]) | i == mkCId "_dTime_PN" -> G_dTime_PN 
-      Just (i,[]) | i == mkCId "_dType_PN" -> G_dType_PN 
-      Just (i,[]) | i == mkCId "_diving_PN" -> G_diving_PN 
-      Just (i,[]) | i == mkCId "_holder_PN" -> G_holder_PN 
-      Just (i,[]) | i == mkCId "_motocross_PN" -> G_motocross_PN 
-      Just (i,[]) | i == mkCId "_p_PN" -> G_p_PN 
-      Just (i,[]) | i == mkCId "_plan3_PN" -> G_plan3_PN 
-      Just (i,[]) | i == mkCId "_plan4_PN" -> G_plan4_PN 
-      Just (i,[]) | i == mkCId "_planAF_PN" -> G_planAF_PN 
-      Just (i,[]) | i == mkCId "_planB_PN" -> G_planB_PN 
-      Just (i,[]) | i == mkCId "_planC_PN" -> G_planC_PN 
-      Just (i,[]) | i == mkCId "_planE_PN" -> G_planE_PN 
-      Just (i,[]) | i == mkCId "_planF_PN" -> G_planF_PN 
-      Just (i,[]) | i == mkCId "_policyHolder_PN" -> G_policyHolder_PN 
-      Just (i,[]) | i == mkCId "_qualifies_for_add_PN" -> G_qualifies_for_add_PN 
-      Just (i,[]) | i == mkCId "_schema_PN" -> G_schema_PN 
-      Just (i,[]) | i == mkCId "_sum_list_PN" -> G_sum_list_PN 
-      Just (i,[]) | i == mkCId "_x_PN" -> G_x_PN 
-      Just (i,[]) | i == mkCId "_y_PN" -> G_y_PN 
 
-
+      Just (i,[]) -> LexPN (showCId i)
       _ -> error ("no PN " ++ show t)
 
 instance Gf GPol where
@@ -2149,78 +1380,13 @@ instance Gf GPrePost where
 
 instance Gf GPrep where
   gf (GConjPrep x1 x2) = mkApp (mkCId "ConjPrep") [gf x1, gf x2]
-  gf G_across_Prep = mkApp (mkCId "_across_Prep") []
-  gf G_after_Prep = mkApp (mkCId "_after_Prep") []
-  gf G_as_Prep = mkApp (mkCId "_as_Prep") []
-  gf G_at_Prep = mkApp (mkCId "_at_Prep") []
-  gf G_between_Prep = mkApp (mkCId "_between_Prep") []
-  gf G_by_Prep = mkApp (mkCId "_by_Prep") []
-  gf G_during_Prep = mkApp (mkCId "_during_Prep") []
-  gf G_for_Prep = mkApp (mkCId "_for_Prep") []
-  gf G_from_Prep = mkApp (mkCId "_from_Prep") []
-  gf G_in_Prep = mkApp (mkCId "_in_Prep") []
-  gf G_into_Prep = mkApp (mkCId "_into_Prep") []
-  gf G_involving_Prep = mkApp (mkCId "_involving_Prep") []
-  gf G_of_Prep = mkApp (mkCId "_of_Prep") []
-  gf G_on_Prep = mkApp (mkCId "_on_Prep") []
-  gf G_out_Prep = mkApp (mkCId "_out_Prep") []
-  gf G_over_Prep = mkApp (mkCId "_over_Prep") []
-  gf G_per_Prep = mkApp (mkCId "_per_Prep") []
-  gf G_than_Prep = mkApp (mkCId "_than_Prep") []
-  gf G_through_Prep = mkApp (mkCId "_through_Prep") []
-  gf G_to_Prep = mkApp (mkCId "_to_Prep") []
-  gf G_under_Prep = mkApp (mkCId "_under_Prep") []
-  gf G_up_Prep = mkApp (mkCId "_up_Prep") []
-  gf G_with_Prep = mkApp (mkCId "_with_Prep") []
-  gf G_within_Prep = mkApp (mkCId "_within_Prep") []
-  gf Gabout_Prep = mkApp (mkCId "about_Prep") []
-  gf Gafter_Prep = mkApp (mkCId "after_Prep") []
-  gf Gbefore_Prep = mkApp (mkCId "before_Prep") []
-  gf Gfor_Prep = mkApp (mkCId "for_Prep") []
-  gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
-  gf Gon_Prep = mkApp (mkCId "on_Prep") []
-  gf Gpossess_Prep = mkApp (mkCId "possess_Prep") []
-  gf Gto_Prep = mkApp (mkCId "to_Prep") []
-  gf Gwithin_Prep = mkApp (mkCId "within_Prep") []
+  gf (LexPrep x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjPrep" -> GConjPrep (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "_across_Prep" -> G_across_Prep 
-      Just (i,[]) | i == mkCId "_after_Prep" -> G_after_Prep 
-      Just (i,[]) | i == mkCId "_as_Prep" -> G_as_Prep 
-      Just (i,[]) | i == mkCId "_at_Prep" -> G_at_Prep 
-      Just (i,[]) | i == mkCId "_between_Prep" -> G_between_Prep 
-      Just (i,[]) | i == mkCId "_by_Prep" -> G_by_Prep 
-      Just (i,[]) | i == mkCId "_during_Prep" -> G_during_Prep 
-      Just (i,[]) | i == mkCId "_for_Prep" -> G_for_Prep 
-      Just (i,[]) | i == mkCId "_from_Prep" -> G_from_Prep 
-      Just (i,[]) | i == mkCId "_in_Prep" -> G_in_Prep 
-      Just (i,[]) | i == mkCId "_into_Prep" -> G_into_Prep 
-      Just (i,[]) | i == mkCId "_involving_Prep" -> G_involving_Prep 
-      Just (i,[]) | i == mkCId "_of_Prep" -> G_of_Prep 
-      Just (i,[]) | i == mkCId "_on_Prep" -> G_on_Prep 
-      Just (i,[]) | i == mkCId "_out_Prep" -> G_out_Prep 
-      Just (i,[]) | i == mkCId "_over_Prep" -> G_over_Prep 
-      Just (i,[]) | i == mkCId "_per_Prep" -> G_per_Prep 
-      Just (i,[]) | i == mkCId "_than_Prep" -> G_than_Prep 
-      Just (i,[]) | i == mkCId "_through_Prep" -> G_through_Prep 
-      Just (i,[]) | i == mkCId "_to_Prep" -> G_to_Prep 
-      Just (i,[]) | i == mkCId "_under_Prep" -> G_under_Prep 
-      Just (i,[]) | i == mkCId "_up_Prep" -> G_up_Prep 
-      Just (i,[]) | i == mkCId "_with_Prep" -> G_with_Prep 
-      Just (i,[]) | i == mkCId "_within_Prep" -> G_within_Prep 
-      Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep 
-      Just (i,[]) | i == mkCId "after_Prep" -> Gafter_Prep 
-      Just (i,[]) | i == mkCId "before_Prep" -> Gbefore_Prep 
-      Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep 
-      Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep 
-      Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep 
-      Just (i,[]) | i == mkCId "possess_Prep" -> Gpossess_Prep 
-      Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep 
-      Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep 
 
-
+      Just (i,[]) -> LexPrep (showCId i)
       _ -> error ("no Prep " ++ show t)
 
 instance Gf GQS where
@@ -2374,33 +1540,12 @@ instance Gf GSub1000000000000 where
       _ -> error ("no Sub1000000000000 " ++ show t)
 
 instance Gf GSubj where
-  gf G_and_Subj = mkApp (mkCId "_and_Subj") []
-  gf G_as_Subj = mkApp (mkCId "_as_Subj") []
-  gf G_before_Subj = mkApp (mkCId "_before_Subj") []
-  gf G_both_Subj = mkApp (mkCId "_both_Subj") []
-  gf G_but_Subj = mkApp (mkCId "_but_Subj") []
-  gf G_if_Subj = mkApp (mkCId "_if_Subj") []
-  gf G_or_Subj = mkApp (mkCId "_or_Subj") []
-  gf G_that_Subj = mkApp (mkCId "_that_Subj") []
-  gf G_when_Subj = mkApp (mkCId "_when_Subj") []
-  gf G_while_Subj = mkApp (mkCId "_while_Subj") []
-  gf Gbecause_Subj = mkApp (mkCId "because_Subj") []
+  gf (LexSubj x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "_and_Subj" -> G_and_Subj 
-      Just (i,[]) | i == mkCId "_as_Subj" -> G_as_Subj 
-      Just (i,[]) | i == mkCId "_before_Subj" -> G_before_Subj 
-      Just (i,[]) | i == mkCId "_both_Subj" -> G_both_Subj 
-      Just (i,[]) | i == mkCId "_but_Subj" -> G_but_Subj 
-      Just (i,[]) | i == mkCId "_if_Subj" -> G_if_Subj 
-      Just (i,[]) | i == mkCId "_or_Subj" -> G_or_Subj 
-      Just (i,[]) | i == mkCId "_that_Subj" -> G_that_Subj 
-      Just (i,[]) | i == mkCId "_when_Subj" -> G_when_Subj 
-      Just (i,[]) | i == mkCId "_while_Subj" -> G_while_Subj 
-      Just (i,[]) | i == mkCId "because_Subj" -> Gbecause_Subj 
 
-
+      Just (i,[]) -> LexSubj (showCId i)
       _ -> error ("no Subj " ++ show t)
 
 instance Gf GTComparison where
@@ -2533,6 +1678,7 @@ instance Gf GVP where
   gf (GComplVSif x1 x2) = mkApp (mkCId "ComplVSif") [gf x1, gf x2]
   gf (GComplVSthat x1 x2) = mkApp (mkCId "ComplVSthat") [gf x1, gf x2]
   gf (GUseComp x1) = mkApp (mkCId "UseComp") [gf x1]
+  gf (GUseV x1) = mkApp (mkCId "UseV") [gf x1]
   gf (LexVP x) = mkApp (mkCId x) []
 
   fg t =
@@ -2544,6 +1690,7 @@ instance Gf GVP where
       Just (i,[x1,x2]) | i == mkCId "ComplVSif" -> GComplVSif (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplVSthat" -> GComplVSthat (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseComp" -> GUseComp (fg x1)
+      Just (i,[x1]) | i == mkCId "UseV" -> GUseV (fg x1)
 
       Just (i,[]) -> LexVP (showCId i)
       _ -> error ("no VP " ++ show t)
@@ -2778,6 +1925,7 @@ instance Compos Tree where
     GComplVSif x1 x2 -> r GComplVSif `a` f x1 `a` f x2
     GComplVSthat x1 x2 -> r GComplVSthat `a` f x1 `a` f x2
     GUseComp x1 -> r GUseComp `a` f x1
+    GUseV x1 -> r GUseV `a` f x1
     GMkVPI x1 -> r GMkVPI `a` f x1
     GComparison_Card_Years x1 -> r GComparison_Card_Years `a` f x1
     GConjPrePostVPS x1 x2 x3 x4 -> r GConjPrePostVPS `a` f x1 `a` f x2 `a` f x3 `a` f x4

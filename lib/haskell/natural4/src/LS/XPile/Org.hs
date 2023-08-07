@@ -110,27 +110,46 @@ musings l4i rs =
            , srchs (ruleLabelName <$> exposedRoots l4i)
 
            , "*** Nubbed, Exposed, Decision Roots"
-           , "maybe some of the decision roots are identical and don't need to be repeated; so we nub them"
-           , vvsep [ "**** Decision Root" <+> viaShow (n :: Int)
+           , "Each ruleset can be organized into multiple trees. Each tree contains rules."
+           , "The leaves of the trees contain datapoints we need to collect from the user, typically by asking the user for that data in some interactive Q&A form style."
+           , "The roots of the trees are the top-level answers that are computed from the rest of the tree: in the current Vue web UI, those roots show up on the LHS of the UI, and the user can choose between them."
+           , "Here, we expose the decision roots, and the rules that (may) contribute to them, as a list of rules."
+           , "Maybe some of the decision roots are identical and don't need to be repeated; so we nub them."
+           , "Now, you may notice that the rule graph shown here does not necessarily line up with the actual data flow."
+           , "That's because this works fine for the simpler cases of only propositional logic."
+           , "But when the rules involve records and arithmetic calculations, graph construction needs to be more intelligent."
+           , "That work is in progress. See https://app.asana.com/0/1181141497134329/1205219649158495"
+           , vvsep [ "**** Decision Root" <+> viaShow n
+                     </> "The rules in this decision tree are produced from ~groupedByAOTree~ run on ~exposedRoots~:"
                      </> vsep [ "-" <+> pretty (ruleLabelName r) | r <- uniqrs ]
+                     </> "The first element in the list is the important one: it's the root of this rule tree."
                      </> "***** grpval" </> srchs grpval
-                     </> "***** head uniqrs" </> srchs (head uniqrs)
+                     </> "***** head uniqrs"
+                     </> "let's look at the first element in more detail."
+                     </> srchs (head uniqrs)
+                     </> "***** and the rest of uniqrs in the tail"
+                     </> srchs (tail uniqrs)
                      </> "***** getAndOrTree (head uniqrs)" </> srchs (getAndOrTree l4i 1 $ head uniqrs)
+                     </> "This should contain the post-expansion set of questions we need to ask the user."
                      </> "***** getBSR [head uniqrs]" </> srchs (mapMaybe getBSR [head uniqrs])
+                     </> "... in BoolStructR format"
                      </> "***** expandBSR" </> srchs (expandBSR l4i 1 <$> mapMaybe getBSR uniqrs)
                      </> vvsep [ "****** uniq rules" </> srchs r
                                  </> "******* givens" </> srchs (given r)
                                  </> vvsep [ "******* horn clause" </> srchs c
                                              </> "******** partitionExistentials"
+                                             </> "We had the idea that if you want to distinguish existential variables from universal variables,"
+                                             <//> "you can put the universal variables in GIVEN, and"
+                                             <//> "the existential variables as individual terms with type declarations and nothing else, in the IF."
                                              </> srchs (partitionExistentials c)
                                            | c <- clauses r ]
                                | r <- uniqrs
                                , hasClauses r
                                , hasGiven r
                                ]
-                   | ((grpval, uniqrs),n) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
-                                                          exposedRoots l4i      -- EXPOSED
-                                                         ) [1..]
+                   | ((grpval, uniqrs),n :: Int) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
+                                                                 exposedRoots l4i      -- EXPOSED
+                                                                ) [1..]
                    , not $ null uniqrs
                    ]
 

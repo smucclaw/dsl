@@ -141,7 +141,12 @@ symbolTable _iopts rs =
 
 -- | A map of all the classes we know about.
 --
+-- Currently this function returns both IS-A and HAS-A relationships for a given class.
+--
 -- Classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
+--
+-- Most of the time, though, classes just contain attributes.
+--
 -- The output of this function is exposed in the `classtable` attribute of the `l4i` record.
 classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
@@ -152,20 +157,20 @@ classHierarchy rs =
                             ( (listToMaybe (maybeToList ts1inf <> maybeToList ts2inf)
                               ,ts1s <> ts2s)
                             , CT $ clstab1 <> clstab2))
-  [ (thisclass, (classtype, attributes))
+  [ (thisclass, (superclass, attributes))
   | r@TypeDecl{} <- rs
   , let thisclass = mt2text (name r)
-        classtype = (super r, [])
+        superclass = (Just $ defaultToSuperType $ super r, [])
         attributes = classHierarchy (has r)
-  , (Just (SimpleType _ _), _) <- [classtype]
+  , (Just (SimpleType _ _), _) <- [superclass] -- exclude enums
   ]
 
 -- | A graph of all the classes we know about.
 --
--- redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right.
+-- redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right. I think this is overproducing a bit, because it's considering the attributes.
 classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
 classGraph (CT ch) ancestors = concat
-  [ (nodePath, (_itypesig, childct)) : classGraph childct nodePath
+  [ pure (nodePath, (_itypesig, childct))
   | (childname, (_itypesig, childct)) <- Map.toList ch
   , let nodePath = childname : ancestors
   ]

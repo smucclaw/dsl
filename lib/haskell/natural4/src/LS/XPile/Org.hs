@@ -20,6 +20,7 @@ import LS.Interpreter
       expandRule,
       classGraph,
       extractEnums,
+      defaultToSuperClass, defaultToSuperType,
       )
 import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
 import LS.RelationalPredicates ( partitionExistentials, getBSR )

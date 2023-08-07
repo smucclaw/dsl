@@ -22,7 +22,7 @@ import LS.Interpreter
       extractEnums,
       defaultToSuperClass, defaultToSuperType,
       )
-import LS.PrettyPrinter ( tildes, (</>), vvsep, myrender )
+
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
     ( Interpreted(classtable, scopetable),
@@ -34,11 +34,13 @@ import LS.Rule
 import LS.Types ( unCT
                 , TypeSig (InlineEnum, SimpleType)
                 , ParamType (TOne, TOptional)
+                , ClassHierarchyMap
                 )
 import LS.PrettyPrinter
+    ( myrender, vvsep, (</>), tildes, (<//>), snake_case )
 
 import Prettyprinter
-    ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc )
+    ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc, indent, line )
 import Text.Pretty.Simple ( pShowNoColor )
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (mapMaybe)
@@ -69,17 +71,25 @@ musings l4i rs =
       decisionGraph = ruleDecisionGraph l4i rs
   in vvsep [ "* musings"
            , "** Global Facts" </> srchs (globalFacts l4i)
+
            , "** Class Hierarchy"
-           , vvsep [ vvsep [ "*** Class:" <+> pretty cname <>
-                             if null (Prelude.tail cname) then emptyDoc
-                             else hsep (" belongs to" : (pretty <$> Prelude.tail cname))
-                           , if null cchild
-                             then emptyDoc
-                             else "**** extends" <+> viaShow (defaultToSuperType $ fst . fst $ cchild) <+> "with new attributes"
-                                  </> srchs (snd cchild)
-                           , "**** deets" </> srchs cname
+           , vvsep [ vvsep [ "*** Class:" <+> pretty fullyQualifiedClassName <+>
+                             "extends" <+> viaShow superclass <>
+                             if not $ null (unCT attrs)
+                             then " with new attributes"
+                             </> let prettyClassAttrs :: ClassHierarchyMap -> Doc ann
+                                     prettyClassAttrs chmap =
+                                       vsep [ "-" <+> pretty attr <+> "::" <+> viaShow inferrableTypeSig
+                                              <> if not (null (unCT attrchildren))
+                                                 then line <> indent 2 (prettyClassAttrs (unCT attrchildren))
+                                                 else emptyDoc
+                                            | (attr, (inferrableTypeSig, attrchildren)) <- Map.toList chmap
+                                            ]
+                                 in prettyClassAttrs (unCT attrs)
+                             else emptyDoc
                            ]
-                   | (cname, cchild) <- cg ]
+                   | (cname, (superclass, attrs)) <- cg
+                   , let fullyQualifiedClassName = Text.intercalate "." (reverse cname) ]
            , "** The entire classgraph"
            , srchs cg
            

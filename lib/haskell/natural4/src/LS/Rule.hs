@@ -43,6 +43,7 @@ import LS.Types
     TemporalConstraint,
     TypeSig,
     WithPos (WithPos, pos, tokenVal),
+    ValuePredicate,
     bsp2text,
     dlToList,
     liftMyToken,
@@ -380,6 +381,9 @@ data Interpreted = L4I {
   -- @[Rule]@; the latter is technically redundant and can be safely
   -- eliminated. [TODO].
   , origrules  :: [Rule]
+
+  -- | valuepredicates contain the bulk of the top-level decision logic, and can be easily expressed as instance or class methosd.
+  , valuePreds :: [ValuePredicate]
   }
   deriving (Eq, Ord, Show)
 

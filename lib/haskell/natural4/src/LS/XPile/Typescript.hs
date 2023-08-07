@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiWayIf #-}
 
 {-| transpiler to Typescript -}
 
@@ -11,7 +13,7 @@ module LS.XPile.Typescript where
 
 -- import Debug.Trace
 
--- import AnyAll
+import AnyAll
 
 -- import L4.Syntax as CoreL4
 
@@ -21,9 +23,9 @@ module LS.XPile.Typescript where
 
 import Data.HashMap.Strict qualified as Map
 -- import qualified Data.Text as T
--- import Data.Maybe (catMaybes, fromMaybe, isJust)
 import qualified Data.List.NonEmpty as NE
 import Data.List (intercalate, nub)
+import Data.List.Extra (groupSort)
 import Data.Maybe (isJust, isNothing)
 import Data.Tree qualified as DT
 import LS.Interpreter
@@ -33,6 +35,7 @@ import LS.Interpreter
     l4interpret,
     topsortedClasses,
     extractEnums,
+    attrsAsMethods,
   )
 import LS.PrettyPrinter
   ( ParamText4 (PT4, PT5),
@@ -45,14 +48,16 @@ import LS.PrettyPrinter
     (</>),
   )
 import LS.Rule as SFL4R
-  ( Interpreted (classtable, scopetable),
+  ( Interpreted (classtable, scopetable, origrules, valuePreds),
     Rule(..),
-    ruleLabelName
+    ruleLabelName,
   )
 import LS.Types as SFL4
   ( ClsTab (CT),
     HornClause (HC, hHead),
     HornClause2,
+    BoolStructR(..),
+    MultiTerm,
     MTExpr (MTT),
     ParamText,
     ParamType (TOne, TOptional),
@@ -64,10 +69,13 @@ import LS.Types as SFL4
         RPnary
       ),
     TypeSig (InlineEnum, SimpleType),
+    ValuePredicate(..),
     clsParent,
     defaultInterpreterOptions,
     getSymType,
     mt2text,
+    rp2text,
+    RPRel(..),
   )
 import Prettyprinter
   ( Doc,
@@ -81,11 +89,13 @@ import Prettyprinter
     hang,
     indent,
     lbrace,
+    braces,
     line,
     list,
     nest,
     rbrace,
     semi,
+    parens,
     space,
     viaShow,
     vsep,
@@ -94,17 +104,17 @@ import Prettyprinter
 import LS.XPile.Logging
 
 -- JsonLogic
-import JsonLogic.Json
-import JsonLogic.Pure.Type
-import JsonLogic.Pure.Operation
+import Text.JSON
 
 asTypescript :: SFL4R.Interpreted -> XPileLog (Doc ann)
 asTypescript l4i = do
   vvsep <$> sequence [ tsPrelude l4i
-                     , tsEnums l4i
-                     , tsClasses l4i
-                     , globalDefinitions l4i
-                     , toJsonLogic l4i
+                     , pure "// tsEnums",           tsEnums l4i
+                     , pure "// tsClasses",         tsClasses l4i
+                     , pure "// globalDefinitions [commented out]" --, globalDefinitions l4i
+                     , pure "// jsInstances",       jsInstances l4i
+                     , pure "// toJsonLogi",        toJsonLogic l4i
+                     , pure "// toPlainTS",         toPlainTS l4i
                      ]
 
 -- | a convention for preserving the original strings and data structures for downstream use
@@ -114,7 +124,9 @@ tsPrelude l4i = return $
        , "export const L4Orig = { enums: { }, classes: { } }"
        ]
 
--- | output class declarations
+-- | output class declarations.
+--
+-- [TODO] -- add class methods here
 tsClasses :: Interpreted -> XPileLog (Doc ann)
 tsClasses l4i = return $
   let ct@(CT ch) = classtable l4i
@@ -173,7 +185,7 @@ tsEnums l4i = return $
   
 
 
--- | all the symbols we know about, including those that show up in GIVEN, DEFINE, and DECIDE.
+-- | all the instance symbols we know about, including those that show up in GIVEN, DEFINE, and DECIDE.
 -- This is probably not the best way to do it because we're commingling local and global variables here.
 -- Happy to rethink all of this.
 -- Also, not yet done, classes and variables need to be topologically sorted because typescript is picky about that.
@@ -183,13 +195,23 @@ jsInstances l4i = return $
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
           "//" <+> viaShow symtab' <//>
+
+          -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
+                  </> "//" <+> viaShow val
                 | (mt, (symtype, vals)) <- Map.toList symtab'
-                , value <- case vals of
+                , val <- vals
+                , value <- case val of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,
                               -- rather than assume that all the HC2 are paramtexts.
-                              HC { hHead = RPParamText {} } : _ -> [ encloseSep lbrace (line <> rbrace) comma ((line <>) <$> asValuePT l4i vals) ]
-                              _                                 -> hc2ts l4i <$> vals
+                             -- We could do with an additional test against the keyword, should be a Define.
+
+                             -- also, we should preorganize all the constContents into a canonical data structure hierarchy, rather than try to fit things into the sctabs
+                              HC { hHead = RPParamText {} } ->
+                                let constContents = asValuePT l4i vals ++ instanceMethods l4i mt
+                                in [ encloseSep (lbrace <> line) (line <> rbrace) (comma <> space) constContents ]
+                              _                                 ->
+                                [hc2ts l4i val]
                  ]
         | (scopename , symtab') <- Map.toList sctabs
         ] </>
@@ -200,6 +222,49 @@ jsInstances l4i = return $
   where
     scopenameStr [] = "globals"
     scopenameStr x  = snake_case x
+
+    instanceMethods :: Interpreted -> SFL4.MultiTerm -> [Doc ann]
+    instanceMethods l4i mt =
+      let marshalled = groupSort [ (attrName, vp)
+                                 | vp@ValPred{..} <- valuePreds l4i
+                                 , attrRel == Just RPis
+                                 , objPath == [mt2text mt]
+                                 ]
+      in
+      [ line <> "// instanceMethods go here"
+        </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>" <+> braces ( indent 1 $
+          vsep [ vpTS <> semi
+               | vp@ValPred{..} <- vps
+               , let vpTS = vpToTS l4i vp
+               ] <> space
+          )
+      | (attrName', vps) <- marshalled
+      ]
+
+-- | convert the @attrVal :- attrCond@ part of a ValuePredicate to typescript syntax
+vpToTS :: Interpreted -> ValuePredicate -> Doc ann
+vpToTS l4i ValPred{..}
+  | attrCond == Just (Leaf (RPMT [MTT "OTHERWISE"])) || isNothing attrCond = "return" <+> pretty attrVal
+  | isJust    attrCond && isJust attrVal = "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal)
+  | otherwise                            = "return null // [TODO]"
+  where
+    rp2ts :: Maybe BoolStructR -> Doc ann
+    rp2ts Nothing = "true"
+    rp2ts (Just bsr) = bsr2ts bsr
+
+    bsr2ts :: BoolStructR -> Doc ann
+    bsr2ts (Leaf (RPConstraint mt1 rprel mt2) ) = pretty (mt2text mt1) <+> renderRPrel rprel <+> pretty (mt2text mt2)
+    bsr2ts (Leaf (RPnary RPis [rp1, rp2])) = pretty (rp2text rp1) <+> renderRPrel RPis <+> pretty (rp2text rp2)
+    bsr2ts (Leaf (RPnary RPsum rps)) = "sum" <> list (pretty . rp2text <$> rps)
+    bsr2ts (Any pp rps) = "any" <> parens (list (bsr2ts <$> rps))
+    bsr2ts (All pp rps) = "all" <> parens (list (bsr2ts <$> rps))
+    bsr2ts (Not rp) = "not" <> parens (bsr2ts rp)
+    bsr2ts _ = error "bsr2ts needs more cases"
+
+    renderRPrel RPis = "=="
+    renderRPrel RPgt = ">"
+    renderRPrel RPlt = "<"
+    renderRPrel _    = error "add a renderRPrel in Typescript.hs"
 
 -- | top-level DEFINEs, going rule by rule
 -- just the facts.
@@ -249,7 +314,7 @@ dumpNestedClass l4i (DT.Node pt children)
 --
 -- In this initial experiment, we do not implement scoped variables. All variables live in global scope.
 --
-
+-- Without further ado:
 hc2ts :: Interpreted -> HornClause2 -> Doc ann
 hc2ts _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
 hc2ts _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
@@ -259,10 +324,21 @@ hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps}
 
 
+toPlainTS :: Interpreted -> XPileLog (Doc ann)
+toPlainTS l4i = do
+  return $ vvsep [ "//" <+> viaShow valpred
+                 | valpred <- valuePreds l4i
+                 ]
+  
 toJsonLogic :: Interpreted -> XPileLog (Doc ann)
 toJsonLogic l4i = do
   mutterd 1 "toJsonLogic"
-  return emptyDoc
+  -- 2 + 2
+  varData <- case decode "{ \"foo\" : \"bar\" }" of
+               Ok jsVarData -> return jsVarData
+               Error err    -> mutterd 2 "error while decoding" >> mutter err
+  
+  return $ "const varData" <+> equals <+> pretty (encode varData)
 
 -- dump only the paramtexts
 asValuePT :: Interpreted -> [HornClause2] -> [Doc ann]

@@ -21,6 +21,7 @@ import LS.Interpreter
       classGraph,
       extractEnums,
       defaultToSuperClass, defaultToSuperType,
+      attrsAsMethods,
       )
 
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
@@ -48,7 +49,7 @@ import qualified Data.List.NonEmpty as NE
 import Data.Bifunctor (first)
 import Data.Graph.Inductive (prettify)
 import Data.Text qualified as Text
-
+import LS.XPile.Logging
 
 -- | org-mode output
 toOrg :: Interpreted -> [Rule] -> String
@@ -112,6 +113,10 @@ musings l4i rs =
                            | (mt, (its, hc)) <- Map.toList st ]
                    | (rn, st) <- Map.toList $ scopetable l4i ]
 
+           , "** attributes as methods"
+           , "we dump expressions of the form DECIDE class's record's attribute IS someValue WHEN someCondition"
+           , let aam = xpLog $ attrsAsMethods rs -- [TODO] this duplicates work done in the Interpreter -- find a way to coherently log common errors from the Interpreter itself, clean up l4i's valuePreds
+             in srchs (fst aam) </> vsep (pretty <$> snd aam)
            , "** the Rule Decision Graph"
            , orgexample (pretty (prettify (first ruleLabelName decisionGraph)))
 

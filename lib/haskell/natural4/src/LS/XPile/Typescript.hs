@@ -75,6 +75,7 @@ import Prettyprinter
     colon,
     comma,
     dquotes,
+    emptyDoc,
     encloseSep,
     equals,
     hang,
@@ -90,27 +91,32 @@ import Prettyprinter
     vsep,
     (<+>),
   )
+import LS.XPile.Logging
 
-asTypescript :: [SFL4R.Rule] -> Doc ann
-asTypescript rs =
-  let l4i = l4interpret defaultInterpreterOptions rs
-  in
-    vvsep [ tsPrelude l4i
-          , tsEnums l4i
-          , tsClasses l4i
-          , globalDefinitions l4i
-          ]
+-- JsonLogic
+import JsonLogic.Json
+import JsonLogic.Pure.Type
+import JsonLogic.Pure.Operation
+
+asTypescript :: SFL4R.Interpreted -> XPileLog (Doc ann)
+asTypescript l4i = do
+  vvsep <$> sequence [ tsPrelude l4i
+                     , tsEnums l4i
+                     , tsClasses l4i
+                     , globalDefinitions l4i
+                     , toJsonLogic l4i
+                     ]
 
 -- | a convention for preserving the original strings and data structures for downstream use
-tsPrelude :: Interpreted -> Doc ann
-tsPrelude l4i =
+tsPrelude :: Interpreted -> XPileLog (Doc ann)
+tsPrelude l4i = return $
   vsep [ "// tsPrelude"
        , "export const L4Orig = { enums: { }, classes: { } }"
        ]
 
 -- | output class declarations
-tsClasses :: Interpreted -> Doc ann
-tsClasses l4i =
+tsClasses :: Interpreted -> XPileLog (Doc ann)
+tsClasses l4i = return $
   let ct@(CT ch) = classtable l4i
   in
   vvsep [ "class" <+> snake_case [MTT className] <>
@@ -141,8 +147,8 @@ tsClasses l4i =
         ]
 
 -- | output enum declarations
-tsEnums :: Interpreted -> Doc ann
-tsEnums l4i =
+tsEnums :: Interpreted -> XPileLog (Doc ann)
+tsEnums l4i = return $
   vvsep ( showEnum <$> extractEnums l4i )
   where
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
@@ -171,8 +177,8 @@ tsEnums l4i =
 -- This is probably not the best way to do it because we're commingling local and global variables here.
 -- Happy to rethink all of this.
 -- Also, not yet done, classes and variables need to be topologically sorted because typescript is picky about that.
-jsInstances :: Interpreted -> Doc ann
-jsInstances l4i =
+jsInstances :: Interpreted -> XPileLog (Doc ann)
+jsInstances l4i = return $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
@@ -183,7 +189,7 @@ jsInstances l4i =
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,
                               -- rather than assume that all the HC2 are paramtexts.
                               HC { hHead = RPParamText {} } : _ -> [ encloseSep lbrace (line <> rbrace) comma ((line <>) <$> asValuePT l4i vals) ]
-                              _                                 -> asValue l4i <$> vals
+                              _                                 -> hc2ts l4i <$> vals
                  ]
         | (scopename , symtab') <- Map.toList sctabs
         ] </>
@@ -197,8 +203,8 @@ jsInstances l4i =
 
 -- | top-level DEFINEs, going rule by rule
 -- just the facts.
-globalDefinitions :: Interpreted -> Doc ann
-globalDefinitions l4i =
+globalDefinitions :: Interpreted -> XPileLog (Doc ann)
+globalDefinitions l4i = return $
   vvsep [ "const" <+> dumpNestedClass l4i f
         | f <- globalFacts l4i
         ]
@@ -218,16 +224,47 @@ dumpNestedClass l4i (DT.Node pt children)
     pretty (PT4 pt l4i)
 
 
--- [TODO] convert the GIVEN ... logic into functions that do the right thing.
+-- | convert the decision logic into functions that do the right thing.
+--
+-- There are several sources of decision logic. In the L4 source, we have a ruleset of multiple rules, some of which are DECIDE rules.
+--
+-- The Interpreter contains a bunch of gnarly code that tries to do expansion of one boolstruct into another.
+--
+-- Going beyond the propositional domain, however, it becomes difficult to force everything to be inlined. This is why named variables and let bindings were invented!
+--
+-- Now, let us assume we have a mathlang-like DSL of some sort that is implemented in something like Typescript or Purescript, which allows traced evaluation.
+--
+-- Our task now is to organize the rulesets into a graph of computations and data flow; then we compile that graph down to the evaluation DSL.
+--
+-- We have a couple candidates for the mathlang DSL:
+-- - https://jsonlogic.com/operations.html
+-- - our own mathlang
+-- - raw Typescript
+--
+-- Let's try the JsonLogic approach first.
+--
+-- We'll bypass the expansion provided by the Interpreter, and work with the raw rules themselves.
+--
+-- We might rely on the Interpreter to provide some of the data flow graphing, so we can trace variable expansion.
+--
+-- In this initial experiment, we do not implement scoped variables. All variables live in global scope.
+--
 
-asValue :: Interpreted -> HornClause2 -> Doc ann
-asValue _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
-asValue _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
-asValue _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
-asValue  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i)
-asValue  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
-asValue  l4i  hc2@HC { hHead = RPnary      _rprel rps }         = asValue l4i hc2 {hHead = head rps}
+hc2ts :: Interpreted -> HornClause2 -> Doc ann
+hc2ts _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
+hc2ts _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
+hc2ts _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
+hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i)
+hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
+hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps}
 
+
+toJsonLogic :: Interpreted -> XPileLog (Doc ann)
+toJsonLogic l4i = do
+  mutterd 1 "toJsonLogic"
+  return emptyDoc
+
+-- dump only the paramtexts
 asValuePT :: Interpreted -> [HornClause2] -> [Doc ann]
 asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $
   [ pretty (PT4 pt l4i)

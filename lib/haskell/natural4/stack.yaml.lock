@@ -87,6 +87,13 @@ packages:
       size: 383
   original:
     hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
+- completed:
+    hackage: jsonlogic-0.1.0.0@sha256:79b5f48ef3f52d0b8c84cf6b7383a7bb5ffd97a15c2683b947335b370c4183aa,2932
+    pantry-tree:
+      sha256: 3c13d5a13a02f581652e1223767ca1d9b0de30fecef5272af6d2a00806e55f77
+      size: 3341
+  original:
+    hackage: jsonlogic-0.1.0.0
 snapshots:
 - completed:
     sha256: 5a59b2a405b3aba3c00188453be172b85893cab8ebc352b1ef58b0eae5d248a2

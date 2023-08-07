@@ -37,11 +37,10 @@ import LS.Types ( unCT
                 , ClassHierarchyMap
                 )
 import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), tildes, (<//>), snake_case )
+    ( myrender, vvsep, (</>), tildes, (<//>), snake_case, srchs, orgexample )
 
 import Prettyprinter
     ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc, indent, line )
-import Text.Pretty.Simple ( pShowNoColor )
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.List (nub)
@@ -114,7 +113,7 @@ musings l4i rs =
                    | (rn, st) <- Map.toList $ scopetable l4i ]
 
            , "** the Rule Decision Graph"
-           , example (pretty (prettify (first ruleLabelName decisionGraph)))
+           , orgexample (pretty (prettify (first ruleLabelName decisionGraph)))
 
            , "** Decision Roots"
            , "rules which are not just RuleAlises, and which are not relied on by any other rule"
@@ -193,9 +192,3 @@ musings l4i rs =
                    </> "**** local variables" </> srchs (ruleLocals l4i r)
                    | r <- rs ]
            ]
-  where
-    srchs :: (Show a) => a -> Doc ann
-    srchs = src "haskell" . pretty . pShowNoColor
-    src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
-    example  x = vsep [ "#+begin_example", x, "#+end_example" ]
-

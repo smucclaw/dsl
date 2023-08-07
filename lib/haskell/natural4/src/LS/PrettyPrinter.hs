@@ -21,6 +21,7 @@ import LS.Rule
 import LS.Types
 import Prettyprinter
 import Prettyprinter.Render.Text
+import Text.Pretty.Simple ( pShowNoColor )
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -336,3 +337,8 @@ a </>  b = vvsep [ a, b ]
 a <//> b = vsep  [ a, b ]
 infixr 5 </>, <//>
 
+-- | print haskell source in a way Org prefers
+srchs :: (Show a) => a -> Doc ann
+srchs = orgsrc "haskell" . pretty . pShowNoColor
+orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
+orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]

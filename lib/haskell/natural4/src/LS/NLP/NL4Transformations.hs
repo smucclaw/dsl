@@ -28,17 +28,17 @@ pushPrePostIntoMain bsgt = case bsgt of
     hackStrVP :: GString -> GVP -> GVP
     hackStrVP in_part vp = GAdvVP vp (GrecoverUnparsedAdv in_part)
 
-    transformWho :: GV2 -> GNP -> GText -> GText
-    transformWho consume beverage (GqWHO person (GAPWho alcoholic)) =
-      GqWHO (referSubj person) (GWHO GpresSimul GPOS (GComplV2 consume (introduceNP (insertAP alcoholic beverage))))
-    transformWho consume beverage (GqWHO person (GAdvWho in_part)) =
-      GqWHO (referSubj person) (GWHO GpresSimul GPOS (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
+    transformWho :: GTemp -> GPol -> GV2 -> GNP -> GText -> GText
+    transformWho t p consume beverage (GqWHO person (GAPWho alcoholic)) =
+      GqWHO (referNP person) (GWHO t p (GComplV2 consume (introduceNP (insertAP alcoholic beverage))))
+    transformWho t p consume beverage (GqWHO person (GAdvWho in_part)) =
+      GqWHO (referNP person) (GWHO t p (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
 
     tryTransformWhole :: BoolStructGText -> BoolStructGText
     tryTransformWhole bs = case bs of
       All pp
           ( Any
-              ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
+              ( Just ( PrePost (GqPREPOST ( GV2_PrePost t p consume ) )
                                (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  Any
@@ -48,15 +48,15 @@ pushPrePostIntoMain bsgt = case bsgt of
         All pp
             ( Any
                 Nothing (
-                   (transformWho consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
+                   (transformWho t p consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
             : Any
                 Nothing (
-                  (transformWho consume beverage `mapBS`) <$> inpart_inwhole)
+                  (transformWho t p consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
 
       Any pp
           ( All
-              ( Just ( PrePost (GqPREPOST ( GV2_PrePost consume ) )
+              ( Just ( PrePost (GqPREPOST ( GV2_PrePost t p consume ) )
                                (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  All
@@ -66,10 +66,10 @@ pushPrePostIntoMain bsgt = case bsgt of
         Any pp
             ( All
                 Nothing (
-                   (transformWho consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
+                   (transformWho t p consume beverage `mapBS`) <$> alcoholic_nonalcoholic)
             : All
                 Nothing (
-                  (transformWho consume beverage `mapBS`) <$> inpart_inwhole)
+                  (transformWho t p consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
       _ -> bs
 
@@ -96,7 +96,7 @@ bsNeg2textNeg bs = case bs of
 -- textNeg2bsNeg :: BoolStructWho -> BoolStructWho
 
 -----------------------------------------------------------------------------
--- This is rather hard to read, but the alternative is to duplicate bs2gf for every single GF category
+-- This is rather hard to read, but the alternative is to duplicate bs2gf for every single GF cate(LexConj "OR")y
 
 type ConjFun list single = GConj -> Tree list -> Tree single
 type ConjPreFun list single = GPrePost -> GConj -> Tree list -> Tree single
@@ -106,12 +106,12 @@ type ListFun single list = [Tree single] -> Tree list
 bs2gf :: (Gf (Tree s)) => ConjFun l s -> ConjPreFun l s -> ConjPrePostFun l s -> ListFun s l -> BoolStructGF s -> Tree s
 bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.Leaf x -> x
-    AA.Any Nothing xs -> mergeConj $ conj GOR $ mkList $ f <$> xs
-    AA.All Nothing xs -> mergeConj $ conj GAND $ mkList $ f <$> xs
-    AA.Any (Just (AA.Pre pre)) xs -> conjPre pre GOR $ mkList $ f <$> xs
-    AA.All (Just (AA.Pre pre)) xs -> conjPre pre GAND $ mkList $ f <$> xs
-    AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GOR $ mkList $ f <$> xs
-    AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post GAND $ mkList $ f <$> xs
+    AA.Any Nothing xs -> mergeConj $ conj (LexConj "OR") $ mkList $ f <$> xs
+    AA.All Nothing xs -> mergeConj $ conj (LexConj "AND") $ mkList $ f <$> xs
+    AA.Any (Just (AA.Pre pre)) xs -> conjPre pre (LexConj "OR") $ mkList $ f <$> xs
+    AA.All (Just (AA.Pre pre)) xs -> conjPre pre (LexConj "AND") $ mkList $ f <$> xs
+    AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post (LexConj "OR") $ mkList $ f <$> xs
+    AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post (LexConj "AND") $ mkList $ f <$> xs
     AA.Not unexpectedBS -> trace unexpectedNegationMsg $ bs2gf conj conjPre conjPrePost mkList unexpectedBS
 --    AA.Not _ -> error unexpectedNegationMsg
   where
@@ -149,27 +149,16 @@ mapBS f bs = case bs of
     AA.Not x -> AA.Not $ mapBS f x
 -----------------------------------------------------------------------------
 -- Generic useful transformations
-
--- for Subj
-introduceSubj :: forall a . Tree a -> Tree a
-introduceSubj (GEVERY x) = GAN x
-introduceSubj (GPARTY x) = GAN x
-introduceSubj x = composOp introduceSubj x
-
-referSubj :: forall a . Tree a -> Tree a
-referSubj (GEVERY x) = GTHE x
-referSubj (GPARTY x) = GTHE x
-referSubj (GAN x) = GTHE x
-referSubj x = composOp referSubj x
-
 -- for NP
 
 introduceNP :: forall a . Tree a -> Tree a
+introduceNP (GEVERY x) = GDetCN GaSg x
 introduceNP (GMassNP x) = GDetCN GaSg x
 introduceNP (GDetCN _ x) = GDetCN GaSg x
 introduceNP x = composOp introduceNP x
 
 referNP :: forall a . Tree a -> Tree a
+referNP (GEVERY x) = GDetCN GtheSg x
 referNP (GMassNP x) = GDetCN GtheSg x
 referNP (GDetCN GaSg x) = GDetCN GtheSg x
 --referNP (GDetCN GaPl x) = GDetCN GthePl x
@@ -238,6 +227,6 @@ aggregateBoolStruct l bs =
     then bs
     else
       (case bs of
-        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees GOR $ concatMap toList xs
-        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees GAND $ concatMap toList xs
+        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ concatMap toList xs
+        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ concatMap toList xs
         _ -> bs)

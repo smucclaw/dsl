@@ -1,29 +1,33 @@
 concrete CustomSyntaxEng of CustomSyntax =
     NumeralEng
   , GrammarEng [
-        N, N2, CN, UseN, NP, Det, DetCN, MassNP
-      , V,  VV, V2, VS, VP
-      , A, A2, AP, AdjCN, PositA
+        N, N2, CN, PN, NP, UseN, ComplN2, UsePN, Num, NumSg, NumPl, Det, DetCN, MassNP
+      , V,  VV, V2, VS, VP, UseV
+      , A, A2, AP, AdjCN, PositA, ComplA2
       , Comp, Adv, VP, UseComp, CompAP, CompNP, CompAdv -- is a public agency
       , Prep, PrepNP, AdvVP
-      , AdA, AdAdv -- only (within the organisation)
+      , AdA, AdAdv, Card, CAdv, AdN, AdNum, AdnCAdv
+        , Dig, Digits, NumDigits, IDig, IIDig, D_0, D_1, D_2, D_3, D_4, D_5, D_6, D_7, D_8, D_9 -- only (within the organisation)
       , ListAdv, BaseAdv, ConsAdv, ConjAdv
       , ListAP, BaseAP, ConsAP, ConjAP
       , ListNP, BaseNP, ConsNP, ConjNP
       , ListS, BaseS, ConsS, ConjS
-      , S, QS, Conj
+      , S, QS, Conj, Subj, SubjS
+        , RS, RP, IdRP, RelCN
       ]
   , StructuralEng [
       Prep, to_Prep, for_Prep, from_Prep, on_Prep, before_Prep, after_Prep, possess_Prep
     , VV, must_VV
+        , AdN, CAdv, less_CAdv, more_CAdv, at_least_AdN, at_most_AdN
+        , Subj, because_Subj
     ]
   , ExtendEng [
         VPS, MkVPS, mkVPS, ListVPS, BaseVPS, ConsVPS, ConjVPS, baseVPS
       , VPI, MkVPI, mkVPI --, [VPI], BaseVPI, ConsVPI, ConjVPI
       , VP, Tense, Ant, Temp, Pol, Conj -- for VPS
-      , ByVP
-      , S, PredVPS
-      , NP, GerundNP -- by performing NDB qualification
+      , ByVP, N, CompoundN
+      , S, PredVPS, RelVPS
+      , NP, GerundNP, Num, GenModNP -- by performing NDB qualification
       ]
   ** open
       SyntaxEng
@@ -94,6 +98,8 @@ concrete CustomSyntaxEng of CustomSyntax =
         in vps ** {s = \\_,_ => may_have_occurred} ;
     -- : NP -> S ; -- it is NP — reference to a previous NP
     ReferenceNP np = mkS (mkCl it_NP <lin NP np : NP>) ;
+    WhileDoing vp = cc2 (ss "while") (GerundAdv vp) ;
+    CNwhereS cn np vps = SentCN cn (cc2 (ss "where") (PredVPS np vps)) ;
 
     presSimul = mkTemp presentTense simultaneousAnt ;
     presAnt = mkTemp presentTense anteriorAnt ;
@@ -104,6 +110,7 @@ concrete CustomSyntaxEng of CustomSyntax =
     theSg = theSg_Det ;
     thePl = thePl_Det ;
     aSg = aSg_Det ;
+    aPl = aPl_Det ;
     your = mkDet youSg_Pron ;
 
     about_Prep = ParadigmsEng.mkPrep "about" ;

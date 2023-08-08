@@ -8,6 +8,7 @@ abstract StandardLexicon = NL4Base ** {
   fun
     within_Prep : Prep ;
     only_AdA : AdA ; -- within -> only within
+    due_to_A2 : A2 ;
 
   -- Open classes, like nouns, verbs etc.
   fun

@@ -127,6 +127,11 @@ tsPrelude l4i = return $
 -- | output class declarations.
 --
 -- [TODO] -- add class methods here
+--
+-- We may need to upgrade all plain attributes to be methods -- because if bob's MyValue is 2 on tuesdays and 14 on wednesdays,
+-- the appropriate way to model that is as a method; but then MyValue has type `() => number`. And alice, whose MyValue is always 40,
+-- ends up with a @const 40@. That's why attributes may need to be upgraded to methods.
+
 tsClasses :: Interpreted -> XPileLog (Doc ann)
 tsClasses l4i = return $
   let ct@(CT ch) = classtable l4i
@@ -140,10 +145,10 @@ tsClasses l4i = return $
           -- <//> "  //" <+> viaShow csuper
           <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
-                                   Just t@(SimpleType TOptional _) -> " ?:" <+> prettySimpleType "ts" (snake_inner . MTT) t
-                                   Just t@(SimpleType TOne      _) -> " :"  <+> prettySimpleType "ts" (snake_inner . MTT) t
-                                   Just t@(InlineEnum TOne      _) -> " :"  <+> snake_case [MTT attrname] <> "Enum"
-                                   Just t                          -> " : " <+> prettySimpleType "ts" (snake_inner . MTT) t
+                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
+                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
+                                   Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"
+                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
                                    Nothing -> ""
                                  <> semi
                                | attrname <- getCTkeys children
@@ -157,6 +162,11 @@ tsClasses l4i = return $
             (Just (InlineEnum _ _), _) -> False -- we deal with enums separately below
             _                          -> True
         ]
+
+defaultMethod :: TypeSig -> Doc ann
+defaultMethod (SimpleType TOne "string") = " return \"\" "
+defaultMethod (SimpleType TOne "number") = " return 0 "
+  
 
 -- | output enum declarations
 tsEnums :: Interpreted -> XPileLog (Doc ann)
@@ -244,7 +254,8 @@ jsInstances l4i = return $
 -- | convert the @attrVal :- attrCond@ part of a ValuePredicate to typescript syntax
 vpToTS :: Interpreted -> ValuePredicate -> Doc ann
 vpToTS l4i ValPred{..}
-  | attrCond == Just (Leaf (RPMT [MTT "OTHERWISE"])) || isNothing attrCond = "return" <+> pretty attrVal
+  | attrCond == Just (Leaf (RPMT [MTT "OTHERWISE"]))
+    || isNothing attrCond                = "return" <+> pretty attrVal
   | isJust    attrCond && isJust attrVal = "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal)
   | otherwise                            = "return null // [TODO]"
   where

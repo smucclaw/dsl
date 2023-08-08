@@ -190,7 +190,7 @@ main = do
       (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
       (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
 
-      (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
+      (totsFN,      (asTSpretty, asTSerr))    = (workuuid <> "/" <> "ts",       xpLog $ asTypescript l4i)
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
@@ -289,7 +289,7 @@ main = do
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
-    when (SFL4.tots      opts) $ mywritefile  True totsFN       iso8601 "ts"   asTSstr
+    when (SFL4.tots      opts) $ mywritefile2 True totsFN       iso8601 "ts"   (show asTSpretty) asTSerr
     when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomaude   opts) $ mywritefile  True toMaudeFN iso8601 "natural4" asMaude
@@ -336,8 +336,6 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toProlog rc) $ pPrint asProlog
-
-    when (SFL4.toTS rc) $ print $ asTypescript rules
 
     when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
     when (SFL4.only opts == "native")  $ pPrint rules

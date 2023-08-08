@@ -70,6 +70,8 @@ dependencies:
   - mono-traversable
   - string-interpolate
   - prettyprinter-interp
+  - json
+  - jsonlogic
 
 language: GHC2021
 

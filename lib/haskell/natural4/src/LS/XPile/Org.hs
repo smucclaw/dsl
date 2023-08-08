@@ -21,6 +21,7 @@ import LS.Interpreter
       classGraph,
       extractEnums,
       defaultToSuperClass, defaultToSuperType,
+      attrsAsMethods,
       )
 
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
@@ -37,11 +38,10 @@ import LS.Types ( unCT
                 , ClassHierarchyMap
                 )
 import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), tildes, (<//>), snake_case )
+    ( myrender, vvsep, (</>), tildes, (<//>), snake_case, srchs, orgexample )
 
 import Prettyprinter
     ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc, indent, line )
-import Text.Pretty.Simple ( pShowNoColor )
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.List (nub)
@@ -49,7 +49,7 @@ import qualified Data.List.NonEmpty as NE
 import Data.Bifunctor (first)
 import Data.Graph.Inductive (prettify)
 import Data.Text qualified as Text
-
+import LS.XPile.Logging
 
 -- | org-mode output
 toOrg :: Interpreted -> [Rule] -> String
@@ -113,8 +113,12 @@ musings l4i rs =
                            | (mt, (its, hc)) <- Map.toList st ]
                    | (rn, st) <- Map.toList $ scopetable l4i ]
 
+           , "** attributes as methods"
+           , "we dump expressions of the form DECIDE class's record's attribute IS someValue WHEN someCondition"
+           , let aam = xpLog $ attrsAsMethods rs -- [TODO] this duplicates work done in the Interpreter -- find a way to coherently log common errors from the Interpreter itself, clean up l4i's valuePreds
+             in srchs (fst aam) </> vsep (pretty <$> snd aam)
            , "** the Rule Decision Graph"
-           , example (pretty (prettify (first ruleLabelName decisionGraph)))
+           , orgexample (pretty (prettify (first ruleLabelName decisionGraph)))
 
            , "** Decision Roots"
            , "rules which are not just RuleAlises, and which are not relied on by any other rule"
@@ -193,9 +197,3 @@ musings l4i rs =
                    </> "**** local variables" </> srchs (ruleLocals l4i r)
                    | r <- rs ]
            ]
-  where
-    srchs :: (Show a) => a -> Doc ann
-    srchs = src "haskell" . pretty . pShowNoColor
-    src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
-    example  x = vsep [ "#+begin_example", x, "#+end_example" ]
-

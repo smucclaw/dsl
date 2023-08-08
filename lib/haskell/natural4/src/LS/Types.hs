@@ -384,6 +384,7 @@ instance Hashable a => Hashable (TemporalConstraint a)
 
 type RuleName   = MultiTerm
 type EntityType = Text.Text
+type EntityName = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
@@ -413,6 +414,35 @@ getUnderlyingType   (SimpleType TOptional s1) = Right s1
 getUnderlyingType   (SimpleType TList0    s1) = Right s1
 getUnderlyingType   (SimpleType TList1    s1) = Right s1
 getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
+
+-- | when the input says @DECIDE ClassA's RecordAttr's AttributeNAME IS foo WHEN bar@
+-- we rewrite that to a `ValuePredicate`.
+data ValuePredicate = ValPred
+  { moduleName :: [EntityName]  -- MoneyLib
+  , scopeName  :: [EntityName]  -- DollarJurisdictions
+  , objPath    :: [EntityName]  -- ClassA, RecordAttr. If this list is null, then the "attribute" is toplevel / module-global
+  , attrName   ::  EntityName   -- AttributeName
+  , attrRel    ::  Maybe RPRel
+  , attrVal    ::  Maybe RelationalPredicate
+  , attrCond   ::  Maybe BoolStructR
+  , attrIType  ::  Inferrable TypeSig
+  , origBSR    ::  Maybe BoolStructR
+  , origHC     ::  Maybe HornClause2
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+defaultValuePredicate = ValPred
+  { moduleName = []
+  , scopeName  = []
+  , objPath    = []
+  , attrName   = "defaultAttrName"
+  , attrRel    = Just   RPis
+  , attrVal    = Just $ RPMT [MTT "defaultAttrVal"]
+  , attrCond   = Nothing
+  , attrIType  = defaultInferrableTypeSig
+  , origBSR    = Nothing
+  , origHC     = Nothing
+  }
 
 -- * what's the difference between SymTab, ClsTab, and ScopeTabs?
 
@@ -454,6 +484,8 @@ type SymTab = Map.HashMap MultiTerm (Inferrable TypeSig, [HornClause2])
 --   The confirmed & inferred types after the type checker & inferrer has run, are recorded in the snd of Inferrable.
 --   If type checking / inference have not been implemented the snd will be empty.
 type Inferrable ts = (Maybe ts, [ts])
+
+defaultInferrableTypeSig = (Nothing, [])
 
 thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 

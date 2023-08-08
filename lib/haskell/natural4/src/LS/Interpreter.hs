@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
 
+
 {-|
 
 The Interpreter runs after the Parser. It prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
@@ -25,8 +26,9 @@ module LS.Interpreter where
 
 import AnyAll qualified as AA
 import Control.Applicative ((<|>))
-import Control.Monad (guard)
+import Control.Monad (guard, join, forM)
 import Data.Bifunctor (first)
+import Data.Either (partitionEithers, fromRight)
 import Data.Graph.Inductive
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
@@ -36,12 +38,13 @@ import Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
+import Data.Traversable (for)
 import Data.Tree
 import Data.Tuple (swap)
 import Debug.Trace
-import LS.XPile.Logging (mutterd, mutterdhsf
+import LS.XPile.Logging (mutter, mutters, mutterd, mutterdhsf
                         , XPileLogE, XPileLog
-                        , pShowNoColorS, xpReturn, xpError)
+                        , pShowNoColorS, xpReturn, xpError, xpLog)
 import LS.PrettyPrinter
 import LS.RelationalPredicates
 import LS.Rule
@@ -59,10 +62,12 @@ l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
 l4interpret iopts rs =
   let ct = classHierarchy rs
       st = symbolTable    iopts rs
+      (vp, vpErr) = xpLog $ attrsAsMethods rs
   in
     L4I { classtable = ct
         , scopetable = st
         , origrules  = rs
+        , valuePreds = fromRight [] vp
         }
 
 -- | Provide the fully expanded, exposed, decision roots of all rules in the ruleset,
@@ -103,6 +108,7 @@ qaHornsR l4i =
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
 symbolTable _iopts rs =
   Map.fromListWith (<>) (fromGivens <> fromDefines <> fromDecides)
+  -- [BUG] this marshalling produces duplicate entries, one from where a thing is DEFINEd and one where its attributes are DECIDEd.
   -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []
   where
     fromGivens :: [(RuleName, SymTab)]
@@ -798,7 +804,87 @@ globalFacts l4i =
   , hasClauses r, Define == keyword r
   ]
 
+-- * Extract everything that looks like a method.
+--
+-- A common form is:
+-- @
+--    DECIDE ClassA's RecordAttr's AttributeName IS foo WHEN bar
+--           ClassA's RecordAttr's AttributeName IS baz WHEN quux
+--           ClassA's RecordAttr's AttributeName IS baz OTHERWISE
+-- @
+-- 
+-- Extract and return all of these decisions in the form:
+--
+-- @
+--    [([ClassA, RecordAttr, AttributeName], foo, Just bar
+-- @
+-- 
+-- | we extract the methods to a fully qualified and annotatable form defined as `ValuePredicate` -- see Types.hs
+--
+-- Go through every rule and break it down into this structure.
 
+attrsAsMethods :: RuleSet -> XPileLogE [ValuePredicate]
+attrsAsMethods rs = do
+  outs <-
+    for [ r | r@Hornlike{keyword=Decide} <- rs ] $ \r -> do
+    for (clauses r) $ \hc -> do
+      gone1 <- go hc
+      case gone1 of
+        Left errs1 -> xpError errs1
+        Right (headLHS, attrVal, attrCond) -> do
+          gone2 <- toObjectPath headLHS
+          mutterd 3 $ show headLHS <> " ... got back gone2: " <> show gone2
+          case gone2 of
+            Left errs2 -> xpError errs2
+            Right (objPath, attrName) -> do
+              let toreturn = defaultValuePredicate
+                    { origHC = Just hc
+                    , origBSR = hBody hc
+                    , objPath
+                    , attrName
+                    , attrVal
+                    , attrCond
+                    }
+              mutterd 3 $ show headLHS <> " returning"
+              mutter $ show $ srchs toreturn
+              xpReturn toreturn
 
+  let (errs, successes) = partitionEithers (concat outs)
+  mutters (concat errs)
+  xpReturn successes
+            
+  where go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
+        go hc@HC{..} =
+          case hHead of
+            (RPnary RPis (RPMT headLHS : headRHS : [])) -> xpReturn (headLHS, Just headRHS, hBody)
 
+            (RPnary RPis (RPMT headLHS : headRHS)) -> do
+              mutterd 3 $ "unexpected RHS in RPnary RPis: " <> show hHead
+              xpReturn (headLHS, listToMaybe headRHS, hBody)
+            
+            (RPConstraint mt1 RPis mt2) -> do
+              mutterd 3 $ "converting RPConstraint in hHead: " <> show hHead
+              xpReturn (mt1, Just (RPMT mt2), hBody)
 
+            _ -> do
+              mutterd 3 "attrsAsMethods: encountered unexpected form of RelationalPredicate"
+              mutter $ show $ srchs hHead
+              xpError ["unhandled RelationalPredicate", show hHead]
+
+        -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
+        -- 
+        --  output: (["foo", "bar"], "baz")
+        toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
+        toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
+        toObjectPath mt = do
+          mutterd 4 $ "toObjectPath input = " <> show mt
+          mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
+          mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
+          mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+          mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+          mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+          mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+          xpReturn (DL.filter (not . T.null) $
+                    T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+                   , mt2text [DL.last mt])
+          

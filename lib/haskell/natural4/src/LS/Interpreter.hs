@@ -108,6 +108,7 @@ qaHornsR l4i =
 symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
 symbolTable _iopts rs =
   Map.fromListWith (<>) (fromGivens <> fromDefines <> fromDecides)
+  -- [BUG] this marshalling produces duplicate entries, one from where a thing is DEFINEd and one where its attributes are DECIDEd.
   -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []
   where
     fromGivens :: [(RuleName, SymTab)]

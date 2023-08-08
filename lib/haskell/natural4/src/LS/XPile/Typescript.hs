@@ -136,24 +136,29 @@ tsClasses :: Interpreted -> XPileLog (Doc ann)
 tsClasses l4i = return $
   let ct@(CT ch) = classtable l4i
   in
-  vvsep [ "class" <+> snake_case [MTT className] <>
-          case clsParent ct className of
-           Nothing       -> mempty
-           (Just parent) -> " extends" <+> pretty parent
+  vvsep [ "class" <+> snake_case [MTT className] <> classExtension
           -- attributes of the class are shown as decls
           <+> lbrace
-          -- <//> "  //" <+> viaShow csuper
+      --    <//> "  //" <+> viaShow csuper
+          <//> "  // using prettySimpleType (old code path)"
           <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
                                    Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
                                    Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
                                    Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"
                                    Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
-                                   Nothing -> ""
+                                   Nothing -> "// tsClasses nothing case"
                                  <> semi
                                | attrname <- getCTkeys children
-                               -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE
-                               ] )
+                               ]
+                        )
+          <//> "  //" <+> "using `methods` (new code path)"
+          <//> indent 2 ( encloseSep (lbrace <> line) (line <> rbrace) (comma <> space)
+                          $ concat [ methods l4i [MTT attrname]
+                                   | attrname <- getCTkeys children
+                                                 -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE, but we'll use the methods approach for that.
+                                   ]
+                        )
           <//> rbrace
         | className <- reverse $ topsortedClasses ct
         , (Just (csuper, children)) <- [Map.lookup className ch]
@@ -161,11 +166,16 @@ tsClasses l4i = return $
             (Just (SimpleType _ _), _) -> True
             (Just (InlineEnum _ _), _) -> False -- we deal with enums separately below
             _                          -> True
+        , let classExtension =
+                case clsParent ct className of
+                  Nothing       -> mempty
+                  (Just parent) -> " extends" <+> pretty parent
         ]
 
 defaultMethod :: TypeSig -> Doc ann
 defaultMethod (SimpleType TOne "string") = " return \"\" "
 defaultMethod (SimpleType TOne "number") = " return 0 "
+defaultMethod _                          = " return undefined "
   
 
 -- | output enum declarations
@@ -204,13 +214,15 @@ jsInstances l4i = return $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
-          "//" <+> viaShow symtab' <//>
+--          "// symtab' = " <+> viaShow symtab' <//>
 
           -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
-                  </> "//" <+> viaShow val
+--                  </> "// symtype = " <+> viaShow symtype
+--                  </> "// val = " <+> viaShow val
                 | (mt, (symtype, vals)) <- Map.toList symtab'
-                , val <- vals
+                , symtype /= (Nothing,[])
+                , val <- nub vals
                 , value <- case val of
                               -- what we should do is gather all the paramtexts and join them in a single dictionary,
                               -- rather than assume that all the HC2 are paramtexts.
@@ -218,9 +230,9 @@ jsInstances l4i = return $
 
                              -- also, we should preorganize all the constContents into a canonical data structure hierarchy, rather than try to fit things into the sctabs
                               HC { hHead = RPParamText {} } ->
-                                let constContents = asValuePT l4i vals ++ instanceMethods l4i mt
+                                let constContents = asValuePT l4i vals ++ methods l4i mt
                                 in [ encloseSep (lbrace <> line) (line <> rbrace) (comma <> space) constContents ]
-                              _                                 ->
+                              _ -> 
                                 [hc2ts l4i val]
                  ]
         | (scopename , symtab') <- Map.toList sctabs
@@ -233,23 +245,26 @@ jsInstances l4i = return $
     scopenameStr [] = "globals"
     scopenameStr x  = snake_case x
 
-    instanceMethods :: Interpreted -> SFL4.MultiTerm -> [Doc ann]
-    instanceMethods l4i mt =
-      let marshalled = groupSort [ (attrName, vp)
-                                 | vp@ValPred{..} <- valuePreds l4i
-                                 , attrRel == Just RPis
-                                 , objPath == [mt2text mt]
-                                 ]
-      in
-      [ line <> "// instanceMethods go here"
-        </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>" <+> braces ( indent 1 $
-          vsep [ vpTS <> semi
-               | vp@ValPred{..} <- vps
-               , let vpTS = vpToTS l4i vp
-               ] <> space
-          )
-      | (attrName', vps) <- marshalled
-      ]
+-- | This was originallyh written as instanceMethods and used in jsInstances. Next we are experimenting with expanding it to work for tsClasses as well.
+--
+-- If the list of valpreds ever gets very big, we can optimize the quadratic algo here using a map.
+methods :: Interpreted -> SFL4.MultiTerm -> [Doc ann]
+methods l4i mt =
+  let marshalled = groupSort [ (attrName, vp)
+                             | vp@ValPred{..} <- valuePreds l4i
+                             , attrRel == Just RPis
+                             , objPath == [mt2text mt]
+                             ]
+  in
+  [ line <> "// methods go here"
+    </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>" <+> braces ( indent 1 $
+      vsep [ vpTS <> semi
+           | vp@ValPred{..} <- vps
+           , let vpTS = vpToTS l4i vp
+           ] <> space
+      )
+  | (attrName', vps) <- marshalled
+  ]
 
 -- | convert the @attrVal :- attrCond@ part of a ValuePredicate to typescript syntax
 vpToTS :: Interpreted -> ValuePredicate -> Doc ann
@@ -325,14 +340,14 @@ dumpNestedClass l4i (DT.Node pt children)
 --
 -- In this initial experiment, we do not implement scoped variables. All variables live in global scope.
 --
--- Without further ado:
+-- Without further ado: [TODO] this is a work in progress
 hc2ts :: Interpreted -> HornClause2 -> Doc ann
 hc2ts _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
-hc2ts _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2)
-hc2ts _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
-hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i)
+hc2ts _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2) <+> "// hc2ts RPConstraint"
+hc2ts _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)" 
+hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i) <+> "// hc2ts RPParamText"
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
-hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps}
+hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps} <+> "// hc2ts RPnary"
 
 
 toPlainTS :: Interpreted -> XPileLog (Doc ann)

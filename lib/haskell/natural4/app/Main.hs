@@ -58,7 +58,7 @@ import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
 import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
-import LS.XPile.Prolog (sfl4ToProlog)
+import LS.XPile.Prolog (rulesToProlog)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
 import LS.XPile.Typescript (asTypescript)
@@ -173,7 +173,7 @@ main = do
 
   -- end of the section that deals with NLG
 
-  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
+  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
       (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))

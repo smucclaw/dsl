@@ -343,6 +343,8 @@ main = do
     when (SFL4.toProlog rc) $ pPrint asProlog
     when (SFL4.toSCasp  rc) $ pPrint asSCasp
 
+    when (SFL4.toTS rc) $ print $ asTypescript rules
+
     when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
     when (SFL4.only opts == "native")  $ pPrint rules
     when (SFL4.only opts == "classes") $ pPrint (SFL4.classtable l4i)

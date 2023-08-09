@@ -571,6 +571,7 @@ data RunConfig = RC { debug     :: Bool
                     , toBabyL4  :: Bool
                     , toASP     :: Bool
                     , toProlog  :: Bool
+                    , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
                     , saveAKA   :: Bool
@@ -596,6 +597,7 @@ defaultRC = RC
         , toBabyL4 = False
         , toASP    = False
         , toProlog = False
+        , toSCasp  = False
         , toUppaal = False
         , saveAKA = False
         , wantNotRules = False

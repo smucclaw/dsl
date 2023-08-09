@@ -8,6 +8,27 @@ to Prolog.
 For more information see also `RelationalPredicates`.
 -}
 
+{-|
+TODO: Move the following into a README once the transpiler toolchain
+is operational.
+
+The transpiler comes in two versions: for Prolog and for sCasp.
+For a generation of valid sCasp to work, some very strong assumptions
+about Spreadsheet / csv files have been made, and if these 
+are not respected, the compiler produces garbage without mercy and warnings:
+* Each argument of a predicate has to be written in a separate CSV cell, 
+  and so has the predicate itself
+* However, arguments can be composite, e.g. function and arguments.
+* Also comparison operators have to be written in a separate cell. 
+For available comparison operators, see function showLPspecialSCasp
+* Assignment of a numerical value to a variable has to be written with IS:
+  var IS val   which is rendered as var #= val in sCasp
+* Equating two terms (triggerin unification in sCasp / Prolog) has to be written = .
+  Attention, in a spreadsheet, the symbol = has to be preceeded by a simple quote to be accepted.
+  term1 = term2 is rendered as term1 = term2 in sCasp
+  The tokens == and === are synonymes of = and are also rendered as term1 = term2 in sCasp
+-}
+
 module LS.XPile.Prolog where
 
 import AnyAll (BoolStruct (All, Any, Leaf, Not), Dot (xPos))
@@ -39,6 +60,8 @@ import LS.Types as SFL4
   )
 import Language.Prolog (Clause (Clause), Term (Struct, Var, Wildcard, Cut), Atom, var)
 import Data.Functor.Classes (showsBinary1)
+import qualified Data.Bits as sCasp
+
 
 -- Document generation for Logic Programs 
 -- Currently supported: Prolog and SCasp
@@ -55,24 +78,14 @@ instance ShowLP Clause where
     showLP t lhs <>
     pretty (":-" :: Text.Text) <>
     nest 4
-      ((vsep (punctuate comma (map (showLP t) rhs)) <>
-      pretty ("." :: Text.Text)))
+      (vsep (punctuate comma (map (showLP t) rhs)) <>
+      pretty ("." :: Text.Text))
   showLP t c = pretty (show c)
 
 instance ShowLP Term where
-  {-
-  showLP SCasp trm@(Struct atom terms) =
-     parens (pretty ("Struct" :: Text.Text) <> pretty (show trm))
-  showLP SCasp trm@(Var vn) =
-     parens (pretty ("Var" :: Text.Text) <> pretty (show trm))
-  showLP SCasp trm@Wildcard =
-     parens (pretty ("WC" :: Text.Text) <> pretty (show trm))
-  showLP SCasp trm@(Cut vn) =
-     parens (pretty ("Cut" :: Text.Text) <> pretty (show trm))
-     -}
   showLP SCasp trm@(Struct atom terms) =
     if showLPIsSpecial atom
-    then showLPspecialSCasp atom terms 
+    then showLPspecialSCasp atom terms
     else pretty (show trm)
   showLP t trm = pretty (show trm)
 
@@ -112,15 +125,22 @@ prologExamples =
 type Analysis = Map.Map Text.Text Text.Text
 
 rulesToProlog :: [SFL4.Rule] -> String
-rulesToProlog rs = show (vsep (map (showLP SCasp) (sfl4ToProlog rs)))
+rulesToProlog rs = show (vsep (map (showLP Prolog) (sfl4ToLogProg rs)))
 
-sfl4ToProlog :: [SFL4.Rule] -> [Clause]
-sfl4ToProlog rs =
+rulesToSCasp :: [SFL4.Rule] -> String
+rulesToSCasp rs = show (vsep (map (showLP SCasp) (sfl4ToLogProg rs)))
+
+-- Translation of rules to generic logic programming clauses
+sfl4ToLogProg :: [SFL4.Rule] -> [Clause]
+sfl4ToLogProg rs =
   let
     analysis = analyze rs :: Analysis
   in
     concatMap (rule2clause analysis) rs
 
+-- TODO: not clear what the "Analysis" is good for. 
+-- The corresponding parameter seems to be ignored in all called functions.
+-- Also see the comment in the "analyze" function further below.
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
 rule2clause st cr@Hornlike {} = hornlike2clauses st (mt2text $ name cr) (clauses cr)
 rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (mt2text $ name td) ens

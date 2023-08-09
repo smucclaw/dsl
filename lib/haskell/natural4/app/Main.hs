@@ -57,7 +57,7 @@ import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
 import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
-import LS.XPile.Prolog (rulesToProlog)
+import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
 import LS.XPile.Typescript (asTypescript)
@@ -173,6 +173,7 @@ main = do
   -- end of the section that deals with NLG
 
   let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
+      (toscaspFN,   asSCasp)                  = (workuuid <> "/" <> "scasp",    rulesToSCasp rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
       (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
@@ -288,6 +289,7 @@ main = do
         (concatMap snd toWriteVue)
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
+    when (SFL4.toscasp   opts) $ mywritefile  True toscaspFN    iso8601 "pl"   asSCasp
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
     when (SFL4.tots      opts) $ mywritefile  True totsFN       iso8601 "ts"   asTSstr
     when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
@@ -336,6 +338,7 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toProlog rc) $ pPrint asProlog
+    when (SFL4.toSCasp  rc) $ pPrint asSCasp
 
     when (SFL4.toTS rc) $ print $ asTypescript rules
 

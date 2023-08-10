@@ -1,0 +1,2 @@
+*a x* is the parent of *a y*
+*a y* is the child of *a x*

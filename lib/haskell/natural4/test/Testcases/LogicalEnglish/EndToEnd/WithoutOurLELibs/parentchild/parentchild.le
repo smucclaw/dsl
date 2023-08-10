@@ -1,0 +1,9 @@
+the target language is: prolog.
+
+the templates are:
+  *a x* is the parent of *a y*,
+  *a y* is the child of *a x*.
+
+the knowledge base encoding includes:
+  a x is the parent of a y
+      if y is the child of x.

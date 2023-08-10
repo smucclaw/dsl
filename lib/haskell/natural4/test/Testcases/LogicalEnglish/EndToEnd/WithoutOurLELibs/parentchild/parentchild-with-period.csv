@@ -1,0 +1,4 @@
+GIVEN,x,,IS A,Person
+,y,,IS A,Person
+DECIDE,x,is the parent of,y,
+IF,y,is the child of,x.,

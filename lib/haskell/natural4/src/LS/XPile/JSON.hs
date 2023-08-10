@@ -57,9 +57,8 @@ import Prettyprinter
 
 
 justClassTypes :: Interpreted -> [Rule] -> String
-justClassTypes l4i rs = Text.unpack $ myrender $ vvsep [ "***" <+> pretty (ruleLabelName r) </> srchs r
-                   </> "**** local variables" </> srchs (ruleLocals l4i r)
-                   | r <- rs ]
+justClassTypes l4i rs = Text.unpack $ myrender $ vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (unCT $ classtable l4i) ]
+
 
 
 -- classtable

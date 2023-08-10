@@ -1,0 +1,2 @@
+a x is the parent of a y
+if y is the child of x.

@@ -62,6 +62,7 @@ import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
+import LS.XPile.JSON
 import LS.XPile.VueJSON
   ( checklist,
     groundrules,
@@ -115,7 +116,7 @@ main = do
           when (SFL4.toChecklist rc) $ do
             let (checkls, checklsErr) = xpLog $ checklist nlgEnvR rc rules
             pPrint checkls
-  
+
           when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
             let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnvR rc rules
                 tochecklFN              =  workuuid <> "/" <> "checkl"
@@ -147,7 +148,7 @@ main = do
             let (topursFN,    (asPursstr, asPursErr)) =
                   (workuuid <> "/" <> "purs"
                   , xpLog $ mutter "* main calling translate2PS" >>
-                    flip fmapE 
+                    flip fmapE
                     (translate2PS allNLGEnvR nlgEnvR rules)
                     (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]"))
                   )
@@ -181,6 +182,7 @@ main = do
       (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
       (todmnFN,     asDMN)                    = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
       (tojsonFN,    asJSONstr)                = (workuuid <> "/" <> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
+      (toUIjsonFN,    asUIjson)                = (workuuid <> "/" <> "uijson",  justClassTypes l4i rules  )
       (tovuejsonFN, asVueJSONrules)           = (workuuid <> "/" <> "vuejson",  fmap xpLog <$> toVueRules rules)
 
       (toIntro1FN,  asTrivial)                   = (workuuid <> "/" <> "intro1",   toTrivial l4i)
@@ -244,6 +246,8 @@ main = do
     when (SFL4.toepilog  opts) $ mywritefile2 True toepilogFN  iso8601 "lp"      (commentIfError "%%" asEpilog) asEpilogErr
     when (SFL4.todmn     opts) $ mywritefileDMN True todmnFN   iso8601 "dmn"  asDMN
     when (SFL4.tojson    opts) $ mywritefile True tojsonFN     iso8601 "json" asJSONstr
+    when (SFL4.touijson    opts) $ mywritefile True toUIjsonFN     iso8601 "uijson" asUIjson
+
 
     when (SFL4.tointro  opts) $ do
       mywritefile  True toIntro1FN   iso8601 "txt"  asTrivial
@@ -276,7 +280,7 @@ main = do
 
           -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
           removeLastComma :: String -> String
-          removeLastComma unlined = 
+          removeLastComma unlined =
             if length lined > 3 -- only if there's a valid json in there
                then unlines $ take (length lined - 3) lined ++ ["}"] ++ drop (length lined - 2) lined
                else unlined

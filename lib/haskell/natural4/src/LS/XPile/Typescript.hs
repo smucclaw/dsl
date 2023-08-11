@@ -39,10 +39,12 @@ import LS.Interpreter
   )
 import LS.PrettyPrinter
   ( ParamText4 (PT4, PT5),
+    commentWith,
     prettyMaybeType,
     prettySimpleType,
     snake_case,
     snake_inner,
+    pShowNoColor,
     vvsep,
     (<//>),
     (</>),
@@ -214,7 +216,7 @@ jsInstances l4i = return $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
---          "// symtab' = " <+> viaShow symtab' <//>
+          "// symtab' = " <+> commentWith "// " (pShowNoColor symtab') <//>
 
           -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
@@ -332,9 +334,9 @@ dumpNestedClass l4i (DT.Node pt children)
 -- - our own mathlang
 -- - raw Typescript
 --
--- Let's try the JsonLogic approach first.
+-- Let's try the raw Typescript approach first, so we can be sure we know what we're doing.
 --
--- We'll bypass the expansion provided by the Interpreter, and work with the raw rules themselves.
+-- We'll bypass most of what is provided by the Interpreter, and work with the raw rules themselves.
 --
 -- We might rely on the Interpreter to provide some of the data flow graphing, so we can trace variable expansion.
 --

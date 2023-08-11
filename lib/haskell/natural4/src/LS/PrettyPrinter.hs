@@ -21,7 +21,8 @@ import LS.Rule
 import LS.Types
 import Prettyprinter
 import Prettyprinter.Render.Text
-import Text.Pretty.Simple ( pShowNoColor )
+import Text.Pretty.Simple qualified as TPS
+import qualified Data.Text.Internal.Lazy
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -342,3 +343,7 @@ srchs :: (Show a) => a -> Doc ann
 srchs = orgsrc "haskell" . pretty . pShowNoColor
 orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
 orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]
+
+
+pShowNoColor :: (Show a) => a -> Data.Text.Internal.Lazy.Text
+pShowNoColor = TPS.pShowNoColor

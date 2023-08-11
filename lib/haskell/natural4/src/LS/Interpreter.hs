@@ -147,7 +147,9 @@ symbolTable _iopts rs =
 
 -- | A map of all the classes we know about.
 --
--- Currently this function returns both IS-A and HAS-A relationships for a given class.
+-- Currently this function returns both IS-A and HAS-A relationships
+-- for a given class, in a tuple of superclass (IS-A) and attributes
+-- (HAS-A).
 --
 -- Classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
 --
@@ -173,7 +175,11 @@ classHierarchy rs =
 
 -- | A graph of all the classes we know about.
 --
--- redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right. I think this is overproducing a bit, because it's considering the attributes.
+-- redraw the class hierarchy as a rooted graph, where the fst in the
+-- pair contains all the breadcrumbs to the current node. root to the
+-- right. I think this is overproducing a bit, because it's
+-- considering the attributes.
+
 classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
 classGraph (CT ch) ancestors = concat
   [ pure (nodePath, (_itypesig, childct))

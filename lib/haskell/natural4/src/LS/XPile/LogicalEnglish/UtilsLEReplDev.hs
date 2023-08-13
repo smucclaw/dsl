@@ -2,13 +2,10 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
 module LS.XPile.LogicalEnglish.UtilsLEReplDev
     ( 
-    L4Prog,
     testfnmsLE,
     letestfnm2rules,
     rulesForEachOfLEtestegs,
@@ -32,15 +29,8 @@ import Data.MonoTraversable (Element, MonoFoldable (otoList))
 import Data.Monoid (Ap (Ap))
 import Data.Sequences (SemiSequence)
 import Data.Text (Text)
-import Data.Type.Bool (type (||))
-import Data.Type.Equality (type (==))
-import Flow ((|>))
-import LS.Rule (Rule)
-import LS.Types (MTExpr, mt2text)
-import LS.Utils (MonoidValidate)
-import Prettyprinter (Doc, Pretty (pretty))
-import Prettyprinter.Interpolate (di)
 
+import LS.Types (MTExpr, mt2text)
 import LS.UtilsREPLDev qualified as R
 import LS.UtilsREPLDev (
     csvsInDir,
@@ -48,11 +38,14 @@ import LS.UtilsREPLDev (
     leTestcasesDir,
     leTestCSVs)
 
+import LS.XPile.LogicalEnglish.Common (
+    L4Prog,
+    Rule,
+    (|>)
+    )
+
 
 ------------- temp utils / constants for prototyping -----
-
-type L4Prog = [Rule]  
--- TODO: consider making this a newtype and moving it to a common.hs module if the type ends up being useful for transpilation
 
 testfnmsLE :: IO [R.BaseFileName]
 testfnmsLE = (fmap . fmap) takeFileName (csvsInDir leTestcasesDir)

@@ -58,8 +58,22 @@ instance Hashable L4Var
 type LEtemplate = T.Text -- aka 'natural language annotation'. 
 -- TODO: Should this be a newtype?
 type VarsFrRuleGiven = HS.HashSet L4Var
-type LERule = T.Text
--- TODO: Should this be a newtype?
+
+data IntermedRule 
+{- TODO: This will be a BoolStruct-esque intermediate representation that contains the HC, but not the given
+-- a tree of T.Texts with constructors like All, Any, Not 
+where each of the T.Text values is a LE condition that has an "a" for every first occurrence of a variable
+and where we've done the main syntactic transformations we're interested in
+i.e., an IntermedRule is the result of doing all the syntactic transformation and processing, so that pretty printing this to LE will just amount to pretty printing a tree of texts, 
+using the structure of the tree to guide indentation
+
+Supposing we already have the LE templates for the L4 program,
+processing a L4 rule thus amounts to:
+
+  L4 Rule -> Intermediate-Boolean-proposition-tree -> pretty printed LE string
+
+TODO: Look into whether we want to re-use the L4 BoolStruct for this, or have our own newtype wrapper
+-}
 
 -------- L4 Program -> LE templates 
 l4toLEtemplates :: L4Prog -> HS.HashSet LEtemplate
@@ -73,9 +87,9 @@ varsFromHCgiven = undefined
 
 -------- L4 Rule -> LE rule
 
-rule2LE :: Rule
-        -> LERule
-rule2LE = undefined
+l4rule2intermed :: Rule
+        -> IntermedRule
+l4rule2intermed = undefined
 {-
   with a  helper function that knows which vars are in the given and that keeps track of the set of variables that we've already seen  
 -} 

@@ -89,6 +89,10 @@ executables:
       - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
       - natural4
+      - filepath
+      - filemanip
+# the file stuff is for the interactive repl utils
+# it's a bit misleading to list them as dependnecies of the executable, but there doesn't seem to be any real alternative if we're using stack, at least according to discord
 
 tests:
   natural4-test:

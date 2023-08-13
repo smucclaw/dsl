@@ -32,6 +32,14 @@ import LS.XPile.LogicalEnglish.Common (
     )
 
 
+{- 
+TODO: After we get a v simple end-to-end prototype out, 
+we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
+The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages.
+
+But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed.
+-}
+
 
 toLE :: L4Prog -> String
 toLE = undefined

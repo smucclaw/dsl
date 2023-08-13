@@ -8,19 +8,23 @@ Simple utils / convenience functions for prototyping / dev-ing at the REPL.
 
 
 module LS.UtilsREPLDev
-  ( filesInDirWithExtn,
+  ( StartDir, BaseFileName,
+    
+    filesInDirWithExtn,
     findFileByNameInDir,
     csvsInDir,
     l4csv2rules,
     leTestcasesDir,
-    leTestCSVs
+    leTestCSVs,
+
+    takeFileName
   )
 where
 
 import Flow ((|>))
 import Data.Maybe (fromMaybe, listToMaybe)
 
-import System.FilePath ((</>))
+import System.FilePath ((</>), takeFileName)
 import System.FilePath.Find
   ( always,
     fileName,

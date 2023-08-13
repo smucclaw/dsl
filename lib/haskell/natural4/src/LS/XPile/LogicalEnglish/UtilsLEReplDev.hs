@@ -20,14 +20,11 @@ module LS.XPile.LogicalEnglish.UtilsLEReplDev
 where
 
 import System.FilePath ((</>), takeFileName)
-import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
 import Data.Coerce (coerce)
 import Data.Kind (Constraint, Type)
 import Data.List.NonEmpty (NonEmpty)
 import Control.Monad
-import Data.MonoTraversable (Element, MonoFoldable (otoList))
 import Data.Monoid (Ap (Ap))
-import Data.Sequences (SemiSequence)
 import Data.Text (Text)
 
 import LS.Types (MTExpr, mt2text)

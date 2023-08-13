@@ -77,6 +77,7 @@ import System.Directory
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
+import LS.XPile.ExportTypes (rulesToPrologTp)
 
 
 myTraceM :: String -> IO ()
@@ -173,6 +174,7 @@ main = do
   -- end of the section that deals with NLG
 
   let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
+      (toprologTpFN,asPrologTp)               = (workuuid <> "/" <> "prologTp", rulesToPrologTp rules)
       (toscaspFN,   asSCasp)                  = (workuuid <> "/" <> "scasp",    rulesToSCasp rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
       (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
@@ -289,6 +291,7 @@ main = do
         (concatMap snd toWriteVue)
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
+    when (SFL4.toprologTp opts) $ mywritefile  True toprologTpFN   iso8601 "pl"   asPrologTp
     when (SFL4.toscasp   opts) $ mywritefile  True toscaspFN    iso8601 "pl"   asSCasp
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
     when (SFL4.tots      opts) $ mywritefile2 True totsFN       iso8601 "ts"   (show asTSpretty) asTSerr

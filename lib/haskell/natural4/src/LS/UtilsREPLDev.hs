@@ -64,6 +64,7 @@ findFileByNameInDir startdir basefnm =
 {-| 
 Util function for getting rules from a L4 CSV filepath
 Meant to be for interactive use at the REPL by a dev, and not for production apps
+Adapted from Joe's code for testing LP Programs
 ==== __Examples__ 
 >>> l4csv2rules "test/Testcases/LogicalEnglish/" "indentation-databreach.csv"
 -}

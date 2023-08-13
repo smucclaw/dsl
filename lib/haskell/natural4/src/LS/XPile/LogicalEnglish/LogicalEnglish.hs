@@ -16,6 +16,7 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE) where
 
+import GHC.Generics (Generic)
 import LS.PrettyPrinter
     ( myrender, vvsep, (</>), tildes, (<//>), srchs )
 import Prettyprinter
@@ -54,10 +55,11 @@ data L4Var = NoApos T.Text
 instance Hashable L4Var
 
 
-type LEtemplate = T.Text -- aka 'natural language annotation'
--- TODO: think about whether it shld be a newtype as opposed to type alias
+type LEtemplate = T.Text -- aka 'natural language annotation'. 
+-- TODO: Should this be a newtype?
 type VarsFrRuleGiven = HS.HashSet L4Var
-
+type LERule = T.Text
+-- TODO: Should this be a newtype?
 
 -------- L4 Program -> LE templates 
 l4toLEtemplates :: L4Prog -> HS.HashSet LEtemplate

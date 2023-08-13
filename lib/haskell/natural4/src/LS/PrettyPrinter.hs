@@ -351,12 +351,6 @@ prettyMaybeType _ _inner Nothing   = ""
 prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 
-srchs :: (Show a) => a -> Doc ann
-srchs = src "haskell" . pretty . pShowNoColor
-src lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
-example  x = vsep [ "#+begin_example", x, "#+end_example" ]
-
-
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
 commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> xs) <> line

@@ -28,6 +28,7 @@ import System.FilePath.Find
     (==?),
     extension
   )
+import Text.Pretty.Simple   ( pShowNoColor, pPrint )
 
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
@@ -62,8 +63,8 @@ findFileByNameInDir startdir basefnm =
 --- TODO: Would be convenient to also have a function that allows you to match just on a part of the base filename
 
 {-| 
-Util function for getting rules from a L4 CSV filepath
-Meant to be for interactive use at the REPL by a dev, and not for production apps
+Util function for getting raw rules from a L4 CSV filepath
+Not meant for production apps!
 Adapted from Joe's code for testing LP Programs
 ==== __Examples__ 
 >>> l4csv2rules "test/Testcases/LogicalEnglish/" "indentation-databreach.csv"
@@ -80,6 +81,14 @@ l4csv2rules startdir csvFpath =
                               dbug = False,
                               dstream = False
                             }
+
+{-| 
+Util function for __pretty printing (in color)__ raw rules from a L4 CSV filepath
+==== __Examples__ 
+>>> pRules "test/Testcases/LogicalEnglish/" "indentation-databreach.csv"
+-}
+pRules :: StartDir -> BaseFileName -> IO ()
+pRules startdir csvFpath = l4csv2rules startdir csvFpath >>= pPrint
 
 
 ------- TODO: LE-specific things; to be moved into a better place when I have more time

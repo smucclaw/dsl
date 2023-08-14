@@ -40,6 +40,7 @@ import LS.XPile.LogicalEnglish.Common (
     (|>)
     )
 
+import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {- 
 TODO: After we get a v simple end-to-end prototype out, 
@@ -62,7 +63,7 @@ type LEtemplate = T.Text -- aka 'natural language annotation'.
 -- TODO: Should this be a newtype?
 type VarsFrRuleGiven = HS.HashSet L4Var
 
-data IntermedRule 
+data IntermedRule
 {- TODO: This will be a BoolStruct-esque intermediate representation that contains the HC, but not the given
 -- a tree of T.Texts with constructors like All, Any, Not 
 where each of the T.Text values is a LE condition that has an "a" for every first occurrence of a variable
@@ -109,7 +110,7 @@ data TranspilerCfg =
                   ruleBodyHeader :: T.Text}
 
 toLE :: L4Prog -> String
-toLE = "some output"
+toLE = const "some output"
 
 
 {-

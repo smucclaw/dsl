@@ -341,6 +341,7 @@ type RuleIDMap = Map.HashMap Rule Int
 ruleDecisionGraph :: Interpreted -> XPileLog RuleGraph
 ruleDecisionGraph l4i = do
   let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
+  mutterdhsf 4 "ruleDecisionGraph: decisionRules from getBSR" pShowNoColorS decisionRules
   mkGraph
     (swap <$> Map.toList ruleIDmap) -- the nodes
     <$> relPredRefsAll l4i ruleIDmap
@@ -372,6 +373,10 @@ relPredRefs l4i ridmap r = do
                      ]
       -- given a rule, see which terms it relies on
       bodyElements = concatMap rp2bodytexts (concatMap AA.extractLeaves (getBSR r))
+
+  mutterdhsf 5 "relPredRefs: headElements" pShowNoColorS headElements
+  mutterdhsf 5 "relPredRefs: bodyElements" pShowNoColorS bodyElements
+
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
   return [ (rid, targetRuleId', ())
      | bElem <- bodyElements

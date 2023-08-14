@@ -351,7 +351,7 @@ hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps} <+> "// hc2ts RPnary"
 
-
+-- | for debugging at the moment only.
 toPlainTS :: Interpreted -> XPileLog (Doc ann)
 toPlainTS l4i = do
   return $ vvsep [ "//" <+> viaShow valpred

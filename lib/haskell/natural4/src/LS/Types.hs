@@ -401,6 +401,7 @@ data InterpreterOptions = IOpts
   }
   deriving (Eq, Ord, Show)
 
+-- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
 defaultInterpreterOptions :: InterpreterOptions
 defaultInterpreterOptions = IOpts
   { enums2decls = False

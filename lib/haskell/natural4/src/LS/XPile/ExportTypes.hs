@@ -8,6 +8,8 @@ HAS field1 is T1
     fieldn is Tn
 
 These declarations are meant to be exported to JSON and to Prolog.
+The approach is strictly ad-hoc and not systematic and agnostic of
+other translations (in particular to JSON) that may have been developed.
 -}
 
 module LS.XPile.ExportTypes where
@@ -117,6 +119,90 @@ instance ShowTypesProlog ExpType where
             )
         )
 
-
 rulesToPrologTp :: [SFL4.Rule] -> String
 rulesToPrologTp rs = show (vsep (map showTypesProlog (concatMap rule2ExpType rs)))
+
+
+------------------------------------
+-- Output of types to Json Schema 
+-- also see https://json-schema.org/understanding-json-schema/
+
+class ShowTypesJson x where
+    showTypesJson :: x -> Doc ann
+
+defsLocationName :: String
+defsLocationName = "$defs"
+
+defsLocation :: String -> String
+defsLocation n = "#/" ++ defsLocationName ++ "/" ++ n
+
+jsonType :: Pretty a => a -> Doc ann
+jsonType t =
+    dquotes (pretty "type") <> pretty ":" <> dquotes (pretty t)
+
+instance ShowTypesJson FieldType where
+    showTypesJson FTBoolean =
+        jsonType "boolean"
+    showTypesJson FTNumber =
+        jsonType "number"
+    showTypesJson FTString =
+        jsonType "string"
+    showTypesJson (FTRef n) =
+        dquotes (pretty "$ref") <> pretty ":" <>
+        dquotes (pretty (defsLocation n))
+    showTypesJson (FTList t) =
+        jsonType "array" <> pretty "," <>
+        dquotes (pretty "items") <> pretty ":" <>
+        braces (showTypesJson t)
+
+instance ShowTypesJson Field where
+    showTypesJson :: Field -> Doc ann
+    showTypesJson (Field fn ft) =
+        dquotes (pretty fn) <> pretty ":" <> braces (showTypesJson ft)
+
+instance ShowTypesJson ExpType where
+    showTypesJson (ExpType tn fds) =
+        dquotes (pretty tn) <> pretty ":" <>
+        nest 4
+        (braces (
+            jsonType "object" <> pretty "," <>
+            dquotes (pretty "properties") <>  pretty ":" <>
+            nest 4
+            (braces (vsep (punctuate comma (map showTypesJson fds))))
+            )
+        )
+
+jsonPreamble :: TypeName -> [Doc ann]
+jsonPreamble tn = [
+    dquotes (pretty "$schema") <> pretty ":" <> dquotes (pretty "http://json-schema.org/draft-07/schema#"),
+    jsonType "object",
+    dquotes (pretty "properties") <> pretty ":" <>
+    braces (dquotes (pretty "User") <> pretty ":" <>
+        braces (showTypesJson (FTList (FTRef tn))))
+    ]
+
+rulesToJsonSchema :: [SFL4.Rule] -> String
+rulesToJsonSchema rs =
+    let ets = concatMap rule2ExpType rs in
+        (case ets of
+            [] -> show (braces emptyDoc)
+            rt : rts ->
+                show
+                (braces
+                    (vsep (punctuate comma
+                    (
+                        jsonPreamble (typeName rt) ++
+                        [dquotes (pretty defsLocationName) <> pretty ":" <>
+                        braces (
+                            nest 4
+                            (vsep (punctuate comma (map showTypesJson ets)))
+                        )
+                        ]
+                    )
+                    ) )
+                )
+        )
+
+{-
+
+-}

@@ -607,6 +607,7 @@ data RunConfig = RC { debug     :: Bool
                     , toASP     :: Bool
                     , toProlog  :: Bool
                     , toPrologTp :: Bool
+                    , toJsonTp  :: Bool
                     , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
@@ -634,6 +635,7 @@ defaultRC = RC
         , toASP    = False
         , toProlog = False
         , toPrologTp = False
+        , toJsonTp = False
         , toSCasp  = False
         , toUppaal = False
         , saveAKA = False

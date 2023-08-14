@@ -985,8 +985,8 @@ getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
     go :: RelationalPredicate -> [BoolStructR]
     go c = case c of
              RPBoolStructR _rp1 _rprel bsr -> [bsr]
-             RPnary        RPis (r:rps)    -> concat (go <$> rps)
-             RPnary        rprel rps       -> concat (go <$> rps)
+             RPnary        RPis (r:rps)    -> concatMap go rps -- we assume r is the subject of the rule and doesn't bear further scrutiny
+             RPnary        rprel rps       -> concatMap go rps
              RPMT          mt              -> pure $ AA.mkLeaf (RPMT mt)
              _                             -> []
 

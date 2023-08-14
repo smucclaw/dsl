@@ -70,7 +70,7 @@ musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = nub $ concatMap (expandRule rs) rs
       (decisionGraph, dGerr) = xpLog (ruleDecisionGraph l4i)
-      (eRout, eRerr) = xpLog (exposedRoots l4i)
+      (eRout, eRerr)         = xpLog (exposedRoots l4i)
   in vvsep [ "* musings"
            , "** Global Facts" </> srchs (globalFacts l4i)
 
@@ -128,7 +128,7 @@ musings l4i rs =
            , "** Decision Roots"
            , "rules which are not just RuleAlises, and which are not relied on by any other rule"
            , srchs (ruleLabelName <$> eRout)
-           , "*** error output from exposedRoots" </> vsep (pretty <$> eRerr)
+           , "*** logging output from exposedRoots" </> vsep (pretty <$> eRerr)
            , "*** Nubbed, Exposed, Decision Roots"
            , "Each ruleset can be organized into multiple trees. Each tree contains rules."
            , "The leaves of the trees contain datapoints we need to collect from the user, typically by asking the user for that data in some interactive Q&A form style."

@@ -426,6 +426,15 @@ decisionRoots rg = do
         toreturn
 
 
+-- | extract a data flow graph
+-- suitable for drawing as SVG
+-- from the rulegraph.
+--
+-- we're interested in a data flow graph whose leaves are the leaf elements in the rulegraph;
+-- the intermediate nodes can be the rules; and
+-- the graph roots out at the decisionRoots.
+
+
 -- | return the internal conditions of the rule, if any, as an and-or tree.
 --
 -- a Regulative rule exposes its `who` and `cond` attributes, rewritten so the subject of the rule is prefixed to the WHO.

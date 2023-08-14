@@ -372,14 +372,22 @@ relPredRefs l4i ridmap r = do
                      , headName <- getDecisionHeads r'
                      ]
       -- given a rule, see which terms it relies on
-      bodyElements = concatMap rp2bodytexts (concatMap AA.extractLeaves (getBSR r))
+      myGetBSR = getBSR r
+      myLeaves = concatMap AA.extractLeaves myGetBSR
+      bodyElements = concatMap rp2bodytexts myLeaves
 
-  mutterdhsf 5 "relPredRefs: headElements" pShowNoColorS headElements
-  mutterdhsf 5 "relPredRefs: bodyElements" pShowNoColorS bodyElements
+  mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
+  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
+
+  mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
+  mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
+  mutterdhsf 5 "relPredRefs: extractLeaves" pShowNoColorS myLeaves
+  mutterdhsf 5 "relPredRefs: bodyElements"  pShowNoColorS bodyElements
 
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  return [ (rid, targetRuleId', ())
-     | bElem <- bodyElements
+  sequence
+    [ (rid, targetRuleId', ()) <$ mutterd 6 ("returning " <> show rid <> ", " <> show targetRuleId')
+    | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
      , let targetRule' = fromJust targetRule -- safe due to above isJust test

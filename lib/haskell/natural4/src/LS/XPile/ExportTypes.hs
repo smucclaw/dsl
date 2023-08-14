@@ -40,6 +40,7 @@ import LS.Types as SFL4
     untypePT, RuleName,
   )
 import Data.Text (unpack)
+import Data.List (nub, nubBy)
 
 type TypeName = String
 
@@ -81,6 +82,10 @@ typeDeclSuperToFieldType (Just  (SimpleType TOne tn)) =
 typeDeclSuperToFieldType (Just  (SimpleType TList1 tn)) = FTList (FTRef (unpack tn))
 typeDeclSuperToFieldType _ = FTString
 
+childNames :: Maybe TypeSig -> TypeName
+childNames (Just ( SimpleType TOne tn)) = unpack tn
+childNames _ = ""
+
 ruleFieldToField :: Rule -> [Field]
 ruleFieldToField (TypeDecl{name=n, super=sup}) =
     [Field (typeDeclNameToFieldName n) (typeDeclSuperToFieldType sup)]
@@ -91,8 +96,25 @@ rule2ExpType (TypeDecl{name=n, has=fields}) =
     [ExpType (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)]
 rule2ExpType _ = []
 
+rule2ExpTypeAll :: Rule -> [ExpType]
+rule2ExpTypeAll (TypeDecl{name=n, has=fields}) =
+    let ruleExpTypeAll = [ExpType (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)]
+        childExpTypes = (concatMap childRules fields)
+    in ruleExpTypeAll ++ childExpTypes
+rule2ExpTypeAll _ = []
+
+checkChildDupes :: [ExpType] -> [ExpType] -> [ExpType]
+checkChildDupes topET childET =
+    let uniqueTypes = nubBy (\topET childET -> typeName topET == typeName childET) childET
+    in topET
+
+childRules :: Rule -> [ExpType]
+childRules (TypeDecl{name=n, super=sup}) =
+    [ExpType (childNames sup) [Field (childNames sup) (FTString)]]
+
+
 ------------------------------------
--- Output of types to Prolog 
+-- Output of types to Prolog
 
 class ShowTypesProlog x where
     showTypesProlog :: x -> Doc ann
@@ -124,7 +146,7 @@ rulesToPrologTp rs = show (vsep (map showTypesProlog (concatMap rule2ExpType rs)
 
 
 ------------------------------------
--- Output of types to Json Schema 
+-- Output of types to Json Schema
 -- also see https://json-schema.org/understanding-json-schema/
 
 class ShowTypesJson x where
@@ -160,6 +182,7 @@ instance ShowTypesJson Field where
     showTypesJson (Field fn ft) =
         dquotes (pretty fn) <> pretty ":" <> braces (showTypesJson ft)
 
+
 instance ShowTypesJson ExpType where
     showTypesJson (ExpType tn fds) =
         dquotes (pretty tn) <> pretty ":" <>
@@ -183,8 +206,8 @@ jsonPreamble tn = [
 
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
-    let ets = concatMap rule2ExpType rs in
-        (case ets of
+    let ets = filter (\et -> typeName et /= "") (nub (concatMap rule2ExpTypeAll rs)) in
+        case ets of
             [] -> show (braces emptyDoc)
             rt : rts ->
                 show
@@ -201,7 +224,6 @@ rulesToJsonSchema rs =
                     )
                     ) )
                 )
-        )
 
 {-
 

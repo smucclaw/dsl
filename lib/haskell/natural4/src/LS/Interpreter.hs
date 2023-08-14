@@ -887,4 +887,22 @@ attrsAsMethods rs = do
           xpReturn (DL.filter (not . T.null) $
                     T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
                    , mt2text [DL.last mt])
-          
+
+
+-- * Data Flow Analysis
+--
+-- the previous generation of Nubbed Decision Roots worked for
+-- boolean propositions. Now we want to analyze the roots that involve
+-- more complicated RelationalPredicates, involving not only booleans
+-- but also numbers.
+
+-- | entryPoints returns those data elements that are not used by any other.
+--
+entryPoints :: Interpreted -> XPileLog [RelationalPredicate]
+entryPoints l4i = do
+  mutter "entryPoints running."
+
+  
+  
+  return []
+

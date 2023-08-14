@@ -64,6 +64,8 @@ import Text.Megaparsec
     (<|>),
   )
 
+-- | [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
+-- We should take advantage of NoFieldSelectors to reduce the hazards here
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , rkeyword :: RegKeywords               -- Every | Party | TokAll

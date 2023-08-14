@@ -95,7 +95,7 @@ main = do
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
 
   -- Bits that have to do with natural language processing and generation
-  nlgLangs <- unsafeInterleaveIO allLangs
+  nlgLangs <- unsafeInterleaveIO allLangs               -- [TODO] Edsko is not a fan and has a whole talk about why we should not use this.
   strLangs <- unsafeInterleaveIO $ printLangs allLangs
   (engE,engErr) <- xpLog <$> langEng
   -- [NOTE] the Production Haskell book gives better ways to integrate Logging with IO

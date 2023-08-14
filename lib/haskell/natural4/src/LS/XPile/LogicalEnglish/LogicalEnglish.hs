@@ -17,7 +17,6 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE) where
 
-
 import LS.PrettyPrinter
     ( myrender, vvsep, (</>), tildes, (<//>), srchs )
 import Prettyprinter
@@ -32,9 +31,10 @@ import GHC.Generics (Generic)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
-
 import Data.String (IsString)
-import LS.Rule (Rule(..))
+
+import LS.Rule qualified as L4 (Rule(..))
+import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.Common (
     L4Prog,
     (|>)
@@ -52,152 +52,55 @@ But for now, we will help ourselves, undeservedly, to the assumption that the L4
 -}
 
 
+irFromL4 :: L4Prog -> [RuleIR]
+irFromL4 = undefined
+
+
+
+gvarsFromL4Rule :: L4.Rule -> GVarSet
+gvarsFromL4Rule = undefined
 
 {-------------------------------------------------------------------------------
-  Common types 
+   L4 Program -> LE Nat Lang Annotations 
 -------------------------------------------------------------------------------}
 
-type OrigVarName = T.Text
-
-{-| This data structure is designed for easy pretty printing: 
-    that's what dictates whether to keep or discard the original L4 structure. 
--}
-data ComplexPropn a =
-  Atomic a
-    -- ^ the structure in SUM, PRODUCT etc would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-  | And [ComplexPropn a]
-  | Or  [ComplexPropn a]
-  | Not [ComplexPropn a]
-  | IsMax [ComplexPropn a]
-  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-
-{-------------------------------------------------------------------------------
-  The L4-related data types
--------------------------------------------------------------------------------}
--- | vars in the GIVEN of an L4 HC 
-newtype GVar = MkGVar T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable)
-type GVarSet = HS.HashSet GVar
-
-newtype Cell = MkCell T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString)
-
--- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
-data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
-                          , head      :: [Cell]
-                          , body      :: L4ComplexPropn }
-type L4ComplexPropn = ComplexPropn [Cell]
--- type IRComplexPropn = ComplexPropn BaseTemplate
-
-{-------------------------------------------------------------------------------
-  Types for L4 -> LE / intermediate representation
--------------------------------------------------------------------------------}
-
-type OrigVarPrefix = T.Text
-{-| TemplateVars are what can get instantiated / substituted to give us either a natural language annotation or a LE rule -}
-data TemplateVar = MatchGVar !OrigVarName
-                 | IsNum !OrigVarName
-                 | EndsInApos !OrigVarPrefix -- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
-      deriving stock (Eq, Ord, Show)
-
-type VarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
-
--- | Substn is a sequence of values that should be substituted for the variables
-newtype Substn = MkSubstn [T.Text]
-  deriving stock (Show)
-  deriving newtype (Eq, Ord)
-
-{-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
-data RuleIR = MkRuleIR { givenVars :: GVarSet
-                        , head      :: BaseTemplate
-                        , body      :: ComplexPropn BaseTemplate }
-{-| This is best understood in the context of RuleIR  -}
-data BaseTemplate = MkTBase { getVarSeq :: VarSeq
-                            , instTemplate :: forall a. LETemplInstanceOrNLA a => Substn -> a } 
-
-{-------------------------------------------------------------------------------
-  LE data types
--------------------------------------------------------------------------------}
-{-|
-
--}
-newtype LENatLangAnnotatn = MkNLA T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString)
-
-newtype LETemplateInstance = MkTInstance T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString)
-
-class LETemplInstanceOrNLA a
-instance LETemplInstanceOrNLA LENatLangAnnotatn
-instance LETemplInstanceOrNLA LETemplateInstance
-
-
-data LERule = LERule
-            { head :: LETemplateInstance
-            , body :: LECondnTree
-            }
-    deriving stock (Eq, Ord, Show)
-
-{-| This is really for *our* dialect of LE (with our in-house libs) rather than standard LE. 
-See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
- -}
-type LECondnTree = ComplexPropn LETemplateInstance
--- ^ so the `sum of`, `product of` would just be atomic LETemplateInsts / texts, since they don't differ indentation-wise from normal atomic conditions 
--- TODO: Ask Joe if the condition in `the max suhc that...` must be atomic
-
-
--------- L4 Program -> LE Nat Lang Annotations 
-{-|
-Generating the templates / nat lang annotations from a set of L4 rules:
-
-Terminology / concepts:
-  * A `GivenVar` is a variable that appears in the GIVEN of the L4.
-
-TODO: Add more docs
--}
-
-
-l4toLENatLangAnnots :: L4Prog -> HS.HashSet LENatLangAnnotatn
-l4toLENatLangAnnots = undefined 
 
 -- | Generate natural language annotations from a RuleIR
 nlasFromRuleIR :: RuleIR -> HS.HashSet LENatLangAnnotatn
 nlasFromRuleIR = undefined
-{-
-for each base template (bt) in the RuleIR, across the head and body,
+{- for each base template (bt) in the RuleIR, across the head and body,
   we take its sequence of original variable names <"v1", "v2", ..., "vn">,
   make a new sequence <"*a v1", "a v2", ..., "a vn">,
  and then instantiate the bt with that new sequence. 
 -}
 
-
--- `ruleLocalsIn` in Interpreter.hs may be worth looking at, though I suspect it'd be cleaner to do this with optics 
--- TODO: think -- how best to model variable, given that we also want to be able to hash it?
-varsFromHCgiven :: Rule -> GVarSet
-varsFromHCgiven = undefined
+allNLAs :: [RuleIR] -> HS.HashSet LENatLangAnnotatn
+allNLAs ruleIRs = HS.unions $ map nlasFromRuleIR ruleIRs
 
 
--------- L4 Rule -> LE rule
+{-------------------------------------------------------------------------------
+    L4.Rule -> LE rule
+-------------------------------------------------------------------------------}
+
+irFromL4Rule :: L4.Rule -> RuleIR
+irFromL4Rule = undefined
 
 
+leruleFromRuleIR :: RuleIR -> LERule
+leruleFromRuleIR = undefined
+{- `ruleLocalsIn` in Interpreter.hs may be worth looking at, though I suspect it'd be cleaner to do this with optics 
+-}
 
---------------
+l4rule2lerule :: L4.Rule -> LERule
+l4rule2lerule = leruleFromRuleIR . irFromL4Rule
 
 
-
-data TranspilerCfg =
-  TranspilerCfg { indentSpaces :: Int,
-                  docHeader    :: T.Text,
-                  templatesHeader :: T.Text,
-                  ruleBodyHeader :: T.Text}
+{-------------------------------------------------------------------------------
+   Orchestrating and pretty printing
+-------------------------------------------------------------------------------}
 
 toLE :: L4Prog -> String
 toLE = const "some output"
-
 
 {-
 note

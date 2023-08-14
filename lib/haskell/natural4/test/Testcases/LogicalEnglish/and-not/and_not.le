@@ -1,0 +1,17 @@
+the target language is: prolog.
+
+the templates are:
+  *a x* is an aquatic animal,
+  *a x* lives in water,
+  *a x* lives on land.
+
+the knowledge base encoding includes:
+  a x is an aquatic animal
+  if x lives in water
+  and it is not the case that 
+    x lives on land.
+
+  Fish lives in water.
+
+query q is:
+  which animal is an aquatic animal.

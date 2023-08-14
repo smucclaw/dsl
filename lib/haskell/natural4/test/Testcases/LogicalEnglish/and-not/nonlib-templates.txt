@@ -1,0 +1,3 @@
+*a x* is an aquatic animal
+*a x* lives in water
+*a x* lives on land

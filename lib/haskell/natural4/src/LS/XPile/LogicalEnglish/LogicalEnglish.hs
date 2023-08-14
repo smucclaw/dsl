@@ -42,26 +42,36 @@ import LS.XPile.LogicalEnglish.Common (
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
-{- 
-TODO: After we get a v simple end-to-end prototype out, 
+{- TODO: After we get a v simple end-to-end prototype out, 
 we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
 (This should be done with Monad.Validate or Data.Validation -- XPileLog isn't as good a fit for this.)
 The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages. 
 
-But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed.
--}
+But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. -}
 
 
-irFromL4 :: L4Prog -> [RuleIR]
-irFromL4 = undefined
+{-------------------------------------------------------------------------------
+   L4 rules -> SimpleL4HCs -> RuleIRs
+-------------------------------------------------------------------------------}
 
 
+simpHCFromRule :: L4.Rule -> SimpleL4HC
+simpHCFromRule = undefined
+
+
+
+irFromSimpHC :: SimpleL4HC -> RuleIR
+irFromSimpHC = undefined
+
+--
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
 gvarsFromL4Rule = undefined
 
+
+
 {-------------------------------------------------------------------------------
-   L4 Program -> LE Nat Lang Annotations 
+   RuleIRs -> LE Nat Lang Annotations 
 -------------------------------------------------------------------------------}
 
 
@@ -79,21 +89,16 @@ allNLAs ruleIRs = HS.unions $ map nlasFromRuleIR ruleIRs
 
 
 {-------------------------------------------------------------------------------
-    L4.Rule -> LE rule
+    RuleIRs -> LE rules
 -------------------------------------------------------------------------------}
-
-irFromL4Rule :: L4.Rule -> RuleIR
-irFromL4Rule = undefined
 
 
 leruleFromRuleIR :: RuleIR -> LERule
 leruleFromRuleIR = undefined
 {- `ruleLocalsIn` in Interpreter.hs may be worth looking at, though I suspect it'd be cleaner to do this with optics 
 -}
-
-l4rule2lerule :: L4.Rule -> LERule
-l4rule2lerule = leruleFromRuleIR . irFromL4Rule
-
+allLERules :: [RuleIR] -> [LERule]
+allLERules = map leruleFromRuleIR 
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing

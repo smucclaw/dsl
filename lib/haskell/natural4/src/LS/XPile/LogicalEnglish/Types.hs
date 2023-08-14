@@ -115,7 +115,7 @@ newtype Substn = MkSubstn [T.Text]
   deriving newtype (Eq, Ord)
 
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
-data RuleIR = MkRuleIR { givenVars :: GVarSet
+data RuleIR = MkRuleIR { givenVars  :: GVarSet
                         , head      :: BaseTemplate
                         , body      :: ComplexPropn BaseTemplate }
 {-| This is best understood in the context of RuleIR  -}
@@ -158,7 +158,7 @@ type LECondnTree = ComplexPropn LETemplateInstance
 -------------------------------------------------------------------------------}
 
 data TranspilerCfg =
-  TranspilerCfg { numIndentSpaces :: !Int,
+  TranspilerCfg { numIndentSpaces :: !Word,
                   docHeader    :: !T.Text,
                   nlasHeader :: !T.Text,
                   ruleBodyHeader :: !T.Text}

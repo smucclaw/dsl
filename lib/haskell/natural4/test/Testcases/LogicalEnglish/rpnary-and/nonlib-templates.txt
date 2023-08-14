@@ -1,0 +1,4 @@
+*a x* is a fluorescent lamp
+*a x* is low-pressure
+*a x* is mercury-vapor
+*a x* is gas-discharge

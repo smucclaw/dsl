@@ -1,12 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE GADTs #-}
 -- {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-|
 
@@ -90,30 +89,33 @@ data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
                           , head      :: [Cell]
                           , body      :: L4ComplexPropn }
 type L4ComplexPropn = ComplexPropn [Cell]
--- type IntermedComplexPropn = ComplexPropn TemplateBase
+-- type IRComplexPropn = ComplexPropn BaseTemplate
 
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
 -------------------------------------------------------------------------------}
 
 type OrigVarPrefix = T.Text
-data TemplateVar = MatchGVar OrigVarName
-                 | IsNum OrigVarName
-                 | EndsInApos OrigVarPrefix -- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
+{-| TemplateVars are what can get instantiated / substituted to give us either a natural language annotation or a LE rule -}
+data TemplateVar = MatchGVar !OrigVarName
+                 | IsNum !OrigVarName
+                 | EndsInApos !OrigVarPrefix -- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
       deriving stock (Eq, Ord, Show)
 
 type VarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
-newtype Substn = MkSubstn [TemplateVar]
+
+-- | Substn is a sequence of values that should be substituted for the variables
+newtype Substn = MkSubstn [T.Text]
   deriving stock (Show)
   deriving newtype (Eq, Ord)
 
-data TemplateBase = MkTBase { varSeq :: VarSeq
-                            , instTemplate :: Substn -> T.Text } 
-
-{-| intermediate representation from which we can generate either LE natl lang annotations or LE rules -}
-data IntermedRepn = MkIntermed { givenVars :: GVarSet
-                               , head      :: TemplateBase
-                               , body      :: ComplexPropn TemplateBase }
+{-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
+data RuleIR = MkRuleIR { givenVars :: GVarSet
+                        , head      :: BaseTemplate
+                        , body      :: ComplexPropn BaseTemplate }
+{-| This is best understood in the context of RuleIR  -}
+data BaseTemplate = MkTBase { getVarSeq :: VarSeq
+                            , instTemplate :: forall a. LETemplInstanceOrNLA a => Substn -> a } 
 
 {-------------------------------------------------------------------------------
   LE data types
@@ -128,7 +130,11 @@ newtype LENatLangAnnotatn = MkNLA T.Text
 newtype LETemplateInstance = MkTInstance T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString)
--- TODO: Think about using type-level machinery to capture wehther or not the template has been instantiated
+
+class LETemplInstanceOrNLA a
+instance LETemplInstanceOrNLA LENatLangAnnotatn
+instance LETemplInstanceOrNLA LETemplateInstance
+
 
 data LERule = LERule
             { head :: LETemplateInstance
@@ -155,9 +161,19 @@ TODO: Add more docs
 -}
 
 
-
 l4toLENatLangAnnots :: L4Prog -> HS.HashSet LENatLangAnnotatn
-l4toLENatLangAnnots = undefined
+l4toLENatLangAnnots = undefined 
+
+-- | Generate natural language annotations from a RuleIR
+nlasFromRuleIR :: RuleIR -> HS.HashSet LENatLangAnnotatn
+nlasFromRuleIR = undefined
+{-
+for each base template (bt) in the RuleIR, across the head and body,
+  we take its sequence of original variable names <"v1", "v2", ..., "vn">,
+  make a new sequence <"*a v1", "a v2", ..., "a vn">,
+ and then instantiate the bt with that new sequence. 
+-}
+
 
 -- `ruleLocalsIn` in Interpreter.hs may be worth looking at, though I suspect it'd be cleaner to do this with optics 
 -- TODO: think -- how best to model variable, given that we also want to be able to hash it?

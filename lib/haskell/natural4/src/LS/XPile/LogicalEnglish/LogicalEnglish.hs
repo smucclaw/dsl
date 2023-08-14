@@ -1,10 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+
 
 {-|
 
@@ -16,7 +18,7 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE) where
 
-import GHC.Generics (Generic)
+
 import LS.PrettyPrinter
     ( myrender, vvsep, (</>), tildes, (<//>), srchs )
 import Prettyprinter
@@ -27,6 +29,7 @@ import Data.Bifunctor       ( first )
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
+import GHC.Generics (Generic)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
@@ -50,9 +53,9 @@ But for now, we will help ourselves, undeservedly, to the assumption that the L4
 
 data L4Var = NoApos T.Text 
            | WithApos T.Text
-           deriving (Eq, Generic, Ord, Read, Show)
+           deriving (Ord, Read, Show, Eq, Generic, Hashable)
 -- TODO: this is a quick first pass; need to think more about how to model L4 var for our purposes
-instance Hashable L4Var
+-- instance Hashable L4Var
 
 
 type LEtemplate = T.Text -- aka 'natural language annotation'. 
@@ -95,10 +98,18 @@ l4rule2intermed = undefined
 -} 
 
 
+--------------
 
+
+
+data TranspilerCfg = 
+  TranspilerCfg { indentSpaces :: Int,
+                  docHeader    :: T.Text,
+                  templatesHeader :: T.Text,
+                  ruleBodyHeader :: T.Text}
 
 toLE :: L4Prog -> String
-toLE = undefined
+toLE = "some output"
 
 
 {-

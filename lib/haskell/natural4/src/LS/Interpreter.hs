@@ -94,7 +94,8 @@ qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
        , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
-                           exposedRoots l4i      -- EXPOSED
+                           let (eRout, eRerr) = xpLog $ exposedRoots l4i      -- EXPOSED
+                           in eRout
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]
@@ -287,12 +288,11 @@ groupedByAOTree l4i rs =
 -- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
 -- We want the SVG Xpiler to reuse this code as authoritative.
 
-exposedRoots :: Interpreted -> [Rule]
-exposedRoots l4i =
-  let rs = origrules l4i
-      decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots decisionGraph
-  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+exposedRoots :: Interpreted -> XPileLog [Rule]
+exposedRoots l4i = do
+  decisionGraph <- ruleDecisionGraph l4i
+  decisionroots <- decisionRoots decisionGraph
+  return [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
 -- | the (inner) type of a particular class's attribute
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
@@ -344,19 +344,20 @@ type RuleGraph = Gr Rule RuleGraphEdgeLabel
 type RuleIDMap = Map.HashMap Rule Int
 
 -- | which decision rules depend on which other decision rules?
-ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
-ruleDecisionGraph l4i rs =
+ruleDecisionGraph :: Interpreted -> XPileLog RuleGraph
+ruleDecisionGraph l4i = do
   let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
-  in mkGraph
-  (swap <$> Map.toList ruleIDmap) -- the nodes
-  (relPredRefsAll l4i rs ruleIDmap)
+  mkGraph
+    (swap <$> Map.toList ruleIDmap) -- the nodes
+    <$> relPredRefsAll l4i ruleIDmap
   where
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
-
+    rs = origrules l4i
+     
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
-relPredRefsAll :: Interpreted -> [Rule] -> RuleIDMap -> [LEdge RuleGraphEdgeLabel]
-relPredRefsAll l4i rs ridmap =
-  concatMap (relPredRefs l4i rs ridmap) rs
+relPredRefsAll :: Interpreted -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefsAll l4i ridmap =
+  concat <$> mapM (relPredRefs l4i ridmap) (origrules l4i)
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known BSR heads from the entire ruleset.
@@ -366,19 +367,19 @@ relPredRefsAll l4i rs ridmap =
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: Interpreted -> [Rule] -> RuleIDMap -> Rule -> [LEdge RuleGraphEdgeLabel]
-relPredRefs _l4i rs ridmap r =
+relPredRefs :: Interpreted -> RuleIDMap -> Rule -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs l4i ridmap r = do
   let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
       -- given a term, see which rule defines it
       headElements = Map.fromList $
                      [ (headName,r')
-                     | r' <- rs
+                     | r' <- origrules l4i
                      , headName <- getDecisionHeads r'
                      ]
       -- given a rule, see which terms it relies on
       bodyElements = concatMap rp2bodytexts (concatMap AA.extractLeaves (getBSR r))
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  in [ (rid, targetRuleId', ())
+  return [ (rid, targetRuleId', ())
      | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
@@ -398,15 +399,15 @@ relPredRefs _l4i rs ridmap r =
 --
 -- Examine the rulegraph for rules which have no indegrees, as far as decisioning goes.
 
-decisionRoots :: RuleGraph -> [Rule]
-decisionRoots rg =
+decisionRoots :: RuleGraph -> XPileLog [Rule]
+decisionRoots rg = do
   let rg' = dereflexed
-  in
-  catMaybes [ lab rg' r
-            | r <- nodes rg'
-            ,  indeg rg' r == 0
---            , outdeg rg' r  > 0
-            ]
+  return $
+    catMaybes [ lab rg' r
+              | r <- nodes rg'
+              ,  indeg rg' r == 0
+              -- , outdeg rg' r  > 0
+              ]
   where
     -- remove reflexive edges that go from node n to node n
     dereflexed :: RuleGraph

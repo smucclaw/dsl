@@ -63,11 +63,14 @@ l4interpret iopts rs =
   let ct = classHierarchy rs
       st = symbolTable    iopts rs
       (vp, vpErr) = xpLog $ attrsAsMethods rs
+      (rDGout, rDGerr) = xpLog $ ruleDecisionGraph rs
   in
     L4I { classtable = ct
         , scopetable = st
         , origrules  = rs
         , valuePreds = fromRight [] vp
+        , ruleGraph  = rDGout
+        , ruleGraphErr = rDGerr
         }
 
 -- | Provide the fully expanded, exposed, decision roots of all rules in the ruleset,
@@ -290,7 +293,7 @@ groupedByAOTree l4i rs =
 
 exposedRoots :: Interpreted -> XPileLog [Rule]
 exposedRoots l4i = do
-  decisionGraph <- ruleDecisionGraph l4i
+  let decisionGraph = ruleGraph l4i
   decisionroots <- decisionRoots decisionGraph
   return [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
@@ -329,36 +332,24 @@ getAttrTypesIn ct classname =
                               ]
 
 
--- | structure the rules as a graph.
--- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
--- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
--- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
---
--- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
--- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
-
-type RuleGraphEdgeLabel = ()
-type RuleGraph = Gr Rule RuleGraphEdgeLabel
-
 -- | used by `ruleDecisionGraph`; a map from a rule to a unique integer identifier for that rule, used in the `RuleGraph`
 type RuleIDMap = Map.HashMap Rule Int
 
 -- | which decision rules depend on which other decision rules?
-ruleDecisionGraph :: Interpreted -> XPileLog RuleGraph
-ruleDecisionGraph l4i = do
+ruleDecisionGraph :: RuleSet -> XPileLog RuleGraph
+ruleDecisionGraph rs = do
   let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
   mutterdhsf 4 "ruleDecisionGraph: decisionRules from getBSR" pShowNoColorS decisionRules
   mkGraph
     (swap <$> Map.toList ruleIDmap) -- the nodes
-    <$> relPredRefsAll l4i ruleIDmap
+    <$> relPredRefsAll rs ruleIDmap
   where
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
-    rs = origrules l4i
      
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
-relPredRefsAll :: Interpreted -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefsAll l4i ridmap =
-  concat <$> mapM (relPredRefs l4i ridmap) (origrules l4i)
+relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefsAll rs ridmap =
+  concat <$> mapM (relPredRefs rs ridmap) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known BSR heads from the entire ruleset.
@@ -368,13 +359,13 @@ relPredRefsAll l4i ridmap =
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: Interpreted -> RuleIDMap -> Rule -> XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefs l4i ridmap r = do
+relPredRefs :: RuleSet -> RuleIDMap -> Rule -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs rs ridmap r = do
   let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
       -- given a term, see which rule defines it
       headElements = Map.fromList $
                      [ (headName,r')
-                     | r' <- origrules l4i
+                     | r' <- rs
                      , headName <- getDecisionHeads r'
                      ]
       -- given a rule, see which terms it relies on
@@ -390,8 +381,10 @@ relPredRefs l4i ridmap r = do
   mutterdhsf 5 "relPredRefs: extractLeaves" pShowNoColorS myLeaves
   mutterdhsf 5 "relPredRefs: bodyElements"  pShowNoColorS bodyElements
 
+  -- [BUG] at some point we lose the moon
+
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  sequence
+  toreturn <- sequence
     [ (rid, targetRuleId', ()) <$ mutterd 6 ("returning " <> show rid <> ", " <> show targetRuleId')
     | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
@@ -403,6 +396,8 @@ relPredRefs l4i ridmap r = do
            rid = ridmap ! r
      ]
 
+  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
+  return toreturn
 
 -- | Which rules are "top-level", "entry-point" rules?
 --

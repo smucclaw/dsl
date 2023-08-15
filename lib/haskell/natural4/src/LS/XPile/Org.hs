@@ -27,7 +27,7 @@ import LS.Interpreter
 
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
-    ( Interpreted(classtable, scopetable),
+    ( Interpreted(..),
       Rule(..),
       hasGiven,
       hasClauses,
@@ -69,7 +69,7 @@ musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = nub $ concatMap (expandRule rs) rs
-      (decisionGraph, dGerr) = xpLog (ruleDecisionGraph l4i)
+      decisionGraph = ruleGraph l4i
       (eRout, eRerr)         = xpLog (exposedRoots l4i)
   in vvsep [ "* musings"
            , "** Global Facts" </> srchs (globalFacts l4i)
@@ -123,7 +123,7 @@ musings l4i rs =
            , "*** entryPoints" </> let (ePout, ePerr) = xpLog (entryPoints l4i) in srchs ePout </> vsep (pretty <$> ePerr)
            , "** the Rule Decision Graph"
            , orgexample (pretty (prettify (first ruleLabelName decisionGraph)))
-           , "*** logging output" </> vsep (pretty <$> dGerr)
+           , "*** logging output" </> vsep (pretty <$> ruleGraphErr l4i)
 
            , "** Decision Roots"
            , "rules which are not just RuleAlises, and which are not relied on by any other rule"

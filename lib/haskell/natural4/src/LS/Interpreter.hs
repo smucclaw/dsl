@@ -336,15 +336,46 @@ getAttrTypesIn ct classname =
 type RuleIDMap = Map.HashMap Rule Int
 
 -- | which decision rules depend on which other decision rules?
+-- And which ground terms don't expand any further?
+--
+-- We answer these questions in two passes.
+--
+-- First, we construct a rulegraph of only rules and their relations. In a conventional programming language we might call this the interprocedural graph.
+-- In the first version of this codebase we stopped here and just returned the graph of rules, which is why the type is called `RuleGraph`.
+--
+-- But that's not enough! We want to know about the leaf nodes, the ground terms, as well.
+-- So, in a second pass, we traverse the rulegraph from the first pass, and return all the leaf nodes found in the RelationalPredicates;
+-- then we eliminate all the tokens which appear in the graph from the first pass. That should leave us with only leaf nodes.
+--
+-- With that clarity, we elevate the leaf nodes into stub rules and return a rule graph of the combined rules + ground terms.
+--
+-- If, downstream, you want to distinguish between rule and ground term, we will have to figure out some annotation or foolproof convention by which we can observe that distinction.
+--
 ruleDecisionGraph :: RuleSet -> XPileLog RuleGraph
 ruleDecisionGraph rs = do
-  let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
-  mutterdhsf 4 "ruleDecisionGraph: decisionRules from getBSR" pShowNoColorS decisionRules
-  mkGraph
-    (swap <$> Map.toList ruleIDmap) -- the nodes
-    <$> relPredRefsAll rs ruleIDmap
+
+  mutterdhsf 4 "ruleDecisionGraph: (1.1) for first pass, decisionrules" pShowNoColorS decisionRules
+
+  let ruleOnlyMap = Map.fromList (Prelude.zip decisionRules [1..])
+  mutterdhsf 4 "ruleDecisionGraph: (1.2) ruleOnlyMap" pShowNoColorS ruleOnlyMap
+
+  ruleOnlyGraph <- mkGraph
+                   (swap <$> Map.toList ruleOnlyMap) -- the nodes
+                   <$> relPredRefsAll rs ruleOnlyMap
+
+  mutterdhsf 4 "ruleDecisionGraph: (1.3) ruleOnlyGraph" pShowNoColorS ruleOnlyGraph
+
+  return ruleOnlyGraph
+
   where
+    -- filter for just those rules which involve decisions
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
+
+  -- we want to represent the leaf nodes in the rule decision graph, so we elevate those to the status of rules by including them in the map
+    groundTerms :: Map.HashMap Rule Int -> [RuleName]
+    groundTerms knownRules = []
+      -- find all the body elements which 
+
      
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
@@ -384,7 +415,7 @@ relPredRefs rs ridmap r = do
   -- [BUG] at some point we lose the moon
 
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  toreturn <- sequence
+  origtoreturn <- sequence
     [ (rid, targetRuleId', ()) <$ mutterd 6 ("returning " <> show rid <> ", " <> show targetRuleId')
     | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
@@ -396,8 +427,9 @@ relPredRefs rs ridmap r = do
            rid = ridmap ! r
      ]
 
-  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
-  return toreturn
+  mutterdhsf 5 "relPredRefs: originally we would have returned" pShowNoColorS origtoreturn
+  -- mutterdhsf 5 "relPredRefs: with the leaf nodes intact, we return" pShowNoColorS toreturn
+  return origtoreturn
 
 -- | Which rules are "top-level", "entry-point" rules?
 --

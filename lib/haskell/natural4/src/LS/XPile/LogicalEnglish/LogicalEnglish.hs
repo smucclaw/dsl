@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -15,7 +16,7 @@ and in part to avoid breaking if the spec / API for Interpreter.hs changes.
 After all, the design intentions for this short-term LE transpiler aren't the same as those for the analzyer (which is part of what will hopefully become an effort in longer-term, more principled language development).
 -}
 
-module LS.XPile.LogicalEnglish.LogicalEnglish (toLE) where
+module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 
 import LS.PrettyPrinter
     ( myrender, vvsep, (</>), tildes, (<//>), srchs )
@@ -63,7 +64,8 @@ simplifyL4rule = undefined
 makeIR :: SimpleL4HC -> RuleIR
 makeIR = undefined
 
---
+
+----- helper funcs -----------------
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
 gvarsFromL4Rule = undefined

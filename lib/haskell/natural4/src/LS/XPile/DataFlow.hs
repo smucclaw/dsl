@@ -19,6 +19,14 @@ import Data.Graph.Inductive.PatriciaTree (Gr)
 
 -- graphviz
 import Data.GraphViz
+    ( shape,
+      graphToDot,
+      Shape(Circle),
+      GraphID(Str),
+      NodeCluster(N, C),
+      GlobalAttributes(NodeAttrs, GraphAttrs),
+      GraphvizParams(..),
+      DotGraph )
 import Data.GraphViz.Printing (renderDot)
 import Data.GraphViz.Attributes.Complete
 
@@ -79,6 +87,9 @@ dataFlowAsDot l4i = do
   -- That code was written before we had the Intepreter available to analyze rules for us.
   -- So, we grab one tree of rules at a time from the RuleGraph provided by the interpreter, and dump those;
   -- then we dump the ground term leaves in those rules.
+
+  let rG = ruleGraph l4i
+  mutterdhsf 3 "dataFlowasDot: first, let's dump the rulegraph" pShowNoColorS rG
 
   return "/*  coming soon: this will be a data flow diagram  */"
 

@@ -12,6 +12,7 @@ import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Hashable (Hashable)
+import qualified Data.HashMap.Strict as Map
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -21,7 +22,7 @@ import GHC.Generics (Generic)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
-    ClsTab,
+    ClsTab(..),
     DList,
     Deontic (DMust),
     Depth,
@@ -63,7 +64,7 @@ import Text.Megaparsec
     (<?>),
     (<|>),
   )
-import Data.Graph.Inductive (Gr)
+import Data.Graph.Inductive (Gr, empty)
 import LS.XPile.Logging (XPileLogW)
 
 -- | [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
@@ -394,6 +395,17 @@ data Interpreted = L4I {
   , ruleGraphErr :: XPileLogW
   }
   deriving (Eq, Show)
+
+-- | default L4I
+defaultL4I :: Interpreted
+defaultL4I = L4I
+  { classtable = CT Map.empty
+  , scopetable = Map.empty
+  , origrules = mempty
+  , valuePreds = mempty
+  , ruleGraph = empty
+  , ruleGraphErr = mempty
+  }
 
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.

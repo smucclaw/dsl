@@ -349,7 +349,7 @@ type RuleIDMap = Map.HashMap Rule Int
 --
 -- With that clarity, we elevate the leaf nodes into stub rules and return a rule graph of the combined rules + ground terms.
 --
--- If, downstream, you want to distinguish between rule and ground term, just look for the rules which have a single Leaf in the BSR which is reflexive to the same rule.
+-- If, downstream, you want to distinguish between rule and ground term, just look for those nodes in the graph which are leaves!
 --
 ruleDecisionGraph :: RuleSet -> XPileLog RuleGraph
 ruleDecisionGraph rs = do
@@ -383,9 +383,7 @@ ruleDecisionGraph rs = do
 
   mutterd 3 "(2.5) let's elevate all the leaf terms to stubby little rules in their own right"
   let stubRules = [ defaultHorn { name = rulename, keyword = Define, srcref = Nothing
-                                , clauses = [ HC { hHead = RPMT rulename
-                                                 , hBody = Just $ AA.mkLeaf (RPMT rulename) }  -- [NOTE] so leaf nodes are reflexive, let's just say we meant for it to be that way, cuz they "bottom out"
-                                            ] }
+                                , clauses = stubClause rulename }
                   | rulename <- ruleNames ]
 
   mutterd 3 "(2.6) then we rebuild the graph with those rules included"
@@ -393,11 +391,25 @@ ruleDecisionGraph rs = do
   expandedRuleGraph :: RuleGraph <- mkGraph
                                     (swap <$> Map.toList expandedRuleMap)
                                     <$> relPredRefsAll (rs ++ stubRules) expandedRuleMap
-      
+
   "(2.7) expandedRuleGraph" ***-> expandedRuleGraph
-  return expandedRuleGraph
+
+  mutterd 3 "(3.1) finally we strip the reflexive BSR from the stub rules while leaving the nodes themselves in place."
+  
+  let prunedRuleGraph = nmap (\r@Hornlike{..} -> if clauses == stubClause name then r { clauses = [] } else r ) expandedRuleGraph
+  "(2.7) prunedRuleGraph" ***-> prunedRuleGraph
+
+  return prunedRuleGraph
 
   where
+     -- [NOTE] for the purposes of generating the graph in the 2nd pass,
+    -- leaf nodes are reflexive. Let's just say we meant for it to be that way, cuz they "bottom out", lol.
+    -- This gets removed in the third pass.
+    stubClause rulename =
+      [ HC { hHead = RPMT rulename
+           , hBody = Just $ AA.mkLeaf (RPMT rulename) }
+      ]
+
     -- filter for just those rules which involve decisions
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
 
@@ -446,8 +458,8 @@ relPredRefs rs ridmap r = do
   -- [BUG] at some point we lose the moon
 
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  origtoreturn <- sequence
-    [ (rid, targetRuleId', ()) <$ mutterd 6 ("returning " <> show rid <> ", " <> show targetRuleId')
+  toreturn <- sequence
+    [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')
     | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
@@ -458,9 +470,8 @@ relPredRefs rs ridmap r = do
            rid = ridmap ! r
      ]
 
-  mutterdhsf 5 "relPredRefs: originally we would have returned" pShowNoColorS origtoreturn
-  -- mutterdhsf 5 "relPredRefs: with the leaf nodes intact, we return" pShowNoColorS toreturn
-  return origtoreturn
+  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
+  return toreturn
 
 -- | Which rules are "top-level", "entry-point" rules?
 --

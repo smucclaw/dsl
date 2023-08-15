@@ -78,7 +78,7 @@ gvarsFromL4Rule = undefined
 
 
 -- | Generate natural language annotations from a RuleIR
-nlasFromRuleIR :: RuleIR -> HS.HashSet LENatLangAnnotatn
+nlasFromRuleIR :: RuleIR -> HS.HashSet LENatLangAnnot
 nlasFromRuleIR = undefined
 {- for each base template (bt) in the RuleIR, across the head and body,
   we take its sequence of original variable names <"v1", "v2", ..., "vn">,
@@ -86,7 +86,7 @@ nlasFromRuleIR = undefined
  and then instantiate the bt with that new sequence. 
 -}
 
-allNLAs :: [RuleIR] -> HS.HashSet LENatLangAnnotatn
+allNLAs :: [RuleIR] -> HS.HashSet LENatLangAnnot
 allNLAs ruleIRs = HS.unions $ map nlasFromRuleIR ruleIRs
 
 

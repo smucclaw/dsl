@@ -16,7 +16,7 @@ module LS.XPile.LogicalEnglish.Types (
     , GVarSet
     , Cell
     , SimpleL4HC
-    , L4ComplexPropn
+    -- , L4ComplexPropn
 
     -- Intermediate representation types
     , TemplateVar
@@ -27,9 +27,9 @@ module LS.XPile.LogicalEnglish.Types (
     , BaseTemplate
 
     -- LE-related types
-    , LENatLangAnnotatn
+    , LENatLangAnnot
     , LETemplateInstance
-    , LETemplInstanceOrNLA(..)
+    , TemplInstanceOrNLA
     , LERule
     , LECondnTree
 
@@ -85,6 +85,7 @@ newtype GVar = MkGVar T.Text
   deriving newtype (Eq, Ord, IsString, Hashable)
 type GVarSet = HS.HashSet GVar
 
+
 newtype Cell = MkCell T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString)
@@ -92,8 +93,8 @@ newtype Cell = MkCell T.Text
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
 data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
                           , head      :: [Cell]
-                          , body      :: L4ComplexPropn }
-type L4ComplexPropn = ComplexPropn [Cell]
+                          , body      :: ComplexPropn [Cell] }
+-- type L4ComplexPropn = ComplexPropn [Cell]
 -- type IRComplexPropn = ComplexPropn BaseTemplate
 
 {-------------------------------------------------------------------------------
@@ -120,12 +121,12 @@ data RuleIR = MkRuleIR { givenVars  :: GVarSet
                         , body      :: ComplexPropn BaseTemplate }
 {-| This is best understood in the context of RuleIR  -}
 data BaseTemplate = MkTBase { getVarSeq :: VarSeq
-                            , instTemplate :: forall a. LETemplInstanceOrNLA a => Substn -> a } 
+                            , instTemplate :: Substn -> TemplInstanceOrNLA } 
 
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
-newtype LENatLangAnnotatn = MkNLA T.Text
+newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
 
@@ -133,11 +134,9 @@ newtype LETemplateInstance = MkTInstance T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
 
--- | a quick n dirty version of Union{LETemplateInstance, LENatLangAnnotatn}
-class LETemplInstanceOrNLA a
-instance LETemplInstanceOrNLA LENatLangAnnotatn
-instance LETemplInstanceOrNLA LETemplateInstance
-
+data TemplInstanceOrNLA = TInst LETemplateInstance
+                        | NLA LENatLangAnnot
+-- TODO: try to derive instances somehow?
 
 data LERule = LERule
             { head :: LETemplateInstance

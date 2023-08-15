@@ -25,6 +25,8 @@ import LS.Interpreter
       entryPoints,
       )
 
+import LS.DataFlow
+
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
     ( Interpreted(..),

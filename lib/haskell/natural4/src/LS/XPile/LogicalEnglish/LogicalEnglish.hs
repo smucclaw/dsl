@@ -55,13 +55,13 @@ But for now, we will help ourselves, undeservedly, to the assumption that the L4
 -------------------------------------------------------------------------------}
 
 
-simpHCFromRule :: L4.Rule -> SimpleL4HC
-simpHCFromRule = undefined
+simplifyL4rule :: L4.Rule -> SimpleL4HC
+simplifyL4rule = undefined
 
 
 
-irFromSimpHC :: SimpleL4HC -> RuleIR
-irFromSimpHC = undefined
+makeIR :: SimpleL4HC -> RuleIR
+makeIR = undefined
 
 --
 

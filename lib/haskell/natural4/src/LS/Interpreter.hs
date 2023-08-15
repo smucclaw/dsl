@@ -378,7 +378,7 @@ ruleDecisionGraph rs = do
   mutterd 3 "(2.5) let's elevate all the leaf terms to stubby little rules in their own right"
   let stubRules = [ defaultHorn { name = rulename, keyword = Define, srcref = Nothing
                                 , clauses = stubClause rulename }
-                  | rulename <- ruleNames ]
+                  | rulename <- difference ]
 
   mutterd 3 "(2.6) then we rebuild the graph with those rules included"
   let expandedRuleMap   = Map.fromList (Prelude.zip (decisionRules ++ stubRules) [1..])
@@ -390,8 +390,8 @@ ruleDecisionGraph rs = do
 
   mutterd 3 "(3.1) finally we strip the reflexive BSR from the stub rules while leaving the nodes themselves in place."
   
-  let prunedRuleGraph = nmap (\r@Hornlike{..} -> if clauses == stubClause name then r { clauses = [] } else r ) expandedRuleGraph
-  "(2.7) prunedRuleGraph" ***-> prunedRuleGraph
+  let prunedRuleGraph = nmap (\r -> if hasClauses r && clauses r == stubClause (name r) then r { clauses = [] } else r ) expandedRuleGraph
+  "(3.2.7) prunedRuleGraph" ***-> prunedRuleGraph
 
   return prunedRuleGraph
 
@@ -450,7 +450,7 @@ relPredRefs rs ridmap r = do
   mutterdhsf 5 "relPredRefs: bodyElements"  pShowNoColorS bodyElements
 
   -- [BUG] at some point we lose the moon
-
+  mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
   toreturn <- sequence
     [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')

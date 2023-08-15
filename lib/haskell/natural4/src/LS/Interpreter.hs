@@ -396,7 +396,7 @@ ruleDecisionGraph rs = do
 
   mutterd 3 "(3.1) finally we strip the reflexive BSR from the stub rules while leaving the nodes themselves in place."
   
-  let prunedRuleGraph = nmap (\r -> if hasClauses r && clauses r == stubClause (name r) then r { clauses = [] } else r ) expandedRuleGraph
+  let prunedRuleGraph = dereflexed $ nmap (\r -> if hasClauses r && clauses r == stubClause (name r) then r { clauses = [] } else r ) expandedRuleGraph
   "(3.2.7) prunedRuleGraph" ***-> prunedRuleGraph
 
   return prunedRuleGraph
@@ -483,22 +483,18 @@ relPredRefs rs ridmap r = do
 
 decisionRoots :: RuleGraph -> XPileLog [Rule]
 decisionRoots rg = do
-  let rg' = dereflexed
+  let rg' = dereflexed rg
   return $
     catMaybes [ lab rg' r
               | r <- nodes rg'
               ,  indeg rg' r == 0
               -- , outdeg rg' r  > 0
               ]
-  where
-    -- remove reflexive edges that go from node n to node n
-    dereflexed :: RuleGraph
-    dereflexed =
-      let toreturn = foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
-      in
---        trace ("dereflexed before: " ++ prettify rg) $
---        trace ("dereflexed after:  " ++ prettify toreturn) $
-        toreturn
+
+-- remove reflexive edges that go from node n to node n
+dereflexed :: RuleGraph -> RuleGraph
+dereflexed rg =
+  foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
 
 
 -- | extract a data flow graph

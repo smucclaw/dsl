@@ -349,42 +349,53 @@ type RuleIDMap = Map.HashMap Rule Int
 --
 -- With that clarity, we elevate the leaf nodes into stub rules and return a rule graph of the combined rules + ground terms.
 --
--- If, downstream, you want to distinguish between rule and ground term, we will have to figure out some annotation or foolproof convention by which we can observe that distinction.
+-- If, downstream, you want to distinguish between rule and ground term, just look for the rules which have a single Leaf in the BSR which is reflexive to the same rule.
 --
 ruleDecisionGraph :: RuleSet -> XPileLog RuleGraph
 ruleDecisionGraph rs = do
 
-  "(1.1) for first pass, decisionrules" --> decisionRules
+  "(1.1) for first pass, we begin with decisionrules" ***-> decisionRules
 
   let ruleOnlyMap = Map.fromList (Prelude.zip decisionRules [1..])
-  "(1.2) ruleOnlyMap" --> ruleOnlyMap
+  "(1.2) ruleOnlyMap" ***-> ruleOnlyMap
 
   mutterd 3 "ruleDecisionGraph: (1.3) ruleOnlyGraph construction log using relPredRefsAll"
-  ruleOnlyGraph <- mkGraph
-                   (swap <$> Map.toList ruleOnlyMap) -- the nodes
-                   <$> relPredRefsAll rs ruleOnlyMap
+  
+  ruleOnlyGraph :: RuleGraph <- mkGraph
+                                (swap <$> Map.toList ruleOnlyMap) -- the nodes
+                                <$> relPredRefsAll rs ruleOnlyMap -- The <$> lifts into the XPileLog monad
 
-  "(1.4) ruleOnlyGraph result" --> ruleOnlyGraph
+  "(1.4) ruleOnlyGraph result" ***-> ruleOnlyGraph
 
   mutterd 3 "as a flex, just to show what's going on, we extract all the leaf terms, if we can, by starting with all the terms entirely. Well, MultiTerms."
 
   let allTerms = DL.nub $ concat (concatMap rp2bodytexts . concatMap AA.extractLeaves . getBSR <$> rs)
-  "(2.1) allTerms" --> allTerms
+  "(2.1) allTerms" ***-> allTerms
 
-  mutterd 3 "we filter for the leaf terms by excluding all the ruleNames that we know from the original ruleset. This may not be a perfect match with the MultiTerms used in the rule graph. [TODO]"
+  mutterd 3 "(2.2) we filter for the leaf terms by excluding all the ruleNames that we know from the original ruleset. This may not be a perfect match with the MultiTerms used in the rule graph. [TODO]"
 
   let (ruleNames, ruleLabelNames) = (ruleName <$> rs, ruleLabelName <$> rs)
-  "ruleNames to omit" --> ruleNames
-  "(what if we used ~ruleLabelName~ instead of ~ruleName~?)" --> ruleLabelNames
+  "(2.3) ruleNames to omit" ***-> ruleNames
+  "(2.3 alt) what if we used ~ruleLabelName~ instead of ~ruleName~?)" ***-> ruleLabelNames
 
-  let difference = allTerms \\ ruleNames
-  "ruleDecisionGraph: that leaves" --> difference
+  let difference = (allTerms \\ ruleNames) \\ [[ MTT "OTHERWISE" ]] --  special case: Otherwise drops out
+  "(2.4) that leaves" ***-> difference
 
-  mutterd 3 "let's elevate all the leaf terms to stubby little rules in their own right"
+  mutterd 3 "(2.5) let's elevate all the leaf terms to stubby little rules in their own right"
+  let stubRules = [ defaultHorn { name = rulename, keyword = Define, srcref = Nothing
+                                , clauses = [ HC { hHead = RPMT rulename
+                                                 , hBody = Just $ AA.mkLeaf (RPMT rulename) }  -- [NOTE] so leaf nodes are reflexive, let's just say we meant for it to be that way, cuz they "bottom out"
+                                            ] }
+                  | rulename <- ruleNames ]
 
-  mutterd 3 "then we attach those terms into the graph"
-
-  return ruleOnlyGraph
+  mutterd 3 "(2.6) then we rebuild the graph with those rules included"
+  let expandedRuleMap   = Map.fromList (Prelude.zip (decisionRules ++ stubRules) [1..])
+  expandedRuleGraph :: RuleGraph <- mkGraph
+                                    (swap <$> Map.toList expandedRuleMap)
+                                    <$> relPredRefsAll (rs ++ stubRules) expandedRuleMap
+      
+  "(2.7) expandedRuleGraph" ***-> expandedRuleGraph
+  return expandedRuleGraph
 
   where
     -- filter for just those rules which involve decisions
@@ -395,7 +406,7 @@ ruleDecisionGraph rs = do
     groundTerms knownRules = []
       -- find all the body elements which 
 
-    (-->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
+    (***->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
      
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]

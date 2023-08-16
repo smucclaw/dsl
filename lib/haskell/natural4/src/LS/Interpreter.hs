@@ -426,7 +426,7 @@ relPredRefsAll rs ridmap =
   concat <$> mapM (relPredRefs rs ridmap) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
--- that correspond to known BSR heads from the entire ruleset.
+-- that correspond to known rule heads from the entire ruleset.
 --
 -- in other words, if a rule R1 says something like (a WHEN b OR c), it defines a, and relies on b and c;
 -- if we find a rule R2 which defines (c MEANS c1 AND c2), then it defines c, and relies on c1 and c2.

@@ -185,11 +185,13 @@ tsRuleEngine l4i = do
                          , not (r `elem` eRout)
                          , not (isFact r)
                          ]
-      (globalRuleParents
-        , globalRuleLeaves) =
+
+      ( globalRuleParents , globalRuleLeaves) =
         partition (\(n,r) -> outdeg (ruleGraph l4i) n /= 0) globalRuleheads
-      globalRulees = [ (n,r) | (n,r) <- globalRuleheads, not $ outdeg (ruleGraph l4i) n == 0 ]
+
       declaredClasses = classRoots (classtable l4i)
+
+  mutterdhsf 3 "globalRuleheads should have excluded facts" pShowNoColorS globalRuleheads
 
   return $ vsep
     [ "interface UserInput {"
@@ -223,9 +225,11 @@ tsRuleEngine l4i = do
     , indent 2 $ vsep $
       "// roots of the rulegraph" :
       [ prettyRuleName exposedRoot
-      | exposedRoot <- eRout ]
+      | exposedRoot <- nub eRout ] -- not sure why nubbing doesn't seem to work, some methods still get dumped.
     , ""
-    , indent 2 "// intermediate computations -- [TODO] -- should be userinput - roots"
+    , indent 2 $ vsep $
+      "// intermediate parent computations" :
+      [ prettyRuleName r | (nodeN,r) <- globalRuleParents ]
     , "}"
     , "export function tsRuleEngine(userInput : UserInput) : OutputState {"
     , indent 2 $ vsep $

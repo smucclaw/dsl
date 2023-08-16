@@ -2,6 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.Rule where
 
@@ -23,6 +24,7 @@ import LS.Types
   ( BoolStructP,
     BoolStructR,
     ClsTab(..),
+    MTExpr(..),
     DList,
     Deontic (DMust),
     Depth,
@@ -356,10 +358,16 @@ hasClauses             __ = False
 -- whose body is a Nothing.
 isFact :: Rule -> Bool
 isFact r
-  | hasClauses r = all ((Nothing ==) . hBody) (clauses r)
-                   && length (clauses r) == 1
+  | hasClauses r = or [ ruleNameIsNumeric (name r) 
+                      , and [ length (clauses r) == 1
+                            , all ((Nothing ==) . hBody) (clauses r) ]
+                      ]
   | otherwise = False
-
+  where
+    -- when we have a numeric fact, it shows up with a name like [ MTI 0 ]
+    ruleNameIsNumeric = all ( \case
+                                MTI _ -> True
+                                _     -> False )
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead
                                 | HC hhead _hbody <- clauses ]

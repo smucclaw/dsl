@@ -57,8 +57,16 @@ loadRawL4AsUnvalid = MkL4Rules
 check :: L4Rules Unvalidated -> Maybe (L4Rules ValidatedNotRefined)
 check (MkL4Rules rulelist) = Just $ MkL4Rules rulelist
 
+
+{- | L4 rules are refined when:
+* All the rules are DECIDEs / HCs
+* There is exactly one HC in the clauses field -- i.e., 
+  the 'ditto' / decision table syntax will be desugared in the obvious way.
+  But note that we will not support the 'OTHERWISE' keyword.
+-}
 refine :: L4Rules ValidatedNotRefined -> L4Rules ValidHornls
 refine (MkL4Rules rulelist) =  MkL4Rules (filter isHornlike rulelist)
+
 
 
 -- | I experimented with auto generating prisms with Optics, but there was an issue with where some of the other type defs were; didn't seem worth the time fixing for our purposes when this would be good enoguh 

@@ -24,7 +24,7 @@ module LS.XPile.LogicalEnglish.Types (
     , OrigVarSeq
     , Substn
     , LamAbsRule
-    , BaseTemplate
+    , LamAbsBase
 
     -- LE-related types
     , LENatLangAnnot
@@ -101,7 +101,7 @@ data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
                           , head      :: [Cell]
                           , body      :: ComplexPropn [Cell] }
 -- type L4ComplexPropn = ComplexPropn [Cell]
--- type IRComplexPropn = ComplexPropn BaseTemplate
+-- type IRComplexPropn = ComplexPropn LamAbsBase
 
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
@@ -126,10 +126,10 @@ newtype Substn = MkSubstn [T.Text]
 
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
 data LamAbsRule = MkLAbsRule { givenVars  :: GVarSet
-                                  , head      :: BaseTemplate
-                                  , body      :: ComplexPropn BaseTemplate }
+                                  , head      :: LamAbsBase
+                                  , body      :: ComplexPropn LamAbsBase }
 {-| This is best understood in the context of LamAbsRule  -}
-data BaseTemplate = MkTBase { getVarSeq :: OrigVarSeq
+data LamAbsBase = MkTBase { getVarSeq :: OrigVarSeq
                             , instTemplate :: Substn -> TemplInstanceOrNLA } 
 
 {-------------------------------------------------------------------------------

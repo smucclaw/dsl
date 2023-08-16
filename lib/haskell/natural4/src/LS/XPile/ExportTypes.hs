@@ -117,7 +117,8 @@ instance ShowTypesProlog ExpType where
             pretty tn <> pretty ", " <> pretty tn <> pretty ", " <>
             brackets (vsep (punctuate comma (map showTypesProlog fds)))
             )
-        )
+        ) <>
+        pretty "."
 
 rulesToPrologTp :: [SFL4.Rule] -> String
 rulesToPrologTp rs = show (vsep (map showTypesProlog (concatMap rule2ExpType rs)))
@@ -138,7 +139,17 @@ defsLocation n = "#/" ++ defsLocationName ++ "/" ++ n
 
 jsonType :: Pretty a => a -> Doc ann
 jsonType t =
-    dquotes (pretty "type") <> pretty ":" <> dquotes (pretty t)
+    dquotes (pretty "type") <> pretty ": " <> dquotes (pretty t)
+
+showRequireds :: [Field] -> Doc ann
+showRequireds fds =
+    dquotes (pretty "required") <> pretty ": " <>
+    brackets (hsep (punctuate comma (map (dquotes . pretty . fieldName) fds)))
+
+showRef :: TypeName -> Doc ann
+showRef n = 
+        dquotes (pretty "$ref") <> pretty ": " <>
+        dquotes (pretty (defsLocation n))
 
 instance ShowTypesJson FieldType where
     showTypesJson FTBoolean =
@@ -147,37 +158,44 @@ instance ShowTypesJson FieldType where
         jsonType "number"
     showTypesJson FTString =
         jsonType "string"
-    showTypesJson (FTRef n) =
-        dquotes (pretty "$ref") <> pretty ":" <>
-        dquotes (pretty (defsLocation n))
-    showTypesJson (FTList t) =
+    showTypesJson (FTRef n) = 
         jsonType "array" <> pretty "," <>
-        dquotes (pretty "items") <> pretty ":" <>
-        braces (showTypesJson t)
+        dquotes (pretty "minItems") <> pretty ": 1," <>
+        dquotes (pretty "maxItems") <> pretty ": 1," <>
+        dquotes (pretty "items") <> pretty ": " <>
+        braces (showRef n)
+    showTypesJson (FTList (FTRef n)) =
+        jsonType "array" <> pretty "," <>
+        dquotes (pretty "items") <> pretty ": " <>
+        braces (showRef n)
+    showTypesJson _ =
+        jsonType "string"
 
 instance ShowTypesJson Field where
     showTypesJson :: Field -> Doc ann
     showTypesJson (Field fn ft) =
-        dquotes (pretty fn) <> pretty ":" <> braces (showTypesJson ft)
+        dquotes (pretty fn) <> pretty ": " <> braces (showTypesJson ft)
 
 instance ShowTypesJson ExpType where
     showTypesJson (ExpType tn fds) =
-        dquotes (pretty tn) <> pretty ":" <>
+        dquotes (pretty tn) <> pretty ": " <>
         nest 4
         (braces (
             jsonType "object" <> pretty "," <>
-            dquotes (pretty "properties") <>  pretty ":" <>
+            dquotes (pretty "properties") <>  pretty ": " <>
             nest 4
-            (braces (vsep (punctuate comma (map showTypesJson fds))))
-            )
-        )
+            (braces (vsep (punctuate comma (map showTypesJson fds)))) <>
+            pretty "," <>
+            nest 4
+            (showRequireds fds)
+        ))
 
 jsonPreamble :: TypeName -> [Doc ann]
 jsonPreamble tn = [
     dquotes (pretty "$schema") <> pretty ":" <> dquotes (pretty "http://json-schema.org/draft-07/schema#"),
     jsonType "object",
-    dquotes (pretty "properties") <> pretty ":" <>
-    braces (dquotes (pretty "User") <> pretty ":" <>
+    dquotes (pretty "properties") <> pretty ": " <>
+    braces (dquotes (pretty "User") <> pretty ": " <>
         braces (showTypesJson (FTList (FTRef tn))))
     ]
 
@@ -192,7 +210,7 @@ rulesToJsonSchema rs =
                     (vsep (punctuate comma
                     (
                         jsonPreamble (typeName rt) ++
-                        [dquotes (pretty defsLocationName) <> pretty ":" <>
+                        [dquotes (pretty defsLocationName) <> pretty ": " <>
                         braces (
                             nest 4
                             (vsep (punctuate comma (map showTypesJson ets)))

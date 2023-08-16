@@ -34,9 +34,13 @@ import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
 
+import LS.Types qualified as L4
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.CheckL4Input (loadRawL4AsUnvalid, checkAndRefine, L4Rules, ValidHornls)
+import LS.XPile.LogicalEnglish.Internal 
+      (L4Rules, ValidHornls, Unvalidated,
+      check, refine,
+      loadRawL4AsUnvalid, gvarsFromL4Rule)
 import LS.XPile.LogicalEnglish.Common (
     L4Prog,
     (|>)
@@ -56,22 +60,34 @@ But for now, we will help ourselves, undeservedly, to the assumption that the L4
    L4 rules -> SimpleL4HCs -> LamAbsRules
 -------------------------------------------------------------------------------}
 
+-- | TODO: Work on implementing this and adding the Monad Validate or Data.Validation stuff instead of Maybe (i.e., rly doing checks upfront and carrying along the error messages and potential warnings) after getting enoguh of the main transpiler out
+checkAndRefine :: L4Rules Unvalidated -> Maybe (L4Rules ValidHornls)
+checkAndRefine rawrules = do
+  validatedL4rules <- check rawrules
+  return $ refine validatedL4rules
 
-simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
-simplifyL4rule = undefined
 
+-- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
+{- | 
 
+-}
+simplifyL4rule :: L4.Rule -> SimpleL4HC
+simplifyL4rule l4r = 
+  -- precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
+  -- TODO: This invariant will have to be established later (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
+  let gvars = gvarsFromL4Rule l4r
+      (rhead, rbody) = simplifyL4HC (Prelude.head $ L4.clauses l4r)
+                      -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
+  in MkSL4hc { givenVars = gvars, head = rhead, body = rbody }
 
+              
 lamAbstract :: SimpleL4HC -> LamAbsRule
 lamAbstract = undefined
 
 
 ----- helper funcs -----------------
-
--- gvarsFromL4Rule :: L4Rules ValidHornls -> GVarSet
--- gvarsFromL4Rule = undefined
-
-
+simplifyL4HC :: L4.HornClause2 -> ([Cell], ComplexPropn [Cell])
+simplifyL4HC = undefined
 
 {-------------------------------------------------------------------------------
    LamAbsRules -> LE Nat Lang Annotations 

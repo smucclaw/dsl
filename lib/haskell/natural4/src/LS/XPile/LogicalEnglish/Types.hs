@@ -12,10 +12,10 @@ module LS.XPile.LogicalEnglish.Types (
     , ComplexPropn
 
     -- L4-related types
-    , GVar
+    , GVar(..)
     , GVarSet
     , Cell
-    , SimpleL4HC
+    , SimpleL4HC(..)
     -- , L4ComplexPropn
 
     -- Intermediate representation types
@@ -84,9 +84,10 @@ newtype GVar = MkGVar T.Text
 type GVarSet = HS.HashSet GVar
 
 
-newtype Cell = MkCell T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString)
+-- | We only need to be able to represent texts and integers in our current encoding  
+data Cell = MkCellT !T.Text
+          | MkCellI Integer
+  deriving stock (Show, Eq, Ord)
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
 data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
@@ -150,7 +151,6 @@ See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md fo
  -}
 type LECondnTree = ComplexPropn LETemplateInstance
 -- ^ so the `sum of`, `product of` would just be atomic LETemplateInsts / texts, since they don't differ indentation-wise from normal atomic conditions 
--- TODO: Ask Joe if the condition in `the max suhc that...` must be atomic
 
 
 {-------------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
--- {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -36,6 +36,7 @@ import Data.String (IsString)
 
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
+import LS.XPile.LogicalEnglish.CheckL4Input (checkAndRefine, L4Rules, ValidHornls)
 import LS.XPile.LogicalEnglish.Common (
     L4Prog,
     (|>)
@@ -52,55 +53,55 @@ But for now, we will help ourselves, undeservedly, to the assumption that the L4
 
 
 {-------------------------------------------------------------------------------
-   L4 rules -> SimpleL4HCs -> RuleIRs
+   L4 rules -> SimpleL4HCs -> LamAbsRules
 -------------------------------------------------------------------------------}
 
 
-simplifyL4rule :: L4.Rule -> SimpleL4HC
+simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
 simplifyL4rule = undefined
 
 
 
-makeIR :: SimpleL4HC -> RuleIR
-makeIR = undefined
+lamAbstract :: SimpleL4HC -> LamAbsRule
+lamAbstract = undefined
 
 
 ----- helper funcs -----------------
 
-gvarsFromL4Rule :: L4.Rule -> GVarSet
+gvarsFromL4Rule :: L4Rules ValidHornls -> GVarSet
 gvarsFromL4Rule = undefined
 
 
 
 {-------------------------------------------------------------------------------
-   RuleIRs -> LE Nat Lang Annotations 
+   LamAbsRules -> LE Nat Lang Annotations 
 -------------------------------------------------------------------------------}
 
 
--- | Generate natural language annotations from a RuleIR
-nlasFromRuleIR :: RuleIR -> HS.HashSet LENatLangAnnot
-nlasFromRuleIR = undefined
-{- for each base template (bt) in the RuleIR, across the head and body,
+-- | Generate natural language annotations from a LamAbsRule
+nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
+nlasFromLamAbsRule = undefined
+{- for each base template (bt) in the LamAbsRule, across the head and body,
   we take its sequence of original variable names <"v1", "v2", ..., "vn">,
   make a new sequence <"*a v1", "a v2", ..., "a vn">,
  and then instantiate the bt with that new sequence. 
 -}
 
-allNLAs :: [RuleIR] -> HS.HashSet LENatLangAnnot
-allNLAs ruleIRs = HS.unions $ map nlasFromRuleIR ruleIRs
+allNLAs :: [LamAbsRule] -> HS.HashSet LENatLangAnnot
+allNLAs lamAbsRules = HS.unions $ map nlasFromLamAbsRule lamAbsRules
 
 
 {-------------------------------------------------------------------------------
-    RuleIRs -> LE rules
+    LamAbsRules -> LE rules
 -------------------------------------------------------------------------------}
 
 
-leruleFromRuleIR :: RuleIR -> LERule
-leruleFromRuleIR = undefined
+leruleFromLamAbsRule :: LamAbsRule -> LERule
+leruleFromLamAbsRule = undefined
 {- `ruleLocalsIn` in Interpreter.hs may be worth looking at, though I suspect it'd be cleaner to do this with optics 
 -}
-allLERules :: [RuleIR] -> [LERule]
-allLERules = map leruleFromRuleIR 
+allLERules :: [LamAbsRule] -> [LERule]
+allLERules = map leruleFromLamAbsRule 
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing

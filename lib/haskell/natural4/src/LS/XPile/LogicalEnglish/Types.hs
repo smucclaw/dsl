@@ -21,9 +21,9 @@ module LS.XPile.LogicalEnglish.Types (
     -- Intermediate representation types
     , TemplateVar
     , OrigVarPrefix
-    , VarSeq
+    , OrigVarSeq
     , Substn
-    , RuleIR
+    , LamAbsRule
     , BaseTemplate
 
     -- LE-related types
@@ -62,8 +62,6 @@ import LS.XPile.LogicalEnglish.Common (
   Common types 
 -------------------------------------------------------------------------------}
 
-type OrigVarName = T.Text
-
 {-| This data structure is designed for easy pretty printing: 
     that's what dictates whether to keep or discard the original L4 structure. 
 -}
@@ -100,15 +98,18 @@ data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
 -------------------------------------------------------------------------------}
+-- | Current thought is that we only need text / strs to capture what the original var 'names' were, because what we will eventually be printing out strings!
+type OrigVarName = T.Text
+
 
 type OrigVarPrefix = T.Text
 {-| TemplateVars are what can get instantiated / substituted to give us either a natural language annotation or a LE rule -}
 data TemplateVar = MatchGVar !OrigVarName
-                 | IsNum !OrigVarName
                  | EndsInApos !OrigVarPrefix -- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
+             --  | IsNum !OrigVarName -- TODO: Work on this case later
       deriving stock (Eq, Ord, Show)
 
-type VarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
+type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
 -- | Substn is a sequence of values that should be substituted for the variables
 newtype Substn = MkSubstn [T.Text]
@@ -116,11 +117,11 @@ newtype Substn = MkSubstn [T.Text]
   deriving newtype (Eq, Ord)
 
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
-data RuleIR = MkRuleIR { givenVars  :: GVarSet
-                        , head      :: BaseTemplate
-                        , body      :: ComplexPropn BaseTemplate }
-{-| This is best understood in the context of RuleIR  -}
-data BaseTemplate = MkTBase { getVarSeq :: VarSeq
+data LamAbsRule = MkLAbsRule { givenVars  :: GVarSet
+                                  , head      :: BaseTemplate
+                                  , body      :: ComplexPropn BaseTemplate }
+{-| This is best understood in the context of LamAbsRule  -}
+data BaseTemplate = MkTBase { getVarSeq :: OrigVarSeq
                             , instTemplate :: Substn -> TemplInstanceOrNLA } 
 
 {-------------------------------------------------------------------------------

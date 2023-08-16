@@ -68,8 +68,10 @@ import LS.XPile.LogicalEnglish.Common (
 data ComplexPropn a =
   Atomic a
   -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-  | IsOpSuchTt a
-  -- ^ IS MAX / MIN / SUM / PROD -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
+  | IsMaxWhere a
+  | IsMinWhere a
+  | IsSumWhere a
+  -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
   | And [ComplexPropn a]
   | Or  [ComplexPropn a]
   | Not [ComplexPropn a]

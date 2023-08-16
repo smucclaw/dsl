@@ -22,7 +22,7 @@ import LS.Types
 import Prettyprinter
 import Prettyprinter.Render.Text
 import Text.Pretty.Simple qualified as TPS
-import qualified Data.Text.Internal.Lazy
+import Data.String (IsString)
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -340,10 +340,7 @@ infixr 5 </>, <//>
 
 -- | print haskell source in a way Org prefers
 srchs :: (Show a) => a -> Doc ann
-srchs = orgsrc "haskell" . pretty . pShowNoColor
+srchs = orgsrc "haskell" . pretty . TPS.pShowNoColor
 orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
 orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]
 
-
-pShowNoColor :: (Show a) => a -> Data.Text.Internal.Lazy.Text
-pShowNoColor = TPS.pShowNoColor

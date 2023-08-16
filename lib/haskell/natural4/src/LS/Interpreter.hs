@@ -50,7 +50,7 @@ import LS.RelationalPredicates
 import LS.Rule
 import LS.Types
 import Prettyprinter
-import Text.Pretty.Simple
+import Text.Pretty.Simple (pShowNoColor)
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream

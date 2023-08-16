@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards, LambdaCase #-}
 
 module LS.XPile.LogicalEnglish.CheckL4Input 
-  (
-      checkAndRefine
+  (   loadRawL4AsUnvalid
+    , checkAndRefine
     , L4Rules -- opaque
     , ValidHornls
+    , Unvalidated
   ) 
   where
 
@@ -33,6 +34,10 @@ data ValidHornls
 
 newtype L4Rules validStatus = MkL4Rules [Rule]
   deriving (Eq, Ord, Show)
+
+
+loadRawL4AsUnvalid :: [Rule] -> L4Rules Unvalidated
+loadRawL4AsUnvalid = MkL4Rules 
 
 -- | TODO: Work on implementing this and adding the Monad Validate or Data.Validation stuff instead of Maybe (i.e., rly doing checks upfront and carrying along the error messages and potential warnings) after getting enoguh of the main transpiler out
 checkAndRefine :: L4Rules Unvalidated -> Maybe (L4Rules ValidHornls)

@@ -36,7 +36,7 @@ import Data.String (IsString)
 
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.CheckL4Input (checkAndRefine, L4Rules, ValidHornls)
+import LS.XPile.LogicalEnglish.CheckL4Input (loadRawL4AsUnvalid, checkAndRefine, L4Rules, ValidHornls)
 import LS.XPile.LogicalEnglish.Common (
     L4Prog,
     (|>)
@@ -68,8 +68,8 @@ lamAbstract = undefined
 
 ----- helper funcs -----------------
 
-gvarsFromL4Rule :: L4Rules ValidHornls -> GVarSet
-gvarsFromL4Rule = undefined
+-- gvarsFromL4Rule :: L4Rules ValidHornls -> GVarSet
+-- gvarsFromL4Rule = undefined
 
 
 

@@ -318,7 +318,7 @@ prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
-commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> xs) <> line
+commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> concatMap T.lines xs) <> line
 
 -- | pretty print output without folding
 myrender :: Doc ann -> T.Text

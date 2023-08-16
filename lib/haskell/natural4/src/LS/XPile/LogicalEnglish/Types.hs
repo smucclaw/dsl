@@ -71,7 +71,7 @@ data ComplexPropn a =
   | And [ComplexPropn a]
   | Or  [ComplexPropn a]
   | Not [ComplexPropn a]
-  | IsMax [ComplexPropn a]
+  | IsMax a
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 {-------------------------------------------------------------------------------

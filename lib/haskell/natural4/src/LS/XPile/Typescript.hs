@@ -23,6 +23,7 @@ import AnyAll
 
 import Data.HashMap.Strict qualified as Map
 -- import qualified Data.Text as T
+import qualified Data.Text.Lazy as DTL
 import qualified Data.List.NonEmpty as NE
 import Data.List (intercalate, nub)
 import Data.List.Extra (groupSort)
@@ -44,7 +45,6 @@ import LS.PrettyPrinter
     prettySimpleType,
     snake_case,
     snake_inner,
-    pShowNoColor,
     vvsep,
     (<//>),
     (</>),
@@ -103,6 +103,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
+import Text.Pretty.Simple (pShowNoColor)
 import LS.XPile.Logging
 
 -- JsonLogic
@@ -216,7 +217,8 @@ jsInstances l4i = return $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
-          "// symtab' = " <+> commentWith "// " (pShowNoColor symtab') <//>
+          "// symtab' = " <+> commentWith "// " [DTL.toStrict $ pShowNoColor symtab'] <//>
+          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
 
           -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value

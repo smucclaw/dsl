@@ -35,19 +35,19 @@ import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
 
 import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..))
+import LS.Types (RelationalPredicate(..), RPRel(..))
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.Internal 
+import LS.XPile.LogicalEnglish.Internal
       (L4Rules, ValidHornls, Unvalidated,
-      check, refine,
-      loadRawL4AsUnvalid, gvarsFromL4Rule)
+      check, refine, loadRawL4AsUnvalid,
+      gvarsFromL4Rule, mtexpr2cell, mtes2cells, rprel2cellt)
 import LS.XPile.LogicalEnglish.Common (
     L4Prog,
     (|>)
     )
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
+import LS.XPile.LogicalEnglish.UtilsLEReplDev () -- for prototyping
 
 {- TODO: After we get a v simple end-to-end prototype out, 
 we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
@@ -70,35 +70,40 @@ checkAndRefine rawrules = do
 
 -- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
 {- | 
-
+  Precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
+  TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
 -}
 simplifyL4rule :: L4.Rule -> SimpleL4HC
-simplifyL4rule l4r = 
-  -- precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
-  -- TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
+simplifyL4rule l4r =
   let gvars = gvarsFromL4Rule l4r
       (rhead, rbody) = simplifyL4HC (Prelude.head $ L4.clauses l4r)
                       -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
   in MkSL4hc { givenVars = gvars, head = rhead, body = rbody }
 
-              
+
 lamAbstract :: SimpleL4HC -> LamAbsRule
 lamAbstract = undefined
 
 
 ----- helper funcs -----------------
 simplifyL4HC :: L4.HornClause2 -> ([Cell], ComplexPropn [Cell])
-simplifyL4HC l4hc = ((simplifyHead l4hc.hHead), (simplifyBody l4hc.hBody))
- 
+simplifyL4HC l4hc = (simplifyHead l4hc.hHead, simplifyBody l4hc.hBody)
+  
 simplifyHead :: L4.RelationalPredicate -> [Cell]
 simplifyHead = \case
-  (RPConstraint mt1 rel mt2) -> undefined 
-  (RPMT mt)                  -> undefined
+  (RPMT exprs)                     -> mtes2cells exprs
+  (RPConstraint exprsl rel exprsr) -> if rel == RPis 
+                                      then mtes2cells exprsl <> [rprel2cellt rel] <> mtes2cells exprsl
+                                      else error "shouldn't be seeing any other operator for RPConstraint in our encoding"
+    -- ^ The only thing we have to care about for the RPCosntraint is IS 
   (RPnary rel rps)           -> undefined
   _ -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
 
 {-
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo | RPmap
+-}
 
+{-
 inspiration:
 
 from types.hs
@@ -129,7 +134,7 @@ hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hH
 
 -}
 
-simplifyBody :: (Maybe L4.BoolStructR) -> ComplexPropn [Cell]
+simplifyBody :: Maybe L4.BoolStructR -> ComplexPropn [Cell]
 simplifyBody = undefined
 
 {-------------------------------------------------------------------------------
@@ -157,10 +162,9 @@ allNLAs lamAbsRules = HS.unions $ map nlasFromLamAbsRule lamAbsRules
 
 leruleFromLamAbsRule :: LamAbsRule -> LERule
 leruleFromLamAbsRule = undefined
-{- `ruleLocalsIn` in Interpreter.hs may be worth looking at, though I suspect it'd be cleaner to do this with optics 
--}
+
 allLERules :: [LamAbsRule] -> [LERule]
-allLERules = map leruleFromLamAbsRule 
+allLERules = map leruleFromLamAbsRule
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing

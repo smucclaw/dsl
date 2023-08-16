@@ -217,7 +217,7 @@ jsInstances l4i = return $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
-          "// symtab' = " <+> commentWith "// " [DTL.toStrict $ pShowNoColor symtab'] <//>
+          "// symtab' = " <+> commentWith "// " (DTL.toStrict <$> DTL.lines (pShowNoColor symtab')) <//>
           -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
 
           -- [TODO] there is a mysterious dup here for alice in micromvp3

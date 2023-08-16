@@ -35,6 +35,7 @@ import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
 
 import LS.Types qualified as L4
+import LS.Types (RelationalPredicate(..))
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.Internal 
@@ -74,7 +75,7 @@ checkAndRefine rawrules = do
 simplifyL4rule :: L4.Rule -> SimpleL4HC
 simplifyL4rule l4r = 
   -- precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
-  -- TODO: This invariant will have to be established later (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
+  -- TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
   let gvars = gvarsFromL4Rule l4r
       (rhead, rbody) = simplifyL4HC (Prelude.head $ L4.clauses l4r)
                       -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
@@ -87,7 +88,49 @@ lamAbstract = undefined
 
 ----- helper funcs -----------------
 simplifyL4HC :: L4.HornClause2 -> ([Cell], ComplexPropn [Cell])
-simplifyL4HC = undefined
+simplifyL4HC l4hc = ((simplifyHead l4hc.hHead), (simplifyBody l4hc.hBody))
+ 
+simplifyHead :: L4.RelationalPredicate -> [Cell]
+simplifyHead = \case
+  (RPConstraint mt1 rel mt2) -> undefined 
+  (RPMT mt)                  -> undefined
+  (RPnary rel rps)           -> undefined
+  _ -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
+
+{-
+
+inspiration:
+
+from types.hs
+rp2mt :: RelationalPredicate -> MultiTerm
+rp2mt (RPParamText    pt)            = pt2multiterm pt
+rp2mt (RPMT           mt)            = mt
+rp2mt (RPConstraint   mt1 rel mt2)   = mt1 ++ [MTT $ rel2txt rel] ++ mt2
+rp2mt (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [MTT $ rel2txt rel] ++ [MTT $ bsr2text bsr] -- [TODO] is there some better way to bsr2mtexpr?
+rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
+
+From md transpiler:
+rpFilter :: RelationalPredicate -> MultiTerm
+rpFilter (RPParamText pt) = pt2multiterm pt
+rpFilter (RPConstraint mt1 rel mt2) = mt1 ++ mt2
+rpFilter (RPBoolStructR mt1 rel bsr) = mt1++ bs2mt bsr
+rpFilter (RPnary rel rps) = concatMap rpFilter rps
+rpFilter (RPMT mt) = mt
+
+
+typescript:
+hc2ts :: Interpreted -> HornClause2 -> Doc ann
+hc2ts _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
+hc2ts _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2) <+> "// hc2ts RPConstraint"
+hc2ts _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)" 
+hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i) <+> "// hc2ts RPParamText"
+hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
+hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps} <+> "// hc2ts RPnary"
+
+-}
+
+simplifyBody :: (Maybe L4.BoolStructR) -> ComplexPropn [Cell]
+simplifyBody = undefined
 
 {-------------------------------------------------------------------------------
    LamAbsRules -> LE Nat Lang Annotations 

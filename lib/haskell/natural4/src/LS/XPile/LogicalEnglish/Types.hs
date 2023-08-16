@@ -94,6 +94,7 @@ type GVarSet = HS.HashSet GVar
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
           | MkCellI !Integer
+          | MkCellIs
   deriving stock (Show, Eq, Ord)
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more

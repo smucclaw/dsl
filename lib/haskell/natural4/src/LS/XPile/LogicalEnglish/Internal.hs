@@ -11,7 +11,6 @@ module LS.XPile.LogicalEnglish.Internal
     , gvarsFromL4Rule
     , mtexpr2cell
     , mtes2cells
-    , rprel2cellt
   ) 
   where
 
@@ -115,15 +114,6 @@ mtexpr2cell = \case
 -- | convenience function for when `map mtexpr2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]
 mtes2cells = map mtexpr2cell
-
-rprel2cellt :: L4.RPRel -> Cell 
-rprel2cellt = \case 
-  RPis  -> MkCellT "is"
-  RPnot -> MkCellT "not"
-  RPand -> MkCellT "and"
-  RPor -> MkCellT "or"
-  _ -> error "other rp rels not supported"
-
 
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]

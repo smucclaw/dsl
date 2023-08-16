@@ -41,7 +41,7 @@ import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.Internal
       (L4Rules, ValidHornls, Unvalidated,
       check, refine, loadRawL4AsUnvalid,
-      gvarsFromL4Rule, mtexpr2cell, mtes2cells, rprel2cellt)
+      gvarsFromL4Rule, mtexpr2cell, mtes2cells)
 import LS.XPile.LogicalEnglish.Common (
     L4Prog,
     (|>)
@@ -93,12 +93,14 @@ simplifyHead :: L4.RelationalPredicate -> [Cell]
 simplifyHead = \case
   (RPMT exprs)                     -> mtes2cells exprs
   (RPConstraint exprsl rel exprsr) -> if rel == RPis 
-                                      then mtes2cells exprsl <> [rprel2cellt rel] <> mtes2cells exprsl
+                                      then mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsl
+                                         {- ^ Can't just lowercase IS and transform the mtexprs to (either Text or Integer) Cells 
+                                         because it could be a IS-number, 
+                                         and when making template vars later, we need to be able to disambiguate between something tt was an IS-kw and smtg tt was originally lowercase 'is'. 
+                                         TODO: But do think more abt this when we implement the intermed stage
+                                        -}
                                       else error "shouldn't be seeing any other operator for RPConstraint in our encoding"
-                                          {- ^ The only thing we have to care about for the RPCosntraint is IS 
-                                          No need to worry abt the is-num pattern at this stage: 
-                                          the mte2cell xfmn already saves integers as such,
-                                          and we only need to log it as the `IsNum` variant of a TemplateVar when we get to making a LamAbstractedRule  -}
+                                          
   (RPnary rel rps)                -> undefined
   _                               -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
 

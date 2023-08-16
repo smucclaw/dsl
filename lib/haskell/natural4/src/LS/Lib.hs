@@ -172,8 +172,16 @@ getConfig o = do
         }
 
 
-parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]]
-parseRules o = do
+-- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
+-- 
+-- At some point we added functionality that allowed sub-rules to be defined inline within a top-level rule, which is why we now have IO [... [Rule]].
+--
+-- Note that sub-rules are themselves rules, which is why we only have one Rule type here.
+--
+-- Shouldn't the idea of sub-rules and top-level rules be reflected in a type hierarchy?
+--
+parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
+parseRules o = do     
   runConfig <- getConfig o
   let files = getNoLabel $ file o
   if null files

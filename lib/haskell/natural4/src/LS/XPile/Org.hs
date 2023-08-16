@@ -19,6 +19,7 @@ import LS.Interpreter
       ruleDecisionGraph,
       expandRule,
       classGraph,
+      classRoots,
       extractEnums,
       defaultToSuperClass, defaultToSuperType,
       attrsAsMethods,
@@ -95,6 +96,10 @@ musings l4i rs =
                    , let fullyQualifiedClassName = Text.intercalate "." (reverse cname) ]
            , "** The entire classgraph"
            , srchs cg
+
+           , "** the roots of the graph"
+           , "have indegree count 0"
+           , srchs (classRoots (classtable l4i))
            
            , "** Enums"
            , vvsep [ "***" <+> snake_case className

@@ -26,7 +26,7 @@ import LS.Types
     DList,
     Deontic (DMust),
     Depth,
-    HornClause (HC),
+    HornClause (HC, hBody),
     HornClause2,
     MTExpr (MTT),
     MultiTerm,
@@ -350,6 +350,15 @@ hasGiveth _          = False
 hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
+
+-- | is a decision rule a predicate or is it a fact?
+-- this may be fragile -- we believe that a rule is a fact if it has exactly one horn clause
+-- whose body is a Nothing.
+isFact :: Rule -> Bool
+isFact r
+  | hasClauses r = all ((Nothing ==) . hBody) (clauses r)
+                   && length (clauses r) == 1
+  | otherwise = False
 
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead

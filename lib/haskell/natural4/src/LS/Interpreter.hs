@@ -191,6 +191,17 @@ classGraph (CT ch) ancestors = concat
   , let nodePath = childname : ancestors
   ]
 
+-- | classes at the root of the container hierarchies.
+-- Basically, these classes have other classes, but no other classes have them.
+classRoots :: ClsTab -> [(EntityType, TypedClass)]
+classRoots ct@(CT ch) =
+  let cg = classGraphFGL ct
+  in [ (className, typedClass)
+     | (n, className) <- labNodes cg
+     , indeg cg n == 0
+     , (Just typedClass) <- [Map.lookup className ch]
+     ]
+
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
 allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gcname)
@@ -210,33 +221,36 @@ type MyClassName = EntityType
 -- [TODO] we should align this with classGraph, which isn't actually an fgl inductive graph yet.
 topsortedClasses :: ClsTab -> [MyClassName]
 topsortedClasses ct =
-  [ cn
-  | n <- topsort asGraph
-  , (Just cn) <- [Map.lookup n idToType]
-  ]
+  let cGraph = classGraphFGL ct
+  in [ cn
+     | n <- topsort cGraph
+     , (Just cn) <- [lab cGraph n]
+     ]
+
+classGraphFGL :: ClsTab -> Gr MyClassName ()
+classGraphFGL ct =
+  -- there are a couple different kinds of dependencies...
+  let child2parent = getInheritances ct       -- child depends on parent
+      class2attrtypes = [ (cn, ut)            -- class depends on attribute types
+                        | cn <- getCTkeys ct
+                        , ts <- getAttrTypesIn ct cn
+                        , Right ut <- [getUnderlyingType ts]
+                        ]
+  in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
   where
-    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
-    allClasses :: ClsTab -> [MyClassName]
-    allClasses = getCTkeys
-    -- first let's assign integer identifiers to each type found in the class hierarchy
-    typeToID = Map.fromList (Prelude.zip allTypes [1..])
-    idToType = Map.fromList $ swap <$> Map.toList typeToID
-    asGraph :: Gr MyClassName ()
-    asGraph =
-      -- there are a couple different kinds of dependencies...
-      let child2parent = getInheritances ct       -- child depends on parent
-          class2attrtypes = [ (cn, ut)            -- class depends on attribute types
-                            | cn <- getCTkeys ct
-                            , ts <- getAttrTypesIn ct cn
-                            , Right ut <- [getUnderlyingType ts]
-                            ]
-      in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
     myEdges :: [(MyClassName, MyClassName)] -> [(Int, Int, ())]
     myEdges abab = [ (aid, bid, ())
                    | (a,b) <- abab
                    , (Just aid) <- [Map.lookup a typeToID]
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
+    allTypes :: [MyClassName]
+    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
+    allClasses :: ClsTab -> [MyClassName]
+    allClasses = getCTkeys
+    -- first let's assign integer identifiers to each type found in the class hierarchy
+    typeToID = Map.fromList (Prelude.zip allTypes [1..])
+    idToType = Map.fromList $ swap <$> Map.toList typeToID
 
 -- | Extract all Enum declarations recursing through class declarations, so we can hoist them to top-level for use by, say, the Typescript transpiler.
 --
@@ -492,9 +506,9 @@ decisionRoots rg = do
               ]
 
 -- remove reflexive edges that go from node n to node n
-dereflexed :: RuleGraph -> RuleGraph
-dereflexed rg =
-  foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
+dereflexed :: Gr a b -> Gr a b
+dereflexed gr =
+  foldr (\n g -> delEdge (n,n) g) gr (nodes gr)
 
 
 -- | extract a data flow graph

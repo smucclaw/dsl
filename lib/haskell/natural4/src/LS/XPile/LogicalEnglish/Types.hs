@@ -14,27 +14,27 @@ module LS.XPile.LogicalEnglish.Types (
     -- L4-related types
     , GVar(..)
     , GVarSet
-    , Cell
+    , Cell(..)
     , SimpleL4HC(..)
     -- , L4ComplexPropn
 
     -- Intermediate representation types
-    , TemplateVar
+    , TemplateVar(..)
     , OrigVarPrefix
     , OrigVarSeq
     , Substn
-    , LamAbsRule
-    , LamAbsBase
+    , LamAbsRule(..)
+    , LamAbsBase(..)
 
     -- LE-related types
     , LENatLangAnnot
     , LETemplateInstance
-    , TemplInstanceOrNLA
-    , LERule
-    , LECondnTree
+    , TemplInstanceOrNLA(..)
+    , LERule(..)
+    , LECondnTree(..)
 
     -- Configuration and LE-specific consts
-    , TranspilerCfg
+    , TranspilerCfg(..)
 ) where
 
 
@@ -93,7 +93,7 @@ type GVarSet = HS.HashSet GVar
 
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
-          | MkCellI Integer
+          | MkCellI !Integer
   deriving stock (Show, Eq, Ord)
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
@@ -108,7 +108,6 @@ data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
 -------------------------------------------------------------------------------}
 -- | Current thought is that we only need text / strs to capture what the original var 'names' were, because what we will eventually be printing out strings!
 type OrigVarName = T.Text
-
 
 type OrigVarPrefix = T.Text
 {-| TemplateVars mark the places where we'd instantiate / substitute in the LamAbsBase / condition template to get either a natural language annotation or a LE rule. They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the LamAbsBase. -}

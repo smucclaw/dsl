@@ -47,7 +47,7 @@ import LS.XPile.LogicalEnglish.Common (
     (|>)
     )
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev () -- for prototyping
+import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {- TODO: After we get a v simple end-to-end prototype out, 
 we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
@@ -95,9 +95,30 @@ simplifyHead = \case
   (RPConstraint exprsl rel exprsr) -> if rel == RPis 
                                       then mtes2cells exprsl <> [rprel2cellt rel] <> mtes2cells exprsl
                                       else error "shouldn't be seeing any other operator for RPConstraint in our encoding"
-    -- ^ The only thing we have to care about for the RPCosntraint is IS 
-  (RPnary rel rps)           -> undefined
-  _ -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
+                                          {- ^ The only thing we have to care about for the RPCosntraint is IS 
+                                          No need to worry abt the is-num pattern at this stage: 
+                                          the mte2cell xfmn already saves integers as such,
+                                          and we only need to log it as the `IsNum` variant of a TemplateVar when we get to making a LamAbstractedRule  -}
+  (RPnary rel rps)                -> undefined
+  _                               -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
+
+{- ^
+An example of an is-num pattern in a RPConstraint
+[ HC
+    { hHead = RPConstraint
+        [ MTT "total savings" ] RPis
+        [ MTI 100 ]
+    , hBody = Just
+        ( All Nothing
+            [ Leaf
+                ( RPConstraint
+                    [ MTT "initial savings" ] RPis
+                    [ MTF 22.5 ]
+                )
+-}
+
+
+
 
 {-
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo | RPmap

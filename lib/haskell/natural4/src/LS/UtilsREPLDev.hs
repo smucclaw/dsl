@@ -9,15 +9,12 @@ Simple utils / convenience functions for prototyping / dev-ing at the REPL.
 
 module LS.UtilsREPLDev
   ( StartDir, BaseFileName,
-    
+    pPrint, -- reexport
     filesInDirWithExtn,
     findFileByNameInDir,
     csvsInDir,
     l4csv2rules,
-    leTestcasesDir,
-    leTestCSVs,
-
-    takeFileName
+    pRules
   )
 where
 
@@ -90,16 +87,7 @@ l4csv2rules startdir csvFpath =
 Util function for __pretty printing (in color)__ raw rules from a L4 CSV filepath
 ==== __Examples__ 
 >>> pRules "test/Testcases/LogicalEnglish/" "indentation-databreach.csv"
+>>> pRules "test/Testcases/" "motor-insurance-1.csv"
 -}
 pRules :: StartDir -> BaseFileName -> IO ()
 pRules startdir csvFpath = l4csv2rules startdir csvFpath >>= pPrint
-
-
-------- TODO: LE-specific things; to be moved into a better place when I have more time
--- | Convenient, tho not the best practice to put this in this module
-leTestcasesDir :: FilePath
-leTestcasesDir = "test" </> "Testcases" </> "LogicalEnglish"
-
--- | Returns a list of csvs in the LE subdir of test/Testcases
-leTestCSVs :: IO [FilePath]
-leTestCSVs = csvsInDir leTestcasesDir

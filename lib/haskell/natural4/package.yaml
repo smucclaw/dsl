@@ -72,6 +72,7 @@ dependencies:
   - prettyprinter-interp
   - json
   - jsonlogic
+  - optics
 
 language: GHC2021
 

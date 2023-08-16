@@ -111,10 +111,11 @@ type OrigVarName = T.Text
 
 
 type OrigVarPrefix = T.Text
-{-| TemplateVars are what can get instantiated / substituted to give us either a natural language annotation or a LE rule -}
+{-| TemplateVars mark the places where we'd instantiate / substitute in the LamAbsBase / condition template to get either a natural language annotation or a LE rule. They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the LamAbsBase. -}
 data TemplateVar = MatchGVar !OrigVarName
                  | EndsInApos !OrigVarPrefix -- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
-             --  | IsNum !OrigVarName -- TODO: Work on this case later
+                 | IsNum !OrigVarName 
+                 -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
       deriving stock (Eq, Ord, Show)
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
@@ -126,11 +127,11 @@ newtype Substn = MkSubstn [T.Text]
 
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
 data LamAbsRule = MkLAbsRule { givenVars  :: GVarSet
-                                  , head      :: LamAbsBase
-                                  , body      :: ComplexPropn LamAbsBase }
+                             , head      :: LamAbsBase
+                             , body      :: ComplexPropn LamAbsBase }
 {-| This is best understood in the context of LamAbsRule  -}
 data LamAbsBase = MkTBase { getVarSeq :: OrigVarSeq
-                            , instTemplate :: Substn -> TemplInstanceOrNLA } 
+                          , instTemplate :: Substn -> TemplInstanceOrNLA } 
 
 {-------------------------------------------------------------------------------
   LE data types

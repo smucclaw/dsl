@@ -101,7 +101,7 @@ instance ShowTypesProlog FieldType where
     showTypesProlog FTBoolean = pretty "boolean"
     showTypesProlog FTNumber = pretty "number"
     showTypesProlog FTString = pretty "string"
-    showTypesProlog (FTRef n) = pretty n
+    showTypesProlog (FTRef n) = pretty "ref" <> parens (pretty n)
     showTypesProlog (FTList t) = pretty "list" <> parens (showTypesProlog t)
 
 
@@ -120,9 +120,19 @@ instance ShowTypesProlog ExpType where
         ) <>
         pretty "."
 
-rulesToPrologTp :: [SFL4.Rule] -> String
-rulesToPrologTp rs = show (vsep (map showTypesProlog (concatMap rule2ExpType rs)))
+-- the root data type of a Json Schema is always embedded in an entrypoint,
+-- here called "toplevel"
+entrypointName :: String
+entrypointName = "toplevel"
 
+rulesToPrologTp :: [SFL4.Rule] -> String
+rulesToPrologTp rs = 
+    let ets = concatMap rule2ExpType rs in
+        (case ets of
+            [] -> show emptyDoc
+            rt : rts -> 
+                let entry = ExpType entrypointName [Field entrypointName (FTRef (typeName rt))] in
+                show (vsep (map showTypesProlog (entry:ets))))
 
 ------------------------------------
 -- Output of types to Json Schema 
@@ -131,6 +141,8 @@ rulesToPrologTp rs = show (vsep (map showTypesProlog (concatMap rule2ExpType rs)
 class ShowTypesJson x where
     showTypesJson :: x -> Doc ann
 
+-- definitions are located in a section called $defs according to the Json Schema standard,
+-- but the choice seems to be arbitrary.
 defsLocationName :: String
 defsLocationName = "$defs"
 
@@ -151,6 +163,11 @@ showRef n =
         dquotes (pretty "$ref") <> pretty ": " <>
         dquotes (pretty (defsLocation n))
 
+
+-- Due to limitations of the JSON Form Web UI builder, 
+-- single references are not represented as single objects,
+-- but arrays of length 1.
+-- List types can only have nesting level 1 (a limitation inherited from Natural4)
 instance ShowTypesJson FieldType where
     showTypesJson FTBoolean =
         jsonType "boolean"
@@ -195,7 +212,7 @@ jsonPreamble tn = [
     dquotes (pretty "$schema") <> pretty ":" <> dquotes (pretty "http://json-schema.org/draft-07/schema#"),
     jsonType "object",
     dquotes (pretty "properties") <> pretty ": " <>
-    braces (dquotes (pretty "User") <> pretty ": " <>
+    braces (dquotes (pretty entrypointName) <> pretty ": " <>
         braces (showTypesJson (FTList (FTRef tn))))
     ]
 

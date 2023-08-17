@@ -331,7 +331,7 @@ rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
 rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
-rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [MTT $ rel2op rel], mt2]
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1 ++ [MTT $ rel2op rel] ++ mt2]
 rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ MTT (rel2op rel) : bod
                                               | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 rp2bodytexts (RPnary         rel rps)       = [MTT (rel2op rel), MTT "("] : concatMap rp2bodytexts rps ++ [[MTT ")"]]
@@ -401,6 +401,7 @@ data InterpreterOptions = IOpts
   }
   deriving (Eq, Ord, Show)
 
+-- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
 defaultInterpreterOptions :: InterpreterOptions
 defaultInterpreterOptions = IOpts
   { enums2decls = False
@@ -420,9 +421,10 @@ getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot in
 data ValuePredicate = ValPred
   { moduleName :: [EntityName]  -- MoneyLib
   , scopeName  :: [EntityName]  -- DollarJurisdictions
-  , objPath    :: [EntityName]  -- ClassA, RecordAttr. If this list is null, then the "attribute" is toplevel / module-global
-  , attrName   ::  EntityName   -- AttributeName
-  , attrRel    ::  Maybe RPRel
+  , objPath    :: [EntityName]  -- ClassA, ClassB, RecordAttrName --> ClassA.ClassB
+                  -- If this list is null, then the "attribute" is toplevel / module-global
+  , attrName   ::  EntityName   -- ClassA, ClassB, RecordAttrName --> RecordAttrName
+  , attrRel    ::  Maybe RPRel  -- 
   , attrVal    ::  Maybe RelationalPredicate
   , attrCond   ::  Maybe BoolStructR
   , attrIType  ::  Inferrable TypeSig

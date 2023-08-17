@@ -203,7 +203,7 @@ toToken "TYPE"   = [TypeSeparator, A_An]
 toToken "IS A"   = [TypeSeparator, A_An]
 toToken "IS AN"  = [TypeSeparator, A_An]
 toToken "IS THE" = [TypeSeparator, A_An]
-toToken "A"      = pure A_An
+toToken "A"      = pure A_An -- [TODO] this is going to break entirely innocent end-user phrasing like 7 8 9 A B C D E
 toToken "AN"     = pure A_An
 toToken "THE"    = pure A_An
 

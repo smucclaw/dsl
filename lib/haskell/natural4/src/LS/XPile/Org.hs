@@ -23,7 +23,6 @@ import LS.Interpreter
       extractEnums,
       defaultToSuperClass, defaultToSuperType,
       attrsAsMethods,
-      entryPoints,
       )
 
 import LS.DataFlow
@@ -127,7 +126,6 @@ musings l4i rs =
            , let aam = xpLog $ attrsAsMethods rs -- [TODO] this duplicates work done in the Interpreter -- find a way to coherently log common errors from the Interpreter itself, clean up l4i's valuePreds
              in srchs (fst aam) </> vsep (pretty <$> snd aam)
            , "** Dataflow modelling"
-           , "*** entryPoints" </> let (ePout, ePerr) = xpLog (entryPoints l4i) in srchs ePout </> vsep (pretty <$> ePerr)
            , "** the Rule Decision Graph"
            , orgexample (pretty (prettify (first ruleLabelName decisionGraph)))
            , "*** logging output" </> vsep (pretty <$> ruleGraphErr l4i)

@@ -277,10 +277,10 @@ tsClasses l4i = return $
           <//> "  // using prettySimpleType (old code path)"
           <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
-                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
-                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
+                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className t)
+                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className t)
                                    Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"
-                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
+                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className t)
                                    Nothing -> "// tsClasses nothing case"
                                  <> semi
                                | attrname <- getCTkeys children
@@ -310,6 +310,22 @@ tsClasses l4i = return $
                   Just parent              -> " extends" <+> pretty parent
         ]
 
+-- | define a class method by searching through the l4i for two kinds of class method definition styles:
+--
+-- first,   DECIDE   MyClass's  MyValue  IS  such and such
+--
+-- second,   GIVEN   mc             IS  A  MyClass
+--                   someArgument   IS  A  number
+--           DECIDE  mc's  MyValue  IS  2 * someArgument
+--
+-- both cases result in the same method definition that looks something like
+-- @
+--    class MyClass { MyValue = (someArgument) => { return 2 * someArgument } }
+--
+
+-- methodFor :: Interpreted -> EntityType -> 
+
+-- | if we can't find a decision rule defining this particular attribute as a method, we return a default method
 defaultMethod :: TypeSig -> Doc ann
 defaultMethod (SimpleType TOne "string") = " return \"\" "
 defaultMethod (SimpleType TOne "number") = " return 0 "
@@ -391,7 +407,7 @@ methods l4i mt =
                              ]
   in
   [ line <> ("// methods go here; attrName = " <> viaShow attrName')
-    </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>"
+    </> snake_inner (MTT attrName') <+> equals <+> parens emptyDoc <+> "=>"
     <+> braces ( line <> indent 2 (
                  vsep [ vpTS <> semi
                       | vp@ValPred{..} <- vps
@@ -406,8 +422,7 @@ vpToTS :: Interpreted -> ValuePredicate -> Doc ann
 vpToTS l4i ValPred{..}
   | attrCond == Just (Leaf (RPMT [MTT "OTHERWISE"]))
     || isNothing attrCond                = "return" <+> pretty attrVal
-  | isJust    attrCond && isJust attrVal = vsep [ "//" <+> "attrCond" <> equals <> viaShow attrCond
-                                                , "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal) ]
+  | isJust    attrCond && isJust attrVal = "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal)
   | otherwise                            = "return null // [TODO]"
   where
     rp2ts :: Maybe BoolStructR -> Doc ann

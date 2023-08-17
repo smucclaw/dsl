@@ -326,6 +326,18 @@ getAttrTypesIn ct classname =
                               ]
 
 
+-- | structure the rules as a graph.
+-- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
+
+-- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
+-- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
+--
+-- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
+-- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
+
+type RuleGraphEdgeLabel = ()
+type RuleGraph = Gr Rule RuleGraphEdgeLabel
+
 -- | used by `ruleDecisionGraph`; a map from a rule to a unique integer identifier for that rule, used in the `RuleGraph`
 type RuleIDMap = Map.HashMap Rule Int
 

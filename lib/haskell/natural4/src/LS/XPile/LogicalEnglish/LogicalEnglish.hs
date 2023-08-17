@@ -93,7 +93,8 @@ simplifyHead :: L4.RelationalPredicate -> [Cell]
 simplifyHead = \case
   (RPMT exprs)                     -> mtes2cells exprs
   (RPConstraint exprsl rel exprsr) -> if rel == RPis 
-                                      then mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsl
+                                      then mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr
+                                      --TODO: Need to account for / stash info for IS NOT --- I think that would be in this variant, but need to check 
                                          {- ^ Can't just lowercase IS and transform the mtexprs to (either Text or Integer) Cells 
                                          because it could be a IS-number, 
                                          and when making template vars later, we need to be able to disambiguate between something tt was an IS-kw and smtg tt was originally lowercase 'is'. 

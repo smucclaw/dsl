@@ -10,6 +10,7 @@ module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , ComplexPropn
+    , OpWhere
 
     -- L4-related types
     , GVar(..)
@@ -68,14 +69,15 @@ import LS.XPile.LogicalEnglish.Common (
 data ComplexPropn a =
   Atomic a
   -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-  | IsMaxWhere a
-  | IsMinWhere a
-  | IsSumWhere a
+  | IsOpSuchThat OpWhere a
   -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
   | And [ComplexPropn a]
   | Or  [ComplexPropn a]
   | Not [ComplexPropn a]
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+
+data OpWhere = MaxWhere | MinWhere | SumWhere
+  deriving stock (Eq, Ord, Show)
 
 {-
 
@@ -95,6 +97,7 @@ type GVarSet = HS.HashSet GVar
 data Cell = MkCellT !T.Text
           | MkCellI !Integer
           | MkCellIs
+          | MkCellNot
   deriving stock (Show, Eq, Ord)
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more

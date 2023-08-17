@@ -421,10 +421,10 @@ getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot in
 data ValuePredicate = ValPred
   { moduleName :: [EntityName]  -- MoneyLib
   , scopeName  :: [EntityName]  -- DollarJurisdictions
-  , objPath    :: [EntityName]  -- ClassA, ClassB, RecordAttr --> ClassA.ClassB.RecordAttr.
+  , objPath    :: [EntityName]  -- ClassA, ClassB, RecordAttrName --> ClassA.ClassB
                   -- If this list is null, then the "attribute" is toplevel / module-global
-  , attrName   ::  EntityName   -- AttributeName
-  , attrRel    ::  Maybe RPRel
+  , attrName   ::  EntityName   -- ClassA, ClassB, RecordAttrName --> RecordAttrName
+  , attrRel    ::  Maybe RPRel  -- 
   , attrVal    ::  Maybe RelationalPredicate
   , attrCond   ::  Maybe BoolStructR
   , attrIType  ::  Inferrable TypeSig

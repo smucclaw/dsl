@@ -267,7 +267,7 @@ classGraphFGL ct =
 --
 -- There are probably a handful of other places inside a `Rule` where
 -- a `TypeSig` could appear, and we need to exhaustively traverse all
--- of those places. Please add code as you find such places.
+-- of those places. Please add code as you find such places. [TODO]
 extractEnums :: Interpreted -> [Rule]
 extractEnums l4i =
   let rs = origrules l4i
@@ -436,8 +436,17 @@ ruleDecisionGraph rs = do
      
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefsAll rs ridmap =
-  concat <$> mapM (relPredRefs rs ridmap) rs
+relPredRefsAll rs ridmap = do
+  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
+      -- given a term, see which rule defines it
+      headElements = Map.fromList $
+                     [ (headName,r')
+                     | r' <- rs
+                     , headName <- getDecisionHeads r' -- [TODO] this is quadratic
+                     ]
+  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
+
+  concat <$> mapM (relPredRefs rs ridmap headElements) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known rule heads from the entire ruleset.
@@ -447,22 +456,16 @@ relPredRefsAll rs ridmap =
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: RuleSet -> RuleIDMap -> Rule -> XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefs rs ridmap r = do
-  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
-      -- given a term, see which rule defines it
-      headElements = Map.fromList $
-                     [ (headName,r')
-                     | r' <- rs
-                     , headName <- getDecisionHeads r' -- [TODO] this is quadratic
-                     ]
+relPredRefs :: RuleSet -> RuleIDMap -> Map.HashMap MultiTerm Rule
+            -> Rule
+            -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs rs ridmap headElements r = do
       -- given a rule, see which terms it relies on
-      myGetBSR = getBSR r
+  let myGetBSR = getBSR r
       myLeaves = concatMap AA.extractLeaves myGetBSR
       bodyElements = concatMap rp2bodytexts myLeaves
 
   mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
-  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
 
   mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
   mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
@@ -979,21 +982,49 @@ attrsAsMethods rs = do
               mutter $ show $ srchs hHead
               xpError ["unhandled RelationalPredicate", show hHead]
 
-        -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
-        -- 
-        --  output: (["foo", "bar"], "baz")
-        toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
-        toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
-        toObjectPath mt = do
-          mutterd 4 $ "toObjectPath input = " <> show mt
-          mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
-          mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
-          mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-          mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          xpReturn (DL.filter (not . T.null) $
-                    T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-                   , mt2text [DL.last mt])
 
+-- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
+-- 
+--  output: (["foo", "bar"], "baz")
+toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
+toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
+toObjectPath mt = do
+  mutterd 4 $ "toObjectPath input = " <> show mt
+  mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
+  mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
+  mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+  mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  xpReturn (DL.filter (not . T.null) $
+            T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+           , mt2text [DL.last mt])
 
+-- | text version of the above: foo.bar.baz.
+--
+-- We should do slightly
+-- better error handling here to deal with a case where MultiTerm is
+-- empty -- maybe we switch to a TypedMulti with NE guarantees on the
+-- multiterm?
+toObjectStr :: MultiTerm -> XPileLogE EntityName
+toObjectStr mt = do
+  objPath <- toObjectPath mt
+  case objPath of
+    Right (oP,objName) -> xpReturn $ T.intercalate "." (oP ++ [objName])
+    Left err           -> xpError err
+
+-- | is a particular attribute typed as an enum?
+-- we aren't following the entire class / instance chain here, we are just guessing based on the name; this needs to be improved. [TODO]
+isAnEnum :: Interpreted -> MultiTerm -> Bool
+isAnEnum l4i mt =
+  let enumNames  = fmap lowerMT . ruleLabelName <$> extractEnums l4i
+      myAttrName = lowerMT <$> mt -- we really want this to be myAttrType
+      toreturn   = myAttrName `elem` enumNames
+  in -- trace ("lowerMT = " <> show myAttrName <> "; ruleLabelName = " <> show enumNames <> " = " <> show toreturn) $
+     toreturn
+    -- lowerMT = [MTT "planaf"]; ruleLabelName = [[MTT "outcome"],[MTT "planaf"],[MTT "plan14"],[MTT "injury"]] = True
+
+-- | lowercase a multiterm to support isAnEnum comparison
+lowerMT :: MTExpr -> MTExpr
+lowerMT (MTT t) = MTT (T.toLower t)
+lowerMT x       = x

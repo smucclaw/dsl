@@ -7,28 +7,23 @@
 module LS.XPile.Typescript where
 
 -- the job of this module is to output valid typescript class definitions, decision functions, and variable instances.
-
 -- consider: https://hackage.haskell.org/package/aeson-typescript
 -- not suitable because L4 allows users to define their own types which are not known to Haskell's type system.
-
 -- import Debug.Trace
-
 import AnyAll
-
 -- import L4.Syntax as CoreL4
-
 -- import L4.Annotation
-
 -- import Data.Functor ( (<&>) )
 
 import Data.HashMap.Strict qualified as Map
--- import qualified Data.Text as T
+import qualified Data.Text as T
 import qualified Data.Text.Lazy as DTL
 import qualified Data.List.NonEmpty as NE
 import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
 import Data.Maybe (isJust, isNothing)
 import Data.Tree qualified as DT
+
 import LS.Interpreter
   ( attrType,
     getCTkeys,
@@ -39,7 +34,10 @@ import LS.Interpreter
     attrsAsMethods,
     classRoots,
     exposedRoots,
+    toObjectStr,
+    isAnEnum,
   )
+
 import LS.PrettyPrinter
   ( ParamText4 (PT4, PT5),
     commentWith,
@@ -191,7 +189,18 @@ tsRuleEngine l4i = do
 
       declaredClasses = classRoots (classtable l4i)
 
-  mutterdhsf 3 "globalRuleheads should have excluded facts" pShowNoColorS globalRuleheads
+  mutterdhsf 3 "globalRuleheads should have excluded facts; we divide them into two halves." pShowNoColorS globalRuleheads
+  mutterd 3 "globalRuleLeaves is one half."
+  mutters ["These are the things we need to ask the user."
+          ,"Enum cases are expanded, but can be converged farther down the operational chain."
+          ,"We can do that because we should be able to type-infer that the LHS of the value assignment is type-annotated as an enum."
+          ,"Fortunately we still have the original rule available at this point in the pipeline."]
+  mutters [ "- " <> show (n,ruleName r) | (n,r) <- globalRuleLeaves ]
+  mutterd 3 "globalRuleParents is the other half."
+  mutters ["These are things we can compute for ourselves if the leaves above are filled out."
+          ,"However, if the end-user wants to speed things up and answer parent nodes directly \"without proof\", they can do that."
+          ]
+  mutters [ "- " <> show (n,ruleName r) | (n,r) <- globalRuleParents ]
 
   return $ vsep
     [ "interface UserInput {"
@@ -277,14 +286,15 @@ tsClasses l4i = return $
                                | attrname <- getCTkeys children
                                ]
                         )
--- [TODO]
---          <//> "  //" <+> "using `methods` (new code path)"
---          <//> indent 2 ( encloseSep (lbrace <> line) (line <> rbrace) (comma <> space)
---                          $ concat [ methods l4i [MTT attrname]
---                                   | attrname <- getCTkeys children
---                                   ]
---                        )
-                                                 -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE, but we'll use the methods approach for that.
+
+          <//> "  //" <+> "using `methods` (new code path)"
+          <//> indent 2 ( encloseSep (lbrace <> line) (line <> rbrace) (comma <> space)
+                          $ concat [ methods l4i [MTT attrname]
+                                   | attrname <- getCTkeys children
+                                   ]
+                        )
+
+          -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE, but we'll use the methods approach for that.
 
           <//> rbrace
         | className <- reverse $ topsortedClasses ct
@@ -313,7 +323,7 @@ tsEnums l4i = return $
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
       let className = ruleLabelName r
       in 
-        "enum" <+> snake_case className <+> lbrace
+        "enum" <+> snake_case className <> "Enum" <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm
@@ -322,7 +332,7 @@ tsEnums l4i = return $
 
           -- but we also want to preserve the original strings for downstream use
           -- so we use the L4Orig convention
-        <//> "L4Orig.enums['" <> snake_case className <> "']" <+> equals <+> lbrace
+        <//> "L4Orig.enums['" <> snake_case className <> "Enum" <> "']" <+> equals <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> colon <+> dquotes (pretty (mt2text [enumStr])) <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm
@@ -380,13 +390,14 @@ methods l4i mt =
                              , objPath == [mt2text mt]
                              ]
   in
-  [ line <> "// methods go here"
-    </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>" <+> braces ( indent 1 $
-      vsep [ vpTS <> semi
-           | vp@ValPred{..} <- vps
-           , let vpTS = vpToTS l4i vp
-           ] <> space
-      )
+  [ line <> ("// methods go here; attrName = " <> viaShow attrName')
+    </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>"
+    <+> braces ( line <> indent 2 (
+                 vsep [ vpTS <> semi
+                      | vp@ValPred{..} <- vps
+                      , let vpTS = vpToTS l4i vp
+                      ] ) <> line
+               )
   | (attrName', vps) <- marshalled
   ]
 
@@ -395,7 +406,8 @@ vpToTS :: Interpreted -> ValuePredicate -> Doc ann
 vpToTS l4i ValPred{..}
   | attrCond == Just (Leaf (RPMT [MTT "OTHERWISE"]))
     || isNothing attrCond                = "return" <+> pretty attrVal
-  | isJust    attrCond && isJust attrVal = "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal)
+  | isJust    attrCond && isJust attrVal = vsep [ "//" <+> "attrCond" <> equals <> viaShow attrCond
+                                                , "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal) ]
   | otherwise                            = "return null // [TODO]"
   where
     rp2ts :: Maybe BoolStructR -> Doc ann
@@ -403,18 +415,46 @@ vpToTS l4i ValPred{..}
     rp2ts (Just bsr) = bsr2ts bsr
 
     bsr2ts :: BoolStructR -> Doc ann
-    bsr2ts (Leaf (RPConstraint mt1 rprel mt2) ) = pretty (mt2text mt1) <+> renderRPrel rprel <+> pretty (mt2text mt2)
-    bsr2ts (Leaf (RPnary RPis [rp1, rp2])) = pretty (rp2text rp1) <+> renderRPrel RPis <+> pretty (rp2text rp2)
+
+    bsr2ts (Leaf (RPConstraint mt1 rprel mt2) ) =
+      let rp = mt2objStr mt1
+      in pretty rp <+> renderRPrel rprel <+> handleEnum [last mt1] mt2
+
+    -- special case, but we need to handle the general case better below
+    bsr2ts (Leaf (RPnary RPis [RPMT mt1, RPMT mt2])) =
+      let rp = mt2objStr mt1
+      in pretty rp <+> renderRPrel RPis <+> handleEnum [last mt1] mt2
+
+    -- general case not fully handled WRT enums.
+    -- to properly do this we need to walk the type graph to figure out for ceratin
+    -- what type the attribute has.
+    bsr2ts (Leaf (RPnary RPis [RPMT mt1, rp2])) =
+      let rp = mt2objStr mt1
+      in pretty rp <+> renderRPrel RPis <+> pretty (rp2text rp2)
+
     bsr2ts (Leaf (RPnary RPsum rps)) = "sum" <> list (pretty . rp2text <$> rps)
     bsr2ts (Any pp rps) = "any" <> parens (list (bsr2ts <$> rps))
     bsr2ts (All pp rps) = "all" <> parens (list (bsr2ts <$> rps))
     bsr2ts (Not rp) = "not" <> parens (bsr2ts rp)
     bsr2ts _ = error "bsr2ts needs more cases"
 
+    mt2objStr mt =
+      let (outStr, outLog) = xpLog $ toObjectStr mt
+      in case outStr of
+           Left err -> "// error encountered in bsr2ts conversion of ValuePredicate to Typescript code: " <> show err
+           Right rp -> T.unpack rp
+
     renderRPrel RPis = "=="
     renderRPrel RPgt = ">"
     renderRPrel RPlt = "<"
     renderRPrel _    = error "add a renderRPrel in Typescript.hs"
+
+    -- upgrade a value Monday to a DaysEnum.Monday 
+    handleEnum :: MultiTerm -> MultiTerm -> Doc ann
+    handleEnum mt1 mt2 =
+      if isAnEnum l4i mt1
+      then snake_case mt1 <> "Enum" <> "." <> snake_case mt2
+      else pretty (mt2text mt2)
 
 -- | top-level DEFINEs, going rule by rule
 -- just the facts.

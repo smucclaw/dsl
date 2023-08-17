@@ -108,8 +108,9 @@ gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
 mtexpr2cell :: L4.MTExpr -> Cell 
 mtexpr2cell = \case 
   MTT t -> MkCellT t
-  MTI i -> MkCellI i
-  _     -> error "floats in cells not currently supported"
+  MTI i -> MkCellNum (MkInteger i)
+  MTF f -> MkCellNum (MkFloat f)
+  _     -> error "Booleans in cells currently not supported"
 
 -- | convenience function for when `map mtexpr2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]

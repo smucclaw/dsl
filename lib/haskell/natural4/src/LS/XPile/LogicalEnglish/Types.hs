@@ -11,6 +11,7 @@ module LS.XPile.LogicalEnglish.Types (
       OrigVarName
     , ComplexPropn
     , OpWhere
+    , SimpleNum(..)
 
     -- L4-related types
     , GVar(..)
@@ -95,9 +96,13 @@ type GVarSet = HS.HashSet GVar
 
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
-          | MkCellI !Integer
+          | MkCellNum !SimpleNum 
+          -- ^ TODO: see if it's possible to use a more generic number type tt includes floats, since Joe  uses floats in his encoding.
           | MkCellIs
           | MkCellNot
+  deriving stock (Show, Eq, Ord)
+
+data SimpleNum = MkInteger Integer | MkFloat Float
   deriving stock (Show, Eq, Ord)
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more

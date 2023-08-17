@@ -102,7 +102,7 @@ simplifyHead = \case
                                         -}
                                       else error "shouldn't be seeing any other operator for RPConstraint in our encoding"
                                           
-  (RPnary rel rps)                -> undefined
+  (RPnary _rel _rps)                -> error "I don't see any RPnary in the head in Joe's encoding, so."
   _                               -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
 
 {- ^

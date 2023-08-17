@@ -66,6 +66,8 @@ check (MkL4Rules rulelist) = Just $ MkL4Rules rulelist
 * There is exactly one HC in the clauses field -- i.e., 
   the 'ditto' / decision table syntax will be desugared in the obvious way.
   But note that we will not support the 'OTHERWISE' keyword.
+* The RelationalPredicate in the head of a HC will be a RPConstraint or RPMT -- never a RPnary or RPBoolstructR RPrel 
+    (even tho the HC data type currently allows for tt)
 -}
 refine :: L4Rules ValidatedNotRefined -> L4Rules ValidHornls
 refine (MkL4Rules rulelist) =  MkL4Rules (filter isHornlike rulelist)

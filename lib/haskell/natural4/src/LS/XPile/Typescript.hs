@@ -58,6 +58,7 @@ import LS.Rule as SFL4R
   )
 import LS.Types as SFL4
   ( ClsTab (CT), unCT,
+    EntityType,
     HornClause (HC, hHead),
     HornClause2,
     BoolStructR(..),
@@ -277,10 +278,10 @@ tsClasses l4i = return $
           <//> "  // using prettySimpleType (old code path)"
           <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
-                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className t)
-                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className t)
+                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
+                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"
-                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className t)
+                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Nothing -> "// tsClasses nothing case"
                                  <> semi
                                | attrname <- getCTkeys children
@@ -323,13 +324,15 @@ tsClasses l4i = return $
 --    class MyClass { MyValue = (someArgument) => { return 2 * someArgument } }
 --
 
--- methodFor :: Interpreted -> EntityType -> 
+methodFor :: Interpreted -> EntityType -> Maybe TypeSig -> Doc ann
+methodFor l4i entype mtsig =
+  defaultMethod mtsig
 
 -- | if we can't find a decision rule defining this particular attribute as a method, we return a default method
-defaultMethod :: TypeSig -> Doc ann
-defaultMethod (SimpleType TOne "string") = " return \"\" "
-defaultMethod (SimpleType TOne "number") = " return 0 "
-defaultMethod _                          = " return undefined "
+defaultMethod :: Maybe TypeSig -> Doc ann
+defaultMethod (Just (SimpleType TOne "string")) = " return \"\" "
+defaultMethod (Just (SimpleType TOne "number")) = " return 0 "
+defaultMethod _                                 = " return undefined "
 
 -- | output enum declarations
 tsEnums :: Interpreted -> XPileLog (Doc ann)

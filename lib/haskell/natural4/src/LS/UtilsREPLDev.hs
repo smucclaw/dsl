@@ -38,8 +38,8 @@ import LS.Utils ((|$>))
 
 -- Getting file paths
 
-type FileExtn = String
-type BaseFileName = String
+type FileExtn = FilePath
+type BaseFileName = FilePath
 type StartDir = FilePath
 
 filesInDirWithExtn :: FileExtn -> StartDir -> IO [FilePath]

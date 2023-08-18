@@ -40,7 +40,7 @@ import LS.Utils ((|$>))
 
 type FileExtn = String
 type BaseFileName = String
-type StartDir = String
+type StartDir = FilePath
 
 filesInDirWithExtn :: FileExtn -> StartDir -> IO [FilePath]
 filesInDirWithExtn fextn = find always (extension ==? fextn)

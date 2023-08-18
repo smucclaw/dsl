@@ -75,7 +75,7 @@ rulesForEachOfLEtestegs = do
 -------------
 
 motorrules :: IO [Rule]
-motorrules = l4csv2rules "test/Testcases/" "motor-insurance-1.csv"
+motorrules = l4csv2rules ("test" </> "Testcases") "motor-insurance-1.csv"
 
 indentpdparules :: IO [Rule]
 indentpdparules = letestfnm2rules "indentation-databreach.csv" 

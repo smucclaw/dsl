@@ -4,11 +4,12 @@
 {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ScopedTypeVariables, PatternSynonyms, DataKinds #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
-    , ComplexPropn
+    , Propn(..)
     , OpWhere
     , SimpleNum(..)
 
@@ -35,7 +36,8 @@ module LS.XPile.LogicalEnglish.Types (
     , LECondnTree(..)
 
     -- Configuration and LE-specific consts
-    , TranspilerCfg(..)
+    , LEProg
+    -- , MkLEProg
 ) where
 
 
@@ -66,15 +68,33 @@ import LS.XPile.LogicalEnglish.Common (
 {-| This data structure is designed for easy pretty printing: 
     that's what dictates whether to keep or discard the original L4 structure. 
 -}
-data ComplexPropn a =
+data Propn a =
   Atomic a
   -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
   | IsOpSuchThat OpWhere a
   -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
-  | And [ComplexPropn a]
-  | Or  [ComplexPropn a]
-  | Not [ComplexPropn a]
+  | And [Propn a]
+  | Or  [Propn a]
+  | Not (Propn a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+
+{-
+Considered using phantom types, gadts, and datakinds to distinguish between the variants of Propn (esp. atomic vs non-atomic for the head vs body), but decided not worth the effort.
+
+  data CPstatus = IsAtomic | IsOST | IsAnd | IsOr | IsNot 
+
+  data Propn a b where
+    Atomic :: a -> Propn a 'IsAtomic
+    -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
+    IsOpSuchThat :: OpWhere -> a -> Propn a 'IsOST
+    -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
+    And :: [Propn a b] -> Propn a 'IsAnd
+    Or  :: [Propn a b] -> Propn a 'IsOr
+    Not :: [Propn a b] -> Propn a 'IsNot
+    deriving (Eq, Ord, Show, Generic, Functor, Foldable)
+
+
+-}
 
 data OpWhere = MaxWhere | MinWhere | SumWhere
   deriving stock (Eq, Ord, Show)
@@ -106,10 +126,11 @@ data SimpleNum = MkInteger Integer | MkFloat Float
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
 data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
-                          , head      :: [Cell]
-                          , body      :: ComplexPropn [Cell] }
--- type L4ComplexPropn = ComplexPropn [Cell]
--- type IRComplexPropn = ComplexPropn LamAbsBase
+                          , head      :: Propn [Cell]
+                            -- ^ tho really this shld be just the atomic variant
+                          , body      :: Maybe (Propn [Cell]) }
+-- type L4ComplexPropn = Propn [Cell]
+-- type IRComplexPropn = Propn LamAbsBase
 
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
@@ -135,7 +156,7 @@ newtype Substn = MkSubstn [T.Text]
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
 data LamAbsRule = MkLAbsRule { givenVars  :: GVarSet
                              , head      :: LamAbsBase
-                             , body      :: ComplexPropn LamAbsBase }
+                             , body      :: Propn LamAbsBase }
 {-| This is best understood in the context of LamAbsRule  -}
 data LamAbsBase = MkTBase { getVarSeq :: OrigVarSeq
                           , instTemplate :: Substn -> TemplInstanceOrNLA } 
@@ -164,11 +185,12 @@ data LERule = LERule
 {-| This is really for *our* dialect of LE (with our in-house libs) rather than standard LE. 
 See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
  -}
-type LECondnTree = ComplexPropn LETemplateInstance
+type LECondnTree = Propn LETemplateInstance
 -- ^ so the `sum of`, `product of` would just be atomic LETemplateInsts / texts, since they don't differ indentation-wise from normal atomic conditions 
 
 -- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
-data LEPRog = MkLEPRog_ {   docHeader    :: !T.Text
+pattern MkLEProg <- undefined
+data LEProg = MkLEProg_ {   docHeader    :: !T.Text
                           , nlasHeader :: !T.Text
                           , ruleBodyHeader :: !T.Text
                           , nlas :: [LENatLangAnnot]
@@ -177,5 +199,5 @@ data LEPRog = MkLEPRog_ {   docHeader    :: !T.Text
     Configs
 -------------------------------------------------------------------------------}
 
-data LECfg = LECfg { numIndentSpaces :: !Word}
+data LECfg = LECfg { numIndentSpaces :: !Word }
 

@@ -7,6 +7,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 
+{-# LANGUAGE ScopedTypeVariables, DataKinds, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-|
 
 We're trying to work with the rules / AST instead, 
@@ -33,8 +35,9 @@ import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
 
+import qualified AnyAll as AA
 import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..), RPRel(..))
+import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR(..), BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.Internal
@@ -85,25 +88,34 @@ lamAbstract = undefined
 
 
 ----- helper funcs -----------------
-simplifyL4HC :: L4.HornClause2 -> ([Cell], ComplexPropn [Cell])
-simplifyL4HC l4hc = (simplifyHead l4hc.hHead, simplifyBody l4hc.hBody)
+-- TODO: Look into how to make it clear in the type signature that the head is just an atomic propn
+simplifyL4HC :: L4.HornClause2 -> (Propn [Cell], Maybe (Propn [Cell]))
+simplifyL4HC l4hc = case l4hc.hBody of 
+  Nothing    -> (simplifyHead l4hc.hHead, Nothing)
+    -- ^ There are HCs with Nothing in the body in the encoding 
+  Just body -> (simplifyHead l4hc.hHead, Just $ simplifyBodyBsr body)
   
-simplifyHead :: L4.RelationalPredicate -> [Cell]
+simplifyHead :: L4.RelationalPredicate -> Propn [Cell]
 simplifyHead = \case
-  (RPMT exprs)                     -> mtes2cells exprs
-  (RPConstraint exprsl rel exprsr) -> if rel == RPis 
-                                      then mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr
-                                      --TODO: Need to account for / stash info for IS NOT --- I think that would be in this variant, but need to check 
-                                         {- ^ Can't just lowercase IS and transform the mtexprs to (either Text or Integer) Cells 
-                                         because it could be a IS-number, 
-                                         and when making template vars later, we need to be able to disambiguate between something tt was an IS-kw and smtg tt was originally lowercase 'is'. 
-                                         TODO: But do think more abt this when we implement the intermed stage
-                                        -}
-                                      else error "shouldn't be seeing any other operator for RPConstraint in our encoding"
+  (RPMT exprs)                      -> Atomic $ mtes2cells exprs
+  (RPConstraint exprsl RPis exprsr) -> simplifybodyrpc @RPis exprsl exprsr
+                                    {- ^ 
+                                      1. Match on RPis directly cos no other rel operator shld appear here in the head: 
+                                        the only ops tt can appear here from the parse are RPis or RPlt or RPgt,
+                                        but the encoding convention does not allow for  RPlt or RPgt in the head.
+
+                                      2. Can't just lowercase IS and transform the mtexprs to (either Text or Integer) Cells 
+                                        because it could be a IS-number, 
+                                        and when making template vars later, we need to be able to disambiguate between something tt was an IS-kw and smtg tt was originally lowercase 'is'. 
+                                        TODO: But do think more abt this when we implement the intermed stage
+                                        TODO: Need to account for / stash info for IS NOT --- I think that would be handled in the intermed stage, but shld check again when we get there.
+
+                                      We handle the case of RPis in a RPConstraint the same way in both the body and head. 
+                                    -}
                                           
   (RPnary _rel _rps)                -> error "I don't see any RPnary in the head in Joe's encoding, so."
-  _                               -> error "(simplifyHead cases) not yet implemented / may not even need to be implemented"
 
+  
 {- ^
 An example of an is-num pattern in a RPConstraint
 [ HC
@@ -118,9 +130,6 @@ An example of an is-num pattern in a RPConstraint
                     [ MTF 22.5 ]
                 )
 -}
-
-
-
 
 {-
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo | RPmap
@@ -155,10 +164,97 @@ hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps} <+> "// hc2ts RPnary"
 
+
+
+
+data BoolStruct lbl a =
+    Leaf                       a
+  | All lbl [BoolStruct lbl a] -- and
+  | Any lbl [BoolStruct lbl a] --  or
+  | Not             (BoolStruct lbl a)
+  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+instance (Hashable lbl, Hashable a) => Hashable (BoolStruct lbl a)
+
+type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
+type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
+
+----
+data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
+                         | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
+                         | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
+                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
+                         | RPnary RPRel [RelationalPredicate] i
+                                -- RPnary RPnot [RPnary RPis [MTT ["the sky"], MTT ["blue"]]
+
+                     --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
+  deriving (Eq, Ord, Show, Generic, ToJSON)
+                 -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
+                 -- would need to reduce to
+                 -- RPConstraint ["eyes"] Rpis ["blue"]
+
+----
+data Propn a =
+    Atomic a
+    -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
+    | IsOpSuchThat OpWhere a
+    -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
+    | And [Propn a]
+    | Or  [Propn a]
+    | Not [Propn a]
+    deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 -}
 
-simplifyBody :: Maybe L4.BoolStructR -> ComplexPropn [Cell]
-simplifyBody = undefined
+  
+-- type BoolStructR = BoolStruct _ RelationalPredicate
+simplifyBodyBsr :: L4.BoolStructR -> Propn [Cell]
+simplifyBodyBsr = \case                       
+  AA.Leaf rp      -> simplifybodyRP rp -- TODO: Think more abt this -- there might be complexity here tt we have to handle upfront here?
+  AA.All _ propns -> And (map simplifyBodyBsr propns)
+  AA.Any _ propns -> Or (map simplifyBodyBsr propns)
+  AA.Not propn   -> Not (simplifyBodyBsr propn)
+{- ^ where a 'L4 propn' = BoolStructR =  BoolStruct _lbl RelationalPredicate.
+
+What do we want to do here?
+
+
+-}
+
+
+simplifybodyRP :: RelationalPredicate -> Propn [Cell]
+simplifybodyRP = \case
+  (RPMT exprs)                     -> Atomic $ mtes2cells exprs 
+                                      -- ^ this is the same for both the body and head
+  (RPConstraint exprsl rel exprsr) -> case rel of 
+                                        RPis -> simplifybodyrpc @RPis exprsl exprsr
+                                        RPor -> simplifybodyrpc @RPor exprsl exprsr
+                                        RPand -> simplifybodyrpc @RPand exprsl exprsr
+                                        {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives!
+                                            EG: ( Leaf
+                                                  ( RPConstraint
+                                                      [ MTT "data breach" , MTT "came about from"] 
+                                                      RPor
+                                                      [ MTT "luck, fate", MTT "acts of god or any similar event"]
+                                                  )
+                                                )
+                                        -}
+  (RPnary rel rps)                -> undefined
+  
+
+-- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
+class SimpBodyRPConstrntRPrel (rp :: RPRel) where
+  simplifybodyrpc :: [MTExpr] -> [MTExpr] -> Propn [Cell]
+
+instance SimpBodyRPConstrntRPrel RPis where
+  simplifybodyrpc exprsl exprsr = Atomic (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
+
+instance SimpBodyRPConstrntRPrel RPor where
+  simplifybodyrpc exprsl exprsr = undefined
+  -- TODO: implement this!
+
+instance SimpBodyRPConstrntRPrel RPand where
+  simplifybodyrpc exprsl exprsr = undefined
+  -- TODO: implement this!
+
 
 {-------------------------------------------------------------------------------
    LamAbsRules -> LE Nat Lang Annotations 

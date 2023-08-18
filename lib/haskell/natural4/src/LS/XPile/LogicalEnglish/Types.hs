@@ -167,14 +167,15 @@ See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md fo
 type LECondnTree = ComplexPropn LETemplateInstance
 -- ^ so the `sum of`, `product of` would just be atomic LETemplateInsts / texts, since they don't differ indentation-wise from normal atomic conditions 
 
-
+-- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
+data LEPRog = MkLEPRog_ {   docHeader    :: !T.Text
+                          , nlasHeader :: !T.Text
+                          , ruleBodyHeader :: !T.Text
+                          , nlas :: [LENatLangAnnot]
+                          , rules :: [LERule] }
 {-------------------------------------------------------------------------------
     Configs
 -------------------------------------------------------------------------------}
 
-data TranspilerCfg =
-  TranspilerCfg { numIndentSpaces :: !Word,
-                  docHeader    :: !T.Text,
-                  nlasHeader :: !T.Text,
-                  ruleBodyHeader :: !T.Text}
+data LECfg = LECfg { numIndentSpaces :: !Word}
 

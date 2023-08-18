@@ -90,13 +90,13 @@ lamAbstract = undefined
 ----- helper funcs -----------------
 -- TODO: Look into how to make it clear in the type signature that the head is just an atomic propn
 simplifyL4HC :: L4.HornClause2 -> (Propn [Cell], Maybe (Propn [Cell]))
-simplifyL4HC l4hc = (simplifyHead l4hc.hHead, fmap simplifyBodyBsr l4hc.hBody)
+simplifyL4HC l4hc = (simplifyHead l4hc.hHead, fmap simplifyHcBodyBsr l4hc.hBody)
 -- ^ There are HCs with Nothing in the body in the encoding 
 
 simplifyHead :: L4.RelationalPredicate -> Propn [Cell]
 simplifyHead = \case
   (RPMT exprs)                      -> Atomic $ mtes2cells exprs
-  (RPConstraint exprsl RPis exprsr) -> simplifybodyrpc @RPis exprsl exprsr
+  (RPConstraint exprsl RPis exprsr) -> simpbodRPC @RPis exprsl exprsr
                                     {- ^ 
                                       1. Match on RPis directly cos no other rel operator shld appear here in the head: 
                                         the only ops tt can appear here from the parse are RPis or RPlt or RPgt,
@@ -111,6 +111,8 @@ simplifyHead = \case
                                       We handle the case of RPis in a RPConstraint the same way in both the body and head. 
                                     -}
 
+  (RPBoolStructR _ _ _)             -> error "should not be seeing RPBoolStructR in head"
+  (RPParamText _)                   -> error "should not be seeing RPParamText in head"
   (RPnary _rel _rps)                -> error "I don't see any RPnary in the head in Joe's encoding, so."
 
 
@@ -163,8 +165,7 @@ hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps} <+> "// hc2ts RPnary"
 
 
-
-
+----------
 data BoolStruct lbl a =
     Leaf                       a
   | All lbl [BoolStruct lbl a] -- and
@@ -181,15 +182,8 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
                          | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
-                         | RPnary RPRel [RelationalPredicate] i
-                                -- RPnary RPnot [RPnary RPis [MTT ["the sky"], MTT ["blue"]]
-
-                     --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-                 -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
-                 -- would need to reduce to
-                 -- RPConstraint ["eyes"] Rpis ["blue"]
-
+                         | RPnary RPRel [RelationalPredicate] 
+                                -- RPnary RPnot [RPnary RPis [MTT ["the sky"], MTT ["blue"]
 ----
 data Propn a =
     Atomic a
@@ -203,29 +197,24 @@ data Propn a =
 -}
 
 
--- type BoolStructR = BoolStruct _ RelationalPredicate
-simplifyBodyBsr :: L4.BoolStructR -> Propn [Cell]
-simplifyBodyBsr = \case
-  AA.Leaf rp      -> simplifybodyRP rp -- TODO: Think more abt this -- there might be complexity here tt we have to handle upfront here?
-  AA.All _ propns -> And (map simplifyBodyBsr propns)
-  AA.Any _ propns -> Or (map simplifyBodyBsr propns)
-  AA.Not propn   -> Not (simplifyBodyBsr propn)
+simplifyHcBodyBsr :: L4.BoolStructR -> Propn [Cell]
+simplifyHcBodyBsr = \case
+  AA.Leaf rp      -> simplifybodyRP rp 
+  AA.All _ propns -> And (map simplifyHcBodyBsr propns)
+  AA.Any _ propns -> Or (map simplifyHcBodyBsr propns)
+  AA.Not propn    -> Not (simplifyHcBodyBsr propn)
 {- ^ where a 'L4 propn' = BoolStructR =  BoolStruct _lbl RelationalPredicate.
-
-What do we want to do here?
-
-
+Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of the data constructors for the RelationalPredicate sum type
 -}
-
 
 simplifybodyRP :: RelationalPredicate -> Propn [Cell]
 simplifybodyRP = \case
-  (RPMT exprs)                     -> Atomic $ mtes2cells exprs
-                                      -- ^ this is the same for both the body and head
-  (RPConstraint exprsl rel exprsr) -> case rel of
-                                        RPis -> simplifybodyrpc @RPis exprsl exprsr
-                                        RPor -> simplifybodyrpc @RPor exprsl exprsr
-                                        RPand -> simplifybodyrpc @RPand exprsl exprsr
+  RPMT exprs                     -> Atomic $ mtes2cells exprs
+                                    -- ^ this is the same for both the body and head
+  RPConstraint exprsl rel exprsr -> case rel of
+                                        RPis -> simpbodRPC @RPis exprsl exprsr
+                                        RPor -> simpbodRPC @RPor exprsl exprsr
+                                        RPand -> simpbodRPC @RPand exprsl exprsr
                                         {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives!
                                             EG: ( Leaf
                                                   ( RPConstraint
@@ -233,26 +222,58 @@ simplifybodyRP = \case
                                                       RPor
                                                       [ MTT "luck, fate", MTT "acts of god or any similar event"]
                                                   )
-                                                )
-                                        -}
-  (RPnary rel rps)                -> undefined
+                                                )                           -}
+                                      
+  RPBoolStructR exprs rel bsr    -> if rel == RPis 
+                                    then simpbodRPBSR exprs bsr
+                                    else error "The spec does not support any other RPRel in a RPBoolStructR"
+  RPnary rel rps                  -> undefined
+  RPParamText _                   -> error "should not be seeing RPParamText in body"
 
 
+simpbodRPBSR :: [MTExpr] -> BoolStructR -> Propn [Cell]
+simpbodRPBSR exprs = \case
+  AA.Not (AA.Leaf (RPMT nonPropnalCmplmt)) -> let leftexprs = mtes2cells exprs  
+                                              in Atomic $ leftexprs <> [MkCellDiffFr] <> mtes2cells nonPropnalCmplmt
+  _                                        -> error "should not be seeing anything other than a Not in the BSR position of a RPBoolStructR"
+  -- i wonder if we can avoid having missing-case warnings with a pattern synonym + the complete pragma
+
+{- | 
+The main thing that simpbodRPBSR does is rewrite L4's
+                    t1 IS NOT t2 
+                to 
+                  t1 is different from t2
+
+EG of a L4 IS NOT:
+```
+      ( RPBoolStructR
+          [ MTT "stumbling" ] RPis
+          ( Not
+              ( Leaf
+                  ( RPMT
+                      [ MTT "walking" ]
+                  )
+              )
+          )
+```
+-}
+
+---------- simplifying rpconstraint in body of L4 HC ----------------------
 -- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
 class SimpBodyRPConstrntRPrel (rp :: RPRel) where
-  simplifybodyrpc :: [MTExpr] -> [MTExpr] -> Propn [Cell]
+  simpbodRPC :: [MTExpr] -> [MTExpr] -> Propn [Cell]
 
 instance SimpBodyRPConstrntRPrel RPis where
-  simplifybodyrpc exprsl exprsr = Atomic (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
+  simpbodRPC exprsl exprsr = Atomic (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
 
 instance SimpBodyRPConstrntRPrel RPor where
-  simplifybodyrpc exprsl exprsr = undefined
+  simpbodRPC exprsl exprsr = undefined
   -- TODO: implement this!
 
 instance SimpBodyRPConstrntRPrel RPand where
-  simplifybodyrpc exprsl exprsr = undefined
+  simpbodRPC exprsl exprsr = undefined
   -- TODO: implement this!
-
+--------------------------------------------------------------------------------
 
 {-------------------------------------------------------------------------------
    LamAbsRules -> LE Nat Lang Annotations 

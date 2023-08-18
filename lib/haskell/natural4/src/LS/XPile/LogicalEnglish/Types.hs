@@ -33,7 +33,7 @@ module LS.XPile.LogicalEnglish.Types (
     , LETemplateInstance
     , TemplInstanceOrNLA(..)
     , LERule(..)
-    , LECondnTree(..)
+    , LECondnTree
 
     -- Configuration and LE-specific consts
     , LEProg
@@ -41,25 +41,14 @@ module LS.XPile.LogicalEnglish.Types (
 ) where
 
 
-import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), tildes, (<//>), srchs )
-import Prettyprinter
-    ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc, indent, line )
-import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
-import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
-import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
 
 import Data.String (IsString)
-import LS.Rule qualified as L4 (Rule(..)) 
-import LS.XPile.LogicalEnglish.Common (
-    L4Prog,
-    (|>)
-    )
+import LS.Rule as L4 (Rule(..)) 
 
 {-------------------------------------------------------------------------------
   Common types 
@@ -118,7 +107,7 @@ data Cell = MkCellT !T.Text
           | MkCellNum !SimpleNum 
           -- ^ TODO: see if it's possible to use a more generic number type tt includes floats, since Joe  uses floats in his encoding.
           | MkCellIs
-          | MkCellNot
+          | MkCellDiffFr
   deriving stock (Show, Eq, Ord)
 
 data SimpleNum = MkInteger Integer | MkFloat Float
@@ -194,7 +183,7 @@ data LEProg = MkLEProg_ {   docHeader    :: !T.Text
                           , nlasHeader :: !T.Text
                           , ruleBodyHeader :: !T.Text
                           , nlas :: [LENatLangAnnot]
-                          , rules :: [LERule] }
+                          , lerules :: [LERule] }
 {-------------------------------------------------------------------------------
     Configs
 -------------------------------------------------------------------------------}

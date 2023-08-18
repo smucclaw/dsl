@@ -2,9 +2,8 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
--- {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+-- {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 

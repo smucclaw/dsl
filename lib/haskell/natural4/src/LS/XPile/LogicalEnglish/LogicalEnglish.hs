@@ -90,11 +90,9 @@ lamAbstract = undefined
 ----- helper funcs -----------------
 -- TODO: Look into how to make it clear in the type signature that the head is just an atomic propn
 simplifyL4HC :: L4.HornClause2 -> (Propn [Cell], Maybe (Propn [Cell]))
-simplifyL4HC l4hc = case l4hc.hBody of 
-  Nothing    -> (simplifyHead l4hc.hHead, Nothing)
-    -- ^ There are HCs with Nothing in the body in the encoding 
-  Just body -> (simplifyHead l4hc.hHead, Just $ simplifyBodyBsr body)
-  
+simplifyL4HC l4hc = (simplifyHead l4hc.hHead, fmap simplifyBodyBsr l4hc.hBody)
+-- ^ There are HCs with Nothing in the body in the encoding 
+
 simplifyHead :: L4.RelationalPredicate -> Propn [Cell]
 simplifyHead = \case
   (RPMT exprs)                      -> Atomic $ mtes2cells exprs
@@ -112,10 +110,10 @@ simplifyHead = \case
 
                                       We handle the case of RPis in a RPConstraint the same way in both the body and head. 
                                     -}
-                                          
+
   (RPnary _rel _rps)                -> error "I don't see any RPnary in the head in Joe's encoding, so."
 
-  
+
 {- ^
 An example of an is-num pattern in a RPConstraint
 [ HC
@@ -204,10 +202,10 @@ data Propn a =
     deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 -}
 
-  
+
 -- type BoolStructR = BoolStruct _ RelationalPredicate
 simplifyBodyBsr :: L4.BoolStructR -> Propn [Cell]
-simplifyBodyBsr = \case                       
+simplifyBodyBsr = \case
   AA.Leaf rp      -> simplifybodyRP rp -- TODO: Think more abt this -- there might be complexity here tt we have to handle upfront here?
   AA.All _ propns -> And (map simplifyBodyBsr propns)
   AA.Any _ propns -> Or (map simplifyBodyBsr propns)
@@ -222,9 +220,9 @@ What do we want to do here?
 
 simplifybodyRP :: RelationalPredicate -> Propn [Cell]
 simplifybodyRP = \case
-  (RPMT exprs)                     -> Atomic $ mtes2cells exprs 
+  (RPMT exprs)                     -> Atomic $ mtes2cells exprs
                                       -- ^ this is the same for both the body and head
-  (RPConstraint exprsl rel exprsr) -> case rel of 
+  (RPConstraint exprsl rel exprsr) -> case rel of
                                         RPis -> simplifybodyrpc @RPis exprsl exprsr
                                         RPor -> simplifybodyrpc @RPor exprsl exprsr
                                         RPand -> simplifybodyrpc @RPand exprsl exprsr
@@ -238,7 +236,7 @@ simplifybodyRP = \case
                                                 )
                                         -}
   (RPnary rel rps)                -> undefined
-  
+
 
 -- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
 class SimpBodyRPConstrntRPrel (rp :: RPRel) where

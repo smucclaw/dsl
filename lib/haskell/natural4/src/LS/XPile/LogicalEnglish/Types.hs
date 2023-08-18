@@ -4,7 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ScopedTypeVariables, PatternSynonyms, DataKinds #-}
+{-# LANGUAGE PatternSynonyms, DataKinds #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -W #-}
+
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -88,13 +90,11 @@ Considered using phantom types, gadts, and datakinds to distinguish between the 
 data OpWhere = MaxWhere | MinWhere | SumWhere
   deriving stock (Eq, Ord, Show)
 
-{-
-
--}
-
 {-------------------------------------------------------------------------------
   The L4-related data types
 -------------------------------------------------------------------------------}
+
+
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
   deriving stock (Show)

@@ -1,6 +1,7 @@
+{-# OPTIONS_GHC -W #-}
 {-# LANGUAGE OverloadedStrings, RecordWildCards, LambdaCase #-}
 
-module LS.XPile.LogicalEnglish.Internal
+module LS.XPile.LogicalEnglish.ValidateL4Input
   (   L4Rules -- opaque
     , ValidHornls
     , Unvalidated
@@ -8,9 +9,6 @@ module LS.XPile.LogicalEnglish.Internal
     , check
     , refine
     , loadRawL4AsUnvalid
-    , gvarsFromL4Rule
-    , mtexpr2cell
-    , mtes2cells
   ) 
   where
 
@@ -34,10 +32,6 @@ import LS.Types as L4
 import LS.Types (RelationalPredicate(..), RPRel(..))
 import LS.Rule qualified as L4 (Rule(..)) 
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.Common (
-    L4Prog,
-    (|>)
-    )
 
 import Debug.Trace (trace)
 
@@ -78,46 +72,3 @@ refine (MkL4Rules rulelist) =  MkL4Rules (filter isHornlike rulelist)
 isHornlike :: L4.Rule -> Bool
 isHornlike     L4.Hornlike{} = True
 isHornlike             __ = False
-
-
-{-------------------------------------------------------------------------------
-   L4 rules -> SimpleL4HCs related
--------------------------------------------------------------------------------}
-
-
---- extracting vars from given ------------------------------------
-extractGiven :: L4.Rule -> [MTExpr]
-  -- [(NE.NonEmpty MTExpr, Maybe TypeSig)]
-extractGiven L4.Hornlike {given=Nothing}        = [] 
--- won't need to worry abt this when we add checking upfront
-extractGiven L4.Hornlike {given=Just paramtext} = concatMap (NE.toList . fst) (NE.toList paramtext)
-extractGiven _                                  = trace "not a Hornlike rule, not extracting given" mempty
--- also won't need to worry abt this when we add checking + filtering upfront
-
-
-gvarsFromL4Rule :: L4.Rule -> GVarSet
-gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
-                       in HS.fromList $ map gmtexpr2gvar givenMTExprs
-        where 
-          -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. This is importantly different from `mtexpr2text` in that it only converts the cases we use for LE and that we would encounter in the Givens on our LE conventions
-          gmtexpr2gvar :: MTExpr -> GVar
-          gmtexpr2gvar = \case 
-            MTT var -> MkGVar var
-            _       -> error "non-text mtexpr variable names in the GIVEN are not allowed on our LE spec :)"
-
---- RP to [Cell] ------------------------------------
-
-mtexpr2cell :: L4.MTExpr -> Cell 
-mtexpr2cell = \case 
-  MTT t -> MkCellT t
-  MTI i -> MkCellNum (MkInteger i)
-  MTF f -> MkCellNum (MkFloat f)
-  _     -> error "Booleans in cells currently not supported"
-
--- | convenience function for when `map mtexpr2cell` too wordy 
-mtes2cells :: [L4.MTExpr] -> [Cell]
-mtes2cells = map mtexpr2cell
-
---- misc notes
--- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
--- wrapper = concat . map extractGiven . coerce

@@ -180,8 +180,36 @@ pattern TotalIsProductTerms total atomargs = TermIsOpOfAtomicTerms RPproduct tot
 pattern TermIsMax maxE atomargs = TermIsOpOfAtomicTerms RPgt maxE atomargs
 pattern TermIsMin minE atomargs = TermIsOpOfAtomicTerms RPlt minE atomargs
 
-{- | 
+
+pattern TermIsOpSuchThat :: RPRel -> MTExpr -> [MTExpr] -> RelationalPredicate
+pattern TermIsOpSuchThat op term φx <- RPnary RPis
+                                          (RPMT [term] :
+                                              [RPnary op
+                                                [RPMT (MTT "x": (MTT "where" : φx))]])
+  where TermIsOpSuchThat op term φx = RPnary RPis (RPMT [term] : [RPnary op [RPMT (MTT "x": (MTT "where" : φx))]])
+  -- needed b/c GHC can't infer tt this is invertible if OverloadedLists extn is enabled
+
+pattern TermIsMaxXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
+pattern TermIsMinXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
+pattern TermIsSumXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
+
+pattern TermIsMaxXWhere term φx = TermIsOpSuchThat RPgt term φx
+pattern TermIsMinXWhere term φx = TermIsOpSuchThat RPlt term φx
+pattern TermIsSumXWhere term φx = TermIsOpSuchThat RPsum term φx
+
+{- ^ 
 Examples of the L4 patterns
+    TermIsMaxXWhere:
+          ( RPnary RPis
+              [ RPMT
+                  [ MTT "savings" ]
+              , RPnary RPgt
+                  [ RPMT
+                      [ MTT "x"
+                      , MTT "where"
+                      , MTT "x"
+                      , MTT "is the thing u saved"
+                      ]]])
 
 t1 IS NOT t2:
 ```
@@ -199,9 +227,7 @@ t IS SUM t1 t2 ... tn:
                         [ MTT "initial savings" ]
                     , RPMT
                         [ MTT "inititial savings * percentage" ]
-                    ]
-                ]
-            )
+                    ]])
 
 t IS MIN t1 t2 .. tn:
             ( RPnary RPis
@@ -212,18 +238,16 @@ t IS MIN t1 t2 .. tn:
                         [ MTT "1.5 * initial savings" ]
                     , RPMT
                         [ MTI 1000 ]
-                    ]
-                ]
-            )
+                    ]])
 -}
 
 
 
 simplifybodyRP :: RelationalPredicate -> Propn [Cell]
 simplifybodyRP = \case
-  RPMT exprs                        -> Atomic $ mtes2cells exprs
-                                    -- ^ this is the same for both the body and head
-  RPConstraint exprsl rel exprsr    -> case rel of
+  RPMT exprs                         -> Atomic $ mtes2cells exprs
+                                     -- ^ this is the same for both the body and head
+  RPConstraint exprsl rel exprsr     -> case rel of
                                           RPis  -> simpbodRPC @RPis exprsl exprsr
                                           RPor  -> simpbodRPC @RPor exprsl exprsr
                                           RPand -> simpbodRPC @RPand exprsl exprsr
@@ -237,15 +261,20 @@ simplifybodyRP = \case
                                                     )
                                                   )                           -}
 
-  T1IsNotT2 t1 t2                       -> Atomic $ mtes2cells t1 <> [MkCellIsDiffFr] <> mtes2cells t2
+  -- max / min / sum x where φ(x)
+  TermIsMaxXWhere term φx            -> IsOpSuchThat MaxWhere (mte2cell term : mtes2cells φx)
+  TermIsMinXWhere term φx            -> IsOpSuchThat MinWhere (mte2cell term : mtes2cells φx)
+  TermIsSumXWhere total φx           -> IsOpSuchThat SumWhere (mte2cell total : mtes2cells φx)
 
-  TermIsMax maxE maxargRPs              -> termIsNaryOpOf MkCellIsMaxOf maxE maxargRPs
-  TermIsMin minE minargRPs             -> termIsNaryOpOf MkCellIsMinOf minE minargRPs
-  TotalIsSumTerms total summandRPs      -> termIsNaryOpOf MkCellIsSumOf total summandRPs
-  TotalIsProductTerms total argRPs      -> termIsNaryOpOf MkCellIsProductOf total argRPs
+  -- max / min / sum of terms
+  TermIsMax term maxargRPs           -> termIsNaryOpOf MkCellIsMaxOf term maxargRPs
+  TermIsMin term minargRPs           -> termIsNaryOpOf MkCellIsMinOf term minargRPs
+  TotalIsSumTerms total summandRPs   -> termIsNaryOpOf MkCellIsSumOf total summandRPs
+  TotalIsProductTerms total argRPs   -> termIsNaryOpOf MkCellIsProductOf total argRPs
 
-  RPnary{}                              -> undefined
+  T1IsNotT2 t1 t2                     -> Atomic $ mtes2cells t1 <> [MkCellIsDiffFr] <> mtes2cells t2
 
+  RPnary{}                              -> error "The spec doesn't support other RPnary constructs in the body of a HC"
   RPBoolStructR {}                      -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
   RPParamText _                         -> error "should not be seeing RPParamText in body"
 

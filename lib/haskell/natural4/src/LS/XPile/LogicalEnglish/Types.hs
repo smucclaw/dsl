@@ -12,7 +12,7 @@ module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , Propn(..)
-    , OpWhere
+    , OpWhere(..)
     , SimpleNum(..)
 
     -- L4-related types

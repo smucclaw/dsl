@@ -12,7 +12,6 @@ module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , Propn(..)
-    , OpWhere(..)
     , SimpleNum(..)
 
     -- L4-related types
@@ -62,8 +61,12 @@ import LS.Rule as L4 (Rule(..))
 data Propn a =
   Atomic a
   -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-  | IsOpSuchThat OpWhere a
-  -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
+  | IsOpSuchThat a a
+  {- |  IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation
+        the first `a` would be the stuff in the angled brackets in "if <..>"
+        the second `a` would be the indented condition below that
+   Note: right now our LE dialect only accepts an atomic propn as the arg to such an operator
+   -}
   | And [Propn a]
   | Or  [Propn a]
   | Not (Propn a)
@@ -77,7 +80,7 @@ Considered using phantom types, gadts, and datakinds to distinguish between the 
   data Propn a b where
     Atomic :: a -> Propn a 'IsAtomic
     -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-    IsOpSuchThat :: OpWhere -> a -> Propn a 'IsOST
+    IsOpSuchThat :: OpSuchTt -> a -> Propn a 'IsOST
     -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
     And :: [Propn a b] -> Propn a 'IsAnd
     Or  :: [Propn a b] -> Propn a 'IsOr
@@ -86,9 +89,6 @@ Considered using phantom types, gadts, and datakinds to distinguish between the 
 
 
 -}
-
-data OpWhere = MaxWhere | MinWhere | SumWhere
-  deriving stock (Eq, Ord, Show)
 
 {-------------------------------------------------------------------------------
   The L4-related data types
@@ -112,6 +112,10 @@ data Cell = MkCellT !T.Text
           | MkCellIsMinOf
           | MkCellIsSumOf
           | MkCellIsProductOf
+
+          | MkCellIsMaxXSuchThat 
+          | MkCellIsMinXSuchThat 
+          | MkCellIsSumEachXSuchThat
   deriving stock (Show, Eq, Ord)
 
 data SimpleNum = MkInteger Integer | MkFloat Float
@@ -122,7 +126,7 @@ data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
                           , head      :: Propn [Cell]
                             -- ^ tho really this shld be just the atomic variant
                           , body      :: Maybe (Propn [Cell]) }
--- type L4ComplexPropn = Propn [Cell]
+-- type L4ComplexPropn = Propn Cell
 -- type IRComplexPropn = Propn LamAbsBase
 
 {-------------------------------------------------------------------------------

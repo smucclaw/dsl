@@ -213,9 +213,9 @@ simplifybodyRP = \case
                                                   )                           -}
 
   -- max / min / sum x where φ(x)
-  TermIsMaxXWhere term φx            -> IsOpSuchThat MaxWhere (mte2cell term : mtes2cells φx)
-  TermIsMinXWhere term φx            -> IsOpSuchThat MinWhere (mte2cell term : mtes2cells φx)
-  TermIsSumXWhere total φx           -> IsOpSuchThat SumWhere (mte2cell total : mtes2cells φx)
+  TermIsMaxXWhere term φx            -> IsOpSuchThat [mte2cell term, MkCellIsMaxXSuchThat] (mtes2cells φx)
+  TermIsMinXWhere term φx            -> IsOpSuchThat [mte2cell term, MkCellIsMinXSuchThat] (mtes2cells φx)
+  TermIsSumXWhere total φx           -> IsOpSuchThat [mte2cell total, MkCellIsSumEachXSuchThat] (mtes2cells φx)
 
   -- max / min / sum of terms
   TermIsMax term maxargRPs           -> termIsNaryOpOf MkCellIsMaxOf term maxargRPs
@@ -231,7 +231,7 @@ simplifybodyRP = \case
 
 
 termIsNaryOpOf :: Foldable seq => Cell -> MTExpr -> seq RelationalPredicate -> Propn [Cell]
-termIsNaryOpOf op t args = Atomic $ [mte2cell t] <> [op] <> concatMap atomRPoperand2cell args
+termIsNaryOpOf op t args = Atomic $ mte2cell t : op : concatMap atomRPoperand2cell args
 
 atomRPoperand2cell :: RelationalPredicate -> [Cell]
 atomRPoperand2cell = \case

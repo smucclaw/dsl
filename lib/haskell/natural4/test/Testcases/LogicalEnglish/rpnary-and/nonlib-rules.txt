@@ -1,4 +1,0 @@
-a x is a fluorescent lamp
-if x is low-pressure
-and x is mercury-vapor
-and x is gas-discharge.

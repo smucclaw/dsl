@@ -18,11 +18,9 @@ import Data.Text qualified as T
 import Data.Bifunctor       ( first )
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
-import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
-import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
 import Data.List.NonEmpty qualified as NE
 import Debug.Trace (trace)
@@ -102,52 +100,6 @@ An example of an is-num pattern in a RPConstraint
                 )
 -}
 
-{-
-data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo | RPmap
--}
-
-{-
-inspiration:
-
-from types.hs
-rp2mt :: RelationalPredicate -> MultiTerm
-rp2mt (RPParamText    pt)            = pt2multiterm pt
-rp2mt (RPMT           mt)            = mt
-rp2mt (RPConstraint   mt1 rel mt2)   = mt1 ++ [MTT $ rel2txt rel] ++ mt2
-rp2mt (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [MTT $ rel2txt rel] ++ [MTT $ bsr2text bsr] -- [TODO] is there some better way to bsr2mtexpr?
-rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
-
-----------
-data BoolStruct lbl a =
-    Leaf                       a
-  | All lbl [BoolStruct lbl a] -- and
-  | Any lbl [BoolStruct lbl a] --  or
-  | Not             (BoolStruct lbl a)
-  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-instance (Hashable lbl, Hashable a) => Hashable (BoolStruct lbl a)
-
-type OptionallyLabeledBoolStruct a = BoolStruct (Maybe (Label T.Text)) a
-type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
-
-----
-data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
-                         | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
-                         | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
-                         | RPBoolStructR MultiTerm RPRel BoolStructR   -- eyes IS (left IS blue AND right IS brown)
-                         | RPnary RPRel [RelationalPredicate] 
-                                -- RPnary RPnot [RPnary RPis [MTT ["the sky"], MTT ["blue"]
-----
-data Propn a =
-    Atomic a
-    -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-    | IsOpSuchThat OpWhere a
-    -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
-    | And [Propn a]
-    | Or  [Propn a]
-    | Not [Propn a]
-    deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
--}
-
 {-------------------------------------------------------------------------------
     simplifying body of L4 HC
 -------------------------------------------------------------------------------}
@@ -162,6 +114,7 @@ simplifyHcBodyBsr = \case
 Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of the data constructors for the RelationalPredicate sum type
 -}
 
+-- patterns for simplifybodyRP
 pattern T1IsNotT2 :: L4.MultiTerm -> L4.MultiTerm -> L4.RelationalPredicate
 pattern T1IsNotT2 t1 t2 = RPBoolStructR t1 RPis (AA.Not (AA.Leaf (RPMT t2)))
 
@@ -241,8 +194,6 @@ t IS MIN t1 t2 .. tn:
                     ]])
 -}
 
-
-
 simplifybodyRP :: RelationalPredicate -> Propn [Cell]
 simplifybodyRP = \case
   RPMT exprs                         -> Atomic $ mtes2cells exprs
@@ -278,6 +229,7 @@ simplifybodyRP = \case
   RPBoolStructR {}                      -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
   RPParamText _                         -> error "should not be seeing RPParamText in body"
 
+
 termIsNaryOpOf :: Foldable seq => Cell -> MTExpr -> seq RelationalPredicate -> Propn [Cell]
 termIsNaryOpOf op t args = Atomic $ [mte2cell t] <> [op] <> concatMap atomRPoperand2cell args
 
@@ -305,10 +257,7 @@ instance SimpBodyRPConstrntRPrel RPor where
 instance SimpBodyRPConstrntRPrel RPand where
   simpbodRPC exprsl exprsr = undefined
   -- TODO: implement this!
-
-
 --------------------------------------------------------------------------------
-
 
 
 {-------------------------------------------------------------------------------

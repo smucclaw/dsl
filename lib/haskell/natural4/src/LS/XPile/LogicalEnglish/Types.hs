@@ -108,6 +108,10 @@ data Cell = MkCellT !T.Text
           -- ^ TODO: see if it's possible to use a more generic number type tt includes floats, since Joe  uses floats in his encoding.
           | MkCellIs
           | MkCellIsDiffFr
+          | MkCellIsMaxOf
+          | MkCellIsMinOf
+          | MkCellIsSumOf
+          | MkCellIsProductOf
   deriving stock (Show, Eq, Ord)
 
 data SimpleNum = MkInteger Integer | MkFloat Float

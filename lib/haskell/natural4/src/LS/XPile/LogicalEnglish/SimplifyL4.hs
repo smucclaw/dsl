@@ -163,47 +163,102 @@ Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of t
 -}
 
 pattern T1IsNotT2 :: L4.MultiTerm -> L4.MultiTerm -> L4.RelationalPredicate
-pattern T1IsNotT2 t1 t2 = (RPBoolStructR t1 RPis (AA.Not (AA.Leaf (RPMT t2)))) 
+pattern T1IsNotT2 t1 t2 = RPBoolStructR t1 RPis (AA.Not (AA.Leaf (RPMT t2)))
+
+pattern TermIsOpOfAtomicTerms :: RPRel -> MTExpr -> [RelationalPredicate] -> RelationalPredicate
+pattern TermIsOpOfAtomicTerms op result args <- RPnary RPis (RPMT [result] : [RPnary op args])
+  where TermIsOpOfAtomicTerms op result args = RPnary RPis (RPMT [result] : [RPnary op args])
+  -- needed b/c GHC can't infer tt this is invertible if OverloadedLists extn is enabled
+
+pattern TotalIsSumTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
+pattern TotalIsProductTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
+pattern TermIsMax :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
+pattern TermIsMin :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
+
+pattern TotalIsSumTerms total summandAtomRPs = TermIsOpOfAtomicTerms RPsum total summandAtomRPs
+pattern TotalIsProductTerms total atomargs = TermIsOpOfAtomicTerms RPproduct total atomargs
+pattern TermIsMax maxE atomargs = TermIsOpOfAtomicTerms RPgt maxE atomargs
+pattern TermIsMin minE atomargs = TermIsOpOfAtomicTerms RPlt minE atomargs
+
+{- | 
+Examples of the L4 patterns
+
+t1 IS NOT t2:
+```
+      ( RPBoolStructR
+          [ MTT "stumbling" ] RPis
+          ( Not ( Leaf ( RPMT [ MTT "walking" ] ) ) )
+```
+
+t IS SUM t1 t2 ... tn:
+            ( RPnary RPis
+                [ RPMT
+                    [ MTT "z" ]
+                , RPnary RPsum
+                    [ RPMT
+                        [ MTT "initial savings" ]
+                    , RPMT
+                        [ MTT "inititial savings * percentage" ]
+                    ]
+                ]
+            )
+
+t IS MIN t1 t2 .. tn:
+            ( RPnary RPis
+                [ RPMT
+                    [ MTT "amountsaved" ]
+                , RPnary RPlt
+                    [ RPMT
+                        [ MTT "1.5 * initial savings" ]
+                    , RPMT
+                        [ MTI 1000 ]
+                    ]
+                ]
+            )
+-}
+
 
 
 simplifybodyRP :: RelationalPredicate -> Propn [Cell]
 simplifybodyRP = \case
-  RPMT exprs                     -> Atomic $ mtes2cells exprs
+  RPMT exprs                        -> Atomic $ mtes2cells exprs
                                     -- ^ this is the same for both the body and head
-  RPConstraint exprsl rel exprsr -> case rel of
-                                        RPis  -> simpbodRPC @RPis exprsl exprsr
-                                        RPor  -> simpbodRPC @RPor exprsl exprsr
-                                        RPand -> simpbodRPC @RPand exprsl exprsr
-                                        _     -> error "shouldn't be seeing other rel ops in rpconstraint in body" 
-                                        {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives!
-                                            EG: ( Leaf
-                                                  ( RPConstraint
-                                                      [ MTT "data breach" , MTT "came about from"] 
-                                                      RPor
-                                                      [ MTT "luck, fate", MTT "acts of god or any similar event"]
-                                                  )
-                                                )                           -}
+  RPConstraint exprsl rel exprsr    -> case rel of
+                                          RPis  -> simpbodRPC @RPis exprsl exprsr
+                                          RPor  -> simpbodRPC @RPor exprsl exprsr
+                                          RPand -> simpbodRPC @RPand exprsl exprsr
+                                          _     -> error "shouldn't be seeing other rel ops in rpconstraint in body"
+                                          {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
+                                              EG: ( Leaf
+                                                    ( RPConstraint
+                                                        [ MTT "data breach" , MTT "came about from"] 
+                                                        RPor
+                                                        [ MTT "luck, fate", MTT "acts of god or any similar event"]
+                                                    )
+                                                  )                           -}
 
-  T1IsNotT2 t1 t2                -> Atomic $ mtes2cells t1 <> [MkCellIsDiffFr] <> mtes2cells t2
-  RPBoolStructR {}               -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
-  RPnary rel rps                 -> undefined
-  RPParamText _                  -> error "should not be seeing RPParamText in body"
+  T1IsNotT2 t1 t2                       -> Atomic $ mtes2cells t1 <> [MkCellIsDiffFr] <> mtes2cells t2
 
+  TermIsMax maxE maxargRPs              -> termIsNaryOpOf MkCellIsMaxOf maxE maxargRPs
+  TermIsMin minE minargRPs             -> termIsNaryOpOf MkCellIsMinOf minE minargRPs
+  TotalIsSumTerms total summandRPs      -> termIsNaryOpOf MkCellIsSumOf total summandRPs
+  TotalIsProductTerms total argRPs      -> termIsNaryOpOf MkCellIsProductOf total argRPs
 
-{- | 
-EG of a L4 t1 IS NOT t2:
-```
-      ( RPBoolStructR
-          [ MTT "stumbling" ] RPis
-          ( Not
-              ( Leaf
-                  ( RPMT
-                      [ MTT "walking" ]
-                  )
-              )
-          )
-```
--}
+  RPnary{}                              -> undefined
+
+  RPBoolStructR {}                      -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
+  RPParamText _                         -> error "should not be seeing RPParamText in body"
+
+termIsNaryOpOf :: Foldable seq => Cell -> MTExpr -> seq RelationalPredicate -> Propn [Cell]
+termIsNaryOpOf op t args = Atomic $ [mte2cell t] <> [op] <> concatMap atomRPoperand2cell args
+
+atomRPoperand2cell :: RelationalPredicate -> [Cell]
+atomRPoperand2cell = \case
+  RPMT mtexprs    -> mtes2cells mtexprs
+  RPParamText _pt -> error "not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"
+                    -- mtes2cells (concatMap (NE.toList . fst) (NE.toList pt)) 
+  _              -> error "input rp supposed to be atomic"
+
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
 
@@ -254,16 +309,16 @@ gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
 
 ------------    MTExprs to [Cell]    ------------------------------------------
 
-mtexpr2cell :: L4.MTExpr -> Cell
-mtexpr2cell = \case
+mte2cell :: L4.MTExpr -> Cell
+mte2cell = \case
   MTT t -> MkCellT t
   MTI i -> MkCellNum (MkInteger i)
   MTF f -> MkCellNum (MkFloat f)
   _     -> error "Booleans in cells currently not supported"
 
--- | convenience function for when `map mtexpr2cell` too wordy 
+-- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]
-mtes2cells = map mtexpr2cell
+mtes2cells = map mte2cell
 
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]

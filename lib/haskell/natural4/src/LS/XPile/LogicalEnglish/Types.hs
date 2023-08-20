@@ -24,6 +24,10 @@ module LS.XPile.LogicalEnglish.Types (
     , OpSuchTt(..)
     , AtomicBPropn(..)
     , L4AtomicBP
+    , pattern MkTrueAtomicBP
+    , pattern MkIsOpSuchTtBP
+    , pattern MkIsOpOf
+    , pattern MkIsDiffFr
     -- , L4ComplexPropn
 
     -- Intermediate representation types
@@ -89,7 +93,7 @@ Considered using phantom types, gadts, and datakinds to distinguish between the 
 
 data AtomicBPropn var bprop = ABPatomic bprop
                             | ABPIsDiffFr var var
-                            | ABPIsOpOf var OpOf bprop
+                            | ABPIsOpOf var OpOf [var]
                               -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
                             | ABPIsOpSuchTt var OpSuchTt bprop
                               {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
@@ -135,6 +139,18 @@ data SimpleNum = MkInteger Integer | MkFloat Float
 
 type Term = Cell
 type L4AtomicBP = AtomicBPropn Term [Cell] 
+
+pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicBP
+pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
+
+pattern MkIsOpSuchTtBP :: Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicBP
+pattern MkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
+
+pattern MkIsDiffFr :: Term -> Term -> BoolPropn L4AtomicBP
+pattern MkIsDiffFr t1 t2 = AtomicBP (ABPIsDiffFr t1 t2)
+
+pattern MkIsOpOf :: Term -> OpOf -> [Term] -> BoolPropn L4AtomicBP
+pattern MkIsOpOf term op args = AtomicBP (ABPIsOpOf term op args)
 
 
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more

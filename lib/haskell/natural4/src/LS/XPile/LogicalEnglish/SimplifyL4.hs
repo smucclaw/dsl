@@ -68,12 +68,10 @@ simplifyL4HC l4hc = (simplifyHead l4hc.hHead, fmap simplifyHcBodyBsr l4hc.hBody)
 
 simplifyHead :: L4.RelationalPredicate -> Propn [Cell]
 simplifyHead = \case
-  (RPMT exprs)                      -> Atomic $ mtes2cells exprs
-  (RPConstraint exprsl RPis exprsr) -> simpbodRPC @RPis exprsl exprsr
+  RPMT exprs                      -> Atomic $ mtes2cells exprs
+  RPConstraint exprsl RPis exprsr -> simpbodRPC @RPis exprsl exprsr
                                     {- ^ 
-                                      1. Match on RPis directly cos no other rel operator shld appear here in the head: 
-                                        the only ops tt can appear here from the parse are RPis or RPlt or RPgt,
-                                        but the encoding convention does not allow for  RPlt or RPgt in the head.
+                                      1. Match on RPis directly cos no other rel operator shld appear here in the head, given the encoding convention / invariants.
 
                                       2. Can't just lowercase IS and transform the mtexprs to (either Text or Integer) Cells 
                                         because it could be a IS-number, 
@@ -83,10 +81,10 @@ simplifyHead = \case
 
                                       We handle the case of RPis in a RPConstraint the same way in both the body and head. 
                                     -}
-
-  (RPBoolStructR _ _ _)             -> error "should not be seeing RPBoolStructR in head"
-  (RPParamText _)                   -> error "should not be seeing RPParamText in head"
-  (RPnary _rel _rps)                -> error "I don't see any RPnary in the head in Joe's encoding, so."
+  RPConstraint {}                -> error "should not be seeing other kinds of RPConstraint in head"
+  RPBoolStructR {}               -> error "should not be seeing RPBoolStructR in head"
+  RPParamText _                  -> error "should not be seeing RPParamText in head"
+  RPnary {}                      -> error "I don't see any RPnary in the head in Joe's encoding, so."
 
 
 {- ^
@@ -156,7 +154,7 @@ data Propn a =
 
 simplifyHcBodyBsr :: L4.BoolStructR -> Propn [Cell]
 simplifyHcBodyBsr = \case
-  AA.Leaf rp      -> simplifybodyRP rp 
+  AA.Leaf rp      -> simplifybodyRP rp
   AA.All _ propns -> And (map simplifyHcBodyBsr propns)
   AA.Any _ propns -> Or (map simplifyHcBodyBsr propns)
   AA.Not propn    -> Not (simplifyHcBodyBsr propn)
@@ -164,14 +162,19 @@ simplifyHcBodyBsr = \case
 Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of the data constructors for the RelationalPredicate sum type
 -}
 
+pattern T1IsNotT2 :: L4.MultiTerm -> L4.MultiTerm -> L4.RelationalPredicate
+pattern T1IsNotT2 t1 t2 = (RPBoolStructR t1 RPis (AA.Not (AA.Leaf (RPMT t2)))) 
+
+
 simplifybodyRP :: RelationalPredicate -> Propn [Cell]
 simplifybodyRP = \case
   RPMT exprs                     -> Atomic $ mtes2cells exprs
                                     -- ^ this is the same for both the body and head
   RPConstraint exprsl rel exprsr -> case rel of
-                                        RPis -> simpbodRPC @RPis exprsl exprsr
-                                        RPor -> simpbodRPC @RPor exprsl exprsr
+                                        RPis  -> simpbodRPC @RPis exprsl exprsr
+                                        RPor  -> simpbodRPC @RPor exprsl exprsr
                                         RPand -> simpbodRPC @RPand exprsl exprsr
+                                        _     -> error "shouldn't be seeing other rel ops in rpconstraint in body" 
                                         {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives!
                                             EG: ( Leaf
                                                   ( RPConstraint
@@ -180,28 +183,15 @@ simplifybodyRP = \case
                                                       [ MTT "luck, fate", MTT "acts of god or any similar event"]
                                                   )
                                                 )                           -}
-                                      
-  RPBoolStructR exprs rel bsr    -> if rel == RPis 
-                                    then simpbodRPBSR exprs bsr
-                                    else error "The spec does not support any other RPRel in a RPBoolStructR"
-  RPnary rel rps                  -> undefined
-  RPParamText _                   -> error "should not be seeing RPParamText in body"
 
+  T1IsNotT2 t1 t2                -> Atomic $ mtes2cells t1 <> [MkCellIsDiffFr] <> mtes2cells t2
+  RPBoolStructR {}               -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
+  RPnary rel rps                 -> undefined
+  RPParamText _                  -> error "should not be seeing RPParamText in body"
 
-simpbodRPBSR :: [MTExpr] -> BoolStructR -> Propn [Cell]
-simpbodRPBSR exprs = \case
-  AA.Not (AA.Leaf (RPMT nonPropnalCmplmt)) -> let leftexprs = mtes2cells exprs  
-                                              in Atomic $ leftexprs <> [MkCellDiffFr] <> mtes2cells nonPropnalCmplmt
-  _                                        -> error "should not be seeing anything other than a Not in the BSR position of a RPBoolStructR"
-  -- i wonder if we can avoid having missing-case warnings with a pattern synonym + the complete pragma
 
 {- | 
-The main thing that simpbodRPBSR does is rewrite L4's
-                    t1 IS NOT t2 
-                to 
-                  t1 is different from t2
-
-EG of a L4 IS NOT:
+EG of a L4 t1 IS NOT t2:
 ```
       ( RPBoolStructR
           [ MTT "stumbling" ] RPis
@@ -245,7 +235,7 @@ instance SimpBodyRPConstrntRPrel RPand where
 
 extractGiven :: L4.Rule -> [MTExpr]
   -- [(NE.NonEmpty MTExpr, Maybe TypeSig)]
-extractGiven L4.Hornlike {given=Nothing}        = [] 
+extractGiven L4.Hornlike {given=Nothing}        = []
 -- won't need to worry abt this when we add checking upfront
 extractGiven L4.Hornlike {given=Just paramtext} = concatMap (NE.toList . fst) (NE.toList paramtext)
 extractGiven _                                  = trace "not a Hornlike rule, not extracting given" mempty
@@ -255,17 +245,17 @@ extractGiven _                                  = trace "not a Hornlike rule, no
 gvarsFromL4Rule :: L4.Rule -> GVarSet
 gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
                        in HS.fromList $ map gmtexpr2gvar givenMTExprs
-        where 
+        where
           -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. This is importantly different from `mtexpr2text` in that it only converts the cases we use for LE and that we would encounter in the Givens on our LE conventions
           gmtexpr2gvar :: MTExpr -> GVar
-          gmtexpr2gvar = \case 
+          gmtexpr2gvar = \case
             MTT var -> MkGVar var
             _       -> error "non-text mtexpr variable names in the GIVEN are not allowed on our LE spec :)"
 
 ------------    MTExprs to [Cell]    ------------------------------------------
 
-mtexpr2cell :: L4.MTExpr -> Cell 
-mtexpr2cell = \case 
+mtexpr2cell :: L4.MTExpr -> Cell
+mtexpr2cell = \case
   MTT t -> MkCellT t
   MTI i -> MkCellNum (MkInteger i)
   MTF f -> MkCellNum (MkFloat f)

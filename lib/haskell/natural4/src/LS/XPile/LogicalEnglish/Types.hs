@@ -11,14 +11,19 @@
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
-    , Propn(..)
+    , BoolPropn(..)
     , SimpleNum(..)
 
     -- L4-related types
     , GVar(..)
     , GVarSet
     , Cell(..)
+    , Term
     , SimpleL4HC(..)
+    , OpOf(..)
+    , OpSuchTt(..)
+    , AtomicBPropn(..)
+    , L4AtomicBP
     -- , L4ComplexPropn
 
     -- Intermediate representation types
@@ -58,37 +63,54 @@ import LS.Rule as L4 (Rule(..))
 {-| This data structure is designed for easy pretty printing: 
     that's what dictates whether to keep or discard the original L4 structure. 
 -}
-data Propn a =
-  Atomic a
-  -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-  | IsOpSuchThat a a
-  {- |  IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation
-        the first `a` would be the stuff in the angled brackets in "if <..>"
-        the second `a` would be the indented condition below that
-   Note: right now our LE dialect only accepts an atomic propn as the arg to such an operator
-   -}
-  | And [Propn a]
-  | Or  [Propn a]
-  | Not (Propn a)
+data BoolPropn a = AtomicBP a
+                 | And [BoolPropn a]
+                 | Or  [BoolPropn a]
+                 | Not (BoolPropn a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 {-
-Considered using phantom types, gadts, and datakinds to distinguish between the variants of Propn (esp. atomic vs non-atomic for the head vs body), but decided not worth the effort.
+Considered using phantom types, gadts, and datakinds to distinguish between the variants of BoolPropn (esp. atomic vs non-atomic for the head vs body), but decided not worth the effort.
 
   data CPstatus = IsAtomic | IsOST | IsAnd | IsOr | IsNot 
 
-  data Propn a b where
-    Atomic :: a -> Propn a 'IsAtomic
+  data BoolPropn a b where
+    Atomic :: a -> BoolPropn a 'IsAtomic
     -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-    IsOpSuchThat :: OpSuchTt -> a -> Propn a 'IsOST
+    IsOpSuchThat :: OpSuchTt -> a -> BoolPropn a 'IsOST
     -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
-    And :: [Propn a b] -> Propn a 'IsAnd
-    Or  :: [Propn a b] -> Propn a 'IsOr
-    Not :: [Propn a b] -> Propn a 'IsNot
+    And :: [BoolPropn a b] -> BoolPropn a 'IsAnd
+    Or  :: [BoolPropn a b] -> BoolPropn a 'IsOr
+    Not :: [BoolPropn a b] -> BoolPropn a 'IsNot
     deriving (Eq, Ord, Show, Generic, Functor, Foldable)
 
 
 -}
+
+data AtomicBPropn var bprop = ABPatomic bprop
+                            | ABPIsDiffFr var var
+                            | ABPIsOpOf var OpOf bprop
+                              -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
+                            | ABPIsOpSuchTt var OpSuchTt bprop
+                              {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
+                                    the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
+                                    the second propn would be the indented φ(x) condition
+                                    Note: right now our LE dialect only accepts an atomic φ(x)
+                              -}
+  deriving stock (Show, Eq, Ord)
+
+
+data OpOf = MaxOf
+          | MinOf
+          | SumOf
+          | ProductOf
+  deriving stock (Show, Eq, Ord)
+
+data OpSuchTt = MaxXSuchThat 
+              | MinXSuchThat 
+              | SumEachXSuchThat
+  deriving stock (Show, Eq, Ord)
+
 
 {-------------------------------------------------------------------------------
   The L4-related data types
@@ -105,29 +127,23 @@ type GVarSet = HS.HashSet GVar
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
           | MkCellNum !SimpleNum 
-          -- ^ TODO: see if it's possible to use a more generic number type tt includes floats, since Joe  uses floats in his encoding.
           | MkCellIs
-          | MkCellIsDiffFr
-          | MkCellIsMaxOf
-          | MkCellIsMinOf
-          | MkCellIsSumOf
-          | MkCellIsProductOf
-
-          | MkCellIsMaxXSuchThat 
-          | MkCellIsMinXSuchThat 
-          | MkCellIsSumEachXSuchThat
   deriving stock (Show, Eq, Ord)
 
 data SimpleNum = MkInteger Integer | MkFloat Float
   deriving stock (Show, Eq, Ord)
 
+type Term = Cell
+type L4AtomicBP = AtomicBPropn Term [Cell] 
+
+
 -- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
 data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
-                          , head      :: Propn [Cell]
+                          , head      :: BoolPropn L4AtomicBP
                             -- ^ tho really this shld be just the atomic variant
-                          , body      :: Maybe (Propn [Cell]) }
--- type L4ComplexPropn = Propn Cell
--- type IRComplexPropn = Propn LamAbsBase
+                          , body      :: Maybe (BoolPropn L4AtomicBP) }
+-- type L4ComplexPropn = BoolPropn Cell
+-- type IRComplexPropn = BoolPropn LamAbsBase
 
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
@@ -150,10 +166,11 @@ newtype Substn = MkSubstn [T.Text]
   deriving stock (Show)
   deriving newtype (Eq, Ord)
 
+--TODO: Edit this / think thru it again when we get to this on Mon
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
 data LamAbsRule = MkLAbsRule { givenVars  :: GVarSet
                              , head      :: LamAbsBase
-                             , body      :: Propn LamAbsBase }
+                             , body      :: BoolPropn LamAbsBase } -- this might need to be a Maybe (BoolPropn LamAbsBase)
 {-| This is best understood in the context of LamAbsRule  -}
 data LamAbsBase = MkTBase { getVarSeq :: OrigVarSeq
                           , instTemplate :: Substn -> TemplInstanceOrNLA } 
@@ -161,6 +178,8 @@ data LamAbsBase = MkTBase { getVarSeq :: OrigVarSeq
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
+type LEVar = T.Text
+
 newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
@@ -171,9 +190,10 @@ newtype LETemplateInstance = MkTInstance T.Text
 
 data TemplInstanceOrNLA = TInst LETemplateInstance
                         | NLA LENatLangAnnot
--- TODO: try to derive instances somehow?
+  deriving stock (Eq, Ord, Show)
 
-data LERule = LERule
+
+data LERule = MkLERule
             { head :: LETemplateInstance
             , body :: LECondnTree
             }
@@ -182,8 +202,10 @@ data LERule = LERule
 {-| This is really for *our* dialect of LE (with our in-house libs) rather than standard LE. 
 See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
  -}
-type LECondnTree = Propn LETemplateInstance
--- ^ so the `sum of`, `product of` would just be atomic LETemplateInsts / texts, since they don't differ indentation-wise from normal atomic conditions 
+type LEAtomicBPropn = AtomicBPropn LEVar LETemplateInstance
+type LECondnTree = BoolPropn LEAtomicBPropn
+-- ^ TODO: This might be too much structure -- think more abt this when we get to pretty printing
+
 
 -- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
 pattern MkLEProg <- undefined

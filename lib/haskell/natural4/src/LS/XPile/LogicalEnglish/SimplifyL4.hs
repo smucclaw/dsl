@@ -60,13 +60,13 @@ simplifyL4rule l4r =
 -------------------------------------------------------------------------------}
 
 -- TODO: Look into how to make it clear in the type signature that the head is just an atomic propn
-simplifyL4HC :: L4.HornClause2 -> (Propn [Cell], Maybe (Propn [Cell]))
+simplifyL4HC :: L4.HornClause2 -> (BoolPropn L4AtomicBP, Maybe (BoolPropn L4AtomicBP))
 simplifyL4HC l4hc = (simplifyHead l4hc.hHead, fmap simplifyHcBodyBsr l4hc.hBody)
 -- ^ There are HCs with Nothing in the body in the encoding 
 
-simplifyHead :: L4.RelationalPredicate -> Propn [Cell]
+simplifyHead :: L4.RelationalPredicate -> BoolPropn L4AtomicBP
 simplifyHead = \case
-  RPMT exprs                      -> Atomic $ mtes2cells exprs
+  RPMT exprs                      -> mkTrueAtomicBP $ mtes2cells exprs
   RPConstraint exprsl RPis exprsr -> simpbodRPC @RPis exprsl exprsr
                                     {- ^ 
                                       1. Match on RPis directly cos no other rel operator shld appear here in the head, given the encoding convention / invariants.
@@ -104,7 +104,7 @@ An example of an is-num pattern in a RPConstraint
     simplifying body of L4 HC
 -------------------------------------------------------------------------------}
 
-simplifyHcBodyBsr :: L4.BoolStructR -> Propn [Cell]
+simplifyHcBodyBsr :: L4.BoolStructR -> BoolPropn L4AtomicBP
 simplifyHcBodyBsr = \case
   AA.Leaf rp      -> simplifybodyRP rp
   AA.All _ propns -> And (map simplifyHcBodyBsr propns)
@@ -115,8 +115,8 @@ Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of t
 -}
 
 -- patterns for simplifybodyRP
-pattern T1IsNotT2 :: L4.MultiTerm -> L4.MultiTerm -> L4.RelationalPredicate
-pattern T1IsNotT2 t1 t2 = RPBoolStructR t1 RPis (AA.Not (AA.Leaf (RPMT t2)))
+pattern T1IsNotT2 :: L4.MTExpr -> L4.MTExpr -> L4.RelationalPredicate
+pattern T1IsNotT2 t1 t2 <- RPBoolStructR [t1] RPis (AA.Not (AA.Leaf (RPMT [t2])))
 
 pattern TermIsOpOfAtomicTerms :: RPRel -> MTExpr -> [RelationalPredicate] -> RelationalPredicate
 pattern TermIsOpOfAtomicTerms op result args <- RPnary RPis (RPMT [result] : [RPnary op args])
@@ -194,9 +194,9 @@ t IS MIN t1 t2 .. tn:
                     ]])
 -}
 
-simplifybodyRP :: RelationalPredicate -> Propn [Cell]
+simplifybodyRP :: RelationalPredicate -> BoolPropn L4AtomicBP
 simplifybodyRP = \case
-  RPMT exprs                         -> Atomic $ mtes2cells exprs
+  RPMT exprs                         -> mkTrueAtomicBP (mtes2cells exprs)
                                      -- ^ this is the same for both the body and head
   RPConstraint exprsl rel exprsr     -> case rel of
                                           RPis  -> simpbodRPC @RPis exprsl exprsr
@@ -213,25 +213,28 @@ simplifybodyRP = \case
                                                   )                           -}
 
   -- max / min / sum x where φ(x)
-  TermIsMaxXWhere term φx            -> IsOpSuchThat [mte2cell term, MkCellIsMaxXSuchThat] (mtes2cells φx)
-  TermIsMinXWhere term φx            -> IsOpSuchThat [mte2cell term, MkCellIsMinXSuchThat] (mtes2cells φx)
-  TermIsSumXWhere total φx           -> IsOpSuchThat [mte2cell total, MkCellIsSumEachXSuchThat] (mtes2cells φx)
+  TermIsMaxXWhere term φx            -> mkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
+  TermIsMinXWhere term φx            -> mkIsOpSuchTtBP (mte2cell term) MinXSuchThat (mtes2cells φx)
+  TermIsSumXWhere total φx           -> mkIsOpSuchTtBP (mte2cell total) SumEachXSuchThat (mtes2cells φx)
 
   -- max / min / sum of terms
-  TermIsMax term maxargRPs           -> termIsNaryOpOf MkCellIsMaxOf term maxargRPs
-  TermIsMin term minargRPs           -> termIsNaryOpOf MkCellIsMinOf term minargRPs
-  TotalIsSumTerms total summandRPs   -> termIsNaryOpOf MkCellIsSumOf total summandRPs
-  TotalIsProductTerms total argRPs   -> termIsNaryOpOf MkCellIsProductOf total argRPs
+  TermIsMax term maxargRPs           -> termIsNaryOpOf MaxOf term maxargRPs
+  TermIsMin term minargRPs           -> termIsNaryOpOf MinOf term minargRPs
+  TotalIsSumTerms total summandRPs   -> termIsNaryOpOf SumOf total summandRPs
+  TotalIsProductTerms total argRPs   -> termIsNaryOpOf ProductOf total argRPs
 
-  T1IsNotT2 t1 t2                     -> Atomic $ mtes2cells t1 <> [MkCellIsDiffFr] <> mtes2cells t2
+  T1IsNotT2 t1 t2                     -> AtomicBP (ABPIsDiffFr (mte2cell t1) (mte2cell t2))
 
   RPnary{}                              -> error "The spec doesn't support other RPnary constructs in the body of a HC"
   RPBoolStructR {}                      -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
   RPParamText _                         -> error "should not be seeing RPParamText in body"
 
 
-termIsNaryOpOf :: Foldable seq => Cell -> MTExpr -> seq RelationalPredicate -> Propn [Cell]
-termIsNaryOpOf op t args = Atomic $ mte2cell t : op : concatMap atomRPoperand2cell args
+termIsNaryOpOf :: Foldable seq => OpOf -> MTExpr -> seq RelationalPredicate -> BoolPropn L4AtomicBP
+termIsNaryOpOf op mteTerm args = AtomicBP (ABPIsOpOf term op cellargs)
+  where term     = mte2cell mteTerm
+        cellargs = concatMap atomRPoperand2cell args
+
 
 atomRPoperand2cell :: RelationalPredicate -> [Cell]
 atomRPoperand2cell = \case
@@ -245,10 +248,10 @@ atomRPoperand2cell = \case
 
 -- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
 class SimpBodyRPConstrntRPrel (rp :: RPRel) where
-  simpbodRPC :: [MTExpr] -> [MTExpr] -> Propn [Cell]
+  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicBP
 
 instance SimpBodyRPConstrntRPrel RPis where
-  simpbodRPC exprsl exprsr = Atomic (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
+  simpbodRPC exprsl exprsr = mkTrueAtomicBP (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
 
 instance SimpBodyRPConstrntRPrel RPor where
   simpbodRPC exprsl exprsr = undefined
@@ -298,6 +301,13 @@ mte2cell = \case
 mtes2cells :: [L4.MTExpr] -> [Cell]
 mtes2cells = map mte2cell
 
+
+------
+mkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicBP
+mkTrueAtomicBP = AtomicBP . ABPatomic 
+
+mkIsOpSuchTtBP :: Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicBP
+mkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
 -- wrapper = concat . map extractGiven . coerce

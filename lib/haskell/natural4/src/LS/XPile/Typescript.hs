@@ -342,7 +342,7 @@ tsEnums l4i = return $
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
       let className = ruleLabelName r
       in 
-        "enum" <+> snake_case className <> "Enum" <+> lbrace
+        "enum" <+> snake_case className <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm
@@ -351,7 +351,7 @@ tsEnums l4i = return $
 
           -- but we also want to preserve the original strings for downstream use
           -- so we use the L4Orig convention
-        <//> "L4Orig.enums['" <> snake_case className <> "Enum" <> "']" <+> equals <+> lbrace
+        <//> "L4Orig.enums['" <> snake_case className <> "']" <+> equals <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> colon <+> dquotes (pretty (mt2text [enumStr])) <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm

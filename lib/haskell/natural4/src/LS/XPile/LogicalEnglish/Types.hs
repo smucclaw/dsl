@@ -1,12 +1,13 @@
 {-# OPTIONS_GHC -W #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE PatternSynonyms, DataKinds #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
@@ -19,7 +20,13 @@ module LS.XPile.LogicalEnglish.Types (
     , GVarSet
     , Cell(..)
     , Term
-    , SimpleL4HC(..)
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead, 
+                 MkL4RuleHc, rgiven, rhead, rbody)
+    -- , pattern MkL4RuleHc
+    -- , pattern MkL4FactHc 
+    -- , pattern 
+    -- , pattern MkL4FactHc
+
     , OpOf(..)
     , OpSuchTt(..)
     , AtomicBPropn(..)
@@ -28,7 +35,6 @@ module LS.XPile.LogicalEnglish.Types (
     , pattern MkIsOpSuchTtBP
     , pattern MkIsOpOf
     , pattern MkIsDiffFr
-    -- , L4ComplexPropn
 
     -- Intermediate representation types
     , TemplateVar(..)
@@ -64,7 +70,7 @@ import LS.Rule as L4 (Rule(..))
   Common types 
 -------------------------------------------------------------------------------}
 
-{-| This data structure is designed for easy pretty printing: 
+{-| The BoolPropn and AtomicBPropn data structures are designed for easy pretty printing to our dialect of LE: 
     that's what dictates whether to keep or discard the original L4 structure. 
 -}
 data BoolPropn a = AtomicBP a
@@ -73,34 +79,18 @@ data BoolPropn a = AtomicBP a
                  | Not (BoolPropn a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
-{-
-Considered using phantom types, gadts, and datakinds to distinguish between the variants of BoolPropn (esp. atomic vs non-atomic for the head vs body), but decided not worth the effort.
-
-  data CPstatus = IsAtomic | IsOST | IsAnd | IsOr | IsNot 
-
-  data BoolPropn a b where
-    Atomic :: a -> BoolPropn a 'IsAtomic
-    -- ^ the structure in 'IS MAX / MIN / SUM / PROD t_1, ..., t_n' would be flattened out so that it's just a list of Cells --- i.e., a list of strings 
-    IsOpSuchThat :: OpSuchTt -> a -> BoolPropn a 'IsOST
-    -- ^ IS MAX / MIN / SUM / PROD where φ(x) -- these require special indentation, and right now our LE dialect only accepts an atomic propn as the arg to such an operator
-    And :: [BoolPropn a b] -> BoolPropn a 'IsAnd
-    Or  :: [BoolPropn a b] -> BoolPropn a 'IsOr
-    Not :: [BoolPropn a b] -> BoolPropn a 'IsNot
-    deriving (Eq, Ord, Show, Generic, Functor, Foldable)
-
-
--}
-
-data AtomicBPropn var bprop = ABPatomic bprop
-                            | ABPIsDiffFr var var
-                            | ABPIsOpOf var OpOf [var]
-                              -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
-                            | ABPIsOpSuchTt var OpSuchTt bprop
-                              {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
-                                    the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
-                                    the second propn would be the indented φ(x) condition
-                                    Note: right now our LE dialect only accepts an atomic φ(x)
-                              -}
+-- | Atomic(ish) Boolean proposition
+data AtomicBPropn var baseprop = 
+    ABPatomic baseprop
+  | ABPIsDiffFr var var
+  | ABPIsOpOf var OpOf [var]
+    -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
+  | ABPIsOpSuchTt var OpSuchTt baseprop
+    {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
+        * the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
+        * the second propn would be the indented φ(x) condition
+      Note: right now our LE dialect only accepts an atomic φ(x)
+    -}
   deriving stock (Show, Eq, Ord)
 
 
@@ -119,7 +109,6 @@ data OpSuchTt = MaxXSuchThat
 {-------------------------------------------------------------------------------
   The L4-related data types
 -------------------------------------------------------------------------------}
-
 
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
@@ -140,6 +129,7 @@ data SimpleNum = MkInteger Integer | MkFloat Float
 type Term = Cell
 type L4AtomicBP = AtomicBPropn Term [Cell] 
 
+-- patterns to make it easier to program with L4AtomicBP and AtomicBPropn
 pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicBP
 pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
 
@@ -152,14 +142,27 @@ pattern MkIsDiffFr t1 t2 = AtomicBP (ABPIsDiffFr t1 t2)
 pattern MkIsOpOf :: Term -> OpOf -> [Term] -> BoolPropn L4AtomicBP
 pattern MkIsOpOf term op args = AtomicBP (ABPIsOpOf term op args)
 
+-- | Two varieties of SimpleL4HC
+data SimpleL4HC = L4hcF L4Fact | L4hcR L4Rule
 
--- not sure right now how best to model the initial L4 side --- need to consult Meng's docs / inspect the AST more
-data SimpleL4HC = MkSL4hc { givenVars :: GVarSet
-                          , head      :: BoolPropn L4AtomicBP
-                            -- ^ tho really this shld be just the atomic variant
-                          , body      :: Maybe (BoolPropn L4AtomicBP) }
--- type L4ComplexPropn = BoolPropn Cell
--- type IRComplexPropn = BoolPropn LamAbsBase
+data L4Fact = L4Fact { givenVars :: GVarSet
+                     , head      :: L4AtomicBP
+                     }
+
+data L4Rule = L4Rule { givenVars :: GVarSet
+                     , head      :: L4AtomicBP
+                     , body      :: BoolPropn L4AtomicBP }
+
+pattern MkL4RuleHc :: GVarSet -> L4AtomicBP -> BoolPropn L4AtomicBP -> SimpleL4HC
+pattern MkL4RuleHc{rgiven, rhead, rbody} = 
+  L4hcR (L4Rule { givenVars = rgiven
+                , head = rhead
+                , body = rbody })
+
+pattern MkL4FactHc :: GVarSet -> L4AtomicBP -> SimpleL4HC
+pattern MkL4FactHc{fgiven, fhead} = 
+  L4hcF  (L4Fact { givenVars = fgiven
+                 , head = fhead})
 
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation

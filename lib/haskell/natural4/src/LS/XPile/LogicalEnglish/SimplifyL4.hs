@@ -46,28 +46,25 @@ TODO: All the `error ..`s should be checked for upfront in the ValidateL4Input m
   Precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
   TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
 -}
-simplifyL4rule :: L4.Rule -> SimpleL4HC
-simplifyL4rule l4r =
-  let gvars = gvarsFromL4Rule l4r
-      (rhead, rbody) = simplifyL4HC (Prelude.head $ L4.clauses l4r)
-                      -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
-  in MkSL4hc { givenVars = gvars, head = rhead, body = rbody }
-
-
+simplifyL4ruleish :: L4.Rule -> SimpleL4HC
+simplifyL4ruleish l4r = 
+  let gvars  = gvarsFromL4Rule l4r
+      clause = Prelude.head $ L4.clauses l4r
+      simpHead  = simplifyHead clause.hHead
+               -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
+  in case clause.hBody of 
+    Nothing   -> MkL4FactHc {fgiven = gvars, fhead = simpHead}
+    Just rbod -> MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simplifyHcBodyBsr rbod}
+    -- ^ There are Facts / HCs with Nothing in the body in the encoding 
 
 {-------------------------------------------------------------------------------
     Simplifying L4 HCs
 -------------------------------------------------------------------------------}
 
--- TODO: Look into how to make it clear in the type signature that the head is just an atomic propn
-simplifyL4HC :: L4.HornClause2 -> (BoolPropn L4AtomicBP, Maybe (BoolPropn L4AtomicBP))
-simplifyL4HC l4hc = (simplifyHead l4hc.hHead, fmap simplifyHcBodyBsr l4hc.hBody)
--- ^ There are HCs with Nothing in the body in the encoding 
-
-simplifyHead :: L4.RelationalPredicate -> BoolPropn L4AtomicBP
+simplifyHead :: L4.RelationalPredicate -> L4AtomicBP
 simplifyHead = \case
-  RPMT exprs                      -> MkTrueAtomicBP $ mtes2cells exprs
-  RPConstraint exprsl RPis exprsr -> simpbodRPC @RPis exprsl exprsr
+  RPMT exprs                      -> ABPatomic $ mtes2cells exprs
+  RPConstraint exprsl RPis exprsr -> simpheadRPC exprsl exprsr
                                     {- ^ 
                                       1. Match on RPis directly cos no other rel operator shld appear here in the head, given the encoding convention / invariants.
 
@@ -99,6 +96,11 @@ An example of an is-num pattern in a RPConstraint
                     [ MTF 22.5 ]
                 )
 -}
+
+-- | Assumes it's an RPis
+simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicBP
+simpheadRPC exprsl exprsr = ABPatomic (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
+
 
 {-------------------------------------------------------------------------------
     simplifying body of L4 HC
@@ -251,7 +253,7 @@ class SimpBodyRPConstrntRPrel (rp :: RPRel) where
   simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicBP
 
 instance SimpBodyRPConstrntRPrel RPis where
-  simpbodRPC exprsl exprsr = MkTrueAtomicBP (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
+  simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
 
 instance SimpBodyRPConstrntRPrel RPor where
   simpbodRPC exprsl exprsr = undefined

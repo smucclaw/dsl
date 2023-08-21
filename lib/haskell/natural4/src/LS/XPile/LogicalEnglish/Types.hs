@@ -85,7 +85,7 @@ data AtomicBPropn var baseprop =
   | ABPIsDiffFr var var
   -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear here
   | ABPIsOpOf var OpOf [var]
-    -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear in the leftmost position
+    -- TODO: Look into what guarantees we have or don't have for the sots of vars tt can appear in the leftmost position
     -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
   | ABPIsOpSuchTt var OpSuchTt baseprop
     -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear in the leftmost position

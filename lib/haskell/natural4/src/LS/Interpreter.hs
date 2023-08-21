@@ -50,7 +50,7 @@ import LS.RelationalPredicates
 import LS.Rule
 import LS.Types
 import Prettyprinter
-import Text.Pretty.Simple
+import Text.Pretty.Simple (pShowNoColor)
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream
@@ -151,7 +151,9 @@ symbolTable _iopts rs =
 
 -- | A map of all the classes we know about.
 --
--- Currently this function returns both IS-A and HAS-A relationships for a given class.
+-- Currently this function returns both IS-A and HAS-A relationships
+-- for a given class, in a tuple of superclass (IS-A) and attributes
+-- (HAS-A).
 --
 -- Classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
 --
@@ -177,13 +179,28 @@ classHierarchy rs =
 
 -- | A graph of all the classes we know about.
 --
--- redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right. I think this is overproducing a bit, because it's considering the attributes.
+-- redraw the class hierarchy as a rooted graph, where the fst in the
+-- pair contains all the breadcrumbs to the current node. root to the
+-- right. I think this is overproducing a bit, because it's
+-- considering the attributes.
+
 classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
 classGraph (CT ch) ancestors = concat
   [ pure (nodePath, (_itypesig, childct))
   | (childname, (_itypesig, childct)) <- Map.toList ch
   , let nodePath = childname : ancestors
   ]
+
+-- | classes at the root of the container hierarchies.
+-- Basically, these classes have other classes, but no other classes have them.
+classRoots :: ClsTab -> [(EntityType, TypedClass)]
+classRoots ct@(CT ch) =
+  let cg = classGraphFGL ct
+  in [ (className, typedClass)
+     | (n, className) <- labNodes cg
+     , indeg cg n == 0
+     , (Just typedClass) <- [Map.lookup className ch]
+     ]
 
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
@@ -204,33 +221,36 @@ type MyClassName = EntityType
 -- [TODO] we should align this with classGraph, which isn't actually an fgl inductive graph yet.
 topsortedClasses :: ClsTab -> [MyClassName]
 topsortedClasses ct =
-  [ cn
-  | n <- topsort asGraph
-  , (Just cn) <- [Map.lookup n idToType]
-  ]
+  let cGraph = classGraphFGL ct
+  in [ cn
+     | n <- topsort cGraph
+     , (Just cn) <- [lab cGraph n]
+     ]
+
+classGraphFGL :: ClsTab -> Gr MyClassName ()
+classGraphFGL ct =
+  -- there are a couple different kinds of dependencies...
+  let child2parent = getInheritances ct       -- child depends on parent
+      class2attrtypes = [ (cn, ut)            -- class depends on attribute types
+                        | cn <- getCTkeys ct
+                        , ts <- getAttrTypesIn ct cn
+                        , Right ut <- [getUnderlyingType ts]
+                        ]
+  in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
   where
-    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
-    allClasses :: ClsTab -> [MyClassName]
-    allClasses = getCTkeys
-    -- first let's assign integer identifiers to each type found in the class hierarchy
-    typeToID = Map.fromList (Prelude.zip allTypes [1..])
-    idToType = Map.fromList $ swap <$> Map.toList typeToID
-    asGraph :: Gr MyClassName ()
-    asGraph =
-      -- there are a couple different kinds of dependencies...
-      let child2parent = getInheritances ct       -- child depends on parent
-          class2attrtypes = [ (cn, ut)            -- class depends on attribute types
-                            | cn <- getCTkeys ct
-                            , ts <- getAttrTypesIn ct cn
-                            , Right ut <- [getUnderlyingType ts]
-                            ]
-      in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
     myEdges :: [(MyClassName, MyClassName)] -> [(Int, Int, ())]
     myEdges abab = [ (aid, bid, ())
                    | (a,b) <- abab
                    , (Just aid) <- [Map.lookup a typeToID]
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
+    allTypes :: [MyClassName]
+    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
+    allClasses :: ClsTab -> [MyClassName]
+    allClasses = getCTkeys
+    -- first let's assign integer identifiers to each type found in the class hierarchy
+    typeToID = Map.fromList (Prelude.zip allTypes [1..])
+    idToType = Map.fromList $ swap <$> Map.toList typeToID
 
 -- | Extract all Enum declarations recursing through class declarations, so we can hoist them to top-level for use by, say, the Typescript transpiler.
 --
@@ -247,7 +267,7 @@ topsortedClasses ct =
 --
 -- There are probably a handful of other places inside a `Rule` where
 -- a `TypeSig` could appear, and we need to exhaustively traverse all
--- of those places. Please add code as you find such places.
+-- of those places. Please add code as you find such places. [TODO]
 extractEnums :: Interpreted -> [Rule]
 extractEnums l4i =
   let rs = origrules l4i
@@ -416,8 +436,17 @@ ruleDecisionGraph rs = do
      
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefsAll rs ridmap =
-  concat <$> mapM (relPredRefs rs ridmap) rs
+relPredRefsAll rs ridmap = do
+  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
+      -- given a term, see which rule defines it
+      headElements = Map.fromList $
+                     [ (headName,r')
+                     | r' <- rs
+                     , headName <- getDecisionHeads r' -- [TODO] this is quadratic
+                     ]
+  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
+
+  concat <$> mapM (relPredRefs rs ridmap headElements) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known rule heads from the entire ruleset.
@@ -427,22 +456,16 @@ relPredRefsAll rs ridmap =
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: RuleSet -> RuleIDMap -> Rule -> XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefs rs ridmap r = do
-  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
-      -- given a term, see which rule defines it
-      headElements = Map.fromList $
-                     [ (headName,r')
-                     | r' <- rs
-                     , headName <- getDecisionHeads r' -- [TODO] this is quadratic
-                     ]
+relPredRefs :: RuleSet -> RuleIDMap -> Map.HashMap MultiTerm Rule
+            -> Rule
+            -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs rs ridmap headElements r = do
       -- given a rule, see which terms it relies on
-      myGetBSR = getBSR r
+  let myGetBSR = getBSR r
       myLeaves = concatMap AA.extractLeaves myGetBSR
       bodyElements = concatMap rp2bodytexts myLeaves
 
   mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
-  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
 
   mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
   mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
@@ -486,9 +509,9 @@ decisionRoots rg = do
               ]
 
 -- remove reflexive edges that go from node n to node n
-dereflexed :: RuleGraph -> RuleGraph
-dereflexed rg =
-  foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
+dereflexed :: Gr a b -> Gr a b
+dereflexed gr =
+  foldr (\n g -> delEdge (n,n) g) gr (nodes gr)
 
 
 -- | extract a data flow graph
@@ -959,21 +982,49 @@ attrsAsMethods rs = do
               mutter $ show $ srchs hHead
               xpError ["unhandled RelationalPredicate", show hHead]
 
-        -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
-        -- 
-        --  output: (["foo", "bar"], "baz")
-        toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
-        toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
-        toObjectPath mt = do
-          mutterd 4 $ "toObjectPath input = " <> show mt
-          mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
-          mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
-          mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-          mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          xpReturn (DL.filter (not . T.null) $
-                    T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-                   , mt2text [DL.last mt])
 
+-- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
+-- 
+--  output: (["foo", "bar"], "baz")
+toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
+toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
+toObjectPath mt = do
+  mutterd 4 $ "toObjectPath input = " <> show mt
+  mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
+  mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
+  mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+  mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  xpReturn (DL.filter (not . T.null) $
+            T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+           , mt2text [DL.last mt])
 
+-- | text version of the above: foo.bar.baz.
+--
+-- We should do slightly
+-- better error handling here to deal with a case where MultiTerm is
+-- empty -- maybe we switch to a TypedMulti with NE guarantees on the
+-- multiterm?
+toObjectStr :: MultiTerm -> XPileLogE EntityName
+toObjectStr mt = do
+  objPath <- toObjectPath mt
+  case objPath of
+    Right (oP,objName) -> xpReturn $ T.intercalate "." (oP ++ [objName])
+    Left err           -> xpError err
+
+-- | is a particular attribute typed as an enum?
+-- we aren't following the entire class / instance chain here, we are just guessing based on the name; this needs to be improved. [TODO]
+isAnEnum :: Interpreted -> MultiTerm -> Bool
+isAnEnum l4i mt =
+  let enumNames  = fmap lowerMT . ruleLabelName <$> extractEnums l4i
+      myAttrName = lowerMT <$> mt -- we really want this to be myAttrType
+      toreturn   = myAttrName `elem` enumNames
+  in -- trace ("lowerMT = " <> show myAttrName <> "; ruleLabelName = " <> show enumNames <> " = " <> show toreturn) $
+     toreturn
+    -- lowerMT = [MTT "planaf"]; ruleLabelName = [[MTT "outcome"],[MTT "planaf"],[MTT "plan14"],[MTT "injury"]] = True
+
+-- | lowercase a multiterm to support isAnEnum comparison
+lowerMT :: MTExpr -> MTExpr
+lowerMT (MTT t) = MTT (T.toLower t)
+lowerMT x       = x

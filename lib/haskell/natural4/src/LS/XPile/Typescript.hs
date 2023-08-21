@@ -7,27 +7,23 @@
 module LS.XPile.Typescript where
 
 -- the job of this module is to output valid typescript class definitions, decision functions, and variable instances.
-
 -- consider: https://hackage.haskell.org/package/aeson-typescript
 -- not suitable because L4 allows users to define their own types which are not known to Haskell's type system.
-
 -- import Debug.Trace
-
 import AnyAll
-
 -- import L4.Syntax as CoreL4
-
 -- import L4.Annotation
-
 -- import Data.Functor ( (<&>) )
 
 import Data.HashMap.Strict qualified as Map
--- import qualified Data.Text as T
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as DTL
 import qualified Data.List.NonEmpty as NE
-import Data.List (intercalate, nub)
+import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
 import Data.Maybe (isJust, isNothing)
 import Data.Tree qualified as DT
+
 import LS.Interpreter
   ( attrType,
     getCTkeys,
@@ -36,9 +32,15 @@ import LS.Interpreter
     topsortedClasses,
     extractEnums,
     attrsAsMethods,
+    classRoots,
+    exposedRoots,
+    toObjectStr,
+    isAnEnum,
   )
+
 import LS.PrettyPrinter
   ( ParamText4 (PT4, PT5),
+    commentWith,
     prettyMaybeType,
     prettySimpleType,
     snake_case,
@@ -48,12 +50,15 @@ import LS.PrettyPrinter
     (</>),
   )
 import LS.Rule as SFL4R
-  ( Interpreted (classtable, scopetable, origrules, valuePreds),
+  ( Interpreted (classtable, scopetable, origrules, valuePreds, ruleGraph),
     Rule(..),
     ruleLabelName,
+    ruleName,
+    isFact,
   )
 import LS.Types as SFL4
-  ( ClsTab (CT),
+  ( ClsTab (CT), unCT,
+    EntityType,
     HornClause (HC, hHead),
     HornClause2,
     BoolStructR(..),
@@ -101,21 +106,151 @@ import Prettyprinter
     vsep,
     (<+>),
   )
+import Text.Pretty.Simple (pShowNoColor)
 import LS.XPile.Logging
+import Data.Graph.Inductive
 
 -- JsonLogic
 import Text.JSON
 
+-- * Application Context
+--
+-- It is expected that this typescript will be part of an end-user facing runtime.
+-- The web interface will construct a JSON object representing user input.
+-- The typescript runtime will be expected to run against that input and produce output state.
+-- That output state will control the user-visible components.
+--
+-- So, for example, if the end-user input looks something like
+--
+-- @
+--    const userInput = { "the moon is out": true
+--                      , "the sky": "cloudy"
+--                      }
+-- @
+--
+-- We we run feed that into the rule engine component written in typescript
+-- which contains the "business logic" derived from natural4,
+-- and get back out
+--
+-- @
+--    const ruleOutput = { "happy": true }
+-- @
+--
+
+-- | top-level function
 asTypescript :: SFL4R.Interpreted -> XPileLog (Doc ann)
 asTypescript l4i = do
-  vvsep <$> sequence [ tsPrelude l4i
-                     , pure "// tsEnums",           tsEnums l4i
-                     , pure "// tsClasses",         tsClasses l4i
+  vvsep <$> sequence [                              tsPrelude   l4i
+                     , pure "// tsEnums",           tsEnums     l4i
+                     , pure "// tsClasses",         tsClasses   l4i
                      , pure "// globalDefinitions [commented out]" --, globalDefinitions l4i
                      , pure "// jsInstances",       jsInstances l4i
-                     , pure "// toJsonLogi",        toJsonLogic l4i
-                     , pure "// toPlainTS",         toPlainTS l4i
+                     , pure "// tsRuleEngine",      tsRuleEngine l4i
+                     , pure "// toJsonLogic",       toJsonLogic l4i
+                     , pure "// toPlainTS",         toPlainTS   l4i
                      ]
+
+
+-- ** Transpilation Strategy
+--
+-- The entry-point for the runtime is the `tsRuleEngine`.
+--
+-- 1. It is given a @userInput@ object, whose attributes conform to
+--    the ontology defined in the ruleset.
+--
+-- 2. Top-level elements which are not part of any class hierarchy
+--     will be top-level attributes in @userInput@.
+--
+-- 3. The business logic runs based on the logical relations defined in the L4.
+--
+-- 4. The output gets placed in ruleOutput, perhaps with optional annotations showing
+--    the justification tree.
+--
+-- ** Language Output Strategy
+--
+-- In the initial sketch of this module we write TS by hand.
+-- But in future we may want to consider using [language-javascript](https://hackage.haskell.org/package/language-javascript-0.7.1.0/docs/Language-JavaScript-Parser-AST.html)
+--
+-- [TODO] we should refine the treatment of RPConstraint X IS Y
+-- where Y is in an enum; then we test for X == Y rather than stringifying to IS
+
+tsRuleEngine :: Interpreted -> XPileLog (Doc ann)
+tsRuleEngine l4i = do
+
+  eRout <- exposedRoots l4i
+
+  let globalRuleheads  = [ (n,r)
+                         | (n,r) <- labNodes (ruleGraph l4i)
+                         , not (r `elem` eRout)
+                         , not (isFact r)
+                         ]
+
+      ( globalRuleParents , globalRuleLeaves) =
+        partition (\(n,r) -> outdeg (ruleGraph l4i) n /= 0) globalRuleheads
+
+      declaredClasses = classRoots (classtable l4i)
+
+  mutterdhsf 3 "globalRuleheads should have excluded facts; we divide them into two halves." pShowNoColorS globalRuleheads
+  mutterd 3 "globalRuleLeaves is one half."
+  mutters ["These are the things we need to ask the user."
+          ,"Enum cases are expanded, but can be converged farther down the operational chain."
+          ,"We can do that because we should be able to type-infer that the LHS of the value assignment is type-annotated as an enum."
+          ,"Fortunately we still have the original rule available at this point in the pipeline."]
+  mutters [ "- " <> show (n,ruleName r) | (n,r) <- globalRuleLeaves ]
+  mutterd 3 "globalRuleParents is the other half."
+  mutters ["These are things we can compute for ourselves if the leaves above are filled out."
+          ,"However, if the end-user wants to speed things up and answer parent nodes directly \"without proof\", they can do that."
+          ]
+  mutters [ "- " <> show (n,ruleName r) | (n,r) <- globalRuleParents ]
+
+  return $ vsep
+    [ "interface UserInput {"
+
+       -- basically the ontology as we understand it, we're expecting that in the input.
+       -- classes are top-level attributes in this interface;
+       -- and top-level decision rules that are not classes also become top-level attributes.
+       --
+       -- [TODO] it'd be nice to infer some more type information so we can distinguish
+       -- between booleans and numebrs for some of these top level decision values.
+
+    , indent 2 $ vsep $
+      "// heads of rules which are not class methods of some sort, excluding output roots below." :
+      "// first we give the leaf nodes, which are ground terms not already known as facts" :
+      [ prettyRuleName r | (nodeN,r) <- globalRuleLeaves ]
+    , ""
+    , indent 2 $ vsep $
+      "// then we give the intermediate parent nodes" :
+      [ prettyRuleName r | (nodeN,r) <- globalRuleParents ]
+    , ""
+    , indent 2 $ vsep $
+      "// instances of DECLAREd classes" :
+      [ dquotes (className <> "Instance") <+> "?" <> colon <+> className <> semi
+      | (classNameT, typedClass) <- declaredClasses
+      , let className = pretty classNameT
+      ]
+
+    , "}"
+    , ""
+    , "interface OutputState {"
+    , indent 2 $ vsep $
+      "// roots of the rulegraph" :
+      [ prettyRuleName exposedRoot
+      | exposedRoot <- nub eRout ] -- not sure why nubbing doesn't seem to work, some methods still get dumped.
+    , ""
+    , indent 2 $ vsep $
+      "// intermediate parent computations" :
+      [ prettyRuleName r | (nodeN,r) <- globalRuleParents ]
+    , "}"
+    , "export function tsRuleEngine(userInput : UserInput) : OutputState {"
+    , indent 2 $ vsep $
+      "// we express each of the exposedRoot graphs;" :
+      "// first rewritten as AOtrees, then dumped as AnyAll in TS" :
+      [ "return { }" ]
+    , "}"
+    ]
+  where
+    prettyRuleName r =
+      dquotes (pretty . mt2text $ ruleName r) <+> "?" <> colon <+> "any" <> semi
 
 -- | a convention for preserving the original strings and data structures for downstream use
 tsPrelude :: Interpreted -> XPileLog (Doc ann)
@@ -143,22 +278,25 @@ tsClasses l4i = return $
           <//> "  // using prettySimpleType (old code path)"
           <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
                                  case attrType children attrname of
-                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
-                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
+                                   Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
+                                   Just t@(SimpleType TOne      _) -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"
-                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (defaultMethod t)
+                                   Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Nothing -> "// tsClasses nothing case"
                                  <> semi
                                | attrname <- getCTkeys children
                                ]
                         )
+
           <//> "  //" <+> "using `methods` (new code path)"
           <//> indent 2 ( encloseSep (lbrace <> line) (line <> rbrace) (comma <> space)
                           $ concat [ methods l4i [MTT attrname]
                                    | attrname <- getCTkeys children
-                                                 -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE, but we'll use the methods approach for that.
                                    ]
                         )
+
+          -- [TODO] finish out the attribute definition -- particularly tricky if it's a DECIDE, but we'll use the methods approach for that.
+
           <//> rbrace
         | className <- reverse $ topsortedClasses ct
         , (Just (csuper, children)) <- [Map.lookup className ch]
@@ -169,14 +307,32 @@ tsClasses l4i = return $
         , let classExtension =
                 case clsParent ct className of
                   Nothing       -> mempty
-                  (Just parent) -> " extends" <+> pretty parent
+                  Just "DefaultSuperClass" -> mempty
+                  Just parent              -> " extends" <+> pretty parent
         ]
 
-defaultMethod :: TypeSig -> Doc ann
-defaultMethod (SimpleType TOne "string") = " return \"\" "
-defaultMethod (SimpleType TOne "number") = " return 0 "
-defaultMethod _                          = " return undefined "
-  
+-- | define a class method by searching through the l4i for two kinds of class method definition styles:
+--
+-- first,   DECIDE   MyClass's  MyValue  IS  such and such
+--
+-- second,   GIVEN   mc             IS  A  MyClass
+--                   someArgument   IS  A  number
+--           DECIDE  mc's  MyValue  IS  2 * someArgument
+--
+-- both cases result in the same method definition that looks something like
+-- @
+--    class MyClass { MyValue = (someArgument) => { return 2 * someArgument } }
+--
+
+methodFor :: Interpreted -> EntityType -> Maybe TypeSig -> Doc ann
+methodFor l4i entype mtsig =
+  defaultMethod mtsig
+
+-- | if we can't find a decision rule defining this particular attribute as a method, we return a default method
+defaultMethod :: Maybe TypeSig -> Doc ann
+defaultMethod (Just (SimpleType TOne "string")) = " return \"\" "
+defaultMethod (Just (SimpleType TOne "number")) = " return 0 "
+defaultMethod _                                 = " return undefined "
 
 -- | output enum declarations
 tsEnums :: Interpreted -> XPileLog (Doc ann)
@@ -186,7 +342,7 @@ tsEnums l4i = return $
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
       let className = ruleLabelName r
       in 
-        "enum" <+> snake_case className <+> lbrace
+        "enum" <+> snake_case className <> "Enum" <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm
@@ -195,7 +351,7 @@ tsEnums l4i = return $
 
           -- but we also want to preserve the original strings for downstream use
           -- so we use the L4Orig convention
-        <//> "L4Orig.enums['" <> snake_case className <> "']" <+> equals <+> lbrace
+        <//> "L4Orig.enums['" <> snake_case className <> "Enum" <> "']" <+> equals <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> colon <+> dquotes (pretty (mt2text [enumStr])) <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm
@@ -214,7 +370,8 @@ jsInstances l4i = return $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
---          "// symtab' = " <+> viaShow symtab' <//>
+          "// symtab' = " <+> commentWith "// " [DTL.toStrict (pShowNoColor symtab')] <//>
+          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
 
           -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
@@ -236,11 +393,7 @@ jsInstances l4i = return $
                                 [hc2ts l4i val]
                  ]
         | (scopename , symtab') <- Map.toList sctabs
-        ] </>
-  "const GLOBALS" <+> equals <+> hang 0 (
-    list ( snake_case <$> nub [ mt
-                              | (_scopename , symtab') <- Map.toList sctabs
-                              , mt <- Map.keys symtab' ] ) <> semi )
+        ]
   where
     scopenameStr [] = "globals"
     scopenameStr x  = snake_case x
@@ -256,13 +409,14 @@ methods l4i mt =
                              , objPath == [mt2text mt]
                              ]
   in
-  [ line <> "// methods go here"
-    </> pretty attrName' <+> equals <+> parens emptyDoc <+> "=>" <+> braces ( indent 1 $
-      vsep [ vpTS <> semi
-           | vp@ValPred{..} <- vps
-           , let vpTS = vpToTS l4i vp
-           ] <> space
-      )
+  [ line <> ("// methods go here; attrName = " <> viaShow attrName')
+    </> snake_inner (MTT attrName') <+> equals <+> parens emptyDoc <+> "=>"
+    <+> braces ( line <> indent 2 (
+                 vsep [ vpTS <> semi
+                      | vp@ValPred{..} <- vps
+                      , let vpTS = vpToTS l4i vp
+                      ] ) <> line
+               )
   | (attrName', vps) <- marshalled
   ]
 
@@ -279,18 +433,46 @@ vpToTS l4i ValPred{..}
     rp2ts (Just bsr) = bsr2ts bsr
 
     bsr2ts :: BoolStructR -> Doc ann
-    bsr2ts (Leaf (RPConstraint mt1 rprel mt2) ) = pretty (mt2text mt1) <+> renderRPrel rprel <+> pretty (mt2text mt2)
-    bsr2ts (Leaf (RPnary RPis [rp1, rp2])) = pretty (rp2text rp1) <+> renderRPrel RPis <+> pretty (rp2text rp2)
+
+    bsr2ts (Leaf (RPConstraint mt1 rprel mt2) ) =
+      let rp = mt2objStr mt1
+      in pretty rp <+> renderRPrel rprel <+> handleEnum [last mt1] mt2
+
+    -- special case, but we need to handle the general case better below
+    bsr2ts (Leaf (RPnary RPis [RPMT mt1, RPMT mt2])) =
+      let rp = mt2objStr mt1
+      in pretty rp <+> renderRPrel RPis <+> handleEnum [last mt1] mt2
+
+    -- general case not fully handled WRT enums.
+    -- to properly do this we need to walk the type graph to figure out for ceratin
+    -- what type the attribute has.
+    bsr2ts (Leaf (RPnary RPis [RPMT mt1, rp2])) =
+      let rp = mt2objStr mt1
+      in pretty rp <+> renderRPrel RPis <+> pretty (rp2text rp2)
+
     bsr2ts (Leaf (RPnary RPsum rps)) = "sum" <> list (pretty . rp2text <$> rps)
     bsr2ts (Any pp rps) = "any" <> parens (list (bsr2ts <$> rps))
     bsr2ts (All pp rps) = "all" <> parens (list (bsr2ts <$> rps))
     bsr2ts (Not rp) = "not" <> parens (bsr2ts rp)
     bsr2ts _ = error "bsr2ts needs more cases"
 
+    mt2objStr mt =
+      let (outStr, outLog) = xpLog $ toObjectStr mt
+      in case outStr of
+           Left err -> "// error encountered in bsr2ts conversion of ValuePredicate to Typescript code: " <> show err
+           Right rp -> T.unpack rp
+
     renderRPrel RPis = "=="
     renderRPrel RPgt = ">"
     renderRPrel RPlt = "<"
     renderRPrel _    = error "add a renderRPrel in Typescript.hs"
+
+    -- upgrade a value Monday to a DaysEnum.Monday 
+    handleEnum :: MultiTerm -> MultiTerm -> Doc ann
+    handleEnum mt1 mt2 =
+      if isAnEnum l4i mt1
+      then snake_case mt1 <> "Enum" <> "." <> snake_case mt2
+      else pretty (mt2text mt2)
 
 -- | top-level DEFINEs, going rule by rule
 -- just the facts.
@@ -332,9 +514,9 @@ dumpNestedClass l4i (DT.Node pt children)
 -- - our own mathlang
 -- - raw Typescript
 --
--- Let's try the JsonLogic approach first.
+-- Let's try the raw Typescript approach first, so we can be sure we know what we're doing.
 --
--- We'll bypass the expansion provided by the Interpreter, and work with the raw rules themselves.
+-- We'll bypass most of what is provided by the Interpreter, and work with the raw rules themselves.
 --
 -- We might rely on the Interpreter to provide some of the data flow graphing, so we can trace variable expansion.
 --

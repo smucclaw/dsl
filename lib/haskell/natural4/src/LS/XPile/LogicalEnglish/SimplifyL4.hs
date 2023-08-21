@@ -9,12 +9,18 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 
 module LS.XPile.LogicalEnglish.SimplifyL4 where
 -- TODO: Make export list
 
 import Data.Text qualified as T
+import qualified Data.Text.Lazy as T (toStrict)
+import qualified Data.Text.Lazy.Builder as B
+import qualified Data.Text.Lazy.Builder.Int as B
+import qualified Data.Text.Lazy.Builder.RealFloat as B
+
 import Data.Bifunctor       ( first )
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
@@ -47,12 +53,12 @@ TODO: All the `error ..`s should be checked for upfront in the ValidateL4Input m
   TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
 -}
 simplifyL4ruleish :: L4.Rule -> SimpleL4HC
-simplifyL4ruleish l4r = 
+simplifyL4ruleish l4r =
   let gvars  = gvarsFromL4Rule l4r
       clause = Prelude.head $ L4.clauses l4r
       simpHead  = simplifyHead clause.hHead
                -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
-  in case clause.hBody of 
+  in case clause.hBody of
     Nothing   -> MkL4FactHc {fgiven = gvars, fhead = simpHead}
     Just rbod -> MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simplifyHcBodyBsr rbod}
     -- ^ There are Facts / HCs with Nothing in the body in the encoding 
@@ -61,7 +67,7 @@ simplifyL4ruleish l4r =
     Simplifying L4 HCs
 -------------------------------------------------------------------------------}
 
-simplifyHead :: L4.RelationalPredicate -> L4AtomicBP
+simplifyHead :: L4.RelationalPredicate -> L4AtomicP
 simplifyHead = \case
   RPMT exprs                      -> ABPatomic $ mtes2cells exprs
   RPConstraint exprsl RPis exprsr -> simpheadRPC exprsl exprsr
@@ -96,17 +102,37 @@ An example of an is-num pattern in a RPConstraint
                     [ MTF 22.5 ]
                 )
 -}
+{- | 
+Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
 
--- | Assumes it's an RPis
-simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicBP
-simpheadRPC exprsl exprsr = ABPatomic (mtes2cells exprsl <> [MkCellIs] <> mtes2cells exprsr)
+Given left and right exprs that flank an RPIs,
+return a L4AtomicP where 
+    <IS NUM>s have been marked accordingly in the numcell,
+    and where the IS is otherwise made normal lowercase text.
 
+Two cases of IS-ing to consider:
+  1. It ends with an IS <NUM>
+    in which case we should convert the NUM to text and warp it in a MkCellIsNum
+  2. It does not
+    in which case we should replace the IS with 'is' text
+-}
+simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
+simpheadRPC exprsl exprsr =
+  let lefts = mtes2cells exprsl
+  in case exprsr of
+    (MTI int : xs)   -> 
+      ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
+    (MTF float : xs) -> 
+      ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
+    _           ->
+      ABPatomic (lefts <> [MkCellT "is"] <> mtes2cells exprsr)
+  
 
 {-------------------------------------------------------------------------------
     simplifying body of L4 HC
 -------------------------------------------------------------------------------}
 
-simplifyHcBodyBsr :: L4.BoolStructR -> BoolPropn L4AtomicBP
+simplifyHcBodyBsr :: L4.BoolStructR -> BoolPropn L4AtomicP
 simplifyHcBodyBsr = \case
   AA.Leaf rp      -> simplifybodyRP rp
   AA.All _ propns -> And (map simplifyHcBodyBsr propns)
@@ -196,7 +222,7 @@ t IS MIN t1 t2 .. tn:
                     ]])
 -}
 
-simplifybodyRP :: RelationalPredicate -> BoolPropn L4AtomicBP
+simplifybodyRP :: RelationalPredicate -> BoolPropn L4AtomicP
 simplifybodyRP = \case
   RPMT exprs                         -> MkTrueAtomicBP (mtes2cells exprs)
                                      -- ^ this is the same for both the body and head
@@ -232,7 +258,7 @@ simplifybodyRP = \case
   RPParamText _                         -> error "should not be seeing RPParamText in body"
 
 
-termIsNaryOpOf :: Foldable seq => OpOf -> MTExpr -> seq RelationalPredicate -> BoolPropn L4AtomicBP
+termIsNaryOpOf :: Foldable seq => OpOf -> MTExpr -> seq RelationalPredicate -> BoolPropn L4AtomicP
 termIsNaryOpOf op mteTerm rpargs = MkIsOpOf term op argterms
   where term     = mte2cell mteTerm
         argterms = concatMap atomRPoperand2cell rpargs
@@ -250,7 +276,7 @@ atomRPoperand2cell = \case
 
 -- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
 class SimpBodyRPConstrntRPrel (rp :: RPRel) where
-  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicBP
+  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 
 instance SimpBodyRPConstrntRPrel RPis where
   simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
@@ -295,16 +321,24 @@ gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
 mte2cell :: L4.MTExpr -> Cell
 mte2cell = \case
   MTT t -> MkCellT t
-  MTI i -> MkCellNum (MkInteger i)
-  MTF f -> MkCellNum (MkFloat f)
+  MTI i -> MkCellT (int2Text i)
+  MTF f -> MkCellT (float2Text f)
   _     -> error "Booleans in cells currently not supported"
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]
 mtes2cells = map mte2cell
 
+------ Other misc utils
+{-| From https://github.com/haskell/text/issues/218 lol
+Thanks to Jo Hsi for finding these!
+-}
+float2Text :: RealFloat a => a -> T.Text
+float2Text = T.toStrict . B.toLazyText . B.realFloat
 
-------
+int2Text :: Integral a => a -> T.Text
+int2Text = T.toStrict . B.toLazyText . B.decimal
+
 
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]

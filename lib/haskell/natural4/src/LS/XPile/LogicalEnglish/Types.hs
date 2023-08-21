@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE PatternSynonyms, DataKinds #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
@@ -43,7 +43,8 @@ module LS.XPile.LogicalEnglish.Types (
     , LamAbsCell(..)
 
     -- LE-related types
-    , LENatLangAnnot
+    , NLACell(..)
+    , LENatLangAnnot(..)
     , LETemplateInstance
     , TemplInstanceOrNLA(..)
     , LERule(..)
@@ -63,6 +64,7 @@ import Control.Monad.Identity ( Identity )
 
 import Data.String (IsString)
 import LS.Rule as L4 (Rule(..))
+import qualified Data.Bits as Generically
 
 {-------------------------------------------------------------------------------
   Common types 
@@ -181,7 +183,7 @@ data TemplateVar = MatchGVar !OrigVarName
                     -}
                  | IsNum !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
-                 | OpOfVar !OrigVarName
+                 | OpOfVarArg !OrigVarName
                  | OtherVar !OrigVarName -- TODO: Look into whether can remove this case 
       deriving stock (Eq, Ord, Show)
 
@@ -266,9 +268,30 @@ instance Hashable LEtiVar where
 from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hashable-Generic.html
 -}
 
+data NLACell = MkParam !T.Text 
+             | MkNonParam !T.Text
+  deriving stock (Eq, Ord, Show)
+
+instance Semigroup NLACell where
+  MkParam l <> MkParam r = MkNonParam $ l <> r
+  MkParam l <> MkNonParam r = MkNonParam $ l <> r
+  MkNonParam l <> MkParam r = MkNonParam $ l <> r
+  MkNonParam l <> MkNonParam r = MkNonParam $ l <> r
+instance Monoid NLACell where
+  mempty = MkNonParam ""
+
+{- Another option:
+deriving stock Generic
+deriving (Semigroup, Monoid) via Generically NLACell 
+Need a base that’s shipped with ghc 94 or newer and need to import Generically.
+But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit-}
+  
 newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
+
+
+
 
 newtype LETemplateInstance = MkTInstance T.Text
   deriving stock (Show)

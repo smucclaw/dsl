@@ -62,8 +62,6 @@ import Language.Prolog (Clause (Clause), Term (Struct, Var, Wildcard, Cut), Atom
 import Data.Functor.Classes (showsBinary1)
 import qualified Data.Bits as sCasp
 
-
-
 -- Document generation for Logic Programs 
 -- Currently supported: Prolog and SCasp
 

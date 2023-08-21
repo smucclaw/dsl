@@ -32,7 +32,7 @@ import Data.Either (partitionEithers, fromRight)
 import Data.Graph.Inductive
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
-import Data.List (find)
+import Data.List (find, (\\))
 import Data.List qualified as DL
 import Data.List.NonEmpty as NE
 import Data.Maybe
@@ -63,11 +63,14 @@ l4interpret iopts rs =
   let ct = classHierarchy rs
       st = symbolTable    iopts rs
       (vp, vpErr) = xpLog $ attrsAsMethods rs
+      (rDGout, rDGerr) = xpLog $ ruleDecisionGraph rs
   in
     L4I { classtable = ct
         , scopetable = st
         , origrules  = rs
         , valuePreds = fromRight [] vp
+        , ruleGraph  = rDGout
+        , ruleGraphErr = rDGerr
         }
 
 -- | Provide the fully expanded, exposed, decision roots of all rules in the ruleset,
@@ -94,7 +97,8 @@ qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
        , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
-                           exposedRoots l4i      -- EXPOSED
+                           let (eRout, eRerr) = xpLog $ exposedRoots l4i      -- EXPOSED
+                           in eRout
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]
@@ -281,12 +285,11 @@ groupedByAOTree l4i rs =
 -- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
 -- We want the SVG Xpiler to reuse this code as authoritative.
 
-exposedRoots :: Interpreted -> [Rule]
-exposedRoots l4i =
-  let rs = origrules l4i
-      decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots decisionGraph
-  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+exposedRoots :: Interpreted -> XPileLog [Rule]
+exposedRoots l4i = do
+  let decisionGraph = ruleGraph l4i
+  decisionroots <- decisionRoots decisionGraph
+  return [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
 -- | the (inner) type of a particular class's attribute
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
@@ -323,58 +326,135 @@ getAttrTypesIn ct classname =
                               ]
 
 
--- | structure the rules as a graph.
--- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
-
--- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
--- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
---
--- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
--- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
-
-type RuleGraphEdgeLabel = ()
-type RuleGraph = Gr Rule RuleGraphEdgeLabel
-
 -- | used by `ruleDecisionGraph`; a map from a rule to a unique integer identifier for that rule, used in the `RuleGraph`
 type RuleIDMap = Map.HashMap Rule Int
 
 -- | which decision rules depend on which other decision rules?
-ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
-ruleDecisionGraph l4i rs =
-  let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
-  in mkGraph
-  (swap <$> Map.toList ruleIDmap) -- the nodes
-  (relPredRefsAll l4i rs ruleIDmap)
+-- And which ground terms don't expand any further?
+--
+-- We answer these questions in two passes.
+--
+-- First, we construct a rulegraph of only rules and their relations. In a conventional programming language we might call this the interprocedural graph.
+-- In the first version of this codebase we stopped here and just returned the graph of rules, which is why the type is called `RuleGraph`.
+--
+-- But that's not enough! We want to know about the leaf nodes, the ground terms, as well.
+-- So, in a second pass, we traverse the rulegraph from the first pass, and return all the leaf nodes found in the RelationalPredicates;
+-- then we eliminate all the tokens which appear in the graph from the first pass. That should leave us with only leaf nodes.
+--
+-- With that clarity, we elevate the leaf nodes into stub rules and return a rule graph of the combined rules + ground terms.
+--
+-- If, downstream, you want to distinguish between rule and ground term, just look for those nodes in the graph which are leaves!
+--
+ruleDecisionGraph :: RuleSet -> XPileLog RuleGraph
+ruleDecisionGraph rs = do
+
+  "(1.1) for first pass, we begin with decisionrules" ***-> decisionRules
+
+  let ruleOnlyMap = Map.fromList (Prelude.zip decisionRules [1..])
+  "(1.2) ruleOnlyMap" ***-> ruleOnlyMap
+
+  mutterd 3 "ruleDecisionGraph: (1.3) ruleOnlyGraph construction log using relPredRefsAll"
+  
+  ruleOnlyGraph :: RuleGraph <- mkGraph
+                                (swap <$> Map.toList ruleOnlyMap) -- the nodes
+                                <$> relPredRefsAll rs ruleOnlyMap -- The <$> lifts into the XPileLog monad
+
+  "(1.4) ruleOnlyGraph result" ***-> ruleOnlyGraph
+
+  mutterd 3 "as a flex, just to show what's going on, we extract all the leaf terms, if we can, by starting with all the terms entirely. Well, MultiTerms."
+
+  let allTerms = DL.nub $ concat (concatMap rp2bodytexts . concatMap AA.extractLeaves . getBSR <$> rs)
+  "(2.1) allTerms" ***-> allTerms
+
+  mutterd 3 "(2.2) we filter for the leaf terms by excluding all the ruleNames that we know from the original ruleset. This may not be a perfect match with the MultiTerms used in the rule graph. [TODO]"
+
+  let (ruleNames, ruleLabelNames) = (ruleName <$> rs, ruleLabelName <$> rs)
+  "(2.3) ruleNames to omit" ***-> ruleNames
+  "(2.3 alt) what if we used ~ruleLabelName~ instead of ~ruleName~?)" ***-> ruleLabelNames
+
+  let difference = (allTerms \\ ruleNames) \\ [[ MTT "OTHERWISE" ]] --  special case: Otherwise drops out
+  "(2.4) that leaves" ***-> difference
+
+  mutterd 3 "(2.5) let's elevate all the leaf terms to stubby little rules in their own right"
+  let stubRules = [ defaultHorn { name = rulename, keyword = Define, srcref = Nothing
+                                , clauses = stubClause rulename }
+                  | rulename <- difference ]
+
+  mutterd 3 "(2.6) then we rebuild the graph with those rules included"
+  let expandedRuleMap   = Map.fromList (Prelude.zip (decisionRules ++ stubRules) [1..])
+  expandedRuleGraph :: RuleGraph <- mkGraph
+                                    (swap <$> Map.toList expandedRuleMap)
+                                    <$> relPredRefsAll (rs ++ stubRules) expandedRuleMap
+
+  "(2.7) expandedRuleGraph" ***-> expandedRuleGraph
+
+  mutterd 3 "(3.1) finally we strip the reflexive BSR from the stub rules while leaving the nodes themselves in place."
+  
+  let prunedRuleGraph = dereflexed $ nmap (\r -> if hasClauses r && clauses r == stubClause (name r) then r { clauses = [] } else r ) expandedRuleGraph
+  "(3.2.7) prunedRuleGraph" ***-> prunedRuleGraph
+
+  return prunedRuleGraph
+
   where
+     -- [NOTE] for the purposes of generating the graph in the 2nd pass,
+    -- leaf nodes are reflexive. Let's just say we meant for it to be that way, cuz they "bottom out", lol.
+    -- This gets removed in the third pass.
+    stubClause rulename =
+      [ HC { hHead = RPMT rulename
+           , hBody = Just $ AA.mkLeaf (RPMT rulename) }
+      ]
+
+    -- filter for just those rules which involve decisions
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
 
+  -- we want to represent the leaf nodes in the rule decision graph, so we elevate those to the status of rules by including them in the map
+    groundTerms :: Map.HashMap Rule Int -> [RuleName]
+    groundTerms knownRules = []
+      -- find all the body elements which 
+
+    (***->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
+     
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
-relPredRefsAll :: Interpreted -> [Rule] -> RuleIDMap -> [LEdge RuleGraphEdgeLabel]
-relPredRefsAll l4i rs ridmap =
-  concatMap (relPredRefs l4i rs ridmap) rs
+relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefsAll rs ridmap =
+  concat <$> mapM (relPredRefs rs ridmap) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
--- that correspond to known BSR heads from the entire ruleset.
+-- that correspond to known rule heads from the entire ruleset.
 --
 -- in other words, if a rule R1 says something like (a WHEN b OR c), it defines a, and relies on b and c;
 -- if we find a rule R2 which defines (c MEANS c1 AND c2), then it defines c, and relies on c1 and c2.
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: Interpreted -> [Rule] -> RuleIDMap -> Rule -> [LEdge RuleGraphEdgeLabel]
-relPredRefs _l4i rs ridmap r =
+relPredRefs :: RuleSet -> RuleIDMap -> Rule -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs rs ridmap r = do
   let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
       -- given a term, see which rule defines it
       headElements = Map.fromList $
                      [ (headName,r')
                      | r' <- rs
-                     , headName <- getDecisionHeads r'
+                     , headName <- getDecisionHeads r' -- [TODO] this is quadratic
                      ]
       -- given a rule, see which terms it relies on
-      bodyElements = concatMap rp2bodytexts (concatMap AA.extractLeaves (getBSR r))
+      myGetBSR = getBSR r
+      myLeaves = concatMap AA.extractLeaves myGetBSR
+      bodyElements = concatMap rp2bodytexts myLeaves
+
+  mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
+  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
+
+  mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
+  mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
+  mutterdhsf 5 "relPredRefs: extractLeaves" pShowNoColorS myLeaves
+  mutterdhsf 5 "relPredRefs: bodyElements"  pShowNoColorS bodyElements
+
+  -- [BUG] at some point we lose the moon
+  mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  in [ (rid, targetRuleId', ())
-     | bElem <- bodyElements
+  toreturn <- sequence
+    [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')
+    | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
      , let targetRule' = fromJust targetRule -- safe due to above isJust test
@@ -384,6 +464,8 @@ relPredRefs _l4i rs ridmap r =
            rid = ridmap ! r
      ]
 
+  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
+  return toreturn
 
 -- | Which rules are "top-level", "entry-point" rules?
 --
@@ -393,24 +475,29 @@ relPredRefs _l4i rs ridmap r =
 --
 -- Examine the rulegraph for rules which have no indegrees, as far as decisioning goes.
 
-decisionRoots :: RuleGraph -> [Rule]
-decisionRoots rg =
-  let rg' = dereflexed
-  in
-  catMaybes [ lab rg' r
-            | r <- nodes rg'
-            ,  indeg rg' r == 0
---            , outdeg rg' r  > 0
-            ]
-  where
-    -- remove reflexive edges that go from node n to node n
-    dereflexed :: RuleGraph
-    dereflexed =
-      let toreturn = foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
-      in
---        trace ("dereflexed before: " ++ prettify rg) $
---        trace ("dereflexed after:  " ++ prettify toreturn) $
-        toreturn
+decisionRoots :: RuleGraph -> XPileLog [Rule]
+decisionRoots rg = do
+  let rg' = dereflexed rg
+  return $
+    catMaybes [ lab rg' r
+              | r <- nodes rg'
+              ,  indeg rg' r == 0
+              -- , outdeg rg' r  > 0
+              ]
+
+-- remove reflexive edges that go from node n to node n
+dereflexed :: RuleGraph -> RuleGraph
+dereflexed rg =
+  foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
+
+
+-- | extract a data flow graph
+-- suitable for drawing as SVG
+-- from the rulegraph.
+--
+-- we're interested in a data flow graph whose leaves are the leaf elements in the rulegraph;
+-- the intermediate nodes can be the rules; and
+-- the graph roots out at the decisionRoots.
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
@@ -888,4 +975,5 @@ attrsAsMethods rs = do
           xpReturn (DL.filter (not . T.null) $
                     T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
                    , mt2text [DL.last mt])
-          
+
+

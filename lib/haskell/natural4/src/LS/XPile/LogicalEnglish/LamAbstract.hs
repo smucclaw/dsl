@@ -10,32 +10,26 @@
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-
-module LS.XPile.LogicalEnglish.LamAbstract where
--- TODO: Make export list
+module LS.XPile.LogicalEnglish.LamAbstract (
+    lamAbstract
+  , lamabstractAP  
+  , lamabstractBody
+) where
 
 import Data.Text qualified as T
-import Data.Bifunctor       ( first )
-import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import GHC.Generics (Generic)
-import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
 import Data.String (IsString)
 import Data.List.NonEmpty qualified as NE
 import Debug.Trace (trace)
 import Data.Coerce (coerce)
+import Data.Text
+import Data.String.Interpolate ( i )
 
-import qualified AnyAll as AA
-import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..), BoolStructR(..), BoolStructT)
-import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       loadRawL4AsUnvalid)
-
-import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 lamAbstract :: SimpleL4HC -> LamAbsHC
 lamAbstract = \case
@@ -44,37 +38,12 @@ lamAbstract = \case
   MkL4RuleHc{..} -> MkLARule { largiven = rgiven
                              , larhead =  lamabstractAP rgiven rhead
                              , larbody = lamabstractBody rgiven rbody }
-{-
-type L4AtomicP = AtomicBPropn Term [Cell]
-
-data BoolPropn a = AtomicBP a
-                 | And [BoolPropn a]
-                 | Or  [BoolPropn a]
-                 | Not (BoolPropn a)
-  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-
--- | Atomic(ish) Boolean proposition
-data AtomicBPropn var baseprop =
-    ABPatomic baseprop
-  | ABPIsDiffFr var var
-  | ABPIsOpOf var OpOf [var]
-  | ABPIsOpSuchTt var OpSuchTt baseprop
-
-
-data L4Fact = L4Fact { givenVars :: GVarSet
-                     , head      :: L4AtomicP
-                     }
-data L4Rule = L4Rule { givenVars :: GVarSet
-                     , head      :: L4AtomicP
-                     , body      :: BoolPropn L4AtomicP }
-
-type LamAbsAtomicP = AtomicBPropn TemplateVar LamAbsBase
-
-data LamAbsBase = TempVar TemplateVar
-                | Pred    !T.Text
--}
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading
+{- | Lambda abstracts over a L4AtomicP, in the sense that
+* non-vars (according to the spec) stay as text
+* things that should be vars (according to the spec) get converted to TemplateVars
+-}
 lamabstractAP :: GVarSet -> L4AtomicP -> LamAbsAtomicP
 lamabstractAP gvars = \case
   ABPatomic cells ->
@@ -92,6 +61,7 @@ lamabstractBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn LamAbsAtomicP
 lamabstractBody gvars l4boolprop =
   let absAtomic = lamabstractAP gvars
   in fmap absAtomic l4boolprop
+
 
 ---- helpers
 
@@ -116,8 +86,8 @@ cell2labscell gvars = \case
 -- TODO: Look into a better / more concise way of doing this
 optOfArg :: Term -> TemplateVar
 optOfArg = \case
-  MkCellT t -> OpOfVar t
-  MkCellIsNum t -> OpOfVar t
+  MkCellT t -> OpOfVarArg t
+  MkCellIsNum t -> OpOfVarArg t
 
 term2tvar :: GVarSet -> Term -> TemplateVar
 term2tvar gvars = \case
@@ -138,16 +108,3 @@ txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
 isAposVar :: GVarSet -> T.Text -> Bool
 isAposVar gvs ctxt = let (prefix, suffix) = T.splitAt 2 ctxt
                       in suffix == "'s" && txtIsAGivenVar gvs prefix
-
-
--- nlasFromLamAbsFact 
--- for now let's assume that the NLAs for facts are already in the fixed lib
--- TODO: When have more time, write smtg tt checks if it is indeed in fixed lib, and add it if not.
-
--- nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
--- nlasFromLamAbsRule = undefined
--- {- for each base template (bt) in the LamAbsRule, across the head and body,
---   we take its sequence of original variable names <"v1", "v2", ..., "vn">,
---   make a new sequence <"*a v1", "a v2", ..., "a vn">,
---  and then instantiate the bt with that new sequence. 
--- -}

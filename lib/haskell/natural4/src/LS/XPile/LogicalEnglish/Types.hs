@@ -81,9 +81,12 @@ data BoolPropn a = AtomicBP a
 data AtomicBPropn var baseprop =
     ABPatomic baseprop
   | ABPIsDiffFr var var
+  -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear here
   | ABPIsOpOf var OpOf [var]
+    -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear in the leftmost position
     -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
   | ABPIsOpSuchTt var OpSuchTt baseprop
+    -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear in the leftmost position
     {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
         * the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
         * the second propn would be the indented φ(x) condition
@@ -173,11 +176,13 @@ type OrigVarPrefix = T.Text
 They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the LamAbsCell. -}
 data TemplateVar = MatchGVar !OrigVarName
                  | EndsInApos !OrigVarPrefix
-                 {- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
+                   {- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
                   `OrigVarPrefix` must have been a GVar
-                 -}
+                    -}
                  | IsNum !OrigVarName
-                 -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
+                   -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
+                 | OpOfTerm !OrigVarName
+                 | OtherTerm !OrigVarName -- TODO: Look into whether can remove this case 
       deriving stock (Eq, Ord, Show)
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?

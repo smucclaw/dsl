@@ -40,10 +40,10 @@ import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 lamAbstract :: SimpleL4HC -> LamAbsHC
 lamAbstract = \case
   MkL4FactHc{..} -> MkLAFact { lafgiven = fgiven
-                             , lafhead =  lamabsAtomicProp fgiven fhead }
+                             , lafhead =  lamabstractAP fgiven fhead }
   MkL4RuleHc{..} -> MkLARule { largiven = rgiven
-                             , larhead =  lamabsAtomicProp rgiven rhead
-                             , larbody = undefined }
+                             , larhead =  lamabstractAP rgiven rhead
+                             , larbody = lamabstractBody rgiven rbody }
 {-
 type L4AtomicP = AtomicBPropn Term [Cell]
 
@@ -68,7 +68,6 @@ data L4Rule = L4Rule { givenVars :: GVarSet
                      , head      :: L4AtomicP
                      , body      :: BoolPropn L4AtomicP }
 
-
 type LamAbsAtomicP = AtomicBPropn TemplateVar LamAbsBase
 
 data LamAbsBase = TempVar TemplateVar
@@ -76,18 +75,23 @@ data LamAbsBase = TempVar TemplateVar
 -}
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading
-lamabsAtomicProp :: GVarSet -> L4AtomicP -> LamAbsAtomicP
-lamabsAtomicProp gvars = \case
-  ABPatomic cells -> 
+lamabstractAP :: GVarSet -> L4AtomicP -> LamAbsAtomicP
+lamabstractAP gvars = \case
+  ABPatomic cells ->
     ABPatomic $ fmap (cell2labscell gvars) cells
-  ABPIsDiffFr t1 t2 -> 
-    ABPIsDiffFr (term2labTempVar gvars t1) 
-                (term2labTempVar gvars t2)
-  ABPIsOpOf t opOf termargs -> 
-    ABPIsOpOf (term2labTempVar gvars t) opOf (fmap (term2labTempVar gvars) termargs)
-  ABPIsOpSuchTt t opST cells -> 
-    ABPIsOpSuchTt (term2labTempVar gvars t) opST 
+  ABPIsDiffFr t1 t2 ->
+    ABPIsDiffFr (term2tvar gvars t1)
+                (term2tvar gvars t2)
+  ABPIsOpOf t opOf termargs ->
+    ABPIsOpOf (term2tvar gvars t) opOf (fmap optOfArg termargs)
+  ABPIsOpSuchTt t opST cells ->
+    ABPIsOpSuchTt (term2tvar gvars t) opST
                   (fmap (cell2labscell gvars) cells)
+
+lamabstractBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn LamAbsAtomicP
+lamabstractBody gvars l4boolprop =
+  let absAtomic = lamabstractAP gvars
+  in fmap absAtomic l4boolprop
 
 
 {- |
@@ -108,23 +112,27 @@ cell2labscell gvars = \case
          else Pred celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
 
-term2labTempVar :: GVarSet -> Term -> TemplateVar
-term2labTempVar gvars = \case
-  MkCellT celltxt ->
-    if txtIsAGivenVar gvars celltxt
-    then MatchGVar celltxt
-    else if isAposVar gvars celltxt
-         then EndsInApos celltxt
-         else error "the input cell was not a term!"
-          -- TODO: Would be better to make the L4 Term a type whose values are guaranteed to be either a MatchGVar or EndsInApos, and move the validation further upstream. Will do this when time permits.
-  MkCellIsNum numtxt -> IsNum numtxt
-    -- TODO: after we make the L4 Term more constrained, we shld be able to remove this case
+-- TODO: Look into a better / more concise way of doing this
+optOfArg :: Term -> TemplateVar
+optOfArg = \case
+  MkCellT t -> OpOfTerm t
+  MkCellIsNum t -> OpOfTerm t
 
+term2tvar :: GVarSet -> Term -> TemplateVar
+term2tvar gvars = \case
+    MkCellT trm -> tryOtherCasesFirst trm
+    MkCellIsNum trm -> tryOtherCasesFirst trm
+    where 
+      tryOtherCasesFirst :: T.Text -> TemplateVar
+      tryOtherCasesFirst trm
+        | txtIsAGivenVar gvars trm = MatchGVar trm
+        | isAposVar gvars trm = EndsInApos trm
+        | otherwise = OtherTerm trm
+-- TODO: Look into trying to do away with the OtherTerm case by leveraging the guarantees we have or don't have re the vars tt appear there. We basically only need OtherTerm if it's possible to have a non-MatchGVar, non-EndsInApos term in that position (as it is for an OptOf term arg)
 
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
 txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
-
 
 isAposVar :: GVarSet -> T.Text -> Bool
 isAposVar gvs ctxt = let (prefix, suffix) = T.splitAt 2 ctxt

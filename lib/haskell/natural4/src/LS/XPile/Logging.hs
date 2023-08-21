@@ -140,11 +140,20 @@ type XPileLogTE m a = XPileLogT m (Either XPileLogW a)
 -- in case you need that. You can also define your own type along
 -- these lines.
 type XPileLog  = XPileLogT Identity
+
+-- | placeholder for arbitrary environment. This should be replaced by
+-- what your actual environment is. Currently there are modules that
+-- make up variants of an XPileLog monad; this is an example of how to
+-- do that. But we should generalize all that and have an XPileLogR a.
 type XPileLogR = HashMap String String
+
+-- | mutterings are basically lists of strings. Any structure in here should be up to the conventions of your logging style; in this project we frequently use org-mode conventions living inside these strings.
 type XPileLogW = [XPileLogW'];       type XPileLogW' = String
 type XPileLogS = HashMap String String
 
--- | XPileLog as a monad transformer, allowing specialization of the base monad to something besides Identity
+-- | XPileLog as a monad transformer, allowing specialization of the base monad to something besides Identity.
+--
+-- [TODO] newtypes are preferred!
 type XPileLogT m = RWST XPileLogR XPileLogW XPileLogS m
 
 

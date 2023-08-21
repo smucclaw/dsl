@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
--- {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE PatternSynonyms, DataKinds #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
@@ -13,24 +13,18 @@ module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , BoolPropn(..)
-    , SimpleNum(..)
-
     -- L4-related types
     , GVar(..)
     , GVarSet
     , Cell(..)
     , Term
-    , SimpleL4HC(MkL4FactHc, fgiven, fhead, 
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead,
                  MkL4RuleHc, rgiven, rhead, rbody)
-    -- , pattern MkL4RuleHc
-    -- , pattern MkL4FactHc 
-    -- , pattern 
-    -- , pattern MkL4FactHc
 
     , OpOf(..)
     , OpSuchTt(..)
     , AtomicBPropn(..)
-    , L4AtomicBP
+    , L4AtomicP
     , pattern MkTrueAtomicBP
     , pattern MkIsOpSuchTtBP
     , pattern MkIsOpOf
@@ -41,8 +35,12 @@ module LS.XPile.LogicalEnglish.Types (
     , OrigVarPrefix
     , OrigVarSeq
     , Substn
+    , LamAbsHC(MkLAFact, lafgiven, lafhead,
+               MkLARule, largiven, larhead, larbody)
+    , LamAbsFact(..)
     , LamAbsRule(..)
-    , LamAbsBase(..)
+    , LamAbsAtomicP
+    , LamAbsCell(..)
 
     -- LE-related types
     , LENatLangAnnot
@@ -64,7 +62,7 @@ import GHC.Generics (Generic)
 import Control.Monad.Identity ( Identity )
 
 import Data.String (IsString)
-import LS.Rule as L4 (Rule(..)) 
+import LS.Rule as L4 (Rule(..))
 
 {-------------------------------------------------------------------------------
   Common types 
@@ -80,7 +78,7 @@ data BoolPropn a = AtomicBP a
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 -- | Atomic(ish) Boolean proposition
-data AtomicBPropn var baseprop = 
+data AtomicBPropn var baseprop =
     ABPatomic baseprop
   | ABPIsDiffFr var var
   | ABPIsOpOf var OpOf [var]
@@ -100,8 +98,8 @@ data OpOf = MaxOf
           | ProductOf
   deriving stock (Show, Eq, Ord)
 
-data OpSuchTt = MaxXSuchThat 
-              | MinXSuchThat 
+data OpSuchTt = MaxXSuchThat
+              | MinXSuchThat
               | SumEachXSuchThat
   deriving stock (Show, Eq, Ord)
 
@@ -119,51 +117,51 @@ type GVarSet = HS.HashSet GVar
 
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
-          | MkCellNum !SimpleNum 
-          | MkCellIs
+          | MkCellIsNum !T.Text
   deriving stock (Show, Eq, Ord)
 
-data SimpleNum = MkInteger Integer | MkFloat Float
-  deriving stock (Show, Eq, Ord)
+-- data SimpleNum = MkInteger Integer | MkFloat Float
+--   deriving stock (Show, Eq, Ord)
 
 type Term = Cell
-type L4AtomicBP = AtomicBPropn Term [Cell] 
+type L4AtomicP = AtomicBPropn Term [Cell]
 
--- patterns to make it easier to program with L4AtomicBP and AtomicBPropn
-pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicBP
+-- patterns to make it easier to program with L4AtomicP and AtomicBPropn
+pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicP
 pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
 
-pattern MkIsOpSuchTtBP :: Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicBP
+pattern MkIsOpSuchTtBP :: Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicP
 pattern MkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
 
-pattern MkIsDiffFr :: Term -> Term -> BoolPropn L4AtomicBP
+pattern MkIsDiffFr :: Term -> Term -> BoolPropn L4AtomicP
 pattern MkIsDiffFr t1 t2 = AtomicBP (ABPIsDiffFr t1 t2)
 
-pattern MkIsOpOf :: Term -> OpOf -> [Term] -> BoolPropn L4AtomicBP
+pattern MkIsOpOf :: Term -> OpOf -> [Term] -> BoolPropn L4AtomicP
 pattern MkIsOpOf term op args = AtomicBP (ABPIsOpOf term op args)
 
 -- | Two varieties of SimpleL4HC
 data SimpleL4HC = L4hcF L4Fact | L4hcR L4Rule
 
 data L4Fact = L4Fact { givenVars :: GVarSet
-                     , head      :: L4AtomicBP
+                     , head      :: L4AtomicP
                      }
 
 data L4Rule = L4Rule { givenVars :: GVarSet
-                     , head      :: L4AtomicBP
-                     , body      :: BoolPropn L4AtomicBP }
+                     , head      :: L4AtomicP
+                     , body      :: BoolPropn L4AtomicP }
 
-pattern MkL4RuleHc :: GVarSet -> L4AtomicBP -> BoolPropn L4AtomicBP -> SimpleL4HC
-pattern MkL4RuleHc{rgiven, rhead, rbody} = 
+pattern MkL4RuleHc :: GVarSet -> L4AtomicP -> BoolPropn L4AtomicP -> SimpleL4HC
+pattern MkL4RuleHc{rgiven, rhead, rbody} =
   L4hcR (L4Rule { givenVars = rgiven
                 , head = rhead
                 , body = rbody })
 
-pattern MkL4FactHc :: GVarSet -> L4AtomicBP -> SimpleL4HC
-pattern MkL4FactHc{fgiven, fhead} = 
-  L4hcF  (L4Fact { givenVars = fgiven
+pattern MkL4FactHc :: GVarSet -> L4AtomicP -> SimpleL4HC
+pattern MkL4FactHc{fgiven, fhead} =
+  L4hcF (L4Fact { givenVars = fgiven
                  , head = fhead})
 
+{-# COMPLETE MkL4FactHc, MkL4RuleHc #-}
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
 -------------------------------------------------------------------------------}
@@ -171,10 +169,14 @@ pattern MkL4FactHc{fgiven, fhead} =
 type OrigVarName = T.Text
 
 type OrigVarPrefix = T.Text
-{-| TemplateVars mark the places where we'd instantiate / substitute in the LamAbsBase / condition template to get either a natural language annotation or a LE rule. They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the LamAbsBase. -}
+{-| TemplateVars mark the places where we'd instantiate / substitute in the LamAbsCell / condition template to get either a natural language annotation or a LE rule. 
+They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the LamAbsCell. -}
 data TemplateVar = MatchGVar !OrigVarName
-                 | EndsInApos !OrigVarPrefix -- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
-                 | IsNum !OrigVarName 
+                 | EndsInApos !OrigVarPrefix
+                 {- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
+                  `OrigVarPrefix` must have been a GVar
+                 -}
+                 | IsNum !OrigVarName
                  -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
       deriving stock (Eq, Ord, Show)
 
@@ -186,18 +188,78 @@ newtype Substn = MkSubstn [T.Text]
   deriving newtype (Eq, Ord)
 
 --TODO: Edit this / think thru it again when we get to this on Mon
-{-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules. -}
-data LamAbsRule = MkLAbsRule { givenVars  :: GVarSet
-                             , head      :: LamAbsBase
-                             , body      :: BoolPropn LamAbsBase } -- this might need to be a Maybe (BoolPropn LamAbsBase)
-{-| This is best understood in the context of LamAbsRule  -}
-data LamAbsBase = MkTBase { getVarSeq :: OrigVarSeq
-                          , instTemplate :: Substn -> TemplInstanceOrNLA } 
+{-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules.
+
+Things to note / think about:
+* One difference between NLAs and making LE rules: 
+  Not all L4AtomicBPs will need to be converted to NLAs --- e.g., t1 is different from t2 already has a NLA in the fixed lib. 
+  By contrast, we do need to be able to convert every L4AtomicP to a LE condition.
+* 
+
+ -}
+data LamAbsHC = LAhcF LamAbsFact | LAhcR LamAbsRule
+      deriving stock (Eq, Ord, Show)
+
+data LamAbsFact = LAFact { givenVars  :: GVarSet
+                         , head      :: LamAbsAtomicP }
+      deriving stock (Eq, Ord, Show)
+data LamAbsRule = LARule { givenVars  :: GVarSet
+                         , head      :: LamAbsAtomicP
+                         , body      :: BoolPropn LamAbsAtomicP }
+      deriving stock (Eq, Ord, Show)
+
+pattern MkLAFact :: GVarSet -> LamAbsAtomicP -> LamAbsHC
+pattern MkLAFact{lafgiven, lafhead}
+  = LAhcF (LAFact { givenVars = lafgiven
+                  , head      = lafhead })
+
+pattern MkLARule :: GVarSet -> LamAbsAtomicP -> BoolPropn LamAbsAtomicP -> LamAbsHC
+pattern MkLARule{largiven, larhead, larbody}
+  = LAhcR (LARule { givenVars = largiven
+                  , head      = larhead
+                  , body      = larbody})
+{-# COMPLETE MkLAFact, MkLARule #-}
+
+{- | This might seem a bit confusing, because now there can be template variables both within a LamAbsCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
+  But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
+  Also, it's helpful to have tt info for generating NLAs, 
+  since the only time we need to generate an NLA is when we have a `baseprop` / `LamAbsCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
+  To put it another way: NLAs are generated *from*, and only from, LamAbsBases.
+ -}
+type LamAbsAtomicP = AtomicBPropn TemplateVar [LamAbsCell]
+
+{-| This is best understood in the context of the other lam abs data types  -}
+data LamAbsCell = TempVar TemplateVar
+                | Pred    !T.Text
+          deriving stock (Eq, Ord, Show)
+  --  MkTBase { getVarSeq :: OrigVarSeq
+  --                         , instTemplate :: Substn -> TemplInstanceOrNLA } 
+
 
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
-type LEVar = T.Text
+-- | For generating template instances / non-NLAs. The main difference is tt we no longer have an IsNum variant
+data LEtiVar = LEMatchGV !OrigVarName
+             | LEApos !OrigVarPrefix
+    deriving stock (Eq, Ord, Show)
+    deriving (Generic, Hashable)
+
+
+{-
+Got this error 
+    Module ‘Data.Hashable.Generic’ does not export ‘gHashWithSalt’
+   |
+63 | import Data.Hashable.Generic ( gHashWithSalt )
+   |                                ^^^^^^^^^^^^^
+on my mac when trying
+
+instance Hashable LEtiVar where
+  hashWithSalt = gHashWithSalt
+  {-# INLINEABLE hashWithSalt #-}
+
+from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hashable-Generic.html
+-}
 
 newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
@@ -221,7 +283,7 @@ data LERule = MkLERule
 {-| This is really for *our* dialect of LE (with our in-house libs) rather than standard LE. 
 See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
  -}
-type LEAtomicBPropn = AtomicBPropn LEVar LETemplateInstance
+type LEAtomicBPropn = AtomicBPropn LEtiVar LETemplateInstance
 type LECondnTree = BoolPropn LEAtomicBPropn
 -- ^ TODO: This might be too much structure -- think more abt this when we get to pretty printing
 

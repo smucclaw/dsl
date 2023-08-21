@@ -181,8 +181,8 @@ data TemplateVar = MatchGVar !OrigVarName
                     -}
                  | IsNum !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
-                 | OpOfTerm !OrigVarName
-                 | OtherTerm !OrigVarName -- TODO: Look into whether can remove this case 
+                 | OpOfVar !OrigVarName
+                 | OtherVar !OrigVarName -- TODO: Look into whether can remove this case 
       deriving stock (Eq, Ord, Show)
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?

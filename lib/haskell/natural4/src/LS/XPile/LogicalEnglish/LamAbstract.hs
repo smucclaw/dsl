@@ -93,6 +93,7 @@ lamabstractBody gvars l4boolprop =
   let absAtomic = lamabstractAP gvars
   in fmap absAtomic l4boolprop
 
+---- helpers
 
 {- |
 The code for simplifying L4 AST has established these invariants:  
@@ -115,8 +116,8 @@ cell2labscell gvars = \case
 -- TODO: Look into a better / more concise way of doing this
 optOfArg :: Term -> TemplateVar
 optOfArg = \case
-  MkCellT t -> OpOfTerm t
-  MkCellIsNum t -> OpOfTerm t
+  MkCellT t -> OpOfVar t
+  MkCellIsNum t -> OpOfVar t
 
 term2tvar :: GVarSet -> Term -> TemplateVar
 term2tvar gvars = \case
@@ -127,8 +128,8 @@ term2tvar gvars = \case
       tryOtherCasesFirst trm
         | txtIsAGivenVar gvars trm = MatchGVar trm
         | isAposVar gvars trm = EndsInApos trm
-        | otherwise = OtherTerm trm
--- TODO: Look into trying to do away with the OtherTerm case by leveraging the guarantees we have or don't have re the vars tt appear there. We basically only need OtherTerm if it's possible to have a non-MatchGVar, non-EndsInApos term in that position (as it is for an OptOf term arg)
+        | otherwise = OtherVar trm
+-- TODO: Look into trying to do away with the OtherVar case by leveraging the guarantees we have or don't have re the vars tt appear there. We basically only need OtherVar if it's possible to have a non-MatchGVar, non-EndsInApos term in that position (as it is for an OptOf term arg)
 
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool

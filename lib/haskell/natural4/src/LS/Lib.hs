@@ -394,7 +394,7 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , tokenVal <- toToken rawToken
+             , tokenVal <- toToken (Text.strip rawToken) -- strip leading and trailing whitespace from tokens. If you want a bare "IS" your best bet is to say "is".
              , tokenVal `notElem` [ Empty, TokTrue, TokFalse ] -- ignore TRUE and FALSE values ... so long as our policy is to ignore checkboxes, that is.
              ]
   where

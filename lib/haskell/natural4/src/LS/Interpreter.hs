@@ -325,6 +325,7 @@ getAttrTypesIn ct classname =
 
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
+
 -- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
 -- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
 --

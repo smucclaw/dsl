@@ -80,7 +80,7 @@ data MyToken = Every | Party | TokAll
              | Empty | EOL
              | RuleMarker Int Text.Text
              | Expect | ScenarioTok
-             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr | TokSum | TokProduct
+             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr | TokSum | TokProduct | TokMin | TokMax
              | Notwithstanding | Despite | SubjectTo
              | Otherwise
              | SOF | EOF
@@ -243,11 +243,11 @@ toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
-toToken "MIN"       = pure TokLT;      toToken "MIN OF"    = pure TokLT
+toToken "MIN"       = pure TokMin;     toToken "MIN OF"    = pure TokMin
 toToken "=<"        = pure TokLTE
 toToken "<="        = pure TokLTE
 toToken ">"         = pure TokGT
-toToken "MAX"       = pure TokGT;      toToken "MAX OF"    = pure TokGT
+toToken "MAX"       = pure TokMax;     toToken "MAX OF"    = pure TokMax
 toToken ">="        = pure TokGTE
 toToken "="         = pure TokEQ
 toToken "&&"        = pure TokAnd
@@ -416,6 +416,8 @@ renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 renderToken Semicolon = ";;"
 
 renderToken SubjectTo = "SUBJECT TO"
+renderToken TokMin = "MIN"
+renderToken TokMax = "MAX"
 renderToken TokSum = "SUM"
 renderToken TokProduct = "PRODUCT"
 renderToken FMap = "MAP"

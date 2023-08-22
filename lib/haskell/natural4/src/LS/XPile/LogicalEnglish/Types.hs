@@ -46,12 +46,13 @@ module LS.XPile.LogicalEnglish.Types (
     , LamAbsCell(..)
 
     -- LE-related types
+    , LEhc(..)
     , NLACell(..)
     , LENatLangAnnot(..)
     , LETemplateInstance
     , TemplInstanceOrNLA(..)
     , LERule(..)
-    , LECondnTree
+    -- , LECondnTree
 
     -- Configuration and LE-specific consts
     , LEProg
@@ -91,7 +92,6 @@ data AtomicBPropn var baseprop =
     -- TODO: Look into what guarantees we have or don't have for the sots of vars tt can appear in the leftmost position
     -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
   | ABPIsOpSuchTt var OpSuchTt baseprop
-    -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear in the leftmost position
     {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
         * the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
         * the second propn would be the indented φ(x) condition
@@ -322,7 +322,7 @@ type LEAtomicBPropn = AtomicBPropn LEtiVar LETemplateInstance
 
 -- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
 pattern MkLEProg <- undefined
-data LEProg = MkLEProg_ {   docHeader    :: !T.Text
+data LEProg = MkLEProg_ { docHeader    :: !T.Text
                         , nlasHeader :: !T.Text
                         , ruleBodyHeader :: !T.Text
                         , nlas :: [LENatLangAnnot]

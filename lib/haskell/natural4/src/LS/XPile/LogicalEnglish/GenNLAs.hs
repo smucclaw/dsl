@@ -56,20 +56,20 @@ nlasFromBody lamabsBP =
 -- TODO: Check if this really does conform to the spec --- went a bit fast here
 nlaLoneFromLAbsAtomicP :: LamAbsAtomicP -> Maybe LENatLangAnnot
 nlaLoneFromLAbsAtomicP =  \case
-  ABPatomic labscells -> nlacs2annot labscells
-  ABPIsOpSuchTt _ _ labscells -> nlacs2annot labscells
+  ABPatomic labscells -> annotFromLabscells labscells
+  ABPIsOpSuchTt _ _ labscells -> annotFromLabscells labscells
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
   where
-    nlacs2annot :: [LamAbsCell] -> Maybe LENatLangAnnot
-    nlacs2annot = nlacellseq2annot . lacs2nlacs
+    annotFromLabscells :: [LamAbsCell] -> Maybe LENatLangAnnot
+    annotFromLabscells = annotFromNLAcells . nlacellsFromLacs
 
-    lacs2nlacs :: [LamAbsCell] -> [NLACell]
-    lacs2nlacs = fmap labscell2NLAcell
+    nlacellsFromLacs :: [LamAbsCell] -> [NLACell]
+    nlacellsFromLacs = fmap labscell2NLAcell
 
 
-nlacellseq2annot :: [NLACell] -> Maybe LENatLangAnnot
-nlacellseq2annot = \case
+annotFromNLAcells :: [NLACell] -> Maybe LENatLangAnnot
+annotFromNLAcells = \case
   (mconcat . intersperseWithSpace -> MkNonParam concatted) -> Just $ coerce concatted
   _ -> Nothing
   where 

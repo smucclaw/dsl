@@ -73,9 +73,11 @@ Invariant: all NLAParams take one of the following two forms:
 -}
 tvar2NLAcell :: TemplateVar -> NLACell
 tvar2NLAcell = \case 
-  IsNum numtxt -> MkNonParam numtxt
   OpOfVarArg arg -> MkNonParam arg
+
   EndsInApos _ -> MkParam "*a var*'s"
+  IsNum _numtxt -> MkParam "*a var*" 
+  -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
   _            -> MkParam "*a var*"
   {- ^
   From the LE handbook:

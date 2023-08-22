@@ -13,14 +13,14 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     nlasFromLamAbsHC
   )
 where
-  
+
 -- TODO: Make export list
 
 -- import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Foldable (toList)
 import Data.Maybe (catMaybes)
-
+import qualified Data.List as L hiding (head, tail)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
@@ -30,7 +30,7 @@ import LS.XPile.LogicalEnglish.Types
 
 nlasFromLamAbsHC :: LamAbsHC -> HS.HashSet LENatLangAnnot
 nlasFromLamAbsHC = \case
-  LAhcF labsfact -> 
+  LAhcF labsfact ->
     case (nlaFromLamAbsFact labsfact) of
       Nothing -> HS.empty
       Just nla -> HS.singleton nla
@@ -42,14 +42,14 @@ nlaFromLamAbsFact :: LamAbsFact -> Maybe LENatLangAnnot
 nlaFromLamAbsFact LAFact{..} = nlaLoneFromLAbsAtomicP head
 
 nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
-nlasFromLamAbsRule LARule{..} = 
+nlasFromLamAbsRule LARule{..} =
   let bodyNLAs = nlasFromBody body
   in case (nlaLoneFromLAbsAtomicP head) of
     Nothing -> bodyNLAs
     Just headNLA -> HS.insert headNLA bodyNLAs
 
 nlasFromBody :: BoolPropn LamAbsAtomicP -> HS.HashSet LENatLangAnnot
-nlasFromBody lamabsBP = 
+nlasFromBody lamabsBP =
   let lstNLAs = fmap nlaLoneFromLAbsAtomicP lamabsBP
   in HS.fromList . catMaybes . toList $ lstNLAs
 
@@ -58,24 +58,27 @@ nlaLoneFromLAbsAtomicP :: LamAbsAtomicP -> Maybe LENatLangAnnot
 nlaLoneFromLAbsAtomicP =  \case
   ABPatomic labscells -> nlacs2annot labscells
   ABPIsOpSuchTt _ _ labscells -> nlacs2annot labscells
-  ABPIsDiffFr{} -> Nothing 
-  ABPIsOpOf{}   -> Nothing   
-  where 
+  ABPIsDiffFr{} -> Nothing
+  ABPIsOpOf{}   -> Nothing
+  where
     nlacs2annot :: [LamAbsCell] -> Maybe LENatLangAnnot
     nlacs2annot = nlacellseq2annot . lacs2nlacs
-        
+
     lacs2nlacs :: [LamAbsCell] -> [NLACell]
     lacs2nlacs = fmap labscell2NLAcell
 
 
 nlacellseq2annot :: [NLACell] -> Maybe LENatLangAnnot
-nlacellseq2annot = \case  
-  (mconcat -> MkNonParam concatted) -> Just $ coerce concatted
+nlacellseq2annot = \case
+  (mconcat . intersperseWithSpace -> MkNonParam concatted) -> Just $ coerce concatted
   _ -> Nothing
+  where 
+    spaceDelimtr = MkNonParam " "
+    intersperseWithSpace = L.intersperse spaceDelimtr 
 
 labscell2NLAcell :: LamAbsCell -> NLACell
 labscell2NLAcell = \case
-  TempVar tvar -> tvar2NLAcell tvar 
+  TempVar tvar -> tvar2NLAcell tvar
   Pred nonparamtxt -> MkNonParam nonparamtxt
 
 {- | 
@@ -84,11 +87,11 @@ Invariant: all NLAParams take one of the following two forms:
   *a var*'s
 -}
 tvar2NLAcell :: TemplateVar -> NLACell
-tvar2NLAcell = \case 
+tvar2NLAcell = \case
   OpOfVarArg arg -> MkNonParam arg
 
   EndsInApos _ -> MkParam "*a var*'s"
-  IsNum _numtxt -> MkParam "*a var*" 
+  IsNum _numtxt -> MkParam "*a var*"
   -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
   _            -> MkParam "*a var*"
   {- ^

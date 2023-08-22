@@ -273,10 +273,10 @@ data NLACell = MkParam !T.Text
   deriving stock (Eq, Ord, Show)
 
 instance Semigroup NLACell where
-  MkParam l <> MkParam r = MkNonParam $ T.concat [l, " ", r]
-  MkParam l <> MkNonParam r = MkNonParam $ T.concat [l, " ", r]
-  MkNonParam l <> MkParam r = MkNonParam $ T.concat [l, " ", r]
-  MkNonParam l <> MkNonParam r = MkNonParam $ T.concat [l, " ", r]
+  MkParam l <> MkParam r = MkNonParam $ l <> r
+  MkParam l <> MkNonParam r = MkNonParam $ l <> r
+  MkNonParam l <> MkParam r = MkNonParam $ l <> r
+  MkNonParam l <> MkNonParam r = MkNonParam $ l <> r
 instance Monoid NLACell where
   mempty = MkNonParam ""
 

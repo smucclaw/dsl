@@ -1,33 +1,45 @@
 {-# OPTIONS_GHC -W #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards #-}
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
+-- {-# LANGUAGE OverloadedRecordDot #-}
+-- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DerivingStrategies #-}
+-- {-# LANGUAGE QuasiQuotes #-}
+-- {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.GenNLAs where
+module LS.XPile.LogicalEnglish.GenNLAs (
+    nlasFromLamAbsHC
+  )
+where
   
 -- TODO: Make export list
 
-import Data.Text qualified as T
+-- import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Foldable (toList)
 import Data.Maybe (catMaybes)
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 import Data.Coerce (coerce)
-import Data.String.Interpolate ( i )
+-- import Data.String.Interpolate ( i )
 
 import LS.XPile.LogicalEnglish.Types
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev 
 
--- nlasFromLamAbsFact 
--- for now let's assume that the NLAs for facts are already in the fixed lib
+nlasFromLamAbsHC :: LamAbsHC -> HS.HashSet LENatLangAnnot
+nlasFromLamAbsHC = \case
+  LAhcF labsfact -> 
+    case (nlaFromLamAbsFact labsfact) of
+      Nothing -> HS.empty
+      Just nla -> HS.singleton nla
+  LAhcR labsrule ->
+    nlasFromLamAbsRule labsrule
+
 -- TODO: When have more time, write smtg tt checks if it is indeed in fixed lib, and add it if not.
+nlaFromLamAbsFact :: LamAbsFact -> Maybe LENatLangAnnot
+nlaFromLamAbsFact LAFact{..} = nlaLoneFromLAbsAtomicP head
 
 nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
 nlasFromLamAbsRule LARule{..} = 
@@ -83,4 +95,6 @@ tvar2NLAcell = \case
   From the LE handbook:
     An instance of a template is obtained from the template by replacing every parameter of the template by a list of words separated by spaces. 
     **There need not be any relationship between the words in a parameter and the words in the instance of the parameter. Different parameters in the same template can be replaced by different or identical instances.** (emphasis mine)
+
+  Right now I'm making all of them "a var" or "a var's", as opposed to "a <orig text>" / "a <orig text>'s", so tt it'll be easy to remove duplicates
   -}

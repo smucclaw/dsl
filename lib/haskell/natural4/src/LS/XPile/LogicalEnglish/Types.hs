@@ -36,7 +36,8 @@ module LS.XPile.LogicalEnglish.Types (
     , OrigVarSeq
     , Substn
     , LamAbsHC(MkLAFact, lafgiven, lafhead,
-               MkLARule, largiven, larhead, larbody)
+               MkLARule, largiven, larhead, larbody,
+               LAhcF, LAhcR)
     , LamAbsFact(..)
     , LamAbsRule(..)
     , LamAbsAtomicP

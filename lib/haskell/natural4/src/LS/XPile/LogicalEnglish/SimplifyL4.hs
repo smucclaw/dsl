@@ -158,8 +158,8 @@ pattern TermIsMin :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
 
 pattern TotalIsSumTerms total summandAtomRPs = TermIsOpOfAtomicTerms RPsum total summandAtomRPs
 pattern TotalIsProductTerms total atomargs = TermIsOpOfAtomicTerms RPproduct total atomargs
-pattern TermIsMax maxE atomargs = TermIsOpOfAtomicTerms RPgt maxE atomargs
-pattern TermIsMin minE atomargs = TermIsOpOfAtomicTerms RPlt minE atomargs
+pattern TermIsMax maxE atomargs = TermIsOpOfAtomicTerms RPmax maxE atomargs
+pattern TermIsMin minE atomargs = TermIsOpOfAtomicTerms RPmin minE atomargs
 
 
 pattern TermIsOpSuchThat :: RPRel -> MTExpr -> [MTExpr] -> RelationalPredicate
@@ -174,8 +174,8 @@ pattern TermIsMaxXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
 pattern TermIsMinXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
 pattern TermIsSumXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
 
-pattern TermIsMaxXWhere term φx = TermIsOpSuchThat RPgt term φx
-pattern TermIsMinXWhere term φx = TermIsOpSuchThat RPlt term φx
+pattern TermIsMaxXWhere term φx = TermIsOpSuchThat RPmax term φx
+pattern TermIsMinXWhere term φx = TermIsOpSuchThat RPmin term φx
 pattern TermIsSumXWhere term φx = TermIsOpSuchThat RPsum term φx
 
 {- ^ 
@@ -184,7 +184,7 @@ Examples of the L4 patterns
           ( RPnary RPis
               [ RPMT
                   [ MTT "savings" ]
-              , RPnary RPgt
+              , RPnary RPmax
                   [ RPMT
                       [ MTT "x"
                       , MTT "where"
@@ -214,7 +214,7 @@ t IS MIN t1 t2 .. tn:
             ( RPnary RPis
                 [ RPMT
                     [ MTT "amountsaved" ]
-                , RPnary RPlt
+                , RPnary RPmin
                     [ RPMT
                         [ MTT "1.5 * initial savings" ]
                     , RPMT

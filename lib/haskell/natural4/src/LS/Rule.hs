@@ -38,7 +38,7 @@ import LS.Types
     PlainParser,
     Preamble,
     RegKeywords (REvery),
-    RelationalPredicate (RPParamText),
+    RelationalPredicate (RPParamText, RPMT),
     RuleName,
     RunConfig (debug, parseCallStack),
     ScopeTabs,
@@ -46,7 +46,9 @@ import LS.Types
     TemporalConstraint,
     TypeSig,
     WithPos (WithPos, pos, tokenVal),
-    ValuePredicate,
+    EntityName,
+    RPRel(..),
+    Inferrable,
     bsp2text,
     dlToList,
     liftMyToken,
@@ -55,6 +57,7 @@ import LS.Types
     mt2text,
     multiterm2pt,
     rpHead,
+    defaultInferrableTypeSig
   )
 import Text.Megaparsec
   ( ErrorItem (Tokens),
@@ -423,6 +426,42 @@ defaultL4I = L4I
   , ruleGraph = empty
   , ruleGraphErr = mempty
   }
+
+
+-- | when the input says @DECIDE ClassA's RecordAttr's AttributeNAME IS foo WHEN bar@
+-- we rewrite that to a `ValuePredicate`.
+data ValuePredicate = ValPred
+  { moduleName :: [EntityName]  -- MoneyLib
+  , scopeName  :: [EntityName]  -- DollarJurisdictions
+  , objPath    :: [EntityName]  -- ClassA, ClassB, RecordAttrName --> ClassA.ClassB
+                  -- If this list is null, then the "attribute" is toplevel / module-global
+  , attrName   ::  EntityName   -- ClassA, ClassB, RecordAttrName --> RecordAttrName
+  , attrRel    ::  Maybe RPRel  -- 
+  , attrVal    ::  Maybe RelationalPredicate
+  , attrCond   ::  Maybe BoolStructR
+  , attrIType  ::  Inferrable TypeSig
+  , origBSR    ::  Maybe BoolStructR
+  , origHC     ::  Maybe HornClause2
+  , origRule   ::  Maybe Rule
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+defaultValuePredicate = ValPred
+  { moduleName = []
+  , scopeName  = []
+  , objPath    = []
+  , attrName   = "defaultAttrName"
+  , attrRel    = Just   RPis
+  , attrVal    = Just $ RPMT [MTT "defaultAttrVal"]
+  , attrCond   = Nothing
+  , attrIType  = defaultInferrableTypeSig
+  , origBSR    = Nothing
+  , origHC     = Nothing
+  , origRule   = Nothing
+  }
+
+
+
 
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.

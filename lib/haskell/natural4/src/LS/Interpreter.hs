@@ -1032,11 +1032,15 @@ isAnEnum l4i mgiven mt =
 -- [TODO] refactor this together with the above function to a single function
 isGivenEnum :: Maybe ParamText -> [MultiTerm] -> MultiTerm -> Bool
 isGivenEnum Nothing _ mt = False
-isGivenEnum (Just ((givenName, Nothing) :| _)) _ mt = False
-isGivenEnum (Just ((givenName, Just mgiven@(InlineEnum _ _)) :| _)) _ mt =
+isGivenEnum (Just typedMultis) enumNames mt = any (enumMatch enumNames mt) $ NE.toList typedMultis
+
+-- | does a specific typedmulti match an enum
+enumMatch :: [MultiTerm] -> MultiTerm -> TypedMulti -> Bool
+enumMatch _ mt (givenName, Nothing) = False
+enumMatch _ mt (givenName, Just mgiven@(InlineEnum _ _)) =
   -- trace ("mt = " <> show mt <> "; givenName = " <> show givenName <> "; given = " <> show mgiven) $
   mt == NE.toList givenName
-isGivenEnum (Just ((givenName, Just mgiven@(SimpleType TOne etype)) :| _)) enumNames mt =
+enumMatch enumNames mt (givenName, Just mgiven@(SimpleType TOne etype)) =
   (pure . MTT . T.toLower . (<> "enum") $ etype) `elem` enumNames
 
 -- | lowercase a multiterm to support isAnEnum comparison

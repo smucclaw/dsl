@@ -19,14 +19,18 @@ import LS.Interpreter
       ruleDecisionGraph,
       expandRule,
       classGraph,
+      classRoots,
       extractEnums,
       defaultToSuperClass, defaultToSuperType,
       attrsAsMethods,
       )
 
+import LS.DataFlow
+
 import LS.RelationalPredicates ( partitionExistentials, getBSR )
 import LS.Rule
-    ( Interpreted(classtable, scopetable, origrules),
+    ( Interpreted(..),
+      Rule(..),
       hasGiven,
       hasClauses,
       ruleLabelName,
@@ -68,7 +72,8 @@ musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
       expandedRules = nub $ concatMap (expandRule rs) rs
-      decisionGraph = ruleDecisionGraph l4i rs
+      decisionGraph = ruleGraph l4i
+      (eRout, eRerr)         = xpLog (exposedRoots l4i)
   in vvsep [ "* musings"
            , "** Global Facts" </> srchs (globalFacts l4i)
 
@@ -92,6 +97,10 @@ musings l4i rs =
                    , let fullyQualifiedClassName = Text.intercalate "." (reverse cname) ]
            , "** The entire classgraph"
            , srchs cg
+
+           , "** the roots of the graph"
+           , "have indegree count 0"
+           , srchs (classRoots (classtable l4i))
            
            , "** Enums"
            , vvsep [ "***" <+> snake_case className
@@ -117,13 +126,15 @@ musings l4i rs =
            , "we dump expressions of the form DECIDE class's record's attribute IS someValue WHEN someCondition"
            , let aam = xpLog $ attrsAsMethods rs -- [TODO] this duplicates work done in the Interpreter -- find a way to coherently log common errors from the Interpreter itself, clean up l4i's valuePreds
              in srchs (fst aam) </> vsep (pretty <$> snd aam)
+           , "** Dataflow modelling"
            , "** the Rule Decision Graph"
            , orgexample (pretty (prettify (first ruleLabelName decisionGraph)))
+           , "*** logging output" </> vsep (pretty <$> ruleGraphErr l4i)
 
            , "** Decision Roots"
            , "rules which are not just RuleAlises, and which are not relied on by any other rule"
-           , srchs (ruleLabelName <$> exposedRoots l4i)
-
+           , srchs (ruleLabelName <$> eRout)
+           , "*** logging output from exposedRoots" </> vsep (pretty <$> eRerr)
            , "*** Nubbed, Exposed, Decision Roots"
            , "Each ruleset can be organized into multiple trees. Each tree contains rules."
            , "The leaves of the trees contain datapoints we need to collect from the user, typically by asking the user for that data in some interactive Q&A form style."
@@ -162,8 +173,8 @@ musings l4i rs =
                                , hasClauses r
                                , hasGiven r
                                ]
-                   | ((grpval, uniqrs),n :: Int) <- Prelude.zip (groupedByAOTree l4i $ -- NUBBED
-                                                                 exposedRoots l4i      -- EXPOSED
+                   | ((grpval, uniqrs),n :: Int) <- Prelude.zip (groupedByAOTree l4i -- NUBBED
+                                                                  eRout      -- EXPOSED
                                                                 ) [1..]
                    , not $ null uniqrs
                    ]

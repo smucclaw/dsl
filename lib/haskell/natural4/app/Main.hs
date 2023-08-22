@@ -28,6 +28,7 @@ import LS.Interpreter
     l4interpret,
     onlyTheItems,
   )
+import LS.DataFlow
 import LS.NLP.NLG
   ( allLangs,
     expandRulesForNLG,
@@ -96,7 +97,7 @@ main = do
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
 
   -- Bits that have to do with natural language processing and generation
-  nlgLangs <- unsafeInterleaveIO allLangs
+  nlgLangs <- unsafeInterleaveIO allLangs               -- [TODO] Edsko is not a fan and has a whole talk about why we should not use this.
   strLangs <- unsafeInterleaveIO $ printLangs allLangs
   (engE,engErr) <- xpLog <$> langEng
   -- [NOTE] the Production Haskell book gives better ways to integrate Logging with IO
@@ -195,6 +196,7 @@ main = do
       (totsFN,      (asTSpretty, asTSerr))    = (workuuid <> "/" <> "ts",       xpLog $ asTypescript l4i)
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
+      (toDFGFN,     (asDFG, asDFGerr))        = (workuuid <> "/" <> "dataflow", xpLog $ dataFlowAsDot l4i)
 
       (toLEFN, asLE)                          = (workuuid <> "/" <> "le",         toLE rules)
       -- (toLEFN ,     (asLE, asLEerr))          = (workuuid <> "/" <> "le",       toLE l4i defaultReaderEnv) -- Meng's version
@@ -237,6 +239,7 @@ main = do
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (null $ SFL4.only opts)) $ do
 
+    when (SFL4.tonative  opts) $ mywritefile2 True toDFGFN     iso8601 "dot"  asDFG asDFGerr
     when (SFL4.tole      opts) $ mywritefile True toLEFN      iso8601 "le"  asLE
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative

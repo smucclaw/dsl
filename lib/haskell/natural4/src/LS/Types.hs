@@ -51,6 +51,7 @@ type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
+           | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
   deriving (Eq, Ord, Show, Generic, ToJSON)
@@ -276,6 +277,7 @@ mkRpmt a = RPMT (MTT <$> a)
 mkRpmtLeaf :: [Text.Text] -> BoolStructR
 mkRpmtLeaf a = mkLeaf (mkRpmt a)
 
+-- | [TODO] figure out why there are two very similar functions, this and `rel2op`
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "IS"
 rel2txt RPhas     = "HAS" -- "relHas"
@@ -290,6 +292,8 @@ rel2txt RPnot     = "NOT"    -- "relNot"
 rel2txt RPand     = "&&"    -- "relAnd"
 rel2txt RPor      = "||"    -- "relOr"
 rel2txt RPmap     = "MAP"
+rel2txt RPmin     = "MIN"
+rel2txt RPmax     = "MAX"
 rel2txt RPsum     = "SUM"
 rel2txt RPproduct = "PRODUCT"
 rel2txt (RPTC TBefore) = "BEFORE"
@@ -298,6 +302,7 @@ rel2txt (RPTC TBy    ) = "BY"
 rel2txt (RPTC TOn)     = "ON"
 rel2txt (RPTC TVague)  = "ABOUT"
 
+-- | [TODO] figure out why there are two very similar functions, this and `rel2txt`
 rel2op :: RPRel -> Text.Text
 rel2op RPis      = "IS"
 rel2op RPhas     = ".?"
@@ -311,14 +316,7 @@ rel2op RPnotElem = "NOT IN"
 rel2op RPnot     = "NOT"
 rel2op RPand     = "&&"
 rel2op RPor      = "||"
-rel2op RPmap     = "MAP"
-rel2op RPsum     = "SUM"
-rel2op RPproduct = "PRODUCT"
-rel2op (RPTC TBefore) = "BEFORE"
-rel2op (RPTC TAfter ) = "AFTER"
-rel2op (RPTC TBy    ) = "BY"
-rel2op (RPTC TOn)     = "ON"
-rel2op (RPTC TVague)  = "ABOUT"
+rel2op x         = rel2txt x
 
 rp2mt :: RelationalPredicate -> MultiTerm
 rp2mt (RPParamText    pt)            = pt2multiterm pt
@@ -331,7 +329,7 @@ rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
 rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
-rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [MTT $ rel2op rel], mt2]
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1 ++ [MTT $ rel2op rel] ++ mt2]
 rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ MTT (rel2op rel) : bod
                                               | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 rp2bodytexts (RPnary         rel rps)       = [MTT (rel2op rel), MTT "("] : concatMap rp2bodytexts rps ++ [[MTT ")"]]
@@ -401,6 +399,7 @@ data InterpreterOptions = IOpts
   }
   deriving (Eq, Ord, Show)
 
+-- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
 defaultInterpreterOptions :: InterpreterOptions
 defaultInterpreterOptions = IOpts
   { enums2decls = False
@@ -420,9 +419,10 @@ getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot in
 data ValuePredicate = ValPred
   { moduleName :: [EntityName]  -- MoneyLib
   , scopeName  :: [EntityName]  -- DollarJurisdictions
-  , objPath    :: [EntityName]  -- ClassA, RecordAttr. If this list is null, then the "attribute" is toplevel / module-global
-  , attrName   ::  EntityName   -- AttributeName
-  , attrRel    ::  Maybe RPRel
+  , objPath    :: [EntityName]  -- ClassA, ClassB, RecordAttrName --> ClassA.ClassB
+                  -- If this list is null, then the "attribute" is toplevel / module-global
+  , attrName   ::  EntityName   -- ClassA, ClassB, RecordAttrName --> RecordAttrName
+  , attrRel    ::  Maybe RPRel  -- 
   , attrVal    ::  Maybe RelationalPredicate
   , attrCond   ::  Maybe BoolStructR
   , attrIType  ::  Inferrable TypeSig

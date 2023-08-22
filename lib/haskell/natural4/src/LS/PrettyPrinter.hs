@@ -34,30 +34,9 @@ import LS.Types
       pt2text,
       rel2op )
 import Prettyprinter
-    ( Doc,
-      Pretty(pretty),
-      (<+>),
-      hsep,
-      viaShow,
-      vsep,
-      defaultLayoutOptions,
-      encloseSep,
-      hcat,
-      layoutPretty,
-      line,
-      nest,
-      LayoutOptions(layoutPageWidth),
-      PageWidth(Unbounded),
-      parens,
-      colon,
-      comma,
-      brackets,
-      dquotes,
-      equals,
-      lbrace,
-      rbrace,
-      squotes )
-import Prettyprinter.Render.Text ( renderStrict )
+import Prettyprinter.Render.Text
+import Text.Pretty.Simple qualified as TPS
+import Data.String (IsString)
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -353,7 +332,7 @@ prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
-commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> xs) <> line
+commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> concatMap T.lines xs) <> line
 
 -- | pretty print output without folding
 myrender :: Doc ann -> T.Text
@@ -375,6 +354,6 @@ infixr 5 </>, <//>
 
 -- | print haskell source in a way Org prefers
 srchs :: (Show a) => a -> Doc ann
-srchs = orgsrc "haskell" . pretty . pShowNoColor
+srchs = orgsrc "haskell" . pretty . TPS.pShowNoColor
 orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
 orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]

@@ -173,8 +173,16 @@ getConfig o = do
         }
 
 
-parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]]
-parseRules o = do
+-- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
+-- 
+-- At some point we added functionality that allowed sub-rules to be defined inline within a top-level rule, which is why we now have IO [... [Rule]].
+--
+-- Note that sub-rules are themselves rules, which is why we only have one Rule type here.
+--
+-- Shouldn't the idea of sub-rules and top-level rules be reflected in a type hierarchy?
+--
+parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
+parseRules o = do     
   runConfig <- getConfig o
   let files = getNoLabel $ file o
   if null files
@@ -395,7 +403,7 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , tokenVal <- toToken rawToken
+             , tokenVal <- toToken (Text.strip rawToken) -- strip leading and trailing whitespace from tokens. If you want a bare "IS" your best bet is to say "is".
              , tokenVal `notElem` [ Empty, TokTrue, TokFalse ] -- ignore TRUE and FALSE values ... so long as our policy is to ignore checkboxes, that is.
              ]
   where

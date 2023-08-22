@@ -2,6 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.Rule where
 
@@ -12,6 +13,7 @@ import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Hashable (Hashable)
+import qualified Data.HashMap.Strict as Map
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -21,11 +23,12 @@ import GHC.Generics (Generic)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
-    ClsTab,
+    ClsTab(..),
+    MTExpr(..),
     DList,
     Deontic (DMust),
     Depth,
-    HornClause (HC),
+    HornClause (HC, hBody),
     HornClause2,
     MTExpr (MTT),
     MultiTerm,
@@ -63,7 +66,11 @@ import Text.Megaparsec
     (<?>),
     (<|>),
   )
+import Data.Graph.Inductive (Gr, empty)
+import LS.XPile.Logging (XPileLogW)
 
+-- | [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
+-- We should take advantage of NoFieldSelectors to reduce the hazards here
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , rkeyword :: RegKeywords               -- Every | Party | TokAll
@@ -346,6 +353,21 @@ hasClauses :: Rule -> Bool
 hasClauses     Hornlike{} = True
 hasClauses             __ = False
 
+-- | is a decision rule a predicate or is it a fact?
+-- this may be fragile -- we believe that a rule is a fact if it has exactly one horn clause
+-- whose body is a Nothing.
+isFact :: Rule -> Bool
+isFact r
+  | hasClauses r = or [ ruleNameIsNumeric (name r) 
+                      , and [ length (clauses r) == 1
+                            , all ((Nothing ==) . hBody) (clauses r) ]
+                      ]
+  | otherwise = False
+  where
+    -- when we have a numeric fact, it shows up with a name like [ MTI 0 ]
+    ruleNameIsNumeric = all ( \case
+                                MTI _ -> True
+                                _     -> False )
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead
                                 | HC hhead _hbody <- clauses ]
@@ -384,8 +406,37 @@ data Interpreted = L4I {
 
   -- | valuepredicates contain the bulk of the top-level decision logic, and can be easily expressed as instance or class methosd.
   , valuePreds :: [ValuePredicate]
+
+  -- | rule decision graph gets used by multiple transpilers, so it lives here
+  , ruleGraph :: RuleGraph
+  , ruleGraphErr :: XPileLogW
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Show)
+
+-- | default L4I
+defaultL4I :: Interpreted
+defaultL4I = L4I
+  { classtable = CT Map.empty
+  , scopetable = Map.empty
+  , origrules = mempty
+  , valuePreds = mempty
+  , ruleGraph = empty
+  , ruleGraphErr = mempty
+  }
+
+-- | structure the rules as a graph.
+-- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
+--
+-- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
+-- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
+--
+-- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
+-- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
+
+type RuleGraphEdgeLabel = ()
+type RuleGraph = Gr Rule RuleGraphEdgeLabel
+
+
 
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name

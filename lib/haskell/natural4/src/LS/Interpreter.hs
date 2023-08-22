@@ -955,6 +955,7 @@ attrsAsMethods rs = do
                     , attrName
                     , attrVal
                     , attrCond
+                    , origRule = Just r
                     }
               mutterd 3 $ show headLHS <> " returning"
               mutter $ show $ srchs toreturn
@@ -1015,12 +1016,12 @@ toObjectStr mt = do
 
 -- | is a particular attribute typed as an enum?
 -- we aren't following the entire class / instance chain here, we are just guessing based on the name; this needs to be improved. [TODO]
-isAnEnum :: Interpreted -> MultiTerm -> Bool
-isAnEnum l4i mt =
+isAnEnum :: Interpreted -> Maybe ParamText -> MultiTerm -> Bool
+isAnEnum l4i mgiven mt =
   let enumNames  = fmap lowerMT . ruleLabelName <$> extractEnums l4i
-      myAttrName = lowerMT <$> mt -- we really want this to be myAttrType
+      myAttrName = pure . MTT . T.toLower . (<> "enum") . mt2text $ mt -- we really want this to be myAttrType
       toreturn   = myAttrName `elem` enumNames
-  in -- trace ("lowerMT = " <> show myAttrName <> "; ruleLabelName = " <> show enumNames <> " = " <> show toreturn) $
+  in trace ("lowerMT = " <> show myAttrName <> "; enumNames = " <> show enumNames <> "; toreturn = " <> show toreturn) $
      toreturn
     -- lowerMT = [MTT "planaf"]; ruleLabelName = [[MTT "outcome"],[MTT "planaf"],[MTT "plan14"],[MTT "injury"]] = True
 
@@ -1028,3 +1029,4 @@ isAnEnum l4i mt =
 lowerMT :: MTExpr -> MTExpr
 lowerMT (MTT t) = MTT (T.toLower t)
 lowerMT x       = x
+

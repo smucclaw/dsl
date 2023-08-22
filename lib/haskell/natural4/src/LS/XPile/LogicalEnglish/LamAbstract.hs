@@ -89,18 +89,19 @@ optOfArg = \case
   MkCellT t -> OpOfVarArg t
   MkCellIsNum t -> OpOfVarArg t
 
+{- | Discussed with Joe on Aug 22: can assume that terms other than the args for op of are either MatchGVar or EndsInApos
+-}
 term2tvar :: GVarSet -> Term -> TemplateVar
 term2tvar gvars = \case
-    MkCellT trm -> tryOtherCasesFirst trm
-    MkCellIsNum trm -> tryOtherCasesFirst trm
-    where 
-      tryOtherCasesFirst :: T.Text -> TemplateVar
-      tryOtherCasesFirst trm
-        | txtIsAGivenVar gvars trm = MatchGVar trm
-        | isAposVar gvars trm = EndsInApos trm
-        | otherwise = OtherVar trm
--- TODO: Look into trying to do away with the OtherVar case by leveraging the guarantees we have or don't have re the vars tt appear there. We basically only need OtherVar if it's possible to have a non-MatchGVar, non-EndsInApos term in that position (as it is for an OptOf term arg)
-
+  MkCellT trm -> whichTVar trm
+  MkCellIsNum trm -> whichTVar trm
+  where 
+    whichTVar :: T.Text -> TemplateVar
+    whichTVar trm
+      | txtIsAGivenVar gvars trm = MatchGVar trm
+      | isAposVar gvars trm = EndsInApos trm
+      | otherwise = error "shouldn't be anything else"
+        -- TODO: add a check upfront for this 
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
 txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars

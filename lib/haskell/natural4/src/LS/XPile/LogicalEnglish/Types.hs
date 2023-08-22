@@ -291,8 +291,6 @@ newtype LENatLangAnnot = MkNLA T.Text
   deriving newtype (Eq, Ord, IsString, Hashable)
 
 
-
-
 newtype LETemplateInstance = MkTInstance T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)

@@ -46,6 +46,9 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       check, refine, loadRawL4AsUnvalid)
 import LS.XPile.LogicalEnglish.SimplifyL4 -- TODO: Add import list
+import LS.XPile.LogicalEnglish.LamAbstract (lamAbstract)
+import LS.XPile.LogicalEnglish.GenNLAs (nlasFromLamAbsHC)
+
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
@@ -68,38 +71,21 @@ checkAndRefine rawrules = do
   return $ refine validatedL4rules
 
 
+allLamAbsHCs :: [L4.Rule] -> [LamAbsHC] 
+allLamAbsHCs = map (lamAbstract . simplifyL4ruleish)
 
-lamAbstract :: SimpleL4HC -> LamAbsRule
-lamAbstract = undefined
+------------ 
 
-{-------------------------------------------------------------------------------
-   LamAbsRules -> LE Nat Lang Annotations 
--------------------------------------------------------------------------------}
+-- | Generate LE Nat Lang Annotations from LamAbsRules  
+allNLAs :: [LamAbsHC] -> HS.HashSet LENatLangAnnot
+allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
 
-
--- | Generate natural language annotations from a LamAbsRule
-nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
-nlasFromLamAbsRule = undefined
-{- for each base template (bt) in the LamAbsRule, across the head and body,
-  we take its sequence of original variable names <"v1", "v2", ..., "vn">,
-  make a new sequence <"*a v1", "a v2", ..., "a vn">,
- and then instantiate the bt with that new sequence. 
--}
-
-allNLAs :: [LamAbsRule] -> HS.HashSet LENatLangAnnot
-allNLAs lamAbsRules = HS.unions $ map nlasFromLamAbsRule lamAbsRules
-
-
-{-------------------------------------------------------------------------------
-    LamAbsRules -> LE rules
--------------------------------------------------------------------------------}
-
-
-leruleFromLamAbsRule :: LamAbsRule -> LERule
-leruleFromLamAbsRule = undefined
-
+-- leruleFromLamAbsRule :: LamAbsRule -> LERule
+-- leruleFromLamAbsRule = undefined
+-- TODO
+-- | Generate LE Rules from LamAbsRules (note: not LamAbsHCs!)  
 allLERules :: [LamAbsRule] -> [LERule]
-allLERules = map leruleFromLamAbsRule
+allLERules = undefined
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing

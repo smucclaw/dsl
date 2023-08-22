@@ -83,9 +83,9 @@ allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
 -- leruleFromLamAbsRule :: LamAbsRule -> LERule
 -- leruleFromLamAbsRule = undefined
 -- TODO
--- | Generate LE Rules from LamAbsRules (note: not LamAbsHCs!)  
-allLERules :: [LamAbsRule] -> [LERule]
-allLERules = undefined
+-- | Generate LE HCs
+allLEhcs :: [LamAbsHC] -> [LEhc]
+allLEhcs = undefined
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing

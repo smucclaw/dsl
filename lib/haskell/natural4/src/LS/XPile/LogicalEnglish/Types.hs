@@ -8,6 +8,8 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE PatternSynonyms, DataKinds #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
@@ -300,27 +302,31 @@ data TemplInstanceOrNLA = TInst LETemplateInstance
   deriving stock (Eq, Ord, Show)
 
 
-data LERule = MkLERule
-            { head :: LETemplateInstance
-            , body :: LECondnTree
-            }
+data LEhc = LEHcFact LEFact | LEHcRule LERule
+      deriving stock (Eq, Ord, Show)
+
+type LEFact = LETemplateInstance
+
+data LERule = LERule { head :: LETemplateInstance
+                     , body :: BoolPropn LEAtomicBPropn
+                     }
     deriving stock (Eq, Ord, Show)
 
 {-| This is really for *our* dialect of LE (with our in-house libs) rather than standard LE. 
 See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
  -}
 type LEAtomicBPropn = AtomicBPropn LEtiVar LETemplateInstance
-type LECondnTree = BoolPropn LEAtomicBPropn
+-- type LECondnTree = BoolPropn LEAtomicBPropn
 -- ^ TODO: This might be too much structure -- think more abt this when we get to pretty printing
 
 
 -- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
 pattern MkLEProg <- undefined
 data LEProg = MkLEProg_ {   docHeader    :: !T.Text
-                          , nlasHeader :: !T.Text
-                          , ruleBodyHeader :: !T.Text
-                          , nlas :: [LENatLangAnnot]
-                          , lerules :: [LERule] }
+                        , nlasHeader :: !T.Text
+                        , ruleBodyHeader :: !T.Text
+                        , nlas :: [LENatLangAnnot]
+                        , lerules :: [LERule] }
 {-------------------------------------------------------------------------------
     Configs
 -------------------------------------------------------------------------------}

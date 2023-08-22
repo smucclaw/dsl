@@ -414,36 +414,6 @@ getUnderlyingType   (SimpleType TList0    s1) = Right s1
 getUnderlyingType   (SimpleType TList1    s1) = Right s1
 getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
 
--- | when the input says @DECIDE ClassA's RecordAttr's AttributeNAME IS foo WHEN bar@
--- we rewrite that to a `ValuePredicate`.
-data ValuePredicate = ValPred
-  { moduleName :: [EntityName]  -- MoneyLib
-  , scopeName  :: [EntityName]  -- DollarJurisdictions
-  , objPath    :: [EntityName]  -- ClassA, ClassB, RecordAttrName --> ClassA.ClassB
-                  -- If this list is null, then the "attribute" is toplevel / module-global
-  , attrName   ::  EntityName   -- ClassA, ClassB, RecordAttrName --> RecordAttrName
-  , attrRel    ::  Maybe RPRel  -- 
-  , attrVal    ::  Maybe RelationalPredicate
-  , attrCond   ::  Maybe BoolStructR
-  , attrIType  ::  Inferrable TypeSig
-  , origBSR    ::  Maybe BoolStructR
-  , origHC     ::  Maybe HornClause2
-  }
-  deriving (Show, Eq, Ord, Generic)
-
-defaultValuePredicate = ValPred
-  { moduleName = []
-  , scopeName  = []
-  , objPath    = []
-  , attrName   = "defaultAttrName"
-  , attrRel    = Just   RPis
-  , attrVal    = Just $ RPMT [MTT "defaultAttrVal"]
-  , attrCond   = Nothing
-  , attrIType  = defaultInferrableTypeSig
-  , origBSR    = Nothing
-  , origHC     = Nothing
-  }
-
 -- * what's the difference between SymTab, ClsTab, and ScopeTabs?
 
 -- | ClsTab: things that are explicitly defined in a Type Declaration (DECLARE ... HAS ...) end up in the ClsTab

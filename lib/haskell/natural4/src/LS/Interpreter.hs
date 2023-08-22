@@ -955,6 +955,7 @@ attrsAsMethods rs = do
                     , attrName
                     , attrVal
                     , attrCond
+                    , origRule = Just r
                     }
               mutterd 3 $ show headLHS <> " returning"
               mutter $ show $ srchs toreturn
@@ -1014,17 +1015,36 @@ toObjectStr mt = do
     Left err           -> xpError err
 
 -- | is a particular attribute typed as an enum?
--- we aren't following the entire class / instance chain here, we are just guessing based on the name; this needs to be improved. [TODO]
-isAnEnum :: Interpreted -> MultiTerm -> Bool
-isAnEnum l4i mt =
+--
+-- 1. does the current rule define the attribute as a GIVEN parameter typed as an enum?
+--
+-- 2. does the current rule define the attribute as a parameter whose type is explicitly known to be enum at the toplevel?
+isAnEnum :: Interpreted -> Maybe ParamText -> MultiTerm -> Bool
+isAnEnum l4i mgiven mt =
   let enumNames  = fmap lowerMT . ruleLabelName <$> extractEnums l4i
-      myAttrName = lowerMT <$> mt -- we really want this to be myAttrType
-      toreturn   = myAttrName `elem` enumNames
-  in -- trace ("lowerMT = " <> show myAttrName <> "; ruleLabelName = " <> show enumNames <> " = " <> show toreturn) $
+      toreturn   = isGivenEnum mgiven enumNames mt
+
+  in -- trace ("lowerMT = " <> show myAttrName <> "; enumNames = " <> show enumNames <> "; toreturn = " <> show toreturn) $
      toreturn
     -- lowerMT = [MTT "planaf"]; ruleLabelName = [[MTT "outcome"],[MTT "planaf"],[MTT "plan14"],[MTT "injury"]] = True
+
+-- | does the current multiterm attribute match a GIVEN parameter which was annotated as an Enum, either explicitly or as a known enum type?
+-- [TODO] refactor this together with the above function to a single function
+isGivenEnum :: Maybe ParamText -> [MultiTerm] -> MultiTerm -> Bool
+isGivenEnum Nothing _ mt = False
+isGivenEnum (Just typedMultis) enumNames mt = any (enumMatch enumNames mt) $ NE.toList typedMultis
+
+-- | does a specific typedmulti match an enum
+enumMatch :: [MultiTerm] -> MultiTerm -> TypedMulti -> Bool
+enumMatch _ mt (givenName, Nothing) = False
+enumMatch _ mt (givenName, Just mgiven@(InlineEnum _ _)) =
+  -- trace ("mt = " <> show mt <> "; givenName = " <> show givenName <> "; given = " <> show mgiven) $
+  mt == NE.toList givenName
+enumMatch enumNames mt (givenName, Just mgiven@(SimpleType TOne etype)) =
+  (pure . MTT . T.toLower . (<> "enum") $ etype) `elem` enumNames
 
 -- | lowercase a multiterm to support isAnEnum comparison
 lowerMT :: MTExpr -> MTExpr
 lowerMT (MTT t) = MTT (T.toLower t)
 lowerMT x       = x
+

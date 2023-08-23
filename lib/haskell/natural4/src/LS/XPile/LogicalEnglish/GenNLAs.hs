@@ -39,12 +39,12 @@ nlasFromLamAbsHC = \case
 
 -- TODO: When have more time, write smtg tt checks if it is indeed in fixed lib, and add it if not.
 nlaFromLamAbsFact :: LamAbsFact -> Maybe LENatLangAnnot
-nlaFromLamAbsFact LAFact{..} = nlaLoneFromLAbsAtomicP head
+nlaFromLamAbsFact LAFact{..} = nlaLoneFromLAbsAtomicP lfhead
 
 nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
-nlasFromLamAbsRule LARule{..} =
-  let bodyNLAs = nlasFromBody body
-  in case (nlaLoneFromLAbsAtomicP head) of
+nlasFromLamAbsRule MkBaseRule{..} =
+  let bodyNLAs = nlasFromBody rbody
+  in case (nlaLoneFromLAbsAtomicP rhead) of
     Nothing -> bodyNLAs
     Just headNLA -> HS.insert headNLA bodyNLAs
 
@@ -67,14 +67,17 @@ nlaLoneFromLAbsAtomicP =  \case
     nlacellsFromLacs :: [LamAbsCell] -> [NLACell]
     nlacellsFromLacs = fmap labscell2NLAcell
 
-
+-- TODO: refactor this to make it more like tmplteTxtFromTIcells in GenTemplateInsts.hs and remove the monoid instance for NLACell
 annotFromNLAcells :: [NLACell] -> Maybe LENatLangAnnot
 annotFromNLAcells = \case
-  (mconcat . intersperseWithSpace -> MkNonParam concatted) -> Just $ coerce concatted
-  _ -> Nothing
+  (mconcat . intersperseWithSpace -> MkNonParam concatted) -> 
+        Just $ coerce concatted
+  _ ->  Nothing
   where 
     spaceDelimtr = MkNonParam " "
     intersperseWithSpace = L.intersperse spaceDelimtr 
+
+
 
 labscell2NLAcell :: LamAbsCell -> NLACell
 labscell2NLAcell = \case

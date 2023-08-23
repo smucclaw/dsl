@@ -38,26 +38,29 @@ module LS.XPile.LogicalEnglish.Types (
                MkLARule, larhead, larbody,
                LAhcF, LAhcR)
     , LamAbsFact(..)
-    , LamAbsRule(..)
+    , BaseRule(..)
+    , LamAbsRule
     , LamAbsAtomicP
     , LamAbsCell(..)
-    , PreTICell(..)
-    , PreTIVSet
 
     -- LE-related types
+    , PreTTCell(..)
+    , PretVSet
+    , PreTTAtomicP
+    , PreTTRule
+
     , LEhcPrint(..)
     , NLACell(..)
     , LENatLangAnnot(..)
-    , LETemplateInstance
+    , LETemplateTxt(..)
     , TInstCell(..)
-    , LERule(..)
-    , LEFact(..)
+    -- , LERule(..)
+    -- , LEFact(..)
     , LEFactForPrint
     , LEFactIntrmd
     , LERuleIntrmd
     , LERuleForPrint
-    , LEAtomicBPIntrmd
-    , LEAtomicBPForPrint
+    , TIAtomicP
     -- , LECondnTree
 
     -- Configuration and LE-specific consts
@@ -119,10 +122,11 @@ instance Bifunctor AtomicBPropn where
       ABPatomic (g prop)
     ABPIsDiffFr v1 v2 -> 
       ABPIsDiffFr (f v1) (f v2)
-    ABPIsOpOf v opof lstVar ->  
-      ABPIsOpOf (f v) opof (map f lstVar)
+    ABPIsOpOf v opof varargs ->  
+      ABPIsOpOf (f v) opof (map f varargs)
     ABPIsOpSuchTt v ostt prop -> 
       ABPIsOpSuchTt (f v) ostt (g prop)
+
 
 data OpOf = MaxOf
           | MinOf
@@ -243,20 +247,28 @@ Things to note / think about:
 data LamAbsHC = LAhcF LamAbsFact | LAhcR LamAbsRule
       deriving stock (Eq, Ord, Show)
 
-data LamAbsFact = LAFact { head      :: LamAbsAtomicP }
-      deriving stock (Eq, Ord, Show)
-data LamAbsRule = LARule { head      :: LamAbsAtomicP
-                         , body      :: BoolPropn LamAbsAtomicP }
-      deriving stock (Eq, Ord, Show)
+newtype LamAbsFact = LAFact { lfhead :: LamAbsAtomicP }
+      deriving stock (Show)
+      deriving newtype (Eq, Ord)
+
+data BaseRule a = MkBaseRule { rhead :: a
+                             , rbody :: BoolPropn a }
+  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
+
+type LamAbsRule = BaseRule LamAbsAtomicP
+
+-- data LamAbsRule = LARule { head      :: LamAbsAtomicP
+--                          , body      :: BoolPropn LamAbsAtomicP }
+--       deriving stock (Eq, Ord, Show)
 
 pattern MkLAFact :: LamAbsAtomicP -> LamAbsHC
 pattern MkLAFact{lafhead}
-  = LAhcF (LAFact { head      = lafhead })
+  = LAhcF (LAFact { lfhead = lafhead })
 
 pattern MkLARule :: LamAbsAtomicP -> BoolPropn LamAbsAtomicP -> LamAbsHC
 pattern MkLARule{larhead, larbody}
-  = LAhcR (LARule { head      = larhead
-                  , body      = larbody})
+  = LAhcR (MkBaseRule { rhead  = larhead
+                      , rbody  = larbody})
 {-# COMPLETE MkLAFact, MkLARule #-}
 
 {- | This might seem a bit confusing, because now there can be template variables both within a LamAbsCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
@@ -271,18 +283,6 @@ type LamAbsAtomicP = AtomicBPropn TemplateVar [LamAbsCell]
 data LamAbsCell = TempVar TemplateVar
                 | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
-
-{-| The first prep step for generating TemplateInstances from LamAbs stuff involves simplifying LamAbsCells to:
-  * things we have to check if we have to prefix with an 'a'
-  * things for which we never have to check that
--}
-data PreTICell = TIVar !T.Text
-               | NotTIVar !T.Text 
-                 -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
-          deriving stock (Eq, Ord, Show)
-          deriving (Generic, Hashable)
-
-type PreTIVSet = HS.HashSet PreTICell
 
 {-------------------------------------------------------------------------------
   LE data types
@@ -305,7 +305,7 @@ instance Monoid NLACell where
   deriving stock Generic
   deriving (Semigroup, Monoid) via Generically NLACell 
 This requires a base that's shipped with ghc 94 or newer and and import Generically.
-But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit-}
+But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit -}
   
 newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
@@ -313,44 +313,51 @@ newtype LENatLangAnnot = MkNLA T.Text
 
 ---------------- For generating template instances / non-NLAs
 
--- | When generating template instances / non-NLAs, we transform LamAbsCells to TInstCells, before mconcating them to get LETemplateInstances 
+
+{-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells to:
+  * things we have to check if we have to prefix with an 'a'
+  * things for which we never have to check that
+-}
+data PreTTCell = TTVar !T.Text
+               | NotTTVar !T.Text 
+                 -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
+          deriving stock (Eq, Ord, Show)
+          deriving (Generic, Hashable)
+
+type PretVSet = HS.HashSet PreTTCell
+type PreTTAtomicP =  AtomicBPropn PreTTCell [PreTTCell]
+
+-- | When generating template instances / non-NLAs, we transform PreTTCells to TInstCells, before basically concatenating them to get LETemplateTxts 
 data TInstCell = PrefixWithA !OrigVarName
                | NoPrefix !T.Text
     deriving stock (Eq, Ord, Show)
     deriving (Generic, Hashable)
 
-newtype LETemplateInstance = MkTInstance T.Text
+newtype LETemplateTxt = MkTempTxt T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
+  deriving (Semigroup, Monoid) via T.Text
+
 
 -- The LE HCs
 data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
       deriving stock (Eq, Ord, Show)
 
--- LE Fact
-data LEFact a = LEFact { fhead :: a }
-  deriving stock (Show, Eq, Ord)
-  -- TODO: Look into how deriving newtype works when we have a  type var like this -- not sure if it'd actually work?
-
-type LEFactIntrmd = LEFact (AtomicBPropn TInstCell [TInstCell])
-type LEFactForPrint = LEFact LETemplateInstance
-
--- LE Rule
-data LERule a = 
-    LERule { rhead :: AtomicBPropn TInstCell a
-           , rbody :: BoolPropn (AtomicBPropn TInstCell a)
-           }
-    deriving stock (Eq, Ord, Show)
-
-type LERuleIntrmd = LERule [TInstCell]
-type LERuleForPrint = LERule LETemplateInstance
-
 -- The atomic bprops we'll use
+
 {-| 
-LEAtomicBPIntrmd serves as an intermediate data structure of sorts: once we have this, we'll mconcat the baseprop, the [TInstCell], to get  LETemplateInstances
+TIAtomicP serves as an intermediate data structure of sorts: once we have this, we'll mconcat the baseprop, the [TInstCell], to get  LETemplateTxts
  -}
-type LEAtomicBPIntrmd = AtomicBPropn TInstCell [TInstCell]
-type LEAtomicBPForPrint = AtomicBPropn TInstCell LETemplateInstance
+type TIAtomicP = AtomicBPropn TInstCell [TInstCell]
+
+type LEFactIntrmd = AtomicBPropn TInstCell [TInstCell]
+type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
+
+type PrettAP = AtomicBPropn PreTTCell [PreTTCell]
+type PreTTRule = BaseRule (AtomicBPropn PreTTCell [PreTTCell])
+type LERuleIntrmd = BaseRule (AtomicBPropn TInstCell [TInstCell])
+type LERuleForPrint = BaseRule (AtomicBPropn LETemplateTxt LETemplateTxt)
+
 
 
 
@@ -367,3 +374,19 @@ data LEProg = MkLEProg_ { docHeader    :: !T.Text
 
 data LECfg = LECfg { numIndentSpaces :: !Word }
 
+
+
+--- to remove once we are sure we won't want to go back to this way of doing this: 
+-- LE Rule
+-- data LERule a b = 
+--     LERule { rhead :: AtomicBPropn a b
+--            , rbody :: BoolPropn (AtomicBPropn a b)
+--            }
+--     deriving stock (Eq, Ord, Show)
+-- type LERuleIntrmd = LERule TInstCell [TInstCell]
+-- type LERuleForPrint = LERule LETemplateTxt LETemplateTxt
+
+-- LE Fact
+-- data LEFact a = LEFact { fhead :: AtomicBPropn a  }
+--   deriving stock (Show, Eq, Ord)
+-- TODO: Think about whether to bother with a wrapper for facts

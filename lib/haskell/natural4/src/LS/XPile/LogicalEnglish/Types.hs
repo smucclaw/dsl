@@ -37,19 +37,22 @@ module LS.XPile.LogicalEnglish.Types (
     , OrigVarPrefix
     , OrigVarSeq
     , Substn
-    , LamAbsHC(MkLAFact, lafgiven, lafhead,
-               MkLARule, largiven, larhead, larbody,
+    , LamAbsHC(MkLAFact, lafhead,
+               MkLARule, larhead, larbody,
                LAhcF, LAhcR)
     , LamAbsFact(..)
     , LamAbsRule(..)
     , LamAbsAtomicP
     , LamAbsCell(..)
+    , PreTICell(..)
+    , PreTIVSet
 
     -- LE-related types
     , LEhcPrint(..)
     , NLACell(..)
     , LENatLangAnnot(..)
     , LETemplateInstance
+    , TInstCell(..)
     , LERule(..)
     , LEFact(..)
     , LEFactForPrint
@@ -202,6 +205,21 @@ data TemplateVar = MatchGVar !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
                  | OpOfVarArg !OrigVarName
       deriving stock (Eq, Ord, Show)
+      deriving (Generic, Hashable)
+type TVarSet = HS.HashSet TemplateVar
+
+{- Got this error 
+    Module ‘Data.Hashable.Generic’ does not export ‘gHashWithSalt’
+   |
+63 | import Data.Hashable.Generic ( gHashWithSalt )
+   |                                ^^^^^^^^^^^^^
+on my mac when trying
+
+instance Hashable TemplateVar where
+  hashWithSalt = gHashWithSalt
+  {-# INLINEABLE hashWithSalt #-}
+
+from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hashable-Generic.html -}
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
@@ -223,23 +241,19 @@ Things to note / think about:
 data LamAbsHC = LAhcF LamAbsFact | LAhcR LamAbsRule
       deriving stock (Eq, Ord, Show)
 
-data LamAbsFact = LAFact { givenVars  :: GVarSet
-                         , head      :: LamAbsAtomicP }
+data LamAbsFact = LAFact { head      :: LamAbsAtomicP }
       deriving stock (Eq, Ord, Show)
-data LamAbsRule = LARule { givenVars  :: GVarSet
-                         , head      :: LamAbsAtomicP
+data LamAbsRule = LARule { head      :: LamAbsAtomicP
                          , body      :: BoolPropn LamAbsAtomicP }
       deriving stock (Eq, Ord, Show)
 
-pattern MkLAFact :: GVarSet -> LamAbsAtomicP -> LamAbsHC
-pattern MkLAFact{lafgiven, lafhead}
-  = LAhcF (LAFact { givenVars = lafgiven
-                  , head      = lafhead })
+pattern MkLAFact :: LamAbsAtomicP -> LamAbsHC
+pattern MkLAFact{lafhead}
+  = LAhcF (LAFact { head      = lafhead })
 
-pattern MkLARule :: GVarSet -> LamAbsAtomicP -> BoolPropn LamAbsAtomicP -> LamAbsHC
-pattern MkLARule{largiven, larhead, larbody}
-  = LAhcR (LARule { givenVars = largiven
-                  , head      = larhead
+pattern MkLARule :: LamAbsAtomicP -> BoolPropn LamAbsAtomicP -> LamAbsHC
+pattern MkLARule{larhead, larbody}
+  = LAhcR (LARule { head      = larhead
                   , body      = larbody})
 {-# COMPLETE MkLAFact, MkLARule #-}
 
@@ -256,26 +270,22 @@ data LamAbsCell = TempVar TemplateVar
                 | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
 
+{-| The first prep step for generating TemplateInstances from LamAbs stuff involves simplifying LamAbsCells to:
+  * things we have to check if we have to prefix with an 'a'
+  * things for which we never have to check that
+-}
+data PreTICell = TIVar !T.Text
+               | NotTIVar !T.Text 
+                 -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
+          deriving stock (Eq, Ord, Show)
+          deriving (Generic, Hashable)
+
+type PreTIVSet = HS.HashSet PreTICell
 
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
 
-
-{-
-Got this error 
-    Module ‘Data.Hashable.Generic’ does not export ‘gHashWithSalt’
-   |
-63 | import Data.Hashable.Generic ( gHashWithSalt )
-   |                                ^^^^^^^^^^^^^
-on my mac when trying
-
-instance Hashable LETInstCell where
-  hashWithSalt = gHashWithSalt
-  {-# INLINEABLE hashWithSalt #-}
-
-from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hashable-Generic.html
--}
 
 data NLACell = MkParam !T.Text 
              | MkNonParam !T.Text
@@ -289,10 +299,10 @@ instance Semigroup NLACell where
 instance Monoid NLACell where
   mempty = MkNonParam ""
 
-{- Another option:
-deriving stock Generic
-deriving (Semigroup, Monoid) via Generically NLACell 
-Need a base that’s shipped with ghc 94 or newer and need to import Generically.
+{- Another option, courtesy of `Mango IV.` from the Functional Programming discord:
+  deriving stock Generic
+  deriving (Semigroup, Monoid) via Generically NLACell 
+This requires a base that's shipped with ghc 94 or newer and and import Generically.
 But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit-}
   
 newtype LENatLangAnnot = MkNLA T.Text
@@ -301,9 +311,9 @@ newtype LENatLangAnnot = MkNLA T.Text
 
 ---------------- For generating template instances / non-NLAs
 
--- | When generating template instances / non-NLAs, we transform LamAbsCells to LETInstCells, before mconcating them to get LETemplateInstances 
-data LETInstCell = PrefixWithA !OrigVarName
-                 | NoPrefix !T.Text
+-- | When generating template instances / non-NLAs, we transform LamAbsCells to TInstCells, before mconcating them to get LETemplateInstances 
+data TInstCell = PrefixWithA !OrigVarName
+               | NoPrefix !T.Text
     deriving stock (Eq, Ord, Show)
     deriving (Generic, Hashable)
 
@@ -321,25 +331,25 @@ newtype LEFact a = LEFact { fhead :: a }
   deriving newtype (Eq, Ord)
   -- TODO: Look into how deriving newtype works when we have a  type var like this -- not sure if it'd actually work?
 
-type LEFactIntrmd = LEFact [LETInstCell]
+type LEFactIntrmd = LEFact (AtomicBPropn TInstCell [TInstCell])
 type LEFactForPrint = LEFact LETemplateInstance
 
 -- LE Rule
 data LERule a = 
-    LERule { rhead :: a
-           , rbody :: BoolPropn (AtomicBPropn LETInstCell a)
+    LERule { rhead :: AtomicBPropn TInstCell a
+           , rbody :: BoolPropn (AtomicBPropn TInstCell a)
            }
     deriving stock (Eq, Ord, Show)
 
-type LERuleIntrmd = LERule [LETInstCell]
+type LERuleIntrmd = LERule [TInstCell]
 type LERuleForPrint = LERule LETemplateInstance
 
 -- The atomic bprops we'll use
 {-| 
-LEAtomicBPIntrmd serves as an intermediate data structure of sorts: once we have this, we'll mconcat the baseprop, the [LETInstCell], to get  LETemplateInstances
+LEAtomicBPIntrmd serves as an intermediate data structure of sorts: once we have this, we'll mconcat the baseprop, the [TInstCell], to get  LETemplateInstances
  -}
-type LEAtomicBPIntrmd = AtomicBPropn LETInstCell [LETInstCell]
-type LEAtomicBPForPrint = AtomicBPropn LETInstCell LETemplateInstance
+type LEAtomicBPIntrmd = AtomicBPropn TInstCell [TInstCell]
+type LEAtomicBPForPrint = AtomicBPropn TInstCell LETemplateInstance
 
 
 

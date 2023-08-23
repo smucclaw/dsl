@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -W #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
@@ -7,9 +8,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE PatternSynonyms, DataKinds #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Use newtype instead of data" #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
@@ -36,7 +34,6 @@ module LS.XPile.LogicalEnglish.Types (
     , TemplateVar(..)
     , OrigVarPrefix
     , OrigVarSeq
-    , Substn
     , LamAbsHC(MkLAFact, lafhead,
                MkLARule, larhead, larbody,
                LAhcF, LAhcR)
@@ -76,7 +73,7 @@ import GHC.Generics (Generic)
 
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
-
+import Data.Bifunctor
 
 {- |
 Misc notes
@@ -116,6 +113,16 @@ data AtomicBPropn var baseprop =
     -}
   deriving stock (Show, Eq, Ord)
 
+instance Bifunctor AtomicBPropn where
+  bimap f g = \case
+    ABPatomic prop -> 
+      ABPatomic (g prop)
+    ABPIsDiffFr v1 v2 -> 
+      ABPIsDiffFr (f v1) (f v2)
+    ABPIsOpOf v opof lstVar ->  
+      ABPIsOpOf (f v) opof (map f lstVar)
+    ABPIsOpSuchTt v ostt prop -> 
+      ABPIsOpSuchTt (f v) ostt (g prop)
 
 data OpOf = MaxOf
           | MinOf
@@ -223,11 +230,6 @@ from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hasha
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
--- | Substn is a sequence of values that should be substituted for the variables
-newtype Substn = MkSubstn [T.Text]
-  deriving stock (Show)
-  deriving newtype (Eq, Ord)
-
 --TODO: Edit this / think thru it again when we get to this on Mon
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules.
 
@@ -326,9 +328,8 @@ data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
       deriving stock (Eq, Ord, Show)
 
 -- LE Fact
-newtype LEFact a = LEFact { fhead :: a }
-  deriving stock (Show)
-  deriving newtype (Eq, Ord)
+data LEFact a = LEFact { fhead :: a }
+  deriving stock (Show, Eq, Ord)
   -- TODO: Look into how deriving newtype works when we have a  type var like this -- not sure if it'd actually work?
 
 type LEFactIntrmd = LEFact (AtomicBPropn TInstCell [TInstCell])

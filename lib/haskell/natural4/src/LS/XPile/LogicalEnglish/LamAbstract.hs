@@ -33,10 +33,8 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
 
 lamAbstract :: SimpleL4HC -> LamAbsHC
 lamAbstract = \case
-  MkL4FactHc{..} -> MkLAFact { lafgiven = fgiven
-                             , lafhead =  lamabstractAP fgiven fhead }
-  MkL4RuleHc{..} -> MkLARule { largiven = rgiven
-                             , larhead =  lamabstractAP rgiven rhead
+  MkL4FactHc{..} -> MkLAFact { lafhead =  lamabstractAP fgiven fhead }
+  MkL4RuleHc{..} -> MkLARule { larhead =  lamabstractAP rgiven rhead
                              , larbody = lamabstractBody rgiven rbody }
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading

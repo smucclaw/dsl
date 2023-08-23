@@ -46,12 +46,18 @@ module LS.XPile.LogicalEnglish.Types (
     , LamAbsCell(..)
 
     -- LE-related types
-    , LEhc(..)
+    , LEhcPrint(..)
     , NLACell(..)
     , LENatLangAnnot(..)
     , LETemplateInstance
-    , TemplInstanceOrNLA(..)
     , LERule(..)
+    , LEFact(..)
+    , LEFactForPrint
+    , LEFactIntrmd
+    , LERuleIntrmd
+    , LERuleForPrint
+    , LEAtomicBPIntrmd
+    , LEAtomicBPForPrint
     -- , LECondnTree
 
     -- Configuration and LE-specific consts
@@ -64,11 +70,19 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
-import Control.Monad.Identity ( Identity )
 
 import Data.String (IsString)
-import LS.Rule as L4 (Rule(..))
-import qualified Data.Bits as Generically
+-- import LS.Rule as L4 (Rule(..))
+
+
+{- |
+Misc notes
+-----------
+When we say 'LE' here, we really mean *our* dialect of LE (with our in-house libs) rather than standard LE. 
+
+* See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
+
+-}
 
 {-------------------------------------------------------------------------------
   Common types 
@@ -241,18 +255,11 @@ type LamAbsAtomicP = AtomicBPropn TemplateVar [LamAbsCell]
 data LamAbsCell = TempVar TemplateVar
                 | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
-  --  MkTBase { getVarSeq :: OrigVarSeq
-  --                         , instTemplate :: Substn -> TemplInstanceOrNLA } 
 
 
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
--- | For generating template instances / non-NLAs. The main difference is tt we no longer have an IsNum variant
-data LEtiVar = LEMatchGV !OrigVarName
-             | LEApos !OrigVarPrefix
-    deriving stock (Eq, Ord, Show)
-    deriving (Generic, Hashable)
 
 
 {-
@@ -263,7 +270,7 @@ Got this error
    |                                ^^^^^^^^^^^^^
 on my mac when trying
 
-instance Hashable LEtiVar where
+instance Hashable LETInstCell where
   hashWithSalt = gHashWithSalt
   {-# INLINEABLE hashWithSalt #-}
 
@@ -292,32 +299,48 @@ newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
 
+---------------- For generating template instances / non-NLAs
+
+-- | When generating template instances / non-NLAs, we transform LamAbsCells to LETInstCells, before mconcating them to get LETemplateInstances 
+data LETInstCell = PrefixWithA !OrigVarName
+                 | NoPrefix !T.Text
+    deriving stock (Eq, Ord, Show)
+    deriving (Generic, Hashable)
 
 newtype LETemplateInstance = MkTInstance T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable)
 
-data TemplInstanceOrNLA = TInst LETemplateInstance
-                        | NLA LENatLangAnnot
-  deriving stock (Eq, Ord, Show)
-
-
-data LEhc = LEHcFact LEFact | LEHcRule LERule
+-- The LE HCs
+data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
       deriving stock (Eq, Ord, Show)
 
-type LEFact = LETemplateInstance
+-- LE Fact
+newtype LEFact a = LEFact { fhead :: a }
+  deriving stock (Show)
+  deriving newtype (Eq, Ord)
+  -- TODO: Look into how deriving newtype works when we have a  type var like this -- not sure if it'd actually work?
 
-data LERule = LERule { head :: LETemplateInstance
-                     , body :: BoolPropn LEAtomicBPropn
-                     }
+type LEFactIntrmd = LEFact [LETInstCell]
+type LEFactForPrint = LEFact LETemplateInstance
+
+-- LE Rule
+data LERule a = 
+    LERule { rhead :: a
+           , rbody :: BoolPropn (AtomicBPropn LETInstCell a)
+           }
     deriving stock (Eq, Ord, Show)
 
-{-| This is really for *our* dialect of LE (with our in-house libs) rather than standard LE. 
-See https://github.com/LogicalContracts/LogicalEnglish/blob/main/le_syntax.md for the 'condition' nomenclature.
+type LERuleIntrmd = LERule [LETInstCell]
+type LERuleForPrint = LERule LETemplateInstance
+
+-- The atomic bprops we'll use
+{-| 
+LEAtomicBPIntrmd serves as an intermediate data structure of sorts: once we have this, we'll mconcat the baseprop, the [LETInstCell], to get  LETemplateInstances
  -}
-type LEAtomicBPropn = AtomicBPropn LEtiVar LETemplateInstance
--- type LECondnTree = BoolPropn LEAtomicBPropn
--- ^ TODO: This might be too much structure -- think more abt this when we get to pretty printing
+type LEAtomicBPIntrmd = AtomicBPropn LETInstCell [LETInstCell]
+type LEAtomicBPForPrint = AtomicBPropn LETInstCell LETemplateInstance
+
 
 
 -- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
@@ -326,7 +349,7 @@ data LEProg = MkLEProg_ { docHeader    :: !T.Text
                         , nlasHeader :: !T.Text
                         , ruleBodyHeader :: !T.Text
                         , nlas :: [LENatLangAnnot]
-                        , lerules :: [LERule] }
+                        , lerules :: [LERuleForPrint] }
 {-------------------------------------------------------------------------------
     Configs
 -------------------------------------------------------------------------------}

@@ -90,10 +90,10 @@ tvar2NLAcell :: TemplateVar -> NLACell
 tvar2NLAcell = \case
   OpOfVarArg arg -> MkNonParam arg
 
-  EndsInApos _ -> MkParam "*a var*'s"
-  IsNum _numtxt -> MkParam "*a var*"
+  EndsInApos _   -> MkParam "*a var*'s"
+  IsNum _numtxt  -> MkParam "*a var*"
   -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
-  _            -> MkParam "*a var*"
+  MatchGVar _    -> MkParam "*a var*"
   {- ^
   From the LE handbook:
     An instance of a template is obtained from the template by replacing every parameter of the template by a list of words separated by spaces. 

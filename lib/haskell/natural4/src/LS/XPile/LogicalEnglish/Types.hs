@@ -313,7 +313,7 @@ newtype LENatLangAnnot = MkNLA T.Text
 
 ---------------- For generating template instances / non-NLAs
 
-
+-- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in PreTTCell so tt can check if the prefix is in `seen` when traversing the rule!
 {-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells to:
   * things we have to check if we have to prefix with an 'a'
   * things for which we never have to check that

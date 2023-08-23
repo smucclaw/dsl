@@ -150,6 +150,7 @@ simplifyLabscs = \case
   Pred txt    -> NotTTVar txt
   TempVar tv -> tvar2prettcell tv
 
+-- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in PreTTCell so tt can check if the prefix is in `seen` when traversing the rule!
 tvar2prettcell :: TemplateVar -> PreTTCell
 tvar2prettcell = \case
     MatchGVar vtxt  -> TTVar vtxt

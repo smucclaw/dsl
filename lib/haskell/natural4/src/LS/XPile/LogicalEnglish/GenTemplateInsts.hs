@@ -26,38 +26,111 @@ import Control.Monad.State
 import Data.Traversable
 import Control.Monad.Identity (Identity)
 
+import Data.Bifunctor
+
 import LS.XPile.LogicalEnglish.Types
 
 
 
 leHCFromLabsHC :: LamAbsHC -> LEhcPrint
 leHCFromLabsHC = \case
-  LAhcF labsfact -> undefined
-  LAhcR labsrule -> undefined
+  LAhcF labsfact -> 
+    LEHcF . leFactPrintFromLabsFact $ labsfact
+  LAhcR labsrule -> 
+    LEHcR 
+    . leRulePrintFromleRIntrmd 
+    . leRIntrmdFromLAbsRule 
+    $ labsrule
+
+leRulePrintFromleRIntrmd :: LERuleIntrmd -> LERuleForPrint
+leRulePrintFromleRIntrmd = fmap (bimap ticell2tmpltetxt temptxtify)
+
+{-|
+Generates LERuleIntrmd = BaseRule (AtomicBPropn TInstCell [TInstCell]) from LamAbsRule
+
+Explaining the logic here
+-------------------------
+Shorthands:
+  PreTTCell := ptc
+  BaseRule := br
+  TInstCell := tic
+
+We know:
+
+  type LERuleIntrmd = br (AtomicBPropn tic [tic])
+  prettrule :: br (AtomicBPropn ptc [ptc])
+
+  type PreTTAtomicP =  AtomicBPropn ptc [ptc]
+  tiABPFromPrettABPacc :: PretVSet-> PreTTAtomicP -> (PretVSet, AtomicBPropn TInstCell [TInstCell])
+                       := pvset -> ptap -> (pvset, ticap)
+
+We want: 
+  to go from 
+      BaseRule (AtomicBPropn ptc [ptc]) = BaseRule PreTTAtomicP := br ptap
+  to 
+      BaseRule (AtomicBPropn tic [tic]) := br ticap
+
+We also know
+  mapAccumL :: forall (t :: * -> *) s a b.
+                Traversable t =>
+                (s -> a -> (s, b)) -> s -> t a -> (s, t b)
+
+Instantiating that with our desired concrete types, we get:     
+     (pvset -> ptap -> (pvset, ticap)  )                   
+     -> pvset -> br ptap -> (pvset, br ticap)
+-}
+leRIntrmdFromLAbsRule :: LamAbsRule -> LERuleIntrmd
+leRIntrmdFromLAbsRule larule = 
+  let prettrule :: BaseRule (AtomicBPropn PreTTCell [PreTTCell]) = simplifyLAtomicP <$> larule
+  in snd (mapAccumL tiABPFromPrettABPacc HS.empty prettrule)
+
+-- type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
+leFactPrintFromLabsFact :: LamAbsFact -> LEFactForPrint
+leFactPrintFromLabsFact = bimap ticell2tmpltetxt temptxtify . leFactIntrmdFromLabsFact
+  where 
+    -- TODO: could prob do a bit more to make these helpers more readable and concise
+    leFactIntrmdFromLabsFact :: LamAbsFact -> AtomicBPropn TInstCell [TInstCell]
+    leFactIntrmdFromLabsFact LAFact{..} = 
+      lefactIntrmdFromPrettABP . simplifyLAtomicP $ lfhead
+
+    lefactIntrmdFromPrettABP :: PreTTAtomicP -> AtomicBPropn TInstCell [TInstCell]
+    lefactIntrmdFromPrettABP prettabp = 
+      let getTInstCells = snd
+      in getTInstCells (tiABPFromPrettABPacc HS.empty prettabp)
 
 
-leFactFromLabsFact :: LamAbsFact -> LEFactForPrint
-leFactFromLabsFact = undefined
-
-
---TODO: Think abt whether to make this an inner fn in leFactFromLabsFact 
-leFactIntrmdFromLabsFact :: LamAbsFact -> LEFactIntrmd
-leFactIntrmdFromLabsFact LAFact{..} = undefined
+-- type PreTTAtomicP =  AtomicBPropn PreTTCell [PreTTCell]
+-- TODO: Look into how to do this without this much plumbing
+tiABPFromPrettABPacc :: PretVSet-> PreTTAtomicP -> (PretVSet, AtomicBPropn TInstCell [TInstCell])
+tiABPFromPrettABPacc pretvs = \case
+  ABPatomic prettcells -> 
+    let (pretvs', ticells) = ticellsFrPrettcellsAcc pretvs prettcells
+    in (pretvs', ABPatomic ticells)
+  ABPIsDiffFr v1 v2 -> 
+    let (pretvs', v1') = makeTInstCell pretvs v1
+        (pretvs'', v2') = makeTInstCell pretvs' v2
+    in (pretvs'', ABPIsDiffFr v1' v2')
+  ABPIsOpOf var opof varlst ->
+    let (pretvs', var') = makeTInstCell pretvs var
+        (pretvs'', ticells) = ticellsFrPrettcellsAcc pretvs' varlst
+    in (pretvs'', ABPIsOpOf var' opof ticells)
+  ABPIsOpSuchTt var ostt prettcells ->
+    let (pretvs', var') = makeTInstCell pretvs var
+        (pretvs'', ticells) = ticellsFrPrettcellsAcc pretvs' prettcells
+    in (pretvs'', ABPIsOpSuchTt var' ostt ticells)
 
 
 --- start by doing it the EASIEST possible way 
-ticellsFromLabscells :: [LamAbsCell] -> [TInstCell]
-ticellsFromLabscells labscells = 
-  let getTInstCells = snd
-      preTIcells = map simplifyLabscell labscells
-  in getTInstCells (mapAccumL makeTInstCell HS.empty preTIcells)
+ticellsFrPrettcellsAcc :: PretVSet -> [PreTTCell] -> (PretVSet, [TInstCell])
+ticellsFrPrettcellsAcc init prettcells = 
+  mapAccumL makeTInstCell init prettcells
 
-makeTInstCell :: PreTIVSet -> PreTICell -> (PreTIVSet, TInstCell)
-makeTInstCell ptivars = \case
-  NotTIVar txt     -> (ptivars, NoPrefix txt)
-  orig@(TIVar txt) -> checkSeen ptivars orig txt
+makeTInstCell :: PretVSet -> PreTTCell -> (PretVSet, TInstCell)
+makeTInstCell prettvars = \case
+  NotTTVar txt     -> (prettvars, NoPrefix txt)
+  orig@(TTVar txt) -> checkSeen prettvars orig txt
   where
-    checkSeen :: PreTIVSet -> PreTICell -> T.Text -> (PreTIVSet, TInstCell)
+    checkSeen :: PretVSet -> PreTTCell -> T.Text -> (PretVSet, TInstCell)
     checkSeen tvars origPtic vartxt =  
       if HS.member origPtic tvars 
       then (tvars, NoPrefix vartxt)
@@ -65,55 +138,36 @@ makeTInstCell ptivars = \case
         let tvars' = HS.insert origPtic tvars
         in (tvars', PrefixWithA vartxt)
 
-
-{-
-data LamAbsHC = LAhcF LamAbsFact | LAhcR LamAbsRule
-      deriving stock (Eq, Ord, Show)
-
-data LamAbsFact = LAFact { head      :: LamAbsAtomicP }
-      deriving stock (Eq, Ord, Show)
-data LamAbsRule = LARule { head      :: LamAbsAtomicP
-                         , body      :: BoolPropn LamAbsAtomicP }
-                         
-type LamAbsAtomicP = AtomicBPropn TemplateVar [LamAbsCell]
-
-data LamAbsCell = TempVar TemplateVar
-                | Pred    !T.Text
-
-newtype LEFact a = LEFact { fhead :: a }
-type LEFactIntrmd = LEFact (AtomicBPropn TInstCell [TInstCell])
-type LEFactForPrint = LEFact LETemplateInstance
-
-data LERule a = 
-    LERule { rhead :: AtomicBPropn TInstCell a
-           , rbody :: BoolPropn (AtomicBPropn TInstCell a)
-           }
-
-
-
-data TInstCell = PrefixWithA !OrigVarName
-               | NoPrefix !T.Text
-
--}
-
-
-
-leRulePrintFromleRuleIntrmd :: LERuleIntrmd -> LERuleForPrint
-leRulePrintFromleRuleIntrmd = undefined
---TODO: mconcat, intersperse. refactor helper function into a common util module
-
-leRuleIntrmdFromLAbsRule :: LamAbsRule -> LERuleIntrmd
-leRuleIntrmdFromLAbsRule = undefined
-
 -------------
 
 
-simplifyLabscell :: LamAbsCell -> PreTICell
-simplifyLabscell = \case
-  Pred txt    -> NotTIVar txt
-  TempVar tv -> case tv of
-    MatchGVar vtxt  -> TIVar vtxt
-    EndsInApos vtxt -> TIVar (vtxt <> "'s")
-    IsNum txt       -> NotTIVar txt
-    OpOfVarArg txt  -> NotTIVar txt
+
+simplifyLAtomicP :: LamAbsAtomicP -> AtomicBPropn PreTTCell [PreTTCell]
+simplifyLAtomicP = bimap tvar2prettcell (map simplifyLabscs)
+    
+simplifyLabscs :: LamAbsCell -> PreTTCell
+simplifyLabscs = \case
+  Pred txt    -> NotTTVar txt
+  TempVar tv -> tvar2prettcell tv
+
+tvar2prettcell :: TemplateVar -> PreTTCell
+tvar2prettcell = \case
+    MatchGVar vtxt  -> TTVar vtxt
+    EndsInApos vtxt -> TTVar (vtxt <> "'s")
+    IsNum txt       -> NotTTVar txt
+    OpOfVarArg txt  -> NotTTVar txt
                        -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
+
+
+temptxtify :: [TInstCell] -> LETemplateTxt
+temptxtify ticells = 
+  mconcat . map ticell2tmpltetxt $ intersperseWithSpace ticells
+  where
+    spaceDelimtr = NoPrefix " "
+    intersperseWithSpace = L.intersperse spaceDelimtr 
+
+ticell2tmpltetxt :: TInstCell -> LETemplateTxt
+ticell2tmpltetxt = \case
+  PrefixWithA txt -> coerce ("a " <> txt)
+  NoPrefix    txt -> coerce txt
+

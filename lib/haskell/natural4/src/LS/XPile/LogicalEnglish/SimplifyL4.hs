@@ -9,11 +9,9 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 
-module LS.XPile.LogicalEnglish.SimplifyL4 where
--- TODO: Make export list
+module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) where
 
 import Data.Text qualified as T
 import qualified Data.Text.Lazy as T (toStrict)
@@ -40,7 +38,6 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       loadRawL4AsUnvalid)
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {-
 TODO: All the `error ..`s should be checked for upfront in the ValidateL4Input module

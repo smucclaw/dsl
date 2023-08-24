@@ -45,9 +45,10 @@ import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       check, refine, loadRawL4AsUnvalid)
-import LS.XPile.LogicalEnglish.SimplifyL4 -- TODO: Add import list
+import LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) -- TODO: Add import list
 import LS.XPile.LogicalEnglish.LamAbstract (lamAbstract)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromLamAbsHC)
+import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC)
 
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
@@ -76,16 +77,13 @@ allLamAbsHCs = map (lamAbstract . simplifyL4ruleish)
 
 ------------ 
 
--- | Generate LE Nat Lang Annotations from LamAbsRules  
+-- | Generate LE Nat Lang Annotations from LamAbsHCs  
 allNLAs :: [LamAbsHC] -> HS.HashSet LENatLangAnnot
 allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
 
--- leruleFromLamAbsRule :: LamAbsRule -> LERule
--- leruleFromLamAbsRule = undefined
--- TODO
--- | Generate LE HCs
+-- | Generate LE HCs from LamAbsHCs
 allLEhcs :: [LamAbsHC] -> [LEhcPrint]
-allLEhcs = undefined
+allLEhcs = map leHCFromLabsHC
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing

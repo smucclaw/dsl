@@ -126,18 +126,19 @@ markUnivVarsInLeCells init lecells =
 identifyUnivVar :: NormdVars -> LEhcCell -> (NormdVars, UnivStatus)
 identifyUnivVar normdvars = \case
   NotVar txt     -> (normdvars, NoPrefix txt)
-  VarNonApos vtxt -> checkSeen normdvars vtxt vtxt
-  VarApos origprefix -> checkSeen normdvars origprefix (origprefix <> "'s")
+  lev@(VarNonApos vtxt) -> checkSeen normdvars vtxt lev
+  lev@(VarApos origprefixtxt) -> checkSeen normdvars origprefixtxt lev
   where
-    checkSeen :: NormdVars -> T.Text -> T.Text -> (NormdVars, UnivStatus)
-    checkSeen nvset vartxt finalvartxt = 
+    checkSeen :: NormdVars -> T.Text -> LEhcCell -> (NormdVars, UnivStatus)
+    checkSeen nvset vartxt levar = 
       let nvar =  MkNormVar vartxt
+          rawvtxt = levarPrintraw levar
       in 
         if HS.member nvar nvset 
-        then (nvset, NoPrefix vartxt)
+        then (nvset, NoPrefix rawvtxt)
         else 
           let nvset' = HS.insert nvar nvset
-          in (nvset', PrefixWithA finalvartxt)
+          in (nvset', PrefixWithA rawvtxt)
 
 -------------
 
@@ -155,7 +156,6 @@ simplifyLabscs = \case
   Pred txt    -> NotVar txt
   TempVar tv -> tvar2lecell tv
 
--- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in LEhcCell so tt can check if the prefix is in `seen` when traversing the rule!
 tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case
     MatchGVar vtxt  -> VarNonApos vtxt
@@ -164,6 +164,12 @@ tvar2lecell = \case
     OpOfVarArg txt  -> NotVar txt
                        -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
 
+-- | Prints the intended raw text for a LEhcCell
+levarPrintraw :: LEhcCell -> T.Text
+levarPrintraw = \case
+  VarApos origprefix -> origprefix <> "'s"
+  VarNonApos vartxt  -> vartxt
+  NotVar txt         -> txt
 
 temptxtify :: [UnivStatus] -> LETemplateTxt
 temptxtify univStatuses = 

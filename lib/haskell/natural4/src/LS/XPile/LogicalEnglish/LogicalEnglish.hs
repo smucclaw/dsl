@@ -89,6 +89,23 @@ allLEhcs = map leHCFromLabsHC
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
 
+-- list of NLAs would have been pre-sorted
+
+
+egLEProg = MkLEProg {
+              docHeader = "the target language is: prolog."
+            , nlasHeader = "the templates are:"
+            , libHCsHeader = "the knowledge base prelude includes:"
+            , libHCs = undefined
+            , hcsHeader = "the knowledge base encoding includes:"
+            , nlas = undefined
+            , leHCs = undefined
+             }
+
+instance Pretty LEProg where
+  pretty MkLEProg{..} = undefined
+
+
 toLE :: [L4.Rule] -> String
 toLE = const "some output"
 

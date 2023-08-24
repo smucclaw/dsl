@@ -349,7 +349,7 @@ data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
 type FactWithUnivsMarked = AtomicBPropn UnivStatus [UnivStatus]
 type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
 
-type LEhcAtomicP =  AtomicBPropn LEhcCell [LEhcCell]
+type LEhcAtomicP = AtomicBPropn LEhcCell [LEhcCell]
 type LERule = BaseRule (AtomicBPropn LEhcCell [LEhcCell])
 type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus])
 type LERuleForPrint = BaseRule (AtomicBPropn LETemplateTxt LETemplateTxt)

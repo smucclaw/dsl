@@ -14,6 +14,7 @@ other translations (in particular to JSON) that may have been developed.
 
 module LS.XPile.ExportTypes where
 
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
 import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Prettyprinter
@@ -32,6 +33,7 @@ import LS.Types as SFL4
     ParamType (TList0, TList1, TOne, TOptional),
     RPRel (RPeq),
     RelationalPredicate (..),
+    TypedMulti,
     TypeSig (..),
     mt2text,
     mtexpr2text,
@@ -40,6 +42,7 @@ import LS.Types as SFL4
     untypePT, RuleName,
   )
 import Data.Text (unpack)
+import Debug.Trace (trace)
 
 type TypeName = String
 
@@ -49,6 +52,7 @@ data FieldType =
     | FTString
     | FTRef TypeName
     | FTList FieldType
+    | FTEnum [TypeName]
     deriving (Eq, Ord, Show, Read)
 
 data Field = Field
@@ -71,15 +75,21 @@ typeDeclNameToFieldName :: RuleName -> String
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
-typeDeclSuperToFieldType (Just  (SimpleType TOne tn)) =
+typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =
     case unpack tn of
         "Boolean" -> FTBoolean
         "Number" -> FTNumber
         "String" -> FTString
         n -> FTRef n
--- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
-typeDeclSuperToFieldType (Just  (SimpleType TList1 tn)) = FTList (FTRef (unpack tn))
-typeDeclSuperToFieldType _ = FTString
+typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (unpack tn))
+typeDeclSuperToFieldType (Just (InlineEnum TOne enums)) =
+    FTEnum (unpackEnums enums)
+  where
+    unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
+    unpackEnum (MTT tn :| _, _) = unpack tn
+typeDeclSuperToFieldType other = do
+    trace ("Unhandled case: " ++ show other) FTString
+
 
 ruleFieldToField :: Rule -> [Field]
 ruleFieldToField (TypeDecl{name=n, super=sup}) =
@@ -87,12 +97,18 @@ ruleFieldToField (TypeDecl{name=n, super=sup}) =
 ruleFieldToField _ = []
 
 rule2ExpType :: Rule -> [ExpType]
-rule2ExpType (TypeDecl{name=n, has=fields}) =
-    [ExpType (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)]
+rule2ExpType (TypeDecl{name=n, has=fields, super=sup}) =
+    let expType = ExpType (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)
+    in case typeDeclSuperToFieldType sup of
+        FTEnum enumValues -> [ExpType  (typeDeclNameToTypeName n) [Field  (typeDeclNameToFieldName n) (FTEnum enumValues)]]
+        _ -> [expType]
+rule2ExpType _ = []
+
+
 rule2ExpType _ = []
 
 ------------------------------------
--- Output of types to Prolog 
+-- Output of types to Prolog
 
 class ShowTypesProlog x where
     showTypesProlog :: x -> Doc ann
@@ -103,6 +119,7 @@ instance ShowTypesProlog FieldType where
     showTypesProlog FTString = pretty "string"
     showTypesProlog (FTRef n) = pretty "ref" <> parens (pretty n)
     showTypesProlog (FTList t) = pretty "list" <> parens (showTypesProlog t)
+    showTypesProlog (FTEnum t) = pretty "list"
 
 
 instance ShowTypesProlog Field where
@@ -126,16 +143,16 @@ entrypointName :: String
 entrypointName = "toplevel"
 
 rulesToPrologTp :: [SFL4.Rule] -> String
-rulesToPrologTp rs = 
+rulesToPrologTp rs =
     let ets = concatMap rule2ExpType rs in
         (case ets of
             [] -> show emptyDoc
-            rt : rts -> 
+            rt : rts ->
                 let entry = ExpType entrypointName [Field entrypointName (FTRef (typeName rt))] in
                 show (vsep (map showTypesProlog (entry:ets))))
 
 ------------------------------------
--- Output of types to Json Schema 
+-- Output of types to Json Schema
 -- also see https://json-schema.org/understanding-json-schema/
 
 class ShowTypesJson x where
@@ -159,12 +176,12 @@ showRequireds fds =
     brackets (hsep (punctuate comma (map (dquotes . pretty . fieldName) fds)))
 
 showRef :: TypeName -> Doc ann
-showRef n = 
+showRef n =
         dquotes (pretty "$ref") <> pretty ": " <>
         dquotes (pretty (defsLocation n))
 
 
--- Due to limitations of the JSON Form Web UI builder, 
+-- Due to limitations of the JSON Form Web UI builder,
 -- single references are not represented as single objects,
 -- but arrays of length 1.
 -- List types can only have nesting level 1 (a limitation inherited from Natural4)
@@ -175,7 +192,7 @@ instance ShowTypesJson FieldType where
         jsonType "number"
     showTypesJson FTString =
         jsonType "string"
-    showTypesJson (FTRef n) = 
+    showTypesJson (FTRef n) =
         jsonType "array" <> pretty "," <>
         dquotes (pretty "minItems") <> pretty ": 1," <>
         dquotes (pretty "maxItems") <> pretty ": 1," <>
@@ -194,6 +211,14 @@ instance ShowTypesJson Field where
         dquotes (pretty fn) <> pretty ": " <> braces (showTypesJson ft)
 
 instance ShowTypesJson ExpType where
+    showTypesJson (ExpType tn fds@[Field fn ft@(FTEnum n)]) =
+        dquotes (pretty tn) <> pretty ": " <>
+        nest 4
+        (braces (
+            jsonType "enum" <> pretty "," <>
+            dquotes (pretty "enum") <> pretty ": " <>
+            nest 4 (brackets (hsep (punctuate comma (map dquotes (map pretty n)))))
+        ))
     showTypesJson (ExpType tn fds) =
         dquotes (pretty tn) <> pretty ": " <>
         nest 4
@@ -222,6 +247,7 @@ rulesToJsonSchema rs =
         (case ets of
             [] -> show (braces emptyDoc)
             rt : rts ->
+                trace ("ets: " ++ show ets) $
                 show
                 (braces
                     (vsep (punctuate comma

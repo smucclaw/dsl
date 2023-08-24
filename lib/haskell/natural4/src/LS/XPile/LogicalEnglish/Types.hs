@@ -365,23 +365,23 @@ pattern MkLEProg :: T.Text
                   -> [LEhcPrint]
                   -> LEProg
 pattern MkLEProg{docHeader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs} = 
-  MkLEProg_ { docHeader = docHeader
-            , nlasHeader = nlasHeader
-            , libHCsHeader = libHCsHeader
-            , libHCs = libHCs
-            , hcsHeader = hcsHeader
-            , nlas = nlas
-            , leHCs = leHCs
+  MkLEProg_ { docHeader_ = docHeader
+            , nlasHeader_ = nlasHeader
+            , libHCsHeader_ = libHCsHeader
+            , libHCs_ = libHCs
+            , hcsHeader_ = hcsHeader
+            , nlas_ = nlas
+            , leHCs_ = leHCs
             , numIndentSpaces = 2
             }
 
-data LEProg = MkLEProg_ { docHeader    :: !T.Text
-                        , nlasHeader :: !T.Text
-                        , libHCsHeader :: !T.Text
-                        , libHCs    :: !T.Text
-                        , hcsHeader :: !T.Text
-                        , nlas :: [LENatLangAnnot]
-                        , leHCs :: [LEhcPrint] 
+data LEProg = MkLEProg_ { docHeader_    :: !T.Text
+                        , nlasHeader_ :: !T.Text
+                        , libHCsHeader_ :: !T.Text
+                        , libHCs_    :: !T.Text
+                        , hcsHeader_ :: !T.Text
+                        , nlas_ :: [LENatLangAnnot]
+                        , leHCs_ :: [LEhcPrint] 
                         , numIndentSpaces :: !Word 
                         -- ^ numIndentSpaces feels like it shld belong in a separate cfg record,
                         -- but we don't have enough cfg params for that to be worthwhile

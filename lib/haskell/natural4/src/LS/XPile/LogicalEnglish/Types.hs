@@ -60,7 +60,7 @@ module LS.XPile.LogicalEnglish.Types (
     , FactWithUnivsMarked
     , RuleWithUnivsMarked
     , LERuleForPrint
-    
+
     -- Configuration and LE-specific consts
     , LEProg(MkLEProg)
 ) where
@@ -361,7 +361,7 @@ pattern MkLEProg :: T.Text
                   -> [LENatLangAnnot]
                   -> [LERuleForPrint]
                   -> LEProg
-pattern MkLEProg docheader nlasheader rulebodyheader nlas lerules = 
+pattern MkLEProg{docheader, nlasheader, rulebodyheader, nlas, lerules} = 
   MkLEProg_ { docHeader = docheader
             , nlasHeader = nlasheader
             , ruleBodyHeader = rulebodyheader

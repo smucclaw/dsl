@@ -44,25 +44,22 @@ module LS.XPile.LogicalEnglish.Types (
     , LamAbsCell(..)
 
     -- LE-related types
-    , PreTTCell(..)
+    , LEhcCell(..)
     -- , PretVSet
     , NormdVars
     , NormalizedVar(..)
-    , PreTTAtomicP
-    , PreTTRule
+    , LEhcAtomicP
+    , LERule
 
     , LEhcPrint(..)
     , NLACell(..)
     , LENatLangAnnot(..)
     , LETemplateTxt(..)
-    , TInstCell(..)
-    -- , LERule(..)
-    -- , LEFact(..)
+    , UnivStatus(..)
     , LEFactForPrint
-    , LEFactIntrmd
-    , LERuleIntrmd
+    , FactWithUnivsMarked
+    , RuleWithUnivsMarked
     , LERuleForPrint
-    , TIAtomicP
     -- , LECondnTree
 
     -- Configuration and LE-specific consts
@@ -315,12 +312,10 @@ newtype LENatLangAnnot = MkNLA T.Text
 
 ---------------- For generating template instances / non-NLAs
 
--- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in PreTTCell so tt can check if the prefix is in `seen` when traversing the rule!
-{-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells to:
-  * things we have to check if we have to prefix with an 'a'
-  * things for which we never have to check that
+-- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in LEhcCell so tt can check if the prefix is in `seen` when traversing the rule!
+{-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells
 -}
-data PreTTCell = VarApos !OrigVarPrefix
+data LEhcCell = VarApos !OrigVarPrefix
                | VarNonApos !OrigVarName
                | NotVar !T.Text 
                  -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
@@ -332,11 +327,10 @@ newtype NormalizedVar = MkNormVar T.Text
   deriving newtype (Eq, Ord, Hashable)
 
 type NormdVars = HS.HashSet NormalizedVar
-type PreTTAtomicP =  AtomicBPropn PreTTCell [PreTTCell]
 
--- | When generating template instances / non-NLAs, we transform PreTTCells to TInstCells, before basically concatenating them to get LETemplateTxts 
-data TInstCell = PrefixWithA !OrigVarName
-               | NoPrefix !T.Text
+-- | When generating template instances / non-NLAs, we transform PreTTCells to UnivStatuses, before basically concatenating them to get LETemplateTxts 
+data UnivStatus = PrefixWithA !OrigVarName
+                | NoPrefix !T.Text
     deriving stock (Eq, Ord, Show)
     deriving (Generic, Hashable)
 
@@ -352,17 +346,12 @@ data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
 
 -- The atomic bprops we'll use
 
-{-| 
-TIAtomicP serves as an intermediate data structure of sorts: once we have this, we'll mconcat the baseprop, the [TInstCell], to get  LETemplateTxts
- -}
-type TIAtomicP = AtomicBPropn TInstCell [TInstCell]
-
-type LEFactIntrmd = AtomicBPropn TInstCell [TInstCell]
+type FactWithUnivsMarked = AtomicBPropn UnivStatus [UnivStatus]
 type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
 
-type PrettAP = AtomicBPropn PreTTCell [PreTTCell]
-type PreTTRule = BaseRule (AtomicBPropn PreTTCell [PreTTCell])
-type LERuleIntrmd = BaseRule (AtomicBPropn TInstCell [TInstCell])
+type LEhcAtomicP =  AtomicBPropn LEhcCell [LEhcCell]
+type LERule = BaseRule (AtomicBPropn LEhcCell [LEhcCell])
+type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus])
 type LERuleForPrint = BaseRule (AtomicBPropn LETemplateTxt LETemplateTxt)
 
 
@@ -390,7 +379,7 @@ data LECfg = LECfg { numIndentSpaces :: !Word }
 --            , rbody :: BoolPropn (AtomicBPropn a b)
 --            }
 --     deriving stock (Eq, Ord, Show)
--- type LERuleIntrmd = LERule TInstCell [TInstCell]
+-- type RuleWithUnivsMarked = LERule UnivStatus [UnivStatus]
 -- type LERuleForPrint = LERule LETemplateTxt LETemplateTxt
 
 -- LE Fact

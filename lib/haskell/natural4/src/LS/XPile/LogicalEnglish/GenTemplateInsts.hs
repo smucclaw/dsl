@@ -37,36 +37,35 @@ leHCFromLabsHC = \case
   LAhcF labsfact -> 
     LEHcF . leFactPrintFromLabsFact $ labsfact
   LAhcR labsrule -> 
-    LEHcR 
-    . leRulePrintFromleRIntrmd 
-    . leRIntrmdFromLAbsRule 
-    $ labsrule
+    LEHcR . textifyUnivMarkedRule . markUnivVarsInRule $ labsrule
 
-leRulePrintFromleRIntrmd :: LERuleIntrmd -> LERuleForPrint
-leRulePrintFromleRIntrmd = fmap (bimap ticell2tmpltetxt temptxtify)
+textifyUnivMarkedRule :: RuleWithUnivsMarked -> LERuleForPrint
+textifyUnivMarkedRule = fmap (bimap univst2tmpltetxt temptxtify)
 
 {-|
-Generates LERuleIntrmd = BaseRule (AtomicBPropn TInstCell [TInstCell]) from LamAbsRule
+Generates RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus]) from LamAbsRule
 
 Explaining the logic here
 -------------------------
+TODO: in the midst of changing names
+
 Shorthands:
-  PreTTCell := ptc
+  LEhcCell := ptc
   BaseRule := br
-  TInstCell := tic
+  UnivStatus := tic
 
 We know:
 
-  type LERuleIntrmd = br (AtomicBPropn tic [tic])
+  type RuleWithUnivsMarked = br (AtomicBPropn tic [tic])
   prettrule :: br (AtomicBPropn ptc [ptc])
 
-  type PreTTAtomicP =  AtomicBPropn ptc [ptc]
-  tiABPFromPrettABPacc :: NormdVars-> PreTTAtomicP -> (NormdVars, AtomicBPropn TInstCell [TInstCell])
+  type LEhcAtomicP =  AtomicBPropn ptc [ptc]
+  markUnivVarsInAtomicPacc :: NormdVars-> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus [UnivStatus])
                        := pvset -> ptap -> (pvset, ticap)
 
 We want: 
   to go from 
-      BaseRule (AtomicBPropn ptc [ptc]) = BaseRule PreTTAtomicP := br ptap
+      BaseRule (AtomicBPropn ptc [ptc]) = BaseRule LEhcAtomicP := br ptap
   to 
       BaseRule (AtomicBPropn tic [tic]) := br ticap
 
@@ -79,59 +78,58 @@ Instantiating that with our desired concrete types, we get:
      (pvset -> ptap -> (pvset, ticap)  )                   
      -> pvset -> br ptap -> (pvset, br ticap)
 -}
-leRIntrmdFromLAbsRule :: LamAbsRule -> LERuleIntrmd
-leRIntrmdFromLAbsRule larule = 
-  let prettrule :: BaseRule (AtomicBPropn PreTTCell [PreTTCell]) = simplifyLAtomicP <$> larule
-  in snd (mapAccumL tiABPFromPrettABPacc HS.empty prettrule)
+markUnivVarsInRule :: LamAbsRule -> RuleWithUnivsMarked
+markUnivVarsInRule larule = 
+  let lerule :: BaseRule (AtomicBPropn LEhcCell [LEhcCell]) = simplifyLAtomicP <$> larule
+  in snd (mapAccumL markUnivVarsInAtomicPacc HS.empty lerule)
 
 -- type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
 leFactPrintFromLabsFact :: LamAbsFact -> LEFactForPrint
-leFactPrintFromLabsFact = bimap ticell2tmpltetxt temptxtify . leFactIntrmdFromLabsFact
+leFactPrintFromLabsFact = (bimap univst2tmpltetxt temptxtify) . markUnivVarsInFact
   where 
     -- TODO: could prob do a bit more to make these helpers more readable and concise
-    leFactIntrmdFromLabsFact :: LamAbsFact -> AtomicBPropn TInstCell [TInstCell]
-    leFactIntrmdFromLabsFact LAFact{..} = 
-      lefactIntrmdFromPrettABP . simplifyLAtomicP $ lfhead
+    markUnivVarsInFact :: LamAbsFact -> AtomicBPropn UnivStatus [UnivStatus]
+    markUnivVarsInFact LAFact{..} = 
+      markUnivVarsInAtomicP . simplifyLAtomicP $ lfhead
 
-    lefactIntrmdFromPrettABP :: PreTTAtomicP -> AtomicBPropn TInstCell [TInstCell]
-    lefactIntrmdFromPrettABP prettabp = 
-      let getTInstCells = snd
-      in getTInstCells (tiABPFromPrettABPacc HS.empty prettabp)
+    markUnivVarsInAtomicP :: LEhcAtomicP -> AtomicBPropn UnivStatus [UnivStatus]
+    markUnivVarsInAtomicP leabp = 
+      let getUnivStatuses = snd
+      in getUnivStatuses (markUnivVarsInAtomicPacc HS.empty leabp)
 
 
--- type PreTTAtomicP =  AtomicBPropn PreTTCell [PreTTCell]
 -- TODO: Look into how to do this without this much plumbing
-tiABPFromPrettABPacc :: NormdVars-> PreTTAtomicP -> (NormdVars, AtomicBPropn TInstCell [TInstCell])
-tiABPFromPrettABPacc pretvs = \case
-  ABPatomic prettcells -> 
-    let (pretvs', ticells) = ticellsFrPrettcellsAcc pretvs prettcells
-    in (pretvs', ABPatomic ticells)
+markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus [UnivStatus])
+markUnivVarsInAtomicPacc nvars = \case
+  ABPatomic lecells -> 
+    let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
+    in (nvars', ABPatomic univStatuses)
   ABPIsDiffFr v1 v2 -> 
-    let (pretvs', v1') = makeTInstCell pretvs v1
-        (pretvs'', v2') = makeTInstCell pretvs' v2
-    in (pretvs'', ABPIsDiffFr v1' v2')
+    let (nvars', v1') = identifyUnivVar nvars v1
+        (nvars'', v2') = identifyUnivVar nvars' v2
+    in (nvars'', ABPIsDiffFr v1' v2')
   ABPIsOpOf var opof varlst ->
-    let (pretvs', var') = makeTInstCell pretvs var
-        (pretvs'', ticells) = ticellsFrPrettcellsAcc pretvs' varlst
-    in (pretvs'', ABPIsOpOf var' opof ticells)
-  ABPIsOpSuchTt var ostt prettcells ->
-    let (pretvs', var') = makeTInstCell pretvs var
-        (pretvs'', ticells) = ticellsFrPrettcellsAcc pretvs' prettcells
-    in (pretvs'', ABPIsOpSuchTt var' ostt ticells)
+    let (nvars', var') = identifyUnivVar nvars var
+        (nvars'', univStatuses) = markUnivVarsInLeCells nvars' varlst
+    in (nvars'', ABPIsOpOf var' opof univStatuses)
+  ABPIsOpSuchTt var ostt lecells ->
+    let (nvars', var') = identifyUnivVar nvars var
+        (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
+    in (nvars'', ABPIsOpSuchTt var' ostt univStatuses)
 
 
 --- start by doing it the EASIEST possible way 
-ticellsFrPrettcellsAcc :: NormdVars -> [PreTTCell] -> (NormdVars, [TInstCell])
-ticellsFrPrettcellsAcc init prettcells = 
-  mapAccumL makeTInstCell init prettcells
+markUnivVarsInLeCells :: NormdVars -> [LEhcCell] -> (NormdVars, [UnivStatus])
+markUnivVarsInLeCells init lecells = 
+  mapAccumL identifyUnivVar init lecells
 
-makeTInstCell :: NormdVars -> PreTTCell -> (NormdVars, TInstCell)
-makeTInstCell normdvars = \case
+identifyUnivVar :: NormdVars -> LEhcCell -> (NormdVars, UnivStatus)
+identifyUnivVar normdvars = \case
   NotVar txt     -> (normdvars, NoPrefix txt)
   VarNonApos vtxt -> checkSeen normdvars vtxt vtxt
   VarApos origprefix -> checkSeen normdvars origprefix (origprefix <> "'s")
   where
-    checkSeen :: NormdVars -> T.Text -> T.Text -> (NormdVars, TInstCell)
+    checkSeen :: NormdVars -> T.Text -> T.Text -> (NormdVars, UnivStatus)
     checkSeen nvset vartxt finalvartxt = 
       let nvar =  MkNormVar vartxt
       in 
@@ -143,23 +141,23 @@ makeTInstCell normdvars = \case
 
 -------------
 
-normalizeVar :: PreTTCell -> Maybe NormalizedVar
+normalizeVar :: LEhcCell -> Maybe NormalizedVar
 normalizeVar = \case
   NotVar _ -> Nothing
   VarApos prefix -> Just $ coerce prefix
   VarNonApos var -> Just $ coerce var
 
-simplifyLAtomicP :: LamAbsAtomicP -> AtomicBPropn PreTTCell [PreTTCell]
-simplifyLAtomicP = bimap tvar2prettcell (map simplifyLabscs)
+simplifyLAtomicP :: LamAbsAtomicP -> AtomicBPropn LEhcCell [LEhcCell]
+simplifyLAtomicP = bimap tvar2lecell (map simplifyLabscs)
     
-simplifyLabscs :: LamAbsCell -> PreTTCell
+simplifyLabscs :: LamAbsCell -> LEhcCell
 simplifyLabscs = \case
   Pred txt    -> NotVar txt
-  TempVar tv -> tvar2prettcell tv
+  TempVar tv -> tvar2lecell tv
 
--- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in PreTTCell so tt can check if the prefix is in `seen` when traversing the rule!
-tvar2prettcell :: TemplateVar -> PreTTCell
-tvar2prettcell = \case
+-- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in LEhcCell so tt can check if the prefix is in `seen` when traversing the rule!
+tvar2lecell :: TemplateVar -> LEhcCell
+tvar2lecell = \case
     MatchGVar vtxt  -> VarNonApos vtxt
     EndsInApos prefix -> VarApos prefix
     IsNum txt       -> NotVar txt
@@ -167,15 +165,15 @@ tvar2prettcell = \case
                        -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
 
 
-temptxtify :: [TInstCell] -> LETemplateTxt
-temptxtify ticells = 
-  mconcat . map ticell2tmpltetxt $ intersperseWithSpace ticells
+temptxtify :: [UnivStatus] -> LETemplateTxt
+temptxtify univStatuses = 
+  mconcat . map univst2tmpltetxt $ intersperseWithSpace univStatuses
   where
     spaceDelimtr = NoPrefix " "
     intersperseWithSpace = L.intersperse spaceDelimtr 
 
-ticell2tmpltetxt :: TInstCell -> LETemplateTxt
-ticell2tmpltetxt = \case
+univst2tmpltetxt :: UnivStatus -> LETemplateTxt
+univst2tmpltetxt = \case
   PrefixWithA txt -> coerce ("a " <> txt)
   NoPrefix    txt -> coerce txt
 

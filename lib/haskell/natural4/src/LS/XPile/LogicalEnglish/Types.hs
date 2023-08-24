@@ -45,7 +45,9 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- LE-related types
     , PreTTCell(..)
-    , PretVSet
+    -- , PretVSet
+    , NormdVars
+    , NormalizedVar(..)
     , PreTTAtomicP
     , PreTTRule
 
@@ -318,13 +320,18 @@ newtype LENatLangAnnot = MkNLA T.Text
   * things we have to check if we have to prefix with an 'a'
   * things for which we never have to check that
 -}
-data PreTTCell = TTVar !T.Text
-               | NotTTVar !T.Text 
+data PreTTCell = VarApos !OrigVarPrefix
+               | VarNonApos !OrigVarName
+               | NotVar !T.Text 
                  -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
           deriving stock (Eq, Ord, Show)
           deriving (Generic, Hashable)
 
-type PretVSet = HS.HashSet PreTTCell
+newtype NormalizedVar = MkNormVar T.Text
+  deriving stock (Show)
+  deriving newtype (Eq, Ord, Hashable)
+
+type NormdVars = HS.HashSet NormalizedVar
 type PreTTAtomicP =  AtomicBPropn PreTTCell [PreTTCell]
 
 -- | When generating template instances / non-NLAs, we transform PreTTCells to TInstCells, before basically concatenating them to get LETemplateTxts 

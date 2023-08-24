@@ -61,7 +61,7 @@ We know:
   prettrule :: br (AtomicBPropn ptc [ptc])
 
   type PreTTAtomicP =  AtomicBPropn ptc [ptc]
-  tiABPFromPrettABPacc :: PretVSet-> PreTTAtomicP -> (PretVSet, AtomicBPropn TInstCell [TInstCell])
+  tiABPFromPrettABPacc :: NormdVars-> PreTTAtomicP -> (NormdVars, AtomicBPropn TInstCell [TInstCell])
                        := pvset -> ptap -> (pvset, ticap)
 
 We want: 
@@ -101,7 +101,7 @@ leFactPrintFromLabsFact = bimap ticell2tmpltetxt temptxtify . leFactIntrmdFromLa
 
 -- type PreTTAtomicP =  AtomicBPropn PreTTCell [PreTTCell]
 -- TODO: Look into how to do this without this much plumbing
-tiABPFromPrettABPacc :: PretVSet-> PreTTAtomicP -> (PretVSet, AtomicBPropn TInstCell [TInstCell])
+tiABPFromPrettABPacc :: NormdVars-> PreTTAtomicP -> (NormdVars, AtomicBPropn TInstCell [TInstCell])
 tiABPFromPrettABPacc pretvs = \case
   ABPatomic prettcells -> 
     let (pretvs', ticells) = ticellsFrPrettcellsAcc pretvs prettcells
@@ -121,42 +121,49 @@ tiABPFromPrettABPacc pretvs = \case
 
 
 --- start by doing it the EASIEST possible way 
-ticellsFrPrettcellsAcc :: PretVSet -> [PreTTCell] -> (PretVSet, [TInstCell])
+ticellsFrPrettcellsAcc :: NormdVars -> [PreTTCell] -> (NormdVars, [TInstCell])
 ticellsFrPrettcellsAcc init prettcells = 
   mapAccumL makeTInstCell init prettcells
 
-makeTInstCell :: PretVSet -> PreTTCell -> (PretVSet, TInstCell)
-makeTInstCell prettvars = \case
-  NotTTVar txt     -> (prettvars, NoPrefix txt)
-  orig@(TTVar txt) -> checkSeen prettvars orig txt
+makeTInstCell :: NormdVars -> PreTTCell -> (NormdVars, TInstCell)
+makeTInstCell normdvars = \case
+  NotVar txt     -> (normdvars, NoPrefix txt)
+  VarNonApos vtxt -> checkSeen normdvars vtxt vtxt
+  VarApos origprefix -> checkSeen normdvars origprefix (origprefix <> "'s")
   where
-    checkSeen :: PretVSet -> PreTTCell -> T.Text -> (PretVSet, TInstCell)
-    checkSeen tvars origPtic vartxt =  
-      if HS.member origPtic tvars 
-      then (tvars, NoPrefix vartxt)
-      else 
-        let tvars' = HS.insert origPtic tvars
-        in (tvars', PrefixWithA vartxt)
+    checkSeen :: NormdVars -> T.Text -> T.Text -> (NormdVars, TInstCell)
+    checkSeen nvset vartxt finalvartxt = 
+      let nvar =  MkNormVar vartxt
+      in 
+        if HS.member nvar nvset 
+        then (nvset, NoPrefix vartxt)
+        else 
+          let nvset' = HS.insert nvar nvset
+          in (nvset', PrefixWithA finalvartxt)
 
 -------------
 
-
+normalizeVar :: PreTTCell -> Maybe NormalizedVar
+normalizeVar = \case
+  NotVar _ -> Nothing
+  VarApos prefix -> Just $ coerce prefix
+  VarNonApos var -> Just $ coerce var
 
 simplifyLAtomicP :: LamAbsAtomicP -> AtomicBPropn PreTTCell [PreTTCell]
 simplifyLAtomicP = bimap tvar2prettcell (map simplifyLabscs)
     
 simplifyLabscs :: LamAbsCell -> PreTTCell
 simplifyLabscs = \case
-  Pred txt    -> NotTTVar txt
+  Pred txt    -> NotVar txt
   TempVar tv -> tvar2prettcell tv
 
 -- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in PreTTCell so tt can check if the prefix is in `seen` when traversing the rule!
 tvar2prettcell :: TemplateVar -> PreTTCell
 tvar2prettcell = \case
-    MatchGVar vtxt  -> TTVar vtxt
-    EndsInApos vtxt -> TTVar (vtxt <> "'s")
-    IsNum txt       -> NotTTVar txt
-    OpOfVarArg txt  -> NotTTVar txt
+    MatchGVar vtxt  -> VarNonApos vtxt
+    EndsInApos prefix -> VarApos prefix
+    IsNum txt       -> NotVar txt
+    OpOfVarArg txt  -> NotVar txt
                        -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
 
 

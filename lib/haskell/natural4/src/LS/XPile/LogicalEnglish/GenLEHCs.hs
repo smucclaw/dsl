@@ -7,104 +7,106 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.GenLEHCs
-where
+module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC) where
 -- TODO: Make export list
 
 
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Foldable (toList)
-import Data.Maybe (catMaybes)
 import qualified Data.List as L hiding (head, tail)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
-import Control.Monad.State
 import Data.Traversable
 import Control.Monad.Identity (Identity)
-
 import Data.Bifunctor
 
 import LS.XPile.LogicalEnglish.Types
 
 
-
 leHCFromLabsHC :: LamAbsHC -> LEhcPrint
 leHCFromLabsHC = \case
-  LAhcF labsfact -> 
+  LAhcF labsfact ->
     LEHcF . leFactPrintFromLabsFact $ labsfact
-  LAhcR labsrule -> 
+  LAhcR labsrule ->
     LEHcR . textifyUnivMarkedRule . markUnivVarsInRule $ labsrule
+
+-- type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
+leFactPrintFromLabsFact :: LamAbsFact -> LEFactForPrint
+leFactPrintFromLabsFact = bimap univst2tmpltetxt temptxtify . markUnivVarsInFact
+
+markUnivVarsInFact :: LamAbsFact -> AtomicBPropn UnivStatus [UnivStatus]
+markUnivVarsInFact LAFact{..} =
+  markUnivVarsInAtomicP . simplifyLAtomicP $ lfhead
+  where
+    markUnivVarsInAtomicP :: LEhcAtomicP -> AtomicBPropn UnivStatus [UnivStatus]
+    markUnivVarsInAtomicP leabp =
+      let getUnivStatuses = snd
+      in getUnivStatuses (markUnivVarsInAtomicPacc HS.empty leabp)
+
 
 textifyUnivMarkedRule :: RuleWithUnivsMarked -> LERuleForPrint
 textifyUnivMarkedRule = fmap (bimap univst2tmpltetxt temptxtify)
 
 {-|
-Generates RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus]) from LamAbsRule
+Generates RuleWithUnivsMarked := BaseRule (AtomicBPropn UnivStatus [UnivStatus]) from LamAbsRule
 
 Explaining the logic here
 -------------------------
-TODO: in the midst of changing names
+At a high level:
+  We're doing a traverse with an accumulator, 
+  a traverse that exploits how BaseRule, which comprises the head and the boolean-proposition-tree body, is parametrized over the atomic (boolean) proposition type.
 
-Shorthands:
-  LEhcCell := ptc
-  BaseRule := br
-  UnivStatus := tic
+In more detail:
 
-We know:
+  Shorthands:
+    LEhcCell := lec
+    BaseRule := br
+    UnivStatus := univst
 
-  type RuleWithUnivsMarked = br (AtomicBPropn tic [tic])
-  prettrule :: br (AtomicBPropn ptc [ptc])
+  We know:
 
-  type LEhcAtomicP =  AtomicBPropn ptc [ptc]
-  markUnivVarsInAtomicPacc :: NormdVars-> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus [UnivStatus])
-                       := pvset -> ptap -> (pvset, ticap)
+    type RuleWithUnivsMarked = br (AtomicBPropn univst [univst])
+    prettrule :: br (AtomicBPropn lec [lec])
 
-We want: 
-  to go from 
-      BaseRule (AtomicBPropn ptc [ptc]) = BaseRule LEhcAtomicP := br ptap
-  to 
-      BaseRule (AtomicBPropn tic [tic]) := br ticap
+    type LEhcAtomicP =  AtomicBPropn lec [lec]
+    markUnivVarsInAtomicPacc :: NormdVars-> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus [UnivStatus])
+                                := nvars -> leap -> (nvars, uvsp)
 
-We also know
-  mapAccumL :: forall (t :: * -> *) s a b.
-                Traversable t =>
-                (s -> a -> (s, b)) -> s -> t a -> (s, t b)
+  We want: 
+    to go from 
+        BaseRule (AtomicBPropn lec [lec]) = BaseRule LEhcAtomicP := br leap
+    to 
+        BaseRule (AtomicBPropn univst [univst]) := br uvsp
 
-Instantiating that with our desired concrete types, we get:     
-     (pvset -> ptap -> (pvset, ticap)  )                   
-     -> pvset -> br ptap -> (pvset, br ticap)
+  We also know
+    mapAccumL :: forall (t :: * -> *) s a b.
+                  Traversable t =>
+                  (s -> a -> (s, b)) -> s -> t a -> (s, t b)
+
+  Instantiating that with our desired concrete types, we get:     
+      (nvars -> leap -> (nvars, uvsp)  )                   
+      -> nvars -> br leap -> (nvars, br uvsp)
+
+  It's also worth studying `markUnivVarsInAtomicPacc` and `markUnivVarsInLeCells`
+  since those functions are what implement the lower-level mechanics of threading 
+  the accumulator argument through
 -}
 markUnivVarsInRule :: LamAbsRule -> RuleWithUnivsMarked
-markUnivVarsInRule larule = 
-  let lerule :: BaseRule (AtomicBPropn LEhcCell [LEhcCell]) = simplifyLAtomicP <$> larule
+markUnivVarsInRule larule =
+  let lerule :: BaseRule LEhcAtomicP = simplifyLAtomicP <$> larule
   in snd (mapAccumL markUnivVarsInAtomicPacc HS.empty lerule)
-
--- type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
-leFactPrintFromLabsFact :: LamAbsFact -> LEFactForPrint
-leFactPrintFromLabsFact = (bimap univst2tmpltetxt temptxtify) . markUnivVarsInFact
-  where 
-    -- TODO: could prob do a bit more to make these helpers more readable and concise
-    markUnivVarsInFact :: LamAbsFact -> AtomicBPropn UnivStatus [UnivStatus]
-    markUnivVarsInFact LAFact{..} = 
-      markUnivVarsInAtomicP . simplifyLAtomicP $ lfhead
-
-    markUnivVarsInAtomicP :: LEhcAtomicP -> AtomicBPropn UnivStatus [UnivStatus]
-    markUnivVarsInAtomicP leabp = 
-      let getUnivStatuses = snd
-      in getUnivStatuses (markUnivVarsInAtomicPacc HS.empty leabp)
 
 
 -- TODO: Look into how to do this without this much plumbing
 markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus [UnivStatus])
 markUnivVarsInAtomicPacc nvars = \case
-  ABPatomic lecells -> 
+  ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
     in (nvars', ABPatomic univStatuses)
-  ABPIsDiffFr v1 v2 -> 
+  ABPIsDiffFr v1 v2 ->
     let (nvars', v1') = identifyUnivVar nvars v1
         (nvars'', v2') = identifyUnivVar nvars' v2
     in (nvars'', ABPIsDiffFr v1' v2')
@@ -120,7 +122,7 @@ markUnivVarsInAtomicPacc nvars = \case
 
 --- start by doing it the EASIEST possible way 
 markUnivVarsInLeCells :: NormdVars -> [LEhcCell] -> (NormdVars, [UnivStatus])
-markUnivVarsInLeCells init lecells = 
+markUnivVarsInLeCells init lecells =
   mapAccumL identifyUnivVar init lecells
 
 identifyUnivVar :: NormdVars -> LEhcCell -> (NormdVars, UnivStatus)
@@ -130,27 +132,21 @@ identifyUnivVar normdvars = \case
   lev@(VarApos origprefixtxt) -> checkSeen normdvars origprefixtxt lev
   where
     checkSeen :: NormdVars -> T.Text -> LEhcCell -> (NormdVars, UnivStatus)
-    checkSeen nvset vartxt levar = 
+    checkSeen nvset vartxt levar =
       let nvar =  MkNormVar vartxt
           rawvtxt = lecPrintraw levar
-      in 
-        if HS.member nvar nvset 
+      in
+        if HS.member nvar nvset
         then (nvset, NoPrefix rawvtxt)
-        else 
+        else
           let nvset' = HS.insert nvar nvset
           in (nvset', PrefixWithA rawvtxt)
 
--------------
+------------- helpers
 
-normalizeVar :: LEhcCell -> Maybe NormalizedVar
-normalizeVar = \case
-  NotVar _ -> Nothing
-  VarApos prefix -> Just $ coerce prefix
-  VarNonApos var -> Just $ coerce var
-
-simplifyLAtomicP :: LamAbsAtomicP -> AtomicBPropn LEhcCell [LEhcCell]
+simplifyLAtomicP :: LamAbsAtomicP -> LEhcAtomicP
 simplifyLAtomicP = bimap tvar2lecell (map simplifyLabscs)
-    
+
 simplifyLabscs :: LamAbsCell -> LEhcCell
 simplifyLabscs = \case
   Pred txt    -> NotVar txt
@@ -172,14 +168,14 @@ lecPrintraw = \case
   NotVar txt         -> txt
 
 temptxtify :: [UnivStatus] -> LETemplateTxt
-temptxtify univStatuses = 
+temptxtify univStatuses =
   mconcat . map univst2tmpltetxt $ intersperseWithSpace univStatuses
   where
     spaceDelimtr = NoPrefix " "
-    intersperseWithSpace = L.intersperse spaceDelimtr 
+    intersperseWithSpace = L.intersperse spaceDelimtr
 
+-- | Converts a UnivStatus to a LETemplateTxt in the obvious way -- basically materializing the UnivStatus tag
 univst2tmpltetxt :: UnivStatus -> LETemplateTxt
 univst2tmpltetxt = \case
   PrefixWithA txt -> coerce ("a " <> txt)
   NoPrefix    txt -> coerce txt
-

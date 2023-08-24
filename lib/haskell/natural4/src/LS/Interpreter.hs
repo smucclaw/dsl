@@ -32,7 +32,7 @@ import Data.Either (partitionEithers, fromRight)
 import Data.Graph.Inductive
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
-import Data.List (find)
+import Data.List (find, (\\))
 import Data.List qualified as DL
 import Data.List.NonEmpty as NE
 import Data.Maybe
@@ -50,7 +50,7 @@ import LS.RelationalPredicates
 import LS.Rule
 import LS.Types
 import Prettyprinter
-import Text.Pretty.Simple
+import Text.Pretty.Simple (pShowNoColor)
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream
@@ -63,11 +63,14 @@ l4interpret iopts rs =
   let ct = classHierarchy rs
       st = symbolTable    iopts rs
       (vp, vpErr) = xpLog $ attrsAsMethods rs
+      (rDGout, rDGerr) = xpLog $ ruleDecisionGraph rs
   in
     L4I { classtable = ct
         , scopetable = st
         , origrules  = rs
         , valuePreds = fromRight [] vp
+        , ruleGraph  = rDGout
+        , ruleGraphErr = rDGerr
         }
 
 -- | Provide the fully expanded, exposed, decision roots of all rules in the ruleset,
@@ -94,7 +97,8 @@ qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
        , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
-                           exposedRoots l4i      -- EXPOSED
+                           let (eRout, eRerr) = xpLog $ exposedRoots l4i      -- EXPOSED
+                           in eRout
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
      ]
@@ -147,7 +151,9 @@ symbolTable _iopts rs =
 
 -- | A map of all the classes we know about.
 --
--- Currently this function returns both IS-A and HAS-A relationships for a given class.
+-- Currently this function returns both IS-A and HAS-A relationships
+-- for a given class, in a tuple of superclass (IS-A) and attributes
+-- (HAS-A).
 --
 -- Classes can contain other classes. Here the hierarchy represents the "has-a" relationship, conspicuous when a DECLARE HAS HAS HAS.
 --
@@ -173,13 +179,28 @@ classHierarchy rs =
 
 -- | A graph of all the classes we know about.
 --
--- redraw the class hierarchy as a rooted graph, where the fst in the pair contains all the breadcrumbs to the current node. root to the right. I think this is overproducing a bit, because it's considering the attributes.
+-- redraw the class hierarchy as a rooted graph, where the fst in the
+-- pair contains all the breadcrumbs to the current node. root to the
+-- right. I think this is overproducing a bit, because it's
+-- considering the attributes.
+
 classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
 classGraph (CT ch) ancestors = concat
   [ pure (nodePath, (_itypesig, childct))
   | (childname, (_itypesig, childct)) <- Map.toList ch
   , let nodePath = childname : ancestors
   ]
+
+-- | classes at the root of the container hierarchies.
+-- Basically, these classes have other classes, but no other classes have them.
+classRoots :: ClsTab -> [(EntityType, TypedClass)]
+classRoots ct@(CT ch) =
+  let cg = classGraphFGL ct
+  in [ (className, typedClass)
+     | (n, className) <- labNodes cg
+     , indeg cg n == 0
+     , (Just typedClass) <- [Map.lookup className ch]
+     ]
 
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
@@ -200,33 +221,36 @@ type MyClassName = EntityType
 -- [TODO] we should align this with classGraph, which isn't actually an fgl inductive graph yet.
 topsortedClasses :: ClsTab -> [MyClassName]
 topsortedClasses ct =
-  [ cn
-  | n <- topsort asGraph
-  , (Just cn) <- [Map.lookup n idToType]
-  ]
+  let cGraph = classGraphFGL ct
+  in [ cn
+     | n <- topsort cGraph
+     , (Just cn) <- [lab cGraph n]
+     ]
+
+classGraphFGL :: ClsTab -> Gr MyClassName ()
+classGraphFGL ct =
+  -- there are a couple different kinds of dependencies...
+  let child2parent = getInheritances ct       -- child depends on parent
+      class2attrtypes = [ (cn, ut)            -- class depends on attribute types
+                        | cn <- getCTkeys ct
+                        , ts <- getAttrTypesIn ct cn
+                        , Right ut <- [getUnderlyingType ts]
+                        ]
+  in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
   where
-    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
-    allClasses :: ClsTab -> [MyClassName]
-    allClasses = getCTkeys
-    -- first let's assign integer identifiers to each type found in the class hierarchy
-    typeToID = Map.fromList (Prelude.zip allTypes [1..])
-    idToType = Map.fromList $ swap <$> Map.toList typeToID
-    asGraph :: Gr MyClassName ()
-    asGraph =
-      -- there are a couple different kinds of dependencies...
-      let child2parent = getInheritances ct       -- child depends on parent
-          class2attrtypes = [ (cn, ut)            -- class depends on attribute types
-                            | cn <- getCTkeys ct
-                            , ts <- getAttrTypesIn ct cn
-                            , Right ut <- [getUnderlyingType ts]
-                            ]
-      in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
     myEdges :: [(MyClassName, MyClassName)] -> [(Int, Int, ())]
     myEdges abab = [ (aid, bid, ())
                    | (a,b) <- abab
                    , (Just aid) <- [Map.lookup a typeToID]
                    , (Just bid) <- [Map.lookup b typeToID]
                    ]
+    allTypes :: [MyClassName]
+    allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
+    allClasses :: ClsTab -> [MyClassName]
+    allClasses = getCTkeys
+    -- first let's assign integer identifiers to each type found in the class hierarchy
+    typeToID = Map.fromList (Prelude.zip allTypes [1..])
+    idToType = Map.fromList $ swap <$> Map.toList typeToID
 
 -- | Extract all Enum declarations recursing through class declarations, so we can hoist them to top-level for use by, say, the Typescript transpiler.
 --
@@ -243,7 +267,7 @@ topsortedClasses ct =
 --
 -- There are probably a handful of other places inside a `Rule` where
 -- a `TypeSig` could appear, and we need to exhaustively traverse all
--- of those places. Please add code as you find such places.
+-- of those places. Please add code as you find such places. [TODO]
 extractEnums :: Interpreted -> [Rule]
 extractEnums l4i =
   let rs = origrules l4i
@@ -281,12 +305,11 @@ groupedByAOTree l4i rs =
 -- The SVG outputter likes to exclude things that have only a single element and are therefore visually uninteresting.
 -- We want the SVG Xpiler to reuse this code as authoritative.
 
-exposedRoots :: Interpreted -> [Rule]
-exposedRoots l4i =
-  let rs = origrules l4i
-      decisionGraph = ruleDecisionGraph l4i rs
-      decisionroots = decisionRoots decisionGraph
-  in [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+exposedRoots :: Interpreted -> XPileLog [Rule]
+exposedRoots l4i = do
+  let decisionGraph = ruleGraph l4i
+  decisionroots <- decisionRoots decisionGraph
+  return [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
 -- | the (inner) type of a particular class's attribute
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
@@ -323,57 +346,138 @@ getAttrTypesIn ct classname =
                               ]
 
 
--- | structure the rules as a graph.
--- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
--- if we walk the roots, we will sooner or later encounter all the decision elements relevant to each root.
--- in a less simple case, the graph is cyclic! everything depends on everything else! but we can recognize that as an error condition.
---
--- note that a regulative rule R1 HENCE R2 is recorded as a single rule, even if we think of the R2 as a separate rule
--- perhaps we should have a notion of anonymous rules, that are internally labelled and structured, so R2 is equal to R1 in the graph.
-
-type RuleGraphEdgeLabel = ()
-type RuleGraph = Gr Rule RuleGraphEdgeLabel
-
 -- | used by `ruleDecisionGraph`; a map from a rule to a unique integer identifier for that rule, used in the `RuleGraph`
 type RuleIDMap = Map.HashMap Rule Int
 
 -- | which decision rules depend on which other decision rules?
-ruleDecisionGraph :: Interpreted -> [Rule] -> RuleGraph
-ruleDecisionGraph l4i rs =
-  let ruleIDmap = Map.fromList (Prelude.zip decisionRules [1..])
-  in mkGraph
-  (swap <$> Map.toList ruleIDmap) -- the nodes
-  (relPredRefsAll l4i rs ruleIDmap)
+-- And which ground terms don't expand any further?
+--
+-- We answer these questions in two passes.
+--
+-- First, we construct a rulegraph of only rules and their relations. In a conventional programming language we might call this the interprocedural graph.
+-- In the first version of this codebase we stopped here and just returned the graph of rules, which is why the type is called `RuleGraph`.
+--
+-- But that's not enough! We want to know about the leaf nodes, the ground terms, as well.
+-- So, in a second pass, we traverse the rulegraph from the first pass, and return all the leaf nodes found in the RelationalPredicates;
+-- then we eliminate all the tokens which appear in the graph from the first pass. That should leave us with only leaf nodes.
+--
+-- With that clarity, we elevate the leaf nodes into stub rules and return a rule graph of the combined rules + ground terms.
+--
+-- If, downstream, you want to distinguish between rule and ground term, just look for those nodes in the graph which are leaves!
+--
+ruleDecisionGraph :: RuleSet -> XPileLog RuleGraph
+ruleDecisionGraph rs = do
+
+  "(1.1) for first pass, we begin with decisionrules" ***-> decisionRules
+
+  let ruleOnlyMap = Map.fromList (Prelude.zip decisionRules [1..])
+  "(1.2) ruleOnlyMap" ***-> ruleOnlyMap
+
+  mutterd 3 "ruleDecisionGraph: (1.3) ruleOnlyGraph construction log using relPredRefsAll"
+  
+  ruleOnlyGraph :: RuleGraph <- mkGraph
+                                (swap <$> Map.toList ruleOnlyMap) -- the nodes
+                                <$> relPredRefsAll rs ruleOnlyMap -- The <$> lifts into the XPileLog monad
+
+  "(1.4) ruleOnlyGraph result" ***-> ruleOnlyGraph
+
+  mutterd 3 "as a flex, just to show what's going on, we extract all the leaf terms, if we can, by starting with all the terms entirely. Well, MultiTerms."
+
+  let allTerms = DL.nub $ concat (concatMap rp2bodytexts . concatMap AA.extractLeaves . getBSR <$> rs)
+  "(2.1) allTerms" ***-> allTerms
+
+  mutterd 3 "(2.2) we filter for the leaf terms by excluding all the ruleNames that we know from the original ruleset. This may not be a perfect match with the MultiTerms used in the rule graph. [TODO]"
+
+  let (ruleNames, ruleLabelNames) = (ruleName <$> rs, ruleLabelName <$> rs)
+  "(2.3) ruleNames to omit" ***-> ruleNames
+  "(2.3 alt) what if we used ~ruleLabelName~ instead of ~ruleName~?)" ***-> ruleLabelNames
+
+  let difference = (allTerms \\ ruleNames) \\ [[ MTT "OTHERWISE" ]] --  special case: Otherwise drops out
+  "(2.4) that leaves" ***-> difference
+
+  mutterd 3 "(2.5) let's elevate all the leaf terms to stubby little rules in their own right"
+  let stubRules = [ defaultHorn { name = rulename, keyword = Define, srcref = Nothing
+                                , clauses = stubClause rulename }
+                  | rulename <- difference ]
+
+  mutterd 3 "(2.6) then we rebuild the graph with those rules included"
+  let expandedRuleMap   = Map.fromList (Prelude.zip (decisionRules ++ stubRules) [1..])
+  expandedRuleGraph :: RuleGraph <- mkGraph
+                                    (swap <$> Map.toList expandedRuleMap)
+                                    <$> relPredRefsAll (rs ++ stubRules) expandedRuleMap
+
+  "(2.7) expandedRuleGraph" ***-> expandedRuleGraph
+
+  mutterd 3 "(3.1) finally we strip the reflexive BSR from the stub rules while leaving the nodes themselves in place."
+  
+  let prunedRuleGraph = dereflexed $ nmap (\r -> if hasClauses r && clauses r == stubClause (name r) then r { clauses = [] } else r ) expandedRuleGraph
+  "(3.2.7) prunedRuleGraph" ***-> prunedRuleGraph
+
+  return prunedRuleGraph
+
   where
+     -- [NOTE] for the purposes of generating the graph in the 2nd pass,
+    -- leaf nodes are reflexive. Let's just say we meant for it to be that way, cuz they "bottom out", lol.
+    -- This gets removed in the third pass.
+    stubClause rulename =
+      [ HC { hHead = RPMT rulename
+           , hBody = Just $ AA.mkLeaf (RPMT rulename) }
+      ]
+
+    -- filter for just those rules which involve decisions
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
 
+  -- we want to represent the leaf nodes in the rule decision graph, so we elevate those to the status of rules by including them in the map
+    groundTerms :: Map.HashMap Rule Int -> [RuleName]
+    groundTerms knownRules = []
+      -- find all the body elements which 
+
+    (***->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
+     
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
-relPredRefsAll :: Interpreted -> [Rule] -> RuleIDMap -> [LEdge RuleGraphEdgeLabel]
-relPredRefsAll l4i rs ridmap =
-  concatMap (relPredRefs l4i rs ridmap) rs
+relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefsAll rs ridmap = do
+  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
+      -- given a term, see which rule defines it
+      headElements = Map.fromList $
+                     [ (headName,r')
+                     | r' <- rs
+                     , headName <- getDecisionHeads r' -- [TODO] this is quadratic
+                     ]
+  mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
+
+  concat <$> mapM (relPredRefs rs ridmap headElements) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
--- that correspond to known BSR heads from the entire ruleset.
+-- that correspond to known rule heads from the entire ruleset.
 --
 -- in other words, if a rule R1 says something like (a WHEN b OR c), it defines a, and relies on b and c;
 -- if we find a rule R2 which defines (c MEANS c1 AND c2), then it defines c, and relies on c1 and c2.
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: Interpreted -> [Rule] -> RuleIDMap -> Rule -> [LEdge RuleGraphEdgeLabel]
-relPredRefs _l4i rs ridmap r =
-  let headElements :: Map.HashMap MultiTerm Rule -- does this get recomputed each time or cached?
-      -- given a term, see which rule defines it
-      headElements = Map.fromList $
-                     [ (headName,r')
-                     | r' <- rs
-                     , headName <- getDecisionHeads r'
-                     ]
+relPredRefs :: RuleSet -> RuleIDMap -> Map.HashMap MultiTerm Rule
+            -> Rule
+            -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs rs ridmap headElements r = do
       -- given a rule, see which terms it relies on
-      bodyElements = concatMap rp2bodytexts (concatMap AA.extractLeaves (getBSR r))
+  let myGetBSR = getBSR r
+      myLeaves = concatMap AA.extractLeaves myGetBSR
+      bodyElements = concatMap rp2bodytexts myLeaves
+
+  mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
+
+  mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
+  mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
+  mutterdhsf 5 "relPredRefs: extractLeaves" pShowNoColorS myLeaves
+  mutterdhsf 5 "relPredRefs: bodyElements"  pShowNoColorS bodyElements
+
+  -- [BUG] at some point we lose the moon
+  mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  in [ (rid, targetRuleId', ())
-     | bElem <- bodyElements
+  toreturn <- sequence
+    [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')
+    | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
      , let targetRule' = fromJust targetRule -- safe due to above isJust test
@@ -383,6 +487,8 @@ relPredRefs _l4i rs ridmap r =
            rid = ridmap ! r
      ]
 
+  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
+  return toreturn
 
 -- | Which rules are "top-level", "entry-point" rules?
 --
@@ -392,24 +498,29 @@ relPredRefs _l4i rs ridmap r =
 --
 -- Examine the rulegraph for rules which have no indegrees, as far as decisioning goes.
 
-decisionRoots :: RuleGraph -> [Rule]
-decisionRoots rg =
-  let rg' = dereflexed
-  in
-  catMaybes [ lab rg' r
-            | r <- nodes rg'
-            ,  indeg rg' r == 0
---            , outdeg rg' r  > 0
-            ]
-  where
-    -- remove reflexive edges that go from node n to node n
-    dereflexed :: RuleGraph
-    dereflexed =
-      let toreturn = foldr (\n g -> delEdge (n,n) g) rg (nodes rg)
-      in
---        trace ("dereflexed before: " ++ prettify rg) $
---        trace ("dereflexed after:  " ++ prettify toreturn) $
-        toreturn
+decisionRoots :: RuleGraph -> XPileLog [Rule]
+decisionRoots rg = do
+  let rg' = dereflexed rg
+  return $
+    catMaybes [ lab rg' r
+              | r <- nodes rg'
+              ,  indeg rg' r == 0
+              -- , outdeg rg' r  > 0
+              ]
+
+-- remove reflexive edges that go from node n to node n
+dereflexed :: Gr a b -> Gr a b
+dereflexed gr =
+  foldr (\n g -> delEdge (n,n) g) gr (nodes gr)
+
+
+-- | extract a data flow graph
+-- suitable for drawing as SVG
+-- from the rulegraph.
+--
+-- we're interested in a data flow graph whose leaves are the leaf elements in the rulegraph;
+-- the intermediate nodes can be the rules; and
+-- the graph roots out at the decisionRoots.
 
 
 -- | return the internal conditions of the rule, if any, as an and-or tree.
@@ -844,6 +955,7 @@ attrsAsMethods rs = do
                     , attrName
                     , attrVal
                     , attrCond
+                    , origRule = Just r
                     }
               mutterd 3 $ show headLHS <> " returning"
               mutter $ show $ srchs toreturn
@@ -871,20 +983,68 @@ attrsAsMethods rs = do
               mutter $ show $ srchs hHead
               xpError ["unhandled RelationalPredicate", show hHead]
 
-        -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
-        -- 
-        --  output: (["foo", "bar"], "baz")
-        toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
-        toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
-        toObjectPath mt = do
-          mutterd 4 $ "toObjectPath input = " <> show mt
-          mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
-          mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
-          mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-          mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-          xpReturn (DL.filter (not . T.null) $
-                    T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-                   , mt2text [DL.last mt])
-          
+
+-- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
+-- 
+--  output: (["foo", "bar"], "baz")
+toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
+toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
+toObjectPath mt = do
+  mutterd 4 $ "toObjectPath input = " <> show mt
+  mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
+  mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
+  mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+  mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  xpReturn (DL.filter (not . T.null) $
+            T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
+           , mt2text [DL.last mt])
+
+-- | text version of the above: foo.bar.baz.
+--
+-- We should do slightly
+-- better error handling here to deal with a case where MultiTerm is
+-- empty -- maybe we switch to a TypedMulti with NE guarantees on the
+-- multiterm?
+toObjectStr :: MultiTerm -> XPileLogE EntityName
+toObjectStr mt = do
+  objPath <- toObjectPath mt
+  case objPath of
+    Right (oP,objName) -> xpReturn $ T.intercalate "." (oP ++ [objName])
+    Left err           -> xpError err
+
+-- | is a particular attribute typed as an enum?
+--
+-- 1. does the current rule define the attribute as a GIVEN parameter typed as an enum?
+--
+-- 2. does the current rule define the attribute as a parameter whose type is explicitly known to be enum at the toplevel?
+isAnEnum :: Interpreted -> Maybe ParamText -> MultiTerm -> Bool
+isAnEnum l4i mgiven mt =
+  let enumNames  = fmap lowerMT . ruleLabelName <$> extractEnums l4i
+      toreturn   = isGivenEnum mgiven enumNames mt
+
+  in -- trace ("lowerMT = " <> show myAttrName <> "; enumNames = " <> show enumNames <> "; toreturn = " <> show toreturn) $
+     toreturn
+    -- lowerMT = [MTT "planaf"]; ruleLabelName = [[MTT "outcome"],[MTT "planaf"],[MTT "plan14"],[MTT "injury"]] = True
+
+-- | does the current multiterm attribute match a GIVEN parameter which was annotated as an Enum, either explicitly or as a known enum type?
+-- [TODO] refactor this together with the above function to a single function
+isGivenEnum :: Maybe ParamText -> [MultiTerm] -> MultiTerm -> Bool
+isGivenEnum Nothing _ mt = False
+isGivenEnum (Just typedMultis) enumNames mt = any (enumMatch enumNames mt) $ NE.toList typedMultis
+
+-- | does a specific typedmulti match an enum
+enumMatch :: [MultiTerm] -> MultiTerm -> TypedMulti -> Bool
+enumMatch _ mt (givenName, Nothing) = False
+enumMatch _ mt (givenName, Just mgiven@(InlineEnum _ _)) =
+  -- trace ("mt = " <> show mt <> "; givenName = " <> show givenName <> "; given = " <> show mgiven) $
+  mt == NE.toList givenName
+enumMatch enumNames mt (givenName, Just mgiven@(SimpleType TOne etype)) =
+  (pure . MTT . T.toLower . (<> "enum") $ etype) `elem` enumNames
+
+-- | lowercase a multiterm to support isAnEnum comparison
+lowerMT :: MTExpr -> MTExpr
+lowerMT (MTT t) = MTT (T.toLower t)
+lowerMT x       = x
+

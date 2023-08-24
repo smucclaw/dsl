@@ -60,11 +60,9 @@ module LS.XPile.LogicalEnglish.Types (
     , FactWithUnivsMarked
     , RuleWithUnivsMarked
     , LERuleForPrint
-    -- , LECondnTree
-
+    
     -- Configuration and LE-specific consts
-    , LEProg
-    -- , MkLEProg
+    , LEProg(MkLEProg)
 ) where
 
 
@@ -355,20 +353,32 @@ type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus])
 type LERuleForPrint = BaseRule (AtomicBPropn LETemplateTxt LETemplateTxt)
 
 
+----- for pretty printing ---------------------------------------------------------
 
+pattern MkLEProg :: T.Text
+                  -> T.Text
+                  -> T.Text
+                  -> [LENatLangAnnot]
+                  -> [LERuleForPrint]
+                  -> LEProg
+pattern MkLEProg docheader nlasheader rulebodyheader nlas lerules = 
+  MkLEProg_ { docHeader = docheader
+            , nlasHeader = nlasheader
+            , ruleBodyHeader = rulebodyheader
+            , nlas = nlas
+            , lerules = lerules
+            , numIndentSpaces = 2
+            }
 
--- TODO: maybe hide the real constructor and use a pattern to make a convenient constructor tt alr initializes with some consts like the doc header?
-pattern MkLEProg <- undefined
 data LEProg = MkLEProg_ { docHeader    :: !T.Text
                         , nlasHeader :: !T.Text
                         , ruleBodyHeader :: !T.Text
                         , nlas :: [LENatLangAnnot]
-                        , lerules :: [LERuleForPrint] }
-{-------------------------------------------------------------------------------
-    Configs
--------------------------------------------------------------------------------}
-
-data LECfg = LECfg { numIndentSpaces :: !Word }
+                        , lerules :: [LERuleForPrint] 
+                        , numIndentSpaces :: !Word 
+                        -- ^ numIndentSpaces feels like it shld belong in a separate cfg record,
+                        -- but we don't have enough cfg params for that to be worthwhile
+                        }
 
 
 

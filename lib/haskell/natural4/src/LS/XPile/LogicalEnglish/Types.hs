@@ -62,7 +62,7 @@ module LS.XPile.LogicalEnglish.Types (
     , LERuleForPrint
 
     -- Configuration and LE-specific consts
-    , LEProg(MkLEProg)
+    , LEProg(MkLEProg, docHeader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs)
 ) where
 
 
@@ -364,8 +364,8 @@ pattern MkLEProg :: T.Text
                   -> [LENatLangAnnot]
                   -> [LEhcPrint]
                   -> LEProg
-pattern MkLEProg{docheader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs} = 
-  MkLEProg_ { docHeader = docheader
+pattern MkLEProg{docHeader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs} = 
+  MkLEProg_ { docHeader = docHeader
             , nlasHeader = nlasHeader
             , libHCsHeader = libHCsHeader
             , libHCs = libHCs

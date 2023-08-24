@@ -9,7 +9,7 @@
 -- {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.GenTemplateInsts
+module LS.XPile.LogicalEnglish.GenLEHCs
 where
 -- TODO: Make export list
 
@@ -132,7 +132,7 @@ identifyUnivVar normdvars = \case
     checkSeen :: NormdVars -> T.Text -> LEhcCell -> (NormdVars, UnivStatus)
     checkSeen nvset vartxt levar = 
       let nvar =  MkNormVar vartxt
-          rawvtxt = levarPrintraw levar
+          rawvtxt = lecPrintraw levar
       in 
         if HS.member nvar nvset 
         then (nvset, NoPrefix rawvtxt)
@@ -165,8 +165,8 @@ tvar2lecell = \case
                        -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
 
 -- | Prints the intended raw text for a LEhcCell
-levarPrintraw :: LEhcCell -> T.Text
-levarPrintraw = \case
+lecPrintraw :: LEhcCell -> T.Text
+lecPrintraw = \case
   VarApos origprefix -> origprefix <> "'s"
   VarNonApos vartxt  -> vartxt
   NotVar txt         -> txt

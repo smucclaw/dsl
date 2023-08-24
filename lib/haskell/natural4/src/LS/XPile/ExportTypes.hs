@@ -215,7 +215,7 @@ instance ShowTypesJson ExpType where
         dquotes (pretty tn) <> pretty ": " <>
         nest 4
         (braces (
-            jsonType "enum" <> pretty "," <>
+            jsonType "string" <> pretty "," <>
             dquotes (pretty "enum") <> pretty ": " <>
             nest 4 (brackets (hsep (punctuate comma (map dquotes (map pretty n)))))
         ))

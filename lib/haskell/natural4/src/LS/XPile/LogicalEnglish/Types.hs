@@ -359,14 +359,14 @@ pattern MkLEProg :: T.Text
                   -> T.Text
                   -> T.Text
                   -> [LENatLangAnnot]
-                  -> [LERuleForPrint]
+                  -> [LEhcPrint]
                   -> LEProg
-pattern MkLEProg{docheader, nlasheader, rulebodyheader, nlas, lerules} = 
+pattern MkLEProg{docheader, nlasheader, rulebodyheader, nlas, lehcs} = 
   MkLEProg_ { docHeader = docheader
             , nlasHeader = nlasheader
             , ruleBodyHeader = rulebodyheader
             , nlas = nlas
-            , lerules = lerules
+            , lehcs = lehcs
             , numIndentSpaces = 2
             }
 
@@ -374,7 +374,7 @@ data LEProg = MkLEProg_ { docHeader    :: !T.Text
                         , nlasHeader :: !T.Text
                         , ruleBodyHeader :: !T.Text
                         , nlas :: [LENatLangAnnot]
-                        , lerules :: [LERuleForPrint] 
+                        , lehcs :: [LEhcPrint] 
                         , numIndentSpaces :: !Word 
                         -- ^ numIndentSpaces feels like it shld belong in a separate cfg record,
                         -- but we don't have enough cfg params for that to be worthwhile

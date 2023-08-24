@@ -355,26 +355,33 @@ type LERuleForPrint = BaseRule (AtomicBPropn LETemplateTxt LETemplateTxt)
 
 ----- for pretty printing ---------------------------------------------------------
 
+
 pattern MkLEProg :: T.Text
+                  -> T.Text
+                  -> T.Text
                   -> T.Text
                   -> T.Text
                   -> [LENatLangAnnot]
                   -> [LEhcPrint]
                   -> LEProg
-pattern MkLEProg{docheader, nlasheader, rulebodyheader, nlas, lehcs} = 
+pattern MkLEProg{docheader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs} = 
   MkLEProg_ { docHeader = docheader
-            , nlasHeader = nlasheader
-            , ruleBodyHeader = rulebodyheader
+            , nlasHeader = nlasHeader
+            , libHCsHeader = libHCsHeader
+            , libHCs = libHCs
+            , hcsHeader = hcsHeader
             , nlas = nlas
-            , lehcs = lehcs
+            , leHCs = leHCs
             , numIndentSpaces = 2
             }
 
 data LEProg = MkLEProg_ { docHeader    :: !T.Text
                         , nlasHeader :: !T.Text
-                        , ruleBodyHeader :: !T.Text
+                        , libHCsHeader :: !T.Text
+                        , libHCs    :: !T.Text
+                        , hcsHeader :: !T.Text
                         , nlas :: [LENatLangAnnot]
-                        , lehcs :: [LEhcPrint] 
+                        , leHCs :: [LEhcPrint] 
                         , numIndentSpaces :: !Word 
                         -- ^ numIndentSpaces feels like it shld belong in a separate cfg record,
                         -- but we don't have enough cfg params for that to be worthwhile

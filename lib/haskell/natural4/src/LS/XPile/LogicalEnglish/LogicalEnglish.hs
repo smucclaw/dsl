@@ -57,12 +57,24 @@ import LS.XPile.LogicalEnglish.Pretty()
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
-{- TODO: After we get a v simple end-to-end prototype out, 
+{- 
+
+TODO: After we get a v simple end-to-end prototype out, 
 we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
 (This should be done with Monad.Validate or Data.Validation -- XPileLog isn't as good a fit for this.)
 The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages. 
 
-But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. -}
+But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. 
+
+
+TODO: Add property based tests
+  EG: 
+    * If you add a new var anywhere in a randomly generated LamAbs HC, the new LE HC should have an 'a' in front of that var
+    * If you take a rand generated LamAbs HC with a var v and add another occurrence of `v` before the old one, the ordering of variables with an `a` prefix in the corresponding new LE HC should differ from that in the old LE HC in the appropriate way (this should be made a bit more precise depending on what is easy to implement)
+    * Take a randomly generated LamABs HC with vars that potentially have multiple occurrences and generate the LE HC from it. For every var in the HC, the 'a' prefix should only appear once.
+    * There should be as many NLAs as leaves in the HC (modulo lib NLAs)
+
+-}
 
 
 {-------------------------------------------------------------------------------
@@ -76,20 +88,13 @@ checkAndRefine rawrules = do
   return $ refine validatedL4rules
 
 
--- allLamAbsHCs :: [L4.Rule] -> [LamAbsHC] 
--- allLamAbsHCs = map (lamAbstract . simplifyL4ruleish)
-
------------- 
-
--- | Generate LE Nat Lang Annotations from LamAbsHCs  
-allNLAs :: [LamAbsHC] -> HS.HashSet LENatLangAnnot
-allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
-
-
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
 
+-- | Generate LE Nat Lang Annotations from LamAbsHCs  
+allNLAs :: [LamAbsHC] -> HS.HashSet LENatLangAnnot
+allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender 

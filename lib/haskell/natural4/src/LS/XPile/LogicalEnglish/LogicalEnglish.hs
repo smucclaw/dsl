@@ -21,10 +21,6 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 
-import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), tildes, (<//>), srchs )
-import Prettyprinter
-    ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc, indent, line )
 import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 import Data.Bifunctor       ( first )
@@ -36,6 +32,14 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
+
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty))
+import LS.PrettyPrinter
+    ( myrender, vvsep, (</>), (<//>) )
+import Prettyprinter.Interpolate (__di)
+    
 
 import qualified AnyAll as AA
 import LS.Types qualified as L4
@@ -49,7 +53,7 @@ import LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) -- TODO: Add impor
 import LS.XPile.LogicalEnglish.LamAbstract (lamAbstract)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromLamAbsHC)
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC)
-
+import LS.XPile.LogicalEnglish.Pretty()
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
@@ -72,8 +76,8 @@ checkAndRefine rawrules = do
   return $ refine validatedL4rules
 
 
-allLamAbsHCs :: [L4.Rule] -> [LamAbsHC] 
-allLamAbsHCs = map (lamAbstract . simplifyL4ruleish)
+-- allLamAbsHCs :: [L4.Rule] -> [LamAbsHC] 
+-- allLamAbsHCs = map (lamAbstract . simplifyL4ruleish)
 
 ------------ 
 
@@ -89,26 +93,18 @@ allLEhcs = map leHCFromLabsHC
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
 
--- list of NLAs would have been pre-sorted
 
-
-egLEProg = MkLEProg {
-              docHeader = "the target language is: prolog."
-            , nlasHeader = "the templates are:"
-            , libHCsHeader = "the knowledge base prelude includes:"
-            , libHCs = undefined
-            , hcsHeader = "the knowledge base encoding includes:"
-            , nlas = undefined
-            , leHCs = undefined
-             }
-
-instance Pretty LEProg where
-  pretty MkLEProg{..} = undefined
-
+doc2str :: Doc ann -> String
+doc2str = T.unpack . myrender 
 
 toLE :: [L4.Rule] -> String
-toLE = const "some output"
-
+toLE l4rules = 
+  let labshcs = map (lamAbstract . simplifyL4ruleish) l4rules
+      nlas    = HS.toList (allNLAs labshcs) -- TODO: sort the nlas
+      lehcs   = allLEhcs labshcs
+      leProg = MkLEProg { nlas = nlas, leHCs = lehcs }
+  in doc2str . pretty $ leProg
+    
 {-
 note
 ------

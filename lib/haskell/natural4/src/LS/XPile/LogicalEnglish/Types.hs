@@ -65,8 +65,6 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- Configuration and LE-specific consts
     , LEProg(..)
-    , PrintCfg
-    , nestLE
 ) where
 
 
@@ -374,50 +372,16 @@ type LERuleForPrint = BaseRule TxtAtomicBP
 
 ----- for pretty printing -------------------------------------------------------
 
-instance Pretty OpOf where
-  pretty :: OpOf -> Doc ann
-  pretty = \case
-    MaxOf -> "is the maximum of"
-    MinOf -> "is the minimum of"
-    SumOf -> "is the sum of"
-    ProductOf -> "is the product of"
 
-instance Pretty OpSuchTt where
-  pretty :: OpSuchTt -> Doc ann
-  pretty = \case
-    MaxXSuchThat -> "is the max x such that"
-    MinXSuchThat -> "is the min x such that"
-    SumEachXSuchThat -> "is the sum of each x such that"
-      
-instance Pretty TxtAtomicBP where 
-  pretty :: TxtAtomicBP -> Doc ann
-  pretty = \case
-    ABPatomic prop -> 
-      pretty prop 
-    ABPIsDiffFr t1 t2 -> 
-      [__di|#{pretty t1} is different from #{pretty t2}|]
-    ABPIsOpOf t1 opof targs -> 
-      [__di|#{pretty t1} #{pretty opof} #{list $ map pretty targs}|]
-    ABPIsOpSuchTt term ostt prop ->
-      [__di|#{pretty term} #{pretty ostt}|] <//> nestLE (pretty prop)
-
-
-data LEProg = MkLEProg { docHeader    :: !T.Text
-                        , nlasHeader :: !T.Text
-                        , libHCsHeader :: !T.Text
-                        , libHCs    :: !T.Text
-                        , hcsHeader :: !T.Text
-                        , nlas :: [LENatLangAnnot]
+data LEProg = MkLEProg {  nlas :: [LENatLangAnnot]
                         , leHCs :: [LEhcPrint] 
                         }
 
--- | config record for pretty printing
-data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int} 
-printcfg = MkPrintCfg { numIndentSpcs = 2 }
-nestLE :: Doc ann -> Doc ann
-nestLE = nest printcfg.numIndentSpcs
-
-
+--   docHeader    :: !T.Text
+-- , nlasHeader :: !T.Text
+-- , libHCsHeader :: !T.Text
+-- , libHCs    :: forall ann. Doc ann
+-- , hcsHeader :: !T.Text
 --- to remove once we are sure we won't want to go back to this way of doing this: 
 -- LE Rule
 -- data LERule a b = 

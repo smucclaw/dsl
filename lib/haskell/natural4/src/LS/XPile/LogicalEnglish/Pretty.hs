@@ -42,6 +42,7 @@ import Prettyprinter
     (<+>),
     viaShow,
     encloseSep,
+    concatWith,
     dot)
 import LS.PrettyPrinter
     ( myrender, vvsep, (</>), (<//>) )
@@ -66,8 +67,11 @@ printcfg = MkPrintCfg { numIndentSpcs = 2 }
 nestLE :: Doc ann -> Doc ann
 nestLE = nest printcfg.numIndentSpcs
 
-nestSeq :: [Doc ann] -> Doc ann
-nestSeq seq =  nestLE (vsep seq)
+indentLE :: Doc ann -> Doc ann
+indentLE = indent printcfg.numIndentSpcs
+
+nestVsepSeq :: [Doc ann] -> Doc ann
+nestVsepSeq seq =  nestLE (vsep seq)
 
 instance Pretty OpOf where
   pretty :: OpOf -> Doc ann
@@ -83,18 +87,6 @@ instance Pretty OpSuchTt where
     MaxXSuchThat -> "is the max x such that"
     MinXSuchThat -> "is the min x such that"
     SumEachXSuchThat -> "is the sum of each x such that"
-
-instance Pretty TxtAtomicBP where
-  pretty :: TxtAtomicBP -> Doc ann
-  pretty = \case
-    ABPatomic prop ->
-      pretty prop
-    ABPIsDiffFr t1 t2 ->
-      [__di|#{pretty t1} is different from #{pretty t2}|]
-    ABPIsOpOf t1 opof targs ->
-      [__di|#{pretty t1} #{pretty opof} #{list $ map pretty targs}|]
-    ABPIsOpSuchTt term ostt prop ->
-      [__di|#{pretty term} #{pretty ostt}|] <//> nestLE (pretty prop)
 
 
 instance Pretty LEhcPrint where
@@ -113,44 +105,52 @@ instance Pretty LERuleForPrint where
 instance Pretty a => Pretty (BoolPropn a) where
   pretty :: Pretty a => BoolPropn a -> Doc ann
   pretty = \case
-      AtomicBP bp -> pretty bp
-      And bps     -> boolop "and" bps
-      Or bps      -> boolop "or" bps
-      Not bp      -> "it is not the case that" <//> nestLE (pretty bp)
+      AtomicBP bp ->
+        pretty bp
+      And bps     ->
+        concatBoolOp "and" (map pretty bps)
+      Or bps      ->
+        concatBoolOp "or" (map pretty bps)
+      Not bp      ->
+        "it is not the case that" <//> indentLE (pretty bp)
+    where
+      concatBoolOp boolop = concatWith (\x y -> x <> line <> boolop <> " " <> y)
 
-type BoolOpTxt = T.Text
-boolop :: Pretty a => BoolOpTxt -> [BoolPropn a] -> Doc ann
-boolop bop bps = 
-  let layoutSubProp :: Pretty a => BoolPropn a -> Doc ann
-      layoutSubProp = \case
-        AtomicBP prop -> [__di|#{bop} #{pretty prop}|]
-        notp@(Not _)  -> [__di|#{bop} #{pretty notp}|]
-        And bps       -> nestSeq (map pretty bps)
-        Or bps        -> nestSeq (map pretty bps)
-  in vsep (map layoutSubProp bps)
+instance Pretty TxtAtomicBP where
+  pretty :: TxtAtomicBP -> Doc ann
+  pretty = \case
+    ABPatomic prop ->
+      pretty prop
+    ABPIsDiffFr t1 t2 ->
+      [__di|#{pretty t1} is different from #{pretty t2}|]
+    ABPIsOpOf t1 opof targs ->
+      [__di|#{pretty t1} #{pretty opof} #{list $ map pretty targs}|]
+    ABPIsOpSuchTt term ostt prop ->
+      [__di|#{pretty term} #{pretty ostt}|] <//> indentLE (pretty prop)
 
+endWithDot txt = [__di|#{ txt }.|]
 
 instance Pretty LEProg where
   pretty :: LEProg -> Doc ann
   pretty MkLEProg{..} =
-    let natLangAnnots = punctuate comma $ map pretty nlas
-                      -- assume list of NLAs would have been pre-sorted
-        prettyLEhcs   = encloseSep line line 
-                                  (dot <+> line) 
-                                  (map pretty leHCs)
+    
+    let natLangAnnots = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlas
+                      -- assume list of NLAs is pre-sorted
+        prettyLEhcs   = vsep $ map ((<> dot) . pretty) leHCs
     in
       [__di|
         the target language is: prolog.
 
         the templates are:
-        #{nestSeq natLangAnnots}
+          #{natLangAnnots}
 
         % Predefined stdlib for translating natural4 -> LE.
         the knowledge base prelude includes:
-        #{nestLE joeLibHCs}
+          #{nestLE joeLibHCs}
+
 
         the knowledge base encoding includes:
-        #{nestLE prettyLEhcs}
+          #{nestLE prettyLEhcs}
       
         query q is:
           0 < 1.
@@ -222,4 +222,4 @@ joeLibHCs =
 
   the sum of a list does not exceed the minimum of a other list
   if a x is the sum of list 
-  and x does not exceed the minimum of other list."|]
+  and x does not exceed the minimum of other list.|]

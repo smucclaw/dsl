@@ -91,7 +91,7 @@ tvar2NLAcell = \case
   OpOfVarArg arg -> MkNonParam arg
 
   EndsInApos _   -> MkParam "*a var*'s"
-  IsNum _numtxt  -> MkParam "*a var*"
+  IsNum _numtxt  -> MkParam "is *a var*"
   -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
   MatchGVar _    -> MkParam "*a var*"
   {- ^

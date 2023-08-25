@@ -156,7 +156,7 @@ tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case
     MatchGVar vtxt  -> VarNonApos vtxt
     EndsInApos prefix -> VarApos prefix
-    IsNum txt       -> NotVar txt
+    IsNum txt       -> NotVar ("is " <> txt)
     OpOfVarArg txt  -> NotVar txt
                        -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
 

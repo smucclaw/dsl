@@ -33,25 +33,25 @@ leHCFromLabsHC = \case
   LAhcR labsrule ->
     LEHcR . textifyUnivMarkedRule . markUnivVarsInRule $ labsrule
 
--- type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
-leFactPrintFromLabsFact :: LamAbsFact -> LEFactForPrint
-leFactPrintFromLabsFact = bimap univst2tmpltetxt temptxtify . markUnivVarsInFact
+-- type LEFactForPrint = AtomicBPropn LETemplateTxt 
+leFactPrintFromLabsFact :: LamAbsFact ->  AtomicBPropn LETemplateTxt 
+leFactPrintFromLabsFact = fmap univst2tmpltetxt . markUnivVarsInFact
 
-markUnivVarsInFact :: LamAbsFact -> AtomicBPropn UnivStatus [UnivStatus]
+markUnivVarsInFact :: LamAbsFact -> AtomicBPropn UnivStatus
 markUnivVarsInFact LAFact{..} =
   markUnivVarsInAtomicP . simplifyLAtomicP $ lfhead
   where
-    markUnivVarsInAtomicP :: LEhcAtomicP -> AtomicBPropn UnivStatus [UnivStatus]
+    markUnivVarsInAtomicP :: LEhcAtomicP -> AtomicBPropn UnivStatus
     markUnivVarsInAtomicP leabp =
       let getUnivStatuses = snd
       in getUnivStatuses (markUnivVarsInAtomicPacc HS.empty leabp)
 
 
 textifyUnivMarkedRule :: RuleWithUnivsMarked -> LERuleForPrint
-textifyUnivMarkedRule = fmap (bimap univst2tmpltetxt temptxtify)
+textifyUnivMarkedRule = fmap . fmap $ univst2tmpltetxt
 
 {-|
-Generates RuleWithUnivsMarked := BaseRule (AtomicBPropn UnivStatus [UnivStatus]) from LamAbsRule
+Generates RuleWithUnivsMarked := BaseRule (AtomicBPropn UnivStatus) from LamAbsRule
 
 Explaining the logic here
 -------------------------
@@ -101,7 +101,7 @@ markUnivVarsInRule larule =
 
 
 -- TODO: Look into how to do this without this much plumbing
-markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus [UnivStatus])
+markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus)
 markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
@@ -145,7 +145,7 @@ identifyUnivVar normdvars = \case
 ------------- helpers
 
 simplifyLAtomicP :: LamAbsAtomicP -> LEhcAtomicP
-simplifyLAtomicP = bimap tvar2lecell (map simplifyLabscs)
+simplifyLAtomicP = fmap simplifyLabscs
 
 simplifyLabscs :: LamAbsCell -> LEhcCell
 simplifyLabscs = \case
@@ -157,8 +157,6 @@ tvar2lecell = \case
     MatchGVar vtxt  -> VarNonApos vtxt
     EndsInApos prefix -> VarApos prefix
     IsNum txt       -> NotVar ("is " <> txt)
-    OpOfVarArg txt  -> NotVar txt
-                       -- ^ I think we never want to put an 'a' in front of the args for that, but it's worth checking again
 
 -- | Prints the intended raw text for a LEhcCell
 lecPrintraw :: LEhcCell -> T.Text
@@ -167,12 +165,12 @@ lecPrintraw = \case
   VarNonApos vartxt  -> vartxt
   NotVar txt         -> txt
 
-temptxtify :: [UnivStatus] -> LETemplateTxt
-temptxtify univStatuses =
-  mconcat . map univst2tmpltetxt $ intersperseWithSpace univStatuses
-  where
-    spaceDelimtr = NoPrefix " "
-    intersperseWithSpace = L.intersperse spaceDelimtr
+-- temptxtify :: [UnivStatus] -> LETemplateTxt
+-- temptxtify univStatuses =
+--   mconcat . map univst2tmpltetxt $ intersperseWithSpace univStatuses
+--   where
+--     spaceDelimtr = NoPrefix " "
+--     intersperseWithSpace = L.intersperse spaceDelimtr
 
 -- | Converts a UnivStatus to a LETemplateTxt in the obvious way -- basically materializing the UnivStatus tag
 univst2tmpltetxt :: UnivStatus -> LETemplateTxt

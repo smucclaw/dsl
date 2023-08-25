@@ -45,15 +45,17 @@ lamAbstract = \case
 lamabstractAP :: GVarSet -> L4AtomicP -> LamAbsAtomicP
 lamabstractAP gvars = \case
   ABPatomic cells ->
-    ABPatomic $ fmap (cell2labscell gvars) cells
+    ABPatomic $ fmap mklabscell cells
   ABPIsDiffFr t1 t2 ->
-    ABPIsDiffFr (term2tvar gvars t1)
-                (term2tvar gvars t2)
+    ABPIsDiffFr (cell2labscell gvars t1)
+                (cell2labscell gvars t2)
   ABPIsOpOf t opOf termargs ->
-    ABPIsOpOf (term2tvar gvars t) opOf (fmap optOfArg termargs)
+    ABPIsOpOf (cell2labscell gvars t) opOf (fmap mklabscell termargs)
   ABPIsOpSuchTt t opST cells ->
-    ABPIsOpSuchTt (term2tvar gvars t) opST
-                  (fmap (cell2labscell gvars) cells)
+    ABPIsOpSuchTt (cell2labscell gvars t) opST
+                  (fmap mklabscell cells)
+  where
+    mklabscell = cell2labscell gvars
 
 lamabstractBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn LamAbsAtomicP
 lamabstractBody gvars l4boolprop =
@@ -81,25 +83,25 @@ cell2labscell gvars = \case
          else Pred celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
 
--- TODO: Look into a better / more concise way of doing this
-optOfArg :: Term -> TemplateVar
-optOfArg = \case
-  MkCellT t -> OpOfVarArg t
-  MkCellIsNum t -> OpOfVarArg t
 
-{- | Discussed with Joe on Aug 22: can assume that terms other than the args for op of are either MatchGVar or EndsInApos
--}
-term2tvar :: GVarSet -> Term -> TemplateVar
-term2tvar gvars = \case
-  MkCellT trm -> whichTVar trm
-  MkCellIsNum trm -> whichTVar trm
-  where 
-    whichTVar :: T.Text -> TemplateVar
-    whichTVar trm
-      | txtIsAGivenVar gvars trm = MatchGVar trm
-      | isAposVar gvars trm = EndsInApos trm
-      | otherwise = error "shouldn't be anything else"
-        -- TODO: add a check upfront for this 
+-- {- | Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
+-- -}
+-- term2tvar :: GVarSet -> Term -> TemplateVar
+-- term2tvar gvars = \case
+--   MkCellT trm -> whichTVar trm
+--   MkCellIsNum trm -> whichTVar trm
+--   where 
+--     whichTVar :: T.Text -> TemplateVar
+--     whichTVar trm
+--       | txtIsAGivenVar gvars trm = MatchGVar trm
+--       | isAposVar gvars trm = EndsInApos trm
+--       | otherwise = error "shouldn't be anything else"
+--         -- TODO: add a check upfront for this 
+-- optOfArg :: Cell -> TemplateVar
+-- optOfArg = \case
+--   MkCellT t -> OpOfVarArg t
+--   MkCellIsNum t -> OpOfVarArg t
+
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
 txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars

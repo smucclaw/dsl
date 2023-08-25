@@ -120,15 +120,18 @@ instance Pretty TxtAtomicBP where
   pretty :: TxtAtomicBP -> Doc ann
   pretty = \case
     ABPatomic prop ->
-      pretty prop
+      prettyprop prop
     ABPIsDiffFr t1 t2 ->
       [__di|#{pretty t1} is different from #{pretty t2}|]
     ABPIsOpOf t1 opof targs ->
       [__di|#{pretty t1} #{pretty opof} #{list $ map pretty targs}|]
     ABPIsOpSuchTt term ostt prop ->
-      [__di|#{pretty term} #{pretty ostt}|] <//> indentLE (pretty prop)
+      [__di|#{pretty term} #{pretty ostt}|] <//> indentLE (prettyprop prop)
+    where
+      prettyprop = hsep . map pretty
 
 endWithDot txt = [__di|#{ txt }.|]
+
 
 instance Pretty LEProg where
   pretty :: LEProg -> Doc ann
@@ -136,7 +139,7 @@ instance Pretty LEProg where
     
     let natLangAnnots = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlas
                       -- assume list of NLAs is pre-sorted
-        prettyLEhcs   = vsep $ map ((<> dot) . pretty) leHCs
+        prettyLEhcs   = vvsep $ map ((<> dot) . pretty) leHCs
     in
       [__di|
         the target language is: prolog.

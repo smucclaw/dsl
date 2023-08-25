@@ -77,17 +77,7 @@ import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter
   ( Doc,
-    Pretty (pretty),
-    comma,
-    hsep,
-    line,
-    parens,
-    punctuate,
-    list,
-    nest,
-    viaShow,
-    vsep,
-    (<+>))
+    Pretty (pretty))
 import LS.PrettyPrinter( (<//>) )
 import Prettyprinter.Interpolate (__di)
     
@@ -116,31 +106,31 @@ data BoolPropn a = AtomicBP a
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 -- | Atomic(ish) Boolean proposition
-data AtomicBPropn var baseprop =
-    ABPatomic baseprop
-  | ABPIsDiffFr var var
+data AtomicBPropn term =
+    ABPatomic [term]
+  | ABPIsDiffFr term term
   -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear here
-  | ABPIsOpOf var OpOf [var]
+  | ABPIsOpOf term OpOf [term]
     -- TODO: Look into what guarantees we have or don't have for the sots of vars tt can appear in the leftmost position
     -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
-  | ABPIsOpSuchTt var OpSuchTt baseprop
+  | ABPIsOpSuchTt term OpSuchTt [term]
     {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
         * the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
         * the second propn would be the indented φ(x) condition
       Note: right now our LE dialect only accepts an atomic φ(x)
     -}
-  deriving stock (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord, Functor, Foldable, Traversable)
 
-instance Bifunctor AtomicBPropn where
-  bimap f g = \case
-    ABPatomic prop -> 
-      ABPatomic (g prop)
-    ABPIsDiffFr v1 v2 -> 
-      ABPIsDiffFr (f v1) (f v2)
-    ABPIsOpOf v opof varargs ->  
-      ABPIsOpOf (f v) opof (map f varargs)
-    ABPIsOpSuchTt v ostt prop -> 
-      ABPIsOpSuchTt (f v) ostt (g prop)
+-- instance Bifunctor AtomicBPropn where
+--   bimap f g = \case
+--     ABPatomic prop -> 
+--       ABPatomic (g prop)
+--     ABPIsDiffFr v1 v2 -> 
+--       ABPIsDiffFr (f v1) (f v2)
+--     ABPIsOpOf v opof varargs ->  
+--       ABPIsOpOf (f v) opof (map f varargs)
+--     ABPIsOpSuchTt v ostt prop -> 
+--       ABPIsOpSuchTt (f v) ostt (g prop)
 
 
 data OpOf = MaxOf
@@ -175,7 +165,7 @@ data Cell = MkCellT !T.Text
 --   deriving stock (Show, Eq, Ord)
 
 type Term = Cell
-type L4AtomicP = AtomicBPropn Term [Cell]
+type L4AtomicP = AtomicBPropn Cell
 
 -- patterns to make it easier to program with L4AtomicP and AtomicBPropn
 pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicP
@@ -229,7 +219,7 @@ data TemplateVar = MatchGVar !OrigVarName
                     -}
                  | IsNum !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
-                 | OpOfVarArg !OrigVarName
+                --  | OpOfVarArg !OrigVarName
       deriving stock (Eq, Ord, Show)
       deriving (Generic, Hashable)
 type TVarSet = HS.HashSet TemplateVar
@@ -292,7 +282,7 @@ pattern MkLARule{larhead, larbody}
   since the only time we need to generate an NLA is when we have a `baseprop` / `LamAbsCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
   To put it another way: NLAs are generated *from*, and only from, LamAbsBases.
  -}
-type LamAbsAtomicP = AtomicBPropn TemplateVar [LamAbsCell]
+type LamAbsAtomicP = AtomicBPropn LamAbsCell
 
 {-| This is best understood in the context of the other lam abs data types  -}
 data LamAbsCell = TempVar TemplateVar
@@ -360,14 +350,14 @@ data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
 
 -- The atomic bprops we'll use
 
-type LEhcAtomicP = AtomicBPropn LEhcCell [LEhcCell]
-type TxtAtomicBP = AtomicBPropn LETemplateTxt LETemplateTxt
+type LEhcAtomicP = AtomicBPropn LEhcCell
+type TxtAtomicBP = AtomicBPropn LETemplateTxt
 
-type FactWithUnivsMarked = AtomicBPropn UnivStatus [UnivStatus]
-type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
+type FactWithUnivsMarked = AtomicBPropn UnivStatus
+type LEFactForPrint = AtomicBPropn LETemplateTxt 
 
-type LERule = BaseRule (AtomicBPropn LEhcCell [LEhcCell])
-type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus])
+type LERule = BaseRule (AtomicBPropn LEhcCell)
+type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus)
 type LERuleForPrint = BaseRule TxtAtomicBP
 
 ----- for pretty printing -------------------------------------------------------

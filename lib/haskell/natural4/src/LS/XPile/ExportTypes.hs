@@ -1,11 +1,14 @@
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
 {-
-Provide export from Natural4 type declarations of the form
+Provide export from Natural4 type declarations of record types of the form
 DECLARE T
 HAS field1 is T1
     ...
     fieldn is Tn
+
+or of enum types of the form:
+DECLARE T IS ONE OF enum1 .. enumn
 
 These declarations are meant to be exported to JSON and to Prolog.
 The approach is strictly ad-hoc and not systematic and agnostic of
@@ -45,6 +48,7 @@ import Data.Text (unpack)
 import Debug.Trace (trace)
 
 type TypeName = String
+type ConstructorName = String
 
 data FieldType =
       FTBoolean
@@ -52,7 +56,6 @@ data FieldType =
     | FTString
     | FTRef TypeName
     | FTList FieldType
-    | FTEnum [TypeName]
     deriving (Eq, Ord, Show, Read)
 
 data Field = Field
@@ -61,10 +64,18 @@ data Field = Field
     }
     deriving (Eq, Ord, Show, Read)
 
-data ExpType = ExpType
-    { typeName :: TypeName
-    , fields :: [Field]
-    }
+-- Expression types, coming 
+-- either as records (DECLARE .. HAS)
+-- or as enum s(DECLARE .. IS ONE OF)
+data ExpType
+    = ExpTypeRecord
+        { typeName :: TypeName
+        , fields :: [Field]
+        }
+    | ExpTypeEnum
+        { typeName :: TypeName
+        , enums :: [ConstructorName]
+        }
     deriving (Eq, Ord, Show, Read)
 
 typeDeclNameToTypeName :: RuleName -> TypeName
@@ -74,6 +85,11 @@ typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 typeDeclNameToFieldName :: RuleName -> String
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
+unpackEnums :: NonEmpty (NonEmpty MTExpr, b) -> [String]
+unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
+unpackEnum :: (NonEmpty MTExpr, b) -> String
+unpackEnum (MTT tn :| _, _) = unpack tn
+
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =
     case unpack tn of
@@ -81,15 +97,10 @@ typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =
         "Number" -> FTNumber
         "String" -> FTString
         n -> FTRef n
+-- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (unpack tn))
-typeDeclSuperToFieldType (Just (InlineEnum TOne enums)) =
-    FTEnum (unpackEnums enums)
-  where
-    unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
-    unpackEnum (MTT tn :| _, _) = unpack tn
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
-
 
 ruleFieldToField :: Rule -> [Field]
 ruleFieldToField (TypeDecl{name=n, super=sup}) =
@@ -97,15 +108,12 @@ ruleFieldToField (TypeDecl{name=n, super=sup}) =
 ruleFieldToField _ = []
 
 rule2ExpType :: Rule -> [ExpType]
-rule2ExpType (TypeDecl{name=n, has=fields, super=sup}) =
-    let expType = ExpType (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)
-    in case typeDeclSuperToFieldType sup of
-        FTEnum enumValues -> [ExpType  (typeDeclNameToTypeName n) [Field  (typeDeclNameToFieldName n) (FTEnum enumValues)]]
-        _ -> [expType]
+rule2ExpType (TypeDecl{name=n, has=fields, super=Nothing}) =
+    [ExpTypeRecord (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)]
+rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
+    [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
 rule2ExpType _ = []
 
-
-rule2ExpType _ = []
 
 ------------------------------------
 -- Output of types to Prolog
@@ -119,15 +127,16 @@ instance ShowTypesProlog FieldType where
     showTypesProlog FTString = pretty "string"
     showTypesProlog (FTRef n) = pretty "ref" <> parens (pretty n)
     showTypesProlog (FTList t) = pretty "list" <> parens (showTypesProlog t)
-    showTypesProlog (FTEnum t) = pretty "list"
-
 
 instance ShowTypesProlog Field where
     showTypesProlog (Field fn ft) =
         parens (pretty fn <> pretty ", " <> showTypesProlog ft)
 
+showEnumProlog :: TypeName -> ConstructorName -> Doc ann
+showEnumProlog tn en =
+    pretty "typedecl" <> parens (pretty tn <> pretty ", " <> pretty en <> pretty ", " <> pretty en) <> pretty "."
 instance ShowTypesProlog ExpType where
-    showTypesProlog (ExpType tn fds) =
+    showTypesProlog (ExpTypeRecord tn fds) =
         pretty "typedecl" <>
         nest 4
         (parens (
@@ -136,6 +145,10 @@ instance ShowTypesProlog ExpType where
             )
         ) <>
         pretty "."
+
+    showTypesProlog (ExpTypeEnum tn enums) =
+        vsep (map (showEnumProlog tn) enums)
+
 
 -- the root data type of a Json Schema is always embedded in an entrypoint,
 -- here called "toplevel"
@@ -148,7 +161,7 @@ rulesToPrologTp rs =
         (case ets of
             [] -> show emptyDoc
             rt : rts ->
-                let entry = ExpType entrypointName [Field entrypointName (FTRef (typeName rt))] in
+                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))] in
                 show (vsep (map showTypesProlog (entry:ets))))
 
 ------------------------------------
@@ -211,15 +224,15 @@ instance ShowTypesJson Field where
         dquotes (pretty fn) <> pretty ": " <> braces (showTypesJson ft)
 
 instance ShowTypesJson ExpType where
-    showTypesJson (ExpType tn fds@[Field fn ft@(FTEnum n)]) =
+    showTypesJson (ExpTypeEnum tn enums) =
         dquotes (pretty tn) <> pretty ": " <>
         nest 4
         (braces (
             jsonType "string" <> pretty "," <>
             dquotes (pretty "enum") <> pretty ": " <>
-            nest 4 (brackets (hsep (punctuate comma (map dquotes (map pretty n)))))
+            nest 4 (brackets (hsep (punctuate comma (map (dquotes . pretty) enums))))
         ))
-    showTypesJson (ExpType tn fds) =
+    showTypesJson (ExpTypeRecord tn fds) =
         dquotes (pretty tn) <> pretty ": " <>
         nest 4
         (braces (
@@ -247,7 +260,7 @@ rulesToJsonSchema rs =
         (case ets of
             [] -> show (braces emptyDoc)
             rt : rts ->
-                trace ("ets: " ++ show ets) $
+                -- trace ("ets: " ++ show ets) $
                 show
                 (braces
                     (vsep (punctuate comma
@@ -264,6 +277,3 @@ rulesToJsonSchema rs =
                 )
         )
 
-{-
-
--}

@@ -165,13 +165,6 @@ lecPrintraw = \case
   VarNonApos vartxt  -> vartxt
   NotVar txt         -> txt
 
--- temptxtify :: [UnivStatus] -> LETemplateTxt
--- temptxtify univStatuses =
---   mconcat . map univst2tmpltetxt $ intersperseWithSpace univStatuses
---   where
---     spaceDelimtr = NoPrefix " "
---     intersperseWithSpace = L.intersperse spaceDelimtr
-
 -- | Converts a UnivStatus to a LETemplateTxt in the obvious way -- basically materializing the UnivStatus tag
 univst2tmpltetxt :: UnivStatus -> LETemplateTxt
 univst2tmpltetxt = \case

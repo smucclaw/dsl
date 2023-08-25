@@ -15,13 +15,11 @@ module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC) where
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Foldable (toList)
-import qualified Data.List as L hiding (head, tail)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
 import Data.Traversable
 import Control.Monad.Identity (Identity)
-import Data.Bifunctor
 
 import LS.XPile.LogicalEnglish.Types
 
@@ -106,18 +104,18 @@ markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
     in (nvars', ABPatomic univStatuses)
-  ABPIsDiffFr v1 v2 ->
-    let (nvars', v1') = identifyUnivVar nvars v1
-        (nvars'', v2') = identifyUnivVar nvars' v2
-    in (nvars'', ABPIsDiffFr v1' v2')
-  ABPIsOpOf var opof varlst ->
-    let (nvars', var') = identifyUnivVar nvars var
-        (nvars'', univStatuses) = markUnivVarsInLeCells nvars' varlst
-    in (nvars'', ABPIsOpOf var' opof univStatuses)
-  ABPIsOpSuchTt var ostt lecells ->
-    let (nvars', var') = identifyUnivVar nvars var
+  ABPIsDiffFr t1 t2 ->
+    let (nvars', t1') = identifyUnivVar nvars t1
+        (nvars'', t2') = identifyUnivVar nvars' t2
+    in (nvars'', ABPIsDiffFr t1' t2')
+  ABPIsOpOf term opof termlst ->
+    let (nvars', term') = identifyUnivVar nvars term
+        (nvars'', univStatuses) = markUnivVarsInLeCells nvars' termlst
+    in (nvars'', ABPIsOpOf term' opof univStatuses)
+  ABPIsOpSuchTt term ostt lecells ->
+    let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
-    in (nvars'', ABPIsOpSuchTt var' ostt univStatuses)
+    in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
 
 
 --- start by doing it the EASIEST possible way 

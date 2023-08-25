@@ -73,6 +73,9 @@ import GHC.Generics (Generic)
 
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty))
 import Data.Bifunctor
 
 {- |
@@ -306,7 +309,7 @@ But sticking to handwritten instance b/c it's easy enough, and to make the behav
   
 newtype LENatLangAnnot = MkNLA T.Text
   deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable)
+  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
 
 ---------------- For generating template instances / non-NLAs
 
@@ -334,7 +337,7 @@ data UnivStatus = PrefixWithA !OrigVarName
 
 newtype LETemplateTxt = MkTempTxt T.Text
   deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable)
+  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
   deriving (Semigroup, Monoid) via T.Text
 
 

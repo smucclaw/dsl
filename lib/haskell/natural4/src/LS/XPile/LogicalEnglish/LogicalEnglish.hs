@@ -85,9 +85,6 @@ checkAndRefine rawrules = do
 allNLAs :: [LamAbsHC] -> HS.HashSet LENatLangAnnot
 allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
 
--- | Generate LE HCs from LamAbsHCs
-allLEhcs :: [LamAbsHC] -> [LEhcPrint]
-allLEhcs = map leHCFromLabsHC
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing
@@ -101,7 +98,7 @@ toLE :: [L4.Rule] -> String
 toLE l4rules = 
   let labshcs = map (lamAbstract . simplifyL4ruleish) l4rules
       nlas    = HS.toList (allNLAs labshcs) -- TODO: sort the nlas
-      lehcs   = allLEhcs labshcs
+      lehcs   = map leHCFromLabsHC labshcs
       leProg = MkLEProg { nlas = nlas, leHCs = lehcs }
   in doc2str . pretty $ leProg
     

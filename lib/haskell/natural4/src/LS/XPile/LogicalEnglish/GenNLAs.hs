@@ -67,7 +67,6 @@ nlaLoneFromLAbsAtomicP =  \case
     nlacellsFromLacs :: [LamAbsCell] -> [NLACell]
     nlacellsFromLacs = fmap labscell2NLAcell
 
--- TODO: refactor this to make it more like tmplteTxtFromTIcells in GenTemplateInsts.hs and remove the monoid instance for NLACell
 annotFromNLAcells :: [NLACell] -> Maybe LENatLangAnnot
 annotFromNLAcells = \case
   (mconcat . intersperseWithSpace -> MkNonParam concatted) -> 
@@ -76,8 +75,6 @@ annotFromNLAcells = \case
   where 
     spaceDelimtr = MkNonParam " "
     intersperseWithSpace = L.intersperse spaceDelimtr 
-
-
 
 labscell2NLAcell :: LamAbsCell -> NLACell
 labscell2NLAcell = \case

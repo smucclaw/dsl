@@ -45,24 +45,28 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- LE-related types
     , LEhcCell(..)
-    -- , PretVSet
+    , NLACell(..)
     , NormdVars
     , NormalizedVar(..)
-    , LEhcAtomicP
-    , LERule
 
-    , LEhcPrint(..)
-    , NLACell(..)
+    , LEhcAtomicP
+    , TxtAtomicBP
+
+    , LERule
     , LENatLangAnnot(..)
     , LETemplateTxt(..)
     , UnivStatus(..)
-    , LEFactForPrint
+
     , FactWithUnivsMarked
     , RuleWithUnivsMarked
+    , LEFactForPrint
     , LERuleForPrint
+    , LEhcPrint(..)
 
     -- Configuration and LE-specific consts
-    , LEProg(MkLEProg, docHeader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs)
+    , LEProg(..)
+    , PrintCfg
+    , nestLE
 ) where
 
 
@@ -75,7 +79,20 @@ import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter
   ( Doc,
-    Pretty (pretty))
+    Pretty (pretty),
+    comma,
+    hsep,
+    line,
+    parens,
+    punctuate,
+    list,
+    nest,
+    viaShow,
+    vsep,
+    (<+>))
+import LS.PrettyPrinter( (<//>) )
+import Prettyprinter.Interpolate (__di)
+    
 import Data.Bifunctor
 
 {- |
@@ -288,7 +305,6 @@ data LamAbsCell = TempVar TemplateVar
   LE data types
 -------------------------------------------------------------------------------}
 
-
 data NLACell = MkParam !T.Text 
              | MkNonParam !T.Text
   deriving stock (Eq, Ord, Show)
@@ -313,7 +329,6 @@ newtype LENatLangAnnot = MkNLA T.Text
 
 ---------------- For generating template instances / non-NLAs
 
--- IMPT TODO: just realized this is prob not correct --- prob want to retain a variant for the 'ends in apos' case in LEhcCell so tt can check if the prefix is in `seen` when traversing the rule!
 {-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells
 -}
 data LEhcCell = VarApos !OrigVarPrefix
@@ -347,49 +362,60 @@ data LEhcPrint = LEHcF LEFactForPrint | LEHcR LERuleForPrint
 
 -- The atomic bprops we'll use
 
+type LEhcAtomicP = AtomicBPropn LEhcCell [LEhcCell]
+type TxtAtomicBP = AtomicBPropn LETemplateTxt LETemplateTxt
+
 type FactWithUnivsMarked = AtomicBPropn UnivStatus [UnivStatus]
 type LEFactForPrint = AtomicBPropn LETemplateTxt LETemplateTxt
 
-type LEhcAtomicP = AtomicBPropn LEhcCell [LEhcCell]
 type LERule = BaseRule (AtomicBPropn LEhcCell [LEhcCell])
 type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus [UnivStatus])
-type LERuleForPrint = BaseRule (AtomicBPropn LETemplateTxt LETemplateTxt)
+type LERuleForPrint = BaseRule TxtAtomicBP
+
+----- for pretty printing -------------------------------------------------------
+
+instance Pretty OpOf where
+  pretty :: OpOf -> Doc ann
+  pretty = \case
+    MaxOf -> "is the maximum of"
+    MinOf -> "is the minimum of"
+    SumOf -> "is the sum of"
+    ProductOf -> "is the product of"
+
+instance Pretty OpSuchTt where
+  pretty :: OpSuchTt -> Doc ann
+  pretty = \case
+    MaxXSuchThat -> "is the max x such that"
+    MinXSuchThat -> "is the min x such that"
+    SumEachXSuchThat -> "is the sum of each x such that"
+      
+instance Pretty TxtAtomicBP where 
+  pretty :: TxtAtomicBP -> Doc ann
+  pretty = \case
+    ABPatomic prop -> 
+      pretty prop 
+    ABPIsDiffFr t1 t2 -> 
+      [__di|#{pretty t1} is different from #{pretty t2}|]
+    ABPIsOpOf t1 opof targs -> 
+      [__di|#{pretty t1} #{pretty opof} #{list $ map pretty targs}|]
+    ABPIsOpSuchTt term ostt prop ->
+      [__di|#{pretty term} #{pretty ostt}|] <//> nestLE (pretty prop)
 
 
------ for pretty printing ---------------------------------------------------------
-
-
-pattern MkLEProg :: T.Text
-                  -> T.Text
-                  -> T.Text
-                  -> T.Text
-                  -> T.Text
-                  -> [LENatLangAnnot]
-                  -> [LEhcPrint]
-                  -> LEProg
-pattern MkLEProg{docHeader, nlasHeader, libHCsHeader, libHCs, hcsHeader, nlas, leHCs} = 
-  MkLEProg_ { docHeader_ = docHeader
-            , nlasHeader_ = nlasHeader
-            , libHCsHeader_ = libHCsHeader
-            , libHCs_ = libHCs
-            , hcsHeader_ = hcsHeader
-            , nlas_ = nlas
-            , leHCs_ = leHCs
-            , numIndentSpaces = 2
-            }
-
-data LEProg = MkLEProg_ { docHeader_    :: !T.Text
-                        , nlasHeader_ :: !T.Text
-                        , libHCsHeader_ :: !T.Text
-                        , libHCs_    :: !T.Text
-                        , hcsHeader_ :: !T.Text
-                        , nlas_ :: [LENatLangAnnot]
-                        , leHCs_ :: [LEhcPrint] 
-                        , numIndentSpaces :: !Word 
-                        -- ^ numIndentSpaces feels like it shld belong in a separate cfg record,
-                        -- but we don't have enough cfg params for that to be worthwhile
+data LEProg = MkLEProg { docHeader    :: !T.Text
+                        , nlasHeader :: !T.Text
+                        , libHCsHeader :: !T.Text
+                        , libHCs    :: !T.Text
+                        , hcsHeader :: !T.Text
+                        , nlas :: [LENatLangAnnot]
+                        , leHCs :: [LEhcPrint] 
                         }
 
+-- | config record for pretty printing
+data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int} 
+printcfg = MkPrintCfg { numIndentSpcs = 2 }
+nestLE :: Doc ann -> Doc ann
+nestLE = nest printcfg.numIndentSpcs
 
 
 --- to remove once we are sure we won't want to go back to this way of doing this: 

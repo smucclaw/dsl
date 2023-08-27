@@ -17,7 +17,7 @@ module LS.XPile.LogicalEnglish.Types (
     , GVar(..)
     , GVarSet
     , Cell(..)
-    , Term
+    , L4Term
     , SimpleL4HC(MkL4FactHc, fgiven, fhead,
                  MkL4RuleHc, rgiven, rhead, rbody)
 
@@ -34,14 +34,16 @@ module LS.XPile.LogicalEnglish.Types (
     , TemplateVar(..)
     , OrigVarPrefix
     , OrigVarSeq
-    , LamAbsHC(MkLAFact, lafhead,
-               MkLARule, larhead, larbody,
-               LAhcF, LAhcR)
-    , LamAbsFact(..)
+    , VarsHC(MkVarsFact,
+             MkVarsRule, 
+             vfhead,
+             vrhead, vrbody,
+             VhcF, VhcR)
+    , VarsFact(..)
     , BaseRule(..)
-    , LamAbsRule
-    , LamAbsAtomicP
-    , LamAbsCell(..)
+    , VarsRule
+    , AtomicPWithVars
+    , VCell(..)
 
     -- LE-related types
     , LEhcCell(..)
@@ -75,13 +77,8 @@ import GHC.Generics (Generic)
 
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
-import Prettyprinter
-  ( Doc,
-    Pretty (pretty))
-import LS.PrettyPrinter( (<//>) )
-import Prettyprinter.Interpolate (__di)
+import Prettyprinter(Pretty)
     
-import Data.Bifunctor
 
 {- |
 Misc notes
@@ -105,32 +102,23 @@ data BoolPropn a = AtomicBP a
                  | Not (BoolPropn a)
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
--- | Atomic(ish) Boolean proposition
+{-| Atomic(ish) Boolean proposition
+The notion of 'term' here is that which is employed in Prolog and logic. 
+In particular, it includes not only variables but also atoms.
+-}
 data AtomicBPropn term =
     ABPatomic [term]
   | ABPIsDiffFr term term
-  -- TODO: Look into what guarantees we have or don't have for the sorts of vars tt can appear here
+    -- ^ Note: the encoding has a few rules that use an atom in the rightmost term
   | ABPIsOpOf term OpOf [term]
-    -- TODO: Look into what guarantees we have or don't have for the sots of vars tt can appear in the leftmost position
     -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
   | ABPIsOpSuchTt term OpSuchTt [term]
     {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
-        * the first Term would be, e.g., the "total savings" in "total savings is the max x such that"
+        * the first L4Term would be, e.g., the "total savings" in "total savings is the max x such that"
         * the second propn would be the indented φ(x) condition
       Note: right now our LE dialect only accepts an atomic φ(x)
     -}
   deriving stock (Show, Eq, Ord, Functor, Foldable, Traversable)
-
--- instance Bifunctor AtomicBPropn where
---   bimap f g = \case
---     ABPatomic prop -> 
---       ABPatomic (g prop)
---     ABPIsDiffFr v1 v2 -> 
---       ABPIsDiffFr (f v1) (f v2)
---     ABPIsOpOf v opof varargs ->  
---       ABPIsOpOf (f v) opof (map f varargs)
---     ABPIsOpSuchTt v ostt prop -> 
---       ABPIsOpSuchTt (f v) ostt (g prop)
 
 
 data OpOf = MaxOf
@@ -161,23 +149,20 @@ data Cell = MkCellT !T.Text
           | MkCellIsNum !T.Text
   deriving stock (Show, Eq, Ord)
 
--- data SimpleNum = MkInteger Integer | MkFloat Float
---   deriving stock (Show, Eq, Ord)
-
-type Term = Cell
+type L4Term = Cell
 type L4AtomicP = AtomicBPropn Cell
 
 -- patterns to make it easier to program with L4AtomicP and AtomicBPropn
 pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicP
 pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
 
-pattern MkIsOpSuchTtBP :: Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicP
+pattern MkIsOpSuchTtBP :: L4Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicP
 pattern MkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
 
-pattern MkIsDiffFr :: Term -> Term -> BoolPropn L4AtomicP
+pattern MkIsDiffFr :: L4Term -> L4Term -> BoolPropn L4AtomicP
 pattern MkIsDiffFr t1 t2 = AtomicBP (ABPIsDiffFr t1 t2)
 
-pattern MkIsOpOf :: Term -> OpOf -> [Term] -> BoolPropn L4AtomicP
+pattern MkIsOpOf :: L4Term -> OpOf -> [L4Term] -> BoolPropn L4AtomicP
 pattern MkIsOpOf term op args = AtomicBP (ABPIsOpOf term op args)
 
 -- | Two varieties of SimpleL4HC
@@ -206,12 +191,12 @@ pattern MkL4FactHc{fgiven, fhead} =
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
 -------------------------------------------------------------------------------}
--- | Current thought is that we only need text / strs to capture what the original var 'names' were, because what we will eventually be printing out strings!
+-- | we only need text / strs to capture what the original var 'names' were, because what we will eventually be printing out strings!
 type OrigVarName = T.Text
 
 type OrigVarPrefix = T.Text
-{-| TemplateVars mark the places where we'd instantiate / substitute in the LamAbsCell / condition template to get either a natural language annotation or a LE rule. 
-They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the LamAbsCell. -}
+{-| TemplateVars mark the places where we'd instantiate / substitute in the VCell / condition template to get either a natural language annotation or a LE rule. 
+They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the VCell. -}
 data TemplateVar = MatchGVar !OrigVarName
                  | EndsInApos !OrigVarPrefix
                    {- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
@@ -219,7 +204,6 @@ data TemplateVar = MatchGVar !OrigVarName
                     -}
                  | IsNum !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
-                --  | OpOfVarArg !OrigVarName
       deriving stock (Eq, Ord, Show)
       deriving (Generic, Hashable)
 type TVarSet = HS.HashSet TemplateVar
@@ -249,10 +233,10 @@ Things to note / think about:
 * 
 
  -}
-data LamAbsHC = LAhcF LamAbsFact | LAhcR LamAbsRule
+data VarsHC = VhcF VarsFact | VhcR VarsRule
       deriving stock (Eq, Ord, Show)
 
-newtype LamAbsFact = LAFact { lfhead :: LamAbsAtomicP }
+newtype VarsFact = VFact { varsfhead :: AtomicPWithVars }
       deriving stock (Show)
       deriving newtype (Eq, Ord)
 
@@ -260,33 +244,30 @@ data BaseRule a = MkBaseRule { rhead :: a
                              , rbody :: BoolPropn a }
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
-type LamAbsRule = BaseRule LamAbsAtomicP
+type VarsRule = BaseRule AtomicPWithVars
 
--- data LamAbsRule = LARule { head      :: LamAbsAtomicP
---                          , body      :: BoolPropn LamAbsAtomicP }
---       deriving stock (Eq, Ord, Show)
 
-pattern MkLAFact :: LamAbsAtomicP -> LamAbsHC
-pattern MkLAFact{lafhead}
-  = LAhcF (LAFact { lfhead = lafhead })
+pattern MkVarsFact :: AtomicPWithVars -> VarsHC
+pattern MkVarsFact{vfhead}
+  = VhcF (VFact { varsfhead = vfhead })
 
-pattern MkLARule :: LamAbsAtomicP -> BoolPropn LamAbsAtomicP -> LamAbsHC
-pattern MkLARule{larhead, larbody}
-  = LAhcR (MkBaseRule { rhead  = larhead
-                      , rbody  = larbody})
-{-# COMPLETE MkLAFact, MkLARule #-}
+pattern MkVarsRule :: AtomicPWithVars -> BoolPropn AtomicPWithVars -> VarsHC
+pattern MkVarsRule{vrhead, vrbody}
+  = VhcR (MkBaseRule { rhead  = vrhead
+                      , rbody  = vrbody})
+{-# COMPLETE MkVarsFact, MkVarsRule #-}
 
-{- | This might seem a bit confusing, because now there can be template variables both within a LamAbsCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
+{- | This might seem a bit confusing, because now there can be template variables both within a VCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
   But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
   Also, it's helpful to have tt info for generating NLAs, 
-  since the only time we need to generate an NLA is when we have a `baseprop` / `LamAbsCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
+  since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
   To put it another way: NLAs are generated *from*, and only from, LamAbsBases.
  -}
-type LamAbsAtomicP = AtomicBPropn LamAbsCell
+type AtomicPWithVars = AtomicBPropn VCell
 
-{-| This is best understood in the context of the other lam abs data types  -}
-data LamAbsCell = TempVar TemplateVar
-                | Pred    !T.Text
+{-| This is best understood in the context of the other VarsX data types  -}
+data VCell = TempVar TemplateVar
+           | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
 
 {-------------------------------------------------------------------------------

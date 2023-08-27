@@ -56,7 +56,7 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {-------------------------------------------------------------------------------
-   L4 rules -> SimpleL4HCs -> LamAbsRules
+   L4 rules -> SimpleL4HCs -> VRules
 -------------------------------------------------------------------------------}
 
 -- | config record for pretty printing

@@ -50,8 +50,8 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       check, refine, loadRawL4AsUnvalid)
 import LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) -- TODO: Add import list
-import LS.XPile.LogicalEnglish.LamAbstract (lamAbstract)
-import LS.XPile.LogicalEnglish.GenNLAs (nlasFromLamAbsHC)
+import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
+import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC)
 import LS.XPile.LogicalEnglish.Pretty()
 
@@ -92,18 +92,18 @@ checkAndRefine rawrules = do
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
 
--- | Generate LE Nat Lang Annotations from LamAbsHCs  
-allNLAs :: [LamAbsHC] -> HS.HashSet LENatLangAnnot
-allNLAs lamabsHCs = HS.unions $ map nlasFromLamAbsHC lamabsHCs
+-- | Generate LE Nat Lang Annotations from VarsHCs  
+allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
+allNLAs vhcs = HS.unions $ map nlasFromVarsHC vhcs
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender 
 
 toLE :: [L4.Rule] -> String
 toLE l4rules = 
-  let labshcs = map (lamAbstract . simplifyL4ruleish) l4rules
-      nlas    = HS.toList (allNLAs labshcs) -- TODO: sort the nlas
-      lehcs   = map leHCFromLabsHC labshcs
+  let vhcs = map (idVarsInHC . simplifyL4ruleish) l4rules
+      nlas    = HS.toList (allNLAs vhcs) -- TODO: sort the nlas
+      lehcs   = map leHCFromLabsHC vhcs
       leProg = MkLEProg { nlas = nlas, leHCs = lehcs }
   in doc2str . pretty $ leProg
     

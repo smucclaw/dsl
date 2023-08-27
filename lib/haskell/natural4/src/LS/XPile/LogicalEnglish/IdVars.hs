@@ -7,13 +7,12 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.LamAbstract (
-    lamAbstract
-  , lamabstractAP  
-  , lamabstractBody
+module LS.XPile.LogicalEnglish.IdVars (
+    idVarsInHC
+  , idVarsInAP  
+  , idVarsInBody
 ) where
 
 import Data.Text qualified as T
@@ -31,35 +30,35 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       loadRawL4AsUnvalid)
 
-lamAbstract :: SimpleL4HC -> LamAbsHC
-lamAbstract = \case
-  MkL4FactHc{..} -> MkLAFact { lafhead =  lamabstractAP fgiven fhead }
-  MkL4RuleHc{..} -> MkLARule { larhead =  lamabstractAP rgiven rhead
-                             , larbody = lamabstractBody rgiven rbody }
+idVarsInHC :: SimpleL4HC -> VarsHC
+idVarsInHC = \case
+  MkL4FactHc{..} -> MkVarsFact { vfhead =  idVarsInAP fgiven fhead }
+  MkL4RuleHc{..} -> MkVarsRule { vrhead =  idVarsInAP rgiven rhead
+                             , vrbody = idVarsInBody rgiven rbody }
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading
-{- | Lambda abstracts over a L4AtomicP, in the sense that
+{- | Identifies vars in L4AtomicP:
 * non-vars (according to the spec) stay as text
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
-lamabstractAP :: GVarSet -> L4AtomicP -> LamAbsAtomicP
-lamabstractAP gvars = \case
+idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
+idVarsInAP gvars = \case
   ABPatomic cells ->
     ABPatomic $ fmap mklabscell cells
   ABPIsDiffFr t1 t2 ->
-    ABPIsDiffFr (cell2labscell gvars t1)
-                (cell2labscell gvars t2)
+    ABPIsDiffFr (cell2vcell gvars t1)
+                (cell2vcell gvars t2)
   ABPIsOpOf t opOf termargs ->
-    ABPIsOpOf (cell2labscell gvars t) opOf (fmap mklabscell termargs)
+    ABPIsOpOf (cell2vcell gvars t) opOf (fmap mklabscell termargs)
   ABPIsOpSuchTt t opST cells ->
-    ABPIsOpSuchTt (cell2labscell gvars t) opST
+    ABPIsOpSuchTt (cell2vcell gvars t) opST
                   (fmap mklabscell cells)
   where
-    mklabscell = cell2labscell gvars
+    mklabscell = cell2vcell gvars
 
-lamabstractBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn LamAbsAtomicP
-lamabstractBody gvars l4boolprop =
-  let absAtomic = lamabstractAP gvars
+idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
+idVarsInBody gvars l4boolprop =
+  let absAtomic = idVarsInAP gvars
   in fmap absAtomic l4boolprop
 
 
@@ -71,10 +70,10 @@ The code for simplifying L4 AST has established these invariants:
   * every IS tt was NOT an IS NUM has been replaced with a `MkCellT "is"`.
 
 So the only time we need to think about IS-es, going forward, is when we have a MkCellIsNum. 
-In other words, we can convert an arbitrary Cell to a LamAbsCell as long as we know the set of given vars, without having to check what other cells are / are not around it.
+In other words, we can convert an arbitrary Cell to a VCell as long as we know the set of given vars, without having to check what other cells are / are not around it.
 -}
-cell2labscell :: GVarSet -> Cell -> LamAbsCell
-cell2labscell gvars = \case
+cell2vcell :: GVarSet -> Cell -> VCell
+cell2vcell gvars = \case
   MkCellT celltxt ->
     if txtIsAGivenVar gvars celltxt
     then TempVar (MatchGVar celltxt)

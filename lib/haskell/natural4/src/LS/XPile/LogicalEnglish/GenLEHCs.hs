@@ -24,20 +24,20 @@ import Control.Monad.Identity (Identity)
 import LS.XPile.LogicalEnglish.Types
 
 
-leHCFromLabsHC :: LamAbsHC -> LEhcPrint
+leHCFromLabsHC :: VarsHC -> LEhcPrint
 leHCFromLabsHC = \case
-  LAhcF labsfact ->
-    LEHcF . leFactPrintFromLabsFact $ labsfact
-  LAhcR labsrule ->
-    LEHcR . textifyUnivMarkedRule . markUnivVarsInRule $ labsrule
+  VhcF vfact ->
+    LEHcF . leFactPrintFromVFact $ vfact
+  VhcR vrule ->
+    LEHcR . textifyUnivMarkedRule . markUnivVarsInRule $ vrule
 
 -- type LEFactForPrint = AtomicBPropn LETemplateTxt 
-leFactPrintFromLabsFact :: LamAbsFact ->  AtomicBPropn LETemplateTxt 
-leFactPrintFromLabsFact = fmap univst2tmpltetxt . markUnivVarsInFact
+leFactPrintFromVFact :: VarsFact ->  AtomicBPropn LETemplateTxt 
+leFactPrintFromVFact = fmap univst2tmpltetxt . markUnivVarsInFact
 
-markUnivVarsInFact :: LamAbsFact -> AtomicBPropn UnivStatus
-markUnivVarsInFact LAFact{..} =
-  markUnivVarsInAtomicP . simplifyLAtomicP $ lfhead
+markUnivVarsInFact :: VarsFact -> AtomicBPropn UnivStatus
+markUnivVarsInFact VFact{..} =
+  markUnivVarsInAtomicP . simplifyVAtomicP $ varsfhead
   where
     markUnivVarsInAtomicP :: LEhcAtomicP -> AtomicBPropn UnivStatus
     markUnivVarsInAtomicP leabp =
@@ -49,7 +49,7 @@ textifyUnivMarkedRule :: RuleWithUnivsMarked -> LERuleForPrint
 textifyUnivMarkedRule = fmap . fmap $ univst2tmpltetxt
 
 {-|
-Generates RuleWithUnivsMarked := BaseRule (AtomicBPropn UnivStatus) from LamAbsRule
+Generates RuleWithUnivsMarked := BaseRule (AtomicBPropn UnivStatus) from VarsRule
 
 Explaining the logic here
 -------------------------
@@ -92,9 +92,9 @@ In more detail:
   since those functions are what implement the lower-level mechanics of threading 
   the accumulator argument through
 -}
-markUnivVarsInRule :: LamAbsRule -> RuleWithUnivsMarked
+markUnivVarsInRule :: VarsRule -> RuleWithUnivsMarked
 markUnivVarsInRule larule =
-  let lerule :: BaseRule LEhcAtomicP = simplifyLAtomicP <$> larule
+  let lerule :: BaseRule LEhcAtomicP = simplifyVAtomicP <$> larule
   in snd (mapAccumL markUnivVarsInAtomicPacc HS.empty lerule)
 
 
@@ -142,11 +142,11 @@ identifyUnivVar normdvars = \case
 
 ------------- helpers
 
-simplifyLAtomicP :: LamAbsAtomicP -> LEhcAtomicP
-simplifyLAtomicP = fmap simplifyLabscs
+simplifyVAtomicP :: AtomicPWithVars -> LEhcAtomicP
+simplifyVAtomicP = fmap simplifyVCells
 
-simplifyLabscs :: LamAbsCell -> LEhcCell
-simplifyLabscs = \case
+simplifyVCells :: VCell -> LEhcCell
+simplifyVCells = \case
   Pred txt    -> NotVar txt
   TempVar tv -> tvar2lecell tv
 

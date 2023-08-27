@@ -10,7 +10,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.LogicalEnglish.GenNLAs (
-    nlasFromLamAbsHC
+    nlasFromVarsHC
   )
 where
 
@@ -28,44 +28,44 @@ import Data.Coerce (coerce)
 import LS.XPile.LogicalEnglish.Types
 
 
-nlasFromLamAbsHC :: LamAbsHC -> HS.HashSet LENatLangAnnot
-nlasFromLamAbsHC = \case
-  LAhcF labsfact ->
-    case (nlaFromLamAbsFact labsfact) of
+nlasFromVarsHC :: VarsHC -> HS.HashSet LENatLangAnnot
+nlasFromVarsHC = \case
+  VhcF vfact ->
+    case (nlaFromVFact vfact) of
       Nothing -> HS.empty
       Just nla -> HS.singleton nla
-  LAhcR labsrule ->
-    nlasFromLamAbsRule labsrule
+  VhcR vrule ->
+    nlasFromVarsRule vrule
 
 -- TODO: When have more time, write smtg tt checks if it is indeed in fixed lib, and add it if not.
-nlaFromLamAbsFact :: LamAbsFact -> Maybe LENatLangAnnot
-nlaFromLamAbsFact LAFact{..} = nlaLoneFromLAbsAtomicP lfhead
+nlaFromVFact :: VarsFact -> Maybe LENatLangAnnot
+nlaFromVFact VFact{..} = nlaLoneFromVAtomicP varsfhead
 
-nlasFromLamAbsRule :: LamAbsRule -> HS.HashSet LENatLangAnnot
-nlasFromLamAbsRule MkBaseRule{..} =
+nlasFromVarsRule :: VarsRule -> HS.HashSet LENatLangAnnot
+nlasFromVarsRule MkBaseRule{..} =
   let bodyNLAs = nlasFromBody rbody
-  in case (nlaLoneFromLAbsAtomicP rhead) of
+  in case (nlaLoneFromVAtomicP rhead) of
     Nothing -> bodyNLAs
     Just headNLA -> HS.insert headNLA bodyNLAs
 
-nlasFromBody :: BoolPropn LamAbsAtomicP -> HS.HashSet LENatLangAnnot
-nlasFromBody lamabsBP =
-  let lstNLAs = fmap nlaLoneFromLAbsAtomicP lamabsBP
+nlasFromBody :: BoolPropn AtomicPWithVars -> HS.HashSet LENatLangAnnot
+nlasFromBody varsABP =
+  let lstNLAs = fmap nlaLoneFromVAtomicP varsABP
   in HS.fromList . catMaybes . toList $ lstNLAs
 
 -- TODO: Check if this really does conform to the spec --- went a bit fast here
-nlaLoneFromLAbsAtomicP :: LamAbsAtomicP -> Maybe LENatLangAnnot
-nlaLoneFromLAbsAtomicP =  \case
-  ABPatomic labscells -> annotFromLabscells labscells
-  ABPIsOpSuchTt _ _ labscells -> annotFromLabscells labscells
+nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe LENatLangAnnot
+nlaLoneFromVAtomicP =  \case
+  ABPatomic vcells -> annotFromVCells vcells
+  ABPIsOpSuchTt _ _ vcells -> annotFromVCells vcells
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
   where
-    annotFromLabscells :: [LamAbsCell] -> Maybe LENatLangAnnot
-    annotFromLabscells = annotFromNLAcells . nlacellsFromLacs
+    annotFromVCells :: [VCell] -> Maybe LENatLangAnnot
+    annotFromVCells = annotFromNLAcells . nlacellsFromLacs
 
-    nlacellsFromLacs :: [LamAbsCell] -> [NLACell]
-    nlacellsFromLacs = fmap labscell2NLAcell
+    nlacellsFromLacs :: [VCell] -> [NLACell]
+    nlacellsFromLacs = fmap vcell2NLAcell
 
 annotFromNLAcells :: [NLACell] -> Maybe LENatLangAnnot
 annotFromNLAcells = \case
@@ -76,8 +76,8 @@ annotFromNLAcells = \case
     spaceDelimtr = MkNonParam " "
     intersperseWithSpace = L.intersperse spaceDelimtr 
 
-labscell2NLAcell :: LamAbsCell -> NLACell
-labscell2NLAcell = \case
+vcell2NLAcell :: VCell -> NLACell
+vcell2NLAcell = \case
   TempVar tvar -> tvar2NLAcell tvar
   Pred nonparamtxt -> MkNonParam nonparamtxt
 

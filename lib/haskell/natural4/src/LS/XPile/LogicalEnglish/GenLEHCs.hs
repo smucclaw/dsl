@@ -8,8 +8,7 @@
 -- {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DerivingStrategies #-}
 
-module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC) where
--- TODO: Make export list
+module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
 
 
 import Data.Text qualified as T
@@ -24,8 +23,8 @@ import Control.Monad.Identity (Identity)
 import LS.XPile.LogicalEnglish.Types
 
 
-leHCFromLabsHC :: VarsHC -> LEhcPrint
-leHCFromLabsHC = \case
+leHCFromVarsHC :: VarsHC -> LEhcPrint
+leHCFromVarsHC = \case
   VhcF vfact ->
     LEHcF . leFactPrintFromVFact $ vfact
   VhcR vrule ->
@@ -125,22 +124,26 @@ markUnivVarsInLeCells init lecells =
 
 identifyUnivVar :: NormdVars -> LEhcCell -> (NormdVars, UnivStatus)
 identifyUnivVar normdvars = \case
-  NotVar txt     -> (normdvars, NoPrefix txt)
-  lev@(VarNonApos vtxt) -> checkSeen normdvars vtxt lev
-  lev@(VarApos origprefixtxt) -> checkSeen normdvars origprefixtxt lev
+  NotVar txt   -> (normdvars, NoPrefix txt)
+  VarCell var  -> checkSeen normdvars var
   where
-    checkSeen :: NormdVars -> T.Text -> LEhcCell -> (NormdVars, UnivStatus)
-    checkSeen nvset vartxt levar =
-      let nvar =  MkNormVar vartxt
-          rawvtxt = lecPrintraw levar
+    checkSeen :: NormdVars -> LEVar -> (NormdVars, UnivStatus)
+    checkSeen nvset levar =
+      let nvar   =  normalizeVar levar
+          vartxt = printlev levar
       in
         if HS.member nvar nvset
-        then (nvset, NoPrefix rawvtxt)
+        then (nvset, NoPrefix vartxt)
         else
           let nvset' = HS.insert nvar nvset
-          in (nvset', PrefixWithA rawvtxt)
+          in (nvset', PrefixWithA vartxt)
 
 ------------- helpers
+
+normalizeVar :: LEVar -> NormalizedVar
+normalizeVar = \case
+  VarNonApos vartxt -> coerce vartxt
+  VarApos prefix -> coerce prefix
 
 simplifyVAtomicP :: AtomicPWithVars -> LEhcAtomicP
 simplifyVAtomicP = fmap simplifyVCells
@@ -152,16 +155,15 @@ simplifyVCells = \case
 
 tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case
-    MatchGVar vtxt  -> VarNonApos vtxt
-    EndsInApos prefix -> VarApos prefix
-    IsNum txt       -> NotVar ("is " <> txt)
+    MatchGVar vtxt    -> VarCell $ VarNonApos vtxt
+    EndsInApos prefix -> VarCell $ VarApos prefix
+    IsNum txt         -> NotVar ("is " <> txt)
 
--- | Prints the intended raw text for a LEhcCell
-lecPrintraw :: LEhcCell -> T.Text
-lecPrintraw = \case
+-- | Prints the intended text for a LEVar
+printlev :: LEVar -> T.Text
+printlev = \case
   VarApos origprefix -> origprefix <> "'s"
   VarNonApos vartxt  -> vartxt
-  NotVar txt         -> txt
 
 -- | Converts a UnivStatus to a LETemplateTxt in the obvious way -- basically materializing the UnivStatus tag
 univst2tmpltetxt :: UnivStatus -> LETemplateTxt

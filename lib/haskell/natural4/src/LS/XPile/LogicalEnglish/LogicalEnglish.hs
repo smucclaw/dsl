@@ -52,7 +52,7 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
 import LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) -- TODO: Add import list
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
-import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromLabsHC)
+import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
 import LS.XPile.LogicalEnglish.Pretty()
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
@@ -103,7 +103,7 @@ toLE :: [L4.Rule] -> String
 toLE l4rules = 
   let vhcs = map (idVarsInHC . simplifyL4ruleish) l4rules
       nlas    = HS.toList (allNLAs vhcs) -- TODO: sort the nlas
-      lehcs   = map leHCFromLabsHC vhcs
+      lehcs   = map leHCFromVarsHC vhcs
       leProg = MkLEProg { nlas = nlas, leHCs = lehcs }
   in doc2str . pretty $ leProg
     

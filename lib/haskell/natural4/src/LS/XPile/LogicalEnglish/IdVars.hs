@@ -5,30 +5,20 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.LogicalEnglish.IdVars (
     idVarsInHC
-  , idVarsInAP  
+  , idVarsInAP
   , idVarsInBody
 ) where
 
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
-import GHC.Generics (Generic)
-import Data.String (IsString)
-import Data.List.NonEmpty qualified as NE
-import Debug.Trace (trace)
 import Data.Coerce (coerce)
-import Data.Text
-import Data.String.Interpolate ( i )
 
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.ValidateL4Input
-      (L4Rules, ValidHornls, Unvalidated,
-      loadRawL4AsUnvalid)
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case
@@ -77,9 +67,11 @@ cell2vcell gvars = \case
   MkCellT celltxt ->
     if txtIsAGivenVar gvars celltxt
     then TempVar (MatchGVar celltxt)
-    else if isAposVar gvars celltxt
-         then TempVar (EndsInApos celltxt)
-         else Pred celltxt
+    else
+      let (prefix, isAposV) = isAposVar gvars celltxt
+      in if isAposV
+        then TempVar (EndsInApos prefix)
+        else Pred celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
 
 
@@ -105,6 +97,11 @@ cell2vcell gvars = \case
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
 txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
 
-isAposVar :: GVarSet -> T.Text -> Bool
-isAposVar gvs ctxt = let (prefix, suffix) = T.splitAt 2 ctxt
-                      in suffix == "'s" && txtIsAGivenVar gvs prefix
+type PrefixAposVar = T.Text
+isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
+isAposVar gvs (T.stripSuffix "'s" -> Just prefix) = 
+            if txtIsAGivenVar gvs prefix 
+            then (prefix, True)
+            else ("", False)
+isAposVar _ _                                     = ("", False)
+-- ^ TODO: this matching on "'s" is a bit brittle cos unicode

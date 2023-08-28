@@ -47,6 +47,7 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- LE-related types
     , LEhcCell(..)
+    , LEVar(..)
     , NLACell(..)
     , NormdVars
     , NormalizedVar(..)
@@ -298,14 +299,17 @@ newtype LENatLangAnnot = MkNLA T.Text
 
 ---------------- For generating template instances / non-NLAs
 
+data LEVar = VarApos !OrigVarPrefix
+           | VarNonApos !OrigVarName
+    deriving stock (Eq, Ord, Show)
+
 {-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells
 -}
-data LEhcCell = VarApos !OrigVarPrefix
-               | VarNonApos !OrigVarName
-               | NotVar !T.Text 
-                 -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
+data LEhcCell = VarCell LEVar 
+              | NotVar !T.Text 
+                -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
           deriving stock (Eq, Ord, Show)
-          deriving (Generic, Hashable)
+          deriving (Generic)
 
 newtype NormalizedVar = MkNormVar T.Text
   deriving stock (Show)

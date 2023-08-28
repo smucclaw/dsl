@@ -159,17 +159,10 @@ simpheadRPC exprsl exprsr =
 
 simplifyHcBodyBsr :: L4.BoolStructR -> SimpL4 (BoolPropn L4AtomicP)
 simplifyHcBodyBsr = \case
-  AA.Leaf rp      -> 
-    simplifybodyRP rp
-  AA.All _ propns -> do
-    props <- mapM simplifyHcBodyBsr propns
-    return $ And props
-  AA.Any _ propns -> do
-    props <- mapM simplifyHcBodyBsr propns
-    return $ Or props
-  AA.Not propn    -> do
-    prop <- simplifyHcBodyBsr propn
-    return $ Not prop
+  AA.Leaf rp      -> simplifybodyRP rp
+  AA.All _ propns -> And <$> mapM simplifyHcBodyBsr propns
+  AA.Any _ propns -> Or <$> mapM simplifyHcBodyBsr propns
+  AA.Not propn    -> Not <$> simplifyHcBodyBsr propn
 {- ^ where a 'L4 propn' = BoolStructR =  BoolStruct _lbl RelationalPredicate.
 Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of the data constructors for the RelationalPredicate sum type
 -}

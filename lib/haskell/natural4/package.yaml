@@ -71,7 +71,6 @@ dependencies:
   - string-interpolate
   - prettyprinter-interp
   - json
-  - optics
 
 language: GHC2021
 

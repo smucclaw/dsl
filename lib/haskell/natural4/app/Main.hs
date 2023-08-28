@@ -199,7 +199,6 @@ main = do
       (toDFGFN,     (asDFG, asDFGerr))        = (workuuid <> "/" <> "dataflow", xpLog $ dataFlowAsDot l4i)
 
       (toLEFN, asLE)                          = (workuuid <> "/" <> "le",         toLE rules)
-      -- (toLEFN ,     (asLE, asLEerr))          = (workuuid <> "/" <> "le",       toLE l4i defaultReaderEnv) -- Meng's version
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines

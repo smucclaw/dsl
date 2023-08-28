@@ -40,7 +40,7 @@ import Prettyprinter
 import LS.PrettyPrinter
     ( myrender, vvsep, (</>), (<//>) )
 import Prettyprinter.Interpolate (__di)
-    
+
 
 import qualified AnyAll as AA
 import LS.Types qualified as L4
@@ -98,16 +98,16 @@ allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
 allNLAs vhcs = HS.unions $ map nlasFromVarsHC vhcs
 
 doc2str :: Doc ann -> String
-doc2str = T.unpack . myrender 
+doc2str = T.unpack . myrender
 
 toLE :: [L4.Rule] -> String
-toLE l4rules = 
-  let vhcs = map (idVarsInHC . simplifyL4ruleish) l4rules
-      nlas    = sort (HS.toList (allNLAs vhcs))
-      lehcs   = map leHCFromVarsHC vhcs
-      leProg = MkLEProg { nlas = nlas, leHCs = lehcs }
+toLE l4rules =
+  let hcsVarsMarked = map (idVarsInHC . simplifyL4ruleish) l4rules
+      nlas          = sort . HS.toList . allNLAs $ hcsVarsMarked
+      lehcs         = map leHCFromVarsHC hcsVarsMarked
+      leProg        = MkLEProg { nlas = nlas, leHCs = lehcs }
   in doc2str . pretty $ leProg
-    
+
 {-
 note
 ------

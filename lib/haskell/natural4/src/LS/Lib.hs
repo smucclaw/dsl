@@ -87,6 +87,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , workdir   :: w ::: String <!> ""  <?> "workdir to save all the output files to"
                    , uuiddir   :: w ::: String <!> "no-uuid"  <?> "uuid prefix to follow the workdir"
                    , toprolog  :: w ::: Bool   <!> "True"  <?> "prolog-like syntax representing the predicate logic"
+                   , toscasp   :: w ::: Bool   <!> "True"  <?> "sCasp-like syntax representing the predicate logic"
                    , tonative  :: w ::: Bool   <!> "True"  <?> "native Haskell data structure of the AST"
                    , topetri   :: w ::: Bool   <!> "True"  <?> "a petri-net Dot file of the state graph"
                    , toaasvg   :: w ::: Bool   <!> "True"  <?> "an anyall SVG of the decision trees"
@@ -158,6 +159,7 @@ getConfig o = do
         , toBabyL4  = only o == "babyl4" || only o == "corel4"
         , toASP     = only o == "asp"
         , toProlog  = only o == "prolog"
+        , toSCasp   = only o == "scasp"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"
         , toChecklist = only o == "checklist"
@@ -171,8 +173,16 @@ getConfig o = do
         }
 
 
-parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]]
-parseRules o = do
+-- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
+-- 
+-- At some point we added functionality that allowed sub-rules to be defined inline within a top-level rule, which is why we now have IO [... [Rule]].
+--
+-- Note that sub-rules are themselves rules, which is why we only have one Rule type here.
+--
+-- Shouldn't the idea of sub-rules and top-level rules be reflected in a type hierarchy?
+--
+parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
+parseRules o = do     
   runConfig <- getConfig o
   let files = getNoLabel $ file o
   if null files
@@ -393,7 +403,7 @@ stanzaAsStream rs =
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & \r -> Debug.trace (show r) r
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1 & Debug.trace <$> show <*> id  -- same as above line, but with reader applicative
                   --  tokenLength = fromIntegral $ Text.length rawToken + 1  -- without debugging
-             , tokenVal <- toToken rawToken
+             , tokenVal <- toToken (Text.strip rawToken) -- strip leading and trailing whitespace from tokens. If you want a bare "IS" your best bet is to say "is".
              , tokenVal `notElem` [ Empty, TokTrue, TokFalse ] -- ignore TRUE and FALSE values ... so long as our policy is to ignore checkboxes, that is.
              ]
   where

@@ -28,6 +28,7 @@ import LS.Interpreter
     l4interpret,
     onlyTheItems,
   )
+import LS.DataFlow
 import LS.NLP.NLG
   ( allLangs,
     expandRulesForNLG,
@@ -58,7 +59,7 @@ import LS.XPile.NaturalLanguage (toNatLang)
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
-import LS.XPile.Prolog (sfl4ToProlog)
+import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
 import LS.XPile.Typescript (asTypescript)
@@ -96,7 +97,7 @@ main = do
       workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
 
   -- Bits that have to do with natural language processing and generation
-  nlgLangs <- unsafeInterleaveIO allLangs
+  nlgLangs <- unsafeInterleaveIO allLangs               -- [TODO] Edsko is not a fan and has a whole talk about why we should not use this.
   strLangs <- unsafeInterleaveIO $ printLangs allLangs
   (engE,engErr) <- xpLog <$> langEng
   -- [NOTE] the Production Haskell book gives better ways to integrate Logging with IO
@@ -116,7 +117,7 @@ main = do
           when (SFL4.toChecklist rc) $ do
             let (checkls, checklsErr) = xpLog $ checklist nlgEnvR rc rules
             pPrint checkls
-  
+
           when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
             let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnvR rc rules
                 tochecklFN              =  workuuid <> "/" <> "checkl"
@@ -148,7 +149,7 @@ main = do
             let (topursFN,    (asPursstr, asPursErr)) =
                   (workuuid <> "/" <> "purs"
                   , xpLog $ mutter "* main calling translate2PS" >>
-                    flip fmapE 
+                    flip fmapE
                     (translate2PS allNLGEnvR nlgEnvR rules)
                     (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]"))
                   )
@@ -173,7 +174,8 @@ main = do
 
   -- end of the section that deals with NLG
 
-  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   show (sfl4ToProlog rules))
+  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
+      (toscaspFN,   asSCasp)                  = (workuuid <> "/" <> "scasp",    rulesToSCasp rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
       (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
       (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
@@ -191,10 +193,11 @@ main = do
       (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
       (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
 
-      (totsFN,      asTSstr)                  = (workuuid <> "/" <> "ts",       show (asTypescript rules))
+      (totsFN,      (asTSpretty, asTSerr))    = (workuuid <> "/" <> "ts",       xpLog $ asTypescript l4i)
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i)
       (toLEFN ,     (asLE, asLEerr))          = (workuuid <> "/" <> "le",       toLE l4i defaultReaderEnv)
+      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
+      (toDFGFN,     (asDFG, asDFGerr))        = (workuuid <> "/" <> "dataflow", xpLog $ dataFlowAsDot l4i)
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
@@ -235,6 +238,7 @@ main = do
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (null $ SFL4.only opts)) $ do
 
     when (SFL4.tole      opts) $ mywritefile2 True toLEFN      iso8601 "le"  asLE asLEerr
+    when (SFL4.tonative  opts) $ mywritefile2 True toDFGFN     iso8601 "dot"  asDFG asDFGerr
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     when (      SFL4.tocorel4  opts) $ mywritefile2 True tocorel4FN   iso8601 "l4"   (commentIfError "--" asCoreL4) asCoreL4Err
@@ -279,7 +283,7 @@ main = do
 
           -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
           removeLastComma :: String -> String
-          removeLastComma unlined = 
+          removeLastComma unlined =
             if length lined > 3 -- only if there's a valid json in there
                then unlines $ take (length lined - 3) lined ++ ["}"] ++ drop (length lined - 2) lined
                else unlined
@@ -291,8 +295,9 @@ main = do
         (concatMap snd toWriteVue)
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
+    when (SFL4.toscasp   opts) $ mywritefile  True toscaspFN    iso8601 "pl"   asSCasp
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
-    when (SFL4.tots      opts) $ mywritefile  True totsFN       iso8601 "ts"   asTSstr
+    when (SFL4.tots      opts) $ mywritefile2 True totsFN       iso8601 "ts"   (show asTSpretty) asTSerr
     when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomaude   opts) $ mywritefile  True toMaudeFN iso8601 "natural4" asMaude
@@ -339,8 +344,7 @@ main = do
       pPrint $ groundrules rc rules
 
     when (SFL4.toProlog rc) $ pPrint asProlog
-
-    when (SFL4.toTS rc) $ print $ asTypescript rules
+    when (SFL4.toSCasp  rc) $ pPrint asSCasp
 
     when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
     when (SFL4.only opts == "native")  $ pPrint rules

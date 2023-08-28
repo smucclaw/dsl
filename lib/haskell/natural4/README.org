@@ -52,7 +52,7 @@ You should get a screenful of green.
 In the ~dsl/lib/haskell/natural4/~ directory, if you run
 
 #+begin_src bash
-  stack run -- --workdir=workdir test/casestudypdpadbno-latest.csv
+  stack run -- --workdir=workdir test/examples/casestudypdpadbno-latest.csv
 #+end_src
 
 You should get a bunch of output onscreen, and you should get even more output inside the newly created directory ~workdir/~.

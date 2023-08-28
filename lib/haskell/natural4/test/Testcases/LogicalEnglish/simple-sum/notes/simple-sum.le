@@ -1,0 +1,31 @@
+the target language is: prolog.
+
+the templates are:
+  *a number* is the sum of *a list*,
+  the additional savings is *a number*,
+  the total savings is *a z*,
+  the initial savings is *a x*,
+  the additional savings is *a y*.
+
+
+the knowledge base includes:
+
+  % Arithmetic predicates required for sum example
+  a number is the sum of a list
+  if number is the sum of each X such that
+      X is in list.
+
+  the total savings is a z
+  if the initial savings is a x
+  and the additional savings is a y
+  and z is the sum of [x, y].
+
+scenario simple is:
+  the initial savings is 1000.
+  the additional savings is 337.
+
+%query q is:
+%  0 < 1.
+
+query totalsavings is:
+  the total savings is which value.

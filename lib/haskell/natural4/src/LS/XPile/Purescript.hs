@@ -11,7 +11,12 @@ Largely a wrapper. Most of the functionality is in the anyall lib.
 
 -}
 
-module LS.XPile.Purescript where
+-- [TODO] export list
+module LS.XPile.Purescript
+  -- * These are the top-level entry points for the Purescript transpiler
+  ( asPurescript
+  , translate2PS)
+where
 
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
@@ -203,7 +208,16 @@ biggestS env rl = do
       then []
       else pure $ onlys ! fst (DL.head sorted)
 
-asPurescript :: NLGEnv -> [Rule] -> XPileLogE String
+-- | top level entry point for purescript generation
+--
+-- [TODO] how do we modularize and abstract from the NLG and the GF interaction here?
+-- 1. because other modules might want to take advantage of NLG too.
+-- 2. because maybe we want to decouple and decline NLG here for simplicity.
+
+asPurescript
+  :: NLGEnv -- ^ Used to produce more human readable versions of the questions
+  -> [Rule]
+  -> XPileLogE String
 asPurescript env rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
       l4i       = env |> interpreted

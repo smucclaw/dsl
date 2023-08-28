@@ -238,12 +238,15 @@ tok2rel = choice
     , RPor      <$ pToken TokOr
     , RPsum     <$ pToken TokSum
     , RPproduct <$ pToken TokProduct
+    , RPmin     <$ pToken TokMin
+    , RPmax     <$ pToken TokMax
     , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
     , RPlte     <$ pToken TokLTE
     , RPgt      <$ pToken TokGT    -- serves double duty as MaxOflist when in RPnary position
     , RPgte     <$ pToken TokGTE
     , RPmap     <$ pToken FMap
     , RPelem    <$ pToken TokIn
+    , RPelem    <$ pToken Includes
     , RPnotElem <$ pToken TokNotIn
     , RPsubjectTo <$ pToken SubjectTo
     , RPTC TBefore <$ pToken Before
@@ -977,8 +980,18 @@ pBSR = debugName "pBSR" $
 getBSR :: Rule -> Maybe BoolStructR
 getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         catMaybes [ hbody | HC _hhead hbody <- clauses ] <//>
-                        [ bsr | HC (RPBoolStructR _rp1 _rprel bsr) _hbody <- clauses ]
+                        concat [ go headRP
+                               | HC headRP _body <- clauses ]
+                           
   where
+    go :: RelationalPredicate -> [BoolStructR]
+    go c = case c of
+             RPBoolStructR _rp1 _rprel bsr -> [bsr]
+             RPnary        RPis (r:rps)    -> concatMap go rps -- we assume r is the subject of the rule and doesn't bear further scrutiny
+             RPnary        rprel rps       -> concatMap go rps
+             RPMT          mt              -> pure $ AA.mkLeaf (RPMT mt)
+             _                             -> []
+
     -- | monochrom on IRC commented that I'm basically doing Prolog's `cut`, here.
     -- I would have used (<||>) but that's already in use by the permutation parser
     (<//>) :: Foldable t => t a -> t a -> t a

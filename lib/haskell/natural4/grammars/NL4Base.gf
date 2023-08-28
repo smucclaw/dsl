@@ -12,41 +12,41 @@ abstract NL4Base = CustomSyntax ** {
     Action ;
     Who ;
     [Who]{2} ;
-    Subj ;
     Deontic ;
     Upon ;
   fun
     -- for fancy NLG
-    Regulative : Subj -> Deontic -> Action -> Text ;
+    Regulative : NP -> Deontic -> Action -> Text ;
     advUPON : Upon -> Text ; -- actually include the word Upon
 
     -- for web forms
     qWHO,
-    sWHO : Subj -> Who -> Text ;
+    sWHO : NP -> Who -> Text ;
     qUPON,  -- TODO rethink types when adding more langs
             -- TODO2 do we allow upon to take full sentence or just VP*?
-    sUPON : Subj -> Upon -> Text ;
+    sUPON : NP -> Upon -> Text ;
     qCOND,
     sCOND : Cond -> Text ;
 
     -- general Regulative stuff
-    EVERY,
-    PARTY,
-    AN, THE : CN -> Subj ; -- EVERY Person
+    EVERY : CN -> NP ; -- EVERY Person
+    -- PARTY,
+    -- AN, THE
     WHO : Temp -> Pol -> VP -> Who ;    -- WHO walks
     ACTION : VP -> Action ;
 
     MUST, MAY, SHANT : Deontic ;
     AND, OR : Conj ;
 
-    SubjWho : Subj -> Who -> Subj ;
+    SubjWho : NP -> Who -> NP ;
     ConjWho : Conj -> [Who] -> Who ;
     ConjPreWho : PrePost -> Conj -> [Who] -> Who ; -- TODO need to find examples in the wild
     ConjPrePostWho : (_,_ : PrePost) -> Conj -> [Who] -> Who ;
 
-    You : Subj ;
+    You : NP ;
 
     UPON : VP -> Upon ; -- upon becoming
+    UPONnp : NP -> VP -> Upon ; -- upon Accident happening -- not used for parsing
 
     WHEN : NP -> Temp -> Pol -> VP -> Cond ;
     ConjCond : Conj -> [Cond] -> Cond ;
@@ -63,9 +63,11 @@ abstract NL4Base = CustomSyntax ** {
     fun
 
       RPleafS : NP -> VPS -> Constraint ;
-      RPleafNP : NP -> Constraint ; -- to pair with PrePost to get a full sentence ???
       RPleafVP : VPS -> Constraint ;
+      -- to pair with PrePost, which we assume to contain the actual predicate
+      RPleafNP : NP -> Constraint ;
       RPleafAP : AP -> Constraint ;
+      RPleafAdv : Adv -> Constraint ;
       ConjConstraint : Conj -> [Constraint] -> Constraint ;
       ConjPreConstraint : PrePost -> Conj -> [Constraint] -> Constraint ;
       ConjPrePostConstraint : PrePost -> PrePost -> Conj -> [Constraint] -> Constraint ;
@@ -120,12 +122,21 @@ abstract NL4Base = CustomSyntax ** {
     MkYear : (x1,_,_,x4: YearComponent) -> Year ;
     Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9 : YearComponent ;
 
+    -- Ages and comparisons
+    Comparison_Card_Years : Card -> VPS ;
+
+    -- Generic comparisons
+    LessThan,
+    GreaterThan : NP -> VPS ;
+
 -----------------------------------------------------------------------------
 -- Very specific things, yet uncategorised
-    V2_PrePost : V2 -> PrePost ; -- consumes
+    V2_PrePost : Temp -> Pol -> V2 -> PrePost ; -- consumes
     NP_PrePost : NP -> PrePost ; -- beverage
     AP_PrePost : AP -> PrePost ; -- any unauthorised
     Adv_PrePost : Adv -> PrePost ; -- of personal data
+    SSlash_PrePost : NP -> Temp -> Pol -> V2 -> PrePost ; -- accident resulted from
+    S_PrePost : NP -> VPS -> PrePost ; -- the vehicle is on its way
     APWho : AP -> Who ; -- alcoholic
     AdvWho : Adv -> Who ; -- in whole
 
@@ -138,11 +149,12 @@ abstract NL4Base = CustomSyntax ** {
       recoverUnparsedWho : String -> Who ;
       recoverUnparsedCond : String -> Cond ;
       recoverUnparsedUpon : String -> Upon ;
-      recoverUnparsedSubj : String -> Subj ;
+      recoverUnparsedNP : String -> NP ;
       recoverUnparsedAction : String -> Action ;
       recoverUnparsedTimeUnit : String -> TimeUnit ;
 
       recoverRPis : String -> String -> Constraint ;
+      recoverRPmath : String -> String -> String -> Constraint ;
 
       recoverUnparsedAdv : String -> Adv ;
 

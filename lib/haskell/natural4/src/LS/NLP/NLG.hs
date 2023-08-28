@@ -1,11 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, GADTs #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module LS.NLP.NLG where
 
 import AnyAll qualified as AA
 import Control.Monad (when)
-import Data.Char qualified as Char (toLower)
+import Data.Char qualified as Char (toLower, isDigit)
 import Data.Foldable qualified as F
 import Data.HashMap.Strict (elems, keys, lookup, toList)
 import Data.HashMap.Strict qualified as Map
@@ -34,13 +34,13 @@ import LS.NLP.NL4Transformations
     bsConstraint2gfConstraint,
     bsWho2gfWho,
     flipPolarity,
-    introduceSubj,
+    introduceNP,
     isChinese,
     isMalay,
     mapBSLabel,
     pastTense,
     pushPrePostIntoMain,
-    referSubj,
+    referNP,
   )
 import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName, ruleConstructor)
 import LS.Types
@@ -53,7 +53,7 @@ import LS.Types
     MTExpr (MTT),
     MultiTerm,
     ParamText,
-    RPRel (RPTC, RPis),
+    RPRel (..),
     RelationalPredicate
       ( RPBoolStructR,
         RPConstraint,
@@ -106,6 +106,7 @@ import PGF
   )
 import Paths_natural4 (getDataFileName)
 import System.Environment (lookupEnv)
+import Prettyprinter.Interpolate (__di)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -161,13 +162,22 @@ myNLGEnv l4i lang = do
     Left  engL -> return $ mutter "** myNLGEnv" >> mutters engErr >> xpError engL
     Right engR -> do
       let myParse typ txt = parse gr engR typ (Text.unpack txt)
-          myLin = rmBIND . Text.pack . linearize gr lang
+          myLin = uncapKeywords . rmBIND . Text.pack . linearize gr lang
       return $ do
         mutter "** myNLGEnv"
         xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = Text.replace " &+ " ""
+
+uncapKeywords :: Text.Text -> Text.Text
+uncapKeywords = Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
+  where
+    lowerWhole keywords word =
+      if word `elem` keywords
+        then Text.toLower word
+        else word
+
 
 gfPath :: String -> String
 gfPath x = "grammars/" ++ x
@@ -216,7 +226,7 @@ nlg = nlg' TopLevel
 nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
 nlg' thl env rule = case rule of
     Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
-      let subjExpr = introduceSubj $ parseSubj env subj
+      let subjExpr = introduceNP $ parseSubj env subj
           deonticExpr = parseDeontic deontic
           actionExpr = parseAction env action
           whoSubjExpr = case who of
@@ -324,6 +334,7 @@ ruleQuestions env alias rule = do
       text
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
+    RuleGroup {} -> pure []
     _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> ruleConstructor rule)]
   -- [TODO] for our Logging exercise, see how to convert the _ case above to an xpError
 
@@ -361,10 +372,10 @@ ruleQnTrees env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
-          aliasExpr = if subjExpr==orgExpr then youExpr else referSubj subjExpr
+          aliasExpr = if subjExpr==orgExpr then youExpr else referNP subjExpr
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
-          qUponTrees = mkUponText env (GqUPON aliasExpr) <$> upon
+          qUponTrees = mkUponText env aliasExpr GqUPON <$> upon
       mutterdhsf 4 "Regulative/subjExpr"   show subjExpr
       mutterdhsf 4 "Regulative/aliasExpr"  show aliasExpr
       mutterdhsf 4 "Regulative/qWhoTrees"  show qWhoTrees
@@ -389,11 +400,11 @@ ruleQnTrees env alias rule = do
 
 ----------------------------------------------------------------------
 
-textViaQaHorns :: NLGEnv -> Alias -> Maybe GSubj -> [QAHorn BoolStructT]
-textViaQaHorns env alias subj = [ QAHorn rn rp (linBStext env $ mkGFtext env alias (referSubj <$> subj) bsr)
+textViaQaHorns :: NLGEnv -> Alias -> Maybe GNP -> [QAHorn BoolStructT]
+textViaQaHorns env alias subj = [ QAHorn rn rp (linBStext env $ mkGFtext env alias (referNP <$> subj) bsr)
                                 | QAHorn rn rp bsr <- qaHornsR (interpreted env)]
 
-mkGFtext :: NLGEnv -> Alias -> Maybe GSubj -> BoolStructR -> BoolStructGText
+mkGFtext :: NLGEnv -> Alias -> Maybe GNP -> BoolStructR -> BoolStructGText
 mkGFtext env alias subj bsr = case (whoParses, condParses) of
   ([], []) -> mkConstraintText env GqPREPOST GqCONSTR bsr
   ([], _:_) -> mkCondText env GqPREPOST GqCOND bsr
@@ -430,11 +441,13 @@ mkCondText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ par
 mkConstraintText :: NLGEnv -> (GPrePost -> GText) -> (GConstraint -> GText) -> BoolStructR -> BoolStructGText
 mkConstraintText env f g bsr = mapBSLabel f g $ aggregateBoolStruct (gfLang env) $ parseConstraintBS env bsr
 
-mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> BoolStructGText
-mkUponText env f pt = AA.Leaf  (f $ parseUpon env pt)
-
--- mkUponText :: NLGEnv -> (GUpon -> GText) -> ParamText -> BoolStructT
--- mkUponText env f = AA.Leaf . gfLin env . gf . f . parseUpon env
+mkUponText :: NLGEnv -> GNP -> (GNP -> GUpon -> GText) -> ParamText -> BoolStructGText
+mkUponText env alias f pt = AA.Leaf (f subj upon)
+  where
+    upon0 = parseUpon env pt
+    (subj,upon) = case upon0 of
+                    GUPONnp np vp -> (np, GUPON vp)
+                    _ -> (alias, upon0)
 
 nlgQuestion :: NLGEnv -> Rule -> XPileLog [Text.Text]
 nlgQuestion env rl = do
@@ -500,11 +513,11 @@ parseAction env bsp = fg tree
     txt = bsp2text bsp
     tree :| _ = parseAny "Action" env txt
 
-parseSubj :: NLGEnv -> BoolStructP -> GSubj
+parseSubj :: NLGEnv -> BoolStructP -> GNP
 parseSubj env bsp = fg tree
   where
     txt = bsp2text bsp
-    tree :| _ = parseAny "Subj" env txt
+    tree :| _ = parseAny "NP" env txt
 
 parseWho :: NLGEnv -> RelationalPredicate -> GWho
 parseWho env rp = fg tree
@@ -518,15 +531,32 @@ parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
     cond = parseCond env (RPMT c)
     tc = parseTComparison t
     date = parseDate d
+parseCond env (RPConstraint a RPis b) = case (nps,vps) of
+  (np:_, (GMkVPS t p vp):_) -> GWHEN np t p vp
+  _ -> parseCond env (RPMT [MTT $ Text.unwords [aTxt, "is", bTxt]])
+  where
+    aTxt = Text.strip $ mt2text a
+    bTxt = Text.strip $ mt2text b
+    nps :: [GNP]
+    nps = fg <$> parseAnyNoRecover "NP" env aTxt
+    vps :: [GVPS]
+    vps = fg <$> parseAnyNoRecover "VPS" env (Text.unwords ["is", bTxt])
+
 parseCond env rp = fg tree
   where
     txt = rp2text rp
     tree :| _ = parseAny "Cond" env txt
 
 parseUpon :: NLGEnv -> ParamText -> GUpon
-parseUpon env pt = fg tree
+parseUpon env pt = case upons of
+    upon:_ -> upon
+    [] -> case nps of
+            np:_ -> GUPONnp np (LexVP "occur")
+            [] -> fg tree
   where
     txt = pt2text pt
+    upons = fg <$> parseAnyNoRecover "Upon" env txt
+    nps = fg <$> parseAnyNoRecover "NP" env txt
     tree :| _ = parseAny "Upon" env txt
 
 parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
@@ -559,7 +589,7 @@ parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (flipPolarity $ fg vp)
   _ -> GrecoverRPis (tString aTxt) (tString $ Text.unwords ["not", bTxt])
   where
-    aTxt = mt2text a
+    aTxt = Text.strip $ mt2text a
     bTxt = bsr2text b
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
@@ -568,13 +598,94 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
   _ -> GrecoverRPis (tString aTxt) (tString bTxt)
   where
-    aTxt = mt2text a
-    bTxt = mt2text b
+    aTxt = Text.strip $ mt2text a
+    bTxt = Text.strip $ mt2text b
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
 
-    tString :: Text.Text -> GString
-    tString = GString . Text.unpack
+parseConstraint env (RPConstraint a (RPTC t) b) = case (sents,advs) of
+  (s:_, adv:_) -> case s of
+                    GPredVPS np (GMkVPS t p vp) -> GRPleafS np (GMkVPS t p (GAdvVP vp adv))
+                    _ -> trace ("parseConstraint: unable to parse " <> showExpr [] (gf s)) fallback
+  x -> trace ("parseConstraint: unable to parse " <> show x <> Text.unpack tTxt) fallback
+  where
+    aTxt = Text.strip $ mt2text a
+    tTxt = gfLin env $ gf $ parseTComparison t
+    bTxt = Text.strip $ mt2text b
+    sents :: [GS]
+    sents = fg <$> parseAnyNoRecover "S" env aTxt
+    advs :: [GAdv]
+    advs = fg <$> parseAnyNoRecover "Adv" env (Text.unwords [tTxt, bTxt])
+    fallback = GrecoverUnparsedConstraint (tString $ Text.unwords [aTxt, tTxt, bTxt])
+
+
+parseConstraint env (RPConstraint a RPgt b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString ">") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is more than", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is greater than", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
+
+parseConstraint env (RPConstraint a RPlt b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is less than", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is less than", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
+
+parseConstraint env (RPConstraint a RPlte b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is at most", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is at most", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
+
+parseConstraint env (RPConstraint a RPgte b) = case (nps,vps) of
+  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
+  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
+  where
+    aTxt0 = Text.strip $ mt2text a
+    aTxt = case dp 6 aTxt0 of
+             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
+             _ -> aTxt0
+
+    bTxt0 = Text.strip $ mt2text b
+    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
+             ("'s age", "years") -> Text.unwords ["is at least", splitDigits bTxt0, "old"]
+             _ -> Text.unwords ["is at least", bTxt0]
+
+    nps = parseAnyNoRecover "NP" env aTxt
+    vps = parseAnyNoRecover "VPS" env bTxt
 
 parseConstraint env rp = fg tree
   where
@@ -617,6 +728,24 @@ typeError cat actualCats = error $ unwords ["category", cat, "not a valid GF cat
 
 tString :: Text.Text -> GString
 tString = GString . Text.unpack
+
+splitDigits :: Text.Text -> Text.Text
+splitDigits txt = Text.unwords (splitDigit <$> Text.words txt)
+  where
+    splitDigit d = if Text.all Char.isDigit d
+                    then Text.intercalate " &+ " (Text.groupBy (\x y -> False) d)
+                    else d
+
+tk, dp :: Int -> Text.Text -> Text.Text
+tk i = Text.pack . tk' i . Text.unpack
+dp i = Text.pack . dp' i . Text.unpack
+
+
+tk', dp' :: Int -> String -> String
+tk' i = reverse . drop i . reverse -- tk 2 "hello" == "hel"
+dp' i = reverse . take i . reverse -- dp 2 "hello" == "lo"
+
+
 -----------------------------------------------------------------------------
 -- Expand a set of rules
 

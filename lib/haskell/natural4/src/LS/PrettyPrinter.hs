@@ -57,6 +57,8 @@ import Prettyprinter
       rbrace,
       squotes )
 import Prettyprinter.Render.Text ( renderStrict )
+import Text.Pretty.Simple qualified as TPS
+import Data.String (IsString)
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -248,13 +250,13 @@ instance Pretty ParamText4 where
   pretty (PT5 orig@(line1 :| line2s) l4i)
     | null line2s = word1 line1 <+> equals <+> quoteBoT l4i line1
     | otherwise   = word1 line1 <+> colon  <+> quoteBoT l4i line1
-    
+
   pretty (PT4 orig@(line1 :| line2s) l4i) -- varpath)
     | null line2s = -- "//" <+> "208:" <+> viaShow line1 <//>
                      quoteRHS line1 <+> colon <+> pretty (MT1 (NE.head (fst line1)))
                      -- we should be in a DEFINE, printing a value; if we're not, we may be dumping values with the wrong order, so we need to create a PT5.
                      --    | line2s == [] = "-- " <> viaShow line1 <//> "199: " <> word1 line1 <> colon <+> quoteBoT line1
-                     
+
     | otherwise    = "//" <+> "213: " <+> viaShow orig <//> -- [TODO] need to fix this -- test by considering a DEFINE with nested records.
                      quoteRHS line1 <> equals <+> lbrace <+> "--" <+> quoteBoT l4i line1 <> Prettyprinter.line
                      <> nest 2 (vsep [ word1 l2 <+> colon <+> dquotes (lrest l2) <> comma | l2 <- line2s ])
@@ -313,7 +315,7 @@ typeOfTerm l4i _tm =
 --                                    Just (its, ct1) -> trace ("underlying type " ++ show t1 ++ " with inferrable typesig " ++ show its ++ " found in toplevel classtable, walking") $
 --                                                       trace ("attempting to obtain extended attributes first tho") $
 --                                                       let ct2 = extendedAttributes ct1 t1
---                                                       in 
+--                                                       in
 --                                                       walk l4i ct2 xs ot
 --                      Left err -> trace ("underlying type returned error: " ++ err) $
 --                                  Nothing
@@ -339,8 +341,8 @@ prettySimpleType _        prty (SimpleType TOne      s1) = prty s1
 prettySimpleType "corel4" prty (SimpleType TOptional s1) = prty s1
 prettySimpleType "ts"     prty (SimpleType TOptional s1) = prty s1
 prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
-prettySimpleType "ts"     prty (SimpleType TList0    s1) = prty s1 <> "[]"
-prettySimpleType "ts"     prty (SimpleType TList1    s1) = prty s1 <> "[]"
+prettySimpleType "ts"     prty (SimpleType TList0    s1) = prty s1 <> brackets ""
+prettySimpleType "ts"     prty (SimpleType TList1    s1) = prty s1 <> brackets ""
 prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
 prettySimpleType _       _prty (InlineEnum pt1       s1) = "# InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
@@ -352,7 +354,7 @@ prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
-commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> xs) <> line
+commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> concatMap T.lines xs) <> line
 
 -- | pretty print output without folding
 myrender :: Doc ann -> T.Text
@@ -371,4 +373,10 @@ tildes x = "~" <> x <> "~"
 a </>  b = vvsep [ a, b ]
 a <//> b = vsep  [ a, b ]
 infixr 5 </>, <//>
+
+-- | print haskell source in a way Org prefers
+srchs :: (Show a) => a -> Doc ann
+srchs = orgsrc "haskell" . pretty . TPS.pShowNoColor
+orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
+orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]
 

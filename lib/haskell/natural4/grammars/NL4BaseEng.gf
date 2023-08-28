@@ -6,6 +6,7 @@ concrete NL4BaseEng of NL4Base =
     , (Extend=ExtendEng)
     , (Symbolic=SymbolicEng)
     , (Lexicon=LexiconEng)
+    , (Construction=ConstructionEng)
     , (CustomSyntax=CustomSyntaxEng)
    ** open Coordination, Prelude, ParadigmsEng, (R=ResEng) in {
 
@@ -52,22 +53,29 @@ concrete NL4BaseEng of NL4Base =
       s = "·" ++ damage.s ++ "is" ++ toContents.s ; -- if constraint isn't parsed, use the original string
       qs = "Is" ++ damage.s ++ toContents.s ++ bindQM
       } ;
-  lin recoverUnparsedConstraint string = recoverUnparsedPrePost string ;
+  lin recoverRPmath gt age fifty = {
+      s = "·" ++ age.s ++ gt.s ++ fifty.s ; -- if constraint isn't parsed, use the original string
+      qs = "Is" ++ age.s ++ gt.s ++ fifty.s ++ bindQM
+      } ;
+  lin recoverUnparsedConstraint string = {
+      s = "·" ++ string.s ;
+      qs = string.s ++ bindQM
+      } ;
 
-  lin recoverUnparsedWho string = MkVPS presSimul POS (mkVP (invarV string.s)) ;
+  lin recoverUnparsedWho string = MkVPS presSimul POS (mkVP (invarUnparsedV string)) ;
 
   lin recoverUnparsedCond string = {
       s = lin S string ;
       qs = lin QS {s = \\_ => string.s}
       } ;
 
-  lin recoverUnparsedUpon string = mkVP (invarV string.s) ;
+  lin recoverUnparsedUpon string = mkVP (invarUnparsedV string) ;
 
-  lin recoverUnparsedSubj string = symb string ;
-
-  lin recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
+  lin recoverUnparsedAction string = MkVPI (mkVP (invarUnparsedV string)) ;
 
   lin recoverUnparsedTimeUnit string = mkCN <LexiconEng.day_N ** {s = \\_,_ => "·" ++ string.s} : N> ;
+
+  oper invarUnparsedV : SS -> V = \ss -> invarV ("·" ++ ss.s) ;
 
 }
 

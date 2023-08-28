@@ -1,0 +1,31 @@
+the target language is: prolog.
+
+the templates are:
+  *a data breach* with *a organization* results in harm to *a individual*,
+  *a data breach* with *a organization* exposed data from *an individual*,
+  *a data breach* with *a organization* relates to the name of *a individual*,
+  *a data breach* with *a organization* relates to an account *a individual* had with *a organization*,
+  *a data breach* with *a organization* relates to data required for access to the account of *a individual*.
+  
+the knowledge base includes:
+  a data breach with a organization results in harm to a individual
+  if data breach with organization exposed data from individual
+  and data breach with organization relates to the name of individual
+    or data breach with organization relates to an account individual had with organization
+      and data breach with organization relates to data required for access to the account of individual.
+
+scenario alicesimple is:
+  the incident last night with acmecorp exposed data from alice.
+  the incident last night with acmecorp relates to the name of alice.
+
+
+scenario aliceharder is:
+  the incident last night with acmecorp exposed data from alice.
+  the incident last night with acmecorp relates to an account alice had with acmecorp.
+  the incident last night with acmecorp relates to data required for access to the account of alice.
+
+query q is:
+  0 < 1.
+
+query qa is:
+  which breach with which org results in harm to alice.

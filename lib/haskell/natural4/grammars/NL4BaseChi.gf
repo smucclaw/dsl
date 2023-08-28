@@ -13,6 +13,7 @@ concrete NL4BaseChi of NL4Base =
     , (Extend=ExtendChi)
     , (Symbolic=SymbolicChi)
     , (Lexicon=LexiconChi)
+    , (Construction=ConstructionChi)
     , (CustomSyntax=CustomSyntaxChi)
    ** open Coordination, Prelude, ParadigmsChi, (R=ResChi) in {
 
@@ -126,7 +127,7 @@ lin
 
     recoverUnparsedUpon string = mkVP (invarV string.s) ;
 
-    recoverUnparsedSubj string = symb string ;
+    recoverUnparsedNP string = symb string ;
 
     recoverUnparsedAction string = MkVPI (mkVP (invarV string.s)) ;
 

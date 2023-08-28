@@ -420,7 +420,7 @@ rpRelToBComparOp RPelem = refute "rpRelToBComparOp: erroring on RPelem"
 rpRelToBComparOp RPnotElem = refute "rpRelToBComparOp: erroring on RPnotElem"
 rpRelToBComparOp RPnot = refute "rpRelToBComparOp: erroring on RPnot"
 rpRelToBComparOp RPTC {}  = refute "rpRelToBComparOp: erroring on RPTC"
-
+rpRelToBComparOp x = refute ("rpRelToBComparOp: erroring on " <> pretty (show x))
 -- END helper functions
 
 boolStructRToExpr :: [String] -> BoolStructR -> ExprM ann ()

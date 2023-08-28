@@ -1,28 +1,9 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE UndecidableInstances #-}
-
+{-# LANGUAGE GADTs, UndecidableInstances #-}
 module LS.NLP.NL4 where
 
-import Control.Monad.Identity
-  ( Identity (Identity, runIdentity),
-    MonadPlus (..),
-    ap,
-  )
+import Control.Monad.Identity (Identity ( Identity, runIdentity), MonadPlus (..), ap )
 import Data.Monoid ()
-import PGF
-  ( Expr,
-    mkApp,
-    mkCId,
-    mkFloat,
-    mkInt,
-    mkStr,
-    showCId,
-    showExpr,
-    unApp,
-    unFloat,
-    unInt,
-    unStr,
-  )
+import PGF (Expr, mkApp, mkCId, mkFloat, mkInt, mkStr, showCId, showExpr, unApp, unFloat, unInt, unStr )
 
 ----------------------------------------------------
 -- automatic translation from GF to Haskell
@@ -59,16 +40,26 @@ instance (Gf (Tree a)) => Show (Tree a) where
     show = showExpr [] . gf
 ----------------------------------------------------
 
+type GA = Tree GA_
+data GA_
+type GA2 = Tree GA2_
+data GA2_
 type GAP = Tree GAP_
 data GAP_
 type GAction = Tree GAction_
 data GAction_
 type GAdA = Tree GAdA_
 data GAdA_
+type GAdN = Tree GAdN_
+data GAdN_
 type GAdv = Tree GAdv_
 data GAdv_
+type GCAdv = Tree GCAdv_
+data GCAdv_
 type GCN = Tree GCN_
 data GCN_
+type GCard = Tree GCard_
+data GCard_
 type GComp = Tree GComp_
 data GComp_
 type GCond = Tree GCond_
@@ -115,10 +106,18 @@ type GListWho = Tree GListWho_
 data GListWho_
 type GMonth = Tree GMonth_
 data GMonth_
+type GN = Tree GN_
+data GN_
+type GN2 = Tree GN2_
+data GN2_
 type GNP = Tree GNP_
 data GNP_
+type GNum = Tree GNum_
+data GNum_
 type GNumeral = Tree GNumeral_
 data GNumeral_
+type GPN = Tree GPN_
+data GPN_
 type GPol = Tree GPol_
 data GPol_
 type GPrePost = Tree GPrePost_
@@ -127,6 +126,10 @@ type GPrep = Tree GPrep_
 data GPrep_
 type GQS = Tree GQS_
 data GQS_
+type GRP = Tree GRP_
+data GRP_
+type GRS = Tree GRS_
+data GRS_
 type GS = Tree GS_
 data GS_
 type GSub10 = Tree GSub10_
@@ -155,6 +158,8 @@ type GTimeUnit = Tree GTimeUnit_
 data GTimeUnit_
 type GUpon = Tree GUpon_
 data GUpon_
+type GV = Tree GV_
+data GV_
 type GV2 = Tree GV2_
 data GV2_
 type GVP = Tree GVP_
@@ -173,20 +178,10 @@ type GYear = Tree GYear_
 data GYear_
 type GYearComponent = Tree GYearComponent_
 data GYearComponent_
-type GA = Tree GA_
-data GA_
-type GA2 = Tree GA2_
-data GA2_
 type GAnt = Tree GAnt_
 data GAnt_
-type GN = Tree GN_
-data GN_
-type GN2 = Tree GN2_
-data GN2_
 type GTense = Tree GTense_
 data GTense_
-type GV = Tree GV_
-data GV_
 type GString = Tree GString_
 data GString_
 type GInt = Tree GInt_
@@ -195,6 +190,10 @@ type GFloat = Tree GFloat_
 data GFloat_
 
 data Tree :: * -> * where
+  LexA :: String -> Tree GA_
+  G_located_in_A2 :: Tree GA2_
+  Gdue_to_A2 :: Tree GA2_
+  GComplA2 :: GA2 -> GNP -> Tree GAP_
   GConjAP :: GConj -> GListAP -> Tree GAP_
   GInt_or_older :: GInt -> Tree GAP_
   GPositA :: GA -> Tree GAP_
@@ -204,16 +203,50 @@ data Tree :: * -> * where
   GACTION :: GVP -> Tree GAction_
   GrecoverUnparsedAction :: GString -> Tree GAction_
   Gonly_AdA :: Tree GAdA_
+  GAdnCAdv :: GCAdv -> Tree GAdN_
+  Gat_least_AdN :: Tree GAdN_
+  Gat_most_AdN :: Tree GAdN_
   GAdAdv :: GAdA -> GAdv -> Tree GAdv_
   GByVP :: GVP -> Tree GAdv_
   GConjAdv :: GConj -> GListAdv -> Tree GAdv_
   GPrepNP :: GPrep -> GNP -> Tree GAdv_
+  GSubjS :: GSubj -> GS -> Tree GAdv_
+  GWhileDoing :: GVP -> Tree GAdv_
+  G_as_Adv :: Tree GAdv_
+  G_at_Adv :: Tree GAdv_
+  G_directly_Adv :: Tree GAdv_
+  G_first_Adv :: Tree GAdv_
+  G_fully_Adv :: Tree GAdv_
+  G_hence_Adv :: Tree GAdv_
+  G_here_Adv :: Tree GAdv_
+  G_indirectly_Adv :: Tree GAdv_
+  G_least_Adv :: Tree GAdv_
+  G_long_Adv :: Tree GAdv_
+  G_more_Adv :: Tree GAdv_
+  G_no_Adv :: Tree GAdv_
+  G_on_its_way_Adv :: Tree GAdv_
+  G_only_Adv :: Tree GAdv_
+  G_permanently_Adv :: Tree GAdv_
+  G_pland_Adv :: Tree GAdv_
+  G_so_Adv :: Tree GAdv_
+  G_soon_Adv :: Tree GAdv_
+  G_then_Adv :: Tree GAdv_
+  G_totally_Adv :: Tree GAdv_
+  G_up_Adv :: Tree GAdv_
   Gin_part :: Tree GAdv_
   Gin_whole :: Tree GAdv_
   GrecoverUnparsedAdv :: GString -> Tree GAdv_
+  Gless_CAdv :: Tree GCAdv_
+  Gmore_CAdv :: Tree GCAdv_
   GAdjCN :: GAP -> GCN -> Tree GCN_
+  GCNwhereS :: GCN -> GNP -> GVPS -> Tree GCN_
+  GComplN2 :: GN2 -> GNP -> Tree GCN_
+  GRelCN :: GCN -> GRS -> Tree GCN_
   GUseN :: GN -> Tree GCN_
+  G_CN_of_any_kind_CN :: GCN -> Tree GCN_
   LexCN :: String -> Tree GCN_
+  GAdNum :: GAdN -> GCard -> Tree GCard_
+  GNumDigits :: GDigits -> Tree GCard_
   GCompAP :: GAP -> Tree GComp_
   GCompAdv :: GAdv -> Tree GComp_
   GCompNP :: GNP -> Tree GComp_
@@ -223,22 +256,24 @@ data Tree :: * -> * where
   GRPConstraint :: GCond -> GTComparison -> GDate -> Tree GCond_
   GWHEN :: GNP -> GTemp -> GPol -> GVP -> Tree GCond_
   GrecoverUnparsedCond :: GString -> Tree GCond_
-  GAND :: Tree GConj_
-  GOR :: Tree GConj_
+  LexConj :: String -> Tree GConj_
   GConjConstraint :: GConj -> GListConstraint -> Tree GConstraint_
   GConjPreConstraint :: GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GConjPrePostConstraint :: GPrePost -> GPrePost -> GConj -> GListConstraint -> Tree GConstraint_
   GRPleafAP :: GAP -> Tree GConstraint_
+  GRPleafAdv :: GAdv -> Tree GConstraint_
   GRPleafNP :: GNP -> Tree GConstraint_
   GRPleafS :: GNP -> GVPS -> Tree GConstraint_
   GRPleafVP :: GVPS -> Tree GConstraint_
   GrecoverRPis :: GString -> GString -> Tree GConstraint_
+  GrecoverRPmath :: GString -> GString -> GString -> Tree GConstraint_
   GrecoverUnparsedConstraint :: GString -> Tree GConstraint_
   GMkDate :: GDay -> GMonth -> GYear -> Tree GDate_
   LexDay :: String -> Tree GDay_
   GMAY :: Tree GDeontic_
   GMUST :: Tree GDeontic_
   GSHANT :: Tree GDeontic_
+  GaPl :: Tree GDet_
   GaSg :: Tree GDet_
   GthePl :: Tree GDet_
   GtheSg :: Tree GDet_
@@ -266,13 +301,22 @@ data Tree :: * -> * where
   GListVPS :: [GVPS] -> Tree GListVPS_
   GListWho :: [GWho] -> Tree GListWho_
   LexMonth :: String -> Tree GMonth_
+  GCompoundN :: GN -> GN -> Tree GN_
+  LexN :: String -> Tree GN_
+  G_premise_where_N2 :: Tree GN2_
+  G_travel_by_N2 :: Tree GN2_
   GConjNP :: GConj -> GListNP -> Tree GNP_
   GContents :: Tree GNP_
   GDetCN :: GDet -> GCN -> Tree GNP_
+  GEVERY :: GCN -> Tree GNP_
+  GGenModNP :: GNum -> GNP -> GCN -> Tree GNP_
   GGerundNP :: GVP -> Tree GNP_
   GLoss_or_Damage :: Tree GNP_
   GMassNP :: GCN -> Tree GNP_
   GNDB_Qualification :: Tree GNP_
+  GSubjWho :: GNP -> GWho -> Tree GNP_
+  GUsePN :: GPN -> Tree GNP_
+  GYou :: Tree GNP_
   Ganimal :: Tree GNP_
   Gany_other_exclusion :: Tree GNP_
   Gbirds :: Tree GNP_
@@ -283,6 +327,7 @@ data Tree :: * -> * where
   Ginsects :: Tree GNP_
   Gplumbing_heating_or_AC :: Tree GNP_
   Gpremium :: Tree GNP_
+  GrecoverUnparsedNP :: GString -> Tree GNP_
   Gresult_from :: GNP -> Tree GNP_
   Grodents :: Tree GNP_
   Gsigned :: Tree GNP_
@@ -291,7 +336,10 @@ data Tree :: * -> * where
   Gswimming_pool :: Tree GNP_
   Gvermin :: Tree GNP_
   Gwater :: Tree GNP_
+  GNumPl :: Tree GNum_
+  GNumSg :: Tree GNum_
   Gnum :: GSub1000000 -> Tree GNumeral_
+  LexPN :: String -> Tree GPN_
   GNEG :: Tree GPol_
   GPOS :: Tree GPol_
   GAP_PrePost :: GAP -> Tree GPrePost_
@@ -299,20 +347,16 @@ data Tree :: * -> * where
   GNP_PrePost :: GNP -> Tree GPrePost_
   GNP_caused_NP_to_VP_Prep_PrePost :: GNP -> GNP -> GVP -> GPrep -> Tree GPrePost_
   GNP_caused_by_PrePost :: GNP -> Tree GPrePost_
-  GV2_PrePost :: GV2 -> Tree GPrePost_
+  GSSlash_PrePost :: GNP -> GTemp -> GPol -> GV2 -> Tree GPrePost_
+  GS_PrePost :: GNP -> GVPS -> Tree GPrePost_
+  GV2_PrePost :: GTemp -> GPol -> GV2 -> Tree GPrePost_
   GrecoverUnparsedPrePost :: GString -> Tree GPrePost_
   GConjPrep :: GConj -> GListPrep -> Tree GPrep_
-  Gabout_Prep :: Tree GPrep_
-  Gafter_Prep :: Tree GPrep_
-  Gbefore_Prep :: Tree GPrep_
-  Gfor_Prep :: Tree GPrep_
-  Gfrom_Prep :: Tree GPrep_
-  Gon_Prep :: Tree GPrep_
-  Gpossess_Prep :: Tree GPrep_
-  Gto_Prep :: Tree GPrep_
-  Gwithin_Prep :: Tree GPrep_
+  LexPrep :: String -> Tree GPrep_
   GConjPrePostQS :: GString -> GString -> GConj -> GListQS -> Tree GQS_
   GConjQS :: GConj -> GListQS -> Tree GQS_
+  GIdRP :: Tree GRP_
+  GRelVPS :: GRP -> GVPS -> Tree GRS_
   GConjPrePostS :: GString -> GString -> GConj -> GListS -> Tree GS_
   GConjS :: GConj -> GListS -> Tree GS_
   GPredVPS :: GNP -> GVPS -> Tree GS_
@@ -344,13 +388,7 @@ data Tree :: * -> * where
   Gpot51 :: Tree GSub1000000000000_
   Gpot5float :: GFloat -> Tree GSub1000000000000_
   Gpot5plus :: GSub1000 -> GSub1000000000 -> Tree GSub1000000000000_
-  GAN :: GCN -> Tree GSubj_
-  GEVERY :: GCN -> Tree GSubj_
-  GPARTY :: GCN -> Tree GSubj_
-  GSubjWho :: GSubj -> GWho -> Tree GSubj_
-  GTHE :: GCN -> Tree GSubj_
-  GYou :: Tree GSubj_
-  GrecoverUnparsedSubj :: GString -> Tree GSubj_
+  LexSubj :: String -> Tree GSubj_
   GAFTER :: Tree GTComparison_
   GBEFORE :: Tree GTComparison_
   GBY :: Tree GTComparison_
@@ -362,22 +400,24 @@ data Tree :: * -> * where
   GpresSimul :: Tree GTemp_
   GTemporalConstraint :: GTComparison -> GDigits -> GTimeUnit -> Tree GTemporal_
   GTemporalConstraintNoDigits :: GTComparison -> GTimeUnit -> Tree GTemporal_
-  GRegulative :: GSubj -> GDeontic -> GAction -> Tree GText_
+  GRegulative :: GNP -> GDeontic -> GAction -> Tree GText_
   GadvUPON :: GUpon -> Tree GText_
   GqCOND :: GCond -> Tree GText_
   GqCONSTR :: GConstraint -> Tree GText_
   GqPREPOST :: GPrePost -> Tree GText_
-  GqUPON :: GSubj -> GUpon -> Tree GText_
-  GqWHO :: GSubj -> GWho -> Tree GText_
+  GqUPON :: GNP -> GUpon -> Tree GText_
+  GqWHO :: GNP -> GWho -> Tree GText_
   GsCOND :: GCond -> Tree GText_
-  GsUPON :: GSubj -> GUpon -> Tree GText_
-  GsWHO :: GSubj -> GWho -> Tree GText_
+  GsUPON :: GNP -> GUpon -> Tree GText_
+  GsWHO :: GNP -> GWho -> Tree GText_
   GDay_Unit :: Tree GTimeUnit_
   GMonth_Unit :: Tree GTimeUnit_
   GYear_Unit :: Tree GTimeUnit_
   GrecoverUnparsedTimeUnit :: GString -> Tree GTimeUnit_
   GUPON :: GVP -> Tree GUpon_
+  GUPONnp :: GNP -> GVP -> Tree GUpon_
   GrecoverUnparsedUpon :: GString -> Tree GUpon_
+  LexV :: String -> Tree GV_
   LexV2 :: String -> Tree GV2_
   GAdvVP :: GVP -> GAdv -> Tree GVP_
   GComplV2 :: GV2 -> GNP -> Tree GVP_
@@ -386,10 +426,14 @@ data Tree :: * -> * where
   GComplVSif :: GVS -> GS -> Tree GVP_
   GComplVSthat :: GVS -> GS -> Tree GVP_
   GUseComp :: GComp -> Tree GVP_
+  GUseV :: GV -> Tree GVP_
   LexVP :: String -> Tree GVP_
   GMkVPI :: GVP -> Tree GVPI_
+  GComparison_Card_Years :: GCard -> Tree GVPS_
   GConjPrePostVPS :: GString -> GString -> GConj -> GListVPS -> Tree GVPS_
   GConjVPS :: GConj -> GListVPS -> Tree GVPS_
+  GGreaterThan :: GNP -> Tree GVPS_
+  GLessThan :: GNP -> Tree GVPS_
   GMayHave :: GVP -> Tree GVPS_
   GMkVPS :: GTemp -> GPol -> GVP -> Tree GVPS_
   LexVS :: String -> Tree GVS_
@@ -403,13 +447,16 @@ data Tree :: * -> * where
   GrecoverUnparsedWho :: GString -> Tree GWho_
   GMkYear :: GYearComponent -> GYearComponent -> GYearComponent -> GYearComponent -> Tree GYear_
   LexYearComponent :: String -> Tree GYearComponent_
-  LexN :: String -> Tree GN_
   GString :: String -> Tree GString_
   GInt :: Int -> Tree GInt_
   GFloat :: Double -> Tree GFloat_
 
 instance Eq (Tree a) where
   i == j = case (i,j) of
+    (LexA x,LexA y) -> x == y
+    (G_located_in_A2,G_located_in_A2) -> and [ ]
+    (Gdue_to_A2,Gdue_to_A2) -> and [ ]
+    (GComplA2 x1 x2,GComplA2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjAP x1 x2,GConjAP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GInt_or_older x1,GInt_or_older y1) -> and [ x1 == y1 ]
     (GPositA x1,GPositA y1) -> and [ x1 == y1 ]
@@ -419,16 +466,50 @@ instance Eq (Tree a) where
     (GACTION x1,GACTION y1) -> and [ x1 == y1 ]
     (GrecoverUnparsedAction x1,GrecoverUnparsedAction y1) -> and [ x1 == y1 ]
     (Gonly_AdA,Gonly_AdA) -> and [ ]
+    (GAdnCAdv x1,GAdnCAdv y1) -> and [ x1 == y1 ]
+    (Gat_least_AdN,Gat_least_AdN) -> and [ ]
+    (Gat_most_AdN,Gat_most_AdN) -> and [ ]
     (GAdAdv x1 x2,GAdAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GByVP x1,GByVP y1) -> and [ x1 == y1 ]
     (GConjAdv x1 x2,GConjAdv y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPrepNP x1 x2,GPrepNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GSubjS x1 x2,GSubjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GWhileDoing x1,GWhileDoing y1) -> and [ x1 == y1 ]
+    (G_as_Adv,G_as_Adv) -> and [ ]
+    (G_at_Adv,G_at_Adv) -> and [ ]
+    (G_directly_Adv,G_directly_Adv) -> and [ ]
+    (G_first_Adv,G_first_Adv) -> and [ ]
+    (G_fully_Adv,G_fully_Adv) -> and [ ]
+    (G_hence_Adv,G_hence_Adv) -> and [ ]
+    (G_here_Adv,G_here_Adv) -> and [ ]
+    (G_indirectly_Adv,G_indirectly_Adv) -> and [ ]
+    (G_least_Adv,G_least_Adv) -> and [ ]
+    (G_long_Adv,G_long_Adv) -> and [ ]
+    (G_more_Adv,G_more_Adv) -> and [ ]
+    (G_no_Adv,G_no_Adv) -> and [ ]
+    (G_on_its_way_Adv,G_on_its_way_Adv) -> and [ ]
+    (G_only_Adv,G_only_Adv) -> and [ ]
+    (G_permanently_Adv,G_permanently_Adv) -> and [ ]
+    (G_pland_Adv,G_pland_Adv) -> and [ ]
+    (G_so_Adv,G_so_Adv) -> and [ ]
+    (G_soon_Adv,G_soon_Adv) -> and [ ]
+    (G_then_Adv,G_then_Adv) -> and [ ]
+    (G_totally_Adv,G_totally_Adv) -> and [ ]
+    (G_up_Adv,G_up_Adv) -> and [ ]
     (Gin_part,Gin_part) -> and [ ]
     (Gin_whole,Gin_whole) -> and [ ]
     (GrecoverUnparsedAdv x1,GrecoverUnparsedAdv y1) -> and [ x1 == y1 ]
+    (Gless_CAdv,Gless_CAdv) -> and [ ]
+    (Gmore_CAdv,Gmore_CAdv) -> and [ ]
     (GAdjCN x1 x2,GAdjCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GCNwhereS x1 x2 x3,GCNwhereS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GComplN2 x1 x2,GComplN2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRelCN x1 x2,GRelCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseN x1,GUseN y1) -> and [ x1 == y1 ]
+    (G_CN_of_any_kind_CN x1,G_CN_of_any_kind_CN y1) -> and [ x1 == y1 ]
     (LexCN x,LexCN y) -> x == y
+    (GAdNum x1 x2,GAdNum y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GNumDigits x1,GNumDigits y1) -> and [ x1 == y1 ]
     (GCompAP x1,GCompAP y1) -> and [ x1 == y1 ]
     (GCompAdv x1,GCompAdv y1) -> and [ x1 == y1 ]
     (GCompNP x1,GCompNP y1) -> and [ x1 == y1 ]
@@ -438,22 +519,24 @@ instance Eq (Tree a) where
     (GRPConstraint x1 x2 x3,GRPConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GWHEN x1 x2 x3 x4,GWHEN y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GrecoverUnparsedCond x1,GrecoverUnparsedCond y1) -> and [ x1 == y1 ]
-    (GAND,GAND) -> and [ ]
-    (GOR,GOR) -> and [ ]
+    (LexConj x,LexConj y) -> x == y
     (GConjConstraint x1 x2,GConjConstraint y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPreConstraint x1 x2 x3,GConjPreConstraint y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjPrePostConstraint x1 x2 x3 x4,GConjPrePostConstraint y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GRPleafAP x1,GRPleafAP y1) -> and [ x1 == y1 ]
+    (GRPleafAdv x1,GRPleafAdv y1) -> and [ x1 == y1 ]
     (GRPleafNP x1,GRPleafNP y1) -> and [ x1 == y1 ]
     (GRPleafS x1 x2,GRPleafS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GRPleafVP x1,GRPleafVP y1) -> and [ x1 == y1 ]
     (GrecoverRPis x1 x2,GrecoverRPis y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GrecoverRPmath x1 x2 x3,GrecoverRPmath y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GrecoverUnparsedConstraint x1,GrecoverUnparsedConstraint y1) -> and [ x1 == y1 ]
     (GMkDate x1 x2 x3,GMkDate y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexDay x,LexDay y) -> x == y
     (GMAY,GMAY) -> and [ ]
     (GMUST,GMUST) -> and [ ]
     (GSHANT,GSHANT) -> and [ ]
+    (GaPl,GaPl) -> and [ ]
     (GaSg,GaSg) -> and [ ]
     (GthePl,GthePl) -> and [ ]
     (GtheSg,GtheSg) -> and [ ]
@@ -481,13 +564,22 @@ instance Eq (Tree a) where
     (GListVPS x1,GListVPS y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListWho x1,GListWho y1) -> and [x == y | (x,y) <- zip x1 y1]
     (LexMonth x,LexMonth y) -> x == y
+    (GCompoundN x1 x2,GCompoundN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (LexN x,LexN y) -> x == y
+    (G_premise_where_N2,G_premise_where_N2) -> and [ ]
+    (G_travel_by_N2,G_travel_by_N2) -> and [ ]
     (GConjNP x1 x2,GConjNP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GContents,GContents) -> and [ ]
     (GDetCN x1 x2,GDetCN y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GEVERY x1,GEVERY y1) -> and [ x1 == y1 ]
+    (GGenModNP x1 x2 x3,GGenModNP y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GGerundNP x1,GGerundNP y1) -> and [ x1 == y1 ]
     (GLoss_or_Damage,GLoss_or_Damage) -> and [ ]
     (GMassNP x1,GMassNP y1) -> and [ x1 == y1 ]
     (GNDB_Qualification,GNDB_Qualification) -> and [ ]
+    (GSubjWho x1 x2,GSubjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GUsePN x1,GUsePN y1) -> and [ x1 == y1 ]
+    (GYou,GYou) -> and [ ]
     (Ganimal,Ganimal) -> and [ ]
     (Gany_other_exclusion,Gany_other_exclusion) -> and [ ]
     (Gbirds,Gbirds) -> and [ ]
@@ -498,6 +590,7 @@ instance Eq (Tree a) where
     (Ginsects,Ginsects) -> and [ ]
     (Gplumbing_heating_or_AC,Gplumbing_heating_or_AC) -> and [ ]
     (Gpremium,Gpremium) -> and [ ]
+    (GrecoverUnparsedNP x1,GrecoverUnparsedNP y1) -> and [ x1 == y1 ]
     (Gresult_from x1,Gresult_from y1) -> and [ x1 == y1 ]
     (Grodents,Grodents) -> and [ ]
     (Gsigned,Gsigned) -> and [ ]
@@ -506,7 +599,10 @@ instance Eq (Tree a) where
     (Gswimming_pool,Gswimming_pool) -> and [ ]
     (Gvermin,Gvermin) -> and [ ]
     (Gwater,Gwater) -> and [ ]
+    (GNumPl,GNumPl) -> and [ ]
+    (GNumSg,GNumSg) -> and [ ]
     (Gnum x1,Gnum y1) -> and [ x1 == y1 ]
+    (LexPN x,LexPN y) -> x == y
     (GNEG,GNEG) -> and [ ]
     (GPOS,GPOS) -> and [ ]
     (GAP_PrePost x1,GAP_PrePost y1) -> and [ x1 == y1 ]
@@ -514,20 +610,16 @@ instance Eq (Tree a) where
     (GNP_PrePost x1,GNP_PrePost y1) -> and [ x1 == y1 ]
     (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4,GNP_caused_NP_to_VP_Prep_PrePost y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GNP_caused_by_PrePost x1,GNP_caused_by_PrePost y1) -> and [ x1 == y1 ]
-    (GV2_PrePost x1,GV2_PrePost y1) -> and [ x1 == y1 ]
+    (GSSlash_PrePost x1 x2 x3 x4,GSSlash_PrePost y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
+    (GS_PrePost x1 x2,GS_PrePost y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GV2_PrePost x1 x2 x3,GV2_PrePost y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GrecoverUnparsedPrePost x1,GrecoverUnparsedPrePost y1) -> and [ x1 == y1 ]
     (GConjPrep x1 x2,GConjPrep y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (Gabout_Prep,Gabout_Prep) -> and [ ]
-    (Gafter_Prep,Gafter_Prep) -> and [ ]
-    (Gbefore_Prep,Gbefore_Prep) -> and [ ]
-    (Gfor_Prep,Gfor_Prep) -> and [ ]
-    (Gfrom_Prep,Gfrom_Prep) -> and [ ]
-    (Gon_Prep,Gon_Prep) -> and [ ]
-    (Gpossess_Prep,Gpossess_Prep) -> and [ ]
-    (Gto_Prep,Gto_Prep) -> and [ ]
-    (Gwithin_Prep,Gwithin_Prep) -> and [ ]
+    (LexPrep x,LexPrep y) -> x == y
     (GConjPrePostQS x1 x2 x3 x4,GConjPrePostQS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjQS x1 x2,GConjQS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GIdRP,GIdRP) -> and [ ]
+    (GRelVPS x1 x2,GRelVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GConjPrePostS x1 x2 x3 x4,GConjPrePostS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjS x1 x2,GConjS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredVPS x1 x2,GPredVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -559,13 +651,7 @@ instance Eq (Tree a) where
     (Gpot51,Gpot51) -> and [ ]
     (Gpot5float x1,Gpot5float y1) -> and [ x1 == y1 ]
     (Gpot5plus x1 x2,Gpot5plus y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GAN x1,GAN y1) -> and [ x1 == y1 ]
-    (GEVERY x1,GEVERY y1) -> and [ x1 == y1 ]
-    (GPARTY x1,GPARTY y1) -> and [ x1 == y1 ]
-    (GSubjWho x1 x2,GSubjWho y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GTHE x1,GTHE y1) -> and [ x1 == y1 ]
-    (GYou,GYou) -> and [ ]
-    (GrecoverUnparsedSubj x1,GrecoverUnparsedSubj y1) -> and [ x1 == y1 ]
+    (LexSubj x,LexSubj y) -> x == y
     (GAFTER,GAFTER) -> and [ ]
     (GBEFORE,GBEFORE) -> and [ ]
     (GBY,GBY) -> and [ ]
@@ -592,7 +678,9 @@ instance Eq (Tree a) where
     (GYear_Unit,GYear_Unit) -> and [ ]
     (GrecoverUnparsedTimeUnit x1,GrecoverUnparsedTimeUnit y1) -> and [ x1 == y1 ]
     (GUPON x1,GUPON y1) -> and [ x1 == y1 ]
+    (GUPONnp x1 x2,GUPONnp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GrecoverUnparsedUpon x1,GrecoverUnparsedUpon y1) -> and [ x1 == y1 ]
+    (LexV x,LexV y) -> x == y
     (LexV2 x,LexV2 y) -> x == y
     (GAdvVP x1 x2,GAdvVP y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplV2 x1 x2,GComplV2 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -601,10 +689,14 @@ instance Eq (Tree a) where
     (GComplVSif x1 x2,GComplVSif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GComplVSthat x1 x2,GComplVSthat y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUseComp x1,GUseComp y1) -> and [ x1 == y1 ]
+    (GUseV x1,GUseV y1) -> and [ x1 == y1 ]
     (LexVP x,LexVP y) -> x == y
     (GMkVPI x1,GMkVPI y1) -> and [ x1 == y1 ]
+    (GComparison_Card_Years x1,GComparison_Card_Years y1) -> and [ x1 == y1 ]
     (GConjPrePostVPS x1 x2 x3 x4,GConjPrePostVPS y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GConjVPS x1 x2,GConjVPS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GGreaterThan x1,GGreaterThan y1) -> and [ x1 == y1 ]
+    (GLessThan x1,GLessThan y1) -> and [ x1 == y1 ]
     (GMayHave x1,GMayHave y1) -> and [ x1 == y1 ]
     (GMkVPS x1 x2 x3,GMkVPS y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (LexVS x,LexVS y) -> x == y
@@ -618,13 +710,34 @@ instance Eq (Tree a) where
     (GrecoverUnparsedWho x1,GrecoverUnparsedWho y1) -> and [ x1 == y1 ]
     (GMkYear x1 x2 x3 x4,GMkYear y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (LexYearComponent x,LexYearComponent y) -> x == y
-    (LexN x,LexN y) -> x == y
     (GString x, GString y) -> x == y
     (GInt x, GInt y) -> x == y
     (GFloat x, GFloat y) -> x == y
     _ -> False
 
+instance Gf GA where
+  gf (LexA x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+
+      Just (i,[]) -> LexA (showCId i)
+      _ -> error ("no A " ++ show t)
+
+instance Gf GA2 where
+  gf G_located_in_A2 = mkApp (mkCId "_located_in_A2") []
+  gf Gdue_to_A2 = mkApp (mkCId "due_to_A2") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "_located_in_A2" -> G_located_in_A2 
+      Just (i,[]) | i == mkCId "due_to_A2" -> Gdue_to_A2 
+
+
+      _ -> error ("no A2 " ++ show t)
+
 instance Gf GAP where
+  gf (GComplA2 x1 x2) = mkApp (mkCId "ComplA2") [gf x1, gf x2]
   gf (GConjAP x1 x2) = mkApp (mkCId "ConjAP") [gf x1, gf x2]
   gf (GInt_or_older x1) = mkApp (mkCId "Int_or_older") [gf x1]
   gf (GPositA x1) = mkApp (mkCId "PositA") [gf x1]
@@ -634,6 +747,7 @@ instance Gf GAP where
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "ComplA2" -> GComplA2 (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ConjAP" -> GConjAP (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Int_or_older" -> GInt_or_older (fg x1)
       Just (i,[x1]) | i == mkCId "PositA" -> GPositA (fg x1)
@@ -660,16 +774,53 @@ instance Gf GAdA where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "only_AdA" -> Gonly_AdA
+      Just (i,[]) | i == mkCId "only_AdA" -> Gonly_AdA 
 
 
       _ -> error ("no AdA " ++ show t)
+
+instance Gf GAdN where
+  gf (GAdnCAdv x1) = mkApp (mkCId "AdnCAdv") [gf x1]
+  gf Gat_least_AdN = mkApp (mkCId "at_least_AdN") []
+  gf Gat_most_AdN = mkApp (mkCId "at_most_AdN") []
+
+  fg t =
+    case unApp t of
+      Just (i,[x1]) | i == mkCId "AdnCAdv" -> GAdnCAdv (fg x1)
+      Just (i,[]) | i == mkCId "at_least_AdN" -> Gat_least_AdN 
+      Just (i,[]) | i == mkCId "at_most_AdN" -> Gat_most_AdN 
+
+
+      _ -> error ("no AdN " ++ show t)
 
 instance Gf GAdv where
   gf (GAdAdv x1 x2) = mkApp (mkCId "AdAdv") [gf x1, gf x2]
   gf (GByVP x1) = mkApp (mkCId "ByVP") [gf x1]
   gf (GConjAdv x1 x2) = mkApp (mkCId "ConjAdv") [gf x1, gf x2]
   gf (GPrepNP x1 x2) = mkApp (mkCId "PrepNP") [gf x1, gf x2]
+  gf (GSubjS x1 x2) = mkApp (mkCId "SubjS") [gf x1, gf x2]
+  gf (GWhileDoing x1) = mkApp (mkCId "WhileDoing") [gf x1]
+  gf G_as_Adv = mkApp (mkCId "_as_Adv") []
+  gf G_at_Adv = mkApp (mkCId "_at_Adv") []
+  gf G_directly_Adv = mkApp (mkCId "_directly_Adv") []
+  gf G_first_Adv = mkApp (mkCId "_first_Adv") []
+  gf G_fully_Adv = mkApp (mkCId "_fully_Adv") []
+  gf G_hence_Adv = mkApp (mkCId "_hence_Adv") []
+  gf G_here_Adv = mkApp (mkCId "_here_Adv") []
+  gf G_indirectly_Adv = mkApp (mkCId "_indirectly_Adv") []
+  gf G_least_Adv = mkApp (mkCId "_least_Adv") []
+  gf G_long_Adv = mkApp (mkCId "_long_Adv") []
+  gf G_more_Adv = mkApp (mkCId "_more_Adv") []
+  gf G_no_Adv = mkApp (mkCId "_no_Adv") []
+  gf G_on_its_way_Adv = mkApp (mkCId "_on_its_way_Adv") []
+  gf G_only_Adv = mkApp (mkCId "_only_Adv") []
+  gf G_permanently_Adv = mkApp (mkCId "_permanently_Adv") []
+  gf G_pland_Adv = mkApp (mkCId "_pland_Adv") []
+  gf G_so_Adv = mkApp (mkCId "_so_Adv") []
+  gf G_soon_Adv = mkApp (mkCId "_soon_Adv") []
+  gf G_then_Adv = mkApp (mkCId "_then_Adv") []
+  gf G_totally_Adv = mkApp (mkCId "_totally_Adv") []
+  gf G_up_Adv = mkApp (mkCId "_up_Adv") []
   gf Gin_part = mkApp (mkCId "in_part") []
   gf Gin_whole = mkApp (mkCId "in_whole") []
   gf (GrecoverUnparsedAdv x1) = mkApp (mkCId "recoverUnparsedAdv") [gf x1]
@@ -680,25 +831,80 @@ instance Gf GAdv where
       Just (i,[x1]) | i == mkCId "ByVP" -> GByVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "ConjAdv" -> GConjAdv (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "PrepNP" -> GPrepNP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "in_part" -> Gin_part
-      Just (i,[]) | i == mkCId "in_whole" -> Gin_whole
+      Just (i,[x1,x2]) | i == mkCId "SubjS" -> GSubjS (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "WhileDoing" -> GWhileDoing (fg x1)
+      Just (i,[]) | i == mkCId "_as_Adv" -> G_as_Adv 
+      Just (i,[]) | i == mkCId "_at_Adv" -> G_at_Adv 
+      Just (i,[]) | i == mkCId "_directly_Adv" -> G_directly_Adv 
+      Just (i,[]) | i == mkCId "_first_Adv" -> G_first_Adv 
+      Just (i,[]) | i == mkCId "_fully_Adv" -> G_fully_Adv 
+      Just (i,[]) | i == mkCId "_hence_Adv" -> G_hence_Adv 
+      Just (i,[]) | i == mkCId "_here_Adv" -> G_here_Adv 
+      Just (i,[]) | i == mkCId "_indirectly_Adv" -> G_indirectly_Adv 
+      Just (i,[]) | i == mkCId "_least_Adv" -> G_least_Adv 
+      Just (i,[]) | i == mkCId "_long_Adv" -> G_long_Adv 
+      Just (i,[]) | i == mkCId "_more_Adv" -> G_more_Adv 
+      Just (i,[]) | i == mkCId "_no_Adv" -> G_no_Adv 
+      Just (i,[]) | i == mkCId "_on_its_way_Adv" -> G_on_its_way_Adv 
+      Just (i,[]) | i == mkCId "_only_Adv" -> G_only_Adv 
+      Just (i,[]) | i == mkCId "_permanently_Adv" -> G_permanently_Adv 
+      Just (i,[]) | i == mkCId "_pland_Adv" -> G_pland_Adv 
+      Just (i,[]) | i == mkCId "_so_Adv" -> G_so_Adv 
+      Just (i,[]) | i == mkCId "_soon_Adv" -> G_soon_Adv 
+      Just (i,[]) | i == mkCId "_then_Adv" -> G_then_Adv 
+      Just (i,[]) | i == mkCId "_totally_Adv" -> G_totally_Adv 
+      Just (i,[]) | i == mkCId "_up_Adv" -> G_up_Adv 
+      Just (i,[]) | i == mkCId "in_part" -> Gin_part 
+      Just (i,[]) | i == mkCId "in_whole" -> Gin_whole 
       Just (i,[x1]) | i == mkCId "recoverUnparsedAdv" -> GrecoverUnparsedAdv (fg x1)
 
 
       _ -> error ("no Adv " ++ show t)
 
+instance Gf GCAdv where
+  gf Gless_CAdv = mkApp (mkCId "less_CAdv") []
+  gf Gmore_CAdv = mkApp (mkCId "more_CAdv") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "less_CAdv" -> Gless_CAdv 
+      Just (i,[]) | i == mkCId "more_CAdv" -> Gmore_CAdv 
+
+
+      _ -> error ("no CAdv " ++ show t)
+
 instance Gf GCN where
   gf (GAdjCN x1 x2) = mkApp (mkCId "AdjCN") [gf x1, gf x2]
+  gf (GCNwhereS x1 x2 x3) = mkApp (mkCId "CNwhereS") [gf x1, gf x2, gf x3]
+  gf (GComplN2 x1 x2) = mkApp (mkCId "ComplN2") [gf x1, gf x2]
+  gf (GRelCN x1 x2) = mkApp (mkCId "RelCN") [gf x1, gf x2]
   gf (GUseN x1) = mkApp (mkCId "UseN") [gf x1]
+  gf (G_CN_of_any_kind_CN x1) = mkApp (mkCId "_CN_of_any_kind_CN") [gf x1]
   gf (LexCN x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AdjCN" -> GAdjCN (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "CNwhereS" -> GCNwhereS (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2]) | i == mkCId "ComplN2" -> GComplN2 (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "RelCN" -> GRelCN (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseN" -> GUseN (fg x1)
+      Just (i,[x1]) | i == mkCId "_CN_of_any_kind_CN" -> G_CN_of_any_kind_CN (fg x1)
 
       Just (i,[]) -> LexCN (showCId i)
       _ -> error ("no CN " ++ show t)
+
+instance Gf GCard where
+  gf (GAdNum x1 x2) = mkApp (mkCId "AdNum") [gf x1, gf x2]
+  gf (GNumDigits x1) = mkApp (mkCId "NumDigits") [gf x1]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "AdNum" -> GAdNum (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "NumDigits" -> GNumDigits (fg x1)
+
+
+      _ -> error ("no Card " ++ show t)
 
 instance Gf GComp where
   gf (GCompAP x1) = mkApp (mkCId "CompAP") [gf x1]
@@ -735,15 +941,12 @@ instance Gf GCond where
       _ -> error ("no Cond " ++ show t)
 
 instance Gf GConj where
-  gf GAND = mkApp (mkCId "AND") []
-  gf GOR = mkApp (mkCId "OR") []
+  gf (LexConj x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AND" -> GAND
-      Just (i,[]) | i == mkCId "OR" -> GOR
 
-
+      Just (i,[]) -> LexConj (showCId i)
       _ -> error ("no Conj " ++ show t)
 
 instance Gf GConstraint where
@@ -751,10 +954,12 @@ instance Gf GConstraint where
   gf (GConjPreConstraint x1 x2 x3) = mkApp (mkCId "ConjPreConstraint") [gf x1, gf x2, gf x3]
   gf (GConjPrePostConstraint x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostConstraint") [gf x1, gf x2, gf x3, gf x4]
   gf (GRPleafAP x1) = mkApp (mkCId "RPleafAP") [gf x1]
+  gf (GRPleafAdv x1) = mkApp (mkCId "RPleafAdv") [gf x1]
   gf (GRPleafNP x1) = mkApp (mkCId "RPleafNP") [gf x1]
   gf (GRPleafS x1 x2) = mkApp (mkCId "RPleafS") [gf x1, gf x2]
   gf (GRPleafVP x1) = mkApp (mkCId "RPleafVP") [gf x1]
   gf (GrecoverRPis x1 x2) = mkApp (mkCId "recoverRPis") [gf x1, gf x2]
+  gf (GrecoverRPmath x1 x2 x3) = mkApp (mkCId "recoverRPmath") [gf x1, gf x2, gf x3]
   gf (GrecoverUnparsedConstraint x1) = mkApp (mkCId "recoverUnparsedConstraint") [gf x1]
 
   fg t =
@@ -763,10 +968,12 @@ instance Gf GConstraint where
       Just (i,[x1,x2,x3]) | i == mkCId "ConjPreConstraint" -> GConjPreConstraint (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostConstraint" -> GConjPrePostConstraint (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "RPleafAP" -> GRPleafAP (fg x1)
+      Just (i,[x1]) | i == mkCId "RPleafAdv" -> GRPleafAdv (fg x1)
       Just (i,[x1]) | i == mkCId "RPleafNP" -> GRPleafNP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "RPleafS" -> GRPleafS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "RPleafVP" -> GRPleafVP (fg x1)
       Just (i,[x1,x2]) | i == mkCId "recoverRPis" -> GrecoverRPis (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "recoverRPmath" -> GrecoverRPmath (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "recoverUnparsedConstraint" -> GrecoverUnparsedConstraint (fg x1)
 
 
@@ -798,14 +1005,15 @@ instance Gf GDeontic where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "MAY" -> GMAY
-      Just (i,[]) | i == mkCId "MUST" -> GMUST
-      Just (i,[]) | i == mkCId "SHANT" -> GSHANT
+      Just (i,[]) | i == mkCId "MAY" -> GMAY 
+      Just (i,[]) | i == mkCId "MUST" -> GMUST 
+      Just (i,[]) | i == mkCId "SHANT" -> GSHANT 
 
 
       _ -> error ("no Deontic " ++ show t)
 
 instance Gf GDet where
+  gf GaPl = mkApp (mkCId "aPl") []
   gf GaSg = mkApp (mkCId "aSg") []
   gf GthePl = mkApp (mkCId "thePl") []
   gf GtheSg = mkApp (mkCId "theSg") []
@@ -813,10 +1021,11 @@ instance Gf GDet where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "aSg" -> GaSg
-      Just (i,[]) | i == mkCId "thePl" -> GthePl
-      Just (i,[]) | i == mkCId "theSg" -> GtheSg
-      Just (i,[]) | i == mkCId "your" -> Gyour
+      Just (i,[]) | i == mkCId "aPl" -> GaPl 
+      Just (i,[]) | i == mkCId "aSg" -> GaSg 
+      Just (i,[]) | i == mkCId "thePl" -> GthePl 
+      Just (i,[]) | i == mkCId "theSg" -> GtheSg 
+      Just (i,[]) | i == mkCId "your" -> Gyour 
 
 
       _ -> error ("no Det " ++ show t)
@@ -842,14 +1051,14 @@ instance Gf GDigit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "n2" -> Gn2
-      Just (i,[]) | i == mkCId "n3" -> Gn3
-      Just (i,[]) | i == mkCId "n4" -> Gn4
-      Just (i,[]) | i == mkCId "n5" -> Gn5
-      Just (i,[]) | i == mkCId "n6" -> Gn6
-      Just (i,[]) | i == mkCId "n7" -> Gn7
-      Just (i,[]) | i == mkCId "n8" -> Gn8
-      Just (i,[]) | i == mkCId "n9" -> Gn9
+      Just (i,[]) | i == mkCId "n2" -> Gn2 
+      Just (i,[]) | i == mkCId "n3" -> Gn3 
+      Just (i,[]) | i == mkCId "n4" -> Gn4 
+      Just (i,[]) | i == mkCId "n5" -> Gn5 
+      Just (i,[]) | i == mkCId "n6" -> Gn6 
+      Just (i,[]) | i == mkCId "n7" -> Gn7 
+      Just (i,[]) | i == mkCId "n8" -> Gn8 
+      Just (i,[]) | i == mkCId "n9" -> Gn9 
 
 
       _ -> error ("no Digit " ++ show t)
@@ -1007,14 +1216,42 @@ instance Gf GMonth where
       Just (i,[]) -> LexMonth (showCId i)
       _ -> error ("no Month " ++ show t)
 
+instance Gf GN where
+  gf (GCompoundN x1 x2) = mkApp (mkCId "CompoundN") [gf x1, gf x2]
+  gf (LexN x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "CompoundN" -> GCompoundN (fg x1) (fg x2)
+
+      Just (i,[]) -> LexN (showCId i)
+      _ -> error ("no N " ++ show t)
+
+instance Gf GN2 where
+  gf G_premise_where_N2 = mkApp (mkCId "_premise_where_N2") []
+  gf G_travel_by_N2 = mkApp (mkCId "_travel_by_N2") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "_premise_where_N2" -> G_premise_where_N2 
+      Just (i,[]) | i == mkCId "_travel_by_N2" -> G_travel_by_N2 
+
+
+      _ -> error ("no N2 " ++ show t)
+
 instance Gf GNP where
   gf (GConjNP x1 x2) = mkApp (mkCId "ConjNP") [gf x1, gf x2]
   gf GContents = mkApp (mkCId "Contents") []
   gf (GDetCN x1 x2) = mkApp (mkCId "DetCN") [gf x1, gf x2]
+  gf (GEVERY x1) = mkApp (mkCId "EVERY") [gf x1]
+  gf (GGenModNP x1 x2 x3) = mkApp (mkCId "GenModNP") [gf x1, gf x2, gf x3]
   gf (GGerundNP x1) = mkApp (mkCId "GerundNP") [gf x1]
   gf GLoss_or_Damage = mkApp (mkCId "Loss_or_Damage") []
   gf (GMassNP x1) = mkApp (mkCId "MassNP") [gf x1]
   gf GNDB_Qualification = mkApp (mkCId "NDB_Qualification") []
+  gf (GSubjWho x1 x2) = mkApp (mkCId "SubjWho") [gf x1, gf x2]
+  gf (GUsePN x1) = mkApp (mkCId "UsePN") [gf x1]
+  gf GYou = mkApp (mkCId "You") []
   gf Ganimal = mkApp (mkCId "animal") []
   gf Gany_other_exclusion = mkApp (mkCId "any_other_exclusion") []
   gf Gbirds = mkApp (mkCId "birds") []
@@ -1025,6 +1262,7 @@ instance Gf GNP where
   gf Ginsects = mkApp (mkCId "insects") []
   gf Gplumbing_heating_or_AC = mkApp (mkCId "plumbing_heating_or_AC") []
   gf Gpremium = mkApp (mkCId "premium") []
+  gf (GrecoverUnparsedNP x1) = mkApp (mkCId "recoverUnparsedNP") [gf x1]
   gf (Gresult_from x1) = mkApp (mkCId "result_from") [gf x1]
   gf Grodents = mkApp (mkCId "rodents") []
   gf Gsigned = mkApp (mkCId "signed") []
@@ -1037,33 +1275,51 @@ instance Gf GNP where
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjNP" -> GConjNP (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "Contents" -> GContents
+      Just (i,[]) | i == mkCId "Contents" -> GContents 
       Just (i,[x1,x2]) | i == mkCId "DetCN" -> GDetCN (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "EVERY" -> GEVERY (fg x1)
+      Just (i,[x1,x2,x3]) | i == mkCId "GenModNP" -> GGenModNP (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "GerundNP" -> GGerundNP (fg x1)
-      Just (i,[]) | i == mkCId "Loss_or_Damage" -> GLoss_or_Damage
+      Just (i,[]) | i == mkCId "Loss_or_Damage" -> GLoss_or_Damage 
       Just (i,[x1]) | i == mkCId "MassNP" -> GMassNP (fg x1)
-      Just (i,[]) | i == mkCId "NDB_Qualification" -> GNDB_Qualification
-      Just (i,[]) | i == mkCId "animal" -> Ganimal
-      Just (i,[]) | i == mkCId "any_other_exclusion" -> Gany_other_exclusion
-      Just (i,[]) | i == mkCId "birds" -> Gbirds
-      Just (i,[]) | i == mkCId "cancelled" -> Gcancelled
-      Just (i,[]) | i == mkCId "claim" -> Gclaim
-      Just (i,[]) | i == mkCId "condition" -> Gcondition
-      Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance
-      Just (i,[]) | i == mkCId "insects" -> Ginsects
-      Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC
-      Just (i,[]) | i == mkCId "premium" -> Gpremium
+      Just (i,[]) | i == mkCId "NDB_Qualification" -> GNDB_Qualification 
+      Just (i,[x1,x2]) | i == mkCId "SubjWho" -> GSubjWho (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "UsePN" -> GUsePN (fg x1)
+      Just (i,[]) | i == mkCId "You" -> GYou 
+      Just (i,[]) | i == mkCId "animal" -> Ganimal 
+      Just (i,[]) | i == mkCId "any_other_exclusion" -> Gany_other_exclusion 
+      Just (i,[]) | i == mkCId "birds" -> Gbirds 
+      Just (i,[]) | i == mkCId "cancelled" -> Gcancelled 
+      Just (i,[]) | i == mkCId "claim" -> Gclaim 
+      Just (i,[]) | i == mkCId "condition" -> Gcondition 
+      Just (i,[]) | i == mkCId "household_appliance" -> Ghousehold_appliance 
+      Just (i,[]) | i == mkCId "insects" -> Ginsects 
+      Just (i,[]) | i == mkCId "plumbing_heating_or_AC" -> Gplumbing_heating_or_AC 
+      Just (i,[]) | i == mkCId "premium" -> Gpremium 
+      Just (i,[x1]) | i == mkCId "recoverUnparsedNP" -> GrecoverUnparsedNP (fg x1)
       Just (i,[x1]) | i == mkCId "result_from" -> Gresult_from (fg x1)
-      Just (i,[]) | i == mkCId "rodents" -> Grodents
-      Just (i,[]) | i == mkCId "signed" -> Gsigned
-      Just (i,[]) | i == mkCId "stay_during_policy_period" -> Gstay_during_policy_period
-      Just (i,[]) | i == mkCId "stay_overnight" -> Gstay_overnight
-      Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool
-      Just (i,[]) | i == mkCId "vermin" -> Gvermin
-      Just (i,[]) | i == mkCId "water" -> Gwater
+      Just (i,[]) | i == mkCId "rodents" -> Grodents 
+      Just (i,[]) | i == mkCId "signed" -> Gsigned 
+      Just (i,[]) | i == mkCId "stay_during_policy_period" -> Gstay_during_policy_period 
+      Just (i,[]) | i == mkCId "stay_overnight" -> Gstay_overnight 
+      Just (i,[]) | i == mkCId "swimming_pool" -> Gswimming_pool 
+      Just (i,[]) | i == mkCId "vermin" -> Gvermin 
+      Just (i,[]) | i == mkCId "water" -> Gwater 
 
 
       _ -> error ("no NP " ++ show t)
+
+instance Gf GNum where
+  gf GNumPl = mkApp (mkCId "NumPl") []
+  gf GNumSg = mkApp (mkCId "NumSg") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "NumPl" -> GNumPl 
+      Just (i,[]) | i == mkCId "NumSg" -> GNumSg 
+
+
+      _ -> error ("no Num " ++ show t)
 
 instance Gf GNumeral where
   gf (Gnum x1) = mkApp (mkCId "num") [gf x1]
@@ -1075,14 +1331,23 @@ instance Gf GNumeral where
 
       _ -> error ("no Numeral " ++ show t)
 
+instance Gf GPN where
+  gf (LexPN x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+
+      Just (i,[]) -> LexPN (showCId i)
+      _ -> error ("no PN " ++ show t)
+
 instance Gf GPol where
   gf GNEG = mkApp (mkCId "NEG") []
   gf GPOS = mkApp (mkCId "POS") []
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "NEG" -> GNEG
-      Just (i,[]) | i == mkCId "POS" -> GPOS
+      Just (i,[]) | i == mkCId "NEG" -> GNEG 
+      Just (i,[]) | i == mkCId "POS" -> GPOS 
 
 
       _ -> error ("no Pol " ++ show t)
@@ -1093,7 +1358,9 @@ instance Gf GPrePost where
   gf (GNP_PrePost x1) = mkApp (mkCId "NP_PrePost") [gf x1]
   gf (GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4) = mkApp (mkCId "NP_caused_NP_to_VP_Prep_PrePost") [gf x1, gf x2, gf x3, gf x4]
   gf (GNP_caused_by_PrePost x1) = mkApp (mkCId "NP_caused_by_PrePost") [gf x1]
-  gf (GV2_PrePost x1) = mkApp (mkCId "V2_PrePost") [gf x1]
+  gf (GSSlash_PrePost x1 x2 x3 x4) = mkApp (mkCId "SSlash_PrePost") [gf x1, gf x2, gf x3, gf x4]
+  gf (GS_PrePost x1 x2) = mkApp (mkCId "S_PrePost") [gf x1, gf x2]
+  gf (GV2_PrePost x1 x2 x3) = mkApp (mkCId "V2_PrePost") [gf x1, gf x2, gf x3]
   gf (GrecoverUnparsedPrePost x1) = mkApp (mkCId "recoverUnparsedPrePost") [gf x1]
 
   fg t =
@@ -1103,7 +1370,9 @@ instance Gf GPrePost where
       Just (i,[x1]) | i == mkCId "NP_PrePost" -> GNP_PrePost (fg x1)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "NP_caused_NP_to_VP_Prep_PrePost" -> GNP_caused_NP_to_VP_Prep_PrePost (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1]) | i == mkCId "NP_caused_by_PrePost" -> GNP_caused_by_PrePost (fg x1)
-      Just (i,[x1]) | i == mkCId "V2_PrePost" -> GV2_PrePost (fg x1)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "SSlash_PrePost" -> GSSlash_PrePost (fg x1) (fg x2) (fg x3) (fg x4)
+      Just (i,[x1,x2]) | i == mkCId "S_PrePost" -> GS_PrePost (fg x1) (fg x2)
+      Just (i,[x1,x2,x3]) | i == mkCId "V2_PrePost" -> GV2_PrePost (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "recoverUnparsedPrePost" -> GrecoverUnparsedPrePost (fg x1)
 
 
@@ -1111,30 +1380,13 @@ instance Gf GPrePost where
 
 instance Gf GPrep where
   gf (GConjPrep x1 x2) = mkApp (mkCId "ConjPrep") [gf x1, gf x2]
-  gf Gabout_Prep = mkApp (mkCId "about_Prep") []
-  gf Gafter_Prep = mkApp (mkCId "after_Prep") []
-  gf Gbefore_Prep = mkApp (mkCId "before_Prep") []
-  gf Gfor_Prep = mkApp (mkCId "for_Prep") []
-  gf Gfrom_Prep = mkApp (mkCId "from_Prep") []
-  gf Gon_Prep = mkApp (mkCId "on_Prep") []
-  gf Gpossess_Prep = mkApp (mkCId "possess_Prep") []
-  gf Gto_Prep = mkApp (mkCId "to_Prep") []
-  gf Gwithin_Prep = mkApp (mkCId "within_Prep") []
+  gf (LexPrep x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ConjPrep" -> GConjPrep (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "about_Prep" -> Gabout_Prep
-      Just (i,[]) | i == mkCId "after_Prep" -> Gafter_Prep
-      Just (i,[]) | i == mkCId "before_Prep" -> Gbefore_Prep
-      Just (i,[]) | i == mkCId "for_Prep" -> Gfor_Prep
-      Just (i,[]) | i == mkCId "from_Prep" -> Gfrom_Prep
-      Just (i,[]) | i == mkCId "on_Prep" -> Gon_Prep
-      Just (i,[]) | i == mkCId "possess_Prep" -> Gpossess_Prep
-      Just (i,[]) | i == mkCId "to_Prep" -> Gto_Prep
-      Just (i,[]) | i == mkCId "within_Prep" -> Gwithin_Prep
 
-
+      Just (i,[]) -> LexPrep (showCId i)
       _ -> error ("no Prep " ++ show t)
 
 instance Gf GQS where
@@ -1148,6 +1400,26 @@ instance Gf GQS where
 
 
       _ -> error ("no QS " ++ show t)
+
+instance Gf GRP where
+  gf GIdRP = mkApp (mkCId "IdRP") []
+
+  fg t =
+    case unApp t of
+      Just (i,[]) | i == mkCId "IdRP" -> GIdRP 
+
+
+      _ -> error ("no RP " ++ show t)
+
+instance Gf GRS where
+  gf (GRelVPS x1 x2) = mkApp (mkCId "RelVPS") [gf x1, gf x2]
+
+  fg t =
+    case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "RelVPS" -> GRelVPS (fg x1) (fg x2)
+
+
+      _ -> error ("no RS " ++ show t)
 
 instance Gf GS where
   gf (GConjPrePostS x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostS") [gf x1, gf x2, gf x3, gf x4]
@@ -1172,7 +1444,7 @@ instance Gf GSub10 where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0" -> Gpot0 (fg x1)
-      Just (i,[]) | i == mkCId "pot01" -> Gpot01
+      Just (i,[]) | i == mkCId "pot01" -> Gpot01 
 
 
       _ -> error ("no Sub10 " ++ show t)
@@ -1189,8 +1461,8 @@ instance Gf GSub100 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot0as1" -> Gpot0as1 (fg x1)
       Just (i,[x1]) | i == mkCId "pot1" -> Gpot1 (fg x1)
-      Just (i,[]) | i == mkCId "pot110" -> Gpot110
-      Just (i,[]) | i == mkCId "pot111" -> Gpot111
+      Just (i,[]) | i == mkCId "pot110" -> Gpot110 
+      Just (i,[]) | i == mkCId "pot111" -> Gpot111 
       Just (i,[x1,x2]) | i == mkCId "pot1plus" -> Gpot1plus (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "pot1to19" -> Gpot1to19 (fg x1)
 
@@ -1207,7 +1479,7 @@ instance Gf GSub1000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot1as2" -> Gpot1as2 (fg x1)
       Just (i,[x1]) | i == mkCId "pot2" -> Gpot2 (fg x1)
-      Just (i,[]) | i == mkCId "pot21" -> Gpot21
+      Just (i,[]) | i == mkCId "pot21" -> Gpot21 
       Just (i,[x1,x2]) | i == mkCId "pot2plus" -> Gpot2plus (fg x1) (fg x2)
 
 
@@ -1224,7 +1496,7 @@ instance Gf GSub1000000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot2as3" -> Gpot2as3 (fg x1)
       Just (i,[x1]) | i == mkCId "pot3" -> Gpot3 (fg x1)
-      Just (i,[]) | i == mkCId "pot31" -> Gpot31
+      Just (i,[]) | i == mkCId "pot31" -> Gpot31 
       Just (i,[x1]) | i == mkCId "pot3float" -> Gpot3float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot3plus" -> Gpot3plus (fg x1) (fg x2)
 
@@ -1242,7 +1514,7 @@ instance Gf GSub1000000000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot3as4" -> Gpot3as4 (fg x1)
       Just (i,[x1]) | i == mkCId "pot4" -> Gpot4 (fg x1)
-      Just (i,[]) | i == mkCId "pot41" -> Gpot41
+      Just (i,[]) | i == mkCId "pot41" -> Gpot41 
       Just (i,[x1]) | i == mkCId "pot4float" -> Gpot4float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot4plus" -> Gpot4plus (fg x1) (fg x2)
 
@@ -1260,7 +1532,7 @@ instance Gf GSub1000000000000 where
     case unApp t of
       Just (i,[x1]) | i == mkCId "pot4as5" -> Gpot4as5 (fg x1)
       Just (i,[x1]) | i == mkCId "pot5" -> Gpot5 (fg x1)
-      Just (i,[]) | i == mkCId "pot51" -> Gpot51
+      Just (i,[]) | i == mkCId "pot51" -> Gpot51 
       Just (i,[x1]) | i == mkCId "pot5float" -> Gpot5float (fg x1)
       Just (i,[x1,x2]) | i == mkCId "pot5plus" -> Gpot5plus (fg x1) (fg x2)
 
@@ -1268,25 +1540,12 @@ instance Gf GSub1000000000000 where
       _ -> error ("no Sub1000000000000 " ++ show t)
 
 instance Gf GSubj where
-  gf (GAN x1) = mkApp (mkCId "AN") [gf x1]
-  gf (GEVERY x1) = mkApp (mkCId "EVERY") [gf x1]
-  gf (GPARTY x1) = mkApp (mkCId "PARTY") [gf x1]
-  gf (GSubjWho x1 x2) = mkApp (mkCId "SubjWho") [gf x1, gf x2]
-  gf (GTHE x1) = mkApp (mkCId "THE") [gf x1]
-  gf GYou = mkApp (mkCId "You") []
-  gf (GrecoverUnparsedSubj x1) = mkApp (mkCId "recoverUnparsedSubj") [gf x1]
+  gf (LexSubj x) = mkApp (mkCId x) []
 
   fg t =
     case unApp t of
-      Just (i,[x1]) | i == mkCId "AN" -> GAN (fg x1)
-      Just (i,[x1]) | i == mkCId "EVERY" -> GEVERY (fg x1)
-      Just (i,[x1]) | i == mkCId "PARTY" -> GPARTY (fg x1)
-      Just (i,[x1,x2]) | i == mkCId "SubjWho" -> GSubjWho (fg x1) (fg x2)
-      Just (i,[x1]) | i == mkCId "THE" -> GTHE (fg x1)
-      Just (i,[]) | i == mkCId "You" -> GYou
-      Just (i,[x1]) | i == mkCId "recoverUnparsedSubj" -> GrecoverUnparsedSubj (fg x1)
 
-
+      Just (i,[]) -> LexSubj (showCId i)
       _ -> error ("no Subj " ++ show t)
 
 instance Gf GTComparison where
@@ -1299,12 +1558,12 @@ instance Gf GTComparison where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "AFTER" -> GAFTER
-      Just (i,[]) | i == mkCId "BEFORE" -> GBEFORE
-      Just (i,[]) | i == mkCId "BY" -> GBY
+      Just (i,[]) | i == mkCId "AFTER" -> GAFTER 
+      Just (i,[]) | i == mkCId "BEFORE" -> GBEFORE 
+      Just (i,[]) | i == mkCId "BY" -> GBY 
       Just (i,[x1,x2]) | i == mkCId "ConjTComparison" -> GConjTComparison (fg x1) (fg x2)
-      Just (i,[]) | i == mkCId "ON" -> GON
-      Just (i,[]) | i == mkCId "VAGUE" -> GVAGUE
+      Just (i,[]) | i == mkCId "ON" -> GON 
+      Just (i,[]) | i == mkCId "VAGUE" -> GVAGUE 
 
 
       _ -> error ("no TComparison " ++ show t)
@@ -1316,9 +1575,9 @@ instance Gf GTemp where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "pastSimul" -> GpastSimul
-      Just (i,[]) | i == mkCId "presAnt" -> GpresAnt
-      Just (i,[]) | i == mkCId "presSimul" -> GpresSimul
+      Just (i,[]) | i == mkCId "pastSimul" -> GpastSimul 
+      Just (i,[]) | i == mkCId "presAnt" -> GpresAnt 
+      Just (i,[]) | i == mkCId "presSimul" -> GpresSimul 
 
 
       _ -> error ("no Temp " ++ show t)
@@ -1371,9 +1630,9 @@ instance Gf GTimeUnit where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "Day_Unit" -> GDay_Unit
-      Just (i,[]) | i == mkCId "Month_Unit" -> GMonth_Unit
-      Just (i,[]) | i == mkCId "Year_Unit" -> GYear_Unit
+      Just (i,[]) | i == mkCId "Day_Unit" -> GDay_Unit 
+      Just (i,[]) | i == mkCId "Month_Unit" -> GMonth_Unit 
+      Just (i,[]) | i == mkCId "Year_Unit" -> GYear_Unit 
       Just (i,[x1]) | i == mkCId "recoverUnparsedTimeUnit" -> GrecoverUnparsedTimeUnit (fg x1)
 
 
@@ -1381,15 +1640,26 @@ instance Gf GTimeUnit where
 
 instance Gf GUpon where
   gf (GUPON x1) = mkApp (mkCId "UPON") [gf x1]
+  gf (GUPONnp x1 x2) = mkApp (mkCId "UPONnp") [gf x1, gf x2]
   gf (GrecoverUnparsedUpon x1) = mkApp (mkCId "recoverUnparsedUpon") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "UPON" -> GUPON (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "UPONnp" -> GUPONnp (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "recoverUnparsedUpon" -> GrecoverUnparsedUpon (fg x1)
 
 
       _ -> error ("no Upon " ++ show t)
+
+instance Gf GV where
+  gf (LexV x) = mkApp (mkCId x) []
+
+  fg t =
+    case unApp t of
+
+      Just (i,[]) -> LexV (showCId i)
+      _ -> error ("no V " ++ show t)
 
 instance Gf GV2 where
   gf (LexV2 x) = mkApp (mkCId x) []
@@ -1408,6 +1678,7 @@ instance Gf GVP where
   gf (GComplVSif x1 x2) = mkApp (mkCId "ComplVSif") [gf x1, gf x2]
   gf (GComplVSthat x1 x2) = mkApp (mkCId "ComplVSthat") [gf x1, gf x2]
   gf (GUseComp x1) = mkApp (mkCId "UseComp") [gf x1]
+  gf (GUseV x1) = mkApp (mkCId "UseV") [gf x1]
   gf (LexVP x) = mkApp (mkCId x) []
 
   fg t =
@@ -1419,6 +1690,7 @@ instance Gf GVP where
       Just (i,[x1,x2]) | i == mkCId "ComplVSif" -> GComplVSif (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "ComplVSthat" -> GComplVSthat (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UseComp" -> GUseComp (fg x1)
+      Just (i,[x1]) | i == mkCId "UseV" -> GUseV (fg x1)
 
       Just (i,[]) -> LexVP (showCId i)
       _ -> error ("no VP " ++ show t)
@@ -1434,15 +1706,21 @@ instance Gf GVPI where
       _ -> error ("no VPI " ++ show t)
 
 instance Gf GVPS where
+  gf (GComparison_Card_Years x1) = mkApp (mkCId "Comparison_Card_Years") [gf x1]
   gf (GConjPrePostVPS x1 x2 x3 x4) = mkApp (mkCId "ConjPrePostVPS") [gf x1, gf x2, gf x3, gf x4]
   gf (GConjVPS x1 x2) = mkApp (mkCId "ConjVPS") [gf x1, gf x2]
+  gf (GGreaterThan x1) = mkApp (mkCId "GreaterThan") [gf x1]
+  gf (GLessThan x1) = mkApp (mkCId "LessThan") [gf x1]
   gf (GMayHave x1) = mkApp (mkCId "MayHave") [gf x1]
   gf (GMkVPS x1 x2 x3) = mkApp (mkCId "MkVPS") [gf x1, gf x2, gf x3]
 
   fg t =
     case unApp t of
+      Just (i,[x1]) | i == mkCId "Comparison_Card_Years" -> GComparison_Card_Years (fg x1)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "ConjPrePostVPS" -> GConjPrePostVPS (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "ConjVPS" -> GConjVPS (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "GreaterThan" -> GGreaterThan (fg x1)
+      Just (i,[x1]) | i == mkCId "LessThan" -> GLessThan (fg x1)
       Just (i,[x1]) | i == mkCId "MayHave" -> GMayHave (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "MkVPS" -> GMkVPS (fg x1) (fg x2) (fg x3)
 
@@ -1510,39 +1788,7 @@ instance Gf GYearComponent where
 
 
 
-instance Gf GA where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
-instance Gf GA2 where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
 instance Gf GAnt where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
-instance Gf GN where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
-
-instance Gf GN2 where
   gf _ = undefined
   fg _ = undefined
 
@@ -1557,16 +1803,9 @@ instance Gf GTense where
 
 
 
-
-instance Gf GV where
-  gf _ = undefined
-  fg _ = undefined
-
-
-
-
 instance Compos Tree where
   compos r a f t = case t of
+    GComplA2 x1 x2 -> r GComplA2 `a` f x1 `a` f x2
     GConjAP x1 x2 -> r GConjAP `a` f x1 `a` f x2
     GInt_or_older x1 -> r GInt_or_older `a` f x1
     GPositA x1 -> r GPositA `a` f x1
@@ -1574,13 +1813,22 @@ instance Compos Tree where
     Gensuing x1 -> r Gensuing `a` f x1
     GACTION x1 -> r GACTION `a` f x1
     GrecoverUnparsedAction x1 -> r GrecoverUnparsedAction `a` f x1
+    GAdnCAdv x1 -> r GAdnCAdv `a` f x1
     GAdAdv x1 x2 -> r GAdAdv `a` f x1 `a` f x2
     GByVP x1 -> r GByVP `a` f x1
     GConjAdv x1 x2 -> r GConjAdv `a` f x1 `a` f x2
     GPrepNP x1 x2 -> r GPrepNP `a` f x1 `a` f x2
+    GSubjS x1 x2 -> r GSubjS `a` f x1 `a` f x2
+    GWhileDoing x1 -> r GWhileDoing `a` f x1
     GrecoverUnparsedAdv x1 -> r GrecoverUnparsedAdv `a` f x1
     GAdjCN x1 x2 -> r GAdjCN `a` f x1 `a` f x2
+    GCNwhereS x1 x2 x3 -> r GCNwhereS `a` f x1 `a` f x2 `a` f x3
+    GComplN2 x1 x2 -> r GComplN2 `a` f x1 `a` f x2
+    GRelCN x1 x2 -> r GRelCN `a` f x1 `a` f x2
     GUseN x1 -> r GUseN `a` f x1
+    G_CN_of_any_kind_CN x1 -> r G_CN_of_any_kind_CN `a` f x1
+    GAdNum x1 x2 -> r GAdNum `a` f x1 `a` f x2
+    GNumDigits x1 -> r GNumDigits `a` f x1
     GCompAP x1 -> r GCompAP `a` f x1
     GCompAdv x1 -> r GCompAdv `a` f x1
     GCompNP x1 -> r GCompNP `a` f x1
@@ -1594,18 +1842,26 @@ instance Compos Tree where
     GConjPreConstraint x1 x2 x3 -> r GConjPreConstraint `a` f x1 `a` f x2 `a` f x3
     GConjPrePostConstraint x1 x2 x3 x4 -> r GConjPrePostConstraint `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GRPleafAP x1 -> r GRPleafAP `a` f x1
+    GRPleafAdv x1 -> r GRPleafAdv `a` f x1
     GRPleafNP x1 -> r GRPleafNP `a` f x1
     GRPleafS x1 x2 -> r GRPleafS `a` f x1 `a` f x2
     GRPleafVP x1 -> r GRPleafVP `a` f x1
     GrecoverRPis x1 x2 -> r GrecoverRPis `a` f x1 `a` f x2
+    GrecoverRPmath x1 x2 x3 -> r GrecoverRPmath `a` f x1 `a` f x2 `a` f x3
     GrecoverUnparsedConstraint x1 -> r GrecoverUnparsedConstraint `a` f x1
     GMkDate x1 x2 x3 -> r GMkDate `a` f x1 `a` f x2 `a` f x3
     GIDig x1 -> r GIDig `a` f x1
     GIIDig x1 x2 -> r GIIDig `a` f x1 `a` f x2
+    GCompoundN x1 x2 -> r GCompoundN `a` f x1 `a` f x2
     GConjNP x1 x2 -> r GConjNP `a` f x1 `a` f x2
     GDetCN x1 x2 -> r GDetCN `a` f x1 `a` f x2
+    GEVERY x1 -> r GEVERY `a` f x1
+    GGenModNP x1 x2 x3 -> r GGenModNP `a` f x1 `a` f x2 `a` f x3
     GGerundNP x1 -> r GGerundNP `a` f x1
     GMassNP x1 -> r GMassNP `a` f x1
+    GSubjWho x1 x2 -> r GSubjWho `a` f x1 `a` f x2
+    GUsePN x1 -> r GUsePN `a` f x1
+    GrecoverUnparsedNP x1 -> r GrecoverUnparsedNP `a` f x1
     Gresult_from x1 -> r Gresult_from `a` f x1
     Gnum x1 -> r Gnum `a` f x1
     GAP_PrePost x1 -> r GAP_PrePost `a` f x1
@@ -1613,11 +1869,14 @@ instance Compos Tree where
     GNP_PrePost x1 -> r GNP_PrePost `a` f x1
     GNP_caused_NP_to_VP_Prep_PrePost x1 x2 x3 x4 -> r GNP_caused_NP_to_VP_Prep_PrePost `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GNP_caused_by_PrePost x1 -> r GNP_caused_by_PrePost `a` f x1
-    GV2_PrePost x1 -> r GV2_PrePost `a` f x1
+    GSSlash_PrePost x1 x2 x3 x4 -> r GSSlash_PrePost `a` f x1 `a` f x2 `a` f x3 `a` f x4
+    GS_PrePost x1 x2 -> r GS_PrePost `a` f x1 `a` f x2
+    GV2_PrePost x1 x2 x3 -> r GV2_PrePost `a` f x1 `a` f x2 `a` f x3
     GrecoverUnparsedPrePost x1 -> r GrecoverUnparsedPrePost `a` f x1
     GConjPrep x1 x2 -> r GConjPrep `a` f x1 `a` f x2
     GConjPrePostQS x1 x2 x3 x4 -> r GConjPrePostQS `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjQS x1 x2 -> r GConjQS `a` f x1 `a` f x2
+    GRelVPS x1 x2 -> r GRelVPS `a` f x1 `a` f x2
     GConjPrePostS x1 x2 x3 x4 -> r GConjPrePostS `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjS x1 x2 -> r GConjS `a` f x1 `a` f x2
     GPredVPS x1 x2 -> r GPredVPS `a` f x1 `a` f x2
@@ -1642,12 +1901,6 @@ instance Compos Tree where
     Gpot5 x1 -> r Gpot5 `a` f x1
     Gpot5float x1 -> r Gpot5float `a` f x1
     Gpot5plus x1 x2 -> r Gpot5plus `a` f x1 `a` f x2
-    GAN x1 -> r GAN `a` f x1
-    GEVERY x1 -> r GEVERY `a` f x1
-    GPARTY x1 -> r GPARTY `a` f x1
-    GSubjWho x1 x2 -> r GSubjWho `a` f x1 `a` f x2
-    GTHE x1 -> r GTHE `a` f x1
-    GrecoverUnparsedSubj x1 -> r GrecoverUnparsedSubj `a` f x1
     GConjTComparison x1 x2 -> r GConjTComparison `a` f x1 `a` f x2
     GTemporalConstraint x1 x2 x3 -> r GTemporalConstraint `a` f x1 `a` f x2 `a` f x3
     GTemporalConstraintNoDigits x1 x2 -> r GTemporalConstraintNoDigits `a` f x1 `a` f x2
@@ -1663,6 +1916,7 @@ instance Compos Tree where
     GsWHO x1 x2 -> r GsWHO `a` f x1 `a` f x2
     GrecoverUnparsedTimeUnit x1 -> r GrecoverUnparsedTimeUnit `a` f x1
     GUPON x1 -> r GUPON `a` f x1
+    GUPONnp x1 x2 -> r GUPONnp `a` f x1 `a` f x2
     GrecoverUnparsedUpon x1 -> r GrecoverUnparsedUpon `a` f x1
     GAdvVP x1 x2 -> r GAdvVP `a` f x1 `a` f x2
     GComplV2 x1 x2 -> r GComplV2 `a` f x1 `a` f x2
@@ -1671,9 +1925,13 @@ instance Compos Tree where
     GComplVSif x1 x2 -> r GComplVSif `a` f x1 `a` f x2
     GComplVSthat x1 x2 -> r GComplVSthat `a` f x1 `a` f x2
     GUseComp x1 -> r GUseComp `a` f x1
+    GUseV x1 -> r GUseV `a` f x1
     GMkVPI x1 -> r GMkVPI `a` f x1
+    GComparison_Card_Years x1 -> r GComparison_Card_Years `a` f x1
     GConjPrePostVPS x1 x2 x3 x4 -> r GConjPrePostVPS `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GConjVPS x1 x2 -> r GConjVPS `a` f x1 `a` f x2
+    GGreaterThan x1 -> r GGreaterThan `a` f x1
+    GLessThan x1 -> r GLessThan `a` f x1
     GMayHave x1 -> r GMayHave `a` f x1
     GMkVPS x1 x2 x3 -> r GMkVPS `a` f x1 `a` f x2 `a` f x3
     GAPWho x1 -> r GAPWho `a` f x1

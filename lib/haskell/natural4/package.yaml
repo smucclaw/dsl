@@ -70,6 +70,7 @@ dependencies:
   - mono-traversable
   - string-interpolate
   - prettyprinter-interp
+  - json
 
 language: GHC2021
 
@@ -77,6 +78,11 @@ ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iteratio
 
 library:
   source-dirs: src
+  dependencies:
+      - filepath
+      - filemanip
+# the file stuff is for the interactive repl utils
+# it's a bit misleading to list them as dependencies of the lib, but there doesn't seem to be any real alternative if we're using stack, at least according to discord
 
 executables:
   natural4-exe:

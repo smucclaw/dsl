@@ -51,6 +51,7 @@ type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
+           | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
   deriving (Eq, Ord, Show, Generic, ToJSON)
@@ -277,6 +278,7 @@ mkRpmt a = RPMT (MTT <$> a)
 mkRpmtLeaf :: [Text.Text] -> BoolStructR
 mkRpmtLeaf a = mkLeaf (mkRpmt a)
 
+-- | [TODO] figure out why there are two very similar functions, this and `rel2op`
 rel2txt :: RPRel -> Text.Text
 rel2txt RPis      = "IS"
 rel2txt RPhas     = "HAS" -- "relHas"
@@ -291,6 +293,8 @@ rel2txt RPnot     = "NOT"    -- "relNot"
 rel2txt RPand     = "&&"    -- "relAnd"
 rel2txt RPor      = "||"    -- "relOr"
 rel2txt RPmap     = "MAP"
+rel2txt RPmin     = "MIN"
+rel2txt RPmax     = "MAX"
 rel2txt RPsum     = "SUM"
 rel2txt RPproduct = "PRODUCT"
 rel2txt (RPTC TBefore) = "BEFORE"
@@ -299,6 +303,7 @@ rel2txt (RPTC TBy    ) = "BY"
 rel2txt (RPTC TOn)     = "ON"
 rel2txt (RPTC TVague)  = "ABOUT"
 
+-- | [TODO] figure out why there are two very similar functions, this and `rel2txt`
 rel2op :: RPRel -> Text.Text
 rel2op RPis      = "IS"
 rel2op RPhas     = ".?"
@@ -312,14 +317,7 @@ rel2op RPnotElem = "NOT IN"
 rel2op RPnot     = "NOT"
 rel2op RPand     = "&&"
 rel2op RPor      = "||"
-rel2op RPmap     = "MAP"
-rel2op RPsum     = "SUM"
-rel2op RPproduct = "PRODUCT"
-rel2op (RPTC TBefore) = "BEFORE"
-rel2op (RPTC TAfter ) = "AFTER"
-rel2op (RPTC TBy    ) = "BY"
-rel2op (RPTC TOn)     = "ON"
-rel2op (RPTC TVague)  = "ABOUT"
+rel2op x         = rel2txt x
 
 rp2mt :: RelationalPredicate -> MultiTerm
 rp2mt (RPParamText    pt)            = pt2multiterm pt
@@ -332,7 +330,7 @@ rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
 rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
-rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1, [MTT $ rel2op rel], mt2]
+rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1 ++ [MTT $ rel2op rel] ++ mt2]
 rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ MTT (rel2op rel) : bod
                                               | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
 rp2bodytexts (RPnary         rel rps)       = [MTT (rel2op rel), MTT "("] : concatMap rp2bodytexts rps ++ [[MTT ")"]]
@@ -385,6 +383,7 @@ instance Hashable a => Hashable (TemporalConstraint a)
 
 type RuleName   = MultiTerm
 type EntityType = Text.Text
+type EntityName = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
@@ -401,6 +400,7 @@ data InterpreterOptions = IOpts
   }
   deriving (Eq, Ord, Show)
 
+-- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
 defaultInterpreterOptions :: InterpreterOptions
 defaultInterpreterOptions = IOpts
   { enums2decls = False
@@ -415,7 +415,7 @@ getUnderlyingType   (SimpleType TList0    s1) = Right s1
 getUnderlyingType   (SimpleType TList1    s1) = Right s1
 getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
 
--- what's the difference between SymTab, ClsTab, and ScopeTabs?
+-- * what's the difference between SymTab, ClsTab, and ScopeTabs?
 
 -- | ClsTab: things that are explicitly defined in a Type Declaration (DECLARE ... HAS ...) end up in the ClsTab
 -- and they qualify to be used as types on the RHS of a :: definition which could appear anywhere.
@@ -456,6 +456,8 @@ type SymTab = Map.HashMap MultiTerm (Inferrable TypeSig, [HornClause2])
 --   If type checking / inference have not been implemented the snd will be empty.
 type Inferrable ts = (Maybe ts, [ts])
 
+defaultInferrableTypeSig = (Nothing, [])
+
 thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 
 -- | attributes defined in the type declaration for this class specifically
@@ -471,7 +473,7 @@ extendedAttributes o@(CT clstab) subclass = do
                  (Just (Just (CT ea))) -> ea
   return $ CT $ ct <> eAttrs
 
--- get out whatever type signature has been user defined or inferred.
+-- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
 getSymType (Just x, _)    = Just x
 getSymType (Nothing, x:_) = Just x
@@ -575,6 +577,7 @@ data RunConfig = RC { debug     :: Bool
                     , toBabyL4  :: Bool
                     , toASP     :: Bool
                     , toProlog  :: Bool
+                    , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
                     , saveAKA   :: Bool
@@ -600,6 +603,7 @@ defaultRC = RC
         , toBabyL4 = False
         , toASP    = False
         , toProlog = False
+        , toSCasp  = False
         , toUppaal = False
         , saveAKA = False
         , wantNotRules = False

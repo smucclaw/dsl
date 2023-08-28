@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -W #-}
+{-# OPTIONS_GHC -foptimal-applicative-do #-}
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
@@ -11,13 +12,22 @@
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
 
-module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) where
+module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4hc, SimpL4(..), SimL4Error(..)) where
 
 import Data.Text qualified as T
 import qualified Data.Text.Lazy as T (toStrict)
 import qualified Data.Text.Lazy.Builder as B
 import qualified Data.Text.Lazy.Builder.Int as B
 import qualified Data.Text.Lazy.Builder.RealFloat as B
+
+import Control.Monad.Validate
+  ( MonadValidate (..)
+    , Validate
+    , refute
+    , dispute
+    , runValidate
+    )
+import Control.Monad.Identity
 
 import Data.Bifunctor       ( first )
 import Data.HashMap.Strict qualified as HM
@@ -40,34 +50,52 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
 
 
 {-
-TODO: All the `error ..`s should be checked for upfront in the ValidateL4Input module
+TODOs: 
+1. Think about checking for some of the `error ..`s upfront in the ValidateL4Input module
+2. Check whether there are also regulative rules; throw error if so. This should prob be in the ValidateL4Input module
 -}
 
+-- | TODO: use more fine-grained types when time permits
+newtype SimL4Error = MkErr { unpackErr :: T.Text }
+  deriving newtype (Eq, Ord, IsString, Semigroup, Monoid)
+  deriving stock (Show)
+
+newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate [SimL4Error] a }
+    deriving newtype (Functor, Applicative, Monad, MonadValidate [SimL4Error])
+{- ^ TODOs: 
+1. Use the newtype...
+2. Per monad-validate's docs, move away from native linked list when time permits --- use Dual [a] or Seq or even Hashset
+3. When time permits, we probably want to switch to validateT add Reader in there for metadata like the location of the erroring rule
+-}
 
 -- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
 {- | 
   Precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
   TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
 -}
-simplifyL4ruleish :: L4.Rule -> SimpleL4HC
-simplifyL4ruleish l4r =
-  let gvars  = gvarsFromL4Rule l4r
-      clause = Prelude.head $ L4.clauses l4r
-      simpHead  = simplifyHead clause.hHead
-               -- this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
-  in case clause.hBody of
-    Nothing   -> MkL4FactHc {fgiven = gvars, fhead = simpHead}
-    Just rbod -> MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simplifyHcBodyBsr rbod}
+simplifyL4hc :: L4.Rule -> SimpL4 SimpleL4HC
+simplifyL4hc l4hc = do
+  let gvars  = gvarsFromL4Rule l4hc
+      clause = Prelude.head $ L4.clauses l4hc
+              -- ^ this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
+  simpHead  <- simplifyHead clause.hHead
+
+  case clause.hBody of
+    Nothing   ->
+      pure $ MkL4FactHc {fgiven = gvars, fhead = simpHead}
+    Just rbod -> do
+      simpBod <- simplifyHcBodyBsr rbod
+      pure $ MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simpBod}
     -- ^ There are Facts / HCs with Nothing in the body in the encoding 
 
 {-------------------------------------------------------------------------------
     Simplifying L4 HCs
 -------------------------------------------------------------------------------}
 
-simplifyHead :: L4.RelationalPredicate -> L4AtomicP
+simplifyHead :: L4.RelationalPredicate -> SimpL4 L4AtomicP
 simplifyHead = \case
-  RPMT exprs                      -> ABPatomic $ mtes2cells exprs
-  RPConstraint exprsl RPis exprsr -> simpheadRPC exprsl exprsr
+  RPMT exprs                      -> pure $ ABPatomic . mtes2cells $ exprs
+  RPConstraint exprsl RPis exprsr -> pure $ simpheadRPC exprsl exprsr
                                     {- ^ 
                                       1. Match on RPis directly cos no other rel operator shld appear here in the head, given the encoding convention / invariants.
 
@@ -79,10 +107,10 @@ simplifyHead = \case
 
                                       We handle the case of RPis in a RPConstraint the same way in both the body and head. 
                                     -}
-  RPConstraint {}                -> error "should not be seeing other kinds of RPConstraint in head"
-  RPBoolStructR {}               -> error "should not be seeing RPBoolStructR in head"
-  RPParamText _                  -> error "should not be seeing RPParamText in head"
-  RPnary {}                      -> error "I don't see any RPnary in the head in Joe's encoding, so."
+  RPConstraint {}                -> SimpL4 $ refute [MkErr "should not be seeing RPConstraints other than the RPis pattern in head"]
+  RPBoolStructR {}               -> SimpL4 $ refute [MkErr "RPBoolStructR in head of HC not supported"]
+  RPParamText _                  -> SimpL4 $ refute [MkErr "RPParamText in head of HC not supported"]
+  RPnary {}                      -> SimpL4 $ refute [MkErr "RPnary in the head of HC not supported."]
 
 
 {- ^
@@ -129,12 +157,19 @@ simpheadRPC exprsl exprsr =
     simplifying body of L4 HC
 -------------------------------------------------------------------------------}
 
-simplifyHcBodyBsr :: L4.BoolStructR -> BoolPropn L4AtomicP
+simplifyHcBodyBsr :: L4.BoolStructR -> SimpL4 (BoolPropn L4AtomicP)
 simplifyHcBodyBsr = \case
-  AA.Leaf rp      -> simplifybodyRP rp
-  AA.All _ propns -> And (map simplifyHcBodyBsr propns)
-  AA.Any _ propns -> Or (map simplifyHcBodyBsr propns)
-  AA.Not propn    -> Not (simplifyHcBodyBsr propn)
+  AA.Leaf rp      -> 
+    simplifybodyRP rp
+  AA.All _ propns -> do
+    props <- mapM simplifyHcBodyBsr propns
+    return $ And props
+  AA.Any _ propns -> do
+    props <- mapM simplifyHcBodyBsr propns
+    return $ Or props
+  AA.Not propn    -> do
+    prop <- simplifyHcBodyBsr propn
+    return $ Not prop
 {- ^ where a 'L4 propn' = BoolStructR =  BoolStruct _lbl RelationalPredicate.
 Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of the data constructors for the RelationalPredicate sum type
 -}
@@ -219,15 +254,15 @@ t IS MIN t1 t2 .. tn:
                     ]])
 -}
 
-simplifybodyRP :: RelationalPredicate -> BoolPropn L4AtomicP
+simplifybodyRP :: RelationalPredicate -> SimpL4 (BoolPropn L4AtomicP)
 simplifybodyRP = \case
-  RPMT exprs                         -> MkTrueAtomicBP (mtes2cells exprs)
+  RPMT exprs                         -> pure $ MkTrueAtomicBP (mtes2cells exprs)
                                      -- ^ this is the same for both the body and head
   RPConstraint exprsl rel exprsr     -> case rel of
-                                          RPis  -> simpbodRPC @RPis exprsl exprsr
-                                          RPor  -> simpbodRPC @RPor exprsl exprsr
-                                          RPand -> simpbodRPC @RPand exprsl exprsr
-                                          _     -> error "shouldn't be seeing other rel ops in rpconstraint in body"
+                                          RPis  -> pure $ simpbodRPC @RPis exprsl exprsr
+                                          RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
+                                          RPand -> pure $ simpbodRPC @RPand exprsl exprsr
+                                          _     -> SimpL4 $ refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
                                           {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
                                               EG: ( Leaf
                                                     ( RPConstraint
@@ -238,21 +273,21 @@ simplifybodyRP = \case
                                                   )                           -}
 
   -- max / min / sum x where φ(x)
-  TermIsMaxXWhere term φx            -> MkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
-  TermIsMinXWhere term φx            -> MkIsOpSuchTtBP (mte2cell term) MinXSuchThat (mtes2cells φx)
-  TermIsSumXWhere total φx           -> MkIsOpSuchTtBP (mte2cell total) SumEachXSuchThat (mtes2cells φx)
+  TermIsMaxXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
+  TermIsMinXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MinXSuchThat (mtes2cells φx)
+  TermIsSumXWhere total φx           -> pure $ MkIsOpSuchTtBP (mte2cell total) SumEachXSuchThat (mtes2cells φx)
 
   -- max / min / sum of terms
-  TermIsMax term maxargRPs           -> termIsNaryOpOf MaxOf term maxargRPs
-  TermIsMin term minargRPs           -> termIsNaryOpOf MinOf term minargRPs
-  TotalIsSumTerms total summandRPs   -> termIsNaryOpOf SumOf total summandRPs
-  TotalIsProductTerms total argRPs   -> termIsNaryOpOf ProductOf total argRPs
+  TermIsMax term maxargRPs           -> pure $ termIsNaryOpOf MaxOf term maxargRPs
+  TermIsMin term minargRPs           -> pure $ termIsNaryOpOf MinOf term minargRPs
+  TotalIsSumTerms total summandRPs   -> pure $ termIsNaryOpOf SumOf total summandRPs
+  TotalIsProductTerms total argRPs   -> pure $ termIsNaryOpOf ProductOf total argRPs
 
-  T1IsNotT2 t1 t2                     -> MkIsDiffFr (mte2cell t1) (mte2cell t2)
+  T1IsNotT2 t1 t2                    -> pure $ MkIsDiffFr (mte2cell t1) (mte2cell t2)
 
-  RPnary{}                              -> error "The spec doesn't support other RPnary constructs in the body of a HC"
-  RPBoolStructR {}                      -> error "The spec does not support a RPRel other than RPis in a RPBoolStructR"
-  RPParamText _                         -> error "should not be seeing RPParamText in body"
+  RPnary{}                           -> SimpL4 $ refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
+  RPBoolStructR {}                   -> SimpL4 $ refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
+  RPParamText _                      -> SimpL4 $ refute [MkErr "should not be seeing RPParamText in body"]
 
 
 termIsNaryOpOf :: Foldable seq => OpOf -> MTExpr -> seq RelationalPredicate -> BoolPropn L4AtomicP
@@ -266,7 +301,7 @@ atomRPoperand2cell = \case
   RPMT mtexprs    -> mtes2cells mtexprs
   RPParamText _pt -> error "not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"
                     -- mtes2cells (concatMap (NE.toList . fst) (NE.toList pt)) 
-  _              -> error "input rp supposed to be atomic"
+  _               -> error "input rp supposed to be atomic"
 
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
@@ -340,3 +375,16 @@ int2Text = T.toStrict . B.toLazyText . B.decimal
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
 -- wrapper = concat . map extractGiven . coerce
+{- a more ambitious version, for the future: 
+data SimL4Error = Error {  errInfo :: SimL4ErrorInfo
+                            --  in the future: errLoc :: ... 
+                        }
+
+
+data SimL4ErrorInfo = HeadErr !T.Text
+                    | BodyErr !T.Text
+pattern MkHeadErr :: T.Text -> SimL4Error
+pattern MkBodyErr :: T.Text -> SimL4Error
+pattern MkHeadErr errtxt = Error (HeadErr errtxt)
+pattern MkBodyErr errtxt = Error (BodyErr errtxt)
+-}

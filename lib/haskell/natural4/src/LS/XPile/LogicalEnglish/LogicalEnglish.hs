@@ -31,7 +31,9 @@ import GHC.Generics (Generic)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
+import Control.Monad.Validate (runValidate)
 import Data.String (IsString)
+import Data.Coerce (coerce)
 import Data.List ( sort )
 
 import Prettyprinter
@@ -50,7 +52,7 @@ import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
       check, refine, loadRawL4AsUnvalid)
-import LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4ruleish) -- TODO: Add import list
+import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4hc) -- TODO: Add import list
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
@@ -97,16 +99,29 @@ checkAndRefine rawrules = do
 allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
 allNLAs vhcs = HS.unions $ map nlasFromVarsHC vhcs
 
-doc2str :: Doc ann -> String
-doc2str = T.unpack . myrender
+
+simplifyL4hcs :: [L4.Rule] -> SimpL4 [SimpleL4HC]
+simplifyL4hcs = traverse simplifyL4hc
+
+
+xpileSimplifiedL4HCs :: [SimpleL4HC] -> String
+xpileSimplifiedL4HCs simpL4HCs =
+  let hcsVarsMarked = map idVarsInHC simpL4HCs
+      nlas          = sort . HS.toList . allNLAs $ hcsVarsMarked
+      lehcs         = map leHCFromVarsHC hcsVarsMarked
+      leProgam      = MkLEProg { nlas = nlas, leHCs = lehcs }
+  in doc2str . pretty $ leProgam
 
 toLE :: [L4.Rule] -> String
 toLE l4rules =
-  let hcsVarsMarked = map (idVarsInHC . simplifyL4ruleish) l4rules
-      nlas          = sort . HS.toList . allNLAs $ hcsVarsMarked
-      lehcs         = map leHCFromVarsHC hcsVarsMarked
-      leProg        = MkLEProg { nlas = nlas, leHCs = lehcs }
-  in doc2str . pretty $ leProg
+  case (runValidate . runSimpL4 . simplifyL4hcs $ l4rules) of
+    Left errors -> errs2str errors
+    Right hcs   -> xpileSimplifiedL4HCs hcs
+  where
+    errs2str = T.unpack . coerce . mconcat 
+
+doc2str :: Doc ann -> String
+doc2str = T.unpack . myrender
 
 {-
 note

@@ -32,6 +32,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
 import Data.String (IsString)
+import Data.List ( sort )
 
 import Prettyprinter
   ( Doc,
@@ -102,7 +103,7 @@ doc2str = T.unpack . myrender
 toLE :: [L4.Rule] -> String
 toLE l4rules = 
   let vhcs = map (idVarsInHC . simplifyL4ruleish) l4rules
-      nlas    = HS.toList (allNLAs vhcs) -- TODO: sort the nlas
+      nlas    = sort (HS.toList (allNLAs vhcs))
       lehcs   = map leHCFromVarsHC vhcs
       leProg = MkLEProg { nlas = nlas, leHCs = lehcs }
   in doc2str . pretty $ leProg

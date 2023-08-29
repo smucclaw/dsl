@@ -16,9 +16,23 @@ import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
-import Debug.Trace
-import LS.Rule
+import Debug.Trace ( trace )
+import LS.Rule ( Interpreted(scopetable, classtable) )
+import Text.Pretty.Simple ( pShowNoColor )
 import LS.Types
+    ( MTExpr(..),
+      rel2txt,
+      MultiTerm,
+      RPRel(RPhas, RPis),
+      TypedMulti,
+      TypeSig(..),
+      ParamText,
+      RelationalPredicate(..),
+      ClsTab(CT),
+      ParamType(TList1, TOne, TOptional, TList0),
+      mtexpr2text,
+      pt2text,
+      rel2op )
 import Prettyprinter
 import Prettyprinter.Render.Text
 import Text.Pretty.Simple qualified as TPS
@@ -343,4 +357,3 @@ srchs :: (Show a) => a -> Doc ann
 srchs = orgsrc "haskell" . pretty . TPS.pShowNoColor
 orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
 orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]
-

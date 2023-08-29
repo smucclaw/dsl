@@ -1,5 +1,4 @@
 GIVEN,x,IS A,Animal
-,aquatic animal,IS A,Aquatic animal
-DECIDE,x,is an,aquatic animal
+DECIDE,x,is an aquatic animal,
 IF,,x,lives in water
 AND,NOT,x,lives on land

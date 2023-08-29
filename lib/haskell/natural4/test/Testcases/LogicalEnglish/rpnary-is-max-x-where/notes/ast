@@ -1,0 +1,75 @@
+[ Hornlike
+    { name =
+        [ MTT "percentage"
+        , MTT "is the highest percentage among all clamorous numbers"
+        , MTT "for"
+        , MTT "withered stalk"
+        , MTT "in the circumstance"
+        ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "percentage" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :|
+            [
+                ( MTT "withered stalk" :|
+                    [ MTT "IS A "
+                    , MTT "Withered Stalk"
+                    ]
+                , Nothing
+                )
+            ,
+                ( MTT "dawn" :| []
+                , Just
+                    ( SimpleType TOne "phenomenon" )
+                )
+            ]
+        )
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPMT
+                [ MTT "percentage"
+                , MTT "is the highest percentage among all clamorous numbers"
+                , MTT "for"
+                , MTT "withered stalk"
+                , MTT "in the circumstance"
+                ]
+            , hBody = Just
+                ( Leaf
+                    ( RPnary RPis
+                        [ RPMT
+                            [ MTT "percentage" ]
+                        , RPnary RPgt
+                            [ RPMT
+                                [ MTT "x"
+                                , MTT "where"
+                                , MTT "x"
+                                , MTT "is the withered stalk"
+                                ]
+                            ]
+                        ]
+                    )
+                )
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Testcases/LogicalEnglish/is-max-x-where/is-max-where.csv"
+            , short = "test/Testcases/LogicalEnglish/is-max-x-where/is-max-where.csv"
+            , srcrow = 2
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+]

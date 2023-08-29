@@ -122,25 +122,3 @@ toLE l4rules =
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender
-
-{-
-note
-------
-
-Key types from codebase:
-  type ParamText = NonEmpty TypedMultiack 
-  type TypedMulti = (NonEmpty MTExpr, Maybe TypeSig)
-
-  data MTExpr = MTT Text.Text -- ^ Text string
-              | MTI Integer   -- ^ Integer
-              | MTF Float     -- ^ Float
-              | MTB Bool      -- ^ Boolean
-            deriving (Eq, Ord, Show, Generic, ToJSON)
-
-    -- | the parser returns a list of MTExpr, to be parsed further at some later point
-  type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
-
-  given    :: Maybe ParamText
-  aka the stuff in the given field is a non-mt list of (NonEmpty MTExpr, Maybe TypeSig)
-
--}

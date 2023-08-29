@@ -118,7 +118,7 @@ toLE l4rules =
     Left errors -> errs2str errors
     Right hcs   -> xpileSimplifiedL4HCs hcs
   where
-    errs2str = T.unpack . coerce . mconcat . HS.toList
+    errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender
@@ -128,7 +128,7 @@ note
 ------
 
 Key types from codebase:
-  type ParamText = NonEmpty TypedMulti
+  type ParamText = NonEmpty TypedMultiack 
   type TypedMulti = (NonEmpty MTExpr, Maybe TypeSig)
 
   data MTExpr = MTT Text.Text -- ^ Text string

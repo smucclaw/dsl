@@ -460,7 +460,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     , wwhere ) <- permutepart
   return $ defaultHorn { name = name
                        , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
-                       , keyword = fromMaybe Means keyword
+                       , keyword = fromMaybe Means keyword -- [TODO] shouldn't this be a Decide?
                        , given = given
                        , giveth
                        , clauses = addWhen topwhen clauses
@@ -935,10 +935,12 @@ mustNestHorn toMT toRN connector pbsr basesl =
                            |-| pbsr
 
   -- the conceptual positioning of the cursor above is critical
-
+  -- This is how we desugar the inline MEANS.
   let simpleHorn = defaultHorn { name = toRN (toMT subj)
                                , keyword = meansTok
                                , clauses = [ HC (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
+                               -- [TODO] this is where an inline MEANS turns into an RPBoolStructR in the head.
+                               -- here the RPis is restricted to assignment / evaluation semantics rather than conditional.
                                , srcref = Just srcref
                                }
   debugPrint "constructed simpleHorn; running tellIdFirst"

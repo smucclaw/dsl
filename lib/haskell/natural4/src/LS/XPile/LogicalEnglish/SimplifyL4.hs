@@ -307,12 +307,15 @@ instance SimpBodyRPConstrntRPrel RPis where
   simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
 
 instance SimpBodyRPConstrntRPrel RPor where
-  simpbodRPC exprsl exprsr = undefined
-  -- TODO: implement this!
+  simpbodRPC exprsl exprsr = Or (map f exprsr)
+    where f exprr =
+            AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
 
 instance SimpBodyRPConstrntRPrel RPand where
-  simpbodRPC exprsl exprsr = undefined
-  -- TODO: implement this!
+  simpbodRPC exprsl exprsr = And (map f exprsr)
+    where f exprr =
+            AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
+
 --------------------------------------------------------------------------------
 
 

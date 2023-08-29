@@ -137,7 +137,7 @@ instance Pretty LEProg where
   pretty :: LEProg -> Doc ann
   pretty MkLEProg{..} =
     
-    let natLangAnnots = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlas
+    let indentedNLAs = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlas
                       -- assume list of NLAs is pre-sorted
         prettyLEhcs   = vvsep $ map ((<> dot) . pretty) leHCs
     in
@@ -145,8 +145,8 @@ instance Pretty LEProg where
         the target language is: prolog.
 
         the templates are:
-          #{natLangAnnots}
-          #{joeLibTemplates}
+          #{indentedNLAs}
+          #{nestLE joeLibTemplates}
 
         % Predefined stdlib for translating natural4 -> LE.
         the knowledge base prelude includes:

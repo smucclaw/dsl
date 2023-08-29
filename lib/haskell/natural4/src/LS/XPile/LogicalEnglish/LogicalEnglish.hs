@@ -88,7 +88,7 @@ TODO: Add property based tests
 checkAndRefine :: L4Rules Unvalidated -> Maybe (L4Rules ValidHornls)
 checkAndRefine rawrules = do
   validatedL4rules <- check rawrules
-  return $ refine validatedL4rules
+  pure $ refine validatedL4rules
 
 
 {-------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ checkAndRefine rawrules = do
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
 allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
-allNLAs vhcs = HS.unions $ map nlasFromVarsHC vhcs
+allNLAs = foldMap nlasFromVarsHC
 
 
 simplifyL4hcs :: [L4.Rule] -> SimpL4 [SimpleL4HC]
@@ -114,11 +114,11 @@ xpileSimplifiedL4HCs simpL4HCs =
 
 toLE :: [L4.Rule] -> String
 toLE l4rules =
-  case (runValidate . runSimpL4 . simplifyL4hcs $ l4rules) of
+  case runValidate . runSimpL4 . simplifyL4hcs $ l4rules of
     Left errors -> errs2str errors
     Right hcs   -> xpileSimplifiedL4HCs hcs
   where
-    errs2str = T.unpack . coerce . mconcat 
+    errs2str = T.unpack . coerce . mconcat
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender

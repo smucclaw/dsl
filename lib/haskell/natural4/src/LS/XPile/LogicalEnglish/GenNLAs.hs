@@ -8,6 +8,8 @@
 -- {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Replace case with maybe" #-}
 
 module LS.XPile.LogicalEnglish.GenNLAs (
     nlasFromVarsHC
@@ -31,7 +33,7 @@ import LS.XPile.LogicalEnglish.Types
 nlasFromVarsHC :: VarsHC -> HS.HashSet LENatLangAnnot
 nlasFromVarsHC = \case
   VhcF vfact ->
-    case (nlaFromVFact vfact) of
+    case nlaFromVFact vfact of
       Nothing -> HS.empty
       Just nla -> HS.singleton nla
   VhcR vrule ->
@@ -44,7 +46,7 @@ nlaFromVFact VFact{..} = nlaLoneFromVAtomicP varsfhead
 nlasFromVarsRule :: VarsRule -> HS.HashSet LENatLangAnnot
 nlasFromVarsRule MkBaseRule{..} =
   let bodyNLAs = nlasFromBody rbody
-  in case (nlaLoneFromVAtomicP rhead) of
+  in case nlaLoneFromVAtomicP rhead of
     Nothing -> bodyNLAs
     Just headNLA -> HS.insert headNLA bodyNLAs
 

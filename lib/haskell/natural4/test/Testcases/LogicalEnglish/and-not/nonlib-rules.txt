@@ -1,0 +1,6 @@
+a x is an aquatic animal
+if x lives in water
+and it is not the case that
+  x lives on land.
+
+Fish lives in water.

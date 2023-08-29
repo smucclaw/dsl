@@ -1,0 +1,4 @@
+GIVEN,x,IS A,Arthropod,
+,y,IS A,Insect,
+DECIDE,x,IS,NOT,y
+IF,x,has eight legs,,

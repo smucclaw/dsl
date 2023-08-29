@@ -65,3 +65,11 @@ The spreadsheet version of that encoding is found at
 https://docs.google.com/spreadsheets/d/1leBCZhgDsn-Abg2H_OINGGv-8Gpf9mzuX1RR56v0Sss/edit#gid=1779650637
 
 L4 legal engineers working in the spreadsheet IDE can access those output files in the spreadsheet sidebar.
+
+* fswatch
+
+this one-liner will automatically rerun natural4 when it sees you have re-downloaded the CSV from google sheets.
+
+#+begin_src bash
+  fswatch -x /Volumes/1tb/mengwong/Downloads/ | perl -MFile::Copy  -nle 'if (my ($fn, $target) = /(Legal(?:SS | Spreadsheets - )(.*).csv) Created.*Renamed/) { for ($target) { print $target; $_ = lc $_; s/[^a-z]//g }; print $fn; print $target; move (qq(/Volumes/1tb/mengwong/Downloads/$fn), qq(/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/$target-latest.csv)) && print(qq($fn -> $target)) && system(qq(cd src/smucclaw/dsl/lib/haskell/natural4; teedate=`date +%Y%m%d-%H%M%S`.txt; stack run -- --workdir=workdir test/$target-latest.csv > workdir/no-uuid/\$teedate; ln -sf \$teedate workdir/no-uuid/LATEST.txt; head workdir/no-uuid/LATEST.txt; echo done ))} BEGIN { $|++ }'
+#+end_src

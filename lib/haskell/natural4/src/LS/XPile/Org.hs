@@ -34,7 +34,8 @@ import LS.Rule
       hasGiven,
       hasClauses,
       ruleLabelName,
-      Rule(clauses, given) )
+      Rule(clauses, given, super, TypeDecl)
+      )
 import LS.Types ( unCT
                 , TypeSig (InlineEnum, SimpleType)
                 , ParamType (TOne, TOptional)

@@ -56,6 +56,7 @@ import LS.XPile.Logging
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
+import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
@@ -199,6 +200,8 @@ main = do
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
       (toDFGFN,     (asDFG, asDFGerr))        = (workuuid <> "/" <> "dataflow", xpLog $ dataFlowAsDot l4i)
+
+      (toLEFN, asLE)                          = (workuuid <> "/" <> "le",         toLE rules)
       (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
       (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
@@ -239,6 +242,7 @@ main = do
   when (toworkdir && not (null $ SFL4.uuiddir opts) && (null $ SFL4.only opts)) $ do
 
     when (SFL4.tonative  opts) $ mywritefile2 True toDFGFN     iso8601 "dot"  asDFG asDFGerr
+    when (SFL4.tole      opts) $ mywritefile True toLEFN      iso8601 "le"  asLE
     when (SFL4.tonative  opts) $ mywritefile True toOrgFN      iso8601 "org"  asOrg
     when (SFL4.tonative  opts) $ mywritefile True tonativeFN   iso8601 "hs"   asNative
     when (      SFL4.tocorel4  opts) $ mywritefile2 True tocorel4FN   iso8601 "l4"   (commentIfError "--" asCoreL4) asCoreL4Err

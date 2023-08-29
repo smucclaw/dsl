@@ -56,6 +56,7 @@ data FieldType =
     | FTString
     | FTRef TypeName
     | FTList FieldType
+    | FTDate
     deriving (Eq, Ord, Show, Read)
 
 data Field = Field
@@ -64,7 +65,7 @@ data Field = Field
     }
     deriving (Eq, Ord, Show, Read)
 
--- Expression types, coming 
+-- Expression types, coming
 -- either as records (DECLARE .. HAS)
 -- or as enum s(DECLARE .. IS ONE OF)
 data ExpType
@@ -96,6 +97,7 @@ typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =
         "Boolean" -> FTBoolean
         "Number" -> FTNumber
         "String" -> FTString
+        "Date" -> FTDate
         n -> FTRef n
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (unpack tn))
@@ -125,6 +127,7 @@ instance ShowTypesProlog FieldType where
     showTypesProlog FTBoolean = pretty "boolean"
     showTypesProlog FTNumber = pretty "number"
     showTypesProlog FTString = pretty "string"
+    showTypesProlog FTDate = pretty "string"
     showTypesProlog (FTRef n) = pretty "ref" <> parens (pretty n)
     showTypesProlog (FTList t) = pretty "list" <> parens (showTypesProlog t)
 
@@ -205,6 +208,9 @@ instance ShowTypesJson FieldType where
         jsonType "number"
     showTypesJson FTString =
         jsonType "string"
+    showTypesJson FTDate =
+        jsonType "string" <> pretty "," <>
+        dquotes (pretty "format") <> pretty ": " <> dquotes (pretty "date")
     showTypesJson (FTRef n) =
         jsonType "array" <> pretty "," <>
         dquotes (pretty "minItems") <> pretty ": 1," <>

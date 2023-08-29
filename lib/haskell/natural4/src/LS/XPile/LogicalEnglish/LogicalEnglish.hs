@@ -118,7 +118,7 @@ toLE l4rules =
     Left errors -> errs2str errors
     Right hcs   -> xpileSimplifiedL4HCs hcs
   where
-    errs2str = T.unpack . coerce . mconcat
+    errs2str = T.unpack . coerce . mconcat . HS.toList
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender

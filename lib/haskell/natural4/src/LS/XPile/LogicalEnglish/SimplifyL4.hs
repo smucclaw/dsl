@@ -8,7 +8,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
 
@@ -32,6 +32,7 @@ import Control.Monad.Identity
 import Data.Bifunctor       ( first )
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
+import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
@@ -57,11 +58,11 @@ TODOs:
 
 -- | TODO: use more fine-grained types when time permits
 newtype SimL4Error = MkErr { unpackErr :: T.Text }
-  deriving newtype (Eq, Ord, IsString, Semigroup, Monoid)
+  deriving newtype (Eq, Ord, IsString, Semigroup, Monoid, Hashable)
   deriving stock (Show)
 
-newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate [SimL4Error] a }
-    deriving newtype (Functor, Applicative, Monad, MonadValidate [SimL4Error])
+newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate (HS.HashSet SimL4Error) a }
+    deriving newtype (Functor, Applicative, Monad, MonadValidate (HS.HashSet SimL4Error))
 {- ^ TODOs: 
 1. Use the newtype...
 2. Per monad-validate's docs, move away from native linked list when time permits --- use Dual [a] or Seq or even Hashset
@@ -92,7 +93,7 @@ simplifyL4hc l4hc = do
     Simplifying L4 HCs
 -------------------------------------------------------------------------------}
 
-simplifyHead :: L4.RelationalPredicate -> SimpL4 L4AtomicP
+simplifyHead :: forall m. MonadValidate (HS.HashSet SimL4Error) m => L4.RelationalPredicate -> m L4AtomicP
 simplifyHead = \case
   RPMT exprs                      -> pure $ ABPatomic . mtes2cells $ exprs
   RPConstraint exprsl RPis exprsr -> pure $ simpheadRPC exprsl exprsr
@@ -107,10 +108,10 @@ simplifyHead = \case
 
                                       We handle the case of RPis in a RPConstraint the same way in both the body and head. 
                                     -}
-  RPConstraint {}                -> SimpL4 $ refute [MkErr "should not be seeing RPConstraints other than the RPis pattern in head"]
-  RPBoolStructR {}               -> SimpL4 $ refute [MkErr "RPBoolStructR in head of HC not supported"]
-  RPParamText _                  -> SimpL4 $ refute [MkErr "RPParamText in head of HC not supported"]
-  RPnary {}                      -> SimpL4 $ refute [MkErr "RPnary in the head of HC not supported."]
+  RPConstraint {}                -> refute [MkErr "should not be seeing RPConstraints other than the RPis pattern in head"]
+  RPBoolStructR {}               -> refute [MkErr "RPBoolStructR in head of HC not supported"]
+  RPParamText _                  -> refute [MkErr "RPParamText in head of HC not supported"]
+  RPnary {}                      -> refute [MkErr "RPnary in the head of HC not supported."]
 
 
 {- ^
@@ -247,7 +248,7 @@ t IS MIN t1 t2 .. tn:
                     ]])
 -}
 
-simplifybodyRP :: RelationalPredicate -> SimpL4 (BoolPropn L4AtomicP)
+simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m => RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case
   RPMT exprs                         -> pure $ MkTrueAtomicBP (mtes2cells exprs)
                                      -- ^ this is the same for both the body and head
@@ -255,7 +256,7 @@ simplifybodyRP = \case
                                           RPis  -> pure $ simpbodRPC @RPis exprsl exprsr
                                           RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
                                           RPand -> pure $ simpbodRPC @RPand exprsl exprsr
-                                          _     -> SimpL4 $ refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
+                                          _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
                                           {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
                                               EG: ( Leaf
                                                     ( RPConstraint
@@ -271,30 +272,29 @@ simplifybodyRP = \case
   TermIsSumXWhere total φx           -> pure $ MkIsOpSuchTtBP (mte2cell total) SumEachXSuchThat (mtes2cells φx)
 
   -- max / min / sum of terms
-  TermIsMax term maxargRPs           -> pure $ termIsNaryOpOf MaxOf term maxargRPs
-  TermIsMin term minargRPs           -> pure $ termIsNaryOpOf MinOf term minargRPs
-  TotalIsSumTerms total summandRPs   -> pure $ termIsNaryOpOf SumOf total summandRPs
-  TotalIsProductTerms total argRPs   -> pure $ termIsNaryOpOf ProductOf total argRPs
+  TermIsMax term maxargRPs           -> termIsNaryOpOf MaxOf term maxargRPs
+  TermIsMin term minargRPs           -> termIsNaryOpOf MinOf term minargRPs
+  TotalIsSumTerms total summandRPs   -> termIsNaryOpOf SumOf total summandRPs
+  TotalIsProductTerms total argRPs   -> termIsNaryOpOf ProductOf total argRPs
 
   T1IsNotT2 t1 t2                    -> pure $ MkIsDiffFr (mte2cell t1) (mte2cell t2)
 
-  RPnary{}                           -> SimpL4 $ refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
-  RPBoolStructR {}                   -> SimpL4 $ refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
-  RPParamText _                      -> SimpL4 $ refute [MkErr "should not be seeing RPParamText in body"]
+  RPnary{}                           -> refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
+  RPBoolStructR {}                   -> refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
+  RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]
 
 
-termIsNaryOpOf :: Foldable seq => OpOf -> MTExpr -> seq RelationalPredicate -> BoolPropn L4AtomicP
-termIsNaryOpOf op mteTerm rpargs = MkIsOpOf term op argterms
+termIsNaryOpOf :: (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) => OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
+termIsNaryOpOf op mteTerm rpargs = pure MkIsOpOf <*> pure term <*> pure op <*> argterms
   where term     = mte2cell mteTerm
-        argterms = concatMap atomRPoperand2cell rpargs
+        argterms = concat <$> traverse atomRPoperand2cell rpargs
 
-
-atomRPoperand2cell :: RelationalPredicate -> [Cell]
+atomRPoperand2cell :: forall m. MonadValidate (HS.HashSet SimL4Error) m => RelationalPredicate -> m [Cell]
 atomRPoperand2cell = \case
-  RPMT mtexprs    -> mtes2cells mtexprs
-  RPParamText _pt -> error "not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"
+  RPMT mtexprs    -> pure $ mtes2cells mtexprs
+  RPParamText _pt -> refute ["not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"]
                     -- mtes2cells (concatMap (NE.toList . fst) (NE.toList pt)) 
-  _               -> error "input rp supposed to be atomic"
+  _               -> refute ["input rp supposed to be atomic"]
 
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
@@ -306,6 +306,7 @@ class SimpBodyRPConstrntRPrel (rp :: RPRel) where
 instance SimpBodyRPConstrntRPrel RPis where
   simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
 
+-- TODO: Chk with Joe and Meng about RPor and RPand
 instance SimpBodyRPConstrntRPrel RPor where
   simpbodRPC exprsl exprsr = Or (map f exprsr)
     where f exprr =

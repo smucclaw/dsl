@@ -146,11 +146,11 @@ instance Pretty LEProg where
 
         the templates are:
           #{natLangAnnots}
+          #{joeLibTemplates}
 
         % Predefined stdlib for translating natural4 -> LE.
         the knowledge base prelude includes:
           #{nestLE joeLibHCs}
-
 
         the knowledge base encoding includes:
           #{nestLE prettyLEhcs}
@@ -159,6 +159,22 @@ instance Pretty LEProg where
           0 < 1.
       |]
 
+joeLibTemplates :: Doc ann
+joeLibTemplates =
+  [__di|
+  *a class*'s *a field* is *a value*,
+  *a class*'s nested *a list of fields* is *a value*,
+  *a class*'s *a field0*'s *a field1* is *a value*,
+  *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*.
+
+  *a number* is a lower bound of *a list*,
+  *a number* is an upper bound of *a list*,
+  *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
+  the sum of *a list* does not exceed the minimum of *a list*,
+  *a number* does not exceed the minimum of *a list*.
+  |]
 
 joeLibHCs :: Doc ann
 joeLibHCs =

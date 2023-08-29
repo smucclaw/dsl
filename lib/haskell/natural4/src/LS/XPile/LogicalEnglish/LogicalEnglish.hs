@@ -51,7 +51,7 @@ import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.ValidateL4Input
       (L4Rules, ValidHornls, Unvalidated,
-      check, refine, loadRawL4AsUnvalid)
+      check, refine, loadRawL4AsUnvalid, isHornlike)
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4hc) -- TODO: Add import list
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
@@ -101,8 +101,10 @@ allNLAs = foldMap nlasFromVarsHC
 
 
 simplifyL4hcs :: [L4.Rule] -> SimpL4 [SimpleL4HC]
-simplifyL4hcs = traverse simplifyL4hc
-
+simplifyL4hcs = traverse simplifyL4hc . filter isHornlike
+{- ^ IMPT TODO: move `filter isHornlike` to prevalidation step when implementing that.
+  This is a temp hack to avoid crashes due to NatL4 app's poor architecture
+-}
 
 xpileSimplifiedL4HCs :: [SimpleL4HC] -> String
 xpileSimplifiedL4HCs simpL4HCs =

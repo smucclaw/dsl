@@ -9,6 +9,8 @@ module LS.XPile.LogicalEnglish.ValidateL4Input
     , check
     , refine
     , loadRawL4AsUnvalid
+
+    , isHornlike -- TODO: TEMP export; will remove this after implementing the prevalidation
   ) 
   where
 

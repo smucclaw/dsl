@@ -3,4 +3,5 @@ FROM haskell:9.2.8-slim-buster
 COPY lib/haskell .
 
 RUN cd ./natural4 \
-    && stack build
+    && stack build \
+    && stack install

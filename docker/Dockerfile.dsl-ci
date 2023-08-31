@@ -2,5 +2,5 @@ FROM haskell:9.2.8-slim-buster
 
 COPY lib/haskell .
 
-RUN cd ./explainable \
+RUN cd ./natural4 \
     && stack build

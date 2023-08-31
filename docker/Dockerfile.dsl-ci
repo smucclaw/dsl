@@ -1,0 +1,4 @@
+FROM haskell:9.2.8-slim-buster
+
+RUN cd lib/haskell/explainable \
+    && stack build

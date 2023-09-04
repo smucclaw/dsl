@@ -10,7 +10,6 @@
 
 module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
 
-
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Foldable (toList)
@@ -150,7 +149,7 @@ simplifyVAtomicP = fmap simplifyVCells
 
 simplifyVCells :: VCell -> LEhcCell
 simplifyVCells = \case
-  Pred txt    -> NotVar txt
+  Pred txt   -> NotVar txt
   TempVar tv -> tvar2lecell tv
 
 tvar2lecell :: TemplateVar -> LEhcCell

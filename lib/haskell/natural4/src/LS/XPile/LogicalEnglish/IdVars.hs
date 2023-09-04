@@ -34,25 +34,38 @@ idVarsInHC = \case
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
 idVarsInAP gvars = \case
   ABPatomic cells ->
-    ABPatomic $ fmap mklabscell cells
+    ABPatomic $ fmap mkVcell cells
   ABPIsDiffFr t1 t2 ->
     ABPIsDiffFr (cell2vcell gvars t1)
                 (cell2vcell gvars t2)
   ABPIsOpOf t opOf termargs ->
-    ABPIsOpOf (cell2vcell gvars t) opOf (fmap mklabscell termargs)
+    ABPIsOpOf (cell2vcell gvars t) opOf (fmap mkVcell termargs)
   ABPIsOpSuchTt t opST cells ->
     ABPIsOpSuchTt (cell2vcell gvars t) opST
-                  (fmap mklabscell cells)
+                  (fmap mkVcell cells)
   where
-    mklabscell = cell2vcell gvars
+    mkVcell = cell2vcell gvars
+
+-- | Replace "." with "dot" and "," with "comma", in the Pred txts of ABPatomics
+postprocAP :: AtomicPWithVars -> AtomicPWithVars
+postprocAP = \case
+  ABPatomic cells -> ABPatomic $ fmap replacePunctnVCell cells
+  others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
-idVarsInBody gvars l4boolprop =
-  let absAtomic = idVarsInAP gvars
-  in fmap absAtomic l4boolprop
+idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 
 
 ---- helpers
+replacePunctn :: T.Text -> T.Text
+replacePunctn = T.replace "," "comma" .
+                T.replace "." "dot"
+
+replacePunctnVCell :: VCell -> VCell
+replacePunctnVCell = \case
+  tv@(TempVar _) -> tv
+  Pred txt  -> Pred $ replacePunctn txt
+
 
 {- |
 The code for simplifying L4 AST has established these invariants:  
@@ -99,8 +112,8 @@ txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
 
 type PrefixAposVar = T.Text
 isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
-isAposVar gvs (T.stripSuffix "'s" -> Just prefix) = 
-            if txtIsAGivenVar gvs prefix 
+isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
+            if txtIsAGivenVar gvs prefix
             then (prefix, True)
             else ("", False)
 isAposVar _ _                                     = ("", False)

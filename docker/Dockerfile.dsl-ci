@@ -1,7 +1,11 @@
-FROM haskell:9.2.8-slim-buster
+FROM haskell:9.2.8-slim-buster as builder
 
 COPY lib/haskell .
 
 RUN cd ./natural4 \
     && stack build \
     && stack install
+
+FROM nginx:1.25.2-bookworm
+
+COPY --from=builder /root/.local/bin/natural4-exe /usr/local/bin/

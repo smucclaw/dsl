@@ -24,7 +24,6 @@ module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 import Data.Bifunctor       ( first )
-import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
@@ -62,14 +61,6 @@ import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {- 
 
-TODO: After we get a v simple end-to-end prototype out, 
-we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
-(This should be done with Monad.Validate or Data.Validation -- XPileLog isn't as good a fit for this.)
-The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages. 
-
-But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. 
-
-
 TODO: Add property based tests
   EG: 
     * If you add a new var anywhere in a randomly generated LamAbs HC, the new LE HC should have an 'a' in front of that var
@@ -77,34 +68,41 @@ TODO: Add property based tests
     * Take a randomly generated LamABs HC with vars that potentially have multiple occurrences and generate the LE HC from it. For every var in the HC, the 'a' prefix should only appear once.
     * There should be as many NLAs as leaves in the HC (modulo lib NLAs)
 
+
+TODO: Think abt doing more on the pre-validation front, e.g. checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
+The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages. 
+But it might be enough to just do what we are currently doing with the validation in the simplifyL4 step
+
+But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. 
+
+
+TODO: Add some prevalidation stuff in the future, if time permits: 
+  * e.g., checking for typos (e.g., if there's something in a cell tt's very similar to but not exactly the same as a given var)
+
 -}
-
-
-{-------------------------------------------------------------------------------
-   L4 rules -> SimpleL4HCs -> LamAbsRules
--------------------------------------------------------------------------------}
-
--- | TODO: Work on implementing this and adding the Monad Validate or Data.Validation stuff instead of Maybe (i.e., rly doing checks upfront and carrying along the error messages and potential warnings) after getting enoguh of the main transpiler out
-checkAndRefine :: L4Rules Unvalidated -> Maybe (L4Rules ValidHornls)
-checkAndRefine rawrules = do
-  validatedL4rules <- check rawrules
-  pure $ refine validatedL4rules
 
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
 
+toLE :: [L4.Rule] -> String
+toLE l4rules =
+  case runAndValidate . simplifyL4hcs . filter isHornlike $ l4rules of
+    Left errors -> errs2str errors
+    Right hcs   -> xpileSimplifiedL4HCs hcs
+  where
+    errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
+    runAndValidate = runValidate . runSimpL4
+{- ^ TODO: think abt whether to do more on the pre-simplifyL4hcs front
+-}
+
 -- | Generate LE Nat Lang Annotations from VarsHCs  
 allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
 allNLAs = foldMap nlasFromVarsHC
 
-
 simplifyL4hcs :: [L4.Rule] -> SimpL4 [SimpleL4HC]
-simplifyL4hcs = traverse simplifyL4hc . filter isHornlike
-{- ^ IMPT TODO: move `filter isHornlike` to prevalidation step when implementing that.
-  This is a temp hack to avoid crashes due to NatL4 app's poor architecture
--}
+simplifyL4hcs = traverse simplifyL4hc
 
 xpileSimplifiedL4HCs :: [SimpleL4HC] -> String
 xpileSimplifiedL4HCs simpL4HCs =
@@ -114,13 +112,6 @@ xpileSimplifiedL4HCs simpL4HCs =
       leProgam      = MkLEProg { nlas = nlas, leHCs = lehcs }
   in doc2str . pretty $ leProgam
 
-toLE :: [L4.Rule] -> String
-toLE l4rules =
-  case runValidate . runSimpL4 . simplifyL4hcs $ l4rules of
-    Left errors -> errs2str errors
-    Right hcs   -> xpileSimplifiedL4HCs hcs
-  where
-    errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender

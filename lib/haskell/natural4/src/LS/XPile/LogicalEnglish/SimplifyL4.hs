@@ -62,16 +62,19 @@ newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate (HS.HashSet SimL4Error) a }
 
 -- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> [SimpL4 SimpleL4HC]
 {- | 
-  It's fine if  input L4 rules have more than 1 HC in their Horn clauses.    
+  It's fine if  input L4 rules have more than 1 HC in their Horn clauses, as in the ditto syntax --- we get the givens and simplify each of the clauses with those givens   
+  
+  When writing L4, it’s important that
+    * there not be empty cells in the head or body between contentful cells,
+    * there not be `""` below the `DECIDE` --- if there are `""` below the `DECIDE`, then the stuff below will get parsed as distinct Hornlikes but without the givens, and the only way to then figure out what the original givens were will be very hacky / fragile 
 -}
 simplifyL4rule :: L4.Rule -> [SimpL4 SimpleL4HC]
 simplifyL4rule l4rule =
-  let gvars = gvarsFromL4Rule l4rule
-  in case L4.clauses l4rule of
-    []           -> []
-                    -- TODO: would probably be good to check earlier for this and log a warning if such L4rules are found
-    [ l4hc ]     -> [simplifyL4hc gvars l4hc]
-    hcs@(_ : _)  -> map (simplifyL4hc gvars) hcs
+  let 
+    gvars = gvarsFromL4Rule l4rule
+    hcs = L4.clauses l4rule
+  in map (simplifyL4hc gvars) hcs
+  -- TODO: would probably be good to check upfront for whether there are L4 rules with no clauses and log a warning if such L4rules are found
 
 {- | an L4 hc, in this context, is taken to be a L4.Rule with ___exactly one__ elt in its `clauses` field  
 -}

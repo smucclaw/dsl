@@ -353,7 +353,8 @@ mte2cell = \case
   MTT t -> MkCellT t
   MTI i -> MkCellT (int2Text i)
   MTF f -> MkCellT (float2Text f)
-  _     -> error "Booleans in cells currently not supported"
+  MTB b -> MkCellT (T.pack (show b))
+            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells and raise a `dispute` if so
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]

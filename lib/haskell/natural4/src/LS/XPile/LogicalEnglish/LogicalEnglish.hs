@@ -1,12 +1,10 @@
 {-# OPTIONS_GHC -W #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
@@ -26,7 +24,6 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
-import Data.String (IsString)
 import Data.Coerce (coerce)
 import Data.List ( sort )
 
@@ -53,7 +50,7 @@ import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
+-- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {- 
 

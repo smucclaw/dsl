@@ -5,8 +5,7 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DeriveAnyClass #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -26,7 +25,6 @@ import Control.Monad.Validate
     , refute
     )
 
--- import Data.Bifunctor       ( first )
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
@@ -70,7 +68,7 @@ newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate (HS.HashSet SimL4Error) a }
 -}
 simplifyL4rule :: L4.Rule -> [SimpL4 SimpleL4HC]
 simplifyL4rule l4rule =
-  let 
+  let
     gvars = gvarsFromL4Rule l4rule
     hcs = L4.clauses l4rule
   in map (simplifyL4hc gvars) hcs
@@ -333,7 +331,7 @@ extractGiven L4.Hornlike {given=Nothing}        = []
 -- won't need to worry abt this when we add checking upfront
 extractGiven L4.Hornlike {given=Just paramtext} = concatMap (NE.toList . fst) (NE.toList paramtext)
 extractGiven _                                  = trace "not a Hornlike rule, not extracting given" mempty
--- also won't need to worry abt this when we add checking + filtering upfront
+-- TODO: also won't need to worry abt this when we add checking + filtering upfront
 
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet

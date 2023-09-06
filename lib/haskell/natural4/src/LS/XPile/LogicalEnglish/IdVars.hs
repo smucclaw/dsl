@@ -58,8 +58,10 @@ idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 
 ---- helpers
 replacePunctn :: T.Text -> T.Text
-replacePunctn = T.replace "," "comma" .
-                T.replace "." "dot"
+replacePunctn txt = if txt == T.empty then txt -- T.replace will error if input empty
+                    else replaceIn txt 
+                    where replaceIn = T.replace "," "comma" .
+                                      T.replace "." "dot"
 
 replacePunctnVCell :: VCell -> VCell
 replacePunctnVCell = \case

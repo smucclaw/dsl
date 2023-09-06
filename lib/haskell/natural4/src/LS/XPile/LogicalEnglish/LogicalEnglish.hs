@@ -48,7 +48,7 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       --   L4Rules, ValidHornls, Unvalidated,
       -- check, refine, loadRawL4AsUnvalid, 
       )
-import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4hc) 
+import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
@@ -84,24 +84,24 @@ TODO: Add some prevalidation stuff in the future, if time permits:
 
 toLE :: [L4.Rule] -> String
 toLE l4rules =
-  case runAndValidate . simplifyL4hcs . filter isHornlike $ l4rules of
+  case runAndValidate . simplifyL4rules . filter isHornlike $ l4rules of
     Left errors -> errs2str errors
-    Right hcs   -> xpileSimplifiedL4HCs hcs
+    Right hcs   -> xpileSimplifiedL4hcs hcs
   where
     errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
     runAndValidate = runValidate . runSimpL4
-{- ^ TODO: think abt whether to do more on the pre-simplifyL4hcs front
+{- ^ TODO: think abt whether to do more on the pre-simplifyL4rules front
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
 allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
 allNLAs = foldMap nlasFromVarsHC
 
-simplifyL4hcs :: [L4.Rule] -> SimpL4 [SimpleL4HC]
-simplifyL4hcs = traverse simplifyL4hc
+simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
+simplifyL4rules = sequenceA . concatMap simplifyL4rule
 
-xpileSimplifiedL4HCs :: [SimpleL4HC] -> String
-xpileSimplifiedL4HCs simpL4HCs =
+xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
+xpileSimplifiedL4hcs simpL4HCs =
   let hcsVarsMarked = map idVarsInHC simpL4HCs
       nlas          = sort . HS.toList . allNLAs $ hcsVarsMarked
       lehcs         = map leHCFromVarsHC hcsVarsMarked

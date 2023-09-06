@@ -21,15 +21,10 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 
-import Text.Pretty.Simple   ( pShowNoColor )
+-- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
-import Data.Bifunctor       ( first )
 import Data.HashSet qualified as HS
-import Data.Hashable (Hashable)
-import GHC.Generics (Generic)
-import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
-import Control.Monad.Identity ( Identity )
+-- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.String (IsString)
 import Data.Coerce (coerce)
@@ -39,23 +34,24 @@ import Prettyprinter
   ( Doc,
     Pretty (pretty))
 import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), (<//>) )
-import Prettyprinter.Interpolate (__di)
+    ( myrender)
+import LS.XPile.LogicalEnglish.Pretty()
 
-
-import qualified AnyAll as AA
-import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR(..), BoolStructT)
+-- import qualified AnyAll as AA
+-- import LS.Types qualified as L4
+-- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.ValidateL4Input
-      (L4Rules, ValidHornls, Unvalidated,
-      check, refine, loadRawL4AsUnvalid, isHornlike)
-import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4hc) -- TODO: Add import list
+      (
+        isHornlike
+      --   L4Rules, ValidHornls, Unvalidated,
+      -- check, refine, loadRawL4AsUnvalid, 
+      )
+import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4hc) 
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
-import LS.XPile.LogicalEnglish.Pretty()
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 

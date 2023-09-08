@@ -8,7 +8,8 @@
 -- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
 
 module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
@@ -24,12 +25,11 @@ import Control.Monad.Validate
     , Validate
     , refute
     )
-
+import Optics 
+import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
-import Data.List.NonEmpty qualified as NE
-import Debug.Trace (trace)
 
 import qualified AnyAll as AA
 import LS.Types qualified as L4
@@ -325,23 +325,41 @@ instance SimpBodyRPConstrntRPrel RPand where
 
 ------------    Extracting vars from given   -----------------------------------
 
-extractGiven :: L4.Rule -> [MTExpr]
-  -- [(NE.NonEmpty MTExpr, Maybe TypeSig)]
-extractGiven L4.Hornlike {given=Nothing}        = []
--- won't need to worry abt this when we add checking upfront
-extractGiven L4.Hornlike {given=Just paramtext} = concatMap (NE.toList . fst) (NE.toList paramtext)
-extractGiven _                                  = trace "not a Hornlike rule, not extracting given" mempty
--- TODO: also won't need to worry abt this when we add checking + filtering upfront
+{- | Preconditions / invariants:
+      * The input L4 rule is a Hornlike (TODO: And actually this fn is an eg of where it *would* be helpful to use the phantom type technique to tag that this is a Hornlike in the type)
+      * Each gvar in the GIVEN declaration should occupy only one cell in the spreadsheet,
+        so that the head of each NonEmpty MTExpr in the TypedMulti tuple would correspond to the gvar for that spreadsheet row in the declaration
 
+An example of GIVENs in the AST, as of Sep 8 2023:
+    given = Just (
+            ( MTT "sightg" :| []
+            , Just
+                ( SimpleType TOne "Sighting" )
+            ) :|
+            [
+                ( MTT "fun activity" :| []
+                , Just
+                    ( SimpleType TOne "Fun Activity" )
+                )
+            ,
+                ( MTT "perzon" :| []
+                , Just
+                    ( SimpleType TOne "Person" )
+                )
+            ])
+-}
+getGivens :: L4.Rule -> [MTExpr]
+getGivens l4rule = l4rule.given ^.. types @MTExpr
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
-gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
-                       in HS.fromList $ map gmtexpr2gvar givenMTExprs
-        where
-          -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. 
-          gmtexpr2gvar :: MTExpr -> GVar
-          gmtexpr2gvar = textifyMTE MkGVar
-          -- TODO: Check upfront for wehther there are non-text mtexpr variable names in the GIVENs; raise a `dispute` if so and print warning as comment in resulting .le
+gvarsFromL4Rule rule = 
+  let givenMTExprs = getGivens rule
+  in HS.fromList $ map gmtexpr2gvar givenMTExprs
+    where
+      -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. 
+      gmtexpr2gvar :: MTExpr -> GVar
+      gmtexpr2gvar = textifyMTE MkGVar
+      -- TODO: Check upfront for wehther there are non-text mtexpr variable names in the GIVENs; raise a `dispute` if so and print warning as comment in resulting .le
 
 ------------    MTExprs to [Cell]    ------------------------------------------
 
@@ -373,7 +391,7 @@ int2Text = T.toStrict . B.toLazyText . B.decimal
 
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
--- wrapper = concat . map extractGiven . coerce
+-- wrapper = concat . map getGivens . coerce
 {- a more ambitious version, for the future: 
 data SimL4Error = Error {  errInfo :: SimL4ErrorInfo
                             --  in the future: errLoc :: ... 

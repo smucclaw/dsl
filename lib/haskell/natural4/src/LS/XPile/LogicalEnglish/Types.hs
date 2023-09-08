@@ -307,7 +307,7 @@ data LEVar = VarApos !OrigVarPrefix
 -}
 data LEhcCell = VarCell LEVar 
               | NotVar !T.Text 
-                -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
+                -- | i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
           deriving stock (Eq, Ord, Show)
           deriving (Generic)
 

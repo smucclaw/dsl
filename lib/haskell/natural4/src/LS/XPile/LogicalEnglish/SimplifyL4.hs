@@ -284,7 +284,7 @@ simplifybodyRP = \case
 
 
 termIsNaryOpOf :: (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) => OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
-termIsNaryOpOf op mteTerm rpargs = pure MkIsOpOf <*> pure term <*> pure op <*> argterms
+termIsNaryOpOf op mteTerm rpargs = MkIsOpOf term op <$> argterms
   where term     = mte2cell mteTerm
         argterms = concat <$> traverse atomRPoperand2cell rpargs
 

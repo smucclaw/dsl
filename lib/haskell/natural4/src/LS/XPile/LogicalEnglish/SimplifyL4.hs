@@ -338,28 +338,30 @@ gvarsFromL4Rule :: L4.Rule -> GVarSet
 gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
                        in HS.fromList $ map gmtexpr2gvar givenMTExprs
         where
-          -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. This is importantly different from `mtexpr2text` in that it only converts the cases we use for LE and that we would encounter in the Givens on our LE conventions
+          -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. 
           gmtexpr2gvar :: MTExpr -> GVar
-          gmtexpr2gvar = \case
-            MTT var -> MkGVar var
-            _       -> error "non-text mtexpr variable names in the GIVEN are not allowed on our LE spec :)"
+          gmtexpr2gvar = textifyMTE MkGVar
+          -- TODO: Check upfront for wehther there are non-text mtexpr variable names in the GIVENs; raise a `dispute` if so and print warning as comment in resulting .le
 
 ------------    MTExprs to [Cell]    ------------------------------------------
 
+textifyMTE :: (T.Text -> t) -> MTExpr -> t
+textifyMTE constrtr = \case
+  MTT t -> constrtr t
+  MTI i -> constrtr (int2Text i)
+  MTF f -> constrtr (float2Text f)
+  MTB b -> constrtr (T.pack (show b))
+            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells; raise a `dispute` if so and print warning as comment in resulting .le
+
 mte2cell :: L4.MTExpr -> Cell
-mte2cell = \case
-  MTT t -> MkCellT t
-  MTI i -> MkCellT (int2Text i)
-  MTF f -> MkCellT (float2Text f)
-  MTB b -> MkCellT (T.pack (show b))
-            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells and raise a `dispute` if so
+mte2cell = textifyMTE MkCellT
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]
-mtes2cells = map mte2cell
+mtes2cells = fmap mte2cell
 
 ------ Other misc utils
-{-| From https://github.com/haskell/text/issues/218 lol
+{-| From https://github.com/haskell/text/issues/218
 Thanks to Jo Hsi for finding these!
 -}
 float2Text :: RealFloat a => a -> T.Text

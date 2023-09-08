@@ -21,6 +21,7 @@ import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
+import Data.Coerce (coerce)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Control.Monad.Identity ( Identity )
@@ -131,15 +132,17 @@ instance Pretty TxtAtomicBP where
       prettyprop = hsep . map pretty
 
 endWithDot txt = [__di|#{ txt }.|]
-
-
+ 
 instance Pretty LEProg where
   pretty :: LEProg -> Doc ann
   pretty MkLEProg{..} =
     
-    let indentedNLAs = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlas
+    let indentedNLAs = endWithDot . nestVsepSeq . punctuate comma 
+                      . map pretty $ nlas
                       -- assume list of NLAs is pre-sorted
         prettyLEhcs   = vvsep $ map ((<> dot) . pretty) leHCs
+        {- ^ Assume commas and dots already replaced in NLAs and LEHcs
+           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
     in
       [__di|
         the target language is: prolog.

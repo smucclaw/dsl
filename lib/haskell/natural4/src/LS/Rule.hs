@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -20,6 +20,7 @@ import Data.Text qualified as Text
 import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
+import Data.Generics.Sum.Constructors
 import LS.Types
   ( BoolStructP,
     BoolStructR,
@@ -71,6 +72,8 @@ import Text.Megaparsec
   )
 import Data.Graph.Inductive (Gr, empty)
 import LS.XPile.Logging (XPileLogW)
+import Optics hiding ((|>), has) -- the Rule record has a `has` field
+import Optics qualified as O (has)
 
 -- | [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
 -- We should take advantage of NoFieldSelectors to reduce the hazards here
@@ -180,6 +183,25 @@ data Rule = Regulative
 instance Hashable Rule
 
 type Parser = WriterT (DList Rule) PlainParser
+
+{-|
+See https://hackage.haskell.org/package/generic-optics-2.2.1.0/docs/Data-Generics-Sum-Constructors.html for an explanation of how this works
+Using Template Haskell to derive the prisms etc would probably be more performant, 
+but I think it'd require (at the very least) re-arranging the code
+
+Examples:
+>>> isReg defaultReg
+True
+
+>>> isReg defaultHorn
+False
+-}
+isReg :: AsConstructor "Regulative" s s a a => s -> Bool
+isReg = O.has (_Ctor @"Regulative")
+
+isHlike :: AsConstructor "Hornlike" s s a a => s -> Bool
+isHlike = O.has (_Ctor @"Hornlike")
+
 
 -- | the more responsible version of head . words . show
 ruleConstructor :: Rule -> String

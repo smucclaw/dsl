@@ -5,14 +5,13 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DeriveAnyClass #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 
-module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4hc, SimpL4(..), SimL4Error(..)) where
+module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
 
 import Data.Text qualified as T
 import qualified Data.Text.Lazy as T (toStrict)
@@ -24,30 +23,22 @@ import Control.Monad.Validate
   ( MonadValidate (..)
     , Validate
     , refute
-    , dispute
-    , runValidate
     )
-import Control.Monad.Identity
 
-import Data.Bifunctor       ( first )
-import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
-import GHC.Generics (Generic)
-import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
 import Data.String (IsString)
 import Data.List.NonEmpty qualified as NE
 import Debug.Trace (trace)
 
 import qualified AnyAll as AA
 import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..), BoolStructR(..), BoolStructT)
+import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.ValidateL4Input
-      (L4Rules, ValidHornls, Unvalidated,
-      loadRawL4AsUnvalid)
+-- import LS.XPile.LogicalEnglish.ValidateL4Input
+--       (L4Rules, ValidHornls, Unvalidated,
+--       loadRawL4AsUnvalid)
 
 
 {-
@@ -64,30 +55,38 @@ newtype SimL4Error = MkErr { unpackErr :: T.Text }
 newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate (HS.HashSet SimL4Error) a }
     deriving newtype (Functor, Applicative, Monad, MonadValidate (HS.HashSet SimL4Error))
 {- ^ TODOs: 
-1. Use the newtype...
-2. Per monad-validate's docs, move away from native linked list when time permits --- use Dual [a] or Seq or even Hashset
-3. When time permits, we probably want to switch to validateT add Reader in there for metadata like the location of the erroring rule
+  * When time permits, we probably want to switch to validateT add Reader in there for metadata like the location of the erroring rule
 -}
 
--- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
+-- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> [SimpL4 SimpleL4HC]
 {- | 
-  Precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
-  TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
+  It's fine if  input L4 rules have more than 1 HC in their Horn clauses, as in the ditto syntax --- we get the givens and simplify each of the clauses with those givens   
+  
+  When writing L4, it’s important that
+    * there not be empty cells in the head or body between contentful cells,
+    * there not be `""` below the `DECIDE` --- if there are `""` below the `DECIDE`, then the stuff below will get parsed as distinct Hornlikes but without the givens, and the only way to then figure out what the original givens were will be very hacky / fragile 
 -}
-simplifyL4hc :: L4.Rule -> SimpL4 SimpleL4HC
-simplifyL4hc l4hc = do
-  let gvars  = gvarsFromL4Rule l4hc
-      clause = Prelude.head $ L4.clauses l4hc
-              -- ^ this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
-  simpHead  <- simplifyHead clause.hHead
+simplifyL4rule :: L4.Rule -> [SimpL4 SimpleL4HC]
+simplifyL4rule l4rule =
+  let
+    gvars = gvarsFromL4Rule l4rule
+    hcs = L4.clauses l4rule
+  in map (simplifyL4hc gvars) hcs
+  -- TODO: would probably be good to check upfront for whether there are L4 rules with no clauses and log a warning if such L4rules are found
 
-  case clause.hBody of
+{- | an L4 hc, in this context, is taken to be a L4.Rule with ___exactly one__ elt in its `clauses` field  
+-}
+simplifyL4hc :: GVarSet -> L4.HornClause2 -> SimpL4 SimpleL4HC
+simplifyL4hc gvars l4hc = do
+  simpHead  <- simplifyHead l4hc.hHead
+  case l4hc.hBody of
     Nothing   ->
       pure $ MkL4FactHc {fgiven = gvars, fhead = simpHead}
+      -- ^ There are Facts / HCs with Nothing in the body in the encoding 
     Just rbod -> do
       simpBod <- simplifyHcBodyBsr rbod
       pure $ MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simpBod}
-    -- ^ There are Facts / HCs with Nothing in the body in the encoding 
+
 
 {-------------------------------------------------------------------------------
     Simplifying L4 HCs
@@ -146,13 +145,13 @@ simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpheadRPC exprsl exprsr =
   let lefts = mtes2cells exprsl
   in case exprsr of
-    (MTI int : xs)   -> 
+    (MTI int : xs)   ->
       ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
-    (MTF float : xs) -> 
+    (MTF float : xs) ->
       ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
     _           ->
       ABPatomic (lefts <> [MkCellT "is"] <> mtes2cells exprsr)
-  
+
 
 {-------------------------------------------------------------------------------
     simplifying body of L4 HC
@@ -332,7 +331,7 @@ extractGiven L4.Hornlike {given=Nothing}        = []
 -- won't need to worry abt this when we add checking upfront
 extractGiven L4.Hornlike {given=Just paramtext} = concatMap (NE.toList . fst) (NE.toList paramtext)
 extractGiven _                                  = trace "not a Hornlike rule, not extracting given" mempty
--- also won't need to worry abt this when we add checking + filtering upfront
+-- TODO: also won't need to worry abt this when we add checking + filtering upfront
 
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
@@ -352,7 +351,8 @@ mte2cell = \case
   MTT t -> MkCellT t
   MTI i -> MkCellT (int2Text i)
   MTF f -> MkCellT (float2Text f)
-  _     -> error "Booleans in cells currently not supported"
+  MTB b -> MkCellT (T.pack (show b))
+            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells and raise a `dispute` if so
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]

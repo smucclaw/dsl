@@ -107,6 +107,7 @@ tests:
       - natural4
       - filepath
       - filemanip
+      - hspec-golden
 
 benchmarks:
   natural4-bench:

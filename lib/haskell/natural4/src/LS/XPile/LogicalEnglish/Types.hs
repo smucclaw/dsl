@@ -1,10 +1,8 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE PatternSynonyms, DataKinds #-}
@@ -224,7 +222,6 @@ from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hasha
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
---TODO: Edit this / think thru it again when we get to this on Mon
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules.
 
 Things to note / think about:
@@ -352,11 +349,7 @@ data LEProg = MkLEProg {  nlas :: [LENatLangAnnot]
                         , leHCs :: [LEhcPrint] 
                         }
 
---   docHeader    :: !T.Text
--- , nlasHeader :: !T.Text
--- , libHCsHeader :: !T.Text
--- , libHCs    :: forall ann. Doc ann
--- , hcsHeader :: !T.Text
+
 --- to remove once we are sure we won't want to go back to this way of doing this: 
 -- LE Rule
 -- data LERule a b = 

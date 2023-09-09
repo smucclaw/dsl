@@ -113,23 +113,14 @@ simplifyHead = \case
   RPnary {}                      -> refute [MkErr "RPnary in the head of HC not supported."]
 
 
-{- ^
-An example of an is-num pattern in a RPConstraint
-[ HC
-    { hHead = RPConstraint
-        [ MTT "total savings" ] RPis
-        [ MTI 100 ]
-    , hBody = Just
-        ( All Nothing
-            [ Leaf
-                ( RPConstraint
-                    [ MTT "initial savings" ] RPis
-                    [ MTF 22.5 ]
-                )
--}
-{- | 
-Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
 
+{- |  Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
+Right now, the only RPConstraint tt can appear in head of L4 HC, according to spec, is RPis
+-}
+simpheadRPC :: Foldable f => f MTExpr -> f MTExpr -> L4AtomicP
+simpheadRPC = simpRPCis
+
+{- |
 Given left and right exprs that flank an RPIs,
 return a L4AtomicP where 
     <IS NUM>s have been marked accordingly in the numcell,
@@ -140,17 +131,33 @@ Two cases of IS-ing to consider:
     in which case we should convert the NUM to text and warp it in a MkCellIsNum
   2. It does not
     in which case we should replace the IS with 'is' text
+
+
+  An example of an is-num pattern in a RPConstraint:
+    [ HC
+        { hHead = RPConstraint
+            [ MTT "total savings" ] RPis
+            [ MTI 100 ]
+        , hBody = Just
+            ( All Nothing
+                [ Leaf
+                    ( RPConstraint
+                        [ MTT "initial savings" ] RPis
+                        [ MTF 22.5 ]
+                    )
 -}
-simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
-simpheadRPC exprsl exprsr =
-  let lefts = mtes2cells exprsl
+simpRPCis :: Foldable f => f MTExpr -> f MTExpr -> L4AtomicP
+simpRPCis exprsl exprsr =
+  let lefts   = mtes2cells exprsl
+      txtRPis = "is" :: T.Text
   in case exprsr of
     (MTI int : xs)   ->
       ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
     (MTF float : xs) ->
       ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
     _           ->
-      ABPatomic (lefts <> [MkCellT "is"] <> mtes2cells exprsr)
+      ABPatomic (lefts <> [MkCellT txtRPis] <> mtes2cells exprsr)
+
 
 
 {-------------------------------------------------------------------------------
@@ -255,6 +262,7 @@ simplifybodyRP = \case
                                           RPis  -> pure $ simpbodRPC @RPis exprsl exprsr
                                           RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
                                           RPand -> pure $ simpbodRPC @RPand exprsl exprsr
+
                                           _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
                                           {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
                                               EG: ( Leaf
@@ -298,23 +306,55 @@ atomRPoperand2cell = \case
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
 
+simpbodRPC = \case
+  RPis  -> AtomicBP (simpheadRPC exprsl exprsr)
+  RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
+  RPand -> pure $ simpbodRPC @RPand exprsl exprsr
+
+  _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
+  {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
+      EG: ( Leaf
+            ( RPConstraint
+                [ MTT "data breach" , MTT "came about from"] 
+                RPor
+                [ MTT "luck, fate", MTT "acts of god or any similar event"]
+            )
+          )                           -}
+
+
+simBodRPCboolop boolop exprsl exprsr = boolop (map f exprsr)
+    where f exprr =
+            MkTrueAtomicBP (mtes2cells exprsl <> [mte2cell exprr])
+
+
+
+
+
+
+
+
 -- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
 class SimpBodyRPConstrntRPrel (rp :: RPRel) where
-  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+  simpbodRPC ::  Foldable f => f MTExpr -> f MTExpr -> BoolPropn L4AtomicP
 
 instance SimpBodyRPConstrntRPrel RPis where
   simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
 
--- TODO: Chk with Joe and Meng about RPor and RPand
 instance SimpBodyRPConstrntRPrel RPor where
   simpbodRPC exprsl exprsr = Or (map f exprsr)
     where f exprr =
             AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
 
 instance SimpBodyRPConstrntRPrel RPand where
+  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
   simpbodRPC exprsl exprsr = And (map f exprsr)
     where f exprr =
             AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
+
+class SimpBodyRPConstrntRPrel (rp :: RPRelArith) where
+  simpRPCarith :: Foldable f => f MTExpr -> f MTExpr -> BoolPropn L4AtomicP
+
+
 
 --------------------------------------------------------------------------------
 

@@ -8,7 +8,7 @@
 -- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications, GADTs #-}
 {-# LANGUAGE PatternSynonyms #-}
 
 
@@ -117,7 +117,7 @@ simplifyHead = \case
 {- |  Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
 Right now, the only RPConstraint tt can appear in head of L4 HC, according to spec, is RPis
 -}
-simpheadRPC :: Foldable f => f MTExpr -> f MTExpr -> L4AtomicP
+simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpheadRPC = simpRPCis
 
 {- |
@@ -146,7 +146,7 @@ Two cases of IS-ing to consider:
                         [ MTF 22.5 ]
                     )
 -}
-simpRPCis :: Foldable f => f MTExpr -> f MTExpr -> L4AtomicP
+simpRPCis :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpRPCis exprsl exprsr =
   let lefts   = mtes2cells exprsl
       txtRPis = "is" :: T.Text
@@ -157,7 +157,6 @@ simpRPCis exprsl exprsr =
       ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
     _           ->
       ABPatomic (lefts <> [MkCellT txtRPis] <> mtes2cells exprsr)
-
 
 
 {-------------------------------------------------------------------------------
@@ -254,24 +253,12 @@ t IS MIN t1 t2 .. tn:
                     ]])
 -}
 
-simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m => RelationalPredicate -> m (BoolPropn L4AtomicP)
+simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m => 
+                    RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case
   RPMT exprs                         -> pure $ MkTrueAtomicBP (mtes2cells exprs)
-                                     -- ^ this is the same for both the body and head
-  RPConstraint exprsl rel exprsr     -> case rel of
-                                          RPis  -> pure $ simpbodRPC @RPis exprsl exprsr
-                                          RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
-                                          RPand -> pure $ simpbodRPC @RPand exprsl exprsr
-
-                                          _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
-                                          {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
-                                              EG: ( Leaf
-                                                    ( RPConstraint
-                                                        [ MTT "data breach" , MTT "came about from"] 
-                                                        RPor
-                                                        [ MTT "luck, fate", MTT "acts of god or any similar event"]
-                                                    )
-                                                  )                           -}
+                                        -- ^ this is the same for both the body and head
+  RPConstraint exprsl rel exprsr     -> simpbodRPC exprsl exprsr rel
 
   -- max / min / sum x where φ(x)
   TermIsMaxXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
@@ -291,12 +278,15 @@ simplifybodyRP = \case
   RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]
 
 
-termIsNaryOpOf :: (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) => OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
+termIsNaryOpOf :: 
+  (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) => 
+    OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
 termIsNaryOpOf op mteTerm rpargs = MkIsOpOf term op <$> argterms
   where term     = mte2cell mteTerm
         argterms = concat <$> traverse atomRPoperand2cell rpargs
 
-atomRPoperand2cell :: forall m. MonadValidate (HS.HashSet SimL4Error) m => RelationalPredicate -> m [Cell]
+atomRPoperand2cell :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
+                          RelationalPredicate -> m [Cell]
 atomRPoperand2cell = \case
   RPMT mtexprs    -> pure $ mtes2cells mtexprs
   RPParamText _pt -> refute ["not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"]
@@ -306,13 +296,24 @@ atomRPoperand2cell = \case
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
 
-simpbodRPC = \case
-  RPis  -> AtomicBP (simpheadRPC exprsl exprsr)
-  RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
-  RPand -> pure $ simpbodRPC @RPand exprsl exprsr
+simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m => 
+                [MTExpr] -> [MTExpr] -> RPRel -> m (BoolPropn L4AtomicP)
+simpbodRPC exprsl exprsr = \case
+  RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
 
+  RPor  -> pure $ simBodRPCboolop InlRPor exprsl exprsr
+  RPand -> pure $ simBodRPCboolop InlRPand exprsl exprsr
+
+  RPlt  -> pure $ simBodRPCarithcomp InlRPlt exprsl exprsr 
+  RPlte -> pure $ simBodRPCarithcomp InlRPlte exprsl exprsr 
+  RPgt  -> pure $ simBodRPCarithcomp InlRPgt exprsl exprsr 
+  RPgte -> pure $ simBodRPCarithcomp InlRPgte exprsl exprsr 
+  
   _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
-  {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
+
+{- |
+  -- TODO: Check if this is still required in light of recent discussion
+  Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
       EG: ( Leaf
             ( RPConstraint
                 [ MTT "data breach" , MTT "came about from"] 
@@ -320,43 +321,25 @@ simpbodRPC = \case
                 [ MTT "luck, fate", MTT "acts of god or any similar event"]
             )
           )                           -}
-
-
-simBodRPCboolop boolop exprsl exprsr = boolop (map f exprsr)
-    where f exprr =
-            MkTrueAtomicBP (mtes2cells exprsl <> [mte2cell exprr])
-
-
-
-
-
-
-
-
--- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
-class SimpBodyRPConstrntRPrel (rp :: RPRel) where
-  simpbodRPC ::  Foldable f => f MTExpr -> f MTExpr -> BoolPropn L4AtomicP
-
-instance SimpBodyRPConstrntRPrel RPis where
-  simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
-
-instance SimpBodyRPConstrntRPrel RPor where
-  simpbodRPC exprsl exprsr = Or (map f exprsr)
-    where f exprr =
-            AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
-
-instance SimpBodyRPConstrntRPrel RPand where
-  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
-  simpbodRPC exprsl exprsr = And (map f exprsr)
-    where f exprr =
-            AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
-
-class SimpBodyRPConstrntRPrel (rp :: RPRelArith) where
-  simpRPCarith :: Foldable f => f MTExpr -> f MTExpr -> BoolPropn L4AtomicP
-
-
-
---------------------------------------------------------------------------------
+simBodRPCboolop :: InlineRPrel RPnonPropAnaph -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+simBodRPCboolop anaOp exprsl exprsr = 
+  let 
+      withLefts :: MTExpr -> BoolPropn L4AtomicP
+      withLefts exprr = MkTrueAtomicBP (mtes2cells exprsl <> [mte2cell exprr])
+  in case anaOp of 
+    InlRPor  -> Or (map withLefts exprsr)
+    InlRPand -> And (map withLefts exprsr) 
+  
+simBodRPCarithcomp :: InlineRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+simBodRPCarithcomp comp exprsl exprsr = 
+  MkTrueAtomicBP (mtes2cells exprsl <> [MkCellT (comp2txt comp)] <> mtes2cells exprsr)
+  where 
+    comp2txt :: InlineRPrel RParithComp -> T.Text
+    comp2txt = \case
+      InlRPlt  -> "<"
+      InlRPlte -> "<=" 
+      InlRPgt  -> ">"   
+      InlRPgte -> ">="  
 
 
 {-------------------------------------------------------------------------------

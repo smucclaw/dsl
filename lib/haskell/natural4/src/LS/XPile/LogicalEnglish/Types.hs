@@ -5,13 +5,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE PatternSynonyms, DataKinds #-}
+{-# LANGUAGE PatternSynonyms, DataKinds, GADTs #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , BoolPropn(..)
     -- L4-related types
+    , InlineRPrel(..)
+    , RPnonPropAnaph 
+    , RParithComp
+    , RPothers
     , GVar(..)
     , GVarSet
     , Cell(..)
@@ -135,6 +139,28 @@ data OpSuchTt = MaxXSuchThat
 {-------------------------------------------------------------------------------
   The L4-related data types
 -------------------------------------------------------------------------------}
+data RPnonPropAnaph
+data RParithComp
+data RPothers
+
+{- | 
+  Some RPs are supported by converting them to cases in other data structures
+  Some RPs are, by contrast, 'inlined'; the following are the 'inline' RPRels tt are supported by L4 -> LE transpiler
+
+  Having a GADT like this is useful for various reasons.
+  For example, it allows us to mark explicitly in the types which of the various RPRel types a function uses (because often, e.g., we only use a specific proper subset), 
+  and to avoid incomplete-pattern-matching errors from the compiler (i.e., to actually get the sort of compile-time guarantees we'd like)
+-}
+data InlineRPrel a where 
+  InlRPlt :: InlineRPrel RParithComp
+  InlRPlte :: InlineRPrel RParithComp
+  InlRPgt :: InlineRPrel RParithComp
+  InlRPgte :: InlineRPrel RParithComp
+
+  InlRPor :: InlineRPrel RPnonPropAnaph
+  InlRPand :: InlineRPrel RPnonPropAnaph
+
+  InlRPelem :: InlineRPrel RPothers
 
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text

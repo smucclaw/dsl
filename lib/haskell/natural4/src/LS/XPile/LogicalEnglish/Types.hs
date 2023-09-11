@@ -83,17 +83,15 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
-import Data.Containers.NonEmpty (HasNonEmpty)
+import Data.Containers.NonEmpty (HasNonEmpty, onNonEmpty)
 
-import Data.List.NonEmpty qualified as NE
 import Data.Foldable (toList)
 import Data.Sequence.NonEmpty (NESeq)
-import Data.Sequence.NonEmpty qualified as NESeq
--- import Data.Sequence (Seq, fromList)
+-- import Data.Sequence.NonEmpty qualified as NESeq
+import Data.Sequence qualified as Seq (fromList)
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter(Pretty)
--- import Optics
 
 {- |
 Misc notes
@@ -356,14 +354,13 @@ pattern NLA nlatxt <- (getNLAtxt -> nlatxt)
 
 -- | Smart constructor for making NLA'
 mkNLA :: forall f. (Foldable f, HasNonEmpty (f NLACell)) => f NLACell -> Maybe NLA'
-mkNLA (NE.nonEmpty . toList -> nlacells) = 
-  case nlacells of
-    Nothing        -> Nothing
-    Just nlacNELst -> 
-      let base = NESeq.fromList nlacNELst
-      in Just $ MkNLA' { getBase'   = base
-                       , getNLATxt' = annotxtify base
-                       , getRegex'  = regexify base }
+mkNLA (Seq.fromList . toList -> nlacells) = 
+  onNonEmpty make nlacells
+    where 
+      make :: NESeq NLACell -> NLA'
+      make base = MkNLA' { getBase'   = base
+                         , getNLATxt' = annotxtify base
+                         , getRegex'  = regexify base }
 
 -- | Private function for making NLATxt from NESeq NLACell (this knows that the underlying record uses NESeq NLACell for getBase')
 annotxtify :: NESeq NLACell -> NLATxt              

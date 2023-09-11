@@ -12,12 +12,11 @@ module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
 
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
-import Data.Foldable (toList)
+-- import Data.Foldable (toList)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
 import Data.Traversable
-import Control.Monad.Identity (Identity)
 
 import LS.XPile.LogicalEnglish.Types
 

@@ -73,6 +73,7 @@ dependencies:
   - json
   - optics
   - generic-optics
+  - nonempty-containers
 
 language: GHC2021
 

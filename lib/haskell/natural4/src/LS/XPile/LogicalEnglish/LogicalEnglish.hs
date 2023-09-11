@@ -91,7 +91,7 @@ toLE l4rules =
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
+allNLAs :: [VarsHC] -> HS.HashSet NLATxt
 allNLAs = foldMap nlasFromVarsHC
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]

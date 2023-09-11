@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, NoFieldSelectors #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE PatternSynonyms, DataKinds, GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms, ViewPatterns, DataKinds, GADTs #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
@@ -50,15 +51,20 @@ module LS.XPile.LogicalEnglish.Types (
     -- LE-related types
     , LEhcCell(..)
     , LEVar(..)
-    , NLACell(..)
     , NormdVars
     , NormalizedVar(..)
 
     , LEhcAtomicP
     , TxtAtomicBP
 
+    , NLACell(..)
+    , NLATxt(..)
+
+    , NLA' (NLA) -- opaque; exporting only pattern for matching on the NLATxt
+    , mkNLA      -- smart constructor
+    , getNLAtxt
+
     , LERule
-    , LENatLangAnnot(..)
     , LETemplateTxt(..)
     , UnivStatus(..)
 
@@ -77,11 +83,17 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
+import Data.Containers.NonEmpty (HasNonEmpty)
 
+import Data.List.NonEmpty qualified as NE
+import Data.Foldable (toList)
+import Data.Sequence.NonEmpty (NESeq)
+import Data.Sequence.NonEmpty qualified as NESeq
+-- import Data.Sequence (Seq, fromList)
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter(Pretty)
-    
+-- import Optics
 
 {- |
 Misc notes
@@ -316,9 +328,50 @@ instance Monoid NLACell where
 This requires a base that's shipped with ghc 94 or newer and and import Generically.
 But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit -}
   
-newtype LENatLangAnnot = MkNLA T.Text
+
+{-
+newtype NLA = MkNLA T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
+-}  
+
+newtype NLATxt = MkNLATxt T.Text
+  deriving stock (Show)
+  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
+
+data Regex -- placeholder; to be removed later
+
+data NLA' =  MkNLA' { getBase'   :: NESeq NLACell 
+                    , getNLATxt' :: NLATxt
+                    , getRegex'  :: Regex }
+
+{-| public getter to view the NLAtxt
+Don't need to export a lens for this field cos not going to change / set it -}
+getNLAtxt :: NLA' -> NLATxt
+getNLAtxt nla' = nla'.getNLATxt'
+
+-- | public pattern to match on the NLAtxt
+pattern NLA :: NLATxt -> NLA'
+pattern NLA nlatxt <- (getNLAtxt -> nlatxt)
+
+-- | Smart constructor for making NLA'
+mkNLA :: forall f. (Foldable f, HasNonEmpty (f NLACell)) => f NLACell -> Maybe NLA'
+mkNLA (NE.nonEmpty . toList -> nlacells) = 
+  case nlacells of
+    Nothing        -> Nothing
+    Just nlacNELst -> 
+      let base = NESeq.fromList nlacNELst
+      in Just $ MkNLA' { getBase'   = base
+                       , getNLATxt' = annotxtify base
+                       , getRegex'  = regexify base }
+
+-- | Private function for making NLATxt from NESeq NLACell (this knows that the underlying record uses NESeq NLACell for getBase')
+annotxtify :: NESeq NLACell -> NLATxt              
+annotxtify = undefined
+
+regexify :: NESeq NLACell -> Regex
+regexify = undefined
+
 
 ---------------- For generating template instances / non-NLAs
 
@@ -371,7 +424,7 @@ type LERuleForPrint = BaseRule TxtAtomicBP
 ----- for pretty printing -------------------------------------------------------
 
 
-data LEProg = MkLEProg {  nlas :: [LENatLangAnnot]
+data LEProg = MkLEProg {  nlas :: [NLATxt]
                         , leHCs :: [LEhcPrint] 
                         }
 

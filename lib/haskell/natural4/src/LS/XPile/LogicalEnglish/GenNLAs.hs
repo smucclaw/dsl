@@ -168,6 +168,14 @@ getNonSubsumed nlaset =
         then acc
         else nla `setInsert` acc 
 
+--TODO:
+-- | For parsing lib templates, as well as templates from, e.g., unit tests, to a set of NLAs
+parseLENLAnnotsToNLAs :: [T.Text] -> HS.HashSet NLA'
+parseLENLAnnotsToNLAs = undefined
+
+parseLENLAnnot :: T.Text -> NLA'
+parseLENLAnnot = undefined
+
 -------------------
 
 nlasFromVarsHC :: VarsHC -> HS.HashSet NLA'

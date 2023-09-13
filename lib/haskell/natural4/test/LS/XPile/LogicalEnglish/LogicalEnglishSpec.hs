@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -60,7 +59,7 @@ import LS (Rule)
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
-import LS.XPile.LogicalEnglish.TestcaseConfig (TestcaseConfig (..), readConfigFile)
+import LS.XPile.LogicalEnglish.Testcase
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir, letestfnm2rules)
 import Safe (tailSafe)
 import System.FilePath (takeBaseName, (<.>), (</>))
@@ -75,46 +74,20 @@ import System.FilePath.Find
   )
 import System.FilePath.Find qualified as FileFind
 import Test.Hspec (Spec, describe, it, pendingWith, runIO)
+import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
 
 -- | The 'Spec' used to test the Logical English transpiler.
 spec :: Spec
 spec = describe "Logical English" $ do
-  testcaseDirs :: [FilePath] <-
+  directories :: [FilePath] <-
     leTestcasesDir
       |>  findWithDepth0 (fileType ==? Directory)
       -- The first directory will always be leTestcasesDir itself, which is why
       -- we need to take the tail to get rid of it.
       |$> tailSafe
       |> runIO
-  for_ testcaseDirs $ \testcaseDir -> do
-    configFile :: Maybe FilePath <-
-      testcaseDir
-        |> findWithDepth0 (fileName ==? "config.yml")
-        |$> listToMaybe
-        |> runIO
-    case configFile of
-      Nothing -> it testcaseDir $ pendingWith "Missing config.yml file."
-      Just configFile -> testcaseConfigFile2spec testcaseDir configFile
-
-testcaseConfigFile2spec :: FilePath -> FilePath -> Spec
-testcaseConfigFile2spec testcaseDir configFile = do
-  testcaseConfig <- runIO $ readConfigFile configFile
-  case testcaseConfig of
-    Left parseExc ->
-      it testcaseDir $ pendingWith
-        [i|Error occured while parsing Yaml file: #{parseExc}|]
-    Right testcaseConfig -> testcaseConfig2spec testcaseDir testcaseConfig
-
-testcaseConfig2spec :: FilePath -> TestcaseConfig -> Spec
-testcaseConfig2spec testcaseDir TestcaseConfig {..} =
-  describe testcaseDir $
-    if enabled
-      then it description $ do
-        let testcaseName = takeBaseName testcaseDir
-        l4rules <- letestfnm2rules $ testcaseName <.> "csv"
-        let leProgram = l4rules |> toLE |> T.pack
-        pure $ goldenLE testcaseName leProgram
-      else it description $ pendingWith "Test case is disabled."
-
-findWithDepth0 :: FileFind.FilterPredicate -> FilePath -> IO [FilePath]
-findWithDepth0 = FileFind.find (depth ==? 0) 
+  for_ directories $ \directory -> do
+    let configFile = directory </> "config.yml"
+    testcase :: Either Error Testcase <-
+      runIO $ configFile2testcase configFile
+    testcase |> either error2spec testcase2spec

@@ -11,10 +11,17 @@ import Data.Bifunctor (Bifunctor (bimap))
 import Data.Maybe (listToMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import Control.Monad.Except
+  ( ExceptT,
+    MonadError (throwError),
+    MonadIO (liftIO),
+    runExceptT,
+  )
 import Data.Yaml qualified as Yaml
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS (Rule)
+import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
@@ -23,26 +30,27 @@ import System.FilePath (takeBaseName, takeDirectory, (<.>))
 import System.FilePath.Find (depth, fileName, (==?))
 import System.FilePath.Find qualified as FileFind
 import Test.Hspec (Spec, describe, it, pendingWith, runIO)
-import LS.Utils ((|$>))
 
 configFile2spec :: FilePath -> IO Spec
 configFile2spec configFile =
-  configFile |> configFile2testcase |$> either error2spec testcase2spec 
+  configFile
+    |> configFile2testcase
+    |> runExceptT
+    |$> either error2spec testcase2spec
 
-configFile2testcase :: FilePath -> IO (Either Error Testcase)
+configFile2testcase :: FilePath -> ExceptT Error IO Testcase
 configFile2testcase configFile = do
-  exists <- doesFileExist configFile
-  if exists
-    then do
-      yamlParseResult :: Either Yaml.ParseException Config <-
-        Yaml.decodeFileEither configFile
-      yamlParseResult |> bimap yamlParseExc2error config2testcase |> pure
-    else pure $ Left $ Error {directory, info = MissingConfigFile}
+  exists <- liftIO $ doesFileExist configFile
+  if not exists
+    then throwError Error {directory, info = MissingConfigFile}
+    else do
+      yamlParseResult <- liftIO $ Yaml.decodeFileEither configFile
+      case yamlParseResult of
+        Left parseExc ->
+          throwError Error {directory, info = YamlParseExc parseExc}
+        Right config -> pure Testcase {directory, config}
   where
     directory = takeDirectory configFile
-    config2testcase config = Testcase {directory, config}
-    yamlParseExc2error parseExc =
-      Error {directory, info = YamlParseExc parseExc}
 
 testcase2spec :: Testcase -> Spec
 testcase2spec Testcase {directory, config = Config {description, enabled}} =

@@ -119,4 +119,4 @@ isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
             then (prefix, True)
             else ("", False)
 isAposVar _ _                                     = ("", False)
--- ^ TODO: this matching on "'s" is a bit brittle cos unicode
+-- TODO: this matching on "'s" is a bit brittle cos unicode

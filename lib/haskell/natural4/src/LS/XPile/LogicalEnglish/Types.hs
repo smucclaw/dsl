@@ -1,19 +1,22 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, NoFieldSelectors #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE PatternSynonyms, DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms, ViewPatterns, DataKinds, GADTs #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , BoolPropn(..)
     -- L4-related types
+    , InlineRPrel(..)
+    , RPnonPropAnaph 
+    , RParithComp
+    , RPothers
     , GVar(..)
     , GVarSet
     , Cell(..)
@@ -48,15 +51,20 @@ module LS.XPile.LogicalEnglish.Types (
     -- LE-related types
     , LEhcCell(..)
     , LEVar(..)
-    , NLACell(..)
     , NormdVars
     , NormalizedVar(..)
 
     , LEhcAtomicP
     , TxtAtomicBP
 
+    , NLACell(..)
+    , NLATxt(..)
+
+    , NLA' (NLA) -- opaque; exporting only pattern for matching on the NLATxt
+    , mkNLA      -- smart constructor
+    , getNLAtxt
+
     , LERule
-    , LENatLangAnnot(..)
     , LETemplateTxt(..)
     , UnivStatus(..)
 
@@ -75,11 +83,15 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
+import Data.Containers.NonEmpty (HasNonEmpty, onNonEmpty)
 
+import Data.Foldable (toList)
+import Data.Sequence.NonEmpty (NESeq)
+-- import Data.Sequence.NonEmpty qualified as NESeq
+import Data.Sequence qualified as Seq (fromList)
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter(Pretty)
-    
 
 {- |
 Misc notes
@@ -137,6 +149,28 @@ data OpSuchTt = MaxXSuchThat
 {-------------------------------------------------------------------------------
   The L4-related data types
 -------------------------------------------------------------------------------}
+data RPnonPropAnaph
+data RParithComp
+data RPothers
+
+{- | 
+  Some RPs are supported by converting them to cases in other data structures
+  Some RPs are, by contrast, 'inlined'; the following are the 'inline' RPRels tt are supported by L4 -> LE transpiler
+
+  Having a GADT like this is useful for various reasons.
+  For example, it allows us to mark explicitly in the types which of the various RPRel types a function uses (because often, e.g., we only use a specific proper subset), 
+  and to avoid incomplete-pattern-matching errors from the compiler (i.e., to actually get the sort of compile-time guarantees we'd like)
+-}
+data InlineRPrel a where 
+  InlRPlt :: InlineRPrel RParithComp
+  InlRPlte :: InlineRPrel RParithComp
+  InlRPgt :: InlineRPrel RParithComp
+  InlRPgte :: InlineRPrel RParithComp
+
+  InlRPor :: InlineRPrel RPnonPropAnaph
+  InlRPand :: InlineRPrel RPnonPropAnaph
+
+  InlRPelem :: InlineRPrel RPothers
 
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
@@ -224,7 +258,6 @@ from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hasha
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
---TODO: Edit this / think thru it again when we get to this on Mon
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules.
 
 Things to note / think about:
@@ -293,9 +326,49 @@ instance Monoid NLACell where
 This requires a base that's shipped with ghc 94 or newer and and import Generically.
 But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit -}
   
-newtype LENatLangAnnot = MkNLA T.Text
+
+{-
+newtype NLA = MkNLA T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
+-}  
+
+newtype NLATxt = MkNLATxt T.Text
+  deriving stock (Show)
+  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
+
+data Regex -- placeholder; to be removed later
+
+data NLA' =  MkNLA' { getBase'   :: NESeq NLACell 
+                    , getNLATxt' :: NLATxt
+                    , getRegex'  :: Regex }
+
+{-| public getter to view the NLAtxt
+Don't need to export a lens for this field cos not going to change / set it -}
+getNLAtxt :: NLA' -> NLATxt
+getNLAtxt nla' = nla'.getNLATxt'
+
+-- | public pattern to match on the NLAtxt
+pattern NLA :: NLATxt -> NLA'
+pattern NLA nlatxt <- (getNLAtxt -> nlatxt)
+
+-- | Smart constructor for making NLA'
+mkNLA :: forall f. (Foldable f, HasNonEmpty (f NLACell)) => f NLACell -> Maybe NLA'
+mkNLA (Seq.fromList . toList -> nlacells) = 
+  onNonEmpty make nlacells
+    where 
+      make :: NESeq NLACell -> NLA'
+      make base = MkNLA' { getBase'   = base
+                         , getNLATxt' = annotxtify base
+                         , getRegex'  = regexify base }
+
+-- | Private function for making NLATxt from NESeq NLACell (this knows that the underlying record uses NESeq NLACell for getBase')
+annotxtify :: NESeq NLACell -> NLATxt              
+annotxtify = undefined
+
+regexify :: NESeq NLACell -> Regex
+regexify = undefined
+
 
 ---------------- For generating template instances / non-NLAs
 
@@ -307,7 +380,7 @@ data LEVar = VarApos !OrigVarPrefix
 -}
 data LEhcCell = VarCell LEVar 
               | NotVar !T.Text 
-                -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
+                -- | i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
           deriving stock (Eq, Ord, Show)
           deriving (Generic)
 
@@ -348,15 +421,11 @@ type LERuleForPrint = BaseRule TxtAtomicBP
 ----- for pretty printing -------------------------------------------------------
 
 
-data LEProg = MkLEProg {  nlas :: [LENatLangAnnot]
+data LEProg = MkLEProg {  nlas :: [NLATxt]
                         , leHCs :: [LEhcPrint] 
                         }
 
---   docHeader    :: !T.Text
--- , nlasHeader :: !T.Text
--- , libHCsHeader :: !T.Text
--- , libHCs    :: forall ann. Doc ann
--- , hcsHeader :: !T.Text
+
 --- to remove once we are sure we won't want to go back to this way of doing this: 
 -- LE Rule
 -- data LERule a b = 

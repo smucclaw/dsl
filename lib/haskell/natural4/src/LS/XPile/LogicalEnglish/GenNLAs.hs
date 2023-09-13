@@ -30,7 +30,7 @@ import Data.Coerce (coerce)
 import LS.XPile.LogicalEnglish.Types
 
 
-nlasFromVarsHC :: VarsHC -> HS.HashSet LENatLangAnnot
+nlasFromVarsHC :: VarsHC -> HS.HashSet NLATxt
 nlasFromVarsHC = \case
   VhcF vfact ->
     case nlaFromVFact vfact of
@@ -40,36 +40,36 @@ nlasFromVarsHC = \case
     nlasFromVarsRule vrule
 
 -- TODO: When have more time, write smtg tt checks if it is indeed in fixed lib, and add it if not.
-nlaFromVFact :: VarsFact -> Maybe LENatLangAnnot
+nlaFromVFact :: VarsFact -> Maybe NLATxt
 nlaFromVFact VFact{..} = nlaLoneFromVAtomicP varsfhead
 
-nlasFromVarsRule :: VarsRule -> HS.HashSet LENatLangAnnot
+nlasFromVarsRule :: VarsRule -> HS.HashSet NLATxt
 nlasFromVarsRule MkBaseRule{..} =
   let bodyNLAs = nlasFromBody rbody
   in case nlaLoneFromVAtomicP rhead of
     Nothing -> bodyNLAs
     Just headNLA -> HS.insert headNLA bodyNLAs
 
-nlasFromBody :: BoolPropn AtomicPWithVars -> HS.HashSet LENatLangAnnot
+nlasFromBody :: BoolPropn AtomicPWithVars -> HS.HashSet NLATxt
 nlasFromBody varsABP =
   let lstNLAs = fmap nlaLoneFromVAtomicP varsABP
   in HS.fromList . catMaybes . toList $ lstNLAs
 
 -- TODO: Check if this really does conform to the spec --- went a bit fast here
-nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe LENatLangAnnot
+nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe NLATxt
 nlaLoneFromVAtomicP =  \case
   ABPatomic vcells -> annotFromVCells vcells
   ABPIsOpSuchTt _ _ vcells -> annotFromVCells vcells
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
   where
-    annotFromVCells :: [VCell] -> Maybe LENatLangAnnot
+    annotFromVCells :: [VCell] -> Maybe NLATxt
     annotFromVCells = annotFromNLAcells . nlacellsFromLacs
 
     nlacellsFromLacs :: [VCell] -> [NLACell]
     nlacellsFromLacs = fmap vcell2NLAcell
 
-annotFromNLAcells :: [NLACell] -> Maybe LENatLangAnnot
+annotFromNLAcells :: [NLACell] -> Maybe NLATxt
 annotFromNLAcells = \case
   (mconcat . intersperseWithSpace -> MkNonParam concatted) -> 
         Just $ coerce concatted

@@ -15,18 +15,13 @@
 
 module LS.XPile.LogicalEnglish.Pretty where
 
-import Text.Pretty.Simple   ( pShowNoColor )
-import Data.Text qualified as T
-import Data.HashMap.Strict qualified as HM
-import Data.HashSet qualified as HS
-import Data.Hashable (Hashable)
-import GHC.Generics (Generic)
-import Data.Coerce (coerce)
-import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
-import Control.Monad.Identity ( Identity )
-import Data.String (IsString)
-import qualified Data.List as L hiding (head, tail)
+-- import Text.Pretty.Simple   ( pShowNoColor )
+-- import Data.Text qualified as T
+-- import Data.HashSet qualified as HS
+-- import Data.Hashable (Hashable)
+-- import Data.Coerce (coerce)
+-- import Data.Maybe (fromMaybe, listToMaybe)
+import Data.String()
 
 import Prettyprinter
   ( Doc,
@@ -34,27 +29,27 @@ import Prettyprinter
     comma,
     hsep,
     line,
-    parens,
+    -- parens,
     punctuate,
     list,
     indent,
     nest,
     vsep,
-    (<+>),
-    viaShow,
-    encloseSep,
+    -- (<+>),
+    -- viaShow,
+    -- encloseSep,
     concatWith,
     dot)
 import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), (<//>) )
+    ( vvsep, (<//>) )
 import Prettyprinter.Interpolate (__di)
 
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.ValidateL4Input
-      (L4Rules, ValidHornls, Unvalidated,
-      check, refine, loadRawL4AsUnvalid)
+-- import LS.XPile.LogicalEnglish.ValidateL4Input
+--       (L4Rules, ValidHornls, Unvalidated,
+--       check, refine, loadRawL4AsUnvalid)
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
+-- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {-------------------------------------------------------------------------------
    L4 rules -> SimpleL4HCs -> VRules

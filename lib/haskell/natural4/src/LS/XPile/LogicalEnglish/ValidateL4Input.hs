@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -W #-}
+-- {-# OPTIONS_GHC -W #-}
 {-# LANGUAGE OverloadedStrings, RecordWildCards, LambdaCase #-}
 
 module LS.XPile.LogicalEnglish.ValidateL4Input

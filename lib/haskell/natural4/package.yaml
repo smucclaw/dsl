@@ -111,6 +111,7 @@ tests:
       - filepath
       - filemanip
       - hspec-golden
+      - yaml
 
 benchmarks:
   natural4-bench:

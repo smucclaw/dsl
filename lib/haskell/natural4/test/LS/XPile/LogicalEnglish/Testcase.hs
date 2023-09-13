@@ -1,7 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.LogicalEnglish.Testcase
   ( Testcase,
@@ -12,22 +11,22 @@ module LS.XPile.LogicalEnglish.Testcase
   )
 where
 
-import Data.Yaml qualified as Yaml
-import GHC.Generics (Generic)
-import qualified System.FilePath.Find as FileFind
-import Flow ((|>))
-import System.FilePath.Find (fileName, (==?), depth)
+import Data.Bifunctor (Bifunctor (bimap))
 import Data.Maybe (listToMaybe)
-import LS.Utils ((|$>))
-import Test.Hspec (runIO, it, pendingWith, describe, Spec)
 import Data.String.Interpolate (i)
-import qualified Data.Text as T
-import System.FilePath ((<.>), takeDirectory, takeBaseName)
-import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
+import Data.Text qualified as T
+import Data.Yaml qualified as Yaml
+import Flow ((|>))
+import GHC.Generics (Generic)
+import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
-import System.Directory ( doesFileExist )
-import Data.Bifunctor (Bifunctor(bimap))
+import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
+import System.Directory (doesFileExist)
+import System.FilePath (takeBaseName, takeDirectory, (<.>))
+import System.FilePath.Find (depth, fileName, (==?))
+import System.FilePath.Find qualified as FileFind
+import Test.Hspec (Spec, describe, it, pendingWith, runIO)
 
 configFile2testcase :: FilePath -> IO (Either Error Testcase)
 configFile2testcase configFile = do
@@ -45,7 +44,7 @@ configFile2testcase configFile = do
       Error {directory, info = YamlParseExc parseExc}
 
 testcase2spec :: Testcase -> Spec
-testcase2spec Testcase {directory, config = Config {..}} =
+testcase2spec Testcase {directory, config = Config {description, enabled}} =
   describe directory $
     if enabled
       then it description $ do
@@ -76,6 +75,7 @@ data Error = Error
   { directory :: FilePath,
     info :: ErrorInfo
   }
+  deriving Show
 
 data ErrorInfo where
   MissingConfigFile :: ErrorInfo

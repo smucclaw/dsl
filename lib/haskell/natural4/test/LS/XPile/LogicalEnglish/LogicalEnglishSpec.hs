@@ -1,7 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- |
 --  Module: LogicalEnglishSpec
@@ -60,21 +58,22 @@ import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
 import LS.XPile.LogicalEnglish.Testcase
+  ( Error,
+    Testcase,
+    configFile2testcase,
+    error2spec,
+    testcase2spec,
+  )
+import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir, letestfnm2rules)
 import Safe (tailSafe)
 import System.FilePath (takeBaseName, (<.>), (</>))
 import System.FilePath.Find
   ( FileType (Directory),
-    depth,
-    extension,
-    fileName,
     fileType,
-    (<=?),
     (==?),
   )
-import System.FilePath.Find qualified as FileFind
-import Test.Hspec (Spec, describe, it, pendingWith, runIO)
-import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
+import Test.Hspec (Spec, describe, it, runIO)
 
 -- | The 'Spec' used to test the Logical English transpiler.
 spec :: Spec

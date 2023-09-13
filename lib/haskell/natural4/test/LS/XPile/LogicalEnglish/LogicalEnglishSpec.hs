@@ -48,36 +48,24 @@ module LS.XPile.LogicalEnglish.LogicalEnglishSpec (spec) where
 
 import Control.Monad (join)
 import Data.Foldable (for_)
-import Data.Maybe (listToMaybe)
-import Data.String.Interpolate (i)
-import Data.Text qualified as T
-import Data.Text.IO qualified as TIO
 import Flow ((|>))
-import GHC.Generics (Generic)
-import LS (Rule)
 import LS.Utils ((|$>))
-import LS.XPile.LogicalEnglish (toLE)
-import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
 import LS.XPile.LogicalEnglish.Testcase (configFile2spec)
 import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
-import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir, letestfnm2rules)
+import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir)
 import Safe (tailSafe)
-import System.FilePath (takeBaseName, (<.>), (</>))
-import System.FilePath.Find
-  ( FileType (Directory),
-    fileType,
-    (==?),
-  )
-import Test.Hspec (Spec, describe, it, runIO)
+import System.FilePath ((</>))
+import System.FilePath.Find (FileType (Directory), fileType, (==?))
+import Test.Hspec (Spec, describe, runIO)
 
 -- | The 'Spec' used to test the Logical English transpiler.
 spec :: Spec
 spec = describe "Logical English" $ do
   directories :: [FilePath] <-
     leTestcasesDir
-      |>  findWithDepth0 (fileType ==? Directory)
-      -- The first directory will always be leTestcasesDir itself, which is why
-      -- we need to take the tail to get rid of it.
+      |> findWithDepth0 (fileType ==? Directory)
+        -- The first directory will always be leTestcasesDir itself, which is why
+        -- we need to take the tail to get rid of it.
       |$> tailSafe
       |> runIO
   for_ directories $ \directory -> do

@@ -10,8 +10,7 @@
 --
 --  This module is responsible for running unit tests for the Logical English
 --  transpiler.
---
---  To define a unit test, one can create a new directory in
+--  To define a test case, one can create a new directory in
 --  leTestcasesDir, like 'is-num' with the following structure:
 --  - {leTestcasesDir}
 --      - is-num
@@ -55,22 +54,24 @@ import Data.Maybe (listToMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
-import Data.Yaml qualified as Yaml
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS (Rule)
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
+import LS.XPile.LogicalEnglish.TestcaseConfig (TestcaseConfig (..), readConfigFile)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir, letestfnm2rules)
+import Safe (tailSafe)
 import System.FilePath (takeBaseName, (<.>), (</>))
 import System.FilePath.Find
   ( FileType (Directory),
     depth,
     extension,
+    fileName,
     fileType,
     (<=?),
-    (==?), fileName,
+    (==?),
   )
 import System.FilePath.Find qualified as FileFind
 import Test.Hspec (Spec, describe, it, pendingWith, runIO)
@@ -81,7 +82,9 @@ spec = describe "Logical English" $ do
   testcaseDirs :: [FilePath] <-
     leTestcasesDir
       |>  findWithDepth0 (fileType ==? Directory)
-      |$> tail
+      -- The first directory will always be leTestcasesDir itself, which is why
+      -- we need to take the tail to get rid of it.
+      |$> tailSafe
       |> runIO
   for_ testcaseDirs $ \testcaseDir -> do
     configFile :: Maybe FilePath <-
@@ -95,7 +98,7 @@ spec = describe "Logical English" $ do
 
 testcaseConfigFile2spec :: FilePath -> FilePath -> Spec
 testcaseConfigFile2spec testcaseDir configFile = do
-  testcaseConfig <- configFile |> Yaml.decodeFileEither |> runIO
+  testcaseConfig <- runIO $ readConfigFile configFile
   case testcaseConfig of
     Left parseExc ->
       it testcaseDir $ pendingWith
@@ -107,21 +110,11 @@ testcaseConfig2spec testcaseDir TestcaseConfig {..} =
   describe testcaseDir $
     if enabled
       then it description $ do
+        let l4csvFile = takeBaseName testcaseDir <.> "csv"
         l4rules <- letestfnm2rules l4csvFile
         let leProgram = l4rules |> toLE |> T.pack
         pure $ goldenLE testcaseDir leProgram
       else it description $ pendingWith "Test case is disabled."
-  where
-    descrFile = "description" <.> "txt"
-    l4csvFile = takeBaseName testcaseDir <.> "csv"
 
 findWithDepth0 :: FileFind.FilterPredicate -> FilePath -> IO [FilePath]
 findWithDepth0 = FileFind.find (depth ==? 0) 
-
-data TestcaseConfig = TestcaseConfig
-  { description :: String,
-    enabled :: Bool
-  }
-  deriving (Generic, Show)
-
-instance Yaml.FromJSON TestcaseConfig

@@ -74,6 +74,7 @@ dependencies:
   - optics
   - generic-optics
   - nonempty-containers
+  - safe
 
 language: GHC2021
 

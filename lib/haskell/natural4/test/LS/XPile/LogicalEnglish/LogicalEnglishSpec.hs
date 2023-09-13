@@ -110,10 +110,10 @@ testcaseConfig2spec testcaseDir TestcaseConfig {..} =
   describe testcaseDir $
     if enabled
       then it description $ do
-        let l4csvFile = takeBaseName testcaseDir <.> "csv"
-        l4rules <- letestfnm2rules l4csvFile
+        let testcaseName = takeBaseName testcaseDir
+        l4rules <- letestfnm2rules $ testcaseName <.> "csv"
         let leProgram = l4rules |> toLE |> T.pack
-        pure $ goldenLE testcaseDir leProgram
+        pure $ goldenLE testcaseName leProgram
       else it description $ pendingWith "Test case is disabled."
 
 findWithDepth0 :: FileFind.FilterPredicate -> FilePath -> IO [FilePath]

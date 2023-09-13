@@ -90,13 +90,12 @@ Examples of NLAs that overlap:
   but does NOT overlap with
       Alice's blahed *a person* *hohoho* blah2
       Alice's2 blahed *a person* blah2 -}
-subsumes :: NLA' -> NLA' -> Maybe NLA'
+subsumes :: NLA' -> NLA' -> Bool
 x `subsumes` y = 
-  if x.numVars < y.numVars then y `subsumes` x
+  if x.numVars < y.numVars then False
   else check x y
   where 
-    check x' y'      = if x'.regex `matchesTxt` (coerce y'.getNLATxt')
-                       then Just x' else Nothing  
+    check x' y'      = x'.regex `matchesTxt` (coerce y'.getNLATxt')
     matchesTxt regex = has (traversalVL $ regexing regex)
 
 

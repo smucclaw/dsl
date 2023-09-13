@@ -106,13 +106,12 @@ annotxtify = fold . intersperseWithSpace . fmap vcell2NLAtxt
 regexify :: NE (Seq VCell) -> Either String Regex
 regexify = makeRegex . foldMap (\case
   TempVar tvar   -> tvar2WordOrVIregex tvar
-  Pred nonvartxt -> cs nonvartxt)
-
+  Pred nonvartxt -> PCRE.escape . T.unpack $ nonvartxt)
+                    --TODO: Add tests to check if have to escape metachars in Pred
 
 type RawRegexStr = String
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
-
 
 
 {- | a regex pattern that matches either a word or another variable indicator -}

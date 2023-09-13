@@ -74,6 +74,12 @@ dependencies:
   - optics
   - generic-optics
   - nonempty-containers
+  - lens-regex-pcre
+  - pcre-heavy
+  - string-conversions
+  - raw-strings-qq
+
+
 
 language: GHC2021
 

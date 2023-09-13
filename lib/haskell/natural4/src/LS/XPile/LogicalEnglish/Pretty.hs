@@ -13,7 +13,7 @@
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty where
+module LS.XPile.LogicalEnglish.Pretty (LEProg(..)) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
 -- import Data.Text qualified as T
@@ -45,6 +45,7 @@ import LS.PrettyPrinter
 import Prettyprinter.Interpolate (__di)
 
 import LS.XPile.LogicalEnglish.Types
+import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       check, refine, loadRawL4AsUnvalid)
@@ -54,6 +55,12 @@ import LS.XPile.LogicalEnglish.Types
 {-------------------------------------------------------------------------------
    L4 rules -> SimpleL4HCs -> VRules
 -------------------------------------------------------------------------------}
+
+
+data LEProg = MkLEProg {  nlatxts :: [NLATxt]
+                        , leHCs   :: [LEhcPrint] 
+                        }
+
 
 -- | config record for pretty printing
 data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int}
@@ -133,7 +140,7 @@ instance Pretty LEProg where
   pretty MkLEProg{..} =
     
     let indentedNLAs = endWithDot . nestVsepSeq . punctuate comma 
-                      . map pretty $ nlas
+                      . map pretty $ nlatxts
                       -- assume list of NLAs is pre-sorted
         prettyLEhcs   = vvsep $ map ((<> dot) . pretty) leHCs
         {- ^ Assume commas and dots already replaced in NLAs and LEHcs

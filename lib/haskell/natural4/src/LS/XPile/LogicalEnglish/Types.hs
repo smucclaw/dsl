@@ -7,6 +7,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns, DataKinds, GADTs #-}
+{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
@@ -14,7 +15,7 @@ module LS.XPile.LogicalEnglish.Types (
     , BoolPropn(..)
     -- L4-related types
     , InlineRPrel(..)
-    , RPnonPropAnaph 
+    , RPnonPropAnaph  
     , RParithComp
     , RPothers
     , GVar(..)
@@ -35,6 +36,7 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- Intermediate representation types
     , TemplateVar(..)
+    , _TempVar, _Pred
     , OrigVarPrefix
     , OrigVarSeq
     , VarsHC(MkVarsFact,
@@ -57,13 +59,6 @@ module LS.XPile.LogicalEnglish.Types (
     , LEhcAtomicP
     , TxtAtomicBP
 
-    , NLACell(..)
-    , NLATxt(..)
-
-    , NLA' (NLA) -- opaque; exporting only pattern for matching on the NLATxt
-    , mkNLA      -- smart constructor
-    , getNLAtxt
-
     , LERule
     , LETemplateTxt(..)
     , UnivStatus(..)
@@ -75,7 +70,7 @@ module LS.XPile.LogicalEnglish.Types (
     , LEhcPrint(..)
 
     -- Configuration and LE-specific consts
-    , LEProg(..)
+    -- , LEProg(..)
 ) where
 
 
@@ -83,15 +78,17 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
-import Data.Containers.NonEmpty (HasNonEmpty, onNonEmpty)
 
-import Data.Foldable (toList)
-import Data.Sequence.NonEmpty (NESeq)
+import Data.Coerce (coerce)
+
 -- import Data.Sequence.NonEmpty qualified as NESeq
-import Data.Sequence qualified as Seq (fromList)
+-- import Data.Sequence qualified as Seq (fromList)
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter(Pretty)
+
+
+import Optics.TH
 
 {- |
 Misc notes
@@ -223,13 +220,14 @@ pattern MkL4FactHc{fgiven, fhead} =
                  , head = fhead})
 
 {-# COMPLETE MkL4FactHc, MkL4RuleHc #-}
+
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
 -------------------------------------------------------------------------------}
 -- | we only need text / strs to capture what the original var 'names' were, because what we will eventually be printing out strings!
 type OrigVarName = T.Text
-
 type OrigVarPrefix = T.Text
+
 {-| TemplateVars mark the places where we'd instantiate / substitute in the VCell / condition template to get either a natural language annotation or a LE rule. 
 They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the VCell. -}
 data TemplateVar = MatchGVar !OrigVarName
@@ -241,6 +239,8 @@ data TemplateVar = MatchGVar !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
       deriving stock (Eq, Ord, Show)
       deriving (Generic, Hashable)
+makePrisms '' TemplateVar
+
 type TVarSet = HS.HashSet TemplateVar
 
 {- Got this error 
@@ -264,8 +264,6 @@ Things to note / think about:
 * One difference between NLAs and making LE rules: 
   Not all L4AtomicBPs will need to be converted to NLAs --- e.g., t1 is different from t2 already has a NLA in the fixed lib. 
   By contrast, we do need to be able to convert every L4AtomicP to a LE condition.
-* 
-
  -}
 data VarsHC = VhcF VarsFact | VhcR VarsRule
       deriving stock (Eq, Ord, Show)
@@ -295,30 +293,34 @@ pattern MkVarsRule{vrhead, vrbody}
   But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
   Also, it's helpful to have tt info for generating NLAs, 
   since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
-  To put it another way: NLAs are generated *from*, and only from, LamAbsBases.
+  
+  TODO: add more comments / references to the relevant code
  -}
 type AtomicPWithVars = AtomicBPropn VCell
 
-{-| This is best understood in the context of the other VarsX data types  -}
+{-| This is best understood in the context of the other VarsX data types -}
 data VCell = TempVar TemplateVar
            | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
+makePrisms ''VCell
 
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
 
-data NLACell = MkParam !T.Text 
-             | MkNonParam !T.Text
-  deriving stock (Eq, Ord, Show)
+-- data NLACell = MkParam !T.Text 
+--              | MkNonParam !T.Text
+--   deriving stock (Eq, Ord, Show)
 
-instance Semigroup NLACell where
-  MkParam l <> MkParam r = MkNonParam $ l <> r
-  MkParam l <> MkNonParam r = MkNonParam $ l <> r
-  MkNonParam l <> MkParam r = MkNonParam $ l <> r
-  MkNonParam l <> MkNonParam r = MkNonParam $ l <> r
-instance Monoid NLACell where
-  mempty = MkNonParam ""
+-- instance Semigroup NLACell where
+--   (<>) :: NLACell -> NLACell -> NLACell
+--   MkParam l <> MkParam r = MkNonParam $ l <> r
+--   MkParam l <> MkNonParam r = MkNonParam $ l <> r
+--   MkNonParam l <> MkParam r = MkNonParam $ l <> r
+--   MkNonParam l <> MkNonParam r = MkNonParam $ l <> r
+-- instance Monoid NLACell where
+--   mempty :: NLACell
+--   mempty = MkNonParam ""
 
 {- Another option, courtesy of `Mango IV.` from the Functional Programming discord:
   deriving stock Generic
@@ -333,41 +335,6 @@ newtype NLA = MkNLA T.Text
   deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
 -}  
 
-newtype NLATxt = MkNLATxt T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
-
-data Regex -- placeholder; to be removed later
-
-data NLA' =  MkNLA' { getBase'   :: NESeq NLACell 
-                    , getNLATxt' :: NLATxt
-                    , getRegex'  :: Regex }
-
-{-| public getter to view the NLAtxt
-Don't need to export a lens for this field cos not going to change / set it -}
-getNLAtxt :: NLA' -> NLATxt
-getNLAtxt nla' = nla'.getNLATxt'
-
--- | public pattern to match on the NLAtxt
-pattern NLA :: NLATxt -> NLA'
-pattern NLA nlatxt <- (getNLAtxt -> nlatxt)
-
--- | Smart constructor for making NLA'
-mkNLA :: forall f. (Foldable f, HasNonEmpty (f NLACell)) => f NLACell -> Maybe NLA'
-mkNLA (Seq.fromList . toList -> nlacells) = 
-  onNonEmpty make nlacells
-    where 
-      make :: NESeq NLACell -> NLA'
-      make base = MkNLA' { getBase'   = base
-                         , getNLATxt' = annotxtify base
-                         , getRegex'  = regexify base }
-
--- | Private function for making NLATxt from NESeq NLACell (this knows that the underlying record uses NESeq NLACell for getBase')
-annotxtify :: NESeq NLACell -> NLATxt              
-annotxtify = undefined
-
-regexify :: NESeq NLACell -> Regex
-regexify = undefined
 
 
 ---------------- For generating template instances / non-NLAs
@@ -376,7 +343,7 @@ data LEVar = VarApos !OrigVarPrefix
            | VarNonApos !OrigVarName
     deriving stock (Eq, Ord, Show)
 
-{-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells
+{-| The first prep step for generating LETemplateTxt from the intermediate stuff involves simplifying VCells
 -}
 data LEhcCell = VarCell LEVar 
               | NotVar !T.Text 
@@ -418,12 +385,6 @@ type LERule = BaseRule (AtomicBPropn LEhcCell)
 type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus)
 type LERuleForPrint = BaseRule TxtAtomicBP
 
------ for pretty printing -------------------------------------------------------
-
-
-data LEProg = MkLEProg {  nlas :: [NLATxt]
-                        , leHCs :: [LEhcPrint] 
-                        }
 
 
 --- to remove once we are sure we won't want to go back to this way of doing this: 

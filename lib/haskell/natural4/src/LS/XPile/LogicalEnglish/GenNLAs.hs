@@ -25,7 +25,6 @@ import Data.HashSet qualified as HS
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
 import Data.Foldable (fold, toList)
 import Data.Maybe (catMaybes)
-import qualified Data.List as L hiding (head, tail)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 
@@ -34,9 +33,8 @@ import LS.XPile.LogicalEnglish.Types
 import Data.String (IsString)
 import Data.String.Interpolate ( i )
 
-import Data.String.Conversions
-import           Data.String.Conversions.Monomorphic
-import qualified Data.ByteString.Char8 as BS
+import Data.String.Conversions (cs)
+-- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
 import qualified Text.Regex.PCRE.Heavy as PCRE
 import Text.Regex.PCRE.Heavy (re)
@@ -76,8 +74,7 @@ instance Hashable NLA' where
   -- prob the easiest way to filter out overlapping NLAs is to use a separate function, rather than trying to shoehorn it into Eq and Hashable and Eq somehow
 
 
-{- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's.
-     Returns Just x if x `subsumes` y
+{- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's
 
 Examples of NLAs that overlap:
 
@@ -91,13 +88,10 @@ Examples of NLAs that overlap:
       Alice's blahed *a person* *hohoho* blah2
       Alice's2 blahed *a person* blah2 -}
 subsumes :: NLA' -> NLA' -> Bool
-x `subsumes` y = 
-  if x.numVars < y.numVars then False
-  else check x y
-  where 
-    check x' y'      = x'.regex `matchesTxt` (coerce y'.getNLATxt')
-    matchesTxt regex = has (traversalVL $ regexing regex)
-
+x `subsumes` y = x.numVars >= y.numVars && x `nlaRMatchesTxt` y
+    where 
+      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (coerce y'.getNLATxt')
+      matchesTxt regex     = has (traversalVL $ regexing regex)
 
     
 {- | public getter to view the NLAtxt
@@ -115,8 +109,8 @@ mkNLA (seqOf folded -> vcells) = do
   nmtVcells <- nonEmpty vcells 
   regex     <- regexify nmtVcells ^? _Right
   return $ MkNLA' { getBase    = nmtVcells
-                  , numVars = lengthOf (folded % filteredBy _TempVar) vcells
-                  , getNLATxt'  = annotxtify vcells
+                  , numVars    = lengthOf (folded % filteredBy _TempVar) vcells
+                  , getNLATxt' = annotxtify vcells
                   , regex      = regex}
 
 
@@ -155,8 +149,6 @@ tvar2WordOrVIregex =
     IsNum _        -> [r|is |] <> wordOrVI
      
 
-
-
 -------------------
 
 
@@ -192,28 +184,6 @@ nlaLoneFromVAtomicP =  \case
   ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
-  -- where
-  --   annotFromVCells :: [VCell] -> Maybe NLATxt
-  --   annotFromVCells = annotFromNLAcells . nlacellsFromVCells
-
-  --   nlacellsFromVCells :: [VCell] -> [NLACell]
-  --   nlacellsFromVCells = fmap vcell2NLAcell
-
--- annotFromNLAcells :: [NLACell] -> Maybe NLATxt
--- annotFromNLAcells = \case
---   (mconcat . intersperseWithSpace -> MkNonParam concatted) -> 
---         Just $ coerce concatted
---   _ ->  Nothing
---   where 
---     spaceDelimtr = MkNonParam " "
---     intersperseWithSpace = L.intersperse spaceDelimtr 
-
--- vcell2NLAcell :: VCell -> NLACell
--- vcell2NLAcell = \case
---   TempVar tvar -> tvar2NLAcell tvar
---   Pred nonparamtxt -> MkNonParam nonparamtxt
-
-
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
@@ -227,23 +197,8 @@ tvar2NLAtxt = \case
   -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
   MatchGVar gvar     -> coerce $ ([i|*a #{gvar}*|] :: T.Text)
 
-
-
-{- | 
-Invariant: all NLAParams take one of the following two forms:
-  *a var*
-  *a var*'s
+{- ^
+From the LE handbook:
+  An instance of a template is obtained from the template by replacing every parameter of the template by a list of words separated by spaces. 
+  **There need not be any relationship between the words in a parameter and the words in the instance of the parameter. Different parameters in the same template can be replaced by different or identical instances.** (emphasis mine)
 -}
--- tvar2NLAcell :: TemplateVar -> NLACell
--- tvar2NLAcell = \case
---   EndsInApos _   -> MkParam "*a var*'s"
---   IsNum _numtxt  -> MkParam "is *a var*"
---   -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
---   MatchGVar _    -> MkParam "*a var*"
-  {- ^
-  From the LE handbook:
-    An instance of a template is obtained from the template by replacing every parameter of the template by a list of words separated by spaces. 
-    **There need not be any relationship between the words in a parameter and the words in the instance of the parameter. Different parameters in the same template can be replaced by different or identical instances.** (emphasis mine)
-
-  Right now I'm making all of them "a var" or "a var's", as opposed to "a <orig text>" / "a <orig text>'s", so tt it'll be easy to remove duplicates
-  -}

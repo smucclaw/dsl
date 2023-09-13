@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards, NoFieldSelectors #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies, DerivingVia, DeriveAnyClass #-}
@@ -21,15 +21,16 @@ module LS.XPile.LogicalEnglish.GenNLAs (
 where
 
 import Data.Text qualified as T
+import Data.Ord (comparing)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
-import Data.Foldable (fold, toList)
+import Data.Foldable (fold, foldl', toList)
 import Data.Maybe (catMaybes)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 
 import LS.XPile.LogicalEnglish.Types
-
+import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
 import Data.String.Interpolate ( i )
 
@@ -37,17 +38,18 @@ import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
 import qualified Text.Regex.PCRE.Heavy as PCRE
-import Text.Regex.PCRE.Heavy (re)
+-- import Text.Regex.PCRE.Heavy (re)
 
 import Optics hiding (re)
-import Data.Text.Optics 
+-- import Data.Text.Optics 
+-- import Data.Set.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Control.Lens.Regex.Text
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
 import Data.Sequences (intersperse)
-
+import Data.List (sortBy)
 import Prettyprinter(Pretty)
 
 
@@ -55,45 +57,26 @@ newtype NLATxt = MkNLATxt T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Semigroup, Monoid, Hashable, Pretty)
 
-
+-- TODO: think more abt whether regex field shld be Regex or the Traversal itself
 -- Traversal T.Text T.Text T.Text T.Text
 data NLA' =  
   MkNLA' { getBase    :: NE (Seq VCell) 
          , numVars    :: !Int
          , getNLATxt'  :: NLATxt
          , regex      :: Regex }
-    deriving stock (Show, Ord) 
+    deriving stock (Show) 
 
 data NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) } 
     deriving stock (Show, Eq, Ord) 
 instance Eq NLA' where
   a == b = MkNLAForEq a.getBase == MkNLAForEq b.getBase
+instance Ord NLA' where
+  a `compare` b = a.getNLATxt' `compare` b.getNLATxt'
 
 instance Hashable NLA' where
   hashWithSalt = hashUsing (\nla -> fromNonEmpty nla.getBase)
   -- prob the easiest way to filter out overlapping NLAs is to use a separate function, rather than trying to shoehorn it into Eq and Hashable and Eq somehow
 
-
-{- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's
-
-Examples of NLAs that overlap:
-
-  NLA Orig: *a person*'s blahed *a person* blah2
-
-  `NLA Orig` overlaps with each of:
-      *a number*'s blahed *a star* blah2
-      sdsd7's blahed sfsi23mkm blah2
-
-  but does NOT overlap with
-      Alice's blahed *a person* *hohoho* blah2
-      Alice's2 blahed *a person* blah2 -}
-subsumes :: NLA' -> NLA' -> Bool
-x `subsumes` y = x.numVars >= y.numVars && x `nlaRMatchesTxt` y
-    where 
-      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (coerce y'.getNLATxt')
-      matchesTxt regex     = has (traversalVL $ regexing regex)
-
-    
 {- | public getter to view the NLAtxt
 Don't need to export a lens for this field cos not going to change / set it -}
 getNLAtxt :: NLA' -> NLATxt
@@ -151,6 +134,41 @@ tvar2WordOrVIregex =
 
 -------------------
 
+{- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's
+
+Examples of NLAs that overlap:
+  NLA Orig: *a person*'s blahed *a person* blah2
+
+  `NLA Orig` overlaps with each of:
+      *a number*'s blahed *a star* blah2
+      sdsd7's blahed sfsi23mkm blah2
+
+  but does NOT overlap with
+      Alice's blahed *a person* *hohoho* blah2
+      Alice's2 blahed *a person* blah2 -}
+subsumes :: NLA' -> NLA' -> Bool
+x `subsumes` y = x.numVars >= y.numVars && x `nlaRMatchesTxt` y
+    where 
+      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (coerce y'.getNLATxt')
+      matchesTxt regex     = has (traversalVL $ regexing regex)
+
+isSubsumedBy :: NLA' -> NLA' -> Bool
+isSubsumedBy = flip subsumes
+
+{- | Returns a sorted Seq of non-subsumed NLAs
+Currently implemented in a naive way -}
+getNonSubsumed :: HS.HashSet NLA' -> Seq NLA'
+getNonSubsumed nlaset = 
+  seqOf folded (foldl' addNLA HS.empty nlasByNumVs)
+    where
+      nlasByNumVs = sortBy (flip $ comparing numVars) (toList nlaset)
+      addNLA :: HS.HashSet NLA' -> NLA' -> HS.HashSet NLA'
+      addNLA acc nla = 
+        if anyOf folded (nla `isSubsumedBy`) acc
+        then acc
+        else nla `setInsert` acc 
+
+-------------------
 
 nlasFromVarsHC :: VarsHC -> HS.HashSet NLA'
 nlasFromVarsHC = \case
@@ -187,8 +205,8 @@ nlaLoneFromVAtomicP =  \case
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar     -> tvar2NLAtxt tvar
-  Pred nonparamtxt -> coerce nonparamtxt
+  TempVar tvar    -> tvar2NLAtxt tvar
+  Pred nonvartxt  -> coerce nonvartxt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case

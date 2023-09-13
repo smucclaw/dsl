@@ -1,13 +1,9 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module LS.XPile.LogicalEnglish.Testcase
-  ( Testcase,
-    Error,
-    configFile2testcase,
-    testcase2spec,
-    error2spec
+  ( configFile2spec,
   )
 where
 
@@ -18,7 +14,7 @@ import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Flow ((|>))
 import GHC.Generics (Generic)
-import LS.Utils ((|$>))
+import LS (Rule)
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
@@ -27,15 +23,20 @@ import System.FilePath (takeBaseName, takeDirectory, (<.>))
 import System.FilePath.Find (depth, fileName, (==?))
 import System.FilePath.Find qualified as FileFind
 import Test.Hspec (Spec, describe, it, pendingWith, runIO)
+import LS.Utils ((|$>))
+
+configFile2spec :: FilePath -> IO Spec
+configFile2spec configFile =
+  configFile |> configFile2testcase |$> either error2spec testcase2spec 
 
 configFile2testcase :: FilePath -> IO (Either Error Testcase)
 configFile2testcase configFile = do
   exists <- doesFileExist configFile
   if exists
-    then
-      configFile
-        |> Yaml.decodeFileEither
-        |$> bimap yamlParseExc2error config2testcase
+    then do
+      yamlParseResult :: Either Yaml.ParseException Config <-
+        Yaml.decodeFileEither configFile
+      yamlParseResult |> bimap yamlParseExc2error config2testcase |> pure
     else pure $ Left $ Error {directory, info = MissingConfigFile}
   where
     directory = takeDirectory configFile
@@ -48,9 +49,9 @@ testcase2spec Testcase {directory, config = Config {description, enabled}} =
   describe directory $
     if enabled
       then it description $ do
-        let testcaseName = takeBaseName directory
-        l4rules <- letestfnm2rules $ testcaseName <.> "csv"
-        let leProgram = l4rules |> toLE |> T.pack
+        let testcaseName :: String = takeBaseName directory
+        l4rules :: [Rule] <- letestfnm2rules $ testcaseName <.> "csv"
+        let leProgram :: T.Text = l4rules |> toLE |> T.pack
         pure $ goldenLE testcaseName leProgram
       else it description $ pendingWith "Test case is disabled."
 

@@ -46,6 +46,7 @@
 --  This file represents the actual output of the Logical English transpiler.
 module LS.XPile.LogicalEnglish.LogicalEnglishSpec (spec) where
 
+import Control.Monad (join)
 import Data.Foldable (for_)
 import Data.Maybe (listToMaybe)
 import Data.String.Interpolate (i)
@@ -58,12 +59,6 @@ import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
 import LS.XPile.LogicalEnglish.Testcase
-  ( Error,
-    Testcase,
-    configFile2testcase,
-    error2spec,
-    testcase2spec,
-  )
 import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir, letestfnm2rules)
 import Safe (tailSafe)
@@ -86,7 +81,5 @@ spec = describe "Logical English" $ do
       |$> tailSafe
       |> runIO
   for_ directories $ \directory -> do
-    let configFile = directory </> "config.yml"
-    testcase :: Either Error Testcase <-
-      runIO $ configFile2testcase configFile
-    testcase |> either error2spec testcase2spec
+    directory </> "config.yml"
+      |> configFile2spec |> runIO |> join

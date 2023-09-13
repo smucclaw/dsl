@@ -58,7 +58,7 @@ import LS (Rule)
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
-import LS.XPile.LogicalEnglish.Testcase
+import LS.XPile.LogicalEnglish.Testcase (configFile2spec)
 import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir, letestfnm2rules)
 import Safe (tailSafe)

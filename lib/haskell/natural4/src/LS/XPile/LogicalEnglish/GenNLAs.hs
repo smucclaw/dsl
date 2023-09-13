@@ -37,7 +37,6 @@ import Data.String.Interpolate ( i )
 import Data.String.Conversions
 import           Data.String.Conversions.Monomorphic
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Internal as BS
 import Text.RawString.QQ
 import qualified Text.Regex.PCRE.Heavy as PCRE
 import Text.Regex.PCRE.Heavy (re)
@@ -46,7 +45,7 @@ import Optics hiding (re)
 import Data.Text.Optics 
 import Data.Sequence.Optics (seqOf)
 import Control.Lens.Regex.Text
-import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty)
+import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
 import Data.Sequences (intersperse)
@@ -58,20 +57,51 @@ newtype NLATxt = MkNLATxt T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Semigroup, Monoid, Hashable, Pretty)
 
+
 -- Traversal T.Text T.Text T.Text T.Text
 data NLA' =  
-  MkNLA' { getBase'    :: NE (Seq VCell) 
-         , getNumVars' :: !Int
+  MkNLA' { getBase    :: NE (Seq VCell) 
+         , numVars    :: !Int
          , getNLATxt'  :: NLATxt
-         , getRegex'   :: Regex }
+         , regex      :: Regex }
+    deriving stock (Show, Ord) 
+
+data NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) } 
     deriving stock (Show, Eq, Ord) 
+instance Eq NLA' where
+  a == b = MkNLAForEq a.getBase == MkNLAForEq b.getBase
 
 instance Hashable NLA' where
-  hashWithSalt = hashUsing (\nla -> nla.getNLATxt')
-  -- TODO temp placeholder
+  hashWithSalt = hashUsing (\nla -> fromNonEmpty nla.getBase)
+  -- prob the easiest way to filter out overlapping NLAs is to use a separate function, rather than trying to shoehorn it into Eq and Hashable and Eq somehow
+
+
+{- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's.
+     Returns Just x if x `subsumes` y
+
+Examples of NLAs that overlap:
+
+  NLA Orig: *a person*'s blahed *a person* blah2
+
+  `NLA Orig` overlaps with each of:
+      *a number*'s blahed *a star* blah2
+      sdsd7's blahed sfsi23mkm blah2
+
+  but does NOT overlap with
+      Alice's blahed *a person* *hohoho* blah2
+      Alice's2 blahed *a person* blah2 -}
+subsumes :: NLA' -> NLA' -> Maybe NLA'
+x `subsumes` y = 
+  if x.numVars < y.numVars then y `subsumes` x
+  else check x y
+  where 
+    check x' y'      = if x'.regex `matchesTxt` (coerce y'.getNLATxt')
+                       then Just x' else Nothing  
+    matchesTxt regex = has (traversalVL $ regexing regex)
+
 
     
-{-| public getter to view the NLAtxt
+{- | public getter to view the NLAtxt
 Don't need to export a lens for this field cos not going to change / set it -}
 getNLAtxt :: NLA' -> NLATxt
 getNLAtxt nla' = nla'.getNLATxt'
@@ -85,10 +115,10 @@ mkNLA :: forall f. (Foldable f, HasNonEmpty (f VCell)) => f VCell -> Maybe NLA'
 mkNLA (seqOf folded -> vcells) = do
   nmtVcells <- nonEmpty vcells 
   regex     <- regexify nmtVcells ^? _Right
-  return $ MkNLA' { getBase'    = nmtVcells
-                  , getNumVars' = lengthOf (folded % filteredBy _TempVar) vcells
+  return $ MkNLA' { getBase    = nmtVcells
+                  , numVars = lengthOf (folded % filteredBy _TempVar) vcells
                   , getNLATxt'  = annotxtify vcells
-                  , getRegex'   = regex}
+                  , regex      = regex}
 
 
 -- | Private function for making NLATxt for NLA'
@@ -104,10 +134,11 @@ annotxtify = fold . intersperseWithSpace . fmap vcell2NLAtxt
       that matches either a word or another variable indicator.
 -}
 regexify :: NE (Seq VCell) -> Either String Regex
-regexify = makeRegex . foldMap (\case
-  TempVar tvar   -> tvar2WordOrVIregex tvar
-  Pred nonvartxt -> PCRE.escape . T.unpack $ nonvartxt)
-                    --TODO: Add tests to check if have to escape metachars in Pred
+regexify = makeRegex . foldMap 
+          (\case
+            TempVar tvar   -> tvar2WordOrVIregex tvar
+            Pred nonvartxt -> PCRE.escape . T.unpack $ nonvartxt)
+                              --TODO: Add tests to check if have to escape metachars in Pred
 
 type RawRegexStr = String
 makeRegex :: RawRegexStr -> Either String Regex
@@ -187,7 +218,7 @@ nlaLoneFromVAtomicP =  \case
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar -> tvar2NLAtxt tvar
+  TempVar tvar     -> tvar2NLAtxt tvar
   Pred nonparamtxt -> coerce nonparamtxt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt

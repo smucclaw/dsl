@@ -302,6 +302,7 @@ type AtomicPWithVars = AtomicBPropn VCell
 data VCell = TempVar TemplateVar
            | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
+          deriving (Generic, Hashable)
 makePrisms ''VCell
 
 {-------------------------------------------------------------------------------

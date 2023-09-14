@@ -10,7 +10,6 @@ where
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Maybe (listToMaybe)
 import Data.String.Interpolate (i)
-import Data.Text qualified as T
 import Control.Monad.Except
   ( ExceptT,
     MonadError (throwError),
@@ -47,7 +46,7 @@ configFile2testcase configFile = runExceptT do
       configFile
         |> Y.decodeFileThrow
         |> modifyError yamlParseExc2error
-        |$> \config -> Testcase {directory, config}
+        |$> Testcase directory
   where
     directory = takeDirectory configFile
     yamlParseExc2error parseExc =
@@ -58,11 +57,13 @@ testcase2spec Testcase {directory, config = Config {description, enabled}} =
   describe directory
     if enabled
       then it description do
-        let testcaseName :: String = takeBaseName directory
-        l4rules :: [Rule] <- letestfnm2rules $ testcaseName <.> "csv"
-        let leProgram :: T.Text = l4rules |> toLE |> T.pack
-        return $ goldenLE testcaseName leProgram
+        testcaseName <.> "csv"
+          |> letestfnm2rules
+          |$> toLE
+          |$> goldenLE testcaseName
       else it description $ pendingWith "Test case is disabled."
+  where
+    testcaseName = takeBaseName directory
 
 error2spec :: Error -> Spec
 error2spec Error {directory, info} = it directory $ pendingWith $ show info

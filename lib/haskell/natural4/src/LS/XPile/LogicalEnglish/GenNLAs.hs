@@ -7,15 +7,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia, DeriveAnyClass #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes, TemplateHaskell #-}
 
 
 module LS.XPile.LogicalEnglish.GenNLAs (
       nlasFromVarsHC
     , NLATxt(..)
+    , _MkNLATxt
 
     , NLA       -- opaque
-    , mkNLA      -- smart constructor
+    , mkNLA     -- smart constructor
     , getNLAtxt
 
     , getNonSubsumed
@@ -46,7 +47,7 @@ import qualified Text.Regex.PCRE.Heavy as PCRE
 -- import Text.Regex.PCRE.Heavy()
 import Control.Lens.Regex.Text
 
-import Optics hiding (re)
+import Optics
 -- import Data.Text.Optics 
 -- import Data.Set.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
@@ -63,14 +64,15 @@ import Prettyprinter(Pretty)
 newtype NLATxt = MkNLATxt T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Semigroup, Monoid, Hashable, Pretty)
+makePrisms ''NLATxt
 
 type RegexTrav = Traversal T.Text T.Text Match Match
 -- TODO: think more abt whether regex field shld be Regex or the Traversal itself
 data NLA =
-  MkNLA { getBase     :: NE (Seq VCell)
-         , numVars    :: !Int
-         , getNLATxt' :: NLATxt
-         , regex      :: RegexTrav }
+  MkNLA { getBase    :: NE (Seq VCell)
+        , numVars    :: !Int
+        , getNLATxt' :: NLATxt
+        , regex      :: RegexTrav }
 
 instance Eq NLA where
   a == b = a.getNLATxt' == b.getNLATxt'
@@ -159,7 +161,7 @@ x `subsumes` y =
   x.numVars > y.numVars && x `nlaRMatchesTxt` y
   -- TODO: Look into the is-num vs "is payout" duplication
     where
-      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (coerce y'.getNLATxt')
+      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (y'.getNLATxt' ^. _MkNLATxt)
       matchesTxt regexTrav = has regexTrav
 
 isSubsumedBy :: NLA -> NLA -> Bool
@@ -182,16 +184,16 @@ getNonSubsumed nlaset =
 {- | filter out nlas that are matched by any of the regex travs
 Use this for filtering out NLAs that are subsumed by lib template NLAs
 -}
-diffOutSubsumed :: Seq RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
+diffOutSubsumed :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
 diffOutSubsumed regtravs tocheck = undefined
 
 
 --TODO:
--- | For parsing lib templates, as well as templates from, e.g., unit tests, to a set of NLAs
-parseLENLAnnotsToNLAs :: [T.Text] -> HS.HashSet NLA
+-- | For parsing lib templates, as well as templates from, e.g., unit tests
+parseLENLAnnotsToNLAs :: Foldable f => f T.Text -> f RegexTrav
 parseLENLAnnotsToNLAs = undefined
 
-parseLENLAnnot :: T.Text -> NLA
+parseLENLAnnot :: T.Text -> RegexTrav
 parseLENLAnnot = undefined
 
 ------------------- Building NLAs from VarsHCs

@@ -36,7 +36,7 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- Intermediate representation types
     , TemplateVar(..)
-    , _TempVar, _Pred
+    , _MatchGVar, _EndsInApos, _IsNum
     , OrigVarPrefix
     , OrigVarSeq
     , VarsHC(MkVarsFact,
@@ -49,6 +49,7 @@ module LS.XPile.LogicalEnglish.Types (
     , VarsRule
     , AtomicPWithVars
     , VCell(..)
+    , _TempVar, _Pred
 
     -- LE-related types
     , LEhcCell(..)
@@ -68,9 +69,6 @@ module LS.XPile.LogicalEnglish.Types (
     , LEFactForPrint
     , LERuleForPrint
     , LEhcPrint(..)
-
-    -- Configuration and LE-specific consts
-    -- , LEProg(..)
 ) where
 
 
@@ -79,14 +77,13 @@ import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
 
-import Data.Coerce (coerce)
+-- import Data.Coerce (coerce)
 
 -- import Data.Sequence.NonEmpty qualified as NESeq
 -- import Data.Sequence qualified as Seq (fromList)
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter(Pretty)
-
 
 import Optics.TH
 
@@ -308,35 +305,6 @@ makePrisms ''VCell
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
-
--- data NLACell = MkParam !T.Text 
---              | MkNonParam !T.Text
---   deriving stock (Eq, Ord, Show)
-
--- instance Semigroup NLACell where
---   (<>) :: NLACell -> NLACell -> NLACell
---   MkParam l <> MkParam r = MkNonParam $ l <> r
---   MkParam l <> MkNonParam r = MkNonParam $ l <> r
---   MkNonParam l <> MkParam r = MkNonParam $ l <> r
---   MkNonParam l <> MkNonParam r = MkNonParam $ l <> r
--- instance Monoid NLACell where
---   mempty :: NLACell
---   mempty = MkNonParam ""
-
-{- Another option, courtesy of `Mango IV.` from the Functional Programming discord:
-  deriving stock Generic
-  deriving (Semigroup, Monoid) via Generically NLACell 
-This requires a base that's shipped with ghc 94 or newer and and import Generically.
-But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit -}
-  
-
-{-
-newtype NLA = MkNLA T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
--}  
-
-
 
 ---------------- For generating template instances / non-NLAs
 

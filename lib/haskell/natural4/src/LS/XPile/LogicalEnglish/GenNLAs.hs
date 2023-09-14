@@ -71,8 +71,6 @@ data NLA' =
          , getNLATxt' :: NLATxt
          , regex      :: RegexTrav }
 
--- newtype NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) }
---     deriving newtype (Show, Eq, Ord)
 instance Eq NLA' where
   a == b = a.getNLATxt' == b.getNLATxt'
 instance Ord NLA' where

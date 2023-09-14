@@ -48,7 +48,15 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
-import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC, NLATxt(..), NLA', pattern NLA, mkNLA, getNLAtxt)
+import LS.XPile.LogicalEnglish.GenNLAs 
+    ( nlasFromVarsHC
+    , NLATxt(..)
+    , NLA', pattern NLA, mkNLA
+    , getNLAtxt 
+    , getNonSubsumed
+    -- , diffOutSubsumed
+    -- , parseLENLAnnotsToNLAs
+    )
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
 
 -- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
@@ -93,7 +101,8 @@ toLE l4rules =
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
 allNLAs :: [VarsHC] -> HS.HashSet NLA'
-allNLAs = foldMap nlasFromVarsHC
+allNLAs = getNonSubsumed . foldMap nlasFromVarsHC
+-- TODO: debug the regex matching in getNonSubsumed
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule
@@ -103,6 +112,7 @@ xpileSimplifiedL4hcs simpL4HCs =
   let hcsVarsMarked = map idVarsInHC simpL4HCs
       nlas          = allNLAs hcsVarsMarked
       nlatxts       = nlas ^.. folded % to getNLAtxt
+      --- TODO: sort the nlatxts...
       lehcs         = map leHCFromVarsHC hcsVarsMarked
       leProgam      = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
   in doc2str . pretty $ leProgam

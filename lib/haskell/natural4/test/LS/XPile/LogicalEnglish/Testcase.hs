@@ -8,18 +8,15 @@ module LS.XPile.LogicalEnglish.Testcase
 where
 
 import Data.Bifunctor (Bifunctor (bimap))
-import Data.Maybe (listToMaybe)
 import Data.String.Interpolate (i)
 import Control.Monad.Except
-  ( ExceptT,
-    MonadError (throwError),
+  ( MonadError (throwError),
     MonadTrans (lift),
     runExceptT,
   )
 import Data.Yaml qualified as Y
 import Flow ((|>))
 import GHC.Generics (Generic)
-import LS (Rule)
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
@@ -54,13 +51,15 @@ configFile2testcase configFile = runExceptT do
 
 testcase2spec :: Testcase -> Spec
 testcase2spec Testcase {directory, config = Config {description, enabled}} =
-  describe directory
+  describe
+    directory
     if enabled
-      then it description do
-        testcaseName <.> "csv"
-          |> letestfnm2rules
-          |$> toLE
-          |$> goldenLE testcaseName
+      then it description
+          ( testcaseName <.> "csv"
+              |> letestfnm2rules
+              |$> toLE
+              |$> goldenLE testcaseName
+          )
       else it description $ pendingWith "Test case is disabled."
   where
     testcaseName = takeBaseName directory

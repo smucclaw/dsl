@@ -67,6 +67,6 @@ spec = describe "Logical English" do
         -- we need to take the tail to get rid of it.
       |$> tailSafe
       |> runIO
-  for_ directories \directory -> do
+  for_ directories \directory ->
     directory </> "config.yml"
       |> configFile2spec |> runIO |> join

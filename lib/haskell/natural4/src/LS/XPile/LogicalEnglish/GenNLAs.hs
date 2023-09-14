@@ -17,6 +17,10 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , NLA' (NLA) -- opaque; exporting only pattern for matching on the NLATxt
     , mkNLA      -- smart constructor
     , getNLAtxt
+
+    , getNonSubsumed
+    , diffOutSubsumed
+    , parseLENLAnnotsToNLAs
   )
 where
 
@@ -67,10 +71,10 @@ data NLA' =
          , getNLATxt' :: NLATxt
          , regex      :: RegexTrav }
 
-newtype NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) }
-    deriving newtype (Show, Eq, Ord)
+-- newtype NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) }
+--     deriving newtype (Show, Eq, Ord)
 instance Eq NLA' where
-  a == b = MkNLAForEq a.getBase == MkNLAForEq b.getBase
+  a == b = a.getNLATxt' == b.getNLATxt'
 instance Ord NLA' where
   a `compare` b = a.getNLATxt' `compare` b.getNLATxt'
 instance Show NLA' where
@@ -78,7 +82,7 @@ instance Show NLA' where
   show nla' = show nla'.getBase <> "\n" <> show nla'.numVars <> "\n" <> show nla'.getNLATxt'
 
 instance Hashable NLA' where
-  hashWithSalt = hashUsing (\nla -> fromNonEmpty nla.getBase)
+  hashWithSalt = hashUsing getNLAtxt
   -- prob the easiest way to filter out overlapping NLAs is to use a separate function, rather than trying to shoehorn it into Eq and Hashable and Eq somehow
 
 {- | public getter to view the NLAtxt

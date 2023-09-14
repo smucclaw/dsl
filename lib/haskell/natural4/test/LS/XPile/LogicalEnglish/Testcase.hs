@@ -1,4 +1,4 @@
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -14,16 +14,17 @@ import Data.Text qualified as T
 import Control.Monad.Except
   ( ExceptT,
     MonadError (throwError),
-    MonadIO (liftIO),
+    MonadTrans (lift),
     runExceptT,
   )
-import Data.Yaml qualified as Yaml
+import Data.Yaml qualified as Y
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS (Rule)
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
+import LS.XPile.LogicalEnglish.SpecUtils (modifyError)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeDirectory, (<.>))
@@ -35,32 +36,32 @@ configFile2spec :: FilePath -> IO Spec
 configFile2spec configFile =
   configFile
     |> configFile2testcase
-    |> runExceptT
     |$> either error2spec testcase2spec
 
-configFile2testcase :: FilePath -> ExceptT Error IO Testcase
-configFile2testcase configFile = do
-  exists <- liftIO $ doesFileExist configFile
+configFile2testcase :: FilePath -> IO (Either Error Testcase)
+configFile2testcase configFile = runExceptT do
+  exists <- lift $ doesFileExist configFile
   if not exists
     then throwError Error {directory, info = MissingConfigFile}
-    else do
-      yamlParseResult <- liftIO $ Yaml.decodeFileEither configFile
-      case yamlParseResult of
-        Left parseExc ->
-          throwError Error {directory, info = YamlParseExc parseExc}
-        Right config -> pure Testcase {directory, config}
+    else
+      configFile
+        |> Y.decodeFileThrow
+        |> modifyError yamlParseExc2error
+        |$> \config -> Testcase {directory, config}
   where
     directory = takeDirectory configFile
+    yamlParseExc2error parseExc =
+      Error {directory, info = YamlParseExc parseExc}
 
 testcase2spec :: Testcase -> Spec
 testcase2spec Testcase {directory, config = Config {description, enabled}} =
-  describe directory $
+  describe directory
     if enabled
-      then it description $ do
+      then it description do
         let testcaseName :: String = takeBaseName directory
         l4rules :: [Rule] <- letestfnm2rules $ testcaseName <.> "csv"
         let leProgram :: T.Text = l4rules |> toLE |> T.pack
-        pure $ goldenLE testcaseName leProgram
+        return $ goldenLE testcaseName leProgram
       else it description $ pendingWith "Test case is disabled."
 
 error2spec :: Error -> Spec
@@ -78,7 +79,7 @@ data Config = Config
   }
   deriving (Generic, Show)
 
-instance Yaml.FromJSON Config
+instance Y.FromJSON Config
 
 data Error = Error
   { directory :: FilePath,
@@ -88,7 +89,7 @@ data Error = Error
 
 data ErrorInfo where
   MissingConfigFile :: ErrorInfo
-  YamlParseExc :: Yaml.ParseException -> ErrorInfo
+  YamlParseExc :: Y.ParseException -> ErrorInfo
 
 instance Show ErrorInfo where
   show MissingConfigFile = "Missing config.yml file."

@@ -1,5 +1,4 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 
 -- |
 --  Module: LogicalEnglishSpec
@@ -51,7 +50,7 @@ import Data.Foldable (for_)
 import Flow ((|>))
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish.Testcase (configFile2spec)
-import LS.XPile.LogicalEnglish.Utils (findWithDepth0)
+import LS.XPile.LogicalEnglish.SpecUtils (findWithDepth0)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir)
 import Safe (tailSafe)
 import System.FilePath ((</>))
@@ -60,7 +59,7 @@ import Test.Hspec (Spec, describe, runIO)
 
 -- | The 'Spec' used to test the Logical English transpiler.
 spec :: Spec
-spec = describe "Logical English" $ do
+spec = describe "Logical English" do
   directories :: [FilePath] <-
     leTestcasesDir
       |> findWithDepth0 (fileType ==? Directory)
@@ -68,6 +67,6 @@ spec = describe "Logical English" $ do
         -- we need to take the tail to get rid of it.
       |$> tailSafe
       |> runIO
-  for_ directories $ \directory -> do
+  for_ directories \directory -> do
     directory </> "config.yml"
       |> configFile2spec |> runIO |> join

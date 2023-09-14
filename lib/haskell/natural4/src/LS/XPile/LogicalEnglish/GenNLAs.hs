@@ -5,9 +5,9 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DerivingStrategies, DerivingVia, DeriveAnyClass #-}
+{-# LANGUAGE DerivingVia, DeriveAnyClass #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
-{-# LANGUAGE TemplateHaskell, QuasiQuotes, TypeFamilies #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 
 module LS.XPile.LogicalEnglish.GenNLAs (
@@ -21,7 +21,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
 where
 
 import Data.Text qualified as T
-import Data.Ord (comparing, Down(..))
+import Data.Ord (Down(..))
 import GHC.Exts (sortWith)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
@@ -49,7 +49,7 @@ import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
-import qualified Data.Sequence as Seq
+-- import qualified Data.Sequence as Seq
 import Data.Sequences (intersperse)
 -- import Data.List (sortBy)
 import Prettyprinter(Pretty)

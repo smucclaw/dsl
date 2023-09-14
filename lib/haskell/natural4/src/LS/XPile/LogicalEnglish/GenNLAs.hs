@@ -7,7 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies, DerivingVia, DeriveAnyClass #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
-{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell, QuasiQuotes, TypeFamilies #-}
 
 
 module LS.XPile.LogicalEnglish.GenNLAs (
@@ -21,7 +21,8 @@ module LS.XPile.LogicalEnglish.GenNLAs (
 where
 
 import Data.Text qualified as T
-import Data.Ord (comparing)
+import Data.Ord (comparing, Down(..))
+import GHC.Exts (sortWith)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
 import Data.Foldable (fold, foldl', toList)
@@ -38,18 +39,19 @@ import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
 import qualified Text.Regex.PCRE.Heavy as PCRE
--- import Text.Regex.PCRE.Heavy (re)
+-- import Text.Regex.PCRE.Heavy()
+import Control.Lens.Regex.Text
 
 import Optics hiding (re)
 -- import Data.Text.Optics 
 -- import Data.Set.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
-import Control.Lens.Regex.Text
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
+import qualified Data.Sequence as Seq
 import Data.Sequences (intersperse)
-import Data.List (sortBy)
+-- import Data.List (sortBy)
 import Prettyprinter(Pretty)
 
 
@@ -57,21 +59,23 @@ newtype NLATxt = MkNLATxt T.Text
   deriving stock (Show)
   deriving newtype (Eq, Ord, IsString, Semigroup, Monoid, Hashable, Pretty)
 
+type RegexTrav = Traversal T.Text T.Text Match Match
 -- TODO: think more abt whether regex field shld be Regex or the Traversal itself
--- Traversal T.Text T.Text T.Text T.Text
-data NLA' =  
-  MkNLA' { getBase    :: NE (Seq VCell) 
+data NLA' =
+  MkNLA' { getBase    :: NE (Seq VCell)
          , numVars    :: !Int
-         , getNLATxt'  :: NLATxt
-         , regex      :: Regex }
-    deriving stock (Show) 
+         , getNLATxt' :: NLATxt
+         , regex      :: RegexTrav }
 
-data NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) } 
-    deriving stock (Show, Eq, Ord) 
+newtype NLAForEq = MkNLAForEq { getBase :: NE (Seq VCell) }
+    deriving newtype (Show, Eq, Ord)
 instance Eq NLA' where
   a == b = MkNLAForEq a.getBase == MkNLAForEq b.getBase
 instance Ord NLA' where
   a `compare` b = a.getNLATxt' `compare` b.getNLATxt'
+instance Show NLA' where
+  show :: NLA' -> String
+  show nla' = show nla'.getBase <> "\n" <> show nla'.numVars <> "\n" <> show nla'.getNLATxt'
 
 instance Hashable NLA' where
   hashWithSalt = hashUsing (\nla -> fromNonEmpty nla.getBase)
@@ -89,28 +93,27 @@ pattern NLA nlatxt <- (getNLAtxt -> nlatxt)
 -- | Smart constructor for making NLA'
 mkNLA :: forall f. (Foldable f, HasNonEmpty (f VCell)) => f VCell -> Maybe NLA'
 mkNLA (seqOf folded -> vcells) = do
-  nmtVcells <- nonEmpty vcells 
+  nmtVcells <- nonEmpty vcells
   regex     <- regexify nmtVcells ^? _Right
   return $ MkNLA' { getBase    = nmtVcells
                   , numVars    = lengthOf (folded % filteredBy _TempVar) vcells
                   , getNLATxt' = annotxtify vcells
-                  , regex      = regex}
-
+                  , regex      = traversify regex}
 
 -- | Private function for making NLATxt for NLA'
-annotxtify :: Seq VCell -> NLATxt              
-annotxtify = fold . intersperseWithSpace . fmap vcell2NLAtxt 
-  where 
+annotxtify :: Seq VCell -> NLATxt
+annotxtify = fold . intersperseWithSpace . fmap vcell2NLAtxt
+  where
     spaceDelimtr = coerce (" " :: T.Text)
     intersperseWithSpace :: Seq NLATxt -> Seq NLATxt
-    intersperseWithSpace = intersperse spaceDelimtr 
+    intersperseWithSpace = intersperse spaceDelimtr
 
 
 {- | Replace each variable indicator with a regex pattern 
       that matches either a word or another variable indicator.
 -}
 regexify :: NE (Seq VCell) -> Either String Regex
-regexify = makeRegex . foldMap 
+regexify = makeRegex . foldMap
           (\case
             TempVar tvar   -> tvar2WordOrVIregex tvar
             Pred nonvartxt -> PCRE.escape . T.unpack $ nonvartxt)
@@ -120,17 +123,18 @@ type RawRegexStr = String
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
 
-
 {- | a regex pattern that matches either a word or another variable indicator -}
 tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
-tvar2WordOrVIregex = 
+tvar2WordOrVIregex =
   let wordOrVI :: RawRegexStr
       wordOrVI = [r|(\w+|\*[\w\s]+\*)|]
   in \case
     MatchGVar _    -> wordOrVI
     EndsInApos _   -> wordOrVI <> [r|'s|]
     IsNum _        -> [r|is |] <> wordOrVI
-     
+
+traversify :: Regex -> RegexTrav
+traversify regex = traversalVL (regexing regex)
 
 -------------------
 
@@ -148,25 +152,33 @@ Examples of NLAs that overlap:
       Alice's2 blahed *a person* blah2 -}
 subsumes :: NLA' -> NLA' -> Bool
 x `subsumes` y = x.numVars >= y.numVars && x `nlaRMatchesTxt` y
-    where 
-      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (coerce y'.getNLATxt')
-      matchesTxt regex     = has (traversalVL $ regexing regex)
+    where
+      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` coerce y'.getNLATxt'
+      matchesTxt regexTrav = has regexTrav
 
 isSubsumedBy :: NLA' -> NLA' -> Bool
 isSubsumedBy = flip subsumes
 
-{- | Returns a sorted Seq of non-subsumed NLAs
-Currently implemented in a naive way -}
-getNonSubsumed :: HS.HashSet NLA' -> Seq NLA'
-getNonSubsumed nlaset = 
-  seqOf folded (foldl' addNLA HS.empty nlasByNumVs)
+{- | Returns a set of non-subsumed NLAs
+Currently implemented in a somewhat naive way -}
+getNonSubsumed :: HS.HashSet NLA' -> HS.HashSet NLA'
+getNonSubsumed nlaset =
+  foldl' maybeInsert HS.empty nlasByNumVs
     where
-      nlasByNumVs = sortBy (flip $ comparing numVars) (toList nlaset)
-      addNLA :: HS.HashSet NLA' -> NLA' -> HS.HashSet NLA'
-      addNLA acc nla = 
+      nlasByNumVs = sortWith (Down . numVars) (toList nlaset)
+                    -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortOn
+      maybeInsert :: HS.HashSet NLA' -> NLA' -> HS.HashSet NLA'
+      maybeInsert acc nla =
         if anyOf folded (nla `isSubsumedBy`) acc
         then acc
-        else nla `setInsert` acc 
+        else nla `setInsert` acc
+
+{- | filter out nlas that are matched by any of the regex travs
+Use this for filtering out NLAs that are subsumed by lib template NLAs
+-}
+diffOutSubsumed :: Seq RegexTrav -> HS.HashSet NLA' -> HS.HashSet NLA'
+diffOutSubsumed regtravs tocheck = undefined
+
 
 --TODO:
 -- | For parsing lib templates, as well as templates from, e.g., unit tests, to a set of NLAs

@@ -51,8 +51,7 @@ configFile2testcase configFile = runExceptT do
 
 testcase2spec :: Testcase -> Spec
 testcase2spec Testcase {directory, config = Config {description, enabled}} =
-  describe
-    directory
+  describe directory
     if enabled
       then it description
           ( testcaseName <.> "csv"

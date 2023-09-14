@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -W #-}
 
-{-# LANGUAGE LambdaCase #-}
+-- {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLists #-}
+-- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
+-- {-# LANGUAGE PatternSynonyms #-}
 {-|
 
 We're trying to work with the rules / AST instead, 
@@ -35,7 +35,6 @@ import LS.PrettyPrinter
     ( myrender)
 import LS.XPile.LogicalEnglish.Pretty(LEProg(..))
 
--- import qualified AnyAll as AA
 -- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
@@ -51,7 +50,7 @@ import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs 
     ( nlasFromVarsHC
     , NLATxt(..)
-    , NLA', pattern NLA, mkNLA
+    , NLA
     , getNLAtxt 
     , getNonSubsumed
     -- , diffOutSubsumed
@@ -100,7 +99,7 @@ toLE l4rules =
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-allNLAs :: [VarsHC] -> HS.HashSet NLA'
+allNLAs :: [VarsHC] -> HS.HashSet NLA
 allNLAs = getNonSubsumed . foldMap nlasFromVarsHC
 -- TODO: debug the regex matching in getNonSubsumed
 
@@ -109,13 +108,13 @@ simplifyL4rules = sequenceA . concatMap simplifyL4rule
 
 xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =
-  let hcsVarsMarked = map idVarsInHC simpL4HCs
-      nlas          = allNLAs hcsVarsMarked
-      nlatxts       = nlas 
-                        & toListOf (folded % to getNLAtxt)
-                        & partsOf traversed %~ sort
-      lehcs         = map leHCFromVarsHC hcsVarsMarked
-      leProgam      = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
+  let hcsVarsMarked           = map idVarsInHC simpL4HCs
+      nlas :: HS.HashSet NLA  = allNLAs hcsVarsMarked
+      nlatxts :: [NLATxt]     = nlas 
+                                    & toListOf (folded % to getNLAtxt)
+                                    & partsOf traversed %~ sort
+      lehcs                   = map leHCFromVarsHC hcsVarsMarked
+      leProgam                = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
   in doc2str . pretty $ leProgam
 
 

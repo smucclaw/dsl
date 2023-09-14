@@ -54,7 +54,8 @@ import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
 -- import qualified Data.Sequence as Seq
-import Data.Sequences (intersperse)
+import Data.Sequences (intersperse, SemiSequence)
+import Data.MonoTraversable (Element)
 -- import Data.List (sortBy)
 import Prettyprinter(Pretty)
 
@@ -102,24 +103,31 @@ mkNLA (seqOf folded -> vcells) = do
                   , getNLATxt' = annotxtify vcells
                   , regex      = traversify regex}
 
+
+textify :: (Foldable t, Monoid c, SemiSequence (t c), Functor t) => Element (t c) -> (a -> c) -> t a -> c
+textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingfn
+
 -- | Private function for making NLATxt for NLA'
 annotxtify :: Seq VCell -> NLATxt
-annotxtify = fold . intersperseWithSpace . fmap vcell2NLAtxt
+annotxtify = textify spaceDelimtr vcell2NLAtxt
   where
-    spaceDelimtr = coerce (" " :: T.Text)
-    intersperseWithSpace :: Seq NLATxt -> Seq NLATxt
-    intersperseWithSpace = intersperse spaceDelimtr
+    spaceDelimtr :: NLATxt = coerce (" " :: T.Text)
 
 
 {- | Replace each variable indicator with a regex pattern 
       that matches either a word or another variable indicator.
 -}
 regexify :: NE (Seq VCell) -> Either String Regex
-regexify = makeRegex . foldMap
-          (\case
-            TempVar tvar   -> tvar2WordOrVIregex tvar
-            Pred nonvartxt -> PCRE.escape . T.unpack $ nonvartxt)
-                              --TODO: Add tests to check if have to escape metachars in Pred
+regexify = makeRegex . textify strdelimitr regexf . fromNonEmpty
+  where 
+    strdelimitr :: String = " "
+    regexf = 
+      \case
+        TempVar tvar   -> tvar2WordOrVIregex tvar
+        Pred nonvartxt -> (PCRE.escape . T.unpack $ nonvartxt)
+          --TODO: Add tests to check if have to escape metachars in Pred
+            -- T.unpack nonvartxt
+            -- PCRE.escape . T.unpack $ nonvartxt
 
 type RawRegexStr = String
 makeRegex :: RawRegexStr -> Either String Regex
@@ -153,9 +161,11 @@ Examples of NLAs that overlap:
       Alice's blahed *a person* *hohoho* blah2
       Alice's2 blahed *a person* blah2 -}
 subsumes :: NLA' -> NLA' -> Bool
-x `subsumes` y = x.numVars >= y.numVars && x `nlaRMatchesTxt` y
+x `subsumes` y = 
+  x.numVars > y.numVars && x `nlaRMatchesTxt` y
+  -- TODO: Look into the is-num vs "is payout" duplication
     where
-      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` coerce y'.getNLATxt'
+      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (coerce y'.getNLATxt')
       matchesTxt regexTrav = has regexTrav
 
 isSubsumedBy :: NLA' -> NLA' -> Bool

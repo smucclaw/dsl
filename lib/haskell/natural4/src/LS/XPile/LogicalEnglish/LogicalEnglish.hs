@@ -111,8 +111,9 @@ xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =
   let hcsVarsMarked = map idVarsInHC simpL4HCs
       nlas          = allNLAs hcsVarsMarked
-      nlatxts       = nlas ^.. folded % to getNLAtxt
-      --- TODO: sort the nlatxts...
+      nlatxts       = nlas 
+                        & toListOf (folded % to getNLAtxt)
+                        & partsOf traversed %~ sort
       lehcs         = map leHCFromVarsHC hcsVarsMarked
       leProgam      = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
   in doc2str . pretty $ leProgam

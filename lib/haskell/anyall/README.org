@@ -383,6 +383,8 @@ See the ~ladder-diagram~ repo, which does everything in HTML and CSS instead of 
 
 and also the ~vue-pure-pdpa~ repo which has a Purescript implementation of the above logic under ~src/AnyAll/~
 
+Since we first wrote this codebase, [[https://hackage.haskell.org/package/decision-diagrams][decision-diagrams]] has appeared on Hackage.
+
 * TODO Things we are gradually getting smart enough to do
 
 ** use Trees That Grow

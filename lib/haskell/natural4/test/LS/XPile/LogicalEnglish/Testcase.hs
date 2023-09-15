@@ -7,7 +7,6 @@ module LS.XPile.LogicalEnglish.Testcase
   )
 where
 
-import Data.Bifunctor (Bifunctor (bimap))
 import Data.String.Interpolate (i)
 import Control.Monad.Except
   ( MonadError (throwError),
@@ -53,12 +52,11 @@ testcase2spec :: Testcase -> Spec
 testcase2spec Testcase {directory, config = Config {description, enabled}} =
   describe directory
     if enabled
-      then it description
-          ( testcaseName <.> "csv"
-              |> letestfnm2rules
-              |$> toLE
-              |$> goldenLE testcaseName
-          )
+      then it description do
+        testcaseName <.> "csv"
+            |> letestfnm2rules
+            |$> toLE
+            |$> goldenLE testcaseName
       else it description $ pendingWith "Test case is disabled."
   where
     testcaseName = takeBaseName directory

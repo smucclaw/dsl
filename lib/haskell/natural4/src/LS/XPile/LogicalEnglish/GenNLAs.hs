@@ -21,7 +21,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
 
     , getNonSubsumed
     , diffOutSubsumed
-    , parseLENLAnnotsToNLAs
+    , regextravifyLENLA
   )
 where
 
@@ -40,6 +40,7 @@ import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
 import Data.String.Interpolate ( i )
 
+import Data.List.Split (splitOn)
 import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
@@ -95,7 +96,7 @@ getNLAtxt nla = nla.getNLATxt'
 mkNLA :: forall f. (Foldable f, HasNonEmpty (f VCell)) => f VCell -> Maybe NLA
 mkNLA (seqOf folded -> vcells) = do
   nmtVcells <- nonEmpty vcells
-  regex     <- regexify nmtVcells ^? _Right
+  regex     <- regexifyVCells nmtVcells ^? _Right
   return $ MkNLA { getBase    = nmtVcells
                   , numVars    = lengthOf (folded % filteredBy _TempVar) vcells
                   , getNLATxt' = annotxtify vcells
@@ -114,8 +115,8 @@ annotxtify = textify spaceDelimtr vcell2NLAtxt
 {- | Replace each variable indicator with a regex pattern 
       that matches either a word or another variable indicator.
 -}
-regexify :: NE (Seq VCell) -> Either String Regex
-regexify = makeRegex . textify strdelimitr regexf . fromNonEmpty
+regexifyVCells :: NE (Seq VCell) -> Either String Regex
+regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
   where 
     strdelimitr :: String = " "
     regexf = \case
@@ -129,12 +130,12 @@ type RawRegexStr = String
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
 
-{- | a regex pattern that matches either a word or another variable indicator -}
+{- | a regex that matches either a word or another variable indicator -}
+wordOrVI :: RawRegexStr
+wordOrVI = [r|(\w+|\*[\w\s]+\*)|]
+
 tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
-tvar2WordOrVIregex =
-  let wordOrVI :: RawRegexStr
-      wordOrVI = [r|(\w+|\*[\w\s]+\*)|]
-  in \case
+tvar2WordOrVIregex = \case
     MatchGVar _    -> wordOrVI
     EndsInApos _   -> wordOrVI <> [r|'s|]
     IsNum _        -> [r|is |] <> wordOrVI
@@ -188,13 +189,24 @@ diffOutSubsumed :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
 diffOutSubsumed regtravs tocheck = undefined
 
 
---TODO:
--- | For parsing lib templates, as well as templates from, e.g., unit tests
-parseLENLAnnotsToNLAs :: Foldable f => f T.Text -> f RegexTrav
-parseLENLAnnotsToNLAs = undefined
+{- | For parsing lib templates, as well as templates from, e.g., unit tests
+Takes as input an NLA that has already had the final char (either comma or period) removed
+-}
+regextravifyNLASection :: Foldable f => T.Text -> Maybe (f RegexTrav)
+regextravifyNLASection = undefined
 
-parseLENLAnnot :: T.Text -> RegexTrav
-parseLENLAnnot = undefined
+regextravifyLENLA :: T.Text -> Either String RegexTrav
+regextravifyLENLA = fmap traversify . makeRegex . rawregexifyLENLA
+
+rawregexifyLENLA :: T.Text -> RawRegexStr
+rawregexifyLENLA (T.unpack -> nlatxt) = 
+  let 
+    splitted = splitOn "*" nlatxt
+    isVarIdx = if splitted ^? ix 0 == Just "" then odd else even     
+  in splitted 
+    & itraversed %& indices isVarIdx         .~ wordOrVI
+    & itraversed %& indices (not . isVarIdx) %~ PCRE.escape  
+    & toListOf (folded % folded) 
 
 ------------------- Building NLAs from VarsHCs
 

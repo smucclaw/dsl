@@ -54,9 +54,9 @@ testcase2spec Testcase {directory, config = Config {description, enabled}} =
     if enabled
       then it description do
         testcaseName <.> "csv"
-            |> letestfnm2rules
-            |$> toLE
-            |$> goldenLE testcaseName
+          |> letestfnm2rules
+          |$> toLE
+          |$> goldenLE testcaseName
       else it description $ pendingWith "Test case is disabled."
   where
     testcaseName = takeBaseName directory

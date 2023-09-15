@@ -109,12 +109,26 @@ ruleFieldToField (TypeDecl{name=n, super=sup}) =
     [Field (typeDeclNameToFieldName n) (typeDeclSuperToFieldType sup)]
 ruleFieldToField _ = []
 
+-- unpackHierarchy :: Rule -> [Field]
+-- unpackHierarchy (TypeDecl{name=n}) =
+--     [Field (typeDeclNameToFieldName n) (FTList (FTRef (unpack n)))]
+-- unpackHierarchy _ = []
+
+rule2JsonExp :: Rule -> [ExpType]
+rule2JsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
+    case unpack n of
+        "damageType Hierarchy" -> concatMap rule2ExpType fields
+        _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+rule2JsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
+    [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
+rule2JsonExp _ = []
+
 rule2ExpType :: Rule -> [ExpType]
-rule2ExpType (TypeDecl{name=n, has=fields, super=Nothing}) =
-    [ExpTypeRecord (typeDeclNameToTypeName n) (concatMap ruleFieldToField fields)]
+rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
 rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
     [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
 rule2ExpType _ = []
+
 
 
 ------------------------------------
@@ -212,11 +226,13 @@ instance ShowTypesJson FieldType where
         jsonType "string" <> pretty "," <>
         dquotes (pretty "format") <> pretty ": " <> dquotes (pretty "date")
     showTypesJson (FTRef n) =
-        jsonType "array" <> pretty "," <>
-        dquotes (pretty "minItems") <> pretty ": 1," <>
-        dquotes (pretty "maxItems") <> pretty ": 1," <>
-        dquotes (pretty "items") <> pretty ": " <>
-        braces (showRef n)
+        -- jsonType "array" <> pretty "," <>
+        -- dquotes (pretty "minItems") <> pretty ": 1," <>
+        -- dquotes (pretty "maxItems") <> pretty ": 1," <>
+        -- dquotes
+        -- (pretty "items") <> pretty ": " <>
+        -- braces
+        (showRef n)
     showTypesJson (FTList (FTRef n)) =
         jsonType "array" <> pretty "," <>
         dquotes (pretty "items") <> pretty ": " <>
@@ -260,13 +276,14 @@ jsonPreamble tn = [
         braces (showTypesJson (FTList (FTRef tn))))
     ]
 
+
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
-    let ets = concatMap rule2ExpType rs in
+    let ets = concatMap rule2JsonExp rs in
         (case ets of
             [] -> show (braces emptyDoc)
             rt : rts ->
-                -- trace ("ets: " ++ show ets) $
+                trace ("ets: " ++ show ets) $
                 show
                 (braces
                     (vsep (punctuate comma
@@ -283,3 +300,25 @@ rulesToJsonSchema rs =
                 )
         )
 
+rulesToUISchema :: [SFL4.Rule] -> String
+rulesToUISchema rs =
+    let ets = concatMap rule2JsonExp rs in
+        (case ets of
+            [] -> show (braces emptyDoc)
+            rt : rts ->
+                trace ("ets: " ++ show ets) $
+                show
+                (braces
+                    (vsep (punctuate comma
+                    (
+                        jsonPreamble (typeName rt) ++
+                        [dquotes (pretty defsLocationName) <> pretty ": " <>
+                        braces (
+                            nest 4
+                            (vsep (punctuate comma (map showTypesJson ets)))
+                        )
+                        ]
+                    )
+                    ) )
+                )
+        )

@@ -49,7 +49,7 @@ import qualified Text.Regex.PCRE.Heavy as PCRE
 import Control.Lens.Regex.Text
 
 import Optics
--- import Data.Text.Optics 
+import Data.Text.Optics (unpacked)
 -- import Data.Set.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
@@ -138,8 +138,6 @@ regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
             -- PCRE.escape . T.unpack $ nonvartxt
 
 type RawRegexStr = String
-makeRegex :: RawRegexStr -> Either String Regex
-makeRegex rawregex = PCRE.compileM (cs rawregex) []
 
 {- | a regex that matches either a word or another variable indicator -}
 wordOrVI :: RawRegexStr
@@ -151,8 +149,15 @@ tvar2WordOrVIregex = \case
     EndsInApos _   -> wordOrVI <> [r|'s|]
     IsNum _        -> [r|is |] <> wordOrVI
 
+makeRegex :: RawRegexStr -> Either String Regex
+makeRegex rawregex = PCRE.compileM (cs rawregex) []
+
 traversify :: Regex -> RegexTrav
 traversify regex = traversalVL (regexing regex)
+
+regextravify :: RawRegexStr -> Maybe RegexTrav
+regextravify rawregex = 
+  rawregex ^? (to makeRegex % _Right % to traversify)  
 
 matchesTxt :: RegexTrav -> T.Text -> Bool
 matchesTxt regexTrav = has regexTrav
@@ -207,21 +212,33 @@ removeRegexMatched regtravs tocheck = undefined
 
 {- | For parsing lib templates, as well as templates from, e.g., unit tests
 -}
-regextravifyNLASection :: Foldable f => f T.Text -> Maybe (f RegexTrav)
-regextravifyNLASection = undefined
+regextravifyNLASection :: T.Text -> [RegexTrav]
+regextravifyNLASection nlasectn = 
+  nlasectn
+    & view (to T.lines)
+    & toListOf (traversed % to T.unsnoc 
+                % folded % _1 
+                % to regextravifyLENLA % _Right)
 
 -- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
 regextravifyLENLA :: T.Text -> Either String RegexTrav
 regextravifyLENLA = fmap traversify . makeRegex . rawregexifyLENLA
 
 rawregexifyLENLA :: T.Text -> RawRegexStr
-rawregexifyLENLA (T.unpack -> nlatxt) =
+rawregexifyLENLA (T.unpack -> nlastr) =
   let
-    splitted = splitOn "*" nlatxt
+    splitted = splitOn "*" nlastr
     isVarIdx = if splitted ^? ix 0 == Just "" then odd else even
+               {- first elt of `splitted` will be a "" if the template begins with a variable indicator
+                   >>> splitOn "*" "*a blah*'s nested *a blah list* is"
+                   ["","a blah","'s nested ","a blah list"," is"]
+                   >>> splitOn "*" "a class's *a list*"
+                   ["a class's ","a list",""]
+               -}
   in splitted
     & itraversed %& indices isVarIdx         .~ wordOrVI
     & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
+                    -- escape metachars in text that's not part of any var indicator
     & toListOf (folded % folded)
 
 ------------------- Building NLAs from VarsHCs
@@ -229,9 +246,7 @@ rawregexifyLENLA (T.unpack -> nlatxt) =
 nlasFromVarsHC :: VarsHC -> HS.HashSet NLA
 nlasFromVarsHC = \case
   VhcF vfact ->
-    case nlaFromVFact vfact of
-      Nothing -> HS.empty
-      Just nla -> HS.singleton nla
+    (maybe HS.empty HS.singleton (nlaFromVFact vfact))
   VhcR vrule ->
     nlasFromVarsRule vrule
 

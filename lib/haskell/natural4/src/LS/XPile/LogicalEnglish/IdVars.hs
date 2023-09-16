@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -W #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards #-}
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
+-- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -49,7 +49,7 @@ idVarsInAP gvars = \case
 -- | Replace "." with "dot" and "," with "comma", in the Pred txts of ABPatomics
 postprocAP :: AtomicPWithVars -> AtomicPWithVars
 postprocAP = \case
-  ABPatomic cells -> ABPatomic $ fmap replacePunctnVCell cells
+  ABPatomic cells -> ABPatomic $ fmap replaceTxtVCell cells
   others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
@@ -57,19 +57,23 @@ idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 
 
 ---- helpers
-replacePunctn :: T.Text -> T.Text
-replacePunctn txt = if txt == T.empty then txt -- T.replace will error if input empty
-                    else replaceIn txt 
-                    where replaceIn = T.replace "," "comma" .
-                                      T.replace "." "dot"
 
-replacePunctnVCell :: VCell -> VCell
-replacePunctnVCell = \case
+-- | Replace text in VCells
+replaceTxtVCell :: VCell -> VCell
+replaceTxtVCell = \case
   tv@(TempVar _) -> tv
-  Pred txt  -> Pred $ replacePunctn txt
+  Pred txt  -> Pred $ replaceTxt txt
+
+replaceTxt :: T.Text -> T.Text
+replaceTxt txt =  if txt == T.empty then txt
+                  -- T.replace will error if input empty
+                  else replacePercent . replaceCommaDot $ txt
+                  where replaceCommaDot = T.replace "," "comma" .
+                                          T.replace "." "dot"
+                        replacePercent = T.replace "%" " percent"
 
 
-{- |
+{- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
   * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum
   * every IS tt was NOT an IS NUM has been replaced with a `MkCellT "is"`.
@@ -89,8 +93,21 @@ cell2vcell gvars = \case
         else Pred celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
 
+txtIsAGivenVar :: GVarSet -> T.Text -> Bool
+txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
 
--- {- | Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
+type PrefixAposVar = T.Text
+isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
+isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
+            if txtIsAGivenVar gvs prefix
+            then (prefix, True)
+            else ("", False)
+isAposVar _ _                                     = ("", False)
+-- TODO: this matching on "'s" is a bit brittle cos unicode
+
+
+
+-- {-  Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
 -- -}
 -- term2tvar :: GVarSet -> Term -> TemplateVar
 -- term2tvar gvars = \case
@@ -107,16 +124,3 @@ cell2vcell gvars = \case
 -- optOfArg = \case
 --   MkCellT t -> OpOfVarArg t
 --   MkCellIsNum t -> OpOfVarArg t
-
-
-txtIsAGivenVar :: GVarSet -> T.Text -> Bool
-txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
-
-type PrefixAposVar = T.Text
-isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
-isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
-            if txtIsAGivenVar gvs prefix
-            then (prefix, True)
-            else ("", False)
-isAposVar _ _                                     = ("", False)
--- TODO: this matching on "'s" is a bit brittle cos unicode

@@ -179,8 +179,7 @@ libTemplates =
   *a class*'s *a field0*'s *a field1* is *a value*,
   *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
   *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
-  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*.
-
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,
   *a number* is a lower bound of *a list*,
   *a number* is an upper bound of *a list*,
   *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,

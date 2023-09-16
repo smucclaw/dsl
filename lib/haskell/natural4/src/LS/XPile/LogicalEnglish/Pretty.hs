@@ -17,6 +17,7 @@ module LS.XPile.LogicalEnglish.Pretty (LEProg(..)) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
 -- import Data.Text qualified as T
+import Data.Foldable (toList)
 -- import Data.HashSet qualified as HS
 -- import Data.Hashable (Hashable)
 -- import Data.Coerce (coerce)
@@ -41,11 +42,16 @@ import Prettyprinter
     concatWith,
     dot)
 import LS.PrettyPrinter
-    ( vvsep, (<//>) )
+    ( vvsep, (<//>), myrender )
 import Prettyprinter.Interpolate (__di)
+-- import Optics
+-- import Data.Set.Optics (setOf)
+import Data.List ( sort )
+
 
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
+import LS.XPile.LogicalEnglish.GenNLAs 
+  (NLATxt, RegexTrav, removeRegexMatches, regextravifyNLASection)
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       check, refine, loadRawL4AsUnvalid)
@@ -138,24 +144,23 @@ endWithDot txt = [__di|#{ txt }.|]
 instance Pretty LEProg where
   pretty :: LEProg -> Doc ann
   pretty MkLEProg{..} =
-    
-    let indentedNLAs = endWithDot . nestVsepSeq . punctuate comma 
-                      . map pretty $ nlatxts
-                      -- assume list of NLAs is pre-sorted
-        prettyLEhcs   = vvsep $ map ((<> dot) . pretty) leHCs
-        {- ^ Assume commas and dots already replaced in NLAs and LEHcs
-           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
+    let 
+      filteredNLAtxts = sort . toList . removeRegexMatches libTemplatesRegTravs $ nlatxts 
+      indentedNLAs    = endWithDot . nestVsepSeq . punctuate comma . map pretty $ filteredNLAtxts
+      prettyLEhcs     = vvsep $ map ((<> dot) . pretty) leHCs
+                        {- ^ Assume commas and dots already replaced in NLAs and LEHcs
+                          (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
     in
       [__di|
         the target language is: prolog.
 
         the templates are:
           #{indentedNLAs}
-          #{nestLE joeLibTemplates}
+          #{nestLE libTemplates}
 
         % Predefined stdlib for translating natural4 -> LE.
         the knowledge base prelude includes:
-          #{nestLE joeLibHCs}
+          #{nestLE libHCs}
 
         the knowledge base encoding includes:
           #{nestLE prettyLEhcs}
@@ -164,8 +169,8 @@ instance Pretty LEProg where
           0 < 1.
       |]
 
-joeLibTemplates :: Doc ann
-joeLibTemplates =
+libTemplates :: Doc ann
+libTemplates =
   [__di|
   *a var* is after *a var*,
   *a var* is before *a var*,
@@ -184,8 +189,12 @@ joeLibTemplates =
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.|]
 
-joeLibHCs :: Doc ann
-joeLibHCs =
+libTemplatesRegTravs :: [RegexTrav]
+libTemplatesRegTravs = regextravifyNLASection . myrender $ libTemplates
+
+
+libHCs :: Doc ann
+libHCs =
   [__di|
   % Note: LE's parsing of [H | T] is broken atm because it transforms that
   % into [H, T] rather than the Prolog term [H | T].

@@ -25,7 +25,6 @@ import Data.HashSet qualified as HS
 -- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
-import Data.List ( sort )
 
 import Optics
 import Prettyprinter
@@ -109,7 +108,6 @@ xpileSimplifiedL4hcs simpL4HCs =
       nlatxts :: [NLATxt]       = hcsVarsMarked 
                                       & toListOf (to allNLAs 
                                                   % folded % to getNLAtxt)
-                                      & partsOf traversed %~ sort
       lehcs                     = map leHCFromVarsHC hcsVarsMarked
       leProgam                  = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
   in doc2str . pretty $ leProgam

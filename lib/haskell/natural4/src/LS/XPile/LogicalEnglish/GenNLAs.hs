@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards, NoFieldSelectors #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia, DeriveAnyClass #-}
@@ -19,8 +19,10 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , mkNLA     -- smart constructor
     , getNLAtxt
 
-    , getNonSubsumed
-    , removeRegexMatched
+    , RegexTrav
+    , removeSubsumed
+    , removeRegexMatches
+    , regextravifyNLASection
     , regextravifyLENLA
   )
 where
@@ -49,7 +51,7 @@ import qualified Text.Regex.PCRE.Heavy as PCRE
 import Control.Lens.Regex.Text
 
 import Optics
-import Data.Text.Optics (unpacked)
+-- import Data.Text.Optics (unpacked)
 -- import Data.Set.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
@@ -58,7 +60,6 @@ import Data.Sequence (Seq)
 -- import qualified Data.Sequence as Seq
 import Data.Sequences (intersperse, SemiSequence)
 import Data.MonoTraversable (Element)
--- import Data.List (sortBy)
 import Prettyprinter(Pretty)
 
 
@@ -68,7 +69,7 @@ newtype NLATxt = MkNLATxt T.Text
 makePrisms ''NLATxt
 
 type RegexTrav = Traversal T.Text T.Text Match Match
--- TODO: think more abt whether regex field shld be Regex or the Traversal itself
+type RawRegexStr = String
 data NLA =
   MkNLA { getBase    :: NE (Seq VCell)
         , numVars    :: !Int
@@ -94,9 +95,8 @@ Using this allows you to get the nice no-run-time-overhead of `coerce`,
 mkNLATxt :: T.Text -> NLATxt
 mkNLATxt = view (re _MkNLATxt)
 
--- | Think of this as the txt-to-nlatxt form of `coerce` 
-nlatToTxt :: NLATxt -> T.Text
-nlatToTxt = view _MkNLATxt
+nlaAsTxt :: NLA -> T.Text
+nlaAsTxt = view _MkNLATxt . getNLAtxt
 
 {- | public getter to view the NLAtxt
 Don't need to export a lens for this field cos not going to change / set it -}
@@ -113,9 +113,7 @@ mkNLA (seqOf folded -> vcells) = do
                   , getNLATxt' = annotxtify vcells
                   , regex      = traversify regex}
 
-
-textify :: (Foldable t, Monoid c, SemiSequence (t c), Functor t) => Element (t c) -> (a -> c) -> t a -> c
-textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingfn
+--- helpers for making NLAs
 
 -- | Private function for making NLATxt for NLA
 annotxtify :: Seq VCell -> NLATxt
@@ -137,7 +135,10 @@ regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
             -- T.unpack nonvartxt
             -- PCRE.escape . T.unpack $ nonvartxt
 
-type RawRegexStr = String
+textify :: (Foldable t, Monoid c, SemiSequence (t c), Functor t) => Element (t c) -> (a -> c) -> t a -> c
+textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingfn
+
+--- helpers for working with regex
 
 {- | a regex that matches either a word or another variable indicator -}
 wordOrVI :: RawRegexStr
@@ -156,14 +157,51 @@ traversify :: Regex -> RegexTrav
 traversify regex = traversalVL (regexing regex)
 
 regextravify :: RawRegexStr -> Maybe RegexTrav
-regextravify rawregex = 
-  rawregex ^? (to makeRegex % _Right % to traversify)  
+regextravify rawregex =
+  rawregex ^? (to makeRegex % _Right % to traversify)
 
-matchesTxt :: RegexTrav -> T.Text -> Bool
-matchesTxt regexTrav = has regexTrav
-
+matchesTxtOf :: RegexTrav -> NLATxt -> Bool
+regexTrav `matchesTxtOf` nlatxt = has regexTrav (view _MkNLATxt nlatxt)
 
 ------------------- Filtering out subsumed NLAs
+
+{- | Returns a set of non-subsumed NLAs
+Currently implemented in a somewhat naive way -}
+removeSubsumed :: HS.HashSet NLA -> HS.HashSet NLA
+removeSubsumed nlaset =
+  foldl' addIfNotSubsumed HS.empty nlasByNumVs
+    where
+      nlasByNumVs = sortWith (Down . (.numVars)) (toList nlaset)
+                    -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortOn
+      addIfNotSubsumed :: HS.HashSet NLA -> NLA -> HS.HashSet NLA
+      addIfNotSubsumed acc nla =
+        if any (nla `isSubsumedBy`) acc
+        then acc
+        else nla `setInsert` acc
+
+{- | filter out NLATxts that are matched by any of the regex travs
+Use this for filtering out NLATxts that are subsumed by lib template NLAs
+-}
+removeRegexMatches :: (Foldable f, Foldable g) => f RegexTrav -> g NLATxt -> HS.HashSet NLATxt
+removeRegexMatches regtravs = foldr addIfNotMatched HS.empty
+  where
+    addIfNotMatched :: NLATxt -> HS.HashSet NLATxt -> HS.HashSet NLATxt
+    addIfNotMatched nlatxt acc =
+      if any (`matchesTxtOf` nlatxt) regtravs
+      then acc
+      else nlatxt `setInsert` acc
+
+{- | For parsing lib templates, as well as templates from, e.g., unit tests
+-}
+regextravifyNLASection :: T.Text -> [RegexTrav]
+regextravifyNLASection nlasectn =
+  nlasectn
+    & view (to T.lines)
+    & toListOf (traversed % to T.unsnoc
+                % folded % _1
+                % to regextravifyLENLA % _Right)
+
+--- helpers
 
 {- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's
 
@@ -182,43 +220,11 @@ Examples of NLAs that overlap:
   @                                             -}
 subsumes :: NLA -> NLA -> Bool
 x `subsumes` y =
-  x.numVars > y.numVars && x `nlaRMatchesTxt` y
+  x.numVars > y.numVars && x.regex `matchesTxtOf` y.getNLATxt'
   -- TODO: Look into the is-num vs "is payout" duplication
-    where
-      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (nlatToTxt y'.getNLATxt')
 
 isSubsumedBy :: NLA -> NLA -> Bool
 isSubsumedBy = flip subsumes
-
-{- | Returns a set of non-subsumed NLAs
-Currently implemented in a somewhat naive way -}
-getNonSubsumed :: HS.HashSet NLA -> HS.HashSet NLA
-getNonSubsumed nlaset =
-  foldl' maybeInsert HS.empty nlasByNumVs
-    where
-      nlasByNumVs = sortWith (Down . numVars) (toList nlaset)
-                    -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortOn
-      maybeInsert :: HS.HashSet NLA -> NLA -> HS.HashSet NLA
-      maybeInsert acc nla =
-        if anyOf folded (nla `isSubsumedBy`) acc
-        then acc
-        else nla `setInsert` acc
-
-{- | filter out nlas that are matched by any of the regex travs
-Use this for filtering out NLAs that are subsumed by lib template NLAs
--}
-removeRegexMatched :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
-removeRegexMatched regtravs tocheck = undefined
-
-{- | For parsing lib templates, as well as templates from, e.g., unit tests
--}
-regextravifyNLASection :: T.Text -> [RegexTrav]
-regextravifyNLASection nlasectn = 
-  nlasectn
-    & view (to T.lines)
-    & toListOf (traversed % to T.unsnoc 
-                % folded % _1 
-                % to regextravifyLENLA % _Right)
 
 -- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
 regextravifyLENLA :: T.Text -> Either String RegexTrav
@@ -250,7 +256,8 @@ nlasFromVarsHC = \case
   VhcR vrule ->
     nlasFromVarsRule vrule
 
--- TODO: When have more time, write smtg tt checks if it is indeed in fixed lib, and add it if not.
+--- helpers
+
 nlaFromVFact :: VarsFact -> Maybe NLA
 nlaFromVFact VFact{..} = nlaLoneFromVAtomicP varsfhead
 
@@ -266,11 +273,11 @@ nlasFromBody varsABP =
   let lstNLAs = fmap nlaLoneFromVAtomicP varsABP
   in HS.fromList . catMaybes . toList $ lstNLAs
 
--- TODO: Check if this really does conform to the spec --- went a bit fast here
 nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe NLA
 nlaLoneFromVAtomicP =  \case
   ABPatomic vcells         -> mkNLA vcells
   ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
+  -- the other two cases are accounted for by lib NLAs/templates
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
 
@@ -283,7 +290,6 @@ tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case
   EndsInApos prefix  -> mkNLATxt [i|*a #{prefix}*'s|]
   IsNum _numtxt      -> mkNLATxt "is *a number*"
-  -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
   MatchGVar gvar     -> mkNLATxt [i|*a #{gvar}*|]
 
 {- ^

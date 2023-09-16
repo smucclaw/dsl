@@ -19,9 +19,7 @@ module LS.XPile.LogicalEnglish.Pretty (LEProg(..)) where
 -- import Data.Text qualified as T
 import Data.Foldable (toList)
 -- import Data.HashSet qualified as HS
--- import Data.Hashable (Hashable)
 -- import Data.Coerce (coerce)
--- import Data.Maybe (fromMaybe, listToMaybe)
 import Data.String()
 
 import Prettyprinter
@@ -142,12 +140,12 @@ instance Pretty TxtAtomicBP where
 endWithDot txt = [__di|#{ txt }.|]
  
 instance Pretty LEProg where
-  pretty :: LEProg -> Doc ann
+  pretty :: forall ann. LEProg -> Doc ann
   pretty MkLEProg{..} =
     let 
-      filteredNLAtxts = sort . toList . removeRegexMatches libTemplatesRegTravs $ nlatxts 
-      indentedNLAs    = endWithDot . nestVsepSeq . punctuate comma . map pretty $ filteredNLAtxts
-      prettyLEhcs     = vvsep $ map ((<> dot) . pretty) leHCs
+      filteredNLAtxts :: [NLATxt] = sort . toList . removeRegexMatches libTemplatesRegTravs $ nlatxts 
+      indentedNLAs    :: Doc ann  = endWithDot . nestVsepSeq . punctuate comma . map pretty $ filteredNLAtxts
+      prettyLEhcs     :: Doc ann  = vvsep $ map ((<> dot) . pretty) leHCs
                         {- ^ Assume commas and dots already replaced in NLAs and LEHcs
                           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
     in

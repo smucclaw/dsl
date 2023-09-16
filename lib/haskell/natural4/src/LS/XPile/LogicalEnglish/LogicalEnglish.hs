@@ -8,7 +8,6 @@
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
--- {-# LANGUAGE PatternSynonyms #-}
 {-|
 
 We're trying to work with the rules / AST instead, 

@@ -20,7 +20,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , getNLAtxt
 
     , getNonSubsumed
-    , diffOutSubsumed
+    , removeSubsumed
     , regextravifyLENLA
   )
 where
@@ -87,6 +87,17 @@ instance Hashable NLA where
   hashWithSalt = hashUsing getNLAtxt
   -- prob the easiest way to filter out overlapping NLAs is to use a separate function, rather than trying to shoehorn it into Eq and Hashable and Eq somehow
 
+{- | Think of this as the specialized-to-the-Txt-to-NLATxt-direction form of `coerce`
+Using this allows you to get the nice no-run-time-overhead of `coerce`, 
+/without/ having to add the type annotations you'd need if you were using `coerce`
+-}
+mkNLATxt :: T.Text -> NLATxt
+mkNLATxt = view (re _MkNLATxt)
+
+-- | Think of this as the txt-to-nlatxt form of `coerce` 
+nlatToTxt :: NLATxt -> T.Text
+nlatToTxt = view _MkNLATxt
+
 {- | public getter to view the NLAtxt
 Don't need to export a lens for this field cos not going to change / set it -}
 getNLAtxt :: NLA -> NLATxt
@@ -117,7 +128,7 @@ annotxtify = textify spaceDelimtr vcell2NLAtxt
 -}
 regexifyVCells :: NE (Seq VCell) -> Either String Regex
 regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
-  where 
+  where
     strdelimitr :: String = " "
     regexf = \case
         TempVar tvar   -> tvar2WordOrVIregex tvar
@@ -143,27 +154,33 @@ tvar2WordOrVIregex = \case
 traversify :: Regex -> RegexTrav
 traversify regex = traversalVL (regexing regex)
 
+matchesTxt :: RegexTrav -> T.Text -> Bool
+matchesTxt regexTrav = has regexTrav
+
+
 ------------------- Filtering out subsumed NLAs
 
 {- | x `subsumes` y <=> x overlaps with y and x's arg places >= y's
 
 Examples of NLAs that overlap:
-  NLA Orig: *a person*'s blahed *a person* blah2
+  NLA Orig: @*a person*'s blahed *a person* blah2@
 
   `NLA Orig` overlaps with each of:
+  @
       *a number*'s blahed *a star* blah2
       sdsd7's blahed sfsi23mkm blah2
-
+  @
   but does NOT overlap with
+  @
       Alice's blahed *a person* *hohoho* blah2
-      Alice's2 blahed *a person* blah2 -}
+      Alice's2 blahed *a person* blah2
+  @                                             -}
 subsumes :: NLA -> NLA -> Bool
-x `subsumes` y = 
+x `subsumes` y =
   x.numVars > y.numVars && x `nlaRMatchesTxt` y
   -- TODO: Look into the is-num vs "is payout" duplication
     where
-      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (y'.getNLATxt' ^. _MkNLATxt)
-      matchesTxt regexTrav = has regexTrav
+      nlaRMatchesTxt x' y' = x'.regex `matchesTxt` (nlatToTxt y'.getNLATxt')
 
 isSubsumedBy :: NLA -> NLA -> Bool
 isSubsumedBy = flip subsumes
@@ -185,28 +202,27 @@ getNonSubsumed nlaset =
 {- | filter out nlas that are matched by any of the regex travs
 Use this for filtering out NLAs that are subsumed by lib template NLAs
 -}
-diffOutSubsumed :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
-diffOutSubsumed regtravs tocheck = undefined
-
+removeSubsumed :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
+removeSubsumed regtravs tocheck = undefined
 
 {- | For parsing lib templates, as well as templates from, e.g., unit tests
-Takes as input an NLA that has already had the final char (either comma or period) removed
 -}
-regextravifyNLASection :: Foldable f => T.Text -> Maybe (f RegexTrav)
+regextravifyNLASection :: Foldable f => f T.Text -> Maybe (f RegexTrav)
 regextravifyNLASection = undefined
 
+-- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
 regextravifyLENLA :: T.Text -> Either String RegexTrav
 regextravifyLENLA = fmap traversify . makeRegex . rawregexifyLENLA
 
 rawregexifyLENLA :: T.Text -> RawRegexStr
-rawregexifyLENLA (T.unpack -> nlatxt) = 
-  let 
+rawregexifyLENLA (T.unpack -> nlatxt) =
+  let
     splitted = splitOn "*" nlatxt
-    isVarIdx = if splitted ^? ix 0 == Just "" then odd else even     
-  in splitted 
+    isVarIdx = if splitted ^? ix 0 == Just "" then odd else even
+  in splitted
     & itraversed %& indices isVarIdx         .~ wordOrVI
-    & itraversed %& indices (not . isVarIdx) %~ PCRE.escape  
-    & toListOf (folded % folded) 
+    & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
+    & toListOf (folded % folded)
 
 ------------------- Building NLAs from VarsHCs
 
@@ -250,10 +266,10 @@ vcell2NLAtxt = \case
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case
-  EndsInApos prefix  -> coerce $ ([i|*a #{prefix}*'s|] :: T.Text)
-  IsNum _numtxt      -> coerce $ ("is *a number*" :: T.Text)
+  EndsInApos prefix  -> mkNLATxt [i|*a #{prefix}*'s|]
+  IsNum _numtxt      -> mkNLATxt "is *a number*"
   -- handling this case explicitly to remind ourselves tt we've handled it, and cos we might want to use "*a number*" instead
-  MatchGVar gvar     -> coerce $ ([i|*a #{gvar}*|] :: T.Text)
+  MatchGVar gvar     -> mkNLATxt [i|*a #{gvar}*|]
 
 {- ^
 From the LE handbook:

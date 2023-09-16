@@ -20,7 +20,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , getNLAtxt
 
     , getNonSubsumed
-    , removeSubsumed
+    , removeRegexMatched
     , regextravifyLENLA
   )
 where
@@ -202,8 +202,8 @@ getNonSubsumed nlaset =
 {- | filter out nlas that are matched by any of the regex travs
 Use this for filtering out NLAs that are subsumed by lib template NLAs
 -}
-removeSubsumed :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
-removeSubsumed regtravs tocheck = undefined
+removeRegexMatched :: Foldable f => f RegexTrav -> HS.HashSet NLA -> HS.HashSet NLA
+removeRegexMatched regtravs tocheck = undefined
 
 {- | For parsing lib templates, as well as templates from, e.g., unit tests
 -}

@@ -167,6 +167,10 @@ instance Pretty LEProg where
 joeLibTemplates :: Doc ann
 joeLibTemplates =
   [__di|
+  *a var* is after *a var*,
+  *a var* is before *a var*,
+  *a var* is strictly after *a var*,
+  *a var* is strictly before *a var*.
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,
@@ -178,8 +182,7 @@ joeLibTemplates =
   *a number* is an upper bound of *a list*,
   *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
   the sum of *a list* does not exceed the minimum of *a list*,
-  *a number* does not exceed the minimum of *a list*.
-  |]
+  *a number* does not exceed the minimum of *a list*.|]
 
 joeLibHCs :: Doc ann
 joeLibHCs =
@@ -192,6 +195,20 @@ joeLibHCs =
   % a class's nested [a field | a fields] is a value
   % if the class's the field is an other class
   % and the other class's nested the fields is the value.
+
+  a d0 is before a d1
+  if d0 is a n days before d1
+  and n >= 0.
+
+  a d0 is strictly before a d1
+  if d0 is a n days before d1
+  and n > 0.
+
+  a d0 is after a d1
+  if d1 is before d0.
+
+  a d0 is strictly after a d1
+  if d1 is strictly before d0.
 
   % Nested accessor predicates.
   a class's a field0's a field1 is a value

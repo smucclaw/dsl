@@ -31,7 +31,7 @@ configFile2spec :: FilePath -> IO Spec
 configFile2spec configFile =
   configFile
     |> configFile2testcase
-    |$> either error2spec testcase2spec
+    |$> either toSpec toSpec
 
 configFile2testcase :: FilePath -> IO (Either Error Testcase)
 configFile2testcase configFile = runExceptT do
@@ -48,21 +48,21 @@ configFile2testcase configFile = runExceptT do
     yamlParseExc2error parseExc =
       Error {directory, info = YamlParseExc parseExc}
 
-testcase2spec :: Testcase -> Spec
-testcase2spec Testcase {directory, config = Config {description, enabled}} =
-  describe directory
-    if enabled
-      then it description do
-        testcaseName <.> "csv"
-          |> letestfnm2rules
-          |$> toLE
-          |$> goldenLE testcaseName
-      else it description $ pendingWith "Test case is disabled."
-  where
-    testcaseName = takeBaseName directory
+instance ToSpec Testcase where
+  toSpec Testcase {directory, config = Config {description, enabled}} =
+    describe directory
+      if enabled
+        then it description do
+          testcaseName <.> "csv"
+            |> letestfnm2rules
+            |$> toLE
+            |$> goldenLE testcaseName
+        else it description $ pendingWith "Test case is disabled."
+    where
+      testcaseName = takeBaseName directory
 
-error2spec :: Error -> Spec
-error2spec Error {directory, info} = it directory $ pendingWith $ show info
+instance ToSpec Error where
+  toSpec Error {directory, info} = it directory $ pendingWith $ show info
 
 data Testcase = Testcase
   { directory :: FilePath,
@@ -91,3 +91,6 @@ data ErrorInfo where
 instance Show ErrorInfo where
   show MissingConfigFile = "Missing config.yml file."
   show (YamlParseExc parseExc) = [i|Error parsing YAML file: #{parseExc}|]
+
+class ToSpec a where
+  toSpec :: a -> Spec

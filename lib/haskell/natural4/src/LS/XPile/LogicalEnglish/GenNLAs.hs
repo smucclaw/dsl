@@ -20,7 +20,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , getNLAtxt
 
     , RegexTrav
-    , removeSubsumed
+    , removeInternallySubsumed
     , removeRegexMatches
     , regextravifyNLASection
     , regextravifyLENLA
@@ -167,29 +167,29 @@ regexTrav `matchesTxtOf` nlatxt = has regexTrav (view _MkNLATxt nlatxt)
 
 {- | Returns a set of non-subsumed NLAs
 Currently implemented in a somewhat naive way -}
-removeSubsumed :: HS.HashSet NLA -> HS.HashSet NLA
-removeSubsumed nlaset =
-  foldl' addIfNotSubsumed HS.empty nlasByNumVs
-    where
-      nlasByNumVs = sortWith (Down . (.numVars)) (toList nlaset)
-                    -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortOn
-      addIfNotSubsumed :: HS.HashSet NLA -> NLA -> HS.HashSet NLA
-      addIfNotSubsumed acc nla =
-        if any (nla `isSubsumedBy`) acc
-        then acc
-        else nla `setInsert` acc
+removeInternallySubsumed :: HS.HashSet NLA -> HS.HashSet NLA
+removeInternallySubsumed nlaset = foldl' addIfNotSubsumed HS.empty nlasByNumVs
+  where
+    nlasByNumVs = sortWith (Down . (.numVars)) (toList nlaset)
+                  -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortOn
+    addIfNotSubsumed :: HS.HashSet NLA -> NLA -> HS.HashSet NLA
+    addIfNotSubsumed acc nla =
+      if any (nla `isSubsumedBy`) acc
+      then acc
+      else nla `setInsert` acc
 
-{- | filter out NLATxts that are matched by any of the regex travs
+{- | filter out NLAs that are matched by any of the regex travs
 Use this for filtering out NLATxts that are subsumed by lib template NLAs
 -}
-removeRegexMatches :: (Foldable f, Foldable g) => f RegexTrav -> g NLATxt -> HS.HashSet NLATxt
+removeRegexMatches :: (Foldable f, Foldable g) => f RegexTrav -> g NLA -> HS.HashSet NLA
 removeRegexMatches regtravs = foldr addIfNotMatched HS.empty
   where
-    addIfNotMatched :: NLATxt -> HS.HashSet NLATxt -> HS.HashSet NLATxt
-    addIfNotMatched nlatxt acc =
-      if any (`matchesTxtOf` nlatxt) regtravs
+    addIfNotMatched :: NLA -> HS.HashSet NLA -> HS.HashSet NLA
+    addIfNotMatched nla acc =
+      if any (`matchesTxtOf` nla.getNLATxt') regtravs
+        --- i.e., if any of the regextravs matches the nlatext of the nla under consideration
       then acc
-      else nlatxt `setInsert` acc
+      else nla `setInsert` acc
 
 {- | For parsing lib templates, as well as templates from, e.g., unit tests
 -}

@@ -21,6 +21,7 @@ module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
+import Data.List (sort)
 -- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
@@ -31,7 +32,7 @@ import Prettyprinter
     Pretty (pretty))
 import LS.PrettyPrinter
     ( myrender)
-import LS.XPile.LogicalEnglish.Pretty(LEProg(..))
+import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt)
 
 -- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
@@ -50,8 +51,12 @@ import LS.XPile.LogicalEnglish.GenNLAs
     , NLATxt(..)
     , NLA
     , getNLAtxt 
-    , removeSubsumed
+    , RegexTrav
+    , removeInternallySubsumed
+    , regextravifyNLASection
+    , removeRegexMatches
     )
+
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
 
 -- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
@@ -95,8 +100,14 @@ toLE l4rules =
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-allNLAs :: [VarsHC] -> HS.HashSet NLA
-allNLAs = removeSubsumed . foldMap nlasFromVarsHC
+getNLAs :: Foldable g => g VarsHC -> HS.HashSet NLA
+getNLAs =  removeSubsumedByLibTemplates . removeInternallySubsumed . foldMap nlasFromVarsHC
+  where
+    libTemplatesRegTravs :: [RegexTrav]
+    libTemplatesRegTravs = regextravifyNLASection libTemplatesTxt
+
+    removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule
@@ -105,8 +116,9 @@ xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =
   let hcsVarsMarked :: [VarsHC] = map idVarsInHC simpL4HCs
       nlatxts :: [NLATxt]       = hcsVarsMarked 
-                                      & toListOf (to allNLAs 
+                                      & toListOf (to getNLAs 
                                                   % folded % to getNLAtxt)
+                                      & partsOf traversed %~ sort
       lehcs                     = map leHCFromVarsHC hcsVarsMarked
       leProgam                  = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
   in doc2str . pretty $ leProgam

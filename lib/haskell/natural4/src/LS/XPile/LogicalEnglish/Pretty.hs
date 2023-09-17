@@ -13,11 +13,10 @@
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty (LEProg(..)) where
+module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
--- import Data.Text qualified as T
-import Data.Foldable (toList)
+import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
 -- import Data.Coerce (coerce)
 import Data.String()
@@ -44,12 +43,11 @@ import LS.PrettyPrinter
 import Prettyprinter.Interpolate (__di)
 -- import Optics
 -- import Data.Set.Optics (setOf)
-import Data.List ( sort )
+-- import Data.List ( sort )
 
 
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.GenNLAs 
-  (NLATxt, RegexTrav, removeRegexMatches, regextravifyNLASection)
+import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       check, refine, loadRawL4AsUnvalid)
@@ -140,11 +138,16 @@ instance Pretty TxtAtomicBP where
 endWithDot txt = [__di|#{ txt }.|]
  
 instance Pretty LEProg where
+
+  {-
+  Preconditions: 
+    * The Pretty-ing code will not do any 'substantive' filtering: 
+        it expects that any required filtering of any of the constituent parts of LEProg (either the NLATxts or the LEhcs) will already have been done, prior to being passed into `pretty`
+  -}
   pretty :: forall ann. LEProg -> Doc ann
   pretty MkLEProg{..} =
     let 
-      filteredNLAtxts :: [NLATxt] = sort . toList . removeRegexMatches libTemplatesRegTravs $ nlatxts 
-      indentedNLAs    :: Doc ann  = endWithDot . nestVsepSeq . punctuate comma . map pretty $ filteredNLAtxts
+      indentedNLAs    :: Doc ann  = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlatxts
       prettyLEhcs     :: Doc ann  = vvsep $ map ((<> dot) . pretty) leHCs
                         {- ^ Assume commas and dots already replaced in NLAs and LEHcs
                           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
@@ -186,9 +189,15 @@ libTemplates =
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.|]
 
-libTemplatesRegTravs :: [RegexTrav]
-libTemplatesRegTravs = regextravifyNLASection . myrender $ libTemplates
+libTemplatesTxt :: T.Text
+libTemplatesTxt = T.strip . myrender $ libTemplates
+{- ^
+>>> libTemplatesTxt
+"*a var* is after *a var*,\n*a var* is before *a var*,\n*a var* is strictly after *a var*,\n*a var* is strictly before *a var*.\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*."
 
+The T.strip isn't currently necessary, 
+but it seems like a good thing to include to pre-empt any future issues from accidentally adding whitespace.
+-}
 
 libHCs :: Doc ann
 libHCs =

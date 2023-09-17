@@ -3,7 +3,6 @@
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards, NoFieldSelectors #-}
--- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia, DeriveAnyClass #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
@@ -20,9 +19,10 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , getNLAtxt
 
     , RegexTrav
-    , FilterResult
+    , FilterResult(..)
     , removeInternallySubsumed
     , removeRegexMatches
+    , removeDisprefdInEquivUpToVarNames
     , regextravifyNLASection
     , regextravifyLENLA
   )
@@ -61,7 +61,8 @@ import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
 -- import qualified Data.Sequence as Seq
-import Data.Sequences (intersperse, SemiSequence)
+import Data.Sequences (SemiSequence, intersperse) --groupAllOn
+import Data.List qualified as L
 import Data.MonoTraversable (Element)
 import Prettyprinter(Pretty)
 
@@ -174,12 +175,14 @@ removeInternallySubsumed :: HS.HashSet NLA -> HS.HashSet NLA
 removeInternallySubsumed nlaset = foldl' addIfNotSubsumed HS.empty nlasByNumVs
   where
     nlasByNumVs = sortWith (Down . (.numVars)) (toList nlaset)
-                  -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortOn
+                  -- See https://ro-che.info/articles/2016-04-02-descending-sort-haskell for why not sortBy (compare `on`
     addIfNotSubsumed :: HS.HashSet NLA -> NLA -> HS.HashSet NLA
     addIfNotSubsumed acc nla =
       if any (nla `isSubsumedBy`) acc
       then acc
       else nla `setInsert` acc
+
+-- filtering out subsumed by lib templates
 
 {- | filter out NLAs that are matched by any of the regex travs
 Use this for filtering out NLATxts that are subsumed by lib template NLAs
@@ -194,30 +197,7 @@ removeRegexMatches regtravs = foldr addIfNotMatched HS.empty
       then acc
       else nla `setInsert` acc
 
--- TODO: first pass; haven't fully thought thru the API I'd like yet
-data FilterResult a = MkFResult { subsumed :: a, kept :: a }
-
-{- Given an equiv class of (two or more) NLAs, remove the dispreferred in that class
-   Assumes (without checking!) that the class has > 1 NLA
--}
-removeDisprefdAmongEquivUpToVarNames :: HS.HashSet NLA -> FilterResult (HS.HashSet NLA)
-removeDisprefdAmongEquivUpToVarNames nlas =
-  let
-    maybeMaxNumChars :: Maybe Int = nlas & maximumOf (folded % to nlaAsTxt % to T.length)
-    fewerThanMaxNumChars :: T.Text -> Bool
-    fewerThanMaxNumChars txt = case maybeMaxNumChars of
-                                Just maxNumChars -> T.length txt < maxNumChars
-                                Nothing          -> False
-    isLessInformative :: T.Text -> Bool = T.isInfixOf "a number" <||> fewerThanMaxNumChars
-
-    subsumed :: HS.HashSet NLA = nlas & setOf (folded
-                                              % filteredBy (to nlaAsTxt % filtered isLessInformative))
-    kept :: HS.HashSet NLA = difference nlas subsumed
-      -- nlas & setOf (folded % filtered (\nla -> not $ HS.member nla subsumed)) 
-  in MkFResult subsumed kept
-
-{- | For parsing lib templates, as well as templates from, e.g., unit tests
--}
+{- | For parsing lib templates, as well as templates from, e.g., unit tests -}
 regextravifyNLASection :: T.Text -> [RegexTrav]
 regextravifyNLASection nlasectn =
   nlasectn
@@ -225,6 +205,28 @@ regextravifyNLASection nlasectn =
     & toListOf (traversed % to T.unsnoc
                 % folded % _1
                 % to regextravifyLENLA % _Right)
+
+-- filtering out dispreferred among the equivalent up to var names
+-- TODO: first pass; haven't fully thought thru the API yet
+data FilterResult a = MkFResult { subsumed :: a, kept :: a }
+  deriving (Eq, Show, Functor)
+
+instance Semigroup a => Semigroup (FilterResult a) where
+  MkFResult s1 k1 <> MkFResult s2 k2 =  MkFResult (s1 <> s2) (k1 <> k2)
+instance Monoid a => Monoid (FilterResult a) where
+  mempty = MkFResult mempty mempty
+
+{- | TODO: Add doctests/examples
+-}
+removeDisprefdInEquivUpToVarNames :: Foldable t => t NLA -> FilterResult [NLA]
+removeDisprefdInEquivUpToVarNames nlas =
+  let eqclasses :: [[NLA]] = L.groupBy isEquivUpToVarNames . L.sort . toList $ nlas
+                                                             -- Re sorting NLAs: recall that the Ord for an NLA delegates to the Ord for its NLATxt
+      makeFResult :: [NLA] -> FilterResult [NLA]
+      makeFResult eqclass = if length eqclass == 1
+                            then MkFResult {subsumed = mempty, kept = eqclass}
+                            else (fmap toList . removeDisprefdInEqClass) eqclass
+  in mconcat . fmap makeFResult $ eqclasses
 
 --- helpers
 
@@ -257,6 +259,24 @@ x `isEquivUpToVarNames` y = x.numVars == y.numVars && x.regex `matchesTxtOf` y.g
                             {- ^ the above two conditions imply also that y.regex `matchesTxtOf` x.getNLATxt'
                                  This could be made into a property test
                             -}
+
+{- Given an equiv class of (two or more) NLAs, remove the dispreferred in that class
+   Assumes (without checking!) that the class has > 1 NLA
+-}
+removeDisprefdInEqClass :: Foldable f => f NLA -> FilterResult (HS.HashSet NLA)
+removeDisprefdInEqClass nlas =
+  let
+    maybeMaxNumChars :: Maybe Int = nlas & maximumOf (folded % to nlaAsTxt % to T.length)
+    fewerThanMaxNumChars :: T.Text -> Bool
+    fewerThanMaxNumChars txt = case maybeMaxNumChars of
+                                Just maxNumChars -> T.length txt < maxNumChars
+                                Nothing          -> False
+    isLessInformative :: T.Text -> Bool = T.isInfixOf "a number" <||> fewerThanMaxNumChars
+
+    subsumed :: HS.HashSet NLA = nlas & setOf (folded
+                                              % filteredBy (to nlaAsTxt % filtered isLessInformative))
+    kept :: HS.HashSet NLA = difference (setOf folded nlas) subsumed
+  in MkFResult {subsumed=subsumed, kept=kept}
 
 
 -- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed

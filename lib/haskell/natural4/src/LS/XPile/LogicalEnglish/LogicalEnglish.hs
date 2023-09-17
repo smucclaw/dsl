@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -W #-}
 
 -- {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- {-# LANGUAGE QuasiQuotes #-}
@@ -21,12 +21,12 @@ module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
-import Data.List (sort)
+-- import Data.List (sort)
 -- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
 
-import Optics
+-- import Optics
 import Prettyprinter
   ( Doc,
     Pretty (pretty))
@@ -49,12 +49,14 @@ import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs 
     ( nlasFromVarsHC
     , NLATxt(..)
-    , NLA
-    , getNLAtxt 
+    , NLA 
+    , getNLAtxt
     , RegexTrav
+    , FilterResult(..)
     , removeInternallySubsumed
     , regextravifyNLASection
     , removeRegexMatches
+    , removeDisprefdInEquivUpToVarNames
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
@@ -100,14 +102,17 @@ toLE l4rules =
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-getNLAs :: Foldable g => g VarsHC -> HS.HashSet NLA
-getNLAs =  removeSubsumedByLibTemplates . removeInternallySubsumed . foldMap nlasFromVarsHC
+getNLATxtResults :: Foldable g => g VarsHC -> FilterResult [NLATxt]
+getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . foldMap nlasFromVarsHC
   where
+    removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
+    removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
+
     libTemplatesRegTravs :: [RegexTrav]
     libTemplatesRegTravs = regextravifyNLASection libTemplatesTxt
 
     removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
-    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule
@@ -115,12 +120,11 @@ simplifyL4rules = sequenceA . concatMap simplifyL4rule
 xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =
   let hcsVarsMarked :: [VarsHC] = map idVarsInHC simpL4HCs
-      nlatxts :: [NLATxt]       = hcsVarsMarked 
-                                      & toListOf (to getNLAs 
-                                                  % folded % to getNLAtxt)
-                                      & partsOf traversed %~ sort
+      nlatresults               = getNLATxtResults hcsVarsMarked
       lehcs                     = map leHCFromVarsHC hcsVarsMarked
-      leProgam                  = MkLEProg { nlatxts = nlatxts, leHCs = lehcs }
+      leProgam                  = MkLEProg { keptnlats =  nlatresults.kept, subsumednlats = nlatresults.subsumed
+                                           , leHCs = lehcs 
+                                           , commentSym = "%"}
   in doc2str . pretty $ leProgam
 
 

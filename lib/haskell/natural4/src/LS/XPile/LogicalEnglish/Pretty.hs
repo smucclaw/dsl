@@ -43,7 +43,7 @@ import LS.PrettyPrinter
 import Prettyprinter.Interpolate (__di)
 -- import Optics
 -- import Data.Set.Optics (setOf)
--- import Data.List ( sort )
+import Data.List ( sort )
 
 
 import LS.XPile.LogicalEnglish.Types
@@ -59,8 +59,10 @@ import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
 -------------------------------------------------------------------------------}
 
 
-data LEProg = MkLEProg {  nlatxts :: [NLATxt]
+data LEProg = MkLEProg {  keptnlats :: [NLATxt]
+                        , subsumednlats :: [NLATxt]
                         , leHCs   :: [LEhcPrint] 
+                        , commentSym :: T.Text
                         }
 
 
@@ -147,8 +149,9 @@ instance Pretty LEProg where
   pretty :: forall ann. LEProg -> Doc ann
   pretty MkLEProg{..} =
     let 
-      indentedNLAs    :: Doc ann  = endWithDot . nestVsepSeq . punctuate comma . map pretty $ nlatxts
-      prettyLEhcs     :: Doc ann  = vvsep $ map ((<> dot) . pretty) leHCs
+      indentedNLAs :: Doc ann  = endWithDot . nestVsepSeq . punctuate comma . map pretty . sort $ keptnlats
+      -- TODO: Add the equiv-up-to-var-names-but-subsumed NLAs as commented out NLAs!
+      prettyLEhcs  :: Doc ann  = vvsep $ map ((<> dot) . pretty) leHCs
                         {- ^ Assume commas and dots already replaced in NLAs and LEHcs
                           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
     in

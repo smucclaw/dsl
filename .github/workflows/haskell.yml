@@ -36,6 +36,15 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
+      - name: Install Ubuntu Prerequisites (libpcre)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get install libpcre3-dev
+      - name: Install MacOS Prerequisites (libpcre)
+        if: startsWith(matrix.os, 'macOS')
+        run: |
+          brew install pcre
+
       - name: Build explainable
         run: stack build
         working-directory: lib/haskell/explainable

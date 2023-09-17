@@ -1,19 +1,23 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields#-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, NoFieldSelectors #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE PatternSynonyms, DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms, ViewPatterns, DataKinds, GADTs #-}
+{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
 
 module LS.XPile.LogicalEnglish.Types (
     -- Common types 
       OrigVarName
     , BoolPropn(..)
     -- L4-related types
+    , InlineRPrel(..)
+    , RPnonPropAnaph  
+    , RParithComp
+    , RPothers
     , GVar(..)
     , GVarSet
     , Cell(..)
@@ -32,6 +36,7 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- Intermediate representation types
     , TemplateVar(..)
+    , _MatchGVar, _EndsInApos, _IsNum
     , OrigVarPrefix
     , OrigVarSeq
     , VarsHC(MkVarsFact,
@@ -44,11 +49,11 @@ module LS.XPile.LogicalEnglish.Types (
     , VarsRule
     , AtomicPWithVars
     , VCell(..)
+    , _TempVar, _Pred
 
     -- LE-related types
     , LEhcCell(..)
     , LEVar(..)
-    , NLACell(..)
     , NormdVars
     , NormalizedVar(..)
 
@@ -56,7 +61,6 @@ module LS.XPile.LogicalEnglish.Types (
     , TxtAtomicBP
 
     , LERule
-    , LENatLangAnnot(..)
     , LETemplateTxt(..)
     , UnivStatus(..)
 
@@ -65,9 +69,6 @@ module LS.XPile.LogicalEnglish.Types (
     , LEFactForPrint
     , LERuleForPrint
     , LEhcPrint(..)
-
-    -- Configuration and LE-specific consts
-    , LEProg(..)
 ) where
 
 
@@ -76,10 +77,15 @@ import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
 
+-- import Data.Coerce (coerce)
+
+-- import Data.Sequence.NonEmpty qualified as NESeq
+-- import Data.Sequence qualified as Seq (fromList)
 import Data.String (IsString)
 -- import LS.Rule as L4 (Rule(..))
 import Prettyprinter(Pretty)
-    
+
+import Optics.TH
 
 {- |
 Misc notes
@@ -137,6 +143,28 @@ data OpSuchTt = MaxXSuchThat
 {-------------------------------------------------------------------------------
   The L4-related data types
 -------------------------------------------------------------------------------}
+data RPnonPropAnaph
+data RParithComp
+data RPothers
+
+{- | 
+  Some RPs are supported by converting them to cases in other data structures
+  Some RPs are, by contrast, 'inlined'; the following are the 'inline' RPRels tt are supported by L4 -> LE transpiler
+
+  Having a GADT like this is useful for various reasons.
+  For example, it allows us to mark explicitly in the types which of the various RPRel types a function uses (because often, e.g., we only use a specific proper subset), 
+  and to avoid incomplete-pattern-matching errors from the compiler (i.e., to actually get the sort of compile-time guarantees we'd like)
+-}
+data InlineRPrel a where 
+  InlRPlt :: InlineRPrel RParithComp
+  InlRPlte :: InlineRPrel RParithComp
+  InlRPgt :: InlineRPrel RParithComp
+  InlRPgte :: InlineRPrel RParithComp
+
+  InlRPor :: InlineRPrel RPnonPropAnaph
+  InlRPand :: InlineRPrel RPnonPropAnaph
+
+  InlRPelem :: InlineRPrel RPothers
 
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
@@ -189,13 +217,14 @@ pattern MkL4FactHc{fgiven, fhead} =
                  , head = fhead})
 
 {-# COMPLETE MkL4FactHc, MkL4RuleHc #-}
+
 {-------------------------------------------------------------------------------
   Types for L4 -> LE / intermediate representation
 -------------------------------------------------------------------------------}
 -- | we only need text / strs to capture what the original var 'names' were, because what we will eventually be printing out strings!
 type OrigVarName = T.Text
-
 type OrigVarPrefix = T.Text
+
 {-| TemplateVars mark the places where we'd instantiate / substitute in the VCell / condition template to get either a natural language annotation or a LE rule. 
 They store the original text / var name in the cell so that that text can be transformed as needed when instantiating the VCell. -}
 data TemplateVar = MatchGVar !OrigVarName
@@ -207,6 +236,8 @@ data TemplateVar = MatchGVar !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
       deriving stock (Eq, Ord, Show)
       deriving (Generic, Hashable)
+makePrisms '' TemplateVar
+
 type TVarSet = HS.HashSet TemplateVar
 
 {- Got this error 
@@ -224,15 +255,12 @@ from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hasha
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
---TODO: Edit this / think thru it again when we get to this on Mon
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules.
 
 Things to note / think about:
 * One difference between NLAs and making LE rules: 
   Not all L4AtomicBPs will need to be converted to NLAs --- e.g., t1 is different from t2 already has a NLA in the fixed lib. 
   By contrast, we do need to be able to convert every L4AtomicP to a LE condition.
-* 
-
  -}
 data VarsHC = VhcF VarsFact | VhcR VarsRule
       deriving stock (Eq, Ord, Show)
@@ -262,40 +290,21 @@ pattern MkVarsRule{vrhead, vrbody}
   But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
   Also, it's helpful to have tt info for generating NLAs, 
   since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
-  To put it another way: NLAs are generated *from*, and only from, LamAbsBases.
+  
+  TODO: add more comments / references to the relevant code
  -}
 type AtomicPWithVars = AtomicBPropn VCell
 
-{-| This is best understood in the context of the other VarsX data types  -}
+{-| This is best understood in the context of the other VarsX data types -}
 data VCell = TempVar TemplateVar
            | Pred    !T.Text
           deriving stock (Eq, Ord, Show)
+          deriving (Generic, Hashable)
+makePrisms ''VCell
 
 {-------------------------------------------------------------------------------
   LE data types
 -------------------------------------------------------------------------------}
-
-data NLACell = MkParam !T.Text 
-             | MkNonParam !T.Text
-  deriving stock (Eq, Ord, Show)
-
-instance Semigroup NLACell where
-  MkParam l <> MkParam r = MkNonParam $ l <> r
-  MkParam l <> MkNonParam r = MkNonParam $ l <> r
-  MkNonParam l <> MkParam r = MkNonParam $ l <> r
-  MkNonParam l <> MkNonParam r = MkNonParam $ l <> r
-instance Monoid NLACell where
-  mempty = MkNonParam ""
-
-{- Another option, courtesy of `Mango IV.` from the Functional Programming discord:
-  deriving stock Generic
-  deriving (Semigroup, Monoid) via Generically NLACell 
-This requires a base that's shipped with ghc 94 or newer and and import Generically.
-But sticking to handwritten instance b/c it's easy enough, and to make the behavior explicit -}
-  
-newtype LENatLangAnnot = MkNLA T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable, Pretty)
 
 ---------------- For generating template instances / non-NLAs
 
@@ -303,11 +312,11 @@ data LEVar = VarApos !OrigVarPrefix
            | VarNonApos !OrigVarName
     deriving stock (Eq, Ord, Show)
 
-{-| The first prep step for generating TemplateTxts from LamAbs stuff involves simplifying LamAbsCells
+{-| The first prep step for generating LETemplateTxt from the intermediate stuff involves simplifying VCells
 -}
 data LEhcCell = VarCell LEVar 
               | NotVar !T.Text 
-                -- ^ i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
+                -- | i.e., not smtg tt we will ever need to check if we need to prefix with an 'a'
           deriving stock (Eq, Ord, Show)
           deriving (Generic)
 
@@ -345,18 +354,8 @@ type LERule = BaseRule (AtomicBPropn LEhcCell)
 type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus)
 type LERuleForPrint = BaseRule TxtAtomicBP
 
------ for pretty printing -------------------------------------------------------
 
 
-data LEProg = MkLEProg {  nlas :: [LENatLangAnnot]
-                        , leHCs :: [LEhcPrint] 
-                        }
-
---   docHeader    :: !T.Text
--- , nlasHeader :: !T.Text
--- , libHCsHeader :: !T.Text
--- , libHCs    :: forall ann. Doc ann
--- , hcsHeader :: !T.Text
 --- to remove once we are sure we won't want to go back to this way of doing this: 
 -- LE Rule
 -- data LERule a b = 

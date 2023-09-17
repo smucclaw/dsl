@@ -33,7 +33,7 @@ import Prettyprinter
     indent,
     nest,
     vsep,
-    -- (<+>),
+    (<+>),
     -- viaShow,
     -- encloseSep,
     concatWith,
@@ -58,9 +58,9 @@ import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
    L4 rules -> SimpleL4HCs -> VRules
 -------------------------------------------------------------------------------}
 
-
 data LEProg = MkLEProg {  keptnlats :: [NLATxt]
                         , subsumednlats :: [NLATxt]
+                          -- ^ this wouldn't be *all* of the filtered-out NLATxts -- just those that are equiv up to var names (and have the same number of vars)
                         , leHCs   :: [LEhcPrint] 
                         , commentSym :: T.Text
                         }
@@ -149,11 +149,18 @@ instance Pretty LEProg where
   pretty :: forall ann. LEProg -> Doc ann
   pretty MkLEProg{..} =
     let 
-      indentedNLAs :: Doc ann  = endWithDot . nestVsepSeq . punctuate comma . map pretty . sort $ keptnlats
-      -- TODO: Add the equiv-up-to-var-names-but-subsumed NLAs as commented out NLAs!
-      prettyLEhcs  :: Doc ann  = vvsep $ map ((<> dot) . pretty) leHCs
+      indentedNLAs :: Doc ann = endWithDot . nestVsepSeq . punctuate comma . map pretty . sort $ keptnlats
+      prettyLEhcs  :: Doc ann = vvsep $ map ((<> dot) . pretty) leHCs
                         {- ^ Assume commas and dots already replaced in NLAs and LEHcs
                           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
+
+      prependWithCommentOp :: Doc ann -> Doc ann = (pretty commentSym <+>)
+      removedNLAs          ::            Doc ann = vsep . map (prependWithCommentOp . pretty) $ subsumednlats
+      removedNLAsection    ::            Doc ann = if length subsumednlats > 0 
+                                                   then 
+                                                      line <> [__di|%% Some of the removed templates (just the equiv-up-to-var-names-with-same-num-vars ones):
+                                                        #{indentLE removedNLAs}|]
+                                                   else ""
     in
       [__di|
         the target language is: prolog.
@@ -161,6 +168,7 @@ instance Pretty LEProg where
         the templates are:
           #{indentedNLAs}
           #{nestLE libTemplates}
+        #{removedNLAsection}
 
         % Predefined stdlib for translating natural4 -> LE.
         the knowledge base prelude includes:

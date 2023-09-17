@@ -20,6 +20,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , getNLAtxt
 
     , RegexTrav
+    , FilterResult
     , removeInternallySubsumed
     , removeRegexMatches
     , regextravifyNLASection
@@ -50,9 +51,10 @@ import qualified Text.Regex.PCRE.Heavy as PCRE
 -- import Text.Regex.PCRE.Heavy()
 import Control.Lens.Regex.Text
 
+import Control.Applicative (liftA2)
 import Optics
 -- import Data.Text.Optics (unpacked)
--- import Data.Set.Optics (setOf)
+import Data.HashSet.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
@@ -191,6 +193,27 @@ removeRegexMatches regtravs = foldr addIfNotMatched HS.empty
       then acc
       else nla `setInsert` acc
 
+-- TODO: first pass; haven't fully thought thru the API I'd like yet
+data FilterResult a = MkFResult { subsumed :: a, kept :: a }
+
+{- Given an equiv class of (two or more) NLAs, remove the dispreferred in that class
+   Assumes (without checking!) that the class has > 1 NLA
+-}
+removeDisprefdAmongEquivUpToVarNames :: Foldable f => f NLA -> FilterResult (HS.HashSet NLA)
+removeDisprefdAmongEquivUpToVarNames nlas =
+  let
+    maybeMaxNumChars :: Maybe Int = nlas & maximumOf (folded % to nlaAsTxt % to T.length)
+    fewerThanMaxNumChars :: T.Text -> Bool
+    fewerThanMaxNumChars txt = case maybeMaxNumChars of
+                                Just maxNumChars -> T.length txt < maxNumChars
+                                Nothing          -> False
+    isLessInformative :: T.Text -> Bool = T.isInfixOf "a number" <||> fewerThanMaxNumChars
+
+    subsumed :: HS.HashSet NLA = nlas & setOf (folded
+                                              % filteredBy (to nlaAsTxt % filtered isLessInformative))
+    kept :: HS.HashSet NLA = nlas & setOf (folded % filtered (\nla -> not $ HS.member nla subsumed)) 
+  in MkFResult subsumed kept
+
 {- | For parsing lib templates, as well as templates from, e.g., unit tests
 -}
 regextravifyNLASection :: T.Text -> [RegexTrav]
@@ -217,7 +240,8 @@ Examples of NLAs that overlap:
   @
       Alice's blahed *a person* *hohoho* blah2
       Alice's2 blahed *a person* blah2
-  @                                             -}
+  @                                            
+  TODO: add / make the above doctests unit tests -}
 subsumes :: NLA -> NLA -> Bool
 x `subsumes` y =
   x.numVars > y.numVars && x.regex `matchesTxtOf` y.getNLATxt'
@@ -225,6 +249,13 @@ x `subsumes` y =
 
 isSubsumedBy :: NLA -> NLA -> Bool
 isSubsumedBy = flip subsumes
+
+isEquivUpToVarNames :: NLA -> NLA -> Bool
+x `isEquivUpToVarNames` y = x.numVars == y.numVars && x.regex `matchesTxtOf` y.getNLATxt'
+                            {- ^ the above two conditions imply also that y.regex `matchesTxtOf` x.getNLATxt'
+                                 This could be made into a property test
+                            -}
+
 
 -- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
 regextravifyLENLA :: T.Text -> Either String RegexTrav
@@ -297,3 +328,8 @@ From the LE handbook:
   An instance of a template is obtained from the template by replacing every parameter of the template by a list of words separated by spaces. 
   **There need not be any relationship between the words in a parameter and the words in the instance of the parameter. Different parameters in the same template can be replaced by different or identical instances.** (emphasis mine)
 -}
+
+-- | A lifted ('||').
+(<||>) :: Applicative f => f Bool -> f Bool -> f Bool
+(<||>) = liftA2 (||)
+{-# INLINE (<||>) #-}

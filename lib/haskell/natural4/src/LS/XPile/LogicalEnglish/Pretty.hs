@@ -18,7 +18,6 @@ module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt) where
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
--- import Data.Coerce (coerce)
 import Data.String()
 
 import Prettyprinter

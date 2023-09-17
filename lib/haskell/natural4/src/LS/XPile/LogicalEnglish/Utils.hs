@@ -10,7 +10,7 @@
 module LS.XPile.LogicalEnglish.Utils (setInsert) where
 
 -- import Data.Text qualified as T
-import Data.HashSet qualified as HS
+-- import Data.HashSet qualified as HS
 -- import Data.Hashable (Hashable, hashWithSalt, hashUsing)
 import Optics
 
@@ -19,6 +19,8 @@ but they can sometimes be hard to read / understand.
 The following functions provide more readable variants of those functions
 -}
 
+-- $setup
+-- >>> import Data.HashSet qualified as HS
 
 {- | Insert into __any__ kind of set
 

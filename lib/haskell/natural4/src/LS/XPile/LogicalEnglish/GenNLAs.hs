@@ -28,10 +28,12 @@ module LS.XPile.LogicalEnglish.GenNLAs (
   )
 where
 
+import LS.Utils ((<||>))
 import Data.Text qualified as T
 import Data.Ord (Down(..))
 import GHC.Exts (sortWith)
 import Data.HashSet qualified as HS
+import Data.Containers (difference)
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
 import Data.Foldable (fold, foldl', toList)
 import Data.Maybe (catMaybes)
@@ -51,7 +53,6 @@ import qualified Text.Regex.PCRE.Heavy as PCRE
 -- import Text.Regex.PCRE.Heavy()
 import Control.Lens.Regex.Text
 
-import Control.Applicative (liftA2)
 import Optics
 -- import Data.Text.Optics (unpacked)
 import Data.HashSet.Optics (setOf)
@@ -199,7 +200,7 @@ data FilterResult a = MkFResult { subsumed :: a, kept :: a }
 {- Given an equiv class of (two or more) NLAs, remove the dispreferred in that class
    Assumes (without checking!) that the class has > 1 NLA
 -}
-removeDisprefdAmongEquivUpToVarNames :: Foldable f => f NLA -> FilterResult (HS.HashSet NLA)
+removeDisprefdAmongEquivUpToVarNames :: HS.HashSet NLA -> FilterResult (HS.HashSet NLA)
 removeDisprefdAmongEquivUpToVarNames nlas =
   let
     maybeMaxNumChars :: Maybe Int = nlas & maximumOf (folded % to nlaAsTxt % to T.length)
@@ -211,7 +212,8 @@ removeDisprefdAmongEquivUpToVarNames nlas =
 
     subsumed :: HS.HashSet NLA = nlas & setOf (folded
                                               % filteredBy (to nlaAsTxt % filtered isLessInformative))
-    kept :: HS.HashSet NLA = nlas & setOf (folded % filtered (\nla -> not $ HS.member nla subsumed)) 
+    kept :: HS.HashSet NLA = difference nlas subsumed
+      -- nlas & setOf (folded % filtered (\nla -> not $ HS.member nla subsumed)) 
   in MkFResult subsumed kept
 
 {- | For parsing lib templates, as well as templates from, e.g., unit tests
@@ -328,8 +330,3 @@ From the LE handbook:
   An instance of a template is obtained from the template by replacing every parameter of the template by a list of words separated by spaces. 
   **There need not be any relationship between the words in a parameter and the words in the instance of the parameter. Different parameters in the same template can be replaced by different or identical instances.** (emphasis mine)
 -}
-
--- | A lifted ('||').
-(<||>) :: Applicative f => f Bool -> f Bool -> f Bool
-(<||>) = liftA2 (||)
-{-# INLINE (<||>) #-}

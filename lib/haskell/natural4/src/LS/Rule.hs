@@ -73,10 +73,24 @@ import Text.Megaparsec
 import Data.Graph.Inductive (Gr, empty)
 import LS.XPile.Logging (XPileLogW)
 import Optics hiding ((|>), has) -- the Rule record has a `has` field
-import Optics qualified as O (has)
+import Optics qualified as O
 
--- | [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
--- We should take advantage of NoFieldSelectors to reduce the hazards here
+{- | 
+[TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
+We should take advantage of NoFieldSelectors to reduce the hazards here
+
+
+The deriving Generics stuff allows us to do things like
+>>> O.has (_Ctor @"Regulative") defaultHorn
+False
+>>> O.has (_Ctor @"Regulative") defaultReg
+True
+
+as well as extracting givens from a rule in an easy way (see the Logical English code).
+
+See https://hackage.haskell.org/package/generic-optics-2.2.1.0/docs/Data-Generics-Sum-Constructors.html 
+for an explanation of how the Generics and optics stuff works
+-}
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , rkeyword :: RegKeywords               -- Every | Party | TokAll
@@ -183,24 +197,6 @@ data Rule = Regulative
 instance Hashable Rule
 
 type Parser = WriterT (DList Rule) PlainParser
-
-{-|
-See https://hackage.haskell.org/package/generic-optics-2.2.1.0/docs/Data-Generics-Sum-Constructors.html for an explanation of how this works
-Using Template Haskell to derive the prisms etc would probably be more performant, 
-but I think it'd require (at the very least) re-arranging the code
-
-Examples:
->>> isReg defaultReg
-True
-
->>> isReg defaultHorn
-False
--}
-isReg :: AsConstructor "Regulative" s s a a => s -> Bool
-isReg = O.has (_Ctor @"Regulative")
-
-isHlike :: AsConstructor "Hornlike" s s a a => s -> Bool
-isHlike = O.has (_Ctor @"Hornlike")
 
 
 -- | the more responsible version of head . words . show

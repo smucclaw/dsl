@@ -13,14 +13,11 @@
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty where
+module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
--- import Data.Text qualified as T
+import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
--- import Data.Hashable (Hashable)
--- import Data.Coerce (coerce)
--- import Data.Maybe (fromMaybe, listToMaybe)
 import Data.String()
 
 import Prettyprinter
@@ -35,16 +32,21 @@ import Prettyprinter
     indent,
     nest,
     vsep,
-    -- (<+>),
+    (<+>),
     -- viaShow,
     -- encloseSep,
     concatWith,
     dot)
 import LS.PrettyPrinter
-    ( vvsep, (<//>) )
+    ( vvsep, (<//>), myrender )
 import Prettyprinter.Interpolate (__di)
+-- import Optics
+-- import Data.Set.Optics (setOf)
+import Data.List ( sort )
+
 
 import LS.XPile.LogicalEnglish.Types
+import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       check, refine, loadRawL4AsUnvalid)
@@ -54,6 +56,14 @@ import LS.XPile.LogicalEnglish.Types
 {-------------------------------------------------------------------------------
    L4 rules -> SimpleL4HCs -> VRules
 -------------------------------------------------------------------------------}
+
+data LEProg = MkLEProg {  keptnlats :: [NLATxt]
+                        , subsumednlats :: [NLATxt]
+                          -- ^ this wouldn't be *all* of the filtered-out NLATxts -- just those that are equiv up to var names (and have the same number of vars)
+                        , leHCs   :: [LEhcPrint] 
+                        , commentSym :: T.Text
+                        }
+
 
 -- | config record for pretty printing
 data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int}
@@ -129,26 +139,39 @@ instance Pretty TxtAtomicBP where
 endWithDot txt = [__di|#{ txt }.|]
  
 instance Pretty LEProg where
-  pretty :: LEProg -> Doc ann
+
+  {-
+  Preconditions: 
+    * The Pretty-ing code will not do any 'substantive' filtering: 
+        it expects that any required filtering of any of the constituent parts of LEProg (either the NLATxts or the LEhcs) will already have been done, prior to being passed into `pretty`
+  -}
+  pretty :: forall ann. LEProg -> Doc ann
   pretty MkLEProg{..} =
-    
-    let indentedNLAs = endWithDot . nestVsepSeq . punctuate comma 
-                      . map pretty $ nlas
-                      -- assume list of NLAs is pre-sorted
-        prettyLEhcs   = vvsep $ map ((<> dot) . pretty) leHCs
-        {- ^ Assume commas and dots already replaced in NLAs and LEHcs
-           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
+    let 
+      indentedNLAs :: Doc ann = endWithDot . nestVsepSeq . punctuate comma . map pretty . sort $ keptnlats
+      prettyLEhcs  :: Doc ann = vvsep $ map ((<> dot) . pretty) leHCs
+                        {- ^ Assume commas and dots already replaced in NLAs and LEHcs
+                          (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
+
+      prependWithCommentOp :: Doc ann -> Doc ann = (pretty commentSym <+>)
+      removedNLAs          ::            Doc ann = vsep . map (prependWithCommentOp . pretty) $ subsumednlats
+      removedNLAsection    ::            Doc ann = if length subsumednlats > 0 
+                                                   then 
+                                                      line <> [__di|%% Some of the removed templates (just the equiv-up-to-var-names-with-same-num-vars ones):
+                                                        #{indentLE removedNLAs}|]
+                                                   else ""
     in
       [__di|
         the target language is: prolog.
 
         the templates are:
           #{indentedNLAs}
-          #{nestLE joeLibTemplates}
+          #{nestLE libTemplates}
+        #{removedNLAsection}
 
         % Predefined stdlib for translating natural4 -> LE.
         the knowledge base prelude includes:
-          #{nestLE joeLibHCs}
+          #{nestLE libHCs}
 
         the knowledge base encoding includes:
           #{nestLE prettyLEhcs}
@@ -157,25 +180,37 @@ instance Pretty LEProg where
           0 < 1.
       |]
 
-joeLibTemplates :: Doc ann
-joeLibTemplates =
+libTemplates :: Doc ann
+libTemplates =
   [__di|
+  *a var* is after *a var*,
+  *a var* is before *a var*,
+  *a var* is strictly after *a var*,
+  *a var* is strictly before *a var*.
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,
   *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
   *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
-  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*.
-
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,
   *a number* is a lower bound of *a list*,
   *a number* is an upper bound of *a list*,
   *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
   the sum of *a list* does not exceed the minimum of *a list*,
-  *a number* does not exceed the minimum of *a list*.
-  |]
+  *a number* does not exceed the minimum of *a list*.|]
 
-joeLibHCs :: Doc ann
-joeLibHCs =
+libTemplatesTxt :: T.Text
+libTemplatesTxt = T.strip . myrender $ libTemplates
+{- ^
+>>> libTemplatesTxt
+"*a var* is after *a var*,\n*a var* is before *a var*,\n*a var* is strictly after *a var*,\n*a var* is strictly before *a var*.\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*."
+
+The T.strip isn't currently necessary, 
+but it seems like a good thing to include to pre-empt any future issues from accidentally adding whitespace.
+-}
+
+libHCs :: Doc ann
+libHCs =
   [__di|
   % Note: LE's parsing of [H | T] is broken atm because it transforms that
   % into [H, T] rather than the Prolog term [H | T].
@@ -185,6 +220,20 @@ joeLibHCs =
   % a class's nested [a field | a fields] is a value
   % if the class's the field is an other class
   % and the other class's nested the fields is the value.
+
+  a d0 is before a d1
+  if d0 is a n days before d1
+  and n >= 0.
+
+  a d0 is strictly before a d1
+  if d0 is a n days before d1
+  and n > 0.
+
+  a d0 is after a d1
+  if d1 is before d0.
+
+  a d0 is strictly after a d1
+  if d1 is strictly before d0.
 
   % Nested accessor predicates.
   a class's a field0's a field1 is a value

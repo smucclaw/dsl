@@ -1,14 +1,13 @@
 {-# OPTIONS_GHC -W #-}
 
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLists #-}
+-- {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot #-}
+-- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-|
 
 We're trying to work with the rules / AST instead, 
@@ -22,19 +21,19 @@ module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
+-- import Data.List (sort)
 -- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
-import Data.List ( sort )
 
+-- import Optics
 import Prettyprinter
   ( Doc,
     Pretty (pretty))
 import LS.PrettyPrinter
     ( myrender)
-import LS.XPile.LogicalEnglish.Pretty()
+import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt)
 
--- import qualified AnyAll as AA
 -- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
@@ -47,7 +46,19 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
-import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
+import LS.XPile.LogicalEnglish.GenNLAs 
+    ( nlasFromVarsHC
+    , NLATxt(..)
+    , NLA 
+    , getNLAtxt
+    , RegexTrav
+    , FilterResult(..)
+    , removeInternallySubsumed
+    , regextravifyNLASection
+    , removeRegexMatches
+    , removeDisprefdInEquivUpToVarNames
+    )
+
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
 
 -- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
@@ -91,18 +102,29 @@ toLE l4rules =
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-allNLAs :: [VarsHC] -> HS.HashSet NLATxt
-allNLAs = foldMap nlasFromVarsHC
+getNLATxtResults :: Foldable g => g VarsHC -> FilterResult [NLATxt]
+getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . foldMap nlasFromVarsHC
+  where
+    removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
+    removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
+
+    libTemplatesRegTravs :: [RegexTrav]
+    libTemplatesRegTravs = regextravifyNLASection libTemplatesTxt
+
+    removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule
 
 xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =
-  let hcsVarsMarked = map idVarsInHC simpL4HCs
-      nlas          = sort . HS.toList . allNLAs $ hcsVarsMarked
-      lehcs         = map leHCFromVarsHC hcsVarsMarked
-      leProgam      = MkLEProg { nlas = nlas, leHCs = lehcs }
+  let hcsVarsMarked :: [VarsHC] = map idVarsInHC simpL4HCs
+      nlatresults               = getNLATxtResults hcsVarsMarked
+      lehcs                     = map leHCFromVarsHC hcsVarsMarked
+      leProgam                  = MkLEProg { keptnlats =  nlatresults.kept, subsumednlats = nlatresults.subsumed
+                                           , leHCs = lehcs 
+                                           , commentSym = "%"}
   in doc2str . pretty $ leProgam
 
 

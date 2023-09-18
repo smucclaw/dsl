@@ -1,16 +1,13 @@
 {-# OPTIONS_GHC -W #-}
 
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLists #-}
+-- {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot #-}
+-- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DeriveAnyClass #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-|
 
 We're trying to work with the rules / AST instead, 
@@ -21,54 +18,52 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 
-import Text.Pretty.Simple   ( pShowNoColor )
+-- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
-import Data.Bifunctor       ( first )
-import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
-import Data.Hashable (Hashable)
-import GHC.Generics (Generic)
-import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
-import Control.Monad.Identity ( Identity )
+-- import Data.List (sort)
+-- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
-import Data.String (IsString)
 import Data.Coerce (coerce)
-import Data.List ( sort )
 
+-- import Optics
 import Prettyprinter
   ( Doc,
     Pretty (pretty))
 import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), (<//>) )
-import Prettyprinter.Interpolate (__di)
+    ( myrender)
+import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt)
 
-
-import qualified AnyAll as AA
-import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR(..), BoolStructT)
+-- import LS.Types qualified as L4
+-- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.ValidateL4Input
-      (L4Rules, ValidHornls, Unvalidated,
-      check, refine, loadRawL4AsUnvalid, isHornlike)
-import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4hc) -- TODO: Add import list
+      (
+        isHornlike
+      --   L4Rules, ValidHornls, Unvalidated,
+      -- check, refine, loadRawL4AsUnvalid, 
+      )
+import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
-import LS.XPile.LogicalEnglish.GenNLAs (nlasFromVarsHC)
-import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
-import LS.XPile.LogicalEnglish.Pretty()
+import LS.XPile.LogicalEnglish.GenNLAs 
+    ( nlasFromVarsHC
+    , NLATxt(..)
+    , NLA 
+    , getNLAtxt
+    , RegexTrav
+    , FilterResult(..)
+    , removeInternallySubsumed
+    , regextravifyNLASection
+    , removeRegexMatches
+    , removeDisprefdInEquivUpToVarNames
+    )
 
-import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
+import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
+
+-- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
 {- 
-
-TODO: After we get a v simple end-to-end prototype out, 
-we'll add functionality for checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
-(This should be done with Monad.Validate or Data.Validation -- XPileLog isn't as good a fit for this.)
-The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages. 
-
-But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. 
-
 
 TODO: Add property based tests
   EG: 
@@ -77,50 +72,61 @@ TODO: Add property based tests
     * Take a randomly generated LamABs HC with vars that potentially have multiple occurrences and generate the LE HC from it. For every var in the HC, the 'a' prefix should only appear once.
     * There should be as many NLAs as leaves in the HC (modulo lib NLAs)
 
+
+TODO: Think abt doing more on the pre-validation front, e.g. checking the L4 input rules __upfront__ for things like whether it's using unsupported keywords, whether the input is well-formed by the lights of the translation rules, and so forth. 
+The thought is that if the upfront checks fail, we'll be able to exit gracefully and provide more helpful diagnostics / error messages. 
+But it might be enough to just do what we are currently doing with the validation in the simplifyL4 step
+
+But for now, we will help ourselves, undeservedly, to the assumption that the L4 input is wellformed. 
+
+
+TODO: Add some prevalidation stuff in the future, if time permits: 
+  * e.g., checking for typos (e.g., if there's something in a cell tt's very similar to but not exactly the same as a given var)
+
 -}
-
-
-{-------------------------------------------------------------------------------
-   L4 rules -> SimpleL4HCs -> LamAbsRules
--------------------------------------------------------------------------------}
-
--- | TODO: Work on implementing this and adding the Monad Validate or Data.Validation stuff instead of Maybe (i.e., rly doing checks upfront and carrying along the error messages and potential warnings) after getting enoguh of the main transpiler out
-checkAndRefine :: L4Rules Unvalidated -> Maybe (L4Rules ValidHornls)
-checkAndRefine rawrules = do
-  validatedL4rules <- check rawrules
-  pure $ refine validatedL4rules
 
 
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
 
--- | Generate LE Nat Lang Annotations from VarsHCs  
-allNLAs :: [VarsHC] -> HS.HashSet LENatLangAnnot
-allNLAs = foldMap nlasFromVarsHC
-
-
-simplifyL4hcs :: [L4.Rule] -> SimpL4 [SimpleL4HC]
-simplifyL4hcs = traverse simplifyL4hc . filter isHornlike
-{- ^ IMPT TODO: move `filter isHornlike` to prevalidation step when implementing that.
-  This is a temp hack to avoid crashes due to NatL4 app's poor architecture
--}
-
-xpileSimplifiedL4HCs :: [SimpleL4HC] -> String
-xpileSimplifiedL4HCs simpL4HCs =
-  let hcsVarsMarked = map idVarsInHC simpL4HCs
-      nlas          = sort . HS.toList . allNLAs $ hcsVarsMarked
-      lehcs         = map leHCFromVarsHC hcsVarsMarked
-      leProgam      = MkLEProg { nlas = nlas, leHCs = lehcs }
-  in doc2str . pretty $ leProgam
-
 toLE :: [L4.Rule] -> String
 toLE l4rules =
-  case runValidate . runSimpL4 . simplifyL4hcs $ l4rules of
+  case runAndValidate . simplifyL4rules . filter isHornlike $ l4rules of
     Left errors -> errs2str errors
-    Right hcs   -> xpileSimplifiedL4HCs hcs
+    Right hcs   -> xpileSimplifiedL4hcs hcs
   where
     errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
+    runAndValidate = runValidate . runSimpL4
+{- ^ TODO: think abt whether to do more on the pre-simplifyL4rules front
+-}
+
+-- | Generate LE Nat Lang Annotations from VarsHCs  
+getNLATxtResults :: Foldable g => g VarsHC -> FilterResult [NLATxt]
+getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . foldMap nlasFromVarsHC
+  where
+    removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
+    removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
+
+    libTemplatesRegTravs :: [RegexTrav]
+    libTemplatesRegTravs = regextravifyNLASection libTemplatesTxt
+
+    removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  
+
+simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
+simplifyL4rules = sequenceA . concatMap simplifyL4rule
+
+xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
+xpileSimplifiedL4hcs simpL4HCs =
+  let hcsVarsMarked :: [VarsHC] = map idVarsInHC simpL4HCs
+      nlatresults               = getNLATxtResults hcsVarsMarked
+      lehcs                     = map leHCFromVarsHC hcsVarsMarked
+      leProgam                  = MkLEProg { keptnlats =  nlatresults.kept, subsumednlats = nlatresults.subsumed
+                                           , leHCs = lehcs 
+                                           , commentSym = "%"}
+  in doc2str . pretty $ leProgam
+
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender

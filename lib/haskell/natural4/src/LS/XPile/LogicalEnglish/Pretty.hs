@@ -27,7 +27,6 @@ import Prettyprinter
     hsep,
     line,
     -- parens,
-    punctuate,
     list,
     indent,
     nest,
@@ -60,7 +59,7 @@ import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
 data LEProg = MkLEProg {  keptnlats :: [NLATxt]
                         , subsumednlats :: [NLATxt]
                           -- ^ this wouldn't be *all* of the filtered-out NLATxts -- just those that are equiv up to var names (and have the same number of vars)
-                        , leHCs   :: [LEhcPrint] 
+                        , leHCs   :: [LEhcPrint]
                         , commentSym :: T.Text
                         }
 
@@ -136,8 +135,19 @@ instance Pretty TxtAtomicBP where
     where
       prettyprop = hsep . map pretty
 
-endWithDot txt = [__di|#{ txt }.|]
- 
+-- endWithDot txt = [__di|#{ txt }.|]
+
+-- | Like punctuate from the pretty printer lib, except that this puts `p` at the end of every doc 
+punctuate'
+    :: Doc ann -- ^ Punctuation, e.g. 'comma'
+    -> [Doc ann]
+    -> [Doc ann]
+punctuate' p = go
+  where
+    go []     = []
+    go [d]    = [d <> p]
+    go (d:ds) = (d <> p) : go ds
+
 instance Pretty LEProg where
 
   {-
@@ -147,16 +157,16 @@ instance Pretty LEProg where
   -}
   pretty :: forall ann. LEProg -> Doc ann
   pretty MkLEProg{..} =
-    let 
-      indentedNLAs :: Doc ann = endWithDot . nestVsepSeq . punctuate comma . map pretty . sort $ keptnlats
+    let
+      indentedNLAs :: Doc ann = nestVsepSeq . punctuate' comma . map pretty . sort $ keptnlats
       prettyLEhcs  :: Doc ann = vvsep $ map ((<> dot) . pretty) leHCs
                         {- ^ Assume commas and dots already replaced in NLAs and LEHcs
                           (can't replace here b/c we sometimes do want the dot, e.g. for numbers) -}
 
       prependWithCommentOp :: Doc ann -> Doc ann = (pretty commentSym <+>)
       removedNLAs          ::            Doc ann = vsep . map (prependWithCommentOp . pretty) $ subsumednlats
-      removedNLAsection    ::            Doc ann = if length subsumednlats > 0 
-                                                   then 
+      removedNLAsection    ::            Doc ann = if not (null subsumednlats)
+                                                   then
                                                       line <> [__di|%% Some of the removed templates (just the equiv-up-to-var-names-with-same-num-vars ones):
                                                         #{indentLE removedNLAs}|]
                                                    else ""

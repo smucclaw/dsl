@@ -142,11 +142,7 @@ punctuate'
     :: Doc ann -- ^ Punctuation, e.g. 'comma'
     -> [Doc ann]
     -> [Doc ann]
-punctuate' p = go
-  where
-    go []     = []
-    go [d]    = [d <> p]
-    go (d:ds) = (d <> p) : go ds
+punctuate' p = map (<> p)
 
 instance Pretty LEProg where
 

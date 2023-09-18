@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -20,6 +20,7 @@ import Data.Text qualified as Text
 import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
+import Data.Generics.Sum.Constructors
 import LS.Types
   ( BoolStructP,
     BoolStructR,
@@ -71,9 +72,25 @@ import Text.Megaparsec
   )
 import Data.Graph.Inductive (Gr, empty)
 import LS.XPile.Logging (XPileLogW)
+import Optics hiding ((|>), has) -- the Rule record has a `has` field
+import Optics qualified as O
 
--- | [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
--- We should take advantage of NoFieldSelectors to reduce the hazards here
+{- | 
+[TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.
+We should take advantage of NoFieldSelectors to reduce the hazards here
+
+
+The deriving Generics stuff allows us to do things like
+>>> O.has (_Ctor @"Regulative") defaultHorn
+False
+>>> O.has (_Ctor @"Regulative") defaultReg
+True
+
+as well as extracting givens from a rule in an easy way (see the Logical English code).
+
+See https://hackage.haskell.org/package/generic-optics-2.2.1.0/docs/Data-Generics-Sum-Constructors.html 
+for an explanation of how the Generics and optics stuff works
+-}
 data Rule = Regulative
             { subj     :: BoolStructP               -- man AND woman AND child
             , rkeyword :: RegKeywords               -- Every | Party | TokAll
@@ -180,6 +197,7 @@ data Rule = Regulative
 instance Hashable Rule
 
 type Parser = WriterT (DList Rule) PlainParser
+
 
 -- | the more responsible version of head . words . show
 ruleConstructor :: Rule -> String

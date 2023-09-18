@@ -1,4 +1,4 @@
 GIVEN,total savings,IS A,Total Savings
-,initial savings,IS A,Initial Savings
+,you,IS A,Person
 DECIDE,total savings,IS,100
-IF,initial savings,IS,22.5
+IF,you,are a member of,this bank

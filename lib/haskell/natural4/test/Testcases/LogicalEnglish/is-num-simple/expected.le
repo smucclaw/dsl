@@ -1,7 +1,8 @@
 the target language is: prolog.
 
 the templates are:
-  .
+  *a total savings* is *a number*,
+  *a you* are a member of this bank,
   *a var* is after *a var*,
   *a var* is before *a var*,
   *a var* is strictly after *a var*,
@@ -18,9 +19,6 @@ the templates are:
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.
 
-%% Some of the removed templates (just the equiv-up-to-var-names-with-same-num-vars ones):
-  % *a initial savings* is *a number*
-  % *a total savings* is *a number*
 
 % Predefined stdlib for translating natural4 -> LE.
 the knowledge base prelude includes:
@@ -104,7 +102,7 @@ the knowledge base prelude includes:
 
 the knowledge base encoding includes:
   a total savings is 100
-  if a initial savings is 22.5.
+  if a you are a member of this bank.
 
 query q is:
   0 < 1.

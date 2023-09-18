@@ -1,19 +1,26 @@
 the target language is: prolog.
 
 the templates are:
-  *a var* is *a var*.
+  .
+  *a var* is after *a var*,
+  *a var* is before *a var*,
+  *a var* is strictly after *a var*,
+  *a var* is strictly before *a var*.
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,
   *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
   *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
-  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*.
-
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,
   *a number* is a lower bound of *a list*,
   *a number* is an upper bound of *a list*,
   *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.
+
+%% Some of the removed templates (just the equiv-up-to-var-names-with-same-num-vars ones):
+  % *a initial savings* is *a number*
+  % *a total savings* is *a number*
 
 % Predefined stdlib for translating natural4 -> LE.
 the knowledge base prelude includes:
@@ -25,6 +32,20 @@ the knowledge base prelude includes:
   % a class's nested [a field | a fields] is a value
   % if the class's the field is an other class
   % and the other class's nested the fields is the value.
+
+  a d0 is before a d1
+  if d0 is a n days before d1
+  and n >= 0.
+
+  a d0 is strictly before a d1
+  if d0 is a n days before d1
+  and n > 0.
+
+  a d0 is after a d1
+  if d1 is before d0.
+
+  a d0 is strictly after a d1
+  if d1 is strictly before d0.
 
   % Nested accessor predicates.
   a class's a field0's a field1 is a value

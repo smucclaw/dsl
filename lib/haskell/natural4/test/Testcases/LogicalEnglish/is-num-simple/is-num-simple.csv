@@ -1,0 +1,4 @@
+GIVEN,total savings,IS A,Total Savings
+,you,IS A,Person
+DECIDE,total savings,IS,100
+IF,you,are a member of,this bank

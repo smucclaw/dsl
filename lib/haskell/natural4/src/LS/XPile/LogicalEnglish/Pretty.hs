@@ -176,14 +176,11 @@ instance Pretty LEProg where
         #{removedNLAsection}
 
         % Predefined stdlib for translating natural4 -> LE.
-        the knowledge base prelude includes:
+        the knowledge base lib includes:
           #{nestLE libHCs}
 
-        the knowledge base encoding includes:
+        the knowledge base rules includes:
           #{nestLE prettyLEhcs}
-      
-        query q is:
-          0 < 1.
       |]
 
 -- | Templates which are predefined in LE itself, and hence should not be
@@ -211,6 +208,11 @@ builtinTemplatesTxt = T.strip . myrender $ builtinTemplates
 libTemplates :: Doc ann
 libTemplates =
   [__di|
+  *a number* <= *a number*,
+  *a date* is before *a date*,
+  *a date* is after *a date*,
+  *a date* is strictly before *a date*,
+  *a date* is strictly after *a date*,
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,
@@ -236,6 +238,9 @@ but it seems like a good thing to include to pre-empt any future issues from acc
 libHCs :: Doc ann
 libHCs =
   [__di|
+  a number <= an other number
+  if number =< other number.
+
   % Note: LE's parsing of [H | T] is broken atm because it transforms that
   % into [H, T] rather than the Prolog term [H | T].
 

@@ -3,6 +3,11 @@ the target language is: prolog.
 the templates are:
   *a total savings* is *a number*,
   *a you* are a member of this bank,
+  *a number* <= *a number*,
+  *a date* is before *a date*,
+  *a date* is after *a date*,
+  *a date* is strictly before *a date*,
+  *a date* is strictly after *a date*,
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,
@@ -17,7 +22,10 @@ the templates are:
 
 
 % Predefined stdlib for translating natural4 -> LE.
-the knowledge base prelude includes:
+the knowledge base lib includes:
+  a number <= an other number
+  if number =< other number.
+
   % Note: LE's parsing of [H | T] is broken atm because it transforms that
   % into [H, T] rather than the Prolog term [H | T].
 
@@ -96,9 +104,6 @@ the knowledge base prelude includes:
   if a x is the sum of list 
   and x does not exceed the minimum of other list.
 
-the knowledge base encoding includes:
+the knowledge base rules includes:
   a total savings is 100
   if a you are a member of this bank.
-
-query q is:
-  0 < 1.

@@ -32,7 +32,7 @@ import Prettyprinter
     Pretty (pretty))
 import LS.PrettyPrinter
     ( myrender)
-import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt)
+import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt, builtinTemplatesTxt)
 
 -- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
@@ -109,7 +109,9 @@ getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . fold
     removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
 
     libTemplatesRegTravs :: [RegexTrav]
-    libTemplatesRegTravs = regextravifyNLASection libTemplatesTxt
+    libTemplatesRegTravs =
+      regextravifyNLASection $
+        T.unlines [libTemplatesTxt, builtinTemplatesTxt]
 
     removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  

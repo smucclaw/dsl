@@ -3,10 +3,6 @@ the target language is: prolog.
 the templates are:
   *a total savings* is *a number*,
   *a you* are a member of this bank,
-  *a var* is after *a var*,
-  *a var* is before *a var*,
-  *a var* is strictly after *a var*,
-  *a var* is strictly before *a var*.
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,

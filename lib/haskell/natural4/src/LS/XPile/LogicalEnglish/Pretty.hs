@@ -13,7 +13,7 @@
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt) where
+module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt, builtinTemplatesTxt) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
@@ -186,13 +186,31 @@ instance Pretty LEProg where
           0 < 1.
       |]
 
+-- | Templates which are predefined in LE itself, and hence should not be
+-- included in the LE output.
+builtinTemplates :: Doc ann
+builtinTemplates =
+  [__di|
+  *a number* < *a number*,
+  *a number* > *a number*,
+  *a number* =< *a number*,
+  *a number* >= *a number*,
+  *a number* = *a number*,
+  *a date* is *a n* days before *a date*,
+  *a date* is *a n* days after *a date*,
+  *a date* is *a n* weeks before *a date*,
+  *a date* is *a n* weeks after *a date*,
+  *a date* is *a n* months before *a date*,
+  *a date* is *a n* months after *a date*, 
+  *a date* is *a n* years before *a date*, 
+  *a date* is *a n* years after *a date*|]
+
+builtinTemplatesTxt :: T.Text
+builtinTemplatesTxt = T.strip . myrender $ builtinTemplates
+
 libTemplates :: Doc ann
 libTemplates =
   [__di|
-  *a var* is after *a var*,
-  *a var* is before *a var*,
-  *a var* is strictly after *a var*,
-  *a var* is strictly before *a var*.
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,

@@ -1,0 +1,12 @@
+the target language is: prolog.
+
+the templates are:
+  *a x* is twice of *a y*.
+
+the knowledge base encoding includes:
+  a x is twice of a y
+  if y is between 0 & 100
+  and x is the product of [y, 2].
+
+query q is:
+  which number is twice of which other number.

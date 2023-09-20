@@ -1,0 +1,5 @@
+GIVEN,bleh bleh,IS A,Blehasaurus,,
+,percentage,IS A,Number,,
+DECIDE,bleh bleh's,additional percentage,,IS,percentage
+IF,percentage,IS,MIN,0.25,
+,,,,0.05 * n,

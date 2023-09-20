@@ -1,0 +1,25 @@
+,GIVEN,d0,IS A,Number
+,,d1,IS A,Number
+,,n,IS A,Number
+,DECIDE,d0,IS,before,d1
+,IF,d0,IS,n,days,before,d1
+,AND,n,>=,0,,,
+,,,,,,,
+,GIVEN,d0,IS A,Date,,,
+,,d1,IS A,Date,,,
+,,n,IS A,Number,,,
+,DECIDE,d0,IS,strictly before,,d1,
+,IF,d0,IS,n,days before,,d1
+,AND,n,>,0,,,
+,,,,,,,
+,GIVEN,d0,IS A,Date,,,
+,,d1,IS A,Date,,,
+,DECIDE,d0,IS,after,d1,,
+,IF,d1,IS,before,d0,,
+,,,,,,,
+,GIVEN,d0,IS A,Date,,,
+,,d1,IS A,Date,,,
+,DECIDE,d0,IS,strictly after,,d1,
+,IF,d1,IS,strictly before,,d0,
+,,,,,,,
+,,,,,,,

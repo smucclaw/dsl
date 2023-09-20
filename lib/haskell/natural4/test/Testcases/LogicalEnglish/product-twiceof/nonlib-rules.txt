@@ -1,3 +1,4 @@
 a x is twice of a y
-if y is between 0 & 100
+if y >= 0
+and y <= 100
 and x is the product of [y, 2].

@@ -182,6 +182,13 @@ pattern TermIsOpOfAtomicTerms op result args <- RPnary RPis (RPMT [result] : [RP
   where TermIsOpOfAtomicTerms op result args = RPnary RPis (RPMT [result] : [RPnary op args])
   -- needed b/c GHC can't infer tt this is invertible if OverloadedLists extn is enabled
 
+pattern T1IsInT2 :: MTExpr -> MTExpr -> RelationalPredicate
+pattern T1IsInT2 t1 t2 <- RPnary RPis [ (RPMT [t1])
+                                      , RPnary RPelem 
+                                            [ RPMT
+                                              [t2] ]]
+  where T1IsInT2 t1 t2 = RPnary RPis [ (RPMT [t1]), RPnary RPelem [ RPMT [t2] ]]
+
 pattern TotalIsSumTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
 pattern TotalIsProductTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
 pattern TermIsMax :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
@@ -242,15 +249,24 @@ t IS SUM t1 t2 ... tn:
                     ]])
 
 t IS MIN t1 t2 .. tn:
-            ( RPnary RPis
+        ( RPnary RPis
+            [ RPMT
+                [ MTT "amountsaved" ]
+            , RPnary RPmin
                 [ RPMT
-                    [ MTT "amountsaved" ]
-                , RPnary RPmin
-                    [ RPMT
-                        [ MTT "1.5 * initial savings" ]
-                    , RPMT
-                        [ MTI 1000 ]
-                    ]])
+                    [ MTT "1.5 * initial savings" ]
+                , RPMT
+                    [ MTI 1000 ]
+                ]])
+
+t1 IS IN t2:
+        ( RPnary RPis
+            [ RPMT
+                [ MTT "thing" ]
+            , RPnary RPelem
+                [ RPMT
+                    [ MTT "set of things" ]
+                ] ] )
 -}
 
 simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m => 
@@ -271,8 +287,10 @@ simplifybodyRP = \case
   TotalIsSumTerms total summandRPs   -> termIsNaryOpOf SumOf total summandRPs
   TotalIsProductTerms total argRPs   -> termIsNaryOpOf ProductOf total argRPs
 
+  -- t1 is not t2 / t1 is in t2
   T1IsNotT2 t1 t2                    -> pure $ MkIsDiffFr (mte2cell t1) (mte2cell t2)
-
+  T1IsInT2  t1 t2                    -> pure $ MkIsIn     (mte2cell t1) (mte2cell t2)
+  
   RPnary{}                           -> refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
   RPBoolStructR {}                   -> refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
   RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]

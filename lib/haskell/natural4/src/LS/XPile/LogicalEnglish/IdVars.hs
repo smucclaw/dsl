@@ -32,19 +32,9 @@ idVarsInHC = \case
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
-idVarsInAP gvars = \case
-  ABPatomic cells ->
-    ABPatomic $ fmap mkVcell cells
-  ABPIsDiffFr t1 t2 ->
-    ABPIsDiffFr (cell2vcell gvars t1)
-                (cell2vcell gvars t2)
-  ABPIsOpOf t opOf termargs ->
-    ABPIsOpOf (cell2vcell gvars t) opOf (fmap mkVcell termargs)
-  ABPIsOpSuchTt t opST cells ->
-    ABPIsOpSuchTt (cell2vcell gvars t) opST
-                  (fmap mkVcell cells)
+idVarsInAP gvars = fmap makeVCell
   where
-    mkVcell = cell2vcell gvars
+    makeVCell = cell2vcell gvars
 
 -- | Replace "." with "dot" and "," with "comma", in the Pred txts of ABPatomics
 postprocAP :: AtomicPWithVars -> AtomicPWithVars

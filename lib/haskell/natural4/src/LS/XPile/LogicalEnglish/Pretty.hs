@@ -126,6 +126,8 @@ instance Pretty TxtAtomicBP where
   pretty = \case
     ABPatomic prop ->
       prettyprop prop
+    ABPIsIn t1 t2 ->
+      [__di|#{pretty t1} is in #{pretty t2}|]
     ABPIsDiffFr t1 t2 ->
       [__di|#{pretty t1} is different from #{pretty t2}|]
     ABPIsOpOf t1 opof targs ->

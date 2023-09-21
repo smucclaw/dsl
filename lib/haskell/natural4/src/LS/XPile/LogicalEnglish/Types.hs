@@ -33,6 +33,7 @@ module LS.XPile.LogicalEnglish.Types (
     , pattern MkIsOpSuchTtBP
     , pattern MkIsOpOf
     , pattern MkIsDiffFr
+    , pattern MkIsIn
 
     -- Intermediate representation types
     , TemplateVar(..)
@@ -115,6 +116,7 @@ In particular, it includes not only variables but also atoms.
 -}
 data AtomicBPropn term =
     ABPatomic [term]
+  | ABPIsIn term term
   | ABPIsDiffFr term term
     -- ^ Note: the encoding has a few rules that use an atom in the rightmost term
   | ABPIsOpOf term OpOf [term]
@@ -185,6 +187,9 @@ pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
 
 pattern MkIsOpSuchTtBP :: L4Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicP
 pattern MkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
+
+pattern MkIsIn :: L4Term -> L4Term -> BoolPropn L4AtomicP
+pattern MkIsIn t1 t2 = AtomicBP (ABPIsIn t1 t2)
 
 pattern MkIsDiffFr :: L4Term -> L4Term -> BoolPropn L4AtomicP
 pattern MkIsDiffFr t1 t2 = AtomicBP (ABPIsDiffFr t1 t2)

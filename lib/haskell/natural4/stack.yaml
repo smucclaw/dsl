@@ -32,7 +32,7 @@ extra-deps:
 # ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: 907230d8d662d407463de09e6996619c61d263ef
+  commit: b636f9ec6045b3cfc2c82c87621b84d02d0e6e5c
 
 - github: smucclaw/gf-core
   commit: 8c945802a9a3f13e676d2d838c511d3b30c5511f

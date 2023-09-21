@@ -301,13 +301,13 @@ simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
 simpbodRPC exprsl exprsr = \case
   RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
 
-  RPor  -> pure $ simBodRPCboolop InlRPor exprsl exprsr
-  RPand -> pure $ simBodRPCboolop InlRPand exprsl exprsr
+  RPor  -> pure $ simBodRPCboolop RpcRPor exprsl exprsr
+  RPand -> pure $ simBodRPCboolop RpcRPand exprsl exprsr
 
-  RPlt  -> pure $ simBodRPCarithcomp InlRPlt exprsl exprsr 
-  RPlte -> pure $ simBodRPCarithcomp InlRPlte exprsl exprsr 
-  RPgt  -> pure $ simBodRPCarithcomp InlRPgt exprsl exprsr 
-  RPgte -> pure $ simBodRPCarithcomp InlRPgte exprsl exprsr 
+  RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr 
+  RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr 
+  RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr 
+  RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr 
   
   _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
 
@@ -321,25 +321,25 @@ simpbodRPC exprsl exprsr = \case
                 [ MTT "luck, fate", MTT "acts of god or any similar event"]
             )
           )                           -}
-simBodRPCboolop :: InlineRPrel RPnonPropAnaph -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+simBodRPCboolop :: RpcRPrel RPnonPropAnaph -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 simBodRPCboolop anaOp exprsl exprsr = 
   let 
       withLefts :: MTExpr -> BoolPropn L4AtomicP
       withLefts exprr = MkTrueAtomicBP (mtes2cells exprsl <> [mte2cell exprr])
   in case anaOp of 
-    InlRPor  -> Or (map withLefts exprsr)
-    InlRPand -> And (map withLefts exprsr) 
+    RpcRPor  -> Or (map withLefts exprsr)
+    RpcRPand -> And (map withLefts exprsr) 
   
-simBodRPCarithcomp :: InlineRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 simBodRPCarithcomp comp exprsl exprsr = 
   MkTrueAtomicBP (mtes2cells exprsl <> [MkCellT (comp2txt comp)] <> mtes2cells exprsr)
   where 
-    comp2txt :: InlineRPrel RParithComp -> T.Text
+    comp2txt :: RpcRPrel RParithComp -> T.Text
     comp2txt = \case
-      InlRPlt  -> "<"
-      InlRPlte -> "<=" 
-      InlRPgt  -> ">"   
-      InlRPgte -> ">="  
+      RpcRPlt  -> "<"
+      RpcRPlte -> "<=" 
+      RpcRPgt  -> ">"   
+      RpcRPgte -> ">="  
 
 
 {-------------------------------------------------------------------------------

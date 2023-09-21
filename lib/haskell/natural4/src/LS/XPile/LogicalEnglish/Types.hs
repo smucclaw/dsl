@@ -14,7 +14,7 @@ module LS.XPile.LogicalEnglish.Types (
       OrigVarName
     , BoolPropn(..)
     -- L4-related types
-    , InlineRPrel(..)
+    , RpcRPrel(..)
     , RPnonPropAnaph  
     , RParithComp
     , RPothers
@@ -148,23 +148,21 @@ data RParithComp
 data RPothers
 
 {- | 
-  Some RPs are supported by converting them to cases in other data structures
-  Some RPs are, by contrast, 'inlined'; the following are the 'inline' RPRels tt are supported by L4 -> LE transpiler
+ Some of the RPRels appear in a RPConstraint.
+ Of those RPConstraint RPRels, these are the ones tt are supported by L4 -> LE transpiler
 
   Having a GADT like this is useful for various reasons.
   For example, it allows us to mark explicitly in the types which of the various RPRel types a function uses (because often, e.g., we only use a specific proper subset), 
   and to avoid incomplete-pattern-matching errors from the compiler (i.e., to actually get the sort of compile-time guarantees we'd like)
 -}
-data InlineRPrel a where 
-  InlRPlt :: InlineRPrel RParithComp
-  InlRPlte :: InlineRPrel RParithComp
-  InlRPgt :: InlineRPrel RParithComp
-  InlRPgte :: InlineRPrel RParithComp
+data RpcRPrel a where 
+  RpcRPlt :: RpcRPrel RParithComp
+  RpcRPlte :: RpcRPrel RParithComp
+  RpcRPgt :: RpcRPrel RParithComp
+  RpcRPgte :: RpcRPrel RParithComp
 
-  InlRPor :: InlineRPrel RPnonPropAnaph
-  InlRPand :: InlineRPrel RPnonPropAnaph
-
-  InlRPelem :: InlineRPrel RPothers
+  RpcRPor :: RpcRPrel RPnonPropAnaph
+  RpcRPand :: RpcRPrel RPnonPropAnaph
 
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text

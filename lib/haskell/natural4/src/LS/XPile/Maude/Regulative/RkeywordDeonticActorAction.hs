@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Maude.Regulative.RkeywordDeonticActorAction

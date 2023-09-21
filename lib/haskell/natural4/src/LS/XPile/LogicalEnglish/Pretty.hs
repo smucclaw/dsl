@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
@@ -19,6 +20,7 @@ module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt, builtinTempl
 import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
 import Data.String()
+import Data.String.Interpolate (__i)
 
 import Prettyprinter
   ( Doc,
@@ -38,7 +40,7 @@ import Prettyprinter
     dot)
 import LS.PrettyPrinter
     ( vvsep, (<//>), myrender )
-import Prettyprinter.Interpolate (__di)
+import Prettyprinter.Interpolate (__di, di)
 -- import Optics
 -- import Data.Set.Optics (setOf)
 import Data.List ( sort )
@@ -187,25 +189,28 @@ instance Pretty LEProg where
 
 -- | Templates which are predefined in LE itself, and hence should not be
 -- included in the LE output.
-builtinTemplates :: Doc ann
-builtinTemplates =
-  [__di|
-  *a number* < *a number*,
-  *a number* > *a number*,
-  *a number* =< *a number*,
-  *a number* >= *a number*,
-  *a number* = *a number*,
-  *a date* is *a n* days before *a date*,
-  *a date* is *a n* days after *a date*,
-  *a date* is *a n* weeks before *a date*,
-  *a date* is *a n* weeks after *a date*,
-  *a date* is *a n* months before *a date*,
-  *a date* is *a n* months after *a date*, 
-  *a date* is *a n* years before *a date*, 
-  *a date* is *a n* years after *a date*|]
-
 builtinTemplatesTxt :: T.Text
-builtinTemplatesTxt = T.strip . myrender $ builtinTemplates
+builtinTemplatesTxt =
+  [__i|
+  *a thing* is in *a thing*,
+  #{nlas}.|]
+  where
+    nlas = concatNLAList $ mconcat [mathNLAList, dateNLAList]
+
+    concatNLAList :: [Doc ann] -> Doc ann
+    concatNLAList = concatWith \x y -> mconcat [x, ",\n", y]
+
+    mathNLAList = do
+      binOp :: Doc ann <- ["<", ">", "=<", ">=", "="]
+      return [di|*a number* #{binOp} *a number*|]
+
+    dateNLAList = do
+      timeUnit :: Doc ann <- ["days", "weeks", "months", "years"]
+      beforeAfter :: Doc ann <- ["before", "after"]
+      return [di|*a date* is *a n* #{timeUnit} #{beforeAfter} *a date*|]
+
+-- >>> builtinTemplatesTxt
+-- "*a number* < *a number*,\n*a number* > *a number*,\n*a number* =< *a number*,\n*a number* >= *a number*,\n*a number* = *a number*,\n*a thing* is in *a thing*,\n\n        *a date* is *a n* days before *a date*,\n        \n        *a date* is *a n* days after *a date*,\n        \n        *a date* is *a n* weeks before *a date*,\n        \n        *a date* is *a n* weeks after *a date*,\n        \n        *a date* is *a n* months before *a date*,\n        \n        *a date* is *a n* months after *a date*,\n        \n        *a date* is *a n* years before *a date*,\n        *a date* is *a n* years after *a date*\n      \n      \n      \n      \n      \n      \n      ."
 
 libTemplates :: Doc ann
 libTemplates =

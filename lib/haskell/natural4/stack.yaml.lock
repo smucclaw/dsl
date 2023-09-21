@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 8f28e435c93e35647dd32d1663904ae079b4212934506a81a38d5cf20bee0a55
+      sha256: 19a26d3a9f257dad813542072d8979763b29b72a3f87cd451f472d4215d358e3
       size: 12537
-    sha256: 78721f19fe91843f4f9a9cb51f698273c75952485718860ec262c1b9780a19d8
-    size: 3188775
-    url: https://github.com/smucclaw/baby-l4/archive/907230d8d662d407463de09e6996619c61d263ef.tar.gz
+    sha256: 843feb1ec4ccf965343262aa686ad7fa07c790a9d3145336ef9b1a62de8e17e4
+    size: 3188639
+    url: https://github.com/smucclaw/baby-l4/archive/b636f9ec6045b3cfc2c82c87621b84d02d0e6e5c.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/907230d8d662d407463de09e6996619c61d263ef.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/b636f9ec6045b3cfc2c82c87621b84d02d0e6e5c.tar.gz
 - completed:
     name: gf
     pantry-tree:

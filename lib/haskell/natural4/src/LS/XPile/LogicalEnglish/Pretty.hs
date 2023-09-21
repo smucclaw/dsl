@@ -14,13 +14,12 @@
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt, builtinTemplatesTxt) where
+module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libAndBuiltinTemplates) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
 import Data.String()
-import Data.String.Interpolate (__i)
 
 import Prettyprinter
   ( Doc,
@@ -44,7 +43,6 @@ import Prettyprinter.Interpolate (__di, di)
 -- import Optics
 -- import Data.Set.Optics (setOf)
 import Data.List ( sort )
-
 
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
@@ -189,9 +187,9 @@ instance Pretty LEProg where
 
 -- | Templates which are predefined in LE itself, and hence should not be
 -- included in the LE output.
-builtinTemplatesTxt :: T.Text
-builtinTemplatesTxt =
-  [__i|
+builtinTemplates :: forall ann. Doc ann
+builtinTemplates =
+  [__di|
   *a thing* is in *a thing*,
   #{nlas}.|]
   where
@@ -208,9 +206,6 @@ builtinTemplatesTxt =
       timeUnit :: Doc ann <- ["days", "weeks", "months", "years"]
       beforeAfter :: Doc ann <- ["before", "after"]
       return [di|*a date* is *a n* #{timeUnit} #{beforeAfter} *a date*|]
-
--- >>> builtinTemplatesTxt
--- "*a number* < *a number*,\n*a number* > *a number*,\n*a number* =< *a number*,\n*a number* >= *a number*,\n*a number* = *a number*,\n*a thing* is in *a thing*,\n\n        *a date* is *a n* days before *a date*,\n        \n        *a date* is *a n* days after *a date*,\n        \n        *a date* is *a n* weeks before *a date*,\n        \n        *a date* is *a n* weeks after *a date*,\n        \n        *a date* is *a n* months before *a date*,\n        \n        *a date* is *a n* months after *a date*,\n        \n        *a date* is *a n* years before *a date*,\n        *a date* is *a n* years after *a date*\n      \n      \n      \n      \n      \n      \n      ."
 
 libTemplates :: Doc ann
 libTemplates =
@@ -232,11 +227,12 @@ libTemplates =
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.|]
 
-libTemplatesTxt :: T.Text
-libTemplatesTxt = T.strip . myrender $ libTemplates
+libAndBuiltinTemplates :: T.Text
+libAndBuiltinTemplates =
+  T.strip . myrender $ vsep [libTemplates, builtinTemplates]
 {- ^
->>> libTemplatesTxt
-"*a var* is after *a var*,\n*a var* is before *a var*,\n*a var* is strictly after *a var*,\n*a var* is strictly before *a var*.\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*."
+>>> libAndBuiltinTemplates
+"*a number* <= *a number*,\n*a date* is before *a date*,\n*a date* is after *a date*,\n*a date* is strictly before *a date*,\n*a date* is strictly after *a date*,\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*.\n*a thing* is in *a thing*,\n*a number* < *a number*,\n*a number* > *a number*,\n*a number* =< *a number*,\n*a number* >= *a number*,\n*a number* = *a number*,\n*a date* is *a n* days before *a date*,\n*a date* is *a n* days after *a date*,\n*a date* is *a n* weeks before *a date*,\n*a date* is *a n* weeks after *a date*,\n*a date* is *a n* months before *a date*,\n*a date* is *a n* months after *a date*,\n*a date* is *a n* years before *a date*,\n*a date* is *a n* years after *a date*."
 
 The T.strip isn't currently necessary, 
 but it seems like a good thing to include to pre-empt any future issues from accidentally adding whitespace.

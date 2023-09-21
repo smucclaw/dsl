@@ -8,6 +8,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-|
 
 We're trying to work with the rules / AST instead, 
@@ -26,13 +27,16 @@ import Data.HashSet qualified as HS
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
 
+import Language.Haskell.TH.Syntax (lift)
+
 -- import Optics
 import Prettyprinter
+
   ( Doc,
     Pretty (pretty))
 import LS.PrettyPrinter
     ( myrender)
-import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt, builtinTemplatesTxt)
+import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libAndBuiltinTemplates)
 
 -- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
@@ -110,8 +114,7 @@ getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . fold
 
     libTemplatesRegTravs :: [RegexTrav]
     libTemplatesRegTravs =
-      regextravifyNLASection $
-        T.unlines [libTemplatesTxt, builtinTemplatesTxt]
+      regextravifyNLASection $(lift libAndBuiltinTemplates)
 
     removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  

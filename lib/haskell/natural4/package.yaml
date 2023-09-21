@@ -79,6 +79,7 @@ dependencies:
   - pcre-heavy
   - string-conversions
   - raw-strings-qq
+  - template-haskell
 
 
 

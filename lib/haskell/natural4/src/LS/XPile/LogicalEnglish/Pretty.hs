@@ -11,7 +11,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 
-{-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
 module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libAndBuiltinTemplates) where
@@ -41,6 +41,8 @@ import LS.PrettyPrinter
     ( vvsep, (<//>), myrender )
 import Prettyprinter.Interpolate (__di, di)
 -- import Optics
+-- import Optics.State.Operators
+-- import Optics.TH
 -- import Data.Set.Optics (setOf)
 import Data.List ( sort )
 
@@ -64,8 +66,9 @@ data LEProg = MkLEProg {  keptnlats :: [NLATxt]
                         }
 
 
+
 -- | config record for pretty printing
-data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int}
+data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int} deriving stock (Show)
 printcfg :: PrintCfg
 printcfg = MkPrintCfg { numIndentSpcs = 2 }
 
@@ -109,17 +112,28 @@ instance Pretty LERuleForPrint where
 
 instance Pretty a => Pretty (BoolPropn a) where
   pretty :: Pretty a => BoolPropn a -> Doc ann
-  pretty = \case
+  pretty =
+    \case
       AtomicBP bp ->
         pretty bp
       And bps     ->
-        concatBoolOp "and" (map pretty bps)
+        boolOp "and" bps
       Or bps      ->
-        concatBoolOp "or" (map pretty bps)
+        boolOp "or" bps
       Not bp      ->
         "it is not the case that" <//> indentLE (pretty bp)
     where
-      concatBoolOp boolop = concatWith (\x y -> x <> line <> boolop <> " " <> y)
+      -- | Nest iff it's an AND or OR, so that won't get extra indentation for "it is not the case that...". 
+      -- TODO: This could be done more elegantly
+      prettnestIfAndOr :: Pretty a => BoolPropn a -> Doc ann
+      prettnestIfAndOr = \case
+        atom@(AtomicBP _) -> pretty atom
+        notbp@(Not _)     -> pretty notbp
+        andbp@(And _)     -> nestLE . pretty $ andbp
+        orbp@(Or _)       -> nestLE . pretty $ orbp
+
+      boolOp opstr bps = concatBoolOp opstr (map prettnestIfAndOr bps)
+      concatBoolOp boolopstr = concatWith (\x y -> x <> line <> boolopstr <+> y)
 
 instance Pretty TxtAtomicBP where
   pretty :: TxtAtomicBP -> Doc ann

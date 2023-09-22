@@ -7,25 +7,25 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 19a26d3a9f257dad813542072d8979763b29b72a3f87cd451f472d4215d358e3
+      sha256: 2412a794276d08c3b765b1adce14df0d3a617a459a127cb4d0a13379e430fd86
       size: 12537
-    sha256: 843feb1ec4ccf965343262aa686ad7fa07c790a9d3145336ef9b1a62de8e17e4
-    size: 3188639
-    url: https://github.com/smucclaw/baby-l4/archive/b636f9ec6045b3cfc2c82c87621b84d02d0e6e5c.tar.gz
+    sha256: c9a251e90fc0025a0ee9dd5d42fb36d701a25f858eeeeda077f6e794f414ff54
+    size: 3188610
+    url: https://github.com/smucclaw/baby-l4/archive/10ea6542a7f7b4b62ffa21fe4e68b30fab2cbe98.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/b636f9ec6045b3cfc2c82c87621b84d02d0e6e5c.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/10ea6542a7f7b4b62ffa21fe4e68b30fab2cbe98.tar.gz
 - completed:
     name: gf
     pantry-tree:
-      sha256: da660f92427ac8aa13229e73432f1006ab24959127a3dfa5f3134e8b5dba7b5b
+      sha256: d853f35d67289a4d08c6b65b90af23df1198a36bc949181c27f494d95bf566f4
       size: 68299
-    sha256: b48c7b9b2a8e875e3b0cb5cfecd30ee40dc33abe103715c6f48c032dab6445f3
-    size: 3499982
-    url: https://github.com/smucclaw/gf-core/archive/8c945802a9a3f13e676d2d838c511d3b30c5511f.tar.gz
+    sha256: 602f29f9cdf483d8a7998cf6fe60482bcaf4610d33f5c03afa9641f31775dc3c
+    size: 3500182
+    url: https://github.com/smucclaw/gf-core/archive/58e705652937a0c0f4794d0e02eee70b3b90e816.tar.gz
     version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/8c945802a9a3f13e676d2d838c511d3b30c5511f.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/58e705652937a0c0f4794d0e02eee70b3b90e816.tar.gz
 - completed:
     name: prolog
     pantry-tree:
@@ -59,20 +59,6 @@ packages:
     version: 0.1.1.0
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
-- completed:
-    hackage: cgi-3001.5.0.1@sha256:4eb5254d65fe00e91f46a8bab5467669e6e95f6a0eb73a048b70a4aab1a5892e,3458
-    pantry-tree:
-      sha256: af3bcbb6a04372b059d0762c5b6f70aa626fdb7592f50ea302516ef8381db79a
-      size: 993
-  original:
-    hackage: cgi-3001.5.0.1
-- completed:
-    hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
-    pantry-tree:
-      sha256: 935927f27b1406c529a992e99b6ad76669612831d5aef4dae1717c5927263cff
-      size: 383
-  original:
-    hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
 - completed:
     hackage: monad-validate-1.3.0.0@sha256:eb6ddd5c9cf72ff0563cba604fa00291376e96138fdb4932d00ff3a99d66706e,2605
     pantry-tree:

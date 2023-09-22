@@ -1,11 +1,11 @@
-FROM haskell:9.2.8-slim-buster as builder
+FROM haskell:9.4.7-slim-buster as builder
 
-COPY lib/haskell .
+COPY --from=dsl lib/haskell .
+
+RUN apt update; \
+    apt-get install -y --no-install-recommends \
+    libpcre3-dev
 
 RUN cd ./natural4 \
     && stack build \
     && stack install
-
-FROM nginx:1.25.2-bookworm
-
-COPY --from=builder /root/.local/bin/natural4-exe /usr/local/bin/

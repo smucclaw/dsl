@@ -1,8 +1,0 @@
-GIVEN,data breach,,IS A,Data Breach,,,,
-,organization,,IS A,Organization,,,,
-,individual,,IS A,Person,,,,
-DECIDE,data breach,with,organization,results in harm to,individual,,,
-IF,data breach,with,organization,exposed data from,individual,,,
-AND,data breach,with,organization,related to the name of,individual,,,
-,OR,data breach,with,organization,relates to an account,individual,had with,organization
-,,AND,data breach,with,organization,relates to data required for access to the account of,individual,

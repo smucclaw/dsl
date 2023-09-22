@@ -25,7 +25,7 @@ import Control.Monad.Validate
     , Validate
     , refute
     )
-import Optics 
+import Optics
 import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
@@ -183,11 +183,11 @@ pattern TermIsOpOfAtomicTerms op result args <- RPnary RPis (RPMT [result] : [RP
   -- needed b/c GHC can't infer tt this is invertible if OverloadedLists extn is enabled
 
 pattern T1IsInT2 :: MTExpr -> MTExpr -> RelationalPredicate
-pattern T1IsInT2 t1 t2 <- RPnary RPis [ (RPMT [t1])
-                                      , RPnary RPelem 
+pattern T1IsInT2 t1 t2 <- RPnary RPis [ RPMT [t1]
+                                      , RPnary RPelem
                                             [ RPMT
                                               [t2] ]]
-  where T1IsInT2 t1 t2 = RPnary RPis [ (RPMT [t1]), RPnary RPelem [ RPMT [t2] ]]
+  where T1IsInT2 t1 t2 = RPnary RPis [ RPMT [t1], RPnary RPelem [ RPMT [t2] ]]
 
 pattern TotalIsSumTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
 pattern TotalIsProductTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
@@ -269,7 +269,7 @@ t1 IS IN t2:
                 ] ] )
 -}
 
-simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m => 
+simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                     RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case
   RPMT exprs                         -> pure $ MkTrueAtomicBP (mtes2cells exprs)
@@ -290,14 +290,14 @@ simplifybodyRP = \case
   -- t1 is not t2 / t1 is in t2
   T1IsNotT2 t1 t2                    -> pure $ MkIsDiffFr (mte2cell t1) (mte2cell t2)
   T1IsInT2  t1 t2                    -> pure $ MkIsIn     (mte2cell t1) (mte2cell t2)
-  
+
   RPnary{}                           -> refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
   RPBoolStructR {}                   -> refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
   RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]
 
 
-termIsNaryOpOf :: 
-  (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) => 
+termIsNaryOpOf ::
+  (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) =>
     OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
 termIsNaryOpOf op mteTerm rpargs = MkIsOpOf term op <$> argterms
   where term     = mte2cell mteTerm
@@ -314,7 +314,7 @@ atomRPoperand2cell = \case
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
 
-simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m => 
+simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                 [MTExpr] -> [MTExpr] -> RPRel -> m (BoolPropn L4AtomicP)
 simpbodRPC exprsl exprsr = \case
   RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
@@ -322,11 +322,11 @@ simpbodRPC exprsl exprsr = \case
   RPor  -> pure $ simBodRPCboolop RpcRPor exprsl exprsr
   RPand -> pure $ simBodRPCboolop RpcRPand exprsl exprsr
 
-  RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr 
-  RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr 
-  RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr 
-  RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr 
-  
+  RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr
+  RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr
+  RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr
+  RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr
+
   _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
 
 {- |
@@ -340,24 +340,24 @@ simpbodRPC exprsl exprsr = \case
             )
           )                           -}
 simBodRPCboolop :: RpcRPrel RPnonPropAnaph -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
-simBodRPCboolop anaOp exprsl exprsr = 
-  let 
+simBodRPCboolop anaOp exprsl exprsr =
+  let
       withLefts :: MTExpr -> BoolPropn L4AtomicP
       withLefts exprr = MkTrueAtomicBP (mtes2cells exprsl <> [mte2cell exprr])
-  in case anaOp of 
+  in case anaOp of
     RpcRPor  -> Or (map withLefts exprsr)
-    RpcRPand -> And (map withLefts exprsr) 
-  
+    RpcRPand -> And (map withLefts exprsr)
+
 simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
-simBodRPCarithcomp comp exprsl exprsr = 
+simBodRPCarithcomp comp exprsl exprsr =
   MkTrueAtomicBP (mtes2cells exprsl <> [MkCellT (comp2txt comp)] <> mtes2cells exprsr)
-  where 
+  where
     comp2txt :: RpcRPrel RParithComp -> T.Text
     comp2txt = \case
       RpcRPlt  -> "<"
-      RpcRPlte -> "<=" 
-      RpcRPgt  -> ">"   
-      RpcRPgte -> ">="  
+      RpcRPlte -> "<="
+      RpcRPgt  -> ">"
+      RpcRPgte -> ">="
 
 
 {-------------------------------------------------------------------------------
@@ -393,7 +393,7 @@ getGivens :: L4.Rule -> [MTExpr]
 getGivens l4rule = l4rule.given ^.. types @MTExpr
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
-gvarsFromL4Rule rule = 
+gvarsFromL4Rule rule =
   let givenMTExprs = getGivens rule
   in HS.fromList $ map gmtexpr2gvar givenMTExprs
     where

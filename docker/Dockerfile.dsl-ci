@@ -1,6 +1,6 @@
 FROM haskell:9.4.7-slim-buster as builder
 
-COPY --from=dsl lib/haskell .
+COPY lib/haskell .
 
 RUN apt update; \
     apt-get install -y --no-install-recommends \

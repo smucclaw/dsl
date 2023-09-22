@@ -49,8 +49,6 @@ extra-deps:
 - monad-validate-1.3.0.0
 - prettyprinter-interp-0.2.0.0
 
-allow-newer: true
-
 # Make weeder work
 ghc-options:
   "$locals": -fwrite-ide-info

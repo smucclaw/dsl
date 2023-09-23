@@ -124,6 +124,8 @@ toToken "IS" =     pure Is
 -- boolean connectors
 toToken "OR" =     pure Or
 toToken "AND" =    pure And
+toToken "..." =    pure And   -- CNL sugar to allow phrases to follow
+toToken "…"   =    pure And   -- CNL sugar to allow phrases to follow -- this is unicode for ellipsis
 toToken "UNLESS" = pure Unless
 toToken "EXCEPT" = pure Unless
 toToken "IF NOT" = pure Unless

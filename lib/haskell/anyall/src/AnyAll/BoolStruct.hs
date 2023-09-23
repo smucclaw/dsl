@@ -100,8 +100,8 @@ simplifyBoolStruct :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl
 simplifyBoolStruct (Not (Not x)) = simplifyBoolStruct x
 simplifyBoolStruct (All _ [x])   = simplifyBoolStruct x
 simplifyBoolStruct (Any _ [x])   = simplifyBoolStruct x
-simplifyBoolStruct (All l1 xs)   = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyBoolStruct $ simplifyBoolStruct <$> xs)
-simplifyBoolStruct (Any l1 xs)   = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (siblingfyBoolStruct $ simplifyBoolStruct <$> xs)
+simplifyBoolStruct (All l1 xs)   = All l1 $ concatMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) (simplifyBoolStruct <$> xs)
+simplifyBoolStruct (Any l1 xs)   = Any l1 $ concatMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) (simplifyBoolStruct <$> xs)
 simplifyBoolStruct orig = orig
 
 data MergeResult a = Merged a | Unmerged a a

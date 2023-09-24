@@ -28,7 +28,6 @@ module LS.XPile.LogicalEnglish.GenNLAs (
   )
 where
 
-import LS.Utils ((<||>))
 import Data.Text qualified as T
 import Data.Ord (Down(..))
 import GHC.Exts (sortWith)
@@ -50,9 +49,9 @@ import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
 import qualified Text.Regex.PCRE.Heavy as PCRE
--- import Text.Regex.PCRE.Heavy()
 import Control.Lens.Regex.Text
 
+import Data.Function (on)
 import Optics
 -- import Data.Text.Optics (unpacked)
 import Data.HashSet.Optics (setOf)
@@ -266,16 +265,17 @@ x `isEquivUpToVarNames` y = x.numVars == y.numVars && x.regex `matchesTxtOf` y.g
 removeDisprefdInEqClass :: Foldable f => f NLA -> FilterResult (HS.HashSet NLA)
 removeDisprefdInEqClass nlas =
   let
-    maybeMaxNumChars :: Maybe Int = nlas & maximumOf (folded % to nlaAsTxt % to T.length)
-    fewerThanMaxNumChars :: T.Text -> Bool
-    fewerThanMaxNumChars txt = case maybeMaxNumChars of
-                                Just maxNumChars -> T.length txt < maxNumChars
-                                Nothing          -> False
-    isLessInformative :: T.Text -> Bool = T.isInfixOf "a number" <||> fewerThanMaxNumChars
+    informativeness :: NLA -> NLA -> Ordering
+    informativeness = compareNlaNumChars
+    compareNlaNumChars = compare `on` (T.length . nlaAsTxt)
+    -- this is the easiest thing to implement that should work well enough for our purposes
+    nlaset = setOf folded nlas
 
-    subsumed :: HS.HashSet NLA = nlas & setOf (folded
-                                              % filteredBy (to nlaAsTxt % filtered isLessInformative))
-    kept :: HS.HashSet NLA = difference (setOf folded nlas) subsumed
+    kept :: HS.HashSet NLA  = nlas
+                                & maximumByOf folded informativeness
+                                & setOf folded
+    subsumed :: HS.HashSet NLA = difference nlaset kept
+
   in MkFResult {subsumed=subsumed, kept=kept}
 
 

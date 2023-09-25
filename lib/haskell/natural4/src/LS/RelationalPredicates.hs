@@ -753,7 +753,10 @@ pTypeSig = debugName "pTypeSig" $ do
                             , TOne      <$ pToken A_An
                             , TOptional <$ pToken Optional
                             , TList0    <$ pToken List0
-                            , TList1    <$ pToken List1 ]
+                            , TList1    <$ pToken List1
+                            , TSet0     <$ pToken Set0
+                            , TSet1     <$ pToken Set1
+                            ]
       base        <- someIndentation pOtherVal
       return $ SimpleType cardinality base
     inlineenum = do
@@ -805,12 +808,16 @@ slTypeSig = debugNameSL "slTypeSig" $ do
        |*| (simpletype <|> inlineenum)
   return typesig
   where
+    -- [TODO] duplicate code here, see also pTypeSig. simplify.
     simpletype = SimpleType
                  $>| choice [ TOne      <$ pToken One
                             , TOne      <$ pToken A_An
                             , TOptional <$ pToken Optional
                             , TList0    <$ pToken List0
-                            , TList1    <$ pToken List1 ]
+                            , TList1    <$ pToken List1
+                            , TSet0     <$ pToken Set0
+                            , TSet1     <$ pToken Set1
+                            ]
                  |>| pOtherVal
     inlineenum = InlineEnum TOne $*| slOneOf
 

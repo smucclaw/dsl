@@ -143,9 +143,14 @@ textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingf
 
 --- helpers for working with regex
 
-{- | a regex that matches either a word or another variable indicator -}
+{- | a regex that matches either of
+  another variable indicator
+  a word 
+  a word - a word
+  a word + a word
+  a word * a word -}
 wordOrVI :: RawRegexStr
-wordOrVI = [r|(\w+|\*[\w\s]+\*)|]
+wordOrVI = [r|(\w+|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+|\w+ \* \w+)|]
 
 tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
 tvar2WordOrVIregex = \case
@@ -294,11 +299,13 @@ rawregexifyLENLA (T.unpack -> nlastr) =
                    >>> splitOn "*" "a class's *a list*"
                    ["a class's ","a list",""]
                -}
-  in splitted
-    & itraversed %& indices isVarIdx         .~ wordOrVI
-    & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
-                    -- escape metachars in text that's not part of any var indicator
-    & toListOf (folded % folded)
+    coreRegex = 
+      splitted
+        & itraversed %& indices isVarIdx         .~ wordOrVI
+        & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
+                        -- escape metachars in text that's not part of any var indicator
+        & toListOf (folded % folded)
+  in [i|^#{coreRegex}$|]
 
 ------------------- Building NLAs from VarsHCs
 

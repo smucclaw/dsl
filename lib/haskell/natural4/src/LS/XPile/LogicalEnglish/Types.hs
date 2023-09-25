@@ -162,6 +162,7 @@ data RpcRPrel a where
   RpcRPlte :: RpcRPrel RParithComp
   RpcRPgt :: RpcRPrel RParithComp
   RpcRPgte :: RpcRPrel RParithComp
+  RpcRPeq :: RpcRPrel RParithComp
 
   RpcRPor :: RpcRPrel RPnonPropAnaph
   RpcRPand :: RpcRPrel RPnonPropAnaph

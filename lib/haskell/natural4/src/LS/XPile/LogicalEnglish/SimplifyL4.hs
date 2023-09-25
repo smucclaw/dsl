@@ -326,6 +326,7 @@ simpbodRPC exprsl exprsr = \case
   RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr
   RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr
   RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr
+  RPeq  -> pure $ simBodRPCarithcomp RpcRPeq exprsl exprsr
 
   _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
 
@@ -350,15 +351,17 @@ simBodRPCboolop anaOp exprsl exprsr =
 
 simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 simBodRPCarithcomp comp exprsl exprsr =
-  MkTrueAtomicBP (mtes2cells exprsl <> [MkCellT (comp2txt comp)] <> mtes2cells exprsr)
+  MkTrueAtomicBP (mtes2cells exprsl <> [comp2cell comp] <> mtes2cells exprsr)
   where
+    comp2cell :: RpcRPrel RParithComp -> Cell
+    comp2cell comp = MkCellT (comp2txt comp)
     comp2txt :: RpcRPrel RParithComp -> T.Text
     comp2txt = \case
       RpcRPlt  -> "<"
       RpcRPlte -> "<="
       RpcRPgt  -> ">"
       RpcRPgte -> ">="
-
+      RpcRPeq  -> "="
 
 {-------------------------------------------------------------------------------
     Misc

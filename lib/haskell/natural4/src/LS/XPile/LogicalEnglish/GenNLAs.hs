@@ -132,7 +132,7 @@ regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
   where
     strdelimitr :: String = " "
     regexf = \case
-        TempVar tvar   -> tvar2WordOrVIregex tvar
+        TempVar tvar   -> tvar2WordsOrVIregex tvar
         Pred nonvartxt -> (PCRE.escape . T.unpack $ nonvartxt)
           --TODO: Add tests to check if have to escape metachars in Pred
             -- T.unpack nonvartxt
@@ -154,14 +154,14 @@ Note: not everything that can appear in a term position needs to be captured her
 because for some constructs that correspond to built-in things, 
 we just don't make NLAs out of them. 
 We don't (and cannot) do this for all of them, but we do do this for some of them. -}
-wordOrVI :: RawRegexStr
-wordOrVI = [r|(\w+( +\w+){0,3}|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
+wordsOrVI :: RawRegexStr
+wordsOrVI = [r|(\w+( +\w+){0,3}|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
 
-tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
-tvar2WordOrVIregex = \case
-    MatchGVar _    -> wordOrVI
-    EndsInApos _   -> wordOrVI <> [r|'s|]
-    IsNum _        -> [r|is |] <> wordOrVI
+tvar2WordsOrVIregex :: TemplateVar -> RawRegexStr
+tvar2WordsOrVIregex = \case
+    MatchGVar _    -> wordsOrVI
+    EndsInApos _   -> wordsOrVI <> [r|'s|]
+    IsNum _        -> [r|is |] <> wordsOrVI
 
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
@@ -306,7 +306,7 @@ rawregexifyLENLA (T.unpack -> nlastr) =
                -}
     coreRegex = 
       splitted
-        & itraversed %& indices isVarIdx         .~ wordOrVI
+        & itraversed %& indices isVarIdx         .~ wordsOrVI
         & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
                         -- escape metachars in text that's not part of any var indicator
         & toListOf (folded % folded)

@@ -201,22 +201,22 @@ instance Pretty LEProg where
 
 -- | Templates which are predefined in LE itself, and hence should not be
 -- included in the LE output.
-builtinTemplates :: forall ann. Doc ann
+builtinTemplates :: Doc ann
 builtinTemplates =
   [__di|
   *a thing* is in *a thing*,
   #{nlas}.|]
   where
-    nlas = concatNLAList $ mconcat [mathNLAList, dateNLAList]
+    nlas = concatNlaList $ mconcat [mathNlaList, dateNlaList]
 
-    concatNLAList :: [Doc ann] -> Doc ann
-    concatNLAList = concatWith \x y -> mconcat [x, ",\n", y]
+    concatNlaList :: [Doc ann] -> Doc ann
+    concatNlaList = concatWith \x y -> mconcat [x, ",\n", y]
 
-    mathNLAList = do
+    mathNlaList = do
       binOp :: Doc ann <- ["<", ">", "=<", ">=", "="]
       return [di|*a number* #{binOp} *a number*|]
 
-    dateNLAList = do
+    dateNlaList = do
       timeUnit :: Doc ann <- ["days", "weeks", "months", "years"]
       beforeAfter :: Doc ann <- ["before", "after"]
       return [di|*a date* is *a n* #{timeUnit} #{beforeAfter} *a date*|]

@@ -199,8 +199,12 @@ instance Pretty LEProg where
           #{nestLE prettyLEhcs}
       |]
 
--- | Templates which are predefined in LE itself, and hence should not be
--- included in the LE output.
+{- | Templates which are predefined in LE itself, and hence should not be
+      included in the LE output.
+      Note: we don't strictly speaking need *all* of the following, 
+            because we don't make NLAs out of every construct,
+            but having all the built-in templates here does make for good documentation 
+-}
 builtinTemplates :: Doc ann
 builtinTemplates =
   [__di|

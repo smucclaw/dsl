@@ -143,11 +143,17 @@ textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingf
 
 --- helpers for working with regex
 
-{- | a regex that matches either of
+{- | 
+a regex that matches either of
   another variable indicator
   a word 
   a word - a word
-  a word + a word -}
+  a word + a word
+  
+Note: not everything that can appear in a term position needs to be captured here, 
+because for some constructs that correspond to built-in things, 
+we just don't make NLAs out of them. 
+We don't (and cannot) do this for all of them, but we do do this for some of them. -}
 wordOrVI :: RawRegexStr
 wordOrVI = [r|(\w+|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
 

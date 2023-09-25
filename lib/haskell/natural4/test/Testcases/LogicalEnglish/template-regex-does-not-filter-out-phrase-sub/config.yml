@@ -1,2 +1,0 @@
-description: "regex for filtering out things matched by templates won't filter out NLAs where the var indicator of a template has been substituted by more than one (space-separated) word"
-enabled: true

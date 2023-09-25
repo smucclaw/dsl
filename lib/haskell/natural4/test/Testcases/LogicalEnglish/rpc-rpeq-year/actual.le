@@ -1,8 +1,6 @@
 the target language is: prolog.
 
 the templates are:
-  *a sam*'s adventure's end date is *a y*,
-  *a sam*'s adventure's start date is *a x*,
   whatever *a n* times,
   *a number* <= *a number*,
   *a date* is before *a date*,

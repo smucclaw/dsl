@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  *a bleh*'s bleh word2 is val,
+  *a bleh*'s one two three four five is val,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -104,5 +104,5 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  a bleh's bleh word2 is val
-  if bleh's bleh is val.
+  a bleh's one two three four is val
+  if bleh's one two three four five is val.

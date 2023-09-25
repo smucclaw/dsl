@@ -146,7 +146,7 @@ textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingf
 {- | 
 a regex that matches either of
   another variable indicator
-  a word 
+  1 - 4 words 
   a word - a word
   a word + a word
   
@@ -155,7 +155,7 @@ because for some constructs that correspond to built-in things,
 we just don't make NLAs out of them. 
 We don't (and cannot) do this for all of them, but we do do this for some of them. -}
 wordOrVI :: RawRegexStr
-wordOrVI = [r|(\w+|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
+wordOrVI = [r|(\w+( +\w+){0,3}|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
 
 tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
 tvar2WordOrVIregex = \case

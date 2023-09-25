@@ -212,14 +212,16 @@ builtinTemplates =
     concatNlaList :: [Doc ann] -> Doc ann
     concatNlaList = concatWith \x y -> mconcat [x, ",\n", y]
 
-    mathNlaList = do
-      binOp :: Doc ann <- ["<", ">", "=<", ">=", "="]
-      return [di|*a number* #{binOp} *a number*|]
+    mathNlaList =
+      [ [di|*a number* #{binOp} *a number*|]
+        | binOp :: Doc ann <- ["<", ">", "=<", ">=", "="]
+      ]
 
-    dateNlaList = do
-      timeUnit :: Doc ann <- ["days", "weeks", "months", "years"]
-      beforeAfter :: Doc ann <- ["before", "after"]
-      return [di|*a date* is *a n* #{timeUnit} #{beforeAfter} *a date*|]
+    dateNlaList =
+      [ [di|*a date* is *a n* #{timeUnit} #{beforeAfter} *a date*|]
+        | timeUnit :: Doc ann <- ["days", "weeks", "months", "years"],
+          beforeAfter :: Doc ann <- ["before", "after"]
+      ]
 
 libTemplates :: Doc ann
 libTemplates =

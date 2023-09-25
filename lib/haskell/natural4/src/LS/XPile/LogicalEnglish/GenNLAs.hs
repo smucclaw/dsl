@@ -147,10 +147,9 @@ textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingf
   another variable indicator
   a word 
   a word - a word
-  a word + a word
-  a word * a word -}
+  a word + a word -}
 wordOrVI :: RawRegexStr
-wordOrVI = [r|(\w+|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+|\w+ \* \w+)|]
+wordOrVI = [r|(\w+|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
 
 tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
 tvar2WordOrVIregex = \case

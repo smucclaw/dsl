@@ -1,0 +1,2 @@
+description: "Empty cells in the head should not affect ditto parsing"
+enabled: true

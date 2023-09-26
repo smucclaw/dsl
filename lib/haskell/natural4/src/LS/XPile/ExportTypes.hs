@@ -17,11 +17,13 @@ other translations (in particular to JSON) that may have been developed.
 
 module LS.XPile.ExportTypes where
 
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
+import Data.Foldable (toList)
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
 import Data.Map qualified as Map
+import Data.Maybe (mapMaybe)
+import Data.Text (unpack)
 import Data.Text qualified as Text
-import Prettyprinter
-import Prettyprinter.Render.Text (putDoc)
+import Debug.Trace (trace)
 import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, clauses, enums, has, name, super),
   )
@@ -36,16 +38,17 @@ import LS.Types as SFL4
     ParamType (TList0, TList1, TOne, TOptional),
     RPRel (RPeq),
     RelationalPredicate (..),
-    TypedMulti,
+    RuleName,
     TypeSig (..),
+    TypedMulti,
     mt2text,
     mtexpr2text,
     pt2text,
     rel2txt,
-    untypePT, RuleName,
+    untypePT,
   )
-import Data.Text (unpack)
-import Debug.Trace (trace)
+import Prettyprinter
+import Prettyprinter.Render.Text (putDoc)
 
 type TypeName = String
 type ConstructorName = String
@@ -86,10 +89,19 @@ typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 typeDeclNameToFieldName :: RuleName -> String
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
-unpackEnums :: NonEmpty (NonEmpty MTExpr, b) -> [String]
-unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
-unpackEnum :: (NonEmpty MTExpr, b) -> String
-unpackEnum (MTT tn :| _, _) = unpack tn
+unpackEnums :: Foldable t => t (NonEmpty MTExpr, b) -> [String]
+unpackEnums = map unpack . mapMaybe paramTextToEnumTypeName . toList
+  where
+    paramTextToEnumTypeName :: (NonEmpty MTExpr, b) -> Maybe Text.Text
+    paramTextToEnumTypeName (MTT tn :| _, _) = Just tn
+    paramTextToEnumTypeName _ = Nothing
+
+-- unpackEnums :: Nonempty (Nonempty MTExpr, b) -> [String]
+-- unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
+
+-- unpackEnum :: (NonEmpty MTExpr, b) -> String
+-- unpackEnum (MTT tn :| _, _) = unpack tn
+-- unpackEnum _ = mempty
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =

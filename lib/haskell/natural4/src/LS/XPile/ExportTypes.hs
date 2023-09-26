@@ -90,11 +90,11 @@ typeDeclNameToFieldName :: RuleName -> String
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
 unpackEnums :: Foldable t => t (NonEmpty MTExpr, b) -> [String]
-unpackEnums = map unpack . mapMaybe paramTextToEnumTypeName . toList
+unpackEnums = map unpack . mapMaybe toEnumTypeName . toList
   where
-    paramTextToEnumTypeName :: (NonEmpty MTExpr, b) -> Maybe Text.Text
-    paramTextToEnumTypeName (MTT tn :| _, _) = Just tn
-    paramTextToEnumTypeName _ = Nothing
+    toEnumTypeName :: (NonEmpty MTExpr, b) -> Maybe Text.Text
+    toEnumTypeName (MTT tn :| _, _) = Just tn
+    toEnumTypeName _ = Nothing
 
 -- unpackEnums :: Nonempty (Nonempty MTExpr, b) -> [String]
 -- unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs

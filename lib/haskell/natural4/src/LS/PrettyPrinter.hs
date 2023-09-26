@@ -29,7 +29,7 @@ import LS.Types
       ParamText,
       RelationalPredicate(..),
       ClsTab(CT),
-      ParamType(TList1, TOne, TOptional, TList0),
+      ParamType(TList1, TOne, TOptional, TList0, TSet0, TSet1),
       mtexpr2text,
       pt2text,
       rel2op )
@@ -312,6 +312,8 @@ typedOrNot "corel4" (multiterm, Just (SimpleType TOptional s1)) = snake_case (to
 typedOrNot        _ (multiterm, Just (SimpleType TOptional s1)) = snake_case (toList multiterm) <> ":?" <+> snake_case [MTT s1]
 typedOrNot        _ (multiterm, Just (SimpleType TList0    s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
 typedOrNot        _ (multiterm, Just (SimpleType TList1    s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
+typedOrNot        _ (multiterm, Just (SimpleType TSet0     s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
+typedOrNot        _ (multiterm, Just (SimpleType TSet1     s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
 typedOrNot        _ (multiterm, Just (InlineEnum pt1       s1)) = snake_case (toList multiterm) <> "# :"  <+> "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
 
 prettySimpleType :: String -> (T.Text -> Doc ann) -> TypeSig -> Doc ann
@@ -321,8 +323,12 @@ prettySimpleType "ts"     prty (SimpleType TOptional s1) = prty s1
 prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
 prettySimpleType "ts"     prty (SimpleType TList0    s1) = prty s1 <> brackets ""
 prettySimpleType "ts"     prty (SimpleType TList1    s1) = prty s1 <> brackets ""
+prettySimpleType "ts"     prty (SimpleType TSet0     s1) = prty s1 <> brackets ""
+prettySimpleType "ts"     prty (SimpleType TSet1     s1) = prty s1 <> brackets ""
 prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
+prettySimpleType _        prty (SimpleType TSet0     s1) = brackets (prty s1)
+prettySimpleType _        prty (SimpleType TSet1     s1) = brackets (prty s1)
 prettySimpleType _       _prty (InlineEnum pt1       s1) = "# InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
 
 prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann

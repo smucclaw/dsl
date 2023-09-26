@@ -2,16 +2,14 @@
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
--- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.LogicalEnglish.IdVars (
     idVarsInHC
-  , idVarsInAP
-  , idVarsInBody
+  -- , idVarsInAP
+  -- , idVarsInBody
 ) where
 
 import Data.Text qualified as T
@@ -54,6 +52,10 @@ replaceTxtVCell = \case
   tv@(TempVar _) -> tv
   Pred txt  -> Pred $ replaceTxt txt
 
+{- | TODO: Would be better to read in a dictionary of what/how to replace from some config file,
+a config file that is kept in sync with the downstream stuff 
+(since have to do this kind of replacement in the converse direction when generating justification)
+-}
 replaceTxt :: T.Text -> T.Text
 replaceTxt txt =  if txt == T.empty then txt
                   -- T.replace will error if input empty

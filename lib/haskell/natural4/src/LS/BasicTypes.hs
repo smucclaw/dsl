@@ -67,6 +67,7 @@ data MyToken = Every | Party | TokAll
              -- | AsOf -- used to evaluate a term not under the live context but at some previous time
              | TypeSeparator -- ::, TYPE, AS, shrug
              | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
+             |                   Set0 | Set1  -- set; set.nonempty
              | Distinct -- entity modifier in GIVEN
              | Unless
              | Hence | Lest | Fulfilled | Breach | Goto
@@ -227,6 +228,14 @@ toToken "LIST1"     = pure List1
 toToken "LIST OF"   = pure List1
 toToken "LISTOF"    = pure List1
 toToken "LIST"      = pure List1
+
+toToken "SET0"     = pure Set0
+toToken "SET1"     = pure Set1
+toToken "SET OF"   = pure Set1
+toToken "SETOF"    = pure Set1
+toToken "SET"      = pure Set1
+
+
 
 toToken "MAP"       = pure FMap
 

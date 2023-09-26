@@ -323,7 +323,7 @@ prettySimpleType "ts"     prty (SimpleType TOptional s1) = prty s1
 prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
 prettySimpleType "ts"     prty (SimpleType TList0    s1) = prty s1 <> brackets ""
 prettySimpleType "ts"     prty (SimpleType TList1    s1) = prty s1 <> brackets ""
-prettySimpleType "ts"     prty (SimpleType TSet0     s1) = prty s1 <> brackets ""
+prettySimpleType "ts"     prty (SimpleType TSet0     s1) = prty s1 <> brackets "" -- [TODO] consider // let pets = new Set(["Cat", "Dog", "Hamster"]);
 prettySimpleType "ts"     prty (SimpleType TSet1     s1) = prty s1 <> brackets ""
 prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)

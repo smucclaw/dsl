@@ -1,0 +1,5 @@
+GIVEN,plan,IS A,Major Plan,
+,percentage,IS A,Number,
+DECIDE,plan's,additional percentage,IS,percentage
+IF,percentage,IS,MAX,0.25,
+,,,,0.1 + n,

@@ -80,6 +80,7 @@ dependencies:
   - string-conversions
   - raw-strings-qq
   - template-haskell
+  - text-replace
 
 
 

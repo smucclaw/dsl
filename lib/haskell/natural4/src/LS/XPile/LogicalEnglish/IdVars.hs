@@ -13,10 +13,12 @@ module LS.XPile.LogicalEnglish.IdVars (
 ) where
 
 import Data.Text qualified as T
+import Text.Replace
 import Data.HashSet qualified as HS
 import Data.Coerce (coerce)
 
 import LS.XPile.LogicalEnglish.Types
+import Data.Sequences (toStrict, fromStrict)
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case
@@ -57,13 +59,24 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt txt =  if txt == T.empty then txt
-                  -- T.replace will error if input empty
-                  else replacePercent . replaceCommaDot $ txt
-                  where replaceCommaDot = T.replace "," " comma " .
-                                          T.replace "." " dot "
-                        replacePercent = T.replace "%" " percent "
+replaceTxt = toStrict . replaceWithList replacements . fromStrict
+  where
+    replacements =
+      [ Replace "," " comma ",
+        Replace "." " dot ",
+        Replace "%" " percent "
+      ]
 
+{- >>> replaceTxt "" 
+""
+-}
+
+-- replaceTxt txt =  if txt == T.empty then txt
+--                   -- T.replace will error if input empty
+--                   else replacePercent . replaceCommaDot $ txt
+--                   where replaceCommaDot = T.replace "," " comma " .
+--                                           T.replace "." " dot "
+--                         replacePercent = T.replace "%" " percent "
 
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

@@ -12,13 +12,13 @@ module LS.XPile.LogicalEnglish.IdVars (
   -- , idVarsInBody
 ) where
 
-import Data.Text qualified as T
-import Text.Replace
-import Data.HashSet qualified as HS
 import Data.Coerce (coerce)
+import Data.HashSet qualified as HS
+import Data.Sequences (fromStrict, toStrict)
+import Data.Text qualified as T
+import Text.Replace (Replace (Replace), replaceWithList)
 
 import LS.XPile.LogicalEnglish.Types
-import Data.Sequences (toStrict, fromStrict)
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case

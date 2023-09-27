@@ -42,6 +42,9 @@ import LS.XPile.LogicalEnglish.Types
     , VCell(..)
   )
 
+-- $setup
+-- >>> import Data.Text qualified as T
+
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case
   MkL4FactHc{..} -> MkVarsFact { vfhead =  idVarsInAP fgiven fhead }
@@ -76,7 +79,8 @@ replaceTxtVCell = \case
   tv@(TempVar _) -> tv
   Pred txt  -> Pred $ replaceTxt txt
 
-{- | TODO: Would be better to read in a dictionary of what/how to replace from some config file,
+{- | 
+TODO: Would be better to read in a dictionary of what/how to replace from some config file,
 a config file that is kept in sync with the downstream stuff 
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
@@ -85,18 +89,29 @@ replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
       listToTrie
-        [ Replace "," " comma ",
+        [ Replace "," " comma",
           Replace "." " dot ",
           Replace "%" " percent" 
-          {- ^ we do not actually want a space after `percent`
+          {- ^ it's cleaner not to put a space after `percent`
            because it's usually something like "100% blah blah" in the encoding
-           So if you add a space after, you end up getting "100 percent  blah blah" --- you end up getting one space more than desired.
+           So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
+           And similarly with `comma`.
+
+           Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
+            >>> replaceTxt ""
+            ""
+
+            >>> replaceTxt ("100.5 * 2" :: T.Text)
+            "100 dot 5 * 2"
+
+            >>> replaceTxt "100% guarantee"
+            "100 percent guarantee"
+
+            >>> replaceTxt "rocks, stones, and trees"
+            "rocks comma stones comma and trees"
           -}
         ]
-
-{- >>> replaceTxt "" 
-""
--}
+        
 
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

@@ -319,35 +319,17 @@ simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
 simpbodRPC exprsl exprsr = \case
   RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
 
-  RPor  -> pure $ simBodRPCboolop RpcRPor exprsl exprsr
-  RPand -> pure $ simBodRPCboolop RpcRPand exprsl exprsr
-
   RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr
   RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr
   RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr
   RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr
   RPeq  -> pure $ simBodRPCarithcomp RpcRPeq exprsl exprsr
 
-  _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
+  RPor  -> refute [MkErr "|| no longer supported -- use ditto and OR instead"]
+  RPand -> refute [MkErr "&& no longer supported -- use ditto and AND instead"]
+  -- TODO: test this
 
-{- |
-  -- TODO: Check if this is still required in light of recent discussion
-  Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
-      EG: ( Leaf
-            ( RPConstraint
-                [ MTT "data breach" , MTT "came about from"] 
-                RPor
-                [ MTT "luck, fate", MTT "acts of god or any similar event"]
-            )
-          )                           -}
-simBodRPCboolop :: RpcRPrel RPnonPropAnaph -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
-simBodRPCboolop anaOp exprsl exprsr =
-  let
-      withLefts :: MTExpr -> BoolPropn L4AtomicP
-      withLefts exprr = MkTrueAtomicBP (mtes2cells exprsl <> [mte2cell exprr])
-  in case anaOp of
-    RpcRPor  -> Or (map withLefts exprsr)
-    RpcRPand -> And (map withLefts exprsr)
+  _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
 
 simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 simBodRPCarithcomp comp exprsl exprsr =

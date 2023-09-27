@@ -16,7 +16,7 @@ import Data.Coerce (coerce)
 import Data.HashSet qualified as HS
 import Data.Sequences (fromStrict, toStrict)
 import Data.Text qualified as T
-import Text.Replace (Replace (Replace), replaceWithList)
+import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 import LS.XPile.LogicalEnglish.Types
 
@@ -59,13 +59,14 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt = toStrict . replaceWithList replacements . fromStrict
+replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
-      [ Replace "," " comma ",
-        Replace "." " dot ",
-        Replace "%" " percent "
-      ]
+      listToTrie
+        [ Replace "," " comma ",
+          Replace "." " dot ",
+          Replace "%" " percent "
+        ]
 
 {- >>> replaceTxt "" 
 ""

@@ -19,6 +19,28 @@ import Data.Text qualified as T
 import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 import LS.XPile.LogicalEnglish.Types
+  (
+      BoolPropn(..)
+    -- L4-related types
+    , GVar(..)
+    , GVarSet
+    , Cell(..)
+    
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead,
+                 MkL4RuleHc, rgiven, rhead, rbody)
+
+    , AtomicBPropn(..)
+    , L4AtomicP
+
+    -- Intermediate representation types
+    , TemplateVar(..)
+    , VarsHC(MkVarsFact,
+             MkVarsRule, 
+             vfhead,
+             vrhead, vrbody)    
+    , AtomicPWithVars
+    , VCell(..)
+  )
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case

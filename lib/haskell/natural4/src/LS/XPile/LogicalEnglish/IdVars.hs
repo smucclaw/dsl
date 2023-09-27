@@ -60,9 +60,9 @@ replaceTxt :: T.Text -> T.Text
 replaceTxt txt =  if txt == T.empty then txt
                   -- T.replace will error if input empty
                   else replacePercent . replaceCommaDot $ txt
-                  where replaceCommaDot = T.replace "," "comma" .
-                                          T.replace "." "dot"
-                        replacePercent = T.replace "%" " percent"
+                  where replaceCommaDot = T.replace "," " comma " .
+                                          T.replace "." " dot "
+                        replacePercent = T.replace "%" " percent "
 
 
 {- | Convert a SimplifiedL4 Cell to a VCell

@@ -249,7 +249,7 @@ removeDisprefdInEquivUpToVarNames nlas =
       makeFResult eqclass = if length eqclass == 1
                             then MkFResult {subsumed = mempty, kept = eqclass}
                             else (fmap toList . removeDisprefdInEqClass) eqclass
-  in mconcat . fmap makeFResult $ eqclasses
+  in foldMap makeFResult eqclasses
 
 --- helpers
 

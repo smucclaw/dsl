@@ -36,6 +36,29 @@ import LS.Types qualified as L4
 import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
+  ( BoolPropn(..)
+    -- L4-related types
+    , RpcRPrel(..)
+      
+    , RParithComp
+    
+    , GVar(..)
+    , GVarSet
+    , Cell(..)
+    
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead,
+                 MkL4RuleHc, rgiven, rhead, rbody)
+
+    , OpOf(..)
+    , OpSuchTt(..)
+    , AtomicBPropn(..)
+    , L4AtomicP
+    , pattern MkTrueAtomicBP
+    , pattern MkIsOpSuchTtBP
+    , pattern MkIsOpOf
+    , pattern MkIsDiffFr
+    , pattern MkIsIn    
+  )
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       loadRawL4AsUnvalid)

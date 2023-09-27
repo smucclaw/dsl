@@ -23,13 +23,11 @@ module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.List (sort)
--- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
 
 import Language.Haskell.TH.Syntax (lift)
 
--- import Optics
 import Prettyprinter
 
   ( Doc,
@@ -38,10 +36,12 @@ import LS.PrettyPrinter
     ( myrender)
 import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libAndBuiltinTemplates)
 
--- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
+  ( SimpleL4HC
+    , VarsHC
+  )
 import LS.XPile.LogicalEnglish.ValidateL4Input
       (
         isHornlike

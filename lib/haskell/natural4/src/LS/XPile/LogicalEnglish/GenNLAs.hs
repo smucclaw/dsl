@@ -40,6 +40,21 @@ import Data.Maybe (catMaybes)
 import Data.Coerce (coerce)
 
 import LS.XPile.LogicalEnglish.Types
+  ( -- Common types 
+      BoolPropn(..)
+    -- L4-related types
+    , AtomicBPropn(..)
+    -- Intermediate representation types
+    , TemplateVar(..)
+    
+    , VarsHC(VhcF, VhcR)
+    , VarsFact(..)
+    , BaseRule(..)
+    , VarsRule
+    , AtomicPWithVars
+    , VCell(..)
+    , _TempVar
+  )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
 import Data.String.Interpolate ( i )
@@ -59,7 +74,6 @@ import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
--- import qualified Data.Sequence as Seq
 import Data.Sequences (SemiSequence, intersperse) --groupAllOn
 import Data.List qualified as L
 import Data.MonoTraversable (Element)

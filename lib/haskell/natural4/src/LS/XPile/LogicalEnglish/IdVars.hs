@@ -46,7 +46,7 @@ idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case
   MkL4FactHc{..} -> MkVarsFact { vfhead =  idVarsInAP fgiven fhead }
   MkL4RuleHc{..} -> MkVarsRule { vrhead =  idVarsInAP rgiven rhead
-                             , vrbody = idVarsInBody rgiven rbody }
+                               , vrbody = idVarsInBody rgiven rbody }
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading
 {- | Identifies vars in L4AtomicP:

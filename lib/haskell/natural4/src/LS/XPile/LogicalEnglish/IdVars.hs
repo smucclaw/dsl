@@ -87,19 +87,16 @@ replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
       listToTrie
         [ Replace "," " comma ",
           Replace "." " dot ",
-          Replace "%" " percent "
+          Replace "%" " percent" 
+          {- ^ we do not actually want a space after `percent`
+           because it's usually something like "100% blah blah" in the encoding
+           So if you add a space after, you end up getting "100 percent  blah blah" --- you end up getting one space more than desired.
+          -}
         ]
 
 {- >>> replaceTxt "" 
 ""
 -}
-
--- replaceTxt txt =  if txt == T.empty then txt
---                   -- T.replace will error if input empty
---                   else replacePercent . replaceCommaDot $ txt
---                   where replaceCommaDot = T.replace "," " comma " .
---                                           T.replace "." " dot "
---                         replacePercent = T.replace "%" " percent "
 
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

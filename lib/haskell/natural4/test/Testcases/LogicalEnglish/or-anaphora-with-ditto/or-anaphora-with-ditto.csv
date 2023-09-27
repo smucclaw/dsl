@@ -1,5 +1,4 @@
 GIVEN,cat,IS A,Felidae,,,,,,,,,,,,
-,sneakiness,IS A,Trait,,,,,,,,,,,,
 DECIDE,sneakiness,of,cat,IS,0.25,IF,cat,is of,bay cat lineage,,,,,,
 ,,,,,,OR,"""","""",lynx lineage,,,,,,
 ,"""","""","""","""",0.5,IF,cat,is of,caracal lineage,,,,,,

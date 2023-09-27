@@ -5,7 +5,7 @@ the templates are:
   *a cat* is of caracal lineage,
   *a cat* is of lynx lineage,
   *a cat* is of ocelot lineage,
-  *a sneakiness* of *a cat* is *a number*,
+  sneakiness of *a cat* is *a number*,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -108,10 +108,10 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  a sneakiness of a cat is 0.25
+  sneakiness of a cat is 0.25
   if cat is of bay cat lineage
   or cat is of lynx lineage.
 
-  a sneakiness of a cat is 0.5
+  sneakiness of a cat is 0.5
   if cat is of caracal lineage
   or cat is of ocelot lineage.

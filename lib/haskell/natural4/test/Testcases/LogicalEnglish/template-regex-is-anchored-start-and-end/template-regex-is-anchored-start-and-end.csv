@@ -1,0 +1,7 @@
+GIVEN,bleh,IS A,Blehy,
+,wah bleh,IS A, Blehy,
+,buh,IS A,Blehy,
+DECIDE,bleh's,word2,is,val,
+IF,wah bleh's,word2,is,val,
+OR,wah2,bleh's,word2,is,val, 
+OR,buh,bleh's,word2,is,val moarrr, 

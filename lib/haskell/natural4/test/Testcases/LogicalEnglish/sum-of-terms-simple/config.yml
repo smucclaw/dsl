@@ -1,0 +1,2 @@
+description: "t IS SUM t1 ...tn = t is the sum of [t1,...,tn] --- in the simple case where we are just adding two terms"
+enabled: true

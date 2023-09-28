@@ -8,6 +8,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-|
 
 We're trying to work with the rules / AST instead, 
@@ -22,22 +23,25 @@ module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.List (sort)
--- import Data.Maybe (fromMaybe, listToMaybe)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
 
--- import Optics
+import Language.Haskell.TH.Syntax (lift)
+
 import Prettyprinter
+
   ( Doc,
     Pretty (pretty))
 import LS.PrettyPrinter
     ( myrender)
-import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libTemplatesTxt)
+import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libAndBuiltinTemplates)
 
--- import LS.Types qualified as L4
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
+  ( SimpleL4HC
+    , VarsHC
+  )
 import LS.XPile.LogicalEnglish.ValidateL4Input
       (
         isHornlike
@@ -109,7 +113,8 @@ getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . fold
     removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
 
     libTemplatesRegTravs :: [RegexTrav]
-    libTemplatesRegTravs = regextravifyNLASection libTemplatesTxt
+    libTemplatesRegTravs =
+      regextravifyNLASection $(lift libAndBuiltinTemplates)
 
     removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  

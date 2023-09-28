@@ -14,7 +14,7 @@ module LS.XPile.LogicalEnglish.Types (
       OrigVarName
     , BoolPropn(..)
     -- L4-related types
-    , InlineRPrel(..)
+    , RpcRPrel(..)
     , RPnonPropAnaph  
     , RParithComp
     , RPothers
@@ -33,6 +33,7 @@ module LS.XPile.LogicalEnglish.Types (
     , pattern MkIsOpSuchTtBP
     , pattern MkIsOpOf
     , pattern MkIsDiffFr
+    , pattern MkIsIn
 
     -- Intermediate representation types
     , TemplateVar(..)
@@ -115,6 +116,7 @@ In particular, it includes not only variables but also atoms.
 -}
 data AtomicBPropn term =
     ABPatomic [term]
+  | ABPIsIn term term
   | ABPIsDiffFr term term
     -- ^ Note: the encoding has a few rules that use an atom in the rightmost term
   | ABPIsOpOf term OpOf [term]
@@ -148,23 +150,22 @@ data RParithComp
 data RPothers
 
 {- | 
-  Some RPs are supported by converting them to cases in other data structures
-  Some RPs are, by contrast, 'inlined'; the following are the 'inline' RPRels tt are supported by L4 -> LE transpiler
+ Some of the RPRels appear in a RPConstraint.
+ Of those RPConstraint RPRels, these are the ones tt are supported by L4 -> LE transpiler
 
   Having a GADT like this is useful for various reasons.
   For example, it allows us to mark explicitly in the types which of the various RPRel types a function uses (because often, e.g., we only use a specific proper subset), 
   and to avoid incomplete-pattern-matching errors from the compiler (i.e., to actually get the sort of compile-time guarantees we'd like)
 -}
-data InlineRPrel a where 
-  InlRPlt :: InlineRPrel RParithComp
-  InlRPlte :: InlineRPrel RParithComp
-  InlRPgt :: InlineRPrel RParithComp
-  InlRPgte :: InlineRPrel RParithComp
+data RpcRPrel a where 
+  RpcRPlt :: RpcRPrel RParithComp
+  RpcRPlte :: RpcRPrel RParithComp
+  RpcRPgt :: RpcRPrel RParithComp
+  RpcRPgte :: RpcRPrel RParithComp
+  RpcRPeq :: RpcRPrel RParithComp
 
-  InlRPor :: InlineRPrel RPnonPropAnaph
-  InlRPand :: InlineRPrel RPnonPropAnaph
-
-  InlRPelem :: InlineRPrel RPothers
+  RpcRPor :: RpcRPrel RPnonPropAnaph
+  RpcRPand :: RpcRPrel RPnonPropAnaph
 
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
@@ -187,6 +188,9 @@ pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
 
 pattern MkIsOpSuchTtBP :: L4Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicP
 pattern MkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
+
+pattern MkIsIn :: L4Term -> L4Term -> BoolPropn L4AtomicP
+pattern MkIsIn t1 t2 = AtomicBP (ABPIsIn t1 t2)
 
 pattern MkIsDiffFr :: L4Term -> L4Term -> BoolPropn L4AtomicP
 pattern MkIsDiffFr t1 t2 = AtomicBP (ABPIsDiffFr t1 t2)

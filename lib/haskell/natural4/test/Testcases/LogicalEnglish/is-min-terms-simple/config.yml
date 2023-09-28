@@ -1,0 +1,2 @@
+description: "t IS MIN t1 ... tn = t is the minimum of [t1,...,tn], with just two terms"
+enabled: true

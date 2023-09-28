@@ -24,11 +24,10 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , removeRegexMatches
     , removeDisprefdInEquivUpToVarNames
     , regextravifyNLASection
-    , regextravifyLENLA
+    , regextravifyNLAStr
   )
 where
 
-import LS.Utils ((<||>))
 import Data.Text qualified as T
 import Data.Ord (Down(..))
 import GHC.Exts (sortWith)
@@ -41,6 +40,21 @@ import Data.Maybe (catMaybes)
 import Data.Coerce (coerce)
 
 import LS.XPile.LogicalEnglish.Types
+  ( -- Common types 
+      BoolPropn(..)
+    -- L4-related types
+    , AtomicBPropn(..)
+    -- Intermediate representation types
+    , TemplateVar(..)
+    
+    , VarsHC(VhcF, VhcR)
+    , VarsFact(..)
+    , BaseRule(..)
+    , VarsRule
+    , AtomicPWithVars
+    , VCell(..)
+    , _TempVar
+  )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
 import Data.String.Interpolate ( i )
@@ -50,9 +64,9 @@ import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
 import qualified Text.Regex.PCRE.Heavy as PCRE
--- import Text.Regex.PCRE.Heavy()
 import Control.Lens.Regex.Text
 
+import Data.Function (on)
 import Optics
 -- import Data.Text.Optics (unpacked)
 import Data.HashSet.Optics (setOf)
@@ -60,12 +74,15 @@ import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 -- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
--- import qualified Data.Sequence as Seq
 import Data.Sequences (SemiSequence, intersperse) --groupAllOn
 import Data.List qualified as L
 import Data.MonoTraversable (Element)
 import Prettyprinter(Pretty)
 
+-- $setup
+-- >>> import qualified Data.Text as T
+-- >>> import Optics
+-- >>> :seti -XOverloadedStrings
 
 newtype NLATxt = MkNLATxt T.Text
   deriving stock (Show)
@@ -133,7 +150,7 @@ regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
   where
     strdelimitr :: String = " "
     regexf = \case
-        TempVar tvar   -> tvar2WordOrVIregex tvar
+        TempVar tvar   -> tvar2WordsOrVIregex tvar
         Pred nonvartxt -> (PCRE.escape . T.unpack $ nonvartxt)
           --TODO: Add tests to check if have to escape metachars in Pred
             -- T.unpack nonvartxt
@@ -144,15 +161,25 @@ textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingf
 
 --- helpers for working with regex
 
-{- | a regex that matches either a word or another variable indicator -}
-wordOrVI :: RawRegexStr
-wordOrVI = [r|(\w+|\*[\w\s]+\*)|]
+{- | 
+a regex that matches either of
+  another variable indicator
+  1 - 4 words 
+  a word - a word
+  a word + a word
+  
+Note: not everything that can appear in a term position needs to be captured here, 
+because for some constructs that correspond to built-in things, 
+we just don't make NLAs out of them. 
+We don't (and cannot) do this for all of them, but we do do this for some of them. -}
+wordsOrVI :: RawRegexStr
+wordsOrVI = [r|(\w+( +\w+){0,3}|\*[\w\s]+\*|\w+ - \w+|\w+ \+ \w+)|]
 
-tvar2WordOrVIregex :: TemplateVar -> RawRegexStr
-tvar2WordOrVIregex = \case
-    MatchGVar _    -> wordOrVI
-    EndsInApos _   -> wordOrVI <> [r|'s|]
-    IsNum _        -> [r|is |] <> wordOrVI
+tvar2WordsOrVIregex :: TemplateVar -> RawRegexStr
+tvar2WordsOrVIregex = \case
+    MatchGVar _    -> wordsOrVI
+    EndsInApos _   -> wordsOrVI <> [r|'s|]
+    IsNum _        -> [r|is |] <> wordsOrVI
 
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
@@ -204,7 +231,7 @@ regextravifyNLASection nlasectn =
     & view (to T.lines)
     & toListOf (traversed % to T.unsnoc
                 % folded % _1
-                % to regextravifyLENLA % _Right)
+                % to regextravifyNLAStr % _Right)
 
 -- filtering out dispreferred among the equivalent up to var names
 -- TODO: first pass; haven't fully thought thru the API yet
@@ -226,7 +253,7 @@ removeDisprefdInEquivUpToVarNames nlas =
       makeFResult eqclass = if length eqclass == 1
                             then MkFResult {subsumed = mempty, kept = eqclass}
                             else (fmap toList . removeDisprefdInEqClass) eqclass
-  in mconcat . fmap makeFResult $ eqclasses
+  in foldMap makeFResult eqclasses
 
 --- helpers
 
@@ -266,25 +293,37 @@ x `isEquivUpToVarNames` y = x.numVars == y.numVars && x.regex `matchesTxtOf` y.g
 removeDisprefdInEqClass :: Foldable f => f NLA -> FilterResult (HS.HashSet NLA)
 removeDisprefdInEqClass nlas =
   let
-    maybeMaxNumChars :: Maybe Int = nlas & maximumOf (folded % to nlaAsTxt % to T.length)
-    fewerThanMaxNumChars :: T.Text -> Bool
-    fewerThanMaxNumChars txt = case maybeMaxNumChars of
-                                Just maxNumChars -> T.length txt < maxNumChars
-                                Nothing          -> False
-    isLessInformative :: T.Text -> Bool = T.isInfixOf "a number" <||> fewerThanMaxNumChars
+    informativeness :: NLA -> NLA -> Ordering
+    informativeness = compareNlaNumChars
+    compareNlaNumChars = compare `on` (T.length . nlaAsTxt)
+    -- this is the easiest thing to implement that should work well enough for our purposes
+    nlaset = setOf folded nlas
 
-    subsumed :: HS.HashSet NLA = nlas & setOf (folded
-                                              % filteredBy (to nlaAsTxt % filtered isLessInformative))
-    kept :: HS.HashSet NLA = difference (setOf folded nlas) subsumed
+    kept :: HS.HashSet NLA  = nlas
+                                & maximumByOf folded informativeness
+                                & setOf folded
+    subsumed :: HS.HashSet NLA = difference nlaset kept
+
   in MkFResult {subsumed=subsumed, kept=kept}
 
 
--- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
-regextravifyLENLA :: T.Text -> Either String RegexTrav
-regextravifyLENLA = fmap traversify . makeRegex . rawregexifyLENLA
+{- | Converts a T.Text NLA to a RegexTrav
+Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
 
-rawregexifyLENLA :: T.Text -> RawRegexStr
-rawregexifyLENLA (T.unpack -> nlastr) =
+>>> (\regx -> has regx "one 2 three says hi") <$> regextravifyNLAStr (T.pack "*a bleh* says hi") 
+Right True
+
+>>> (\regx -> has regx "*another thing* says hi") <$> regextravifyNLAStr (T.pack "*a bleh* says hi") 
+Right True
+
+>>> (\regx -> has regx " nowWithLeadingSpc says hi") <$> regextravifyNLAStr (T.pack "*a bleh* says hi") 
+Right False
+-}
+regextravifyNLAStr :: T.Text -> Either String RegexTrav
+regextravifyNLAStr = fmap traversify . makeRegex . rawregexifyNLAStr
+
+rawregexifyNLAStr :: T.Text -> RawRegexStr
+rawregexifyNLAStr (T.unpack -> nlastr) =
   let
     splitted = splitOn "*" nlastr
     isVarIdx = if splitted ^? ix 0 == Just "" then odd else even
@@ -294,11 +333,13 @@ rawregexifyLENLA (T.unpack -> nlastr) =
                    >>> splitOn "*" "a class's *a list*"
                    ["a class's ","a list",""]
                -}
-  in splitted
-    & itraversed %& indices isVarIdx         .~ wordOrVI
-    & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
-                    -- escape metachars in text that's not part of any var indicator
-    & toListOf (folded % folded)
+    coreRegex = 
+      splitted
+        & itraversed %& indices isVarIdx         .~ wordsOrVI
+        & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
+                        -- escape metachars in text that's not part of any var indicator
+        & toListOf (folded % folded)
+  in [i|^#{coreRegex}$|]
 
 ------------------- Building NLAs from VarsHCs
 
@@ -330,7 +371,9 @@ nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe NLA
 nlaLoneFromVAtomicP =  \case
   ABPatomic vcells         -> mkNLA vcells
   ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
-  -- the other two cases are accounted for by lib NLAs/templates
+
+  -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
+  ABPIsIn{}     -> Nothing -- TODO: Check if `is in` is really built into LE! Seems tt way but haven't run LE query yet
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
 

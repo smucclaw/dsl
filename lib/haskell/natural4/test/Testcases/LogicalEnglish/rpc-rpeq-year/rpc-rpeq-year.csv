@@ -1,0 +1,9 @@
+GIVEN,sam,IS A,Person,,
+,n,IS A,Number,,
+,x,IS A,Number,,
+,y,IS A,Number,,
+DECIDE,whatever,n,times,,
+IF,sam's,adventure's,start date,IS,x
+AND,sam's,adventure's,end date,IS,y
+AND,y,=,2023,
+AND,n,=,y - x,

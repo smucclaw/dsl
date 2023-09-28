@@ -1,0 +1,7 @@
+GIVEN,x,IS A,Number,
+,y,IS A,Number,
+DECIDE,x,is twice of,y,
+IF,y,>=,0,
+AND,y,<=,100,
+AND,x,IS,PRODUCT,y
+,,,,2

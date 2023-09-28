@@ -101,10 +101,8 @@ markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
     in (nvars', ABPatomic univStatuses)
-  ABPIsDiffFr t1 t2 ->
-    let (nvars', t1') = identifyUnivVar nvars t1
-        (nvars'', t2') = identifyUnivVar nvars' t2
-    in (nvars'', ABPIsDiffFr t1' t2')
+  ABPIsIn t1 t2     -> isSmtg ABPIsIn t1 t2
+  ABPIsDiffFr t1 t2 -> isSmtg ABPIsDiffFr t1 t2
   ABPIsOpOf term opof termlst ->
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' termlst
@@ -113,6 +111,12 @@ markUnivVarsInAtomicPacc nvars = \case
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
     in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
+  where
+    isSmtg op t1 t2 = 
+      let (nvars', t1') = identifyUnivVar nvars t1
+          (nvars'', t2') = identifyUnivVar nvars' t2
+      in (nvars'', op t1' t2')
+
 
 
 --- start by doing it the EASIEST possible way 

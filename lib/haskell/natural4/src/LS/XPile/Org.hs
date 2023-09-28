@@ -197,6 +197,11 @@ musings l4i rs =
                    , "terms annotated with TYPICALLY so we tell XPile targets what their default values are"
                    , srchs (getMarkings l4i)
                    ]
+
+           , "** show all possible combinations of sats, with NL"
+           , "This is for the AW 415 cheating / 378 theft use case. If we have ~a && (b || c)~ we need to show there are two possible paths."
+           , "If we have ~a && (b || c) && (d || e || f)~ we enumerate the six possible paths."
+           
            , "** symbol tables (~scopetable l4i~)"
            , vvsep [ "***" <+> pretty lhs </> srchs rhs | (lhs, rhs) <- Map.toList (scopetable l4i) ]
 

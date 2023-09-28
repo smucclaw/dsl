@@ -24,7 +24,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , removeRegexMatches
     , removeDisprefdInEquivUpToVarNames
     , regextravifyNLASection
-    , regextravifyLENLA
+    , regextravifyNLAStr
   )
 where
 
@@ -79,6 +79,10 @@ import Data.List qualified as L
 import Data.MonoTraversable (Element)
 import Prettyprinter(Pretty)
 
+-- $setup
+-- >>> import qualified Data.Text as T
+-- >>> import Optics
+-- >>> :seti -XOverloadedStrings
 
 newtype NLATxt = MkNLATxt T.Text
   deriving stock (Show)
@@ -227,7 +231,7 @@ regextravifyNLASection nlasectn =
     & view (to T.lines)
     & toListOf (traversed % to T.unsnoc
                 % folded % _1
-                % to regextravifyLENLA % _Right)
+                % to regextravifyNLAStr % _Right)
 
 -- filtering out dispreferred among the equivalent up to var names
 -- TODO: first pass; haven't fully thought thru the API yet
@@ -303,12 +307,23 @@ removeDisprefdInEqClass nlas =
   in MkFResult {subsumed=subsumed, kept=kept}
 
 
--- | Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
-regextravifyLENLA :: T.Text -> Either String RegexTrav
-regextravifyLENLA = fmap traversify . makeRegex . rawregexifyLENLA
+{- | Converts a T.Text NLA to a RegexTrav
+Takes as input a T.Text NLA that has already had the final char (either comma or period) removed
 
-rawregexifyLENLA :: T.Text -> RawRegexStr
-rawregexifyLENLA (T.unpack -> nlastr) =
+>>> (\regx -> has regx "one 2 three says hi") <$> regextravifyNLAStr (T.pack "*a bleh* says hi") 
+Right True
+
+>>> (\regx -> has regx "*another thing* says hi") <$> regextravifyNLAStr (T.pack "*a bleh* says hi") 
+Right True
+
+>>> (\regx -> has regx " nowWithLeadingSpc says hi") <$> regextravifyNLAStr (T.pack "*a bleh* says hi") 
+Right False
+-}
+regextravifyNLAStr :: T.Text -> Either String RegexTrav
+regextravifyNLAStr = fmap traversify . makeRegex . rawregexifyNLAStr
+
+rawregexifyNLAStr :: T.Text -> RawRegexStr
+rawregexifyNLAStr (T.unpack -> nlastr) =
   let
     splitted = splitOn "*" nlastr
     isVarIdx = if splitted ^? ix 0 == Just "" then odd else even

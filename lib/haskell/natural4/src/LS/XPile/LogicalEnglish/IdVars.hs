@@ -44,6 +44,7 @@ import LS.XPile.LogicalEnglish.Types
 
 -- $setup
 -- >>> import Data.Text qualified as T
+-- >>> :seti -XOverloadedStrings
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case

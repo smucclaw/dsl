@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
@@ -10,10 +11,10 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 
-{-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libTemplatesTxt) where
+module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libAndBuiltinTemplates) where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
@@ -38,11 +39,12 @@ import Prettyprinter
     dot)
 import LS.PrettyPrinter
     ( vvsep, (<//>), myrender )
-import Prettyprinter.Interpolate (__di)
+import Prettyprinter.Interpolate (__di, di)
 -- import Optics
+-- import Optics.State.Operators
+-- import Optics.TH
 -- import Data.Set.Optics (setOf)
 import Data.List ( sort )
-
 
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
@@ -64,8 +66,9 @@ data LEProg = MkLEProg {  keptnlats :: [NLATxt]
                         }
 
 
+
 -- | config record for pretty printing
-data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int}
+data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int} deriving stock (Show)
 printcfg :: PrintCfg
 printcfg = MkPrintCfg { numIndentSpcs = 2 }
 
@@ -109,23 +112,36 @@ instance Pretty LERuleForPrint where
 
 instance Pretty a => Pretty (BoolPropn a) where
   pretty :: Pretty a => BoolPropn a -> Doc ann
-  pretty = \case
+  pretty =
+    \case
       AtomicBP bp ->
         pretty bp
       And bps     ->
-        concatBoolOp "and" (map pretty bps)
+        boolOp "and" bps
       Or bps      ->
-        concatBoolOp "or" (map pretty bps)
+        boolOp "or" bps
       Not bp      ->
         "it is not the case that" <//> indentLE (pretty bp)
     where
-      concatBoolOp boolop = concatWith (\x y -> x <> line <> boolop <> " " <> y)
+      -- | Nest iff it's an AND or OR, so that won't get extra indentation for "it is not the case that...". 
+      -- TODO: This could be done more elegantly
+      prettnestIfAndOr :: Pretty a => BoolPropn a -> Doc ann
+      prettnestIfAndOr = \case
+        atom@(AtomicBP _) -> pretty atom
+        notbp@(Not _)     -> pretty notbp
+        andbp@(And _)     -> nestLE . pretty $ andbp
+        orbp@(Or _)       -> nestLE . pretty $ orbp
+
+      boolOp opstr bps = concatBoolOp opstr (map prettnestIfAndOr bps)
+      concatBoolOp boolopstr = concatWith (\x y -> x <> line <> boolopstr <+> y)
 
 instance Pretty TxtAtomicBP where
   pretty :: TxtAtomicBP -> Doc ann
   pretty = \case
     ABPatomic prop ->
       prettyprop prop
+    ABPIsIn t1 t2 ->
+      [__di|#{pretty t1} is in #{pretty t2}|]
     ABPIsDiffFr t1 t2 ->
       [__di|#{pretty t1} is different from #{pretty t2}|]
     ABPIsOpOf t1 opof targs ->
@@ -142,11 +158,7 @@ punctuate'
     :: Doc ann -- ^ Punctuation, e.g. 'comma'
     -> [Doc ann]
     -> [Doc ann]
-punctuate' p = go
-  where
-    go []     = []
-    go [d]    = [d <> p]
-    go (d:ds) = (d <> p) : go ds
+punctuate' p = map (<> p)
 
 instance Pretty LEProg where
 
@@ -180,23 +192,49 @@ instance Pretty LEProg where
         #{removedNLAsection}
 
         % Predefined stdlib for translating natural4 -> LE.
-        the knowledge base prelude includes:
+        the knowledge base lib includes:
           #{nestLE libHCs}
 
-        the knowledge base encoding includes:
+        the knowledge base rules includes:
           #{nestLE prettyLEhcs}
-      
-        query q is:
-          0 < 1.
       |]
+
+{- | Templates which are predefined in LE itself, and hence should not be
+      included in the LE output.
+      Note: we don't strictly speaking need *all* of the following, 
+            because we don't make NLAs out of every construct,
+            but having all the built-in templates here does make for good documentation 
+-}
+builtinTemplates :: Doc ann
+builtinTemplates =
+  [__di|
+  *a thing* is in *a thing*,
+  #{nlas}.|]
+  where
+    nlas = concatNlaList $ mconcat [mathNlaList, dateNlaList]
+
+    concatNlaList :: [Doc ann] -> Doc ann
+    concatNlaList = concatWith \x y -> mconcat [x, ",\n", y]
+
+    mathNlaList =
+      [ [di|*a number* #{binOp} *a number*|]
+        | binOp :: Doc ann <- ["<", ">", "=<", ">=", "="]
+      ]
+
+    dateNlaList =
+      [ [di|*a date* is *a n* #{timeUnit} #{beforeAfter} *a date*|]
+        | timeUnit :: Doc ann <- ["days", "weeks", "months", "years"],
+          beforeAfter :: Doc ann <- ["before", "after"]
+      ]
 
 libTemplates :: Doc ann
 libTemplates =
   [__di|
-  *a var* is after *a var*,
-  *a var* is before *a var*,
-  *a var* is strictly after *a var*,
-  *a var* is strictly before *a var*.
+  *a number* <= *a number*,
+  *a date* is before *a date*,
+  *a date* is after *a date*,
+  *a date* is strictly before *a date*,
+  *a date* is strictly after *a date*,
   *a class*'s *a field* is *a value*,
   *a class*'s nested *a list of fields* is *a value*,
   *a class*'s *a field0*'s *a field1* is *a value*,
@@ -209,11 +247,12 @@ libTemplates =
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.|]
 
-libTemplatesTxt :: T.Text
-libTemplatesTxt = T.strip . myrender $ libTemplates
+libAndBuiltinTemplates :: T.Text
+libAndBuiltinTemplates =
+  T.strip . myrender $ vsep [libTemplates, builtinTemplates]
 {- ^
->>> libTemplatesTxt
-"*a var* is after *a var*,\n*a var* is before *a var*,\n*a var* is strictly after *a var*,\n*a var* is strictly before *a var*.\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*."
+>>> libAndBuiltinTemplates
+"*a number* <= *a number*,\n*a date* is before *a date*,\n*a date* is after *a date*,\n*a date* is strictly before *a date*,\n*a date* is strictly after *a date*,\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*.\n*a thing* is in *a thing*,\n*a number* < *a number*,\n*a number* > *a number*,\n*a number* =< *a number*,\n*a number* >= *a number*,\n*a number* = *a number*,\n*a date* is *a n* days before *a date*,\n*a date* is *a n* days after *a date*,\n*a date* is *a n* weeks before *a date*,\n*a date* is *a n* weeks after *a date*,\n*a date* is *a n* months before *a date*,\n*a date* is *a n* months after *a date*,\n*a date* is *a n* years before *a date*,\n*a date* is *a n* years after *a date*."
 
 The T.strip isn't currently necessary, 
 but it seems like a good thing to include to pre-empt any future issues from accidentally adding whitespace.
@@ -222,6 +261,9 @@ but it seems like a good thing to include to pre-empt any future issues from acc
 libHCs :: Doc ann
 libHCs =
   [__di|
+  a number <= an other number
+  if number =< other number.
+
   % Note: LE's parsing of [H | T] is broken atm because it transforms that
   % into [H, T] rather than the Prolog term [H | T].
 

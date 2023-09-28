@@ -73,7 +73,11 @@ import Text.Megaparsec
 import Data.Graph.Inductive (Gr, empty)
 import LS.XPile.Logging (XPileLogW)
 import Optics hiding ((|>), has) -- the Rule record has a `has` field
-import Optics qualified as O
+
+-- $setup
+-- >>> :set -XDataKinds -XFlexibleContexts -XTypeApplications -XTypeFamilies -XDeriveGeneric
+-- >>> import Optics qualified as O (has)
+-- >>> import Data.Generics.Sum.Constructors
 
 {- | 
 [TODO] refactoring: these should be broken out into their own (new)types and have Rule include them all.

@@ -2,29 +2,57 @@
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
--- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.LogicalEnglish.IdVars (
     idVarsInHC
-  , idVarsInAP
-  , idVarsInBody
+  -- , idVarsInAP
+  -- , idVarsInBody
 ) where
 
-import Data.Text qualified as T
-import Data.HashSet qualified as HS
 import Data.Coerce (coerce)
+import Data.HashSet qualified as HS
+import Data.Sequences (fromStrict, toStrict)
+import Data.Text qualified as T
+import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 import LS.XPile.LogicalEnglish.Types
+  (
+      BoolPropn(..)
+    -- L4-related types
+    , GVar(..)
+    , GVarSet
+    , Cell(..)
+    
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead,
+                 MkL4RuleHc, rgiven, rhead, rbody)
+
+    , AtomicBPropn(..)
+    , L4AtomicP
+
+    -- Intermediate representation types
+    , TemplateVar(..)
+    , VarsHC(MkVarsFact,
+             MkVarsRule, 
+             vfhead,
+             vrhead, vrbody)    
+    , AtomicPWithVars
+    , VCell(..)
+  )
+
+-- $setup
+-- >>> import Data.Text qualified as T
+-- >>> :seti -XOverloadedStrings
+-- >>> import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
+-- >>> import Data.Sequences (fromStrict, toStrict)
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case
   MkL4FactHc{..} -> MkVarsFact { vfhead =  idVarsInAP fgiven fhead }
   MkL4RuleHc{..} -> MkVarsRule { vrhead =  idVarsInAP rgiven rhead
-                             , vrbody = idVarsInBody rgiven rbody }
+                               , vrbody = idVarsInBody rgiven rbody }
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading
 {- | Identifies vars in L4AtomicP:
@@ -32,19 +60,9 @@ idVarsInHC = \case
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
-idVarsInAP gvars = \case
-  ABPatomic cells ->
-    ABPatomic $ fmap mkVcell cells
-  ABPIsDiffFr t1 t2 ->
-    ABPIsDiffFr (cell2vcell gvars t1)
-                (cell2vcell gvars t2)
-  ABPIsOpOf t opOf termargs ->
-    ABPIsOpOf (cell2vcell gvars t) opOf (fmap mkVcell termargs)
-  ABPIsOpSuchTt t opST cells ->
-    ABPIsOpSuchTt (cell2vcell gvars t) opST
-                  (fmap mkVcell cells)
+idVarsInAP gvars = fmap makeVCell
   where
-    mkVcell = cell2vcell gvars
+    makeVCell = cell2vcell gvars
 
 -- | Replace "." with "dot" and "," with "comma", in the Pred txts of ABPatomics
 postprocAP :: AtomicPWithVars -> AtomicPWithVars
@@ -64,14 +82,39 @@ replaceTxtVCell = \case
   tv@(TempVar _) -> tv
   Pred txt  -> Pred $ replaceTxt txt
 
+{- | 
+TODO: Would be better to read in a dictionary of what/how to replace from some config file,
+a config file that is kept in sync with the downstream stuff 
+(since have to do this kind of replacement in the converse direction when generating justification)
+-}
 replaceTxt :: T.Text -> T.Text
-replaceTxt txt =  if txt == T.empty then txt
-                  -- T.replace will error if input empty
-                  else replacePercent . replaceCommaDot $ txt
-                  where replaceCommaDot = T.replace "," "comma" .
-                                          T.replace "." "dot"
-                        replacePercent = T.replace "%" " percent"
+replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
+  where
+    replacements =
+      listToTrie
+        [ Replace "," " comma",
+          Replace "." " dot ",
+          Replace "%" " percent" 
+          {- ^ it's cleaner not to put a space after `percent`
+           because it's usually something like "100% blah blah" in the encoding
+           So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
+           And similarly with `comma`.
 
+           Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
+            >>> replaceTxt ""
+            ""
+
+            >>> replaceTxt ("100.5 * 2" :: T.Text)
+            "100 dot 5 * 2"
+
+            >>> replaceTxt "100% guarantee"
+            "100 percent guarantee"
+
+            >>> replaceTxt "rocks, stones, and trees"
+            "rocks comma stones comma and trees"
+          -}
+        ]
+        
 
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

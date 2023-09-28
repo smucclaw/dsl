@@ -1,0 +1,4 @@
+GIVEN,x,IS A,Animal,
+DECIDE,x,is an aquatic animal,
+IF,,x,IS,NOT,an insect,
+AND,NOT,x,lives on land,

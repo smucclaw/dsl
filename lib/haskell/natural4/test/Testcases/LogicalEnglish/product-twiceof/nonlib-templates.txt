@@ -1,1 +1,2 @@
 *a x* is twice of *a y*
+*a y* <= 100,

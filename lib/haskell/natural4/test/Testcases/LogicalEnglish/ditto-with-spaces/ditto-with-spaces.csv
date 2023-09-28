@@ -1,0 +1,4 @@
+GIVEN,b,IS A,Beetle,,,,,,,,
+DECIDE,b's,type,,IS,Christmas Beetle,IF,b's,diet,IS,Eucalyptus,
+,"""","""",,"""",Dung Beetle,"""","""","""","""",Dung,
+,"""","""",,"""",Rhino Beetle,"""","""","""","""",Organic mulch,

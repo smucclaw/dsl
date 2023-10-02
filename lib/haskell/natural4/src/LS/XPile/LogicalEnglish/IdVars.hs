@@ -92,9 +92,10 @@ replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
       listToTrie
-        [ Replace "," " comma",
-          Replace "." " dot ",
-          Replace "%" " percent" 
+        [ Replace "," " COMMA",
+          Replace "." " DOT ",
+          Replace "%" " PERCENT",
+          Replace ";" " SEMICOLON"
           {- ^ it's cleaner not to put a space after `percent`
            because it's usually something like "100% blah blah" in the encoding
            So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
@@ -105,13 +106,13 @@ replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
             ""
 
             >>> replaceTxt ("100.5 * 2" :: T.Text)
-            "100 dot 5 * 2"
+            "100 DOT 5 * 2"
 
             >>> replaceTxt "100% guarantee"
-            "100 percent guarantee"
+            "100 PERCENT guarantee"
 
             >>> replaceTxt "rocks, stones, and trees"
-            "rocks comma stones comma and trees"
+            "rocks COMMA stones COMMA and trees"
           -}
         ]
         

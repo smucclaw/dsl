@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -W #-}
 
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -16,6 +18,7 @@ import Data.Coerce (coerce)
 import Data.HashSet qualified as HS
 import Data.Sequences (fromStrict, toStrict)
 import Data.Text qualified as T
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 import LS.XPile.LogicalEnglish.Types
@@ -88,12 +91,13 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
+replaceTxt =
+  replacePeriod . replaceHyphen .
+  toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
       listToTrie
         [ Replace "," " COMMA",
-          Replace "." " DOT ",
           Replace "%" " PERCENT",
           Replace ":" " COLON",
           Replace ";" " SEMICOLON"
@@ -116,8 +120,19 @@ replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
             "rocks COMMA stones COMMA and trees"
           -}
         ]
-        
 
+    replacePeriod =
+      PCRE.gsub
+        -- https://stackoverflow.com/a/45616898 
+        [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
+        (" PERIOD " :: T.Text)
+
+    replaceHyphen =
+      PCRE.gsub
+        -- https://stackoverflow.com/a/31911114
+        [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
+        \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
+        
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
   * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum

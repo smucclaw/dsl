@@ -95,6 +95,7 @@ replaceTxt = toStrict . replaceWithTrie replacements . fromStrict
         [ Replace "," " COMMA",
           Replace "." " DOT ",
           Replace "%" " PERCENT",
+          Replace ":" " COLON",
           Replace ";" " SEMICOLON"
           {- ^ it's cleaner not to put a space after `percent`
            because it's usually something like "100% blah blah" in the encoding

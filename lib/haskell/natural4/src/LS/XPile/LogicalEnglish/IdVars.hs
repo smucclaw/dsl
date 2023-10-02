@@ -118,6 +118,10 @@ replaceTxt =
           -}
         ]
 
+    -- LE has no trouble parsing dots that appear in numbers, ie things like
+    -- "clause 2.1 applies" is fine.
+    -- However, dots used as a full-stop, as in "The car is blue." is not ok
+    -- and so that "." needs to be turned into "PERIOD".
     replacePeriod =
       PCRE.gsub
         -- https://stackoverflow.com/a/45616898 

@@ -92,15 +92,12 @@ a config file that is kept in sync with the downstream stuff
 -}
 replaceTxt :: T.Text -> T.Text
 replaceTxt =
-  replacePeriod . replaceHyphen .
-  toStrict . replaceWithTrie replacements . fromStrict
+  replacePeriod . toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
       listToTrie
         [ Replace "," " COMMA",
-          Replace "%" " PERCENT",
-          Replace ":" " COLON",
-          Replace ";" " SEMICOLON"
+          Replace "%" " PERCENT"
           {- ^ it's cleaner not to put a space after `percent`
            because it's usually something like "100% blah blah" in the encoding
            So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
@@ -127,11 +124,11 @@ replaceTxt =
         [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
         (" PERIOD " :: T.Text)
 
-    replaceHyphen =
-      PCRE.gsub
-        -- https://stackoverflow.com/a/31911114
-        [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
-        \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
+    -- replaceHyphen =
+    --   PCRE.gsub
+    --     -- https://stackoverflow.com/a/31911114
+    --     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
+    --     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
         
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

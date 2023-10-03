@@ -3,7 +3,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 -- {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
 {-
 Provide export from Natural4 type declarations of record types of the form
 DECLARE T
@@ -27,6 +26,7 @@ import Prettyprinter
 import Prettyprinter.Render.Text ()
 import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, keyword, clauses, has, name, super),
+    extractMTExprs
   )
 import LS.Types as SFL4
   (
@@ -51,9 +51,8 @@ import Data.Text (unpack)
 import Debug.Trace (trace)
 import Data.List (isSuffixOf, intercalate)
 import Data.Char (toLower)
-import Optics hiding (has)
-import Data.Text.Optics (unpacked)
-import Data.Generics.Product.Types (types, HasTypes)
+-- import Optics hiding (has)
+import Data.Generics.Product.Types (HasTypes)
 
 
 type TypeName = String
@@ -112,7 +111,7 @@ typeDeclNameToFieldName = typeDeclNameToTypeName
 
 -- | Collect the enums into a list of strings
 getEnums :: forall s. (HasTypes s MTExpr) => s -> [String]
-getEnums enums = enums ^.. types @MTExpr % to mtexpr2text % unpacked
+getEnums = map (T.unpack . mtexpr2text) . extractMTExprs
 
 textToFieldType :: T.Text -> FieldType
 textToFieldType tn = case unpack tn of

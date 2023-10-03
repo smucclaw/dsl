@@ -21,6 +21,7 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import Data.Generics.Sum.Constructors
+import Data.Generics.Product.Types (types, HasTypes)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
@@ -358,6 +359,11 @@ defaultTypeDecl =
       defaults = [],
       symtab = []
     }
+
+-- | Extract the MTExprs from, e.g., the Maybe ParamTexts (e.g. from the given field)
+extractMTExprs :: forall s. (HasTypes s MTExpr) => s -> [MTExpr]
+extractMTExprs = toListOf (types @MTExpr)
+
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool

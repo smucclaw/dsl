@@ -1,30 +1,61 @@
 {-# OPTIONS_GHC -W #-}
 
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards #-}
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.LogicalEnglish.IdVars (
     idVarsInHC
-  , idVarsInAP
-  , idVarsInBody
+  -- , idVarsInAP
+  -- , idVarsInBody
 ) where
 
-import Data.Text qualified as T
-import Data.HashSet qualified as HS
 import Data.Coerce (coerce)
+import Data.HashSet qualified as HS
+import Data.Sequences (fromStrict, toStrict)
+import Data.Text qualified as T
+import Text.Regex.PCRE.Heavy qualified as PCRE
+import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 import LS.XPile.LogicalEnglish.Types
+  (
+      BoolPropn(..)
+    -- L4-related types
+    , GVar(..)
+    , GVarSet
+    , Cell(..)
+    
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead,
+                 MkL4RuleHc, rgiven, rhead, rbody)
+
+    , AtomicBPropn(..)
+    , L4AtomicP
+
+    -- Intermediate representation types
+    , TemplateVar(..)
+    , VarsHC(MkVarsFact,
+             MkVarsRule, 
+             vfhead,
+             vrhead, vrbody)    
+    , AtomicPWithVars
+    , VCell(..)
+  )
+
+-- $setup
+-- >>> import Data.Text qualified as T
+-- >>> :seti -XOverloadedStrings
+-- >>> import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
+-- >>> import Data.Sequences (fromStrict, toStrict)
 
 idVarsInHC :: SimpleL4HC -> VarsHC
 idVarsInHC = \case
   MkL4FactHc{..} -> MkVarsFact { vfhead =  idVarsInAP fgiven fhead }
   MkL4RuleHc{..} -> MkVarsRule { vrhead =  idVarsInAP rgiven rhead
-                             , vrbody = idVarsInBody rgiven rbody }
+                               , vrbody = idVarsInBody rgiven rbody }
 
 -- TODO: Refactor with a Reader when time permits to de-emphasize the gvars threading
 {- | Identifies vars in L4AtomicP:
@@ -32,29 +63,78 @@ idVarsInHC = \case
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
-idVarsInAP gvars = \case
-  ABPatomic cells ->
-    ABPatomic $ fmap mklabscell cells
-  ABPIsDiffFr t1 t2 ->
-    ABPIsDiffFr (cell2vcell gvars t1)
-                (cell2vcell gvars t2)
-  ABPIsOpOf t opOf termargs ->
-    ABPIsOpOf (cell2vcell gvars t) opOf (fmap mklabscell termargs)
-  ABPIsOpSuchTt t opST cells ->
-    ABPIsOpSuchTt (cell2vcell gvars t) opST
-                  (fmap mklabscell cells)
+idVarsInAP gvars = fmap makeVCell
   where
-    mklabscell = cell2vcell gvars
+    makeVCell = cell2vcell gvars
+
+-- | Replace "." with "dot" and "," with "comma", in the Pred txts of ABPatomics
+postprocAP :: AtomicPWithVars -> AtomicPWithVars
+postprocAP = \case
+  ABPatomic cells -> ABPatomic $ fmap replaceTxtVCell cells
+  others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
-idVarsInBody gvars l4boolprop =
-  let absAtomic = idVarsInAP gvars
-  in fmap absAtomic l4boolprop
+idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 
 
 ---- helpers
 
-{- |
+-- | Replace text in VCells
+replaceTxtVCell :: VCell -> VCell
+replaceTxtVCell = \case
+  tv@(TempVar _) -> tv
+  Pred txt  -> Pred $ replaceTxt txt
+
+{- | 
+TODO: Would be better to read in a dictionary of what/how to replace from some config file,
+a config file that is kept in sync with the downstream stuff 
+(since have to do this kind of replacement in the converse direction when generating justification)
+-}
+replaceTxt :: T.Text -> T.Text
+replaceTxt =
+  replacePeriod . toStrict . replaceWithTrie replacements . fromStrict
+  where
+    replacements =
+      listToTrie
+        [ Replace "," " COMMA",
+          Replace "%" " PERCENT"
+          {- ^ it's cleaner not to put a space after `percent`
+           because it's usually something like "100% blah blah" in the encoding
+           So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
+           And similarly with `comma`.
+
+           Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
+            >>> replaceTxt ""
+            ""
+
+            >>> replaceTxt ("100.5 * 2" :: T.Text)
+            "100 DOT 5 * 2"
+
+            >>> replaceTxt "100% guarantee"
+            "100 PERCENT guarantee"
+
+            >>> replaceTxt "rocks, stones, and trees"
+            "rocks COMMA stones COMMA and trees"
+          -}
+        ]
+
+    -- LE has no trouble parsing dots that appear in numbers, ie things like
+    -- "clause 2.1 applies" is fine.
+    -- However, dots used as a full-stop, as in "The car is blue." is not ok
+    -- and so that "." needs to be turned into "PERIOD".
+    replacePeriod =
+      PCRE.gsub
+        -- https://stackoverflow.com/a/45616898 
+        [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
+        (" PERIOD " :: T.Text)
+
+    -- replaceHyphen =
+    --   PCRE.gsub
+    --     -- https://stackoverflow.com/a/31911114
+    --     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
+    --     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
+        
+{- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
   * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum
   * every IS tt was NOT an IS NUM has been replaced with a `MkCellT "is"`.
@@ -74,8 +154,21 @@ cell2vcell gvars = \case
         else Pred celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
 
+txtIsAGivenVar :: GVarSet -> T.Text -> Bool
+txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
 
--- {- | Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
+type PrefixAposVar = T.Text
+isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
+isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
+            if txtIsAGivenVar gvs prefix
+            then (prefix, True)
+            else ("", False)
+isAposVar _ _                                     = ("", False)
+-- TODO: this matching on "'s" is a bit brittle cos unicode
+
+
+
+-- {-  Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
 -- -}
 -- term2tvar :: GVarSet -> Term -> TemplateVar
 -- term2tvar gvars = \case
@@ -92,16 +185,3 @@ cell2vcell gvars = \case
 -- optOfArg = \case
 --   MkCellT t -> OpOfVarArg t
 --   MkCellIsNum t -> OpOfVarArg t
-
-
-txtIsAGivenVar :: GVarSet -> T.Text -> Bool
-txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
-
-type PrefixAposVar = T.Text
-isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
-isAposVar gvs (T.stripSuffix "'s" -> Just prefix) = 
-            if txtIsAGivenVar gvs prefix 
-            then (prefix, True)
-            else ("", False)
-isAposVar _ _                                     = ("", False)
--- ^ TODO: this matching on "'s" is a bit brittle cos unicode

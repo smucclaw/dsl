@@ -48,7 +48,7 @@ import LS.Types as SFL4
     HornClause2,
     MTExpr (..),
     ParamText,
-    ParamType (TList0, TList1, TOne, TOptional),
+    ParamType (TList0, TList1, TOne, TOptional, TSet0, TSet1),
     RPRel (RPeq),
     RelationalPredicate (..),
     TypeSig (..),
@@ -189,6 +189,8 @@ showtype (SimpleType TOne      tt) = tt
 showtype (SimpleType TOptional tt) = "optional("     <> tt <> ")"
 showtype (SimpleType TList0    tt) = "listOf("       <> tt <> ")"
 showtype (SimpleType TList1    tt) = "nonEmptyList(" <> tt <> ")"
+showtype (SimpleType TSet0     tt) = "setOf("        <> tt <> ")"
+showtype (SimpleType TSet1     tt) = "nonEmptySet("  <> tt <> ")"
 showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums (fmap mtexpr2text <$> untypePT tt)))
 
 inEnums :: NonEmpty (NonEmpty Text.Text) -> Text.Text

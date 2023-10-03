@@ -10,15 +10,13 @@
 
 module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
 
-
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
-import Data.Foldable (toList)
+-- import Data.Foldable (toList)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
 import Data.Traversable
-import Control.Monad.Identity (Identity)
 
 import LS.XPile.LogicalEnglish.Types
 
@@ -103,10 +101,8 @@ markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
     in (nvars', ABPatomic univStatuses)
-  ABPIsDiffFr t1 t2 ->
-    let (nvars', t1') = identifyUnivVar nvars t1
-        (nvars'', t2') = identifyUnivVar nvars' t2
-    in (nvars'', ABPIsDiffFr t1' t2')
+  ABPIsIn t1 t2     -> isSmtg ABPIsIn t1 t2
+  ABPIsDiffFr t1 t2 -> isSmtg ABPIsDiffFr t1 t2
   ABPIsOpOf term opof termlst ->
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' termlst
@@ -115,6 +111,12 @@ markUnivVarsInAtomicPacc nvars = \case
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
     in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
+  where
+    isSmtg op t1 t2 = 
+      let (nvars', t1') = identifyUnivVar nvars t1
+          (nvars'', t2') = identifyUnivVar nvars' t2
+      in (nvars'', op t1' t2')
+
 
 
 --- start by doing it the EASIEST possible way 
@@ -150,7 +152,7 @@ simplifyVAtomicP = fmap simplifyVCells
 
 simplifyVCells :: VCell -> LEhcCell
 simplifyVCells = \case
-  Pred txt    -> NotVar txt
+  Pred txt   -> NotVar txt
   TempVar tv -> tvar2lecell tv
 
 tvar2lecell :: TemplateVar -> LEhcCell

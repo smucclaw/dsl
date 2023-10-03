@@ -8,10 +8,12 @@ module LS.Utils
     mapThenSwallowErrs,
     runMonoidValidate,
     swallowErrs,
-    MonoidValidate
+    MonoidValidate,
+    (<||>)
   )
 where
 
+import Control.Applicative (liftA2)
 import Control.Monad.Validate
   ( MonadValidate (refute),
     Validate,
@@ -73,3 +75,8 @@ swallowErrs = mapThenSwallowErrs id
 
 runMonoidValidate :: MonoidValidate e a -> Either e a
 runMonoidValidate x = x |> coerce |> runValidate 
+
+-- | A simple lifted ('||'), copied from Control.Bool
+(<||>) :: Applicative f => f Bool -> f Bool -> f Bool
+(<||>) = liftA2 (||)
+{-# INLINE (<||>) #-}

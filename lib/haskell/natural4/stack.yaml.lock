@@ -5,41 +5,27 @@
 
 packages:
 - completed:
-    hackage: monad-validate-1.2.0.1@sha256:5a100da896f11ca4b7c123da85decbedeb46c37054a097f258ac911e715cb68d,2587
-    pantry-tree:
-      sha256: 034ee4de9765e38b763f5d73b236cc112205728e680cefbfe12d2882accc3264
-      size: 611
-  original:
-    hackage: monad-validate-1.2.0.1
-- completed:
-    hackage: prettyprinter-interp-0.2.0.0@sha256:45299b61bd6c27d594c1a72b5a8dd5734e791a59828725e4f4e420f3cc37232b,2016
-    pantry-tree:
-      sha256: 2e5ee99fc904a487b1bd94f31db28705b15b0eebcfd7f46879439fbf7313faa1
-      size: 300
-  original:
-    hackage: prettyprinter-interp-0.2.0.0
-- completed:
     name: baby-l4
     pantry-tree:
-      sha256: f80ab74c33cc5b4436412e059e687ec03ea264501306dac31b11984a7c071e14
+      sha256: 2412a794276d08c3b765b1adce14df0d3a617a459a127cb4d0a13379e430fd86
       size: 12537
-    sha256: bf45b0b0ec67989e388d3488aeb9f4aeb61223ef506e62fc95f8da4ddefd8097
-    size: 3188779
-    url: https://github.com/smucclaw/baby-l4/archive/ab191cf0bc915579b841bfe0153591a601e48ae9.tar.gz
+    sha256: c9a251e90fc0025a0ee9dd5d42fb36d701a25f858eeeeda077f6e794f414ff54
+    size: 3188610
+    url: https://github.com/smucclaw/baby-l4/archive/10ea6542a7f7b4b62ffa21fe4e68b30fab2cbe98.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/ab191cf0bc915579b841bfe0153591a601e48ae9.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/10ea6542a7f7b4b62ffa21fe4e68b30fab2cbe98.tar.gz
 - completed:
     name: gf
     pantry-tree:
-      sha256: ddc00ca6074f3a72daa4e6370eebf4371cbd78feb34c0d2dae8610754be228db
-      size: 67922
-    sha256: 062c2e69e46ef7c104cdf2617302c20f499ae6ec0a4753c2acf573beba5454e6
-    size: 3499648
-    url: https://github.com/smucclaw/gf-core/archive/6a36b486fae612798ec36873ccbbdbca73df4f6c.tar.gz
+      sha256: d853f35d67289a4d08c6b65b90af23df1198a36bc949181c27f494d95bf566f4
+      size: 68299
+    sha256: 602f29f9cdf483d8a7998cf6fe60482bcaf4610d33f5c03afa9641f31775dc3c
+    size: 3500182
+    url: https://github.com/smucclaw/gf-core/archive/58e705652937a0c0f4794d0e02eee70b3b90e816.tar.gz
     version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/6a36b486fae612798ec36873ccbbdbca73df4f6c.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/58e705652937a0c0f4794d0e02eee70b3b90e816.tar.gz
 - completed:
     name: prolog
     pantry-tree:
@@ -74,22 +60,29 @@ packages:
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
-    hackage: cgi-3001.5.0.1@sha256:4eb5254d65fe00e91f46a8bab5467669e6e95f6a0eb73a048b70a4aab1a5892e,3458
+    hackage: monad-validate-1.3.0.0@sha256:eb6ddd5c9cf72ff0563cba604fa00291376e96138fdb4932d00ff3a99d66706e,2605
     pantry-tree:
-      sha256: af3bcbb6a04372b059d0762c5b6f70aa626fdb7592f50ea302516ef8381db79a
-      size: 993
+      sha256: 0b2a3a57be48fcc739708b214fca202f1e95b1cd773dd3bb9589d3007cf8cf5e
+      size: 611
   original:
-    hackage: cgi-3001.5.0.1
+    hackage: monad-validate-1.3.0.0
 - completed:
-    hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
+    hackage: prettyprinter-interp-0.2.0.0@sha256:7072e659fb902cbcab790c9cca2b0739f9f4b81b666a63f2140139950f05025d,2086
     pantry-tree:
-      sha256: 935927f27b1406c529a992e99b6ad76669612831d5aef4dae1717c5927263cff
-      size: 383
+      sha256: fe22c473eb4387db98518e748253004c0b649ff88bb13eecae81231cb7a2552c
+      size: 300
   original:
-    hackage: multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
+    hackage: prettyprinter-interp-0.2.0.0
+- completed:
+    hackage: text-replace-0.1.0.3@sha256:1ac3a6a18f0e7d5274e14b6e03e3b36b953d8f0a24ee6b43f8a8befb4160b6b6,1628
+    pantry-tree:
+      sha256: 9d2b3712b7223ab76c50f5e86bdca1431287896af9bd93abc54533a264da1de0
+      size: 394
+  original:
+    hackage: text-replace-0.1.0.3
 snapshots:
 - completed:
-    sha256: 5a59b2a405b3aba3c00188453be172b85893cab8ebc352b1ef58b0eae5d248a2
-    size: 650475
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/26.yaml
-  original: lts-20.26
+    sha256: 9313df78f49519315342f4c51ffc5da12659d3735f8ac3c54a1fb98ff874474e
+    size: 640036
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/12.yaml
+  original: lts-21.12

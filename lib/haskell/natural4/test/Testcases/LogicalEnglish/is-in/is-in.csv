@@ -1,0 +1,7 @@
+GIVEN,blehy,IS A,Mehosaurus,,
+,welpy,IS A,Sianosaurus,,
+,encounter,IS A,Encounter,,
+,events,IS,LIST OF,welpEvents,
+,welp event,IS A,WelpEvents,
+DECIDE,blehy,saw,welpy,within 2 months of,encounter
+IF,welp event,IS,IN,events

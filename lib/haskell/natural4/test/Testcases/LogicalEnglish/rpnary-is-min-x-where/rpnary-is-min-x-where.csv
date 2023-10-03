@@ -1,0 +1,4 @@
+,GIVEN,percentage,,IS A,Number,
+,,circumst,,IS A,Circumstance,,,,,,
+,DECIDE,percentage,is the highest percentage among all applicable,for,circumst,
+,IF,percentage,IS,MIN,x,where,x,is the percentage that was promised in the golden land,

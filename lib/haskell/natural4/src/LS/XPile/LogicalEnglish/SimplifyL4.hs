@@ -5,14 +5,14 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE DeriveAnyClass #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
+{-# LANGUAGE TypeApplications, GADTs #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 
-module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4hc, SimpL4(..), SimL4Error(..)) where
+module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
 
 import Data.Text qualified as T
 import qualified Data.Text.Lazy as T (toStrict)
@@ -24,30 +24,44 @@ import Control.Monad.Validate
   ( MonadValidate (..)
     , Validate
     , refute
-    , dispute
-    , runValidate
     )
-import Control.Monad.Identity
-
-import Data.Bifunctor       ( first )
-import Data.HashMap.Strict qualified as HM
+import Optics
+import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
-import GHC.Generics (Generic)
-import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
 import Data.String (IsString)
-import Data.List.NonEmpty qualified as NE
-import Debug.Trace (trace)
 
 import qualified AnyAll as AA
 import LS.Types qualified as L4
-import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..), BoolStructR(..), BoolStructT)
+import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
 import LS.Rule qualified as L4 (Rule(..))
 import LS.XPile.LogicalEnglish.Types
-import LS.XPile.LogicalEnglish.ValidateL4Input
-      (L4Rules, ValidHornls, Unvalidated,
-      loadRawL4AsUnvalid)
+  ( BoolPropn(..)
+    -- L4-related types
+    , RpcRPrel(..)
+      
+    , RParithComp
+    
+    , GVar(..)
+    , GVarSet
+    , Cell(..)
+    
+    , SimpleL4HC(MkL4FactHc, fgiven, fhead,
+                 MkL4RuleHc, rgiven, rhead, rbody)
+
+    , OpOf(..)
+    , OpSuchTt(..)
+    , AtomicBPropn(..)
+    , L4AtomicP
+    , pattern MkTrueAtomicBP
+    , pattern MkIsOpSuchTtBP
+    , pattern MkIsOpOf
+    , pattern MkIsDiffFr
+    , pattern MkIsIn    
+  )
+-- import LS.XPile.LogicalEnglish.ValidateL4Input
+--       (L4Rules, ValidHornls, Unvalidated,
+--       loadRawL4AsUnvalid)
 
 
 {-
@@ -64,30 +78,38 @@ newtype SimL4Error = MkErr { unpackErr :: T.Text }
 newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate (HS.HashSet SimL4Error) a }
     deriving newtype (Functor, Applicative, Monad, MonadValidate (HS.HashSet SimL4Error))
 {- ^ TODOs: 
-1. Use the newtype...
-2. Per monad-validate's docs, move away from native linked list when time permits --- use Dual [a] or Seq or even Hashset
-3. When time permits, we probably want to switch to validateT add Reader in there for metadata like the location of the erroring rule
+  * When time permits, we probably want to switch to validateT add Reader in there for metadata like the location of the erroring rule
 -}
 
--- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> SimpleL4HC
+-- TODO: Switch over to this, e.g. with coerce or with `over` from new-type generic when have time: simplifyL4rule :: L4Rules ValidHornls -> [SimpL4 SimpleL4HC]
 {- | 
-  Precondition: assume that the input L4 rules only have 1 HC in their Horn clauses. 
-  TODO: This invariant will have to be established in the next iteration of work on this transpiler (mainly by desugaring the 'ditto'/decision table stuff accordingly first) 
+  It's fine if  input L4 rules have more than 1 HC in their Horn clauses, as in the ditto syntax --- we get the givens and simplify each of the clauses with those givens   
+  
+  When writing L4, it’s important that
+    * there not be empty cells in the head or body between contentful cells,
+    * there not be `""` below the `DECIDE` --- if there are `""` below the `DECIDE`, then the stuff below will get parsed as distinct Hornlikes but without the givens, and the only way to then figure out what the original givens were will be very hacky / fragile 
 -}
-simplifyL4hc :: L4.Rule -> SimpL4 SimpleL4HC
-simplifyL4hc l4hc = do
-  let gvars  = gvarsFromL4Rule l4hc
-      clause = Prelude.head $ L4.clauses l4hc
-              -- ^ this use of head will be safe in the future iteration when we do validation and make sure that there will be exactly one HC in every L4 rule that this fn gets called on
-  simpHead  <- simplifyHead clause.hHead
+simplifyL4rule :: L4.Rule -> [SimpL4 SimpleL4HC]
+simplifyL4rule l4rule =
+  let
+    gvars = gvarsFromL4Rule l4rule
+    hcs = L4.clauses l4rule
+  in map (simplifyL4hc gvars) hcs
+  -- TODO: would probably be good to check upfront for whether there are L4 rules with no clauses and log a warning if such L4rules are found
 
-  case clause.hBody of
+{- | an L4 hc, in this context, is taken to be a L4.Rule with ___exactly one__ elt in its `clauses` field  
+-}
+simplifyL4hc :: GVarSet -> L4.HornClause2 -> SimpL4 SimpleL4HC
+simplifyL4hc gvars l4hc = do
+  simpHead  <- simplifyHead l4hc.hHead
+  case l4hc.hBody of
     Nothing   ->
       pure $ MkL4FactHc {fgiven = gvars, fhead = simpHead}
+      -- ^ There are Facts / HCs with Nothing in the body in the encoding 
     Just rbod -> do
       simpBod <- simplifyHcBodyBsr rbod
       pure $ MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simpBod}
-    -- ^ There are Facts / HCs with Nothing in the body in the encoding 
+
 
 {-------------------------------------------------------------------------------
     Simplifying L4 HCs
@@ -114,23 +136,14 @@ simplifyHead = \case
   RPnary {}                      -> refute [MkErr "RPnary in the head of HC not supported."]
 
 
-{- ^
-An example of an is-num pattern in a RPConstraint
-[ HC
-    { hHead = RPConstraint
-        [ MTT "total savings" ] RPis
-        [ MTI 100 ]
-    , hBody = Just
-        ( All Nothing
-            [ Leaf
-                ( RPConstraint
-                    [ MTT "initial savings" ] RPis
-                    [ MTF 22.5 ]
-                )
--}
-{- | 
-Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
 
+{- |  Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
+Right now, the only RPConstraint tt can appear in head of L4 HC, according to spec, is RPis
+-}
+simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
+simpheadRPC = simpRPCis
+
+{- |
 Given left and right exprs that flank an RPIs,
 return a L4AtomicP where 
     <IS NUM>s have been marked accordingly in the numcell,
@@ -141,18 +154,33 @@ Two cases of IS-ing to consider:
     in which case we should convert the NUM to text and warp it in a MkCellIsNum
   2. It does not
     in which case we should replace the IS with 'is' text
+
+
+  An example of an is-num pattern in a RPConstraint:
+    [ HC
+        { hHead = RPConstraint
+            [ MTT "total savings" ] RPis
+            [ MTI 100 ]
+        , hBody = Just
+            ( All Nothing
+                [ Leaf
+                    ( RPConstraint
+                        [ MTT "initial savings" ] RPis
+                        [ MTF 22.5 ]
+                    )
 -}
-simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
-simpheadRPC exprsl exprsr =
-  let lefts = mtes2cells exprsl
+simpRPCis :: [MTExpr] -> [MTExpr] -> L4AtomicP
+simpRPCis exprsl exprsr =
+  let lefts   = mtes2cells exprsl
+      txtRPis = "is" :: T.Text
   in case exprsr of
-    (MTI int : xs)   -> 
+    (MTI int : xs)   ->
       ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
-    (MTF float : xs) -> 
+    (MTF float : xs) ->
       ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
     _           ->
-      ABPatomic (lefts <> [MkCellT "is"] <> mtes2cells exprsr)
-  
+      ABPatomic (lefts <> [MkCellT txtRPis] <> mtes2cells exprsr)
+
 
 {-------------------------------------------------------------------------------
     simplifying body of L4 HC
@@ -176,6 +204,13 @@ pattern TermIsOpOfAtomicTerms :: RPRel -> MTExpr -> [RelationalPredicate] -> Rel
 pattern TermIsOpOfAtomicTerms op result args <- RPnary RPis (RPMT [result] : [RPnary op args])
   where TermIsOpOfAtomicTerms op result args = RPnary RPis (RPMT [result] : [RPnary op args])
   -- needed b/c GHC can't infer tt this is invertible if OverloadedLists extn is enabled
+
+pattern T1IsInT2 :: MTExpr -> MTExpr -> RelationalPredicate
+pattern T1IsInT2 t1 t2 <- RPnary RPis [ RPMT [t1]
+                                      , RPnary RPelem
+                                            [ RPMT
+                                              [t2] ]]
+  where T1IsInT2 t1 t2 = RPnary RPis [ RPMT [t1], RPnary RPelem [ RPMT [t2] ]]
 
 pattern TotalIsSumTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
 pattern TotalIsProductTerms :: MTExpr -> [RelationalPredicate] -> RelationalPredicate
@@ -237,34 +272,32 @@ t IS SUM t1 t2 ... tn:
                     ]])
 
 t IS MIN t1 t2 .. tn:
-            ( RPnary RPis
+        ( RPnary RPis
+            [ RPMT
+                [ MTT "amountsaved" ]
+            , RPnary RPmin
                 [ RPMT
-                    [ MTT "amountsaved" ]
-                , RPnary RPmin
-                    [ RPMT
-                        [ MTT "1.5 * initial savings" ]
-                    , RPMT
-                        [ MTI 1000 ]
-                    ]])
+                    [ MTT "1.5 * initial savings" ]
+                , RPMT
+                    [ MTI 1000 ]
+                ]])
+
+t1 IS IN t2:
+        ( RPnary RPis
+            [ RPMT
+                [ MTT "thing" ]
+            , RPnary RPelem
+                [ RPMT
+                    [ MTT "set of things" ]
+                ] ] )
 -}
 
-simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m => RelationalPredicate -> m (BoolPropn L4AtomicP)
+simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
+                    RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case
   RPMT exprs                         -> pure $ MkTrueAtomicBP (mtes2cells exprs)
-                                     -- ^ this is the same for both the body and head
-  RPConstraint exprsl rel exprsr     -> case rel of
-                                          RPis  -> pure $ simpbodRPC @RPis exprsl exprsr
-                                          RPor  -> pure $ simpbodRPC @RPor exprsl exprsr
-                                          RPand -> pure $ simpbodRPC @RPand exprsl exprsr
-                                          _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
-                                          {- ^ Special case to handle for RPConstraint in the body but not the head: non-propositional connectives / anaphora!
-                                              EG: ( Leaf
-                                                    ( RPConstraint
-                                                        [ MTT "data breach" , MTT "came about from"] 
-                                                        RPor
-                                                        [ MTT "luck, fate", MTT "acts of god or any similar event"]
-                                                    )
-                                                  )                           -}
+                                        -- ^ this is the same for both the body and head
+  RPConstraint exprsl rel exprsr     -> simpbodRPC exprsl exprsr rel
 
   -- max / min / sum x where φ(x)
   TermIsMaxXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
@@ -277,19 +310,24 @@ simplifybodyRP = \case
   TotalIsSumTerms total summandRPs   -> termIsNaryOpOf SumOf total summandRPs
   TotalIsProductTerms total argRPs   -> termIsNaryOpOf ProductOf total argRPs
 
+  -- t1 is not t2 / t1 is in t2
   T1IsNotT2 t1 t2                    -> pure $ MkIsDiffFr (mte2cell t1) (mte2cell t2)
+  T1IsInT2  t1 t2                    -> pure $ MkIsIn     (mte2cell t1) (mte2cell t2)
 
   RPnary{}                           -> refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
   RPBoolStructR {}                   -> refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
   RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]
 
 
-termIsNaryOpOf :: (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) => OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
-termIsNaryOpOf op mteTerm rpargs = pure MkIsOpOf <*> pure term <*> pure op <*> argterms
+termIsNaryOpOf ::
+  (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) =>
+    OpOf -> MTExpr -> seq RelationalPredicate -> m (BoolPropn L4AtomicP)
+termIsNaryOpOf op mteTerm rpargs = MkIsOpOf term op <$> argterms
   where term     = mte2cell mteTerm
         argterms = concat <$> traverse atomRPoperand2cell rpargs
 
-atomRPoperand2cell :: forall m. MonadValidate (HS.HashSet SimL4Error) m => RelationalPredicate -> m [Cell]
+atomRPoperand2cell :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
+                          RelationalPredicate -> m [Cell]
 atomRPoperand2cell = \case
   RPMT mtexprs    -> pure $ mtes2cells mtexprs
   RPParamText _pt -> refute ["not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"]
@@ -299,26 +337,36 @@ atomRPoperand2cell = \case
 
 --------- simplifying RPConstraint in body of L4 HC ------------------------------------
 
--- https://www.tweag.io/blog/2022-11-15-unrolling-with-typeclasses/
-class SimpBodyRPConstrntRPrel (rp :: RPRel) where
-  simpbodRPC :: [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
+                [MTExpr] -> [MTExpr] -> RPRel -> m (BoolPropn L4AtomicP)
+simpbodRPC exprsl exprsr = \case
+  RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
 
-instance SimpBodyRPConstrntRPrel RPis where
-  simpbodRPC exprsl exprsr = AtomicBP (simpheadRPC exprsl exprsr)
+  RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr
+  RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr
+  RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr
+  RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr
+  RPeq  -> pure $ simBodRPCarithcomp RpcRPeq exprsl exprsr
 
--- TODO: Chk with Joe and Meng about RPor and RPand
-instance SimpBodyRPConstrntRPrel RPor where
-  simpbodRPC exprsl exprsr = Or (map f exprsr)
-    where f exprr =
-            AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
+  RPor  -> refute [MkErr "|| no longer supported -- use ditto and OR instead"]
+  RPand -> refute [MkErr "&& no longer supported -- use ditto and AND instead"]
+  -- TODO: test this
 
-instance SimpBodyRPConstrntRPrel RPand where
-  simpbodRPC exprsl exprsr = And (map f exprsr)
-    where f exprr =
-            AtomicBP (ABPatomic (mtes2cells exprsl <> [mte2cell exprr]))
+  _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
 
---------------------------------------------------------------------------------
-
+simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
+simBodRPCarithcomp comp exprsl exprsr =
+  MkTrueAtomicBP (mtes2cells exprsl <> [comp2cell comp] <> mtes2cells exprsr)
+  where
+    comp2cell :: RpcRPrel RParithComp -> Cell
+    comp2cell comp = MkCellT (comp2txt comp)
+    comp2txt :: RpcRPrel RParithComp -> T.Text
+    comp2txt = \case
+      RpcRPlt  -> "<"
+      RpcRPlte -> "<="
+      RpcRPgt  -> ">"
+      RpcRPgte -> ">="
+      RpcRPeq  -> "="
 
 {-------------------------------------------------------------------------------
     Misc
@@ -326,40 +374,61 @@ instance SimpBodyRPConstrntRPrel RPand where
 
 ------------    Extracting vars from given   -----------------------------------
 
-extractGiven :: L4.Rule -> [MTExpr]
-  -- [(NE.NonEmpty MTExpr, Maybe TypeSig)]
-extractGiven L4.Hornlike {given=Nothing}        = []
--- won't need to worry abt this when we add checking upfront
-extractGiven L4.Hornlike {given=Just paramtext} = concatMap (NE.toList . fst) (NE.toList paramtext)
-extractGiven _                                  = trace "not a Hornlike rule, not extracting given" mempty
--- also won't need to worry abt this when we add checking + filtering upfront
+{- | Preconditions / invariants:
+      * The input L4 rule is a Hornlike (TODO: And actually this fn is an eg of where it *would* be helpful to use the phantom type technique to tag that this is a Hornlike in the type)
+      * Each gvar in the GIVEN declaration should occupy only one cell in the spreadsheet,
+        so that the head of each NonEmpty MTExpr in the TypedMulti tuple would correspond to the gvar for that spreadsheet row in the declaration
 
+An example of GIVENs in the AST, as of Sep 8 2023:
+    given = Just (
+            ( MTT "sightg" :| []
+            , Just
+                ( SimpleType TOne "Sighting" )
+            ) :|
+            [
+                ( MTT "fun activity" :| []
+                , Just
+                    ( SimpleType TOne "Fun Activity" )
+                )
+            ,
+                ( MTT "perzon" :| []
+                , Just
+                    ( SimpleType TOne "Person" )
+                )
+            ])
+-}
+getGivens :: L4.Rule -> [MTExpr]
+getGivens l4rule = l4rule.given ^.. types @MTExpr
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
-gvarsFromL4Rule rule = let givenMTExprs = extractGiven rule
-                       in HS.fromList $ map gmtexpr2gvar givenMTExprs
-        where
-          -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. This is importantly different from `mtexpr2text` in that it only converts the cases we use for LE and that we would encounter in the Givens on our LE conventions
-          gmtexpr2gvar :: MTExpr -> GVar
-          gmtexpr2gvar = \case
-            MTT var -> MkGVar var
-            _       -> error "non-text mtexpr variable names in the GIVEN are not allowed on our LE spec :)"
+gvarsFromL4Rule rule =
+  let givenMTExprs = getGivens rule
+  in HS.fromList $ map gmtexpr2gvar givenMTExprs
+    where
+      -- | Transforms a MTExpr tt appears in the GIVEN of a HC to a Gvar. 
+      gmtexpr2gvar :: MTExpr -> GVar
+      gmtexpr2gvar = textifyMTE MkGVar
+      -- TODO: Check upfront for wehther there are non-text mtexpr variable names in the GIVENs; raise a `dispute` if so and print warning as comment in resulting .le
 
 ------------    MTExprs to [Cell]    ------------------------------------------
 
+textifyMTE :: (T.Text -> t) -> MTExpr -> t
+textifyMTE constrtr = \case
+  MTT t -> constrtr t
+  MTI i -> constrtr (int2Text i)
+  MTF f -> constrtr (float2Text f)
+  MTB b -> constrtr (T.pack (show b))
+            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells; raise a `dispute` if so and print warning as comment in resulting .le
+
 mte2cell :: L4.MTExpr -> Cell
-mte2cell = \case
-  MTT t -> MkCellT t
-  MTI i -> MkCellT (int2Text i)
-  MTF f -> MkCellT (float2Text f)
-  _     -> error "Booleans in cells currently not supported"
+mte2cell = textifyMTE MkCellT
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]
-mtes2cells = map mte2cell
+mtes2cells = fmap mte2cell
 
 ------ Other misc utils
-{-| From https://github.com/haskell/text/issues/218 lol
+{-| From https://github.com/haskell/text/issues/218
 Thanks to Jo Hsi for finding these!
 -}
 float2Text :: RealFloat a => a -> T.Text
@@ -371,7 +440,7 @@ int2Text = T.toStrict . B.toLazyText . B.decimal
 
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]
--- wrapper = concat . map extractGiven . coerce
+-- wrapper = concat . map getGivens . coerce
 {- a more ambitious version, for the future: 
 data SimL4Error = Error {  errInfo :: SimL4ErrorInfo
                             --  in the future: errLoc :: ... 

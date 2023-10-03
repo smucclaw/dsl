@@ -16,7 +16,7 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Either (lefts, rights)
 import Data.Foldable qualified as DF
 import Data.HashMap.Strict qualified as Map
-import Data.List (intercalate, isPrefixOf, partition)
+import Data.List (intercalate, isPrefixOf, partition, sortOn)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as TL
 import Data.Time.Clock (getCurrentTime)
@@ -327,7 +327,7 @@ main = do
                    displayTxt = Text.unpack $ SFL4.mt2text n
                appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
-           | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- Map.toList asaasvg
+           | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- sortOn (fmap SFL4.mtexpr2text . fst) $ Map.toList asaasvg
            , let (fname, ext) = (take 127 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
       myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")

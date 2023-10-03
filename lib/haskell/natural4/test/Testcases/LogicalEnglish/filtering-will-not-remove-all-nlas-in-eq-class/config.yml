@@ -1,0 +1,2 @@
+description: "Filtering out the dispreferred / less informative will not end up removing all the NLAs in an equiv class, even if all those NLAs are of the form <... is a number>"
+enabled: true

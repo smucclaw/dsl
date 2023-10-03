@@ -71,6 +71,18 @@ dependencies:
   - string-interpolate
   - prettyprinter-interp
   - json
+  - optics
+  - generic-optics
+  - nonempty-containers
+  - safe
+  - lens-regex-pcre
+  - pcre-heavy
+  - string-conversions
+  - raw-strings-qq
+  - template-haskell
+  - text-replace
+
+
 
 language: GHC2021
 
@@ -107,6 +119,21 @@ tests:
       - natural4
       - filepath
       - filemanip
+      - hspec-golden
+      - yaml
+  doctests:
+    source-dirs:      test/doctests
+    main:             Doctests.hs
+    ghc-options:
+      - -threaded
+      # `doctest` does not depend on `natural4` at compile-time, but it does
+      # depend on it at runtime.
+      # GHC will flag the `natural4` package as an unused dependency,
+      # so we have to turn off that warning.
+      - -Wno-unused-packages
+    dependencies:
+      - doctest-parallel >= 0.1
+      - natural4
 
 benchmarks:
   natural4-bench:

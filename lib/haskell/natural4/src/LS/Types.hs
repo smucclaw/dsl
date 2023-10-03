@@ -364,7 +364,7 @@ noSrcRef  = Nothing
 noDeem   :: Maybe ParamText
 noDeem = Nothing
 
-data ParamType = TOne | TOptional | TList0 | TList1
+data ParamType = TOne | TOptional | TList0 | TList1 | TSet0 | TSet1
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
 instance Hashable ParamType
@@ -412,6 +412,8 @@ getUnderlyingType   (SimpleType TOne      s1) = Right s1
 getUnderlyingType   (SimpleType TOptional s1) = Right s1
 getUnderlyingType   (SimpleType TList0    s1) = Right s1
 getUnderlyingType   (SimpleType TList1    s1) = Right s1
+getUnderlyingType   (SimpleType TSet0     s1) = Right s1
+getUnderlyingType   (SimpleType TSet1     s1) = Right s1
 getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
 
 -- * what's the difference between SymTab, ClsTab, and ScopeTabs?

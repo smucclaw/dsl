@@ -35,6 +35,10 @@ import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
 import LS.Utils ((|$>))
 
+-- $setup
+-- >>> import System.FilePath ((</>))
+
+
 
 -- Getting file paths
 
@@ -50,8 +54,9 @@ csvsInDir = filesInDirWithExtn ".csv"
 
 {-| 
 ==== __Examples__ 
->>> findFileByNameInDir leTestcasesDir "indentation-databreach.csv"
-Just "test/Testcases/LogicalEnglish/indentation-propn-databreach/indentation-databreach.csv"
+>>> findFileByNameInDir  ("test" </> "Testcases" </> "LogicalEnglish") "indentation-propn-databreach.csv"
+Just "test/Testcases/LogicalEnglish/indentation-propn-databreach/indentation-propn-databreach.csv"
+
 -}
 findFileByNameInDir :: StartDir -> BaseFileName -> IO (Maybe FilePath)
 findFileByNameInDir startdir basefnm =
@@ -68,7 +73,8 @@ Util function for getting raw rules from a L4 CSV filepath
 Not meant for production apps!
 Adapted from Joe's code for testing LP Programs
 ==== __Examples__ 
->>> l4csv2rules "test/Testcases/LogicalEnglish/" "indentation-databreach.csv"
+>>> l4csv2rules "test/Testcases/LogicalEnglish/indentation-propn-databreach" "indentation-propn-databreach.csv"
+...
 -}
 l4csv2rules :: StartDir -> BaseFileName -> IO [LS.Rule]
 l4csv2rules startdir csvFpath =
@@ -86,8 +92,10 @@ l4csv2rules startdir csvFpath =
 {-| 
 Util function for __pretty printing (in color)__ raw rules from a L4 CSV filepath
 ==== __Examples__ 
->>> pRules "test/Testcases/LogicalEnglish/" "indentation-databreach.csv"
+>>> pRules "test/Testcases/LogicalEnglish/" "indentation-propn-databreach.csv"
+...
 >>> pRules "test/Testcases/" "motor-insurance-1.csv"
+...
 -}
 pRules :: StartDir -> BaseFileName -> IO ()
 pRules startdir csvFpath = l4csv2rules startdir csvFpath >>= pPrint

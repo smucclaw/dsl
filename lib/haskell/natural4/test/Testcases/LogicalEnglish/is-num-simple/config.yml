@@ -1,0 +1,2 @@
+description: "If IS is followed by a number in the head, number should become *a number*"
+enabled: true

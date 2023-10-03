@@ -1,0 +1,4 @@
+,GIVEN,percentage,,IS A,Number,
+,,withered stalk,,IS A,Withered Stalk,
+,DECIDE,percentage,is the highest percentage among all clamorous numbers,for,withered stalk,in the circumstance,
+,IF,percentage,IS,MAX,x,where,x,is the withered stalk,

@@ -1,0 +1,108 @@
+the target language is: prolog.
+
+the templates are:
+  *a bleh*'s one two three four five is val,
+  *a number* <= *a number*,
+  *a date* is before *a date*,
+  *a date* is after *a date*,
+  *a date* is strictly before *a date*,
+  *a date* is strictly after *a date*,
+  *a class*'s *a field* is *a value*,
+  *a class*'s nested *a list of fields* is *a value*,
+  *a class*'s *a field0*'s *a field1* is *a value*,
+  *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
+  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,
+  *a number* is a lower bound of *a list*,
+  *a number* is an upper bound of *a list*,
+  *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
+  the sum of *a list* does not exceed the minimum of *a list*,
+  *a number* does not exceed the minimum of *a list*.
+
+
+% Predefined stdlib for translating natural4 -> LE.
+the knowledge base lib includes:
+  a number <= an other number
+  if number =< other number.
+
+  % Note: LE's parsing of [H | T] is broken atm because it transforms that
+  % into [H, T] rather than the Prolog term [H | T].
+
+  % a class's nested [] is a value.
+
+  % a class's nested [a field | a fields] is a value
+  % if the class's the field is an other class
+  % and the other class's nested the fields is the value.
+
+  a d0 is before a d1
+  if d0 is a n days before d1
+  and n >= 0.
+
+  a d0 is strictly before a d1
+  if d0 is a n days before d1
+  and n > 0.
+
+  a d0 is after a d1
+  if d1 is before d0.
+
+  a d0 is strictly after a d1
+  if d1 is strictly before d0.
+
+  % Nested accessor predicates.
+  a class's a field0's a field1 is a value
+  if class's field0 is a class0
+  and class0's field1 is value.
+
+  a class's a field0's a field1's a field2 is a value
+  if class's field0 is a class0
+  and class0's field1 is a class1
+  and class1's field2 is value.
+
+  a class's a field0's a field1's a field2's a field3 is a value
+  if class's field0 is a class0
+  and class0's field1 is a class1
+  and class1's field2 is a class2
+  and class2's field3 is value.
+
+  a class's a field0's a field1's a field2's a field3's a field4 is a value
+  if the class's field0 is a class0
+  and class0's field1 is a class1
+  and class1's field2 is a class2
+  and class2's field3 is a class3
+  and class3's field4 is value.
+
+  % Arithmetic predicates.
+  a number is an upper bound of a list
+  if for all cases in which
+     a X is in list
+     it is the case that
+      X is [a class, a field]
+          and class's field is a value
+          and number >= value
+        or number >= X.
+
+  a number is a lower bound of a list
+  if for all cases in which
+     a X is in list
+     it is the case that
+      X is [a class, a field]
+          and class's field is a value
+          and number =< value
+        or number =< X.
+
+  % number = min(x, max(y, z))
+  a number is the minimum of a x and the maximum of a y and a z
+  if a m is the maximum of [y, z]
+  and number is the minimum of [x, m].
+
+  a number does not exceed the minimum of a list of numbers
+  if a min is the minimum of list of numbers
+  and number =< min.
+
+  the sum of a list does not exceed the minimum of a other list
+  if a x is the sum of list 
+  and x does not exceed the minimum of other list.
+
+the knowledge base rules includes:
+  a bleh's one two three four is val
+  if bleh's one two three four five is val.

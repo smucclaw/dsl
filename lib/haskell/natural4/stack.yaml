@@ -9,7 +9,7 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-20.26
+resolver: lts-21.12
 
 packages:
 - .
@@ -26,18 +26,16 @@ packages:
 extra-deps:
 - ../anyall
 - ../explainable
-- monad-validate-1.2.0.1
-- prettyprinter-interp-0.2.0.0
 
 # if you are actively developing both baby-l4 and the natural4 code that uses it (import L4.*)
 # you may prefer to do something like this:
 # ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: ab191cf0bc915579b841bfe0153591a601e48ae9
+  commit: 10ea6542a7f7b4b62ffa21fe4e68b30fab2cbe98
 
 - github: smucclaw/gf-core
-  commit: 6a36b486fae612798ec36873ccbbdbca73df4f6c
+  commit: 58e705652937a0c0f4794d0e02eee70b3b90e816
 
 - github: smucclaw/prolog
   commit: 1f793236846ad506eef1cf3acd8646334123088d
@@ -48,11 +46,9 @@ extra-deps:
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
-- cgi-3001.5.0.1
-- multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
-
-
-allow-newer: true
+- monad-validate-1.3.0.0
+- prettyprinter-interp-0.2.0.0
+- text-replace-0.1.0.3
 
 # Make weeder work
 ghc-options:

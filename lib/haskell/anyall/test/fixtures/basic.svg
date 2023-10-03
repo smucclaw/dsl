@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
-    "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" width="23" xmlns:xlink="http://www.w3.org/1999/xlink" height="23" version="1.11.1"><rect fill="black" stroke="none" x="0" width="60" y="0" transform="translate(23 23)" height="30"/></svg>
+    "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" height="23" width="23" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.11.1"><rect transform="translate(23 23)" x="0" y="0" fill="black" height="30" width="60" stroke="none"/></svg>

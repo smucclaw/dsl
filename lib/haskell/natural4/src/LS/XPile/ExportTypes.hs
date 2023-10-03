@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
+{-# LANGUAGE PatternSynonyms #-}
+
 
 {-
 Provide export from Natural4 type declarations of record types of the form
@@ -19,23 +21,23 @@ module LS.XPile.ExportTypes where
 
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
 import Data.Map qualified as Map
-import Data.Text qualified as Text
+import Data.Text qualified as T
 import Prettyprinter
 import Prettyprinter.Render.Text (putDoc)
 import LS.Rule as SFL4
-  ( Rule (Hornlike, TypeDecl, clauses, enums, has, name, super),
+  ( Rule (Hornlike, TypeDecl, keyword, clauses, enums, has, name, super),
   )
 import LS.Types as SFL4
   ( BoolStructP,
     BoolStructR,
     EntityType,
-    HornClause (hBody, hHead),
+    HornClause (HC, hBody, hHead),
     HornClause2,
     MTExpr (..),
     ParamText,
     ParamType (TList0, TList1, TOne, TOptional),
-    RPRel (RPeq),
     RelationalPredicate (..),
+    RPRel(..),
     TypedMulti,
     TypeSig (..),
     mt2text,
@@ -43,7 +45,9 @@ import LS.Types as SFL4
     pt2text,
     rel2txt,
     untypePT, RuleName,
+    MyToken(Means)
   )
+import qualified AnyAll as AA (BoolStruct(Leaf))
 import Data.Text (unpack)
 import Debug.Trace (trace)
 import Data.List (isSuffixOf, find, intercalate)
@@ -94,15 +98,19 @@ unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
 unpackEnum :: (NonEmpty MTExpr, b) -> String
 unpackEnum (MTT tn :| _, _) = unpack tn
 
-typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
-typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =
-    case unpack tn of
+
+textToFieldType :: T.Text -> FieldType
+textToFieldType tn = case unpack tn of
         "Boolean" -> FTBoolean
         "Number" -> FTNumber
         "String" -> FTString
         "Date" -> FTDate
         n -> FTRef n
+
+typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
+typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
+
 typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (map toLower $ intercalate "_" $ words $ unpack tn))
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
@@ -117,20 +125,53 @@ ruleFieldToField _ = []
 --     [Field (typeDeclNameToFieldName n) (FTList (FTRef (unpack n)))]
 -- unpackHierarchy _ = []
 
+{- |
+Example:
+    ```
+    Hornlike
+        { name =
+            [ MTT "clause 15.1" ]
+        , super = Nothing
+        , keyword = Means
+        , given = Nothing , giveth = Nothing , upon = Nothing
+        , clauses =
+            [ HC { hHead = RPBoolStructR
+                    [ MTT "clause 15.1" ] RPis
+                    ( Leaf
+                        ( RPMT [ MTT "text that we want to be transferred over to the json so that it can be displayed on mouseover in the web UI" ] ))
+                , hBody = Nothing
+                }
+            ]
+        , rlabel = Nothing
+    ```
+-}
+
+-- below matching MultiTerm instead of Text, because
+-- typeDeclNameToTypeName validates the shape of the MultiTerm (singleton list)
+pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means, clauses= [ HC { hHead = RPBoolStructR term RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
+
 rule2JsonExp :: Rule -> [ExpType]
-rule2JsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
-    case unpack n of
-        n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
-        _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
-rule2JsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
-    [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
-rule2JsonExp _ = []
+rule2JsonExp r = case r of
+    TypeDecl{name=[MTT n], has=fields, super=Nothing}
+      -> case unpack n of
+           n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
+           _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+    TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
+      -> [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
+    TermMeansThat term def
+      -> [ExpTypeRecord (typeDeclNameToTypeName term) [Field {fieldName = T.unpack $ mt2text def, fieldType = textToFieldType (T.pack "object")}]]
+
+    _ -> []
+
+-- TODO: do we want to split long lines e.g. like below?
+-- "winter sports or ice hockey; horse riding or playing polo; canoeing, sailing or windsurfing"
+-- -> [MTT "winter sports or ice hockey", MTT "horse riding or playing polo", MTT "canoeing, sailing or windsurfing"]
 
 -- rule2JsonExp :: Rule -> [ExpType]
 -- rule2JsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
 --     let hierarchyName = (unpack n) ++ " Hierarchy"
 --     in case findNonHierarchyRule hierarchyName (TypeDecl{name=[MTT n], has=fields, super=Nothing}) of
---         True  -> [ExpTypeRecord (typeDeclNameToTypeName [MTT (Text.pack "hi")]) (concatMap ruleFieldToField fields)]
+--         True  -> [ExpTypeRecord (typeDeclNameToTypeName [MTT (T.pack "hi")]) (concatMap ruleFieldToField fields)]
 --         False | " Hierarchy" `isSuffixOf` (unpack n) -> concatMap rule2HierarchyBool fields
 --                 | otherwise -> [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
 --         _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]

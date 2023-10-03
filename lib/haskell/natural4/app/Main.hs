@@ -79,7 +79,7 @@ import System.Directory
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
-import LS.XPile.ExportTypes (rulesToPrologTp, rulesToJsonSchema)
+import LS.XPile.ExportTypes (rulesToHaskellTp, rulesToPrologTp, rulesToJsonSchema)
 
 
 myTraceM :: String -> IO ()
@@ -177,6 +177,7 @@ main = do
 
   let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
       (toprologTpFN,asPrologTp)               = (workuuid <> "/" <> "prologTp", rulesToPrologTp rules)
+      (tohaskellTpFN,asHaskellTp)             = (workuuid <> "/" <> "haskellTp", rulesToHaskellTp rules)
       (tojsonTpFN,  asJsonTp)                 = (workuuid <> "/" <> "jsonTp",   rulesToJsonSchema rules)
       (toscaspFN,   asSCasp)                  = (workuuid <> "/" <> "scasp",    rulesToSCasp rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
@@ -300,6 +301,7 @@ main = do
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.toprologTp opts) $ mywritefile  True toprologTpFN  iso8601 "pl" asPrologTp
+    when (SFL4.tohaskellTp opts) $ mywritefile True tohaskellTpFN  iso8601 "hs" asHaskellTp
     when (SFL4.tojsonTp opts)  $ mywritefile  True tojsonTpFN   iso8601 "json" asJsonTp
     when (SFL4.toscasp   opts) $ mywritefile  True toscaspFN    iso8601 "pl"   asSCasp
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr

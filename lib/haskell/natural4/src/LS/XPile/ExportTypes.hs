@@ -49,6 +49,7 @@ import LS.Types as SFL4
   )
 import Prettyprinter
 import Prettyprinter.Render.Text (putDoc)
+import L4.PrintProg (capitalise)
 
 type TypeName = String
 type ConstructorName = String
@@ -142,6 +143,54 @@ rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
 rule2ExpType _ = []
 
 
+------------------------------------
+-- Output of types to Haskell
+
+class ShowTypesHaskell x where
+    showTypesHaskell :: x -> Doc ann
+
+-- TODO: the capitalisation aims to produce valid Haskell type names,
+-- however the types are written in L4. 
+-- The wilder the L4 cell contents get, the more processing is required here
+instance ShowTypesHaskell TypeName where
+    showTypesHaskell = pretty . capitalise
+
+instance ShowTypesHaskell FieldType where
+    showTypesHaskell FTBoolean = pretty "Bool"
+    showTypesHaskell FTNumber = pretty "Int"
+    showTypesHaskell FTString = pretty "String"
+    showTypesHaskell FTDate = pretty "String"
+    showTypesHaskell (FTRef n) = showTypesHaskell n
+    showTypesHaskell (FTList t) = brackets (showTypesHaskell t)
+
+instance ShowTypesHaskell Field where
+    showTypesHaskell (Field fn ft) = pretty fn <> pretty " :: " <> showTypesHaskell ft
+
+showEnumHaskell :: TypeName -> ConstructorName -> Doc ann
+showEnumHaskell tn en =
+    pretty "data" <> parens (pretty tn <> pretty ", " <> pretty en <> pretty ", " <> pretty en) <> pretty "."
+
+instance ShowTypesHaskell ExpType where
+    showTypesHaskell (ExpTypeRecord tn fds) =
+        pretty "data " <> showTypesHaskell tn <> pretty " = " <> showTypesHaskell tn <>
+            nest 4 (braces (vsep (punctuate comma (map showTypesHaskell fds))))
+
+    showTypesHaskell (ExpTypeEnum tn enums) =
+        pretty "data " <> showTypesHaskell tn <>
+        nest 4
+            (pretty " = " <>
+            vsep (punctuate (pretty " | ") (map showTypesHaskell enums)))
+
+
+rulesToHaskellTp :: [SFL4.Rule] -> String
+rulesToHaskellTp rs =
+    let ets = concatMap rule2ExpType rs in
+        (case ets of
+            [] -> show emptyDoc
+            rt : rts ->
+                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))] in
+                show (vsep (map showTypesHaskell (entry:ets))))
+
 
 ------------------------------------
 -- Output of types to Prolog
@@ -164,6 +213,7 @@ instance ShowTypesProlog Field where
 showEnumProlog :: TypeName -> ConstructorName -> Doc ann
 showEnumProlog tn en =
     pretty "typedecl" <> parens (pretty tn <> pretty ", " <> pretty en <> pretty ", " <> pretty en) <> pretty "."
+
 instance ShowTypesProlog ExpType where
     showTypesProlog (ExpTypeRecord tn fds) =
         pretty "typedecl" <>

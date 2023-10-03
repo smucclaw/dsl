@@ -73,6 +73,11 @@ data Field = Field
     }
     deriving (Eq, Ord, Show, Read)
 
+-- | c.f. https://json-schema.org/blog/posts/custom-annotations-will-continue
+data AnnotatField = MkAnnotField 
+    { fieldName :: String
+    , annotatn :: String}
+
 -- Expression types, coming
 -- either as records (DECLARE .. HAS)
 -- or as enum s(DECLARE .. IS ONE OF)
@@ -85,6 +90,11 @@ data ExpType
         { typeName :: TypeName
         , enums :: [ConstructorName]
         }
+    -- TODO: I think we want something like this, but I don't like how this is a sum of records with different fields
+    -- | ExpTypeMetadata
+    --     { typeName :: TypeName
+    --     , fields :: [AnnotatField]
+    --     }
     deriving (Eq, Ord, Show, Read)
 
 typeDeclNameToTypeName :: RuleName -> TypeName
@@ -160,12 +170,17 @@ rule2JsonExp = \case
     TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     TermMeansThat term def
-      -> [ExpTypeRecord 
-            (typeDeclNameToTypeName term) 
-            [Field {fieldName = T.unpack $ mt2text def, 
-                    fieldType = textToFieldType (T.pack "object")}]]
+      -> undefined
+        -- I think that we should use something like the ExpTypeMetadata type sketched in comments above
+        -- [ExpTypeRecord 
+        --     (makeMetadataTypeName term) 
+        --     [Field {fieldName = T.unpack $ mt2text def, 
+        --             fieldType = textToFieldType (T.pack "object")}]]
       
     _ -> []
+        where
+            makeMetadataTypeName term = term <> MTT "metadata"   
+
 
 -- TODO: do we want to split long lines e.g. like below?
 -- "winter sports or ice hockey; horse riding or playing polo; canoeing, sailing or windsurfing"

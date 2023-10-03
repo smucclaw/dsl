@@ -147,7 +147,9 @@ Example:
 below matching MultiTerm instead of Text, because
 typeDeclNameToTypeName validates the shape of the MultiTerm (singleton list)
 -}
-pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means, clauses= [ HC { hHead = RPBoolStructR term RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
+pattern TermMeansThat :: [MTExpr] -> [MTExpr] -> Rule
+pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means, 
+                                                   clauses= [ HC { hHead = RPBoolStructR term RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
 
 rule2JsonExp :: Rule -> [ExpType]
 rule2JsonExp = \case
@@ -158,7 +160,10 @@ rule2JsonExp = \case
     TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     TermMeansThat term def
-      -> [ExpTypeRecord (typeDeclNameToTypeName term) [Field {fieldName = T.unpack $ mt2text def, fieldType = textToFieldType (T.pack "object")}]]
+      -> [ExpTypeRecord 
+            (typeDeclNameToTypeName term) 
+            [Field {fieldName = T.unpack $ mt2text def, 
+                    fieldType = textToFieldType (T.pack "object")}]]
       
     _ -> []
 

@@ -1,7 +1,8 @@
-{-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
+{-# OPTIONS_GHC -W #-}
 {-# LANGUAGE PatternSynonyms #-}
-
-
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
 {-
 Provide export from Natural4 type declarations of record types of the form
 DECLARE T
@@ -18,40 +19,40 @@ other translations (in particular to JSON) that may have been developed.
 -}
 
 module LS.XPile.ExportTypes where
+    -- TODO: Add export list!
 
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
-import Data.Map qualified as Map
 import Data.Text qualified as T
 import Prettyprinter
-import Prettyprinter.Render.Text (putDoc)
+import Prettyprinter.Render.Text ()
 import LS.Rule as SFL4
-  ( Rule (Hornlike, TypeDecl, keyword, clauses, enums, has, name, super),
+  ( Rule (Hornlike, TypeDecl, keyword, clauses, has, name, super),
   )
 import LS.Types as SFL4
-  ( BoolStructP,
-    BoolStructR,
-    EntityType,
-    HornClause (HC, hBody, hHead),
-    HornClause2,
+  ( 
+    -- BoolStructR,
+    HornClause (..),
+    -- HornClause2,
     MTExpr (..),
-    ParamText,
-    ParamType (TList0, TList1, TOne, TOptional),
+    -- ParamText,
+    ParamType (TList1, TOne),
     RelationalPredicate (..),
     RPRel(..),
-    TypedMulti,
     TypeSig (..),
     mt2text,
     mtexpr2text,
-    pt2text,
-    rel2txt,
-    untypePT, RuleName,
+    -- rel2txt,
+    -- untypePT, 
+    RuleName,
     MyToken(Means)
   )
-import qualified AnyAll as AA (BoolStruct(Leaf))
+import AnyAll qualified as AA (BoolStruct(Leaf))
 import Data.Text (unpack)
 import Debug.Trace (trace)
-import Data.List (isSuffixOf, find, intercalate)
+import Data.List (isSuffixOf, intercalate)
 import Data.Char (toLower)
+import Optics hiding (has)
+import Data.Text.Optics (unpacked)
+import Data.Generics.Product.Types (types, HasTypes)
 
 
 type TypeName = String
@@ -87,17 +88,15 @@ data ExpType
     deriving (Eq, Ord, Show, Read)
 
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [MTT n] =  map toLower $ intercalate "_" $ words $ unpack n
+typeDeclNameToTypeName [MTT n] =  map toLower . intercalate "_" . words . unpack $ n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> String
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
-unpackEnums :: NonEmpty (NonEmpty MTExpr, b) -> [String]
-unpackEnums ((MTT tn :| _, _) :| xs) = unpack tn : map unpackEnum xs
-unpackEnum :: (NonEmpty MTExpr, b) -> String
-unpackEnum (MTT tn :| _, _) = unpack tn
-
+-- | Collect the enums into a list of strings
+getEnums :: forall s. (HasTypes s MTExpr) => s -> [String]
+getEnums enums = enums ^.. types @MTExpr % to mtexpr2text % unpacked
 
 textToFieldType :: T.Text -> FieldType
 textToFieldType tn = case unpack tn of
@@ -144,23 +143,23 @@ Example:
             ]
         , rlabel = Nothing
     ```
--}
 
--- below matching MultiTerm instead of Text, because
--- typeDeclNameToTypeName validates the shape of the MultiTerm (singleton list)
+below matching MultiTerm instead of Text, because
+typeDeclNameToTypeName validates the shape of the MultiTerm (singleton list)
+-}
 pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means, clauses= [ HC { hHead = RPBoolStructR term RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
 
 rule2JsonExp :: Rule -> [ExpType]
-rule2JsonExp r = case r of
+rule2JsonExp = \case
     TypeDecl{name=[MTT n], has=fields, super=Nothing}
       -> case unpack n of
            n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
            _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
     TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
-      -> [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
+      -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     TermMeansThat term def
       -> [ExpTypeRecord (typeDeclNameToTypeName term) [Field {fieldName = T.unpack $ mt2text def, fieldType = textToFieldType (T.pack "object")}]]
-
+      
     _ -> []
 
 -- TODO: do we want to split long lines e.g. like below?
@@ -182,7 +181,7 @@ rule2JsonExp r = case r of
 rule2ExpType :: Rule -> [ExpType]
 rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
 rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
-    [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
+    [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
 rule2ExpType _ = []
 
 findNonHierarchyRule :: TypeName -> Rule -> Bool
@@ -190,7 +189,7 @@ findNonHierarchyRule hierarchyName rule =
    getType rule == hierarchyName
 
 getType:: Rule -> TypeName
-getType(TypeDecl{name=[MTT n], super=sup}) =
+getType(TypeDecl{name=[MTT n]}) =
     typeDeclNameToTypeName [MTT n]
 getType _ = ""
 
@@ -199,7 +198,10 @@ getType _ = ""
 
 rule2HierarchyBool :: Rule -> [ExpType]
 rule2HierarchyBool (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
-    where ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
+    where 
+        ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
+        ruleBool _                    = [] 
+        
 rule2HierarchyBool _ = []
 
 ------------------------------------
@@ -248,7 +250,7 @@ rulesToPrologTp rs =
     let ets = concatMap rule2ExpType rs in
         (case ets of
             [] -> show emptyDoc
-            rt : rts ->
+            rt : _rts ->
                 let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))] in
                 show (vsep (map showTypesProlog (entry:ets))))
 
@@ -353,7 +355,7 @@ rulesToJsonSchema rs =
     let ets = concatMap rule2JsonExp rs in
         (case ets of
             [] -> show (braces emptyDoc)
-            (rt : rts) ->
+            (rt : _rts) ->
                 trace ("ets: " ++ show ets) $
                 show
                 (braces

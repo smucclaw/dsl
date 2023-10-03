@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -W #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
+-- {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
 {-
 Provide export from Natural4 type declarations of record types of the form
@@ -28,7 +29,7 @@ import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, keyword, clauses, has, name, super),
   )
 import LS.Types as SFL4
-  ( 
+  (
     -- BoolStructR,
     HornClause (..),
     -- HornClause2,
@@ -38,7 +39,7 @@ import LS.Types as SFL4
     RelationalPredicate (..),
     RPRel(..),
     TypeSig (..),
-    mt2text,
+    -- mt2text,
     mtexpr2text,
     -- rel2txt,
     -- untypePT, 
@@ -74,9 +75,18 @@ data Field = Field
     deriving (Eq, Ord, Show, Read)
 
 -- | c.f. https://json-schema.org/blog/posts/custom-annotations-will-continue
-data AnnotatField = MkAnnotField 
+data AnnotatField = MkAnnotField
     { fieldName :: String
-    , annotatn :: String}
+    , annotatn :: String
+    -- TODO: Prob want type other than String to allow for more structured annotations in the future
+    }
+    deriving (Eq, Ord, Show, Read)
+
+data Metadata = MkMetadata
+    { typeName :: TypeName
+    , fields :: [AnnotatField]
+    }
+    deriving (Eq, Ord, Show, Read)
 
 -- Expression types, coming
 -- either as records (DECLARE .. HAS)
@@ -90,11 +100,7 @@ data ExpType
         { typeName :: TypeName
         , enums :: [ConstructorName]
         }
-    -- TODO: I think we want something like this, but I don't like how this is a sum of records with different fields
-    -- | ExpTypeMetadata
-    --     { typeName :: TypeName
-    --     , fields :: [AnnotatField]
-    --     }
+    | ExpMetadata Metadata
     deriving (Eq, Ord, Show, Read)
 
 typeDeclNameToTypeName :: RuleName -> TypeName
@@ -158,7 +164,7 @@ below matching MultiTerm instead of Text, because
 typeDeclNameToTypeName validates the shape of the MultiTerm (singleton list)
 -}
 pattern TermMeansThat :: [MTExpr] -> [MTExpr] -> Rule
-pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means, 
+pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means,
                                                    clauses= [ HC { hHead = RPBoolStructR term RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
 
 rule2JsonExp :: Rule -> [ExpType]
@@ -171,15 +177,20 @@ rule2JsonExp = \case
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     TermMeansThat term def
       -> undefined
-        -- I think that we should use something like the ExpTypeMetadata type sketched in comments above
+        -- TODO: Stopped because I realized https://smucclaw.slack.com/archives/C0164JRERL0/p1696347657385909
+        --  [ExpMetadata 
+        --     MkMetadata { typeName = typeDeclNameToTypeName term
+        --                 , fields = [MkAnnotField {}]
+        --                 )
+        
         -- [ExpTypeRecord 
         --     (makeMetadataTypeName term) 
         --     [Field {fieldName = T.unpack $ mt2text def, 
         --             fieldType = textToFieldType (T.pack "object")}]]
-      
+
     _ -> []
-        where
-            makeMetadataTypeName term = term <> MTT "metadata"   
+        -- where
+            -- makeMetadataTypeName term = term <> MTT (T.pack "metadata")
 
 
 -- TODO: do we want to split long lines e.g. like below?
@@ -218,10 +229,10 @@ getType _ = ""
 
 rule2HierarchyBool :: Rule -> [ExpType]
 rule2HierarchyBool (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
-    where 
+    where
         ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
-        ruleBool _                    = [] 
-        
+        ruleBool _                    = []
+
 rule2HierarchyBool _ = []
 
 ------------------------------------
@@ -259,6 +270,8 @@ instance ShowTypesProlog ExpType where
     showTypesProlog (ExpTypeEnum tn enums) =
         vsep (map (showEnumProlog tn) enums)
 
+    showTypesProlog (ExpMetadata _) = pretty "" 
+
 
 -- the root data type of a Json Schema is always embedded in an entrypoint,
 -- here called "toplevel"
@@ -271,7 +284,7 @@ rulesToPrologTp rs =
         (case ets of
             [] -> show emptyDoc
             rt : _rts ->
-                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))] in
+                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef rt.typeName)] in
                 show (vsep (map showTypesProlog (entry:ets))))
 
 ------------------------------------
@@ -296,7 +309,7 @@ jsonType t =
 showRequireds :: [Field] -> Doc ann
 showRequireds fds =
     dquotes (pretty "required") <> pretty ": " <>
-    brackets (hsep (punctuate comma (map (dquotes . pretty . fieldName) fds)))
+    brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann
 showRef n =
@@ -338,6 +351,13 @@ instance ShowTypesJson Field where
     showTypesJson (Field fn ft) =
         dquotes (pretty fn) <> pretty ": " <> braces (showTypesJson ft)
 
+instance ShowTypesJson AnnotatField where
+    showTypesJson :: AnnotatField -> Doc ann
+    showTypesJson (MkAnnotField fn annot) = 
+        dquotes (pretty fn) <> pretty ": " <> pretty annot
+        -- TODO: Right now annot is a String, but probably want to allow for other types in the future so that can use other structured annotations
+
+
 instance ShowTypesJson ExpType where
     showTypesJson (ExpTypeEnum tn enums) =
         dquotes (pretty tn) <> pretty ": " <>
@@ -359,6 +379,18 @@ instance ShowTypesJson ExpType where
             nest 4
             (showRequireds fds)
         ))
+    showTypesJson (ExpMetadata (MkMetadata tn annotfields)) = 
+        -- TODO: Abstract common functionality between this and ExpTypeRecord out later
+        dquotes (pretty $ "metadata" <> tn) <> pretty ": " <>
+        nest 4
+        (braces (
+            jsonType "object" <> pretty "," <>
+            dquotes (pretty "properties") <>  pretty ": " <>
+            nest 4
+            (braces (vsep (punctuate comma (map showTypesJson annotfields)))) <>
+            pretty ","
+        ))
+
 
 jsonPreamble :: TypeName -> [Doc ann]
 jsonPreamble tn = [
@@ -381,7 +413,7 @@ rulesToJsonSchema rs =
                 (braces
                     (vsep (punctuate comma
                     (
-                        jsonPreamble (typeName rt) ++
+                        jsonPreamble rt.typeName ++
                         [dquotes (pretty defsLocationName) <> pretty ": " <>
                         braces (
                             nest 4
@@ -404,7 +436,7 @@ rulesToUISchema rs =
                 (braces
                     (vsep (punctuate comma
                     (
-                        jsonPreamble (typeName (last rts)) ++
+                        jsonPreamble (last rts).typeName ++
                         [dquotes (pretty defsLocationName) <> pretty ": " <>
                         braces (
                             nest 4

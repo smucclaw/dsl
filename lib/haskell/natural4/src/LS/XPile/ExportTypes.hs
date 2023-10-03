@@ -46,6 +46,9 @@ import LS.Types as SFL4
   )
 import Data.Text (unpack)
 import Debug.Trace (trace)
+import Data.List (isSuffixOf, find, intercalate)
+import Data.Char (toLower)
+
 
 type TypeName = String
 type ConstructorName = String
@@ -80,7 +83,7 @@ data ExpType
     deriving (Eq, Ord, Show, Read)
 
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [MTT n] = unpack n
+typeDeclNameToTypeName [MTT n] =  map toLower $ intercalate "_" $ words $ unpack n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> String
@@ -100,7 +103,7 @@ typeDeclSuperToFieldType (Just (SimpleType TOne tn)) =
         "Date" -> FTDate
         n -> FTRef n
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
-typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (unpack tn))
+typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (map toLower $ intercalate "_" $ words $ unpack tn))
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
@@ -117,11 +120,23 @@ ruleFieldToField _ = []
 rule2JsonExp :: Rule -> [ExpType]
 rule2JsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
     case unpack n of
-        "damageType Hierarchy" -> concatMap rule2ExpType fields
+        n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
         _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
 rule2JsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
     [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
 rule2JsonExp _ = []
+
+-- rule2JsonExp :: Rule -> [ExpType]
+-- rule2JsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
+--     let hierarchyName = (unpack n) ++ " Hierarchy"
+--     in case findNonHierarchyRule hierarchyName (TypeDecl{name=[MTT n], has=fields, super=Nothing}) of
+--         True  -> [ExpTypeRecord (typeDeclNameToTypeName [MTT (Text.pack "hi")]) (concatMap ruleFieldToField fields)]
+--         False | " Hierarchy" `isSuffixOf` (unpack n) -> concatMap rule2HierarchyBool fields
+--                 | otherwise -> [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+--         _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+-- rule2JsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
+--     [ExpTypeEnum (typeDeclNameToTypeName (n)) (unpackEnums enums)]
+-- rule2JsonExp _ = []
 
 rule2ExpType :: Rule -> [ExpType]
 rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
@@ -129,7 +144,22 @@ rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
     [ExpTypeEnum (typeDeclNameToTypeName n) (unpackEnums enums)]
 rule2ExpType _ = []
 
+findNonHierarchyRule :: TypeName -> Rule -> Bool
+findNonHierarchyRule hierarchyName rule =
+   getType rule == hierarchyName
 
+getType:: Rule -> TypeName
+getType(TypeDecl{name=[MTT n], super=sup}) =
+    typeDeclNameToTypeName [MTT n]
+getType _ = ""
+
+-- enumToField :: ConstructorName -> Field
+-- enumToField enumName = Field enumName FTBoolean
+
+rule2HierarchyBool :: Rule -> [ExpType]
+rule2HierarchyBool (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
+    where ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
+rule2HierarchyBool _ = []
 
 ------------------------------------
 -- Output of types to Prolog
@@ -194,7 +224,7 @@ defsLocationName :: String
 defsLocationName = "$defs"
 
 defsLocation :: String -> String
-defsLocation n = "#/" ++ defsLocationName ++ "/" ++ n
+defsLocation n = "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
 
 jsonType :: Pretty a => a -> Doc ann
 jsonType t =
@@ -232,7 +262,7 @@ instance ShowTypesJson FieldType where
         -- dquotes
         -- (pretty "items") <> pretty ": " <>
         -- braces
-        (showRef n)
+        showRef n
     showTypesJson (FTList (FTRef n)) =
         jsonType "array" <> pretty "," <>
         dquotes (pretty "items") <> pretty ": " <>
@@ -273,7 +303,7 @@ jsonPreamble tn = [
     jsonType "object",
     dquotes (pretty "properties") <> pretty ": " <>
     braces (dquotes (pretty entrypointName) <> pretty ": " <>
-        braces (showTypesJson (FTList (FTRef tn))))
+        braces (showTypesJson (FTRef tn)))
     ]
 
 
@@ -282,7 +312,7 @@ rulesToJsonSchema rs =
     let ets = concatMap rule2JsonExp rs in
         (case ets of
             [] -> show (braces emptyDoc)
-            rt : rts ->
+            (rt : rts) ->
                 trace ("ets: " ++ show ets) $
                 show
                 (braces
@@ -305,13 +335,13 @@ rulesToUISchema rs =
     let ets = concatMap rule2JsonExp rs in
         (case ets of
             [] -> show (braces emptyDoc)
-            rt : rts ->
+            rts ->
                 trace ("ets: " ++ show ets) $
                 show
                 (braces
                     (vsep (punctuate comma
                     (
-                        jsonPreamble (typeName rt) ++
+                        jsonPreamble (typeName (last rts)) ++
                         [dquotes (pretty defsLocationName) <> pretty ": " <>
                         braces (
                             nest 4

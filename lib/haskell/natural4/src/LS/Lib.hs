@@ -89,6 +89,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , toprolog  :: w ::: Bool   <!> "True"  <?> "prolog-like syntax representing the predicate logic"
                    , toprologTp :: w ::: Bool  <!> "True"  <?> "prolog-like syntax from type declarations"
                    , tojsonTp  :: w ::: Bool   <!> "True"  <?> "json-like syntax from type declarations"
+                   , tojsonUI  :: w ::: Bool   <!> "True"  <?> "json-like syntax from type declarations for web form"
                    , toscasp   :: w ::: Bool   <!> "True"  <?> "sCasp-like syntax representing the predicate logic"
                    , tonative  :: w ::: Bool   <!> "True"  <?> "native Haskell data structure of the AST"
                    , topetri   :: w ::: Bool   <!> "True"  <?> "a petri-net Dot file of the state graph"
@@ -163,6 +164,7 @@ getConfig o = do
         , toProlog  = only o == "prolog"
         , toPrologTp  = only o == "prologTp"
         , toJsonTp  = only o == "jsonTp"
+        , toJsonUI  = only o == "jsonUI"
         , toSCasp   = only o == "scasp"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"
@@ -178,7 +180,7 @@ getConfig o = do
 
 
 -- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
--- 
+--
 -- At some point we added functionality that allowed sub-rules to be defined inline within a top-level rule, which is why we now have IO [... [Rule]].
 --
 -- Note that sub-rules are themselves rules, which is why we only have one Rule type here.
@@ -186,7 +188,7 @@ getConfig o = do
 -- Shouldn't the idea of sub-rules and top-level rules be reflected in a type hierarchy?
 --
 parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
-parseRules o = do     
+parseRules o = do
   runConfig <- getConfig o
   let files = getNoLabel $ file o
   if null files

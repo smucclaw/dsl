@@ -79,7 +79,7 @@ import System.Directory
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
-import LS.XPile.ExportTypes (rulesToPrologTp, rulesToJsonSchema)
+import LS.XPile.ExportTypes (rulesToPrologTp, rulesToJsonSchema, rulesToUISchema)
 
 
 myTraceM :: String -> IO ()
@@ -118,7 +118,7 @@ main = do
           when (SFL4.toChecklist rc) $ do
             let (checkls, checklsErr) = xpLog $ checklist nlgEnvR rc rules
             pPrint checkls
-  
+
           when (SFL4.tocheckl  opts) $ do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
             let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnvR rc rules
                 tochecklFN              =  workuuid <> "/" <> "checkl"
@@ -150,7 +150,7 @@ main = do
             let (topursFN,    (asPursstr, asPursErr)) =
                   (workuuid <> "/" <> "purs"
                   , xpLog $ mutter "* main calling translate2PS" >>
-                    flip fmapE 
+                    flip fmapE
                     (translate2PS allNLGEnvR nlgEnvR rules)
                     (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]"))
                   )
@@ -178,6 +178,7 @@ main = do
   let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
       (toprologTpFN,asPrologTp)               = (workuuid <> "/" <> "prologTp", rulesToPrologTp rules)
       (tojsonTpFN,  asJsonTp)                 = (workuuid <> "/" <> "jsonTp",   rulesToJsonSchema rules)
+      (tojsonUIFN,  asJsonUI)                 = (workuuid <> "/" <> "jsonUI",   rulesToUISchema rules)
       (toscaspFN,   asSCasp)                  = (workuuid <> "/" <> "scasp",    rulesToSCasp rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
       (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
@@ -287,7 +288,7 @@ main = do
 
           -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
           removeLastComma :: String -> String
-          removeLastComma unlined = 
+          removeLastComma unlined =
             if length lined > 3 -- only if there's a valid json in there
                then unlines $ take (length lined - 3) lined ++ ["}"] ++ drop (length lined - 2) lined
                else unlined
@@ -301,6 +302,7 @@ main = do
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.toprologTp opts) $ mywritefile  True toprologTpFN  iso8601 "pl" asPrologTp
     when (SFL4.tojsonTp opts)  $ mywritefile  True tojsonTpFN   iso8601 "json" asJsonTp
+    when (SFL4.tojsonUI opts)  $ mywritefile  True tojsonUIFN   iso8601 "json" asJsonUI
     when (SFL4.toscasp   opts) $ mywritefile  True toscaspFN    iso8601 "pl"   asSCasp
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
     when (SFL4.tots      opts) $ mywritefile2 True totsFN       iso8601 "ts"   (show asTSpretty) asTSerr

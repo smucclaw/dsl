@@ -578,6 +578,7 @@ data RunConfig = RC { debug     :: Bool
                     , toProlog  :: Bool
                     , toPrologTp :: Bool
                     , toJsonTp  :: Bool
+                    , toJsonUI  :: Bool
                     , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool

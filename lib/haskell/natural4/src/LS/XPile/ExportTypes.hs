@@ -154,8 +154,26 @@ data JSchemaExp
     | ExpMetadataGrp MetadataGrp
     deriving stock (Eq, Ord, Show, Read)
 
+pattern MkMetadata :: MdGroupName -> [MdataKV] -> JSchemaExp
+pattern MkMetadata{grpName, mdata} = 
+    ExpMetadataGrp ( MkMetadataGrp { mdGroupName = grpName
+                                   , metadata = mdata })
+
+processTextForJsonSchema :: T.Text -> T.Text
+processTextForJsonSchema = T.toLower . T.intercalate (T.pack "_") . T.words
+
+stringifyMdataMTExpr :: MTExpr -> String
+stringifyMdataMTExpr = T.unpack . processTextForJsonSchema . mtexpr2text
+
+-- TODO: Rewrite this in terms of processTextForJsonSchema
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [MTT n] =  map toLower . intercalate "_" . words . unpack $ n
+typeDeclNameToTypeName [ mtt@(MTT n) ] = 
+    typeDeclExprToTypeName mtt
+        where
+            -- | TODO: This will need cleaning up 
+            typeDeclExprToTypeName :: MTExpr -> TypeName
+            typeDeclExprToTypeName (MTT n) = map toLower . intercalate "_" . words . T.unpack $ n
+            typeDeclExprToTypeName _       = ""
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> String

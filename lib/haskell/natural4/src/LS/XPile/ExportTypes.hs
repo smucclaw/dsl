@@ -164,13 +164,16 @@ pattern MkMetadata{grpName, mdata} =
 
 {-# COMPLETE ExpTypeRecord, ExpTypeEnum, MkMetadata #-}
 
-processTextForJsonSchema :: T.Text -> T.Text
-processTextForJsonSchema = T.toLower . T.intercalate (T.pack "_") . T.words
+processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
+processTopLvlNameTextForJsonSchema = T.toLower . T.intercalate (T.pack "_") . T.words
 
-stringifyMdataMTExpr :: MTExpr -> String
-stringifyMdataMTExpr = T.unpack . processTextForJsonSchema . mtexpr2text
+stringifyMTEwrapper :: (T.Text -> T.Text) -> MTExpr -> String
+stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 
--- TODO: Rewrite this in terms of processTextForJsonSchema
+stringfyMdataKVmtexpr :: MTExpr -> String
+stringfyMdataKVmtexpr = stringifyMTEwrapper id
+
+-- TODO: Rewrite this in terms of processTopLvlNameTextForJsonSchema
 typeDeclNameToTypeName :: RuleName -> TypeName
 typeDeclNameToTypeName [ (MTT n) ] =  map toLower . intercalate "_" . words . T.unpack $ n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
@@ -469,8 +472,8 @@ jsonifyMeans rs =
 extractMdataFromMeansRule :: Rule -> Maybe MdataKV 
 extractMdataFromMeansRule = \case
     TermMeansThat term defnExprs -> 
-        Just $ MkMdataKV { key = stringifyMdataMTExpr term
-                         , annots = map stringifyMdataMTExpr defnExprs} 
+        Just $ MkMdataKV { key = stringfyMdataKVmtexpr term
+                         , annots = map stringfyMdataKVmtexpr defnExprs} 
     _ -> Nothing    
 
 rulesToJsonSchema :: [SFL4.Rule] -> String

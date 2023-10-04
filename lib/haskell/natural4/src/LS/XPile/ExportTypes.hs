@@ -162,6 +162,8 @@ pattern MkMetadata{grpName, mdata} =
     ExpMetadataGrp ( MkMetadataGrp { mdGroupName = grpName
                                    , metadata = mdata })
 
+{-# COMPLETE ExpTypeRecord, ExpTypeEnum, MkMetadata #-}
+
 processTextForJsonSchema :: T.Text -> T.Text
 processTextForJsonSchema = T.toLower . T.intercalate (T.pack "_") . T.words
 

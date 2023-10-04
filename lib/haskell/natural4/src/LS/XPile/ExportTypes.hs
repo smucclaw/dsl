@@ -170,13 +170,7 @@ stringifyMdataMTExpr = T.unpack . processTextForJsonSchema . mtexpr2text
 
 -- TODO: Rewrite this in terms of processTextForJsonSchema
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [ mtt@(MTT n) ] = 
-    typeDeclExprToTypeName mtt
-        where
-            -- | TODO: This will need cleaning up 
-            typeDeclExprToTypeName :: MTExpr -> TypeName
-            typeDeclExprToTypeName (MTT n) = map toLower . intercalate "_" . words . T.unpack $ n
-            typeDeclExprToTypeName _       = ""
+typeDeclNameToTypeName [ (MTT n) ] =  map toLower . intercalate "_" . words . T.unpack $ n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> String
@@ -419,6 +413,7 @@ instance ShowTypesJson MdataKV where
 
 
 instance ShowTypesJson JSchemaExp where
+    showTypesJson :: JSchemaExp -> Doc ann
     showTypesJson (ExpTypeEnum tn enums) =
         dquotes (pretty tn) <> pretty ": " <>
         nest 4
@@ -439,17 +434,17 @@ instance ShowTypesJson JSchemaExp where
             nest 4
             (showRequireds fds)
         ))
-    -- showTypesJson (MetadataGrp (MkMetadataGrp tn annotfields)) = 
-    --     -- TODO: Abstract common functionality between this and ExpTypeRecord out later
-    --     dquotes (pretty $ "metadata" <> tn) <> pretty ": " <>
-    --     nest 4
-    --     (braces (
-    --         jsonType "object" <> pretty "," <>
-    --         dquotes (pretty "properties") <>  pretty ": " <>
-    --         nest 4
-    --         (braces (vsep (punctuate comma (map showTypesJson annotfields)))) <>
-    --         pretty ","
-    --     ))
+    showTypesJson (MkMetadata grpName mdata) = 
+        -- TODO: Abstract common functionality between this and ExpTypeRecord out later
+        dquotes (pretty $ "metadata" <> grpName) <> pretty ": " <>
+        nest 4
+        (braces (
+            jsonType "object" <> pretty "," <>
+            dquotes (pretty "properties") <>  pretty ": " <>
+            nest 4
+            (braces (vsep (punctuate comma (map showTypesJson mdata)))) <>
+            pretty ","
+        ))
 
 
 jsonPreamble :: TypeName -> [Doc ann]

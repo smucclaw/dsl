@@ -471,6 +471,7 @@ rulesToJsonSchema rs =
         (meansRules, nonMeansRules) = partition ruleIsMeans rs
         globalMetadataDefs = jsonifyMeans meansRules
         ets = concatMap rule2NonmdJsonExp nonMeansRules
+        subJsonObjs = map showTypesJson (globalMetadataDefs : ets)
     in
         (case ets of
             [] -> show (braces emptyDoc)
@@ -484,7 +485,7 @@ rulesToJsonSchema rs =
                         [dquotes (pretty defsLocationName) <> pretty ": " <>
                         braces (
                             nest 4
-                            (vsep (punctuate comma (map showTypesJson ets)))
+                            (vsep (punctuate comma subJsonObjs))
                         )
                         ]
                     )

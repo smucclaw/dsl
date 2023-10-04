@@ -170,6 +170,9 @@ stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 stringfyMdataKVmtexpr :: MTExpr -> String
 stringfyMdataKVmtexpr = stringifyMTEwrapper id
 
+stringfyMdataName :: MTExpr -> String
+stringfyMdataName = stringifyMTEwrapper processTopLvlNameTextForJsonSchema
+
 typeDeclNameToTypeName :: RuleName -> TypeName
 typeDeclNameToTypeName [ MTT n ] =  T.unpack . processTopLvlNameTextForJsonSchema $ n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
@@ -459,7 +462,7 @@ jsonifyMeans rs =
 extractMdataFromMeansRule :: Rule -> Maybe MdataKV
 extractMdataFromMeansRule = \case
     TermMeansThat term defnExprs ->
-        Just $ MkMdataKV { key = stringfyMdataKVmtexpr term
+        Just $ MkMdataKV { key = stringfyMdataName term
                          , annots = map stringfyMdataKVmtexpr defnExprs}
     _ -> Nothing
 

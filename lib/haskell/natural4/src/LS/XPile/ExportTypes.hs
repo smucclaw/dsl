@@ -25,7 +25,6 @@ module LS.XPile.ExportTypes (
 
     , rulesToPrologTp
 ) where
-    -- TODO: Add export list!
 
 import Data.Text qualified as T
 import Prettyprinter
@@ -46,9 +45,7 @@ import LS.Types as SFL4
     RPRel(..),
     TypeSig (..),
     -- mt2text,
-    mtexpr2text,
-    -- rel2txt,
-    -- untypePT, 
+    mtexpr2text, 
     RuleName,
     MyToken(Means)
   )
@@ -246,8 +243,6 @@ rule2NonmdJsonExp = \case
     TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     _ -> []
-        -- where
-            -- makeMetadataTypeName term = term <> MTT (T.pack "metadata")
 
 rule2ExpType :: Rule -> [JSchemaExp]
 rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]

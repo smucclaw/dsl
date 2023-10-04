@@ -247,10 +247,20 @@ rule2NonmdJsonExp = \case
         -- where
             -- makeMetadataTypeName term = term <> MTT (T.pack "metadata")
 
+rule2ExpType :: Rule -> [JSchemaExp]
+rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
+    [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
+rule2ExpType _ = []
 
--- TODO: do we want to split long lines e.g. like below?
--- "winter sports or ice hockey; horse riding or playing polo; canoeing, sailing or windsurfing"
--- -> [MTT "winter sports or ice hockey", MTT "horse riding or playing polo", MTT "canoeing, sailing or windsurfing"]
+rule2HierarchyBool :: Rule -> [JSchemaExp]
+rule2HierarchyBool (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
+    where
+        ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
+        ruleBool _                    = []
+
+rule2HierarchyBool _ = []
+
 
 -- rule2NonmdJsonExp :: Rule -> [JSchemaExp]
 -- rule2NonmdJsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
@@ -264,31 +274,19 @@ rule2NonmdJsonExp = \case
 --     [ExpTypeEnum (typeDeclNameToTypeName (n)) (unpackEnums enums)]
 -- rule2NonmdJsonExp _ = []
 
-rule2ExpType :: Rule -> [JSchemaExp]
-rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
-rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
-    [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
-rule2ExpType _ = []
+-- findNonHierarchyRule :: TypeName -> Rule -> Bool
+-- findNonHierarchyRule hierarchyName rule =
+--    getType rule == hierarchyName
 
-findNonHierarchyRule :: TypeName -> Rule -> Bool
-findNonHierarchyRule hierarchyName rule =
-   getType rule == hierarchyName
-
-getType:: Rule -> TypeName
-getType(TypeDecl{name=[MTT n]}) =
-    typeDeclNameToTypeName [MTT n]
-getType _ = ""
+-- getType:: Rule -> TypeName
+-- getType(TypeDecl{name=[MTT n]}) =
+--     typeDeclNameToTypeName [MTT n]
+-- getType _ = ""
 
 -- enumToField :: ConstructorName -> Field
 -- enumToField enumName = Field enumName FTBoolean
 
-rule2HierarchyBool :: Rule -> [JSchemaExp]
-rule2HierarchyBool (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
-    where
-        ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
-        ruleBool _                    = []
 
-rule2HierarchyBool _ = []
 
 ------------------------------------
 -- Output of types to Prolog
@@ -324,6 +322,8 @@ instance ShowTypesProlog JSchemaExp where
 
     showTypesProlog (ExpTypeEnum tn enums) =
         vsep (map (showEnumProlog tn) enums)
+
+    showTypesProlog (MkMetadata _ _) = pretty ""
 
 
 -- the root data type of a Json Schema is always embedded in an entrypoint,
@@ -438,7 +438,7 @@ instance ShowTypesJson JSchemaExp where
         ))
     showTypesJson (MkMetadata grpName mdata) = 
         -- TODO: Abstract common functionality between this and ExpTypeRecord out later
-        dquotes (pretty $ "metadata" <> grpName) <> pretty ": " <>
+        dquotes (pretty $ "x_" <> grpName) <> pretty ": " <>
         nest 4
         (braces (
             jsonType "object" <> pretty "," <>
@@ -463,7 +463,7 @@ jsonifyMeans :: [Rule] -> JSchemaExp
 jsonifyMeans rs = 
     let 
         mdataKVs = rs ^.. folded % to extractMdataFromMeansRule % folded
-    in MkMetadata { grpName = "global_metadata_definitions"
+    in MkMetadata { grpName = "global_mdata_definitions"
                   , mdata = mdataKVs }
 
 extractMdataFromMeansRule :: Rule -> Maybe MdataKV 

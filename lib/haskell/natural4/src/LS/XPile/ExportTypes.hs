@@ -52,9 +52,9 @@ import Data.Text (unpack)
 import Debug.Trace (trace)
 import Data.List (isSuffixOf, intercalate, partition)
 import Data.Char (toLower)
--- import Optics hiding (has)
+import Optics hiding (has)
 import Data.Generics.Product.Types (HasTypes)
-import Optics.TH
+-- import Optics.TH
 
 -- for json types -----------------------------------
 type TypeName = String
@@ -105,21 +105,19 @@ will become, in the json schema,
 }
 ```
 
-
 Things to note:
     * https://json-schema.org/blog/posts/custom-annotations-will-continue
 -}
 
-
-data MdataKV = MdataKV
+data MdataKV = MkMdataKV
     { key :: String
-    , annotatn :: [String]
+    , annots :: [String]
     }
     deriving (Eq, Ord, Show, Read)
 makePrisms ''MdataKV 
 
 type MdGroupName = String
-data MetadataGrp = MkMetadata
+data MetadataGrp = MkMetadataGrp
     { mdGroupName :: MdGroupName
     -- ^ e.g.: "x_global_metadata_definitions"
     , metadata      :: [MdataKV]
@@ -228,13 +226,10 @@ Example:
             ]
         , rlabel = Nothing
     ```
-
-below matching MultiTerm instead of Text, because
-typeDeclNameToTypeName validates the shape of the MultiTerm (singleton list)
 -}
-pattern TermMeansThat :: [MTExpr] -> [MTExpr] -> Rule
+pattern TermMeansThat :: MTExpr -> [MTExpr] -> Rule
 pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means,
-                                                   clauses= [ HC { hHead = RPBoolStructR term RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
+                                                   clauses= [ HC { hHead = RPBoolStructR [term] RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
 
 ruleIsMeans :: Rule -> Bool
 ruleIsMeans = \case TermMeansThat _ _ -> True; _others -> False 
@@ -251,7 +246,7 @@ rule2JsonExp = \case
       -> undefined
         -- TODO: Stopped because I realized https://smucclaw.slack.com/archives/C0164JRERL0/p1696347657385909
         --  [MetadataGrp 
-        --     MkMetadata { typeName = typeDeclNameToTypeName term
+        --     MkMetadataGrp { typeName = typeDeclNameToTypeName term
         --                 , fields = [MkAnnotField {}]
         --                 )
         
@@ -426,7 +421,7 @@ instance ShowTypesJson Field where
 
 instance ShowTypesJson MdataKV where
     showTypesJson :: MdataKV -> Doc ann
-    showTypesJson (MdataKV key metadata) = 
+    showTypesJson (MkMdataKV key metadata) = 
         dquotes (pretty key) <> pretty ": " <> bracketArgs metadata
        
 
@@ -452,7 +447,7 @@ instance ShowTypesJson JSchemaExp where
             nest 4
             (showRequireds fds)
         ))
-    -- showTypesJson (MetadataGrp (MkMetadata tn annotfields)) = 
+    -- showTypesJson (MetadataGrp (MkMetadataGrp tn annotfields)) = 
     --     -- TODO: Abstract common functionality between this and ExpTypeRecord out later
     --     dquotes (pretty $ "metadata" <> tn) <> pretty ": " <>
     --     nest 4
@@ -467,20 +462,32 @@ instance ShowTypesJson JSchemaExp where
 
 jsonPreamble :: TypeName -> [Doc ann]
 jsonPreamble tn = [
-    dquotes (pretty "$schema") <> pretty ":" <> dquotes (pretty "http://json-schema.org/draft-07/schema#"),
+    dquotes (pretty "$schema") <> pcolon <> dquotes (pretty "http://json-schema.org/draft-07/schema#"),
     jsonType "object",
-    dquotes (pretty "properties") <> pretty ": " <>
-    braces (dquotes (pretty entrypointName) <> pretty ": " <>
+    dquotes (pretty "properties") <> pcolon <>
+    braces (dquotes (pretty entrypointName) <> pcolon <>
         braces (showTypesJson (FTRef tn)))
     ]
+        where pcolon = pretty ":"
 
 jsonifyMeans :: [Rule] -> JSchemaExp
-jsonifyMeans = undefined
+jsonifyMeans rs = 
+    let 
+        mdataKVs = rs ^.. folded % to extractMdataFromMeansRule % folded
+    in MkMetadata { grpName = "global_metadata_definitions"
+                  , mdata = mdataKVs }
+
+extractMdataFromMeansRule :: Rule -> Maybe MdataKV 
+extractMdataFromMeansRule = \case
+    TermMeansThat term defnExprs -> 
+        Just $ MkMdataKV { key = stringifyMdataMTExpr term
+                         , annots = map stringifyMdataMTExpr defnExprs} 
+    _ -> Nothing    
 
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
     let 
-        -- TODO: Would be better to avoid bullion blindness here; improve when time permits
+        -- TODO: Would be better to avoid boolean blindness here; improve when time permits
         -- Partitioning in advance because we want to group the means HLikes into one object
         (meansRules, nonMeansRules) = partition ruleIsMeans rs
         globalMetadataDefs = jsonifyMeans meansRules

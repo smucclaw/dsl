@@ -19,7 +19,12 @@ The approach is strictly ad-hoc and not systematic and agnostic of
 other translations (in particular to JSON) that may have been developed.
 -}
 
-module LS.XPile.ExportTypes where
+module LS.XPile.ExportTypes (
+      rulesToUISchema
+    , rulesToJsonSchema
+
+    , rulesToPrologTp
+) where
     -- TODO: Add export list!
 
 import Data.Text qualified as T

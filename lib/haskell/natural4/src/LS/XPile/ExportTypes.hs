@@ -239,27 +239,14 @@ pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means,
 ruleIsMeans :: Rule -> Bool
 ruleIsMeans = \case TermMeansThat _ _ -> True; _others -> False 
 
-rule2JsonExp :: Rule -> [JSchemaExp]
-rule2JsonExp = \case
+rule2NonmdJsonExp :: Rule -> [JSchemaExp]
+rule2NonmdJsonExp = \case
     TypeDecl{name=[MTT n], has=fields, super=Nothing}
       -> case unpack n of
            n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
            _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
     TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
-    TermMeansThat term def
-      -> undefined
-        -- TODO: Stopped because I realized https://smucclaw.slack.com/archives/C0164JRERL0/p1696347657385909
-        --  [MetadataGrp 
-        --     MkMetadataGrp { typeName = typeDeclNameToTypeName term
-        --                 , fields = [MkAnnotField {}]
-        --                 )
-        
-        -- [ExpTypeRecord 
-        --     (makeMetadataTypeName term) 
-        --     [Field {fieldName = T.unpack $ mt2text def, 
-        --             fieldType = textToFieldType (T.pack "object")}]]
-
     _ -> []
         -- where
             -- makeMetadataTypeName term = term <> MTT (T.pack "metadata")
@@ -269,17 +256,17 @@ rule2JsonExp = \case
 -- "winter sports or ice hockey; horse riding or playing polo; canoeing, sailing or windsurfing"
 -- -> [MTT "winter sports or ice hockey", MTT "horse riding or playing polo", MTT "canoeing, sailing or windsurfing"]
 
--- rule2JsonExp :: Rule -> [JSchemaExp]
--- rule2JsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
+-- rule2NonmdJsonExp :: Rule -> [JSchemaExp]
+-- rule2NonmdJsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
 --     let hierarchyName = (unpack n) ++ " Hierarchy"
 --     in case findNonHierarchyRule hierarchyName (TypeDecl{name=[MTT n], has=fields, super=Nothing}) of
 --         True  -> [ExpTypeRecord (typeDeclNameToTypeName [MTT (T.pack "hi")]) (concatMap ruleFieldToField fields)]
 --         False | " Hierarchy" `isSuffixOf` (unpack n) -> concatMap rule2HierarchyBool fields
 --                 | otherwise -> [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
 --         _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
--- rule2JsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
+-- rule2NonmdJsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
 --     [ExpTypeEnum (typeDeclNameToTypeName (n)) (unpackEnums enums)]
--- rule2JsonExp _ = []
+-- rule2NonmdJsonExp _ = []
 
 rule2ExpType :: Rule -> [JSchemaExp]
 rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
@@ -496,7 +483,7 @@ rulesToJsonSchema rs =
         -- Partitioning in advance because we want to group the means HLikes into one object
         (meansRules, nonMeansRules) = partition ruleIsMeans rs
         globalMetadataDefs = jsonifyMeans meansRules
-        ets = concatMap rule2JsonExp nonMeansRules
+        ets = concatMap rule2NonmdJsonExp nonMeansRules
     in
         (case ets of
             [] -> show (braces emptyDoc)
@@ -520,7 +507,7 @@ rulesToJsonSchema rs =
 
 rulesToUISchema :: [SFL4.Rule] -> String
 rulesToUISchema rs =
-    let ets = concatMap rule2JsonExp rs in
+    let ets = concatMap rule2NonmdJsonExp rs in
         (case ets of
             [] -> show (braces emptyDoc)
             rts ->

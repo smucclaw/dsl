@@ -288,6 +288,13 @@ libHCs =
   if d1 is strictly before d0.
 
   % Nested accessor predicates.
+  a class's a field is a value
+  if field is different from name
+  and field is different from id
+  and a class0's name is class
+    or class0's id is class
+  and class0's field is value.
+
   a class's a field0's a field1 is a value
   if class's field0 is a class0
   and class0's field1 is value.

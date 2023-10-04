@@ -119,7 +119,7 @@ data MdataKV = MkMdataKV
     , annots :: [String]
     }
     deriving (Eq, Ord, Show, Read)
-makePrisms ''MdataKV 
+makePrisms ''MdataKV
 
 type MdGroupName = String
 data MetadataGrp = MkMetadataGrp
@@ -158,7 +158,7 @@ data JSchemaExp
     deriving stock (Eq, Ord, Show, Read)
 
 pattern MkMetadata :: MdGroupName -> [MdataKV] -> JSchemaExp
-pattern MkMetadata{grpName, mdata} = 
+pattern MkMetadata{grpName, mdata} =
     ExpMetadataGrp ( MkMetadataGrp { mdGroupName = grpName
                                    , metadata = mdata })
 
@@ -173,9 +173,8 @@ stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 stringfyMdataKVmtexpr :: MTExpr -> String
 stringfyMdataKVmtexpr = stringifyMTEwrapper id
 
--- TODO: Rewrite this in terms of processTopLvlNameTextForJsonSchema
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [ (MTT n) ] =  map toLower . intercalate "_" . words . T.unpack $ n
+typeDeclNameToTypeName [ MTT n ] =  T.unpack . processTopLvlNameTextForJsonSchema $ n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> String
@@ -236,7 +235,7 @@ pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means,
                                                    clauses= [ HC { hHead = RPBoolStructR [term] RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
 
 ruleIsMeans :: Rule -> Bool
-ruleIsMeans = \case TermMeansThat _ _ -> True; _others -> False 
+ruleIsMeans = \case TermMeansThat _ _ -> True; _others -> False
 
 rule2NonmdJsonExp :: Rule -> [JSchemaExp]
 rule2NonmdJsonExp = \case
@@ -373,7 +372,7 @@ showRef n =
         dquotes (pretty (defsLocation n))
 
 bracketArgs :: Pretty a => [a] -> Doc ann
-bracketArgs = brackets . hsep . punctuate comma . map (dquotes . pretty) 
+bracketArgs = brackets . hsep . punctuate comma . map (dquotes . pretty)
 
 
 -- Due to limitations of the JSON Form Web UI builder,
@@ -412,9 +411,9 @@ instance ShowTypesJson Field where
 
 instance ShowTypesJson MdataKV where
     showTypesJson :: MdataKV -> Doc ann
-    showTypesJson (MkMdataKV key metadata) = 
+    showTypesJson (MkMdataKV key metadata) =
         dquotes (pretty key) <> pretty ": " <> bracketArgs metadata
-       
+
 
 
 instance ShowTypesJson JSchemaExp where
@@ -439,7 +438,7 @@ instance ShowTypesJson JSchemaExp where
             nest 4
             (showRequireds fds)
         ))
-    showTypesJson (MkMetadata grpName mdata) = 
+    showTypesJson (MkMetadata grpName mdata) =
         -- TODO: Abstract common functionality between this and ExpTypeRecord out later
         dquotes (pretty $ "x_" <> grpName) <> pretty ": " <>
         nest 4
@@ -463,22 +462,22 @@ jsonPreamble tn = [
         where pcolon = pretty ":"
 
 jsonifyMeans :: [Rule] -> JSchemaExp
-jsonifyMeans rs = 
-    let 
+jsonifyMeans rs =
+    let
         mdataKVs = rs ^.. folded % to extractMdataFromMeansRule % folded
     in MkMetadata { grpName = "global_mdata_definitions"
                   , mdata = mdataKVs }
 
-extractMdataFromMeansRule :: Rule -> Maybe MdataKV 
+extractMdataFromMeansRule :: Rule -> Maybe MdataKV
 extractMdataFromMeansRule = \case
-    TermMeansThat term defnExprs -> 
+    TermMeansThat term defnExprs ->
         Just $ MkMdataKV { key = stringfyMdataKVmtexpr term
-                         , annots = map stringfyMdataKVmtexpr defnExprs} 
-    _ -> Nothing    
+                         , annots = map stringfyMdataKVmtexpr defnExprs}
+    _ -> Nothing
 
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
-    let 
+    let
         -- TODO: Would be better to avoid boolean blindness here; improve when time permits
         -- Partitioning in advance because we want to group the means HLikes into one object
         (meansRules, nonMeansRules) = partition ruleIsMeans rs

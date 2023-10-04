@@ -410,7 +410,6 @@ instance ShowTypesJson MdataKV where
         dquotes (pretty key) <> pretty ": " <> bracketArgs metadata
 
 
-
 instance ShowTypesJson JSchemaExp where
     showTypesJson :: JSchemaExp -> Doc ann
     showTypesJson (ExpTypeEnum tn enums) =
@@ -422,27 +421,21 @@ instance ShowTypesJson JSchemaExp where
             nest 4 (brackets (hsep (punctuate comma (map (dquotes . pretty) enums))))
         ))
     showTypesJson (ExpTypeRecord tn fds) =
-        dquotes (pretty tn) <> pretty ": " <>
-        nest 4
-        (braces (
-            jsonType "object" <> pretty "," <>
-            dquotes (pretty "properties") <>  pretty ": " <>
-            nest 4
-            (braces (vsep (punctuate comma (map showTypesJson fds)))) <>
-            pretty "," <>
-            nest 4
-            (showRequireds fds)
-        ))
+        pprintJsonObj tn fds requiredFds
+            where requiredFds = pretty "," <> nest 4 (showRequireds fds)
     showTypesJson (MkMetadata grpName mdata) =
-        -- TODO: Abstract common functionality between this and ExpTypeRecord out later
-        dquotes (pretty $ "x_" <> grpName) <> pretty ": " <>
+        pprintJsonObj ("x_" <> grpName) mdata (pretty "")
+
+pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
+pprintJsonObj key values final = 
+    dquotes (pretty key) <> pretty ": " <>
         nest 4
         (braces (
             jsonType "object" <> pretty "," <>
             dquotes (pretty "properties") <>  pretty ": " <>
-            nest 4
-            (braces (vsep (punctuate comma (map showTypesJson mdata)))) <>
-            pretty ","
+                nest 4
+                (braces (vsep (punctuate comma (map showTypesJson values)))) 
+                <> final
         ))
 
 

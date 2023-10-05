@@ -33,7 +33,7 @@ module LS.XPile.ExportTypes (
 import Data.Text qualified as T
 import Prettyprinter
 import Prettyprinter.Render.Text ()
-import Prettyprinter.Interpolate (__di, di)
+import Prettyprinter.Interpolate (__di)
 
 import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, keyword, clauses, has, name, super),

@@ -26,7 +26,7 @@ other translations (in particular to JSON) that may have been developed.
 module LS.XPile.ExportTypes (
       rulesToUISchema
     , rulesToJsonSchema
-
+    , rulesToHaskellTp
     , rulesToPrologTp
 ) where
 
@@ -34,6 +34,7 @@ import Data.Text qualified as T
 import Prettyprinter
 import Prettyprinter.Render.Text ()
 import Prettyprinter.Interpolate (__di)
+import L4.PrintProg (capitalise)
 
 import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, keyword, clauses, has, name, super),
@@ -291,6 +292,56 @@ rule2HierarchyBool _ = []
 
 -- enumToField :: ConstructorName -> Field
 -- enumToField enumName = Field enumName FTBoolean
+
+
+------------------------------------
+-- Output of types to Haskell
+
+class ShowTypesHaskell x where
+    showTypesHaskell :: x -> Doc ann
+
+-- TODO: the capitalisation aims to produce valid Haskell type names,
+-- however the types are written in L4. 
+-- The wilder the L4 cell contents get, the more processing is required here
+instance ShowTypesHaskell TypeName where
+    showTypesHaskell = pretty . capitalise
+
+instance ShowTypesHaskell FieldType where
+    showTypesHaskell FTBoolean = pretty "Bool"
+    showTypesHaskell FTNumber = pretty "Int"
+    showTypesHaskell FTString = pretty "String"
+    showTypesHaskell FTDate = pretty "String"
+    showTypesHaskell (FTRef n) = showTypesHaskell n
+    showTypesHaskell (FTList t) = brackets (showTypesHaskell t)
+
+instance ShowTypesHaskell Field where
+    showTypesHaskell (Field fn ft) = pretty fn <> pretty " :: " <> showTypesHaskell ft
+
+showEnumHaskell :: TypeName -> ConstructorName -> Doc ann
+showEnumHaskell tn en =
+    pretty "data" <> parens (pretty tn <> pretty ", " <> pretty en <> pretty ", " <> pretty en) <> pretty "."
+
+instance ShowTypesHaskell JSchemaExp where
+    showTypesHaskell (ExpTypeRecord tn fds) =
+        pretty "data " <> showTypesHaskell tn <> pretty " = " <> showTypesHaskell tn <>
+            nest 4 (braces (vsep (punctuate comma (map showTypesHaskell fds))))
+
+    showTypesHaskell (ExpTypeEnum tn enums) =
+        pretty "data " <> showTypesHaskell tn <>
+        nest 4
+            (pretty " = " <>
+            vsep (punctuate (pretty " | ") (map showTypesHaskell enums)))
+
+    showTypesHaskell (MkMetadata _ _) = pretty ""
+
+rulesToHaskellTp :: [SFL4.Rule] -> String
+rulesToHaskellTp rs =
+    let ets = concatMap rule2ExpType rs in
+        (case ets of
+            [] -> show emptyDoc
+            rt : rts ->
+                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))] in
+                show (vsep (map showTypesHaskell (entry:ets))))
 
 
 

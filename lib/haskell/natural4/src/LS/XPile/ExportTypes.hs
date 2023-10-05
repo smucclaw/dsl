@@ -392,12 +392,6 @@ instance ShowTypesJson FieldType where
         jsonType "string" <> pretty "," <>
         dquotes (pretty "format") <> pretty ": " <> dquotes (pretty "date")
     showTypesJson (FTRef n) =
-        -- jsonType "array" <> pretty "," <>
-        -- dquotes (pretty "minItems") <> pretty ": 1," <>
-        -- dquotes (pretty "maxItems") <> pretty ": 1," <>
-        -- dquotes
-        -- (pretty "items") <> pretty ": " <>
-        -- braces
         showRef n
     showTypesJson (FTList (FTRef n)) =
         jsonType "array" <> pretty "," <>
@@ -445,20 +439,8 @@ pprintJsonObj key values final =
                 <> final
         ))
 
-
-jsonPreamble :: TypeName -> [Doc ann]
-jsonPreamble tn = [
-    dquotes (pretty "$schema") <> pcolon <> dquotes (pretty "http://json-schema.org/draft-07/schema#"),
-    jsonType "object",
-    dquotes (pretty "properties") <> pcolon <>
-    braces (dquotes (pretty entrypointName) <> pcolon <>
-        braces (showTypesJson (FTRef tn)))
-    ]
-        where pcolon = pretty ":"
-
-
-jsonPreambleBQ :: TypeName -> Doc ann
-jsonPreambleBQ tn =
+jsonPreamble :: TypeName -> Doc ann
+jsonPreamble tn =
     [__di|
         "$schema":"http://json-schema.org/draft-07/schema\#",
         "type": "object",
@@ -480,36 +462,6 @@ extractMdataFromMeansRule = \case
                          , annots = map stringfyMdataKVmtexpr defnExprs}
     _ -> Nothing
 
-rulesToJsonSchemaOld :: [SFL4.Rule] -> String
-rulesToJsonSchemaOld rs =
-    let
-        -- TODO: Would be better to avoid boolean blindness here; improve when time permits
-        -- Partitioning in advance because we want to group the means HLikes into one object
-        (meansRules, nonMeansRules) = partition ruleIsMeans rs
-        globalMetadataDefs = jsonifyMeans meansRules
-        ets = concatMap rule2NonmdJsonExp nonMeansRules
-        subJsonObjs = map showTypesJson (globalMetadataDefs : ets)
-    in
-        (case ets of
-            [] -> show (braces emptyDoc)
-            (rt : _rts) ->
-                trace ("ets: " ++ show ets) $
-                show
-                (braces
-                    (vsep (punctuate comma
-                    (
-                        [jsonPreambleBQ rt.typeName] ++
-                        [dquotes (pretty defsLocationName) <> pretty ": " <>
-                        braces (
-                            nest 4
-                            (vsep (punctuate comma subJsonObjs))
-                        )
-                        ]
-                    )
-                    ) )
-                )
-        )
-
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
     let
@@ -519,29 +471,16 @@ rulesToJsonSchema rs =
         globalMetadataDefs = jsonifyMeans meansRules
         ets = concatMap rule2NonmdJsonExp nonMeansRules
         subJsonObjs = map showTypesJson (globalMetadataDefs : ets)
-        d rt = braces
-                    (vsep (punctuate comma
-                    (
-                        jsonPreambleBQ rt.typeName :
-                        [dquotes (pretty defsLocationName) <> pretty ": " <>
-                        braces (
-                            nest 4
-                            (vsep (punctuate comma subJsonObjs))
-                        )
-                        ]
-                    )
-                    ) )
-        dnew2 rt = [__di| {#{jsonPreambleBQ (typeName rt)},
-            "#{pretty defsLocationName}":
-            {#{vsep (punctuate comma subJsonObjs)}}
-            }
-            |]
-    in
-        (case ets of
+    in (case ets of
             [] -> show (braces emptyDoc)
             (rt : _rts) ->
                 trace ("ets: " ++ show ets) $
-                show (dnew2 rt)
+                show [__di| 
+                {#{jsonPreamble (typeName rt)},
+                "#{pretty defsLocationName}":
+                {#{vsep (punctuate comma subJsonObjs)}}
+                }
+                |]
         )
 
 rulesToUISchema :: [SFL4.Rule] -> String
@@ -555,7 +494,7 @@ rulesToUISchema rs =
                 (braces
                     (vsep (punctuate comma
                     (
-                        jsonPreamble (last rts).typeName ++
+                        jsonPreamble (last rts).typeName :
                         [dquotes (pretty defsLocationName) <> pretty ": " <>
                         braces (
                             nest 4

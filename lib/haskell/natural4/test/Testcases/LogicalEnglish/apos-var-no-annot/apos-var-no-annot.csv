@@ -1,6 +1,4 @@
 GIVEN,bleh,IS A,Blehy
 ,buh,IS A,Blehy
 DECIDE,not gvar's,one two three four five six,is,val,
-// not gvar and a lot of words in field pos, so would expect this to generate an NLA, even tho there's an apos
 IF,bleh's,one two three four five six,is,val,
-// gvar, so the second one shouldn't generate NLA even tho there's also more than the max num of words in field pos

@@ -9,7 +9,8 @@ module LS.Utils
     runMonoidValidate,
     swallowErrs,
     MonoidValidate,
-    (<||>)
+    (<||>),
+    (<&&>)
   )
 where
 
@@ -80,3 +81,7 @@ runMonoidValidate x = x |> coerce |> runValidate
 (<||>) :: Applicative f => f Bool -> f Bool -> f Bool
 (<||>) = liftA2 (||)
 {-# INLINE (<||>) #-}
+
+(<&&>) :: Applicative f => f Bool -> f Bool -> f Bool
+(<&&>) = liftA2 (&&)
+{-# INLINE (<&&>) #-}

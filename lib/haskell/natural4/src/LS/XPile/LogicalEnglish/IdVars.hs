@@ -35,8 +35,11 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicBPropn(..)
     , L4AtomicP
 
-    -- Intermediate representation types
+    -- Intermediate representation types, prisms, and constants
     , TemplateVar(..)
+    -- , _TempVar
+    --, _AposAtom, _NonVarOrNonAposAtom
+    -- , aposSuffix
     , VarsHC(MkVarsFact,
              MkVarsRule, 
              vfhead,
@@ -83,8 +86,9 @@ idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 -- | Replace text in VCells
 replaceTxtVCell :: VCell -> VCell
 replaceTxtVCell = \case
-  tv@(TempVar _) -> tv
-  Pred txt  -> Pred $ replaceTxt txt
+  tv@(TempVar _)         -> tv
+  apAtm@(AposAtom _)     -> apAtm
+  NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom (replaceTxt txt)
 
 {- | 
 TODO: Would be better to read in a dictionary of what/how to replace from some config file,
@@ -152,28 +156,21 @@ In other words, we can convert an arbitrary Cell to a VCell as long as we know t
 -}
 cell2vcell :: GVarSet -> Cell -> VCell
 cell2vcell gvars = \case
-  MkCellT celltxt ->
-    if txtIsAGivenVar gvars celltxt
-    then TempVar (MatchGVar celltxt)
-    else
-      let (prefix, isAposV) = isAposVar gvars celltxt
-      in if isAposV
-        then TempVar (EndsInApos prefix)
-        else Pred celltxt
+  MkCellT celltxt    -> celltxt2vcell gvars celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
+
+celltxt2vcell :: GVarSet -> T.Text -> VCell
+celltxt2vcell gvars (T.stripSuffix "'s" -> Just prefix) = 
+-- NOTE / TODO: this matching on "'s" is a bit brittle cos unicode
+    if txtIsAGivenVar gvars prefix 
+    then TempVar (EndsInApos prefix)
+    else AposAtom prefix 
+celltxt2vcell gvars celltxt
+  | txtIsAGivenVar gvars celltxt = TempVar (MatchGVar celltxt)
+  | otherwise = NonVarOrNonAposAtom celltxt
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
 txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
-
-type PrefixAposVar = T.Text
-isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
-isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
-            if txtIsAGivenVar gvs prefix
-            then (prefix, True)
-            else ("", False)
-isAposVar _ _                                     = ("", False)
--- TODO: this matching on "'s" is a bit brittle cos unicode
-
 
 
 -- {-  Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
@@ -186,7 +183,7 @@ isAposVar _ _                                     = ("", False)
 --     whichTVar :: T.Text -> TemplateVar
 --     whichTVar trm
 --       | txtIsAGivenVar gvars trm = MatchGVar trm
---       | isAposVar gvars trm = EndsInApos trm
+--       | checkApos gvars trm = EndsInApos trm
 --       | otherwise = error "shouldn't be anything else"
 --         -- TODO: add a check upfront for this 
 -- optOfArg :: Cell -> TemplateVar

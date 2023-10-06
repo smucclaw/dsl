@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  not gvar's one two three four five six is val,
+  
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,

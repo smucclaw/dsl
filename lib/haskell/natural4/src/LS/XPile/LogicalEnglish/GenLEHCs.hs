@@ -13,7 +13,6 @@ module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.Foldable (toList)
--- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
 import Data.Traversable
@@ -184,9 +183,9 @@ simplifyVAtomicP = fmap simplifyVCells
 
 simplifyVCells :: VCell -> LEhcCell
 simplifyVCells = \case
-  PredOrNonAposAtom txt -> NotVar txt
-  AposAtom prefix       -> NotVar prefix <> aposSuffix
-  TempVar tv            -> tvar2lecell tv
+  NonVarOrNonAposAtom txt -> NotVar txt
+  AposAtom prefix         -> NotVar $ prefix <> aposSuffix
+  TempVar tv              -> tvar2lecell tv
 
 tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case

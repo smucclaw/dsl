@@ -39,6 +39,7 @@ import Data.Maybe (catMaybes)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 
+import LS.Utils ((<&&>))
 import LS.XPile.LogicalEnglish.Types
   ( -- Common types 
       BoolPropn(..)
@@ -53,8 +54,9 @@ import LS.XPile.LogicalEnglish.Types
     , VarsRule
     , AtomicPWithVars
     , VCell(..)
-    , _TempVar
+    , _TempVar, _AposAtom
     , _EndsInApos
+    , aposSuffix
   )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
@@ -149,9 +151,11 @@ regexifyVCells :: NE (Seq VCell) -> Either String Regex
 regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
   where
     strdelimitr :: String = " "
+    escapeTxt = PCRE.escape . T.unpack
     regexf = \case
         TempVar tvar   -> tvar2WordsOrVIregex tvar
-        Pred nonvartxt -> (PCRE.escape . T.unpack $ nonvartxt)
+        AposAtom prefix -> escapeTxt $ prefix <> aposSuffix
+        NonVarOrNonAposAtom txt -> escapeTxt txt
 
 
 textify :: (Foldable t, Monoid c, SemiSequence (t c), Functor t) => Element (t c) -> (a -> c) -> t a -> c
@@ -367,25 +371,30 @@ nlasFromBody varsABP =
 
 -- | Keeps only those VCells that we do want to generate an NLA from
 keepVCells :: (Foldable f) => f VCell -> Maybe (f VCell)
-keepVCells vcells = if wantToGenNLAFromTheseVCells vcells then Just vcells else Nothing
-  where 
-    wantToGenNLAFromTheseVCells = allOf folded (isn't $ _TempVar % _EndsInApos)
+keepVCells vcells = if allOf folded notEndInApos vcells then Just vcells else Nothing
+  where
+    notEndInApos = isn't (_TempVar % _EndsInApos) <&&> 
+                   isn't _AposAtom
 
 nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe NLA
 nlaLoneFromVAtomicP =  \case
-  ABPatomic vcells         -> keepVCells vcells >>= mkNLA
-  ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
+  ABPatomic φvcs         -> selectivelyMkNLA φvcs
+  ABPIsOpSuchTt _ _ φvcs -> selectivelyMkNLA φvcs
 
   -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
   ABPBaseIs{}   -> Nothing
   ABPIsIn{}     -> Nothing
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
+  
+  where 
+    selectivelyMkNLA φvcells = keepVCells φvcells >>= mkNLA
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar    -> tvar2NLAtxt tvar
-  Pred nonvartxt  -> coerce nonvartxt
+  TempVar tvar           -> tvar2NLAtxt tvar
+  AposAtom prefix        -> coerce $ prefix <> aposSuffix
+  NonVarOrNonAposAtom txt  -> coerce txt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case

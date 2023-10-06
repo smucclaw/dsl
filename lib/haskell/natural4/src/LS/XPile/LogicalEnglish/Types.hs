@@ -35,9 +35,10 @@ module LS.XPile.LogicalEnglish.Types (
     , pattern MkIsDiffFr
     , pattern MkIsIn
 
-    -- Intermediate representation types
+    -- Intermediate representation types, prisms, and consts
     , TemplateVar(..)
     , _MatchGVar, _EndsInApos, _IsNum
+    , aposSuffix
     , OrigVarPrefix
     , OrigVarSeq
     , VarsHC(MkVarsFact,
@@ -50,7 +51,7 @@ module LS.XPile.LogicalEnglish.Types (
     , VarsRule
     , AtomicPWithVars
     , VCell(..)
-    , _TempVar, _Pred
+    , _TempVar, _NonVarOrNonAposAtom, _AposAtom
 
     -- LE-related types
     , LEhcCell(..)
@@ -260,6 +261,27 @@ from https://hackage.haskell.org/package/hashable-generics-1.1.7/docs/Data-Hasha
 
 type OrigVarSeq = [TemplateVar] -- TODO: Look into replacing [] with a more general Sequence type?
 
+aposSuffix :: T.Text
+aposSuffix = "'s"
+
+{-| This is best understood in the context of the other VarsX data types -}
+data VCell = TempVar             TemplateVar
+           | AposAtom            !OrigVarPrefix
+           | NonVarOrNonAposAtom !T.Text 
+          deriving stock (Eq, Ord, Show)
+          deriving (Generic, Hashable)
+makePrisms ''VCell
+
+{- | This might seem a bit confusing, because now there can be template variables both within a VCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
+  But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
+  Also, it's helpful to have tt info for generating NLAs, 
+  since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for, e.g., ABPIsDiffFr and ABPIsOpOf. 
+  
+  TODO: add more comments / references to the relevant code
+ -}
+type AtomicPWithVars = AtomicBPropn VCell
+
+
 {-| Intermediate representation from which we can generate either LE natl lang annotations or LE rules.
 
 Things to note / think about:
@@ -291,21 +313,6 @@ pattern MkVarsRule{vrhead, vrbody}
                       , rbody  = vrbody})
 {-# COMPLETE MkVarsFact, MkVarsRule #-}
 
-{- | This might seem a bit confusing, because now there can be template variables both within a VCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
-  But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
-  Also, it's helpful to have tt info for generating NLAs, 
-  since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for, e.g., ABPIsDiffFr and ABPIsOpOf. 
-  
-  TODO: add more comments / references to the relevant code
- -}
-type AtomicPWithVars = AtomicBPropn VCell
-
-{-| This is best understood in the context of the other VarsX data types -}
-data VCell = TempVar TemplateVar
-           | Pred    !T.Text
-          deriving stock (Eq, Ord, Show)
-          deriving (Generic, Hashable)
-makePrisms ''VCell
 
 {-------------------------------------------------------------------------------
   LE data types

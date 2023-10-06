@@ -46,7 +46,7 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicBPropn(..)
     -- Intermediate representation types
     , TemplateVar(..)
-    
+
     , VarsHC(VhcF, VhcR)
     , VarsFact(..)
     , BaseRule(..)
@@ -54,6 +54,7 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicPWithVars
     , VCell(..)
     , _TempVar
+    , _EndsInApos
   )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
@@ -72,7 +73,6 @@ import Optics
 import Data.HashSet.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
--- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
 import Data.Sequences (SemiSequence, intersperse) --groupAllOn
 import Data.List qualified as L
@@ -331,7 +331,7 @@ rawregexifyNLAStr (T.unpack -> nlastr) =
                    >>> splitOn "*" "a class's *a list*"
                    ["a class's ","a list",""]
                -}
-    coreRegex = 
+    coreRegex =
       splitted
         & itraversed %& indices isVarIdx         .~ wordsOrVI
         & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
@@ -365,14 +365,20 @@ nlasFromBody varsABP =
   let lstNLAs = fmap nlaLoneFromVAtomicP varsABP
   in HS.fromList . catMaybes . toList $ lstNLAs
 
+-- | Keeps only those VCells that we do want to generate an NLA from
+keepVCells :: (Foldable g) => g VCell -> Maybe [VCell]
+keepVCells vcells = if wantToGenNLAFromTheseVCells vcells then Just (toList vcells) else Nothing
+  where 
+    wantToGenNLAFromTheseVCells = allOf folded (isn't $ _TempVar % _EndsInApos)
+
 nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe NLA
 nlaLoneFromVAtomicP =  \case
-  ABPatomic vcells         -> mkNLA vcells
+  ABPatomic vcells         -> keepVCells vcells >>= mkNLA
   ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
 
   -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
   ABPBaseIs{}   -> Nothing
-  ABPIsIn{}     -> Nothing 
+  ABPIsIn{}     -> Nothing
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
 

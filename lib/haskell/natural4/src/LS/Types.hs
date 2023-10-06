@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
@@ -17,7 +16,7 @@ import AnyAll (mkLeaf)
 import qualified AnyAll as AA
 import Control.Monad
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
-import Control.Monad.Writer.Lazy (WriterT (runWriterT))
+-- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Hashable (Hashable)
@@ -468,10 +467,10 @@ thisAttributes (CT clstab) subclass = do
 
 extendedAttributes o@(CT clstab) subclass = do
   ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
-  let eAttrs = case (extendedAttributes o <$> clsParent o subclass) of
+  let eAttrs = case extendedAttributes o <$> clsParent o subclass of
                  Nothing               -> Map.empty
-                 (Just Nothing)        -> Map.empty
-                 (Just (Just (CT ea))) -> ea
+                 Just Nothing        -> Map.empty
+                 Just (Just (CT ea)) -> ea
   return $ CT $ ct <> eAttrs
 
 -- | get out whatever type signature has been user defined or inferred.
@@ -505,7 +504,7 @@ multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt
 
 bsp2text :: BoolStructP -> Text.Text
 bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]
-bsp2text (AA.Leaf                   x ) = Text.unwords $ fmap mtexpr2text . concatMap toList $ fst <$> x
+bsp2text (AA.Leaf                   x ) = Text.unwords (mtexpr2text <$> foldMap (toList . fst) x)
 bsp2text (AA.Any (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
 bsp2text (AA.Any (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
 bsp2text (AA.Any Nothing                   xs) = "any of:-" <> Text.unwords (bsp2text <$> xs)
@@ -560,11 +559,11 @@ data NatLang = NLen
 
 tc2nl :: NatLang -> Maybe (TemporalConstraint Text.Text) -> Text.Text
 tc2nl NLen Nothing = "eventually"
-tc2nl NLen (Just (TemporalConstraint TBefore n t)) = Text.unwords [ "before", (maybe "" (Text.pack . show) n), t ]
-tc2nl NLen (Just (TemporalConstraint TBy     n t)) = Text.unwords [ "by",     (maybe "" (Text.pack . show) n), t ]
-tc2nl NLen (Just (TemporalConstraint TAfter  n t)) = Text.unwords [ "after",  (maybe "" (Text.pack . show) n), t ]
-tc2nl NLen (Just (TemporalConstraint TOn     n t)) = Text.unwords [ "on",     (maybe "" (Text.pack . show) n), t ]
-tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", (maybe "" (Text.pack . show) n), t ]
+tc2nl NLen (Just (TemporalConstraint TBefore n t)) = Text.unwords [ "before", maybe "" (Text.pack . show) n, t ]
+tc2nl NLen (Just (TemporalConstraint TBy     n t)) = Text.unwords [ "by",     maybe "" (Text.pack . show) n, t ]
+tc2nl NLen (Just (TemporalConstraint TAfter  n t)) = Text.unwords [ "after",  maybe "" (Text.pack . show) n, t ]
+tc2nl NLen (Just (TemporalConstraint TOn     n t)) = Text.unwords [ "on",     maybe "" (Text.pack . show) n, t ]
+tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", maybe "" (Text.pack . show) n, t ]
 
 
 data RunConfig = RC { debug     :: Bool
@@ -626,6 +625,7 @@ defaultRC = RC
         , runNLGtests = False
         , toHTML = False
         }
+
 nestLevel :: RunConfig -> Int
 nestLevel = length . parseCallStack
 

@@ -241,17 +241,19 @@ pattern TermIsSumXWhere term φx = TermIsOpSuchThat RPsum term φx
 
 {- ^ 
 Examples of the L4 patterns
-    TermIsMaxXWhere:
-          ( RPnary RPis
+```
+TermIsMaxXWhere:
+      ( RPnary RPis
+          [ RPMT
+              [ MTT "savings" ]
+          , RPnary RPmax
               [ RPMT
-                  [ MTT "savings" ]
-              , RPnary RPmax
-                  [ RPMT
-                      [ MTT "x"
-                      , MTT "where"
-                      , MTT "x"
-                      , MTT "is the thing u saved"
-                      ]]])
+                  [ MTT "x"
+                  , MTT "where"
+                  , MTT "x"
+                  , MTT "is the thing u saved"
+                  ]]])
+```
 
 t1 IS NOT t2:
 ```

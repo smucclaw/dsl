@@ -60,14 +60,16 @@ import AnyAll qualified as AA (BoolStruct(Leaf))
 import Data.Text (unpack)
 import Debug.Trace (trace)
 import Data.List (isSuffixOf, intercalate, partition)
-import Data.Char (toLower)
+import Data.Char (toLower, isAlphaNum)
 import Optics hiding (has)
 import Data.Generics.Product.Types (HasTypes)
 -- import Optics.TH
+import Data.Set qualified as S
 
 -- for json types -----------------------------------
-type TypeName = String
 type ConstructorName = String
+type FieldName = String
+type TypeName = String
 
 data FieldType =
       FTBoolean
@@ -79,7 +81,7 @@ data FieldType =
     deriving (Eq, Ord, Show, Read)
 
 data Field = Field
-    { fieldName :: String
+    { fieldName :: FieldName
     , fieldType :: FieldType
     }
     deriving (Eq, Ord, Show, Read)
@@ -297,40 +299,54 @@ rule2HierarchyBool _ = []
 ------------------------------------
 -- Output of types to Haskell
 
+-- somewhat brutal methods to convert arbitrary strings to Haskell identifiers
+convertToAlphaNum :: Char -> Char
+convertToAlphaNum c =
+    if isAlphaNum c
+    then c
+    else '_'
+
+haskellise :: String -> String
+haskellise = map convertToAlphaNum
+
+hConstructorName :: ConstructorName -> ConstructorName
+hConstructorName = capitalise . haskellise
+hFieldName :: FieldName -> FieldName
+hFieldName = haskellise
+hTypeName :: TypeName -> TypeName
+hTypeName = capitalise . haskellise
+hTypeNameAsConstructorName :: TypeName -> ConstructorName
+hTypeNameAsConstructorName = hTypeName
 class ShowTypesHaskell x where
     showTypesHaskell :: x -> Doc ann
 
--- TODO: the capitalisation aims to produce valid Haskell type names,
--- however the types are written in L4. 
--- The wilder the L4 cell contents get, the more processing is required here
-instance ShowTypesHaskell TypeName where
-    showTypesHaskell = pretty . capitalise
 
 instance ShowTypesHaskell FieldType where
     showTypesHaskell FTBoolean = pretty "Bool"
     showTypesHaskell FTNumber = pretty "Int"
     showTypesHaskell FTString = pretty "String"
     showTypesHaskell FTDate = pretty "String"
-    showTypesHaskell (FTRef n) = showTypesHaskell n
+    showTypesHaskell (FTRef n) = pretty (hTypeName n)
     showTypesHaskell (FTList t) = brackets (showTypesHaskell t)
 
 instance ShowTypesHaskell Field where
-    showTypesHaskell (Field fn ft) = pretty fn <> pretty " :: " <> showTypesHaskell ft
-
-showEnumHaskell :: TypeName -> ConstructorName -> Doc ann
-showEnumHaskell tn en =
-    pretty "data" <> parens (pretty tn <> pretty ", " <> pretty en <> pretty ", " <> pretty en) <> pretty "."
+    showTypesHaskell f@(Field fn ft) = 
+        trace ("Field: " ++ (show f) ) $  
+        pretty (hFieldName fn) <> pretty " :: " <> showTypesHaskell ft
 
 instance ShowTypesHaskell JSchemaExp where
+    showTypesHaskell :: JSchemaExp -> Doc ann
     showTypesHaskell (ExpTypeRecord tn fds) =
-        pretty "data " <> showTypesHaskell tn <> pretty " = " <> showTypesHaskell tn <>
+        trace ("Record: " ++ (show tn) ++ (show (hTypeName tn))) $
+        pretty "data " <> pretty (hTypeName tn) <> pretty " = " <> pretty (hTypeNameAsConstructorName tn) <>
             nest 4 (braces (vsep (punctuate comma (map showTypesHaskell fds))))
 
     showTypesHaskell (ExpTypeEnum tn enums) =
-        pretty "data " <> showTypesHaskell tn <>
+        trace ("Enum: " ++ (show tn) ++ (show (hTypeName tn))) $
+        pretty "data " <> pretty (hTypeName tn) <>
         nest 4
             (pretty " = " <>
-            vsep (punctuate (pretty " | ") (map showTypesHaskell enums)))
+            vsep (punctuate (pretty " | ") (map (pretty . hConstructorName) enums)))
 
     showTypesHaskell (MkMetadata _ _) = pretty ""
 
@@ -339,11 +355,42 @@ rulesToHaskellTp rs =
     let ets = concatMap rule2ExpType rs in
         (case ets of
             [] -> show emptyDoc
-            rt : rts ->
-                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))] in
-                show (vsep (map showTypesHaskell (entry:ets))))
+            rt : _rts ->
+                let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))]
+                    entries = entry:ets
+                in trace ("Entries: " ++ (show entries)) $
+                   show (vsep (map showTypesHaskell entries ++
+                        translationTable (genTranslationTable entries))))
 
+translationTable :: forall ann. [(String, String)] -> [Doc ann]
+translationTable tab =
+    [vsep [
+            pretty "translations :: [(String, String)]"
+          , pretty "translations = " <>
+            nest 4
+                (brackets (vsep (punctuate comma (map (\(p1, p2) ->  parens (dquotes (pretty p1) <> pretty ", " <> dquotes (pretty p2))) tab))))
+        ]]
 
+genTranslationTable :: [JSchemaExp] -> [(String, String)]
+genTranslationTable tab = S.toList (S.unions (map tableOfSchema tab))
+
+tableOfSchema :: JSchemaExp -> S.Set (String, String)
+tableOfSchema (ExpTypeRecord tn fds) =
+    S.insert (tn, hTypeName tn) (S.unions (map tableOfField fds))
+tableOfSchema (ExpTypeEnum tn enums) =
+    S.insert (tn, hTypeName tn) (S.unions (map tableOfEnum enums))
+tableOfSchema (MkMetadata{}) = S.empty
+
+tableOfField :: Field -> S.Set (FieldName, FieldName)
+tableOfField (Field fn ft) = S.insert (fn, hFieldName fn) (tableOfType ft)
+
+tableOfEnum :: ConstructorName -> S.Set (ConstructorName, ConstructorName)
+tableOfEnum e = S.singleton (e, hConstructorName e)
+
+tableOfType :: FieldType -> S.Set (TypeName, TypeName)
+tableOfType (FTRef n) = S.singleton (n, hTypeName n)
+tableOfType (FTList t) = tableOfType t
+tableOfType _ = S.empty
 
 ------------------------------------
 -- Output of types to Prolog
@@ -525,7 +572,7 @@ rulesToJsonSchema rs =
     in (case ets of
             [] -> show (braces emptyDoc)
             (rt : _rts) ->
-                trace ("ets: " ++ show ets) $
+                -- trace ("ets: " ++ show ets) $
                 show [__di| 
                 {#{jsonPreamble (typeName rt)},
                 "#{pretty defsLocationName}":
@@ -540,7 +587,7 @@ rulesToUISchema rs =
         (case ets of
             [] -> show (braces emptyDoc)
             rts ->
-                trace ("ets: " ++ show ets) $
+                -- trace ("ets: " ++ show ets) $
                 show
                 (braces
                     (vsep (punctuate comma
@@ -556,3 +603,4 @@ rulesToUISchema rs =
                     ) )
                 )
         )
+

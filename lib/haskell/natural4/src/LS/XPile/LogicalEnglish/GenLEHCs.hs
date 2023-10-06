@@ -94,7 +94,6 @@ markUnivVarsInRule larule =
   let lerule :: BaseRule LEhcAtomicP = simplifyVAtomicP <$> larule
   in snd (mapAccumL markUnivVarsInAtomicPacc HS.empty lerule)
 
-
 {- TODO: I've thought of a way to do this with less plumbing using optics, 
 just not sure if streamlining the plumbing is worth the potential increased complexity for others -}
 markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus)
@@ -120,14 +119,12 @@ markUnivVarsInAtomicPacc nvars = \case
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
     in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
-    
+
   where
     isSmtg op t1 t2 = 
       let (nvars', t1') = identifyUnivVar nvars t1
           (nvars'', t2') = identifyUnivVar nvars' t2
       in (nvars'', op t1' t2')
-
-
 
 --- start by doing it the EASIEST possible way 
 markUnivVarsInLeCells :: NormdVars -> [LEhcCell] -> (NormdVars, [UnivStatus])

@@ -22,13 +22,13 @@ import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
-import qualified Data.List.NonEmpty as NE
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
+import Data.List.NonEmpty qualified as NE
 -- import qualified Data.Map as Map
 import Data.Monoid (Endo (Endo))
-import qualified Data.Set as Set
-import qualified Data.Text as Text
-import qualified Data.Tree as Tree
+-- import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Tree qualified as Tree
 import Data.Void (Void)
 import GHC.Generics (Generic)
 import LS.BasicTypes
@@ -581,6 +581,8 @@ data RunConfig = RC { debug     :: Bool
                     , toPrologTp :: Bool
                     , toJsonTp  :: Bool
                     , toJsonUI  :: Bool
+                    , toMaude :: Bool
+                    , toLogicalEnglish :: Bool
                     , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
@@ -609,6 +611,9 @@ defaultRC = RC
         , toProlog = False
         , toPrologTp = False
         , toJsonTp = False
+        , toJsonUI = False
+        , toMaude = False
+        , toLogicalEnglish = False
         , toSCasp  = False
         , toUppaal = False
         , saveAKA = False

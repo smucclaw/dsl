@@ -241,8 +241,9 @@ pattern TermIsSumXWhere term φx = TermIsOpSuchThat RPsum term φx
 
 {- ^ 
 Examples of the L4 patterns
-```
+
 TermIsMaxXWhere:
+```
       ( RPnary RPis
           [ RPMT
               [ MTT "savings" ]

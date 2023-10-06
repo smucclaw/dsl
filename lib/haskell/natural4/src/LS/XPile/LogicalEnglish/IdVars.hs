@@ -44,6 +44,7 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicPWithVars
     , VCell(..)
   )
+import Data.String.Interpolate (i)
 
 -- $setup
 -- >>> import Data.Text qualified as T
@@ -92,7 +93,7 @@ a config file that is kept in sync with the downstream stuff
 -}
 replaceTxt :: T.Text -> T.Text
 replaceTxt =
-  replacePeriod . toStrict . replaceWithTrie replacements . fromStrict
+  replaceClauseNums . replacePeriod . toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
       listToTrie
@@ -127,6 +128,12 @@ replaceTxt =
         -- https://stackoverflow.com/a/45616898 
         [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
         (" PERIOD " :: T.Text)
+
+    -- Replace references to clause numbers of the form "14.1.3" with "14.1 (3)".
+    replaceClauseNums =
+      PCRE.gsub
+        [PCRE.re|(\d+\.\d+)\.(\d+)|]
+        \(x:y:_ :: [T.Text]) -> [i|#{x}(#{y})|] :: T.Text
 
     -- replaceHyphen =
     --   PCRE.gsub

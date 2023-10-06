@@ -19,6 +19,31 @@ import Data.Coerce (coerce)
 import Data.Traversable
 
 import LS.XPile.LogicalEnglish.Types
+  ( -- L4-related types
+      AtomicBPropn(..)
+    
+    -- Intermediate representation types, prisms, and consts
+    , TemplateVar(..)
+    , aposSuffix
+    , VarsHC(VhcF, VhcR)
+    , VarsFact(..)
+    , BaseRule(..)
+    , VarsRule
+    , AtomicPWithVars
+    , VCell(..)
+  
+    -- LE-related types
+    , LEhcCell(..)
+    , LEVar(..)
+    , NormdVars
+    , NormalizedVar(..)
+    , LEhcAtomicP
+    , LETemplateTxt(..)
+    , UnivStatus(..)
+    , RuleWithUnivsMarked
+    , LERuleForPrint
+    , LEhcPrint(..) 
+  )
 
 
 leHCFromVarsHC :: VarsHC -> LEhcPrint
@@ -159,8 +184,9 @@ simplifyVAtomicP = fmap simplifyVCells
 
 simplifyVCells :: VCell -> LEhcCell
 simplifyVCells = \case
-  Pred txt   -> NotVar txt
-  TempVar tv -> tvar2lecell tv
+  PredOrNonAposAtom txt -> NotVar txt
+  AposAtom prefix       -> NotVar prefix <> aposSuffix
+  TempVar tv            -> tvar2lecell tv
 
 tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case

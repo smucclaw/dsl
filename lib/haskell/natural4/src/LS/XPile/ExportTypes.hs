@@ -33,7 +33,7 @@ module LS.XPile.ExportTypes (
 import Data.Text qualified as T
 import Prettyprinter
 import Prettyprinter.Render.Text ()
-import Prettyprinter.Interpolate (__di)
+import Prettyprinter.Interpolate (__di, di)
 import L4.PrintProg (capitalise)
 
 import LS.Rule as SFL4
@@ -63,6 +63,7 @@ import Data.List (isSuffixOf, intercalate, partition)
 import Data.Char (toLower, isAlphaNum)
 import Optics hiding (has)
 import Data.Generics.Product.Types (HasTypes)
+import qualified Text.Regex.PCRE.Heavy as PCRE
 -- import Optics.TH
 import Data.Set qualified as S
 
@@ -456,8 +457,14 @@ class ShowTypesJson x where
 defsLocationName :: String
 defsLocationName = "$defs"
 
-defsLocation :: String -> String
-defsLocation n = "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
+defsLocation :: String -> Doc ann
+defsLocation n =
+  [di|\#/#{defsLocationName}/#{n'}|]
+  where
+    -- Replace multiple whitespaces with a single underscore.
+    n' = PCRE.gsub [PCRE.re|\s+|] "_" n
+
+-- defsLocation n = pretty $ "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
 
 jsonType :: Pretty a => a -> Doc ann
 jsonType t =
@@ -469,7 +476,7 @@ showRequireds fds =
     brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann
-showRef n = [__di| "$ref": "#{pretty (defsLocation n)}"|]
+showRef n = [__di| "$ref": "#{defsLocation n}"|]
 
 bracketArgs :: Pretty a => [a] -> Doc ann
 bracketArgs = brackets . hsep . punctuate comma . map (dquotes . pretty)

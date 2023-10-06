@@ -242,14 +242,31 @@ toToken "MAP"       = pure FMap
 toToken "AKA"       = pure Aka
 toToken "TYPICALLY" = pure Typically
 
-toToken "-§"        = pure $ RuleMarker (-1) "§"
+toToken "CLAUSE"    = pure $ RuleMarker   1  "§"
 toToken "SECTION"   = pure $ RuleMarker   1  "§"
+
+toToken "-§"        = pure $ RuleMarker (-1) "§"
 toToken "§"         = pure $ RuleMarker   1  "§"
 toToken "§§"        = pure $ RuleMarker   2  "§"
 toToken "§§§"       = pure $ RuleMarker   3  "§"
 toToken "§§§§"      = pure $ RuleMarker   4  "§"
 toToken "§§§§§"     = pure $ RuleMarker   5  "§"
 toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
+
+toToken "-¶"        = pure $ RuleMarker (-1) "¶"
+toToken "¶"         = pure $ RuleMarker   1  "¶"
+toToken "¶¶"        = pure $ RuleMarker   2  "¶"
+toToken "¶¶¶"       = pure $ RuleMarker   3  "¶"
+toToken "¶¶¶¶"      = pure $ RuleMarker   4  "¶"
+toToken "¶¶¶¶¶"     = pure $ RuleMarker   5  "¶"
+toToken "¶¶¶¶¶¶"    = pure $ RuleMarker   6  "¶"
+
+toToken "H1"        = pure $ RuleMarker   1  "H"
+toToken "H2"        = pure $ RuleMarker   2  "H"
+toToken "H3"        = pure $ RuleMarker   3  "H"
+toToken "H4"        = pure $ RuleMarker   4  "H"
+toToken "H5"        = pure $ RuleMarker   5  "H"
+toToken "H6"        = pure $ RuleMarker   6  "H"
 
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
@@ -422,6 +439,7 @@ renderToken OneOf = "ONE OF"
 renderToken TypeSeparator = "::"
 renderToken (Other txt) = show txt
 renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
+renderToken (RuleMarker n "H") = "H" ++ show n
 renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
 
 renderToken Semicolon = ";;"

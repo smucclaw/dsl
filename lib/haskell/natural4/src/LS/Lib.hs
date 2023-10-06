@@ -110,7 +110,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tonl      :: w ::: Bool   <!> "True"  <?> "natural language"
                    , tomaude   :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
-                   , tole      :: w ::: Bool   <!> "True"  <?> "logical english"
+                   , tologicalenglish      :: w ::: Bool   <!> "True"  <?> "logical english"
 
                    , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 
@@ -166,6 +166,8 @@ getConfig o = do
         , toPrologTp  = only o == "prologTp"
         , toJsonTp  = only o == "jsonTp"
         , toJsonUI  = only o == "jsonUI"
+        , toMaude = only o == "maude"
+        , toLogicalEnglish = only o == "LogicalEnglish"
         , toSCasp   = only o == "scasp"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"

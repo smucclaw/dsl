@@ -366,8 +366,8 @@ nlasFromBody varsABP =
   in HS.fromList . catMaybes . toList $ lstNLAs
 
 -- | Keeps only those VCells that we do want to generate an NLA from
-keepVCells :: (Foldable g) => g VCell -> Maybe [VCell]
-keepVCells vcells = if wantToGenNLAFromTheseVCells vcells then Just (toList vcells) else Nothing
+keepVCells :: (Foldable f) => f VCell -> Maybe (f VCell)
+keepVCells vcells = if wantToGenNLAFromTheseVCells vcells then Just vcells else Nothing
   where 
     wantToGenNLAFromTheseVCells = allOf folded (isn't $ _TempVar % _EndsInApos)
 

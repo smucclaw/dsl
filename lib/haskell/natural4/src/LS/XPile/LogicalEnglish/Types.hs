@@ -294,7 +294,7 @@ pattern MkVarsRule{vrhead, vrbody}
 {- | This might seem a bit confusing, because now there can be template variables both within a VCell and outside of it (e.g., if it's a ABPIsOpSuchTt). 
   But I wanted to retain information about what the original variant of AtomicBPropn was for p printing afterwards.
   Also, it's helpful to have tt info for generating NLAs, 
-  since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for ABPIsDiffFr and ABPIsOpOf. 
+  since the only time we need to generate an NLA is when we have a `baseprop` / `VCell` --- we don't need to do tt for, e.g., ABPIsDiffFr and ABPIsOpOf. 
   
   TODO: add more comments / references to the relevant code
  -}

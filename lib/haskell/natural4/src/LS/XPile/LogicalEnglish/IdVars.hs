@@ -137,7 +137,7 @@ replaceTxt =
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
   * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum
-  * every IS tt was NOT an IS NUM has been replaced with a `MkCellT "is"`.
+  * every IS tt was NOT an IS NUM has been marked as belonging to the ABPBaseIs variant of AtomicBP
 
 So the only time we need to think about IS-es, going forward, is when we have a MkCellIsNum. 
 In other words, we can convert an arbitrary Cell to a VCell as long as we know the set of given vars, without having to check what other cells are / are not around it.

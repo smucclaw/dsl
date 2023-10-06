@@ -15,10 +15,10 @@
 module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
 
 import Data.Text qualified as T
-import qualified Data.Text.Lazy as T (toStrict)
-import qualified Data.Text.Lazy.Builder as B
-import qualified Data.Text.Lazy.Builder.Int as B
-import qualified Data.Text.Lazy.Builder.RealFloat as B (FPFormat(..), formatRealFloat)
+import Data.Text.Lazy qualified as T (toStrict)
+import Data.Text.Lazy.Builder qualified as B
+import Data.Text.Lazy.Builder.Int qualified as B
+import Data.Text.Lazy.Builder.RealFloat qualified as B (FPFormat (..), formatRealFloat)
 
 import Control.Monad.Validate
   ( MonadValidate (..)
@@ -31,7 +31,7 @@ import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
 
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 import LS.Types qualified as L4
 import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
 import LS.Rule qualified as L4 (Rule(..))

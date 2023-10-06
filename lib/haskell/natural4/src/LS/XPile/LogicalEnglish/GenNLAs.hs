@@ -152,9 +152,7 @@ regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
     regexf = \case
         TempVar tvar   -> tvar2WordsOrVIregex tvar
         Pred nonvartxt -> (PCRE.escape . T.unpack $ nonvartxt)
-          --TODO: Add tests to check if have to escape metachars in Pred
-            -- T.unpack nonvartxt
-            -- PCRE.escape . T.unpack $ nonvartxt
+
 
 textify :: (Foldable t, Monoid c, SemiSequence (t c), Functor t) => Element (t c) -> (a -> c) -> t a -> c
 textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingfn

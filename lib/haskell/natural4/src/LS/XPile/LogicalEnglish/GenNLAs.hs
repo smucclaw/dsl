@@ -371,7 +371,8 @@ nlaLoneFromVAtomicP =  \case
   ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
 
   -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
-  ABPIsIn{}     -> Nothing -- TODO: Check if `is in` is really built into LE! Seems tt way but haven't run LE query yet
+  ABPBaseIs{}   -> Nothing
+  ABPIsIn{}     -> Nothing 
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
 

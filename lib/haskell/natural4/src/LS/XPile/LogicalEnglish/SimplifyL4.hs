@@ -146,15 +146,8 @@ simpheadRPC = simpRPCis
 {- |
 Given left and right exprs that flank an RPIs,
 return a L4AtomicP where 
-    <IS NUM>s have been marked accordingly in the numcell,
-    and where the IS is otherwise made normal lowercase text.
-
-Two cases of IS-ing to consider:
-  1. It ends with an IS <NUM>
-    in which case we should convert the NUM to text and warp it in a MkCellIsNum
-  2. It does not
-    in which case we should replace the IS with 'is' text
-
+  * if it's an <IS NUM>, that's marked accordingly in the numcell,
+  * otherwise it's made a ABPBaseIs
 
   An example of an is-num pattern in a RPConstraint:
     [ HC
@@ -172,14 +165,17 @@ Two cases of IS-ing to consider:
 simpRPCis :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpRPCis exprsl exprsr =
   let lefts   = mtes2cells exprsl
-      txtRPis = "is" :: T.Text
   in case exprsr of
+    -- it's an IS NUM
+    -- so convert the NUM to text and warp it in a MkCellIsNum
     (MTI int : xs)   ->
       ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
     (MTF float : xs) ->
       ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
+
+    -- not IS NUM
     _           ->
-      ABPatomic (lefts <> [MkCellT txtRPis] <> mtes2cells exprsr)
+      ABPBaseIs lefts (mtes2cells exprsr)
 
 
 {-------------------------------------------------------------------------------

@@ -140,6 +140,8 @@ instance Pretty TxtAtomicBP where
   pretty = \case
     ABPatomic prop ->
       prettyprop prop
+    ABPBaseIs lefts rights -> 
+      [__di|#{prettyprop lefts} is #{prettyprop rights}|]
     ABPIsIn t1 t2 ->
       [__di|#{pretty t1} is in #{pretty t2}|]
     ABPIsDiffFr t1 t2 ->

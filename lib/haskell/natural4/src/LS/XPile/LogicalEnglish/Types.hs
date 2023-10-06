@@ -116,6 +116,7 @@ In particular, it includes not only variables but also atoms.
 -}
 data AtomicBPropn term =
     ABPatomic [term]
+  | ABPBaseIs [term] [term] -- not an IS NUM!
   | ABPIsIn term term
   | ABPIsDiffFr term term
     -- ^ Note: the encoding has a few rules that use an atom in the rightmost term
@@ -330,7 +331,7 @@ newtype NormalizedVar = MkNormVar T.Text
 
 type NormdVars = HS.HashSet NormalizedVar
 
--- | When generating template instances / non-NLAs, we transform PreTTCells to UnivStatuses, before basically concatenating them to get LETemplateTxts 
+-- | Are you something we should prefix with an 'a' or not
 data UnivStatus = PrefixWithA !OrigVarName
                 | NoPrefix !T.Text
     deriving stock (Eq, Ord, Show)

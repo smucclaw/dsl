@@ -95,22 +95,32 @@ markUnivVarsInRule larule =
   in snd (mapAccumL markUnivVarsInAtomicPacc HS.empty lerule)
 
 
--- TODO: Look into how to do this without this much plumbing
+{- TODO: I've thought of a way to do this with less plumbing using optics, 
+just not sure if streamlining the plumbing is worth the potential increased complexity for others -}
 markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus)
 markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
     in (nvars', ABPatomic univStatuses)
+
+  ABPBaseIs lefts rights -> 
+    let (nvars', leftsWithUnivStats) = markUnivVarsInLeCells nvars lefts
+        (nvars'', rightsWithUnivStats) = markUnivVarsInLeCells nvars' rights
+    in (nvars'', ABPBaseIs leftsWithUnivStats rightsWithUnivStats)
+
   ABPIsIn t1 t2     -> isSmtg ABPIsIn t1 t2
   ABPIsDiffFr t1 t2 -> isSmtg ABPIsDiffFr t1 t2
+
   ABPIsOpOf term opof termlst ->
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' termlst
     in (nvars'', ABPIsOpOf term' opof univStatuses)
+
   ABPIsOpSuchTt term ostt lecells ->
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
     in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
+    
   where
     isSmtg op t1 t2 = 
       let (nvars', t1') = identifyUnivVar nvars t1

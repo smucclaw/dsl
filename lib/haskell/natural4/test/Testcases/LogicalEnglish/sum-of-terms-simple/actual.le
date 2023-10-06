@@ -1,9 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  additional *a additsavings* is y,
-  initial *a initsavings* is x,
-  total *a totsavings* is z,
+  
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -113,7 +111,7 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  total a totsavings is z
-  if initial a initsavings is x
-  and additional a additsavings is y
+  p's a total savings is z
+  if p's a initial savings is x
+  and p's a additional savings is y
   and z is the sum of [x, y].

@@ -129,11 +129,11 @@ replaceTxt =
         [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
         (" PERIOD " :: T.Text)
 
-    -- Replace references to clause numbers of the form "14.1.3" with "14.1 (3)".
+    -- Replace references to clause numbers of the form "14.1.3" with "14.1 PERIOD 3".
     replaceClauseNums =
       PCRE.gsub
         [PCRE.re|(\d+\.\d+)\.(\d+)|]
-        \(x:y:_ :: [T.Text]) -> [i|#{x}(#{y})|] :: T.Text
+        \(x:y:_ :: [T.Text]) -> [i|#{x} PERIOD #{y}|] :: T.Text
 
     -- replaceHyphen =
     --   PCRE.gsub

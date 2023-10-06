@@ -93,7 +93,8 @@ a config file that is kept in sync with the downstream stuff
 -}
 replaceTxt :: T.Text -> T.Text
 replaceTxt =
-  replaceClauseNums . replacePeriod . toStrict . replaceWithTrie replacements . fromStrict
+  replaceClauseNums . replacePeriod .
+  toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements =
       listToTrie

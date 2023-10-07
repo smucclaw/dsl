@@ -39,6 +39,7 @@ import Data.Maybe (catMaybes)
 -- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 
+import LS.Utils ((<&&>))
 import LS.XPile.LogicalEnglish.Types
   ( -- Common types 
       BoolPropn(..)
@@ -46,14 +47,16 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicBPropn(..)
     -- Intermediate representation types
     , TemplateVar(..)
-    
+
     , VarsHC(VhcF, VhcR)
     , VarsFact(..)
     , BaseRule(..)
     , VarsRule
     , AtomicPWithVars
     , VCell(..)
-    , _TempVar
+    , _TempVar, _AposAtom
+    , _EndsInApos
+    , aposSuffix
   )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
@@ -72,7 +75,6 @@ import Optics
 import Data.HashSet.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
--- onNonEmpty, fromNonEmpty, 
 import Data.Sequence (Seq)
 import Data.Sequences (SemiSequence, intersperse) --groupAllOn
 import Data.List qualified as L
@@ -149,12 +151,12 @@ regexifyVCells :: NE (Seq VCell) -> Either String Regex
 regexifyVCells = makeRegex . textify strdelimitr regexf . fromNonEmpty
   where
     strdelimitr :: String = " "
+    escapeTxt = PCRE.escape . T.unpack
     regexf = \case
         TempVar tvar   -> tvar2WordsOrVIregex tvar
-        Pred nonvartxt -> (PCRE.escape . T.unpack $ nonvartxt)
-          --TODO: Add tests to check if have to escape metachars in Pred
-            -- T.unpack nonvartxt
-            -- PCRE.escape . T.unpack $ nonvartxt
+        AposAtom prefix -> escapeTxt $ prefix <> aposSuffix
+        NonVarOrNonAposAtom txt -> escapeTxt txt
+
 
 textify :: (Foldable t, Monoid c, SemiSequence (t c), Functor t) => Element (t c) -> (a -> c) -> t a -> c
 textify spaceDelimtr mappingfn = fold . intersperse spaceDelimtr . fmap mappingfn
@@ -333,7 +335,7 @@ rawregexifyNLAStr (T.unpack -> nlastr) =
                    >>> splitOn "*" "a class's *a list*"
                    ["a class's ","a list",""]
                -}
-    coreRegex = 
+    coreRegex =
       splitted
         & itraversed %& indices isVarIdx         .~ wordsOrVI
         & itraversed %& indices (not . isVarIdx) %~ PCRE.escape
@@ -367,20 +369,32 @@ nlasFromBody varsABP =
   let lstNLAs = fmap nlaLoneFromVAtomicP varsABP
   in HS.fromList . catMaybes . toList $ lstNLAs
 
+-- | Keeps only those VCells that we do want to generate an NLA from
+keepVCells :: (Foldable f) => f VCell -> Maybe (f VCell)
+keepVCells vcells = if allOf folded notEndInApos vcells then Just vcells else Nothing
+  where
+    notEndInApos = isn't (_TempVar % _EndsInApos) <&&> 
+                   isn't _AposAtom
+
 nlaLoneFromVAtomicP :: AtomicPWithVars -> Maybe NLA
 nlaLoneFromVAtomicP =  \case
-  ABPatomic vcells         -> mkNLA vcells
-  ABPIsOpSuchTt _ _ vcells -> mkNLA vcells
+  ABPatomic φvcs         -> selectivelyMkNLA φvcs
+  ABPIsOpSuchTt _ _ φvcs -> selectivelyMkNLA φvcs
 
   -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
-  ABPIsIn{}     -> Nothing -- TODO: Check if `is in` is really built into LE! Seems tt way but haven't run LE query yet
+  ABPBaseIs{}   -> Nothing
+  ABPIsIn{}     -> Nothing
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
+  
+  where 
+    selectivelyMkNLA φvcells = keepVCells φvcells >>= mkNLA
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar    -> tvar2NLAtxt tvar
-  Pred nonvartxt  -> coerce nonvartxt
+  TempVar tvar           -> tvar2NLAtxt tvar
+  AposAtom prefix        -> coerce $ prefix <> aposSuffix
+  NonVarOrNonAposAtom txt  -> coerce txt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case

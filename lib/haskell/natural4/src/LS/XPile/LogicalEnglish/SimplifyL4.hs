@@ -15,10 +15,10 @@
 module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
 
 import Data.Text qualified as T
-import qualified Data.Text.Lazy as T (toStrict)
-import qualified Data.Text.Lazy.Builder as B
-import qualified Data.Text.Lazy.Builder.Int as B
-import qualified Data.Text.Lazy.Builder.RealFloat as B
+import Data.Text.Lazy qualified as T (toStrict)
+import Data.Text.Lazy.Builder qualified as B
+import Data.Text.Lazy.Builder.Int qualified as B
+import Data.Text.Lazy.Builder.RealFloat qualified as B (FPFormat (..), formatRealFloat)
 
 import Control.Monad.Validate
   ( MonadValidate (..)
@@ -31,7 +31,7 @@ import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
 
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 import LS.Types qualified as L4
 import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
 import LS.Rule qualified as L4 (Rule(..))
@@ -39,13 +39,13 @@ import LS.XPile.LogicalEnglish.Types
   ( BoolPropn(..)
     -- L4-related types
     , RpcRPrel(..)
-      
+
     , RParithComp
-    
+
     , GVar(..)
     , GVarSet
     , Cell(..)
-    
+
     , SimpleL4HC(MkL4FactHc, fgiven, fhead,
                  MkL4RuleHc, rgiven, rhead, rbody)
 
@@ -57,7 +57,7 @@ import LS.XPile.LogicalEnglish.Types
     , pattern MkIsOpSuchTtBP
     , pattern MkIsOpOf
     , pattern MkIsDiffFr
-    , pattern MkIsIn    
+    , pattern MkIsIn
   )
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
@@ -146,15 +146,8 @@ simpheadRPC = simpRPCis
 {- |
 Given left and right exprs that flank an RPIs,
 return a L4AtomicP where 
-    <IS NUM>s have been marked accordingly in the numcell,
-    and where the IS is otherwise made normal lowercase text.
-
-Two cases of IS-ing to consider:
-  1. It ends with an IS <NUM>
-    in which case we should convert the NUM to text and warp it in a MkCellIsNum
-  2. It does not
-    in which case we should replace the IS with 'is' text
-
+  * if it's an <IS NUM>, that's marked accordingly in the numcell,
+  * otherwise it's made a ABPBaseIs
 
   An example of an is-num pattern in a RPConstraint:
     [ HC
@@ -172,14 +165,17 @@ Two cases of IS-ing to consider:
 simpRPCis :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpRPCis exprsl exprsr =
   let lefts   = mtes2cells exprsl
-      txtRPis = "is" :: T.Text
   in case exprsr of
+    -- it's an IS NUM
+    -- so convert the NUM to text and warp it in a MkCellIsNum
     (MTI int : xs)   ->
       ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
     (MTF float : xs) ->
       ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
+
+    -- not IS NUM
     _           ->
-      ABPatomic (lefts <> [MkCellT txtRPis] <> mtes2cells exprsr)
+      ABPBaseIs lefts (mtes2cells exprsr)
 
 
 {-------------------------------------------------------------------------------
@@ -241,17 +237,20 @@ pattern TermIsSumXWhere term φx = TermIsOpSuchThat RPsum term φx
 
 {- ^ 
 Examples of the L4 patterns
-    TermIsMaxXWhere:
-          ( RPnary RPis
+
+TermIsMaxXWhere:
+```
+      ( RPnary RPis
+          [ RPMT
+              [ MTT "savings" ]
+          , RPnary RPmax
               [ RPMT
-                  [ MTT "savings" ]
-              , RPnary RPmax
-                  [ RPMT
-                      [ MTT "x"
-                      , MTT "where"
-                      , MTT "x"
-                      , MTT "is the thing u saved"
-                      ]]])
+                  [ MTT "x"
+                  , MTT "where"
+                  , MTT "x"
+                  , MTT "is the thing u saved"
+                  ]]])
+```
 
 t1 IS NOT t2:
 ```
@@ -432,7 +431,15 @@ mtes2cells = fmap mte2cell
 Thanks to Jo Hsi for finding these!
 -}
 float2Text :: RealFloat a => a -> T.Text
-float2Text = T.toStrict . B.toLazyText . B.realFloat
+float2Text = T.toStrict . B.toLazyText . decFloat
+
+{- | Differs from B.realFloat only in that we use standard decimal notation (i.e., in the choice of FPFormat)
+See https://hackage.haskell.org/package/text-2.1/docs/src/Data.Text.Lazy.Builder.RealFloat.html
+-}
+decFloat :: RealFloat a => a -> B.Builder
+{-# SPECIALIZE decFloat :: Float -> B.Builder #-}
+{-# SPECIALIZE decFloat :: Double -> B.Builder #-}
+decFloat = B.formatRealFloat B.Fixed Nothing
 
 int2Text :: Integral a => a -> T.Text
 int2Text = T.toStrict . B.toLazyText . B.decimal

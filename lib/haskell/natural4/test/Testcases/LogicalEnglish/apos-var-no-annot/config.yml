@@ -1,0 +1,2 @@
+description: "whenever we have an apos var (i.e. it's a gvar and it's of the form `<thing>'s`) in a condition, we won't generate an NLA for that condition"
+enabled: true

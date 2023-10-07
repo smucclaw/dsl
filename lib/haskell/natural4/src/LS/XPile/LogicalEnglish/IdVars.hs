@@ -35,8 +35,11 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicBPropn(..)
     , L4AtomicP
 
-    -- Intermediate representation types
+    -- Intermediate representation types, prisms, and constants
     , TemplateVar(..)
+    -- , _TempVar
+    --, _AposAtom, _NonVarOrNonAposAtom
+    -- , aposSuffix
     , VarsHC(MkVarsFact,
              MkVarsRule, 
              vfhead,
@@ -44,6 +47,7 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicPWithVars
     , VCell(..)
   )
+import Data.String.Interpolate (i)
 
 -- $setup
 -- >>> import Data.Text qualified as T
@@ -82,8 +86,9 @@ idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 -- | Replace text in VCells
 replaceTxtVCell :: VCell -> VCell
 replaceTxtVCell = \case
-  tv@(TempVar _) -> tv
-  Pred txt  -> Pred $ replaceTxt txt
+  tv@(TempVar _)         -> tv
+  apAtm@(AposAtom _)     -> apAtm
+  NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom (replaceTxt txt)
 
 {- | 
 TODO: Would be better to read in a dictionary of what/how to replace from some config file,
@@ -91,81 +96,88 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt =
-  replacePeriod . toStrict . replaceWithTrie replacements . fromStrict
+replaceTxt = replacePeriod . replaceTxtPlain
+
+replaceTxtPlain :: T.Text -> T.Text
+replaceTxtPlain = toStrict . replaceWithTrie replacements . fromStrict
   where
-    replacements =
-      listToTrie
-        [ Replace "," " COMMA",
-          Replace "%" " PERCENT"
-          {- ^ it's cleaner not to put a space after `percent`
-           because it's usually something like "100% blah blah" in the encoding
-           So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
-           And similarly with `comma`.
+    replacements = listToTrie $ mconcat [replaceCommaPercent, replaceInf]
 
-           Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
-            >>> replaceTxt ""
-            ""
+    replaceInf =
+      [ Replace inf " inf "
+        | inf <- [" infinity ", " INFINITY ", " INF "]
+      ]
 
-            >>> replaceTxt ("100.5 * 2" :: T.Text)
-            "100 DOT 5 * 2"
+    replaceCommaPercent =
+      [ Replace "," " COMMA",
+        Replace "%" " PERCENT"
+      ]
+      {- ^ it's cleaner not to put a space after `percent`
+        because it's usually something like "100% blah blah" in the encoding
+        So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
+        And similarly with `comma`.
 
-            >>> replaceTxt "100% guarantee"
-            "100 PERCENT guarantee"
+        Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
+        >>> replaceTxt ""
+        ""
+        >>> replaceTxt "100% guarantee"
+        "100 PERCENT guarantee"
 
-            >>> replaceTxt "rocks, stones, and trees"
-            "rocks COMMA stones COMMA and trees"
-          -}
-        ]
+        >>> replaceTxt "rocks, stones, and trees"
+        "rocks COMMA stones COMMA and trees"
+      -}
 
-    -- LE has no trouble parsing dots that appear in numbers, ie things like
-    -- "clause 2.1 applies" is fine.
-    -- However, dots used as a full-stop, as in "The car is blue." is not ok
-    -- and so that "." needs to be turned into "PERIOD".
-    replacePeriod =
+-- LE has no trouble parsing dots that appear in numbers, ie things like
+-- "clause 2.1 applies" is fine.
+-- However, dots used as a full-stop, as in "The car is blue." is not ok
+-- and so that "." needs to be turned into "PERIOD".
+-- Also, references to clause numbers of the form "14.1.3" are not ok and so
+-- must be replaced with "14.1 PERIOD 3".
+replacePeriod :: T.Text -> T.Text
+replacePeriod = replaceClauseNums . replaceFullStop
+  where
+    replaceFullStop =
       PCRE.gsub
         -- https://stackoverflow.com/a/45616898 
         [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
         (" PERIOD " :: T.Text)
 
-    -- replaceHyphen =
-    --   PCRE.gsub
-    --     -- https://stackoverflow.com/a/31911114
-    --     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
-    --     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
+    replaceClauseNums =
+      PCRE.gsub
+        [PCRE.re|(\d+\.\d+)\.(\d+)|]
+        \(x:y:_ :: [T.Text]) -> [i|#{x} PERIOD #{y}|] :: T.Text
+
+-- replaceHyphen =
+--   PCRE.gsub
+--     -- https://stackoverflow.com/a/31911114
+--     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
+--     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
         
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
   * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum
-  * every IS tt was NOT an IS NUM has been replaced with a `MkCellT "is"`.
+  * every IS tt was NOT an IS NUM has been marked as belonging to the ABPBaseIs variant of AtomicBP
 
 So the only time we need to think about IS-es, going forward, is when we have a MkCellIsNum. 
 In other words, we can convert an arbitrary Cell to a VCell as long as we know the set of given vars, without having to check what other cells are / are not around it.
 -}
 cell2vcell :: GVarSet -> Cell -> VCell
 cell2vcell gvars = \case
-  MkCellT celltxt ->
-    if txtIsAGivenVar gvars celltxt
-    then TempVar (MatchGVar celltxt)
-    else
-      let (prefix, isAposV) = isAposVar gvars celltxt
-      in if isAposV
-        then TempVar (EndsInApos prefix)
-        else Pred celltxt
+  MkCellT celltxt    -> celltxt2vcell gvars celltxt
   MkCellIsNum numtxt -> TempVar (IsNum numtxt)
+
+celltxt2vcell :: GVarSet -> T.Text -> VCell
+celltxt2vcell gvars (T.stripSuffix "'s" -> Just prefix) = 
+-- NOTE / TODO: this matching on "'s" is a bit brittle cos unicode
+    if txtIsAGivenVar gvars prefix 
+    then TempVar (EndsInApos prefix)
+    else AposAtom prefix 
+celltxt2vcell gvars celltxt
+  | txtIsAGivenVar gvars celltxt = TempVar (MatchGVar celltxt)
+  | otherwise = NonVarOrNonAposAtom celltxt
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
 txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
-
-type PrefixAposVar = T.Text
-isAposVar :: GVarSet -> T.Text -> (PrefixAposVar, Bool)
-isAposVar gvs (T.stripSuffix "'s" -> Just prefix) =
-            if txtIsAGivenVar gvs prefix
-            then (prefix, True)
-            else ("", False)
-isAposVar _ _                                     = ("", False)
--- TODO: this matching on "'s" is a bit brittle cos unicode
-
 
 
 -- {-  Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables
@@ -178,7 +190,7 @@ isAposVar _ _                                     = ("", False)
 --     whichTVar :: T.Text -> TemplateVar
 --     whichTVar trm
 --       | txtIsAGivenVar gvars trm = MatchGVar trm
---       | isAposVar gvars trm = EndsInApos trm
+--       | checkApos gvars trm = EndsInApos trm
 --       | otherwise = error "shouldn't be anything else"
 --         -- TODO: add a check upfront for this 
 -- optOfArg :: Cell -> TemplateVar

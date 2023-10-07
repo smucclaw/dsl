@@ -13,12 +13,36 @@ module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.Foldable (toList)
--- import Debug.Trace (trace)
 import Data.Coerce (coerce)
 -- import Data.String.Interpolate ( i )
 import Data.Traversable
 
 import LS.XPile.LogicalEnglish.Types
+  ( -- L4-related types
+      AtomicBPropn(..)
+    
+    -- Intermediate representation types, prisms, and consts
+    , TemplateVar(..)
+    , aposSuffix
+    , VarsHC(VhcF, VhcR)
+    , VarsFact(..)
+    , BaseRule(..)
+    , VarsRule
+    , AtomicPWithVars
+    , VCell(..)
+  
+    -- LE-related types
+    , LEhcCell(..)
+    , LEVar(..)
+    , NormdVars
+    , NormalizedVar(..)
+    , LEhcAtomicP
+    , LETemplateTxt(..)
+    , UnivStatus(..)
+    , RuleWithUnivsMarked
+    , LERuleForPrint
+    , LEhcPrint(..) 
+  )
 
 
 leHCFromVarsHC :: VarsHC -> LEhcPrint
@@ -94,30 +118,37 @@ markUnivVarsInRule larule =
   let lerule :: BaseRule LEhcAtomicP = simplifyVAtomicP <$> larule
   in snd (mapAccumL markUnivVarsInAtomicPacc HS.empty lerule)
 
-
--- TODO: Look into how to do this without this much plumbing
+{- TODO: I've thought of a way to do this with less plumbing using optics, 
+just not sure if streamlining the plumbing is worth the potential increased complexity for others -}
 markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus)
 markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
     let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
     in (nvars', ABPatomic univStatuses)
+
+  ABPBaseIs lefts rights -> 
+    let (nvars', leftsWithUnivStats) = markUnivVarsInLeCells nvars lefts
+        (nvars'', rightsWithUnivStats) = markUnivVarsInLeCells nvars' rights
+    in (nvars'', ABPBaseIs leftsWithUnivStats rightsWithUnivStats)
+
   ABPIsIn t1 t2     -> isSmtg ABPIsIn t1 t2
   ABPIsDiffFr t1 t2 -> isSmtg ABPIsDiffFr t1 t2
+
   ABPIsOpOf term opof termlst ->
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' termlst
     in (nvars'', ABPIsOpOf term' opof univStatuses)
+
   ABPIsOpSuchTt term ostt lecells ->
     let (nvars', term') = identifyUnivVar nvars term
         (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
     in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
+
   where
     isSmtg op t1 t2 = 
       let (nvars', t1') = identifyUnivVar nvars t1
           (nvars'', t2') = identifyUnivVar nvars' t2
       in (nvars'', op t1' t2')
-
-
 
 --- start by doing it the EASIEST possible way 
 markUnivVarsInLeCells :: NormdVars -> [LEhcCell] -> (NormdVars, [UnivStatus])
@@ -152,8 +183,9 @@ simplifyVAtomicP = fmap simplifyVCells
 
 simplifyVCells :: VCell -> LEhcCell
 simplifyVCells = \case
-  Pred txt   -> NotVar txt
-  TempVar tv -> tvar2lecell tv
+  NonVarOrNonAposAtom txt -> NotVar txt
+  AposAtom prefix         -> NotVar $ prefix <> aposSuffix
+  TempVar tv              -> tvar2lecell tv
 
 tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case

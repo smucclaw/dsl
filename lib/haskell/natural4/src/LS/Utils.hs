@@ -9,7 +9,9 @@ module LS.Utils
     runMonoidValidate,
     swallowErrs,
     MonoidValidate,
-    (<||>)
+    compose,
+    (<||>),
+    (<&&>)
   )
 where
 
@@ -21,8 +23,8 @@ import Control.Monad.Validate
   )
 import Data.Coerce (coerce)
 import Data.Either (rights, partitionEithers)
-import Data.Monoid (Ap (Ap))
-import Flow ((|>))
+import Data.Monoid (Ap (Ap), Endo (Endo))
+import Flow ((|>), (.>))
 
 infixl 0 |$>
 
@@ -76,7 +78,15 @@ swallowErrs = mapThenSwallowErrs id
 runMonoidValidate :: MonoidValidate e a -> Either e a
 runMonoidValidate x = x |> coerce |> runValidate 
 
+-- | Function composition via the endomorphism monoid.
+compose :: forall a. [a -> a] -> a -> a
+compose = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
+
 -- | A simple lifted ('||'), copied from Control.Bool
 (<||>) :: Applicative f => f Bool -> f Bool -> f Bool
 (<||>) = liftA2 (||)
 {-# INLINE (<||>) #-}
+
+(<&&>) :: Applicative f => f Bool -> f Bool -> f Bool
+(<&&>) = liftA2 (&&)
+{-# INLINE (<&&>) #-}

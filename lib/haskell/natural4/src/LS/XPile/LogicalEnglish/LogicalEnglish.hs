@@ -4,7 +4,7 @@
 {-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
@@ -64,6 +64,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
+import Data.String.Interpolate (__i)
 
 -- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
@@ -100,7 +101,11 @@ toLE l4rules =
     Left errors -> errs2str errors
     Right hcs   -> xpileSimplifiedL4hcs hcs
   where
-    errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
+    errs2str errors =
+      [__i|
+        ERRORS FOUND:
+        #{T.unpack . T.intercalate "\n" . coerce . HS.toList $ errors}
+      |]
     runAndValidate = runValidate . runSimpL4
 {- ^ TODO: think abt whether to do more on the pre-simplifyL4rules front
 -}

@@ -100,19 +100,12 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt = replacePeriod . replaceTxtPlain
+replaceTxt = replacePeriod . replaceTxtPlain . replaceInf
 
 replaceTxtPlain :: T.Text -> T.Text
 replaceTxtPlain = toStrict . replaceWithTrie replacements . fromStrict
   where
-    replacements = listToTrie $ mconcat [replaceCommaPercent, replaceInf]
-
-    -- LE, as with Prolog, uses "inf" to denote positive infinity.
-    -- TODO: Add test cases for this replacement.
-    replaceInf =
-      [ Replace inf "inf"
-        | inf <- ["infinity", "INFINITY", "INF", "∞"]
-      ]
+    replacements = listToTrie replaceCommaPercent
 
     replaceCommaPercent =
       [ Replace "," " COMMA",
@@ -132,6 +125,14 @@ replaceTxtPlain = toStrict . replaceWithTrie replacements . fromStrict
         >>> replaceTxt "rocks, stones, and trees"
         "rocks COMMA stones COMMA and trees"
       -}
+
+-- LE, as with Prolog, uses "inf" to denote positive infinity.
+-- TODO: Add test cases for this replacement.`
+replaceInf :: T.Text -> T.Text
+replaceInf =
+  PCRE.sub
+    [PCRE.re|^\s*infinity\s*$|^\s*∞\s*$|]
+    ("inf" :: T.Text)
 
 -- LE has no trouble parsing dots that appear in numbers, ie things like
 -- "clause 2.1 applies" is fine.

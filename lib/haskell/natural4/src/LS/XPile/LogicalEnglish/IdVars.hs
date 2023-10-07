@@ -96,55 +96,62 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt =
-  replaceClauseNums . replacePeriod .
-  toStrict . replaceWithTrie replacements . fromStrict
+replaceTxt = replacePeriod . replaceTxtPlain
+
+replaceTxtPlain :: T.Text -> T.Text
+replaceTxtPlain = toStrict . replaceWithTrie replacements . fromStrict
   where
-    replacements =
-      listToTrie
-        [ Replace "," " COMMA",
-          Replace "%" " PERCENT"
-          {- ^ it's cleaner not to put a space after `percent`
-           because it's usually something like "100% blah blah" in the encoding
-           So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
-           And similarly with `comma`.
+    replacements = listToTrie $ mconcat [replaceCommaPercent, replaceInf]
 
-           Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
-            >>> replaceTxt ""
-            ""
+    replaceInf =
+      [ Replace inf " inf "
+        | inf <- [" infinity ", " INFINITY ", " INF "]
+      ]
 
-            >>> replaceTxt ("100.5 * 2" :: T.Text)
-            "100 DOT 5 * 2"
+    replaceCommaPercent =
+      [ Replace "," " COMMA",
+        Replace "%" " PERCENT"
+      ]
+      {- ^ it's cleaner not to put a space after `percent`
+        because it's usually something like "100% blah blah" in the encoding
+        So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
+        And similarly with `comma`.
 
-            >>> replaceTxt "100% guarantee"
-            "100 PERCENT guarantee"
+        Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
+        >>> replaceTxt ""
+        ""
+        >>> replaceTxt "100% guarantee"
+        "100 PERCENT guarantee"
 
-            >>> replaceTxt "rocks, stones, and trees"
-            "rocks COMMA stones COMMA and trees"
-          -}
-        ]
+        >>> replaceTxt "rocks, stones, and trees"
+        "rocks COMMA stones COMMA and trees"
+      -}
 
-    -- LE has no trouble parsing dots that appear in numbers, ie things like
-    -- "clause 2.1 applies" is fine.
-    -- However, dots used as a full-stop, as in "The car is blue." is not ok
-    -- and so that "." needs to be turned into "PERIOD".
-    replacePeriod =
+-- LE has no trouble parsing dots that appear in numbers, ie things like
+-- "clause 2.1 applies" is fine.
+-- However, dots used as a full-stop, as in "The car is blue." is not ok
+-- and so that "." needs to be turned into "PERIOD".
+-- Also, references to clause numbers of the form "14.1.3" are not ok and so
+-- must be replaced with "14.1 PERIOD 3".
+replacePeriod :: T.Text -> T.Text
+replacePeriod = replaceClauseNums . replaceFullStop
+  where
+    replaceFullStop =
       PCRE.gsub
         -- https://stackoverflow.com/a/45616898 
         [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
         (" PERIOD " :: T.Text)
 
-    -- Replace references to clause numbers of the form "14.1.3" with "14.1 PERIOD 3".
     replaceClauseNums =
       PCRE.gsub
         [PCRE.re|(\d+\.\d+)\.(\d+)|]
         \(x:y:_ :: [T.Text]) -> [i|#{x} PERIOD #{y}|] :: T.Text
 
-    -- replaceHyphen =
-    --   PCRE.gsub
-    --     -- https://stackoverflow.com/a/31911114
-    --     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
-    --     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
+-- replaceHyphen =
+--   PCRE.gsub
+--     -- https://stackoverflow.com/a/31911114
+--     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
+--     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
         
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

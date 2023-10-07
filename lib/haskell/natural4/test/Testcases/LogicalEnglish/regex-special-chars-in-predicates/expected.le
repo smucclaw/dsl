@@ -113,7 +113,3 @@ the knowledge base lib includes:
 the knowledge base rules includes:
   bob satisfies clauses 10.1 PERIOD 2 COMMA 10.1 PERIOD 3 or 12.1 PERIOD  Next sentence PERIOD 
   if bob satisfies clauses 10.1 PERIOD 2 COMMA 10.1 PERIOD 3 or 12.1 PERIOD  Next sentence PERIOD .
-
-  clause 10.1 PERIOD 1's amount is 10
-  if it is not the case that
-    clause 12.1 PERIOD 2's amount is 0.

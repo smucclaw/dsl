@@ -86,10 +86,10 @@ idVarsInBody gvars = fmap $ idVarsInAP gvars
 -- | Replace text in VCells
 replaceTxtVCell :: VCell -> VCell
 replaceTxtVCell = \case
-  -- TempVar (MatchGVar txt)  -> TempVar $ MatchGVar $ replaceTxt txt
-  -- TempVar (EndsInApos txt) -> TempVar $ EndsInApos $ replaceTxt txt
-  -- tv@(TempVar (IsNum _))   -> tv
-  tv@(TempVar _) -> tv
+  TempVar (MatchGVar txt)  -> TempVar $ MatchGVar $ replaceTxt txt
+  TempVar (EndsInApos txt) -> TempVar $ EndsInApos $ replaceTxt txt
+  TempVar (IsNum txt)   -> TempVar $ IsNum $ replaceTxt txt
+  -- tv@(TempVar _) -> tv
   AposAtom txt             -> AposAtom $ replaceTxt txt
   NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom $ replaceTxt txt
 

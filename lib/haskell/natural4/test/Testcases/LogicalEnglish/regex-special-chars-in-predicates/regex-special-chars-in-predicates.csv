@@ -1,5 +1,2 @@
 DECIDE,bob,"satisfies clauses 10.1.2, 10.1.3 or 12.1. Next sentence.",,,
 IF,bob,"satisfies clauses 10.1.2, 10.1.3 or 12.1. Next sentence.",,,
-,,,,,
-DECIDE,clause 10.1.1's,amount,IS,10,
-IF,NOT,clause 12.1.2's,amount,IS,0

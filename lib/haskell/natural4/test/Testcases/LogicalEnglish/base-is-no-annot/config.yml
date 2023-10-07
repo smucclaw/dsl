@@ -1,0 +1,2 @@
+description: "Something of the form <blah> IS <blah>, where <blah> does not start with any sort of number, does not generate an NLA / template"
+enabled: true

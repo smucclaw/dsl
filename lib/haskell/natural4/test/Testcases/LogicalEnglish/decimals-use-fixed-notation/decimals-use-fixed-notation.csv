@@ -1,0 +1,6 @@
+GIVEN,factor,IS A,Number,
+,x,
+,y,
+DECIDE,x's factor,IS,0.001,
+,y's factor,IS,0.00009999
+,IF,we are,looking,to be happy

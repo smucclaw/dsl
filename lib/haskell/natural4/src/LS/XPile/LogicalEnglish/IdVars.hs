@@ -67,7 +67,7 @@ idVarsInHC = \case
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
-idVarsInAP gvars = fmap makeVCell
+idVarsInAP gvars = postprocAP . fmap makeVCell
   where
     makeVCell = cell2vcell gvars
 
@@ -78,7 +78,7 @@ postprocAP = \case
   others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
-idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
+idVarsInBody gvars = fmap $ idVarsInAP gvars
 
 
 ---- helpers
@@ -86,9 +86,12 @@ idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
 -- | Replace text in VCells
 replaceTxtVCell :: VCell -> VCell
 replaceTxtVCell = \case
-  tv@(TempVar _)         -> tv
-  apAtm@(AposAtom _)     -> apAtm
-  NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom (replaceTxt txt)
+  -- TempVar (MatchGVar txt)  -> TempVar $ MatchGVar $ replaceTxt txt
+  -- TempVar (EndsInApos txt) -> TempVar $ EndsInApos $ replaceTxt txt
+  -- tv@(TempVar (IsNum _))   -> tv
+  tv@(TempVar _) -> tv
+  AposAtom txt             -> AposAtom $ replaceTxt txt
+  NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom $ replaceTxt txt
 
 {- | 
 TODO: Would be better to read in a dictionary of what/how to replace from some config file,

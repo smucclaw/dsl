@@ -1,0 +1,3 @@
+GIVEN,total savings,
+DECIDE,life,IS,goodenough,4,us,
+IF,total savings,IS,healthy,

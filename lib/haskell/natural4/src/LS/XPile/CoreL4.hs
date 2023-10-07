@@ -211,6 +211,7 @@ import Prettyprinter.Interpolate (__di, di)
 import Text.Regex.TDFA (AllTextMatches (getAllTextMatches), (=~))
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
+import LS.Utils (compose)
 
 -- type ExprM a = Either String (Expr a)
 type ExprM ann a = MonoidValidate (Doc ann) (Expr a)
@@ -716,7 +717,7 @@ prettyDefnCs rname cs = do
       replacements =
         [ T.replace (T.pack t) $ T.pack $ show n
         | (t, n) <- zip (nub myterms) x123 ]
-      outstr = chain replacements $ mt2text rhs
+      outstr = compose replacements $ mt2text rhs
       returntype = "Integer"
 
   pure $ if null myterms
@@ -743,9 +744,6 @@ prettyDefnCs rname cs = do
       <> Prettyprinter.line <> commentShow "#" cl
     -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
   where
-    -- Function composition via the endomorphism monoid
-    chain :: [a -> a] -> a -> a
-    chain = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
 
     x123 = [[di|x#{n}|] | (n :: Int) <- [1..]]
 

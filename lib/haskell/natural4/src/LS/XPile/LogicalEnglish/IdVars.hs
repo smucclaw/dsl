@@ -107,9 +107,11 @@ replaceTxtPlain = toStrict . replaceWithTrie replacements . fromStrict
   where
     replacements = listToTrie $ mconcat [replaceCommaPercent, replaceInf]
 
+    -- LE, as with Prolog, uses "inf" to denote positive infinity.
+    -- TODO: Add test cases for this replacement.
     replaceInf =
-      [ Replace inf " inf "
-        | inf <- [" infinity ", " INFINITY ", " INF "]
+      [ Replace inf "inf"
+        | inf <- ["infinity", "INFINITY", "INF", "∞"]
       ]
 
     replaceCommaPercent =

@@ -37,7 +37,7 @@ import Prettyprinter.Interpolate (__di, di)
 import L4.PrintProg (capitalise)
 
 import LS.Rule as SFL4
-  ( Rule (TypeDecl, keyword, clauses, has, name, super),
+  ( Rule (TypeDecl, has, name, super),
     extractMTExprs
   )
 import LS.Types as SFL4
@@ -55,7 +55,7 @@ import LS.Types as SFL4
 import Data.Text (unpack)
 import Debug.Trace (trace)
 import Data.List (isSuffixOf, intercalate)
-import Data.Char (toLower, isAlphaNum)
+import Data.Char (isAlphaNum)
 import Data.Generics.Product.Types (HasTypes)
 import qualified Text.Regex.PCRE.Heavy as PCRE
 -- import Optics.TH
@@ -111,7 +111,7 @@ data JSchemaExp
     deriving stock (Eq, Ord, Show, Read)
 
 processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
-processTopLvlNameTextForJsonSchema = T.toLower . T.intercalate (T.pack "_") . T.words
+processTopLvlNameTextForJsonSchema = T.intercalate (T.pack "_") . T.words
 
 -- stringifyMTEwrapper :: (T.Text -> T.Text) -> MTExpr -> String
 -- stringifyMTEwrapper f = T.unpack . f . mtexpr2text
@@ -139,7 +139,7 @@ typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 
-typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (map toLower $ intercalate "_" $ words $ unpack tn))
+typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (intercalate "_" $ words $ unpack tn))
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 

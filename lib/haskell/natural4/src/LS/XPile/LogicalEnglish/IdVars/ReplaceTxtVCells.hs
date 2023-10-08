@@ -74,9 +74,9 @@ replaceTxtPlain = fromStrict >>> replaceWithTrie replacements >>> toStrict
 -- TODO: Add test cases for this replacement.`
 replaceInf :: T.Text -> T.Text
 replaceInf =
-    PCRE.sub
-      [PCRE.re|^(?i)infinity$|^(?i)inf$|^∞$|]
-      ("inf" :: T.Text)
+  PCRE.sub
+    [PCRE.re|^(?i)infinity$|^(?i)inf$|^∞$|]
+    ("inf" :: T.Text)
 
 -- LE has no trouble parsing dots that appear in numbers, ie things like
 -- "clause 2.1 applies" is fine.

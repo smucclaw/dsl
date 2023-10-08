@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  *a a PERIOD  b PERIOD  c COMMA d PERIOD * is a thing,
+  *a a PERIOD b PERIOD c COMMA d PERIOD* is a thing,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -111,4 +111,4 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  a a PERIOD  b PERIOD  c COMMA d PERIOD  is a thing.
+  a a PERIOD b PERIOD c COMMA d PERIOD is a thing.

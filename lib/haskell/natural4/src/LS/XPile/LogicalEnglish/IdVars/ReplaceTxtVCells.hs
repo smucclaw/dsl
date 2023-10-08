@@ -42,6 +42,13 @@ replaceTxt txt =
     |> replaceInf
     |> replaceTxtPlain
     |> replacePeriod
+    |> trimWhitespaces
+
+trimWhitespaces :: T.Text -> T.Text
+trimWhitespaces txt =
+  txt
+    |> T.strip
+    |> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)
 
 replaceTxtPlain :: T.Text -> T.Text
 replaceTxtPlain txt =

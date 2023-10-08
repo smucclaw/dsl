@@ -40,13 +40,10 @@ import LS.Rule as SFL4
   )
 import LS.Types as SFL4
   (
-    -- BoolStructR,
-    -- HornClause2,
     MTExpr (..),
     -- ParamText,
     ParamType (TList1, TOne),
     TypeSig (..),
-    -- mt2text,
     mtexpr2text,
     RuleName
   )
@@ -235,18 +232,18 @@ instance ShowTypesHaskell FieldType where
 
 instance ShowTypesHaskell Field where
     showTypesHaskell f@(Field fn ft) = 
-        trace ("Field: " ++ (show f) ) $  
+        -- trace ("Field: " ++ (show f) ) $  
         pretty (hFieldName fn) <> pretty " :: " <> showTypesHaskell ft
 
 instance ShowTypesHaskell JSchemaExp where
     showTypesHaskell :: JSchemaExp -> Doc ann
     showTypesHaskell (ExpTypeRecord tn fds) =
-        trace ("Record: " ++ (show tn) ++ (show (hTypeName tn))) $
+        -- trace ("Record: " ++ (show tn) ++ (show (hTypeName tn))) $
         pretty "data " <> pretty (hTypeName tn) <> pretty " = " <> pretty (hTypeNameAsConstructorName tn) <>
             nest 4 (braces (vsep (punctuate comma (map showTypesHaskell fds))))
 
     showTypesHaskell (ExpTypeEnum tn enums) =
-        trace ("Enum: " ++ (show tn) ++ (show (hTypeName tn))) $
+        -- trace ("Enum: " ++ (show tn) ++ (show (hTypeName tn))) $
         pretty "data " <> pretty (hTypeName tn) <>
         nest 4
             (pretty " = " <>
@@ -375,9 +372,6 @@ showRequireds fds =
 
 showRef :: TypeName -> Doc ann
 showRef n = [__di| "$ref": "#{defsLocation n}"|]
-
--- bracketArgs :: Pretty a => [a] -> Doc ann
--- bracketArgs = brackets . hsep . punctuate comma . map (dquotes . pretty)
 
 
 -- Due to limitations of the JSON Form Web UI builder,

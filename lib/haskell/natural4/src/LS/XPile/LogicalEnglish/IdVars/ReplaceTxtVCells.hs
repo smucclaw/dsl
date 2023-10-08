@@ -8,10 +8,10 @@ module LS.XPile.LogicalEnglish.IdVars.ReplaceTxtVCells
   )
 where
 
+import Control.Category ((>>>))
 import Data.Sequences (LazySequence (..))
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
-import Flow ((|>))
 import LS.XPile.LogicalEnglish.Types
   ( TemplateVar (..),
     VCell (..),
@@ -36,26 +36,18 @@ a config file that is kept in sync with the downstream stuff
 (since have to do this kind of replacement in the converse direction when generating justification)
 -}
 replaceTxt :: T.Text -> T.Text
-replaceTxt txt =
-  txt
-    |> T.strip
-    |> replaceInf
-    |> replaceTxtPlain
-    |> replacePeriod
-    |> trimWhitespaces
+replaceTxt =
+  T.strip
+    >>> replaceInf
+    >>> replaceTxtPlain
+    >>> replacePeriod
+    >>> trimWhitespaces
 
 trimWhitespaces :: T.Text -> T.Text
-trimWhitespaces txt =
-  txt
-    |> T.strip
-    |> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)
+trimWhitespaces = T.strip >>> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)
 
 replaceTxtPlain :: T.Text -> T.Text
-replaceTxtPlain txt =
-  txt
-    |> fromStrict
-    |> replaceWithTrie replacements
-    |> toStrict
+replaceTxtPlain = fromStrict >>> replaceWithTrie replacements >>> toStrict
   where
     replacements = listToTrie replaceCommaPercent
 
@@ -93,10 +85,7 @@ replaceInf =
 -- Also, references to clause numbers of the form "14.1.3" are not ok and so
 -- must be replaced with "14.1 PERIOD 3".
 replacePeriod :: T.Text -> T.Text
-replacePeriod txt =
-  txt
-    |> replaceFullStop
-    |> replaceClauseNums
+replacePeriod = replaceFullStop >>> replaceClauseNums
   where
     replaceFullStop =
       PCRE.gsub

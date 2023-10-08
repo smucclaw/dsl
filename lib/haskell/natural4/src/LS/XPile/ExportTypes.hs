@@ -56,8 +56,7 @@ import Data.List (isSuffixOf, intercalate)
 import Data.Char (isAlphaNum)
 import Data.Generics.Product.Types (HasTypes)
 import qualified Text.Regex.PCRE.Heavy as PCRE
--- import Optics.TH
-import Data.Set qualified as S
+import qualified Data.Set as S
 
 -- for json types -----------------------------------
 type ConstructorName = String
@@ -282,7 +281,6 @@ tableOfSchema (ExpTypeRecord tn fds) =
     S.insert (tn, hTypeName tn) (S.unions (map tableOfField fds))
 tableOfSchema (ExpTypeEnum tn enums) =
     S.insert (tn, hTypeName tn) (S.unions (map tableOfEnum enums))
--- tableOfSchema (MkMetadata{}) = S.empty
 
 tableOfField :: Field -> S.Set (FieldName, FieldName)
 tableOfField (Field fn ft) = S.insert (fn, hFieldName fn) (tableOfType ft)

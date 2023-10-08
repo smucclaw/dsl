@@ -17,7 +17,7 @@ import LS.XPile.LogicalEnglish.Types
     VCell (..),
   )
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import Text.Replace (Replace (..), listToTrie, replaceWithTrie)
+import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 -- | Replace text in VCells
 replaceTxtVCell :: VCell -> VCell
@@ -39,21 +39,21 @@ replaceTxt :: T.Text -> T.Text
 replaceTxt =
   T.strip
     >>> replaceInf
-    >>> replaceTxtPlain
     >>> replacePeriod
+    >>> replaceTxtSimple
     >>> trimWhitespaces
 
 trimWhitespaces :: T.Text -> T.Text
 trimWhitespaces = T.strip >>> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)
 
-replaceTxtPlain :: T.Text -> T.Text
-replaceTxtPlain = fromStrict >>> replaceWithTrie replacements >>> toStrict
+replaceTxtSimple :: T.Text -> T.Text
+replaceTxtSimple = fromStrict >>> replaceWithTrie replacements >>> toStrict
   where
     replacements = listToTrie replaceCommaPercent
 
     replaceCommaPercent =
-      [ Replace "," " COMMA",
-        Replace "%" " PERCENT"
+      [ Replace "," " COMMA ",
+        Replace "%" " PERCENT "
       ]
       {- ^ it's cleaner not to put a space after `percent`
         because it's usually something like "100% blah blah" in the encoding

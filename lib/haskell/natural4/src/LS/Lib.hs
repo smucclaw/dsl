@@ -87,6 +87,10 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , workdir   :: w ::: String <!> ""  <?> "workdir to save all the output files to"
                    , uuiddir   :: w ::: String <!> "no-uuid"  <?> "uuid prefix to follow the workdir"
                    , toprolog  :: w ::: Bool   <!> "True"  <?> "prolog-like syntax representing the predicate logic"
+                   , toprologTp :: w ::: Bool  <!> "True"  <?> "prolog-like syntax from type declarations"
+                   , tohaskellTp :: w ::: Bool  <!> "True"  <?> "haskell-like syntax from type declarations"
+                   , tojsonTp  :: w ::: Bool   <!> "True"  <?> "json-like syntax from type declarations"
+                   , tojsonUI  :: w ::: Bool   <!> "True"  <?> "json-like syntax from type declarations for web form"
                    , toscasp   :: w ::: Bool   <!> "True"  <?> "sCasp-like syntax representing the predicate logic"
                    , tonative  :: w ::: Bool   <!> "True"  <?> "native Haskell data structure of the AST"
                    , topetri   :: w ::: Bool   <!> "True"  <?> "a petri-net Dot file of the state graph"
@@ -106,7 +110,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tonl      :: w ::: Bool   <!> "True"  <?> "natural language"
                    , tomaude   :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
-                   , tole      :: w ::: Bool   <!> "True"  <?> "logical english"
+                   , tologicalenglish      :: w ::: Bool   <!> "True"  <?> "logical english"
 
                    , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 
@@ -159,6 +163,11 @@ getConfig o = do
         , toBabyL4  = only o == "babyl4" || only o == "corel4"
         , toASP     = only o == "asp"
         , toProlog  = only o == "prolog"
+        , toPrologTp  = only o == "prologTp"
+        , toJsonTp  = only o == "jsonTp"
+        , toJsonUI  = only o == "jsonUI"
+        , toMaude = only o == "maude"
+        , toLogicalEnglish = only o == "LogicalEnglish"
         , toSCasp   = only o == "scasp"
         , toUppaal  = only o == "uppaal"
         , toGrounds = only o == "grounds"
@@ -174,7 +183,7 @@ getConfig o = do
 
 
 -- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
--- 
+--
 -- At some point we added functionality that allowed sub-rules to be defined inline within a top-level rule, which is why we now have IO [... [Rule]].
 --
 -- Note that sub-rules are themselves rules, which is why we only have one Rule type here.
@@ -182,7 +191,7 @@ getConfig o = do
 -- Shouldn't the idea of sub-rules and top-level rules be reflected in a type hierarchy?
 --
 parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
-parseRules o = do     
+parseRules o = do
   runConfig <- getConfig o
   let files = getNoLabel $ file o
   if null files

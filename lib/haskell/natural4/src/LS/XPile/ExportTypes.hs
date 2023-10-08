@@ -1,10 +1,8 @@
 {-# OPTIONS_GHC -W #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, TemplateHaskell #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE  DerivingVia, DeriveAnyClass #-}
-
-
 {-# LANGUAGE QuasiQuotes #-}
 
 -- {-# LANGUAGE OverloadedStrings #-}

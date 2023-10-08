@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module LS.XPile.LogicalEnglish.IdVars.RegexReplaceCells
+module LS.XPile.LogicalEnglish.IdVars.ReplaceTxtVCells
   ( replaceTxtVCell,
   )
 where

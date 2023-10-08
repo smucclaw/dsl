@@ -42,7 +42,7 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicPWithVars
     , VCell(..)
   )
-import LS.XPile.LogicalEnglish.IdVars.RegexReplaceCells (replaceTxtVCell)
+import LS.XPile.LogicalEnglish.IdVars.ReplaceTxtVCells (replaceTxtVCell)
 
 -- $setup
 -- >>> import Data.Text qualified as T

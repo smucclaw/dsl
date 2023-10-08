@@ -49,7 +49,7 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       -- check, refine, loadRawL4AsUnvalid, 
       )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
-import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
+import LS.XPile.LogicalEnglish.IdVars.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs 
     ( nlasFromVarsHC
     , NLATxt(..)

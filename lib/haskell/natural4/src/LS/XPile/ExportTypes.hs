@@ -37,31 +37,25 @@ import Prettyprinter.Interpolate (__di, di)
 import L4.PrintProg (capitalise)
 
 import LS.Rule as SFL4
-  ( Rule (Hornlike, TypeDecl, keyword, clauses, has, name, super),
+  ( Rule (TypeDecl, keyword, clauses, has, name, super),
     extractMTExprs
   )
 import LS.Types as SFL4
   (
     -- BoolStructR,
-    HornClause (..),
     -- HornClause2,
     MTExpr (..),
     -- ParamText,
     ParamType (TList1, TOne),
-    RelationalPredicate (..),
-    RPRel(..),
     TypeSig (..),
     -- mt2text,
     mtexpr2text,
-    RuleName,
-    MyToken(Means)
+    RuleName
   )
-import AnyAll qualified as AA (BoolStruct(Leaf))
 import Data.Text (unpack)
 import Debug.Trace (trace)
-import Data.List (isSuffixOf, intercalate, partition)
+import Data.List (isSuffixOf, intercalate)
 import Data.Char (toLower, isAlphaNum)
-import Optics hiding (has)
 import Data.Generics.Product.Types (HasTypes)
 import qualified Text.Regex.PCRE.Heavy as PCRE
 -- import Optics.TH
@@ -87,56 +81,9 @@ data Field = Field
     }
     deriving (Eq, Ord, Show, Read)
 
--- for json metadata annotations -----------------------------------
-{- 
-Right now we're just adding a __global__ metadata dict to the json schema
+-- non-json-schema-specific metadata will be moved to another module
 
-EG:
-
-```L4
-§	Global definition dictionary	
-§§	High risk activity definitions	
-		
-§§§	Clause 2.1	
-	Clause 2.1	
-MEANS	ok 1	
-		
-§§§	Clause 2.2	
-	Clause 2.2 	
-MEANS	whatever	123
-```
-
-will become, in the json schema,
-
-```json
-{
-    x_global_metadata_definitions": {"type": "object",
-                                     "properties": 
-                                            { "Clause 2.1": ["ok 1"],
-                                              "Clause 2.2": ["whatever", "123"] }}
-}
-```
-
-Things to note:
-    * https://json-schema.org/blog/posts/custom-annotations-will-continue
--}
-
-data MdataKV = MkMdataKV
-    { key :: String
-    , annots :: [String]
-    }
-    deriving (Eq, Ord, Show, Read)
-makePrisms ''MdataKV
-
-type MdGroupName = String
-data MetadataGrp = MkMetadataGrp
-    { mdGroupName :: MdGroupName
-    -- ^ e.g.: "x_global_metadata_definitions"
-    , metadata      :: [MdataKV]
-    }
-    deriving (Eq, Ord, Show, Read)
-makePrisms ''MetadataGrp
-
+-- can think about moving to using references to these records instead of a sum of records with different fieldnames
 -- data TypeRec = MkTypeRecord 
 --         { typeName :: TypeName
 --         , fields :: [Field]
@@ -161,27 +108,13 @@ data JSchemaExp
         { typeName :: TypeName
         , enums :: [ConstructorName]
         }
-    | ExpMetadataGrp MetadataGrp
     deriving stock (Eq, Ord, Show, Read)
-
-pattern MkMetadata :: MdGroupName -> [MdataKV] -> JSchemaExp
-pattern MkMetadata{grpName, mdata} =
-    ExpMetadataGrp ( MkMetadataGrp { mdGroupName = grpName
-                                   , metadata = mdata })
-
-{-# COMPLETE ExpTypeRecord, ExpTypeEnum, MkMetadata #-}
 
 processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
 processTopLvlNameTextForJsonSchema = T.toLower . T.intercalate (T.pack "_") . T.words
 
-stringifyMTEwrapper :: (T.Text -> T.Text) -> MTExpr -> String
-stringifyMTEwrapper f = T.unpack . f . mtexpr2text
-
-stringfyMdataKVmtexpr :: MTExpr -> String
-stringfyMdataKVmtexpr = stringifyMTEwrapper id
-
-stringfyMdataName :: MTExpr -> String
-stringfyMdataName = stringifyMTEwrapper processTopLvlNameTextForJsonSchema
+-- stringifyMTEwrapper :: (T.Text -> T.Text) -> MTExpr -> String
+-- stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 
 typeDeclNameToTypeName :: RuleName -> TypeName
 typeDeclNameToTypeName [ MTT n ] =  T.unpack . processTopLvlNameTextForJsonSchema $ n
@@ -192,7 +125,7 @@ typeDeclNameToFieldName = typeDeclNameToTypeName
 
 -- | Collect the enums into a list of strings
 getEnums :: forall s. (HasTypes s MTExpr) => s -> [String]
-getEnums = map (T.unpack . mtexpr2text) . extractMTExprs
+getEnums = map (T.unpack . mtexpr2text) . SFL4.extractMTExprs
 
 textToFieldType :: T.Text -> FieldType
 textToFieldType tn = case unpack tn of
@@ -210,8 +143,8 @@ typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (map toLo
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
-ruleFieldToField :: Rule -> [Field]
-ruleFieldToField (TypeDecl{name=n, super=sup}) =
+ruleFieldToField :: SFL4.Rule -> [Field]
+ruleFieldToField (SFL4.TypeDecl{name=n, super=sup}) =
     [Field (typeDeclNameToFieldName n) (typeDeclSuperToFieldType sup)]
 ruleFieldToField _ = []
 
@@ -220,53 +153,26 @@ ruleFieldToField _ = []
 --     [Field (typeDeclNameToFieldName n) (FTList (FTRef (unpack n)))]
 -- unpackHierarchy _ = []
 
-{- | Pattern for matching on L4 `MEANS`
-Example:
-    ```
-    Hornlike
-        { name =
-            [ MTT "clause 15.1" ]
-        , super = Nothing
-        , keyword = Means
-        , given = Nothing , giveth = Nothing , upon = Nothing
-        , clauses =
-            [ HC { hHead = RPBoolStructR
-                    [ MTT "clause 15.1" ] RPis
-                    ( Leaf
-                        ( RPMT [ MTT "text that we want to be transferred over to the json so that it can be displayed on mouseover in the web UI" ] ))
-                , hBody = Nothing
-                }
-            ]
-        , rlabel = Nothing
-    ```
--}
-pattern TermMeansThat :: MTExpr -> [MTExpr] -> Rule
-pattern TermMeansThat term defnMtexprs <- Hornlike{keyword=Means,
-                                                   clauses= [ HC { hHead = RPBoolStructR [term] RPis ( AA.Leaf ( RPMT defnMtexprs ) ) } ]}
-
-ruleIsMeans :: Rule -> Bool
-ruleIsMeans = \case TermMeansThat _ _ -> True; _others -> False
-
-rule2NonmdJsonExp :: Rule -> [JSchemaExp]
+rule2NonmdJsonExp :: SFL4.Rule -> [JSchemaExp]
 rule2NonmdJsonExp = \case
-    TypeDecl{name=[MTT n], has=fields, super=Nothing}
+    SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}
       -> case unpack n of
            n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
            _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
-    TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
+    SFL4.TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     _ -> []
 
-rule2ExpType :: Rule -> [JSchemaExp]
-rule2ExpType (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
-rule2ExpType (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
+rule2ExpType :: SFL4.Rule -> [JSchemaExp]
+rule2ExpType (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+rule2ExpType (SFL4.TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
     [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
 rule2ExpType _ = []
 
-rule2HierarchyBool :: Rule -> [JSchemaExp]
-rule2HierarchyBool (TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
+rule2HierarchyBool :: SFL4.Rule -> [JSchemaExp]
+rule2HierarchyBool (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
     where
-        ruleBool ((TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
+        ruleBool ((SFL4.TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
         ruleBool _                    = []
 
 rule2HierarchyBool _ = []
@@ -349,8 +255,6 @@ instance ShowTypesHaskell JSchemaExp where
             (pretty " = " <>
             vsep (punctuate (pretty " | ") (map (pretty . hConstructorName) enums)))
 
-    showTypesHaskell (MkMetadata _ _) = pretty ""
-
 rulesToHaskellTp :: [SFL4.Rule] -> String
 rulesToHaskellTp rs =
     let ets = concatMap rule2ExpType rs in
@@ -380,7 +284,7 @@ tableOfSchema (ExpTypeRecord tn fds) =
     S.insert (tn, hTypeName tn) (S.unions (map tableOfField fds))
 tableOfSchema (ExpTypeEnum tn enums) =
     S.insert (tn, hTypeName tn) (S.unions (map tableOfEnum enums))
-tableOfSchema (MkMetadata{}) = S.empty
+-- tableOfSchema (MkMetadata{}) = S.empty
 
 tableOfField :: Field -> S.Set (FieldName, FieldName)
 tableOfField (Field fn ft) = S.insert (fn, hFieldName fn) (tableOfType ft)
@@ -427,8 +331,6 @@ instance ShowTypesProlog JSchemaExp where
 
     showTypesProlog (ExpTypeEnum tn enums) =
         vsep (map (showEnumProlog tn) enums)
-
-    showTypesProlog (MkMetadata _ _) = pretty ""
 
 
 -- the root data type of a Json Schema is always embedded in an entrypoint,
@@ -478,8 +380,8 @@ showRequireds fds =
 showRef :: TypeName -> Doc ann
 showRef n = [__di| "$ref": "#{defsLocation n}"|]
 
-bracketArgs :: Pretty a => [a] -> Doc ann
-bracketArgs = brackets . hsep . punctuate comma . map (dquotes . pretty)
+-- bracketArgs :: Pretty a => [a] -> Doc ann
+-- bracketArgs = brackets . hsep . punctuate comma . map (dquotes . pretty)
 
 
 -- Due to limitations of the JSON Form Web UI builder,
@@ -510,11 +412,6 @@ instance ShowTypesJson Field where
     showTypesJson (Field fn ft) =
         dquotes (pretty fn) <> pretty ": " <> braces (showTypesJson ft)
 
-instance ShowTypesJson MdataKV where
-    showTypesJson :: MdataKV -> Doc ann
-    showTypesJson (MkMdataKV key metadata) =
-        dquotes (pretty key) <> pretty ": " <> bracketArgs metadata
-
 
 instance ShowTypesJson JSchemaExp where
     showTypesJson :: JSchemaExp -> Doc ann
@@ -529,9 +426,7 @@ instance ShowTypesJson JSchemaExp where
     showTypesJson (ExpTypeRecord tn fds) =
         pprintJsonObj tn fds requiredFds
             where requiredFds = pretty "," <> nest 4 (showRequireds fds)
-    showTypesJson (MkMetadata grpName mdata) =
-        pprintJsonObj ("x_" <> grpName) mdata (pretty "")
-
+    
 pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
 pprintJsonObj key values final =
     dquotes (pretty key) <> pretty ": " <>
@@ -552,30 +447,13 @@ jsonPreamble tn =
         "properties":{"#{pretty entrypointName}":{#{showTypesJson (FTRef tn)}}}
     |]
 
-
-jsonifyMeans :: [Rule] -> JSchemaExp
-jsonifyMeans rs =
-    let
-        mdataKVs = rs ^.. folded % to extractMdataFromMeansRule % folded
-    in MkMetadata { grpName = "global_mdata_definitions"
-                  , mdata = mdataKVs }
-
-extractMdataFromMeansRule :: Rule -> Maybe MdataKV
-extractMdataFromMeansRule = \case
-    TermMeansThat term defnExprs ->
-        Just $ MkMdataKV { key = stringfyMdataName term
-                         , annots = map stringfyMdataKVmtexpr defnExprs}
-    _ -> Nothing
-
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
     let
         -- TODO: Would be better to avoid boolean blindness here; improve when time permits
         -- Partitioning in advance because we want to group the means HLikes into one object
-        (meansRules, nonMeansRules) = partition ruleIsMeans rs
-        globalMetadataDefs = jsonifyMeans meansRules
-        ets = concatMap rule2NonmdJsonExp nonMeansRules
-        subJsonObjs = map showTypesJson (globalMetadataDefs : ets)
+        ets = concatMap rule2NonmdJsonExp rs
+        subJsonObjs = map showTypesJson ets
     in (case ets of
             [] -> show (braces emptyDoc)
             (rt : _rts) ->

@@ -71,11 +71,10 @@ replaceTxtSimple = fromStrict >>> replaceWithTrie replacements >>> toStrict
       -}
 
 -- LE, as with Prolog, uses "inf" to denote positive infinity.
--- TODO: Add test cases for this replacement.`
 replaceInf :: T.Text -> T.Text
 replaceInf =
   PCRE.sub
-    [PCRE.re|^(?i)infinity$|^(?i)inf$|^∞$|]
+    [PCRE.re|^infinity$|^Infinity$|^Inf$|]
     ("inf" :: T.Text)
 
 -- LE has no trouble parsing dots that appear in numbers, ie things like

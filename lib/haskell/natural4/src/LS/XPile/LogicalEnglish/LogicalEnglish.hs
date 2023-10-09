@@ -117,23 +117,10 @@ toLE l4rules =
 getNLATxtResults :: (Foldable g) => g VarsHC -> FilterResult [NLATxt]
 getNLATxtResults =
   foldMap nlasFromVarsHC
+    >>> removeBinaryIs
     >>> removeSubsumedOrDisprefed
     >>> (fmap . fmap $ getNLAtxt)
   where
-    removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
-    removeSubsumedOrDisprefed =
-      removeBinaryIs
-        >>> removeInternallySubsumed
-        >>> removeSubsumedByLibTemplates
-        >>> removeDisprefdInEquivUpToVarNames
-
-    libTemplatesRegTravs :: [RegexTrav]
-    libTemplatesRegTravs =
-      regextravifyNLASection $(lift libAndBuiltinTemplates)
-
-    removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
-    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
-
     -- Hack to remove NLAs of the form:
     -- *a thing* is *a thing*
     removeBinaryIs :: HS.HashSet NLA -> HS.HashSet NLA
@@ -143,6 +130,19 @@ getNLATxtResults =
           >>> coerce
           >>> T.strip
           >>> not . (PCRE.≈ [PCRE.re|^\*a\s+.*\*\s+is\s+\*a\s+.*\*$|])
+
+    removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
+    removeSubsumedOrDisprefed =
+      removeInternallySubsumed
+        >>> removeSubsumedByLibTemplates
+        >>> removeDisprefdInEquivUpToVarNames
+
+    removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
+
+    libTemplatesRegTravs :: [RegexTrav]
+    libTemplatesRegTravs =
+      regextravifyNLASection $(lift libAndBuiltinTemplates)
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule

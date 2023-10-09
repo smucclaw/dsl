@@ -132,10 +132,10 @@ xpileSimplifiedL4hcs simpL4HCs =
   let hcsVarsMarked :: [VarsHC] = map idVarsInHC simpL4HCs
       nlatresults               = getNLATxtResults hcsVarsMarked
       lehcs                     = map leHCFromVarsHC hcsVarsMarked
-      leProgam                  = MkLEProg { keptnlats =  nlatresults.kept, subsumednlats = nlatresults.subsumed
+      leProgram                 = MkLEProg { keptnlats =  nlatresults.kept, subsumednlats = nlatresults.subsumed
                                            , leHCs = lehcs 
                                            , commentSym = "%"}
-  in doc2str . pretty $ leProgam
+  in doc2str . pretty $ leProgram
 
 
 doc2str :: Doc ann -> String

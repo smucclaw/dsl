@@ -140,8 +140,12 @@ sfl4ToLogProg rs =
 -- TODO: not clear what the "Analysis" is good for. 
 -- The corresponding parameter seems to be ignored in all called functions.
 -- Also see the comment in the "analyze" function further below.
+-- TODO: generation of clauses for type declarations has been disabled completely
+-- because the code generated for enums is ill-formed (invalid Prolog)
+
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
 rule2clause st cr@Hornlike {} = hornlike2clauses st (mt2text $ name cr) (clauses cr)
+rule2clause st TypeDecl {} = []
 rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (mt2text $ name td) ens
 
 

@@ -20,11 +20,14 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
+import Control.Category ((>>>))
+import Data.String.Interpolate (__i)
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.List (sort)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 import Language.Haskell.TH.Syntax (lift)
 
@@ -53,7 +56,7 @@ import LS.XPile.LogicalEnglish.IdVars.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs 
     ( nlasFromVarsHC
     , NLATxt(..)
-    , NLA 
+    , NLA
     , getNLAtxt
     , RegexTrav
     , FilterResult(..)
@@ -64,7 +67,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
-import Data.String.Interpolate (__i)
+
 
 -- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
@@ -111,18 +114,35 @@ toLE l4rules =
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-getNLATxtResults :: Foldable g => g VarsHC -> FilterResult [NLATxt]
-getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . foldMap nlasFromVarsHC
+getNLATxtResults :: (Foldable g) => g VarsHC -> FilterResult [NLATxt]
+getNLATxtResults =
+  foldMap nlasFromVarsHC
+    >>> removeSubsumedOrDisprefed
+    >>> (fmap . fmap $ getNLAtxt)
   where
     removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
-    removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
+    removeSubsumedOrDisprefed =
+      removeBinaryIs
+        >>> removeInternallySubsumed
+        >>> removeSubsumedByLibTemplates
+        >>> removeDisprefdInEquivUpToVarNames
 
     libTemplatesRegTravs :: [RegexTrav]
     libTemplatesRegTravs =
       regextravifyNLASection $(lift libAndBuiltinTemplates)
 
-    removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
-    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  
+    removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
+
+    -- Hack to remove NLAs of the form:
+    -- *a thing* is *a thing*
+    removeBinaryIs :: HS.HashSet NLA -> HS.HashSet NLA
+    removeBinaryIs =
+      HS.filter $
+        getNLAtxt
+          >>> coerce
+          >>> T.strip
+          >>> not . (PCRE.≈ [PCRE.re|^\*a\s+.*\*\s+is\s+\*a\s+.*\*$|])
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule

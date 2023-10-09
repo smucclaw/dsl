@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  *a total savings* is *a number*,
+  
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -19,8 +19,6 @@ the templates are:
   the sum of *a list* does not exceed the minimum of *a list*,
   *a number* does not exceed the minimum of *a list*.
 
-%% Some of the removed templates (just the equiv-up-to-var-names-with-same-num-vars ones):
-  % *a add savings* is *a number*
 
 % Predefined stdlib for translating natural4 -> LE.
 the knowledge base lib includes:

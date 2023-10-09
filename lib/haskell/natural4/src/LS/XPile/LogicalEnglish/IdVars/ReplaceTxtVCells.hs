@@ -103,4 +103,3 @@ replacePeriod = replaceFullStop >>> replaceClauseNums
 --     -- https://stackoverflow.com/a/31911114
 --     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
 --     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
-        

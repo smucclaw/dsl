@@ -104,7 +104,7 @@ toLE l4rules =
     errs2str errors =
       [__i|
         ERRORS FOUND:
-        #{T.unpack . T.intercalate "\n" . coerce . HS.toList $ errors}
+        #{T.intercalate "\n" . coerce . HS.toList $ errors}
       |]
     runAndValidate = runValidate . runSimpL4
 {- ^ TODO: think abt whether to do more on the pre-simplifyL4rules front

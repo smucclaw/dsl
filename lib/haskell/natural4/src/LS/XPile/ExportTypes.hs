@@ -67,6 +67,7 @@ data FieldType =
     | FTRef TypeName
     | FTList FieldType
     | FTDate
+    | FTInteger
     deriving (Eq, Ord, Show, Read)
 
 data Field = Field
@@ -78,7 +79,7 @@ data Field = Field
 -- non-json-schema-specific metadata will be moved to another module
 
 -- can think about moving to using references to these records instead of a sum of records with different fieldnames
--- data TypeRec = MkTypeRecord 
+-- data TypeRec = MkTypeRecord
 --         { typeName :: TypeName
 --         , fields :: [Field]
 --         }
@@ -124,6 +125,7 @@ getEnums = map mtexpr2text . SFL4.extractMTExprs
 
 textToFieldType :: T.Text -> FieldType
 textToFieldType tn = case tn of
+        "Integer" -> FTInteger
         "Boolean" -> FTBoolean
         "Number" -> FTNumber
         "String" -> FTString
@@ -230,15 +232,16 @@ class ShowTypesHaskell x where
 
 instance ShowTypesHaskell FieldType where
     showTypesHaskell FTBoolean = "Bool"
-    showTypesHaskell FTNumber = "Int"
+    showTypesHaskell FTNumber = "Double"
+    showTypesHaskell FTInteger = "Int"
     showTypesHaskell FTString = "String"
     showTypesHaskell FTDate = "String"
     showTypesHaskell (FTRef n) = pretty $ hTypeName n
     showTypesHaskell (FTList t) = brackets $ showTypesHaskell t
 
 instance ShowTypesHaskell Field where
-    showTypesHaskell (Field fn ft) = 
-        -- trace ("Field: " ++ (show f) ) $  
+    showTypesHaskell (Field fn ft) =
+        -- trace ("Field: " ++ (show f) ) $
         pretty (hFieldName fn) <> " :: " <> showTypesHaskell ft
 
 instance ShowTypesHaskell JSchemaExp where
@@ -305,6 +308,7 @@ class ShowTypesProlog x where
 instance ShowTypesProlog FieldType where
     showTypesProlog FTBoolean = "boolean"
     showTypesProlog FTNumber = "number"
+    showTypesProlog FTInteger = "integer"
     showTypesProlog FTString = "string"
     showTypesProlog FTDate = "string"
     showTypesProlog (FTRef n) = "ref" <> parens (pretty n)
@@ -385,6 +389,8 @@ showRef n = [__di| "$ref": "#{defsLocation n}"|]
 -- but arrays of length 1.
 -- List types can only have nesting level 1 (a limitation inherited from Natural4)
 instance ShowTypesJson FieldType where
+    showTypesJson FTInteger =
+        jsonType "integer"
     showTypesJson FTBoolean =
         jsonType "boolean"
     showTypesJson FTNumber =
@@ -422,7 +428,7 @@ instance ShowTypesJson JSchemaExp where
     showTypesJson (ExpTypeRecord tn fds) =
         pprintJsonObj tn fds requiredFds
             where requiredFds = "," <> nest 4 (showRequireds fds)
-    
+
 pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
 pprintJsonObj key values final =
     dquotes (pretty key) <> ": " <>
@@ -454,7 +460,7 @@ rulesToJsonSchema rs =
             [] -> show $ braces emptyDoc
             (rt : _rts) ->
                 -- trace ("ets: " ++ show ets) $
-                show [__di| 
+                show [__di|
                 {#{jsonPreamble (typeName rt)},
                 "#{pretty defsLocationName}":
                 {#{vsep (punctuate comma subJsonObjs)}}

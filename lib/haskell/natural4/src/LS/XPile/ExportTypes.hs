@@ -232,7 +232,7 @@ class ShowTypesHaskell x where
 
 instance ShowTypesHaskell FieldType where
     showTypesHaskell FTBoolean = "Bool"
-    showTypesHaskell FTNumber = "Int"
+    showTypesHaskell FTNumber = "Double"
     showTypesHaskell FTInteger = "Int"
     showTypesHaskell FTString = "String"
     showTypesHaskell FTDate = "String"

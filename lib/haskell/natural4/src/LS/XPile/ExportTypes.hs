@@ -52,7 +52,7 @@ import Debug.Trace (trace)
 -- import Data.List (isSuffixOf, intercalate)
 -- import Data.Char (isAlphaNum)
 import Data.Generics.Product.Types (HasTypes)
-import Data.HashSet qualified as S
+import Data.HashMap.Strict qualified as M
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 -- for json types -----------------------------------
@@ -277,24 +277,24 @@ translationTable tab =
         ]]
 
 genTranslationTable :: [JSchemaExp] -> [(T.Text, T.Text)]
-genTranslationTable tab = S.toList (S.unions (map tableOfSchema tab))
+genTranslationTable tab = M.toList (M.unions (map tableOfSchema tab))
 
-tableOfSchema :: JSchemaExp -> S.HashSet (T.Text, T.Text)
+tableOfSchema :: JSchemaExp -> M.HashMap T.Text T.Text
 tableOfSchema (ExpTypeRecord tn fds) =
-    S.insert (tn, hTypeName tn) (S.unions (map tableOfField fds))
+    M.insert tn (hTypeName tn) (M.unions (map tableOfField fds))
 tableOfSchema (ExpTypeEnum tn enums) =
-    S.insert (tn, hTypeName tn) (S.unions (map tableOfEnum enums))
+    M.insert tn (hTypeName tn) (M.unions (map tableOfEnum enums))
 
-tableOfField :: Field -> S.HashSet (FieldName, FieldName)
-tableOfField (Field fn ft) = S.insert (fn, hFieldName fn) (tableOfType ft)
+tableOfField :: Field -> M.HashMap FieldName FieldName
+tableOfField (Field fn ft) = M.insert fn (hFieldName fn) (tableOfType ft)
 
-tableOfEnum :: ConstructorName -> S.HashSet (ConstructorName, ConstructorName)
-tableOfEnum e = S.singleton (e, hConstructorName e)
+tableOfEnum :: ConstructorName -> M.HashMap ConstructorName ConstructorName
+tableOfEnum e = M.singleton e $ hConstructorName e
 
-tableOfType :: FieldType -> S.HashSet (TypeName, TypeName)
-tableOfType (FTRef n) = S.singleton (n, hTypeName n)
+tableOfType :: FieldType -> M.HashMap TypeName TypeName
+tableOfType (FTRef n) = M.singleton n $ hTypeName n
 tableOfType (FTList t) = tableOfType t
-tableOfType _ = S.empty
+tableOfType _ = M.empty
 
 ------------------------------------
 -- Output of types to Prolog

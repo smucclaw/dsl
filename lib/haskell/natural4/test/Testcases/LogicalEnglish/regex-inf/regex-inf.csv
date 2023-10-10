@@ -1,0 +1,4 @@
+GIVEN,n,IS A,Number,
+DECIDE,bob's,maximum salary,IS,Infinity
+IF,bob's,age,IS,n
+AND,n,IS,30,

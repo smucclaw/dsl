@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  *a you* are a member of this bank,
+  
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -111,5 +111,6 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  a total savings is 100
-  if a you are a member of this bank.
+  clause 10.1 PERIOD 1's amount is 10
+  if it is not the case that
+    clause 12.1 PERIOD 2's amount is 0.

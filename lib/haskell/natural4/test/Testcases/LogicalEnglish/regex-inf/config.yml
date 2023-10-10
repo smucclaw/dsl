@@ -1,0 +1,3 @@
+# Disabled because it's currently failing.
+description: "Regex replacement of infinity."
+enabled: true

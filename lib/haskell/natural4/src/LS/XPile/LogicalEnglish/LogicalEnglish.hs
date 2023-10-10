@@ -4,7 +4,7 @@
 {-# LANGUAGE DuplicateRecordFields, OverloadedRecordDot #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes #-}
@@ -20,11 +20,14 @@ After all, the design intentions for this short-term LE transpiler aren't the sa
 module LS.XPile.LogicalEnglish.LogicalEnglish (toLE)  where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
+import Control.Category ((>>>))
+import Data.String.Interpolate (__i)
 import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.List (sort)
 import Control.Monad.Validate (runValidate)
 import Data.Coerce (coerce)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 import Language.Haskell.TH.Syntax (lift)
 
@@ -49,11 +52,11 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       -- check, refine, loadRawL4AsUnvalid, 
       )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
-import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
+import LS.XPile.LogicalEnglish.IdVars.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs 
     ( nlasFromVarsHC
     , NLATxt(..)
-    , NLA 
+    , NLA
     , getNLAtxt
     , RegexTrav
     , FilterResult(..)
@@ -64,6 +67,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
+
 
 -- import LS.XPile.LogicalEnglish.UtilsLEReplDev -- for prototyping
 
@@ -100,24 +104,45 @@ toLE l4rules =
     Left errors -> errs2str errors
     Right hcs   -> xpileSimplifiedL4hcs hcs
   where
-    errs2str = pure "ERRORS FOUND:\n" <> T.unpack . T.intercalate "\n" . coerce . HS.toList
+    errs2str errors =
+      [__i|
+        ERRORS FOUND:
+        #{T.intercalate "\n" . coerce . HS.toList $ errors}
+      |]
     runAndValidate = runValidate . runSimpL4
 {- ^ TODO: think abt whether to do more on the pre-simplifyL4rules front
 -}
 
 -- | Generate LE Nat Lang Annotations from VarsHCs  
-getNLATxtResults :: Foldable g => g VarsHC -> FilterResult [NLATxt]
-getNLATxtResults =  (fmap . fmap $ getNLAtxt) . removeSubsumedOrDisprefed . foldMap nlasFromVarsHC
+getNLATxtResults :: (Foldable g) => g VarsHC -> FilterResult [NLATxt]
+getNLATxtResults =
+  foldMap nlasFromVarsHC
+    >>> removeBinaryIs
+    >>> removeSubsumedOrDisprefed
+    >>> (fmap . fmap $ getNLAtxt)
   where
+    -- Hack to remove NLAs of the form:
+    -- *a thing* is *a thing*
+    removeBinaryIs :: HS.HashSet NLA -> HS.HashSet NLA
+    removeBinaryIs =
+      HS.filter $
+        getNLAtxt
+          >>> coerce
+          >>> T.strip
+          >>> not . (PCRE.≈ [PCRE.re|^\*a\s+.*\*\s+is\s+\*a\s+.*\*$|])
+
     removeSubsumedOrDisprefed :: HS.HashSet NLA -> FilterResult [NLA]
-    removeSubsumedOrDisprefed = removeDisprefdInEquivUpToVarNames . removeSubsumedByLibTemplates . removeInternallySubsumed 
+    removeSubsumedOrDisprefed =
+      removeInternallySubsumed
+        >>> removeSubsumedByLibTemplates
+        >>> removeDisprefdInEquivUpToVarNames
+
+    removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
+    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
 
     libTemplatesRegTravs :: [RegexTrav]
     libTemplatesRegTravs =
       regextravifyNLASection $(lift libAndBuiltinTemplates)
-
-    removeSubsumedByLibTemplates :: Foldable f => f NLA -> HS.HashSet NLA
-    removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs  
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
 simplifyL4rules = sequenceA . concatMap simplifyL4rule

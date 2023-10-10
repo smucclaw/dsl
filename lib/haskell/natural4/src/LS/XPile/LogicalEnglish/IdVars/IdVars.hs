@@ -1,14 +1,12 @@
 {-# OPTIONS_GHC -W #-}
 
-{-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.IdVars (
+module LS.XPile.LogicalEnglish.IdVars.IdVars (
     idVarsInHC
   -- , idVarsInAP
   -- , idVarsInBody
@@ -16,10 +14,7 @@ module LS.XPile.LogicalEnglish.IdVars (
 
 import Data.Coerce (coerce)
 import Data.HashSet qualified as HS
-import Data.Sequences (fromStrict, toStrict)
 import Data.Text qualified as T
-import Text.Regex.PCRE.Heavy qualified as PCRE
-import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 import LS.XPile.LogicalEnglish.Types
   (
@@ -47,7 +42,7 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicPWithVars
     , VCell(..)
   )
-import Data.String.Interpolate (i)
+import LS.XPile.LogicalEnglish.IdVars.ReplaceTxtVCells (replaceTxtVCell)
 
 -- $setup
 -- >>> import Data.Text qualified as T
@@ -67,7 +62,7 @@ idVarsInHC = \case
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
-idVarsInAP gvars = fmap makeVCell
+idVarsInAP gvars = postprocAP . fmap makeVCell
   where
     makeVCell = cell2vcell gvars
 
@@ -78,81 +73,11 @@ postprocAP = \case
   others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
-idVarsInBody gvars = fmap (postprocAP . idVarsInAP gvars)
+idVarsInBody gvars = fmap $ idVarsInAP gvars
 
 
 ---- helpers
 
--- | Replace text in VCells
-replaceTxtVCell :: VCell -> VCell
-replaceTxtVCell = \case
-  tv@(TempVar _)         -> tv
-  apAtm@(AposAtom _)     -> apAtm
-  NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom (replaceTxt txt)
-
-{- | 
-TODO: Would be better to read in a dictionary of what/how to replace from some config file,
-a config file that is kept in sync with the downstream stuff 
-(since have to do this kind of replacement in the converse direction when generating justification)
--}
-replaceTxt :: T.Text -> T.Text
-replaceTxt = replacePeriod . replaceTxtPlain
-
-replaceTxtPlain :: T.Text -> T.Text
-replaceTxtPlain = toStrict . replaceWithTrie replacements . fromStrict
-  where
-    replacements = listToTrie $ mconcat [replaceCommaPercent, replaceInf]
-
-    replaceInf =
-      [ Replace inf " inf "
-        | inf <- [" infinity ", " INFINITY ", " INF "]
-      ]
-
-    replaceCommaPercent =
-      [ Replace "," " COMMA",
-        Replace "%" " PERCENT"
-      ]
-      {- ^ it's cleaner not to put a space after `percent`
-        because it's usually something like "100% blah blah" in the encoding
-        So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
-        And similarly with `comma`.
-
-        Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
-        >>> replaceTxt ""
-        ""
-        >>> replaceTxt "100% guarantee"
-        "100 PERCENT guarantee"
-
-        >>> replaceTxt "rocks, stones, and trees"
-        "rocks COMMA stones COMMA and trees"
-      -}
-
--- LE has no trouble parsing dots that appear in numbers, ie things like
--- "clause 2.1 applies" is fine.
--- However, dots used as a full-stop, as in "The car is blue." is not ok
--- and so that "." needs to be turned into "PERIOD".
--- Also, references to clause numbers of the form "14.1.3" are not ok and so
--- must be replaced with "14.1 PERIOD 3".
-replacePeriod :: T.Text -> T.Text
-replacePeriod = replaceClauseNums . replaceFullStop
-  where
-    replaceFullStop =
-      PCRE.gsub
-        -- https://stackoverflow.com/a/45616898 
-        [PCRE.re|[a-zA-z] + [^0-9\s.]+|\.(?!\d)|]
-        (" PERIOD " :: T.Text)
-
-    replaceClauseNums =
-      PCRE.gsub
-        [PCRE.re|(\d+\.\d+)\.(\d+)|]
-        \(x:y:_ :: [T.Text]) -> [i|#{x} PERIOD #{y}|] :: T.Text
-
--- replaceHyphen =
---   PCRE.gsub
---     -- https://stackoverflow.com/a/31911114
---     [PCRE.re|(?=\S*[-])([a-zA-Z]+)\-([a-zA-Z]+)|]
---     \(s0:s1:_) -> mconcat [s0, " HYPHEN ", s1] :: T.Text
-        
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
   * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum

@@ -2,7 +2,8 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
-{-# LANGUAGE  DerivingVia, DeriveAnyClass #-}
+{-# LANGUAGE DerivingVia, DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -- {-# LANGUAGE OverloadedStrings #-}
@@ -47,18 +48,17 @@ import LS.Types as SFL4
     mtexpr2text,
     RuleName
   )
-import Data.Text (unpack)
 import Debug.Trace (trace)
-import Data.List (isSuffixOf, intercalate)
-import Data.Char (isAlphaNum)
+-- import Data.List (isSuffixOf, intercalate)
+-- import Data.Char (isAlphaNum)
 import Data.Generics.Product.Types (HasTypes)
-import qualified Text.Regex.PCRE.Heavy as PCRE
-import qualified Data.Set as S
+import Data.HashSet qualified as S
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 -- for json types -----------------------------------
-type ConstructorName = String
-type FieldName = String
-type TypeName = String
+type ConstructorName = T.Text
+type FieldName = T.Text
+type TypeName = T.Text
 
 data FieldType =
       FTBoolean
@@ -105,24 +105,25 @@ data JSchemaExp
     deriving stock (Eq, Ord, Show, Read)
 
 processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
-processTopLvlNameTextForJsonSchema = T.intercalate (T.pack "_") . T.words
+processTopLvlNameTextForJsonSchema = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text)
+  -- T.intercalate (T.pack "_") . T.words
 
 -- stringifyMTEwrapper :: (T.Text -> T.Text) -> MTExpr -> String
 -- stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [ MTT n ] =  T.unpack . processTopLvlNameTextForJsonSchema $ n
+typeDeclNameToTypeName [ MTT n ] = processTopLvlNameTextForJsonSchema n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
-typeDeclNameToFieldName :: RuleName -> String
+typeDeclNameToFieldName :: RuleName -> T.Text
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
 -- | Collect the enums into a list of strings
-getEnums :: forall s. (HasTypes s MTExpr) => s -> [String]
-getEnums = map (T.unpack . mtexpr2text) . SFL4.extractMTExprs
+getEnums :: forall s. (HasTypes s MTExpr) => s -> [T.Text]
+getEnums = map mtexpr2text . SFL4.extractMTExprs
 
 textToFieldType :: T.Text -> FieldType
-textToFieldType tn = case unpack tn of
+textToFieldType tn = case tn of
         "Boolean" -> FTBoolean
         "Number" -> FTNumber
         "String" -> FTString
@@ -133,7 +134,8 @@ typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 
-typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList (FTRef (intercalate "_" $ words $ unpack tn))
+typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) =
+  FTList (FTRef $ PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) tn)
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
@@ -150,21 +152,21 @@ ruleFieldToField _ = []
 rule2NonmdJsonExp :: SFL4.Rule -> [JSchemaExp]
 rule2NonmdJsonExp = \case
     SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}
-      -> case unpack n of
-           n' | "Hierarchy" `isSuffixOf` n' -> concatMap rule2HierarchyBool fields
-           _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+      -> case n of
+           n' | "Hierarchy" `T.isSuffixOf` n' -> foldMap rule2HierarchyBool fields
+           _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleFieldToField fields)]
     SFL4.TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
       -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
     _ -> []
 
 rule2ExpType :: SFL4.Rule -> [JSchemaExp]
-rule2ExpType (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+rule2ExpType (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleFieldToField fields)]
 rule2ExpType (SFL4.TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
     [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
 rule2ExpType _ = []
 
 rule2HierarchyBool :: SFL4.Rule -> [JSchemaExp]
-rule2HierarchyBool (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleBool fields)]
+rule2HierarchyBool (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleBool fields)]
     where
         ruleBool ((SFL4.TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
         ruleBool _                    = []
@@ -176,10 +178,10 @@ rule2HierarchyBool _ = []
 -- rule2NonmdJsonExp (TypeDecl{name=[MTT n], has=fields, super=Nothing}) =
 --     let hierarchyName = (unpack n) ++ " Hierarchy"
 --     in case findNonHierarchyRule hierarchyName (TypeDecl{name=[MTT n], has=fields, super=Nothing}) of
---         True  -> [ExpTypeRecord (typeDeclNameToTypeName [MTT (T.pack "hi")]) (concatMap ruleFieldToField fields)]
---         False | " Hierarchy" `isSuffixOf` (unpack n) -> concatMap rule2HierarchyBool fields
---                 | otherwise -> [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
---         _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (concatMap ruleFieldToField fields)]
+--         True  -> [ExpTypeRecord (typeDeclNameToTypeName [MTT (T.pack "hi")]) (foldMap ruleFieldToField fields)]
+--         False | " Hierarchy" `isSuffixOf` (unpack n) -> foldMap rule2HierarchyBool fields
+--                 | otherwise -> [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleFieldToField fields)]
+--         _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleFieldToField fields)]
 -- rule2NonmdJsonExp (TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
 --     [ExpTypeEnum (typeDeclNameToTypeName (n)) (unpackEnums enums)]
 -- rule2NonmdJsonExp _ = []
@@ -201,21 +203,25 @@ rule2HierarchyBool _ = []
 -- Output of types to Haskell
 
 -- somewhat brutal methods to convert arbitrary strings to Haskell identifiers
-convertToAlphaNum :: Char -> Char
-convertToAlphaNum c =
-    if isAlphaNum c
-    then c
-    else '_'
+-- convertToAlphaNum :: Char -> Char
+-- convertToAlphaNum c =
+--     if isAlphaNum c
+--     then c
+--     else '_'
 
-haskellise :: String -> String
-haskellise = map convertToAlphaNum
+haskellise :: T.Text -> T.Text
+haskellise = PCRE.gsub [PCRE.re|[^a-zA-Z\d\s:]|] ("_" :: T.Text)
+  -- map convertToAlphaNum
+
+capitaliseTxt :: T.Text -> T.Text
+capitaliseTxt = T.pack . capitalise . T.unpack
 
 hConstructorName :: ConstructorName -> ConstructorName
-hConstructorName = capitalise . haskellise
+hConstructorName = capitaliseTxt . haskellise
 hFieldName :: FieldName -> FieldName
 hFieldName = haskellise
 hTypeName :: TypeName -> TypeName
-hTypeName = capitalise . haskellise
+hTypeName = capitaliseTxt . haskellise
 hTypeNameAsConstructorName :: TypeName -> ConstructorName
 hTypeNameAsConstructorName = hTypeName
 class ShowTypesHaskell x where
@@ -223,69 +229,69 @@ class ShowTypesHaskell x where
 
 
 instance ShowTypesHaskell FieldType where
-    showTypesHaskell FTBoolean = pretty "Bool"
-    showTypesHaskell FTNumber = pretty "Int"
-    showTypesHaskell FTString = pretty "String"
-    showTypesHaskell FTDate = pretty "String"
-    showTypesHaskell (FTRef n) = pretty (hTypeName n)
-    showTypesHaskell (FTList t) = brackets (showTypesHaskell t)
+    showTypesHaskell FTBoolean = "Bool"
+    showTypesHaskell FTNumber = "Int"
+    showTypesHaskell FTString = "String"
+    showTypesHaskell FTDate = "String"
+    showTypesHaskell (FTRef n) = pretty $ hTypeName n
+    showTypesHaskell (FTList t) = brackets $ showTypesHaskell t
 
 instance ShowTypesHaskell Field where
-    showTypesHaskell f@(Field fn ft) = 
+    showTypesHaskell (Field fn ft) = 
         -- trace ("Field: " ++ (show f) ) $  
-        pretty (hFieldName fn) <> pretty " :: " <> showTypesHaskell ft
+        pretty (hFieldName fn) <> " :: " <> showTypesHaskell ft
 
 instance ShowTypesHaskell JSchemaExp where
     showTypesHaskell :: JSchemaExp -> Doc ann
     showTypesHaskell (ExpTypeRecord tn fds) =
         -- trace ("Record: " ++ (show tn) ++ (show (hTypeName tn))) $
-        pretty "data " <> pretty (hTypeName tn) <> pretty " = " <> pretty (hTypeNameAsConstructorName tn) <>
+        "data " <> pretty (hTypeName tn) <> " = " <> pretty (hTypeNameAsConstructorName tn) <>
             nest 4 (braces (vsep (punctuate comma (map showTypesHaskell fds))))
 
     showTypesHaskell (ExpTypeEnum tn enums) =
         -- trace ("Enum: " ++ (show tn) ++ (show (hTypeName tn))) $
-        pretty "data " <> pretty (hTypeName tn) <>
+        "data " <> pretty (hTypeName tn) <>
         nest 4
-            (pretty " = " <>
-            vsep (punctuate (pretty " | ") (map (pretty . hConstructorName) enums)))
+            (" = " <>
+            vsep (punctuate " | " (map (pretty . hConstructorName) enums)))
 
 rulesToHaskellTp :: [SFL4.Rule] -> String
 rulesToHaskellTp rs =
-    let ets = concatMap rule2ExpType rs in
+    let ets = foldMap rule2ExpType rs in
         (case ets of
-            [] -> show emptyDoc
+            [] -> ""
             rt : _rts ->
                 let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))]
                     entries = entry:ets
-                in trace ("Entries: " ++ (show entries)) $
+                in trace ("Entries: " ++ show entries) $
                    show (vsep (map showTypesHaskell entries ++
                         translationTable (genTranslationTable entries))))
 
-translationTable :: forall ann. [(String, String)] -> [Doc ann]
+translationTable :: forall ann. [(T.Text, T.Text)] -> [Doc ann]
 translationTable tab =
     [vsep [
-            pretty "translations :: [(String, String)]"
-          , pretty "translations = " <>
+            "translations :: [(String, String)]"
+          , "translations = " <>
             nest 4
-                (brackets (vsep (punctuate comma (map (\(p1, p2) ->  parens (dquotes (pretty p1) <> pretty ", " <> dquotes (pretty p2))) tab))))
+                (brackets (vsep (punctuate comma (map (\(p1, p2) ->  parens (dquotes (pretty p1) <> ", " <> dquotes (pretty p2))) tab))))
         ]]
 
-genTranslationTable :: [JSchemaExp] -> [(String, String)]
+genTranslationTable :: [JSchemaExp] -> [(T.Text, T.Text)]
 genTranslationTable tab = S.toList (S.unions (map tableOfSchema tab))
 
-tableOfSchema :: JSchemaExp -> S.Set (String, String)
+tableOfSchema :: JSchemaExp -> S.HashSet (T.Text, T.Text)
 tableOfSchema (ExpTypeRecord tn fds) =
     S.insert (tn, hTypeName tn) (S.unions (map tableOfField fds))
 tableOfSchema (ExpTypeEnum tn enums) =
     S.insert (tn, hTypeName tn) (S.unions (map tableOfEnum enums))
 
-tableOfField :: Field -> S.Set (FieldName, FieldName)
+tableOfField :: Field -> S.HashSet (FieldName, FieldName)
 tableOfField (Field fn ft) = S.insert (fn, hFieldName fn) (tableOfType ft)
 
-tableOfEnum :: ConstructorName -> S.Set (ConstructorName, ConstructorName)
+tableOfEnum :: ConstructorName -> S.HashSet (ConstructorName, ConstructorName)
 tableOfEnum e = S.singleton (e, hConstructorName e)
 
-tableOfType :: FieldType -> S.Set (TypeName, TypeName)
+tableOfType :: FieldType -> S.HashSet (TypeName, TypeName)
 tableOfType (FTRef n) = S.singleton (n, hTypeName n)
 tableOfType (FTList t) = tableOfType t
 tableOfType _ = S.empty
@@ -297,30 +303,30 @@ class ShowTypesProlog x where
     showTypesProlog :: x -> Doc ann
 
 instance ShowTypesProlog FieldType where
-    showTypesProlog FTBoolean = pretty "boolean"
-    showTypesProlog FTNumber = pretty "number"
-    showTypesProlog FTString = pretty "string"
-    showTypesProlog FTDate = pretty "string"
-    showTypesProlog (FTRef n) = pretty "ref" <> parens (pretty n)
-    showTypesProlog (FTList t) = pretty "list" <> parens (showTypesProlog t)
+    showTypesProlog FTBoolean = "boolean"
+    showTypesProlog FTNumber = "number"
+    showTypesProlog FTString = "string"
+    showTypesProlog FTDate = "string"
+    showTypesProlog (FTRef n) = "ref" <> parens (pretty n)
+    showTypesProlog (FTList t) = "list" <> parens (showTypesProlog t)
 
 instance ShowTypesProlog Field where
     showTypesProlog (Field fn ft) =
-        parens (pretty fn <> pretty ", " <> showTypesProlog ft)
+        parens (pretty fn <> ", " <> showTypesProlog ft)
 
 showEnumProlog :: TypeName -> ConstructorName -> Doc ann
 showEnumProlog tn en =
-    pretty "typedecl" <> parens (pretty tn <> pretty ", " <> pretty en <> pretty ", " <> pretty en) <> pretty "."
+    "typedecl" <> parens (pretty tn <> ", " <> pretty en <> ", " <> pretty en) <> "."
 instance ShowTypesProlog JSchemaExp where
     showTypesProlog (ExpTypeRecord tn fds) =
-        pretty "typedecl" <>
+        "typedecl" <>
         nest 4
         (parens (
-            pretty tn <> pretty ", " <> pretty tn <> pretty ", " <>
+            pretty tn <> ", " <> pretty tn <> ", " <>
             brackets (vsep (punctuate comma (map showTypesProlog fds)))
             )
         ) <>
-        pretty "."
+        "."
 
     showTypesProlog (ExpTypeEnum tn enums) =
         vsep (map (showEnumProlog tn) enums)
@@ -328,14 +334,14 @@ instance ShowTypesProlog JSchemaExp where
 
 -- the root data type of a Json Schema is always embedded in an entrypoint,
 -- here called "toplevel"
-entrypointName :: String
+entrypointName :: T.Text
 entrypointName = "toplevel"
 
 rulesToPrologTp :: [SFL4.Rule] -> String
 rulesToPrologTp rs =
-    let ets = concatMap rule2ExpType rs in
+    let ets = foldMap rule2ExpType rs in
         (case ets of
-            [] -> show emptyDoc
+            [] -> ""
             rt : _rts ->
                 let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef rt.typeName)] in
                 show (vsep (map showTypesProlog (entry:ets))))
@@ -349,25 +355,25 @@ class ShowTypesJson x where
 
 -- definitions are located in a section called $defs according to the Json Schema standard,
 -- but the choice seems to be arbitrary.
-defsLocationName :: String
+defsLocationName :: T.Text
 defsLocationName = "$defs"
 
-defsLocation :: String -> Doc ann
+defsLocation :: T.Text -> Doc ann
 defsLocation n =
   [di|\#/#{defsLocationName}/#{n'}|]
   where
     -- Replace multiple whitespaces with a single underscore.
-    n' = PCRE.gsub [PCRE.re|\s+|] "_" n
+    n' = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) n
 
 -- defsLocation n = pretty $ "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
 
-jsonType :: Pretty a => a -> Doc ann
+jsonType :: T.Text -> Doc ann
 jsonType t =
-    dquotes (pretty "type") <> pretty ": " <> dquotes (pretty t)
+    dquotes "type" <> ": " <> dquotes (pretty t)
 
 showRequireds :: [Field] -> Doc ann
 showRequireds fds =
-    dquotes (pretty "required") <> pretty ": " <>
+    dquotes "required" <> ": " <>
     brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann
@@ -386,13 +392,13 @@ instance ShowTypesJson FieldType where
     showTypesJson FTString =
         jsonType "string"
     showTypesJson FTDate =
-        jsonType "string" <> pretty "," <>
-        dquotes (pretty "format") <> pretty ": " <> dquotes (pretty "date")
+        jsonType "string" <> "," <>
+        dquotes "format" <> ": " <> dquotes "date"
     showTypesJson (FTRef n) =
         showRef n
     showTypesJson (FTList (FTRef n)) =
-        jsonType "array" <> pretty "," <>
-        dquotes (pretty "items") <> pretty ": " <>
+        jsonType "array" <> "," <>
+        dquotes "items" <> ": " <>
         braces (showRef n)
     showTypesJson _ =
         jsonType "string"
@@ -400,30 +406,30 @@ instance ShowTypesJson FieldType where
 instance ShowTypesJson Field where
     showTypesJson :: Field -> Doc ann
     showTypesJson (Field fn ft) =
-        dquotes (pretty fn) <> pretty ": " <> braces (showTypesJson ft)
+        dquotes (pretty fn) <> ": " <> braces (showTypesJson ft)
 
 
 instance ShowTypesJson JSchemaExp where
     showTypesJson :: JSchemaExp -> Doc ann
     showTypesJson (ExpTypeEnum tn enums) =
-        dquotes (pretty tn) <> pretty ": " <>
+        dquotes (pretty tn) <> ": " <>
         nest 4
         (braces (
-            jsonType "string" <> pretty "," <>
-            dquotes (pretty "enum") <> pretty ": " <>
+            jsonType "string" <> "," <>
+            dquotes "enum" <> ": " <>
             nest 4 (brackets (hsep (punctuate comma (map (dquotes . pretty) enums))))
         ))
     showTypesJson (ExpTypeRecord tn fds) =
         pprintJsonObj tn fds requiredFds
-            where requiredFds = pretty "," <> nest 4 (showRequireds fds)
+            where requiredFds = "," <> nest 4 (showRequireds fds)
     
 pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
 pprintJsonObj key values final =
-    dquotes (pretty key) <> pretty ": " <>
+    dquotes (pretty key) <> ": " <>
         nest 4
         (braces (
-            jsonType "object" <> pretty "," <>
-            dquotes (pretty "properties") <>  pretty ": " <>
+            jsonType "object" <> "," <>
+            dquotes "properties" <> ": " <>
                 nest 4
                 (braces (vsep (punctuate comma (map showTypesJson values))))
                 <> final
@@ -442,10 +448,10 @@ rulesToJsonSchema rs =
     let
         -- TODO: Would be better to avoid boolean blindness here; improve when time permits
         -- Partitioning in advance because we want to group the means HLikes into one object
-        ets = concatMap rule2NonmdJsonExp rs
+        ets = foldMap rule2NonmdJsonExp rs
         subJsonObjs = map showTypesJson ets
     in (case ets of
-            [] -> show (braces emptyDoc)
+            [] -> show $ braces emptyDoc
             (rt : _rts) ->
                 -- trace ("ets: " ++ show ets) $
                 show [__di| 
@@ -458,9 +464,9 @@ rulesToJsonSchema rs =
 
 rulesToUISchema :: [SFL4.Rule] -> String
 rulesToUISchema rs =
-    let ets = concatMap rule2NonmdJsonExp rs in
+    let ets = foldMap rule2NonmdJsonExp rs in
         (case ets of
-            [] -> show (braces emptyDoc)
+            [] -> show $ braces emptyDoc
             rts ->
                 -- trace ("ets: " ++ show ets) $
                 show
@@ -468,7 +474,7 @@ rulesToUISchema rs =
                     (vsep (punctuate comma
                     (
                         jsonPreamble (last rts).typeName :
-                        [dquotes (pretty defsLocationName) <> pretty ": " <>
+                        [dquotes (pretty defsLocationName) <> ": " <>
                         braces (
                             nest 4
                             (vsep (punctuate comma (map showTypesJson ets)))

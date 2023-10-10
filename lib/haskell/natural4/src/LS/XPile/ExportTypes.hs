@@ -105,7 +105,7 @@ data JSchemaExp
     deriving stock (Eq, Ord, Show, Read)
 
 processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
-processTopLvlNameTextForJsonSchema = PCRE.gsub [PCRE.re|\s|] ("_" :: T.Text)
+processTopLvlNameTextForJsonSchema = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text)
   -- T.intercalate (T.pack "_") . T.words
 
 -- stringifyMTEwrapper :: (T.Text -> T.Text) -> MTExpr -> String
@@ -135,7 +135,7 @@ typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 
 typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) =
-  FTList (FTRef $ PCRE.gsub [PCRE.re|\s|] ("_" :: T.Text) tn)
+  FTList (FTRef $ PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) tn)
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
@@ -363,7 +363,7 @@ defsLocation n =
   [di|\#/#{defsLocationName}/#{n'}|]
   where
     -- Replace multiple whitespaces with a single underscore.
-    n' = PCRE.gsub [PCRE.re|\s|] ("_" :: T.Text) n
+    n' = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) n
 
 -- defsLocation n = pretty $ "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
 

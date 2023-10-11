@@ -27,7 +27,7 @@ import LS.XPile.LogicalEnglish.Types
     , SimpleL4HC(MkL4FactHc, fgiven, fhead,
                  MkL4RuleHc, rgiven, rhead, rbody)
 
-    , AtomicBPropn(..)
+    -- , AtomicBPropn(..)
     , L4AtomicP
 
     -- Intermediate representation types, prisms, and constants
@@ -42,7 +42,6 @@ import LS.XPile.LogicalEnglish.Types
     , AtomicPWithVars
     , VCell(..)
   )
-import LS.XPile.LogicalEnglish.IdVars.ReplaceTxtVCells (replaceTxtVCell)
 
 -- $setup
 -- >>> import Data.Text qualified as T
@@ -62,21 +61,33 @@ idVarsInHC = \case
 * things that should be vars (according to the spec) get converted to TemplateVars
 -}
 idVarsInAP :: GVarSet -> L4AtomicP -> AtomicPWithVars
-idVarsInAP gvars = postprocAP . fmap makeVCell
+idVarsInAP gvars = fmap makeVCell
   where
     makeVCell = cell2vcell gvars
 
 -- | Replace "." with "dot" and "," with "comma", in the Pred txts of ABPatomics
-postprocAP :: AtomicPWithVars -> AtomicPWithVars
-postprocAP = \case
-  ABPatomic cells -> ABPatomic $ fmap replaceTxtVCell cells
-  others          -> others
+-- postprocAP :: AtomicPWithVars -> AtomicPWithVars
+-- postprocAP =
+--   \case
+--   ABPatomic cells -> ABPatomic $ fmap replaceTxtVCell cells
+--   others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
 idVarsInBody gvars = fmap $ idVarsInAP gvars
 
 
 ---- helpers
+
+-- | Replace text in VCells
+-- replaceTxtVCell :: VCell -> VCell
+-- replaceTxtVCell = \case
+--   TempVar (MatchGVar txt)  -> TempVar $ MatchGVar $ replaceTxt txt
+--   TempVar (EndsInApos txt) -> TempVar $ EndsInApos $ replaceTxt txt
+--   TempVar (IsNum txt)      -> TempVar $ IsNum $ replaceTxt txt
+--   -- tv@(TempVar _) -> tv
+--   AposAtom txt             -> AposAtom $ replaceTxt txt
+--   -- apAtm@(AposAtom _) -> apAtm
+--   NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom $ replaceTxt txt
 
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  

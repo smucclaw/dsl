@@ -145,7 +145,7 @@ getNLATxtResults =
       regextravifyNLASection $(lift libAndBuiltinTemplates)
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
-simplifyL4rules = sequenceA . concatMap simplifyL4rule
+simplifyL4rules = sequenceA . foldMap simplifyL4rule
 
 xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =

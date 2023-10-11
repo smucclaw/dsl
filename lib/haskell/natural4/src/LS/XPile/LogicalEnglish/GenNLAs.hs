@@ -194,7 +194,7 @@ regextravify rawregex =
   rawregex ^? (to makeRegex % _Right % to traversify)
 
 matchesTxtOf :: RegexTrav -> NLATxt -> Bool
-regexTrav `matchesTxtOf` nlatxt = has regexTrav (view _MkNLATxt nlatxt)
+regexTrav `matchesTxtOf` nlatxt = regexTrav `has` view _MkNLATxt nlatxt
 
 ------------------- Filtering out subsumed NLAs
 

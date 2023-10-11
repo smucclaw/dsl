@@ -6,7 +6,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.IdVars.IdVars (
+module LS.XPile.LogicalEnglish.IdVars (
     idVarsInHC
   -- , idVarsInAP
   -- , idVarsInBody

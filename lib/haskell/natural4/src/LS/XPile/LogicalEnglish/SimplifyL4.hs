@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
 {-# LANGUAGE TypeApplications, GADTs #-}
@@ -60,6 +60,7 @@ import LS.XPile.LogicalEnglish.Types
     , pattern MkIsIn
   )
 import LS.XPile.LogicalEnglish.ReplaceTxt (replaceTxt)
+import Data.String.Interpolate (i)
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       loadRawL4AsUnvalid)
@@ -413,11 +414,12 @@ gvarsFromL4Rule rule =
 ------------    MTExprs to [Cell]    ------------------------------------------
 
 textifyMTE :: (T.Text -> t) -> MTExpr -> t
-textifyMTE constrtr = \case
-  MTT t -> constrtr $ replaceTxt t
-  MTI i -> constrtr $ int2Text i
-  MTF f -> constrtr $ float2Text f
-  MTB b -> constrtr $ T.toLower . T.pack . show $ b
+textifyMTE constrtr =
+  constrtr . \case
+    MTT t -> replaceTxt t
+    MTI i -> int2Text i
+    MTF f -> float2Text f
+    MTB b -> T.toLower [i|#{b}|]
             -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells; raise a `dispute` if so and print warning as comment in resulting .le
 
 mte2cell :: L4.MTExpr -> Cell

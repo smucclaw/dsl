@@ -63,7 +63,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     , removeInternallySubsumed
     , regextravifyNLASection
     , removeRegexMatches
-    , removeDisprefdInEquivUpToVarNames
+    -- , removeDisprefdInEquivUpToVarNames
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
@@ -135,7 +135,10 @@ getNLATxtResults =
     removeSubsumedOrDisprefed =
       removeInternallySubsumed
         >>> removeSubsumedByLibTemplates
-        >>> removeDisprefdInEquivUpToVarNames
+        -- 2023-10-11 (Joe): Quick hack because this is causing problems with the
+        -- current policy encoding and isn't needed for it.
+        >>> \ x -> MkFResult {subsumed = [], kept = HS.toList x}
+        -- >>> removeDisprefdInEquivUpToVarNames
 
     removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs

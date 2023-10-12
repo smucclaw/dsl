@@ -138,7 +138,6 @@ getNLATxtResults =
         >>> HS.toList
         >>> removeAlphaEquivNLAs
         >>> \ x -> MkFResult {subsumed = [], kept = x}
-        -- >>> removeDisprefdInEquivUpToVarNames
 
     removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs

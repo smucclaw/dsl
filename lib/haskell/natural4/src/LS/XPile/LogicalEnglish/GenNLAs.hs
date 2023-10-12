@@ -17,6 +17,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , NLA       -- opaque
     , mkNLA     -- smart constructor
     , getNLAtxt
+    , nlaAsTxt
 
     , RegexTrav
     , FilterResult(..)

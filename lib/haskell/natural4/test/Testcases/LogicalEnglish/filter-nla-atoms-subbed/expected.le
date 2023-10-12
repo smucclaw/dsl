@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  *a add savings* bleh 100,
+  *a some var* pred *a some var* 10,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -111,5 +111,5 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  a total savings bleh 100
-  if a add savings bleh 100.
+  subbed by something pred a some var 10
+  if some var pred some var 10.

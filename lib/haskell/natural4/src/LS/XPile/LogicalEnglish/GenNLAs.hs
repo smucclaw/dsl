@@ -60,13 +60,13 @@ import LS.XPile.LogicalEnglish.Types
   )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate ( i, __i )
 
 import Data.List.Split (splitOn)
 import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
-import qualified Text.Regex.PCRE.Heavy as PCRE
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Control.Lens.Regex.Text
 
 import Data.Function (on)
@@ -105,7 +105,14 @@ instance Ord NLA where
   a `compare` b = a.getNLATxt' `compare` b.getNLATxt'
 instance Show NLA where
   show :: NLA -> String
-  show nla = show nla.getBase <> "\n" <> show nla.numVars <> "\n" <> show nla.getNLATxt'
+  show nla =
+    [__i|
+      Base: #{nlaAsTxt nla}
+      Num vars: #{numVars}
+      NLA Txt: #{getNLAtxt nla}
+    |]
+    where
+      numVars = nla.numVars
 
 instance Hashable NLA where
   hashWithSalt = hashUsing getNLAtxt
@@ -348,7 +355,7 @@ rawregexifyNLAStr (T.unpack -> nlastr) =
 nlasFromVarsHC :: VarsHC -> HS.HashSet NLA
 nlasFromVarsHC = \case
   VhcF vfact ->
-    (maybe HS.empty HS.singleton (nlaFromVFact vfact))
+    maybe HS.empty HS.singleton (nlaFromVFact vfact)
   VhcR vrule ->
     nlasFromVarsRule vrule
 

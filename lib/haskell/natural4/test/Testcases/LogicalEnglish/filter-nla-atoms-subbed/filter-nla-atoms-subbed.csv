@@ -1,0 +1,3 @@
+GIVEN,some var,
+DECIDE,subbed by something,pred,some var,10,
+IF,some var,pred,some var,10,

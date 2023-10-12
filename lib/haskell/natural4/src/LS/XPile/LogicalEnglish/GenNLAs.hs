@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards, NoFieldSelectors #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -22,15 +23,18 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , FilterResult(..)
     , removeInternallySubsumed
     , removeRegexMatches
-    , removeDisprefdInEquivUpToVarNames
+    , removeAlphaEquivNLAs
+    -- , removeDisprefdInEquivUpToVarNames
     , regextravifyNLASection
     , regextravifyNLAStr
   )
 where
 
+import Control.Category ((>>>))
 import Data.Text qualified as T
 import Data.Ord (Down(..))
 import GHC.Exts (sortWith)
+import GHC.Generics (Generic)
 import Data.HashSet qualified as HS
 import Data.Containers (difference)
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
@@ -79,7 +83,8 @@ import Data.Sequence (Seq)
 import Data.Sequences (SemiSequence, intersperse) --groupAllOn
 import Data.List qualified as L
 import Data.MonoTraversable (Element)
-import Prettyprinter(Pretty)
+import Prettyprinter (Pretty)
+import Witherable qualified as Wither
 
 -- $setup
 -- >>> import qualified Data.Text as T
@@ -107,12 +112,13 @@ instance Show NLA where
   show :: NLA -> String
   show nla =
     [__i|
-      Base: #{nlaAsTxt nla}
+      Base: #{base}
       Num vars: #{numVars}
       NLA Txt: #{getNLAtxt nla}
     |]
     where
       numVars = nla.numVars
+      base = nla.getBase
 
 instance Hashable NLA where
   hashWithSalt = hashUsing getNLAtxt
@@ -251,6 +257,25 @@ instance Semigroup a => Semigroup (FilterResult a) where
   MkFResult s1 k1 <> MkFResult s2 k2 =  MkFResult (s1 <> s2) (k1 <> k2)
 instance Monoid a => Monoid (FilterResult a) where
   mempty = MkFResult mempty mempty
+
+newtype DeBruijnNLA = DeBruijnNLA [DeBruijnVCell]
+  deriving (Eq, Generic)
+  deriving newtype Hashable
+
+data DeBruijnVCell where
+  Var :: DeBruijnVCell
+  Txt :: T.Text -> DeBruijnVCell
+  deriving (Eq, Generic, Hashable)
+
+removeAlphaEquivNLAs :: Wither.Witherable t => t NLA -> t NLA
+removeAlphaEquivNLAs = Wither.hashNubOn abstractVarsFromNLA
+  where
+    abstractVarsFromNLA :: NLA -> DeBruijnNLA =
+      (.getBase) >>> toList >>> map vcell2VarOrTxt >>> coerce
+
+    vcell2VarOrTxt :: VCell -> DeBruijnVCell = \case
+      NonVarOrNonAposAtom txt -> Txt txt
+      _ -> Var
 
 {- | TODO: Add doctests/examples
 -}

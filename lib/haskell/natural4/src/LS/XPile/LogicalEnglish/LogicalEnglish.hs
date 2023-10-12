@@ -53,7 +53,7 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
-import LS.XPile.LogicalEnglish.GenNLAs 
+import LS.XPile.LogicalEnglish.GenNLAs
     ( nlasFromVarsHC
     , NLATxt(..)
     , NLA
@@ -63,7 +63,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     , removeInternallySubsumed
     , regextravifyNLASection
     , removeRegexMatches
-    -- , removeDisprefdInEquivUpToVarNames
+    , removeAlphaEquivNLAs
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
@@ -135,9 +135,9 @@ getNLATxtResults =
     removeSubsumedOrDisprefed =
       removeInternallySubsumed
         >>> removeSubsumedByLibTemplates
-        -- 2023-10-11 (Joe): Quick hack because this is causing problems with the
-        -- current policy encoding and isn't needed for it.
-        >>> \ x -> MkFResult {subsumed = [], kept = HS.toList x}
+        >>> HS.toList
+        >>> removeAlphaEquivNLAs
+        >>> \ x -> MkFResult {subsumed = [], kept = x}
         -- >>> removeDisprefdInEquivUpToVarNames
 
     removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA

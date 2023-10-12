@@ -422,9 +422,9 @@ nlaLoneFromVAtomicP =  \case
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar           -> tvar2NLAtxt tvar
-  AposAtom prefix        -> coerce $ prefix <> aposSuffix
-  NonVarOrNonAposAtom txt  -> coerce txt
+  TempVar tvar            -> tvar2NLAtxt tvar
+  AposAtom prefix         -> mkNLATxt $ prefix <> aposSuffix
+  NonVarOrNonAposAtom txt -> mkNLATxt txt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case

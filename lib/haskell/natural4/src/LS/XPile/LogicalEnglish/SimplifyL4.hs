@@ -30,6 +30,7 @@ import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
+import Data.String.Interpolate (i)
 
 import AnyAll qualified as AA
 import LS.Types qualified as L4
@@ -60,7 +61,6 @@ import LS.XPile.LogicalEnglish.Types
     , pattern MkIsIn
   )
 import LS.XPile.LogicalEnglish.ReplaceTxt (replaceTxt)
-import Data.String.Interpolate (i)
 -- import LS.XPile.LogicalEnglish.ValidateL4Input
 --       (L4Rules, ValidHornls, Unvalidated,
 --       loadRawL4AsUnvalid)
@@ -434,11 +434,9 @@ mtes2cells = fmap mte2cell
 Thanks to Jo Hsi for finding these!
 -}
 float2Text :: RealFloat a => a -> T.Text
-float2Text f =
-  case (isInfinite f, f > 0) of
-      (True, True) -> "inf"
-      (True, _) -> "-inf"
-      _ -> T.toStrict . B.toLazyText . decFloat $ f
+float2Text f
+  | isInfinite f = if f > 0 then "inf" else "-inf"
+  | otherwise = T.toStrict . B.toLazyText . decFloat $ f
 
 {- | Differs from B.realFloat only in that we use standard decimal notation (i.e., in the choice of FPFormat)
 See https://hackage.haskell.org/package/text-2.1/docs/src/Data.Text.Lazy.Builder.RealFloat.html

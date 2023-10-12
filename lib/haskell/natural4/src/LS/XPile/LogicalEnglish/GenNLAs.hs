@@ -22,15 +22,18 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , FilterResult(..)
     , removeInternallySubsumed
     , removeRegexMatches
-    , removeDisprefdInEquivUpToVarNames
+    , removeAlphaEquivNLAs
+    -- , removeDisprefdInEquivUpToVarNames
     , regextravifyNLASection
     , regextravifyNLAStr
   )
 where
 
+import Control.Category ((>>>))
 import Data.Text qualified as T
 import Data.Ord (Down(..))
 import GHC.Exts (sortWith)
+import GHC.Generics (Generic)
 import Data.HashSet qualified as HS
 import Data.Containers (difference)
 import Data.Hashable (Hashable, hashWithSalt, hashUsing)
@@ -60,13 +63,13 @@ import LS.XPile.LogicalEnglish.Types
   )
 import LS.XPile.LogicalEnglish.Utils (setInsert)
 import Data.String (IsString)
-import Data.String.Interpolate ( i )
+import Data.String.Interpolate ( i, __i )
 
 import Data.List.Split (splitOn)
 import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
 import Text.RawString.QQ
-import qualified Text.Regex.PCRE.Heavy as PCRE
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Control.Lens.Regex.Text
 
 import Data.Function (on)
@@ -79,7 +82,8 @@ import Data.Sequence (Seq)
 import Data.Sequences (SemiSequence, intersperse) --groupAllOn
 import Data.List qualified as L
 import Data.MonoTraversable (Element)
-import Prettyprinter(Pretty)
+import Prettyprinter (Pretty)
+import Witherable qualified as Wither
 
 -- $setup
 -- >>> import qualified Data.Text as T
@@ -105,7 +109,15 @@ instance Ord NLA where
   a `compare` b = a.getNLATxt' `compare` b.getNLATxt'
 instance Show NLA where
   show :: NLA -> String
-  show nla = show nla.getBase <> "\n" <> show nla.numVars <> "\n" <> show nla.getNLATxt'
+  show nla =
+    [__i|
+      Base: #{base}
+      Num vars: #{numVars}
+      NLA Txt: #{getNLAtxt nla}
+    |]
+    where
+      numVars = nla.numVars
+      base = nla.getBase
 
 instance Hashable NLA where
   hashWithSalt = hashUsing getNLAtxt
@@ -194,7 +206,7 @@ regextravify rawregex =
   rawregex ^? (to makeRegex % _Right % to traversify)
 
 matchesTxtOf :: RegexTrav -> NLATxt -> Bool
-regexTrav `matchesTxtOf` nlatxt = has regexTrav (view _MkNLATxt nlatxt)
+regexTrav `matchesTxtOf` nlatxt = regexTrav `has` view _MkNLATxt nlatxt
 
 ------------------- Filtering out subsumed NLAs
 
@@ -244,6 +256,23 @@ instance Semigroup a => Semigroup (FilterResult a) where
   MkFResult s1 k1 <> MkFResult s2 k2 =  MkFResult (s1 <> s2) (k1 <> k2)
 instance Monoid a => Monoid (FilterResult a) where
   mempty = MkFResult mempty mempty
+
+type DeBruijnNLA = [DeBruijnVCell]
+
+data DeBruijnVCell where
+  Var :: DeBruijnVCell
+  Txt :: T.Text -> DeBruijnVCell
+  deriving (Eq, Generic, Hashable)
+
+removeAlphaEquivNLAs :: Wither.Witherable t => t NLA -> t NLA
+removeAlphaEquivNLAs = Wither.hashNubOn abstractVarsFromNLA
+  where
+    abstractVarsFromNLA :: NLA -> DeBruijnNLA =
+      (.getBase) >>> toList >>> map abstractVcell
+
+    abstractVcell :: VCell -> DeBruijnVCell = \case
+      NonVarOrNonAposAtom txt -> Txt txt
+      _ -> Var
 
 {- | TODO: Add doctests/examples
 -}
@@ -348,7 +377,7 @@ rawregexifyNLAStr (T.unpack -> nlastr) =
 nlasFromVarsHC :: VarsHC -> HS.HashSet NLA
 nlasFromVarsHC = \case
   VhcF vfact ->
-    (maybe HS.empty HS.singleton (nlaFromVFact vfact))
+    maybe HS.empty HS.singleton (nlaFromVFact vfact)
   VhcR vrule ->
     nlasFromVarsRule vrule
 

@@ -3,8 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module LS.XPile.LogicalEnglish.IdVars.ReplaceTxtVCells
-  ( replaceTxtVCell,
+module LS.XPile.LogicalEnglish.ReplaceTxt
+  ( replaceTxt
   )
 where
 
@@ -18,17 +18,6 @@ import LS.XPile.LogicalEnglish.Types
   )
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
-
--- | Replace text in VCells
-replaceTxtVCell :: VCell -> VCell
-replaceTxtVCell = \case
-  TempVar (MatchGVar txt)  -> TempVar $ MatchGVar $ replaceTxt txt
-  TempVar (EndsInApos txt) -> TempVar $ EndsInApos $ replaceTxt txt
-  TempVar (IsNum txt)      -> TempVar $ IsNum $ replaceTxt txt
-  -- tv@(TempVar _) -> tv
-  AposAtom txt             -> AposAtom $ replaceTxt txt
-  -- apAtm@(AposAtom _) -> apAtm
-  NonVarOrNonAposAtom txt  -> NonVarOrNonAposAtom $ replaceTxt txt
 
 {- | 
 TODO: Would be better to read in a dictionary of what/how to replace from some config file,

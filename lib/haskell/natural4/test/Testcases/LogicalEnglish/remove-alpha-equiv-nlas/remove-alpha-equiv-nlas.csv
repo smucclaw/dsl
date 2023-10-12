@@ -1,0 +1,16 @@
+GIVEN,person,IS A,Person
+DECIDE,person,satisfies clause 14.1,
+IF,person,satisfies clause 14.1.1,
+AND,person,satisfies clause 14.1.2,
+;;,,,
+GIVEN,person,IS A,Person
+DECIDE,person,satisfies clause 14.1.1,
+IF,person,does something,
+;;,,,
+GIVEN,p,IS A,Person
+DECIDE,p,satisfies clause 14.1.1,
+IF,p,does something else,
+;;,,,
+GIVEN,person,IS A,Person
+DECIDE,person,satisfies clause 14.1.2,
+IF,person,does something,

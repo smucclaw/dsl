@@ -52,8 +52,8 @@ import LS.XPile.LogicalEnglish.ValidateL4Input
       -- check, refine, loadRawL4AsUnvalid, 
       )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
-import LS.XPile.LogicalEnglish.IdVars.IdVars (idVarsInHC)
-import LS.XPile.LogicalEnglish.GenNLAs 
+import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
+import LS.XPile.LogicalEnglish.GenNLAs
     ( nlasFromVarsHC
     , NLATxt(..)
     , NLA
@@ -63,7 +63,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     , removeInternallySubsumed
     , regextravifyNLASection
     , removeRegexMatches
-    , removeDisprefdInEquivUpToVarNames
+    , removeAlphaEquivNLAs
     )
 
 import LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC)
@@ -135,7 +135,10 @@ getNLATxtResults =
     removeSubsumedOrDisprefed =
       removeInternallySubsumed
         >>> removeSubsumedByLibTemplates
-        >>> removeDisprefdInEquivUpToVarNames
+        >>> HS.toList
+        >>> removeAlphaEquivNLAs
+        >>> \ x -> MkFResult {subsumed = [], kept = x}
+        -- >>> removeDisprefdInEquivUpToVarNames
 
     removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs
@@ -145,7 +148,7 @@ getNLATxtResults =
       regextravifyNLASection $(lift libAndBuiltinTemplates)
 
 simplifyL4rules :: [L4.Rule] -> SimpL4 [SimpleL4HC]
-simplifyL4rules = sequenceA . concatMap simplifyL4rule
+simplifyL4rules = sequenceA . foldMap simplifyL4rule
 
 xpileSimplifiedL4hcs :: [SimpleL4HC] -> String
 xpileSimplifiedL4hcs simpL4HCs =

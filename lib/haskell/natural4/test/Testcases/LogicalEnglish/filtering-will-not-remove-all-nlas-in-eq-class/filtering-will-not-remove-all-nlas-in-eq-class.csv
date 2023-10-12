@@ -1,4 +1,4 @@
 GIVEN,total savings,IS A,Total Savings
 ,add savings,IS A,Add Savings
-DECIDE,total savings,IS,100
-IF,add savings,IS,200
+DECIDE,total savings,bleh,100
+IF,add savings,bleh,100

@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -W #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, RecordWildCards, NoFieldSelectors #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -258,9 +257,7 @@ instance Semigroup a => Semigroup (FilterResult a) where
 instance Monoid a => Monoid (FilterResult a) where
   mempty = MkFResult mempty mempty
 
-newtype DeBruijnNLA = DeBruijnNLA [DeBruijnVCell]
-  deriving (Eq, Generic)
-  deriving newtype Hashable
+type DeBruijnNLA = [DeBruijnVCell]
 
 data DeBruijnVCell where
   Var :: DeBruijnVCell
@@ -271,9 +268,9 @@ removeAlphaEquivNLAs :: Wither.Witherable t => t NLA -> t NLA
 removeAlphaEquivNLAs = Wither.hashNubOn abstractVarsFromNLA
   where
     abstractVarsFromNLA :: NLA -> DeBruijnNLA =
-      (.getBase) >>> toList >>> map vcell2VarOrTxt >>> coerce
+      (.getBase) >>> toList >>> map abstractVcell
 
-    vcell2VarOrTxt :: VCell -> DeBruijnVCell = \case
+    abstractVcell :: VCell -> DeBruijnVCell = \case
       NonVarOrNonAposAtom txt -> Txt txt
       _ -> Var
 

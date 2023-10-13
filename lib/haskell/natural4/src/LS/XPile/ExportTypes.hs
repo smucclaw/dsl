@@ -426,8 +426,9 @@ instance ShowTypesJson JSchemaExp where
             nest 4 (brackets (hsep (punctuate comma (map (dquotes . pretty) enums))))
         ))
     showTypesJson (ExpTypeRecord tn fds) =
-        pprintJsonObj tn fds requiredFds
-            where requiredFds = "," <> nest 4 (showRequireds fds)
+        pprintJsonObj tn fds ""
+        -- ""
+        --     where requiredFds = "," <> nest 4 (showRequireds fds)
 
 pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
 pprintJsonObj key values final =

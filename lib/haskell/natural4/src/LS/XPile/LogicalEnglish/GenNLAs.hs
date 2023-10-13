@@ -80,8 +80,7 @@ import Data.HashSet.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 import Data.Sequence (Seq)
-import Data.Sequences (SemiSequence, intersperse) --groupAllOn
-import Data.List qualified as L
+import Data.Sequences (SemiSequence, intersperse, sort, IsSequence (..)) --groupAllOn
 import Data.MonoTraversable (Element)
 import Prettyprinter (Pretty)
 import Witherable qualified as Wither
@@ -279,7 +278,7 @@ removeAlphaEquivNLAs = Wither.hashNubOn abstractVarsFromNLA
 -}
 removeDisprefdInEquivUpToVarNames :: Foldable t => t NLA -> FilterResult [NLA]
 removeDisprefdInEquivUpToVarNames nlas =
-  let eqclasses :: [[NLA]] = L.groupBy isEquivUpToVarNames . L.sort . toList $ nlas
+  let eqclasses :: [[NLA]] = groupBy isEquivUpToVarNames . sort . toList $ nlas
                                                              -- Re sorting NLAs: recall that the Ord for an NLA delegates to the Ord for its NLATxt
       makeFResult :: [NLA] -> FilterResult [NLA]
       makeFResult eqclass = if length eqclass == 1
@@ -422,9 +421,9 @@ nlaLoneFromVAtomicP =  \case
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar            -> tvar2NLAtxt tvar
-  AposAtom prefix         -> mkNLATxt $ prefix <> aposSuffix
-  NonVarOrNonAposAtom txt -> mkNLATxt txt
+  TempVar tvar           -> tvar2NLAtxt tvar
+  AposAtom prefix        -> coerce $ prefix <> aposSuffix
+  NonVarOrNonAposAtom txt  -> coerce txt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case

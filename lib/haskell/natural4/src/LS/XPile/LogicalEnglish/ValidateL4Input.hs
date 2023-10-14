@@ -49,12 +49,12 @@ newtype L4Rules validStatus = MkL4Rules [L4.Rule]
   deriving (Eq, Ord, Show)
 
 loadRawL4AsUnvalid :: [L4.Rule] -> L4Rules Unvalidated
-loadRawL4AsUnvalid = MkL4Rules 
+loadRawL4AsUnvalid = coerce 
 
 
 -- | TODO: Work on implementing this and adding the Monad Validate or Data.Validation stuff instead of Maybe (i.e., rly doing checks upfront and carrying along the error messages and potential warnings) after getting enoguh of the main transpiler out
 check :: L4Rules Unvalidated -> Maybe (L4Rules ValidatedNotRefined)
-check (MkL4Rules rulelist) = Just $ MkL4Rules rulelist
+check (MkL4Rules rulelist) = Just $ coerce rulelist
 
 
 {- | L4 rules are refined when:
@@ -66,7 +66,7 @@ check (MkL4Rules rulelist) = Just $ MkL4Rules rulelist
     (even tho the HC data type currently allows for tt)
 -}
 refine :: L4Rules ValidatedNotRefined -> L4Rules ValidHornls
-refine (MkL4Rules rulelist) =  MkL4Rules (filter isHornlike rulelist)
+refine (MkL4Rules rulelist) =  coerce $ filter isHornlike rulelist
 
 
 

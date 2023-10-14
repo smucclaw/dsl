@@ -341,23 +341,26 @@ atomRPoperand2cell = \case
 simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                 [MTExpr] -> [MTExpr] -> RPRel -> m (BoolPropn L4AtomicP)
 simpbodRPC exprsl exprsr = \case
-  RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
+  RPis  -> pure $ AtomicBP $ simpheadRPC exprsl exprsr
 
-  RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr
-  RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr
-  RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr
-  RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr
-  RPeq  -> pure $ simBodRPCarithcomp RpcRPeq exprsl exprsr
+  RPlt  -> comp2boolPropn RpcRPlt
+  RPlte -> comp2boolPropn RpcRPlte
+  RPgt  -> comp2boolPropn RpcRPgt
+  RPgte -> comp2boolPropn RpcRPgte
+  RPeq  -> comp2boolPropn RpcRPeq
 
   RPor  -> refute [MkErr "|| no longer supported -- use ditto and OR instead"]
   RPand -> refute [MkErr "&& no longer supported -- use ditto and AND instead"]
   -- TODO: test this
 
   _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
+  where
+    comp2boolPropn :: RpcRPrel RParithComp -> m (BoolPropn L4AtomicP)
+    comp2boolPropn comp = pure $ simBodRPCarithcomp comp exprsl exprsr
 
 simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 simBodRPCarithcomp comp exprsl exprsr =
-  MkTrueAtomicBP (mtes2cells exprsl <> [comp2cell comp] <> mtes2cells exprsr)
+  MkTrueAtomicBP $ mtes2cells exprsl <> [comp2cell comp] <> mtes2cells exprsr
   where
     comp2cell :: RpcRPrel RParithComp -> Cell
     comp2cell comp = MkCellT (comp2txt comp)

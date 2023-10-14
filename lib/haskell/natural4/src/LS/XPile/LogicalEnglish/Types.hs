@@ -172,14 +172,14 @@ data RpcRPrel a where
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
   deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable)
+  deriving newtype (Eq, Hashable)
 type GVarSet = HS.HashSet GVar
 
 
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
           | MkCellIsNum !T.Text
-  deriving stock (Show, Eq, Ord)
+  deriving stock (Show, Eq)
 
 type L4Term = Cell
 type L4AtomicP = AtomicBPropn Cell

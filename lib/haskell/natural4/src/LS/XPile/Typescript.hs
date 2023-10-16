@@ -346,17 +346,19 @@ tsClasses l4i = do
           <+> lbrace
       --    <//> "  //" <+> viaShow csuper
           <//> "  // using prettySimpleType (old code path)"
-          <//> indent 2 ( vsep [ snake_case [MTT attrname] <>
+          <//> indent 2 ( vsep [ snakeAttr <> (pretty $ T.replicate padSpaces " ") <>
                                  case attrType children attrname of
                                    Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Just t@(SimpleType TOne      sc)
                                      | sc /= "DefaultSuperClass"   -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                      | otherwise                   -> " () "          <+>                                                 braces (methodFor l4i className (Just t))
-                                   Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"
+                                   Just t@(InlineEnum TOne      _) -> " () : "        <+> snake_case [MTT attrname] <> "Enum"         <+> braces (methodFor l4i className (Just t))
                                    Just t                          -> " () : "        <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Nothing -> "// tsClasses nothing case"
                                  <> semi
                                | attrname <- getCTkeys children
+                               , let snakeAttr = snake_case [MTT attrname]
+                                     padSpaces = maxAttrLen - T.length attrname
                                ]
                         )
 
@@ -384,6 +386,7 @@ tsClasses l4i = do
                   Nothing       -> mempty
                   Just "DefaultSuperClass" -> mempty
                   Just parent              -> " extends" <+> pretty parent
+              maxAttrLen = maximum $ T.length <$> getCTkeys children
         ]
 
 -- | define a class method by searching through the l4i for two kinds of class method definition styles:

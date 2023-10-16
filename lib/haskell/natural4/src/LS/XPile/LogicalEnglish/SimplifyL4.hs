@@ -25,8 +25,8 @@ import Control.Monad.Validate
     , Validate
     , refute
     )
-import Optics
-import Data.Generics.Product.Types (types)
+-- import Optics
+-- import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
@@ -35,7 +35,7 @@ import Data.String.Interpolate (i)
 import AnyAll qualified as AA
 import LS.Types qualified as L4
 import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
-import LS.Rule qualified as L4 (Rule(..))
+import LS.Rule qualified as L4 (Rule(..), extractMTExprs)
 import LS.XPile.LogicalEnglish.Types
   ( BoolPropn(..)
     -- L4-related types
@@ -377,7 +377,7 @@ An example of GIVENs in the AST, as of Sep 8 2023:
             ])
 -}
 getGivens :: L4.Rule -> [MTExpr]
-getGivens l4rule = l4rule.given ^.. types @MTExpr
+getGivens l4rule = L4.extractMTExprs l4rule.given
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
 gvarsFromL4Rule rule =

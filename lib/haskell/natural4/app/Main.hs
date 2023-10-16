@@ -393,7 +393,7 @@ mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> 
 mywritefile2 doLink dirname filename ext s e = do
   createDirectoryIfMissing True dirname
   let mypath1    = dirname <> "/" <> filename <> "." <> ext
-      mypath2    = dirname <> "/" <> filename <> "." <> "err"
+      mypath2    = dirname <> "/" <> filename <> "." <> (if ext == "org" then "err" else "org")
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
   writeFile mypath2 (intercalate "\n" e)
   writeFile mypath1 s

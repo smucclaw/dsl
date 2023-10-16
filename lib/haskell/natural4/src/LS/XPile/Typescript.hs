@@ -335,10 +335,13 @@ tsPrelude l4i = return $
 -- ends up with a @const 40@. That's why attributes may need to be upgraded to methods.
 
 tsClasses :: Interpreted -> XPileLog (Doc ann)
-tsClasses l4i = return $
+tsClasses l4i = do
   let ct@(CT ch) = classtable l4i
-  in
-  vvsep [ "class" <+> snake_case [MTT className] <> classExtension
+  vvsep <$> sequence
+    [ do
+        mutterdhsf 3 "tsClasses / className" pShowNoColorS className
+        mutterdhsf 3 "tsClasses / children" pShowNoColorS children
+        return $ "class" <+> snake_case [MTT className] <> classExtension
           -- attributes of the class are shown as decls
           <+> lbrace
       --    <//> "  //" <+> viaShow csuper
@@ -414,7 +417,7 @@ tsEnums l4i = return $
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
       let className = ruleLabelName r
       in 
-        "enum" <+> snake_case className <+> lbrace
+        "enum" <+> snake_case className <> "Enum" <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
                              , enumStr <- NE.toList enumMultiTerm
@@ -462,7 +465,7 @@ jsInstances l4i = return $
                                 let constContents = asValuePT l4i vals ++ methods l4i mt
                                 in [ encloseSep (lbrace <> line) (line <> rbrace) (comma <> space) constContents ]
                               _ -> 
-                                [hc2ts l4i val]
+                                ["// hc2ts" <> line, hc2ts l4i val]
                  ]
         | (scopename , symtab') <- Map.toList sctabs
         ]
@@ -627,6 +630,7 @@ toJsonLogic l4i = do
 -- dump only the paramtexts
 asValuePT :: Interpreted -> [HornClause2] -> [Doc ann]
 asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $
-  [ pretty (PT4 pt l4i)
+  [ "// hc2s: " <> viaShow hc2s <>
+    pretty (PT4 pt l4i)
   | HC { hHead = RPParamText pt } <- hc2s ]
                  

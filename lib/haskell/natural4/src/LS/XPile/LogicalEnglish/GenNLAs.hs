@@ -411,6 +411,7 @@ nlaLoneFromVAtomicP =  \case
 
   -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
   ABPBaseIs{}   -> Nothing
+  -- so smtg like 'X's bleh is 100' will not generate an NLA
   ABPIsIn{}     -> Nothing
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
@@ -426,9 +427,9 @@ vcell2NLAtxt = \case
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case
-  EndsInApos prefix  -> mkNLATxt [i|*a #{prefix}*'s|]
-  Num _numtxt      -> mkNLATxt "*a number*"
-  MatchGVar gvar     -> mkNLATxt [i|*a #{gvar}*|]
+  EndsInApos prefix -> mkNLATxt [i|*a #{prefix}*'s|]
+  Num _numtxt       -> mkNLATxt "*a number*"
+  MatchGVar gvar    -> mkNLATxt [i|*a #{gvar}*|]
 
 {- ^
 From the LE handbook:

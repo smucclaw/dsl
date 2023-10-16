@@ -41,7 +41,6 @@ import Data.Hashable (Hashable, hashWithSalt, hashUsing)
 import Data.Foldable (fold, foldl', toList)
 import Data.Maybe (catMaybes)
 -- import Debug.Trace (trace)
-import Data.Coerce (coerce)
 
 import LS.Utils ((<&&>))
 import LS.XPile.LogicalEnglish.Types
@@ -154,7 +153,7 @@ mkNLA (seqOf folded -> vcells) = do
 annotxtify :: Seq VCell -> NLATxt
 annotxtify = textify spaceDelimtr vcell2NLAtxt
   where
-    spaceDelimtr :: NLATxt = coerce (" " :: T.Text)
+    spaceDelimtr :: NLATxt = mkNLATxt " "
 
 {- | Replace each variable indicator with a regex pattern 
       that matches either a word or another variable indicator.
@@ -193,7 +192,7 @@ tvar2WordsOrVIregex :: TemplateVar -> RawRegexStr
 tvar2WordsOrVIregex = \case
     MatchGVar _    -> wordsOrVI
     EndsInApos _   -> wordsOrVI <> [r|'s|]
-    IsNum _        -> [r|is |] <> wordsOrVI
+    Num _          -> [r|is |] <> wordsOrVI
 
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
@@ -428,7 +427,7 @@ vcell2NLAtxt = \case
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case
   EndsInApos prefix  -> mkNLATxt [i|*a #{prefix}*'s|]
-  IsNum _numtxt      -> mkNLATxt "*a number*"
+  Num _numtxt      -> mkNLATxt "*a number*"
   MatchGVar gvar     -> mkNLATxt [i|*a #{gvar}*|]
 
 {- ^

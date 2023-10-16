@@ -377,7 +377,7 @@ jsonType t =
 
 -- showRequireds :: [Field] -> Doc ann
 -- showRequireds fds =
---     dquotes "required" <> ": " <>
+--     dquotes "required" <> ": " <> 
 --     brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann
@@ -427,11 +427,10 @@ instance ShowTypesJson JSchemaExp where
         ))
     showTypesJson (ExpTypeRecord tn fds) =
         pprintJsonObj tn fds ""
-        -- ""
 --         --     where requiredFds = "," <> nest 4 (showRequireds fds)
 
--- pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
--- pprintJsonObj key values final =
+pprintJsonObj :: (Pretty a, ShowTypesJson b) => a -> [b] -> Doc ann -> Doc ann
+pprintJsonObj key values final =
     dquotes (pretty key) <> ": " <>
         nest 4
         (braces (

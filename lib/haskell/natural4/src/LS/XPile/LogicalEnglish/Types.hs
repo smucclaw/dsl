@@ -238,11 +238,11 @@ data TemplateVar = MatchGVar !OrigVarName
                    {- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
                   `OrigVarPrefix` must have been a GVar
                     -}
-                 | IsNum !OrigVarName
+                 | Num !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
       deriving stock (Eq, Ord, Show)
       deriving (Generic, Hashable)
-makePrisms '' TemplateVar
+makePrisms ''TemplateVar
 
 type TVarSet = HS.HashSet TemplateVar
 

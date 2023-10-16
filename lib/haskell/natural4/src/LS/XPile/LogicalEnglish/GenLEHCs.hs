@@ -190,7 +190,7 @@ tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case
     MatchGVar vtxt    -> VarCell $ VarNonApos vtxt
     EndsInApos prefix -> VarCell $ VarApos prefix
-    IsNum txt         -> NotVar [i|is #{txt}|]
+    Num numtxt        -> NotVar [i|is #{numtxt}|]
 
 -- | Prints the intended text for a LEVar
 printlev :: LEVar -> T.Text

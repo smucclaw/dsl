@@ -91,16 +91,15 @@ idVarsInBody gvars = fmap $ idVarsInAP gvars
 
 {- | Convert a SimplifiedL4 Cell to a VCell
 The code for simplifying L4 AST has established these invariants:  
-  * every IS NUM has had the IS removed, with the number converted to T.Text and wrapped in a MkCellIsNum
-  * every IS tt was NOT an IS NUM has been marked as belonging to the ABPBaseIs variant of AtomicBP
+  * every number has been converted to T.Text and wrapped in a MkCellNum
+  * every IS has been marked as belonging to the ABPBaseIs variant of AtomicBP
 
-So the only time we need to think about IS-es, going forward, is when we have a MkCellIsNum. 
-In other words, we can convert an arbitrary Cell to a VCell as long as we know the set of given vars, without having to check what other cells are / are not around it.
+So, we can convert an arbitrary text Cell to a VCell as long as we know the set of given vars, without having to check what other cells are / are not around it.
 -}
 cell2vcell :: GVarSet -> Cell -> VCell
 cell2vcell gvars = \case
-  MkCellT celltxt    -> celltxt2vcell gvars celltxt
-  MkCellIsNum numtxt -> TempVar (IsNum numtxt)
+  MkCellT celltxt  -> celltxt2vcell gvars celltxt
+  MkCellNum numtxt -> TempVar (Num numtxt)
 
 celltxt2vcell :: GVarSet -> T.Text -> VCell
 celltxt2vcell gvars (T.stripSuffix "'s" -> Just prefix) = 

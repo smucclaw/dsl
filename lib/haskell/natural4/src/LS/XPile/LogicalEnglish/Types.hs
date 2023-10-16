@@ -37,7 +37,7 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- Intermediate representation types, prisms, and consts
     , TemplateVar(..)
-    , _MatchGVar, _EndsInApos, _IsNum
+    , _MatchGVar, _EndsInApos, _Num
     , aposSuffix
     , OrigVarPrefix
     , OrigVarSeq
@@ -172,14 +172,14 @@ data RpcRPrel a where
 -- | vars in the GIVEN of an L4 HC 
 newtype GVar = MkGVar T.Text
   deriving stock (Show)
-  deriving newtype (Eq, Ord, IsString, Hashable)
+  deriving newtype (Eq, Hashable)
 type GVarSet = HS.HashSet GVar
 
 
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
-          | MkCellIsNum !T.Text
-  deriving stock (Show, Eq, Ord)
+          | MkCellNum !T.Text
+  deriving stock (Show, Eq)
 
 type L4Term = Cell
 type L4AtomicP = AtomicBPropn Cell
@@ -238,11 +238,11 @@ data TemplateVar = MatchGVar !OrigVarName
                    {- ^ so the orig var name, the thing that occupied the cell, would have been OrigVarPrefix <> "'s"
                   `OrigVarPrefix` must have been a GVar
                     -}
-                 | IsNum !OrigVarName
+                 | Num !OrigVarName
                    -- This case should be treated differently depending on whether trying to generate a NLA or LE rule
       deriving stock (Eq, Ord, Show)
       deriving (Generic, Hashable)
-makePrisms '' TemplateVar
+makePrisms ''TemplateVar
 
 type TVarSet = HS.HashSet TemplateVar
 

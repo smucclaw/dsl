@@ -1,0 +1,2 @@
+description: "Something of the form `X|IS|<NUM>` does not generate an NLA"
+enabled: true

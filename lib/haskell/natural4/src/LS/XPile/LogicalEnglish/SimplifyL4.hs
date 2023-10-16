@@ -25,8 +25,8 @@ import Control.Monad.Validate
     , Validate
     , refute
     )
-import Optics
-import Data.Generics.Product.Types (types)
+-- import Optics
+-- import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
@@ -35,7 +35,7 @@ import Data.String.Interpolate (i)
 import AnyAll qualified as AA
 import LS.Types qualified as L4
 import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
-import LS.Rule qualified as L4 (Rule(..))
+import LS.Rule qualified as L4 (Rule(..), extractMTExprs)
 import LS.XPile.LogicalEnglish.Types
   ( BoolPropn(..)
     -- L4-related types
@@ -145,39 +145,14 @@ Right now, the only RPConstraint tt can appear in head of L4 HC, according to sp
 simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpheadRPC = simpRPCis
 
-{- |
-Given left and right exprs that flank an RPIs,
-return a L4AtomicP where 
-  * if it's an <IS NUM>, that's marked accordingly in the numcell,
-  * otherwise it's made a ABPBaseIs
-
-  An example of an is-num pattern in a RPConstraint:
-    [ HC
-        { hHead = RPConstraint
-            [ MTT "total savings" ] RPis
-            [ MTI 100 ]
-        , hBody = Just
-            ( All Nothing
-                [ Leaf
-                    ( RPConstraint
-                        [ MTT "initial savings" ] RPis
-                        [ MTF 22.5 ]
-                    )
+{- |  
+We no longer want to generate annotations 
+from things involving an IS cell --- IS should be treated specially, as a built-in predicate
 -}
 simpRPCis :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpRPCis exprsl exprsr =
-  let lefts   = mtes2cells exprsl
-  in case exprsr of
-    -- it's an IS NUM
-    -- so convert the NUM to text and warp it in a MkCellIsNum
-    (MTI int : xs)   ->
-      ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
-    (MTF float : xs) ->
-      ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
-
-    -- not IS NUM
-    _           ->
-      ABPBaseIs lefts (mtes2cells exprsr)
+  let (lefts, rights) = (mtes2cells exprsl, mtes2cells exprsr)
+  in ABPBaseIs lefts rights
 
 
 {-------------------------------------------------------------------------------
@@ -341,23 +316,26 @@ atomRPoperand2cell = \case
 simpbodRPC :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                 [MTExpr] -> [MTExpr] -> RPRel -> m (BoolPropn L4AtomicP)
 simpbodRPC exprsl exprsr = \case
-  RPis  -> pure $ AtomicBP (simpheadRPC exprsl exprsr)
+  RPis  -> pure $ AtomicBP $ simpheadRPC exprsl exprsr
 
-  RPlt  -> pure $ simBodRPCarithcomp RpcRPlt exprsl exprsr
-  RPlte -> pure $ simBodRPCarithcomp RpcRPlte exprsl exprsr
-  RPgt  -> pure $ simBodRPCarithcomp RpcRPgt exprsl exprsr
-  RPgte -> pure $ simBodRPCarithcomp RpcRPgte exprsl exprsr
-  RPeq  -> pure $ simBodRPCarithcomp RpcRPeq exprsl exprsr
+  RPlt  -> comp2boolPropn RpcRPlt
+  RPlte -> comp2boolPropn RpcRPlte
+  RPgt  -> comp2boolPropn RpcRPgt
+  RPgte -> comp2boolPropn RpcRPgte
+  RPeq  -> comp2boolPropn RpcRPeq
 
   RPor  -> refute [MkErr "|| no longer supported -- use ditto and OR instead"]
   RPand -> refute [MkErr "&& no longer supported -- use ditto and AND instead"]
   -- TODO: test this
 
   _     -> refute [MkErr "shouldn't be seeing other rel ops in rpconstraint in body"]
+  where
+    comp2boolPropn :: RpcRPrel RParithComp -> m (BoolPropn L4AtomicP)
+    comp2boolPropn comp = pure $ simBodRPCarithcomp comp exprsl exprsr
 
 simBodRPCarithcomp :: RpcRPrel RParithComp -> [MTExpr] -> [MTExpr] -> BoolPropn L4AtomicP
 simBodRPCarithcomp comp exprsl exprsr =
-  MkTrueAtomicBP (mtes2cells exprsl <> [comp2cell comp] <> mtes2cells exprsr)
+  MkTrueAtomicBP $ mtes2cells exprsl <> [comp2cell comp] <> mtes2cells exprsr
   where
     comp2cell :: RpcRPrel RParithComp -> Cell
     comp2cell comp = MkCellT (comp2txt comp)
@@ -399,7 +377,7 @@ An example of GIVENs in the AST, as of Sep 8 2023:
             ])
 -}
 getGivens :: L4.Rule -> [MTExpr]
-getGivens l4rule = l4rule.given ^.. types @MTExpr
+getGivens l4rule = L4.extractMTExprs l4rule.given
 
 gvarsFromL4Rule :: L4.Rule -> GVarSet
 gvarsFromL4Rule rule =
@@ -420,10 +398,18 @@ textifyMTE constrtr =
     MTI i -> int2Text i
     MTF f -> float2Text f
     MTB b -> T.toLower [i|#{b}|]
-            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells; raise a `dispute` if so and print warning as comment in resulting .le
 
 mte2cell :: L4.MTExpr -> Cell
-mte2cell = textifyMTE MkCellT
+mte2cell = \case
+  mte@(MTT _) -> textify mte
+  mte@(MTB _) -> textify mte
+
+  mte@(MTI _) -> numify mte
+  mte@(MTF _) -> numify mte
+  where 
+    textify = textifyMTE MkCellT
+    numify  = textifyMTE MkCellNum
+  -- could use prisms and guards instead to get less 'repetition of code', but that would also increase the risk of incomplete case matching in the future
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]

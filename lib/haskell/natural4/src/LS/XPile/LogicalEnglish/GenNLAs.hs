@@ -17,6 +17,7 @@ module LS.XPile.LogicalEnglish.GenNLAs (
     , NLA       -- opaque
     , mkNLA     -- smart constructor
     , getNLAtxt
+    , nlaAsTxt
 
     , RegexTrav
     , FilterResult(..)
@@ -40,7 +41,6 @@ import Data.Hashable (Hashable, hashWithSalt, hashUsing)
 import Data.Foldable (fold, foldl', toList)
 import Data.Maybe (catMaybes)
 -- import Debug.Trace (trace)
-import Data.Coerce (coerce)
 
 import LS.Utils ((<&&>))
 import LS.XPile.LogicalEnglish.Types
@@ -79,8 +79,7 @@ import Data.HashSet.Optics (setOf)
 import Data.Sequence.Optics (seqOf)
 import Data.Containers.NonEmpty (NE, HasNonEmpty, nonEmpty, fromNonEmpty)
 import Data.Sequence (Seq)
-import Data.Sequences (SemiSequence, intersperse) --groupAllOn
-import Data.List qualified as L
+import Data.Sequences (SemiSequence, intersperse, sort, IsSequence (..)) --groupAllOn
 import Data.MonoTraversable (Element)
 import Prettyprinter (Pretty)
 import Witherable qualified as Wither
@@ -154,7 +153,7 @@ mkNLA (seqOf folded -> vcells) = do
 annotxtify :: Seq VCell -> NLATxt
 annotxtify = textify spaceDelimtr vcell2NLAtxt
   where
-    spaceDelimtr :: NLATxt = coerce (" " :: T.Text)
+    spaceDelimtr :: NLATxt = mkNLATxt " "
 
 {- | Replace each variable indicator with a regex pattern 
       that matches either a word or another variable indicator.
@@ -193,7 +192,7 @@ tvar2WordsOrVIregex :: TemplateVar -> RawRegexStr
 tvar2WordsOrVIregex = \case
     MatchGVar _    -> wordsOrVI
     EndsInApos _   -> wordsOrVI <> [r|'s|]
-    IsNum _        -> [r|is |] <> wordsOrVI
+    Num _          -> wordsOrVI
 
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []
@@ -278,7 +277,7 @@ removeAlphaEquivNLAs = Wither.hashNubOn abstractVarsFromNLA
 -}
 removeDisprefdInEquivUpToVarNames :: Foldable t => t NLA -> FilterResult [NLA]
 removeDisprefdInEquivUpToVarNames nlas =
-  let eqclasses :: [[NLA]] = L.groupBy isEquivUpToVarNames . L.sort . toList $ nlas
+  let eqclasses :: [[NLA]] = groupBy isEquivUpToVarNames . sort . toList $ nlas
                                                              -- Re sorting NLAs: recall that the Ord for an NLA delegates to the Ord for its NLATxt
       makeFResult :: [NLA] -> FilterResult [NLA]
       makeFResult eqclass = if length eqclass == 1
@@ -412,6 +411,7 @@ nlaLoneFromVAtomicP =  \case
 
   -- the other cases are accounted for by lib NLAs/templates, or are just built into LE
   ABPBaseIs{}   -> Nothing
+  -- so smtg like 'X's bleh is 100' will not generate an NLA
   ABPIsIn{}     -> Nothing
   ABPIsDiffFr{} -> Nothing
   ABPIsOpOf{}   -> Nothing
@@ -421,15 +421,15 @@ nlaLoneFromVAtomicP =  \case
 
 vcell2NLAtxt :: VCell -> NLATxt
 vcell2NLAtxt = \case
-  TempVar tvar           -> tvar2NLAtxt tvar
-  AposAtom prefix        -> coerce $ prefix <> aposSuffix
-  NonVarOrNonAposAtom txt  -> coerce txt
+  TempVar tvar            -> tvar2NLAtxt tvar
+  AposAtom prefix         -> mkNLATxt $ prefix <> aposSuffix
+  NonVarOrNonAposAtom txt -> mkNLATxt txt
 
 tvar2NLAtxt :: TemplateVar -> NLATxt
 tvar2NLAtxt = \case
-  EndsInApos prefix  -> mkNLATxt [i|*a #{prefix}*'s|]
-  IsNum _numtxt      -> mkNLATxt "is *a number*"
-  MatchGVar gvar     -> mkNLATxt [i|*a #{gvar}*|]
+  EndsInApos prefix -> mkNLATxt [i|*a #{prefix}*'s|]
+  Num _numtxt       -> mkNLATxt "*a number*"
+  MatchGVar gvar    -> mkNLATxt [i|*a #{gvar}*|]
 
 {- ^
 From the LE handbook:

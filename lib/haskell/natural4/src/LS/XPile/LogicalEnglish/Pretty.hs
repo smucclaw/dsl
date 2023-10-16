@@ -210,12 +210,12 @@ instance Pretty LEProg where
 builtinTemplates :: Doc ann
 builtinTemplates =
   [__di|
-  *a thing* is in *a thing*,
-  #{nlas}.|]
+    *a thing* is in *a thing*,
+    #{nlas}.
+  |]
   where
     nlas = concatNlaList $ mconcat [mathNlaList, dateNlaList]
 
-    concatNlaList :: [Doc ann] -> Doc ann
     concatNlaList = concatWith \x y -> mconcat [x, ",\n", y]
 
     mathNlaList =
@@ -224,37 +224,39 @@ builtinTemplates =
       ]
 
     dateNlaList =
-      [ [di|*a date* is *a n* #{timeUnit} #{comparison} *a date*|]
-        | timeUnit :: Doc ann <- ["days", "weeks", "months", "years"],
+      [ [di|*a date* is *a n* #{timeUnit}#{s} #{comparison} *a date*|]
+        | timeUnit :: Doc ann <- ["day", "week", "month", "year"],
+          s ::Doc ann <- ["", "s"],
           comparison :: Doc ann <- ["before", "after", "within"]
       ]
 
 libTemplates :: Doc ann
 libTemplates =
   [__di|
-  *a number* <= *a number*,
-  *a date* is before *a date*,
-  *a date* is after *a date*,
-  *a date* is strictly before *a date*,
-  *a date* is strictly after *a date*,
-  *a class*'s *a field* is *a value*,
-  *a class*'s nested *a list of fields* is *a value*,
-  *a class*'s *a field0*'s *a field1* is *a value*,
-  *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
-  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
-  *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,
-  *a number* is a lower bound of *a list*,
-  *a number* is an upper bound of *a list*,
-  *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
-  the sum of *a list* does not exceed the minimum of *a list*,
-  *a number* does not exceed the minimum of *a list*.|]
+    *a number* <= *a number*,
+    *a date* is before *a date*,
+    *a date* is after *a date*,
+    *a date* is strictly before *a date*,
+    *a date* is strictly after *a date*,
+    *a class*'s *a field* is *a value*,
+    *a class*'s nested *a list of fields* is *a value*,
+    *a class*'s *a field0*'s *a field1* is *a value*,
+    *a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,
+    *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,
+    *a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,
+    *a number* is a lower bound of *a list*,
+    *a number* is an upper bound of *a list*,
+    *a number* is the minimum of *a number* and the maximum of *a number* and *a number*,
+    the sum of *a list* does not exceed the minimum of *a list*,
+    *a number* does not exceed the minimum of *a list*.
+  |]
 
 libAndBuiltinTemplates :: T.Text
 libAndBuiltinTemplates =
   T.strip . myrender $ vsep [libTemplates, builtinTemplates]
 {- ^
 >>> libAndBuiltinTemplates
-"*a number* <= *a number*,\n*a date* is before *a date*,\n*a date* is after *a date*,\n*a date* is strictly before *a date*,\n*a date* is strictly after *a date*,\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*.\n*a thing* is in *a thing*,\n*a number* < *a number*,\n*a number* > *a number*,\n*a number* =< *a number*,\n*a number* >= *a number*,\n*a number* = *a number*,\n*a date* is *a n* days before *a date*,\n*a date* is *a n* days after *a date*,\n*a date* is *a n* days within *a date*,\n*a date* is *a n* weeks before *a date*,\n*a date* is *a n* weeks after *a date*,\n*a date* is *a n* weeks within *a date*,\n*a date* is *a n* months before *a date*,\n*a date* is *a n* months after *a date*,\n*a date* is *a n* months within *a date*,\n*a date* is *a n* years before *a date*,\n*a date* is *a n* years after *a date*,\n*a date* is *a n* years within *a date*."
+"*a number* <= *a number*,\n*a date* is before *a date*,\n*a date* is after *a date*,\n*a date* is strictly before *a date*,\n*a date* is strictly after *a date*,\n*a class*'s *a field* is *a value*,\n*a class*'s nested *a list of fields* is *a value*,\n*a class*'s *a field0*'s *a field1* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3* is *a value*,\n*a class*'s *a field0*'s *a field1*'s *a field2*'s *a field3*'s *a field4* is *a value*,\n*a number* is a lower bound of *a list*,\n*a number* is an upper bound of *a list*,\n*a number* is the minimum of *a number* and the maximum of *a number* and *a number*,\nthe sum of *a list* does not exceed the minimum of *a list*,\n*a number* does not exceed the minimum of *a list*.\n*a thing* is in *a thing*,\n*a number* < *a number*,\n*a number* > *a number*,\n*a number* =< *a number*,\n*a number* >= *a number*,\n*a number* = *a number*,\n*a date* is *a n* day before *a date*,\n*a date* is *a n* day after *a date*,\n*a date* is *a n* day within *a date*,\n*a date* is *a n* days before *a date*,\n*a date* is *a n* days after *a date*,\n*a date* is *a n* days within *a date*,\n*a date* is *a n* week before *a date*,\n*a date* is *a n* week after *a date*,\n*a date* is *a n* week within *a date*,\n*a date* is *a n* weeks before *a date*,\n*a date* is *a n* weeks after *a date*,\n*a date* is *a n* weeks within *a date*,\n*a date* is *a n* month before *a date*,\n*a date* is *a n* month after *a date*,\n*a date* is *a n* month within *a date*,\n*a date* is *a n* months before *a date*,\n*a date* is *a n* months after *a date*,\n*a date* is *a n* months within *a date*,\n*a date* is *a n* year before *a date*,\n*a date* is *a n* year after *a date*,\n*a date* is *a n* year within *a date*,\n*a date* is *a n* years before *a date*,\n*a date* is *a n* years after *a date*,\n*a date* is *a n* years within *a date*."
 
 The T.strip isn't currently necessary, 
 but it seems like a good thing to include to pre-empt any future issues from accidentally adding whitespace.
@@ -290,12 +292,12 @@ libHCs =
   if d1 is strictly before d0.
 
   % Nested accessor predicates.
-  a class's a field is a value
-  if field is different from name
-  and field is different from id
-  and a class0's name is class
-    or class0's id is class
-  and class0's field is value.
+  % a class's a field is a value
+  % if field is different from name
+  % and field is different from id
+  % and a class0's name is class
+  %   or class0's id is class
+  % and class0's field is value.
 
   a class's a field0's a field1 is a value
   if class's field0 is a class0

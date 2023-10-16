@@ -5,7 +5,7 @@
 -- {-# LANGUAGE OverloadedRecordDot #-}
 -- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DerivingStrategies #-}
 
 module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
@@ -14,7 +14,7 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.Foldable (toList)
 import Data.Coerce (coerce)
--- import Data.String.Interpolate ( i )
+import Data.String.Interpolate ( i )
 import Data.Traversable
 
 import LS.XPile.LogicalEnglish.Types
@@ -43,7 +43,6 @@ import LS.XPile.LogicalEnglish.Types
     , LERuleForPrint
     , LEhcPrint(..) 
   )
-
 
 leHCFromVarsHC :: VarsHC -> LEhcPrint
 leHCFromVarsHC = \case
@@ -191,16 +190,16 @@ tvar2lecell :: TemplateVar -> LEhcCell
 tvar2lecell = \case
     MatchGVar vtxt    -> VarCell $ VarNonApos vtxt
     EndsInApos prefix -> VarCell $ VarApos prefix
-    IsNum txt         -> NotVar ("is " <> txt)
-
+    Num numtxt        -> NotVar numtxt
+    
 -- | Prints the intended text for a LEVar
 printlev :: LEVar -> T.Text
 printlev = \case
-  VarApos origprefix -> origprefix <> "'s"
+  VarApos origprefix -> origprefix <> aposSuffix
   VarNonApos vartxt  -> vartxt
 
 -- | Converts a UnivStatus to a LETemplateTxt in the obvious way -- basically materializing the UnivStatus tag
 univst2tmpltetxt :: UnivStatus -> LETemplateTxt
 univst2tmpltetxt = \case
-  PrefixWithA txt -> coerce ("a " <> txt)
+  PrefixWithA txt -> coerce $ "a " <> txt
   NoPrefix    txt -> coerce txt

@@ -1,0 +1,6 @@
+GIVEN,additional deposit,
+,you,IS A,Person
+,Acme Bank,IS A,Bank
+DECIDE,your deposit,IS,100
+IF,Acme Bank's,holdings,>=,1000000
+AND,Acme Bank's,initial deposits,IS,9999

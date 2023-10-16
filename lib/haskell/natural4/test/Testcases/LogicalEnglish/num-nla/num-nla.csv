@@ -1,0 +1,5 @@
+GIVEN,additional deposit,
+,you,IS A,Person
+DECIDE,you have,additional deposit,of,100
+IF,you,are a member of,this bank
+AND,you made an initial deposit of,200,in your account

@@ -58,6 +58,7 @@ import LS.XPile.LogicalEnglish.GenNLAs
     , NLATxt(..)
     , NLA
     , getNLAtxt
+    , nlaAsTxt
     , RegexTrav
     , FilterResult(..)
     , removeInternallySubsumed
@@ -126,8 +127,7 @@ getNLATxtResults =
     removeBinaryIs :: HS.HashSet NLA -> HS.HashSet NLA
     removeBinaryIs =
       HS.filter $
-        getNLAtxt
-          >>> coerce
+        nlaAsTxt
           >>> T.strip
           >>> not . (PCRE.≈ [PCRE.re|^\*a\s+.*\*\s+is\s+\*a\s+.*\*$|])
 
@@ -138,7 +138,6 @@ getNLATxtResults =
         >>> HS.toList
         >>> removeAlphaEquivNLAs
         >>> \ x -> MkFResult {subsumed = [], kept = x}
-        -- >>> removeDisprefdInEquivUpToVarNames
 
     removeSubsumedByLibTemplates :: (Foldable f) => f NLA -> HS.HashSet NLA
     removeSubsumedByLibTemplates = removeRegexMatches libTemplatesRegTravs

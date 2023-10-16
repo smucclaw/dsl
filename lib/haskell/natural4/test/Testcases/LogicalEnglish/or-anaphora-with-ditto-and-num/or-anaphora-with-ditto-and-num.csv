@@ -1,0 +1,7 @@
+GIVEN,cat,IS A,Felidae,,,,,,,,,,,,
+DECIDE,cat has,0.25,sneakiness,IF,cat,is of,bay cat lineage,,,,,,,,
+,,,,OR,"""","""",lynx lineage,,,,,,,,
+,"""",0.5,"""",IF,cat,is of,caracal lineage,,,,,,,,
+,,,,OR,"""","""",ocelot lineage,,,,,,,,
+// c.f. change in is-num spec: 
+// | bob has | 10 | apples | and | 20 | oranges |should generate the annotation bob has *a number* apples and *a number* oranges

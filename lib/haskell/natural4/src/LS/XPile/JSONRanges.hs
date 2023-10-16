@@ -65,7 +65,7 @@ asJSONRanges l4i = do
     [ do
         mutterdhsf 2 ("dims for " <> show className) pShowNoColorS dims
 
-        let points = extend dims []
+        let points = take 100 $ extend dims []
         mutterdhsf 2 ("points for " <> show className) pShowNoColorS points
 
         return $ (viaShow className) <> colon <+>

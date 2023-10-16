@@ -174,7 +174,6 @@ classHierarchy rs =
   , let thisclass = mt2text (name r)
         superclass = (Just $ defaultToSuperType $ super r, [])
         attributes = classHierarchy (has r)
-  , (Just (SimpleType _ _), _) <- [superclass] -- exclude enums
   ]
 
 -- | A graph of all the classes we know about.

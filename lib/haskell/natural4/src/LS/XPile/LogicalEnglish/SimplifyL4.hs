@@ -290,9 +290,12 @@ t1 IS IN t2:
 simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                     RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case
-  RPMT exprs                         -> simplifyRPMT exprs
-                                        -- ^ TermIsNumberOfXWhere gets handled here
-  RPConstraint exprsl rel exprsr     -> simpbodRPC exprsl exprsr rel
+
+  -- is number of x where φ(x)
+  RPMT (TermIsNumberOfXWhere term x φx) -> pure $ MkIsOpSuchTtBP (mte2cell term) (NumOfSuchThat $ mte2cell x) (mtes2cells φx)
+  RPMT otherExprs                       -> pure $ MkTrueAtomicBP (mtes2cells otherExprs)
+
+  RPConstraint exprsl rel exprsr        -> simpbodRPC exprsl exprsr rel
 
   -- max / min / sum x where φ(x), corresponding to RPnary RPis ...
   TermIsMaxXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
@@ -309,16 +312,11 @@ simplifybodyRP = \case
   T1IsNotT2 t1 t2                    -> pure $ MkIsDiffFr (mte2cell t1) (mte2cell t2)
   T1IsInT2  t1 t2                    -> pure $ MkIsIn     (mte2cell t1) (mte2cell t2)
 
+  -- others not supported
   RPnary{}                           -> refute [MkErr "The spec doesn't support other RPnary constructs in the body of a HC"]
   RPBoolStructR {}                   -> refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
   RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]
 
-
-simplifyRPMT :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
-                    [MTExpr] -> m (BoolPropn L4AtomicP)
-simplifyRPMT = \case
-  TermIsNumberOfXWhere term x φx -> pure $ MkIsOpSuchTtBP (mte2cell term) (NumOfSuchThat $ mte2cell x) (mtes2cells φx)
-  otherExprs                     -> pure $ MkTrueAtomicBP (mtes2cells otherExprs)
 
 termIsNaryOpOf ::
   (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) =>

@@ -207,13 +207,33 @@ pattern TermIsOpSuchThat op term φx <- RPnary RPis
 pattern TermIsMaxXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
 pattern TermIsMinXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
 pattern TermIsSumXWhere :: MTExpr -> [MTExpr] -> RelationalPredicate
+pattern TermIsNumberOfXWhere :: MTExpr -> MTExpr -> [MTExpr] -> [MTExpr]
 
 pattern TermIsMaxXWhere term φx = TermIsOpSuchThat RPmax term φx
 pattern TermIsMinXWhere term φx = TermIsOpSuchThat RPmin term φx
 pattern TermIsSumXWhere term φx = TermIsOpSuchThat RPsum term φx
+pattern TermIsNumberOfXWhere term x φx <- (term :
+                                            (MTT "is the number of" : (x :
+                                            (MTT "where" : φx))))
 
 {- ^ 
 Examples of the L4 patterns
+
+```
+        [ Leaf
+            ( RPMT
+                [ MTT "n"
+                , MTT "is the number of"
+                , MTT "friend"
+                , MTT "where"
+                , MTT "person"
+                , MTT "met"
+                , MTT "friend"
+                , MTT "on"
+                , MTT "date"
+                ]
+            )
+```
 
 TermIsMaxXWhere:
 ```
@@ -271,16 +291,16 @@ t1 IS IN t2:
 simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                     RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case
-  RPMT exprs                         -> pure $ MkTrueAtomicBP (mtes2cells exprs)
-                                        -- ^ this is the same for both the body and head
+  RPMT exprs                         -> simplifyRPMT exprs
+                                        -- ^ TermIsNumberOfXWhere gets handled here
   RPConstraint exprsl rel exprsr     -> simpbodRPC exprsl exprsr rel
 
-  -- max / min / sum x where φ(x)
+  -- max / min / sum x where φ(x), corresponding to RPnary RPis ...
   TermIsMaxXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MaxXSuchThat (mtes2cells φx)
   TermIsMinXWhere term φx            -> pure $ MkIsOpSuchTtBP (mte2cell term) MinXSuchThat (mtes2cells φx)
   TermIsSumXWhere total φx           -> pure $ MkIsOpSuchTtBP (mte2cell total) SumEachXSuchThat (mtes2cells φx)
 
-  -- max / min / sum of terms
+  -- max / min / sum of terms; another RPnary RPis ...
   TermIsMax term maxargRPs           -> termIsNaryOpOf MaxOf term maxargRPs
   TermIsMin term minargRPs           -> termIsNaryOpOf MinOf term minargRPs
   TotalIsSumTerms total summandRPs   -> termIsNaryOpOf SumOf total summandRPs
@@ -294,6 +314,12 @@ simplifybodyRP = \case
   RPBoolStructR {}                   -> refute [MkErr "The spec does not support a RPRel other than RPis in a RPBoolStructR"]
   RPParamText _                      -> refute [MkErr "should not be seeing RPParamText in body"]
 
+
+simplifyRPMT :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
+                    [MTExpr] -> m (BoolPropn L4AtomicP)
+simplifyRPMT = \case
+  TermIsNumberOfXWhere term x φx -> pure $ MkIsOpSuchTtBP (mte2cell term) (NumOfSuchThat $ mte2cell x) (mtes2cells φx)
+  otherExprs                     -> pure $ MkTrueAtomicBP (mtes2cells otherExprs)
 
 termIsNaryOpOf ::
   (Foldable seq, Traversable seq, MonadValidate (HS.HashSet SimL4Error) m) =>
@@ -406,7 +432,7 @@ mte2cell = \case
 
   mte@(MTI _) -> numify mte
   mte@(MTF _) -> numify mte
-  where 
+  where
     textify = textifyMTE MkCellT
     numify  = textifyMTE MkCellNum
   -- could use prisms and guards instead to get less 'repetition of code', but that would also increase the risk of incomplete case matching in the future

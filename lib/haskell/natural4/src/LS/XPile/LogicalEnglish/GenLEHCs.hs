@@ -3,9 +3,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DuplicateRecordFields, RecordWildCards #-}
 -- {-# LANGUAGE OverloadedRecordDot #-}
--- {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+-- {-# LANGUAGE QuasiQuotes #-}
 -- {-# LANGUAGE DerivingStrategies #-}
 
 module LS.XPile.LogicalEnglish.GenLEHCs (leHCFromVarsHC) where
@@ -14,13 +13,12 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.Foldable (toList)
 import Data.Coerce (coerce)
-import Data.String.Interpolate ( i )
 import Data.Traversable
 
 import LS.XPile.LogicalEnglish.Types
   ( -- L4-related types
       AtomicBPropn(..)
-    
+
     -- Intermediate representation types, prisms, and consts
     , TemplateVar(..)
     , aposSuffix
@@ -30,7 +28,7 @@ import LS.XPile.LogicalEnglish.Types
     , VarsRule
     , AtomicPWithVars
     , VCell(..)
-  
+
     -- LE-related types
     , LEhcCell(..)
     , LEVar(..)
@@ -41,7 +39,7 @@ import LS.XPile.LogicalEnglish.Types
     , UnivStatus(..)
     , RuleWithUnivsMarked
     , LERuleForPrint
-    , LEhcPrint(..) 
+    , LEhcPrint(..)
   )
 
 leHCFromVarsHC :: VarsHC -> LEhcPrint
@@ -52,7 +50,7 @@ leHCFromVarsHC = \case
     LEHcR . textifyUnivMarkedRule . markUnivVarsInRule $ vrule
 
 -- type LEFactForPrint = AtomicBPropn LETemplateTxt 
-leFactPrintFromVFact :: VarsFact ->  AtomicBPropn LETemplateTxt 
+leFactPrintFromVFact :: VarsFact ->  AtomicBPropn LETemplateTxt
 leFactPrintFromVFact = fmap univst2tmpltetxt . markUnivVarsInFact
 
 markUnivVarsInFact :: VarsFact -> AtomicBPropn UnivStatus
@@ -108,7 +106,7 @@ In more detail:
       (nvars -> leap -> (nvars, uvsp)  )                   
       -> nvars -> br leap -> (nvars, br uvsp)
 
-  It's also worth studying `markUnivVarsInAtomicPacc` and `markUnivVarsInLeCells`
+  It's also worth studying `markUnivVarsInAtomicPacc` and `markUnivVarsInTravable`
   since those functions are what implement the lower-level mechanics of threading 
   the accumulator argument through
 -}
@@ -122,12 +120,12 @@ just not sure if streamlining the plumbing is worth the potential increased comp
 markUnivVarsInAtomicPacc :: NormdVars -> LEhcAtomicP -> (NormdVars, AtomicBPropn UnivStatus)
 markUnivVarsInAtomicPacc nvars = \case
   ABPatomic lecells ->
-    let (nvars', univStatuses) = markUnivVarsInLeCells nvars lecells
+    let (nvars', univStatuses) = markUnivVarsInTravable nvars lecells
     in (nvars', ABPatomic univStatuses)
 
-  ABPBaseIs lefts rights -> 
-    let (nvars', leftsWithUnivStats) = markUnivVarsInLeCells nvars lefts
-        (nvars'', rightsWithUnivStats) = markUnivVarsInLeCells nvars' rights
+  ABPBaseIs lefts rights ->
+    let (nvars', leftsWithUnivStats) = markUnivVarsInTravable nvars lefts
+        (nvars'', rightsWithUnivStats) = markUnivVarsInTravable nvars' rights
     in (nvars'', ABPBaseIs leftsWithUnivStats rightsWithUnivStats)
 
   ABPIsIn t1 t2     -> isSmtg ABPIsIn t1 t2
@@ -135,24 +133,23 @@ markUnivVarsInAtomicPacc nvars = \case
 
   ABPIsOpOf term opof termlst ->
     let (nvars', term') = identifyUnivVar nvars term
-        (nvars'', univStatuses) = markUnivVarsInLeCells nvars' termlst
+        (nvars'', univStatuses) = markUnivVarsInTravable nvars' termlst
     in (nvars'', ABPIsOpOf term' opof univStatuses)
 
-  ABPIsOpSuchTt term ostt lecells ->
+  ABPIsOpSuchTt term ostt lecsφx ->
     let (nvars', term') = identifyUnivVar nvars term
-        (nvars'', univStatuses) = markUnivVarsInLeCells nvars' lecells
-    in (nvars'', ABPIsOpSuchTt term' ostt univStatuses)
-
+        (nvars'', ostt') = markUnivVarsInTravable nvars' ostt
+        (nvars''', univStatuses) = markUnivVarsInTravable nvars'' lecsφx
+    in (nvars''', ABPIsOpSuchTt term' ostt' univStatuses)
   where
-    isSmtg op t1 t2 = 
+    isSmtg op t1 t2 =
       let (nvars', t1') = identifyUnivVar nvars t1
           (nvars'', t2') = identifyUnivVar nvars' t2
       in (nvars'', op t1' t2')
 
---- start by doing it the EASIEST possible way 
-markUnivVarsInLeCells :: NormdVars -> [LEhcCell] -> (NormdVars, [UnivStatus])
-markUnivVarsInLeCells init lecells =
-  mapAccumL identifyUnivVar init lecells
+
+markUnivVarsInTravable :: Traversable t => NormdVars -> t LEhcCell -> (NormdVars, t UnivStatus)
+markUnivVarsInTravable = mapAccumL identifyUnivVar
 
 identifyUnivVar :: NormdVars -> LEhcCell -> (NormdVars, UnivStatus)
 identifyUnivVar normdvars = \case
@@ -191,7 +188,7 @@ tvar2lecell = \case
     MatchGVar vtxt    -> VarCell $ VarNonApos vtxt
     EndsInApos prefix -> VarCell $ VarApos prefix
     Num numtxt        -> NotVar numtxt
-    
+
 -- | Prints the intended text for a LEVar
 printlev :: LEVar -> T.Text
 printlev = \case

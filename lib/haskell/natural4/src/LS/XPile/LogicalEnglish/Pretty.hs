@@ -79,7 +79,7 @@ indentLE :: Doc ann -> Doc ann
 indentLE = indent printcfg.numIndentSpcs
 
 nestVsepSeq :: [Doc ann] -> Doc ann
-nestVsepSeq seq =  nestLE (vsep seq)
+nestVsepSeq seq = nestLE (vsep seq)
 
 instance Pretty OpOf where
   pretty :: OpOf -> Doc ann
@@ -89,13 +89,13 @@ instance Pretty OpOf where
     SumOf -> "is the sum of"
     ProductOf -> "is the product of"
 
-instance Pretty OpSuchTt where
-  pretty :: OpSuchTt -> Doc ann
+instance Pretty a => Pretty (OpSuchTt a) where
+  pretty :: Pretty a => OpSuchTt a -> Doc ann
   pretty = \case
     MaxXSuchThat -> "is the max x such that"
     MinXSuchThat -> "is the min x such that"
     SumEachXSuchThat -> "is the sum of each x such that"
-
+    NumOfSuchThat x -> [__di|is the number of #{pretty x} such that|]
 
 instance Pretty LEhcPrint where
   pretty :: LEhcPrint -> Doc ann

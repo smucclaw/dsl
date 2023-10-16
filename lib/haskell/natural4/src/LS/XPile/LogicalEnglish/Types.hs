@@ -123,7 +123,7 @@ data AtomicBPropn term =
     -- ^ Note: the encoding has a few rules that use an atom in the rightmost term
   | ABPIsOpOf term OpOf [term]
     -- ^ 't IS MAX / MIN / SUM / PROD t_1, ..., t_n'  
-  | ABPIsOpSuchTt term OpSuchTt [term]
+  | ABPIsOpSuchTt term (OpSuchTt term) [term]
     {- |  t IS MAX / MIN / SUM / PROD x where φ(x) -- these require special indentation
         * the first L4Term would be, e.g., the "total savings" in "total savings is the max x such that"
         * the second propn would be the indented φ(x) condition
@@ -138,10 +138,11 @@ data OpOf = MaxOf
           | ProductOf
   deriving stock (Show, Eq, Ord)
 
-data OpSuchTt = MaxXSuchThat
-              | MinXSuchThat
-              | SumEachXSuchThat
-  deriving stock (Show, Eq, Ord)
+data OpSuchTt a = MaxXSuchThat
+                | MinXSuchThat
+                | SumEachXSuchThat
+                | NumOfSuchThat a
+  deriving stock (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 
 {-------------------------------------------------------------------------------
@@ -180,6 +181,7 @@ type GVarSet = HS.HashSet GVar
 data Cell = MkCellT !T.Text
           | MkCellNum !T.Text
   deriving stock (Show, Eq)
+makePrisms ''Cell
 
 type L4Term = Cell
 type L4AtomicP = AtomicBPropn Cell
@@ -188,7 +190,7 @@ type L4AtomicP = AtomicBPropn Cell
 pattern MkTrueAtomicBP :: [Cell] -> BoolPropn L4AtomicP
 pattern MkTrueAtomicBP cells = AtomicBP (ABPatomic cells)
 
-pattern MkIsOpSuchTtBP :: L4Term -> OpSuchTt -> [Cell] -> BoolPropn L4AtomicP
+pattern MkIsOpSuchTtBP :: L4Term -> OpSuchTt L4Term -> [L4Term] -> BoolPropn L4AtomicP
 pattern MkIsOpSuchTtBP var ost bprop = AtomicBP (ABPIsOpSuchTt var ost bprop)
 
 pattern MkIsIn :: L4Term -> L4Term -> BoolPropn L4AtomicP

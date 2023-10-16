@@ -1,0 +1,8 @@
+;;,,,,,,,,,,
+,GIVEN,person,IS A,Key Person,,,,,,
+,,n,IS A,Number,,,,,,
+,,date,IS A,Date,,,,,,
+,DECIDE,person,made friends at the event,,,,,,,
+,IF,n,is the number of,friend,where,person,met,friend,on,date
+,AND,n,>,1,,,,,,
+;;,,,,,,,,,,

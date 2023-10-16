@@ -1,0 +1,13 @@
+GIVEN,person,IS A,Person
+DECIDE,person,has,10,mangos,in their bag,or maybe,2000,
+IF,person,satisfies clause 14.1.1,
+AND,person,satisfies clause 14.1.2,
+;;,,,
+GIVEN,p,IS A,Person
+DECIDE,p,satisfies clause 14.1.1,
+IF,p,does something,
+AND,p,has,10000,mangos,in their bag,or maybe,6000,
+;;,,,
+GIVEN,person,IS A,Person
+DECIDE,person,satisfies clause 14.1.2,
+IF,person,has,inf,mangos,in their bag,or maybe,2000,

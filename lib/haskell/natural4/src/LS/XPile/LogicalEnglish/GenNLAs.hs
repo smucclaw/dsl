@@ -192,7 +192,7 @@ tvar2WordsOrVIregex :: TemplateVar -> RawRegexStr
 tvar2WordsOrVIregex = \case
     MatchGVar _    -> wordsOrVI
     EndsInApos _   -> wordsOrVI <> [r|'s|]
-    Num _          -> [r|is |] <> wordsOrVI
+    Num _          -> wordsOrVI
 
 makeRegex :: RawRegexStr -> Either String Regex
 makeRegex rawregex = PCRE.compileM (cs rawregex) []

@@ -287,7 +287,6 @@ t1 IS IN t2:
                     [ MTT "set of things" ]
                 ] ] )
 -}
-
 simplifybodyRP :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
                     RelationalPredicate -> m (BoolPropn L4AtomicP)
 simplifybodyRP = \case

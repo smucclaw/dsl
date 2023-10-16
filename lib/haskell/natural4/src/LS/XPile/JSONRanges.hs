@@ -104,8 +104,11 @@ asJSONRanges l4i = do
 
     -- any decent Guild Navigator knows how to fold space.
     -- it's easy. Given a concrete extensional space of points, and an abstract Space of dimensions, grab the first abstract dimension off the rank and cross-product it with all remaining dimensions, until there are no dimensions left and all you have is points.
+
+    -- consider if we aren't reinventing Data.Row row-types here
     extend :: Space EntityType T.Text -> Points EntityType T.Text -> Points EntityType T.Text
     extend [] pts = pts
+    extend ((Dimension dimKey dimVals):dims) [] = extend dims [ [(dimKey, dimVal)] | dimVal <- dimVals ]
     extend ((Dimension dimKey dimVals):dims) pts = extend dims 
                                                    [ (dimKey, dimVal) : pt
                                                    | pt <- pts

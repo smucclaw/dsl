@@ -1,8 +1,9 @@
 the target language is: prolog.
 
 the templates are:
-  *a var* nonvartxt some var final nonvartxt,
-  subbed by something nonvartxt *a var* final nonvartxt,
+  *a you* are a member of this bank,
+  you have *a additional deposit* of *a number*,
+  you made an initial deposit of *a number* in your account,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -112,5 +113,6 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  subbed by something nonvartxt a var final nonvartxt
-  if var nonvartxt some var final nonvartxt.
+  you have a additional deposit of 100
+  if a you are a member of this bank
+  and you made an initial deposit of 200 in your account.

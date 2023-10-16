@@ -1,7 +1,8 @@
 the target language is: prolog.
 
 the templates are:
-  *a some var* pred *a some var* 10,
+  *a var* nonvartxt some var final nonvartxt,
+  subbed by something nonvartxt *a var* final nonvartxt,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,
@@ -111,5 +112,5 @@ the knowledge base lib includes:
   and x does not exceed the minimum of other list.
 
 the knowledge base rules includes:
-  subbed by something pred a some var 10
-  if some var pred some var 10.
+  subbed by something nonvartxt a var final nonvartxt
+  if var nonvartxt some var final nonvartxt.

@@ -1,7 +1,7 @@
 the target language is: prolog.
 
 the templates are:
-  *a add savings* bleh 100,
+  *a total savings* bleh *a number*,
   *a number* <= *a number*,
   *a date* is before *a date*,
   *a date* is after *a date*,

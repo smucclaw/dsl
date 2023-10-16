@@ -37,7 +37,7 @@ module LS.XPile.LogicalEnglish.Types (
 
     -- Intermediate representation types, prisms, and consts
     , TemplateVar(..)
-    , _MatchGVar, _EndsInApos, _IsNum
+    , _MatchGVar, _EndsInApos, _Num
     , aposSuffix
     , OrigVarPrefix
     , OrigVarSeq
@@ -178,7 +178,7 @@ type GVarSet = HS.HashSet GVar
 
 -- | We only need to be able to represent texts and integers in our current encoding  
 data Cell = MkCellT !T.Text
-          | MkCellIsNum !T.Text
+          | MkCellNum !T.Text
   deriving stock (Show, Eq)
 
 type L4Term = Cell

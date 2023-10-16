@@ -145,39 +145,14 @@ Right now, the only RPConstraint tt can appear in head of L4 HC, according to sp
 simpheadRPC :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpheadRPC = simpRPCis
 
-{- |
-Given left and right exprs that flank an RPIs,
-return a L4AtomicP where 
-  * if it's an <IS NUM>, that's marked accordingly in the numcell,
-  * otherwise it's made a ABPBaseIs
-
-  An example of an is-num pattern in a RPConstraint:
-    [ HC
-        { hHead = RPConstraint
-            [ MTT "total savings" ] RPis
-            [ MTI 100 ]
-        , hBody = Just
-            ( All Nothing
-                [ Leaf
-                    ( RPConstraint
-                        [ MTT "initial savings" ] RPis
-                        [ MTF 22.5 ]
-                    )
+{- |  
+We no longer want to generate annotations 
+from things involving an IS cell --- IS should be treated specially, as a built-in predicate
 -}
 simpRPCis :: [MTExpr] -> [MTExpr] -> L4AtomicP
 simpRPCis exprsl exprsr =
-  let lefts   = mtes2cells exprsl
-  in case exprsr of
-    -- it's an IS NUM
-    -- so convert the NUM to text and warp it in a MkCellIsNum
-    (MTI int : xs)   ->
-      ABPatomic $ lefts <> [MkCellIsNum (int2Text int)] <> mtes2cells xs
-    (MTF float : xs) ->
-      ABPatomic $ lefts <> [MkCellIsNum (float2Text float)] <> mtes2cells xs
-
-    -- not IS NUM
-    _           ->
-      ABPBaseIs lefts (mtes2cells exprsr)
+  let (lefts, rights) = (mtes2cells exprsl, mtes2cells exprsr)
+  in ABPBaseIs lefts rights
 
 
 {-------------------------------------------------------------------------------
@@ -423,10 +398,18 @@ textifyMTE constrtr =
     MTI i -> int2Text i
     MTF f -> float2Text f
     MTB b -> T.toLower [i|#{b}|]
-            -- TODO: Prob shld check upfront for whether there are any MTB MTExprs in cells; raise a `dispute` if so and print warning as comment in resulting .le
 
 mte2cell :: L4.MTExpr -> Cell
-mte2cell = textifyMTE MkCellT
+mte2cell = \case
+  mte@(MTT _) -> textify mte
+  mte@(MTB _) -> textify mte
+
+  mte@(MTI _) -> numify mte
+  mte@(MTF _) -> numify mte
+  where 
+    textify = textifyMTE MkCellT
+    numify  = textifyMTE MkCellNum
+  -- could use prisms and guards instead to get less 'repetition of code', but that would also increase the risk of incomplete case matching in the future
 
 -- | convenience function for when `map mte2cell` too wordy 
 mtes2cells :: [L4.MTExpr] -> [Cell]

@@ -7,25 +7,25 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: eeb123df6385b2e719690c9759bacd5d4c74eb735cec01b0c217d5ebf9428856
+      sha256: 897ff5f82195e3e1928225be352fcadf296ed950e9eda04bdc8473eec17afdbd
       size: 12537
-    sha256: c3f496d4cd972d3517b9a869db8fa8cfdc4b7a7e97d2a009ea90447fe28a4b78
-    size: 3188545
-    url: https://github.com/smucclaw/baby-l4/archive/6086f4647da7436b747c7ea1b616dbb5e769a71d.tar.gz
+    sha256: 92abf482aa0cd305f56590f8ec57a78870a68cc10190aa4a1ccc752aec172e72
+    size: 3188641
+    url: https://github.com/smucclaw/baby-l4/archive/c87f16b26771179c582824ac959cb666958e26af.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/6086f4647da7436b747c7ea1b616dbb5e769a71d.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/c87f16b26771179c582824ac959cb666958e26af.tar.gz
 - completed:
     name: gf
     pantry-tree:
-      sha256: 6f50c61c5efbde36a3da78f8867571f8d08cddceaf01d3702578cc571a6272f9
+      sha256: cfe4b75d637188cbe3a3017410d8c56daa282c710d5ad21ccc6048f4271153a5
       size: 68299
-    sha256: c2c5cd3a1135001577cb450a8378fb5f06d9ad8442726bd73bbeb33cb6490301
-    size: 3499620
-    url: https://github.com/smucclaw/gf-core/archive/35e5b43ad98dddeadde079719267534a91a83326.tar.gz
+    sha256: a68c5f762640885fdd66ab660377d841bbf6787137a0d31eebc1d01b2972fb7a
+    size: 3499974
+    url: https://github.com/smucclaw/gf-core/archive/4f40614dd773cd07ff5916bbcde57d9ee3ec09bf.tar.gz
     version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/35e5b43ad98dddeadde079719267534a91a83326.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/4f40614dd773cd07ff5916bbcde57d9ee3ec09bf.tar.gz
 - completed:
     name: prolog
     pantry-tree:
@@ -82,7 +82,7 @@ packages:
     hackage: text-replace-0.1.0.3
 snapshots:
 - completed:
-    sha256: 350737ef1c4c748f4c7ff56b6e74f2f6d15039a2f148662a8ec1aded016b80d0
-    size: 640033
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/15.yaml
-  original: lts-21.15
+    sha256: 1d663bec402f77fa09fa3e8cf288c3c7eb18a1f28a5e0c331ac47adeacd21346
+    size: 640034
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/16.yaml
+  original: lts-21.16

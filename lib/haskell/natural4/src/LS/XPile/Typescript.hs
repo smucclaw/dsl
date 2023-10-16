@@ -291,9 +291,9 @@ tsRuleEngine l4i = do
     , ""
     , indent 2 $ vsep $
       "// instances of DECLAREd classes" :
-      [ dquotes (className <> "Instance") <+> "?" <> colon <+> className <> semi
+      [ ( className <> "Instance") <+> "?" <> colon <+> className <> semi
       | (classNameT, typedClass) <- declaredClasses
-      , let className = pretty classNameT
+      , let className = snake_case [MTT classNameT]
       ]
 
     , "}"

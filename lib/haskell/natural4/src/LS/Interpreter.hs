@@ -164,17 +164,24 @@ classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
   -- multiple DECLARE of the same class are allowed, so we have to merge.
   -- we do some violence to the inferred types here.
-  CT $ Map.fromListWith (\((ts1inf,ts1s),CT clstab1)
-                          ((ts2inf,ts2s),CT clstab2) ->
-                            ( (listToMaybe (maybeToList ts1inf <> maybeToList ts2inf)
-                              ,ts1s <> ts2s)
-                            , CT $ clstab1 <> clstab2))
+  CT $ Map.fromListWith mergeClassTypes
   [ (thisclass, (superclass, attributes))
   | r@TypeDecl{} <- rs
   , let thisclass = mt2text (name r)
         superclass = (Just $ defaultToSuperType $ super r, [])
         attributes = classHierarchy (has r)
   ]
+
+mergeClassTypes :: Semigroup b
+                => ((Maybe a, b), ClsTab)
+                -> ((Maybe a, b), ClsTab)
+                -> ((Maybe a, b), ClsTab)
+mergeClassTypes
+  ((ts1inf,ts1s),CT clstab1)
+  ((ts2inf,ts2s),CT clstab2) =
+  ( (listToMaybe (maybeToList ts1inf <> maybeToList ts2inf)
+    , ts1s <> ts2s)
+  , CT $ clstab1 <> clstab2)
 
 -- | A graph of all the classes we know about.
 --
@@ -1047,3 +1054,32 @@ lowerMT :: MTExpr -> MTExpr
 lowerMT (MTT t) = MTT (T.toLower t)
 lowerMT x       = x
 
+-- actually i think this is not needed because we can use `extendedAttributes`
+-- -- | an expanded version of the class table, respecting inheritance, and respecting overrides along the way.
+-- inheritedClassHierarchy :: Interpreted -> XPileLog ClsTab
+-- inheritedClassHierarchy l4i = do
+--   let ct = unCT (classtable l4i)
+--   CT $ Map.fromListWith mergeClassTypes
+--   [ ... ]
+--   where
+--     go :: ClassHierarchyMap
+--        -> EntityType
+--        -> XPileLogE ClsTab
+--     go chm typeName = do
+--       case Map.lookup typeName chm of
+--         Nothing -> xpReturn (CT Map.empty)
+
+--         Just ((Nothing, _inferredTypes), ct) -> do
+--           mutterd 3 ("inheritedClassHierarchy: " <> T.unpack typeName <> " does not extend; returning direct attributes")
+--           xpReturn ct
+
+--         Just ((Just (SimpleType TOne superClass), _inferredTypes), ct) -> do
+--           mutterd 3 ("inheritedClassHierarchy: " <> T.unpack typeName <> " extends " <> T.unpack superClass <> ", inheriting attributes")
+--           ct' <- go chm superClass
+--           case ct' of
+--             Left err  -> xpError err
+--             Right superCT -> xpReturn $ CT (unCT superCT <> unCT ct) -- we rely on Map's mconcat to use RHS keys to overwrite LHS keys
+
+--         Just ((_, _inferredTypes), ct) -> do
+--           xpError ["this extension syntax not supported"]
+--           -- [TODO] do we want to die here with an expError, or do we want to return the ct that seems to still be here?

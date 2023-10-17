@@ -8,6 +8,7 @@ elsewhere in our codebase. -}
 
 module LS.XPile.JSONRanges where
 
+import Control.Monad (forM_)
 import Data.HashMap.Strict qualified as Map
 import Data.List (groupBy, nub)
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -40,7 +41,7 @@ asJSONRanges l4i = do
   mutterd 1 "asJSONRanges"
   let ct = unCT $ classtable l4i
 
-  classDimensions :: [(EntityType, Space EntityType T.Text)] <-
+  classDimensions :: [(EntityType, Space EntityType MultiTerm)] <-
     sequence
     [ do
         mutterdhsf 2 ("class " <> show thisclass) pShowNoColorS (itypesig, ct)
@@ -59,6 +60,13 @@ asJSONRanges l4i = do
           ea3 = filter isArbitrary ea2
     ]
 
+  mutterd 1 "classDimensions cardinality"
+  forM_ classDimensions $ \(et, space) -> do
+    mutterd 2 ("class " <> show et <> " expecting " <>
+               show (product [ length v | Dimension lbl values <- space, v <- values ]) )
+    forM_ space $ \(Dimension lbl values) -> do
+      mutterd 3 (show lbl <> " " <> show (length values))
+      
   mutterdhsf 1 "classDimensions" pShowNoColorS classDimensions
 
   curlyList <$> sequence
@@ -81,7 +89,7 @@ asJSONRanges l4i = do
     isArbitrary :: (EntityType, TypedClass) -> Bool
     isArbitrary (_, ((Just (InlineEnum _    _ ), _), _)) = True
     isArbitrary (_, ((Just (SimpleType TOne st), _), _)) = isBool st
-    isArbitrary _                                   = False
+    isArbitrary _                                        = False
 
     isBool "Boolean" = True
     isBool "Bool"    = True
@@ -91,12 +99,12 @@ asJSONRanges l4i = do
 
     curlyList = encloseSep "{" "}" comma
 
-    variants :: Maybe TypeSig -> [T.Text]
+    variants :: Maybe TypeSig -> [MultiTerm]
     variants Nothing = []
     variants (Just (SimpleType TOne et))
-      | isBool et = ["true", "false"]
+      | isBool et = [[MTB True], [MTB False]]
       | otherwise = []
-    variants (Just (InlineEnum _pt  enums)) = [ mt2text [ptmt']
+    variants (Just (InlineEnum _pt  enums)) = [ pure ptmt'
                                               | (ptmt, pttype) <- NE.toList enums
                                               , ptmt' <- NE.toList ptmt
                                               ]
@@ -106,7 +114,7 @@ asJSONRanges l4i = do
     -- it's easy. Given a concrete extensional space of points, and an abstract Space of dimensions, grab the first abstract dimension off the rank and cross-product it with all remaining dimensions, until there are no dimensions left and all you have is points.
 
     -- consider if we aren't reinventing Data.Row row-types here
-    extend :: Space EntityType T.Text -> Points EntityType T.Text -> Points EntityType T.Text
+    extend :: Space EntityType a -> Points EntityType a -> Points EntityType a
     extend [] pts = pts
     extend ((Dimension dimKey dimVals):dims) [] = extend dims [ [(dimKey, dimVal)] | dimVal <- dimVals ]
     extend ((Dimension dimKey dimVals):dims) pts = extend dims 

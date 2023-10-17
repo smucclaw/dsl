@@ -63,9 +63,10 @@ asJSONRanges l4i = do
   mutterd 1 "classDimensions cardinality"
   forM_ classDimensions $ \(et, space) -> do
     mutterd 2 ("class " <> show et <> " expecting " <>
-               show (product [ length v | Dimension lbl values <- space, v <- values ]) )
+               show (product [ length values | Dimension lbl values <- space ])
+               <> " points in configuration space, i.e. JSON instances")
     forM_ space $ \(Dimension lbl values) -> do
-      mutterd 3 (show lbl <> " " <> show (length values))
+      mutterd 3 (show (length values) <> " " <> show lbl)
       
   mutterdhsf 1 "classDimensions" pShowNoColorS classDimensions
 
@@ -73,7 +74,7 @@ asJSONRanges l4i = do
     [ do
         mutterdhsf 2 ("dims for " <> show className) pShowNoColorS dims
 
-        let points = take 100 $ extend dims []
+        let points = take 1000 $ extend dims []
         mutterdhsf 2 ("points for " <> show className) pShowNoColorS points
 
         return $ (viaShow className) <> colon <+>

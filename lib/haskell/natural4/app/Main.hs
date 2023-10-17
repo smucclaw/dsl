@@ -62,6 +62,7 @@ import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
+import LS.XPile.JSONRanges (asJSONRanges)
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
 import LS.XPile.VueJSON
@@ -198,6 +199,7 @@ main = do
       (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
       (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
 
+      (tojsrFN,     (asJSRpretty, asJSRerr))  = (workuuid <> "/" <> "jsonranges",  xpLog $ asJSONRanges l4i)
       (totsFN,      (asTSpretty, asTSerr))    = (workuuid <> "/" <> "ts",       xpLog $ asTypescript l4i)
       (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
       (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
@@ -307,6 +309,7 @@ main = do
     when (SFL4.tojsonUI opts)  $ mywritefile  True tojsonUIFN   iso8601 "json" asJsonUI
     when (SFL4.toscasp   opts) $ mywritefile  True toscaspFN    iso8601 "pl"   asSCasp
     when (SFL4.topetri   opts) $ mywritefile2 True topetriFN    iso8601 "dot"  (commentIfError "//" asPetri) asPetriErr
+    when (SFL4.tojsr     opts) $ mywritefile2 True tojsrFN      iso8601 "json" (show asJSRpretty) asJSRerr
     when (SFL4.tots      opts) $ mywritefile2 True totsFN       iso8601 "ts"   (show asTSpretty) asTSerr
     when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
@@ -393,7 +396,7 @@ mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> 
 mywritefile2 doLink dirname filename ext s e = do
   createDirectoryIfMissing True dirname
   let mypath1    = dirname <> "/" <> filename <> "." <> ext
-      mypath2    = dirname <> "/" <> filename <> "." <> "err"
+      mypath2    = dirname <> "/" <> filename <> "." <> (if ext == "org" then "err" else "org")
       mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
   writeFile mypath2 (intercalate "\n" e)
   writeFile mypath1 s

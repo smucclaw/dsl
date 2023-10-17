@@ -763,7 +763,12 @@ pTypeSig = debugName "pTypeSig" $ do
       InlineEnum TOne <$> pOneOf
 
 pOneOf :: Parser ParamText
-pOneOf = pToken OneOf *> someIndentation (fromList . concatMap toList <$> sameDepth pParamText)
+pOneOf = do
+  pt <- pToken OneOf *> someIndentation (fromList . concatMap toList <$> sameDepth pParamText)
+--  if length pt == 1
+--  then
+-- see https://github.com/smucclaw/dsl/issues/466
+  return pt
                                          -- i thought we could use sequence, but i guess not?
 
 -- sometimes we want a multiterm, just a list of text

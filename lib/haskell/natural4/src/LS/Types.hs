@@ -466,6 +466,7 @@ thisAttributes (CT clstab) subclass = do
   ((_mts, _tss), ct) <- Map.lookup subclass clstab
   return ct
 
+-- | attributes including superclass attributes
 extendedAttributes o@(CT clstab) subclass = do
   ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
   let eAttrs = case extendedAttributes o <$> clsParent o subclass of

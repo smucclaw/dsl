@@ -50,7 +50,7 @@ import LS.Types as SFL4
   )
 import Debug.Trace (trace)
 -- import Data.List (isSuffixOf, intercalate)
--- import Data.Char (isAlphaNum)
+import Data.Char (isAlphaNum)
 import Data.Generics.Product.Types (HasTypes)
 import Data.HashMap.Strict qualified as M
 import Text.Regex.PCRE.Heavy qualified as PCRE
@@ -205,25 +205,31 @@ rule2HierarchyBool _ = []
 -- Output of types to Haskell
 
 -- somewhat brutal methods to convert arbitrary strings to Haskell identifiers
--- convertToAlphaNum :: Char -> Char
--- convertToAlphaNum c =
---     if isAlphaNum c
---     then c
---     else '_'
+convertToAlphaNum :: Char -> Char
+convertToAlphaNum c =
+    if isAlphaNum c
+    then c
+    else '_'
 
-haskellise :: T.Text -> T.Text
-haskellise = PCRE.gsub [PCRE.re|[^a-zA-Z\d\s:]|] ("_" :: T.Text)
-  -- map convertToAlphaNum
+haskellise :: String -> String
+haskellise = map convertToAlphaNum
+    -- PCRE.gsub [PCRE.re|[^a-zA-Z\d\s:]|] ("_" :: T.Text)
+
+haskelliseTxt :: T.Text -> T.Text
+haskelliseTxt = T.pack . haskellise . T.unpack
 
 capitaliseTxt :: T.Text -> T.Text
 capitaliseTxt = T.pack . capitalise . T.unpack
 
+derivingClause :: T.Text
+derivingClause = "deriving (Eq, Ord, Show, Read, Generic)"
+
 hConstructorName :: ConstructorName -> ConstructorName
-hConstructorName = capitaliseTxt . haskellise
+hConstructorName = capitaliseTxt . haskelliseTxt
 hFieldName :: FieldName -> FieldName
-hFieldName = haskellise
+hFieldName = haskelliseTxt
 hTypeName :: TypeName -> TypeName
-hTypeName = capitaliseTxt . haskellise
+hTypeName = capitaliseTxt . haskelliseTxt
 hTypeNameAsConstructorName :: TypeName -> ConstructorName
 hTypeNameAsConstructorName = hTypeName
 class ShowTypesHaskell x where
@@ -244,19 +250,38 @@ instance ShowTypesHaskell Field where
         -- trace ("Field: " ++ (show f) ) $
         pretty (hFieldName fn) <> " :: " <> showTypesHaskell ft
 
+showInstanceDecl :: TypeName -> Doc ann
+showInstanceDecl tn =
+    vsep [
+          pretty ("instance FromJSON " :: T.Text) <> pretty (hTypeName tn)
+        , pretty ("instance ToJSON " :: T.Text) <> pretty (hTypeName tn)
+    ]
+
 instance ShowTypesHaskell JSchemaExp where
     showTypesHaskell :: JSchemaExp -> Doc ann
     showTypesHaskell (ExpTypeRecord tn fds) =
         -- trace ("Record: " ++ (show tn) ++ (show (hTypeName tn))) $
-        "data " <> pretty (hTypeName tn) <> " = " <> pretty (hTypeNameAsConstructorName tn) <>
-            nest 4 (braces (vsep (punctuate comma (map showTypesHaskell fds))))
+        vsep
+        [ "data " <> pretty (hTypeName tn) <> " = " <> pretty (hTypeNameAsConstructorName tn) <>
+            nest 4
+            (vsep
+                [braces (vsep (punctuate comma (map showTypesHaskell fds))),
+                 pretty derivingClause])
+        , showInstanceDecl tn
+        ]
 
     showTypesHaskell (ExpTypeEnum tn enums) =
         -- trace ("Enum: " ++ (show tn) ++ (show (hTypeName tn))) $
-        "data " <> pretty (hTypeName tn) <>
-        nest 4
+        vsep
+        [ "data " <> pretty (hTypeName tn) <>
+            nest 4
             (" = " <>
-            vsep (punctuate " | " (map (pretty . hConstructorName) enums)))
+            vsep
+                (punctuate " | " (map (pretty . hConstructorName) enums) ++
+                [pretty derivingClause])
+            )
+        , showInstanceDecl tn
+        ]
 
 rulesToHaskellTp :: [SFL4.Rule] -> String
 rulesToHaskellTp rs =

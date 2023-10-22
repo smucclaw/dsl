@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Explainable.MathLang where
 
@@ -28,10 +29,11 @@ type SymTab = Map.Map String
 data MyState = MyState { symtabF :: SymTab (Expr     Float)
                        , symtabP :: SymTab (Pred     Float)
                        , symtabL :: SymTab (ExprList Float)
+                       , symtabS :: SymTab String
                        }
   deriving (Show, Eq)
 emptyState :: MyState
-emptyState = MyState Map.empty Map.empty Map.empty
+emptyState = MyState Map.empty Map.empty Map.empty Map.empty
 
 
 -- ** Simple Float Expressions
@@ -637,14 +639,15 @@ dumpExplanationF depth s f = do
   (val, xpl, stab, wlog) <- xplainF () s f
   putStrLn (stars ++ " val" ); print val
   putStrLn (stars ++ " xpl" ); print xpl
-  putStrLn (stars ++ " stab"); print stab
+  putStrLn (stars ++ " starting state"); print s
+  putStrLn (stars ++ " ending SymTab"); print stab
   putStrLn (stars ++ " wlog"); print wlog
   putStrLn (stars ++ " typescript"); do
     putStrLn "#+BEGIN_SRC typescript"
     print (pp f)
+    print (ppst s)
     putStrLn "#+END_SRC"
   
-
   where stars = replicate depth '*'
   
 
@@ -683,6 +686,32 @@ instance ToTS Pred a where
   pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
   pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
 
+ppst :: MyState -> Doc ann
+ppst (MyState{..}) =
+  "tsm.initSymTab" <> hang 2
+  ( parens
+    ( encloseSep lbrace rbrace (comma <> line) $
+      [ dquotes keyString <> colon <+> valString
+      | (k,Val _lbl v) <- Map.toList symtabF
+      , let keyString = pretty k
+            valString = pretty v
+      ]
+      ++
+      [ dquotes keyString <> colon <+> valString
+      | (k,PredVal _lbl v) <- Map.toList symtabP
+      , let keyString = pretty k
+            valString = if v then "true" else "false"
+      ]
+      ++
+      [ dquotes keyString <> colon <+> valString
+      | (k,v) <- Map.toList symtabS
+      , let keyString = pretty k
+            valString = pretty v
+      ]
+      
+    ) )
+  
+
 dqpretty :: (Pretty a) => a -> Doc ann
 dqpretty = dquotes . pretty
 
@@ -694,4 +723,6 @@ h0parens :: Doc ann -> Doc ann
 h0parens = hang 0 . parens
 h0tupled :: [Doc ann] -> Doc ann
 h0tupled = hang 0 . tupled
+
+
 

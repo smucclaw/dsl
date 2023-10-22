@@ -1,7 +1,7 @@
 module Explainable.MathLang where
 
 import qualified Data.Map as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, fromMaybe)
 import Control.Monad (forM_, mapAndUnzipM)
 import Control.Monad.Trans.RWS
 import Data.Tree
@@ -188,7 +188,7 @@ eval :: Expr Float -> ExplainableIO r MyState Float
 eval (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
-                  ,[show x ++ ": a leaf value"]) [])
+                  ,[show x ++ ": " ++ fromMaybe "a leaf value" lbl]) [])
 eval (MathBin lbl Plus   x y) = binEval "addition"       (+) x y
 eval (MathBin lbl Minus  x y) = binEval "subtraction"    (-) x y
 eval (MathBin lbl Times  x y) = binEval "multiplication" (*) x y
@@ -258,7 +258,7 @@ binEval title f x y = retitle title $ do
 
 evalP :: Pred Float -> ExplainableIO r MyState Bool
 evalP (PredVal lbl x) = do
-  return (x, Node ([],[show x ++ ": a leaf value"]) [])
+  return (x, Node ([],[show x ++ ": a leaf value" ++ showlbl lbl]) [])
 evalP (PredNot lbl x) = do
   (xval,xpl) <- retitle "not" (evalP x)
   let toreturn = not xval
@@ -417,11 +417,10 @@ xplainF r expr = do
                              (eval expr)
                              (([],["toplevel"]),r)         -- reader: HistoryPath, actualReader
                              emptyState -- state: MyState
-  putStrLn $ "* xplainF"
   putStrLn $ "#+begin_src haskell\n" ++ show expr ++ "\n#+end_src"
-  putStrLn $ "** toplevel: val = "    ++ show val
-  putStrLn $ "** toplevel: log = "    ++ show wlog
-  putStrLn $ "** toplevel: xpl = " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
+  putStrLn $ "- val :: "    ++ show val
+  putStrLn $ "- log :: "    ++ show wlog
+  putStrLn $ "- xpl :: " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
 
   return (val, xpl, stab, wlog)
 
@@ -432,11 +431,10 @@ xplainL r exprList = do
                            (deepEvalList (exprList,mkNod "deep eval"))
                            (([],["toplevel"]),r)         -- reader: HistoryPath, actualReader
                            emptyState -- state: MyState
-  putStrLn $ "* xplainL"
   putStrLn $ "#+begin_src haskell\n" ++ show xl ++ "\n#+end_src"
-  putStrLn $ "** toplevel: val = "    ++ show xl
-  putStrLn $ "** toplevel: log = "    ++ show wlog
-  putStrLn $ "** toplevel: xpl = " ++ show xl ++ "\n" ++ drawTreeOrg 3 xp
+  putStrLn $ "- val :: "    ++ show xl
+  putStrLn $ "- log :: "    ++ show wlog
+  putStrLn $ "- xpl :: " ++ show xl ++ "\n" ++ drawTreeOrg 3 xp
   return (xl, xp, stab, wlog) -- [TODO] note the explanation result from xs is discarded
 
 unMathList :: Show a => ExprList a -> [Expr a]

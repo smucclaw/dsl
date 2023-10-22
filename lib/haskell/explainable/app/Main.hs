@@ -1,8 +1,6 @@
 module Main (main) where
 
 import Explainable.Lib
-import qualified Data.Map as Map
-import Control.Monad.Trans.State
 import Control.Monad (when)
 
 main :: IO ()

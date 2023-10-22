@@ -56,7 +56,7 @@ runTests_Mathlang = do
         "two usually" @|. 2
         |+
         ("more on Sundays" @|=
-         (PredComp (Just "is it sunday") CEQ (MathVar "dow")) ("sunday is day seven" @|. 7)
+         ("it is sunday" @|= ( (MathVar "dow") |=== ("sunday is day seven" @|. 7)) )
          @|? ("two on Sundays" @|. 2)
          @|: ("one otherwise"  @|. 1)
         )

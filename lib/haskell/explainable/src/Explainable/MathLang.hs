@@ -134,8 +134,8 @@ data ExprList a
 x <| ys = ListFilt Nothing x CLT ys
 x |> ys = ListFilt Nothing x CGT ys
 
--- | To support our notion of Data.Ord
-data Comp = CEQ | CGT | CLT | CGTE | CLTE
+-- | To support our notion of Data.Ord and Eq
+data Comp = CEQ | CGT | CLT | CGTE | CLTE | CNEQ
   deriving (Eq, Show)
 
 -- | @show@ for comparisons
@@ -328,6 +328,7 @@ evalP' (PredComp lbl c x y) =
           CLT  | c' == LT           -> True
           CGTE | c' `elem` [GT, EQ] -> True
           CLTE | c' `elem` [LT, EQ] -> True
+          CNEQ | c' /= EQ           -> True
           _                         -> False
         (lhs,rhs) = verbose title
     return (toreturn, (Node ([]
@@ -544,11 +545,19 @@ infix 2 |||, @|||
 infix 3 |&&, @|&&
 infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 
-(@|<),(@|>),(@|<=),(@|>=) :: String -> Expr a -> Expr a -> Pred a
+(|===),(|!==),(|/==) :: Expr a -> Expr a -> Pred a
+(|===) = PredComp Nothing CEQ
+(|/==) = PredComp Nothing CNEQ
+(|!==) = PredComp Nothing CNEQ
+
+(@|<),(@|>),(@|<=),(@|>=),(@|===),(@|!==),(@|/==) :: String -> Expr a -> Expr a -> Pred a
 (@|<)  s = PredComp (Just s) CLT
 (@|<=) s = PredComp (Just s) CLTE
 (@|>)  s = PredComp (Just s) CGT
 (@|>=) s = PredComp (Just s) CGTE
+(@|===) s = PredComp (Just s) CEQ
+(@|/==) s = PredComp (Just s) CNEQ
+(@|!==) s = PredComp (Just s) CNEQ
   
 (@|&&),(@|||),(@|==),(@|!=),(@|/=) :: String -> Pred a -> Pred a -> Pred a
 (@|&&) s x y = PredBin (Just s) PredAnd  x y

@@ -690,7 +690,7 @@ ppst :: MyState -> Doc ann
 ppst (MyState{..}) =
   "tsm.initSymTab" <> hang 2
   ( parens
-    ( encloseSep lbrace rbrace (comma <> line) $
+    ( encloseSep lbrace rbrace comma $
       [ dquotes keyString <> colon <+> valString
       | (k,Val _lbl v) <- Map.toList symtabF
       , let keyString = pretty k
@@ -703,7 +703,7 @@ ppst (MyState{..}) =
             valString = if v then "true" else "false"
       ]
       ++
-      [ dquotes keyString <> colon <+> valString
+      [ dquotes keyString <> colon <+> dquotes valString
       | (k,v) <- Map.toList symtabS
       , let keyString = pretty k
             valString = pretty v

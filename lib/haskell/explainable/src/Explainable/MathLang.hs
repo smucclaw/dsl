@@ -437,10 +437,6 @@ verbose "comparison"     = ("is the result of comparing", "with")
 verbose "variable expansion" = ("which comes from the variable", "")
 verbose x                = (x, x ++ " argument")
 
--- | syntactic sugar for labeling expressions
-(@|.) :: String -> Float -> Expr Float
-(@|.) = Val . Just
-infix 6 @|.
 
 (@|+),(@|-),(@|*),(@|/) :: String -> Expr Float -> Expr Float -> Expr Float
 (@|+) lbl = MathBin (Just lbl) Plus
@@ -448,11 +444,10 @@ infix 6 @|.
 (@|*) lbl = MathBin (Just lbl) Times
 (@|/) lbl = MathBin (Just lbl) Divide
 
-class Exprlbl expra where
-  (@|=) :: String -> expra -> expra
+class Exprlbl expr a where
+  (@|=) :: String -> expr a -> expr a
 
-instance Exprlbl (Expr a) where
-  (@|=) :: String -> Expr a -> Expr a
+instance Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
@@ -472,13 +467,9 @@ instance Exprlbl (Expr a) where
   (@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
   (@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
 
-
-class ExprTernary expr a where
-  (@|?) :: Pred a -> TernaryRHS (expr a) -> expr a
-
-instance ExprTernary Expr a where
-  (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
-
+(@|.) :: String -> a -> Expr a
+(@|.) = Val . Just
+infix 6 @|., @|..
 
 infix 1 @|=
 infix 4 @|+, @|-
@@ -486,15 +477,24 @@ infix 5 @|*, @|/
 
 -- | syntactic sugar for ternary syntax. The trick is to join up the branches into a single thing
 data TernaryRHS a = TRHS a a deriving (Eq, Show)
+
 (@|:) :: expr -> expr -> TernaryRHS expr
 (@|:) tbranch fbranch = TRHS tbranch fbranch
+
+class ExprTernary expr a where
+  (@|?) :: Pred a -> TernaryRHS (expr a) -> expr a
 
 infixr 2 @|?
 infix  3 @|:
 
+instance ExprTernary Expr a where
+  (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
+
+instance ExprTernary Pred a where
+  (@|?) pred (TRHS tbranch fbranch) = PredITE Nothing pred tbranch fbranch
+
 -- | syntactic sugar for the predicate expressions
-instance Exprlbl (Pred a) where
-  (@|=) :: String -> Pred a -> Pred a
+instance Exprlbl Pred a where
   (@|=) lbl ( PredVal  Nothing    x )     = PredVal  (Just lbl) x
   (@|=) lbl ( PredNot  Nothing    x )     = PredNot  (Just lbl) x
   (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
@@ -506,8 +506,8 @@ instance Exprlbl (Pred a) where
   (@|=) lbl ( PredVar  (Just old) x )     = PredVar  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredITE  (Just old) x y z ) = PredITE  (Just lbl <++> Just ("previously " ++ old)) x y z
 
-instance ExprTernary Pred a where
-  (@|?) pred (TRHS tbranch fbranch) = PredITE Nothing pred tbranch fbranch
+(@|..) :: String -> Bool -> Pred a
+(@|..) = PredVal . Just
 
 -- | some example runs
 toplevel :: IO ()

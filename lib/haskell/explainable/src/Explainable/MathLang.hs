@@ -195,9 +195,11 @@ data Pred a
   | PredVar  String                                   -- ^ boolean variable retrieval
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
+  | PredFold ExprLabel AndOr [Pred a]                -- ^ and / or a list
   deriving (Eq, Show)
 
-
+data AndOr = PLAnd | PLOr
+  deriving (Eq, Show)
 
 getPredLabel :: Pred a -> ExprLabel
 getPredLabel ( PredVal      lbl  _     ) = lbl
@@ -207,6 +209,7 @@ getPredLabel ( PredComp     lbl  _ _ _ ) = lbl
 getPredLabel ( PredVar      lbl        ) = Just lbl
 getPredLabel ( PredSet      lbl  _     ) = Just lbl
 getPredLabel ( PredITE      lbl  _ _ _ ) = lbl
+getPredLabel ( PredFold     lbl  _ _   ) = lbl
 
 
 -- | variables
@@ -343,6 +346,17 @@ evalP' (PredComp lbl c x y) =
                        , mkNod rhs
                        , ypl ]))
 
+evalP' (PredFold lbl andor ps) =
+  let title = "listfold" ++ showlbl lbl
+  in retitle (title <> " " <> show andor) $ do
+    evalps <- mapM evalP ps
+    let toreturn = case andor of
+                     PLAnd -> all fst evalps
+                     PLOr  -> any fst evalps
+    return (toreturn, Node ([]
+                           , [show toreturn ++ " " ++ show andor])
+                      (snd <$> evalps ) )
+                      
 evalP' (PredVar str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
@@ -534,13 +548,15 @@ instance Exprlbl Pred a where
   (@|=) lbl ( PredNot  Nothing    x )     = PredNot  (Just lbl) x
   (@|=) lbl ( PredBin  Nothing    x y z ) = PredBin  (Just lbl) x y z
   (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
+  (@|=) lbl ( PredFold Nothing    x y   ) = PredFold (Just lbl) x y
+  (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
   (@|=) _   ( PredVar             _ )     = error "use @|$< to label a variable reference"
   (@|=) _   ( PredSet             _ _ )   = error "use @|$> to label a variable assignment"
-  (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
   (@|=) lbl ( PredVal  (Just old) x )     = PredVal  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredNot  (Just old) x )     = PredNot  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredBin  (Just old) x y z ) = PredBin  (Just lbl <++> Just ("previously " ++ old)) x y z
   (@|=) lbl ( PredComp (Just old) x y z ) = PredComp (Just lbl <++> Just ("previously " ++ old)) x y z
+  (@|=) lbl ( PredFold (Just old) x y   ) = PredFold (Just lbl <++> Just ("previously " ++ old)) x y
   (@|=) lbl ( PredITE  (Just old) x y z ) = PredITE  (Just lbl <++> Just ("previously " ++ old)) x y z
 
   (@|$<) lbl   = PredVar lbl
@@ -685,10 +701,13 @@ instance ToTS Pred a where
   pp (PredVar  str      ) = "new tsm.GetVar" <+> h0parens ( dqpretty str )
   pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
   pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
+  pp (PredFold lbl p xs)  = "new tsm.BoolFold" <+> h0tupled [ dquotes $ maybe "any/all" pretty lbl
+                                                            , "tsm.BoolFoldOp." <> case p of { PLAnd -> "All"; PLOr -> "Any" }
+                                                            , list ( pp <$> xs ) ]
 
 ppst :: MyState -> Doc ann
 ppst (MyState{..}) =
-  "tsm.initSymTab" <> hang 2
+  "tsm.initSymTab" <> hang 1
   ( parens
     ( encloseSep lbrace rbrace comma $
       [ dquotes keyString <> colon <+> valString

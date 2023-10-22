@@ -33,13 +33,13 @@ runTests_1 = do
   -- you may ask: how is this better than just doing things natively in haskell? The answer: evaluation is decorated with explanations, and that's valuable, because XAI.
 
   putStrLn "* the sum of all positive elements, ignoring negative elements"
-  dumpExplanationF 2 defaultState $ sumOf     $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
+  dumpExplanationF 2 defaultState $ (+||)     $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
 
   putStrLn "* the product of the doubles of all positive elements, ignoring negative and zero elements"
-  dumpExplanationF 2 defaultState $ productOf $ timesEach 2 $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
+  dumpExplanationF 2 defaultState $ (*||) $ timesEach 2 $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
 
   putStrLn "* the sum of the doubles of all positive elements and the unchanged original values of all negative elements"
-  dumpExplanationF 2 defaultState $ sumOf $ timesPositives 2 [-2, -1, 0, 1, 2, 3]
+  dumpExplanationF 2 defaultState $ (+||) $ timesPositives 2 [-2, -1, 0, 1, 2, 3]
 
 
 defaultState :: MyState

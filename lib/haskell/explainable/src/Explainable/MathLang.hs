@@ -154,11 +154,17 @@ shw CLTE = "<="
 
 -- * Syntactic Sugar
 
-(+||),sumOf,productOf,(*||) :: ExprList a -> Expr a
+(+||),(*||),(<||),(>||) :: ExprList a -> Expr a
 (+||)     = ListFold Nothing FoldSum
-sumOf     = ListFold Nothing FoldSum
 (*||)     = ListFold Nothing FoldProduct
-productOf = ListFold Nothing FoldProduct
+(<||)     = ListFold Nothing FoldMin
+(>||)     = ListFold Nothing FoldMax
+
+sumOf,productOf,minOf,maxOf :: [Expr a] -> Expr a
+sumOf     = (+||) . MathList Nothing
+productOf = (*||) . MathList Nothing
+minOf     = (<||) . MathList Nothing
+maxOf     = (>||) . MathList Nothing
 
 negativeElementsOf :: [Float] -> ExprList Float
 negativeElementsOf xs = Val Nothing 0 |> MathList Nothing (Val Nothing <$> xs)

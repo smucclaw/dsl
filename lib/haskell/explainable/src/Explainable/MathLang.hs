@@ -38,8 +38,8 @@ emptyState = MyState Map.empty Map.empty Map.empty
 data Expr a = Val      ExprLabel a                            -- ^ simple value
             | Parens   ExprLabel           (Expr a)           -- ^ parentheses for grouping
             | MathBin  ExprLabel MathBinOp (Expr a) (Expr a)  -- ^ binary arithmetic operation
-            | MathVar  ExprLabel String                       -- ^ variable reference
-            | MathSet  ExprLabel String    (Expr a)           -- ^ variable assignment
+            | MathVar            String                       -- ^ variable reference
+            | MathSet            String    (Expr a)           -- ^ variable assignment
             | MathITE  ExprLabel  (Pred a) (Expr a) (Expr a)  -- ^ if-then-else
             | MathMax  ExprLabel           (Expr a) (Expr a)  -- ^ max of two expressions
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
@@ -54,8 +54,8 @@ showlbl (Just l) = " (" ++ l ++ ")"
 getExprLabel :: Expr a -> ExprLabel
 getExprLabel ( Val      lbl  _     ) = lbl
 getExprLabel ( Parens   lbl  _     ) = lbl
-getExprLabel ( MathVar  lbl  _     ) = lbl
-getExprLabel ( MathSet  lbl  _ _   ) = lbl
+getExprLabel ( MathVar       lbl   ) = Just lbl
+getExprLabel ( MathSet       lbl _ ) = Just lbl
 getExprLabel ( MathMax  lbl  _ _   ) = lbl
 getExprLabel ( MathMin  lbl  _ _   ) = lbl
 getExprLabel ( ListFold lbl  _ _   ) = lbl
@@ -186,7 +186,8 @@ data Pred a
   | PredNot  ExprLabel (Pred a)                       -- ^ boolean not
   | PredComp ExprLabel Comp (Expr a) (Expr a)         -- ^ Ord comparisions: x < y
   | PredBin  ExprLabel PredBinOp (Pred a) (Pred a)    -- ^ predicate and / or / eq / ne
-  | PredVar  ExprLabel String                         -- ^ boolean variable name
+  | PredVar  String                                   -- ^ boolean variable retrieval
+  | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   deriving (Eq, Show)
 
@@ -197,7 +198,8 @@ getPredLabel ( PredVal      lbl  _     ) = lbl
 getPredLabel ( PredNot      lbl  _     ) = lbl
 getPredLabel ( PredBin      lbl  _ _ _ ) = lbl
 getPredLabel ( PredComp     lbl  _ _ _ ) = lbl
-getPredLabel ( PredVar      lbl  _     ) = lbl
+getPredLabel ( PredVar      lbl        ) = Just lbl
+getPredLabel ( PredSet      lbl  _     ) = Just lbl
 getPredLabel ( PredITE      lbl  _ _ _ ) = lbl
 
 
@@ -233,14 +235,14 @@ eval' (Parens  _lbl x)          = unaEval "parentheses"    id  x
 eval' (MathITE _lbl p x y)      = evalFP eval  p x y
 eval' (MathMax  lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
 eval' (MathMin  lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]))
-eval' (MathVar _lbl str) =
+eval' (MathVar      str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
-eval' (MathSet _lbl str x) =
+eval' (MathSet     str x) =
   let title = "variable assignment:" ++ str
   in retitle (title <> " " <> show str <> " := " <> show x) $ do
     symtab <- gets symtabF
@@ -334,8 +336,8 @@ evalP' (PredComp lbl c x y) =
                        , mkNod rhs
                        , ypl ]))
 
-evalP' (PredVar lbl str) =
-  let title = "variable expansion" ++ showlbl lbl
+evalP' (PredVar str) =
+  let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarP str
@@ -460,13 +462,15 @@ verbose x                = (x, x ++ " argument")
 
 class Exprlbl expr a where
   (@|=) :: String -> expr a -> expr a
-
+  (@|$<) :: String -> expr a
+  (@|$>) :: String -> expr a -> expr a
+  
 instance Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
-  (@|=) lbl ( MathVar  Nothing x     ) = MathVar  (Just lbl) x     
-  (@|=) lbl ( MathSet  Nothing x y   ) = MathSet  (Just lbl) x y   
+  (@|=) lbl ( MathVar          x     ) = error "use @|$< to label a variable reference"
+  (@|=) lbl ( MathSet          x y   ) = error "use @|$> to label a variable assignment"
   (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
@@ -474,12 +478,13 @@ instance Exprlbl Expr a where
   (@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
   (@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
   (@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
-  (@|=) lbl ( MathVar  (Just old) x     ) = MathVar  (Just lbl <++> Just ("previously " ++ old)) x     
-  (@|=) lbl ( MathSet  (Just old) x y   ) = MathSet  (Just lbl <++> Just ("previously " ++ old)) x y   
   (@|=) lbl ( MathITE  (Just old) x y z ) = MathITE  (Just lbl <++> Just ("previously " ++ old)) x y z 
   (@|=) lbl ( MathMax  (Just old) x y   ) = MathMax  (Just lbl <++> Just ("previously " ++ old)) x y   
   (@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
   (@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
+
+  (@|$<) lbl   = MathVar lbl
+  (@|$>) lbl x = MathSet lbl x
 
 (@|.) :: String -> a -> Expr a
 (@|.) = Val . Just
@@ -513,14 +518,18 @@ instance Exprlbl Pred a where
   (@|=) lbl ( PredNot  Nothing    x )     = PredNot  (Just lbl) x
   (@|=) lbl ( PredBin  Nothing    x y z ) = PredBin  (Just lbl) x y z
   (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
-  (@|=) lbl ( PredVar  Nothing    x )     = PredVar  (Just lbl) x
+  (@|=) lbl ( PredVar             x )     = error "use @|$< to label a variable reference"
+  (@|=) lbl ( PredSet             x y )   = error "use @|$> to label a variable assignment"
   (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
   (@|=) lbl ( PredVal  (Just old) x )     = PredVal  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredNot  (Just old) x )     = PredNot  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredBin  (Just old) x y z ) = PredBin  (Just lbl <++> Just ("previously " ++ old)) x y z
   (@|=) lbl ( PredComp (Just old) x y z ) = PredComp (Just lbl <++> Just ("previously " ++ old)) x y z
-  (@|=) lbl ( PredVar  (Just old) x )     = PredVar  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredITE  (Just old) x y z ) = PredITE  (Just lbl <++> Just ("previously " ++ old)) x y z
+
+  (@|$<) lbl   = PredVar lbl
+  (@|$>) lbl x = PredSet lbl x
+
 
 (@|..) :: String -> Bool -> Pred a
 (@|..) = PredVal . Just
@@ -535,12 +544,21 @@ infix 2 |||, @|||
 infix 3 |&&, @|&&
 infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 
+(@|<),(@|>),(@|<=),(@|>=) :: String -> Expr a -> Expr a -> Pred a
+(@|<)  s = PredComp (Just s) CLT
+(@|<=) s = PredComp (Just s) CLTE
+(@|>)  s = PredComp (Just s) CGT
+(@|>=) s = PredComp (Just s) CGTE
+  
 (@|&&),(@|||),(@|==),(@|!=),(@|/=) :: String -> Pred a -> Pred a -> Pred a
 (@|&&) s x y = PredBin (Just s) PredAnd  x y
 (@|||) s x y = PredBin (Just s) PredOr   x y
 (@|==) s x y = PredBin (Just s) PredEq   x y
 (@|!=) s x y = PredBin (Just s) PredNeq  x y
 (@|/=) s x y = PredBin (Just s) PredNeq  x y
+
+(@|!) :: String -> Pred a -> Pred a
+(@|!) s = PredNot (Just s)
 
 data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
   deriving (Eq, Show)

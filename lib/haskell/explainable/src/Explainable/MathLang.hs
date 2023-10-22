@@ -1,5 +1,6 @@
 module Explainable.MathLang where
 
+import Prelude hiding (pred)
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe, fromMaybe)
 import Control.Monad (forM_, mapAndUnzipM, unless)
@@ -51,15 +52,15 @@ showlbl Nothing  = mempty
 showlbl (Just l) = " (" ++ l ++ ")"
 
 getExprLabel :: Expr a -> ExprLabel
-getExprLabel ( Val      lbl  x     ) = lbl
-getExprLabel ( Parens   lbl  x     ) = lbl
-getExprLabel ( MathBin  lbl  x y z ) = lbl
-getExprLabel ( MathVar  lbl  x     ) = lbl
-getExprLabel ( MathSet  lbl  x y   ) = lbl
-getExprLabel ( MathITE  lbl  x y z ) = lbl
-getExprLabel ( MathMax  lbl  x y   ) = lbl
-getExprLabel ( MathMin  lbl  x y   ) = lbl
-getExprLabel ( ListFold lbl  x y   ) = lbl
+getExprLabel ( Val      lbl  _     ) = lbl
+getExprLabel ( Parens   lbl  _     ) = lbl
+getExprLabel ( MathVar  lbl  _     ) = lbl
+getExprLabel ( MathSet  lbl  _ _   ) = lbl
+getExprLabel ( MathMax  lbl  _ _   ) = lbl
+getExprLabel ( MathMin  lbl  _ _   ) = lbl
+getExprLabel ( ListFold lbl  _ _   ) = lbl
+getExprLabel ( MathBin  lbl  _ _ _ ) = lbl
+getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
 
 
 (<++>) :: Maybe String -> Maybe String -> Maybe String
@@ -184,13 +185,17 @@ data Pred a
   = PredVal  ExprLabel Bool
   | PredNot  ExprLabel (Pred a)                       -- ^ boolean not
   | PredComp ExprLabel Comp (Expr a) (Expr a)         -- ^ Ord comparisions: x < y
+  | PredBin  ExprLabel PredBinOp (Pred a) (Pred a)    -- ^ predicate and / or / eq / ne
   | PredVar  ExprLabel String                         -- ^ boolean variable name
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   deriving (Eq, Show)
 
+
+
 getPredLabel :: Pred a -> ExprLabel
 getPredLabel ( PredVal      lbl  _     ) = lbl
 getPredLabel ( PredNot      lbl  _     ) = lbl
+getPredLabel ( PredBin      lbl  _ _ _ ) = lbl
 getPredLabel ( PredComp     lbl  _ _ _ ) = lbl
 getPredLabel ( PredVar      lbl  _     ) = lbl
 getPredLabel ( PredITE      lbl  _ _ _ ) = lbl
@@ -230,7 +235,7 @@ eval' (MathMax  lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]
 eval' (MathMin  lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]))
 eval' (MathVar _lbl str) =
   let title = "variable expansion: " ++ str
-      (lhs,rhs) = verbose title
+      (lhs,_rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
@@ -252,7 +257,7 @@ eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
 doFold str f xs = retitle ("listfold " <> str) $ do
-  (MathList ylbl yvals,yexps) <- evalList xs
+  (MathList _ylbl yvals,yexps) <- evalList xs
   zs <- mapM eval yvals
   let toreturn = f (fst <$> zs)
   return (toreturn
@@ -296,10 +301,19 @@ evalP pred = do
 
 evalP' (PredVal lbl x) = do
   return (x, Node ([],[show x ++ ": a leaf value" ++ showlbl lbl]) [])
-evalP' (PredNot lbl x) = do
+evalP' (PredNot _lbl x) = do
   (xval,xpl) <- retitle "not" (evalP x)
   let toreturn = not xval
   return (toreturn, Node ([] ,[show toreturn ++ ": logical not of"]) [xpl])
+evalP' (PredBin _lbl binop x y) = do
+  (xval, xpl) <- evalP x
+  (yval, ypl) <- evalP y
+  let toreturn = case binop of
+                   PredAnd -> xval && yval
+                   PredOr  -> xval || yval
+                   PredEq  -> xval == yval
+                   PredNeq -> xval /= yval
+  return (toreturn, Node ([] ,[show toreturn ++ ": logical " ++ show binop]) [xpl, ypl])
 evalP' (PredComp lbl c x y) =
   let title = "comparison" ++ showlbl lbl
   in retitle (title <> " " <> shw c) $ do
@@ -322,13 +336,13 @@ evalP' (PredComp lbl c x y) =
 
 evalP' (PredVar lbl str) =
   let title = "variable expansion" ++ showlbl lbl
-      (lhs,rhs) = verbose title
+      (lhs,_rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarP str
     (xval, xpl2) <- evalP xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 
-evalP' (PredITE lbl p x y) = evalFP evalP p x y
+evalP' (PredITE _lbl p x y) = evalFP evalP p x y
 
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
 -- This works for both boolean Predicates and float Exprs.
@@ -376,7 +390,7 @@ evalList (ListFilt lbl x comp lf2) = do
   return (lf3val, Node ([],["recursing RHS ListFilt"]) [lf2xpl, mkNod "becomes", lf3xpl])
 
 evalList (ListMap lbl Id ylist) = return (ylist, mkNod ("id on ExprList" ++ showlbl lbl))
-evalList (ListMap lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" $ do
+evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" $ do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   return ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length ylist') ++ " elements"]) [yxpl] )
@@ -396,7 +410,7 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap ma
 -- I supposed this is analogous to "unboxed" types.
 
 deepEvalList :: (ExprList Float,XP) -> ExplainableIO r MyState [Float]
-deepEvalList (MathList lbl xs,xp) = do
+deepEvalList (MathList _lbl xs,xp) = do
   vals <- mapM eval xs
   return (fst <$> vals, Node ([],["deep evaluation to floats"]) (xp : (snd <$> vals)))
 deepEvalList (other,_xp) = deepEvalList =<< evalList other
@@ -497,17 +511,39 @@ instance ExprTernary Pred a where
 instance Exprlbl Pred a where
   (@|=) lbl ( PredVal  Nothing    x )     = PredVal  (Just lbl) x
   (@|=) lbl ( PredNot  Nothing    x )     = PredNot  (Just lbl) x
+  (@|=) lbl ( PredBin  Nothing    x y z ) = PredBin  (Just lbl) x y z
   (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
   (@|=) lbl ( PredVar  Nothing    x )     = PredVar  (Just lbl) x
   (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
   (@|=) lbl ( PredVal  (Just old) x )     = PredVal  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredNot  (Just old) x )     = PredNot  (Just lbl <++> Just ("previously " ++ old)) x
+  (@|=) lbl ( PredBin  (Just old) x y z ) = PredBin  (Just lbl <++> Just ("previously " ++ old)) x y z
   (@|=) lbl ( PredComp (Just old) x y z ) = PredComp (Just lbl <++> Just ("previously " ++ old)) x y z
   (@|=) lbl ( PredVar  (Just old) x )     = PredVar  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredITE  (Just old) x y z ) = PredITE  (Just lbl <++> Just ("previously " ++ old)) x y z
 
 (@|..) :: String -> Bool -> Pred a
 (@|..) = PredVal . Just
+
+(|&&),(|||),(|==),(|/=),(|!=) :: Pred a -> Pred a -> Pred a
+(|&&) x y = PredBin Nothing PredAnd x y
+(|||) x y = PredBin Nothing PredOr  x y
+(|==) x y = PredBin Nothing PredEq  x y
+(|!=) x y = PredBin Nothing PredNeq x y
+(|/=) x y = PredBin Nothing PredNeq x y
+infix 2 |||, @|||
+infix 3 |&&, @|&&
+infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
+
+(@|&&),(@|||),(@|==),(@|!=),(@|/=) :: String -> Pred a -> Pred a -> Pred a
+(@|&&) s x y = PredBin (Just s) PredAnd  x y
+(@|||) s x y = PredBin (Just s) PredOr   x y
+(@|==) s x y = PredBin (Just s) PredEq   x y
+(@|!=) s x y = PredBin (Just s) PredNeq  x y
+(@|/=) s x y = PredBin (Just s) PredNeq  x y
+
+data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
+  deriving (Eq, Show)
 
 -- | some example runs
 toplevel :: IO ()
@@ -518,7 +554,7 @@ toplevel = forM_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one"
                  , ListFold (Just "positive 1") FoldSum $ Val (Just "zero") 0 <| ml23
                  , ListFold (Just "positive 2") FoldSum $ Val (Just "zero") 0 <| ml23
                  ] $ \topexpr -> do
-  (val, xpl, stab, wlog) <- xplainF () emptyState topexpr
+  (_val, _xpl, _stab, _wlog) <- xplainF () emptyState topexpr
   return ()
   where ml23 = MathList (Just "minus two to three")
                [Val Nothing (-2), Val Nothing (-1), Val Nothing 0, Val Nothing 1, Val Nothing 2, Val Nothing 3]
@@ -552,8 +588,8 @@ xplainL r exprList = do
   return (xl, xp, stab, wlog) -- [TODO] note the explanation result from xs is discarded
 
 unMathList :: Show a => ExprList a -> [Expr a]
-unMathList (MathList lbl xs) = xs
-unMathList x                 = error $ "unMathList: expected exprList to be fully evaluated, but got " ++ show x
+unMathList (MathList _lbl xs) = xs
+unMathList x                  = error $ "unMathList: expected exprList to be fully evaluated, but got " ++ show x
 
 -- | dump an explanation of a mathlang expression
 dumpExplanationF :: Int -> MyState -> Expr Float -> IO ()

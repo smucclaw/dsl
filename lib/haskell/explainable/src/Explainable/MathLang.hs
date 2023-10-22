@@ -498,9 +498,10 @@ verbose x                = (x, x ++ " argument")
 
 class Exprlbl expr a where
   (@|=) :: String -> expr a -> expr a
-  (@|$<) :: String -> expr a
+  getvar, (@|$<) :: String -> expr a
   (@|$>) :: String -> expr a -> expr a
-  
+  getvar = (@|$<) 
+ 
 instance Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     

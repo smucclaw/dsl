@@ -28,6 +28,7 @@ dependencies:
 - parsec
 - parser-combinators
 - boxes
+- prettyprinter
 
 language: GHC2021
 

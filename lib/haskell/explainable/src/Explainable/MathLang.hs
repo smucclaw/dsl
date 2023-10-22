@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Explainable.MathLang where
 
 import Prelude hiding (pred)
@@ -9,6 +11,7 @@ import Control.Monad.Trans.RWS
 import Data.Tree
 import Data.Bifunctor
 import Explainable
+import Prettyprinter
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:
@@ -171,8 +174,8 @@ timesPositives n ns = timesPositives' n (MathList Nothing (Val Nothing <$> ns))
 
 -- | logical not
 
-(!|) :: Pred a -> Pred a
-(!|) = PredNot (Just "logical negation")
+(|!) :: Pred a -> Pred a
+(|!) = PredNot (Just "logical negation")
 
 -- * Booleans
 
@@ -626,7 +629,57 @@ dumpExplanationF depth s f = do
   putStrLn (stars ++ " xpl" ); print xpl
   putStrLn (stars ++ " stab"); print stab
   putStrLn (stars ++ " wlog"); print wlog
+  putStrLn (stars ++ " typescript"); do
+    putStrLn "#+BEGIN_SRC typescript"
+    print (pp f)
+    putStrLn "#+END_SRC"
+  
 
   where stars = replicate depth '*'
   
+
+-- * Prettty-printing to the Typescript version of the MathLang library
+class ToTS expr a where
+  pp :: (Show a) => expr a -> Doc ann
+
+instance ToTS Expr a where
+  pp (Val      lbl x )        = "new tsm.Num0"    <+> hang 0 ( tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] )
+
+  pp (Parens   lbl x        ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
+  pp (MathBin  lbl mbop x y ) = "new tsm.Num2"    <+> hang 0 ( tupled [ dquotes $ maybe ("binop " <> viaShow mbop) pretty lbl
+                                                                      , "tsm.NumBinOp." <> case mbop of { Plus -> "Add"; Minus -> "Sub"; Times -> "Mul"; Divide -> "Div" }
+                                                                      , pp x , pp y ] )
+  pp (MathVar  str          ) = "new tsm.GetVar"  <+> hang 0 ( parens ( dqpretty str) )
+  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> hang 0 ( tupled [ dqpretty str, parens (pp x) <> ".val" ] )
+  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> hang 0 ( tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] )
+  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> hang 0 ( tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ] )
+  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> hang 0 ( tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] )
+  pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> hang 0 (tupled [ dquotes $ maybe "list fold"    pretty lbl
+                                                                                 , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
+                                                                                 , list (pp <$> xs) ] )
+
+  pp x = error $ "MathLang:ToTS pp unimplemented; " <> show x
+
+instance ToTS Pred a where
+  pp (PredVal  lbl a    ) = "new tsm.Bool0"      <+> hang 0 ( tupled [ dquotes $ maybe (viaShow a) pretty lbl, tf a ] )
+  pp (PredNot  lbl x    ) = "new tsm.Bool1"      <+> hang 0 ( tupled [ dquotes $ maybe (viaShow x) pretty lbl, "tsm.BoolUnaOp.BoolNot", pp x ] )
+  pp (PredComp lbl c x y) = "new tsm.NumToBool2" <+> hang 0 ( tupled [ dquotes $ maybe (viaShow c) pretty lbl
+                                                                     , "tsm.NumToBoolOp." <> case c of { CEQ -> "NBeq"; CNEQ -> "NBneq"; CLT -> "NBlt"; CLTE -> "NBlte"; CGT -> "NBgt"; CGTE -> "NBgte" }
+                                                                     , pp x, pp y ] )
+  pp (PredBin  lbl o x y) = "new tsm.Bool2" <+> hang 0 ( tupled [ dquotes $ maybe (viaShow o) pretty lbl
+                                                                , "tsm.BoolBinOp." <> case o of { PredAnd -> "And"; PredOr -> "Or"; PredEq -> "BoolEq"; PredNeq -> "BoolNeq" }
+                                                                , pp x, pp y ] )
+  pp (PredVar  str      ) = "new tsm.GetVar" <+> hang 0 ( parens ( dqpretty str ) )
+  pp (PredSet  str x    ) = "new tsm.SetVar" <+> hang 0 ( tupled [ dqpretty str, parens (pp x) <> ".val" ] )
+  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> hang 0 ( tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] )
+
+dqpretty :: (Pretty a) => a -> Doc ann
+dqpretty = dquotes . pretty
+
+tf :: Bool -> Doc ann
+tf True = "true"
+tf False = "false"
+
+h0parens = hang 0 . parens
+h0tupled = hang 0 . tupled
 

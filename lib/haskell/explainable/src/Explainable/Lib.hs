@@ -63,7 +63,5 @@ runTests_Mathlang = do
   dumpExplanationF 3 defaultState iceCreams
 
 
-
   
-  putStrLn "* output to typescript"
 

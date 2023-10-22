@@ -2,7 +2,8 @@ module Explainable.MathLang where
 
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe, fromMaybe)
-import Control.Monad (forM_, mapAndUnzipM)
+import Control.Monad (forM_, mapAndUnzipM, unless)
+import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
 import Data.Tree
 import Data.Bifunctor
@@ -49,6 +50,19 @@ showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
 showlbl (Just l) = " (" ++ l ++ ")"
 
+getExprLabel :: Expr a -> ExprLabel
+getExprLabel ( Val      lbl  x     ) = lbl
+getExprLabel ( Parens   lbl  x     ) = lbl
+getExprLabel ( MathBin  lbl  x y z ) = lbl
+getExprLabel ( MathVar  lbl  x     ) = lbl
+getExprLabel ( MathSet  lbl  x y   ) = lbl
+getExprLabel ( MathITE  lbl  x y z ) = lbl
+getExprLabel ( MathMax  lbl  x y   ) = lbl
+getExprLabel ( MathMin  lbl  x y   ) = lbl
+getExprLabel ( ListFold lbl  x y   ) = lbl
+
+
+(<++>) :: Maybe String -> Maybe String -> Maybe String
 (<++>) Nothing Nothing  = Nothing
 (<++>) Nothing (Just y) = Just y
 (<++>) (Just x) Nothing = Just x
@@ -169,10 +183,18 @@ type PredList a = [Pred a]
 data Pred a
   = PredVal  ExprLabel Bool
   | PredNot  ExprLabel (Pred a)                       -- ^ boolean not
-  | PredComp ExprLabel Comp (Expr a) (Expr a)        -- ^ Ord comparisions: x < y
+  | PredComp ExprLabel Comp (Expr a) (Expr a)         -- ^ Ord comparisions: x < y
   | PredVar  ExprLabel String                         -- ^ boolean variable name
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   deriving (Eq, Show)
+
+getPredLabel :: Pred a -> ExprLabel
+getPredLabel ( PredVal      lbl  _     ) = lbl
+getPredLabel ( PredNot      lbl  _     ) = lbl
+getPredLabel ( PredComp     lbl  _ _ _ ) = lbl
+getPredLabel ( PredVar      lbl  _     ) = lbl
+getPredLabel ( PredITE      lbl  _ _ _ ) = lbl
+
 
 -- | variables
 data Var a
@@ -184,27 +206,36 @@ data Var a
 
 -- | Evaluate floats
 
-eval :: Expr Float -> ExplainableIO r MyState Float
-eval (Val lbl x) = do
+eval,eval' :: Expr Float -> ExplainableIO r MyState Float
+eval exprfloat = do
+  (x, result) <- eval' exprfloat
+  let lbl = getExprLabel exprfloat
+  -- liftIO $ putStrLn $ "lbl = " ++ show lbl
+  -- i really need to learn Lens / Optics
+  unless (null lbl) $ modify (\mystate -> mystate { symtabF = Map.insert (fromMaybe "" lbl) (Val lbl x) (symtabF mystate) })
+  -- liftIO . print =<< get
+  return (x, result)
+
+eval' (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
                   ,[show x ++ ": " ++ fromMaybe "a leaf value" lbl]) [])
-eval (MathBin lbl Plus   x y) = binEval "addition"       (+) x y
-eval (MathBin lbl Minus  x y) = binEval "subtraction"    (-) x y
-eval (MathBin lbl Times  x y) = binEval "multiplication" (*) x y
-eval (MathBin lbl Divide x y) = binEval "division"       (/) x y
-eval (Parens  lbl x)          = unaEval "parentheses"    id  x
-eval (MathITE lbl p x y)      = evalFP eval  p x y
-eval (MathMax lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
-eval (MathMin lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]))
-eval (MathVar lbl str) =
+eval' (MathBin _lbl Plus   x y) = binEval "addition"       (+) x y
+eval' (MathBin _lbl Minus  x y) = binEval "subtraction"    (-) x y
+eval' (MathBin _lbl Times  x y) = binEval "multiplication" (*) x y
+eval' (MathBin _lbl Divide x y) = binEval "division"       (/) x y
+eval' (Parens  _lbl x)          = unaEval "parentheses"    id  x
+eval' (MathITE _lbl p x y)      = evalFP eval  p x y
+eval' (MathMax  lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
+eval' (MathMin  lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]))
+eval' (MathVar _lbl str) =
   let title = "variable expansion: " ++ str
       (lhs,rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
-eval (MathSet lbl str x) =
+eval' (MathSet _lbl str x) =
   let title = "variable assignment:" ++ str
   in retitle (title <> " " <> show str <> " := " <> show x) $ do
     symtab <- gets symtabF
@@ -213,10 +244,10 @@ eval (MathSet lbl str x) =
     (xval,xpl) <- eval x
     return (xval, Node ([], [show xval ++ ": " ++ " saved to " ++ str]) [xpl])
 
-eval (ListFold lbl FoldMin     xs) = doFold "min" minimum xs
-eval (ListFold lbl FoldMax     xs) = doFold "max" maximum xs
-eval (ListFold lbl FoldSum     xs) = doFold "sum" sum xs
-eval (ListFold lbl FoldProduct xs) = doFold "product" product xs                              
+eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
+eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
+eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
+eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs                              
 
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
@@ -256,14 +287,20 @@ binEval title f x y = retitle title $ do
 
 -- | Evaluate predicates
 
-evalP :: Pred Float -> ExplainableIO r MyState Bool
-evalP (PredVal lbl x) = do
+evalP,evalP' :: Pred Float -> ExplainableIO r MyState Bool
+evalP pred = do
+  (x, result) <- evalP' pred
+  let lbl = getPredLabel pred
+  unless (null lbl) $ modify (\mystate -> mystate { symtabP = Map.insert (fromMaybe "" lbl) (PredVal lbl x) (symtabP mystate) })
+  return (x, result)
+
+evalP' (PredVal lbl x) = do
   return (x, Node ([],[show x ++ ": a leaf value" ++ showlbl lbl]) [])
-evalP (PredNot lbl x) = do
+evalP' (PredNot lbl x) = do
   (xval,xpl) <- retitle "not" (evalP x)
   let toreturn = not xval
   return (toreturn, Node ([] ,[show toreturn ++ ": logical not of"]) [xpl])
-evalP (PredComp lbl c x y) =
+evalP' (PredComp lbl c x y) =
   let title = "comparison" ++ showlbl lbl
   in retitle (title <> " " <> shw c) $ do
     (xval, xpl) <- eval x
@@ -283,7 +320,7 @@ evalP (PredComp lbl c x y) =
                        , mkNod rhs
                        , ypl ]))
 
-evalP (PredVar lbl str) =
+evalP' (PredVar lbl str) =
   let title = "variable expansion" ++ showlbl lbl
       (lhs,rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
@@ -291,7 +328,7 @@ evalP (PredVar lbl str) =
     (xval, xpl2) <- evalP xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 
-evalP (PredITE lbl p x y) = evalFP evalP p x y
+evalP' (PredITE lbl p x y) = evalFP evalP p x y
 
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
 -- This works for both boolean Predicates and float Exprs.
@@ -373,7 +410,11 @@ deepEvalList (other,_xp) = deepEvalList =<< evalList other
 getvarF :: String -> ExplainableIO r MyState (Expr Float)
 getvarF x = do
   symtab <- gets symtabF
-  return (symtab Map.! x, Node ([show $ symtab Map.! x], ["looked up " ++ x]) [])
+  case x `Map.lookup` symtab of
+    Nothing -> liftIO $ do
+      putStrLn ("getvarF: unable to find variable `" ++ x ++ "` in symbol table")
+      error "MathLang fatal error in getvarF"
+    Just v  -> return (v, Node ([show v], ["variable `" ++ x ++ "` has value " ++ show v]) [])
 
 -- | Get a @Pred Float@ variable
   
@@ -396,27 +437,63 @@ verbose "comparison"     = ("is the result of comparing", "with")
 verbose "variable expansion" = ("which comes from the variable", "")
 verbose x                = (x, x ++ " argument")
 
+-- | syntactic sugar for labeling expressions
+(@|.) :: String -> Float -> Expr Float
+(@|.) = Val . Just
+infix 6 @|.
+
+(@|+),(@|-),(@|*),(@|/) :: String -> Expr Float -> Expr Float -> Expr Float
+(@|+) lbl = MathBin (Just lbl) Plus
+(@|-) lbl = MathBin (Just lbl) Minus
+(@|*) lbl = MathBin (Just lbl) Times
+(@|/) lbl = MathBin (Just lbl) Divide
+
+(@|=) :: String -> Expr Float -> Expr Float
+(@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
+(@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
+(@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
+(@|=) lbl ( MathVar  Nothing x     ) = MathVar  (Just lbl) x     
+(@|=) lbl ( MathSet  Nothing x y   ) = MathSet  (Just lbl) x y   
+(@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
+(@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
+(@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
+(@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
+(@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
+(@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
+(@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
+(@|=) lbl ( MathVar  (Just old) x     ) = MathVar  (Just lbl <++> Just ("previously " ++ old)) x     
+(@|=) lbl ( MathSet  (Just old) x y   ) = MathSet  (Just lbl <++> Just ("previously " ++ old)) x y   
+(@|=) lbl ( MathITE  (Just old) x y z ) = MathITE  (Just lbl <++> Just ("previously " ++ old)) x y z 
+(@|=) lbl ( MathMax  (Just old) x y   ) = MathMax  (Just lbl <++> Just ("previously " ++ old)) x y   
+(@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
+(@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
+
+infix 2 @|=
+infix 4 @|+, @|-
+infix 5 @|*, @|/
+
 -- | some example runs
 toplevel :: IO ()
 toplevel = forM_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one") 1)
+                 , "my sum" @|= "two" @|. 2 |+ "three" @|. 3
                  , ListFold (Just "greater than 2") FoldSum $ Val (Just "two") 2 <| MathList (Just "one to four")
                    [Val Nothing 1, Val Nothing 2, Val Nothing 3, Val Nothing 4]
                  , ListFold (Just "positive 1") FoldSum $ Val (Just "zero") 0 <| ml23
                  , ListFold (Just "positive 2") FoldSum $ Val (Just "zero") 0 <| ml23
                  ] $ \topexpr -> do
-  (val, xpl, stab, wlog) <- xplainF () topexpr
+  (val, xpl, stab, wlog) <- xplainF () emptyState topexpr
   return ()
   where ml23 = MathList (Just "minus two to three")
                [Val Nothing (-2), Val Nothing (-1), Val Nothing 0, Val Nothing 1, Val Nothing 2, Val Nothing 3]
 -- * Explainers  
 
 -- | Explain an @Expr Float@
-xplainF :: r -> Expr Float -> IO (Float, XP, MyState, [String])
-xplainF r expr = do
+xplainF :: r -> MyState -> Expr Float -> IO (Float, XP, MyState, [String])
+xplainF r s expr = do
   ((val,xpl), stab, wlog) <- runRWST
                              (eval expr)
                              (([],["toplevel"]),r)         -- reader: HistoryPath, actualReader
-                             emptyState -- state: MyState
+                             s
   putStrLn $ "#+begin_src haskell\n" ++ show expr ++ "\n#+end_src"
   putStrLn $ "- val :: "    ++ show val
   putStrLn $ "- log :: "    ++ show wlog
@@ -440,3 +517,16 @@ xplainL r exprList = do
 unMathList :: Show a => ExprList a -> [Expr a]
 unMathList (MathList lbl xs) = xs
 unMathList x                 = error $ "unMathList: expected exprList to be fully evaluated, but got " ++ show x
+
+-- | dump an explanation of a mathlang expression
+dumpExplanationF :: Int -> MyState -> Expr Float -> IO ()
+dumpExplanationF depth s f = do
+  (val, xpl, stab, wlog) <- xplainF () s f
+  putStrLn (stars ++ " val" ); print val
+  putStrLn (stars ++ " xpl" ); print xpl
+  putStrLn (stars ++ " stab"); print stab
+  putStrLn (stars ++ " wlog"); print wlog
+
+  where stars = replicate depth '*'
+  
+

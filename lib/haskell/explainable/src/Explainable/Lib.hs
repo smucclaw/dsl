@@ -2,6 +2,7 @@ module Explainable.Lib where
 
 import Text.Megaparsec ( choice, some, Parsec, MonadParsec(try) )
 import Text.Megaparsec.Char ( numberChar )
+import qualified Data.Map as Map
 
 import Explainable.MathLang
 
@@ -27,38 +28,40 @@ int = read <$> some numberChar
 
 runTests_1 :: IO ()
 runTests_1 = do
-  -- (t1v, t1x, t1s, t1w) <- xplainF someScenario (MathITE (PredComp CLT (Val 1) (Val 2)) (Val 100) (Val 200))
+  -- (t1v, t1x, t1s, t1w) <- xplainF someScenario varstate (MathITE (PredComp CLT (Val 1) (Val 2)) (Val 100) (Val 200))
 
   -- you may ask: how is this better than just doing things natively in haskell? The answer: evaluation is decorated with explanations, and that's valuable, because XAI.
 
   putStrLn "* the sum of all positive elements, ignoring negative elements"
-  dumpExplanation 2 $ sumOf     $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
+  dumpExplanationF 2 defaultState $ sumOf     $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
 
   putStrLn "* the product of the doubles of all positive elements, ignoring negative and zero elements"
-  dumpExplanation 2 $ productOf $ timesEach 2 $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
+  dumpExplanationF 2 defaultState $ productOf $ timesEach 2 $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
 
   putStrLn "* the sum of the doubles of all positive elements and the unchanged original values of all negative elements"
-  dumpExplanation 2 $ sumOf $ timesPositives 2 [-2, -1, 0, 1, 2, 3]
+  dumpExplanationF 2 defaultState $ sumOf $ timesPositives 2 [-2, -1, 0, 1, 2, 3]
 
 
+defaultState = emptyState { symtabF = Map.fromList [("dow", "dow" @|. 2)] }
+  
 
 runTests_Mathlang :: IO ()
 runTests_Mathlang = do
   putStrLn "* mathlang tests"
 
-  putStrLn "** two plus two equals four"
-  let four = Val (Just "two") 2 |+ Val (Just "two") 2
-  dumpExplanation 3 four
+  putStrLn "** two plus (two on sundays, and one every other day) equals three or four"
+  let iceCreams =
+        "iceCreams" @|= Val (Just "two") 2 |+
+        MathITE (Just "more on Sundays" )
+        (PredComp (Just "is it sunday") CEQ
+          (MathVar (Just "what day of the week is it") "dow")
+          ("sunday is day seven" @|. 7))
+        ("two on Sundays" @|. 2)
+        ("one otherwise"  @|. 1)
+  dumpExplanationF 3 defaultState iceCreams
+
+
+
   
   putStrLn "* output to typescript"
 
-dumpExplanation :: Int -> Expr Float -> IO ()
-dumpExplanation depth f = do
-  (val, xpl, stab, wlog) <- xplainF () f
-  putStrLn (stars ++ " val" ); print val
-  putStrLn (stars ++ " xpl" ); print xpl
-  putStrLn (stars ++ " stab"); print stab
-  putStrLn (stars ++ " wlog"); print wlog
-
-  where stars = replicate depth '*'
-  

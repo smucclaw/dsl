@@ -159,9 +159,28 @@ squashToTotals sc = do
   (total,xpl) <- eval $ sumOf . col2mathList $ sc Map.! "net income"
   return (Map.singleton "net income" (Map.singleton "total" total)
          ,xpl)
+
+runTests_Mathlang :: IO ()
+runTests_Mathlang = do
+  putStrLn "* mathlang tests"
+
+  putStrLn "** two plus two equals four"
+  let four = Val 2 |+ Val 2
+  dumpExplanation four
   
-runTests :: IO ()
-runTests = do
+  putStrLn "* output to typescript"
+  where
+    dumpExplanation f = do
+      (val, xpl, stab, wlog) <- xplainF () f
+      putStrLn "*** val"; print val
+      putStrLn "*** xpl"; print xpl
+      putStrLn "*** stab"; print stab
+      putStrLn "*** wlog"; print wlog
+
+
+  
+runTests_Taxes :: IO ()
+runTests_Taxes = do
  
   putStrLn "* Scenarios"
 

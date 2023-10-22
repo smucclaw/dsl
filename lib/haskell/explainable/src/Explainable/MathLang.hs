@@ -144,6 +144,7 @@ data Comp = CEQ | CGT | CLT | CGTE | CLTE | CNEQ
 -- | @show@ for comparisons
 shw :: Comp -> String
 shw CEQ  = "=="
+shw CNEQ = "!="
 shw CGT  = ">"
 shw CGTE = ">="
 shw CLT  = "<"
@@ -348,6 +349,15 @@ evalP' (PredVar str) =
     (xval, xpl2) <- evalP xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 
+evalP' (PredSet str x) =
+  let title = "variable assignment: " ++ str
+  in retitle (title <> " " <> show str <> " := " <> fromMaybe (show x) (getPredLabel x)) $ do
+    symtab <- gets symtabP
+    let newmap = Map.insert str x symtab
+    modify (\ms -> ms { symtabP = newmap })
+    (xval,xpl) <- evalP x
+    return (xval, Node ([], [show xval ++ ": " ++ " saved to " ++ str]) [xpl])
+
 evalP' (PredITE _lbl p x y) = evalFP evalP p x y
 
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
@@ -406,8 +416,8 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap ma
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   liveElements <- mapM (evalP . PredComp (lbl1 <++> lbl2) comp c) ylist'
 
-  return ( MathList (Just "evaled list") [ if tf then MathBin (Just "tf true") binop x y else y
-                                         | (y,tf) <- zip ylist' (fst <$> liveElements) ]
+  return ( MathList (Just "evaled list") [ if b then MathBin (Just "boolean true") binop x y else y
+                                         | (y,b) <- zip ylist' (fst <$> liveElements) ]
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length (filter id (fst <$> liveElements))) ++ " relevant elements (" ++
                     "who pass " ++ show c ++ " " ++ show comp ++ ")"])
            [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
@@ -473,8 +483,8 @@ instance Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
-  (@|=) lbl ( MathVar          x     ) = error "use @|$< to label a variable reference"
-  (@|=) lbl ( MathSet          x y   ) = error "use @|$> to label a variable assignment"
+  (@|=) _   ( MathVar          _     ) = error "use @|$< to label a variable reference"
+  (@|=) _   ( MathSet          _ _   ) = error "use @|$> to label a variable assignment"
   (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
@@ -522,8 +532,8 @@ instance Exprlbl Pred a where
   (@|=) lbl ( PredNot  Nothing    x )     = PredNot  (Just lbl) x
   (@|=) lbl ( PredBin  Nothing    x y z ) = PredBin  (Just lbl) x y z
   (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
-  (@|=) lbl ( PredVar             x )     = error "use @|$< to label a variable reference"
-  (@|=) lbl ( PredSet             x y )   = error "use @|$> to label a variable assignment"
+  (@|=) _   ( PredVar             _ )     = error "use @|$< to label a variable reference"
+  (@|=) _   ( PredSet             _ _ )   = error "use @|$> to label a variable assignment"
   (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
   (@|=) lbl ( PredVal  (Just old) x )     = PredVal  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredNot  (Just old) x )     = PredNot  (Just lbl <++> Just ("previously " ++ old)) x
@@ -643,35 +653,35 @@ class ToTS expr a where
   pp :: (Show a) => expr a -> Doc ann
 
 instance ToTS Expr a where
-  pp (Val      lbl x )        = "new tsm.Num0"    <+> hang 0 ( tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] )
+  pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] 
 
-  pp (Parens   lbl x        ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
-  pp (MathBin  lbl mbop x y ) = "new tsm.Num2"    <+> hang 0 ( tupled [ dquotes $ maybe ("binop " <> viaShow mbop) pretty lbl
+  pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
+  pp (MathBin  lbl mbop x y ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe ("binop " <> viaShow mbop) pretty lbl
                                                                       , "tsm.NumBinOp." <> case mbop of { Plus -> "Add"; Minus -> "Sub"; Times -> "Mul"; Divide -> "Div" }
-                                                                      , pp x , pp y ] )
-  pp (MathVar  str          ) = "new tsm.GetVar"  <+> hang 0 ( parens ( dqpretty str) )
-  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> hang 0 ( tupled [ dqpretty str, parens (pp x) <> ".val" ] )
-  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> hang 0 ( tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] )
-  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> hang 0 ( tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ] )
-  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> hang 0 ( tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] )
-  pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> hang 0 (tupled [ dquotes $ maybe "list fold"    pretty lbl
-                                                                                 , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
-                                                                                 , list (pp <$> xs) ] )
+                                                                      , pp x , pp y ] 
+  pp (MathVar  str          ) = "new tsm.GetVar"  <+> h0parens ( dqpretty str)
+  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
+  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
+  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ] 
+  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] 
+  pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> h0tupled [ dquotes $ maybe "list fold" pretty (lbl <++> mlbl)
+                                                                           , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
+                                                                           , list (pp <$> xs) ]
 
   pp x = error $ "MathLang:ToTS pp unimplemented; " <> show x
 
 instance ToTS Pred a where
-  pp (PredVal  lbl a    ) = "new tsm.Bool0"      <+> hang 0 ( tupled [ dquotes $ maybe (viaShow a) pretty lbl, tf a ] )
-  pp (PredNot  lbl x    ) = "new tsm.Bool1"      <+> hang 0 ( tupled [ dquotes $ maybe (viaShow x) pretty lbl, "tsm.BoolUnaOp.BoolNot", pp x ] )
-  pp (PredComp lbl c x y) = "new tsm.NumToBool2" <+> hang 0 ( tupled [ dquotes $ maybe (viaShow c) pretty lbl
+  pp (PredVal  lbl a    ) = "new tsm.Bool0"      <+> h0tupled [ dquotes $ maybe (viaShow a) pretty lbl, tf a ]
+  pp (PredNot  lbl x    ) = "new tsm.Bool1"      <+> h0tupled [ dquotes $ maybe (viaShow x) pretty lbl, "tsm.BoolUnaOp.BoolNot", pp x ]
+  pp (PredComp lbl c x y) = "new tsm.NumToBool2" <+> h0tupled [ dquotes $ maybe (viaShow c) pretty lbl
                                                                      , "tsm.NumToBoolOp." <> case c of { CEQ -> "NBeq"; CNEQ -> "NBneq"; CLT -> "NBlt"; CLTE -> "NBlte"; CGT -> "NBgt"; CGTE -> "NBgte" }
-                                                                     , pp x, pp y ] )
-  pp (PredBin  lbl o x y) = "new tsm.Bool2" <+> hang 0 ( tupled [ dquotes $ maybe (viaShow o) pretty lbl
+                                                                     , pp x, pp y ] 
+  pp (PredBin  lbl o x y) = "new tsm.Bool2" <+> h0tupled [ dquotes $ maybe (viaShow o) pretty lbl
                                                                 , "tsm.BoolBinOp." <> case o of { PredAnd -> "And"; PredOr -> "Or"; PredEq -> "BoolEq"; PredNeq -> "BoolNeq" }
-                                                                , pp x, pp y ] )
-  pp (PredVar  str      ) = "new tsm.GetVar" <+> hang 0 ( parens ( dqpretty str ) )
-  pp (PredSet  str x    ) = "new tsm.SetVar" <+> hang 0 ( tupled [ dqpretty str, parens (pp x) <> ".val" ] )
-  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> hang 0 ( tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] )
+                                                                , pp x, pp y ] 
+  pp (PredVar  str      ) = "new tsm.GetVar" <+> h0parens ( dqpretty str )
+  pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
+  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
 
 dqpretty :: (Pretty a) => a -> Doc ann
 dqpretty = dquotes . pretty
@@ -680,6 +690,8 @@ tf :: Bool -> Doc ann
 tf True = "true"
 tf False = "false"
 
+h0parens :: Doc ann -> Doc ann
 h0parens = hang 0 . parens
+h0tupled :: [Doc ann] -> Doc ann
 h0tupled = hang 0 . tupled
 

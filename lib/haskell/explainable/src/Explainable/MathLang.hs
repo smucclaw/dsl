@@ -448,29 +448,66 @@ infix 6 @|.
 (@|*) lbl = MathBin (Just lbl) Times
 (@|/) lbl = MathBin (Just lbl) Divide
 
-(@|=) :: String -> Expr Float -> Expr Float
-(@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
-(@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
-(@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
-(@|=) lbl ( MathVar  Nothing x     ) = MathVar  (Just lbl) x     
-(@|=) lbl ( MathSet  Nothing x y   ) = MathSet  (Just lbl) x y   
-(@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
-(@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
-(@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
-(@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
-(@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
-(@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
-(@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
-(@|=) lbl ( MathVar  (Just old) x     ) = MathVar  (Just lbl <++> Just ("previously " ++ old)) x     
-(@|=) lbl ( MathSet  (Just old) x y   ) = MathSet  (Just lbl <++> Just ("previously " ++ old)) x y   
-(@|=) lbl ( MathITE  (Just old) x y z ) = MathITE  (Just lbl <++> Just ("previously " ++ old)) x y z 
-(@|=) lbl ( MathMax  (Just old) x y   ) = MathMax  (Just lbl <++> Just ("previously " ++ old)) x y   
-(@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
-(@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
+class Exprlbl expra where
+  (@|=) :: String -> expra -> expra
 
-infix 2 @|=
+instance Exprlbl (Expr a) where
+  (@|=) :: String -> Expr a -> Expr a
+  (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
+  (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
+  (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
+  (@|=) lbl ( MathVar  Nothing x     ) = MathVar  (Just lbl) x     
+  (@|=) lbl ( MathSet  Nothing x y   ) = MathSet  (Just lbl) x y   
+  (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
+  (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
+  (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
+  (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
+  (@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
+  (@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
+  (@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
+  (@|=) lbl ( MathVar  (Just old) x     ) = MathVar  (Just lbl <++> Just ("previously " ++ old)) x     
+  (@|=) lbl ( MathSet  (Just old) x y   ) = MathSet  (Just lbl <++> Just ("previously " ++ old)) x y   
+  (@|=) lbl ( MathITE  (Just old) x y z ) = MathITE  (Just lbl <++> Just ("previously " ++ old)) x y z 
+  (@|=) lbl ( MathMax  (Just old) x y   ) = MathMax  (Just lbl <++> Just ("previously " ++ old)) x y   
+  (@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
+  (@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
+
+
+class ExprTernary expr a where
+  (@|?) :: Pred a -> TernaryRHS (expr a) -> expr a
+
+instance ExprTernary Expr a where
+  (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
+
+
+infix 1 @|=
 infix 4 @|+, @|-
 infix 5 @|*, @|/
+
+-- | syntactic sugar for ternary syntax. The trick is to join up the branches into a single thing
+data TernaryRHS a = TRHS a a deriving (Eq, Show)
+(@|:) :: expr -> expr -> TernaryRHS expr
+(@|:) tbranch fbranch = TRHS tbranch fbranch
+
+infixr 2 @|?
+infix  3 @|:
+
+-- | syntactic sugar for the predicate expressions
+instance Exprlbl (Pred a) where
+  (@|=) :: String -> Pred a -> Pred a
+  (@|=) lbl ( PredVal  Nothing    x )     = PredVal  (Just lbl) x
+  (@|=) lbl ( PredNot  Nothing    x )     = PredNot  (Just lbl) x
+  (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
+  (@|=) lbl ( PredVar  Nothing    x )     = PredVar  (Just lbl) x
+  (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
+  (@|=) lbl ( PredVal  (Just old) x )     = PredVal  (Just lbl <++> Just ("previously " ++ old)) x
+  (@|=) lbl ( PredNot  (Just old) x )     = PredNot  (Just lbl <++> Just ("previously " ++ old)) x
+  (@|=) lbl ( PredComp (Just old) x y z ) = PredComp (Just lbl <++> Just ("previously " ++ old)) x y z
+  (@|=) lbl ( PredVar  (Just old) x )     = PredVar  (Just lbl <++> Just ("previously " ++ old)) x
+  (@|=) lbl ( PredITE  (Just old) x y z ) = PredITE  (Just lbl <++> Just ("previously " ++ old)) x y z
+
+instance ExprTernary Pred a where
+  (@|?) pred (TRHS tbranch fbranch) = PredITE Nothing pred tbranch fbranch
 
 -- | some example runs
 toplevel :: IO ()

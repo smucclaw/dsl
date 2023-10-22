@@ -42,7 +42,8 @@ runTests_1 = do
   dumpExplanationF 2 defaultState $ sumOf $ timesPositives 2 [-2, -1, 0, 1, 2, 3]
 
 
-defaultState = emptyState { symtabF = Map.fromList [("dow", "dow" @|. 2)] }
+defaultState :: MyState
+defaultState = emptyState { symtabF = Map.fromList [("dow", "dow" @|. 7)] }
   
 
 runTests_Mathlang :: IO ()
@@ -51,13 +52,14 @@ runTests_Mathlang = do
 
   putStrLn "** two plus (two on sundays, and one every other day) equals three or four"
   let iceCreams =
-        "iceCreams" @|= Val (Just "two") 2 |+
-        MathITE (Just "more on Sundays" )
-        (PredComp (Just "is it sunday") CEQ
-          (MathVar (Just "what day of the week is it") "dow")
-          ("sunday is day seven" @|. 7))
-        ("two on Sundays" @|. 2)
-        ("one otherwise"  @|. 1)
+        "iceCreams" @|=
+        "two usually" @|. 2
+        |+
+        ("more on Sundays" @|=
+         (PredComp (Just "is it sunday") CEQ (MathVar (Just "what day of the week is it") "dow")) ("sunday is day seven" @|. 7)
+         @|? ("two on Sundays" @|. 2)
+         @|: ("one otherwise"  @|. 1)
+        )
   dumpExplanationF 3 defaultState iceCreams
 
 

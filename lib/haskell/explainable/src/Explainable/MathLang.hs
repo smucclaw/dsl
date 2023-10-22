@@ -33,23 +33,33 @@ emptyState = MyState Map.empty Map.empty Map.empty
 
 -- | Numeric expressions are things that evaluate to a number.
 -- The @a@ here is pretty much always a @Float@.
-data Expr a = Val a                                -- ^ simple value
-            | Parens            (Expr a)           -- ^ parentheses for grouping
-            | MathBin MathBinOp (Expr a) (Expr a)  -- ^ binary arithmetic operation
-            | MathVar String                       -- ^ variable reference
-            | MathSet String    (Expr a)           -- ^ variable assignment
-            | MathITE  (Pred a) (Expr a) (Expr a)  -- ^ if-then-else
-            | MathMax           (Expr a) (Expr a)  -- ^ max of two expressions
-            | MathMin           (Expr a) (Expr a)  -- ^ min of two expressions
-            | ListFold SomeFold (ExprList a)       -- ^ fold a list of expressions into a single expr value
+data Expr a = Val      ExprLabel a                            -- ^ simple value
+            | Parens   ExprLabel           (Expr a)           -- ^ parentheses for grouping
+            | MathBin  ExprLabel MathBinOp (Expr a) (Expr a)  -- ^ binary arithmetic operation
+            | MathVar  ExprLabel String                       -- ^ variable reference
+            | MathSet  ExprLabel String    (Expr a)           -- ^ variable assignment
+            | MathITE  ExprLabel  (Pred a) (Expr a) (Expr a)  -- ^ if-then-else
+            | MathMax  ExprLabel           (Expr a) (Expr a)  -- ^ max of two expressions
+            | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
+            | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
             deriving (Eq, Show)
+
+type ExprLabel = Maybe String
+showlbl :: ExprLabel -> String
+showlbl Nothing  = mempty
+showlbl (Just l) = " (" ++ l ++ ")"
+
+(<++>) Nothing Nothing  = Nothing
+(<++>) Nothing (Just y) = Just y
+(<++>) (Just x) Nothing = Just x
+(<++>) (Just x) (Just y) = Just (x ++ ", " ++ y)
 
 -- | basic binary operator for arithmetic
 (|+),(|-),(|*),(|/) :: Expr Float -> Expr Float -> Expr Float
-x |+ y = MathBin Plus   x y
-x |- y = MathBin Minus  x y
-x |* y = MathBin Times  x y
-x |/ y = MathBin Divide x y
+x |+ y = MathBin Nothing Plus   x y
+x |- y = MathBin Nothing Minus  x y
+x |* y = MathBin Nothing Times  x y
+x |/ y = MathBin Nothing Divide x y
 
 infix 5 |*, |/
 infix 4 |+, |-
@@ -63,10 +73,10 @@ infix 4 |+, |-
 -- But this is crude. There's an alternative way to say it, using MathSections in an ExprList.
 
 (+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> ExplainableIO r MyState [Float]
-x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Plus   x) ys
-x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Minus  x) ys
-x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Times  x) ys
-x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Divide x) ys
+x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Plus   x) ys
+x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Minus  x) ys
+x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Times  x) ys
+x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Divide x) ys
 
 -- ** Function Sections and infrastructure for folds
 
@@ -91,10 +101,10 @@ data SomeFold = FoldSum      -- ^ by taking the sum
 
 -- | We can filter, map, and mapIf over lists of expressions. Here, @a@ is pretty much always a @Float@.
 data ExprList a
-  = MathList [Expr a]                                    -- ^ a basic list of `Expr` expressions
-  | ListMap   (MathSection a)               (ExprList a) -- ^ apply the function to everything
-  | ListFilt                  (Expr a) Comp (ExprList a) -- ^ eliminate the unwanted elements
-  | ListMapIf (MathSection a) (Expr a) Comp (ExprList a) -- ^ leaving the unwanted elements unchanged
+  = MathList  ExprLabel [Expr a]                                    -- ^ a basic list of `Expr` expressions
+  | ListMap   ExprLabel (MathSection a)               (ExprList a) -- ^ apply the function to everything
+  | ListFilt  ExprLabel                 (Expr a) Comp (ExprList a) -- ^ eliminate the unwanted elements
+  | ListMapIf ExprLabel (MathSection a) (Expr a) Comp (ExprList a) -- ^ leaving the unwanted elements unchanged
   deriving (Eq, Show)
 
 -- * Some sugary constructors for expressions in our math language.
@@ -106,8 +116,8 @@ data ExprList a
 -- Here, we would say @ 0 <| [-2,-1,0,1,2] @
 
 (<|),(|>) :: Expr Float -> ExprList Float -> ExprList Float
-x <| ys = ListFilt x CLT ys
-x |> ys = ListFilt x CGT ys
+x <| ys = ListFilt Nothing x CLT ys
+x |> ys = ListFilt Nothing x CGT ys
 
 -- | To support our notion of Data.Ord
 data Comp = CEQ | CGT | CLT | CGTE | CLTE
@@ -124,30 +134,30 @@ shw CLTE = "<="
 -- * Syntactic Sugar
 
 (+||),sumOf,productOf,(*||) :: ExprList a -> Expr a
-(+||)     = ListFold FoldSum
-sumOf     = ListFold FoldSum
-(*||)     = ListFold FoldProduct
-productOf = ListFold FoldProduct
+(+||)     = ListFold Nothing FoldSum
+sumOf     = ListFold Nothing FoldSum
+(*||)     = ListFold Nothing FoldProduct
+productOf = ListFold Nothing FoldProduct
 
 negativeElementsOf :: [Float] -> ExprList Float
-negativeElementsOf xs = Val 0 |> MathList (Val <$> xs)
+negativeElementsOf xs = Val Nothing 0 |> MathList Nothing (Val Nothing <$> xs)
 
 positiveElementsOf :: [Float] -> ExprList Float
-positiveElementsOf xs = Val 0 <| MathList (Val <$> xs)
+positiveElementsOf xs = Val Nothing 0 <| MathList Nothing (Val Nothing <$> xs)
 
 timesEach :: Float -> ExprList Float -> ExprList Float
-timesEach n = ListMap (MathSection Times (Val n))
+timesEach n = ListMap Nothing (MathSection Times (Val Nothing n))
 
 timesPositives' :: Float -> ExprList Float -> ExprList Float
-timesPositives' n = ListMapIf (MathSection Times (Val n)) (Val 0) CLT
+timesPositives' n = ListMapIf Nothing (MathSection Times (Val Nothing n)) (Val Nothing 0) CLT
 
 timesPositives :: Float -> [Float] -> ExprList Float
-timesPositives n ns = timesPositives' n (MathList (Val <$> ns))
+timesPositives n ns = timesPositives' n (MathList Nothing (Val Nothing <$> ns))
 
 -- | logical not
 
 (!|) :: Pred a -> Pred a
-(!|) = PredNot
+(!|) = PredNot (Just "logical negation")
 
 -- * Booleans
 
@@ -157,11 +167,11 @@ type PredList a = [Pred a]
 
 -- | conditional predicates: things that evaluate to a boolean
 data Pred a
-  = PredVal Bool
-  | PredNot (Pred a)                       -- ^ boolean not
-  | PredComp Comp (Expr a) (Expr a)        -- ^ Ord comparisions: x < y
-  | PredVar String                         -- ^ boolean variable name
-  | PredITE (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
+  = PredVal  ExprLabel Bool
+  | PredNot  ExprLabel (Pred a)                       -- ^ boolean not
+  | PredComp ExprLabel Comp (Expr a) (Expr a)        -- ^ Ord comparisions: x < y
+  | PredVar  ExprLabel String                         -- ^ boolean variable name
+  | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   deriving (Eq, Show)
 
 -- | variables
@@ -175,27 +185,27 @@ data Var a
 -- | Evaluate floats
 
 eval :: Expr Float -> ExplainableIO r MyState Float
-eval (Val x) = do
+eval (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
                   ,[show x ++ ": a leaf value"]) [])
-eval (MathBin Plus   x y) = binEval "addition"       (+) x y
-eval (MathBin Minus  x y) = binEval "subtraction"    (-) x y
-eval (MathBin Times  x y) = binEval "multiplication" (*) x y
-eval (MathBin Divide x y) = binEval "division"       (/) x y
-eval (Parens x)           = unaEval "parentheses"    id  x
-eval (MathITE p x y)      = evalFP eval  p x y
-eval (MathMax x y)        = eval (ListFold FoldMax (MathList [x,y]))
-eval (MathMin x y)        = eval (ListFold FoldMin (MathList [x,y]))
-eval (MathVar str) =
-  let title = "variable expansion"
+eval (MathBin lbl Plus   x y) = binEval "addition"       (+) x y
+eval (MathBin lbl Minus  x y) = binEval "subtraction"    (-) x y
+eval (MathBin lbl Times  x y) = binEval "multiplication" (*) x y
+eval (MathBin lbl Divide x y) = binEval "division"       (/) x y
+eval (Parens  lbl x)          = unaEval "parentheses"    id  x
+eval (MathITE lbl p x y)      = evalFP eval  p x y
+eval (MathMax lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
+eval (MathMin lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]))
+eval (MathVar lbl str) =
+  let title = "variable expansion: " ++ str
       (lhs,rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
-eval (MathSet str x) =
-  let title = "variable assignment"
+eval (MathSet lbl str x) =
+  let title = "variable assignment:" ++ str
   in retitle (title <> " " <> show str <> " := " <> show x) $ do
     symtab <- gets symtabF
     let newmap = Map.union (Map.singleton str x) symtab
@@ -203,15 +213,15 @@ eval (MathSet str x) =
     (xval,xpl) <- eval x
     return (xval, Node ([], [show xval ++ ": " ++ " saved to " ++ str]) [xpl])
 
-eval (ListFold FoldMin     xs) = doFold "min" minimum xs
-eval (ListFold FoldMax     xs) = doFold "max" maximum xs
-eval (ListFold FoldSum     xs) = doFold "sum" sum xs
-eval (ListFold FoldProduct xs) = doFold "product" product xs                              
+eval (ListFold lbl FoldMin     xs) = doFold "min" minimum xs
+eval (ListFold lbl FoldMax     xs) = doFold "max" maximum xs
+eval (ListFold lbl FoldSum     xs) = doFold "sum" sum xs
+eval (ListFold lbl FoldProduct xs) = doFold "product" product xs                              
 
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
 doFold str f xs = retitle ("listfold " <> str) $ do
-  (MathList yvals,yexps) <- evalList xs
+  (MathList ylbl yvals,yexps) <- evalList xs
   zs <- mapM eval yvals
   let toreturn = f (fst <$> zs)
   return (toreturn
@@ -247,14 +257,14 @@ binEval title f x y = retitle title $ do
 -- | Evaluate predicates
 
 evalP :: Pred Float -> ExplainableIO r MyState Bool
-evalP (PredVal x) = do
+evalP (PredVal lbl x) = do
   return (x, Node ([],[show x ++ ": a leaf value"]) [])
-evalP (PredNot x) = do
+evalP (PredNot lbl x) = do
   (xval,xpl) <- retitle "not" (evalP x)
   let toreturn = not xval
   return (toreturn, Node ([] ,[show toreturn ++ ": logical not of"]) [xpl])
-evalP (PredComp c x y) =
-  let title = "comparison"
+evalP (PredComp lbl c x y) =
+  let title = "comparison" ++ showlbl lbl
   in retitle (title <> " " <> shw c) $ do
     (xval, xpl) <- eval x
     (yval, ypl) <- eval y
@@ -273,15 +283,15 @@ evalP (PredComp c x y) =
                        , mkNod rhs
                        , ypl ]))
 
-evalP (PredVar str) =
-  let title = "variable expansion"
+evalP (PredVar lbl str) =
+  let title = "variable expansion" ++ showlbl lbl
       (lhs,rhs) = verbose title
   in retitle (title <> " " <> show str) $ do
     (xvar, xpl1) <- getvarP str
     (xval, xpl2) <- evalP xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 
-evalP (PredITE p x y) = evalFP evalP p x y
+evalP (PredITE lbl p x y) = evalFP evalP p x y
 
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
 -- This works for both boolean Predicates and float Exprs.
@@ -304,10 +314,10 @@ evalFP evf p x y = retitle "if-then-else" $ do
 -- | Evaluate an `ExprList`
 
 evalList :: ExprList Float -> ExplainableIO r MyState (ExprList Float)
-evalList (MathList a) = return (MathList a, Node (show <$> a,["base MathList with " ++ show (length a) ++ " elements"]) [])
-evalList (ListFilt x comp (MathList ys)) = do
+evalList (MathList lbl a) = return (MathList lbl a, Node (show <$> a,["base MathList with " ++ show (length a) ++ " elements"]) [])
+evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
   origs <- mapM eval ys
-  round1 <- mapM (evalP . PredComp comp x) ys
+  round1 <- mapM (evalP . PredComp lbl1 comp x) ys
   let round2 = [ if not r1
                  then (Nothing, Node ([show xval]
                                      , ["excluded " ++ show xval ++
@@ -318,29 +328,29 @@ evalList (ListFilt x comp (MathList ys)) = do
                | ((r1,xpl), xval) <- zip round1 ys
                ]
       round3 = mapMaybe fst round2
-  return ( MathList round3
+  return ( MathList (lbl1 <++> lbl2) round3
          , Node ([]
                 , (show (length round3) ++ " elements were reduced from an original " ++ show (length round1))
                   : ["- " ++ show (fst o) | o <- origs])
            $ fmap snd round2)
-evalList (ListFilt x comp lf2) = do
+evalList (ListFilt lbl x comp lf2) = do
   (lf2val, lf2xpl) <- evalList lf2
-  (lf3val, lf3xpl) <- evalList (ListFilt x comp lf2val)
+  (lf3val, lf3xpl) <- evalList (ListFilt lbl x comp lf2val)
   return (lf3val, Node ([],["recursing RHS ListFilt"]) [lf2xpl, mkNod "becomes", lf3xpl])
 
-evalList (ListMap Id ylist) = return (ylist, mkNod "id on ExprList")
-evalList (ListMap (MathSection binop x) ylist) = retitle "fmap mathsection" $ do
-  (MathList ylist', yxpl) <- evalList ylist
-  return ( MathList [ MathBin binop x y | y <- ylist' ]
+evalList (ListMap lbl Id ylist) = return (ylist, mkNod ("id on ExprList" ++ showlbl lbl))
+evalList (ListMap lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" $ do
+  (MathList lbl2 ylist', yxpl) <- evalList ylist
+  return ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length ylist') ++ " elements"]) [yxpl] )
 
-evalList (ListMapIf Id _c _comp ylist) = retitle "fmap mathsection id" $ evalList ylist
-evalList (ListMapIf (MathSection binop x) c comp ylist) = retitle "fmap mathsection if" $ do
-  (MathList ylist', yxpl) <- evalList ylist
-  liveElements <- mapM (evalP . PredComp comp c) ylist'
+evalList (ListMapIf lbl Id _c _comp ylist) = retitle ("fmap mathsection id" ++ showlbl lbl) $ evalList ylist
+evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap mathsection if" ++ showlbl lbl1) $ do
+  (MathList lbl2 ylist', yxpl) <- evalList ylist
+  liveElements <- mapM (evalP . PredComp (lbl1 <++> lbl2) comp c) ylist'
 
-  return ( MathList [ if tf then MathBin binop x y else y
-                    | (y,tf) <- zip ylist' (fst <$> liveElements) ]
+  return ( MathList (Just "evaled list") [ if tf then MathBin (Just "tf true") binop x y else y
+                                         | (y,tf) <- zip ylist' (fst <$> liveElements) ]
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length (filter id (fst <$> liveElements))) ++ " relevant elements (" ++
                     "who pass " ++ show c ++ " " ++ show comp ++ ")"])
            [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
@@ -349,7 +359,7 @@ evalList (ListMapIf (MathSection binop x) c comp ylist) = retitle "fmap mathsect
 -- I supposed this is analogous to "unboxed" types.
 
 deepEvalList :: (ExprList Float,XP) -> ExplainableIO r MyState [Float]
-deepEvalList (MathList xs,xp) = do
+deepEvalList (MathList lbl xs,xp) = do
   vals <- mapM eval xs
   return (fst <$> vals, Node ([],["deep evaluation to floats"]) (xp : (snd <$> vals)))
 deepEvalList (other,_xp) = deepEvalList =<< evalList other
@@ -388,14 +398,16 @@ verbose x                = (x, x ++ " argument")
 
 -- | some example runs
 toplevel :: IO ()
-toplevel = forM_ [ Val 2 |+ (Val 5 |- Val 1)
-                 , ListFold FoldSum $ Val 2 <| MathList [Val 1, Val 2, Val 3, Val 4]
-                 , ListFold FoldSum $ Val 0 <| MathList [Val (-2), Val (-1), Val 0, Val 1, Val 2, Val 3]
-                 , ListFold FoldSum $ Val 0 <| MathList [Val (-2), Val (-1), Val 0, Val 1, Val 2, Val 3]
+toplevel = forM_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one") 1)
+                 , ListFold (Just "greater than 2") FoldSum $ Val (Just "two") 2 <| MathList (Just "one to four")
+                   [Val Nothing 1, Val Nothing 2, Val Nothing 3, Val Nothing 4]
+                 , ListFold (Just "positive 1") FoldSum $ Val (Just "zero") 0 <| ml23
+                 , ListFold (Just "positive 2") FoldSum $ Val (Just "zero") 0 <| ml23
                  ] $ \topexpr -> do
   (val, xpl, stab, wlog) <- xplainF () topexpr
   return ()
-
+  where ml23 = MathList (Just "minus two to three")
+               [Val Nothing (-2), Val Nothing (-1), Val Nothing 0, Val Nothing 1, Val Nothing 2, Val Nothing 3]
 -- * Explainers  
 
 -- | Explain an @Expr Float@
@@ -428,5 +440,5 @@ xplainL r exprList = do
   return (xl, xp, stab, wlog) -- [TODO] note the explanation result from xs is discarded
 
 unMathList :: Show a => ExprList a -> [Expr a]
-unMathList (MathList xs) = xs
-unMathList x             = error $ "unMathList: expected exprList to be fully evaluated, but got " ++ show x
+unMathList (MathList lbl xs) = xs
+unMathList x                 = error $ "unMathList: expected exprList to be fully evaluated, but got " ++ show x

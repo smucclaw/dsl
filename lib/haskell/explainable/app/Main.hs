@@ -8,7 +8,6 @@ import Control.Monad (when)
 main :: IO ()
 main = do
   when True  $ runTests_Mathlang
-  when False $ runTests_Taxes
 
 -- if 3 > 2 then 5 else 6
 

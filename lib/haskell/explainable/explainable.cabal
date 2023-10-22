@@ -28,7 +28,6 @@ library
       Explainable
       Explainable.Lib
       Explainable.MathLang
-      Explainable.TaxDSL
   other-modules:
       Paths_explainable
   hs-source-dirs:

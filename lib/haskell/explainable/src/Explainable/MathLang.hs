@@ -1,9 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Explainable.MathLang where
 
 import Prelude hiding (pred)
+import NeatInterpolation
+import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe, fromMaybe)
 import Control.Monad (forM_, mapAndUnzipM, unless)
@@ -666,10 +669,25 @@ dumpExplanationF depth s f = do
   putStrLn (stars ++ " ending SymTab"); print stab
   putStrLn (stars ++ " wlog"); print wlog
   putStrLn (stars ++ " typescript"); do
-    putStrLn "#+BEGIN_SRC typescript"
-    print (pp f)
+    putStrLn "#+BEGIN_SRC typescript :tangle from-hs.ts"
+    putStrLn $ T.unpack $ [text|
+      // in emacs, tangle with C-c C-v t
+      // mv from-hs.ts ../../../../usecases/sect10-typescript/src/
+      // cd ../../../../usecases/sect10-typescript/src/; tsc from-hs.ts
+      // node from-hs.js
+      import * as tsm from './mathlang';
+
+      function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
+        console.log("* " + Math.round(expr.val))
+        tsm.explTrace(expr, 2)
+        console.log("")
+        return expr
+      }
+    |]
     print (ppst s)
+    print $ "let maxClaim = myshow" <> parens (pp f)
     putStrLn "#+END_SRC"
+
   
   where stars = replicate depth '*'
   

@@ -39,9 +39,11 @@ library
     , containers
     , megaparsec
     , mtl
+    , neat-interpolation
     , parsec
     , parser-combinators
     , prettyprinter
+    , text
     , transformers
   default-language: GHC2021
 
@@ -59,9 +61,11 @@ executable explainable-exe
     , explainable
     , megaparsec
     , mtl
+    , neat-interpolation
     , parsec
     , parser-combinators
     , prettyprinter
+    , text
     , transformers
   default-language: GHC2021
 
@@ -82,8 +86,10 @@ test-suite explainable-test
     , hspec
     , megaparsec
     , mtl
+    , neat-interpolation
     , parsec
     , parser-combinators
     , prettyprinter
+    , text
     , transformers
   default-language: GHC2021

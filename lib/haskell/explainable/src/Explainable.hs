@@ -40,6 +40,10 @@ import Data.Bifunctor (first)
 -- We tack on a bit of useful infrastructure of our own: basically, a call stack, and a history trace of previous execution,
 -- in the form of a `HistoryPath`.
 --
+-- We equip each expression with an optional label / name / title.
+-- When an expression is evaluated the system automatically saves the
+-- value of that expression into the symbol table kept in State.
+--
 type ExplainableIO  r st a = RWST         (HistoryPath,r) [String] st IO (a,XP)
 type Explainable    r st a = ExplainableIO r st a
 

@@ -1,12 +1,11 @@
 module Main (main) where
 
 import Explainable.Lib
-import qualified Data.Map as Map
-import Control.Monad.Trans.State
+import Control.Monad (when)
 
 main :: IO ()
 main = do
-  runTests
+  when True  $ runTests_Mathlang
 
 -- if 3 > 2 then 5 else 6
 

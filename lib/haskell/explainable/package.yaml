@@ -28,6 +28,9 @@ dependencies:
 - parsec
 - parser-combinators
 - boxes
+- prettyprinter
+- neat-interpolation
+- text
 
 language: GHC2021
 

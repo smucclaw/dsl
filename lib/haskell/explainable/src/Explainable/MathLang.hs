@@ -729,7 +729,7 @@ instance ToTS Expr a where
   pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] 
   pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> h0tupled [ dquotes $ maybe "list fold" pretty (lbl <++> mlbl)
                                                                            , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
-                                                                           , list (pp <$> xs) ]
+                                                                           , hang 2 $ list (pp <$> xs) ]
 
   pp x = error $ "MathLang:ToTS pp unimplemented; " <> show x
 
@@ -747,15 +747,16 @@ instance ToTS Pred a where
   pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
   pp (PredFold lbl p xs)  = "new tsm.BoolFold" <+> h0tupled [ dquotes $ maybe "any/all" pretty lbl
                                                             , "tsm.BoolFoldOp." <> case p of { PLAnd -> "All"; PLOr -> "Any" }
-                                                            , list ( pp <$> xs ) ]
+                                                            , hang 2 $ list ( pp <$> xs ) ]
 
 
 
 ppst :: MyState -> Doc ann
 ppst (MyState{..}) =
+  "export function setup (symtab : Object) {" <> line <> indent 2 (
   "tsm.initSymTab" <> hang 1
-  ( list
-    [ encloseSep lbrace rbrace comma $
+  ( encloseSep lparen rparen comma
+    [ "..." <> encloseSep lbrace rbrace comma (
       [ dquotes keyString <> colon <+> valString
       | (k,Val _lbl v) <- Map.toList symtabF
       , let keyString = pretty k
@@ -772,10 +773,10 @@ ppst (MyState{..}) =
       | (k,v) <- Map.toList symtabS
       , let keyString = pretty k
             valString = pretty v
-      ]
-      
-    , "...userDefinedState"
-    ] )
+      ] )
+    , "...symtab"
+    ]
+  ) ) <> line <> "}" <> line
   
 
 dqpretty :: (Pretty a) => a -> Doc ann

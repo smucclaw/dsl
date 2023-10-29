@@ -754,8 +754,8 @@ instance ToTS Pred a where
 ppst :: MyState -> Doc ann
 ppst (MyState{..}) =
   "tsm.initSymTab" <> hang 1
-  ( parens
-    ( encloseSep lbrace rbrace comma $
+  ( list
+    [ encloseSep lbrace rbrace comma $
       [ dquotes keyString <> colon <+> valString
       | (k,Val _lbl v) <- Map.toList symtabF
       , let keyString = pretty k
@@ -774,7 +774,8 @@ ppst (MyState{..}) =
             valString = pretty v
       ]
       
-    ) )
+    , "...userDefinedState"
+    ] )
   
 
 dqpretty :: (Pretty a) => a -> Doc ann

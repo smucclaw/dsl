@@ -59,6 +59,7 @@ showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
 showlbl (Just l) = " (" ++ l ++ ")"
 
+-- | shouldn't this move into the Exprlbl class?
 getExprLabel :: Expr a -> ExprLabel
 getExprLabel ( Val      lbl  _     ) = lbl
 getExprLabel ( Parens   lbl  _     ) = lbl
@@ -128,6 +129,8 @@ data ExprList a
   | ListMap   ExprLabel (MathSection a)               (ExprList a) -- ^ apply the function to everything
   | ListFilt  ExprLabel                 (Expr a) Comp (ExprList a) -- ^ eliminate the unwanted elements
   | ListMapIf ExprLabel (MathSection a) (Expr a) Comp (ExprList a) -- ^ leaving the unwanted elements unchanged
+  | ListConcat ExprLabel [ExprList a] -- ^ [[a]] -> [a]
+  | ListITE    ExprLabel (Pred a) (ExprList a) (ExprList a)        -- ^ if-then-else for expr lists
   deriving (Eq, Show)
 
 -- * Some sugary constructors for expressions in our math language.
@@ -204,7 +207,7 @@ data Pred a
   | PredVar  String                                   -- ^ boolean variable retrieval
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
-  | PredFold ExprLabel AndOr [Pred a]                -- ^ and / or a list
+  | PredFold ExprLabel AndOr (PredList a)             -- ^ and / or a list
   deriving (Eq, Show)
 
 data AndOr = PLAnd | PLOr
@@ -447,6 +450,14 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap ma
                     "who pass " ++ show c ++ " " ++ show comp ++ ")"])
            [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
 
+evalList (ListConcat lbl xxs) = do
+  mapped <- mapM evalList xxs
+  return ( MathList lbl (concat [ f | (MathList _lbl2 f,_) <- mapped ] )
+         , Node ([], ["concatted " ++ show (length mapped) ++ " elements"])
+           (snd <$> mapped))
+
+evalList (ListITE _lbl p y z) = evalFP evalList p y z
+
 -- | deepEvalList means we reduce the `ExprList` to a plain haskell list of floats.
 -- I supposed this is analogous to "unboxed" types.
 
@@ -504,6 +515,7 @@ class Exprlbl expr a where
   getvar, (@|$<) :: String -> expr a
   (@|$>) :: String -> expr a -> expr a
   getvar = (@|$<) 
+
  
 instance Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
@@ -548,6 +560,9 @@ infix  3 @|:
 
 instance ExprTernary Expr a where
   (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
+
+instance ExprTernary ExprList a where
+  (@|?) pred (TRHS tbranch fbranch) = ListITE Nothing pred tbranch fbranch
 
 instance ExprTernary Pred a where
   (@|?) pred (TRHS tbranch fbranch) = PredITE Nothing pred tbranch fbranch

@@ -755,10 +755,10 @@ instance ToTS Pred a where
 ppst :: MyState -> Doc ann -> Doc ann
 ppst (MyState{..}) realign =
   pretty [text|
-    function realign (form_data : Object) : Object {
+    function realign (form_data) {
       var toreturn = {...form_data}
   |] <>  realign <> line <> "  return toreturn;\n}" <> line <>
-   "export function setup (symtab : Object) {" <> line <> indent 2 (
+   "export function setup (symtab) {" <> line <> indent 2 (
   "const realigned = realign(symtab);" <> line <>
   "tsm.initSymTab" <> hang 1
   ( encloseSep lparen rparen comma

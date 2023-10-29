@@ -515,7 +515,6 @@ class Exprlbl expr a where
   getvar, (@|$<) :: String -> expr a
   (@|$>) :: String -> expr a -> expr a
   getvar = (@|$<) 
-
  
 instance Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
@@ -538,6 +537,7 @@ instance Exprlbl Expr a where
   (@|$<) lbl   = MathVar lbl
   (@|$>) lbl x = MathSet lbl x
 
+
 (@|.) :: String -> a -> Expr a
 (@|.) = Val . Just
 infix 6 @|., @|..
@@ -556,7 +556,7 @@ class ExprTernary expr a where
   (@|?) :: Pred a -> TernaryRHS (expr a) -> expr a
 
 infixr 2 @|?
-infix  3 @|:
+infixr 3 @|:
 
 instance ExprTernary Expr a where
   (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
@@ -744,6 +744,8 @@ instance ToTS Pred a where
   pp (PredFold lbl p xs)  = "new tsm.BoolFold" <+> h0tupled [ dquotes $ maybe "any/all" pretty lbl
                                                             , "tsm.BoolFoldOp." <> case p of { PLAnd -> "All"; PLOr -> "Any" }
                                                             , list ( pp <$> xs ) ]
+
+
 
 ppst :: MyState -> Doc ann
 ppst (MyState{..}) =

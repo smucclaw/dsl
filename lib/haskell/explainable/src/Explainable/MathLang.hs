@@ -695,13 +695,10 @@ dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
 dumpTypescript realign s f = do
   putStrLn $ T.unpack $ [text|
       // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
-      // in emacs, tangle with C-c C-v t
-      // mv from-hs.ts ../../../../usecases/sect10-typescript/src/
-      // cd ../../../../usecases/sect10-typescript/src/; tsc from-hs.ts
-      // node from-hs.js
+
       import * as tsm from './mathlang';
 
-      function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
+      export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
         console.log("* " + Math.round(expr.val))
         tsm.explTrace(expr, 2)
         console.log("")
@@ -709,7 +706,7 @@ dumpTypescript realign s f = do
       }
       |]
   print (ppst s realign)
-  print $ "let maxClaim = myshow" <> parens (pp f)
+  print $ "export const maxClaim = " <> pp f
 
 
 -- * Prettty-printing to the Typescript version of the MathLang library

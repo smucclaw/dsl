@@ -685,7 +685,15 @@ dumpExplanationF depth s f = do
   putStrLn (stars ++ " wlog"); print wlog
   putStrLn (stars ++ " typescript"); do
     putStrLn "#+BEGIN_SRC typescript :tangle from-hs.ts"
-    putStrLn $ T.unpack $ [text|
+    dumpTypescript s f
+    putStrLn "#+END_SRC"
+
+  
+  where stars = replicate depth '*'
+  
+dumpTypescript :: MyState -> Expr Float -> IO ()
+dumpTypescript s f = do
+  putStrLn $ T.unpack $ [text|
       // in emacs, tangle with C-c C-v t
       // mv from-hs.ts ../../../../usecases/sect10-typescript/src/
       // cd ../../../../usecases/sect10-typescript/src/; tsc from-hs.ts
@@ -698,14 +706,10 @@ dumpExplanationF depth s f = do
         console.log("")
         return expr
       }
-    |]
-    print (ppst s)
-    print $ "let maxClaim = myshow" <> parens (pp f)
-    putStrLn "#+END_SRC"
+      |]
+  print (ppst s)
+  print $ "let maxClaim = myshow" <> parens (pp f)
 
-  
-  where stars = replicate depth '*'
-  
 
 -- * Prettty-printing to the Typescript version of the MathLang library
 class ToTS expr a where

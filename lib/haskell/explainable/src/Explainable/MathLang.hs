@@ -706,7 +706,7 @@ dumpTypescript realign s f = do
       }
       |]
   print (ppst s realign)
-  print $ "export const maxClaim = " <> pp f
+  print $ "export const maxClaim = () => { return " <> pp f <> line <> "}"
 
 
 -- * Prettty-printing to the Typescript version of the MathLang library

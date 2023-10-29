@@ -762,7 +762,7 @@ ppst (MyState{..}) realign =
   "const realigned = realign(symtab);" <> line <>
   "tsm.initSymTab" <> hang 1
   ( encloseSep lparen rparen comma
-    [ "..." <> encloseSep lbrace rbrace comma (
+    [ "{ ..." <> encloseSep lbrace rbrace comma (
       [ dquotes keyString <> colon <+> valString
       | (k,Val _lbl v) <- Map.toList symtabF
       , let keyString = pretty k
@@ -780,7 +780,7 @@ ppst (MyState{..}) realign =
       , let keyString = pretty k
             valString = pretty v
       ] )
-    , "...realigned"
+    , "...realigned }"
     ]
   ) ) <> line <> "}" <> line
   

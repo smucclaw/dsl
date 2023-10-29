@@ -5,7 +5,7 @@
 module Explainable.MathLang where
 
 import Prelude hiding (pred)
-import NeatInterpolation
+import NeatInterpolation ( text )
 import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe, fromMaybe)
@@ -685,15 +685,16 @@ dumpExplanationF depth s f = do
   putStrLn (stars ++ " wlog"); print wlog
   putStrLn (stars ++ " typescript"); do
     putStrLn "#+BEGIN_SRC typescript :tangle from-hs.ts"
-    dumpTypescript s f
+    dumpTypescript "" s f
     putStrLn "#+END_SRC"
 
   
   where stars = replicate depth '*'
   
-dumpTypescript :: MyState -> Expr Float -> IO ()
-dumpTypescript s f = do
+dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
+dumpTypescript realign s f = do
   putStrLn $ T.unpack $ [text|
+      // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
       // in emacs, tangle with C-c C-v t
       // mv from-hs.ts ../../../../usecases/sect10-typescript/src/
       // cd ../../../../usecases/sect10-typescript/src/; tsc from-hs.ts
@@ -707,7 +708,7 @@ dumpTypescript s f = do
         return expr
       }
       |]
-  print (ppst s)
+  print (ppst s realign)
   print $ "let maxClaim = myshow" <> parens (pp f)
 
 
@@ -751,9 +752,14 @@ instance ToTS Pred a where
 
 
 
-ppst :: MyState -> Doc ann
-ppst (MyState{..}) =
-  "export function setup (symtab : Object) {" <> line <> indent 2 (
+ppst :: MyState -> Doc ann -> Doc ann
+ppst (MyState{..}) realign =
+  pretty [text|
+    function realign (form_data : Object) : Object {
+      var toreturn = {...form_data}
+  |] <>  realign <> line <> "  return toreturn;\n}" <> line <>
+   "export function setup (symtab : Object) {" <> line <> indent 2 (
+  "const realigned = realign(symtab);" <> line <>
   "tsm.initSymTab" <> hang 1
   ( encloseSep lparen rparen comma
     [ "..." <> encloseSep lbrace rbrace comma (
@@ -774,7 +780,7 @@ ppst (MyState{..}) =
       , let keyString = pretty k
             valString = pretty v
       ] )
-    , "...symtab"
+    , "...realigned"
     ]
   ) ) <> line <> "}" <> line
   

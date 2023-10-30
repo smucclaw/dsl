@@ -52,6 +52,7 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMax  ExprLabel           (Expr a) (Expr a)  -- ^ max of two expressions
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
+            | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Float ) or perhaps a Maybe (Expr Float)
             deriving (Eq, Show)
 
 type ExprLabel = Maybe String
@@ -61,6 +62,7 @@ showlbl (Just l) = " (" ++ l ++ ")"
 
 -- | shouldn't this move into the Exprlbl class?
 getExprLabel :: Expr a -> ExprLabel
+getExprLabel ( Undefined lbl       ) = lbl
 getExprLabel ( Val      lbl  _     ) = lbl
 getExprLabel ( Parens   lbl  _     ) = lbl
 getExprLabel ( MathVar       lbl   ) = Just lbl
@@ -244,6 +246,12 @@ eval exprfloat = do
   -- liftIO . print =<< get
   return (x, result)
 
+-- in the Haskell we default undefined to zero. In the typescript output we preserve undefined.
+eval' (Undefined lbl) = do
+  (history,path) <- asks historypath
+  return (0, Node ([unlines history ++ pathSpec path ++ ": undefined as zero 0"]
+                  ,["undefined: " ++ fromMaybe "an explicit undefined value, defaulting to zero" lbl]) [])
+  
 eval' (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
@@ -517,6 +525,7 @@ class Exprlbl expr a where
   getvar = (@|$<) 
  
 instance Exprlbl Expr a where
+  (@|=) lbl ( Undefined Nothing      ) = Undefined (Just lbl)
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
@@ -526,6 +535,7 @@ instance Exprlbl Expr a where
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
   (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
+  (@|=) lbl ( Undefined (Just old)      ) = Undefined (Just lbl <++> Just ("previously " ++ old))
   (@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
   (@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
   (@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
@@ -713,7 +723,10 @@ dumpTypescript realign s f = do
 class ToTS expr a where
   pp :: (Show a) => expr a -> Doc ann
 
+
+-- in future consider a new class tsm.Undefined -- would that more faithfully follow this representation?
 instance ToTS Expr a where
+  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"] 
   pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] 
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.

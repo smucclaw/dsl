@@ -709,8 +709,8 @@ dumpTypescript realign s f = do
       import * as tsm from './mathlang';
 
       export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
-        console.log("* " + Math.round(expr.val))
-        tsm.explTrace(expr, 2)
+        console.log("** " + Math.round(expr.val))
+        tsm.explTrace(expr, 3)
         console.log("")
         return expr
       }

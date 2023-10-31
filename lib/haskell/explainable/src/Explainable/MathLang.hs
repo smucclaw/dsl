@@ -808,4 +808,13 @@ h0tupled :: [Doc ann] -> Doc ann
 h0tupled = hang 0 . tupled
 
 
+-- * data flow extraction
+-- we don't care about the value returned, just the state graph traversed
+-- [TODO] this allows us to return a full default emptyState symtab that tells the expert system
+-- what to ask the end user for.
+
+allVars :: Expr Float -> ExplainableIO r MyState (Expr Float)
+allVars inexpr = do
+  return (inexpr, Node ([],[]) [])
+
 

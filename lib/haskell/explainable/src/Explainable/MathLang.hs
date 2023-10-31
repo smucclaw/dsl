@@ -716,6 +716,10 @@ dumpTypescript realign s f = do
 
       export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
         console.log("** " + Math.round(expr.val))
+        console.log("#+NAME symtab")
+        console.log("#+BEGIN_SRC json")
+        console.log(JSON.stringify(tsm.symTab,null,2))
+        console.log("#+END_SRC")
         tsm.explTrace(expr, 3)
         console.log("")
         return expr

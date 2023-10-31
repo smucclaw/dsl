@@ -60,6 +60,12 @@ showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
 showlbl (Just l) = " (" ++ l ++ ")"
 
+cappedBy :: Expr a -> Expr a -> Expr a
+cappedBy = MathMin (Just "capped by")
+
+discountedBy :: Expr Float -> Expr Float -> Expr Float
+discountedBy x y = x |* ("one hundred percent" @|. 1 |- y)
+
 -- | shouldn't this move into the Exprlbl class?
 getExprLabel :: Expr a -> ExprLabel
 getExprLabel ( Undefined lbl       ) = lbl
@@ -811,7 +817,7 @@ h0tupled = hang 0 . tupled
 -- * data flow extraction
 -- we don't care about the value returned, just the state graph traversed
 -- [TODO] this allows us to return a full default emptyState symtab that tells the expert system
--- what to ask the end user for.
+-- waht to ask the end user for.
 
 allVars :: Expr Float -> ExplainableIO r MyState (Expr Float)
 allVars inexpr = do

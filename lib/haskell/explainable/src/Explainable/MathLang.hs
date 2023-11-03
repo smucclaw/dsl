@@ -426,6 +426,7 @@ evalList :: ExprList Float -> ExplainableIO r MyState (ExprList Float)
 evalList (MathList lbl a) = return (MathList lbl a, Node (show <$> a,["base MathList with " ++ show (length a) ++ " elements"]) [])
 evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
   origs <- mapM eval ys
+  -- [TODO] exclude Undefined values from origs
   round1 <- mapM (evalP . PredComp lbl1 comp x) ys
   let round2 = [ if not r1
                  then (Nothing, Node ([show xval]

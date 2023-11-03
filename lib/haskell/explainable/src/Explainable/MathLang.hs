@@ -714,6 +714,7 @@ dumpTypescript realign s f = do
       // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
 
       import * as tsm from './mathlang';
+      export { exprReduce } from './mathlang';
 
       export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
         console.log("** " + Math.round(expr.val))

@@ -93,8 +93,8 @@ x |- y = MathBin Nothing Minus  x y
 x |* y = MathBin Nothing Times  x y
 x |/ y = MathBin Nothing Divide x y
 
-infix 5 |*, |/
-infix 4 |+, |-
+infixl 5 |*, |/
+infixl 4 |+, |-
 
 -- | fmap.
 -- 
@@ -559,9 +559,9 @@ instance Exprlbl Expr a where
 (@|.) = Val . Just
 infix 6 @|., @|..
 
-infix 1 @|=
-infix 4 @|+, @|-
-infix 5 @|*, @|/
+infixl 1 @|=
+infixl 4 @|+, @|-
+infixl 5 @|*, @|/
 
 -- | syntactic sugar for ternary syntax. The trick is to join up the branches into a single thing
 data TernaryRHS a = TRHS a a deriving (Eq, Show)
@@ -714,7 +714,7 @@ dumpTypescript realign s f = do
       // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
 
       import * as tsm from './mathlang';
-      export { exprReduce } from './mathlang';
+      export { exprReduce, asDot } from './mathlang';
 
       export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
         console.log("** " + Math.round(expr.val))

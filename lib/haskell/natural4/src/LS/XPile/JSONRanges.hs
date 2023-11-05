@@ -129,6 +129,7 @@ quickPretty [MTB True] = "true"
 quickPretty [MTB False] = "false"
 quickPretty [MTI myint] = viaShow myint
 quickPretty [MTT str]   = viaShow str
+quickPretty x           = error $ "quickPretty error in pattern match: unhandled case: " ++ show x
 
 type Point  lbl val = [(lbl, val)]
 type Points lbl val = [Point lbl val]

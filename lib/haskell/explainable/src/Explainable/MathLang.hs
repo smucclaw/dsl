@@ -542,14 +542,14 @@ instance Exprlbl Expr a where
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
   (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
-  (@|=) lbl ( Undefined (Just old)      ) = Undefined (Just lbl <++> Just ("previously " ++ old))
-  (@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
-  (@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
-  (@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
-  (@|=) lbl ( MathITE  (Just old) x y z ) = MathITE  (Just lbl <++> Just ("previously " ++ old)) x y z 
-  (@|=) lbl ( MathMax  (Just old) x y   ) = MathMax  (Just lbl <++> Just ("previously " ++ old)) x y   
-  (@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
-  (@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
+  (@|=) lbl ( Undefined (Just _old)       ) = Undefined (Just lbl {- <++> Just ("previously " ++ old) -} )
+  (@|=) lbl ( Val       (Just _old) x     ) = Val       (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
+  (@|=) lbl ( Parens    (Just _old) x     ) = Parens    (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
+  (@|=) lbl ( MathBin   (Just _old) x y z ) = MathBin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
+  (@|=) lbl ( MathITE   (Just _old) x y z ) = MathITE   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
+  (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
+  (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
+  (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
 
   (@|$<) lbl   = MathVar lbl
   (@|$>) lbl x = MathSet lbl x
@@ -557,7 +557,11 @@ instance Exprlbl Expr a where
 
 (@|.) :: String -> a -> Expr a
 (@|.) = Val . Just
-infix 6 @|., @|..
+infix 6 @|., @|.., @|??
+
+undef,(@|??) :: String -> Expr Float
+(@|??) = undef
+undef = Undefined . Just
 
 infixl 1 @|=
 infixl 4 @|+, @|-

@@ -28,6 +28,7 @@ library
       Explainable
       Explainable.Lib
       Explainable.MathLang
+      Explainable.ToGraphViz
   other-modules:
       Paths_explainable
   hs-source-dirs:
@@ -37,6 +38,8 @@ library
       base >=4.7 && <5
     , boxes
     , containers
+    , fgl
+    , graphviz
     , megaparsec
     , mtl
     , neat-interpolation
@@ -59,6 +62,8 @@ executable explainable-exe
     , boxes
     , containers
     , explainable
+    , fgl
+    , graphviz
     , megaparsec
     , mtl
     , neat-interpolation
@@ -83,6 +88,8 @@ test-suite explainable-test
     , boxes
     , containers
     , explainable
+    , fgl
+    , graphviz
     , hspec
     , megaparsec
     , mtl

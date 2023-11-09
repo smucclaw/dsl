@@ -31,6 +31,8 @@ dependencies:
 - prettyprinter
 - neat-interpolation
 - text
+- fgl
+- graphviz
 
 language: GHC2021
 

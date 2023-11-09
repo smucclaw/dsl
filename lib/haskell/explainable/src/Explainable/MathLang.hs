@@ -5,7 +5,7 @@
 module Explainable.MathLang where
 
 import Prelude hiding (pred)
-import NeatInterpolation
+import NeatInterpolation ( text )
 import qualified Data.Text as T
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe, fromMaybe)
@@ -52,6 +52,7 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMax  ExprLabel           (Expr a) (Expr a)  -- ^ max of two expressions
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
+            | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Float ) or perhaps a Maybe (Expr Float)
             deriving (Eq, Show)
 
 type ExprLabel = Maybe String
@@ -59,7 +60,15 @@ showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
 showlbl (Just l) = " (" ++ l ++ ")"
 
+cappedBy :: Expr a -> Expr a -> Expr a
+cappedBy = MathMin (Just "capped by")
+
+discountedBy :: Expr Float -> Expr Float -> Expr Float
+discountedBy x y = x |* ("one hundred percent" @|. 1 |- y)
+
+-- | shouldn't this move into the Exprlbl class?
 getExprLabel :: Expr a -> ExprLabel
+getExprLabel ( Undefined lbl       ) = lbl
 getExprLabel ( Val      lbl  _     ) = lbl
 getExprLabel ( Parens   lbl  _     ) = lbl
 getExprLabel ( MathVar       lbl   ) = Just lbl
@@ -84,9 +93,12 @@ x |- y = MathBin Nothing Minus  x y
 x |* y = MathBin Nothing Times  x y
 x |/ y = MathBin Nothing Divide x y
 
-infix 5 |*, |/
-infix 4 |+, |-
+infixl 5 |*, |/
+infixl 4 |+, |-
 
+less :: Expr Float -> Expr Float -> Expr Float
+less = (|-)
+  
 -- | fmap.
 -- 
 -- In Haskell, we would say @(+2) <$> [1,2,3]@
@@ -128,6 +140,8 @@ data ExprList a
   | ListMap   ExprLabel (MathSection a)               (ExprList a) -- ^ apply the function to everything
   | ListFilt  ExprLabel                 (Expr a) Comp (ExprList a) -- ^ eliminate the unwanted elements
   | ListMapIf ExprLabel (MathSection a) (Expr a) Comp (ExprList a) -- ^ leaving the unwanted elements unchanged
+  | ListConcat ExprLabel [ExprList a] -- ^ [[a]] -> [a]
+  | ListITE    ExprLabel (Pred a) (ExprList a) (ExprList a)        -- ^ if-then-else for expr lists
   deriving (Eq, Show)
 
 -- * Some sugary constructors for expressions in our math language.
@@ -204,7 +218,7 @@ data Pred a
   | PredVar  String                                   -- ^ boolean variable retrieval
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
-  | PredFold ExprLabel AndOr [Pred a]                -- ^ and / or a list
+  | PredFold ExprLabel AndOr (PredList a)             -- ^ and / or a list
   deriving (Eq, Show)
 
 data AndOr = PLAnd | PLOr
@@ -241,6 +255,12 @@ eval exprfloat = do
   -- liftIO . print =<< get
   return (x, result)
 
+-- in the Haskell we default undefined to zero. In the typescript output we preserve undefined.
+eval' (Undefined lbl) = do
+  (history,path) <- asks historypath
+  return (0, Node ([unlines history ++ pathSpec path ++ ": undefined as zero 0"]
+                  ,["undefined: " ++ fromMaybe "an explicit undefined value, defaulting to zero" lbl]) [])
+  
 eval' (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
@@ -409,6 +429,7 @@ evalList :: ExprList Float -> ExplainableIO r MyState (ExprList Float)
 evalList (MathList lbl a) = return (MathList lbl a, Node (show <$> a,["base MathList with " ++ show (length a) ++ " elements"]) [])
 evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
   origs <- mapM eval ys
+  -- [TODO] exclude Undefined values from origs
   round1 <- mapM (evalP . PredComp lbl1 comp x) ys
   let round2 = [ if not r1
                  then (Nothing, Node ([show xval]
@@ -446,6 +467,14 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap ma
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length (filter id (fst <$> liveElements))) ++ " relevant elements (" ++
                     "who pass " ++ show c ++ " " ++ show comp ++ ")"])
            [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
+
+evalList (ListConcat lbl xxs) = do
+  mapped <- mapM evalList xxs
+  return ( MathList lbl (concat [ f | (MathList _lbl2 f,_) <- mapped ] )
+         , Node ([], ["concatted " ++ show (length mapped) ++ " elements"])
+           (snd <$> mapped))
+
+evalList (ListITE _lbl p y z) = evalFP evalList p y z
 
 -- | deepEvalList means we reduce the `ExprList` to a plain haskell list of floats.
 -- I supposed this is analogous to "unboxed" types.
@@ -506,6 +535,7 @@ class Exprlbl expr a where
   getvar = (@|$<) 
  
 instance Exprlbl Expr a where
+  (@|=) lbl ( Undefined Nothing      ) = Undefined (Just lbl)
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
@@ -515,24 +545,30 @@ instance Exprlbl Expr a where
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
   (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
-  (@|=) lbl ( Val      (Just old) x     ) = Val      (Just lbl <++> Just ("previously " ++ old)) x     
-  (@|=) lbl ( Parens   (Just old) x     ) = Parens   (Just lbl <++> Just ("previously " ++ old)) x     
-  (@|=) lbl ( MathBin  (Just old) x y z ) = MathBin  (Just lbl <++> Just ("previously " ++ old)) x y z 
-  (@|=) lbl ( MathITE  (Just old) x y z ) = MathITE  (Just lbl <++> Just ("previously " ++ old)) x y z 
-  (@|=) lbl ( MathMax  (Just old) x y   ) = MathMax  (Just lbl <++> Just ("previously " ++ old)) x y   
-  (@|=) lbl ( MathMin  (Just old) x y   ) = MathMin  (Just lbl <++> Just ("previously " ++ old)) x y   
-  (@|=) lbl ( ListFold (Just old) x y   ) = ListFold (Just lbl <++> Just ("previously " ++ old)) x y   
+  (@|=) lbl ( Undefined (Just _old)       ) = Undefined (Just lbl {- <++> Just ("previously " ++ old) -} )
+  (@|=) lbl ( Val       (Just _old) x     ) = Val       (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
+  (@|=) lbl ( Parens    (Just _old) x     ) = Parens    (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
+  (@|=) lbl ( MathBin   (Just _old) x y z ) = MathBin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
+  (@|=) lbl ( MathITE   (Just _old) x y z ) = MathITE   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
+  (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
+  (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
+  (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
 
   (@|$<) lbl   = MathVar lbl
   (@|$>) lbl x = MathSet lbl x
 
+
 (@|.) :: String -> a -> Expr a
 (@|.) = Val . Just
-infix 6 @|., @|..
+infix 6 @|., @|.., @|??
 
-infix 1 @|=
-infix 4 @|+, @|-
-infix 5 @|*, @|/
+undef,(@|??) :: String -> Expr Float
+(@|??) = undef
+undef = Undefined . Just
+
+infixl 1 @|=
+infixl 4 @|+, @|-
+infixl 5 @|*, @|/
 
 -- | syntactic sugar for ternary syntax. The trick is to join up the branches into a single thing
 data TernaryRHS a = TRHS a a deriving (Eq, Show)
@@ -544,10 +580,13 @@ class ExprTernary expr a where
   (@|?) :: Pred a -> TernaryRHS (expr a) -> expr a
 
 infixr 2 @|?
-infix  3 @|:
+infixr 3 @|:
 
 instance ExprTernary Expr a where
   (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
+
+instance ExprTernary ExprList a where
+  (@|?) pred (TRHS tbranch fbranch) = ListITE Nothing pred tbranch fbranch
 
 instance ExprTernary Pred a where
   (@|?) pred (TRHS tbranch fbranch) = PredITE Nothing pred tbranch fbranch
@@ -670,33 +709,44 @@ dumpExplanationF depth s f = do
   putStrLn (stars ++ " wlog"); print wlog
   putStrLn (stars ++ " typescript"); do
     putStrLn "#+BEGIN_SRC typescript :tangle from-hs.ts"
-    putStrLn $ T.unpack $ [text|
-      // in emacs, tangle with C-c C-v t
-      // mv from-hs.ts ../../../../usecases/sect10-typescript/src/
-      // cd ../../../../usecases/sect10-typescript/src/; tsc from-hs.ts
-      // node from-hs.js
-      import * as tsm from './mathlang';
-
-      function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
-        console.log("* " + Math.round(expr.val))
-        tsm.explTrace(expr, 2)
-        console.log("")
-        return expr
-      }
-    |]
-    print (ppst s)
-    print $ "let maxClaim = myshow" <> parens (pp f)
+    dumpTypescript "" s f
     putStrLn "#+END_SRC"
 
   
   where stars = replicate depth '*'
   
+dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
+dumpTypescript realign s f = do
+  putStrLn $ T.unpack $ [text|
+      // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
+
+      import * as tsm from './mathlang';
+      export { exprReduce, asDot } from './mathlang';
+
+      export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
+        console.log("** " + Math.round(expr.val))
+        tsm.explTrace(expr, 3)
+
+        console.log("** JSON of symTab")
+        console.log("#+NAME symtab")
+        console.log("#+BEGIN_SRC json")
+        console.log(JSON.stringify(tsm.symTab,null,2))
+        console.log("#+END_SRC")
+        return expr
+      }
+      |]
+  print (ppst s realign)
+  print $ "export const maxClaim = () => { return " <> pp f <> line <> "}"
+
 
 -- * Prettty-printing to the Typescript version of the MathLang library
 class ToTS expr a where
   pp :: (Show a) => expr a -> Doc ann
 
+
+-- in future consider a new class tsm.Undefined -- would that more faithfully follow this representation?
 instance ToTS Expr a where
+  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"] 
   pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] 
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
@@ -710,7 +760,7 @@ instance ToTS Expr a where
   pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] 
   pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> h0tupled [ dquotes $ maybe "list fold" pretty (lbl <++> mlbl)
                                                                            , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
-                                                                           , list (pp <$> xs) ]
+                                                                           , hang 2 $ list (pp <$> xs) ]
 
   pp x = error $ "MathLang:ToTS pp unimplemented; " <> show x
 
@@ -728,13 +778,21 @@ instance ToTS Pred a where
   pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
   pp (PredFold lbl p xs)  = "new tsm.BoolFold" <+> h0tupled [ dquotes $ maybe "any/all" pretty lbl
                                                             , "tsm.BoolFoldOp." <> case p of { PLAnd -> "All"; PLOr -> "Any" }
-                                                            , list ( pp <$> xs ) ]
+                                                            , hang 2 $ list ( pp <$> xs ) ]
 
-ppst :: MyState -> Doc ann
-ppst (MyState{..}) =
+
+
+ppst :: MyState -> Doc ann -> Doc ann
+ppst (MyState{..}) realign =
+  pretty [text|
+    function realign (form_data : any) {
+      var toreturn = {...form_data}
+  |] <>  realign <> line <> "  return toreturn;\n}" <> line <>
+   "export function setup (symtab : any) {" <> line <> indent 2 (
+  "const realigned = realign(symtab);" <> line <>
   "tsm.initSymTab" <> hang 1
-  ( parens
-    ( encloseSep lbrace rbrace comma $
+  ( encloseSep lparen rparen comma
+    [ "{ ..." <> encloseSep lbrace rbrace comma (
       [ dquotes keyString <> colon <+> valString
       | (k,Val _lbl v) <- Map.toList symtabF
       , let keyString = pretty k
@@ -751,9 +809,10 @@ ppst (MyState{..}) =
       | (k,v) <- Map.toList symtabS
       , let keyString = pretty k
             valString = pretty v
-      ]
-      
-    ) )
+      ] )
+    , "...realigned }"
+    ]
+  ) ) <> line <> "}" <> line
   
 
 dqpretty :: (Pretty a) => a -> Doc ann
@@ -768,5 +827,14 @@ h0parens = hang 0 . parens
 h0tupled :: [Doc ann] -> Doc ann
 h0tupled = hang 0 . tupled
 
+
+-- * data flow extraction
+-- we don't care about the value returned, just the state graph traversed
+-- [TODO] this allows us to return a full default emptyState symtab that tells the expert system
+-- waht to ask the end user for.
+
+allVars :: Expr Float -> ExplainableIO r MyState (Expr Float)
+allVars inexpr = do
+  return (inexpr, Node ([],[]) [])
 
 

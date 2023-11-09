@@ -79,7 +79,7 @@ asJSONRanges l4i = do
 
         return $ (viaShow className) <> colon <+>
           (curlyList 
-            [ viaShow i <> colon <+> curlyList [ viaShow k <> colon <+> viaShow v | (k, v) <- point ]
+            [ viaShow i <> colon <+> curlyList [ viaShow k <> colon <+> quickPretty v | (k, v) <- point ]
             | (point, i) <- zip points [1..]
             ]
           )
@@ -123,7 +123,13 @@ asJSONRanges l4i = do
                                                    | pt <- pts
                                                    , dimVal <- dimVals
                                                    ]
-                  
+
+quickPretty :: MultiTerm -> Doc ann
+quickPretty [MTB True] = "true"
+quickPretty [MTB False] = "false"
+quickPretty [MTI myint] = viaShow myint
+quickPretty [MTT str]   = viaShow str
+quickPretty x           = error $ "quickPretty error in pattern match: unhandled case: " ++ show x
 
 type Point  lbl val = [(lbl, val)]
 type Points lbl val = [Point lbl val]

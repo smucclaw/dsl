@@ -96,6 +96,9 @@ x |/ y = MathBin Nothing Divide x y
 infixl 5 |*, |/
 infixl 4 |+, |-
 
+less :: Expr Float -> Expr Float -> Expr Float
+less = (|-)
+  
 -- | fmap.
 -- 
 -- In Haskell, we would say @(+2) <$> [1,2,3]@

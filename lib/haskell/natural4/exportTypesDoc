@@ -1,0 +1,98 @@
+ what it does:
+ Transpiles a set of L4 rules into JSON Schema
+ 
+ The rules were initially pre-parsed from a csv
+ The parsed rules can be seen in the native haskell output
+
+ --
+
+ The function that does this is:
+ rulesToJsonSchema
+ it takes the first rule as the parent/root ("toplevel") of the json schema
+ all the objects in the schema are defined as references, and are properties of the parent object. If a reference is parsed but is not a property of the parent object, it won't be present in the form that's generated from the json schema.
+ the properties are the fields in the form object
+ 
+ --
+
+ The main type FieldType defines all the types of fields in the schema
+
+ The FTRef type defines references (and so on).
+ The example I'll give is FTRef because it's not as obvious.
+ It's assumed that if a rule doesn't have a specific type defined
+     eg.
+      [ TypeDecl
+            { name =
+                [ MTT "number" ]
+            , super = Just
+                ( SimpleType TOne "Integer" )
+            , has = []
+    Number has an "integer" type
+          { name =
+              [ MTT "Illness claim" ]
+          , super = Nothing
+          , has =
+              [ TypeDecl
+                  { name =
+                      [ MTT "clause 15.2" ]
+                  , super = Just
+                      ( SimpleType TOne "Boolean" )
+    Clause 15.2 has a "boolean" type
+
+    If the rule has no specified type then it's assumed to be a reference.
+
+    So for example, claim_type here:
+    [ TypeDecl
+    { name =
+        [ MTT "Web Form" ]
+    , super = Nothing
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "claim type" ]
+            , super = Just
+                ( SimpleType TOne "Claim" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+       is parsed as a reference that references the definition Claim:
+       {"Web_Form": {"type": "object","properties": {"claim_type": {"$ref": "#/$defs/Claim"},
+
+Each rule has a [MTT n] (name), fields (has), and type (super)
+The MTT type is just a MultiTerm type that has a string. So we can just extract the string n to get the name.
+A parent object will have fields as an array. We do the same thing with each field: get the name, and type.
+The rule names in L4 are written with spaces. In the json schema, we're using snake case for the names as these will interact with the logical english backend.
+
+The situation with enums is slightly different.
+That it's an enum is defined in the type (super)
+however while most of the types are of the pattern (Just ( SimpleType TOne "Boolean", [] )
+where the string is the type, the enums are identified by the datatype InlineEnum:
+    ( Just
+      ( InlineEnum TOne
+          (
+              ( MTT "Accident" :| []
+              , Nothing
+              ) :|
+              [
+                  ( MTT "Illness" :| []
+                  , Nothing
+                  )
+              ]
+          )
+      )
+
+and this wraps the values of the enum, where we extract the strings in an array.So the above is parsed to this:
+"Claim": {"type": "string","enum": ["Accident", "Illness"]},
+
+---
+
+showTypesJson merely prettifies into the json schema format
+
+---
+(a note: rulestoUISchema isn't used and should be deprecated from all things that reference it)

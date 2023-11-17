@@ -68,6 +68,7 @@ data FieldType =
     | FTList FieldType
     | FTDate
     | FTInteger
+    | FTEnum [FieldName]
     deriving (Eq, Ord, Show, Read)
 
 data Field = Field
@@ -138,6 +139,9 @@ typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 
 typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) =
   FTList (FTRef $ PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) tn)
+
+typeDeclSuperToFieldType (Just (InlineEnum TOne enums)) = FTEnum (getEnums enums)
+
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
@@ -151,29 +155,11 @@ ruleFieldToField _ = []
 --     [Field (typeDeclNameToFieldName n) (FTList (FTRef (unpack n)))]
 -- unpackHierarchy _ = []
 
-rule2NonmdJsonExp :: SFL4.Rule -> [JSchemaExp]
-rule2NonmdJsonExp = \case
-    SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}
-      -> case n of
-           n' | "Hierarchy" `T.isSuffixOf` n' -> foldMap rule2HierarchyBool fields
-           _ ->  [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleFieldToField fields)]
-    SFL4.TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}
-      -> [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
-    _ -> []
-
 rule2ExpType :: SFL4.Rule -> [JSchemaExp]
 rule2ExpType (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleFieldToField fields)]
 rule2ExpType (SFL4.TypeDecl{name=n, has=[], super=Just (InlineEnum TOne enums)}) =
     [ExpTypeEnum (typeDeclNameToTypeName n) (getEnums enums)]
 rule2ExpType _ = []
-
-rule2HierarchyBool :: SFL4.Rule -> [JSchemaExp]
-rule2HierarchyBool (SFL4.TypeDecl{name=[MTT n], has=fields, super=Nothing}) = [ExpTypeRecord (typeDeclNameToTypeName [MTT n]) (foldMap ruleBool fields)]
-    where
-        ruleBool ((SFL4.TypeDecl{name=n})) = [Field (typeDeclNameToFieldName n) FTBoolean]
-        ruleBool _                    = []
-
-rule2HierarchyBool _ = []
 
 
 -- rule2NonmdJsonExp :: Rule -> [JSchemaExp]
@@ -244,6 +230,8 @@ instance ShowTypesHaskell FieldType where
     showTypesHaskell FTDate = "String"
     showTypesHaskell (FTRef n) = pretty $ hTypeName n
     showTypesHaskell (FTList t) = brackets $ showTypesHaskell t
+    showTypesHaskell (FTEnum t) = brackets $ (pretty $ getEnums t)
+
 
 instance ShowTypesHaskell Field where
     showTypesHaskell (Field fn ft) =
@@ -338,6 +326,7 @@ instance ShowTypesProlog FieldType where
     showTypesProlog FTDate = "string"
     showTypesProlog (FTRef n) = "ref" <> parens (pretty n)
     showTypesProlog (FTList t) = "list" <> parens (showTypesProlog t)
+    showTypesProlog (FTEnum t) = "list" <> parens (pretty $ getEnums t)
 
 instance ShowTypesProlog Field where
     showTypesProlog (Field fn ft) =
@@ -402,7 +391,7 @@ jsonType t =
 
 -- showRequireds :: [Field] -> Doc ann
 -- showRequireds fds =
---     dquotes "required" <> ": " <> 
+--     dquotes "required" <> ": " <>
 --     brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann
@@ -431,6 +420,8 @@ instance ShowTypesJson FieldType where
         jsonType "array" <> "," <>
         dquotes "items" <> ": " <>
         braces (showRef n)
+    showTypesJson (FTEnum n) =
+      brackets (hsep (punctuate comma (map (dquotes . pretty) (map processTopLvlNameTextForJsonSchema n))))
     showTypesJson _ =
         jsonType "string"
 
@@ -479,7 +470,7 @@ rulesToJsonSchema rs =
     let
         -- TODO: Would be better to avoid boolean blindness here; improve when time permits
         -- Partitioning in advance because we want to group the means HLikes into one object
-        ets = foldMap rule2NonmdJsonExp rs
+        ets = foldMap rule2ExpType rs
         subJsonObjs = map showTypesJson ets
     in (case ets of
             [] -> show $ braces emptyDoc
@@ -495,7 +486,7 @@ rulesToJsonSchema rs =
 
 rulesToUISchema :: [SFL4.Rule] -> String
 rulesToUISchema rs =
-    let ets = foldMap rule2NonmdJsonExp rs in
+    let ets = foldMap rule2ExpType rs in
         (case ets of
             [] -> show $ braces emptyDoc
             rts ->

@@ -26,7 +26,7 @@ spec = do
 
   -- TODO: this one doesn't work yet, will do a separate PR to get that done
   describe "Prettyprinting: internal, spaces" $ do
-    xit "L4 name with spaces should still be with spaces in the internal representation" $ do
+    it "L4 name with spaces should still be with spaces in the internal representation" $ do
       let
         typeSig = Just (SimpleType TList1 "Name With Spaces")
       typeDeclSuperToFieldType typeSig `shouldBe` FTList (FTRef "Name With Spaces")

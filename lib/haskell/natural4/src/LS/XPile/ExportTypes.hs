@@ -116,7 +116,7 @@ processTopLvlNameTextForJsonSchema = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text)
 -- stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [ MTT n ] = processTopLvlNameTextForJsonSchema n
+typeDeclNameToTypeName [ MTT n ] = n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> T.Text
@@ -133,7 +133,7 @@ textToFieldType tn = case tn of
         "Number" -> FTNumber
         "String" -> FTString
         "Date" -> FTDate
-        n -> FTRef (processTopLvlNameTextForJsonSchema n)
+        n -> FTRef n
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
@@ -433,8 +433,6 @@ instance ShowTypesJson FieldType where
         jsonType "array" <> "," <>
         dquotes "items" <> ": " <>
         braces (showTypesJson n)
-    showTypesJson _ =
-        jsonType "string"
 
 instance ShowTypesJson Field where
     showTypesJson :: Field -> Doc ann

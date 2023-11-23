@@ -27,6 +27,9 @@ module LS.XPile.ExportTypes (
     , rulesToJsonSchema
     , rulesToHaskellTp
     , rulesToPrologTp
+
+    -- for tests
+    , FieldType(..), typeDeclSuperToFieldType, showTypesJson
 ) where
 
 import Data.Text qualified as T
@@ -130,14 +133,13 @@ textToFieldType tn = case tn of
         "Number" -> FTNumber
         "String" -> FTString
         "Date" -> FTDate
-        n -> FTRef n
+        n -> FTRef (processTopLvlNameTextForJsonSchema n)
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 
-typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) =
-  FTList (FTRef $ PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) tn)
+typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList $ textToFieldType tn
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
@@ -392,7 +394,7 @@ defsLocation n =
   [di|\#/#{defsLocationName}/#{n'}|]
   where
     -- Replace multiple whitespaces with a single underscore.
-    n' = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) n
+    n' = processTopLvlNameTextForJsonSchema n
 
 -- defsLocation n = pretty $ "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
 
@@ -402,7 +404,7 @@ jsonType t =
 
 -- showRequireds :: [Field] -> Doc ann
 -- showRequireds fds =
---     dquotes "required" <> ": " <> 
+--     dquotes "required" <> ": " <>
 --     brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann
@@ -427,10 +429,10 @@ instance ShowTypesJson FieldType where
         dquotes "format" <> ": " <> dquotes "date"
     showTypesJson (FTRef n) =
         showRef n
-    showTypesJson (FTList (FTRef n)) =
+    showTypesJson (FTList n) =
         jsonType "array" <> "," <>
         dquotes "items" <> ": " <>
-        braces (showRef n)
+        braces (showTypesJson n)
     showTypesJson _ =
         jsonType "string"
 

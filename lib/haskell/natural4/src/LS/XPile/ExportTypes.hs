@@ -133,7 +133,7 @@ textToFieldType tn = case tn of
         "Number" -> FTNumber
         "String" -> FTString
         "Date" -> FTDate
-        n -> FTRef (PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) n)
+        n -> FTRef (processTopLvlNameTextForJsonSchema n)
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
@@ -394,7 +394,7 @@ defsLocation n =
   [di|\#/#{defsLocationName}/#{n'}|]
   where
     -- Replace multiple whitespaces with a single underscore.
-    n' = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) n
+    n' = processTopLvlNameTextForJsonSchema n
 
 -- defsLocation n = pretty $ "#/" ++ defsLocationName ++ "/" ++ (map toLower $ intercalate "_" $ words n)
 

@@ -27,6 +27,9 @@ module LS.XPile.ExportTypes (
     , rulesToJsonSchema
     , rulesToHaskellTp
     , rulesToPrologTp
+
+    -- for tests
+    , FieldType(..), typeDeclSuperToFieldType, showTypesJson
 ) where
 
 import Data.Text qualified as T
@@ -401,7 +404,7 @@ jsonType t =
 
 -- showRequireds :: [Field] -> Doc ann
 -- showRequireds fds =
---     dquotes "required" <> ": " <> 
+--     dquotes "required" <> ": " <>
 --     brackets (hsep (punctuate comma (map (dquotes . pretty . (.fieldName)) fds)))
 
 showRef :: TypeName -> Doc ann

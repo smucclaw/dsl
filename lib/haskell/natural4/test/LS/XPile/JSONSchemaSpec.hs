@@ -1,10 +1,56 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.XPile.JSONSchemaSpec where
 
 import Test.Hspec ( describe, it, xit, shouldBe, Spec )
-import LS.Types (TypeSig(..), ParamType(..))
-import LS.XPile.ExportTypes
+import LS.Types (TypeSig(..), ParamType(..), EntityType, MTExpr(MTT))
+import LS.Rule (Rule(..))
+import LS.XPile.ExportTypes (typeDeclSuperToFieldType, showTypesJson, FieldType(..), rulesToJsonSchema)
+import Test.QuickCheck
+import qualified Data.Text as T
+import Control.Monad (liftM2)
+import Text.Regex.PCRE.Heavy qualified as PCRE
+
+instance Arbitrary ParamType where
+    arbitrary = oneof $ pure <$> [TOne, TOptional, TList0, TList1, TSet0, TSet1]
+
+instance Arbitrary TypeSig where
+    arbitrary = liftM2 SimpleType arbitrary arbitrary
+
+instance Arbitrary MTExpr where
+    arbitrary = MTT . T.pack . (:[]) <$> arbitrary
+
+instance Arbitrary EntityType where
+    arbitrary = T.pack <$> arbitrary
+
+instance Arbitrary Rule where
+  arbitrary = do
+    ruleName <- arbitrary
+    maybeTypeSig <- arbitrary
+    hasRules <- arbitrary
+    pure $ TypeDecl {
+            name = ruleName,
+            super = maybeTypeSig,
+            has = hasRules,
+            enums   = Nothing,
+            given   = Nothing,
+            upon    = Nothing,
+            rlabel  = Nothing,
+            lsource = Nothing,
+            srcref  = Nothing,
+            defaults = [],
+            symtab   = []
+            }
+
+processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
+processTopLvlNameTextForJsonSchema = PCRE.gsub ([PCRE.re|\s+|]) ("_" :: T.Text)
+
+isNormalised :: T.Text -> Bool
+isNormalised s = s == processTopLvlNameTextForJsonSchema s
+
+prop_RuleNormalisedAsJson :: Rule -> Bool
+prop_RuleNormalisedAsJson r = isNormalised $ T.pack $ rulesToJsonSchema [r]
 
 spec :: Spec
 spec = do
@@ -24,7 +70,6 @@ spec = do
 
    -- Tests for prettyprinting
 
-  -- TODO: this one doesn't work yet, will do a separate PR to get that done
   describe "Prettyprinting: internal, spaces" $ do
     it "L4 name with spaces should still be with spaces in the internal representation" $ do
       let
@@ -51,3 +96,8 @@ spec = do
         typeSig = Just (SimpleType TList1 "NameWithoutSpaces")
         fieldType = typeDeclSuperToFieldType typeSig
       show (showTypesJson fieldType)  `shouldBe` "\"type\": \"array\",\"items\": {\"$ref\": \"#/$defs/NameWithoutSpaces\"}"
+
+  -- TODO: this test gets stuck, why ???
+  describe "Prettyprinting: property-based testing" $ do
+    xit "Applying rulesToJsonSchema to arbitrary rules, all should be normalised" $ do
+        property prop_RuleNormalisedAsJson

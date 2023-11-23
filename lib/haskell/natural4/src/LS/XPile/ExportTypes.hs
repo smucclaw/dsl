@@ -130,14 +130,13 @@ textToFieldType tn = case tn of
         "Number" -> FTNumber
         "String" -> FTString
         "Date" -> FTDate
-        n -> FTRef n
+        n -> FTRef (PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) n)
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
 -- TODO: There somehow cannot be lists of lists (problem both of the parser and of data structures).
 
-typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) =
-  FTList (FTRef $ PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text) tn)
+typeDeclSuperToFieldType (Just (SimpleType TList1 tn)) = FTList $ textToFieldType tn
 typeDeclSuperToFieldType other = do
     trace ("Unhandled case: " ++ show other) FTString
 
@@ -427,10 +426,10 @@ instance ShowTypesJson FieldType where
         dquotes "format" <> ": " <> dquotes "date"
     showTypesJson (FTRef n) =
         showRef n
-    showTypesJson (FTList (FTRef n)) =
+    showTypesJson (FTList n) =
         jsonType "array" <> "," <>
         dquotes "items" <> ": " <>
-        braces (showRef n)
+        braces (showTypesJson n)
     showTypesJson _ =
         jsonType "string"
 

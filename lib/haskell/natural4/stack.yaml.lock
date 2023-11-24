@@ -73,13 +73,6 @@ packages:
       size: 300
   original:
     hackage: prettyprinter-interp-0.2.0.0
-- completed:
-    hackage: text-replace-0.1.0.3@sha256:1ac3a6a18f0e7d5274e14b6e03e3b36b953d8f0a24ee6b43f8a8befb4160b6b6,1628
-    pantry-tree:
-      sha256: 9d2b3712b7223ab76c50f5e86bdca1431287896af9bd93abc54533a264da1de0
-      size: 394
-  original:
-    hackage: text-replace-0.1.0.3
 snapshots:
 - completed:
     sha256: 5921ddc75f5dd3f197fbc32e1e5676895a8e7b971d4f82ef6b556657801dd18a

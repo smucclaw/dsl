@@ -46,7 +46,6 @@ import LS.XPile.LogicalEnglish.Types
 -- $setup
 -- >>> import Data.Text qualified as T
 -- >>> :seti -XOverloadedStrings
--- >>> import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 -- >>> import Data.Sequences (fromStrict, toStrict)
 
 idVarsInHC :: SimpleL4HC -> VarsHC

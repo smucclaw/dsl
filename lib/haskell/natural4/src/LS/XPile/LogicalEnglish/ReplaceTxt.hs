@@ -17,7 +17,6 @@ import LS.XPile.LogicalEnglish.Types
     VCell (..),
   )
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import Text.Replace (Replace (Replace), listToTrie, replaceWithTrie)
 
 {- | 
 TODO: Would be better to read in a dictionary of what/how to replace from some config file,
@@ -29,35 +28,33 @@ replaceTxt =
   T.strip
     >>> replaceInf
     >>> replacePeriod
-    >>> replaceTxtSimple
+    >>> replaceComma
+    >>> replacePercent
     >>> trimWhitespaces
 
 trimWhitespaces :: T.Text -> T.Text
 trimWhitespaces = T.strip >>> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)
 
-replaceTxtSimple :: T.Text -> T.Text
-replaceTxtSimple = fromStrict >>> replaceWithTrie replacements >>> toStrict
-  where
-    replacements = listToTrie replaceCommaPercent
+replaceComma :: T.Text -> T.Text
+replaceComma = PCRE.gsub [PCRE.re|,|] (" COMMA " :: T.Text)
 
-    replaceCommaPercent =
-      [ Replace "," " COMMA ",
-        Replace "%" " PERCENT "
-      ]
-      {- ^ it's cleaner not to put a space after `percent`
-        because it's usually something like "100% blah blah" in the encoding
-        So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
-        And similarly with `comma`.
+replacePercent :: T.Text -> T.Text
+replacePercent = PCRE.gsub [PCRE.re|%|] (" PERCENT " :: T.Text)
 
-        Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
-        >>> replaceTxt ""
-        ""
-        >>> replaceTxt "100% guarantee"
-        "100 PERCENT guarantee"
+  {- ^ it's cleaner not to put a space after `percent`
+    because it's usually something like "100% blah blah" in the encoding
+    So if you add a space after, you end up getting "100 percent  blah blah", which doesn't look as nice.
+    And similarly with `comma`.
 
-        >>> replaceTxt "rocks, stones, and trees"
-        "rocks COMMA stones COMMA and trees"
-      -}
+    Couldn't figure out quickly how to get doc tests to work for this function, so not bothering with that for now. (TODO)
+    >>> replaceTxt ""
+    ""
+    >>> replaceTxt "100% guarantee"
+    "100 PERCENT guarantee"
+
+    >>> replaceTxt "rocks, stones, and trees"
+    "rocks COMMA stones COMMA and trees"
+  -}
 
 -- LE, as with Prolog, uses "inf" to denote positive infinity.
 replaceInf :: T.Text -> T.Text

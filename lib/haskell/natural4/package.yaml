@@ -80,9 +80,6 @@ dependencies:
   - string-conversions
   - raw-strings-qq
   - template-haskell
-  - text-replace
-
-
 
 language: GHC2021
 

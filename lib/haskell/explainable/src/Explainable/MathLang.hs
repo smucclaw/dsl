@@ -53,12 +53,30 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Float ) or perhaps a Maybe (Expr Float)
-            deriving (Eq, Show)
+            deriving (Eq)
+
+instance (Show a) => Show (Expr a) where
+  show (Val Nothing a) = "Val " <> parensIfNeg (show a)
+  show (Val lbl a) = unwords ["Val", showlbl lbl, parensIfNeg (show a)]
+  show (Parens lbl e) = unwords ["Parens", showlbl lbl, show e]
+  show (MathBin lbl binop e1 e2) = unwords ["MathBinOp", showlbl lbl, show binop, show e1, show e2]
+  show (MathVar str) = unwords ["MathVar", str]
+  show (MathSet str e) = unwords ["MathSet", str, show e]
+  show (MathITE lbl pred e1 e2) = unwords ["MathITE", showlbl lbl, show pred, show e1, show e2]
+  show (MathMax lbl e1 e2) = unwords ["MathMax", showlbl lbl, show e1, show e2]
+  show (MathMin lbl e1 e2) = unwords ["MathMin", showlbl lbl, show e1, show e2]
+  show (ListFold lbl f el) = unwords ["ListFold", showlbl lbl, show f, show el]
+  show (Undefined lbl) = unwords ["Undefined", showlbl lbl]
 
 type ExprLabel = Maybe String
 showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
-showlbl (Just l) = " (" ++ l ++ ")"
+showlbl (Just l) = "(" ++ l ++ ")"
+
+parensIfNeg :: String -> String
+parensIfNeg str = case str of
+  '-':_ -> concat ["(", str, ")"]
+  _ -> str
 
 cappedBy :: Expr a -> Expr a -> Expr a
 cappedBy = MathMin (Just "capped by")

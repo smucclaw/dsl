@@ -796,14 +796,14 @@ getExpandedRuleNames l4i rule = case rule of
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
 expandRuleForNLGE l4i depth rule = do
   case rule of
-    Regulative{} -> mutterd depth "expandRuleForNLGE: running Regulative" >> do
+    Regulative{who, cond, upon, hence, lest} -> mutterd depth "expandRuleForNLGE: running Regulative" >> do
       -- Maybe (XPileLogE BoolStructR)
       -- XPileLogE (Maybe BoolStructR)
-      who'   <- go (who rule)
-      cond'  <- go (cond rule)
-      hence' <- traverse (expandRuleForNLGE l4i depth) $ hence rule
-      lest'  <- traverse (expandRuleForNLGE l4i depth) $ lest rule
-      upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon rule )
+      who'   <- go who
+      cond'  <- go cond
+      hence' <- traverse (expandRuleForNLGE l4i depth) hence
+      lest'  <- traverse (expandRuleForNLGE l4i depth) lest
+      upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon )
       return $ rule
         { who = who'
         , cond = cond'

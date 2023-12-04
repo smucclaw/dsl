@@ -9,7 +9,6 @@ module LS.XPile.LogicalEnglish.ReplaceTxt
 where
 
 import Control.Category ((>>>))
-import Data.Sequences (LazySequence (..))
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS.XPile.LogicalEnglish.Types

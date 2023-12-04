@@ -750,7 +750,7 @@ expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
 expandRulesForNLGE env rules = do
   let depth = 4
   mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
-  toreturn <- sequence (expandRuleForNLGE l4i (depth+1) <$> uniqrs)
+  toreturn <- traverse (expandRuleForNLGE l4i $ depth+1) uniqrs
   mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
   return toreturn
   where
@@ -801,8 +801,8 @@ expandRuleForNLGE l4i depth rule = do
       -- XPileLogE (Maybe BoolStructR)
       who'   <- go (who rule)
       cond'  <- go (cond rule)
-      hence' <- sequence $ expandRuleForNLGE l4i depth <$> hence rule
-      lest'  <- sequence $ expandRuleForNLGE l4i depth <$> lest  rule
+      hence' <- traverse (expandRuleForNLGE l4i depth) (hence rule)
+      lest'  <- traverse (expandRuleForNLGE l4i depth) (lest  rule)
       upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon rule )
       return $ rule
         { who = who'
@@ -817,7 +817,7 @@ expandRuleForNLGE l4i depth rule = do
       rule { cond = expandBSR l4i depth <$> cond rule } )
     _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
   where
-    go xs = sequence $ expandBSRM l4i depth <$> xs
+    go = traverse $ expandBSRM l4i depth
 
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions

@@ -801,8 +801,8 @@ expandRuleForNLGE l4i depth rule = do
       -- XPileLogE (Maybe BoolStructR)
       who'   <- go (who rule)
       cond'  <- go (cond rule)
-      hence' <- traverse (expandRuleForNLGE l4i depth) (hence rule)
-      lest'  <- traverse (expandRuleForNLGE l4i depth) (lest  rule)
+      hence' <- traverse (expandRuleForNLGE l4i depth) $ hence rule
+      lest'  <- traverse (expandRuleForNLGE l4i depth) $ lest rule
       upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon rule )
       return $ rule
         { who = who'

@@ -9,15 +9,15 @@ Largely a wrapper. Most of the functionality is in the anyall lib.
 module LS.XPile.GFTrees where
 
 import AnyAll qualified as AA
+import Control.Monad (join)
 import Data.Maybe (catMaybes, listToMaybe, mapMaybe)
 import Data.Text qualified as T
 import LS
 import LS.NLP.NL4Transformations
 import LS.NLP.NLG
+import LS.XPile.Logging (XPileLog)
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
-import LS.XPile.Logging (XPileLog)
-import Control.Monad (mapM, join)
 
 
 gftrees :: NLGEnv -> [Rule] -> XPileLog [BoolStructGText]

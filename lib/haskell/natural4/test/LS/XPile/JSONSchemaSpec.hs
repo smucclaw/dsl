@@ -3,20 +3,30 @@
 
 module LS.XPile.JSONSchemaSpec where
 
-import Test.Hspec ( describe, it, xit, shouldBe, Spec )
-import LS.Types (TypeSig(..), ParamType(..), EntityType, MTExpr(MTT))
-import LS.Rule (Rule(..))
-import LS.XPile.ExportTypes (typeDeclSuperToFieldType, showTypesJson, FieldType(..), rulesToJsonSchema)
+import Control.Applicative (liftA2)
+import Data.Text qualified as T
+import LS.Rule (Rule (..))
+import LS.Types
+  ( EntityType,
+    MTExpr (MTT),
+    ParamType (..),
+    TypeSig (..),
+  )
+import LS.XPile.ExportTypes
+  ( FieldType (..),
+    rulesToJsonSchema,
+    showTypesJson,
+    typeDeclSuperToFieldType,
+  )
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.QuickCheck
-import qualified Data.Text as T
-import Control.Monad (liftM2)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 instance Arbitrary ParamType where
     arbitrary = oneof $ pure <$> [TOne, TOptional, TList0, TList1, TSet0, TSet1]
 
 instance Arbitrary TypeSig where
-    arbitrary = liftM2 SimpleType arbitrary arbitrary
+    arbitrary = liftA2 SimpleType arbitrary arbitrary
 
 instance Arbitrary MTExpr where
     arbitrary = MTT . T.pack . (:[]) <$> arbitrary
@@ -44,7 +54,7 @@ instance Arbitrary Rule where
             }
 
 processTopLvlNameTextForJsonSchema :: T.Text -> T.Text
-processTopLvlNameTextForJsonSchema = PCRE.gsub ([PCRE.re|\s+|]) ("_" :: T.Text)
+processTopLvlNameTextForJsonSchema = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text)
 
 isNormalised :: T.Text -> Bool
 isNormalised s = s == processTopLvlNameTextForJsonSchema s

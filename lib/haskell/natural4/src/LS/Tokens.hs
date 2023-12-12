@@ -152,7 +152,7 @@ refillDeepers n = do
 
 -- | push back a token into the stream.
 pushBackToken :: WithPos MyToken -> Parser ()
-pushBackToken tok = updateParserState (\s@State {stateInput} -> s{stateInput = pushTokenStream tok stateInput})
+pushBackToken tok = updateParserState \s@State {stateInput} -> s{stateInput = pushTokenStream tok stateInput}
 
 pushTokenStream :: WithPos MyToken -> MyStream -> MyStream
 pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStream}
@@ -201,12 +201,12 @@ liftRawPFun :: (RawParser a -> RawParser a) -> Parser a -> Parser a
 liftRawPFun f = WriterT . ReaderT . (\x -> f . runReaderT x) . runWriterT
 
 printErrors :: String -> RunConfig -> Parser a -> Parser a
-printErrors dname r = runOnErrors $ \ cnsmp err s res -> do
+printErrors dname r = runOnErrors \ cnsmp err s res -> do
   let consumption = case cnsmp of
         MPInternal.Consumed -> "Consumed"
         MPInternal.Virgin -> "Unconsumed"
   let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s
-                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) (\_ _ -> error "eerr")
+                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) \_ _ -> error "eerr"
   magicRunParser . myTraceM $ "\\ !" <> consumption <> " Error: " <> dname <> ": " <> onelineErrorMsg err
 
 debugNameP :: Show a => String -> Parser a -> Parser a
@@ -690,7 +690,7 @@ infixl 4 $+/
 
 p1 /+/ p2 = do
   (uncurry <$> p1 <*> p2)
-    |-- (\n -> debugPrint $ "/+/ pending " ++ show n ++ " UnDeepers")
+    |-- \n -> debugPrint $ "/+/ pending " ++ show n ++ " UnDeepers"
 infixl 4 /+/
 
 p1 $>/ p2 = debugPrintSL "$>/" >> p1 $+/ (|>>) p2
@@ -956,7 +956,7 @@ pretendEmpty = liftRawPFun iPretendEmpty
 
 -- | Like 'try' but allows backtracking on success as well (as long as no later step consumes tokens before the branching).
 iPretendEmpty :: (Stream s, Ord e) => Parsec e s a -> Parsec e s a
-iPretendEmpty pt = MPInternal.ParsecT $ \s _ _ eok eerr ->
+iPretendEmpty pt = MPInternal.ParsecT \s _ _ eok eerr ->
    let eerr' err _ = eerr err s
    in MPInternal.unParser pt s eok eerr' eok eerr'
 
@@ -964,7 +964,7 @@ runOnErrors :: (forall b. MPInternal.Consumption -> ParseError MyStream Void -> 
 runOnErrors f = liftRawPFun (iRunOnErrors f)
 
 iRunOnErrors :: (Stream s, Ord e, Monad m) => (forall b. MPInternal.Consumption -> ParseError s e -> State s e -> m b -> m b) -> ParsecT e  s m a -> ParsecT e s m a
-iRunOnErrors f pt = MPInternal.ParsecT $ \s cok cerr eok eerr ->
+iRunOnErrors f pt = MPInternal.ParsecT \s cok cerr eok eerr ->
     let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
         eerr' err s' = f MPInternal.Virgin err s' (eerr err s')
     in

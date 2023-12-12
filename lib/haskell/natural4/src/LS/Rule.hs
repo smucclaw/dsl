@@ -246,7 +246,7 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
 
 ruleLabelName :: Rule -> RuleName
 ruleLabelName rule =
-  rule |> getRlabel |> maybe (ruleName rule) (\x -> [MTT $ rl2text x]) 
+  rule |> getRlabel |> maybe (ruleName rule) \x -> [MTT $ rl2text x]
 
 getRlabel :: Rule -> Maybe RuleLabel
 getRlabel Regulative {rlabel}   = rlabel

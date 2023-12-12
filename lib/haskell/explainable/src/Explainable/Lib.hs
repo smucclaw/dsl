@@ -7,7 +7,7 @@ import Text.Megaparsec.Char (numberChar)
 import Explainable.MathLang
 
 someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+someFunc = print "someFunc"
 
 -- | if we generalize a 2 dimensional Data.Matrix to higher dimensions, we have ... a Tensor! but let's reinvent the wheel and not use one of the available tensor libraries.
 -- some guidance from IRC suggested just making vector of vectors of vectors etc.
@@ -32,13 +32,13 @@ runTests_1 = do
 
   -- you may ask: how is this better than just doing things natively in haskell? The answer: evaluation is decorated with explanations, and that's valuable, because XAI.
 
-  putStrLn "* the sum of all positive elements, ignoring negative elements"
+  print "* the sum of all positive elements, ignoring negative elements"
   dumpExplanationF 2 defaultState $ (+||)     $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
 
-  putStrLn "* the product of the doubles of all positive elements, ignoring negative and zero elements"
+  print "* the product of the doubles of all positive elements, ignoring negative and zero elements"
   dumpExplanationF 2 defaultState $ (*||) $ timesEach 2 $ positiveElementsOf [-2, -1, 0, 1, 2, 3]
 
-  putStrLn "* the sum of the doubles of all positive elements and the unchanged original values of all negative elements"
+  print "* the sum of the doubles of all positive elements and the unchanged original values of all negative elements"
   dumpExplanationF 2 defaultState $ (+||) $ timesPositives 2 [-2, -1, 0, 1, 2, 3]
 
 
@@ -48,9 +48,9 @@ defaultState = emptyState { symtabF = Map.fromList [("dow", "dow" @|. 7)] }
 
 runTests_Mathlang :: IO ()
 runTests_Mathlang = do
-  putStrLn "* mathlang tests"
+  print "* mathlang tests"
 
-  putStrLn "** two plus (two on sundays, and one every other day) equals three or four"
+  print "** two plus (two on sundays, and one every other day) equals three or four"
   let iceCreams =
         "iceCreams" @|=
         "two usually" @|. 2

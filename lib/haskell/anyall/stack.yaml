@@ -35,6 +35,8 @@ extra-deps:
 - git: https://github.com/smucclaw/optparse-generic.git
   commit: 65aec52d6d2000d1ec3efbc9f04dfe4321b31cc1
 
+- prettyprinter-interp-0.2.0.0
+
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:

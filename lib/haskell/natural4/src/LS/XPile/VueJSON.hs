@@ -172,7 +172,7 @@ rp2grounds  rc  globalrules  r (RPnary     _rprel rps) = concatMap (rp2grounds r
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
 ignoreTypicalRP rc globalrules r =
   if not $ extendedGrounds rc
-  then (\rp -> not (hasDefaultValue r rp || defaultInGlobals globalrules rp))
+  then \rp -> not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
   else const True
 
 -- is the "head-like" key of a relationalpredicate found in the list of defaults associated with the rule?

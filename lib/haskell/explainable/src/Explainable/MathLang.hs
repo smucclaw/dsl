@@ -15,8 +15,8 @@ import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text qualified as T
 import Data.Tree
 import Explainable
-import NeatInterpolation (text)
 import Prettyprinter
+import Prettyprinter.Interpolate (di)
 import Prelude hiding (pred)
 
 -- * Now we do a deepish embedding of an eDSL.
@@ -680,7 +680,7 @@ toplevel = for_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one")
                    [Val Nothing 1, Val Nothing 2, Val Nothing 3, Val Nothing 4]
                  , ListFold (Just "positive 1") FoldSum $ Val (Just "zero") 0 <| ml23
                  , ListFold (Just "positive 2") FoldSum $ Val (Just "zero") 0 <| ml23
-                 ] $ \topexpr -> do
+                 ] \topexpr -> do
   (_val, _xpl, _stab, _wlog) <- xplainF () emptyState topexpr
   return ()
   where ml23 = MathList (Just "minus two to three")
@@ -737,26 +737,27 @@ dumpExplanationF depth s f = do
 
 dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
 dumpTypescript realign s f = do
-  putStrLn $ T.unpack $ [text|
-      // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
+  print[di|
+    // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
 
-      import * as tsm from './mathlang';
-      export { exprReduce, asDot } from './mathlang';
+    import * as tsm from './mathlang';
+    export { exprReduce, asDot } from './mathlang';
 
-      export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
-        console.log("** " + Math.round(expr.val))
-        tsm.explTrace(expr, 3)
+    export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
+      console.log("** " + Math.round(expr.val))
+      tsm.explTrace(expr, 3)
 
-        console.log("** JSON of symTab")
-        console.log("#+NAME symtab")
-        console.log("#+BEGIN_SRC json")
-        console.log(JSON.stringify(tsm.symTab,null,2))
-        console.log("#+END_SRC")
-        return expr
-      }
-      |]
-  print (ppst s realign)
-  print $ "export const maxClaim = () => { return " <> pp f <> line <> "}"
+      console.log("** JSON of symTab")
+      console.log("\#+NAME symtab")
+      console.log("\#+BEGIN_SRC json")
+      console.log(JSON.stringify(tsm.symTab,null,2))
+      console.log("\#+END_SRC")
+      return expr
+    }
+    #{ppst s realign}
+    export const maxClaim = () => { return #{pp f}
+  }
+  |]
 
 
 -- * Prettty-printing to the Typescript version of the MathLang library
@@ -804,7 +805,7 @@ instance ToTS Pred a where
 
 ppst :: MyState -> Doc ann -> Doc ann
 ppst (MyState{..}) realign =
-  pretty [text|
+  [di|
     function realign (form_data : any) {
       var toreturn = {...form_data}
   |] <>  realign <> line <> "  return toreturn;\n}" <> line <>

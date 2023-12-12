@@ -133,7 +133,7 @@ instance Pretty a => Pretty (BoolPropn a) where
         orbp@(Or _)       -> nestLE . pretty $ orbp
 
       boolOp opstr bps = concatBoolOp opstr (map prettnestIfAndOr bps)
-      concatBoolOp boolopstr = concatWith (\x y -> x <> line <> boolopstr <+> y)
+      concatBoolOp boolopstr = concatWith \x y -> x <> line <> boolopstr <+> y
 
 instance Pretty TxtAtomicBP where
   pretty :: TxtAtomicBP -> Doc ann

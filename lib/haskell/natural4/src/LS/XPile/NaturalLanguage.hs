@@ -3,7 +3,6 @@
 module LS.XPile.NaturalLanguage where
 
 import AnyAll as AA
-import Data.Map qualified as Map
 import Data.Text qualified as T
 import LS.Interpreter ( qaHornsT )
 import LS.Rule ( Interpreted )

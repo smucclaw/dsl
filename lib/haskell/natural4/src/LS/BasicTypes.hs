@@ -20,11 +20,11 @@ module LS.BasicTypes where
 import Data.Aeson (ToJSON)
 import Data.Char (toUpper)
 import Data.Hashable (Hashable)
-import qualified Data.List as DL
-import qualified Data.List.NonEmpty as NE
+import Data.List qualified as DL
+import Data.List.NonEmpty qualified as NE
 import Data.Proxy (Proxy (..))
-import qualified Data.Text as Text
-import qualified Data.Vector as V
+import Data.Text qualified as Text
+import Data.Vector qualified as V
 import GHC.Generics (Generic)
 import Text.Megaparsec
   ( PosState
@@ -349,11 +349,11 @@ instance Stream MyStream where
       Just _nex -> (x, MyStream str s')
 
 instance VisualStream MyStream where
-  -- showTokens Proxy (x NE.:| []) = show (tokenVal x)
-  showTokens Proxy xs = unwords
-    . NE.toList
-    . fmap showTokenWithContext $ xs
   tokensLength Proxy xs = sum (tokenLength <$> xs)
+  -- showTokens Proxy (x NE.:| []) = show (tokenVal x)
+  showTokens Proxy = unwords
+    . NE.toList
+    . fmap showTokenWithContext
 
 showTokenWithContext :: WithPos MyToken -> String
 showTokenWithContext WithPos {tokenVal = t} = showMyToken t

@@ -35,7 +35,7 @@ configFile2spec configFile =
 
 configFile2testcase :: FilePath -> IO (Either Error Testcase)
 configFile2testcase configFile = runExceptT do
-  exists <- lift $ doesFileExist configFile
+  exists <- lift do doesFileExist configFile
   if not exists
     then throwError Error {directory, info = MissingConfigFile}
     else

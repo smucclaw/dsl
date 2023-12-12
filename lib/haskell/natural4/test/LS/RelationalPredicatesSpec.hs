@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.RelationalPredicatesSpec where
@@ -11,14 +12,14 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "partitionExistentials" $ do
-    it "expand Leaf (not RPParamText)" $ do
+  describe "partitionExistentials" do
+    it "expand Leaf (not RPParamText)" do
       let
         l = mkRpmtLeaf ["sky", "is", "blue"]
         hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentials hc `shouldBe` (l,l)
 
-    it "expand Leaf RPParamText" $ do
+    it "expand Leaf RPParamText" do
       let
         typeSig = Just (SimpleType TOne "Fruit")
         typedWords = "apple" :| ["orange", "banana"]
@@ -27,7 +28,7 @@ spec = do
         hc = HC {hHead = mkRpmt [""], hBody = Just l}
       partitionExistentials hc `shouldBe` (l,l)
 
-    it "partition All" $ do
+    it "partition All" do
       let
         fruitType = Just (SimpleType TOne "Fruit")
         l1 = mkLeaf $ RPParamText $ (MTT <$> "apple" :| ["orange", "banana"], fruitType) :| []
@@ -38,7 +39,7 @@ spec = do
         hc = HC {hHead = mkRpmt [""], hBody = Just (mkAll Nothing [l1, l2])}
       partitionExistentials hc `shouldBe` (mkAll Nothing [l1, l2], mkAll Nothing [])
 
-    it "partition Any" $ do
+    it "partition Any" do
       let
         fruitType = Just (SimpleType TOne "Fruit")
         l1 = mkLeaf $ RPParamText $ (MTT <$> "apple" :| ["orange", "banana"], fruitType) :| []

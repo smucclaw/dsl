@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -125,7 +126,7 @@ instance Show t => Pretty (TranslationMode (Expr t)) where
 
 -- prettyLPRuleCommon :: Show t => TranslationMode (LPRule lpLang t) -> Doc ann
 -- prettyLPRuleCommon (ExplainsR (LPRule _rn _env _vds preconds postcond)) =
---   vsep $ do
+--   vsep do
 --     precond <- preconds
 --     pure [__di|
 --       explains(#{pretty precond}, #{pretty postcond}, _N + 1) :-
@@ -143,7 +144,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
       accordingToPostcond = pretty AccordingToE {..}
 
   pretty (CausedByR LPRule {ruleName, preconds, postcond}) =
-    vsep $ do
+    vsep do
       precond <- preconds
       pure [__di|
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, _N + 1) :-
@@ -160,7 +161,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
     |]
 
   pretty (VarSubs1R LPRule {ruleName, localVarDecls, preconds, postcond}) =
-    vsep $ do
+    vsep do
       precond <- preconds
       pure [__di|
         explains(#{pretty precond}, #{pretty postcond}, _N) :-
@@ -168,7 +169,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
       |]
 
   pretty (VarSubs2R LPRule {..}) =
-    vsep $ do
+    vsep do
       cond <- postcond : preconds
       pure [__di|
         createSub(subInst_#{ruleName}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond varDecls) (varDeclToVarStrList localVarDecls))}, _N) :-
@@ -188,7 +189,7 @@ instance Show t => Pretty (TranslationMode (ASPRule t)) where
       varDecls = localVarDecls <> globalVarDecls
 
   pretty (VarSubs4R LPRule {..}) =
-    vsep $ do
+    vsep do
       cond <- postcond : preconds
       pure [__di|
         createSub(subInst_#{ruleName}#{toBrackets2 (my_str_trans_list (preconToVarStrList cond varDecls) (varDeclToVarStrList localVarDecls))}, _N) :-
@@ -210,7 +211,7 @@ instance Show t => Pretty (TranslationMode (EpilogRule t)) where
       accordingToPostcond = pretty AccordingToE {..}
 
   pretty (CausedByR LPRule {ruleName, preconds, postcond}) =
-    vsep $ do
+    vsep do
       precond <- preconds
       pure [__di|
         caused_by(pos, #{pretty $ LegallyHoldsE precond}, #{accordingToPostcond}, 0) :-

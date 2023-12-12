@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -136,12 +137,10 @@ rule2doc
       clauses = [HC {hHead = RPBoolStructR mtExpr RPis (All _ leaves)}]
     } =
     leaves
-      |> traverse
+      |> traverse \case
         -- Convert each leaf into a mtt
-        ( \case
-            Leaf (RPMT mtt) -> pure mtt
-            _ -> throwDefaultErr
-        )
+          Leaf (RPMT mtt) -> pure mtt
+          _ -> throwDefaultErr
       |$> mkMeans mtExpr
 
 rule2doc _ = throwDefaultErr

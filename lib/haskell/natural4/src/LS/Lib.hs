@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -197,7 +198,7 @@ parseRules o = do
   let files = getNoLabel $ file o
   if null files
   then parseSTDIN runConfig { sourceURL="STDIN" }
-  else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
+  else concat <$> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
 
   where
     getNoLabel (NoLabel x) = x
@@ -205,10 +206,10 @@ parseRules o = do
     getBS other = BS.readFile other
     parseSTDIN rc = do
       bs <- BS.getContents
-      mapM (parseStream rc "STDIN") (exampleStreams bs)
+      traverse (parseStream rc "STDIN") (exampleStreams bs)
     parseFile rc filename = do
       bs <- getBS filename
-      mapM (parseStream rc filename) (exampleStreams bs)
+      traverse (parseStream rc filename) (exampleStreams bs)
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
@@ -482,7 +483,7 @@ pRulesAndNotRules = do
     if wantNotRules then maybeToList notarule else []
 
 pNotARule :: Parser Rule
-pNotARule = debugName "pNotARule" $ do
+pNotARule = debugName "pNotARule" do
   myTraceM "pNotARule: starting"
   toreturn <- NotARule <$> manyDeep getTokenNonDeep
   myTraceM "pNotARule: returning"
@@ -490,7 +491,7 @@ pNotARule = debugName "pNotARule" $ do
 
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
-pRule = debugName "pRule" $ do
+pRule = debugName "pRule" do
   _ <- debugName "many dnl" $ many dnl
   notFollowedBy eof
 
@@ -512,7 +513,7 @@ pRule = debugName "pRule" $ do
 
 -- TypeDecl
 pTypeDeclaration :: Parser Rule
-pTypeDeclaration = debugName "pTypeDeclaration" $ do
+pTypeDeclaration = debugName "pTypeDeclaration" do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   (proto,g,u) <- permute $ (,,)
     <$$> pToken Declare *> someIndentation declareLimb
@@ -556,7 +557,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" $ do
 
 -- VarDefn gets turned into a Hornlike rule
 pVarDefn :: Parser Rule
-pVarDefn = debugName "pVarDefn" $ do
+pVarDefn = debugName "pVarDefn" do
   maybeLabel <- optional pRuleLabel
   (proto,g,u,w) <- permute $ (,,,)
     <$$> pToken Define *> defineLimb
@@ -573,7 +574,7 @@ pVarDefn = debugName "pVarDefn" $ do
                              else [ ]
                  }
   where
-    defineLimb = debugName "pVarDefn/defineLimb" $ do
+    defineLimb = debugName "pVarDefn/defineLimb" do
       (name,mytype) <- manyIndentation pKeyValuesAka
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype
@@ -594,7 +595,7 @@ pVarDefn = debugName "pVarDefn" $ do
 
 -- | parse a Scenario stanza
 pScenarioRule :: Parser Rule
-pScenarioRule = debugName "pScenarioRule" $ do
+pScenarioRule = debugName "pScenarioRule" do
   rlabel <- pToken ScenarioTok *> someIndentation (someDeep pOtherVal)
   (expects,givens) <- permute $ (,)
     <$$> some (manyIndentation pExpect)
@@ -619,7 +620,7 @@ pScenarioRule = debugName "pScenarioRule" $ do
 -- RPConstraint (RPNot (RPIs ["The Sky", "Blue"]))
 
 pExpect :: Parser Expect
-pExpect = debugName "pExpect" $ do
+pExpect = debugName "pExpect" do
   _expect  <- pToken Expect
   relPred <- someIndentation $
              try (do
@@ -645,12 +646,12 @@ pExpect = debugName "pExpect" $ do
 -- I am going to guess the pretendEmpty helps to handle the second case.
 
 pGivens :: Parser [RelationalPredicate]
-pGivens = debugName "pGivens" $ do
+pGivens = debugName "pGivens" do
   sameDepth pRelationalPredicate
 
 
 pRegRule :: Parser Rule
-pRegRule = debugName "pRegRule" $ do
+pRegRule = debugName "pRegRule" do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   manyIndentation $ choice
                 [ try $ (\r -> r { rlabel = maybeLabel }) <$> pRegRuleNormal
@@ -671,7 +672,7 @@ pRegRule = debugName "pRegRule" $ do
 --       IF  a potato is available
 
 pRegRuleSugary :: Parser Rule
-pRegRuleSugary = debugName "pRegRuleSugary" $ do
+pRegRuleSugary = debugName "pRegRuleSugary" do
   entityname         <- AA.mkLeaf . multiterm2pt <$> someDeep pMTExpr            -- You ... but no AKA allowed here
   _leftX             <- lookAhead pXLocation
   let keynamewho = pure ((RParty, entityname), Nothing)
@@ -724,7 +725,7 @@ stackGiven gvn r@Constitutive{..} = r { given = gvn <> given }
 stackGiven _   r                  = r
 
 pRegRuleNormal :: Parser Rule
-pRegRuleNormal = debugName "pRegRuleNormal" $ do
+pRegRuleNormal = debugName "pRegRuleNormal" do
   let keynamewho = (,) <$> pActor [REvery,RParty,RTokAll]
                    <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
   rulebody <- permutationsReg keynamewho
@@ -765,7 +766,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" $ do
 
 
 pHenceLest :: MyToken -> Parser Rule
-pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) $ do
+pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
@@ -786,7 +787,7 @@ pPreamble toks = choice (try . pTokenish <$> toks)
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
 pActor :: [RegKeywords] -> Parser (RegKeywords, BoolStructP)
-pActor keywords = debugName ("pActor " ++ show keywords) $ do
+pActor keywords = debugName ("pActor " ++ show keywords) do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
@@ -850,7 +851,7 @@ preambleRelPred preambles = do
 permutationsReg :: Parser ((RegKeywords, BoolStructP), Maybe (Preamble, BoolStructR))
                 -> Parser RuleBody
 permutationsReg keynamewho =
-  debugName "permutationsReg" $ do
+  debugName "permutationsReg" do
   try ( debugName "regulative permutation with deontic-temporal" $ permute ( mkRBfromDT
             <$$> pDoAction
             <||> keynamewho
@@ -880,7 +881,7 @@ permutationsReg keynamewho =
 -- MAY EVENTUALLY
 --  -> pay
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
-pDT = debugName "pDT" $ do
+pDT = debugName "pDT" do
   (pd,pt) <- (,)
     $>| pDeontic
     |>< optional pTemporal
@@ -888,13 +889,13 @@ pDT = debugName "pDT" $ do
 
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, BoolStructP)
-pDA = debugName "pDA" $ do
+pDA = debugName "pDA" do
   pd <- pDeontic
   pa <- someIndentation dBoolStructP
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
-preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  $ do
+preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  do
   condWord <- choice (try . pToken <$> wanted)
   myTraceM ("preambleBoolStructP: found: " ++ show condWord)
   ands <- dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
@@ -902,7 +903,7 @@ preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  
 
 
 dBoolStructP ::  Parser BoolStructP
-dBoolStructP = debugName "dBoolStructP" $ do
+dBoolStructP = debugName "dBoolStructP" do
   makeExprParser (manyIndentation $ AA.mkLeaf <$> pParamText)
          [ [ prefix MPNot   (\x   -> AA.mkNot x) ]
          , [ binary Or      (\x y -> AA.mkAny Nothing [x, y]) ]
@@ -911,7 +912,7 @@ dBoolStructP = debugName "dBoolStructP" $ do
          ]
 
 exprP :: Parser (MyBoolStruct ParamText)
-exprP = debugName "expr pParamText" $ do
+exprP = debugName "expr pParamText" do
   raw <- expr pParamText
 
   return $ case raw of
@@ -933,7 +934,7 @@ exprP = debugName "expr pParamText" $ do
 
 
 pAndGroup ::  Parser BoolStructP
-pAndGroup = debugName "pAndGroup" $ do
+pAndGroup = debugName "pAndGroup" do
   orGroup1 <- pOrGroup
   orGroupN <- many $ pToken And *> pOrGroup
   let toreturn = if null orGroupN
@@ -942,7 +943,7 @@ pAndGroup = debugName "pAndGroup" $ do
   return toreturn
 
 pOrGroup ::  Parser BoolStructP
-pOrGroup = debugName "pOrGroup" $ do
+pOrGroup = debugName "pOrGroup" do
   elem1    <- pElement
   elems    <- many $ pToken Or *> pElement
   let toreturn = if null elems
@@ -951,7 +952,7 @@ pOrGroup = debugName "pOrGroup" $ do
   return toreturn
 
 pAtomicElement ::  Parser BoolStructP
-pAtomicElement = debugName "pAtomicElement" $ do
+pAtomicElement = debugName "pAtomicElement" do
   try pNestedBool
     <|> pNotElement
     <|> pLeafVal
@@ -959,7 +960,7 @@ pAtomicElement = debugName "pAtomicElement" $ do
 -- [TODO]: switch all this over the the Expr parser
 
 pElement :: Parser BoolStructP
-pElement = debugName "pElement" $ do
+pElement = debugName "pElement" do
         try (hornlikeAsElement <$> tellIdFirst (debugName "nested pHornlike" pHornlike))
     <|> pAtomicElement
 
@@ -968,12 +969,12 @@ hornlikeAsElement ::  Rule -> BoolStructP
 hornlikeAsElement hlr = AA.mkLeaf $ multiterm2pt $ name hlr
 
 pNotElement :: Parser BoolStructP
-pNotElement = debugName "pNotElement" $ do
+pNotElement = debugName "pNotElement" do
   inner <- pToken MPNot *> pElement
   return $ AA.mkNot inner
 
 pLeafVal ::  Parser BoolStructP
-pLeafVal = debugName "pLeafVal" $ do
+pLeafVal = debugName "pLeafVal" do
   leafVal <- pParamText
   myTraceM $ "pLeafVal returning " ++ show leafVal
   return $ AA.mkLeaf leafVal
@@ -981,7 +982,7 @@ pLeafVal = debugName "pLeafVal" $ do
 -- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 
 pNestedBool ::  Parser BoolStructP
-pNestedBool = debugName "pNestedBool" $ do
+pNestedBool = debugName "pNestedBool" do
   -- "foo AND bar" is a nestedBool; but just "foo" is a leafval.
   (leftX,foundBool) <- lookAhead (pLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
   myTraceM $ "pNestedBool matched " ++ show foundBool ++ " at location " ++ show leftX

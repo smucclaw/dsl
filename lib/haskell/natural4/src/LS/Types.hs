@@ -635,10 +635,22 @@ increaseNestLevel :: String -> RunConfig -> RunConfig
 increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 
 magicKeywords :: [Text.Text]
-magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLESS DEFINE"
+magicKeywords =
+  [ "EVERY",
+    "PARTY",
+    "MUST,",
+    "MAY",
+    "WHEN",
+    "INCLUDES",
+    "MEANS",
+    "IS",
+    "IF",
+    "UNLESS",
+    "DEFINE"
+  ]
 
 -- | we actually want @[Text]@ here not just `MultiTerm`
 enumLabels, enumLabels_ :: ParamText -> [Text.Text]
-enumLabels nelist = fmap mtexpr2text $ concat $ NE.toList $ NE.toList . fst <$> nelist
+enumLabels nelist = fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels

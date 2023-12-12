@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -266,7 +267,7 @@ rpHornlikeAsElement :: Rule -> BoolStructR
 rpHornlikeAsElement =  multiterm2bsr
 
 rpLeafVal :: Parser BoolStructR
-rpLeafVal = debugName "rpLeafVal" $ do
+rpLeafVal = debugName "rpLeafVal" do
   leafVal <- pRelationalPredicate
   myTraceM $ "rpLeafVal returning " ++ show leafVal
   return $ AA.mkLeaf leafVal
@@ -340,7 +341,7 @@ c2hornlike r = r
 --  IF      Condition C
 
 pConstitutiveRule :: Parser Rule
-pConstitutiveRule = debugName "pConstitutiveRule" $ do
+pConstitutiveRule = debugName "pConstitutiveRule" do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
   leftY              <- lookAhead pYLocation
   namep              <- debugName "calling someIndentation pNameParens, skipping over invisible DEFINE keyword" $ someIndentation pNameParens
@@ -384,7 +385,7 @@ permutationsCon copula ifwhen l4unless l4given =
              <> ", positive=" <> show ifwhen
              <> ", negative=" <> show l4unless
              <> ", given="    <> show l4given
-            ) $ do
+            ) do
   permute $ (,,,)
     <$$>             preambleBoolStructR copula
     <|?> ([], some $ preambleBoolStructR ifwhen)
@@ -397,7 +398,7 @@ permutationsCon copula ifwhen l4unless l4given =
 --      WHEN weekend
 
 pBoolConnector :: Parser MyToken
-pBoolConnector = debugName "pBoolConnector" $ do
+pBoolConnector = debugName "pBoolConnector" do
   pToken And <|> pToken Or <|> pToken Unless <|> pToken MPNot
 
 -- support name-like expressions tagged with AKA, which means "also known as"
@@ -411,7 +412,7 @@ pPTParens = debugName "pPTParens" $ pAKA slParamText pt2multiterm
 
 
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
-preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  $ do
+preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  do
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
@@ -424,7 +425,7 @@ preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  
 
 
 preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
-preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles) $ do
+preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles) do
   (,)
     $>| choice (try . pToken <$> preambles)
     |>< pParamText
@@ -440,7 +441,7 @@ pHornlike = pHornlike' True
 -- and sometimes, when pHornlike is being used to parse the WHERE limb of a regulative rule, we say we don't need the DEFINE/DECIDE keyword;
 -- this tries to give the behaviour of the ambitious parser but in a someStructure parser.
 pHornlike' :: Bool -> Parser Rule
-pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") $ do
+pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") do
   rlabel <- optional pRuleLabel
   let dKeyword = if needDkeyword
                  then Just <$> choice [ pToken Decide ]
@@ -487,7 +488,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     -- DECIDE X IS y
     --   WHEN Z IS Q
 
-    -- ambitious dKeyword = debugName "pHornlike/ambitious" $ do
+    -- ambitious dKeyword = debugName "pHornlike/ambitious" do
     --   (keyword, subject) <- (,) $>| debugName "Decide" (choice [ pToken Decide ]) |*< slMultiTerm
     --   (iswhen, object)   <- (,) $>| debugName "When/Is"       (choice [ pToken When,   pToken Is     ]) |>< pNameParens
     --   (ifLimb,unlessLimb,andLimb,orLimb) <- debugName "pHornlike/ambitious / clauses permute" $ permute $ (,,,)
@@ -512,7 +513,7 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     someStructure :: Parser (Maybe MyToken) -> Parser (Maybe MyToken, RuleName, [HornClause BoolStructR])
     someStructure dKeyword = do
       keyword  <- dKeyword -- usually testing for pToken Define or Decide or some such, but sometimes it's not needed, so dKeyword is a Nothing parser
-      debugName ("pHornlike/someStructure(" ++ show keyword ++ ")" ) $ do
+      debugName ("pHornlike/someStructure(" ++ show keyword ++ ")" ) do
         relwhens <- (if isNothing keyword then manyIndentation else someIndentation) $ sameDepth rpSameNextLineWhen
         return (keyword
                , inferRuleName (fst . head $ relwhens)
@@ -535,7 +536,7 @@ rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
 
 pRelPred :: Parser RelationalPredicate
-pRelPred = debugName "pRelPred" $ do
+pRelPred = debugName "pRelPred" do
   slRelPred |<$ undeepers
 
 
@@ -543,7 +544,7 @@ pRelPred = debugName "pRelPred" $ do
 -- foo IS bar WHEN baz          Just Leaf baz                          becomes a body to the horn clause
 -- foo IS bar OTHERWISE         Just Leaf __OTHERWISE__                becomes a default case, which feels like a fact, but isn't.
 whenCase :: Parser (Maybe BoolStructR)
-whenCase = debugName "whenCase" $ do
+whenCase = debugName "whenCase" do
   try (whenIf *> (Just <$> pBSR)) -- we don't have a someIndentation here because we want to preserve any GoDeepers for the prePost parsing.
 --  <|> Nothing <$ debugName "Otherwise" (pToken Otherwise)
   <|> Just (AA.mkLeaf (RPMT [MTT "OTHERWISE"])) <$ debugName "Otherwise" (pToken Otherwise) -- consider RPDefault
@@ -568,7 +569,7 @@ whenIf = debugName "whenIf" $ choice [ pToken When, pToken If ]
 -- The other kind of paramtext may have a typesig, and has to appear on only one line. This does work.
 
 slRelPred :: SLParser RelationalPredicate
-slRelPred = debugName "slRelPred" $ do
+slRelPred = debugName "slRelPred" do
   choice [ try ( debugName "slRelPred/RPnary from IS" rpISnary )
          , try ( debugName "slRelPred/RPConstraint"   rpConstraint )
          , try ( debugName "slRelPred/RPBoolStructR"  rpBoolStructR )
@@ -577,7 +578,7 @@ slRelPred = debugName "slRelPred" $ do
          , try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
     -- this doesn't work. [TODO]. Or maybe we wait to replace all this with the PTree alternative.
     -- , try ( debugName "RPParamText (sans typesig, requiring multiline)" rpMultiParamText )  
-    -- <|> try ( debugName "slRelPred/RPParamText (to MT) (without typesig)" $ do
+    -- <|> try ( debugName "slRelPred/RPParamText (to MT) (without typesig)" do
     --             pt <- slParamText
     --             if NE.length pt == 1
     --               then return $ RPMT (toList $ NE.head $ untypePT pt)
@@ -634,7 +635,7 @@ rpBoolStructR = debugName "rpBoolStructR calling slMultiTerm / IS / pBSR" $
 -- This becomes RPnary RPis [RPMT x, RPnary RPgt [RPMT (MTT ["foo"]), RPMT (MTT ["bar"]), RPMT (MTT ["baz"])]]
 
 rpISnary :: SLParser RelationalPredicate
-rpISnary = debugName "rpISnary" $ do
+rpISnary = debugName "rpISnary" do
   (lhs,_rptok,rhs) <- (,,)
     $*| debugName "rpISnary/slMultiTerm" slMultiTerm
     |>| parseIS
@@ -707,19 +708,19 @@ pParamTextSameDepthOK = pParamText' False
 
 -- | currently unused, i think, but this is meant to be the next evolution of paramtext, because we want to allow NL-like, arbitrary syntax trees
 pPTree :: Parser PTree
-pPTree = debugName "pPTtree tree" $ do
+pPTree = debugName "pPTtree tree" do
   try pTreeOneWord <|> pTreeSomeWords
 
 pTreeOneWord, pTreeSomeWords :: Parser PTree
 -- single word on the first line, followed by many indenteds on subsequent lines.
-pTreeOneWord = debugName "pTreeOneWord" $ do
+pTreeOneWord = debugName "pTreeOneWord" do
   firstWord  <- debugName "pTreeOneWord: the word" (pSingleTermAka <* debugName "EOL" dnl)
   inners     <- debugName "pTreeOneWord: inners" (sameDepth pPTree)
   return $ mkPTree firstWord inners
 
 -- multiple words on the first line, followed by many subsequent lines which are indented relative to the first word.
-pTreeSomeWords = debugName "pTreeSomeWords" $ do
-  (firstLine, inners) <- debugName "pTreeSomeWords: first line, first word" $ do
+pTreeSomeWords = debugName "pTreeSomeWords" do
+  (firstLine, inners) <- debugName "pTreeSomeWords: first line, first word" do
     firstLine  <- debugName "pTreeSomeWords: lookahead pMultiTermAka" (lookAhead pKeyValuesAka)
     _firstWord <- debugName "pTreeSomeWords: first line, first word" pAnyText
     (_nextWords, nextLines) <- someIndentation $ (,)
@@ -741,7 +742,7 @@ hasTypeSig ((_,_      ) :| _) = True
 
 
 pTypeSig :: Parser TypeSig
-pTypeSig = debugName "pTypeSig" $ do
+pTypeSig = debugName "pTypeSig" do
   _           <- choice [ try (pToken TypeSeparator <* pToken A_An)
                         , pToken TypeSeparator
                         , pToken Is
@@ -788,7 +789,7 @@ slParamText = debugNameSL "slParamText" $ pure <$> slTypedMulti
 
 -- so it turns out we usually don't even ever get here because a TYPICALLY gets handled by slAKA
 slTypedMulti :: SLParser TypedMulti
-slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" $ do
+slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" do
   (l,ts,typicalval) <- (,,)
     $*| slMultiTerm
     |*| (|?|) slTypeSig
@@ -807,7 +808,7 @@ writeTypically somekey someval = do
   return ()
 
 slTypeSig :: SLParser TypeSig
-slTypeSig = debugNameSL "slTypeSig" $ do
+slTypeSig = debugNameSL "slTypeSig" do
   (_typesep, typesig) <- (,)
        $>| (pToken TypeSeparator <|> pToken Is)
        |*| (simpletype <|> inlineenum)
@@ -840,12 +841,12 @@ slKeyValuesAka :: SLParser TypedMulti
 slKeyValuesAka = debugNameSL "slKeyValuesAka" $ slAKA slKeyValues (toList . fst)
 
 pKeyValues :: Parser TypedMulti
-pKeyValues = debugName "pKeyValues" $ do slKeyValues |<$ undeepers
+pKeyValues = debugName "pKeyValues" do slKeyValues |<$ undeepers
 
 -- | a ParamText key value pair is simply a (key : [v1,v2,v3]).
 -- we use nestedHorn to allow a MEANS under the v1.
 slKeyValues :: SLParser TypedMulti
-slKeyValues = debugNameSL "slKeyValues" $ do
+slKeyValues = debugNameSL "slKeyValues" do
   (lhs, (rhs, typesig))   <- try (
     (,) -- key followed by values, and the values can sit on top of a MEANS
       $>| pMTExpr
@@ -870,11 +871,11 @@ getSrcRef = do
 
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
-pAKA baseParser toMultiTerm = debugName "pAKA" $ do
+pAKA baseParser toMultiTerm = debugName "pAKA" do
   manyIndentation (slAKA baseParser toMultiTerm |<$ undeepers)
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
-slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
+slAKA baseParser toMultiTerm = debugNameSL "slAKA" do
   (base, entityalias, typicalval) <-
     debugNameSL "slAKA with nestedHorn" $ nestedHorn (toMultiTerm.fst3) id meansIs pBSR $
     debugNameSL "slAKA base (multiterm,aka,typically)" $
@@ -898,7 +899,7 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
   where
     fst3 (x,_,_) = x
     akapart :: SLParser RuleName
-    akapart = debugName "PAKA/akapart" $ do
+    akapart = debugName "PAKA/akapart" do
       (_akatoken, akaval) <- (,)
                                 $>| debugName "Aka Token" (pToken Aka)
                                 |*| someLiftSL pOtherVal
@@ -910,7 +911,7 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" $ do
 -- but here we are constrained to MultiTerm.
 -- [TODO] this should change in the future to allow a mix of MultiTerm and True/False values.
 typically :: SLParser MultiTerm
-typically = debugName "typically" $ do
+typically = debugName "typically" do
   (_typically, someterm) <- (,)
                                 $>| pToken Typically
                                 |*| slMultiTerm
@@ -935,7 +936,7 @@ nestedHorn toMT toRN connector pbsr basesl =
 
 -- | parser for a horn clause with an inline MEANS
 mustNestHorn toMT toRN connector pbsr basesl =
-  debugNameSL "trying hasNested to match an inline MEANS" $ do
+  debugNameSL "trying hasNested to match an inline MEANS" do
   srcref   <- liftSL getSrcRef
               |-- (\n -> debugPrint $ "mustNestHorn before basesl: " ++ show n ++ " UnDeepers")
   (subj, meansTok, bsr) <- (,,)

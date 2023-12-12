@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -25,7 +26,7 @@ tempConstr2doc ::
   forall ann1 ann2.
   Maybe (TemporalConstraint T.Text) ->
   MonoidValidate (Doc ann1) (Maybe (Doc ann2))
-tempConstr2doc = traverse $ \case
+tempConstr2doc = traverse \case
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)

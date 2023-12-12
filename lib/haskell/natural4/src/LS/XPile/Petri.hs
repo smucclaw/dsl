@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -267,7 +268,7 @@ elideNodesN = elideNodes False
 -- | get rid of intermediary nodes y that fit the pattern `x -> y -> z`, where y passes the given predicate.
 -- if |x| and |z| are each 1, use the elideNodes1 form
 elideNodes :: Bool -> LT.Text -> (PNode Deet -> Bool) -> PetriD -> PetriD
-elideNodes limit1 desc pnpred og = runGM og $ do
+elideNodes limit1 desc pnpred og = runGM og do
   -- awkward phrasing, shouldn't there be some sort of concatM
   for_ [ do
              newEdge' (x,    z, [Comment $ "after elision of " <> desc <> " intermediary"])
@@ -285,7 +286,7 @@ elideNodes limit1 desc pnpred og = runGM og $ do
 
 
 reorder :: [Rule] -> PetriD -> PetriD
-reorder _rules og = runGM og $ do
+reorder _rules og = runGM og do
   -- x You if then must -> x if then you must
   for_ [ (x0, you1, if2, then3, must4)
         | you1  <- nodes $ labfilter (hasDeet IsParty) og
@@ -306,7 +307,7 @@ mergePetri :: [Rule] -> PetriD -> PetriD
 mergePetri rules og = foldl (mergePetri' rules) og (nodes $ labfilter (hasDeet IsSplit) og)
 
 mergePetri' :: [Rule] -> PetriD -> Node -> PetriD
-mergePetri' rules og splitNode = runGM og $ do
+mergePetri' rules og splitNode = runGM og do
   -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
   -- myTraceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
   for_ [ twins
@@ -334,10 +335,10 @@ mergePetri' rules og splitNode = runGM og $ do
     GM . put $ gs {currentGraph = mergePetri' rules newPetri splitNode }
 
 condElimination :: [Rule] -> PetriD -> PetriD
-condElimination _rules og = runGM og $ do
+condElimination _rules og = runGM og do
   -- if (a) { ... if (x y z a) { ...
   --                        ^ delete
-  return ()
+  pure ()
 
 fromRuleAlias :: Attribute
 fromRuleAlias = Comment "from RuleAlias"
@@ -372,7 +373,7 @@ splitJoin :: [Rule]      -- background input ruleset
           -> PetriD    -- subgraphs which are to live together under the split/join.
           -> Node        -- entry point node that leads into the split
           -> PetriD      -- rewritten whole graph
-splitJoin _rs og _sj sgs entry = runGM og $ do
+splitJoin _rs og _sj sgs entry = runGM og do
       -- Sometimes, entry satisfies hasDeet IsFirstNode and so it appears
       -- in the resulting list of nodes as returned by the call to nodes below.
       -- Since we only want the children of entry and not entry itself, we can
@@ -386,9 +387,10 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
       --               v
       --              ...
   let headsOfChildren =
-        sgs |> labfilter (hasDeet IsFirstNode)
-            |> nodes
-            |> filter (/= entry)
+        sgs
+          |> labfilter (hasDeet IsFirstNode)
+          |> nodes
+          |> filter (/= entry)
       successTails    = [ n
                         | n <- nodes $ labfilter (hasDeet IsLastHappy) sgs
                         , m <- suc og n -- there is a direct link to FULFILLED
@@ -430,7 +432,7 @@ splitJoin _rs og _sj sgs entry = runGM og $ do
     --                                         All done
     --                                           |
     --                                        Fulfilled                      
-    when (length successTails > 1) $ do
+    when (length successTails > 1) do
       joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
       newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
       traverse_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
@@ -633,14 +635,14 @@ r2fgl _rs _defRL RegBreach      = pure $ pure Nothing
 -- however, if no existing rule in our list of rules bears that label (yet(, we put in a placeholder state.
 -- the following function assumes the rulealias does not appear in the ruleset, so we are calling r2fgl as a last resort.
 -- we will do another pass over the graph subsequently to rewire any rulealiases
-r2fgl _rs _defRL (RuleAlias rn) = pure $ do
+r2fgl _rs _defRL (RuleAlias rn) = pure do
   sg <- getGraph
   let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode, OrigRL ntxt]
   maybe (fmap Just . newNode $
          mkPlaceA [IsFirstNode, FromRuleAlias, OrigRL ntxt] ntxt ) (pure . Just) already
 
-r2fgl rs defRL Regulative{..} = return $ do
+r2fgl rs defRL Regulative{..} = pure do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel

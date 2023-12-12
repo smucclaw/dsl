@@ -1,21 +1,23 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Explainable.MathLang where
 
-import Prelude hiding (pred)
-import NeatInterpolation ( text )
-import qualified Data.Text as T
-import qualified Data.Map as Map
-import Data.Maybe (mapMaybe, fromMaybe)
-import Control.Monad (forM_, mapAndUnzipM, unless)
+import Control.Monad (mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
-import Data.Tree
 import Data.Bifunctor
+import Data.Foldable (for_)
+import Data.HashMap.Strict qualified as Map
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Text qualified as T
+import Data.Tree
 import Explainable
+import NeatInterpolation (text)
 import Prettyprinter
+import Prelude hiding (pred)
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:
@@ -28,7 +30,7 @@ import Prettyprinter
 -- In future we will have as many symbol tables as there are Expr types in our DSL.
 -- Grab the `MyState` by calling @<- get@. If you know which symtab you want, you can call
 -- @<- gets symtabX@.
-type SymTab = Map.Map String
+type SymTab = Map.HashMap String
 data MyState = MyState { symtabF :: SymTab (Expr     Float)
                        , symtabP :: SymTab (Pred     Float)
                        , symtabL :: SymTab (ExprList Float)
@@ -116,7 +118,7 @@ infixl 4 |+, |-
 
 less :: Expr Float -> Expr Float -> Expr Float
 less = (|-)
-  
+
 -- | fmap.
 -- 
 -- In Haskell, we would say @(+2) <$> [1,2,3]@
@@ -278,7 +280,7 @@ eval' (Undefined lbl) = do
   (history,path) <- asks historypath
   return (0, Node ([unlines history ++ pathSpec path ++ ": undefined as zero 0"]
                   ,["undefined: " ++ fromMaybe "an explicit undefined value, defaulting to zero" lbl]) [])
-  
+
 eval' (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
@@ -294,13 +296,13 @@ eval' (MathMin  lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]
 eval' (MathVar      str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
-  in retitle (title <> " " <> show str) $ do
+  in retitle (title <> " " <> show str) do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 eval' (MathSet     str x) =
   let title = "variable assignment:" ++ str
-  in retitle (title <> " " <> show str <> " := " <> show x) $ do
+  in retitle (title <> " " <> show str <> " := " <> show x) do
     symtab <- gets symtabF
     let newmap = Map.union (Map.singleton str x) symtab
     modify (\ms -> ms { symtabF = newmap })
@@ -310,11 +312,11 @@ eval' (MathSet     str x) =
 eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
 eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
-eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs                              
+eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
-doFold str f xs = retitle ("listfold " <> str) $ do
+doFold str f xs = retitle ("listfold " <> str) do
   (MathList _ylbl yvals,yexps) <- evalList xs
   zs <- mapM eval yvals
   let toreturn = f (fst <$> zs)
@@ -322,19 +324,19 @@ doFold str f xs = retitle ("listfold " <> str) $ do
          , Node ([],(show toreturn ++ " = " ++ str ++ " of " ++ show (length zs) ++ " elements")
                   : [ "- " ++ show e | e <- fst <$> zs ])
            (yexps : (snd <$> zs)))
-  
+
 -- | helper function, Unary evaluation of an `Expr` `Float` to some `Float`
 unaEval :: String -> (Float -> Float) -> Expr Float -> ExplainableIO r MyState Float
 unaEval title f x =
   let (lhs,_rhs) = verbose title
-  in retitle title $ do
+  in retitle title do
     (xval, xpl) <- eval x
     let toreturn = f xval
     return (toreturn, Node ([], [show toreturn ++ ": " ++ lhs]) [xpl])
 
 -- | helper function, Binary evaluation
 binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> ExplainableIO r MyState Float
-binEval title f x y = retitle title $ do
+binEval title f x y = retitle title do
   -- liftIO putStrLn should be treated as more of a Debug.Trace.
   -- "normal" output gets returned in the fst part of the Node.
   -- normal output then gets output inside a #+begin_example/#+end_example block.
@@ -374,7 +376,7 @@ evalP' (PredBin _lbl binop x y) = do
   return (toreturn, Node ([] ,[show toreturn ++ ": logical " ++ show binop]) [xpl, ypl])
 evalP' (PredComp lbl c x y) =
   let title = "comparison" ++ showlbl lbl
-  in retitle (title <> " " <> shw c) $ do
+  in retitle (title <> " " <> shw c) do
     (xval, xpl) <- eval x
     (yval, ypl) <- eval y
     let c' = compare xval yval
@@ -387,15 +389,15 @@ evalP' (PredComp lbl c x y) =
           CNEQ | c' /= EQ           -> True
           _                         -> False
         (lhs,rhs) = verbose title
-    return (toreturn, (Node ([]
+    return (toreturn, Node ([]
                             ,[show toreturn ++ " " ++ lhs ++ " (" ++ shw c ++ ")"])
                        [ xpl
                        , mkNod rhs
-                       , ypl ]))
+                       , ypl ])
 
 evalP' (PredFold lbl andor ps) =
   let title = "listfold" ++ showlbl lbl
-  in retitle (title <> " " <> show andor) $ do
+  in retitle (title <> " " <> show andor) do
     evalps <- mapM evalP ps
     let toreturn = case andor of
                      PLAnd -> all fst evalps
@@ -403,18 +405,18 @@ evalP' (PredFold lbl andor ps) =
     return (toreturn, Node ([]
                            , [show toreturn ++ " " ++ show andor])
                       (snd <$> evalps ) )
-                      
+
 evalP' (PredVar str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
-  in retitle (title <> " " <> show str) $ do
+  in retitle (title <> " " <> show str) do
     (xvar, xpl1) <- getvarP str
     (xval, xpl2) <- evalP xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 
 evalP' (PredSet str x) =
   let title = "variable assignment: " ++ str
-  in retitle (title <> " " <> show str <> " := " <> fromMaybe (show x) (getPredLabel x)) $ do
+  in retitle (title <> " " <> show str <> " := " <> fromMaybe (show x) (getPredLabel x)) do
     symtab <- gets symtabP
     let newmap = Map.insert str x symtab
     modify (\ms -> ms { symtabP = newmap })
@@ -431,7 +433,7 @@ evalFP :: Show t
        -> t
        -> t
        -> ExplainableIO r MyState a
-evalFP evf p x y = retitle "if-then-else" $ do
+evalFP evf p x y = retitle "if-then-else" do
   (pval,pxpl) <- evalP p
   if pval
     then do
@@ -470,13 +472,13 @@ evalList (ListFilt lbl x comp lf2) = do
   return (lf3val, Node ([],["recursing RHS ListFilt"]) [lf2xpl, mkNod "becomes", lf3xpl])
 
 evalList (ListMap lbl Id ylist) = return (ylist, mkNod ("id on ExprList" ++ showlbl lbl))
-evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" $ do
+evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   return ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length ylist') ++ " elements"]) [yxpl] )
 
 evalList (ListMapIf lbl Id _c _comp ylist) = retitle ("fmap mathsection id" ++ showlbl lbl) $ evalList ylist
-evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap mathsection if" ++ showlbl lbl1) $ do
+evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap mathsection if" ++ showlbl lbl1) do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   liveElements <- mapM (evalP . PredComp (lbl1 <++> lbl2) comp c) ylist'
 
@@ -513,13 +515,13 @@ getvarF :: String -> ExplainableIO r MyState (Expr Float)
 getvarF x = do
   symtab <- gets symtabF
   case x `Map.lookup` symtab of
-    Nothing -> liftIO $ do
+    Nothing -> liftIO do
       putStrLn ("getvarF: unable to find variable `" ++ x ++ "` in symbol table")
       error "MathLang fatal error in getvarF"
     Just v  -> return (v, Node ([show v], ["variable `" ++ x ++ "` has value " ++ show v]) [])
 
 -- | Get a @Pred Float@ variable
-  
+
 getvarP :: String -> ExplainableIO r MyState (Pred Float)
 getvarP x = do
   symtab <- gets symtabP
@@ -550,27 +552,27 @@ class Exprlbl expr a where
   (@|=) :: String -> expr a -> expr a
   getvar, (@|$<) :: String -> expr a
   (@|$>) :: String -> expr a -> expr a
-  getvar = (@|$<) 
- 
+  getvar = (@|$<)
+
 instance Exprlbl Expr a where
   (@|=) lbl ( Undefined Nothing      ) = Undefined (Just lbl)
-  (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
-  (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
-  (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
+  (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x
+  (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x
+  (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z
   (@|=) _   ( MathVar          _     ) = error "use @|$< to label a variable reference"
   (@|=) _   ( MathSet          _ _   ) = error "use @|$> to label a variable assignment"
-  (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
-  (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
-  (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
-  (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
+  (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z
+  (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y
+  (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y
+  (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y
   (@|=) lbl ( Undefined (Just _old)       ) = Undefined (Just lbl {- <++> Just ("previously " ++ old) -} )
-  (@|=) lbl ( Val       (Just _old) x     ) = Val       (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
-  (@|=) lbl ( Parens    (Just _old) x     ) = Parens    (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
-  (@|=) lbl ( MathBin   (Just _old) x y z ) = MathBin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
-  (@|=) lbl ( MathITE   (Just _old) x y z ) = MathITE   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
-  (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
-  (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
-  (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
+  (@|=) lbl ( Val       (Just _old) x     ) = Val       (Just lbl {- <++> Just ("previously " ++ old) -} ) x
+  (@|=) lbl ( Parens    (Just _old) x     ) = Parens    (Just lbl {- <++> Just ("previously " ++ old) -} ) x
+  (@|=) lbl ( MathBin   (Just _old) x y z ) = MathBin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z
+  (@|=) lbl ( MathITE   (Just _old) x y z ) = MathITE   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z
+  (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
+  (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
+  (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
 
   (@|$<) lbl   = MathVar lbl
   (@|$>) lbl x = MathSet lbl x
@@ -656,7 +658,7 @@ infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 (@|===) s = PredComp (Just s) CEQ
 (@|/==) s = PredComp (Just s) CNEQ
 (@|!==) s = PredComp (Just s) CNEQ
-  
+
 (@|&&),(@|||),(@|==),(@|!=),(@|/=) :: String -> Pred a -> Pred a -> Pred a
 (@|&&) s x y = PredBin (Just s) PredAnd  x y
 (@|||) s x y = PredBin (Just s) PredOr   x y
@@ -672,7 +674,7 @@ data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
 
 -- | some example runs
 toplevel :: IO ()
-toplevel = forM_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one") 1)
+toplevel = for_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one") 1)
                  , "my sum" @|= "two" @|. 2 |+ "three" @|. 3
                  , ListFold (Just "greater than 2") FoldSum $ Val (Just "two") 2 <| MathList (Just "one to four")
                    [Val Nothing 1, Val Nothing 2, Val Nothing 3, Val Nothing 4]
@@ -730,9 +732,9 @@ dumpExplanationF depth s f = do
     dumpTypescript "" s f
     putStrLn "#+END_SRC"
 
-  
+
   where stars = replicate depth '*'
-  
+
 dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
 dumpTypescript realign s f = do
   putStrLn $ T.unpack $ [text|
@@ -764,18 +766,18 @@ class ToTS expr a where
 
 -- in future consider a new class tsm.Undefined -- would that more faithfully follow this representation?
 instance ToTS Expr a where
-  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"] 
-  pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] 
+  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"]
+  pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x]
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
   pp (MathBin  lbl mbop x y ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe ("binop " <> viaShow mbop) pretty lbl
                                                                       , "tsm.NumBinOp." <> case mbop of { Plus -> "Add"; Minus -> "Sub"; Times -> "Mul"; Divide -> "Div" }
-                                                                      , pp x , pp y ] 
+                                                                      , pp x , pp y ]
   pp (MathVar  str          ) = "new tsm.GetVar"  <+> h0parens ( dqpretty str)
-  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
-  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
-  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ] 
-  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] 
+  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ]
+  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ]
+  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ]
+  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ]
   pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> h0tupled [ dquotes $ maybe "list fold" pretty (lbl <++> mlbl)
                                                                            , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
                                                                            , hang 2 $ list (pp <$> xs) ]
@@ -787,13 +789,13 @@ instance ToTS Pred a where
   pp (PredNot  lbl x    ) = "new tsm.Bool1"      <+> h0tupled [ dquotes $ maybe (viaShow x) pretty lbl, "tsm.BoolUnaOp.BoolNot", pp x ]
   pp (PredComp lbl c x y) = "new tsm.NumToBool2" <+> h0tupled [ dquotes $ maybe (viaShow c) pretty lbl
                                                                      , "tsm.NumToBoolOp." <> case c of { CEQ -> "NBeq"; CNEQ -> "NBneq"; CLT -> "NBlt"; CLTE -> "NBlte"; CGT -> "NBgt"; CGTE -> "NBgte" }
-                                                                     , pp x, pp y ] 
+                                                                     , pp x, pp y ]
   pp (PredBin  lbl o x y) = "new tsm.Bool2" <+> h0tupled [ dquotes $ maybe (viaShow o) pretty lbl
                                                                 , "tsm.BoolBinOp." <> case o of { PredAnd -> "And"; PredOr -> "Or"; PredEq -> "BoolEq"; PredNeq -> "BoolNeq" }
-                                                                , pp x, pp y ] 
+                                                                , pp x, pp y ]
   pp (PredVar  str      ) = "new tsm.GetVar" <+> h0parens ( dqpretty str )
-  pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
-  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
+  pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ]
+  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ]
   pp (PredFold lbl p xs)  = "new tsm.BoolFold" <+> h0tupled [ dquotes $ maybe "any/all" pretty lbl
                                                             , "tsm.BoolFoldOp." <> case p of { PLAnd -> "All"; PLOr -> "Any" }
                                                             , hang 2 $ list ( pp <$> xs ) ]
@@ -831,7 +833,7 @@ ppst (MyState{..}) realign =
     , "...realigned }"
     ]
   ) ) <> line <> "}" <> line
-  
+
 
 dqpretty :: (Pretty a) => a -> Doc ann
 dqpretty = dquotes . pretty

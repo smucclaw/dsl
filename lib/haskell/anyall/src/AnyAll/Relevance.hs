@@ -5,11 +5,11 @@ import AnyAll.Types
 import Control.Monad (guard, when)
 import Data.Either
 import Data.HashMap.Strict (lookup)
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List (all, any)
 import Data.Maybe (isJust)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Tree
 import Debug.Trace
 import Explainable

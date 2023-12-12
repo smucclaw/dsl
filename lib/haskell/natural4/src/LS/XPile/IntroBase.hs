@@ -7,18 +7,17 @@ here we make the environment Reader the base monad of the XPileLog's RWST, repla
 
 module LS.XPile.IntroBase (toBase) where
 
-import LS.Interpreter       ( qaHornsT )
-import LS.PrettyPrinter     ( myrender, (</>), (<//>) )
-import LS.Rule              ( Interpreted(..) )
-import LS.XPile.Logging     ( XPileLogR, XPileLogW, XPileLogS )
-import LS.XPile.IntroReader ( MyEnv(..), defaultReaderEnv  )
-import Prettyprinter        ( Doc, pretty )
-import Text.Pretty.Simple   ( pShowNoColor )
+import Data.Bifunctor (first)
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
-import Data.Bifunctor       ( first )
-
-import           Data.Map (Map)
-import qualified Data.Map as Map
+import LS.Interpreter (qaHornsT)
+import LS.PrettyPrinter (myrender, (<//>), (</>))
+import LS.Rule (Interpreted (..))
+import LS.XPile.IntroReader (MyEnv (..), defaultReaderEnv)
+import LS.XPile.Logging (XPileLogR, XPileLogS, XPileLogW)
+import Prettyprinter (Doc, pretty)
+import Text.Pretty.Simple (pShowNoColor)
 
 -- import Control.Monad.Identity ( Identity )
 import Control.Monad.Reader

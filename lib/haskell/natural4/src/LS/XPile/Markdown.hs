@@ -8,7 +8,6 @@ where
 import AnyAll qualified as AA
 import Control.Monad (liftM2)
 import Data.ByteString.Lazy.Char8 qualified as ByteString
-import Data.Map qualified as Map
 import Data.Text qualified as Text
 import LS.NLP.NLG (NLGEnv, nlg)
 import LS.RelationalPredicates (getBSR)
@@ -46,7 +45,7 @@ bsMarkdown envs rl = fmap (Text.unpack . Text.intercalate "  ") (sequence [eachn
 
 eachnlg :: NLGEnv -> [Rule] -> IO Text.Text
 eachnlg env rl = do
-  txt <- mapM (nlg env) rl
+  txt <- traverse (nlg env) rl
   return $ Text.unwords txt
 
 -- bsMarkdown :: [Rule] -> String
@@ -60,7 +59,7 @@ rpFilter (RPnary rel rps) = concatMap rpFilter rps
 rpFilter (RPMT mt) = mt
 
 rl2bs :: [Rule] -> [BoolStructR]
-rl2bs rl = concatMap r2b rl
+rl2bs rl = foldMap r2b rl
 
 r2b :: Rule -> [BoolStructR]
 r2b rl = case getBSR rl of

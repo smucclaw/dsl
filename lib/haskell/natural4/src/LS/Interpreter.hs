@@ -1,7 +1,6 @@
-{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
 
 
 {-|
@@ -380,7 +379,7 @@ ruleDecisionGraph rs = do
   "(1.2) ruleOnlyMap" ***-> ruleOnlyMap
 
   mutterd 3 "ruleDecisionGraph: (1.3) ruleOnlyGraph construction log using relPredRefsAll"
-  
+
   ruleOnlyGraph :: RuleGraph <- mkGraph
                                 (swap <$> Map.toList ruleOnlyMap) -- the nodes
                                 <$> relPredRefsAll rs ruleOnlyMap -- The <$> lifts into the XPileLog monad
@@ -389,7 +388,7 @@ ruleDecisionGraph rs = do
 
   mutterd 3 "as a flex, just to show what's going on, we extract all the leaf terms, if we can, by starting with all the terms entirely. Well, MultiTerms."
 
-  let allTerms = DL.nub $ concat (concatMap rp2bodytexts . concatMap AA.extractLeaves . getBSR <$> rs)
+  let allTerms = DL.nub $ foldMap (foldMap rp2bodytexts . concatMap AA.extractLeaves . getBSR) rs
   "(2.1) allTerms" ***-> allTerms
 
   mutterd 3 "(2.2) we filter for the leaf terms by excluding all the ruleNames that we know from the original ruleset. This may not be a perfect match with the MultiTerms used in the rule graph. [TODO]"
@@ -415,7 +414,7 @@ ruleDecisionGraph rs = do
   "(2.7) expandedRuleGraph" ***-> expandedRuleGraph
 
   mutterd 3 "(3.1) finally we strip the reflexive BSR from the stub rules while leaving the nodes themselves in place."
-  
+
   let prunedRuleGraph = dereflexed $ nmap (\r -> if hasClauses r && clauses r == stubClause (name r) then r { clauses = [] } else r ) expandedRuleGraph
   "(3.2.7) prunedRuleGraph" ***-> prunedRuleGraph
 
@@ -439,7 +438,7 @@ ruleDecisionGraph rs = do
       -- find all the body elements which 
 
     (***->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
-     
+
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
 relPredRefsAll rs ridmap = do
@@ -452,7 +451,7 @@ relPredRefsAll rs ridmap = do
                      ]
   mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
 
-  concat <$> mapM (relPredRefs rs ridmap headElements) rs
+  concat <$> traverse (relPredRefs rs ridmap headElements) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known rule heads from the entire ruleset.
@@ -677,11 +676,11 @@ expandMT l4i depth ogRP mt0 =
 -- Despite the name, this is not directly related to expandClauses.
 -- It happens deeper in, under `expandMT`.
 expandClause :: Interpreted -> Int -> HornClause2 -> [RelationalPredicate]
-expandClause _l4i _depth (HC   (RPMT          _mt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC   (RPParamText   _pt            ) (Nothing) ) = [          ] -- no change
-expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) (Nothing) ) = [ RPMT (mt ++ MTT "IS" : rhs) ] -- substitute with rhs -- [TODO] weird, fix.
-expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) (Nothing) ) = [     o    ] -- maintain inequality
-expandClause  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) (Nothing) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
+expandClause _l4i _depth (HC   (RPMT          _mt            ) Nothing ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPParamText   _pt            ) Nothing ) = [          ] -- no change
+expandClause _l4i _depth (HC   (RPConstraint   mt  RPis   rhs) Nothing ) = [ RPMT (mt ++ MTT "IS" : rhs) ] -- substitute with rhs -- [TODO] weird, fix.
+expandClause _l4i _depth (HC o@(RPConstraint  _mt _rprel _rhs) Nothing ) = [     o    ] -- maintain inequality
+expandClause  l4i  depth (HC   (RPBoolStructR  mt  RPis   bsr) Nothing ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bsr) ]
 expandClause  l4i  depth (HC   (RPMT          mt          )    (Just bodybsr) ) = [ RPBoolStructR mt RPis (expandBSR' l4i (depth + 1) bodybsr) ]
 expandClause _l4i _depth (HC   (RPParamText   _pt           )  (Just _bodybsr) ) = [          ] -- no change
 expandClause _l4i _depth (HC   (RPConstraint  _mt RPis   _rhs) (Just _bodybsr) ) = [          ] -- x is y when z ... let's do a noop for now, and think through the semantics later.
@@ -763,7 +762,7 @@ expandRule _ _ = []
 -- used for purescript output -- this is the toplevel function called by Main
 onlyTheItems :: Interpreted -> BoolStructT
 onlyTheItems l4i =
-  let myitem = AA.mkAll Nothing (catMaybes $ getAndOrTree l4i 1 <$> origrules l4i)
+  let myitem = AA.mkAll Nothing (mapMaybe (getAndOrTree l4i 1) (origrules l4i))
       simplified = AA.simplifyBoolStruct myitem
   in simplified
 
@@ -858,7 +857,7 @@ getMarkings l4i =
   AA.Marking $ Map.fromList $
   [ (defkey, defval)
   | DefTypically{..} <- origrules l4i
-  , (defkey,defval) <- catMaybes $ markings <$> defaults
+  , (defkey,defval) <- mapMaybe markings defaults
   ]
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
@@ -970,16 +969,16 @@ attrsAsMethods rs = do
   let (errs, successes) = partitionEithers (concat outs)
   mutters (concat errs)
   xpReturn successes
-            
+
   where go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
         go hc@HC{..} =
           case hHead of
-            (RPnary RPis (RPMT headLHS : headRHS : [])) -> xpReturn (headLHS, Just headRHS, hBody)
+            (RPnary RPis [RPMT headLHS, headRHS]) -> xpReturn (headLHS, Just headRHS, hBody)
 
             (RPnary RPis (RPMT headLHS : headRHS)) -> do
               mutterd 3 $ "unexpected RHS in RPnary RPis: " <> show hHead
               xpReturn (headLHS, listToMaybe headRHS, hBody)
-            
+
             (RPConstraint mt1 RPis mt2) -> do
               mutterd 3 $ "converting RPConstraint in hHead: " <> show hHead
               xpReturn (mt1, Just (RPMT mt2), hBody)

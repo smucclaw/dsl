@@ -1,5 +1,3 @@
-{-# LANGUAGE GHC2021 #-}
-
 {-| A module for wrapping transpilation errors and STDERR trace mumbling.
 
 This section explains the developer motivation for this library.

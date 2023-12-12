@@ -1,4 +1,6 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Parsing.SLParserSpec where
 
 import Text.Megaparsec
@@ -19,14 +21,14 @@ import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/slparser/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
 xfiletest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 xfiletest testfile _desc parseFunc expected =
-  xit testfile $ do
+  xit testfile do
   testcsv <- BS.readFile ("test/Parsing/slparser/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -42,7 +44,7 @@ spec = do
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "Parsing primitives" $ do
+    describe "Parsing primitives" do
       filetest "primitive-pNumber" "primitive number"
         (parseOther pNumber) (42, [])
 
@@ -149,7 +151,7 @@ spec = do
           ), []
         )
 
-      it "SLParser combinators 1 /+=" $ do
+      it "SLParser combinators 1 /+=" do
         parseOther ((,,)
                      $*| (someLiftSL (pToken (Other "foo")))
                      |>| pToken (Other "bar")
@@ -157,7 +159,7 @@ spec = do
          (exampleStream "foo,foo,foo,bar,qux")
           `shouldParse` (([Other "foo",Other "foo",Other "foo"],Other "bar",Other "qux"),[])
 
-      it "SLParser combinators 2 /+=" $ do
+      it "SLParser combinators 2 /+=" do
         parseOther ((,,)
                      $*| pToken (Other "foo") /+= (liftSL $ pToken (Other "bar"))
                      |>| pToken (Other "bar")
@@ -165,7 +167,7 @@ spec = do
          (exampleStream "foo,foo,foo,bar,qux")
           `shouldParse` ((([Other "foo",Other "foo",Other "foo"],Other "bar"),Other "bar",Other "qux"),[])
 
-      it "SLParser combinators 3 /+=" $ do
+      it "SLParser combinators 3 /+=" do
         parseOther ((,,)
                      $*| (pOtherVal) /+= ((,) >>| (pToken (Other "bar")) |>| pOtherVal)
                      |>| pToken (Other "bar")
@@ -173,7 +175,7 @@ spec = do
          (exampleStream "foo,foo,foo,bar,qux")
           `shouldParse` (((["foo","foo","foo"],(Other "bar", "qux")),Other "bar",Other "qux"),[])
 
-      it "SLParser combinators 4 /+=" $ do
+      it "SLParser combinators 4 /+=" do
         parseOther ((,,)
                      $*| (pOtherVal) /+= ((,) >>| pOtherVal |>| pOtherVal)
                      |>| pToken (Other "bar")
@@ -183,13 +185,13 @@ spec = do
 
 -- [TODO] disturbingly, this fails if we use the "standard" version from Parser.
       let aNLK :: Int -> SLParser (MultiTerm,MyToken)
-          aNLK maxDepth = mkSL $ do
+          aNLK maxDepth = mkSL do
             (toreturn, n) <- runSL aboveNextLineKeyword2
             debugPrint $ "got back toreturn=" ++ show toreturn ++ " with n=" ++ show n ++ "; maxDepth=" ++ show maxDepth ++ "; guard is n < maxDepth = " ++ show (n < maxDepth)
             guard (n < maxDepth)
             return (toreturn, n)
 
-      it "SLParser combinators 5 aboveNextLineKeyword2" $ do
+      it "SLParser combinators 5 aboveNextLineKeyword2" do
         parseOther ((,,)
                     $>| pOtherVal
                     |*| aboveNextLineKeyword2
@@ -201,7 +203,7 @@ spec = do
                          ,"bar")                         -- pOtherVal
                         ,[])
 
-      it "SLParser combinators 6 greedy star" $ do
+      it "SLParser combinators 6 greedy star" do
         parseOther ((,,,)
                      $*| (debugName "first outer pOtherVal" pOtherVal /*= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
@@ -215,7 +217,7 @@ spec = do
                           , "bar" )
                         ,[])
 
-      it "SLParser combinators 7 nongreedy star" $ do
+      it "SLParser combinators 7 nongreedy star" do
         parseOther ((,,,)
                      $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
@@ -229,7 +231,7 @@ spec = do
                           , "bar" )
                         ,[])
 
-      it "SLParser combinators 8 greedy plus" $ do
+      it "SLParser combinators 8 greedy plus" do
         parseOther ((,,,)
                      $*| (debugName "first outer pOtherVal" pOtherVal /+= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
@@ -243,7 +245,7 @@ spec = do
                           , "bar" )
                         ,[])
 
-      it "SLParser combinators 9 nongreedy plus" $ do
+      it "SLParser combinators 9 nongreedy plus" do
         parseOther ((,,,)
                      $*| (debugName "first outer pOtherVal" pOtherVal /+?= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
@@ -257,7 +259,7 @@ spec = do
                           , "bar" )
                         ,[])
 
-      it "SLParser combinators 10 maxdepth 0" $ do
+      it "SLParser combinators 10 maxdepth 0" do
         parseOther ((,,,)
                      $*| (debugName "first outer pOtherVal" pOtherVal /*?= aNLK 1)
                      |>| debugName "looking for foo3"    pOtherVal
@@ -285,7 +287,7 @@ spec = do
                            "of the personal data is likely to occur") inline_xs
           inline_4xs= Any Nothing [inline_pp, inline4_pp]
 
-          pInline1 = parseOther $ do
+          pInline1 = parseOther do
             (,,)
               >*| debugName "subject slMultiTerm" slMultiTerm  -- "Bad"
               |<| pToken Means
@@ -322,7 +324,7 @@ spec = do
 
 
 -- sl style
-    describe "sameOrNextLine" $ do
+    describe "sameOrNextLine" do
       let potatoParser = parseOther (sameOrNextLine
                                       (flip const $>| (pToken Declare) |*| (someSL (liftSL pOtherVal)))
                                       (flip const $>| (pToken Has    ) |*| (someSL (liftSL pOtherVal))))
@@ -334,7 +336,7 @@ spec = do
       filetest "sameornext-3-dnl"   "a b on next left"  potatoParser potatoExpect
       filetest "sameornext-4-right" "a b on next right" potatoParser potatoExpect
 
-    describe "ampersand" $ do
+    describe "ampersand" do
       let nextLineP = myindented $ sameOrNextLine (someLiftSL pOtherVal) (someLiftSL pOtherVal)
       xfiletest "ampersand-1" "should fail to parse" -- [TODO] how do we run a shouldFailOn? we are expecting this to fail.
         (parseOther nextLineP) ((["Potato"],["genus", "species"]), [])

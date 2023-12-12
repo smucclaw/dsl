@@ -7,15 +7,15 @@ import Data.Aeson
 import Data.Aeson.Key (toText)
 import Data.Aeson.KeyMap hiding (mapMaybe)
 import Data.Aeson.Types (Parser, parse, parseMaybe)
-import qualified Data.ByteString.Lazy as B
+import Data.ByteString.Lazy qualified as B
+import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
-import qualified Data.HashMap.Strict as Map
 import Data.Maybe
 import Data.String (IsString)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
 import Data.Tree
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import Debug.Trace (trace, traceM)
 import GHC.Generics
 import Text.Pretty.Simple (pShowNoColor)
@@ -159,13 +159,13 @@ getSV sv1 (Q sv2 (Simply x) pp m)
 getSV _ _ = Nothing
 
 getAsks :: (ToJSONKey a, Hashable a) => QTree a -> Map.HashMap a (Default Bool)
-getAsks qt = Map.fromList $ catMaybes $ getSV Ask <$> flatten qt
+getAsks qt = Map.fromList $ mapMaybe (getSV Ask) (flatten qt)
 
 getAsksJSON :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getAsksJSON = encode . getAsks
 
 getViews :: (ToJSONKey a, Hashable a) => QTree a -> Map.HashMap a (Default Bool)
-getViews qt = Map.fromList $ catMaybes $ getSV View <$> flatten qt
+getViews qt = Map.fromList $ mapMaybe (getSV View) (flatten qt)
 
 getViewsJSON :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getViewsJSON = encode . getViews

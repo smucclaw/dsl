@@ -11,7 +11,7 @@ import Data.Aeson.Types
 import Data.Hashable (Hashable)
 import Data.List (sort)
 import Data.Maybe
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Tree
 import Debug.Trace
 import GHC.Generics

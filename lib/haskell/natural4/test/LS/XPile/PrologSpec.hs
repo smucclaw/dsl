@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.XPile.PrologSpec where
@@ -10,8 +11,8 @@ import Data.List.NonEmpty
 
 spec :: Spec
 spec = do
-  describe "bsp2struct" $ do
-    it "Leaf" $ do
+  describe "bsp2struct" do
+    it "Leaf" do
       let
         typeSig = Just (SimpleType TOne "Fruit")
         typedWords = "apple" :| ["orange", "banana"]
@@ -19,7 +20,7 @@ spec = do
         l = mkLeaf rp
       bsp2struct l `shouldBe` [vart "apple orange banana"]
 
-    it "Not" $ do
+    it "Not" do
       let
         typeSig = Just (SimpleType TOne "Fruit")
         typedWords = MTT <$> "apple" :| ["orange", "banana"]
@@ -27,7 +28,7 @@ spec = do
         l = mkNot $ mkLeaf rp
       bsp2struct l `shouldBe` vart "neg" : [vart "apple orange banana"]
 
-    it "Any" $ do
+    it "Any" do
       let
         fruitType = Just (SimpleType TOne "Fruit")
         fruitWords = MTT <$> "apple" :| ["orange", "banana"]
@@ -39,7 +40,7 @@ spec = do
         l = mkAny Nothing [mkLeaf l1, mkLeaf l2]
       bsp2struct l `shouldBe` vart "or" : [vart "apple orange banana", vart "red orange yellow"]
 
-    it "All" $ do
+    it "All" do
       let
         fruitType = Just (SimpleType TOne "Fruit")
         fruitWords = MTT <$> "apple" :| ["orange", "banana"]

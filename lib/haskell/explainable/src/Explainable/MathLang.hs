@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -9,7 +10,7 @@ import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
 import Data.Bifunctor
 import Data.Foldable (for_)
-import Data.Map qualified as Map
+import Data.HashMap.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text qualified as T
 import Data.Tree
@@ -29,7 +30,7 @@ import Prelude hiding (pred)
 -- In future we will have as many symbol tables as there are Expr types in our DSL.
 -- Grab the `MyState` by calling @<- get@. If you know which symtab you want, you can call
 -- @<- gets symtabX@.
-type SymTab = Map.Map String
+type SymTab = Map.HashMap String
 data MyState = MyState { symtabF :: SymTab (Expr     Float)
                        , symtabP :: SymTab (Pred     Float)
                        , symtabL :: SymTab (ExprList Float)
@@ -295,13 +296,13 @@ eval' (MathMin  lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]
 eval' (MathVar      str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
-  in retitle (title <> " " <> show str) $ do
+  in retitle (title <> " " <> show str) do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 eval' (MathSet     str x) =
   let title = "variable assignment:" ++ str
-  in retitle (title <> " " <> show str <> " := " <> show x) $ do
+  in retitle (title <> " " <> show str <> " := " <> show x) do
     symtab <- gets symtabF
     let newmap = Map.union (Map.singleton str x) symtab
     modify (\ms -> ms { symtabF = newmap })
@@ -315,7 +316,7 @@ eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
-doFold str f xs = retitle ("listfold " <> str) $ do
+doFold str f xs = retitle ("listfold " <> str) do
   (MathList _ylbl yvals,yexps) <- evalList xs
   zs <- mapM eval yvals
   let toreturn = f (fst <$> zs)
@@ -328,14 +329,14 @@ doFold str f xs = retitle ("listfold " <> str) $ do
 unaEval :: String -> (Float -> Float) -> Expr Float -> ExplainableIO r MyState Float
 unaEval title f x =
   let (lhs,_rhs) = verbose title
-  in retitle title $ do
+  in retitle title do
     (xval, xpl) <- eval x
     let toreturn = f xval
     return (toreturn, Node ([], [show toreturn ++ ": " ++ lhs]) [xpl])
 
 -- | helper function, Binary evaluation
 binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> ExplainableIO r MyState Float
-binEval title f x y = retitle title $ do
+binEval title f x y = retitle title do
   -- liftIO putStrLn should be treated as more of a Debug.Trace.
   -- "normal" output gets returned in the fst part of the Node.
   -- normal output then gets output inside a #+begin_example/#+end_example block.
@@ -375,7 +376,7 @@ evalP' (PredBin _lbl binop x y) = do
   return (toreturn, Node ([] ,[show toreturn ++ ": logical " ++ show binop]) [xpl, ypl])
 evalP' (PredComp lbl c x y) =
   let title = "comparison" ++ showlbl lbl
-  in retitle (title <> " " <> shw c) $ do
+  in retitle (title <> " " <> shw c) do
     (xval, xpl) <- eval x
     (yval, ypl) <- eval y
     let c' = compare xval yval
@@ -396,7 +397,7 @@ evalP' (PredComp lbl c x y) =
 
 evalP' (PredFold lbl andor ps) =
   let title = "listfold" ++ showlbl lbl
-  in retitle (title <> " " <> show andor) $ do
+  in retitle (title <> " " <> show andor) do
     evalps <- mapM evalP ps
     let toreturn = case andor of
                      PLAnd -> all fst evalps
@@ -408,14 +409,14 @@ evalP' (PredFold lbl andor ps) =
 evalP' (PredVar str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
-  in retitle (title <> " " <> show str) $ do
+  in retitle (title <> " " <> show str) do
     (xvar, xpl1) <- getvarP str
     (xval, xpl2) <- evalP xvar
     return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
 
 evalP' (PredSet str x) =
   let title = "variable assignment: " ++ str
-  in retitle (title <> " " <> show str <> " := " <> fromMaybe (show x) (getPredLabel x)) $ do
+  in retitle (title <> " " <> show str <> " := " <> fromMaybe (show x) (getPredLabel x)) do
     symtab <- gets symtabP
     let newmap = Map.insert str x symtab
     modify (\ms -> ms { symtabP = newmap })
@@ -432,7 +433,7 @@ evalFP :: Show t
        -> t
        -> t
        -> ExplainableIO r MyState a
-evalFP evf p x y = retitle "if-then-else" $ do
+evalFP evf p x y = retitle "if-then-else" do
   (pval,pxpl) <- evalP p
   if pval
     then do
@@ -471,13 +472,13 @@ evalList (ListFilt lbl x comp lf2) = do
   return (lf3val, Node ([],["recursing RHS ListFilt"]) [lf2xpl, mkNod "becomes", lf3xpl])
 
 evalList (ListMap lbl Id ylist) = return (ylist, mkNod ("id on ExprList" ++ showlbl lbl))
-evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" $ do
+evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   return ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
          , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length ylist') ++ " elements"]) [yxpl] )
 
 evalList (ListMapIf lbl Id _c _comp ylist) = retitle ("fmap mathsection id" ++ showlbl lbl) $ evalList ylist
-evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap mathsection if" ++ showlbl lbl1) $ do
+evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap mathsection if" ++ showlbl lbl1) do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   liveElements <- mapM (evalP . PredComp (lbl1 <++> lbl2) comp c) ylist'
 
@@ -514,7 +515,7 @@ getvarF :: String -> ExplainableIO r MyState (Expr Float)
 getvarF x = do
   symtab <- gets symtabF
   case x `Map.lookup` symtab of
-    Nothing -> liftIO $ do
+    Nothing -> liftIO do
       putStrLn ("getvarF: unable to find variable `" ++ x ++ "` in symbol table")
       error "MathLang fatal error in getvarF"
     Just v  -> return (v, Node ([show v], ["variable `" ++ x ++ "` has value " ++ show v]) [])

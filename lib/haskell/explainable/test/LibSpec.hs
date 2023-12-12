@@ -1,10 +1,13 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedLists #-}
+
 module LibSpec where
 
-import Test.Hspec
-import qualified Data.Map as Map
 import Control.Monad.RWS
+import Data.HashMap.Strict ((!))
+import Data.HashMap.Strict qualified as Map
 import Data.Tree
-import Data.Map ((!))
+import Test.Hspec
 
 import Explainable.MathLang
     ( (*||),
@@ -16,8 +19,8 @@ import Explainable.MathLang
       timesPositives,
       MyState(MyState) )
 
-scenarios :: Map.Map String Scenario
-scenarios = Map.fromList
+scenarios :: Map.HashMap String Scenario
+scenarios =
     [ "1a" ~=>
         [ "ordinary income"      <-~ ["Rents" ~== 72150, "Agriculture" ~== 30000  , "Exempt Capital" ~== 100]
         , "extraordinary income" <-~ [                   "Agriculture" ~== 270000 , "Exempt Capital" ~== 100]
@@ -50,10 +53,10 @@ scenarios = Map.fromList
 
 spec :: Spec
 spec = do
-  describe "labelFirst" $ do
+  describe "labelFirst" do
     let someScenario = LibSpec.scenarios ! "1a"
 
-    it "the sum of all negative elements" $ do
+    it "the sum of all negative elements" do
         ((val, xpl), stab, wlog) <- runRWST
                                         (eval $ (+||) $ negativeElementsOf [-2, -1, 0, 1, 2, 3])
                                         (([],["toplevel"]), someScenario)
@@ -63,7 +66,7 @@ spec = do
         stab  `shouldBe` MyState Map.empty Map.empty Map.empty Map.empty
         wlog `shouldBe` []
 
-    it "the product of the doubles of all positive elements, ignoring negative and zero elements" $ do
+    it "the product of the doubles of all positive elements, ignoring negative and zero elements" do
         ((val, xpl), stab, wlog) <- runRWST
                                         (eval $ (*||) $ timesEach 2 $ positiveElementsOf [-2, -1, 0, 1, 2, 3])
                                         (([],["toplevel"]), someScenario)
@@ -74,7 +77,7 @@ spec = do
         wlog `shouldBe` []
 
     -- TODO: this test actualy fails, stab should be empty but test gives Val 6.0
-    xit "the sum of the doubles of all positive elements and the unchanged original values of all negative elements" $ do
+    xit "the sum of the doubles of all positive elements and the unchanged original values of all negative elements" do
         ((val, xpl), stab, wlog) <- runRWST
                                         (eval $ (+||) $ timesPositives 2 [-2, -1, 0, 1, 2, 3])
                                         (([],["toplevel"]), someScenario)
@@ -571,8 +574,8 @@ sumOfDoublesOfPositivesAndNegativesExplanation = Node {
 
 -----------------------------------------------------------------------------
 -- Copied over from TaxDSL that was deprecated
-type Scenario      = Map.Map String         IncomeStreams
-type IncomeStreams = Map.Map IncomeCategory Float
+type Scenario      = Map.HashMap String         IncomeStreams
+type IncomeStreams = Map.HashMap IncomeCategory Float
 
 type IncomeCategory = String
 

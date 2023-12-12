@@ -1,6 +1,6 @@
 module Explainable.Lib where
 
-import Data.Map qualified as Map
+import Data.HashMap.Strict qualified as Map
 import Text.Megaparsec (MonadParsec (try), Parsec, choice, some)
 import Text.Megaparsec.Char (numberChar)
 

@@ -8,24 +8,23 @@ This module also provides a family of SLParser combinators ("Same Line").
 
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
+import Control.Applicative (Alternative, liftA2)
+import Control.Monad.Reader (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
+import Control.Monad.Writer.Lazy
+import Data.Functor.Identity (Identity)
+import Data.List (intercalate)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Maybe (isNothing)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Text.Megaparsec
-import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT), MonadReader)
-import Control.Monad.Writer.Lazy
-import Data.List (intercalate)
-
-import LS.Types
-import LS.Rule
-import Debug.Trace (traceM)
-import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
-import Data.Maybe (isNothing)
+import Debug.Trace (traceM)
+import LS.Error (onelineErrorMsg)
+import LS.Rule
+import LS.Types
+import Text.Megaparsec
 import Text.Megaparsec.Debug (dbg)
 import Text.Megaparsec.Internal qualified as MPInternal
-import Data.List.NonEmpty (NonEmpty)
-import Data.Functor.Identity (Identity)
-import LS.Error (onelineErrorMsg)
 
 -- "discard newline", a reference to GNU Make
 dnl :: Parser MyToken

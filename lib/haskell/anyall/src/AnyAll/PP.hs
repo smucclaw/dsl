@@ -2,23 +2,23 @@
 
 module AnyAll.PP (ppQTree, hardnormal, softnormal, cStyle, haskellStyle) where
 
-import AnyAll.Types hiding ((<>))
+import AnyAll.BoolStruct
 import AnyAll.Relevance
+import AnyAll.Types hiding ((<>))
 import Control.Monad (forM_)
-import Data.Maybe
-import Data.Tree
-import Data.String (IsString)
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.Types
+import Data.ByteString.Lazy qualified as B
+import Data.ByteString.Lazy.UTF8 (toString)
 import Data.HashMap.Strict as Map
+import Data.List
+import Data.Maybe
+import Data.String (IsString)
+import Data.Text qualified as T
+import Data.Tree
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
-import qualified Data.ByteString.Lazy   as B
-import Data.ByteString.Lazy.UTF8 (toString)
-import qualified Data.Text       as T
-import Data.Aeson.Encode.Pretty ( encodePretty )
-import Data.Aeson.Types
-import Data.List
 import Text.Pretty.Simple (pPrint)
-import AnyAll.BoolStruct
 
 data Style ann = Style
                  { s_parens :: Doc ann -> Doc ann

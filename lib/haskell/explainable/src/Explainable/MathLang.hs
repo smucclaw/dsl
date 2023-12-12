@@ -4,18 +4,18 @@
 
 module Explainable.MathLang where
 
-import Prelude hiding (pred)
-import NeatInterpolation ( text )
-import qualified Data.Text as T
-import qualified Data.Map as Map
-import Data.Maybe (mapMaybe, fromMaybe)
 import Control.Monad (forM_, mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
-import Data.Tree
 import Data.Bifunctor
+import Data.Map qualified as Map
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Text qualified as T
+import Data.Tree
 import Explainable
+import NeatInterpolation (text)
 import Prettyprinter
+import Prelude hiding (pred)
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:

@@ -14,8 +14,8 @@ import AnyAll.Types hiding ((<>))
 
 import Data.String
 import Graphics.Svg
-import qualified Data.Text as T
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
+import Data.Text qualified as T
 import Data.Tree
 import Debug.Trace
 import           Data.Text.Lazy                   (toStrict, Text)

@@ -8,8 +8,8 @@ This module also provides a family of SLParser combinators ("Same Line").
 
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
-import qualified Data.Set           as Set
-import qualified Data.Text as Text
+import Data.Set qualified as Set
+import Data.Text qualified as Text
 import Text.Megaparsec
 import Control.Monad.Reader (asks, local, ReaderT (ReaderT, runReaderT), MonadReader)
 import Control.Monad.Writer.Lazy
@@ -22,7 +22,7 @@ import Control.Applicative (liftA2, Alternative)
 import Data.Void (Void)
 import Data.Maybe (isNothing)
 import Text.Megaparsec.Debug (dbg)
-import qualified Text.Megaparsec.Internal as MPInternal
+import Text.Megaparsec.Internal qualified as MPInternal
 import Data.List.NonEmpty (NonEmpty)
 import Data.Functor.Identity (Identity)
 import LS.Error (onelineErrorMsg)

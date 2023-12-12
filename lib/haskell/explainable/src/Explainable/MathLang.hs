@@ -4,10 +4,11 @@
 
 module Explainable.MathLang where
 
-import Control.Monad (forM_, mapAndUnzipM, unless)
+import Control.Monad (mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
 import Data.Bifunctor
+import Data.Foldable (for_)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text qualified as T
@@ -116,7 +117,7 @@ infixl 4 |+, |-
 
 less :: Expr Float -> Expr Float -> Expr Float
 less = (|-)
-  
+
 -- | fmap.
 -- 
 -- In Haskell, we would say @(+2) <$> [1,2,3]@
@@ -278,7 +279,7 @@ eval' (Undefined lbl) = do
   (history,path) <- asks historypath
   return (0, Node ([unlines history ++ pathSpec path ++ ": undefined as zero 0"]
                   ,["undefined: " ++ fromMaybe "an explicit undefined value, defaulting to zero" lbl]) [])
-  
+
 eval' (Val lbl x) = do
   (history,path) <- asks historypath
   return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
@@ -310,7 +311,7 @@ eval' (MathSet     str x) =
 eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
 eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
-eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs                              
+eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
@@ -322,7 +323,7 @@ doFold str f xs = retitle ("listfold " <> str) $ do
          , Node ([],(show toreturn ++ " = " ++ str ++ " of " ++ show (length zs) ++ " elements")
                   : [ "- " ++ show e | e <- fst <$> zs ])
            (yexps : (snd <$> zs)))
-  
+
 -- | helper function, Unary evaluation of an `Expr` `Float` to some `Float`
 unaEval :: String -> (Float -> Float) -> Expr Float -> ExplainableIO r MyState Float
 unaEval title f x =
@@ -387,11 +388,11 @@ evalP' (PredComp lbl c x y) =
           CNEQ | c' /= EQ           -> True
           _                         -> False
         (lhs,rhs) = verbose title
-    return (toreturn, (Node ([]
+    return (toreturn, Node ([]
                             ,[show toreturn ++ " " ++ lhs ++ " (" ++ shw c ++ ")"])
                        [ xpl
                        , mkNod rhs
-                       , ypl ]))
+                       , ypl ])
 
 evalP' (PredFold lbl andor ps) =
   let title = "listfold" ++ showlbl lbl
@@ -403,7 +404,7 @@ evalP' (PredFold lbl andor ps) =
     return (toreturn, Node ([]
                            , [show toreturn ++ " " ++ show andor])
                       (snd <$> evalps ) )
-                      
+
 evalP' (PredVar str) =
   let title = "variable expansion: " ++ str
       (lhs,_rhs) = verbose title
@@ -519,7 +520,7 @@ getvarF x = do
     Just v  -> return (v, Node ([show v], ["variable `" ++ x ++ "` has value " ++ show v]) [])
 
 -- | Get a @Pred Float@ variable
-  
+
 getvarP :: String -> ExplainableIO r MyState (Pred Float)
 getvarP x = do
   symtab <- gets symtabP
@@ -550,27 +551,27 @@ class Exprlbl expr a where
   (@|=) :: String -> expr a -> expr a
   getvar, (@|$<) :: String -> expr a
   (@|$>) :: String -> expr a -> expr a
-  getvar = (@|$<) 
- 
+  getvar = (@|$<)
+
 instance Exprlbl Expr a where
   (@|=) lbl ( Undefined Nothing      ) = Undefined (Just lbl)
-  (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x     
-  (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x     
-  (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z 
+  (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x
+  (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x
+  (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z
   (@|=) _   ( MathVar          _     ) = error "use @|$< to label a variable reference"
   (@|=) _   ( MathSet          _ _   ) = error "use @|$> to label a variable assignment"
-  (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z 
-  (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y   
-  (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y   
-  (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y   
+  (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z
+  (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y
+  (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y
+  (@|=) lbl ( ListFold Nothing x y   ) = ListFold (Just lbl) x y
   (@|=) lbl ( Undefined (Just _old)       ) = Undefined (Just lbl {- <++> Just ("previously " ++ old) -} )
-  (@|=) lbl ( Val       (Just _old) x     ) = Val       (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
-  (@|=) lbl ( Parens    (Just _old) x     ) = Parens    (Just lbl {- <++> Just ("previously " ++ old) -} ) x     
-  (@|=) lbl ( MathBin   (Just _old) x y z ) = MathBin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
-  (@|=) lbl ( MathITE   (Just _old) x y z ) = MathITE   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z 
-  (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
-  (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
-  (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y   
+  (@|=) lbl ( Val       (Just _old) x     ) = Val       (Just lbl {- <++> Just ("previously " ++ old) -} ) x
+  (@|=) lbl ( Parens    (Just _old) x     ) = Parens    (Just lbl {- <++> Just ("previously " ++ old) -} ) x
+  (@|=) lbl ( MathBin   (Just _old) x y z ) = MathBin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z
+  (@|=) lbl ( MathITE   (Just _old) x y z ) = MathITE   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y z
+  (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
+  (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
+  (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
 
   (@|$<) lbl   = MathVar lbl
   (@|$>) lbl x = MathSet lbl x
@@ -656,7 +657,7 @@ infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 (@|===) s = PredComp (Just s) CEQ
 (@|/==) s = PredComp (Just s) CNEQ
 (@|!==) s = PredComp (Just s) CNEQ
-  
+
 (@|&&),(@|||),(@|==),(@|!=),(@|/=) :: String -> Pred a -> Pred a -> Pred a
 (@|&&) s x y = PredBin (Just s) PredAnd  x y
 (@|||) s x y = PredBin (Just s) PredOr   x y
@@ -672,7 +673,7 @@ data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
 
 -- | some example runs
 toplevel :: IO ()
-toplevel = forM_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one") 1)
+toplevel = for_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one") 1)
                  , "my sum" @|= "two" @|. 2 |+ "three" @|. 3
                  , ListFold (Just "greater than 2") FoldSum $ Val (Just "two") 2 <| MathList (Just "one to four")
                    [Val Nothing 1, Val Nothing 2, Val Nothing 3, Val Nothing 4]
@@ -730,9 +731,9 @@ dumpExplanationF depth s f = do
     dumpTypescript "" s f
     putStrLn "#+END_SRC"
 
-  
+
   where stars = replicate depth '*'
-  
+
 dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
 dumpTypescript realign s f = do
   putStrLn $ T.unpack $ [text|
@@ -764,18 +765,18 @@ class ToTS expr a where
 
 -- in future consider a new class tsm.Undefined -- would that more faithfully follow this representation?
 instance ToTS Expr a where
-  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"] 
-  pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x] 
+  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"]
+  pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x]
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
   pp (MathBin  lbl mbop x y ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe ("binop " <> viaShow mbop) pretty lbl
                                                                       , "tsm.NumBinOp." <> case mbop of { Plus -> "Add"; Minus -> "Sub"; Times -> "Mul"; Divide -> "Div" }
-                                                                      , pp x , pp y ] 
+                                                                      , pp x , pp y ]
   pp (MathVar  str          ) = "new tsm.GetVar"  <+> h0parens ( dqpretty str)
-  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
-  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
-  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ] 
-  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ] 
+  pp (MathSet  str x        ) = "new tsm.SetVar"  <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ]
+  pp (MathITE  lbl p x y    ) = "new tsm.Bool3"   <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ]
+  pp (MathMax  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "greater of"   pretty lbl , "tsm.NumBinOp.MaxOf2"      , pp x, pp y ]
+  pp (MathMin  lbl   x y    ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe "lesser of"    pretty lbl , "tsm.NumBinOp.MinOf2"      , pp x, pp y ]
   pp (ListFold lbl f (MathList mlbl xs) ) = "new tsm.NumFold" <+> h0tupled [ dquotes $ maybe "list fold" pretty (lbl <++> mlbl)
                                                                            , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
                                                                            , hang 2 $ list (pp <$> xs) ]
@@ -787,13 +788,13 @@ instance ToTS Pred a where
   pp (PredNot  lbl x    ) = "new tsm.Bool1"      <+> h0tupled [ dquotes $ maybe (viaShow x) pretty lbl, "tsm.BoolUnaOp.BoolNot", pp x ]
   pp (PredComp lbl c x y) = "new tsm.NumToBool2" <+> h0tupled [ dquotes $ maybe (viaShow c) pretty lbl
                                                                      , "tsm.NumToBoolOp." <> case c of { CEQ -> "NBeq"; CNEQ -> "NBneq"; CLT -> "NBlt"; CLTE -> "NBlte"; CGT -> "NBgt"; CGTE -> "NBgte" }
-                                                                     , pp x, pp y ] 
+                                                                     , pp x, pp y ]
   pp (PredBin  lbl o x y) = "new tsm.Bool2" <+> h0tupled [ dquotes $ maybe (viaShow o) pretty lbl
                                                                 , "tsm.BoolBinOp." <> case o of { PredAnd -> "And"; PredOr -> "Or"; PredEq -> "BoolEq"; PredNeq -> "BoolNeq" }
-                                                                , pp x, pp y ] 
+                                                                , pp x, pp y ]
   pp (PredVar  str      ) = "new tsm.GetVar" <+> h0parens ( dqpretty str )
-  pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ] 
-  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ] 
+  pp (PredSet  str x    ) = "new tsm.SetVar" <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ]
+  pp (PredITE  lbl p x y) = "new tsm.Bool3"  <+> h0tupled [ dquotes $ maybe "if-then-else" pretty lbl , "tsm.BoolTriOp.IfThenElse" , pp p, pp x, pp y ]
   pp (PredFold lbl p xs)  = "new tsm.BoolFold" <+> h0tupled [ dquotes $ maybe "any/all" pretty lbl
                                                             , "tsm.BoolFoldOp." <> case p of { PLAnd -> "All"; PLOr -> "Any" }
                                                             , hang 2 $ list ( pp <$> xs ) ]
@@ -831,7 +832,7 @@ ppst (MyState{..}) realign =
     , "...realigned }"
     ]
   ) ) <> line <> "}" <> line
-  
+
 
 dqpretty :: (Pretty a) => a -> Doc ann
 dqpretty = dquotes . pretty

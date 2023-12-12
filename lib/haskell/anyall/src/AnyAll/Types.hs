@@ -159,13 +159,13 @@ getSV sv1 (Q sv2 (Simply x) pp m)
 getSV _ _ = Nothing
 
 getAsks :: (ToJSONKey a, Hashable a) => QTree a -> Map.HashMap a (Default Bool)
-getAsks qt = Map.fromList $ catMaybes $ getSV Ask <$> flatten qt
+getAsks qt = Map.fromList $ mapMaybe (getSV Ask) (flatten qt)
 
 getAsksJSON :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getAsksJSON = encode . getAsks
 
 getViews :: (ToJSONKey a, Hashable a) => QTree a -> Map.HashMap a (Default Bool)
-getViews qt = Map.fromList $ catMaybes $ getSV View <$> flatten qt
+getViews qt = Map.fromList $ mapMaybe (getSV View) (flatten qt)
 
 getViewsJSON :: (ToJSONKey a, Hashable a) => QTree a -> B.ByteString
 getViewsJSON = encode . getViews

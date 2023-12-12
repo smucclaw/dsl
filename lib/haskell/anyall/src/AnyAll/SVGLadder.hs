@@ -390,7 +390,7 @@ rowLayouter sc (bbold, old) (bbnew, new) =
       <> connectingCurve
   )
   where
-    templateBox = (defaultBBox sc)
+    templateBox = defaultBBox sc
         & boxDims.dimHeight .~ max (bbold ^. bboxHeight) (bbnew ^. bboxHeight)
         & boxDims.dimWidth .~ bbold ^. bboxWidth + lrHgap + bbnew ^. bboxWidth
     myScale = getScale sc
@@ -446,7 +446,7 @@ columnLayouter sc parentbbox (bbold, old) (bbnew, new) = (bbox, svg)
     inboundConnector = inboundCurve sc parentbbox bbold bbnew
     outboundConnector = outboundCurve sc parentbbox bbold bbnew
     bbox =
-      (defaultBBox sc)
+      defaultBBox sc
         & boxDims.dimHeight .~ bbold ^. bboxHeight + bbnew ^. bboxHeight + lrVgap
         & boxDims.dimWidth .~ max (bbold ^. bboxWidth) (bbnew ^. bboxWidth)
         & boxConnect .~ (connect bbold `mergeConnects` connect bbnew)
@@ -518,7 +518,7 @@ combineOr sc elems =
     leftMargin' = myScale ^. aavscaleMargins.leftMargin
     rightMargin' = myScale ^. aavscaleMargins.rightMargin
     childheights = interElementGap * fromIntegral (length elems - 1) + sum (boxHeight . dimensions . fst <$> elems)
-    mybbox = (defaultBBox sc)
+    mybbox = defaultBBox sc
       & boxDims.dimWidth .~  maximum (boxWidth . dimensions . fst <$> elems)
       & boxDims.dimHeight .~ childheights
     reorderedChildren = reorderByConnectivity elems
@@ -604,7 +604,7 @@ rowLayouterS (bbnew, new) = do
   myScale <- asks aav
   (bbold, old) <- get
   let
-    templateBox = (defaultBBox sc)
+    templateBox = defaultBBox sc
         & boxDims.dimHeight .~ max (bbold ^. bboxHeight) (bbnew ^. bboxHeight)
         & boxDims.dimWidth .~ bbold ^. bboxWidth + lrHgap + bbnew ^. bboxWidth
     lrHgap = myScale ^. aavscaleHorizontalLayout.gapHorizontal
@@ -688,7 +688,7 @@ deriveBoxCap negContext m =
     Nothing -> (NoLine, notLine NoLine, NoLine)
   where
     notLine = if negContext then const FullLine else id
-    topLine = \nc -> if nc then FullLine else NoLine
+    topLine nc = if nc then FullLine else NoLine
 
 extractSoft :: Default Bool -> Maybe Bool
 extractSoft (Default (Right b)) = b
@@ -796,7 +796,7 @@ deriveBoxSize caption = do
 
 labelBox :: Scale -> T.Text -> T.Text -> BoxedSVG
 labelBox sc baseline caption =
-  ( (defaultBBox sc)
+  ( defaultBBox sc
       & boxDims.dimWidth .~ boxWidth
       & boxDims.dimHeight .~ boxHeight,
     boxContent
@@ -839,7 +839,7 @@ drawLeafR caption = do
           <> boxContent
           <> boxCap
     )
-            
+
 
 
 box :: AAVConfig -> Double -> Double -> Double -> Double -> SVGElement

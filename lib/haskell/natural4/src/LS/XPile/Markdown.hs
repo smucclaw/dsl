@@ -46,7 +46,7 @@ bsMarkdown envs rl = fmap (Text.unpack . Text.intercalate "  ") (sequence [eachn
 
 eachnlg :: NLGEnv -> [Rule] -> IO Text.Text
 eachnlg env rl = do
-  txt <- mapM (nlg env) rl
+  txt <- traverse (nlg env) rl
   return $ Text.unwords txt
 
 -- bsMarkdown :: [Rule] -> String

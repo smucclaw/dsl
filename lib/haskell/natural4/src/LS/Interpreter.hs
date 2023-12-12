@@ -452,7 +452,7 @@ relPredRefsAll rs ridmap = do
                      ]
   mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
 
-  concat <$> mapM (relPredRefs rs ridmap headElements) rs
+  concat <$> traverse (relPredRefs rs ridmap headElements) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known rule heads from the entire ruleset.

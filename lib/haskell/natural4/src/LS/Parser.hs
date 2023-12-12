@@ -44,12 +44,12 @@ prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.OptionallyLabeledBoolStruct a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.mkLeaf txt
-toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.mkAll (Just (AA.Pre     (mt2text pre))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.mkAny (Just (AA.Pre     (mt2text pre))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.mkAll (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.mkAny (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyAll mis)                     = AA.mkAll Nothing <$> mapM toBoolStruct mis
-toBoolStruct (MyAny mis)                     = AA.mkAny Nothing <$> mapM toBoolStruct mis
+toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.mkAll (Just (AA.Pre     (mt2text pre))) <$> traverse toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.mkAny (Just (AA.Pre     (mt2text pre))) <$> traverse toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.mkAll (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> traverse toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.mkAny (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> traverse toBoolStruct xs
+toBoolStruct (MyAll mis)                     = AA.mkAll Nothing <$> traverse toBoolStruct mis
+toBoolStruct (MyAny mis)                     = AA.mkAny Nothing <$> traverse toBoolStruct mis
 toBoolStruct (MyNot mi')                     = AA.mkNot <$> toBoolStruct mi'
 toBoolStruct (MyLabel pre post (MyLabel pre2 post2 _))  = Left $ "Nested labels not supported: " ++ show (MyLabel pre post (MyLeaf ()), MyLabel pre2 post2 (MyLeaf ()))
 toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre ++ " cannot be applied to a leaf: " ++ show x

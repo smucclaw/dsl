@@ -138,7 +138,7 @@ filetest testfile desc parseFunc expected =
     `shouldParse` [ expected ]
 
 pullIO :: Either (ParseErrorBundle MyStream e) [IO b] -> IO (Either (ParseErrorBundle MyStream e) [b])
-pullIO = mapM sequence
+pullIO = traverse sequence
 
 filetestIO :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) (IO b)) -> b -> SpecWith ()
 filetestIO testfile desc parseFunc expected =

@@ -98,7 +98,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> XPileLog Grounds
 checklist env _ rs = do
-   qs <- nlgQuestion env `mapM` rs
+   qs <- nlgQuestion env `traverse` rs
    let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
    pure $ sequence nonEmptyQs
 
@@ -112,7 +112,7 @@ multiChecklist env rc rs = do
 
 -- toHTML :: NLGEnv -> RunConfig -> [Rule] -> IO (Text, Text)
 -- toHTML env _ rs = do
---   htm <- nlg env `mapM` rs
+--   htm <- nlg env `traverse` rs
 
 --   <div class="deontic rule">
 --   <div class="quantifier">Every person who</div>

@@ -197,7 +197,7 @@ parseRules o = do
   let files = getNoLabel $ file o
   if null files
   then parseSTDIN runConfig { sourceURL="STDIN" }
-  else concat <$> mapM (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
+  else concat <$> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
 
   where
     getNoLabel (NoLabel x) = x
@@ -205,10 +205,10 @@ parseRules o = do
     getBS other = BS.readFile other
     parseSTDIN rc = do
       bs <- BS.getContents
-      mapM (parseStream rc "STDIN") (exampleStreams bs)
+      traverse (parseStream rc "STDIN") (exampleStreams bs)
     parseFile rc filename = do
       bs <- getBS filename
-      mapM (parseStream rc filename) (exampleStreams bs)
+      traverse (parseStream rc filename) (exampleStreams bs)
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do

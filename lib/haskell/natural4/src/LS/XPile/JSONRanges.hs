@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -8,7 +9,6 @@ elsewhere in our codebase. -}
 
 module LS.XPile.JSONRanges where
 
-import Control.Monad (forM_)
 import Data.HashMap.Strict qualified as Map
 import Data.List (groupBy, nub)
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -27,6 +27,7 @@ import LS.XPile.Logging
   )
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
+import Data.Foldable (for_)
 
 data Dimension lbl vals = Dimension lbl [vals]
   deriving (Show, Eq)
@@ -56,18 +57,18 @@ asJSONRanges l4i = do
         return (thisclass, dims)
     | (thisclass, (itypesig, ct)) <- Map.toList ct
     , let ea1 = extendedAttributes (classtable l4i) thisclass
-          ea2 = fromMaybe [] $ Map.toList . unCT <$> ea1
+          ea2 = maybe [] (Map.toList . unCT) ea1
           ea3 = filter isArbitrary ea2
     ]
 
   mutterd 1 "classDimensions cardinality"
-  forM_ classDimensions $ \(et, space) -> do
+  for_ classDimensions \(et, space) -> do
     mutterd 2 ("class " <> show et <> " expecting " <>
                show (product [ length values | Dimension lbl values <- space ])
                <> " points in configuration space, i.e. JSON instances")
-    forM_ space $ \(Dimension lbl values) -> do
+    for_ space \(Dimension lbl values) -> do
       mutterd 3 (show (length values) <> " " <> show lbl)
-      
+
   mutterdhsf 1 "classDimensions" pShowNoColorS classDimensions
 
   curlyList <$> sequence
@@ -77,13 +78,12 @@ asJSONRanges l4i = do
         let points = take 1000 $ extend dims []
         mutterdhsf 2 ("points for " <> show className) pShowNoColorS points
 
-        return $ (viaShow className) <> colon <+>
-          (curlyList 
+        return $ viaShow className <> colon <+>
+          curlyList
             [ viaShow i <> colon <+> curlyList [ viaShow k <> colon <+> quickPretty v | (k, v) <- point ]
             | (point, i) <- zip points [1..]
             ]
-          )
-                                      
+
     | (className, dims) <- classDimensions
     ]
   where
@@ -118,7 +118,7 @@ asJSONRanges l4i = do
     extend :: Space EntityType a -> Points EntityType a -> Points EntityType a
     extend [] pts = pts
     extend ((Dimension dimKey dimVals):dims) [] = extend dims [ [(dimKey, dimVal)] | dimVal <- dimVals ]
-    extend ((Dimension dimKey dimVals):dims) pts = extend dims 
+    extend ((Dimension dimKey dimVals):dims) pts = extend dims
                                                    [ (dimKey, dimVal) : pt
                                                    | pt <- pts
                                                    , dimVal <- dimVals

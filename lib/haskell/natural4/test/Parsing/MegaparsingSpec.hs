@@ -1,5 +1,7 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
+
 module Parsing.MegaparsingSpec where
 
 import Text.Megaparsec
@@ -15,7 +17,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/megaparsing/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -30,19 +32,19 @@ spec = do
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "megaparsing" $ do
+    describe "megaparsing" do
 
-      it "should parse an unconditional" $ do
+      it "should parse an unconditional" do
         parseR pRules "" (exampleStream ",EVERY,person,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ srcrow2 $ defaultReg { subj = mkLeafPT "person"
                                                , deontic = DMust
                                                } ]
 
-      it "should parse a rule label" $ do
+      it "should parse a rule label" do
         parseR pRules "" (exampleStream ",\xc2\xa7,Hello\n")
           `shouldParse` [srcrow2 $ RuleGroup {rlabel = Just ("\167",1,"Hello"), srcref = srcref defaultReg}]
 
-      it "should parse a rule label followed by something" $ do
+      it "should parse a rule label followed by something" do
         parseR pRules "" (exampleStream "\xc2\xa7,Hello\n,something\nMEANS,something\n")
           `shouldParse`
           [ defaultHorn
@@ -56,15 +58,15 @@ spec = do
                 rlabel = Just ("\167", 1, "Hello")
               }
           ]
-      it "should parse a single OtherVal" $ do
+      it "should parse a single OtherVal" do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ srccol1 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
 
-      it "should parse the null temporal EVENTUALLY" $ do
+      it "should parse the null temporal EVENTUALLY" do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,MUST,EVENTUALLY,,\n,->,sing,,\n")
           `shouldParse` [ srccol1 . srcrow2 $ defaultReg { who = Just (mkLeafR "walks") } ]
 
-      it "should parse dummySing" $ do
+      it "should parse dummySing" do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` [ srccol1 <$> srcrow2 $ defaultReg {
                             who = Just (All Nothing
@@ -88,7 +90,7 @@ spec = do
                                        ])
                            } ]
 
-      it "should parse indentedDummySing" $ do
+      it "should parse indentedDummySing" do
         parseR pRules "" (exampleStream ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,OR,runs,,\n,OR,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,->,sing,,\n")
           `shouldParse` (srccol1 <$> srcrow2 <$> imbibeRule)
 

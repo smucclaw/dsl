@@ -5,19 +5,17 @@
 
 module LS.XPile.IntroLog (toLog) where
 
-import LS.Interpreter       ( qaHornsT )
-import LS.PrettyPrinter     ( myrender, (</>), (<//>) )
-import LS.Rule              ( Interpreted(..) )
-import LS.XPile.Logging     ( XPileLog, mutter )
-import Prettyprinter        ( Doc, pretty )
-import Text.Pretty.Simple   ( pShowNoColor )
+import Control.Monad.Reader (Reader, asks, runReader)
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
-import LS.XPile.IntroReader ( MyEnv(..), defaultReaderEnv  )
-
-import           Data.Map (Map)
-import qualified Data.Map as Map
-
-import Control.Monad.Reader ( runReader, Reader, asks )
+import LS.Interpreter (qaHornsT)
+import LS.PrettyPrinter (myrender, (<//>), (</>))
+import LS.Rule (Interpreted (..))
+import LS.XPile.IntroReader (MyEnv (..), defaultReaderEnv)
+import LS.XPile.Logging (XPileLog, mutter)
+import Prettyprinter (Doc, pretty)
+import Text.Pretty.Simple (pShowNoColor)
 
 toLog :: Interpreted -> MyEnv -> XPileLog String
 toLog l4i myenv = Text.unpack . myrender <$> inner l4i myenv

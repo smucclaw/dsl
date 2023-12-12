@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
@@ -58,7 +59,7 @@ testcases =
 
 spec :: Spec
 spec =
-  for_ ([ASP, Epilog] :: [LPLang]) $ \lpLang ->
+  for_ ([ASP, Epilog] :: [LPLang]) \lpLang ->
     describe [i|Testing #{lpLang} transpiler|] $
       for_ testcases $ testcase2spec lpLang
 
@@ -73,7 +74,7 @@ instance Hashable LPTestcase
 
 testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestcase {..} =
-  it dir $ do
+  it dir do
     Just csvFile <- findFileWithName csvFile
     rules :: [LS.Rule] <-
       LS.dumpRules

@@ -1,4 +1,6 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Parsing.NewParserSpec where
 
 import Text.Megaparsec
@@ -17,7 +19,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/newparser/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -33,7 +35,7 @@ spec = do
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "revised parser" $ do
+    describe "revised parser" do
 
       let simpleHorn = [ defaultHorn
               { name = [MTT "X"]
@@ -74,11 +76,11 @@ spec = do
       filetest "horn-2" "should parse horn clauses 2"
         (parseR pToplevel) simpleHorn
 
-    describe "our new parser" $ do
+    describe "our new parser" do
       let myand = LS.Types.And
           myor  = LS.Types.Or
 
-      it "should inject Deeper tokens to match indentation" $ do
+      it "should inject Deeper tokens to match indentation" do
         let testfile = "test/Parsing/newparser/indent-2-a.csv"
         testcsv <- BS.readFile testfile
         let mystreams = exampleStreams testcsv
@@ -121,7 +123,7 @@ spec = do
                  , MyLeaf (text2pt "term5")
                  ],[])
 
-    describe "parser elements and fragments ... should parse" $ do
+    describe "parser elements and fragments ... should parse" do
       let ptFragment1 :: ParamText
           ptFragment1 = (MTT <$> "one word" :| []  , Nothing) :| []
           ptFragment2 = (MTT <$> "one word" :| [], Just (SimpleType TOne "String")) :| []
@@ -163,7 +165,7 @@ spec = do
                                          , Nothing):|[]
                                ,[])
 
-    describe "WHO / WHICH / WHOSE parsing of BoolStructR" $ do
+    describe "WHO / WHICH / WHOSE parsing of BoolStructR" do
 
       let whoStructR_1 = defaultReg { who = Just ( mkRpmtLeaf ["eats"] ) }
           whoStructR_2 = defaultReg { who = Just ( mkRpmtLeaf ["eats", "rudely"] ) }
@@ -178,15 +180,15 @@ spec = do
       filetest "who-3" "should handle a simple RPMT"
         (parseR pToplevel) [ whoStructR_3 ]
 
-      it "sameline fourIs float" $ do
+      it "sameline fourIs float" do
         parseOther _fourIs "" (exampleStream "A,IS,IS,IS\n")
           `shouldParse` ((A_An,Is,Is,Is), [])
 
-      it "sameline threeIs float" $ do
+      it "sameline threeIs float" do
         parseOther _threeIs "" (exampleStream "IS,IS,IS,IS\n")
           `shouldParse` ((Is,(Is,Is),Is), [])
 
-    describe "MISC" $ do
+    describe "MISC" do
       let unauthorisedExpected = [
             defaultHorn { name = [MTT "a Data Breach"],
               clauses =

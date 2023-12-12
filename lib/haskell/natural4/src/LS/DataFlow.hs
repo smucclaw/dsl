@@ -10,10 +10,9 @@ import LS.XPile.Logging
 import LS
 import LS.Interpreter
 import LS.Rule
+import Data.HashMap.Strict qualified as Map -- if you want to upgrade this to Hashmap, go ahead
 import Data.Text qualified as Text
 import Flow ((.>), (|>))
-
-import qualified Data.Map as Map -- if you want to upgrade this to Hashmap, go ahead
 
 -- fgl
 import Data.Graph.Inductive.Graph
@@ -91,23 +90,22 @@ dataFlowAsDot l4i = do
   mutterd 3 "dataFlowasDot: heeere's ruleGraphErr"
   mutters (ruleGraphErr l4i)
 
-  let toreturn = ( dfg
-                   |> graphToDot flowParams
-                   |> unqtDot
-                   |> renderDot
-                   |> LT.toStrict
-                   |> Text.unpack
-                 )
+  let toreturn = dfg
+                  |> graphToDot flowParams
+                  |> unqtDot
+                  |> renderDot
+                  |> LT.toStrict
+                  |> Text.unpack
 
   mutterdhsf 3 "and now we should get some dot goodness" pShowNoColorS toreturn
   return toreturn
 
 
   where
-    ruleNodes = Map.fromList ( zip [1..] [ [MTT "pretend rule R1" ] -- 1
+    ruleNodes = Map.fromList ( zip [(1 :: Int)..] [ [MTT "pretend rule R1" ] -- 1
                                          , [MTT "pretend rule R2" ] -- 2
                                          ]  )
-    leafNodes = Map.fromList ( zip [1..] [ [MTT "pretend leaf L1" ] -- 1
+    leafNodes = Map.fromList ( zip [(1 :: Int)..] [ [MTT "pretend leaf L1" ] -- 1
                                          , [MTT "pretend leaf L2" ] -- 2
                                          , [MTT "pretend leaf L3" ] -- 3
                                          , [MTT "pretend leaf L4" ] -- 4
@@ -131,7 +129,7 @@ dataFlowAsDot l4i = do
       }
 
 fmtRuleNode :: (Node, Rule) -> [Attribute]
-fmtRuleNode (n, r) = pure $ toLabel $ (Text.pack (show n) <> "\\n" <> mt2text (ruleName r))
+fmtRuleNode (n, r) = pure $ toLabel (Text.pack (show n) <> "\\n" <> mt2text (ruleName r))
 
 
 

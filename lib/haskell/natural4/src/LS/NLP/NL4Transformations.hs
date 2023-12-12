@@ -1,4 +1,6 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module LS.NLP.NL4Transformations where
@@ -18,7 +20,7 @@ flipPolarity x = composOp flipPolarity x
 
 
 pushPrePostIntoMain :: BoolStructGText -> BoolStructGText
-pushPrePostIntoMain bsgt = case bsgt of
+pushPrePostIntoMain = \case
   Leaf x -> Leaf x
   All l xs -> tryTransformWhole (All l (pushPrePostIntoMain <$> xs))
   Any l xs -> tryTransformWhole (Any l (pushPrePostIntoMain <$> xs))
@@ -35,7 +37,7 @@ pushPrePostIntoMain bsgt = case bsgt of
       GqWHO (referNP person) (GWHO t p (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
 
     tryTransformWhole :: BoolStructGText -> BoolStructGText
-    tryTransformWhole bs = case bs of
+    tryTransformWhole = \case
       All pp
           ( Any
               ( Just ( PrePost (GqPREPOST ( GV2_PrePost t p consume ) )
@@ -71,7 +73,7 @@ pushPrePostIntoMain bsgt = case bsgt of
                 Nothing (
                   (transformWho t p consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
-      _ -> bs
+      bs -> bs
 
 
 type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPrePost)) (Tree a)
@@ -83,13 +85,13 @@ type BoolStructCond = BoolStructGF GCond_
 type BoolStructConstraint = BoolStructGF GConstraint_
 
 bsNeg2textNeg :: (Gf (Tree a)) => AA.BoolStruct b (Tree a) -> AA.BoolStruct b (Tree a)
-bsNeg2textNeg bs = case bs of
+bsNeg2textNeg = \case
   AA.Leaf x -> AA.Leaf x
-  AA.All l xs -> AA.All l (fmap bsNeg2textNeg xs)
-  AA.Any l xs -> AA.Any l (fmap bsNeg2textNeg xs)
-  AA.Not (AA.Leaf x)    -> AA.Leaf (flipPolarity x)
-  AA.Not (AA.All l xs)  -> AA.All l (fmap bsNeg2textNeg xs)
-  AA.Not (AA.Any l xs)  -> AA.Any l (fmap bsNeg2textNeg xs)
+  AA.All l xs -> AA.All l $ bsNeg2textNeg <$> xs
+  AA.Any l xs -> AA.Any l $ bsNeg2textNeg <$> xs
+  AA.Not (AA.Leaf x)    -> AA.Leaf $ flipPolarity x
+  AA.Not (AA.All l xs)  -> AA.All l $ bsNeg2textNeg <$> xs
+  AA.Not (AA.Any l xs)  -> AA.Any l $ bsNeg2textNeg <$> xs
   AA.Not (AA.Not x)     -> bsNeg2textNeg x
 
 -- inverse:
@@ -132,21 +134,21 @@ bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePos
 
 mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe (AA.Label a)) c ->  AA.BoolStruct (Maybe (AA.Label b)) d
 mapBSLabel f g bs = case bs of
-    AA.Leaf x -> AA.Leaf $ g x
-    AA.Any pre xs -> AA.Any (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
-    AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
-    AA.Not x -> AA.Not $ mapBSLabel f g x
+  AA.Leaf x -> AA.Leaf $ g x
+  AA.Any pre xs -> AA.Any (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
+  AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
+  AA.Not x -> AA.Not $ mapBSLabel f g x
 
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
 applyLabel f (AA.Pre a) = AA.Pre (f a)
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
 
 mapBS :: (a -> b) -> AA.BoolStruct c a ->  AA.BoolStruct c b
-mapBS f bs = case bs of
-    AA.Leaf x -> AA.Leaf $ f x
-    AA.Any lbl xs -> AA.Any lbl (mapBS f <$> xs)
-    AA.All lbl xs -> AA.All lbl (mapBS f <$> xs)
-    AA.Not x -> AA.Not $ mapBS f x
+mapBS f = \case
+  AA.Leaf x -> AA.Leaf $ f x
+  AA.Any lbl xs -> AA.Any lbl (mapBS f <$> xs)
+  AA.All lbl xs -> AA.All lbl (mapBS f <$> xs)
+  AA.Not x -> AA.Not $ mapBS f x
 -----------------------------------------------------------------------------
 -- Generic useful transformations
 -- for NP
@@ -169,7 +171,7 @@ insertAP ap = go
   where
     go :: forall a . Tree a -> Tree a
     go (GMassNP cn) = GMassNP (GAdjCN ap cn)
-    go cn@(GUseN n) = GAdjCN ap cn
+    go cn@(GUseN _) = GAdjCN ap cn
     go x = composOp go x
 
 pastTense :: forall a . Tree a -> Tree a
@@ -189,10 +191,9 @@ mergeConj x = composOp mergeConj x
 -- TODO: check if viewpatterns help?
 squeezeTrees :: forall a . GConj -> [Tree a] -> Maybe (Tree a)
 squeezeTrees conj [
-    GRPConstraint cond1 tc1 date1
-  , GRPConstraint cond2 tc2 date2]
-  | cond1==cond2
-  , date1==date2 = pure $ GRPConstraint cond1 conjTC date1
+    GRPConstraint cond tc1 date
+  , GRPConstraint ((== cond) -> True) tc2 ((== date) -> True)]
+  = pure $ GRPConstraint cond conjTC date
   where
     conjTC :: GTComparison
     conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
@@ -209,17 +210,17 @@ squeezeTrees conj [
 --     pure $ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp newComp))
 
 squeezeTrees conj [
-    GRPleafS subj1 vps1
-  , GRPleafS subj2 vps2]
-  | subj1==subj2 = pure $ GRPleafS subj1 (GConjVPS conj (GListVPS [vps1, vps2]))
+    GRPleafS subj vps1
+  , GRPleafS ((== subj) -> True) vps2]
+  = pure $ GRPleafS subj (GConjVPS conj (GListVPS [vps1, vps2]))
 
 squeezeTrees _ _ = Nothing
 
 isChinese :: Language -> Bool
-isChinese l = l == mkCId "NL4Chi"
+isChinese = (== mkCId "NL4Chi")
 
 isMalay :: Language -> Bool
-isMalay l = l == mkCId "NL4May"
+isMalay = (== mkCId "NL4May")
 
 aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
 aggregateBoolStruct l bs =

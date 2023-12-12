@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -18,7 +19,7 @@ import AnyAll.BoolStruct
 import AnyAll.Types (Label (Pre, PrePost))
 import Data.List (groupBy, nub)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
-import Data.Map qualified as Map
+import Data.HashMap.Strict qualified as Map
 import Data.Maybe (maybeToList)
 import Data.Text qualified as T
 import Data.Text qualified as Text
@@ -98,7 +99,7 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> XPileLog Grounds
 checklist env _ rs = do
-   qs <- nlgQuestion env `mapM` rs
+   qs <- nlgQuestion env `traverse` rs
    let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
    pure $ sequence nonEmptyQs
 
@@ -112,7 +113,7 @@ multiChecklist env rc rs = do
 
 -- toHTML :: NLGEnv -> RunConfig -> [Rule] -> IO (Text, Text)
 -- toHTML env _ rs = do
---   htm <- nlg env `mapM` rs
+--   htm <- nlg env `traverse` rs
 
 --   <div class="deontic rule">
 --   <div class="quantifier">Every person who</div>
@@ -134,7 +135,7 @@ rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
   let whoGrounds  = (MTT (bsp2text subj) :) <$> bsr2grounds rc globalrules r who
       condGrounds =                             bsr2grounds rc globalrules r cond
-  in concat [whoGrounds, condGrounds]
+  in mconcat [whoGrounds, condGrounds]
 
 rulegrounds rc globalrules r@Hornlike{..} =
   let givenGrounds  = pt2grounds rc globalrules r <$> maybeToList given
@@ -143,7 +144,7 @@ rulegrounds rc globalrules r@Hornlike{..} =
                         bsr2grounds rc globalrules r (hBody clause)
                       | clause <- clauses ]
 
-  in concat $ concat [givenGrounds, uponGrounds, clauseGrounds]
+  in mconcat $ mconcat [givenGrounds, uponGrounds, clauseGrounds]
 
 rulegrounds _rc _globalrules _r = [ ]
 
@@ -258,7 +259,7 @@ itemRPToItemJSON (Any (Just pre@(Pre _)) items)      = mkAny pre (map itemRPToIt
 itemRPToItemJSON (Any (Just pp@(PrePost _ _)) items) = mkAny pp (map itemRPToItemJSON items)
 itemRPToItemJSON (Not item)                          = mkNot (itemRPToItemJSON item)
 
-type RuleJSON = Map.Map String BoolStructLT
+type RuleJSON = Map.HashMap String BoolStructLT
 
 rulesToRuleJSON :: [Rule] -> RuleJSON
 rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
@@ -279,4 +280,4 @@ ruleToRuleJSON RuleGroup {}    = Map.empty
 ruleToRuleJSON RegFulfilled {} = Map.empty
 ruleToRuleJSON RegBreach {}    = Map.empty
 ruleToRuleJSON NotARule {}     = Map.empty
-ruleToRuleJSON x               = Map.fromList [(T.unpack $ mt2text $ ruleName x, mkLeaf "unimplemented")]
+ruleToRuleJSON x               = [(T.unpack $ mt2text $ ruleName x, mkLeaf "unimplemented")]

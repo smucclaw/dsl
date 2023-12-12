@@ -1,4 +1,6 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -44,12 +46,12 @@ prePostParse base = either fail pure . toBoolStruct =<< expr base
 
 toBoolStruct :: (Show a, PrependHead a) => MyBoolStruct a -> Either String (AA.OptionallyLabeledBoolStruct a)
 toBoolStruct (MyLeaf txt)                    = pure $ AA.mkLeaf txt
-toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.mkAll (Just (AA.Pre     (mt2text pre))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.mkAny (Just (AA.Pre     (mt2text pre))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.mkAll (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.mkAny (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> mapM toBoolStruct xs
-toBoolStruct (MyAll mis)                     = AA.mkAll Nothing <$> mapM toBoolStruct mis
-toBoolStruct (MyAny mis)                     = AA.mkAny Nothing <$> mapM toBoolStruct mis
+toBoolStruct (MyLabel pre Nothing (MyAll xs))     = AA.mkAll (Just (AA.Pre     (mt2text pre))) <$> traverse toBoolStruct xs
+toBoolStruct (MyLabel pre Nothing (MyAny xs))     = AA.mkAny (Just (AA.Pre     (mt2text pre))) <$> traverse toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAll xs)) = AA.mkAll (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> traverse toBoolStruct xs
+toBoolStruct (MyLabel pre (Just post) (MyAny xs)) = AA.mkAny (Just (AA.PrePost (mt2text pre) (mt2text post))) <$> traverse toBoolStruct xs
+toBoolStruct (MyAll mis)                     = AA.mkAll Nothing <$> traverse toBoolStruct mis
+toBoolStruct (MyAny mis)                     = AA.mkAny Nothing <$> traverse toBoolStruct mis
 toBoolStruct (MyNot mi')                     = AA.mkNot <$> toBoolStruct mi'
 toBoolStruct (MyLabel pre post (MyLabel pre2 post2 _))  = Left $ "Nested labels not supported: " ++ show (MyLabel pre post (MyLeaf ()), MyLabel pre2 post2 (MyLeaf ()))
 toBoolStruct (MyLabel pre _post (MyLeaf x))        = Left $ "Label " ++ show pre ++ " cannot be applied to a leaf: " ++ show x
@@ -60,11 +62,11 @@ toBoolStruct (MyLabel pre _post (MyNot x))         = Left $ "Label (" ++ show pr
 -- These parsers look for AnyAll Labels above and below a base expression.
 expr,exprIndent, term,termIndent, notLabelTerm :: (Show a) => Parser a -> Parser (MyBoolStruct a)
 expr p = ppp $ debugName "expression" (makeExprParser (term p) table <?> "expression")
-term p = termIndent p
+term = termIndent
 
 exprIndent p = ppp $ debugName "expression indentable" (makeExprParser (termIndent p) table <?> "expression indentable")
-termIndent p = debugName "termIndent p" $ do
-  try (debugName "term p/1a:label ends directly above next line" $ do
+termIndent p = debugName "termIndent p" do
+  try (debugName "term p/1a:label ends directly above next line" do
         (lbl, inner) <- (,)
           $*| (someLiftSL pMTExpr <* liftSL (lookAhead pMTExpr))
           |>< expr p
@@ -72,17 +74,17 @@ termIndent p = debugName "termIndent p" $ do
         debugPrint $ "1a: got inner: " <> show inner
         return $ MyLabel lbl Nothing inner)
     <|>
-    try (debugName "term p/1b:label ends to the left of line below, with EOL" $ do
+    try (debugName "term p/1b:label ends to the left of line below, with EOL" do
         (lbl, inner) <- (,)
-          $*| (someLiftSL pMTExpr) <* liftSL (debugName "matching EOL" dnl)
+          $*| someLiftSL pMTExpr <* liftSL (debugName "matching EOL" dnl)
           |>< expr p
         debugPrint $ "1b: got label to the left, with EOL: " ++ show lbl
         debugPrint $ "1b: got inner: " ++ show inner
         return $ MyLabel lbl Nothing inner)
     <|>
-    try (debugName "term p/1c:label ends to the right of line below" $ do
+    try (debugName "term p/1c:label ends to the right of line below" do
         (lbl,inner) <- (,)
-          $*| (someLiftSL pMTExpr)
+          $*| someLiftSL pMTExpr
           |<| expr p
           |<$ undeepers
         debugPrint $ "1c: got label to the right of next line: " ++ show lbl
@@ -142,7 +144,7 @@ myUnless a b                             = -- trace "myUnless: path 3" $
                                            MyAll (a : [MyNot b])
 
 setLess a (MyAll ((MyLeaf l):bs))
-  | all (\b -> case b of
+  | all (\case
             MyNot _ -> True
             _       -> False
         ) bs = MyAll (a : MyNot (MyLeaf l) : bs)
@@ -153,7 +155,7 @@ getAny (MyAny xs) = xs
 getAny x = [x]
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
-binary  tname f = InfixR  (f <$ (debugName ("binary(" <> show tname <> ")") $ pToken tname))
+binary  tname f = InfixR  (f <$ debugName ("binary(" <> show tname <> ")") (pToken tname))
 prefix,postfix :: MyToken -> (a -> a) -> Operator Parser a
 prefix  tname f = Prefix  (f <$ pToken tname)
 postfix tname f = Postfix (f <$ pToken tname)
@@ -182,7 +184,7 @@ ppp base = -- local (\rc -> rc { debug = True }) $
 
 -- how many UnDeepers do we count between the end of this line and the start of the next (where, presumably, we get an OR)
 expectUnDeepers :: Parser Int
-expectUnDeepers = debugName "expectUnDeepers" $ lookAhead $ do
+expectUnDeepers = debugName "expectUnDeepers" $ lookAhead do
   ignored <- manyTill (pMTExpr <|> MTT "GD" <$ pToken GoDeeper) (lookAhead (pToken UnDeeper))
   debugPrint $ "ignoring " ++ show ignored
   udps <- some (pToken UnDeeper)
@@ -191,7 +193,7 @@ expectUnDeepers = debugName "expectUnDeepers" $ lookAhead $ do
 
 
 withPrePost, withPreOnly :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
-withPrePost basep = debugName "withPrePost" $ do
+withPrePost basep = debugName "withPrePost" do
   (pre, body, post) <- (,,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
@@ -204,7 +206,7 @@ withPrePost basep = debugName "withPrePost" $ do
     relabelpp :: MyBoolStruct a -> MultiTerm -> MultiTerm -> MyBoolStruct a
     relabelpp bs pre post = MyLabel pre (Just post) bs
 
-withPreOnly basep = do -- debugName "withPreOnly" $ do
+withPreOnly basep = do -- debugName "withPreOnly" do
   (pre, body) <- (,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct
@@ -231,7 +233,7 @@ withPreOnly basep = do -- debugName "withPreOnly" $ do
 -- it fails on any other number of GoDeepers encountered, so the caling /+= can break on the correct location between LHS,RHS
 
 aboveNextLineKeyword :: SLParser (MultiTerm,MyToken)
-aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
+aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" do
   undp_count <- expectUnDeepers
   debugPrint $ "aNLK: determined undp_count = " ++ show undp_count
   (slmt,n) <- runSL $ godeeper 1
@@ -253,7 +255,7 @@ aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" $ do
 
 -- slightly different, unfortunately. see test/Spec.hs
 aboveNextLineKeyword2 :: SLParser (MultiTerm,MyToken)
-aboveNextLineKeyword2 = debugName "aboveNextLineKeyword2" $ do
+aboveNextLineKeyword2 = debugName "aboveNextLineKeyword2" do
   (_,x,y) <- (,,)
                  $*| return ((),0::Int)
                  ->| 1

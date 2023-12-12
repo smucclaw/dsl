@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings, GADTs #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -125,7 +126,7 @@ langEng :: IO (XPileLogE Language)
 langEng = do
   grammarFile <- getDataFileName $ gfPath "NL4.pgf"
   gr <- readPGF grammarFile
-  pure $ do
+  pure do
     mutter "*** langEng reading NL4.pgf, calling getLang NL4Eng"
     getLang "NL4Eng" gr
 
@@ -161,7 +162,7 @@ myNLGEnv l4i lang = do
     Right engR -> do
       let myParse typ txt = parse gr engR typ (Text.unpack txt)
           myLin = uncapKeywords . rmBIND . Text.pack . linearize gr lang
-      return $ do
+      return do
         mutter "** myNLGEnv"
         xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
@@ -256,7 +257,7 @@ nlg' thl env rule = case rule of
                       rt <- nlg' (MyHence i) env r
                       pure $ pad rt
                     Nothing -> pure mempty
-      when (verbose env) $ do
+      when (verbose env) do
         putStrLn "nlg': regulative"
         putStrLn $ "    " <> showExpr [] ruleTree
       pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
@@ -268,7 +269,7 @@ nlg' thl env rule = case rule of
             Nothing -> []
           bodyTrees = concatMap parseBodyHC clauses
           bodyLins = gfLin env <$> bodyTrees
-      when (verbose env) $ do
+      when (verbose env) do
         putStrLn "nlg': hornlike"
         putStrLn $ unlines $ ["   head: " <> showExpr [] t | t <- headTrees]
         putStrLn $ unlines $ ["   body: " <> showExpr [] t | t <- bodyTrees]

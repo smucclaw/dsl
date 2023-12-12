@@ -226,7 +226,7 @@ builtinTemplates =
     dateNlaList =
       [ [di|*a date* is *a n* #{timeUnit}#{s} #{comparison} *a date*|]
         | timeUnit :: Doc ann <- ["day", "week", "month", "year"],
-          s ::Doc ann <- ["", "s"],
+          s :: Doc ann <- ["", "s"],
           comparison :: Doc ann <- ["before", "after", "within"]
       ]
 

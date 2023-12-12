@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.BasicTypesSpec (spec) where
@@ -27,6 +28,6 @@ prop_rendertoken mytok =
 
 spec :: Spec
 spec = do
-    describe "renderToken" $ do
-      it "is the inverse of toToken" $ do
+    describe "renderToken" do
+      it "is the inverse of toToken" do
         property prop_rendertoken

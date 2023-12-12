@@ -1,11 +1,13 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module CompoundSpec(spec) where
 
 import Test.Hspec
 import AnyAll.Types
 import AnyAll.Relevance
 import AnyAll.BoolStruct
-import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict qualified as Map
 import Data.Tree
 import Data.Maybe (fromJust)
 import Data.Text as T
@@ -22,8 +24,8 @@ spec :: Spec
 spec = do
   let markup m = Marking (Default <$> m)
       rlv item marking = relevant Hard (markup marking) Nothing item
-  describe "with mustSing," $ do
-    it "should ask for confirmation of assumptions, even if true" $ do
+  describe "with mustSing," do
+    it "should ask for confirmation of assumptions, even if true" do
       rlv mustSing (Map.fromList [("walk",  Left $ Just True)
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
@@ -36,7 +38,7 @@ spec = do
           ]
         ]
 
-    it "should ask for confirmation of assumptions, even if false" $ do
+    it "should ask for confirmation of assumptions, even if false" do
       rlv mustSing (Map.fromList [("walk",  Left $ Just False)
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
@@ -49,7 +51,7 @@ spec = do
           ]
         ]
 
-    it "should ask for confirmation of assumptions, when Nothing" $ do
+    it "should ask for confirmation of assumptions, when Nothing" do
       rlv mustSing (Map.fromList [("walk",  Left   Nothing)
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
@@ -60,31 +62,31 @@ spec = do
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
-    it "when Hard, should consider a Walk=R False to be dispositive" $ do
+    it "when Hard, should consider a Walk=R False to be dispositive" do
       flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just False)
                                                               ,("eat",   Left $ Just True)
                                                               ,("drink", Left $ Just True)])
         `shouldBe` [mkLeaf "walk"]
 
-    it "when Soft, should consider a Walk=L False to be dispositive" $ do
+    it "when Soft, should consider a Walk=L False to be dispositive" do
       flip (dispositive Soft) mustSing (markup $ Map.fromList [("walk",  Left $ Just False)
                                                               ,("eat",   Left $ Just True)
                                                               ,("drink", Left $ Just True)])
         `shouldBe` [mkLeaf "walk"]
 
-    it "when Soft, should consider a Walk=L True, drink=L True to be dispositive" $ do
+    it "when Soft, should consider a Walk=L True, drink=L True to be dispositive" do
       flip (dispositive Soft) mustSing (markup $ Map.fromList [("walk",  Left $ Just True)
                                                               ,("eat",   Left $ Nothing)
                                                               ,("drink", Left $ Just True)])
         `shouldBe` [mkLeaf "walk", mkLeaf "drink"]
 
-    it "should consider a Walk=R True, Eat=R True to be dispositive" $ do
+    it "should consider a Walk=R True, Eat=R True to be dispositive" do
       flip (dispositive Hard) mustSing (markup $ Map.fromList [("walk",  Right $ Just True)
                                                               ,("eat",   Right $ Just True)
                                                               ,("drink", Left $ Just True)])
         `shouldBe` [mkLeaf "walk", mkLeaf "eat"]
 
-    it "should short-circuit a confirmed False in an And list" $ do
+    it "should short-circuit a confirmed False in an And list" do
       rlv mustSing (Map.fromList [("walk",  Right $ Just False)
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
@@ -95,7 +97,7 @@ spec = do
           [ Node (Q Hide (Simply "eat") Nothing lt) []
           , Node (Q Hide (Simply "drink") Nothing lt) [] ] ]
 
-    it "given a confirmed True in an And list, should recurse into the eat/drink limb" $ do
+    it "given a confirmed True in an And list, should recurse into the eat/drink limb" do
       rlv mustSing (Map.fromList [("walk",  Right $ Just True)
                                  ,("eat",   Left $ Just True)
                                  ,("drink", Left $ Just True)])
@@ -106,7 +108,7 @@ spec = do
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
-    it "should stop given a confirmed Eat  =True in an Or list" $ do
+    it "should stop given a confirmed Eat  =True in an Or list" do
       rlv mustSing (Map.fromList [("walk",  Right $ Just True)
                                  ,("eat",   Right $ Just True)
                                  ,("drink", Left $ Just True)])
@@ -117,7 +119,7 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rt) []
           , Node (Q Hide (Simply "drink") Nothing lt) [] ] ]
 
-    it "should stop given a confirmed Drink=True in an Or list" $ do
+    it "should stop given a confirmed Drink=True in an Or list" do
       rlv mustSing (Map.fromList [("walk",  Right $ Just True)
                                  ,("eat",   Left  $ Just True)
                                  ,("drink", Right $ Just True)])
@@ -128,7 +130,7 @@ spec = do
           [ Node (Q Hide (Simply "eat") Nothing lt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-    it "should demand walk even when Drink=True" $ do
+    it "should demand walk even when Drink=True" do
       rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                  ,("eat",   Left  $ Just True)
                                  ,("drink", Right $ Just True)])
@@ -139,8 +141,8 @@ spec = do
           [ Node (Q Hide (Simply "eat") Nothing lt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-  describe "with mustDance," $ do
-    it "should ask for everything when nothing is known" $ do
+  describe "with mustDance," do
+    it "should ask for everything when nothing is known" do
       rlv mustDance (Map.fromList [("walk",  Left Nothing)
                                   ,("run",   Left Nothing)
                                   ,("eat",   Left Nothing)
@@ -155,7 +157,7 @@ spec = do
           [ Node (Q Ask (Simply "eat") Nothing ln) []
           , Node (Q Ask (Simply "drink") Nothing ln) [] ] ]
 
-    it "should ask for everything when everything is assumed true" $ do
+    it "should ask for everything when everything is assumed true" do
       rlv mustDance (Map.fromList [("walk",  Left (Just True))
                                   ,("run",   Left (Just True))
                                   ,("eat",   Left (Just True))
@@ -170,7 +172,7 @@ spec = do
           [ Node (Q Ask (Simply "eat") Nothing lt) []
           , Node (Q Ask (Simply "drink") Nothing lt) [] ] ]
 
-    it "should ask for everything when everything is assumed false" $ do
+    it "should ask for everything when everything is assumed false" do
       rlv mustDance (Map.fromList [("walk",  Left (Just False))
                                   ,("run",   Left (Just False))
                                   ,("eat",   Left (Just False))
@@ -185,7 +187,7 @@ spec = do
           [ Node (Q Ask (Simply "eat") Nothing lf) []
           , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
-    it "should handle a Walk=False by stopping" $ do
+    it "should handle a Walk=False by stopping" do
       rlv mustDance (Map.fromList [("walk",  Right (Just False))
                                   ,("run",   Left (Just False))
                                   ,("eat",   Left (Just False))
@@ -200,7 +202,7 @@ spec = do
           [ Node (Q Hide (Simply "eat") Nothing lf) []
           , Node (Q Hide (Simply "drink") Nothing lf) [] ] ]
 
-    it "should handle a Run=False by stopping (in future this will depend on displaypref" $ do
+    it "should handle a Run=False by stopping (in future this will depend on displaypref" do
       rlv mustDance (Map.fromList [("walk",  Left (Just False))
                                   ,("run",   Right (Just False))
                                   ,("eat",   Right (Just True))
@@ -215,7 +217,7 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-    it "should handle a Walk=True by remaining curious about the run and the food" $ do
+    it "should handle a Walk=True by remaining curious about the run and the food" do
       rlv mustDance (Map.fromList [("walk",  Right (Just True))
                                   ,("run",   Left (Just False))
                                   ,("eat",   Left (Just False))
@@ -230,7 +232,7 @@ spec = do
           [ Node (Q Ask (Simply "eat") Nothing lf) []
           , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
-    it "should handle a Walk=True,Eat=False by remaining curious about the run and the drink" $ do
+    it "should handle a Walk=True,Eat=False by remaining curious about the run and the drink" do
       rlv mustDance (Map.fromList [("walk",  Right (Just True))
                                   ,("run",   Left (Just False))
                                   ,("eat",   Right (Just False))
@@ -245,7 +247,7 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rf) []
           , Node (Q Ask (Simply "drink") Nothing lf) [] ] ]
 
-    it "should demand walk even when Run=True, Drink=True" $ do
+    it "should demand walk even when Run=True, Drink=True" do
       rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
                                   ,("run",   Right $ Just True)
                                   ,("eat",   Left  $ Just True)
@@ -260,7 +262,7 @@ spec = do
           [ Node (Q Hide (Simply "eat") Nothing lt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-    it "should demand walk even when Run=True, Eat=True" $ do
+    it "should demand walk even when Run=True, Eat=True" do
       rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
                                   ,("run",   Right $ Just True)
                                   ,("eat",   Right $ Just True)
@@ -275,7 +277,7 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rt) []
           , Node (Q Hide (Simply "drink") Nothing lt) [] ] ]
 
-    it "should demand walk even when Run=True, Eat=True, Drink=True" $ do
+    it "should demand walk even when Run=True, Eat=True, Drink=True" do
       rlv mustDance (Map.fromList [("walk",  Left  $ Just True)
                                   ,("run",   Right $ Just True)
                                   ,("eat",   Right $ Just True)
@@ -290,7 +292,7 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-    it "should show all when all true" $ do
+    it "should show all when all true" do
       rlv mustDance (Map.fromList [("walk",  Right $ Just True)
                                   ,("run",   Right $ Just True)
                                   ,("eat",   Right $ Just True)
@@ -305,12 +307,12 @@ spec = do
           [ Node (Q View (Simply "eat") Nothing rt) []
           , Node (Q View (Simply "drink") Nothing rt) [] ] ]
 
-  describe "JSON conversion" $ do
-    it "should encode Default left just true" $ do
+  describe "JSON conversion" do
+    it "should encode Default left just true" do
       asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"Left\":true}"
-    it "should encode Default left just false" $ do
+    it "should encode Default left just false" do
       asJSONDefault (Default (Left (Just False))) `shouldBe` "{\"Left\":false}"
-    it "should encode Default left nothing" $ do
+    it "should encode Default left nothing" do
       asJSONDefault (Default (Left (Nothing :: Maybe Bool))) `shouldBe` "{\"Left\":null}"
     it "should encode Q mustSing" $ do
       asJSON (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
@@ -323,12 +325,12 @@ spec = do
       `shouldBe` (Just (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                                    ,("eat",   Left  $ Just True)
                                                    ,("drink", Right $ Just True)])))
-    it "should encode Q mustNot" $ do
+    it "should encode Q mustNot" do
       asJSON (rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
                                         ,("eat",   Left  $ Just True)]))
         `shouldBe` "[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"And\"},\"prePost\":{\"contents\":\"both\",\"tag\":\"Pre\"},\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"walk\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]],[{\"shouldView\":\"View\",\"andOr\":{\"tag\":\"Neg\"},\"prePost\":null,\"mark\":{\"Left\":null}},[[{\"shouldView\":\"Ask\",\"andOr\":{\"contents\":\"eat\",\"tag\":\"Simply\"},\"prePost\":null,\"mark\":{\"Left\":true}},[]]]]]]"
 
-    it "should roundtrip Q mustNot" $ do
+    it "should roundtrip Q mustNot" do
       let qNot = rlv mustNot (Map.fromList [("walk",  Left  $ Just True)
                                            ,("eat",   Left  $ Just True)])
       fromJust (fromJSON (asJSON qNot)) `shouldBe` qNot

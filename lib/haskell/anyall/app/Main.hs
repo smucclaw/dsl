@@ -1,23 +1,23 @@
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
 import AnyAll
-import qualified Data.HashMap.Strict        as Map
-import qualified Data.Text         as T
-import qualified Data.ByteString.Lazy as B
+import Control.Monad (forM_, guard, when)
+import Data.Aeson
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.Types (parseMaybe)
+import Data.ByteString.Lazy qualified as B
 import Data.ByteString.Lazy.UTF8 (toString)
-import           Control.Monad (forM_, when, guard)
+import Data.Either (fromLeft, fromRight, isLeft, isRight)
+import Data.HashMap.Strict qualified as Map
+import Data.Maybe
+import Data.Text qualified as T
+import Options.Generic
 import System.Environment
 import System.Exit
-import Data.Maybe
-import Data.Either (isLeft, fromLeft, isRight, fromRight)
-
-import Data.Aeson
-import Data.Aeson.Encode.Pretty ( encodePretty )
-import Data.Aeson.Types (parseMaybe)
-import Options.Generic
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
@@ -41,7 +41,7 @@ main = do
 
   mycontents <- B.getContents
   let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
-  when (isLeft myinput) $ do
+  when (isLeft myinput) do
     putStrLn $ "JSON decoding error: " ++ show (fromLeft "see smucclaw/dsl/lib/haskell/anyall/app/Main.hs source" myinput)
     exitFailure
   when (only opts == "native") $ print myinput

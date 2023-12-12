@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -646,7 +647,7 @@ prettyDecls previously rs =
 
 prettyFacts :: ScopeTabs -> Doc ann
 prettyFacts sctabs =
-  vsep $ do
+  vsep do
     (scopename, symtab') <- Map.toList sctabs
     -- (_mt, (_symtype, _vals)) <- Map.toList symtab'
     -- global symtab as facts
@@ -658,7 +659,7 @@ prettyFacts sctabs =
 -- | enums are exhaustive and disjoint
 prettyBoilerplate :: ClsTab -> Doc ann
 prettyBoilerplate ct@(CT ch) =
-  vsep $ do
+  vsep do
     className <- getCTkeys ct
     className
       |> (`Map.lookup` ch)

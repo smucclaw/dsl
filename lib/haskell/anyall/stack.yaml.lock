@@ -15,6 +15,13 @@ packages:
   original:
     commit: 65aec52d6d2000d1ec3efbc9f04dfe4321b31cc1
     git: https://github.com/smucclaw/optparse-generic.git
+- completed:
+    hackage: prettyprinter-interp-0.2.0.0@sha256:69c339a95b265dab9b3478ca19ec96952b6b472bd0ff6e2127112a9562362c1d,2086
+    pantry-tree:
+      sha256: 72ec39fe4a40e437e7c0d3efba1f97c4e4e860a7b5503f31d185cef389c9c6e1
+      size: 300
+  original:
+    hackage: prettyprinter-interp-0.2.0.0
 snapshots:
 - completed:
     sha256: abcc4a65c15c7c2313f1a87f01bfd4d910516e1930b99653eef1d2d006515916

@@ -30,8 +30,8 @@ dependencies:
 - parser-combinators
 - boxes
 - prettyprinter
-- neat-interpolation
 - text
+- prettyprinter-interp
 - fgl
 - graphviz
 

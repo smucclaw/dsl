@@ -42,10 +42,10 @@ library
     , graphviz
     , megaparsec
     , mtl
-    , neat-interpolation
     , parsec
     , parser-combinators
     , prettyprinter
+    , prettyprinter-interp
     , text
     , transformers
     , unordered-containers
@@ -67,10 +67,10 @@ executable explainable-exe
     , graphviz
     , megaparsec
     , mtl
-    , neat-interpolation
     , parsec
     , parser-combinators
     , prettyprinter
+    , prettyprinter-interp
     , text
     , transformers
     , unordered-containers
@@ -95,10 +95,10 @@ test-suite explainable-test
     , hspec
     , megaparsec
     , mtl
-    , neat-interpolation
     , parsec
     , parser-combinators
     , prettyprinter
+    , prettyprinter-interp
     , text
     , transformers
     , unordered-containers

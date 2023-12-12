@@ -294,7 +294,7 @@ reorder _rules og = runGM og do
         , if2   <- suc og you1   , maybe False (hasDeet IsCond) (lab og if2)
         , then3 <- suc og if2    , maybe False (hasDeet IsThen) (lab og then3)
         , must4 <- suc og then3  , maybe False (hasDeet IsDeon) (lab og must4)
-        ] $ \(x0, you1, if2, then3, must4) -> do
+        ] \(x0, you1, if2, then3, must4) -> do
     delEdge' (x0, you1)
     delEdge' (    you1, if2)
     delEdge' (               then3, must4)
@@ -314,17 +314,16 @@ mergePetri' rules og splitNode = runGM og do
         | let twins = suc og splitNode
         , length (nub $ fmap ntext <$> (lab og <$> twins)) == 1
         , length twins > 1
-        ] $ \twins -> do
+        ] \twins -> do
     let grandchildren = concatMap (suc og) twins
         survivor : excess = twins
         parents = pre og splitNode
-    for_ twins         (\n -> delEdge' (splitNode,n))
-    for_ twins         (\n -> for_ grandchildren (\gc -> delEdge' (n,gc)))
-    for_ grandchildren (\gc -> newEdge' (splitNode,gc,[Comment "due to mergePetri"]))
-    for_ parents       (\n  -> do
+    for_ twins         \n -> delEdge' (splitNode,n)
+    for_ twins         \n -> for_ grandchildren (\gc -> delEdge' (n,gc))
+    for_ grandchildren \gc -> newEdge' (splitNode,gc,[Comment "due to mergePetri"])
+    for_ parents       \n  -> do
                             newEdge' (n, survivor, [Comment "due to mergePetri"])
                             delEdge' (n, splitNode)
-                        )
     for_ excess        delNode'
     newEdge' (survivor, splitNode, [Comment "due to mergePetri"])
 

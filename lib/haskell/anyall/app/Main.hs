@@ -12,6 +12,7 @@ import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy qualified as B
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Either (fromLeft, fromRight, isLeft, isRight)
+import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe
 import Data.Text qualified as T
@@ -76,7 +77,7 @@ maindemo = do
                   [ Leaf "eat"
                   , Leaf "drink" ]
                 ]
-  forM_
+  for_
     [ Map.empty
     , Map.fromList [("walk" :: T.Text,  Left  $ Just True )
                    ,("run",   Left  $ Just True )

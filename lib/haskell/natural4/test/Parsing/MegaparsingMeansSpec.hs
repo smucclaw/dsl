@@ -1,4 +1,6 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Parsing.MegaparsingMeansSpec where
 
 -- import qualified Test.Hspec.Megaparsec as THM
@@ -14,7 +16,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/megaparsing-means/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -29,7 +31,7 @@ spec = do
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "megaparsing MEANS" $ do
+    describe "megaparsing MEANS" do
 
       let bobUncle1 = defaultHorn
             { name = [MTT "Bob's your uncle"]

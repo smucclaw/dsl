@@ -1,4 +1,6 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Parsing.MegaparsingUnlessSpec where
 
 import Text.Megaparsec
@@ -13,7 +15,7 @@ import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/megaparsing-unless/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -29,7 +31,7 @@ spec = do
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "megaparsing UNLESS semantics" $ do
+    describe "megaparsing UNLESS semantics" do
 
       let dayOfSilence = [ defaultReg { cond = Just ( Not ( mkLeafR "day of silence" ) ) } ]
 
@@ -110,7 +112,7 @@ spec = do
       filetest "ifnot-5-indentation-explicit" "should handle NOT AND indented the other way"
         (parseR pRules) dayOfSong
 
-      it "pilcrows-1" $ do
+      it "pilcrows-1" do
         testcsv <- BS.readFile ("test/Parsing/megaparsing-unless/" <> "pilcrows-1" <> ".csv")
         parseR pRules "pilcrows-1" `traverse` exampleStreams testcsv
           `shouldParse` [ dayOfSilence, srcrow2 <$> dayOfSong ]

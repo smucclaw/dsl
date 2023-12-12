@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {-|
@@ -74,7 +75,7 @@ tokenViewColumnSize :: Int
 tokenViewColumnSize = 15
 
 myTraceM :: String -> Parser ()
-myTraceM x = whenDebug $ do
+myTraceM x = whenDebug do
   nestDepth <- asks nestLevel
   lookingAt <- lookAhead getWithPos <|> ("EOF" <$ eof)
   traceM $ leftPad lookingAt tokenViewColumnSize <> indentShow nestDepth <> x
@@ -119,7 +120,7 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 
 
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
-pSrcRef = debugName "pSrcRef" $ do
+pSrcRef = debugName "pSrcRef" do
   rlabel' <- optional pRuleLabel
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
@@ -172,7 +173,7 @@ someUndeepersOrEOL p = do
 
 -- calls upToNUndeepers and continues. Usage: ... |<<| () ...
 (|<<|) :: SLParser a -> () -> SLParser a
-p1 |<<| _ = mkSL $ do
+p1 |<<| _ = mkSL do
   (result, n) <- runSL p1
   (_, u) <- runSL $ upToNUndeepers n
   let remaining = n + u
@@ -240,7 +241,7 @@ instance IsParser SLParser where
   mapParser f = mkSL . f . runSL
 
 debugPrintP :: String -> Parser ()
-debugPrintP str = -- whenDebug $ do
+debugPrintP str = -- whenDebug do
 --  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
 --  leftX     <- lookAhead pXLocation
   myTraceM $ "> " <> str
@@ -333,26 +334,26 @@ someDeepThenMaybe p1 p2 = someIndentation $ manyDeepThenMaybe p1 p2
 -- what if you want to match something like
 -- foo foo foo foo foo (bar)
 manyDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
-manyDeepThen p1 p2 = debugName "manyDeepThen" $ do
+manyDeepThen p1 p2 = debugName "manyDeepThen" do
   p <- try (debugName "manyDeepThen/initial" p1)
   (lhs, rhs) <- donext
   return (p:lhs, rhs)
   where
     donext = debugName "manyDeepThen/going inner" (try $ someIndentation $ manyDeepThen p1 p2)
              <|> debugName "manyDeepThen/donext-rhs" base
-    base = debugName "manyDeepThen/base" $ do
+    base = debugName "manyDeepThen/base" do
       rhs <- try (manyIndentation p2)
       return ([], rhs)
 
 manyDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
-manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" $ do
+manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
   p <- try (debugName "manyDeepThenMaybe/initial" p1)
   (lhs, rhs) <- donext
   return (p:lhs, rhs)
   where
     donext = debugName "going inner" (try $ someIndentation $ manyDeepThenMaybe p1 p2)
              <|> debugName "going rhs" base
-    base = debugName "manyDeepThenMaybe/base" $ do
+    base = debugName "manyDeepThenMaybe/base" do
       rhs <- optional $ try (manyIndentation p2)
       return ([], rhs)
 
@@ -510,7 +511,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 
 --
 (|?|)  :: Show a => SLParser a ->          SLParser (Maybe a) -- optional for an SLParser
-(|?|) p = debugNameSL "|?| optional something" $ do
+(|?|) p = debugNameSL "|?| optional something" do
   try (do
           out <- (|>>) p
           return (Just out))
@@ -569,12 +570,12 @@ manySLPlain x = manyLiftSL x |<$ undeepers     -- many pOtherVal and then undeep
 
 -- | sl version of `some`, which consumes some deepers between each step
 someSL p = debugNameSL "someSL" $ (:) <$> p <*> many (try $ some slDeeper *> p)
--- someSL p = debugNameSL "|:| some" $ do
+-- someSL p = debugNameSL "|:| some" do
 --   p1 <- debugNameSL "|:| base parser" p
 --   ps <- try deeper <|> nomore
 --   return (p1:ps)
 --   where
---     deeper = debugName "|:| deeper" $ do
+--     deeper = debugName "|:| deeper" do
 --       _ <- debugName "|:| some GoDeeper" $ some slDeeper
 --       someSL p
 --     nomore = debugName "|:| noMore" $ return []
@@ -582,7 +583,7 @@ someSL p = debugNameSL "someSL" $ (:) <$> p <*> many (try $ some slDeeper *> p)
 
 -- manySL :: Show a => SLParser a -> SLParser [a]
 -- | sl version of `many`, which consumes some deepers between each step
-manySL p = debugNameSL "|.| manyLike" $ do
+manySL p = debugNameSL "|.| manyLike" do
   try (someSL p) <|> pure []
 
 f $>| p2 = do
@@ -709,7 +710,7 @@ p1 |<$ p2 = do
   return result
 infixl 4 |<$
 
-p1 |-- p2 = mkSL $ do
+p1 |-- p2 = mkSL do
   (result, n) <- runSL p1
   p2 n
   return (result, n)
@@ -725,7 +726,7 @@ l ->| n = do
 infixl 4 ->|
 
 howDeep :: SLParser Int
-howDeep = mkSL $ do
+howDeep = mkSL do
   (_, n) <- runSL $ pure ()
   return (n,n)
 
@@ -736,7 +737,7 @@ finishSL p = p |<$ undeepers
 -- | Like `someUndeepers`, but only consumes up to n UnDeepers
 upToNUndeepers :: Int -> SLParser ()
 upToNUndeepers 0 = debugName "upToNUndeepers(0)/done" $ return ()
-upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") $ do
+upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") do
   (slUnDeeper *> upToNUndeepers (n-1)) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
 
 
@@ -745,23 +746,23 @@ upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") $ do
 
 undeepers :: Int -> Parser ()
 undeepers n | n < 0 =  debugName "undeepers" $ fail "undeepers: negative number of undeepers"
-undeepers n = debugName "undeepers" $ do
+undeepers n = debugName "undeepers" do
   debugPrint $ "sameLine/undeepers: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
   _ <- count n (pToken UnDeeper)
   debugPrint "sameLine: success!"
 
 godeeper :: Int -> SLParser ()
-godeeper n = mkSL $ debugName ("godeeper " ++ show n) $ do
+godeeper n = mkSL $ debugName ("godeeper " ++ show n) do
   _ <- count n (pToken GoDeeper)
   debugPrint "matched!"
   return ((),n)
 
 manyUndeepers :: SLParser ()
-manyUndeepers = debugNameSL "manyUndeepers" $ do
+manyUndeepers = debugNameSL "manyUndeepers" do
   (slUnDeeper >> manyUndeepers) <|> return ()
 
 someUndeepers :: SLParser ()
-someUndeepers = debugNameSL "someUndeepers" $ do
+someUndeepers = debugNameSL "someUndeepers" do
   slUnDeeper >> manyUndeepers
 
 -- | consume any GoDeepers, then parse -- plain
@@ -772,11 +773,11 @@ infixl 4 $>>
 (|>>) p = do
   try recurse <|> base
   where
-    base = debugName "|>>/base" $ do
+    base = debugName "|>>/base" do
       out <- p
       debugPrint $ "|>>/base got " ++ show out
       return out
-    recurse = debugName "|>>/recurse" $ do
+    recurse = debugName "|>>/recurse" do
       slDeeper >> (|>>) p
 infixl 4 |>>
 
@@ -885,18 +886,18 @@ infixl 4 `indented1`
 -- an indent3 isn't as easy as just stacking on another      `indentChain` pThree
 -- you have to do it this way instead.
 indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
-indent3 f p1 p2 p3 = debugName "indent3" $ do
+indent3 f p1 p2 p3 = debugName "indent3" do
   p1' <- p1
   someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
 
 -- [TODO] deprecate these in favour of slparser or something even better. this is janky.
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
-optIndentedTuple p1 p2 = debugName "optIndentedTuple" $ do
+optIndentedTuple p1 p2 = debugName "optIndentedTuple" do
   (,) <$> p1 `optIndented` p2
 
 optIndented :: (Show a, Show b) => Parser (Maybe a -> b) -> Parser a -> Parser b
 infixl 4 `optIndented`
-optIndented p1 p2 = debugName "optIndented" $ do
+optIndented p1 p2 = debugName "optIndented" do
   f <- p1
   y <- optional (someIndentation p2)
   return $ f y

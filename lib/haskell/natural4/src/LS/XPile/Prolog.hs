@@ -33,7 +33,7 @@ module LS.XPile.Prolog where
 
 import AnyAll (BoolStruct (All, Any, Leaf, Not), Dot (xPos))
 import Data.List.NonEmpty as NE (NonEmpty (..), toList)
-import Data.Map qualified as Map
+import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
 import Prettyprinter
 import Prettyprinter.Render.Text (putDoc)
@@ -121,7 +121,7 @@ prologExamples =
   [ Clause (Struct "foo" [var "Bar", var "Baz"]) [Struct "quux" [var "Bar"], var "Bonk"]
   ]
 
-type Analysis = Map.Map Text.Text Text.Text
+type Analysis = Map.HashMap Text.Text Text.Text
 
 rulesToProlog :: [SFL4.Rule] -> String
 rulesToProlog rs = show (vsep (map (showLP Prolog) (sfl4ToLogProg rs)))

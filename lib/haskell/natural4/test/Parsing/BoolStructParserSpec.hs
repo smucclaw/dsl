@@ -1,5 +1,7 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
+
 module Parsing.BoolStructParserSpec where
 
 import Text.Megaparsec
@@ -132,7 +134,7 @@ scenario4 = Scenario
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/boolstruct/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -142,21 +144,21 @@ pullIO = traverse sequence
 
 filetestIO :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) (IO b)) -> b -> SpecWith ()
 filetestIO testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/boolstruct/" <> testfile <> ".csv")
   parseResult <- pullIO $ parseFunc testfile `traverse` exampleStreams testcsv
   parseResult `shouldParse` [ expected ]
 
 texttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 texttest testText desc parseFunc expected =
-  it desc $ do
+  it desc do
   let testcsv = TLE.encodeUtf8 (TL.fromStrict testText)
   parseFunc (show testText) `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
 xtexttest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => T.Text -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 xtexttest testText desc parseFunc expected =
-  xit desc $ do
+  xit desc do
     let testcsv = TLE.encodeUtf8 (TL.fromStrict testText)
     parseFunc (show testText) `traverse` exampleStreams testcsv
       `shouldParse` [ expected ]
@@ -174,7 +176,7 @@ spec = do
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "Parsing boolstruct" $ do
+    describe "Parsing boolstruct" do
       filetest "boolstructp-1" "basic boolstruct of text"
         (parseOther pBoolStruct )
         ( All Nothing [Any Nothing [mkLeaf "thing1"
@@ -293,7 +295,7 @@ spec = do
         , []
         )
 
-    describe "nestedHorn" $ do
+    describe "nestedHorn" do
       filetest "declare-nestedhorn-1" "nestedHorn inside a HAS"
         (parseR pToplevel)
           [ defaultTypeDecl
@@ -309,7 +311,7 @@ spec = do
           ]
 
 
-    describe "variable substitution and rule expansion" $ do
+    describe "variable substitution and rule expansion" do
       let parseSM s m = do
             rs <- parseR pToplevel s m
             return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) 1 (head rs)

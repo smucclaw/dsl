@@ -98,7 +98,7 @@ spec = do
       it [i|rodentsInterp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
     Right env -> do
       describe "test rodents" do
-        it "Should return questions about rodent damage" $ do
+        it "Should return questions about rodent damage" do
             let questions = linBStext env $ mkConstraintText env GqPREPOST GqCONSTR rodentsBSR
             questions `shouldBe` All Nothing [Any (Just (Pre "Is the Loss or Damage caused by")) [Leaf "rodents?",Leaf "insects?",Leaf "vermin?",Leaf "birds?"],Not (Any Nothing [All Nothing [Leaf "is Loss or Damage to contents?",Leaf "is Loss or Damage caused by birds?"],All Nothing [Leaf "is Loss or Damage ensuing loss?",Leaf "is Loss or Damage covered?",Not (Any Nothing [Leaf "does any other exclusion apply?",Any (Just (Pre "did an animal cause water to escape from")) [Leaf "a household appliance?",Leaf "a swimming pool?",Leaf "a plumbing, heating, or air conditioning system?"]])]])]
 

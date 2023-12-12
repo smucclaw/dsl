@@ -206,7 +206,7 @@ withPrePost basep = debugName "withPrePost" do
     relabelpp :: MyBoolStruct a -> MultiTerm -> MultiTerm -> MyBoolStruct a
     relabelpp bs pre post = MyLabel pre (Just post) bs
 
-withPreOnly basep = do -- debugName "withPreOnly" $ do
+withPreOnly basep = do -- debugName "withPreOnly" do
   (pre, body) <- (,)
    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
     -- and to the left of the first, topmost term in the boolstruct

@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -384,7 +385,7 @@ qaHornsByLang rules langEnv = do
   -- first we see which of these actually returned anything useful
   mutterd d "all rulequestionsNamed returned"
 
-  measuredRQs <- for allRQs $ \(rn, asqn) -> do
+  measuredRQs <- for allRQs \(rn, asqn) -> do
     mutterdhsf (d+1) (show rn) pShowNoColorS asqn
     mutterd (d+1) [i|size of [BoolStruct] = #{length asqn}|]
     case compare (length asqn) 1 of
@@ -396,7 +397,7 @@ qaHornsByLang rules langEnv = do
   mutterdhsf d "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
 
   -- now we filter for only those bits of questStruct whose names match the names from qaHorns.
-  wantedRQs <- for (rights measuredRQs) $ \case
+  wantedRQs <- for (rights measuredRQs) \case
     (rn@((`elem` qaHornNames) -> True), asqn) -> xpReturn (rn, asqn)
     (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
 

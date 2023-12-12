@@ -146,7 +146,7 @@ main = do
           -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
           -- natural4-exe --workdir workdir --only md inputfile.csv
           -- will produce only the workdir output file
-            when (toworkdir && not (null $ SFL4.uuiddir opts) && not (null $ SFL4.only opts)) $ do
+            when (toworkdir && not (null $ SFL4.uuiddir opts) && not (null $ SFL4.only opts)) do
               when (SFL4.only opts `elem` ["md", "tomd"]) $ mywritefile True tomarkdownFN iso8601 "md" =<< asMD
 
           when (SFL4.topurs    opts) do
@@ -242,7 +242,7 @@ main = do
 
   -- if --workdir is specified, and there are no --only, then we run all the things
   -- however, we can flag specific exclusions by adding the --tomd option which, counterintuitively, disables tomd
-  when (toworkdir && not (null $ SFL4.uuiddir opts) && null (SFL4.only opts)) $ do
+  when (toworkdir && not (null $ SFL4.uuiddir opts) && null (SFL4.only opts)) do
 
     when (SFL4.tonative  opts) $ mywritefile2 True toDFGFN     iso8601 "dot"  asDFG asDFGerr
     when (SFL4.tologicalenglish      opts) $ mywritefile True toLEFN      iso8601 "le"  asLE

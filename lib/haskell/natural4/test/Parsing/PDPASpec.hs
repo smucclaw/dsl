@@ -1,5 +1,7 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
+
 module Parsing.PDPASpec where
 
 import Text.Megaparsec
@@ -17,7 +19,7 @@ import qualified Data.Text as T
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) $ do
+  it (testfile ++ ": " ++ desc ) do
   testcsv <- BS.readFile ("test/Parsing/pdpa/" <> testfile <> ".csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -39,7 +41,7 @@ spec = do
     let  parseOther   x y s = runMyParser id      runConfig x y s
     let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
-    describe "PDPA" $ do
+    describe "PDPA" do
       filetest "pdpadbno-1"   "must assess" (parseR pToplevel) expected_pdpadbno1
 
       filetest "pdpadbno-2" "data intermediaries"

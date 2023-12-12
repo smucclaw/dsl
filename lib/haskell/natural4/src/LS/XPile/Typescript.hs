@@ -248,7 +248,7 @@ tsRuleEngine l4i = do
 
   let globalRuleheads  = [ (n,r)
                          | (n,r) <- labNodes (ruleGraph l4i)
-                         , not (r `elem` eRout)
+                         , r `notElem` eRout
                          , not (isFact r)
                          ]
 
@@ -346,7 +346,7 @@ tsClasses l4i = do
           <+> lbrace
       --    <//> "  //" <+> viaShow csuper
           <//> "  // using prettySimpleType (old code path)"
-          <//> indent 2 ( vsep [ snakeAttr <> (pretty $ T.replicate padSpaces " ") <>
+          <//> indent 2 ( vsep [ snakeAttr <> pretty (T.replicate padSpaces " ") <>
                                  case attrType children attrname of
                                    Just t@(SimpleType TOptional _) -> " () : null | " <+> prettySimpleType "ts" (snake_inner . MTT) t <+> braces (methodFor l4i className (Just t))
                                    Just t@(SimpleType TOne      sc)
@@ -419,7 +419,7 @@ tsEnums l4i = return $
   where
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =
       let className = ruleLabelName r
-      in 
+      in
         "enum" <+> snake_case className <> "Enum" <+> lbrace
         <//> indent 2 ( vsep [ snake_case [enumStr] <> comma
                              | (enumMultiTerm, _) <- NE.toList enumNEList
@@ -436,7 +436,7 @@ tsEnums l4i = return $
                              ] )
         <//> rbrace
 
-  
+
 
 
 -- | all the instance symbols we know about, including those that show up in GIVEN, DEFINE, and DECIDE.
@@ -450,6 +450,15 @@ jsInstances l4i = return $
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
           "// symtab' = " <+> commentWith "// " [DTL.toStrict (pShowNoColor symtab')] <//>
           -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
+          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
+          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
+          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
+
+          -- [TODO] there is a mysterious dup here for alice in micromvp3
+
+          -- [TODO] there is a mysterious dup here for alice in micromvp3
+
+          -- [TODO] there is a mysterious dup here for alice in micromvp3
 
           -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
@@ -467,7 +476,7 @@ jsInstances l4i = return $
                               HC { hHead = RPParamText {} } ->
                                 let constContents = asValuePT l4i vals ++ methods l4i mt
                                 in [ encloseSep (lbrace <> line) (line <> rbrace) (comma <> space) constContents ]
-                              _ -> 
+                              _ ->
                                 ["// hc2ts" <> line, hc2ts l4i val]
                  ]
         | (scopename , symtab') <- Map.toList sctabs
@@ -608,7 +617,7 @@ dumpNestedClass l4i (DT.Node pt children)
 hc2ts :: Interpreted -> HornClause2 -> Doc ann
 hc2ts _l4i  hc2@HC { hHead = RPMT        _ }                 = "value" <+> colon <+> dquotes (pretty (hHead hc2))
 hc2ts _l4i _hc2@HC { hHead = RPConstraint  mt1 _rprel mt2 }  = snake_case mt1 <+> colon <+> dquotes (snake_case mt2) <+> "// hc2ts RPConstraint"
-hc2ts _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)" 
+hc2ts _l4i _hc2@HC { hHead = RPBoolStructR mt1 _rprel _bsr } = snake_case mt1 <+> colon <+> "(some => lambda)"
 hc2ts  l4i _hc2@HC { hHead = RPParamText pt }                = pretty (PT4 pt l4i) <+> "// hc2ts RPParamText"
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel [] }         = error "TypeScript: headless RPnary encountered"
 hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hHead = head rps} <+> "// hc2ts RPnary"
@@ -619,7 +628,7 @@ toPlainTS l4i = do
   return $ vvsep [ "//" <+> viaShow valpred
                  | valpred <- valuePreds l4i
                  ]
-  
+
 toJsonLogic :: Interpreted -> XPileLog (Doc ann)
 toJsonLogic l4i = do
   mutterd 1 "toJsonLogic"
@@ -627,7 +636,7 @@ toJsonLogic l4i = do
   varData <- case decode "{ \"foo\" : \"bar\" }" of
                Ok jsVarData -> return jsVarData
                Error err    -> mutterd 2 "error while decoding" >> mutter err
-  
+
   return $ "const varData" <+> equals <+> pretty (encode varData)
 
 -- dump only the paramtexts
@@ -636,4 +645,4 @@ asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $
   [ "// hc2s: " <> viaShow hc2s <>
     pretty (PT4 pt l4i)
   | HC { hHead = RPParamText pt } <- hc2s ]
-                 
+

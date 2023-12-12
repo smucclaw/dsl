@@ -639,6 +639,6 @@ magicKeywords = Text.words "EVERY PARTY MUST MAY WHEN INCLUDES MEANS IS IF UNLES
 
 -- | we actually want @[Text]@ here not just `MultiTerm`
 enumLabels, enumLabels_ :: ParamText -> [Text.Text]
-enumLabels nelist = fmap mtexpr2text $ concat $ NE.toList $ NE.toList . fst <$> nelist
+enumLabels nelist = fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels

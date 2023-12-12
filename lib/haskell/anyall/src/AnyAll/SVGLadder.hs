@@ -11,19 +11,19 @@ import Data.List (foldl', sortBy)
 import Data.Function  (on)
 
 import AnyAll.Types hiding ((<>))
-
-import Data.String
-import Graphics.Svg
+import Control.Monad.RWS
+import Data.Foldable (traverse_)
 import Data.HashMap.Strict qualified as Map
+import Data.String
 import Data.Text qualified as T
+import Data.Text.Lazy (Text, toStrict)
+import Data.Text.Lazy.Builder (toLazyText)
+import Data.Text.Lazy.Builder.Int
 import Data.Tree
 import Debug.Trace
-import           Data.Text.Lazy                   (toStrict, Text)
-import           Data.Text.Lazy.Builder           (toLazyText)
-import           Data.Text.Lazy.Builder.Int
-import Text.Printf (formatInteger)
+import Graphics.Svg
 import Lens.Micro.Platform
-import Control.Monad.RWS
+import Text.Printf (formatInteger)
 
 type Length  = Integer
 type SVGElement = Element

@@ -754,8 +754,8 @@ dumpTypescript realign s f = do
       console.log("\#+END_SRC")
       return expr
     }
-  #{ppst s realign}
-  export const maxClaim = () => { return #{pp f}
+    #{ppst s realign}
+    export const maxClaim = () => { return #{pp f}
   }
   |]
 

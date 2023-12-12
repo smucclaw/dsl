@@ -737,26 +737,27 @@ dumpExplanationF depth s f = do
 
 dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
 dumpTypescript realign s f = do
-  print [di|
-      // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
+  print[di|
+    // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
 
-      import * as tsm from './mathlang';
-      export { exprReduce, asDot } from './mathlang';
+    import * as tsm from './mathlang';
+    export { exprReduce, asDot } from './mathlang';
 
-      export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
-        console.log("** " + Math.round(expr.val))
-        tsm.explTrace(expr, 3)
+    export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
+      console.log("** " + Math.round(expr.val))
+      tsm.explTrace(expr, 3)
 
-        console.log("** JSON of symTab")
-        console.log("\#+NAME symtab")
-        console.log("\#+BEGIN_SRC json")
-        console.log(JSON.stringify(tsm.symTab,null,2))
-        console.log("\#+END_SRC")
-        return expr
-      }
-      |]
-  print (ppst s realign)
-  print $ "export const maxClaim = () => { return " <> pp f <> line <> "}"
+      console.log("** JSON of symTab")
+      console.log("\#+NAME symtab")
+      console.log("\#+BEGIN_SRC json")
+      console.log(JSON.stringify(tsm.symTab,null,2))
+      console.log("\#+END_SRC")
+      return expr
+    }
+  #{ppst s realign}
+  export const maxClaim = () => { return #{pp f}
+  }
+  |]
 
 
 -- * Prettty-printing to the Typescript version of the MathLang library

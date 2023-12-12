@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -942,8 +943,8 @@ globalFacts l4i =
 attrsAsMethods :: RuleSet -> XPileLogE [ValuePredicate]
 attrsAsMethods rs = do
   outs <-
-    for [ r | r@Hornlike{keyword=Decide} <- rs ] $ \r -> do
-    for (clauses r) $ \hc -> do
+    for [ r | r@Hornlike{keyword=Decide} <- rs ] \r -> do
+    for (clauses r) \hc -> do
       gone1 <- go hc
       case gone1 of
         Left errs1 -> xpError errs1

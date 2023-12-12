@@ -581,7 +581,7 @@ combineAndS ::  [BoxedSVG] -> SVGCanvas ()
 combineAndS elems = do
   myScale <- asks aav
   put firstE
-  mapM_ rowLayouterS restE
+  traverse_ rowLayouterS restE
   (childbbox, children) <- get
   let
     leftPad = myScale ^. aavscaleMargins.leftMargin

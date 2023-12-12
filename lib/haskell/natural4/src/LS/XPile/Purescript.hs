@@ -100,7 +100,7 @@ mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
                     -> XPileLog [([RuleName], [BoolStructT])]
 mutterRuleNameAndBS rnbss = do
   mutterd 3 "rulename, bs pairs:"
-  for_ rnbss $ \(names, bs) -> do
+  for_ rnbss \(names, bs) -> do
     mutterdhsf 4 (slashNames names)
       pShowNoColorS bs
   return rnbss
@@ -320,7 +320,7 @@ translate2PS nlgEnvs eng rules = do
   -------------------------------------------------------------
   mutterd 2 "trying the new approach based on qaHornsT"
   qaHornsAllLangs :: [Either XPileLogW String] <-
-    for nlgEnvs $ \nlgEnv@(NLGEnv {gfLang}) -> do
+    for nlgEnvs \nlgEnv@(NLGEnv {gfLang}) -> do
       let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
           l4i       = interpreted nlgEnv
           listOfMarkings = l4i |> getMarkings |> AA.getMarking |> Map.toList
@@ -402,7 +402,7 @@ qaHornsByLang rules langEnv = do
     (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
 
   mutterd d "wanted RQs, rights (successes) ->"
-  for_ (rights wantedRQs) (\(rn, asqn) -> mutterdhsf (d+1) (show rn) pShowNoColorS asqn)
+  for_ (rights wantedRQs) \(rn, asqn) -> mutterdhsf (d+1) (show rn) pShowNoColorS asqn
   mutterdhsf d "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
 
   let rqMap = Map.fromList (rights wantedRQs)

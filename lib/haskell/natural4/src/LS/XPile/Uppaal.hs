@@ -8,7 +8,7 @@ import AnyAll qualified as AA
 -- import qualified Data.ByteString.Char8 as T
 
 import Data.Maybe (fromMaybe)
-import Data.Set qualified as Set
+import Data.HashSet qualified as Set
 import Data.Text (unpack)
 import Data.Text qualified as TL
 import L4.PrintProg
@@ -38,7 +38,7 @@ emptyTASys
       {annotOfSys = (), nameOfTASys = "Unknown name", declsOfSys = [],
        channelsOfSys = [], automataOfSys = []}
 
-addRule :: Set.Set ChannelName -> SFL4R.Rule -> CoreL4.TASys () -> CoreL4.TASys ()
+addRule :: Set.HashSet ChannelName -> SFL4R.Rule -> CoreL4.TASys () -> CoreL4.TASys ()
 addRule hc r@Regulative{rlabel = Just (_,_,lb)} ts | unpack lb `Set.member` hc = ts {automataOfSys = fst (ruleToTA r (Just lb)) : automataOfSys ts}
                                                    | otherwise = ts {automataOfSys = fst (ruleToTA r Nothing) : automataOfSys ts} -- TODO: Use the decls in snd
 addRule _hc _r ts = ts
@@ -88,7 +88,7 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
                                  }
 ruleToTA r _ = error $ "Unexpected rule type: " ++ show r
 
-extractDecls :: Set.Set (Var (Tp ())) -> [VarDecl ()]
+extractDecls :: Set.HashSet (Var (Tp ())) -> [VarDecl ()]
 extractDecls = map varToVarDecl . Set.toList
 
 varToVarDecl :: Var (Tp ()) -> VarDecl ()

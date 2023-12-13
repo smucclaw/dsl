@@ -16,7 +16,8 @@ import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Foldable qualified as Fold
-import Data.List (nub, partition)
+import Data.Hashable
+import Data.List (nub, partition, sort)
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i)
 import Flow ((|>))
@@ -64,7 +65,7 @@ import Prettyprinter.Interpolate (__di)
 -- This could possibly be remedied with NoType versions of these tactics
 babyL4ToLogicProgram ::
   forall (lpLang :: LPLang) ann t.
-  (Show t, Ord t, Eq t) =>
+  (Show t, Ord t, Hashable t) =>
   Program t ->
   LogicProgram lpLang t
 babyL4ToLogicProgram program = LogicProgram {..}
@@ -114,7 +115,7 @@ isHeadOfPrecondFact _ = False
 
 ruleToLPRule ::
   forall (lpLang :: LPLang) ann t.
-  (Show t, Ord t) =>
+  (Show t, Ord t, Hashable t) =>
   Rule t ->
   MonoidValidate (Doc ann) (LPRule lpLang t, [(Var t, Var t, Int)])
 ruleToLPRule rule@Rule {..} = do
@@ -144,6 +145,7 @@ ruleToLPRule rule@Rule {..} = do
         postcond : preconds                 -- [pre and post conds]
           |> foldMap fv                     -- {free variables}
           |> Fold.toList                    -- [free varaibles]
+          |> sort
           |> partition isLocalVar           -- (local vars, global vars)
           |> join bimap (varTovarDecl <$>)  -- (local var decls, global var decls)
 

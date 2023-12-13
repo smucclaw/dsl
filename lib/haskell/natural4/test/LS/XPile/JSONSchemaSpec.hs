@@ -109,6 +109,6 @@ spec = do
       show (showTypesJson fieldType) `shouldBe` "\"type\": \"array\",\"items\": {\"$ref\": \"#/$defs/NameWithoutSpaces\"}"
 
   -- TODO: this test gets stuck, why ???
-  describe "Prettyprinting: property-based testing" $ do
-    xit "Applying rulesToJsonSchema to arbitrary rules, all should be normalised" $ do
+  describe "Prettyprinting: property-based testing" do
+    xit "Applying rulesToJsonSchema to arbitrary rules, all should be normalised" do
         property prop_RuleNormalisedAsJson

@@ -20,6 +20,7 @@ import AnyAll qualified as AA
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
 
+import Control.Monad
 import Control.Monad.Combinators.Expr
 import Control.Monad.Writer.Lazy
 import Data.ByteString.Lazy (ByteString)

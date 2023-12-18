@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 0f8678e9b26e63fd50370a8894bcad4a8aa4f2ad595ae62425c1259287b2cb21
+      sha256: 665b8d665d81dc4242898c099f2107311bcd18a312a89862833876635eb454b3
       size: 12537
-    sha256: ebb63b32f91a0dff0a57d50e116e9f22ce2d7ef20d8126ed3be8310aa29b0d46
-    size: 3188887
-    url: https://github.com/smucclaw/baby-l4/archive/38fd24597f42985a140856e98d5942ff2fe922e8.tar.gz
+    sha256: 10b2cc1c21541323260ab5872e2aaf8660147126c041e9e7a6e1a478dd18c257
+    size: 3188614
+    url: https://github.com/smucclaw/baby-l4/archive/b0428c66548962e8e23214853a3087d1bb6d4f2a.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/38fd24597f42985a140856e98d5942ff2fe922e8.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/b0428c66548962e8e23214853a3087d1bb6d4f2a.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -38,17 +38,6 @@ packages:
   original:
     url: https://github.com/smucclaw/prolog/archive/2e23022799e5019bbb8cadeba3dab788073b582d.tar.gz
 - completed:
-    name: simple-smt
-    pantry-tree:
-      sha256: 52b7da75230a4cbc27007b8560371a007d3ce5f4773023dc8f1f43299e99a414
-      size: 357
-    sha256: f9d9fea35beb8ca0260a0ca6af2feba5db2f01d9ca1dc4b9a0b139795eccd488
-    size: 10807
-    url: https://github.com/yav/simple-smt/archive/dd03ca1.tar.gz
-    version: 0.9.7
-  original:
-    url: https://github.com/yav/simple-smt/archive/dd03ca1.tar.gz
-- completed:
     name: wordnet
     pantry-tree:
       sha256: 7db8d23ba9a90ac1cc7a51d98bd3d464d3dcfe0c0f04b6ca795878c4f2d3ac1a
@@ -66,6 +55,13 @@ packages:
       size: 611
   original:
     hackage: monad-validate-1.3.0.0
+- completed:
+    hackage: simple-smt-0.9.7@sha256:a93eba88f8177e13b39bf664b53ad65ca8eea976f00cae443c081b3ea3c26fb3,736
+    pantry-tree:
+      sha256: ddbb8343712ef5d96480180f4df7113db80ecb41336ec3e02876ccdb6ff6b547
+      size: 253
+  original:
+    hackage: simple-smt-0.9.7
 snapshots:
 - completed:
     sha256: e176944bc843f740e05242fa7a66ca1f440c127e425254f7f1257f9b19add23f

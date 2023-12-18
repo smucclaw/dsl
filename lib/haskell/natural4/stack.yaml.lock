@@ -29,14 +29,14 @@ packages:
 - completed:
     name: prolog
     pantry-tree:
-      sha256: fe8f510067c7094cd6c03597121aabfc0f10e1309b2dd6f0cff6b12e759153be
+      sha256: d357ce450731c7bcc5ce09d541fe050e1b5f8b09636c72017266a84ca695d5bb
       size: 894
-    sha256: cfe0a31bcdf7a7556f0508223ed486113a06e206fb90fb33f782c6abc683cf80
-    size: 9820
-    url: https://github.com/smucclaw/prolog/archive/f07ad8554ee577f1d78ea51c0d5e03dd376e5bbc.tar.gz
+    sha256: bbe4dd03afccccc3a3e4d1a2b367f155d653b14c7265bb20d6335db34c88b075
+    size: 9826
+    url: https://github.com/smucclaw/prolog/archive/2e23022799e5019bbb8cadeba3dab788073b582d.tar.gz
     version: 0.3.2
   original:
-    url: https://github.com/smucclaw/prolog/archive/f07ad8554ee577f1d78ea51c0d5e03dd376e5bbc.tar.gz
+    url: https://github.com/smucclaw/prolog/archive/2e23022799e5019bbb8cadeba3dab788073b582d.tar.gz
 - completed:
     name: simple-smt
     pantry-tree:

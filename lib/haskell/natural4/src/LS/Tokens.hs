@@ -10,8 +10,10 @@ This module also provides a family of SLParser combinators ("Same Line").
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import Control.Applicative (Alternative, liftA2)
+import Control.Monad (MonadPlus, replicateM_, when)
 import Control.Monad.Reader (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
 import Control.Monad.Writer.Lazy
+import Data.Monoid (Sum(..))
 import Data.Functor.Identity (Identity)
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty)
@@ -204,7 +206,7 @@ printErrors :: String -> RunConfig -> Parser a -> Parser a
 printErrors dname r = runOnErrors \ cnsmp err s res -> do
   let consumption = case cnsmp of
         MPInternal.Consumed -> "Consumed"
-        MPInternal.Virgin -> "Unconsumed"
+        MPInternal.NotConsumed -> "Unconsumed"
   let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s
                            (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) \_ _ -> error "eerr"
   magicRunParser . myTraceM $ "\\ !" <> consumption <> " Error: " <> dname <> ": " <> onelineErrorMsg err
@@ -966,6 +968,6 @@ runOnErrors f = liftRawPFun (iRunOnErrors f)
 iRunOnErrors :: (Stream s, Ord e, Monad m) => (forall b. MPInternal.Consumption -> ParseError s e -> State s e -> m b -> m b) -> ParsecT e  s m a -> ParsecT e s m a
 iRunOnErrors f pt = MPInternal.ParsecT \s cok cerr eok eerr ->
     let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
-        eerr' err s' = f MPInternal.Virgin err s' (eerr err s')
+        eerr' err s' = f MPInternal.NotConsumed err s' (eerr err s')
     in
     MPInternal.unParser pt s cok cerr' eok eerr'

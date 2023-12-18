@@ -208,6 +208,7 @@ module LS.RelationalPredicates where
 
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (mkLeaf)
+import Control.Monad
 import Control.Monad.Writer.Lazy
 import Data.Foldable qualified as DF
 import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)

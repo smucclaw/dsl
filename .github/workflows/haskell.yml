@@ -20,7 +20,7 @@ jobs:
       - uses: haskell/actions/setup@v2
         with:
           enable-stack: true
-          cabal-version: '3.8.1.0'
+          cabal-version: '3.10.1.0'
 
       - name: Cache
         uses: actions/cache@v3

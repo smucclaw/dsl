@@ -8,9 +8,10 @@ module LS.XPile.LogicalEnglish.Testcase
 where
 
 import Data.String.Interpolate (i)
+import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Except
   ( MonadError (throwError),
-    MonadTrans (lift),
+    modifyError,
     runExceptT,
   )
 import Data.Yaml qualified as Y
@@ -19,7 +20,6 @@ import GHC.Generics (Generic)
 import LS.Utils ((|$>))
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.LogicalEnglish.GoldenUtils (goldenLE)
-import LS.XPile.LogicalEnglish.SpecUtils (modifyError)
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeDirectory, (<.>))

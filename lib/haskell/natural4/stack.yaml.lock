@@ -7,36 +7,36 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 6f1748ba315b487e7d5edafcdbdc16f48b4ba9ba68ecd55cf83f89a7a2644270
+      sha256: 0f8678e9b26e63fd50370a8894bcad4a8aa4f2ad595ae62425c1259287b2cb21
       size: 12537
-    sha256: bd85257a843a17115b19c227b986e16fa16a4f0c2f1df7e14d1e088bc232619d
-    size: 3188877
-    url: https://github.com/smucclaw/baby-l4/archive/7a1c080d18b782e3b181dddbaef44e0869c38dda.tar.gz
+    sha256: ebb63b32f91a0dff0a57d50e116e9f22ce2d7ef20d8126ed3be8310aa29b0d46
+    size: 3188887
+    url: https://github.com/smucclaw/baby-l4/archive/38fd24597f42985a140856e98d5942ff2fe922e8.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/7a1c080d18b782e3b181dddbaef44e0869c38dda.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/38fd24597f42985a140856e98d5942ff2fe922e8.tar.gz
 - completed:
     name: gf
     pantry-tree:
-      sha256: 65e3f83cf9ad6af2e1eb55e970fa09b7ae33742cd95bdaeff0a02ade51a71083
+      sha256: 403ab5b8eab295f2c5304ca7aa3ab4b811de6f1d8053644502dc3890239787bc
       size: 68240
-    sha256: 15d528d1346c6959d3b6a57217d4d573ec897086622a2cf5ff5b5b02cbb4ee27
-    size: 3499883
-    url: https://github.com/smucclaw/gf-core/archive/e11017abc0c91ff5b4c4da48e25b355b5704c2a8.tar.gz
+    sha256: dea2343938b6d233abce016c2c6dc6db6fba9fc58aeeae6fe766f08768e48fbb
+    size: 3499779
+    url: https://github.com/smucclaw/gf-core/archive/f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac.tar.gz
     version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/e11017abc0c91ff5b4c4da48e25b355b5704c2a8.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac.tar.gz
 - completed:
     name: prolog
     pantry-tree:
-      sha256: e5ff5e42a409ec85dabb40363e10ec8929b2e4df9c37d06e5213b1240a220f49
-      size: 839
-    sha256: 2a64f5537d26e10075ee3700461d175d21c798f7061d1552cba9bf51f34e38fc
-    size: 9494
-    url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
+      sha256: d357ce450731c7bcc5ce09d541fe050e1b5f8b09636c72017266a84ca695d5bb
+      size: 894
+    sha256: bbe4dd03afccccc3a3e4d1a2b367f155d653b14c7265bb20d6335db34c88b075
+    size: 9826
+    url: https://github.com/smucclaw/prolog/archive/2e23022799e5019bbb8cadeba3dab788073b582d.tar.gz
     version: 0.3.2
   original:
-    url: https://github.com/smucclaw/prolog/archive/1f793236846ad506eef1cf3acd8646334123088d.tar.gz
+    url: https://github.com/smucclaw/prolog/archive/2e23022799e5019bbb8cadeba3dab788073b582d.tar.gz
 - completed:
     name: simple-smt
     pantry-tree:
@@ -66,16 +66,9 @@ packages:
       size: 611
   original:
     hackage: monad-validate-1.3.0.0
-- completed:
-    hackage: prettyprinter-interp-0.2.0.0@sha256:7072e659fb902cbcab790c9cca2b0739f9f4b81b666a63f2140139950f05025d,2086
-    pantry-tree:
-      sha256: fe22c473eb4387db98518e748253004c0b649ff88bb13eecae81231cb7a2552c
-      size: 300
-  original:
-    hackage: prettyprinter-interp-0.2.0.0
 snapshots:
 - completed:
-    sha256: abcc4a65c15c7c2313f1a87f01bfd4d910516e1930b99653eef1d2d006515916
-    size: 640074
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/24.yaml
-  original: lts-21.24
+    sha256: e176944bc843f740e05242fa7a66ca1f440c127e425254f7f1257f9b19add23f
+    size: 712153
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/0.yaml
+  original: lts-22.0

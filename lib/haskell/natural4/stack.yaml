@@ -32,7 +32,7 @@ extra-deps:
 # ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: 38fd24597f42985a140856e98d5942ff2fe922e8
+  commit: b0428c66548962e8e23214853a3087d1bb6d4f2a
 
 - github: smucclaw/gf-core
   commit: f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac
@@ -40,13 +40,11 @@ extra-deps:
 - github: smucclaw/prolog
   commit: 2e23022799e5019bbb8cadeba3dab788073b582d
   
-- github: yav/simple-smt
-  commit: dd03ca1
-
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
 - monad-validate-1.3.0.0
+- simple-smt-0.9.7
 
 allow-newer: true
 

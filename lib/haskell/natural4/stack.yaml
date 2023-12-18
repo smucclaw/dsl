@@ -38,7 +38,7 @@ extra-deps:
   commit: f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac
 
 - github: smucclaw/prolog
-  commit: f07ad8554ee577f1d78ea51c0d5e03dd376e5bbc
+  commit: 2e23022799e5019bbb8cadeba3dab788073b582d
   
 - github: yav/simple-smt
   commit: dd03ca1

@@ -88,13 +88,6 @@ xrenderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
 xpRenderStream :: MyStream -> String
 xpRenderStream = Text.unpack . LT.toStrict . pStringNoColor . xrenderStream
 
--- | Pretty-print an 'ErrorItem'.
-showErrorItem :: VisualStream s => Proxy s -> ErrorItem (Token s) -> String
-showErrorItem pxy_ = \case
-  Tokens ts -> showTokens pxy_ ts
-  Label label_ -> NE.toList label_
-  EndOfInput -> "end of input"
-
 -- | Get length of the “pointer” to display under a given 'ErrorItem'.
 errorItemLength :: VisualStream s => Proxy s -> ErrorItem (Token s) -> Int
 errorItemLength pxy_ = \case

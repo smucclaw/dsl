@@ -29,11 +29,10 @@ dependencies:
   - hashable
   - flow
   - text
-  - hspec
   - megaparsec
-  - hspec-megaparsec
   - hxt
   - mtl
+  - transformers
   - cassava
   - vector
   - bytestring
@@ -42,7 +41,7 @@ dependencies:
   - boxes
   - anyall
   - split
-  - generic-data
+  # - generic-data
   - parsers
   - aeson
   - aeson-pretty
@@ -50,7 +49,7 @@ dependencies:
   - gf
   - optparse-generic
   - prolog
-  - replace-megaparsec
+  # - replace-megaparsec
   - parser-combinators
   - fgl
   - graphviz
@@ -64,7 +63,7 @@ dependencies:
   - regex-tdfa
   - baby-l4
   - quickcheck-text
-  - explainable
+  # - explainable
   - witherable
   - monad-validate
   - mono-traversable
@@ -114,6 +113,8 @@ tests:
       - '"-with-rtsopts=-N -H500M -qg"'
     dependencies:
       - natural4
+      - hspec
+      - hspec-megaparsec
       - filepath
       - filemanip
       - hspec-golden

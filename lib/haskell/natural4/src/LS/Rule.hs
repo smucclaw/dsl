@@ -241,7 +241,9 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
 
 -- | find some unique name for the rule for purposes of scoping the symbol table.
 -- if a rule label is provided, we use that.
--- if it's not provided, we use the name.
+-- if it's not provided, we use the most relevant clue we can find.
+-- in the case of a deontic rule, it's the party in the rule.
+-- in the case of a constitutive rule, it's the name of the thing being decided.
 -- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
 
 ruleLabelName :: Rule -> RuleName

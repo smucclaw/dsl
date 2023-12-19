@@ -63,7 +63,7 @@ dependencies:
   - regex-tdfa
   - baby-l4
   - quickcheck-text
-  # - explainable
+  - explainable
   - witherable
   - monad-validate
   - mono-traversable

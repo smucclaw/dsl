@@ -69,9 +69,9 @@ runTests_Mathlang = do
   let taxableAmount =
         "taxableAmount" @|=
         getvar "vivacity"
-        @|? ( (getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
-	      |+
-	      (getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
+        @|? ( ("income tax amount"  @|=  getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
+              |+
+              ("asset tax amount"   @|=  getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
         @|: "the dead pay no tax" @|. 0
 
   -- dumpExplanationF 3 defaultState iceCreams

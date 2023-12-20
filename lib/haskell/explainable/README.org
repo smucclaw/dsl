@@ -44,8 +44,9 @@ and want to know every detail.
   #+end_quote
 
 A specific end-user comes along. The all-seeing, all-knowing state
-already knows their annual income, and their net worth. So the state
-runs a simple function:
+already knows their annual income ($100,000), and their net worth
+($700,000). So the state runs a simple function, and feeds it the
+parameters it already knows:
 
 #+begin_src javascript
   function taxableAmount (vivacity, annualIncome, netWorth) {
@@ -53,6 +54,9 @@ runs a simple function:
     else { return (annualIncome * 0.07 + netWorth * 0.01) }
   }
 #+end_src
+
+You could imagine that bit of JS living inside a form, which allows
+the end-user to play with the inputs.
 
 That's a pretty straightforward /implementation/. But the end-user,
 like an insatiable five-year-old, asks "why?"
@@ -89,13 +93,13 @@ DECIDE  assetTaxAmount   IS  0.01  *  netWorth
 
 It's L4's job to figure out that:
 - ~vivacity~ is a Bool
-- ~annualIncome~ and ~netWorth~ are inputs we require from the environment, or from the user
+- ~annualIncome~ and ~netWorth~ are numeric inputs we require from the environment, or from the user
 - ~incomeTaxAmount~ and ~assetTaxAmount~ are intermediate values.
 
 L4 should also generate enough code in some operational language to
 actually perform the computation, and return $14,000.
 
-L4 should also, for visualization purposes, return a tree:
+L4 should also, for visualization purposes, return a tree of some sort, which can be drawn as a diagram. The content of the tree would be something like this:
 
 #+begin_example
 - taxableAmount
@@ -121,9 +125,9 @@ L4 should also, for visualization purposes, return a tree:
    let taxableAmount =
          "taxable amount" @|=
          getvar "vivacity"
-         @|? ( (getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
+         @|? ( ("income tax amount"  @|=  getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
                |+
-               (getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
+               ("asset tax amount"   @|=  getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
          @|: "the dead pay no tax" @|. 0
  #+end_src
 
@@ -161,7 +165,7 @@ expression and used to calculate a result.
 With those inputs, the ~xplainF~ function does arrive at the correct answer:
 
 #+begin_src haskell
-MathITE (taxableAmount) PredVar "vivacity" MathBinOp  Plus MathBinOp  Times MathVar annualIncome Val (income tax rate) 7.0e-2 MathBinOp  Times MathVar netWorth Val (asset tax rate) 1.0e-2 Val (the dead pay no tax) 0.0
+MathITE (taxableAmount) PredVar "vivacity" MathBinOp  Plus MathBinOp (income tax amount) Times MathVar annualIncome Val (income tax rate) 7.0e-2 MathBinOp (asset tax amount) Times MathVar netWorth Val (asset tax rate) 1.0e-2 Val (the dead pay no tax) 0.0
 #+end_src
 
 - val :: 14000.0
@@ -177,7 +181,7 @@ MathITE (taxableAmount) PredVar "vivacity" MathBinOp  Plus MathBinOp  Times Math
 Here's more from the ~xplainF~ function:
 
     #+begin_example
-      ,*** if PredVar "vivacity" then MathBinOp  Plus MathBinOp  Times MathVar annualIncome Val (income tax rate) 7.0e-2 MathBinOp  Times MathVar netWorth Val (asset tax rate) 1.0e-2 else Val (the dead pay no tax) 0.0
+      ,*** if PredVar "vivacity" then MathBinOp  Plus MathBinOp (income tax amount) Times MathVar annualIncome Val (income tax rate) 7.0e-2 MathBinOp (asset tax amount) Times MathVar netWorth Val (asset tax rate) 1.0e-2 else Val (the dead pay no tax) 0.0
       ,**** True: variable expansion: vivacity vivacity
       ,***** looked up vivacity
       ,***** True: a leaf value(alive or dead)
@@ -240,23 +244,25 @@ And it sets up the actual computation as a tree of constructors:
 #+begin_src typescript
   export const maxClaim = () => {
     return new tsm.Bool3 ( "taxableAmount"
-			   , tsm.BoolTriOp.IfThenElse
-			   , new tsm.GetVar ("vivacity")
-			   , new tsm.Num2 ( "binop Plus"
-					    , tsm.NumBinOp.Add
-					    , new tsm.Num2 ( "binop Times"
-							     , tsm.NumBinOp.Mul
-							     , new tsm.GetVar ("annualIncome")
-							     , new tsm.Num0 ( "income tax rate"
-									      , 7.0e-2 ) )
-					    , new tsm.Num2 ( "binop Times"
-							     , tsm.NumBinOp.Mul
-							     , new tsm.GetVar ("netWorth")
-							     , new tsm.Num0 ( "asset tax rate"
-									      , 1.0e-2 ) ) )
-			   , new tsm.Num0 ("the dead pay no tax", 0.0) )
+                           , tsm.BoolTriOp.IfThenElse
+                           , new tsm.GetVar ("vivacity")
+                           , new tsm.Num2 ( "binop Plus"
+                                            , tsm.NumBinOp.Add
+                                            , new tsm.Num2 ( "income tax amount"
+                                                             , tsm.NumBinOp.Mul
+                                                             , new tsm.GetVar ("annualIncome")
+                                                             , new tsm.Num0 ( "income tax rate"
+                                                                              , 7.0e-2 ) )
+                                            , new tsm.Num2 ( "asset tax amount"
+                                                             , tsm.NumBinOp.Mul
+                                                             , new tsm.GetVar ("netWorth")
+                                                             , new tsm.Num0 ( "asset tax rate"
+                                                                              , 1.0e-2 ) ) )
+                           , new tsm.Num0 ("the dead pay no tax", 0.0) )
   }
 #+end_src
+
+Note that each of the sub-expressions has its own label. Isn't that nice?
 
 And when /that/ runs, you get this output, which is also intended to be viewed in Org mode:
 
@@ -270,17 +276,15 @@ expression, and under it, you see how that expression was arrived at.
   ,***                                   14000    taxableAmount = true branch
   ,****                                   true    vivacity
   ,****                                  14000    binop Plus = sum of
-  ,*****                                  7000    binop Times = product of
+  ,*****                                  7000    income tax amount = product of
   ,******                               100000    annualIncome
   ,******                                 0.07    income tax rate
-  ,*****                                  7000    binop Times = product of
+  ,*****                                  7000    asset tax amount = product of
   ,******                               700000    netWorth
   ,******                                 0.01    asset tax rate
 #+end_example
 
 * How to run by hand
-
-
    
 #+begin_example
   ┌─[20231220-16:58:09]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
@@ -311,19 +315,19 @@ expression, and under it, you see how that expression was arrived at.
       export { exprReduce, asDot } from './mathlang';
 
       export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
-	console.log("** " + Math.round(expr.val))
-	tsm.explTrace(expr, 3)
+        console.log("** " + Math.round(expr.val))
+        tsm.explTrace(expr, 3)
 
-	console.log("** JSON of symTab")
-					      , new tsm.GetVar ("annualIncome")
-					      , new tsm.Num0 ( "income tax rate"
-							     , 7.0e-2 ) )
-			       , new tsm.Num2 ( "binop Times"
-					      , tsm.NumBinOp.Mul
-					      , new tsm.GetVar ("netWorth")
-					      , new tsm.Num0 ( "asset tax rate"
-							     , 1.0e-2 ) ) )
-		, new tsm.Num0 ("the dead pay no tax", 0.0) )
+        console.log("** JSON of symTab")
+                                              , new tsm.GetVar ("annualIncome")
+                                              , new tsm.Num0 ( "income tax rate"
+                                                             , 7.0e-2 ) )
+                               , new tsm.Num2 ( "binop Times"
+                                              , tsm.NumBinOp.Mul
+                                              , new tsm.GetVar ("netWorth")
+                                              , new tsm.Num0 ( "asset tax rate"
+                                                             , 1.0e-2 ) ) )
+                , new tsm.Num0 ("the dead pay no tax", 0.0) )
     }
 
   move this over to the runtime directory
@@ -340,7 +344,10 @@ expression, and under it, you see how that expression was arrived at.
     "annualIncome": 100000,
     "netWorth": 700000,
     "vivacity": true
-  }%                                                                                                                                          ┌─[20231220-17:00:16]   [mengwong@rosegold:~/src/smucclaw/usecases/sect10-typescript]
+  }
+
+
+  ┌─[20231220-17:57:35]   [mengwong@rosegold:~/src/smucclaw/usecases/sect10-typescript]
   └─[0] <git:(20231219-examples 69767a8a✱✈) > node src/crunch.js tests/taxableAmount/taxableAmount.json
   ,* [PASS]   taxableAmount: 14000
   ,** input JSON
@@ -355,16 +362,17 @@ expression, and under it, you see how that expression was arrived at.
   ,***                                   14000    taxableAmount = true branch
   ,****                                   true    vivacity
   ,****                                  14000    binop Plus = sum of
-  ,*****                                  7000    binop Times = product of
+  ,*****                                  7000    income tax amount = product of
   ,******                               100000    annualIncome
   ,******                                 0.07    income tax rate
-  ,*****                                  7000    binop Times = product of
+  ,*****                                  7000    asset tax amount = product of
   ,******                               700000    netWorth
   ,******                                 0.01    asset tax rate
   ,** JSON of symTab
   ,#+NAME symtab
   ,#+BEGIN_SRC json
   {
+    "dow": 7,
     "annualIncome": 100000,
     "netWorth": 700000,
     "vivacity": true
@@ -376,14 +384,14 @@ expression, and under it, you see how that expression was arrived at.
     "taxableAmount": 14000,
     "vivacity": true,
     "binop Plus": 14000,
-    "binop Times": 7000,
+    "income tax amount": 7000.000000000001,
     "annualIncome": 100000,
     "income tax rate": 0.07,
+    "asset tax amount": 7000,
     "netWorth": 700000,
     "asset tax rate": 0.01
   }
   ,#+END_SRC
-
 #+end_example
 
 

@@ -43,7 +43,12 @@ runTests_1 = do
 
 
 defaultState :: MyState
-defaultState = emptyState { symtabF = Map.fromList [("dow", "dow" @|. 7)] }
+defaultState = emptyState { symtabF = Map.fromList [ ("dow", "dow" @|. 7)
+                                                   , ("annualIncome", "annual income" @|. 100000)
+                                                   , ("netWorth",     "net worth"     @|. 700000)
+                                                   ]
+                          , symtabP = Map.fromList [ ("vivacity", "alive or dead" @|.. True) ]
+                          }
   
 
 runTests_Mathlang :: IO ()
@@ -60,6 +65,16 @@ runTests_Mathlang = do
          @|? ("two on Sundays" @|. 2)
          @|: ("one otherwise"  @|. 1)
         )
-  dumpExplanationF 3 defaultState iceCreams
+  
+  let taxableAmount =
+        "taxableAmount" @|=
+        getvar "vivacity"
+        @|? ( (getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
+	      |+
+	      (getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
+        @|: "the dead pay no tax" @|. 0
+
+  -- dumpExplanationF 3 defaultState iceCreams
+  dumpExplanationF 3 defaultState taxableAmount
 
 

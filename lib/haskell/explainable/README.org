@@ -2,208 +2,533 @@
 
 "Algorithms. You're talking about algorithms."
 
-* User goals
+* Motivation
 
-At a high level the /end-user/ goals are:
-- *evaluate* some computation to crunch a bunch of input parameters into a set of output numbers, basically "how much tax do i need to pay?"
-- *explain* the basis for that computation, basically "why that amount and not some other?"
+A regulation says: an end-user must pay tax. A legal engineer
+/encodes/ the regulation in L4; and L4 /operationalizes/ the
+regulation by generating software that calculates a specific amount
+for a specific end-user.
 
-The /legal engineer/ goals are:
-- translate some existing legal text into some formal representation
-- have some nice convenient affordances like unit tests, good syntax, feedback that we are writing good code.
-- accessibility
+Now the end-user wants to know /why/ the amount is what it is.
+Our operational runtime needs to /explain/ it -- to "show the working".
+
+Many encodings of regulations are written as /implementations/: they
+quickly return the answer, but don't include an explanation of how the
+answer was derived.
+
+Implementation-orientation is common in most of
+the programming world.
+
+"Get me the JPG at this URL."
+
+"OK, here you go: a stream of bytes. Enjoy looking at the picture!"
+
+What's missing from that: "First I tried the URL you gave me, but I
+got a 302 redirect, so I went to this other URL instead, and when I
+did, it turned out that I already had that URL in my cache, so I sent
+a HEAD request rather than at GET request, and the origin server
+confirmed that my cache was up to date, and, I see your eyes have
+glazed over."
+
+But when it comes to money, people suddenly perk up and pay attention
+and want to know every detail.
+
+* Example
+
+  Suppose we have a regulation:
+
+  #+begin_quote
+  If you're dead, you don't have to pay taxes.
+
+  If you're alive, the taxes you pay are 7% of your annual income, plus 1% of your net worth.
+  #+end_quote
+
+A specific end-user comes along. The all-seeing, all-knowing state
+already knows their annual income, and their net worth. So the state
+runs a simple function:
+
+#+begin_src javascript
+  function taxableAmount (vivacity, annualIncome, netWorth) {
+    if (vivacity == "dead") { return 0 }
+    else { return (annualIncome * 0.07 + netWorth * 0.01) }
+  }
+#+end_src
+
+That's a pretty straightforward /implementation/. But the end-user,
+like an insatiable five-year-old, asks "why?"
+
+The only answer we can give is: "your annualIncome was 100000 and your
+netWorth was 700000 and you are alive, so the tax payable is $14,000".
+
+That's unsatisfactory. What the end-user wants to hear is:
+
+#+begin_quote
+Because the income tax rate is 7%; your income was $100,000; and so the income tax component is $7,000.
+
+Alongside that, the asset tax rate is 1%; your assets are $700,000; and so the asset tax component is $7,000.
+
+Together, they add up to $14,000.
+
+If you were dead, you wouldn't have to pay anything at all.
+
+But you're alive, so you have to pay $14,000.
+#+end_quote
+
+End-users want that level of detail.
+
+And we want to give it to them.
+
+In Natural L4, the encoding might be:
+
+#+begin_example
+DECIDE  taxableAmount    IS  0                                   WHEN  vivacity  IS  dead
+DECIDE  taxableAmount    IS  incomeTaxAmount  +  assetTaxAmount  OTHERWISE
+DECIDE  incomeTaxAmount  IS  0.07  *  annualIncome
+DECIDE  assetTaxAmount   IS  0.01  *  netWorth
+#+end_example
+
+It's L4's job to figure out that:
+- ~vivacity~ is a Bool
+- ~annualIncome~ and ~netWorth~ are inputs we require from the environment, or from the user
+- ~incomeTaxAmount~ and ~assetTaxAmount~ are intermediate values.
+
+L4 should also generate enough code in some operational language to
+actually perform the computation, and return $14,000.
+
+L4 should also, for visualization purposes, return a tree:
+
+#+begin_example
+- taxableAmount
+  - IF vivacity == dead
+  - THEN is 0
+  - ELSE is the SUM of
+    - incomeTaxAmount
+      - is the PRODUCT of
+        - annualIncome
+        - income tax rate == 0.07
+    - assetTaxAmount
+      - is the PRODUCT of
+        - netWorth
+	- asset tax rate == 0.01
+#+end_example
+
+** In Haskell MathLang
+
+   We provide a Haskell library which implements a MathLang as an
+   embedded DSL, with syntactic sugar for familiar operators.
+
+ #+begin_src haskell
+  let taxableAmount =
+        "taxable amount" @|=
+        getvar "vivacity"
+        @|? ( (getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
+	      |+
+	      (getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
+        @|: "the dead pay no tax" @|. 0
+ #+end_src
+
+* Output: The Answer
+
+  The above fragment is an ~Expr Float~.
+
+  It can be compiled to runnable Haskell, and executed in ~ghci~ or at the command line.
+
+  But wait, where do the variable values for ~annualIncome~ and ~netWorth~ come from?
+
+  We have an ~eval~ function that takes an ~Expr Float~ and a
+  ~MyState~ containing a symbol table. It returns a ~Float~. The
+  symbol table is what contains the parameters for ~annualIncome =
+  100,000~ and ~netWorth = 700,000~. So the ~getVar~ pulls the
+  necessary values out of that symbol table, and voila.
+
+The symbol table is segregated by type of value.
+  
+#+begin_src haskell
+  defaultState :: MyState
+  defaultState = emptyState { symtabF = Map.fromList [ ("annualIncome", "annual income" @|.  100000)
+						     , ("netWorth",     "net worth"     @|.  700000) ]
+			    , symtabP = Map.fromList [ ("vivacity",     "alive or dead" @|.. True) ]
+			    }
+#+end_src
+
+  Well, I lied. That's not /actually/ the type of ~eval~. The ~MyState~
+  is available as part of an ~ExplainableIO~ monad, and that monad
+  gets run by the ~xplainF~ function.
+
+But that's basically how parameters get passed into an Explainable
+expression and used to calculate a result.
+
+With those inputs, the ~xplainF~ function does arrive at the correct answer:
+
+#+begin_src haskell
+MathITE (taxableAmount) PredVar "vivacity" MathBinOp  Plus MathBinOp  Times MathVar annualIncome Val (income tax rate) 7.0e-2 MathBinOp  Times MathVar netWorth Val (asset tax rate) 1.0e-2 Val (the dead pay no tax) 0.0
+#+end_src
+
+- val :: 14000.0
+
+* Output: Explanation
+
+   The whole point of this is to provide the explanation tree.
+
+   Calculating the result is only half the job of the ~xplainF~ function.
+
+   The other half? Verbosely outputting the execution tree.
+
+Here's more from the ~xplainF~ function:
+
+    #+begin_example
+      ,*** if PredVar "vivacity" then MathBinOp  Plus MathBinOp  Times MathVar annualIncome Val (income tax rate) 7.0e-2 MathBinOp  Times MathVar netWorth Val (asset tax rate) 1.0e-2 else Val (the dead pay no tax) 0.0
+      ,**** True: variable expansion: vivacity vivacity
+      ,***** looked up vivacity
+      ,***** True: a leaf value(alive or dead)
+      ,**** thus we choose the then branch
+      ,**** 14000.0: which we obtain by adding
+      ,***** 7000.0: which we obtain by multiplying
+      ,****** 100000.0: variable expansion: annualIncome annualIncome
+      ,******* variable `annualIncome` has value Val (annual income) 100000.0
+      ,******* 100000.0: annual income
+      ,****** by
+      ,****** 7.0e-2: income tax rate
+      ,***** to
+      ,***** 7000.0: which we obtain by multiplying
+      ,****** 700000.0: variable expansion: netWorth netWorth
+      ,******* variable `netWorth` has value Val (net worth) 700000.0
+      ,******* 700000.0: net worth
+      ,****** by
+      ,****** 1.0e-2: asset tax rate
+    #+end_example
+
+If you opened that in Org Mode, you would be able to fold and hide and
+show the subtrees elegantly; here you kind of have to squint.
+
+* Output: Transpilation to Typescript
+
+   Haskell is fine and dandy, and it runs really fast, so in future,
+   the next time we need to calculate taxes for 100 million people, we
+   can just set up 100 million ~MyState~ configurations, and call
+   ~xplainF~ 100 million times.
+
+   But maybe we want to push the burden of doing those 100 million
+   computations onto the end users. To run in their browsers on their
+   computers.
+
+   That means we need to transpile to Javascript.
+
+   The ~dumpTypescript~ function performs code generation to construct
+   a load of Typescript representing the computation that was
+   originally an ~Expr Float~ or a ~Pred Float~ or whatever. That
+   computation gets transformed into a giant tree of Typescript object
+   constructors.
+
+   Those objects can then be instantiated and evaluated by a
+   Typescript MathLang runtime.
+  
+The generated code sets up the input as a JS object:
+
+#+begin_src typescript
+  export function setup (symtab : any) {
+    const realigned = realign(symtab);
+    tsm.initSymTab({ ...{"dow": 7.0
+		   ,"annualIncome": 100000.0
+		   ,"netWorth": 700000.0
+		   ,"vivacity": true}
+		   ,...realigned })
+  }
+#+end_src
+
+And it sets up the actual computation as a tree of constructors:
+
+#+begin_src typescript
+  export const maxClaim = () => {
+    return new tsm.Bool3 ( "taxableAmount"
+			   , tsm.BoolTriOp.IfThenElse
+			   , new tsm.GetVar ("vivacity")
+			   , new tsm.Num2 ( "binop Plus"
+					    , tsm.NumBinOp.Add
+					    , new tsm.Num2 ( "binop Times"
+							     , tsm.NumBinOp.Mul
+							     , new tsm.GetVar ("annualIncome")
+							     , new tsm.Num0 ( "income tax rate"
+									      , 7.0e-2 ) )
+					    , new tsm.Num2 ( "binop Times"
+							     , tsm.NumBinOp.Mul
+							     , new tsm.GetVar ("netWorth")
+							     , new tsm.Num0 ( "asset tax rate"
+									      , 1.0e-2 ) ) )
+			   , new tsm.Num0 ("the dead pay no tax", 0.0) )
+  }
+#+end_src
+
+And when /that/ runs, you get this output, which is also intended to be viewed in Org mode:
+
+* Output: from Typescript
+
+The format is a little different, but the idea is the same: you get an
+expression, and under it, you see how that expression was arrived at.
+
+#+begin_example
+  ,** 14000
+  ,***                                   14000    taxableAmount = true branch
+  ,****                                   true    vivacity
+  ,****                                  14000    binop Plus = sum of
+  ,*****                                  7000    binop Times = product of
+  ,******                               100000    annualIncome
+  ,******                                 0.07    income tax rate
+  ,*****                                  7000    binop Times = product of
+  ,******                               700000    netWorth
+  ,******                                 0.01    asset tax rate
+#+end_example
+
+* How to run by hand
+
+
+   
+#+begin_example
+  ┌─[20231220-16:58:09]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
+  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > stack run > out.org
+  explainable-0.1.0.0: unregistering (local file changes: README.org)
+  explainable> build (lib + exe)
+  Preprocessing library for explainable-0.1.0.0..
+  Building library for explainable-0.1.0.0..
+  ld: warning: -single_module is obsolete
+  Preprocessing executable 'explainable-exe' for explainable-0.1.0.0..
+  Building executable 'explainable-exe' for explainable-0.1.0.0..
+  explainable> copy/register
+  Installing library in /Users/mengwong/src/smucclaw/dsl/lib/haskell/explainable/.stack-work/install/aarch64-osx/6c858a89320cceb1aca5dc1e8d312bdee71bc93b895f41633b4c921232fc5b4a/9.6.3/lib/aarch64-osx-ghc-9.6.3/explainable-0.1.0.0-4jJZUHMg3N0CMzgre02hYX
+  Installing executable explainable-exe in /Users/mengwong/src/smucclaw/dsl/lib/haskell/explainable/.stack-work/install/aarch64-osx/6c858a89320cceb1aca5dc1e8d312bdee71bc93b895f41633b4c921232fc5b4a/9.6.3/bin
+  Registering library for explainable-0.1.0.0..
+
+
+  ┌─[20231220-16:58:19]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
+  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > # emacs C-c C-v t outputs the typescript tangle to from-hs.ts
+
+
+
+  ┌─[20231220-16:59:30]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
+  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > head from-hs.ts; tail from-hs.ts
+  // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
+
+      import * as tsm from './mathlang';
+      export { exprReduce, asDot } from './mathlang';
+
+      export function myshow(expr: tsm.Expr<any>) : tsm.Expr<any> {
+	console.log("** " + Math.round(expr.val))
+	tsm.explTrace(expr, 3)
+
+	console.log("** JSON of symTab")
+					      , new tsm.GetVar ("annualIncome")
+					      , new tsm.Num0 ( "income tax rate"
+							     , 7.0e-2 ) )
+			       , new tsm.Num2 ( "binop Times"
+					      , tsm.NumBinOp.Mul
+					      , new tsm.GetVar ("netWorth")
+					      , new tsm.Num0 ( "asset tax rate"
+							     , 1.0e-2 ) ) )
+		, new tsm.Num0 ("the dead pay no tax", 0.0) )
+    }
+
+  move this over to the runtime directory
+
+  ┌─[20231220-16:59:43]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
+  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > cp from-hs.ts ~/src/smucclaw/usecases/sect10-typescript/src/pau.ts
+  ┌─[20231220-16:59:53]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
+  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > cd ~/src/smucclaw/usecases/sect10-typescript/
+  ┌─[20231220-16:59:59]   [mengwong@rosegold:~/src/smucclaw/usecases/sect10-typescript]
+  └─[0] <git:(20231219-examples 69767a8a✱✈) > tsc
+  ┌─[20231220-17:00:00]   [mengwong@rosegold:~/src/smucclaw/usecases/sect10-typescript]
+  └─[0] <git:(20231219-examples 69767a8a✱✈) > cat tests/taxableAmount/taxableAmount.json
+  {
+    "annualIncome": 100000,
+    "netWorth": 700000,
+    "vivacity": true
+  }%                                                                                                                                          ┌─[20231220-17:00:16]   [mengwong@rosegold:~/src/smucclaw/usecases/sect10-typescript]
+  └─[0] <git:(20231219-examples 69767a8a✱✈) > node src/crunch.js tests/taxableAmount/taxableAmount.json
+  ,* [PASS]   taxableAmount: 14000
+  ,** input JSON
+  ,#+BEGIN_SRC js
+  {
+    "annualIncome": 100000,
+    "netWorth": 700000,
+    "vivacity": true
+  }
+  ,#+END_SRC
+  ,** 14000
+  ,***                                   14000    taxableAmount = true branch
+  ,****                                   true    vivacity
+  ,****                                  14000    binop Plus = sum of
+  ,*****                                  7000    binop Times = product of
+  ,******                               100000    annualIncome
+  ,******                                 0.07    income tax rate
+  ,*****                                  7000    binop Times = product of
+  ,******                               700000    netWorth
+  ,******                                 0.01    asset tax rate
+  ,** JSON of symTab
+  ,#+NAME symtab
+  ,#+BEGIN_SRC json
+  {
+    "dow": 7,
+    "annualIncome": 100000,
+    "netWorth": 700000,
+    "vivacity": true
+  }
+  ,#+END_SRC
+  ,** reduced expr as dict
+  ,#+BEGIN_SRC js
+  {
+    "taxableAmount": 14000,
+    "vivacity": true,
+    "binop Plus": 14000,
+    "binop Times": 7000,
+    "annualIncome": 100000,
+    "income tax rate": 0.07,
+    "netWorth": 700000,
+    "asset tax rate": 0.01
+  }
+  ,#+END_SRC
+
+#+end_example
+
 
 * Semantics (Requirements)
 
-Based on the input problems that we've seen so far we will need the following elements of a DSL to handle tabular arithmetic calculations:
+Based on the input problems that we've seen so far we will need the following elements of a DSL to handle arithmetic calculations involving Boolean conditionals:
 
 ** organize input parameters into dictionaries or a multi-dimensional array
 
-so that we can look up, for instance
-- for tax year { 2022 }
-- how much { ordinary income, extraordinary income }
-- was derived from the category of { employment, rent, capital }
+This lets use set up input parameters with attributes like
+- citizenship :: Singapore
+- date of birth :: 1955
+- income :: 100,000
+- number of properties :: 1
 
-*** we need at a minimum dictionaries aka associative arrays aka hashmaps
+Now we can ask, does the object qualify for some entitlement benefit, and if so, what is the amount of the entitlement? Or taxation, or whatever.
 
-in Haskell this is provided by Data.Map
+** We support the semantics of basic arithmetic
 
-** filter some collection of things
+These are the operators you would expect to find on a $10 desk calculator.
 
-within { ordinary income }, which of the categories show negative vs positive values?
+Binary operators, of type ~Float -> Float -> Float~
 
-sum over all of those values to arrive at subtotals
-
-*** we need Functors that can be filtered so we need Eq
-
-in Haskell this is provided by Data.List
-
-** arithmetic
-
+#+begin_example
 + - * /
+#+end_example
 
-over individual values but also mapped over lists and the complex data structures above
+We don't have or logarithms in exponentiation the current version of mathlang, but maybe we should, for calculating compound interest.
 
-*** we need Num and Int and Float
+** We support Boolean logic
 
-in Haskell this is provided by base
+These are the operators programmers learn pretty early:
 
-** temporary variables / let bindings
+#+begin_example
+&& || ! ==
+#+end_example
 
-identified by names in the source laws, e.g. "residual taxable amount" -- how do we keep track of these things?
+Binary operators, of type ~Bool -> Bool -> Bool~
 
-*** in our skeletal version we can just hardcode and rely on the host language's ~let~
+** We support arithmetic comparison
 
-let scenario_34_1 = ....
+These turn numbers into bools: ~Float -> Float -> Bool~
 
-*** in a fuller implementation we would need scope, closures, variables, functions, and parameters
+#+begin_example
+> < >= <= == !=
+#+end_example
 
-we could shoehorn a symbol table into a Haskell State monad and do all the usual function evaluation thing under the lambda calculus
+** We support foldable lists
 
-** make decisions -- choose a particular branch of execution -- based on some conditions
+We might to obtain the product of all the non-negative numbers in a list. So we would need to filter and then fold.
 
-if, hypothetically speaking, we were to use the 2021 tax rates, if they are lower than the actual 2022 tax rates, then the payable taxes will be the arithmetic mean between the 2021 and 2022 rates.
+We don't have punctuation-like operators available for that, but the constructors are
 
-we need comparison operators: > >= == <= <
+#+begin_example
+ListFold
+PredFold
+#+end_example
 
-we need boolean logic: and or not
+This is how (for numbers) you get ~maximum~, ~minimum~, ~product~, and ~sum~.
 
-syntactic sugar "implies"
+This is also how (for Bools) you get ~any~ and ~all~ over a list of Bools.
 
-if something "leads to" something, then we choose to use it, otherwise we don't.
+** Setting variable bindings
 
-*** the typeclasses are: Eq, Ord, Bool.
+Some intermediate calculations are identified by names in the source laws, e.g. "residual taxable amount".
 
-*** this decision logic makes heavy use of "defaults", and thinks in terms of "exceptions".
+In MathLang we save those output named values to a symbol table under the ~MyState~ record.
 
-in law defaults go first, in computing defaults go last.
+This allows the caller to inspect intermediate workings.
 
-Catala supports out-of-order definitions.
+** Getting variable bindings
 
-** evaluate hypotheticals
+The text above introduces ~getvar~ but it's worth repeating here for completeness -- this is how we pull values out of the "~MyState~" symbol table, which contains the input parameters used by our calculation.
 
-if we were to apply this tax computation method, what tax would we pay?
+** Ternary conditions
 
-without actually returning that as our final answer.
-
-and without outputting our reasoning as part of the overall explanation.
-
-we need to be able to do sort of local scope, but also Reader's ~local~ to contrive counterfactuals
-
-but in future maybe Eric Walkingshaw would be interested in framing this as a variational problem
-
-** do we need to let the user define their own functions?
-
-for the initial skeletal DSL maybe we hardcode all the functions that need to be defined but could also be general enough to be used elsewhere.
-
-So for now we say we don't let the user do this.
-
-And then if a function is something taxRatesFor2023 or section_34_1_Computation then that is specific to this use case "program" and the user should have some way of defining that.
-
-* Semantics (implementation / specification)
-
-We'll have a think about this when we have made a little more progress.
-
-** assertions
-
-*** some value must always be > 0
-
-** refinement types could be used to limit the bounds of some things, like, whole numbers vs Ints
-
-** syntactic sugar for frequently expressed notions that can reduce to lower-level primitives
-
-** projectional editing
-
-automatically generate isomorphic visual representations eg diagrams, graphs
+Conditional branching is available with the usual ~if ? then : else~ punctuation: ~condition @|? then @|: else~
 
 * Syntax
 
 ** embedded DSL in Haskell
 
+We have a variety of sugary operators. The important ones are
 
+*** expression labels: ~@|=~
 
-** Natural4 spreadsheet
+Every MathLang expression can be labeled with an explicit name. That name, and the value of the computed expression, will be returned as part of the dictionary of intermedicate calculations.
 
-* Software Structure
+*** simple numeric values
 
-Typically the app stack looks like this:
-
-| LEVEL             | EXAMPLE MODULE | DESCRIPTION                      | EXAMPLE                                                                                  |
-|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
-| application exe   | Main.hs        | some kind of runtime             | imports Lib                                                                              |
-|                   | Lib.hs         |                                  | import TaxDSL                                                                            |
-|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
-| application lib   | TaxDSL.hs      | Let's compute taxes!             | import Explainable, import AnyAll, import MathLang                                       |
-|                   | PDPADBNO.hs    | Let's decide if PDPA DBNO!       |                                                                                          |
-|                   | L4.hs          | Let's have a DSL for law!        |                                                                                          |
-|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
-| internal dsl      | AnyAll.hs      | booleans                         | BoolStructT with AnyAll (walks,runs,eats)                                                |
-| representing      | MathLang.hs    | first-order predicate logic      | BoolStructR with AnyAll (X IS Y, Z < 1000)                                               |
-| the logic of      | Prolog.hs      | arithmetic                       | MathLang with Plus Minus Times Divide Parens (Tax = Income * 0.25)                       |
-| some "theory"     |                | temporal                         | LTL / CTL (EX, AF, AG, etc) (Always Eventually Get Paid)                                 |
-|                   |                | deontic                          | State transition system (PetriNet HENCE LEST, Bob Must Pay Alice Before end of quarter)  |
-|                   |                | etc                              | ...                                                                                      |
-|-------------------+----------------+----------------------------------+------------------------------------------------------------------------------------------|
-| explainable monad | Explainable.hs | evaluate a computation verbosely | We want to be able to lift the particular DSL's eval() function into Explainable         |
-|                   |                |                                  | such that every computation is verbosely logged to Stdout,Stderr or some Org-Mode format |
-
-Each of the internal DSLs should be able to run within Explainable.
-
-This should work for any of the "internal DSLs" above, so we can
-evaluate boolean AnyAlls, we can evaluate arithmetic expressions, we
-can do more interesting things with the modal logics.
-
-** Example of a MathLang explanation
-
-Suppose we are given ~(Tax = Income * 0.25) :: MathLang~
-
-We eval it inside Explainable and we get output like
-
-#+BEGIN_EXAMPLE                                                                    
-Tax is $2,500
-| Because Tax = Income * 25%
-| | And we know Income is $10,000.
-#+END_EXAMPLE                                                                      
-                                                                                   
-** Example of an AnyAll BooLStruct explanation
-
-Suppose we are given
-
-#+begin_example
-EVERY Person
-  WHO walks
-  AND eats
-   OR drinks
- MUST sing
-#+end_example
-
-That gets read into something like
-
-#+begin_example
-(walks && (eats || drinks)) => must(sing)
-#+end_example
-
-or perhaps
-#+begin_src prolog
-must(Person, sing) :- walks(Person), (eats(Person) ; drinks(Person)).
+#+begin_src haskell
+"some number" @|. 42
 #+end_src
 
-Combine that with some input facts:
+*** simple boolean values
 
-| walks  | True  |
-| eats   | False |
-| drinks | True  |
+#+begin_src haskell
+"i am alive" @|.. True
+#+end_src
 
-The Explainability monad should return something like
+*** mathematical binary operations
+
+#+begin_src haskell
+"doubled"  @|=    "some number" @|. 42    |*   "two" @|. 2
+#+end_src
 
 #+begin_example
-The Person must sing, because
-| the rule is that a person who walks and eats or drinks must sing;
-| and
-| the person walks
-| and
-| the person drinks
+|+ |- |* |/
 #+end_example
+
+*** boolean binary operations
+
+#+begin_example
+|&& |||
+#+end_example
+
+*** boolean unary not
+
+#+begin_example
+@|!
+#+end_example
+
+*** arithmetic comparison
+
+#+begin_example
+(@|<)
+(@|<=)
+(@|>)
+(@|>=)
+(@|===)
+(@|/==)
+(@|!==)
+#+end_example
+
+*** boolean comparison
+
+#+begin_example
+(@|==) s x y = PredBin (Just s) PredEq   x y
+(@|!=) s x y = PredBin (Just s) PredNeq  x y
+(@|/=) s x y = PredBin (Just s) PredNeq  x y
+#+end_example
+
+* Other details
 
 ** Example of Explanation
 
@@ -216,11 +541,4 @@ The ~xplainL~ evaluates & explains an ~ExprList Float~.
 The ~xplainE~ evaluates & explains an arbitrary ~Explainable~.
 
 So any future explainable DSL should have a similar structure in which the ~Expr~ expression language can be evaluated and explained within the ~Explainable~ monad.
-
-** How to compose Explainable with whatever Expression DSL?
-
-Should we make Explainable a typeclass, and then instantiate things like AnyAll into Explainable?
-
-We already do that with the Pretty typeclass, which knows how to show values nicely, so it is entirely conceivable that we could just instantiate into the Explainable typeclass which both knows how to show values and evaluate them.
-
 

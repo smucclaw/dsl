@@ -207,25 +207,25 @@ show the subtrees elegantly; here you kind of have to squint.
 
 * Output: Transpilation to Typescript
 
-   Haskell is fine and dandy, and it runs really fast, so in future,
-   the next time we need to calculate taxes for 100 million people, we
-   can just set up 100 million ~MyState~ configurations, and call
-   ~xplainF~ 100 million times.
+Haskell is fine and dandy, and it runs really fast, so in future,
+the next time we need to calculate taxes for 100 million people, we
+can just set up 100 million ~MyState~ configurations, and call
+~xplainF~ 100 million times.
 
-   But maybe we want to push the burden of doing those 100 million
-   computations onto the end users. To run in their browsers on their
-   computers.
+But maybe we want to push the burden of doing those 100 million
+computations onto the end users. To run in their browsers on their
+computers.
 
-   That means we need to transpile to Javascript.
+That means we need to transpile to Javascript.
 
-   The ~dumpTypescript~ function performs code generation to construct
-   a load of Typescript representing the computation that was
-   originally an ~Expr Float~ or a ~Pred Float~ or whatever. That
-   computation gets transformed into a giant tree of Typescript object
-   constructors.
+The ~dumpTypescript~ function performs code generation to construct
+a load of Typescript representing the computation that was
+originally an ~Expr Float~ or a ~Pred Float~ or whatever. That
+computation gets transformed into a giant tree of Typescript object
+constructors.
 
-   Those objects can then be instantiated and evaluated by a
-   Typescript MathLang runtime.
+Those objects can then be instantiated and evaluated by a
+Typescript MathLang runtime.
   
 The generated code sets up the input as a JS object:
 
@@ -394,6 +394,14 @@ expression, and under it, you see how that expression was arrived at.
   ,#+END_SRC
 #+end_example
 
+
+* About the Typescript evaluation runtime
+
+The typescript version of the MathLang codebase is its own thing; the essential operators are the same, but there is some divergence when it comes to the more unusual operators like list maps and folds; if you are doing maps, filters, and folds, you need to double check that what you want actually works as intended.
+
+It reimplements the Haskell codebase but as a bunch of Typescript classes instead.
+
+https://github.com/smucclaw/usecases/blob/main/sect10-typescript/src/mathlang.ts
 
 * Output: a diagram
 

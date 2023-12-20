@@ -26,7 +26,7 @@ the programming world.
 What's missing from that: "First I tried the URL you gave me, but I
 got a 302 redirect, so I went to this other URL instead, and when I
 did, it turned out that I already had that URL in my cache, so I sent
-a HEAD request rather than at GET request, and the origin server
+a HEAD request rather than a GET request, and the origin server
 confirmed that my cache was up to date, and, I see your eyes have
 glazed over."
 
@@ -118,13 +118,13 @@ L4 should also, for visualization purposes, return a tree:
    embedded DSL, with syntactic sugar for familiar operators.
 
  #+begin_src haskell
-  let taxableAmount =
-        "taxable amount" @|=
-        getvar "vivacity"
-        @|? ( (getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
-	      |+
-	      (getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
-        @|: "the dead pay no tax" @|. 0
+   let taxableAmount =
+         "taxable amount" @|=
+         getvar "vivacity"
+         @|? ( (getvar "annualIncome"   |*   "income tax rate" @|. 0.07)
+               |+
+               (getvar "netWorth"       |*   "asset tax rate"  @|. 0.01) )
+         @|: "the dead pay no tax" @|. 0
  #+end_src
 
 * Output: The Answer
@@ -146,9 +146,9 @@ The symbol table is segregated by type of value.
 #+begin_src haskell
   defaultState :: MyState
   defaultState = emptyState { symtabF = Map.fromList [ ("annualIncome", "annual income" @|.  100000)
-						     , ("netWorth",     "net worth"     @|.  700000) ]
-			    , symtabP = Map.fromList [ ("vivacity",     "alive or dead" @|.. True) ]
-			    }
+                                                     , ("netWorth",     "net worth"     @|.  700000) ]
+                            , symtabP = Map.fromList [ ("vivacity",     "alive or dead" @|.. True) ]
+                            }
 #+end_src
 
   Well, I lied. That's not /actually/ the type of ~eval~. The ~MyState~
@@ -228,8 +228,7 @@ The generated code sets up the input as a JS object:
 #+begin_src typescript
   export function setup (symtab : any) {
     const realigned = realign(symtab);
-    tsm.initSymTab({ ...{"dow": 7.0
-		   ,"annualIncome": 100000.0
+    tsm.initSymTab({ ...{ "annualIncome": 100000.0
 		   ,"netWorth": 700000.0
 		   ,"vivacity": true}
 		   ,...realigned })
@@ -366,7 +365,6 @@ expression, and under it, you see how that expression was arrived at.
   ,#+NAME symtab
   ,#+BEGIN_SRC json
   {
-    "dow": 7,
     "annualIncome": 100000,
     "netWorth": 700000,
     "vivacity": true
@@ -413,7 +411,7 @@ Binary operators, of type ~Float -> Float -> Float~
 + - * /
 #+end_example
 
-We don't have or logarithms in exponentiation the current version of mathlang, but maybe we should, for calculating compound interest.
+We don't have logarithms or exponentiation in the current version of mathlang, but maybe we should, for calculating compound interest.
 
 ** We support Boolean logic
 

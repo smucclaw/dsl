@@ -395,6 +395,12 @@ expression, and under it, you see how that expression was arrived at.
 #+end_example
 
 
+* Output: a diagram
+
+The Typescript also generates a Graphviz Dot file showing the computation tree:
+
+[[./doc/taxableAmount.png]]
+
 * Semantics (Requirements)
 
 Based on the input problems that we've seen so far we will need the following elements of a DSL to handle arithmetic calculations involving Boolean conditionals:

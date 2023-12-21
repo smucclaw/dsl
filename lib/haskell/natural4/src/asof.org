@@ -1,0 +1,99 @@
+#+TITLE: The Semantics of ~AS OF~: Temporal Epistemic Modals
+
+* Summary
+
+  The ~AS OF~ (and synonymously ~AS AT~) operators fix decision logic to a particular time.
+
+* Introductory Examples
+  
+For example, the sale of liquor is conditional upon the age of the buyer at the time of purchase.
+
+#+begin_example
+  GIVEN  t  IS A  TimePoint
+         p  IS A  Person
+  DECIDE p qualifies     AS OF  t
+      IF p's age >= 21   AS OF  t
+#+end_example
+    
+Let's say that the validity of a will is conditional upon two things:
+- the metal capacity of the testator at the time of signing, and
+- the marital status remaining unchanged between the time of signing and the time of death.
+
+#+begin_example
+  GIVEN  signing   IS A  TimePoint
+         death     IS A  TimePoint
+         p         IS A  Person
+  DECIDE p's will  IS valid  AS OF  death
+      IF p's marital status  AS OF  death  ==  p's marital status  AS OF  signing
+#+end_example
+
+We assume that "marital status" includes the particulars of the spouse.
+
+* Background
+
+For background, please see the following:
+
+- [[https://en.wikipedia.org/wiki/Temporal_database][Temporal Database (Wikipedia)]]
+- [[https://en.wikipedia.org/wiki/Modal_logic#Temporal_logic][Modal Logic (temporals)]]
+
+* Syntax Specification
+
+  #+begin_example
+    DecisionExpression ::= DecisionExpression "AS OF" TimeExpression
+  #+end_example
+
+* Semantics
+
+  Any logic that computes a decision is extended with an additional parameter representing "at time T".
+
+  If an operational function considers a series of inputs
+
+  #+begin_src javascript
+function decision (input1, ..., inputN) { ... }
+  #+end_src
+
+The temporally-aware version of that function looks like
+
+  #+begin_src javascript
+function decision_T (input1, ..., inputN, atTime) { ... }
+  #+end_src
+
+In the naive version, ~atTime~ is a single timepoint.
+
+In a more complete system,, ~atTime~ is a possibly empty list of timepoint resolution functions.
+
+* Stacking of relative computations
+
+The syntax deliberately allows for chains of "AS OF" to calculate relative timepoints.
+
+Suppose an insurance policy wants to consider the age of a policyholder at the time of contract renewal.
+
+At the time the operational runtime is considering the policy (/run time/),
+
+the contract has already been renewed at some point in the past year (/renewal time/).
+
+And at the time of that renewal, the policyholder has had a birthday in the past year (/birthday time/).
+
+#+begin_example
+  DECIDE policy expires
+      IF holder's age  >= 75  AS OF  previous birthday
+                              AS OF  previous policy renewal
+                              AS OF  calculation time
+#+end_example
+
+This allows an audit engine to specify what the decision logic would have computed under some earlier, possibly buggy, version of the codebase, as it was snapshotted on the first of December:
+
+#+begin_example
+  DECIDE policy expires
+      IF holder's age  >= 75  AS OF  previous birthday
+                              AS OF  previous policy renewal
+                              AS OF  policy logic engine version 1.1
+                              AS OF  2023-12-01
+#+end_example
+
+* TODO Rule Against Perpetuities
+
+We illustrate the Rule Against Perpetuities using ~AS OF~ syntax.
+
+
+  

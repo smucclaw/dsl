@@ -13,7 +13,7 @@ packages:
     hackage: orgmode-0.1.0.1
 snapshots:
 - completed:
-    sha256: 7af03e6be2d59fab007bea15a79dd7fa70baa84d8585f431023fec1033ba4149
-    size: 713438
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/2.yaml
-  original: lts-22.2
+    sha256: 8b211c5a6aad3787e023dfddaf7de7868968e4f240ecedf14ad1c5b2199046ca
+    size: 714097
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/4.yaml
+  original: lts-22.4

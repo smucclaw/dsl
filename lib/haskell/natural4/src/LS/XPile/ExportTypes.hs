@@ -123,17 +123,17 @@ typeDeclNameToFieldName :: RuleName -> T.Text
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
 -- | Collect the enums into a list of strings
-getEnums :: forall s. (HasTypes s MTExpr) => s -> [T.Text]
+getEnums :: (HasTypes s MTExpr) => s -> [T.Text]
 getEnums = map mtexpr2text . SFL4.extractMTExprs
 
 textToFieldType :: T.Text -> FieldType
-textToFieldType tn = case tn of
-        "Integer" -> FTInteger
-        "Boolean" -> FTBoolean
-        "Number" -> FTNumber
-        "String" -> FTString
-        "Date" -> FTDate
-        n -> FTRef (processTopLvlNameTextForJsonSchema n)
+textToFieldType = \case
+  "Integer" -> FTInteger
+  "Boolean" -> FTBoolean
+  "Number" -> FTNumber
+  "String" -> FTString
+  "Date" -> FTDate
+  n -> FTRef $ processTopLvlNameTextForJsonSchema n
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
@@ -297,7 +297,7 @@ rulesToHaskellTp rs =
                    show (vsep (map showTypesHaskell entries ++
                         translationTable (genTranslationTable entries))))
 
-translationTable :: forall ann. [(T.Text, T.Text)] -> [Doc ann]
+translationTable :: [(T.Text, T.Text)] -> [Doc ann]
 translationTable tab =
     [vsep [
             "translations :: [(String, String)]"
@@ -433,8 +433,8 @@ instance ShowTypesJson FieldType where
         jsonType "array" <> "," <>
         dquotes "items" <> ": " <>
         braces (showTypesJson n)
-    showTypesJson _ =
-        jsonType "string"
+    -- showTypesJson _ =
+    --     jsonType "string"
 
 instance ShowTypesJson Field where
     showTypesJson :: Field -> Doc ann

@@ -146,11 +146,10 @@ sfl4ToLogProg rs =
 rule2clause :: Analysis -> SFL4.Rule -> [Clause]
 rule2clause st cr@Hornlike {} = hornlike2clauses st (mt2text $ name cr) (clauses cr)
 rule2clause st TypeDecl {} = []
-rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (mt2text $ name td) ens
+-- rule2clause st td@TypeDecl { enums = Just ens }    = clpEnums st (mt2text $ name td) ens
 
 
-rule2clause st td@TypeDecl { has   = rules }
-  | rules /= [] = describeDict st (mt2text $ name td) (super td) rules
+-- rule2clause st td@TypeDecl { has   = rules@(_:_) } = describeDict st (mt2text $ name td) (super td) rules
 -- https://www.swi-prolog.org/pldoc/man?section=bidicts
 -- TypeDecl
 --   { name = "Player"
@@ -167,7 +166,7 @@ rule2clause st td@TypeDecl { has   = rules }
 --           )
 --       ]
 
-rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (mt2text $ name td) sup
+-- rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (mt2text $ name td) sup
 -- [ TypeDecl
 --     { name = "Hand"
 --     , super = Just

@@ -123,17 +123,17 @@ typeDeclNameToFieldName :: RuleName -> T.Text
 typeDeclNameToFieldName = typeDeclNameToTypeName
 
 -- | Collect the enums into a list of strings
-getEnums :: forall s. (HasTypes s MTExpr) => s -> [T.Text]
+getEnums :: (HasTypes s MTExpr) => s -> [T.Text]
 getEnums = map mtexpr2text . SFL4.extractMTExprs
 
 textToFieldType :: T.Text -> FieldType
-textToFieldType tn = case tn of
-        "Integer" -> FTInteger
-        "Boolean" -> FTBoolean
-        "Number" -> FTNumber
-        "String" -> FTString
-        "Date" -> FTDate
-        n -> FTRef n
+textToFieldType = \case
+  "Integer" -> FTInteger
+  "Boolean" -> FTBoolean
+  "Number" -> FTNumber
+  "String" -> FTString
+  "Date" -> FTDate
+  n -> FTRef n
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
@@ -297,7 +297,7 @@ rulesToHaskellTp rs =
                    show (vsep (map showTypesHaskell entries ++
                         translationTable (genTranslationTable entries))))
 
-translationTable :: forall ann. [(T.Text, T.Text)] -> [Doc ann]
+translationTable :: [(T.Text, T.Text)] -> [Doc ann]
 translationTable tab =
     [vsep [
             "translations :: [(String, String)]"

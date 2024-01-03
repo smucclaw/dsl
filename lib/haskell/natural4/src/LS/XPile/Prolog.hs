@@ -166,7 +166,7 @@ rule2clause st TypeDecl {} = []
 --           )
 --       ]
 
-rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (mt2text $ name td) sup
+-- rule2clause st td@TypeDecl { has   = [], super = Just sup }  = pure $ describeParent st (mt2text $ name td) sup
 -- [ TypeDecl
 --     { name = "Hand"
 --     , super = Just

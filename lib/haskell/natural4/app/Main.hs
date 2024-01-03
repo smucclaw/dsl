@@ -66,7 +66,7 @@ import LS.XPile.SVG qualified as AAS
 import LS.XPile.JSONRanges (asJSONRanges)
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
-import LS.XPile.XPMathLang qualified as XPML
+import LS.XPile.MathLang (toMathLang)
 import LS.XPile.VueJSON
   ( checklist,
     groundrules,
@@ -198,7 +198,7 @@ main = do
       (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
       (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
 
-      (toMathLangTSFN,  (asMathLangTS,     asMathLangTSErr))     = (workuuid <> "/" <> "mathlangTS",   XPML.asMathLang l4i defaultReaderEnv)
+      (toMathLangTSFN,  (asMathLangTS,     asMathLangTSErr))     = (workuuid <> "/" <> "mathlangTS",   toMathLang l4i defaultReaderEnv)
 
       (tojsrFN,     (asJSRpretty, asJSRerr))  = (workuuid <> "/" <> "jsonranges",  xpLog $ asJSONRanges l4i)
       (totsFN,      (asTSpretty, asTSerr))    = (workuuid <> "/" <> "ts",       xpLog $ asTypescript l4i)

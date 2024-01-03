@@ -1,9 +1,11 @@
-module LS.XPile.XPMathLang where
+module LS.XPile.MathLang.MathLang (toMathLang) where
 
+import LS.XPile.IntroReader (MyEnv)
 import LS.Interpreter
 import Explainable.MathLang
 import LS.Rule (Interpreted)
 import Data.HashMap.Strict qualified as Map
+
 
 -- | calling the output "MyState" is misleading, but this is the most general way to cover the idea that
 -- a ruleset consists of more than one rule, similar to how the Vue interface gives more than one
@@ -11,10 +13,10 @@ import Data.HashMap.Strict qualified as Map
 --
 -- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
 -- to contain an @Expr Float@ called "must sing"
-asMathLang :: Interpreted -> MyEnv -> (String, [String])
+toMathLang :: Interpreted -> MyEnv -> (String, [String])
+toMathLang l4i myenv = undefined 
 
-asMathLang l4i myenv =
-  intermediate l4i myenv
+--   intermediate l4i myenv
     -- inconveniently, dumpTypescript returns IO () when we would prefer it to return String. So somebody please take on the burden of fixing this to be better.
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.
     -- the most important transformations are:
@@ -28,7 +30,8 @@ asMathLang l4i myenv =
 --  MyState { symtabF = Map.fromList [("maxClaim", ... -- snd element dumps to { return new tsm.Bool3 )] }
 
 intermediate :: Interpreted -> MyEnv -> (String, [String])
-intermediate l4i myenv =
+intermediate l4i myenv = undefined 
+{-
   let topLevelExprs = qaHorns l4i
 
   -- what would the L4 of this be?
@@ -68,6 +71,7 @@ intermediate l4i myenv =
       debuggingOutput = pShowNoColorS $ mathLangExpr2a
 
    in (debuggingOutput, ["here we will pretend that the dumpTypescript function returned a well-behaved pure String and not an IO argh"])
+-}
 
 -- the Qualifies bit gets broken out into its own Hornlike rule, BUT you should access it via qaHornsT, which exposes it
 -- for use by transpilers.

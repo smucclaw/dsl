@@ -1,16 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
-module LS.XPile.XPMathLangSpec where
+module LS.XPile.MathLangSpec where
 
 import Data.HashMap.Strict qualified as Map
 import Explainable.MathLang
 import LS.Rule
-import LS.XPile.XPMathLang
+import LS.XPile.MathLang
 import Test.Hspec
 import LS
 import AnyAll
 
 spec :: Spec
-spec = describe "asMathLang" $ do
+spec = describe "toMathLang" $ do
   it "should convert Interpreted to MyState" $ do
     let rule =
           Hornlike
@@ -43,4 +43,4 @@ spec = describe "asMathLang" $ do
         expected :: MyState
         expected = emptyState {symtabP = Map.fromList [("must sing", output)]}
 
-    asMathLang interpreted `shouldBe` expected
+    toMathLang interpreted `shouldBe` expected

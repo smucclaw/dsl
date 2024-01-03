@@ -584,6 +584,7 @@ data RunConfig = RC { debug     :: Bool
                     , toJsonUI  :: Bool
                     , toMaude :: Bool
                     , toLogicalEnglish :: Bool
+                    , toMathLang :: Bool
                     , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
@@ -615,6 +616,7 @@ defaultRC = RC
         , toJsonUI = False
         , toMaude = False
         , toLogicalEnglish = False
+        , toMathLang = False
         , toSCasp  = False
         , toUppaal = False
         , saveAKA = False

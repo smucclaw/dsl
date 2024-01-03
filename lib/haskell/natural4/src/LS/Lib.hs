@@ -114,6 +114,7 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tomaude   :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
                    , tologicalenglish      :: w ::: Bool   <!> "True"  <?> "logical english"
+                   , tomathlang      :: w ::: Bool   <!> "True"  <?> "typed lambda calculus with arithmetic ops and convenience hofs"
 
                    , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 

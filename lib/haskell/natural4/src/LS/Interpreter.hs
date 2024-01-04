@@ -1,7 +1,9 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 
 {-|
@@ -26,11 +28,10 @@ module LS.Interpreter where
 
 import AnyAll qualified as AA
 import Control.Applicative ((<|>))
-import Control.Monad (guard, join, forM)
+import Control.Monad (guard, join)
 import Data.Bifunctor (first)
 import Data.Either (partitionEithers, fromRight)
 import Data.Graph.Inductive
-import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (find, (\\))
 import Data.List qualified as DL
@@ -51,6 +52,7 @@ import LS.Rule
 import LS.Types
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 -- | interpret the parsed rules based on some configuration options.
 -- This is a canonical intermediate representation used by downstream
@@ -277,7 +279,7 @@ classGraphFGL ct =
 extractEnums :: Interpreted -> [Rule]
 extractEnums l4i =
   let rs = origrules l4i
-  in concatMap go rs
+  in foldMap go rs
   where
     go :: Rule -> [Rule]
     go r@TypeDecl{super = Just (InlineEnum enumtype enumtext)} =
@@ -490,7 +492,7 @@ relPredRefs rs ridmap headElements r = do
      , let targetRuleId = Map.lookup targetRule' ridmap
      , isJust targetRuleId
      , let targetRuleId' = fromJust targetRuleId -- safe due to above isJust test
-           rid = ridmap ! r
+           rid = ridmap Map.! r
      ]
 
   mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
@@ -862,49 +864,58 @@ getMarkings l4i =
   ]
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
-    markings (RPConstraint (MTT "has" : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
-    markings (RPConstraint (MTT "is"  : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
     markings (RPConstraint          xs  RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
     markings _                                    = Nothing
 
     rhsval [MTB rhs] = Just rhs
-    rhsval [MTF rhs] = if rhs == 0 then Just False else Just True
-    rhsval [MTT rhs] = case T.toLower rhs of
-                   "does not" -> Just False
-                   "doesn't"  -> Just False
-                   "hasn't"   -> Just False
-                   "false"    -> Just False
-                   "not"      -> Just False
-                   "no"       -> Just False
-                   "f"        -> Just False
-                   "t"        -> Just True
-                   "so"       -> Just True
-                   "yes"      -> Just True
-                   "has"      -> Just True
-                   "true"     -> Just True
-                   "does"     -> Just True
-                   _            -> Nothing
-    rhsval [] = Nothing
+    rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)?|f)$|]) -> True)] = Just False
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t)$|]) -> True)] = Just True
+    -- rhsval [MTT rhs] = case T.toLower rhs of
+    --                "does not" -> Just False
+    --                "doesn't"  -> Just False
+    --                "hasn't"   -> Just False
+    --                "false"    -> Just False
+    --                "not"      -> Just False
+    --                "no"       -> Just False
+    --                "f"        -> Just False
+    --                "t"        -> Just True
+    --                "so"       -> Just True
+    --                "yes"      -> Just True
+    --                "has"      -> Just True
+    --                "true"     -> Just True
+    --                "does"     -> Just True
+    --                _            -> Nothing
+    -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
     rhsval _  = Nothing
 
-
 -- | local variables
 -- a list of the typed multiterms which show up inside the GIVEN and GIVETH attributes of a rule.
-ruleLocals, ruleLocalsIn, ruleLocalsOut :: Interpreted -> Rule -> [TypedMulti]
-ruleLocals l4i r = ruleLocalsIn l4i r ++ ruleLocalsOut l4i r
+ruleLocals :: Interpreted -> Rule -> [TypedMulti]
+ruleLocals l4i r = ruleLocalsIn l4i r <> ruleLocalsOut l4i r
 
 -- | input variables -- GIVEN
-ruleLocalsIn _l4i r
-  | not (hasGiven r) = []
-  | otherwise = concatMap NE.toList (maybeToList (given r))
+-- ruleLocalsIn _l4i r
+--   | not (hasGiven r) = []
+--   | otherwise = foldMap NE.toList (maybeToList (given r))
 
 -- | output variables -- GIVETH
-ruleLocalsOut _l4i r
-  | not (hasGiveth r) = []
-  | otherwise = concatMap NE.toList (maybeToList (giveth r))
+-- ruleLocalsOut _l4i r
+--   | not (hasGiveth r) = []
+--   | otherwise = foldMap NE.toList (maybeToList (giveth r))
 
+ruleLocalsIn :: Interpreted -> Rule -> [TypedMulti]
+ruleLocalsIn = ruleLocalsInOut hasGiven given
 
+ruleLocalsOut :: Interpreted -> Rule -> [TypedMulti]
+ruleLocalsOut = ruleLocalsInOut hasGiveth giveth
+
+ruleLocalsInOut :: (Rule -> Bool) -> (Rule -> Maybe ParamText) -> Interpreted -> Rule -> [TypedMulti]
+ruleLocalsInOut hasGivenOrGiveth givenGiveth _l4i r
+  | hasGivenOrGiveth r = foldMap NE.toList $ maybeToList $ givenGiveth r
+  | otherwise = []
 
 type NestedClass = Tree ParamText
 

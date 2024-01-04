@@ -21,6 +21,7 @@ import LS.Utils (MonoidValidate)
 import LS.XPile.Maude.Utils (throwDefaultErr)
 import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 tempConstr2doc ::
   forall ann1 ann2.
@@ -30,7 +31,8 @@ tempConstr2doc = traverse \case
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)
-      (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
+      ((PCRE.≈ [PCRE.re|^(?i)day(s)?$|]) -> True)
+      -- (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) ->
       pure [di|#{tComparison'} #{n} DAY|]
       where

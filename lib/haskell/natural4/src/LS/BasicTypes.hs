@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use camelCase" #-}
@@ -41,7 +43,7 @@ import Text.Megaparsec
     VisualStream (..),
     initialPos,
   )
-
+import Text.Regex.PCRE.Heavy qualified as PCRE
 -- import Data.List (intercalate)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
@@ -127,9 +129,7 @@ toToken "OR" =     pure Or
 toToken "AND" =    pure And
 toToken "..." =    pure And   -- CNL sugar to allow phrases to follow
 toToken "…"   =    pure And   -- CNL sugar to allow phrases to follow -- this is unicode for ellipsis
-toToken "UNLESS" = pure Unless
-toToken "EXCEPT" = pure Unless
-toToken "IF NOT" = pure Unless
+toToken ((PCRE.≈ [PCRE.re|^(UNLESS|EXCEPT|IF NOT)$|]) -> True) = pure Unless
 toToken "NOT"    = pure MPNot
 
 -- set operators
@@ -152,10 +152,7 @@ toToken "AT"     = pure On      -- ==
 toToken "EVENTUALLY" = pure Eventually
 
 -- the rest of the regulative rule
-toToken "➔"       =     pure Do
-toToken "->"      =     pure Do
-toToken "DO"      =     pure Do
-toToken "PERFORM" =     pure Do
+toToken ((PCRE.≈ [PCRE.re|^(➔|->|DO|PERFORM)$|]) -> True)      = pure Do
 
 -- for discarding
 toToken "" =       pure Empty
@@ -164,32 +161,22 @@ toToken "FALSE" =  pure TokFalse
 toToken "HOLDS" =  pure Holds
 
 -- regulative chains
-toToken "HENCE" = pure Hence
-toToken "THUS"  = pure Hence
+toToken ((PCRE.≈ [PCRE.re|^(HENCE|THUS)$|]) -> True)      = pure Hence
 
 -- alternative formulations intended to be closer to natural language
 -- for the obligation case
 toToken "IF FULFILLED"      = pure Hence
-toToken "IF NOT FULFILLED"  = pure Lest
-toToken "IF VIOLATED"       = pure Lest
+toToken ((PCRE.≈ [PCRE.re|^IF (NOT FULFILLED|VIOLATED)$|]) -> True)      = pure Lest
 -- for the permission case
-toToken "IF EXERCISED"      = pure Hence
-toToken "IF EXERCIZED"      = pure Hence
-toToken "IF NOT EXERCISED"  = pure Lest
-toToken "IF NOT EXERCIZED"  = pure Lest
+toToken ((PCRE.≈ [PCRE.re|^IF EXERCI(S|Z)ED$|]) -> True)      = pure Hence
+toToken ((PCRE.≈ [PCRE.re|^IF NOT EXERCI(S|Z)ED$|]) -> True)      = pure Lest
 -- for the prohibition case
 toToken "IF PROHIBITION VIOLATED"      = pure Lest
-toToken "IF PROHIBITION NOT VIOLATED"  = pure Hence
-toToken "IF NOT PROHIBITION VIOLATED"  = pure Hence
-toToken "IF NOT VIOLATED"              = pure Hence
-
+toToken ((PCRE.≈ [PCRE.re|^IF (PROHIBITION NOT|NOT (PROHIBITION)*) VIOLATED$|]) -> True)      = pure Hence
 
 -- mutable state variables are modified by UPON THEN ELSE
 toToken     "THEN" = pure Then
-toToken     "ELSE" = pure Else
-toToken  "OR ELSE" = pure Else
-toToken "XOR ELSE" = pure Else
-toToken    "XELSE" = pure Else
+toToken ((PCRE.≈ [PCRE.re|^(((X)*OR |X)*ELSE)$|]) -> True)      = pure Else
 
 -- trivial contracts
 toToken  "FULFILLED" = pure Fulfilled
@@ -200,90 +187,55 @@ toToken  "GOTO" = pure Goto
 
 toToken ";"      = pure EOL
 
-toToken ":"      = [TypeSeparator, A_An]
-toToken "::"     = [TypeSeparator, A_An]
-toToken "TYPE"   = [TypeSeparator, A_An]
-toToken "IS A"   = [TypeSeparator, A_An]
-toToken "IS AN"  = [TypeSeparator, A_An]
-toToken "IS THE" = [TypeSeparator, A_An]
-toToken "A"      = pure A_An -- [TODO] this is going to break entirely innocent end-user phrasing like 7 8 9 A B C D E
-toToken "AN"     = pure A_An
-toToken "THE"    = pure A_An
+toToken ((PCRE.≈ [PCRE.re|^(:(:)*|TYPE|IS (A(N)*|THE))$|]) -> True) =
+  [TypeSeparator, A_An]
+toToken ((PCRE.≈ [PCRE.re|^(A(N)*|THE)$|]) -> True) = pure A_An -- [TODO] this is going to break entirely innocent end-user phrasing like 7 8 9 A B C D E
 
 toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define -- [TODO] rephrase DEFINE to support DECIDE and possibly overloaded DATA?
 toToken "DATA"      = pure Define
 toToken "DECIDE"    = pure Decide
-toToken "ONEOF"    = pure OneOf
-toToken "ONE OF"    = pure OneOf
-toToken "IS ONE OF" = pure OneOf
-toToken "AS ONE OF" = pure OneOf
+toToken ((PCRE.≈ [PCRE.re|^(ONEOF|((I|A)*S )*ONE OF)$|]) -> True) =
+  pure OneOf
 toToken "DEEM"      = pure Deem
 toToken "HAS"       = pure Has
 
 toToken "ONE"       = pure One
 toToken "OPTIONAL"  = pure Optional
+
 toToken "LIST0"     = pure List0
-toToken "LIST1"     = pure List1
-toToken "LIST OF"   = pure List1
-toToken "LISTOF"    = pure List1
-toToken "LIST"      = pure List1
+toToken ((PCRE.≈ [PCRE.re|^(LIST(1|( )*OF)*)$|]) -> True) = pure List1
 
 toToken "SET0"     = pure Set0
-toToken "SET1"     = pure Set1
-toToken "SET OF"   = pure Set1
-toToken "SETOF"    = pure Set1
-toToken "SET"      = pure Set1
-
-
+toToken ((PCRE.≈ [PCRE.re|^(SET(1|( )*OF)*)$|]) -> True) = pure Set1
 
 toToken "MAP"       = pure FMap
 
 toToken "AKA"       = pure Aka
 toToken "TYPICALLY" = pure Typically
 
-toToken "CLAUSE"    = pure $ RuleMarker   1  "§"
-toToken "SECTION"   = pure $ RuleMarker   1  "§"
+toToken ((PCRE.≈ [PCRE.re|^(CLAUSE|SECTION)$|]) -> True) =
+  pure $ RuleMarker   1  "§"
 
-toToken "-§"        = pure $ RuleMarker (-1) "§"
-toToken "§"         = pure $ RuleMarker   1  "§"
-toToken "§§"        = pure $ RuleMarker   2  "§"
-toToken "§§§"       = pure $ RuleMarker   3  "§"
-toToken "§§§§"      = pure $ RuleMarker   4  "§"
-toToken "§§§§§"     = pure $ RuleMarker   5  "§"
-toToken "§§§§§§"    = pure $ RuleMarker   6  "§"
+toToken ((PCRE.scan [PCRE.re|^-(§|¶)$|]) -> [(_, [c])]) =
+  pure $ RuleMarker (-1) c
 
-toToken "-¶"        = pure $ RuleMarker (-1) "¶"
-toToken "¶"         = pure $ RuleMarker   1  "¶"
-toToken "¶¶"        = pure $ RuleMarker   2  "¶"
-toToken "¶¶¶"       = pure $ RuleMarker   3  "¶"
-toToken "¶¶¶¶"      = pure $ RuleMarker   4  "¶"
-toToken "¶¶¶¶¶"     = pure $ RuleMarker   5  "¶"
-toToken "¶¶¶¶¶¶"    = pure $ RuleMarker   6  "¶"
-
-toToken "H1"        = pure $ RuleMarker   1  "H"
-toToken "H2"        = pure $ RuleMarker   2  "H"
-toToken "H3"        = pure $ RuleMarker   3  "H"
-toToken "H4"        = pure $ RuleMarker   4  "H"
-toToken "H5"        = pure $ RuleMarker   5  "H"
-toToken "H6"        = pure $ RuleMarker   6  "H"
+toToken s@((PCRE.scan [PCRE.re|^(§|¶|H)+$|]) -> [(_, [c])]) =
+  pure $ RuleMarker (Text.length s) c
 
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
-toToken "MIN"       = pure TokMin;     toToken "MIN OF"    = pure TokMin
-toToken "=<"        = pure TokLTE
-toToken "<="        = pure TokLTE
+toToken ((PCRE.≈ [PCRE.re|^MIN( OF)*$|]) -> True)       = pure TokMin
+toToken ((PCRE.≈ [PCRE.re|^(<=|=>)*$|]) -> True)       = pure TokLTE
 toToken ">"         = pure TokGT
-toToken "MAX"       = pure TokMax;     toToken "MAX OF"    = pure TokMax
+toToken ((PCRE.≈ [PCRE.re|^MAX( OF)*$|]) -> True)       = pure TokMax
 toToken ">="        = pure TokGTE
-toToken "="         = pure TokEQ
 toToken "&&"        = pure TokAnd
 toToken "||"        = pure TokOr
-toToken "SUM"       = pure TokSum;     toToken "SUM OF"     = pure TokSum
-toToken "PRODUCT"   = pure TokProduct; toToken "PRODUCT OF" = pure TokProduct
-toToken "=="        = pure TokEQ
-toToken "==="       = pure TokEQ
+toToken ((PCRE.≈ [PCRE.re|^SUM( OF)*$|]) -> True)       = pure TokSum
+toToken ((PCRE.≈ [PCRE.re|^PRODUCT( OF)*$|]) -> True)   = pure TokProduct
+toToken ((PCRE.≈ [PCRE.re|^=(=)*(=)*$|]) -> True)   = pure TokEQ
 toToken "IN"        = pure TokIn
 toToken "NOT IN"    = pure TokNotIn
 

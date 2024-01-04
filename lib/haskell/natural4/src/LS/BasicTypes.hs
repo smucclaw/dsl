@@ -169,11 +169,11 @@ toToken ((PCRE.≈ [PCRE.re|^IF EXERCI(S|Z)ED$|]) -> True)      = pure Hence
 toToken ((PCRE.≈ [PCRE.re|^IF NOT EXERCI(S|Z)ED$|]) -> True)      = pure Lest
 -- for the prohibition case
 toToken "IF PROHIBITION VIOLATED"      = pure Lest
-toToken ((PCRE.≈ [PCRE.re|^IF (PROHIBITION NOT|NOT (PROHIBITION)*) VIOLATED$|]) -> True)      = pure Hence
+toToken ((PCRE.≈ [PCRE.re|^IF (PROHIBITION NOT|NOT (PROHIBITION)?) VIOLATED$|]) -> True)      = pure Hence
 
 -- mutable state variables are modified by UPON THEN ELSE
 toToken     "THEN" = pure Then
-toToken ((PCRE.≈ [PCRE.re|^(((X)*OR |X)*ELSE)$|]) -> True)      = pure Else
+toToken ((PCRE.≈ [PCRE.re|^(((X)?OR |X)?ELSE)$|]) -> True)      = pure Else
 
 -- trivial contracts
 toToken  "FULFILLED" = pure Fulfilled
@@ -184,15 +184,15 @@ toToken  "GOTO" = pure Goto
 
 toToken ";"      = pure EOL
 
-toToken ((PCRE.≈ [PCRE.re|^(:(:)*|TYPE|IS (A(N)*|THE))$|]) -> True) =
+toToken ((PCRE.≈ [PCRE.re|^(:(:)?|TYPE|IS (A(N)?|THE))$|]) -> True) =
   [TypeSeparator, A_An]
-toToken ((PCRE.≈ [PCRE.re|^(A(N)*|THE)$|]) -> True) = pure A_An -- [TODO] this is going to break entirely innocent end-user phrasing like 7 8 9 A B C D E
+toToken ((PCRE.≈ [PCRE.re|^(A(N)?|THE)$|]) -> True) = pure A_An -- [TODO] this is going to break entirely innocent end-user phrasing like 7 8 9 A B C D E
 
 toToken "DECLARE"   = pure Declare
 toToken "DEFINE"    = pure Define -- [TODO] rephrase DEFINE to support DECIDE and possibly overloaded DATA?
 toToken "DATA"      = pure Define
 toToken "DECIDE"    = pure Decide
-toToken ((PCRE.≈ [PCRE.re|^(ONEOF|((I|A)*S )*ONE OF)$|]) -> True) =
+toToken ((PCRE.≈ [PCRE.re|^(ONEOF|((I|A)?S )?ONE OF)$|]) -> True) =
   pure OneOf
 toToken "DEEM"      = pure Deem
 toToken "HAS"       = pure Has
@@ -201,10 +201,10 @@ toToken "ONE"       = pure One
 toToken "OPTIONAL"  = pure Optional
 
 toToken "LIST0"     = pure List0
-toToken ((PCRE.≈ [PCRE.re|^(LIST(1|( )*OF)*)$|]) -> True) = pure List1
+toToken ((PCRE.≈ [PCRE.re|^(LIST(1|( )?OF)?)$|]) -> True) = pure List1
 
 toToken "SET0"     = pure Set0
-toToken ((PCRE.≈ [PCRE.re|^(SET(1|( )*OF)*)$|]) -> True) = pure Set1
+toToken ((PCRE.≈ [PCRE.re|^(SET(1|( )?OF)?)$|]) -> True) = pure Set1
 
 toToken "MAP"       = pure FMap
 
@@ -223,16 +223,16 @@ toToken s@((PCRE.scan [PCRE.re|^(§|¶|H)+$|]) -> [(_, [c])]) =
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
-toToken ((PCRE.≈ [PCRE.re|^MIN( OF)*$|]) -> True)       = pure TokMin
-toToken ((PCRE.≈ [PCRE.re|^(<=|=>)*$|]) -> True)       = pure TokLTE
+toToken ((PCRE.≈ [PCRE.re|^MIN( OF)?$|]) -> True)       = pure TokMin
+toToken ((PCRE.≈ [PCRE.re|^(<=|=>)?$|]) -> True)       = pure TokLTE
 toToken ">"         = pure TokGT
-toToken ((PCRE.≈ [PCRE.re|^MAX( OF)*$|]) -> True)       = pure TokMax
+toToken ((PCRE.≈ [PCRE.re|^MAX( OF)?$|]) -> True)       = pure TokMax
 toToken ">="        = pure TokGTE
 toToken "&&"        = pure TokAnd
 toToken "||"        = pure TokOr
-toToken ((PCRE.≈ [PCRE.re|^SUM( OF)*$|]) -> True)       = pure TokSum
-toToken ((PCRE.≈ [PCRE.re|^PRODUCT( OF)*$|]) -> True)   = pure TokProduct
-toToken ((PCRE.≈ [PCRE.re|^=(=)*(=)*$|]) -> True)   = pure TokEQ
+toToken ((PCRE.≈ [PCRE.re|^SUM( OF)?$|]) -> True)       = pure TokSum
+toToken ((PCRE.≈ [PCRE.re|^PRODUCT( OF)?$|]) -> True)   = pure TokProduct
+toToken ((PCRE.≈ [PCRE.re|^=(=)?(=)?$|]) -> True)   = pure TokEQ
 toToken "IN"        = pure TokIn
 toToken "NOT IN"    = pure TokNotIn
 

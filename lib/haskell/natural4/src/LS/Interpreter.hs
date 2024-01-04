@@ -279,7 +279,7 @@ classGraphFGL ct =
 extractEnums :: Interpreted -> [Rule]
 extractEnums l4i =
   let rs = origrules l4i
-  in concatMap go rs
+  in foldMap go rs
   where
     go :: Rule -> [Rule]
     go r@TypeDecl{super = Just (InlineEnum enumtype enumtext)} =
@@ -870,7 +870,7 @@ getMarkings l4i =
 
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)*|f)$|]) -> True)] = Just False
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)?|f)$|]) -> True)] = Just False
     rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t)$|]) -> True)] = Just True
     -- rhsval [MTT rhs] = case T.toLower rhs of
     --                "does not" -> Just False

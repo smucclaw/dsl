@@ -85,7 +85,7 @@ import Prettyprinter (Pretty)
 import Witherable qualified as Wither
 
 -- $setup
--- >>> import qualified Data.Text as T
+-- >>> import Data.Text qualified as T
 -- >>> import Optics
 -- >>> :seti -XOverloadedStrings
 

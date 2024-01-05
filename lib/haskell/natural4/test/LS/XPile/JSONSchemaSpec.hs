@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.XPile.JSONSchemaSpec where
+module LS.XPile.JSONSchemaSpec (spec) where
 
 import Test.Hspec ( describe, it, xit, shouldBe, Spec )
 import LS.Types (TypeSig(..), ParamType(..))

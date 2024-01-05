@@ -4,7 +4,6 @@ module LS.NLP.NL4 where
 import Control.Monad ( ap, MonadPlus(..) )
 import Control.Monad.Identity (Identity ( Identity, runIdentity) )
 import Data.Monoid ()
-import Data.Kind (Type)
 import PGF (Expr, mkApp, mkCId, mkFloat, mkInt, mkStr, showCId, showExpr, unApp, unFloat, unInt, unStr )
 
 ----------------------------------------------------
@@ -191,7 +190,7 @@ data GInt_
 type GFloat = Tree GFloat_
 data GFloat_
 
-data Tree :: Type -> Type where
+data Tree t where
   LexA :: String -> Tree GA_
   G_located_in_A2 :: Tree GA2_
   Gdue_to_A2 :: Tree GA2_

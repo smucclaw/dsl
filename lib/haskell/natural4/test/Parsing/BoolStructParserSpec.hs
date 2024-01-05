@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 
-module Parsing.BoolStructParserSpec where
+module Parsing.BoolStructParserSpec (spec) where
 
 import Text.Megaparsec
 import LS.Lib
@@ -16,11 +16,11 @@ import LS.Types
 import LS.Rule
 import LS.XPile.VueJSON
 import Test.Hspec
-import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TLE
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.Encoding qualified as TLE
 import LS.NLP.NLG (NLGEnv)
 import Test.Hspec.Megaparsec (shouldParse)
 
@@ -140,7 +140,7 @@ filetest testfile desc parseFunc expected =
     `shouldParse` [ expected ]
 
 pullIO :: Either (ParseErrorBundle MyStream e) [IO b] -> IO (Either (ParseErrorBundle MyStream e) [b])
-pullIO = traverse sequence
+pullIO = traverse sequenceA
 
 filetestIO :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) (IO b)) -> b -> SpecWith ()
 filetestIO testfile desc parseFunc expected =

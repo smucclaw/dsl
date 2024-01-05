@@ -105,9 +105,9 @@ rule2doc
       ruleActorAction = sequenceA [ruleName', rkeywordActor, deonticAction]
       ruleName' = pure [di|RULE #{text2qid ruleName}|]
       rkeywordActor =
-        RkeywordActor {rkeyword, actor} |> rkeywordActor2doc -- |$> pure
+        RkeywordActor {rkeyword, actor} |> rkeywordActor2doc
       deonticAction =
-        DeonticAction {deontic, action} |> deonticAction2doc -- |$> pure
+        DeonticAction {deontic, action} |> deonticAction2doc
 
       deadline = temporal |> tempConstr2doc |$> maybeToList
 
@@ -160,10 +160,3 @@ mkMeans name (otoList -> details :: [MultiTerm]) =
         |> \case
           [qid] -> qid
           qids -> [di|(#{qids |> intersperse "AND" |> hsep})|]
-        -- |> parenthesizeIf (lengthMoreThanOne details)
-
-    -- parenthesizeIf True x = [di|(#{x})|]
-    -- parenthesizeIf False x = x
-
-    -- lengthMoreThanOne ((`ocompareLength` 1) -> GT) = True
-    -- lengthMoreThanOne _ = False

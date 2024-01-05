@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -22,7 +24,7 @@ import Data.List (groupBy, nub)
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (maybeToList)
 import Data.Text qualified as T
-import Data.Text qualified as Text
+import Data.Traversable (for)
 import LS.NLP.NLG (NLGEnv, nlgQuestion)
 import LS.RelationalPredicates (aaLeavesFilter)
 import LS.Rule
@@ -91,7 +93,7 @@ import LS.XPile.Logging
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> Grounds
-groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
+groundrules rc rs = nub $ foldMap (rulegrounds rc globalrules) rs
   where
     globalrules :: [Rule]
     globalrules = [ r
@@ -99,19 +101,22 @@ groundrules rc rs = nub $ concatMap (rulegrounds rc globalrules) rs
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> XPileLog Grounds
 checklist env _ rs = do
-   qs <- nlgQuestion env `traverse` rs
-   let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
-   pure $ sequence nonEmptyQs
+  qs <- nlgQuestion env `traverse` rs
+  --  let nonEmptyQs = [ MTT <$> q | q@(_:_) <- qs ]
+  --  pure $ sequence nonEmptyQs
+  pure $ for qs \case
+    [] -> mempty
+    q -> MTT <$> q
 
 multiChecklist :: [NLGEnv] -> RunConfig -> [Rule] -> XPileLog Grounds
 multiChecklist env rc rs = do
-  qs <- sequence [checklist e rc rs | e <- env]
-  pure $ concat qs
+  qs <- (\e -> checklist e rc rs) `traverse` env
+  pure $ mconcat qs
 
 -- original:
 -- checklist env rc rs = groundsToChecklist env $ groundrules rc rs
 
--- toHTML :: NLGEnv -> RunConfig -> [Rule] -> IO (Text, Text)
+-- toHTML :: NLGEnv -> RunConfig -> [Rule] -> IO (T, T)
 -- toHTML env _ rs = do
 --   htm <- nlg env `traverse` rs
 
@@ -129,7 +134,7 @@ multiChecklist env rc rs = do
 --    <div class="action">sing</div>
 -- </div>
 
-  -- return $ Text.breakOn "\n" $ Text.unwords htm
+  -- return $ T.breakOn "\n" $ T.unwords htm
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
@@ -149,11 +154,11 @@ rulegrounds rc globalrules r@Hornlike{..} =
 rulegrounds _rc _globalrules _r = [ ]
 
 -- [TODO]: other forms of Rule need their ground terms expressed.
--- [TODO]: also, we should return the terms as a plain BoolStruct (Item Text.Text) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item Text.
+-- [TODO]: also, we should return the terms as a plain BoolStruct (Item T.T) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item T.
 
 
 -- [TODO] in future this will become
--- type Grounds = AA.Item Text.Text
+-- type Grounds = AA.Item T.T
 type Grounds = [MultiTerm]
 
 bsr2grounds :: RunConfig -> [Rule] -> Rule -> Maybe BoolStructR -> Grounds
@@ -194,16 +199,16 @@ groundsToChecklist env mts = sequence [
   ]
 groundToChecklist :: NLGEnv -> MultiTerm -> XPileLog MultiTerm
 groundToChecklist env mt = do
-{-  let txt = Text.unwords mt
+{-  let txt = T.unwords mt
   uds <- parseUD env txt
   let qs = gf $ getQSFromTrees $ udsToTreeGroups uds
   -- Debug output: print the AST of the question generated in getQSFromTrees
   when (verbose env) $ putStrLn ("The generated QS from the UDApp tree:\n" ++ showExpr qs)
   let lin = linearize (gfGrammar env) (gfLang gr) qs
   let result = case words lin of
-        "is":"there":"parseUD:":"fail":_ -> Text.pack "Is it true that " <> txt
-        _ -> Text.pack lin -}
-  let result = Text.pack "NLG is under construction"
+        "is":"there":"parseUD:":"fail":_ -> T.pack "Is it true that " <> txt
+        _ -> T.pack lin -}
+  let result = T.pack "NLG is under construction"
   return $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
@@ -212,13 +217,13 @@ pickOneOf mts = MTT "Does any of the following hold?" :
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
 groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word
-                | [_t1] <- Text.words (mtexpr2text mt1)
-                , [_t2] <- Text.words (mtexpr2text mt2) = True
+                | [_t1] <- T.words (mtexpr2text mt1)
+                , [_t2] <- T.words (mtexpr2text mt2) = True
 groupSingletons _ _ = False -- a) one/both mts not singleton, or b) are singletons but contain >1 word
 
-quaero :: [Text.Text] -> [Text.Text]
-quaero [x] = [Text.unwords $ quaero $ Text.words x]
-quaero (x:xs) = Text.toTitle x : init xs ++ [last xs <> "?"]
+quaero :: [T.Text] -> [T.Text]
+quaero [x] = [T.unwords $ quaero $ T.words x]
+quaero (x:xs) = T.toTitle x : init xs ++ [last xs <> "?"]
 quaero xs = xs
 
 toVueRules :: [Rule] -> [(RuleName, XPileLogE BoolStructR)]

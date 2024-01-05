@@ -12,7 +12,6 @@ module LS.PrettyPrinter where
 import AnyAll qualified as AA
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
--- import qualified Data.Map as Map
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT

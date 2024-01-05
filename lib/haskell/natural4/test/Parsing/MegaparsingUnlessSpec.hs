@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parsing.MegaparsingUnlessSpec where
+module Parsing.MegaparsingUnlessSpec (spec) where
 
 import Text.Megaparsec
 import LS.Lib
@@ -10,7 +10,7 @@ import LS.BasicTypes
 import LS.Types
 import LS.Rule
 import Test.Hspec
-import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Lazy qualified as BS
 import Test.Hspec.Megaparsec (shouldParse)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()

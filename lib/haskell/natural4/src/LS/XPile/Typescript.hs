@@ -109,9 +109,9 @@ import AnyAll
 
 import Control.Monad (join)
 import Data.HashMap.Strict qualified as Map
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as DTL
-import qualified Data.List.NonEmpty as NE
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as DTL
+import Data.List.NonEmpty qualified as NE
 import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
 import Data.Maybe (isJust, isNothing)
@@ -209,7 +209,7 @@ import Text.JSON
 -- | top-level function
 asTypescript :: SFL4R.Interpreted -> XPileLog (Doc ann)
 asTypescript l4i = do
-  vvsep <$> sequence [                              tsPrelude   l4i
+  vvsep <$> sequenceA [                              tsPrelude   l4i
                      , pure "// tsEnums",           tsEnums     l4i
                      , pure "// tsClasses",         tsClasses   l4i
                      , pure "// globalDefinitions [commented out]" --, globalDefinitions l4i
@@ -337,7 +337,7 @@ tsPrelude l4i = return $
 tsClasses :: Interpreted -> XPileLog (Doc ann)
 tsClasses l4i = do
   let ct@(CT ch) = classtable l4i
-  vvsep <$> sequence
+  vvsep <$> sequenceA
     [ do
         mutterdhsf 3 "tsClasses / className" pShowNoColorS className
         mutterdhsf 3 "tsClasses / children" pShowNoColorS children

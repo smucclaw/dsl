@@ -9,12 +9,12 @@ elsewhere in our codebase. -}
 
 module LS.XPile.JSONRanges where
 
+import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.List (groupBy, nub)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
 import Data.Text qualified as T
-import Data.Text qualified as Text
 import Data.Maybe (maybeToList, fromMaybe)
 import LS
 import LS.XPile.Logging
@@ -27,7 +27,6 @@ import LS.XPile.Logging
   )
 import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
-import Data.Foldable (for_)
 
 data Dimension lbl vals = Dimension lbl [vals]
   deriving (Show, Eq)
@@ -43,10 +42,10 @@ asJSONRanges l4i = do
   let ct = unCT $ classtable l4i
 
   classDimensions :: [(EntityType, Space EntityType MultiTerm)] <-
-    sequence
+    sequenceA
     [ do
         mutterdhsf 2 ("class " <> show thisclass) pShowNoColorS (itypesig, ct)
-        dims <- sequence
+        dims <- sequenceA
           [ do
               mutterdhsf 3 ("attribute: " <> T.unpack attrName) pShowNoColorS explicitTS
               return $ Dimension attrName (variants explicitTS)
@@ -71,7 +70,7 @@ asJSONRanges l4i = do
 
   mutterdhsf 1 "classDimensions" pShowNoColorS classDimensions
 
-  curlyList <$> sequence
+  curlyList <$> sequenceA
     [ do
         mutterdhsf 2 ("dims for " <> show className) pShowNoColorS dims
 

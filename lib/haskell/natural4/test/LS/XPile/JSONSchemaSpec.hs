@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module LS.XPile.JSONSchemaSpec where
+module LS.XPile.JSONSchemaSpec (spec) where
 
 import Control.Applicative (liftA2)
 import Data.Text qualified as T

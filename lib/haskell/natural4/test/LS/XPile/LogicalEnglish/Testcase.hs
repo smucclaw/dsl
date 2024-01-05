@@ -41,6 +41,11 @@ configFile2testcase configFile = runExceptT do
     else
       configFile
         |> Y.decodeFileThrow
+        -- Note that Yaml parse exceptions are thrown as IO errors, which are
+        -- for some reason treated as a different error type from other types
+        -- of errors.
+        -- Hence we need to use modifyError to catch the exception, modify it
+        -- into our internal exception type, and then re-throw it.
         |> modifyError yamlParseExc2error
         |$> Testcase directory
   where

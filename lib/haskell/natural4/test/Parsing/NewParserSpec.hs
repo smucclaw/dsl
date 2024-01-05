@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parsing.NewParserSpec where
+module Parsing.NewParserSpec (spec) where
 
 import Text.Megaparsec
 import LS.Lib
@@ -13,7 +13,7 @@ import LS.BasicTypes
 import LS.Types
 import LS.Rule
 import Test.Hspec
-import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Test.Hspec.Megaparsec (shouldParse)
 

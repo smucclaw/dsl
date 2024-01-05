@@ -60,7 +60,7 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         maxAllowedWidth = 35
         maxLengths = fmap (fmap (min maxAllowedWidth . length)) excelTableMarked & foldl1' (V.zipWith max) & fmap (fromIntegral @_ @Int)
         boxRepresentation = excelTableMarked
-          -- & sequence -- NOTE: This only works if the table is actually rectangular and doesn't have jagged rows
+          -- & sequenceA -- NOTE: This only works if the table is actually rectangular and doesn't have jagged rows
           -- & fmap (vcat Box.left . fmap Box.text )
           & fmap (imap (\c -> Box.alignHoriz Box.left (maxLengths V.! c) . Box.para Box.left maxAllowedWidth) >>> hsep 3 Box.left)
           & vcat Box.left & Box.render

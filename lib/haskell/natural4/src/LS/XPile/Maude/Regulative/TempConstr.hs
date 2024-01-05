@@ -31,7 +31,7 @@ tempConstr2doc = traverse \case
   ( TemporalConstraint
       tComparison@((`elem` [TOn, TBefore]) -> True)
       (Just n)
-      ((PCRE.≈ [PCRE.re|^(?i)day(s)?$|]) -> True)
+      ((PCRE.≈ [PCRE.re|^((?i)day(s)?)$|]) -> True)
       -- (T.toUpper .> (`elem` ["DAY", "DAYS"]) -> True)
     ) ->
       pure [di|#{tComparison'} #{n} DAY|]

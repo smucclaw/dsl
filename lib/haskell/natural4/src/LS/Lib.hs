@@ -580,7 +580,7 @@ pVarDefn = debugName "pVarDefn" do
       (name,mytype) <- manyIndentation pKeyValuesAka
       myTraceM $ "got name = " <> show name
       myTraceM $ "got mytype = " <> show mytype
-      hases   <- concat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
+      hases   <- mconcat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
       return $ defaultHorn
         { name = NE.toList name

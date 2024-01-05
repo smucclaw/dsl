@@ -44,7 +44,6 @@ import Text.Megaparsec
     initialPos,
   )
 import Text.Regex.PCRE.Heavy qualified as PCRE
--- import Data.List (intercalate)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 
@@ -223,16 +222,16 @@ toToken s@((PCRE.scan [PCRE.re|^(§|¶|H)+$|]) -> [(_, [c])]) =
 toToken "SCENARIO"  = pure ScenarioTok
 toToken "EXPECT"    = pure Expect
 toToken "<"         = pure TokLT
-toToken ((PCRE.≈ [PCRE.re|^MIN( OF)?$|]) -> True)       = pure TokMin
-toToken ((PCRE.≈ [PCRE.re|^(<=|=>)?$|]) -> True)       = pure TokLTE
+toToken ((PCRE.≈ [PCRE.re|^MIN( OF)?$|]) -> True)     = pure TokMin
+toToken ((PCRE.≈ [PCRE.re|^(<=|=>)?$|]) -> True)      = pure TokLTE
 toToken ">"         = pure TokGT
-toToken ((PCRE.≈ [PCRE.re|^MAX( OF)?$|]) -> True)       = pure TokMax
+toToken ((PCRE.≈ [PCRE.re|^MAX( OF)?$|]) -> True)     = pure TokMax
 toToken ">="        = pure TokGTE
 toToken "&&"        = pure TokAnd
 toToken "||"        = pure TokOr
-toToken ((PCRE.≈ [PCRE.re|^SUM( OF)?$|]) -> True)       = pure TokSum
-toToken ((PCRE.≈ [PCRE.re|^PRODUCT( OF)?$|]) -> True)   = pure TokProduct
-toToken ((PCRE.≈ [PCRE.re|^=(=)?(=)?$|]) -> True)   = pure TokEQ
+toToken ((PCRE.≈ [PCRE.re|^SUM( OF)?$|]) -> True)     = pure TokSum
+toToken ((PCRE.≈ [PCRE.re|^PRODUCT( OF)?$|]) -> True) = pure TokProduct
+toToken ((PCRE.≈ [PCRE.re|^=(=)?(=)?$|]) -> True)     = pure TokEQ
 toToken "IN"        = pure TokIn
 toToken "NOT IN"    = pure TokNotIn
 

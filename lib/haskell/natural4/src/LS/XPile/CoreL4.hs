@@ -745,15 +745,14 @@ prettyDefnCs rname cs = do
       <> Prettyprinter.line <> commentShow "#" cl
     -- defn aPlusB : Integer -> Integer -> Integer = \x : Integer -> \y : Integer -> x + y
   where
-
     x123 = [[di|x#{n}|] | (n :: Int) <- [1..]]
 
 prettyDefns :: [SFL4.Rule] -> Doc ann
 prettyDefns rs =
-  vsep $ concat [ prettyDefnCs "" (clauses r)
-                | r <- rs
-                , hasClauses r
-                ]
+  vsep $ mconcat [ prettyDefnCs "" (clauses r)
+                 | r <- rs
+                 , hasClauses r
+                 ]
 
 
 {-
@@ -900,7 +899,6 @@ prettyClasses ct =
      , typesNotExplicitlyDefined ]
 
   where -- [TODO] -- move this to the Interpreter
-
     superClassesNotExplicitlyDefined :: Doc ann
     superClassesNotExplicitlyDefined =
       let

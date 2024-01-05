@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.RelationalPredicatesSpec where
+module LS.RelationalPredicatesSpec (spec) where
 
 import AnyAll
 import Data.HashMap.Strict qualified as Map

@@ -13,7 +13,7 @@ module LS.Types
 where
 
 import AnyAll (mkLeaf)
-import qualified AnyAll as AA
+import AnyAll qualified as AA
 import Control.Monad
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
@@ -31,6 +31,7 @@ import Data.Tree qualified as Tree
 import Data.Void (Void)
 import GHC.Generics (Generic)
 import LS.BasicTypes
+import Safe (headMay)
 import Text.Megaparsec
 import Optics
 
@@ -478,8 +479,7 @@ extendedAttributes o@(CT clstab) subclass = do
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
 getSymType (Just x, _)    = Just x
-getSymType (Nothing, x:_) = Just x
-getSymType (Nothing, [])  = Nothing
+getSymType (_, xs) = headMay xs
 
 -- a subclass extends a superclass.
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass

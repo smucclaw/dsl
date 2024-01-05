@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parsing.SLParserSpec where
+module Parsing.SLParserSpec (spec) where
 
 import Text.Megaparsec
 import LS.Lib
@@ -13,9 +13,9 @@ import LS.BasicTypes
 import LS.Types
 import LS.Rule
 import Test.Hspec
-import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Lazy qualified as BS
 import Control.Monad (when, guard)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Test.Hspec.Megaparsec (shouldParse)
 
 

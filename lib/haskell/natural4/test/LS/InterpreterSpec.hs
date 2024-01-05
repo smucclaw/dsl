@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.InterpreterSpec where
+module LS.InterpreterSpec (spec) where
 
 import AnyAll
 import Data.HashMap.Strict qualified as Map

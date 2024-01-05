@@ -16,7 +16,7 @@ import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Foldable qualified as Fold
-import Data.Hashable
+import Data.Hashable (Hashable)
 import Data.List (nub, partition, sort)
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i)

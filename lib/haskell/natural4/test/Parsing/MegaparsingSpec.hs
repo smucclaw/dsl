@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 
-module Parsing.MegaparsingSpec where
+module Parsing.MegaparsingSpec (spec) where
 
 import Text.Megaparsec
 import LS.Lib
@@ -11,7 +11,7 @@ import LS.BasicTypes
 import LS.Types
 import LS.Rule
 import Test.Hspec
-import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Test.Hspec.Megaparsec (shouldParse)
 

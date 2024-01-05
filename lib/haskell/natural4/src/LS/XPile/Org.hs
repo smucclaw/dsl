@@ -49,7 +49,7 @@ import Prettyprinter
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.List (nub)
-import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty qualified as NE
 import Data.Bifunctor (first)
 import Data.Graph.Inductive (prettify)
 import Data.Text qualified as Text

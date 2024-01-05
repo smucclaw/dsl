@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.XPile.PrologSpec where
+module LS.XPile.PrologSpec (spec) where
 
 import Test.Hspec
 import LS.Types

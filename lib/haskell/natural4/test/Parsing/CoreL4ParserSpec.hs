@@ -2,12 +2,12 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parsing.CoreL4ParserSpec where
+module Parsing.CoreL4ParserSpec (spec) where
 
 -- import qualified Test.Hspec.Megaparsec as THM
 
 import AnyAll hiding (asJSON)
-import qualified Data.ByteString.Lazy as BS
+import Data.ByteString.Lazy qualified as BS
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import LS.BasicTypes ( MyStream, MyToken(Decide) )

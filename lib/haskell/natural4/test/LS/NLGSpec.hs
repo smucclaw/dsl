@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module LS.NLGSpec where
+module LS.NLGSpec (spec) where
 
 import AnyAll (BoolStruct (..), Label (..))
 import Data.Graph.Inductive qualified as Graph (empty)

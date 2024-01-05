@@ -6,10 +6,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module LS.XPile.CoreL4.LogicProgramSpec
-  ( spec,
-  )
-where
+module LS.XPile.CoreL4.LogicProgramSpec (spec) where
 
 import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (bimap))

@@ -110,7 +110,7 @@ main = do
       (nlgEnv, nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
       (allNLGEnv, allNLGEnvErr) <- unsafeInterleaveIO do
         xps <- traverse (myNLGEnv l4i) nlgLangs
-        return (xpLog $ sequence xps)
+        return (xpLog $ sequenceA xps)
 
     -- codepath that depends on nlgEnv succeeding
       case nlgEnv of

@@ -483,7 +483,7 @@ relPredRefs rs ridmap headElements r = do
   -- [BUG] at some point we lose the moon
   mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  toreturn <- sequence
+  toreturn <- sequenceA
     [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')
     | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements

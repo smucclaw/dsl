@@ -1,4 +1,4 @@
-import qualified LS as SFL4
+import LS qualified as SFL4
 import Criterion.Main
 
 main :: IO ()

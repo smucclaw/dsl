@@ -190,7 +190,7 @@ data GInt_
 type GFloat = Tree GFloat_
 data GFloat_
 
-data Tree t where
+data Tree a where
   LexA :: String -> Tree GA_
   G_located_in_A2 :: Tree GA2_
   Gdue_to_A2 :: Tree GA2_

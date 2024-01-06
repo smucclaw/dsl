@@ -3,10 +3,7 @@ module LS.XPile.LogicalEnglish.SpecUtils
   )
 where
 
-import Control.Monad.Except
-    ( runExceptT, MonadError(throwError), ExceptT )
-import System.FilePath.Find (depth, (==?))
-import System.FilePath.Find qualified as FileFind
+import System.FilePath.Find (FilterPredicate, depth, find, (==?))
 
-findWithDepth0 :: FileFind.FilterPredicate -> FilePath -> IO [FilePath]
-findWithDepth0 = FileFind.find (depth ==? 0) 
+findWithDepth0 :: FilterPredicate -> FilePath -> IO [FilePath]
+findWithDepth0 = find (depth ==? 0) 

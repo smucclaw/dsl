@@ -79,6 +79,7 @@ dependencies:
   - string-conversions
   - raw-strings-qq
   - template-haskell
+  - effectful
 
 language: GHC2021
 

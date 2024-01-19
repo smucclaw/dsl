@@ -736,7 +736,7 @@ dumpExplanationF depth s f = do
   where stars = replicate depth '*'
 
 -- | Transforms MathLang expressions to Typescript
-dumpTypescript :: Doc ann -> MyState -> Expr Float -> Doc ann
+dumpTypescript :: Doc ann0 -> MyState -> Expr Float -> Doc ann1
 dumpTypescript realign s f =
   [di|
     // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs

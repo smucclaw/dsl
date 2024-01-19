@@ -45,6 +45,7 @@ extra-deps:
 
 - monad-validate-1.3.0.0
 - simple-smt-0.9.7
+- diagnose-2.4.0
 
 allow-newer: true
 

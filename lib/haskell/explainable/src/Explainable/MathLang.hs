@@ -729,16 +729,16 @@ dumpExplanationF depth s f = do
   putStrLn (stars ++ " wlog"); print wlog
   putStrLn (stars ++ " typescript"); do
     putStrLn "#+BEGIN_SRC typescript :tangle from-hs.ts"
-    dumpTypescript "" s f
+    print $ dumpTypescript "" s f
     putStrLn "#+END_SRC"
 
 
   where stars = replicate depth '*'
 
 -- | Transforms MathLang expressions to Typescript
-dumpTypescript :: Doc ann -> MyState -> Expr Float -> IO ()
-dumpTypescript realign s f = do
-  print[di|
+dumpTypescript :: Doc ann -> MyState -> Expr Float -> Doc ann
+dumpTypescript realign s f =
+  [di|
     // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
 
     import * as tsm from './mathlang';
@@ -756,8 +756,9 @@ dumpTypescript realign s f = do
       return expr
     }
     #{ppst s realign}
-    export const maxClaim = () => { return #{pp f}
-  }
+    export const maxClaim = () => {
+      return #{pp f} 
+    }
   |]
 
 

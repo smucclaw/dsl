@@ -98,8 +98,8 @@ inPredicateForm (RPConstraint  mt1 RPhas mt2)     = addHas (pred_flip mt2) ++ mt
     addHas (    x:xs) = MTT ("has"<>mtexpr2text x) : xs
     addHas [] = []
 inPredicateForm (RPConstraint  mt1 rprel mt2)     = MTT (rel2txt rprel) : mt1 ++ mt2
-inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = mt1 ++ concatMap DF.toList (DT.traverse inPredicateForm bsr)
-inPredicateForm (RPnary        rprel rps)         = MTT (rel2txt rprel) : concatMap inPredicateForm rps
+inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = mt1 ++ foldMap DF.toList (DT.traverse inPredicateForm bsr)
+inPredicateForm (RPnary        rprel rps)         = MTT (rel2txt rprel) : foldMap inPredicateForm rps
 
 pred_flip :: [a] -> [a]
 pred_flip xs = last xs : init xs
@@ -337,7 +337,7 @@ prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
 
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
-commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> concatMap T.lines xs) <> line
+commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> foldMap T.lines xs) <> line
 
 -- | pretty print output without folding
 myrender :: Doc ann -> T.Text

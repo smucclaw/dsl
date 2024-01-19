@@ -267,7 +267,7 @@ nlg' thl env rule = case rule of
           parseBodyHC cl = case hBody cl of
             Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
             Nothing -> []
-          bodyTrees = concatMap parseBodyHC clauses
+          bodyTrees = foldMap parseBodyHC clauses
           bodyLins = gfLin env <$> bodyTrees
       when (verbose env) do
         putStrLn "nlg': hornlike"
@@ -450,7 +450,7 @@ mkUponText env alias f pt = AA.Leaf (f subj upon)
 nlgQuestion :: NLGEnv -> Rule -> XPileLog [Text.Text]
 nlgQuestion env rl = do
   questionsInABoolStruct <- ruleQuestions env Nothing rl -- TODO: the Nothing means there is no AKA
-  pure $ concatMap F.toList questionsInABoolStruct
+  pure $ foldMap F.toList questionsInABoolStruct
 
 -----------------------------------------------------------------------------
 -- Parsing fields into GF categories – all typed, no PGF.Expr allowed
@@ -731,7 +731,7 @@ splitDigits :: Text.Text -> Text.Text
 splitDigits txt = Text.unwords (splitDigit <$> Text.words txt)
   where
     splitDigit d = if Text.all Char.isDigit d
-                    then Text.intercalate " &+ " (Text.groupBy (\x y -> False) d)
+                    then Text.intercalate " &+ " (Text.groupBy (\_ _ -> False) d)
                     else d
 
 tk, dp :: Int -> Text.Text -> Text.Text
@@ -756,20 +756,20 @@ expandRulesForNLGE env rules = do
   return toreturn
   where
     l4i = interpreted env
-    usedrules = getExpandedRuleNames l4i `concatMap` rules
+    usedrules = getExpandedRuleNames l4i `foldMap` rules
     uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
 
 expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
 expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
   where
     l4i = interpreted env
-    usedrules = getExpandedRuleNames l4i `concatMap` rules
+    usedrules = getExpandedRuleNames l4i `foldMap` rules
     uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
 getExpandedRuleNames l4i rule = case rule of
   Regulative {} -> concat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
-  Hornlike {} -> getNamesHC l4i `concatMap` clauses rule
+  Hornlike {} -> getNamesHC l4i `foldMap` clauses rule
   _ -> []
 
   where
@@ -779,8 +779,8 @@ getExpandedRuleNames l4i rule = case rule of
         RPBoolStructR mt1 RPis _bsr -> [mt1]
         o                           -> []
     getNamesBSR l4i depth (AA.Not item)   = getNamesBSR l4i (depth + 1) item
-    getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
-    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `concatMap` xs
+    getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
+    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
 
     getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
     getNamesRP l4i depth (RPConstraint  mt1 RPis mt2) = [mt2]

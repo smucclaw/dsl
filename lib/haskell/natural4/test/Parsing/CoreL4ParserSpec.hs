@@ -10,6 +10,7 @@ import AnyAll hiding (asJSON)
 import Data.ByteString.Lazy qualified as BS
 import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Text qualified as T
 import LS.BasicTypes ( MyStream, MyToken(Decide) )
 import LS.Interpreter
 import LS.Lib
@@ -17,20 +18,21 @@ import LS.Rule
 import LS.Types
 import LS.XPile.CoreL4
 import LS.XPile.Logging (fromxpLogE)
+import System.FilePath ((</>), (-<.>))
 import Test.Hspec
 import Test.Hspec.Megaparsec (shouldParse)
 import Text.Megaparsec
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) do
-  testcsv <- BS.readFile ("test/Parsing/corel4/" <> testfile <> ".csv")
+  it (testfile <> ": " <> desc ) do
+  testcsv <- BS.readFile ("test" </> "Parsing" </> "corel4" </> testfile -<.> "csv")
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
 spec :: Spec
 spec  = do
-    let runConfig = defaultRC { sourceURL = "test/Spec" }
+    let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
@@ -43,7 +45,7 @@ spec  = do
     describe "transpiler to CoreL4" do
       xit "should output a class declaration for seca.csv" do
         let testfile = "seca"
-        testcsv <- BS.readFile ("test/" <> testfile <> ".csv")
+        testcsv <- BS.readFile $ "test" </> testfile -<.> "csv"
         let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
         (fmap (fromxpLogE . sfl4ToCorel4) <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
 
@@ -125,27 +127,27 @@ spec  = do
 
 
       filetest "class-1" "parent-class identification"
-        (parseOther (do
+        (parseOther do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
                             parent = clsParent classH "Class2"
-                        return $ parent))
+                        return $ parent)
         (Just "Class1",[])
 
       filetest "class-1" "attribute enumeration"
-        (parseOther (do
+        (parseOther do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
                             tA = sort . getCTkeys <$> thisAttributes classH "Class2"
-                        return $ tA))
+                        return $ tA)
         (Just ["bar address","firstname","lastname","office address","work address"], [])
 
       filetest "class-1" "extended attribute enumeration"
-        (parseOther (do
+        (parseOther do
                         rules <- some pTypeDeclaration
                         let classH = classHierarchy rules
                             eA = sort . getCTkeys <$> extendedAttributes classH "Class2"
-                        return $ eA))
+                        return $ eA)
         (Just ["bar address","firstname","id","lastname","office address","work address"], [])
 
       filetest "class-fa-1" "financial advisor data modelling"

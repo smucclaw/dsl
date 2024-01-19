@@ -14,7 +14,7 @@ import Data.HashMap.Strict qualified as Map
 -- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
 -- to contain an @Expr Float@ called "must sing"
 toMathLang :: Interpreted -> MyEnv -> (String, [String])
-toMathLang l4i myenv = undefined 
+toMathLang l4i myenv = ("NotYetImplemented", []) 
 
 --   intermediate l4i myenv
     -- inconveniently, dumpTypescript returns IO () when we would prefer it to return String. So somebody please take on the burden of fixing this to be better.

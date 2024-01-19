@@ -186,6 +186,7 @@ import LS.Utils
   ( MonoidValidate,
     mapThenSwallowErrs,
     (|$>),
+    compose
   )
 import LS.XPile.CoreL4.LogicProgram
   ( LPLang (..),
@@ -209,10 +210,9 @@ import Prettyprinter
     (<+>),
   )
 import Prettyprinter.Interpolate (__di, di)
-import Text.Regex.TDFA (AllTextMatches (getAllTextMatches), (=~))
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
-import LS.Utils (compose)
 
 -- type ExprM a = Either String (Expr a)
 type ExprM ann a = MonoidValidate (Doc ann) (Expr a)
@@ -710,15 +710,19 @@ prettyDefnCs rname cs = do
   -- [TODO] convert "age < 16 years" to "age_in_years < 16"
   -- OR just convert to "age < 16"
 
-  let rhss = T.unpack (mt2text rhs)
-      myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
-                                                          ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
-                                          :: String)) :: [String]
+  let rhss = mt2text rhs
+      -- myterms = getAllTextMatches (rhss =~ (intercalate "|" ["\\<[[:alpha:]]+'s [[:alpha:]]+\\>"
+      --                                                     ,"\\<[[:alpha:]]( +[[:alpha:]]+)*\\>"]
+      --                                     :: String)) :: [String]
+      myterms =
+        rhss
+          |> PCRE.scan [PCRE.re|\\<[[:alpha:]]+'s [[:alpha:]]+\\>|\\<[[:alpha:]]( +[[:alpha:]]+)*\\>|]
+          |$> fst
       intypes = Seq.replicate (length myterms) "Integer"
       replacements =
-        [ T.replace (T.pack t) $ T.pack $ show n
+        [ T.replace t $ T.pack $ show n
         | (t, n) <- zip (nub myterms) x123 ]
-      outstr = compose replacements $ mt2text rhs
+      outstr = compose replacements $ rhss
       returntype = "Integer"
 
   pure $ if null myterms

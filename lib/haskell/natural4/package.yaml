@@ -59,8 +59,8 @@ dependencies:
   - time
   - iso8601-time
   - directory
-  - fgl
-  - regex-tdfa
+  - filepath
+  # - regex-tdfa
   - baby-l4
   - quickcheck-text
   - explainable
@@ -115,7 +115,6 @@ tests:
       - natural4
       - hspec
       - hspec-megaparsec
-      - filepath
       - filemanip
       - hspec-golden
       - yaml

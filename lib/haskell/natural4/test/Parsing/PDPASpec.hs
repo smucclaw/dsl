@@ -15,12 +15,12 @@ import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
 import Test.Hspec.Megaparsec (shouldParse)
 import Data.Text qualified as T
-
+import System.FilePath ((</>), (-<.>))
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) do
-  testcsv <- BS.readFile ("test/Parsing/pdpa/" <> testfile <> ".csv")
+  it (testfile <> ": " <> desc ) do
+  testcsv <- BS.readFile $ "test" </> "Parsing" </> "pdpa" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
@@ -32,7 +32,7 @@ mkParamText = fromList . fmap mkMTExprMulti
 
 spec :: Spec
 spec = do
-    let runConfig = defaultRC { sourceURL = "test/Spec" }
+    let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s

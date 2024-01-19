@@ -284,9 +284,9 @@ extractEnums l4i =
     go :: Rule -> [Rule]
     go r@TypeDecl{super = Just (InlineEnum enumtype enumtext)} =
       [r]
-    go TypeDecl{has = has} = concatMap go has
+    go TypeDecl{has = has} = foldMap go has
     go Hornlike{given = Just givens, srcref=srcref} =
-      concatMap go [ defaultTypeDecl { name = nameEnum
+      foldMap go [ defaultTypeDecl { name = nameEnum
                                      , super = gEnum
                                      , srcref = srcref}
                    | (gName, gEnum@(Just (InlineEnum _ _))) <- NE.toList givens
@@ -348,7 +348,7 @@ getAttrTypesIn :: ClsTab -> EntityType -> [TypeSig]
 getAttrTypesIn ct classname =
   case thisAttributes ct classname of
     Nothing         -> []
-    (Just (CT ct')) -> concat [ ts : concatMap (getAttrTypesIn ct'') (getCTkeys ct'')
+    (Just (CT ct')) -> concat [ ts : foldMap (getAttrTypesIn ct'') (getCTkeys ct'')
                               | (_attrname, (its, ct'')) <- Map.toList ct' -- EntityType (Inferrable TypeSig, ClsTab)
                               , Just ts <- [getSymType its]
                               ]
@@ -391,7 +391,7 @@ ruleDecisionGraph rs = do
 
   mutterd 3 "as a flex, just to show what's going on, we extract all the leaf terms, if we can, by starting with all the terms entirely. Well, MultiTerms."
 
-  let allTerms = DL.nub $ foldMap (foldMap rp2bodytexts . concatMap AA.extractLeaves . getBSR) rs
+  let allTerms = DL.nub $ foldMap (foldMap rp2bodytexts . foldMap AA.extractLeaves . getBSR) rs
   "(2.1) allTerms" ***-> allTerms
 
   mutterd 3 "(2.2) we filter for the leaf terms by excluding all the ruleNames that we know from the original ruleset. This may not be a perfect match with the MultiTerms used in the rule graph. [TODO]"
@@ -470,8 +470,8 @@ relPredRefs :: RuleSet -> RuleIDMap -> Map.HashMap MultiTerm Rule
 relPredRefs rs ridmap headElements r = do
       -- given a rule, see which terms it relies on
   let myGetBSR = getBSR r
-      myLeaves = concatMap AA.extractLeaves myGetBSR
-      bodyElements = concatMap rp2bodytexts myLeaves
+      myLeaves = foldMap AA.extractLeaves myGetBSR
+      bodyElements = foldMap rp2bodytexts myLeaves
 
   mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
 

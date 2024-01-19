@@ -23,7 +23,7 @@ import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Encoding qualified as TLE
 import LS.NLP.NLG (NLGEnv)
 import Test.Hspec.Megaparsec (shouldParse)
-
+import System.FilePath ((</>), (-<.>))
 
 scenario1 :: Rule
 scenario1 = Scenario
@@ -134,8 +134,8 @@ scenario4 = Scenario
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) do
-  testcsv <- BS.readFile ("test/Parsing/boolstruct/" <> testfile <> ".csv")
+  it (testfile <> ": " <> desc ) do
+  testcsv <- BS.readFile $ "test" </> "Parsing" </> "boolstruct" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
@@ -144,8 +144,8 @@ pullIO = traverse sequenceA
 
 filetestIO :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) (IO b)) -> b -> SpecWith ()
 filetestIO testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) do
-  testcsv <- BS.readFile ("test/Parsing/boolstruct/" <> testfile <> ".csv")
+  it (testfile <> ": " <> desc ) do
+  testcsv <- BS.readFile $ "test" </> "Parsing" </> "boolstruct" </> testfile -<.> "csv"
   parseResult <- pullIO $ parseFunc testfile `traverse` exampleStreams testcsv
   parseResult `shouldParse` [ expected ]
 
@@ -165,7 +165,7 @@ xtexttest testText desc parseFunc expected =
 
 spec :: Spec
 spec = do
-    let runConfig = defaultRC { sourceURL = "test/Spec" }
+    let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s

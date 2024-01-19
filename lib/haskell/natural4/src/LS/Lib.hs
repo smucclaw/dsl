@@ -327,7 +327,7 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
 
 
 getStanzas :: RawStanza -> [RawStanza]
-getStanzas rs = splitPilcrows `concatMap` chunks
+getStanzas rs = splitPilcrows `foldMap` chunks
   where chunks = getChunks rs
 
 splitPilcrows :: RawStanza -> [RawStanza]

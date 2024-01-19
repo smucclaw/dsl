@@ -407,7 +407,7 @@ qaHornsByLang rules langEnv = do
 
   let rqMap = Map.fromList (rights wantedRQs)
 
-  let qaHornsWithQuestions = concatMap catMaybes
+  let qaHornsWithQuestions = foldMap catMaybes
         [ [ if Map.member n rqMap then Just (names, rqMap Map.! n) else Nothing
           | n <- names ]
         | names <- fst <$> qaHT ]

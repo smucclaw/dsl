@@ -25,7 +25,7 @@ taSysToString = show . showL4 [PrintSystem UppaalStyle]
 toL4TA :: [SFL4R.Rule] -> CoreL4.TASys ()
 toL4TA rules = foldr (addRule henceChannels) emptyTASys { channelsOfSys =  Set.toList henceChannels } rules
   where
-    henceChannels = Set.fromList $ concatMap getHence rules
+    henceChannels = Set.fromList $ foldMap getHence rules
 
 getHence :: SFL4R.Rule -> [String]
 getHence Regulative{ hence = Just (RuleAlias rname)} = pure . unpack $ mt2text rname

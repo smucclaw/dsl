@@ -284,7 +284,7 @@ sfl4ToCorel4 rs =
                           , ""
                           ]
 
-  in xpReturn $ unlines $ nubstrings $ concatMap lines
+  in xpReturn $ unlines $ nubstrings $ foldMap lines
   ( [ -- "#\n# outputted via L4.Program types\n#\n\n"
       -- , ppCorel4 . sfl4ToCorel4Program $ rs
       "\n#\n# outputted directly from XPile/CoreL4.hs\n#\n"
@@ -664,19 +664,18 @@ prettyBoilerplate ct@(CT ch) =
     className
       |> (`Map.lookup` ch)
       |> maybe mempty
-        ( \case
-            (_ctype@(Just (InlineEnum TOne nelist), _), _) ->
-              let c_name = snake_inner (MTT className)
-                  enumList = enumLabels_ nelist
-               in pure [__di|
-                  fact #{angles $ c_name <> "Exhaustive"}
-                  for x:#{c_name} #{encloseSep "" "" " || " ((\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList)}
+        \case
+          (_ctype@(Just (InlineEnum TOne nelist), _), _) ->
+            let c_name = snake_inner (MTT className)
+                enumList = enumLabels_ nelist
+              in pure [__di|
+                fact #{angles $ c_name <> "Exhaustive"}
+                for x:#{c_name} #{encloseSep "" "" " || " ((\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList)}
 
-                  fact #{angles $ c_name <> "Disj"}
-                  #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList)}
-                |]
-            _ -> mempty
-        )
+                fact #{angles $ c_name <> "Disj"}
+                #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList)}
+              |]
+          _ -> mempty
   where
     pairwise :: [a] -> [(a, a)]
     pairwise xs =
@@ -686,7 +685,7 @@ prettyBoilerplate ct@(CT ch) =
         -- This does NOT play nice with infinite lists in that if xs is infinite,
         -- then tail is also always infinite, so that the order type is > ω.
         -- Consequently, some pairs may never get enumerated over.
-        |> foldMap (\(x, tail) -> [(x, y) | y <- tail])
+        |> foldMap \(x, tail) -> [(x, y) | y <- tail]
 
 -- pairwise [] = []
 -- pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
@@ -915,7 +914,7 @@ prettyClasses ct =
     typesNotExplicitlyDefined :: Doc ann
     typesNotExplicitlyDefined =
       let
-        foundTypes = rights $ getUnderlyingType <$> concatMap (getAttrTypesIn ct) (getCTkeys ct)
+        foundTypes = rights $ getUnderlyingType <$> foldMap (getAttrTypesIn ct) (getCTkeys ct)
         knownClasses = getCTkeys ct
       in vsep $ ("### types not explicitly defined" :
                  ( ("class" <+>) . pretty <$> ((foundTypes \\ knownClasses) \\ ["Object", "Number"]) ))
@@ -1186,7 +1185,6 @@ hornlikeToContext Hornlike {given} =
     |> foldMap (fst .> Fold.toList)
     |> mapMaybe
       -- destructMTT
-      ( \case
-          MTT (T.unpack -> x) -> Just x
-          _ -> Nothing
-      )
+      \case
+        MTT (T.unpack -> x) -> Just x
+        _ -> Nothing

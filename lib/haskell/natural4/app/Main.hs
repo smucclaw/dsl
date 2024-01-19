@@ -276,20 +276,20 @@ main = do
     when (SFL4.tovuejson opts) do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
       let toWriteVue =  [ ( case out' of
-                              Right _ -> show (Text.unpack (SFL4.mt2text rname)) ++ ": \n"
+                              Right _ -> show (Text.unpack (SFL4.mt2text rname)) <> ": \n"
                               Left  _ -> "" -- this little section is inelegant
                               -- If   error, dump // "!! error"
-                              -- Else dump out' ++ ', \n"
-                            ++ commentIfError "// !! error" out' ++ ", \n"
+                              -- Else dump out' <> ', \n"
+                            <> commentIfError "// !! error" out' <> ", \n"
                           , err)
                         | (rname, (out, err)) <- asVueJSONrules
                         , let out' = toString . encodePretty . itemRPToItemJSON <$> out
                         ]
 
-          vuePrefix = -- "# this is vuePrefix from natural4/app/Main.hs\n\n" ++
+          vuePrefix = -- "# this is vuePrefix from natural4/app/Main.hs\n\n" <>
                       "{"
           vueSuffix = "}"
-                      -- ++ "\n\n# this is vueSuffix from natural4/app/Main.hs"
+                      -- <> "\n\n# this is vueSuffix from natural4/app/Main.hs"
 
           jsonProhibitsComments :: String -> String
           jsonProhibitsComments = unlines . filter (not . ("//" `isPrefixOf`)) . lines
@@ -298,14 +298,14 @@ main = do
           removeLastComma :: String -> String
           removeLastComma unlined =
             if length lined > 3 -- only if there's a valid json in there
-               then unlines $ take (length lined - 3) lined ++ ["}"] ++ drop (length lined - 2) lined
+               then unlines $ take (length lined - 3) lined <> ["}"] <> drop (length lined - 2) lined
                else unlined
             where lined = lines unlined
 
       mywritefile2 True tovuejsonFN iso8601 "vuejson"
         (removeLastComma $ jsonProhibitsComments $
-           intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
-        (concatMap snd toWriteVue)
+           intercalate "\n" [vuePrefix, foldMap fst toWriteVue, vueSuffix])
+        (foldMap snd toWriteVue)
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.toprologTp opts) $ mywritefile  True toprologTpFN  iso8601 "pl" asPrologTp
@@ -413,7 +413,7 @@ mywritefileDMN doLink dirname filename ext xmltree = do
   createDirectoryIfMissing True dirname
   let mypath = dirname </> filename     -<.> ext
       mylink = dirname </> "LATEST" -<.> ext
-  _ <- HXT.runX ( xmltree HXT.>>> HXT.writeDocument [ HXT.withIndent HXT.yes ] mypath )
+  HXT.runX ( xmltree HXT.>>> HXT.writeDocument [ HXT.withIndent HXT.yes ] mypath )
   when doLink $ myMkLink (filename -<.> ext) mylink
 
 myMkLink :: FilePath -> FilePath -> IO ()

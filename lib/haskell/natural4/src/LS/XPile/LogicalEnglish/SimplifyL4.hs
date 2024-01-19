@@ -327,7 +327,7 @@ atomRPoperand2cell :: forall m. MonadValidate (HS.HashSet SimL4Error) m =>
 atomRPoperand2cell = \case
   RPMT mtexprs    -> pure $ mtes2cells mtexprs
   RPParamText _pt -> refute ["not sure if we rly need this case (RPParamText in fn atomRPoperand2cell); erroring as a diagnostic tool"]
-                    -- mtes2cells (concatMap (NE.toList . fst) (NE.toList pt)) 
+                    -- mtes2cells (foldMap (NE.toList . fst) (NE.toList pt)) 
   _               -> refute ["input rp supposed to be atomic"]
 
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -20,7 +21,13 @@ import Data.Text.Lazy qualified as LT
 import Data.Vector (foldl1', imap)
 import Data.Vector qualified as V
 import Data.Void (Void)
-import LS.BasicTypes (MyStream (MyStream, unMyStream), MyToken (Other), WithPos (pos, tokenVal), myStreamInput, renderToken)
+import LS.BasicTypes
+  ( MyStream (MyStream, unMyStream),
+    MyToken (Other),
+    WithPos (pos, tokenVal),
+    myStreamInput,
+    renderToken
+  )
 import Text.Megaparsec
 import Text.Megaparsec.Pos
 import Text.Pretty.Simple (pStringNoColor)
@@ -51,7 +58,7 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         col = unPos (sourceColumn epos) - 1
         excelTable = pst & pstateInput & myStreamInput
         numCols = maximum $ fmap length excelTable
-        paddedExcelTable = excelTable & fmap (\x -> x <> V.replicate (numCols - length x) "")
+        paddedExcelTable = excelTable & fmap \x -> x <> V.replicate (numCols - length x) ""
         excelTableMarked =
           imap (\i -> if i == row then imap (\j -> if j == col then ("✳ " <>) else id) else id ) paddedExcelTable
           & fmap (fmap Text.unpack)
@@ -73,7 +80,7 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
           <> xpRenderStream (insertStarAt epos $ pstateInput pst)
 
 insertStarAt :: SourcePos -> MyStream -> MyStream
-insertStarAt sp (MyStream vec wps) = MyStream vec (concatMap insertIt wps)
+insertStarAt sp (MyStream vec wps) = MyStream vec (foldMap insertIt wps)
   where
     insertIt :: WithPos MyToken -> [WithPos MyToken]
     insertIt t | pos t == sp = [Other "✳" <$ t, t]

@@ -324,7 +324,7 @@ rp2mt (RPParamText    pt)            = pt2multiterm pt
 rp2mt (RPMT           mt)            = mt
 rp2mt (RPConstraint   mt1 rel mt2)   = mt1 ++ [MTT $ rel2txt rel] ++ mt2
 rp2mt (RPBoolStructR  mt1 rel bsr)   = mt1 ++ [MTT $ rel2txt rel] ++ [MTT $ bsr2text bsr] -- [TODO] is there some better way to bsr2mtexpr?
-rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : concatMap rp2mt rps
+rp2mt (RPnary         rel rps)       = MTT (rel2txt rel) : foldMap rp2mt rps
 
 -- | pull out all the body leaves of RelationalRredicates as multiterms
 rp2bodytexts :: RelationalPredicate -> [MultiTerm]
@@ -332,8 +332,8 @@ rp2bodytexts (RPParamText    pt)            = [pt2multiterm pt]
 rp2bodytexts (RPMT           mt)            = [mt]
 rp2bodytexts (RPConstraint   mt1 rel mt2)   = [mt1 ++ [MTT $ rel2op rel] ++ mt2]
 rp2bodytexts (RPBoolStructR  mt1 rel bsr)   = [mt1 ++ MTT (rel2op rel) : bod
-                                              | bod <- concatMap rp2bodytexts (AA.extractLeaves bsr) ]
-rp2bodytexts (RPnary         rel rps)       = [MTT (rel2op rel), MTT "("] : concatMap rp2bodytexts rps ++ [[MTT ")"]]
+                                              | bod <- foldMap rp2bodytexts (AA.extractLeaves bsr) ]
+rp2bodytexts (RPnary         rel rps)       = [MTT (rel2op rel), MTT "("] : foldMap rp2bodytexts rps ++ [[MTT ")"]]
 
 rp2text :: RelationalPredicate -> Text.Text
 rp2text = Text.unwords . fmap mtexpr2text . rp2mt

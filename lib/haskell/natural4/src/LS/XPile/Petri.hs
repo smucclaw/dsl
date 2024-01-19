@@ -315,7 +315,7 @@ mergePetri' rules og splitNode = runGM og do
         , length (nub $ fmap ntext <$> (lab og <$> twins)) == 1
         , length twins > 1
         ] \twins -> do
-    let grandchildren = concatMap (suc og) twins
+    let grandchildren = foldMap (suc og) twins
         survivor : excess = twins
         parents = pre og splitNode
     for_ twins         \n -> delEdge' (splitNode,n)
@@ -487,7 +487,7 @@ connectRules sg rules =
                    , let r = getRuleByLabel rules =<< nrl
                    , let outs = maybe [] (expandRule rules) r
                    , let rlouts = fmap rl2text <$> (rlabel <$> outs)
-                   , let outgraph = labfilter (\pn -> any (\x -> x pn) [ hasDeet (OrigRL rlout')
+                   , let outgraph = labfilter (\pn -> any ($ pn) [ hasDeet (OrigRL rlout')
                                                                        | rlout <- rlouts
                                                                        , isJust rlout
                                                                        , let rlout' = fromJust rlout -- safe due to above isJust test

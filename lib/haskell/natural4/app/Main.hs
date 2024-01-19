@@ -79,6 +79,7 @@ import System.Directory
     createFileLink,
     renameFile,
   )
+import System.FilePath ((</>), (-<.>))
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
@@ -98,7 +99,7 @@ main = do
   iso8601  <- now8601
 
   let toworkdir   = not $ null $ SFL4.workdir opts
-      workuuid    = SFL4.workdir opts <> "/" <> SFL4.uuiddir opts
+      workuuid    = SFL4.workdir opts </> SFL4.uuiddir opts
 
   -- Bits that have to do with natural language processing and generation
   nlgLangs <- unsafeInterleaveIO allLangs               -- [TODO] Edsko is not a fan and has a whole talk about why we should not use this.
@@ -124,11 +125,11 @@ main = do
 
           when (SFL4.tocheckl  opts) do -- this is deliberately placed here because the nlg stuff is slow to run, so let's leave it for last -- [TODO] move this to below, or eliminate this entirely
             let (asCheckl, asChecklErr) = xpLog $ checklist nlgEnvR rc rules
-                tochecklFN              =  workuuid <> "/" <> "checkl"
+                tochecklFN              =  workuuid </> "checkl"
             mywritefile2 True tochecklFN   iso8601 "txt" (show asCheckl) asChecklErr
 
           when (SFL4.togftrees opts) do
-            let (togftreesFN,    (asGftrees, asGftreesErr)) = (workuuid <> "/" <> "gftrees"
+            let (togftreesFN,    (asGftrees, asGftreesErr)) = (workuuid </> "gftrees"
                                                               , xpLog $ gftrees nlgEnvR rules)
             mywritefile2 True togftreesFN iso8601 "gftrees" (pShowNoColorS asGftrees) asGftreesErr
 
@@ -140,7 +141,7 @@ main = do
           let allNLGEnvR = rights allNLGEnv
 
           when (SFL4.tomd      opts) do
-            let (tomarkdownFN, asMD)     = (workuuid <> "/" <> "md",  bsMarkdown allNLGEnvR rules)
+            let (tomarkdownFN, asMD)     = (workuuid </> "md",  bsMarkdown allNLGEnvR rules)
             mywritefile True tomarkdownFN iso8601 "md" =<< asMD
 
           -- some transpiler targets are a bit slow to run so we offer a way to call them specifically
@@ -151,7 +152,7 @@ main = do
 
           when (SFL4.topurs    opts) do
             let (topursFN,    (asPursstr, asPursErr)) =
-                  (workuuid <> "/" <> "purs"
+                  (workuuid </> "purs"
                   , xpLog $ mutter "* main calling translate2PS" >>
                     fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS allNLGEnvR nlgEnvR rules)
                   )
@@ -175,41 +176,41 @@ main = do
 
   -- end of the section that deals with NLG
 
-  let (toprologFN,  asProlog)                 = (workuuid <> "/" <> "prolog",   rulesToProlog rules)
-      (toprologTpFN,asPrologTp)               = (workuuid <> "/" <> "prologTp", rulesToPrologTp rules)
-      (tohaskellTpFN,asHaskellTp)             = (workuuid <> "/" <> "haskellTp", rulesToHaskellTp rules)
-      (tojsonTpFN,  asJsonTp)                 = (workuuid <> "/" <> "jsonTp",   rulesToJsonSchema rules)
-      (tojsonUIFN,  asJsonUI)                 = (workuuid <> "/" <> "jsonUI",   rulesToUISchema rules)
-      (toscaspFN,   asSCasp)                  = (workuuid <> "/" <> "scasp",    rulesToSCasp rules)
-      (topetriFN,   (asPetri, asPetriErr))    = (workuuid <> "/" <> "petri",    xpLog $ toPetri rules)
-      (toaasvgFN,   asaasvg)                  = (workuuid <> "/" <> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
-      (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid <> "/" <> "corel4",   xpLog (sfl4ToCorel4 rules))
-      (tobabyl4FN,  asBabyL4)                 = (workuuid <> "/" <> "babyl4",   sfl4ToBabyl4 l4i)
-      (toaspFN,     (asASP, asASPErr))        = (workuuid <> "/" <> "asp",      xpLog $ sfl4ToASP rules)
-      (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid <> "/" <> "epilog",   xpLog $ sfl4ToEpilog rules)
-      (todmnFN,     asDMN)                    = (workuuid <> "/" <> "dmn",      sfl4ToDMN rules)
-      (tojsonFN,    asJSONstr)                = (workuuid <> "/" <> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
-      (tovuejsonFN, asVueJSONrules)           = (workuuid <> "/" <> "vuejson",  fmap xpLog <$> toVueRules rules)
+  let (toprologFN,  asProlog)                 = (workuuid </> "prolog",   rulesToProlog rules)
+      (toprologTpFN,asPrologTp)               = (workuuid </> "prologTp", rulesToPrologTp rules)
+      (tohaskellTpFN,asHaskellTp)             = (workuuid </> "haskellTp", rulesToHaskellTp rules)
+      (tojsonTpFN,  asJsonTp)                 = (workuuid </> "jsonTp",   rulesToJsonSchema rules)
+      (tojsonUIFN,  asJsonUI)                 = (workuuid </> "jsonUI",   rulesToUISchema rules)
+      (toscaspFN,   asSCasp)                  = (workuuid </> "scasp",    rulesToSCasp rules)
+      (topetriFN,   (asPetri, asPetriErr))    = (workuuid </> "petri",    xpLog $ toPetri rules)
+      (toaasvgFN,   asaasvg)                  = (workuuid </> "aasvg",    AAS.asAAsvg defaultAAVConfig l4i rules)
+      (tocorel4FN,  (asCoreL4, asCoreL4Err))  = (workuuid </> "corel4",   xpLog (sfl4ToCorel4 rules))
+      (tobabyl4FN,  asBabyL4)                 = (workuuid </> "babyl4",   sfl4ToBabyl4 l4i)
+      (toaspFN,     (asASP, asASPErr))        = (workuuid </> "asp",      xpLog $ sfl4ToASP rules)
+      (toepilogFN,  (asEpilog, asEpilogErr))  = (workuuid </> "epilog",   xpLog $ sfl4ToEpilog rules)
+      (todmnFN,     asDMN)                    = (workuuid </> "dmn",      sfl4ToDMN rules)
+      (tojsonFN,    asJSONstr)                = (workuuid </> "json",     toString $ encodePretty   (alwaysLabeled   $ onlyTheItems l4i))
+      (tovuejsonFN, asVueJSONrules)           = (workuuid </> "vuejson",  fmap xpLog <$> toVueRules rules)
 
-      (toIntro1FN,  asTrivial)                   = (workuuid <> "/" <> "intro1",   toTrivial l4i)
-      (toIntro2FN,  asBasic)                     = (workuuid <> "/" <> "intro2",   toBasic   l4i)
-      (toIntro3FN,  asReader)                    = (workuuid <> "/" <> "intro3",   toReader  l4i defaultReaderEnv)
-      (toIntro4FN,  (asLog, asLogErr))           = (workuuid <> "/" <> "intro4",   xpLog $ toLog l4i defaultReaderEnv)
-      (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid <> "/" <> "intro5",   toShoehorn l4i defaultReaderEnv)
-      (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid <> "/" <> "intro6",   toBase l4i defaultReaderEnv)
+      (toIntro1FN,  asTrivial)                   = (workuuid </> "intro1",   toTrivial l4i)
+      (toIntro2FN,  asBasic)                     = (workuuid </> "intro2",   toBasic   l4i)
+      (toIntro3FN,  asReader)                    = (workuuid </> "intro3",   toReader  l4i defaultReaderEnv)
+      (toIntro4FN,  (asLog, asLogErr))           = (workuuid </> "intro4",   xpLog $ toLog l4i defaultReaderEnv)
+      (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid </> "intro5",   toShoehorn l4i defaultReaderEnv)
+      (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid </> "intro6",   toBase l4i defaultReaderEnv)
 
-      (toMathLangTSFN,  (asMathLangTS,     asMathLangTSErr))     = (workuuid <> "/" <> "mathlangTS",   toMathLang l4i defaultReaderEnv)
+      (toMathLangTSFN,  (asMathLangTS,     asMathLangTSErr))     = (workuuid </> "mathlangTS",   toMathLang l4i defaultReaderEnv)
 
-      (tojsrFN,     (asJSRpretty, asJSRerr))  = (workuuid <> "/" <> "jsonranges",  xpLog $ asJSONRanges l4i)
-      (totsFN,      (asTSpretty, asTSerr))    = (workuuid <> "/" <> "ts",       xpLog $ asTypescript l4i)
-      (togroundsFN, asGrounds)                = (workuuid <> "/" <> "grounds",  show $ groundrules rc rules)
-      (toOrgFN,     asOrg)                    = (workuuid <> "/" <> "org",      toOrg l4i rules)
-      (toDFGFN,     (asDFG, asDFGerr))        = (workuuid <> "/" <> "dataflow", xpLog $ dataFlowAsDot l4i)
+      (tojsrFN,     (asJSRpretty, asJSRerr))  = (workuuid </> "jsonranges",  xpLog $ asJSONRanges l4i)
+      (totsFN,      (asTSpretty, asTSerr))    = (workuuid </> "ts",       xpLog $ asTypescript l4i)
+      (togroundsFN, asGrounds)                = (workuuid </> "grounds",  show $ groundrules rc rules)
+      (toOrgFN,     asOrg)                    = (workuuid </> "org",      toOrg l4i rules)
+      (toDFGFN,     (asDFG, asDFGerr))        = (workuuid </> "dataflow", xpLog $ dataFlowAsDot l4i)
 
-      (toLEFN, asLE)                          = (workuuid <> "/" <> "logical_english",         toLE rules)
-      (toNL_FN,     asNatLang)                = (workuuid <> "/" <> "natlang",  toNatLang l4i)
-      (toMaudeFN,   asMaude)                  = (workuuid <> "/" <> "maude", Maude.rules2maudeStr rules)
-      (tonativeFN,  asNative)  = (workuuid <> "/" <> "native",   unlines
+      (toLEFN, asLE)                          = (workuuid </> "logical_english",         toLE rules)
+      (toNL_FN,     asNatLang)                = (workuuid </> "natlang",  toNatLang l4i)
+      (toMaudeFN,   asMaude)                  = (workuuid </> "maude", Maude.rules2maudeStr rules)
+      (tonativeFN,  asNative)  = (workuuid </> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
 
@@ -319,11 +320,11 @@ main = do
     when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomaude   opts) $ mywritefile  True toMaudeFN iso8601 "natural4" asMaude
     when (SFL4.toaasvg   opts) do
-      let dname = toaasvgFN <> "/" <> iso8601
+      let dname = toaasvgFN </> iso8601
       if null asaasvg
         then do
         createDirectoryIfMissing True dname
-        appendFile (dname <> "/index.html") "<!-- this file intentionally left blank -->"
+        appendFile (dname </> "index.html") "<!-- this file intentionally left blank -->"
         else sequence_
              [ do
                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
@@ -332,14 +333,14 @@ main = do
                mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
                mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
                mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
-               let fnamext = fname <> "." <> ext
+               let fnamext = fname -<.> ext
                    displayTxt = Text.unpack $ SFL4.mt2text n
-               appendFile (dname <> "/index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
+               appendFile (dname </> "index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- sortOn (fmap SFL4.mtexpr2text . fst) $ Map.toList asaasvg
            , let (fname, ext) = (take 127 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
-      myMkLink iso8601 (toaasvgFN <> "/" <> "LATEST")
+      myMkLink iso8601 (toaasvgFN </> "LATEST")
 
 
     putStrLn "natural4: output to workdir done"
@@ -378,20 +379,20 @@ now8601 = formatISO8601Millis <$> getCurrentTime
 writeBSfile :: Bool -> FilePath -> FilePath -> String -> ByteString.ByteString -> IO ()
 writeBSfile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
-  let mypath = dirname <> "/" <> filename     <> "." <> ext
-      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  let mypath = dirname </> filename     -<.> ext
+      mylink     = dirname </> "LATEST" -<.> ext
   ByteString.writeFile mypath s
-  when doLink $ myMkLink (filename <> "." <> ext) mylink
+  when doLink $ myMkLink (filename -<.> ext) mylink
 
 
 -- | output only "stdout" to outfile
 mywritefile :: Bool -> FilePath -> FilePath -> String -> String -> IO ()
 mywritefile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
-  let mypath = dirname <> "/" <> filename     <> "." <> ext
-      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  let mypath = dirname </> filename     -<.> ext
+      mylink     = dirname </> "LATEST" -<.> ext
   writeFile mypath s
-  when doLink $ myMkLink (filename <> "." <> ext) mylink
+  when doLink $ myMkLink (filename -<.> ext) mylink
 
 -- | output both "stdout" to outfile and "stderr" to outfile.err.
 -- Note that if the "s" argument is itself an Either, we need to process a little bit to dump the Lefts as comments
@@ -399,21 +400,21 @@ mywritefile doLink dirname filename ext s = do
 mywritefile2 :: Bool -> FilePath -> FilePath -> String -> String -> [String] -> IO ()
 mywritefile2 doLink dirname filename ext s e = do
   createDirectoryIfMissing True dirname
-  let mypath1    = dirname <> "/" <> filename <> "." <> ext
-      mypath2    = dirname <> "/" <> filename <> "." <> if ext == "org" then "err" else "org"
-      mylink     = dirname <> "/" <> "LATEST" <> "." <> ext
+  let mypath1    = dirname </> filename -<.> ext
+      mypath2    = dirname </> filename -<.> if ext == "org" then "err" else "org"
+      mylink     = dirname </> "LATEST" -<.> ext
   writeFile mypath2 (intercalate "\n" e)
   writeFile mypath1 s
-  when doLink $ myMkLink (filename <> "." <> ext) mylink
+  when doLink $ myMkLink (filename -<.> ext) mylink
 
 
 mywritefileDMN :: Bool -> FilePath -> FilePath -> String -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree -> IO ()
 mywritefileDMN doLink dirname filename ext xmltree = do
   createDirectoryIfMissing True dirname
-  let mypath = dirname <> "/" <> filename     <> "." <> ext
-      mylink = dirname <> "/" <> "LATEST" <> "." <> ext
+  let mypath = dirname </> filename     -<.> ext
+      mylink = dirname </> "LATEST" -<.> ext
   _ <- HXT.runX ( xmltree HXT.>>> HXT.writeDocument [ HXT.withIndent HXT.yes ] mypath )
-  when doLink $ myMkLink (filename <> "." <> ext) mylink
+  when doLink $ myMkLink (filename -<.> ext) mylink
 
 myMkLink :: FilePath -> FilePath -> IO ()
 myMkLink filename mylink = do
@@ -431,6 +432,6 @@ snakeScrub =
 
 -- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
 commentIfError :: String -> Either XPileLogW String -> String
-commentIfError comment (Left x) = foldMap ((comment ++ " ") ++) x
+commentIfError comment (Left x) = foldMap ((comment <> " ") <>) x
 commentIfError _      (Right x) = x
 

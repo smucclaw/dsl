@@ -61,7 +61,7 @@ import LS.XPile.LogicalEnglish.Types
     , _EndsInApos
     , aposSuffix
   )
-import LS.XPile.LogicalEnglish.Utils (setInsert)
+import LS.Utils.OpticsUtils (setInsert)
 import Data.String (IsString)
 import Data.String.Interpolate ( i, __i )
 

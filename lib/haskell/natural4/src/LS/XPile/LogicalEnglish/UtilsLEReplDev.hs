@@ -28,7 +28,7 @@ import Control.Monad
 
 import LS.Rule(Rule(..))
 import LS.Types (MTExpr, mt2text)
-import LS.UtilsREPLDev
+import LS.Utils.UtilsREPLDev (BaseFileName, pRules, csvsInDir, l4csv2rules)
 
 import LS (pRelPred)
 

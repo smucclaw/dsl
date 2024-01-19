@@ -71,7 +71,7 @@ toOrg l4i rs = Text.unpack (myrender (musings l4i rs))
 musings :: Interpreted -> [Rule] -> Doc ann
 musings l4i rs =
   let cg = classGraph (classtable l4i) []
-      expandedRules = nub $ concatMap (expandRule rs) rs
+      expandedRules = nub $ foldMap (expandRule rs) rs
       decisionGraph = ruleGraph l4i
       (eRout, eRerr)         = xpLog (exposedRoots l4i)
   in vvsep [ "* musings"

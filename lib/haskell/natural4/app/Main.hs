@@ -298,8 +298,8 @@ main = do
 
       mywritefile2 True tovuejsonFN iso8601 "vuejson"
         (removeLastComma $ jsonProhibitsComments $
-           intercalate "\n" [vuePrefix, concatMap fst toWriteVue, vueSuffix])
-        (concatMap snd toWriteVue)
+           intercalate "\n" [vuePrefix, foldMap fst toWriteVue, vueSuffix])
+        (foldMap snd toWriteVue)
 
     when (SFL4.toprolog  opts) $ mywritefile  True toprologFN   iso8601 "pl"   asProlog
     when (SFL4.toprologTp opts) $ mywritefile  True toprologTpFN  iso8601 "pl" asPrologTp

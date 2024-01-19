@@ -228,6 +228,6 @@ aggregateBoolStruct l bs =
     then bs
     else
       (case bs of
-        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ concatMap toList xs
-        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ concatMap toList xs
+        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ foldMap toList xs
+        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ foldMap toList xs
         _ -> bs)

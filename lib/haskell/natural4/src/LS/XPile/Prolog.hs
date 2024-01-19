@@ -135,7 +135,7 @@ sfl4ToLogProg rs =
   let
     analysis = analyze rs :: Analysis
   in
-    concatMap (rule2clause analysis) rs
+    foldMap (rule2clause analysis) rs
 
 -- TODO: not clear what the "Analysis" is good for. 
 -- The corresponding parameter seems to be ignored in all called functions.
@@ -239,14 +239,14 @@ hornlike2clauses _st _fname hc2s =
 bsp2struct :: BoolStructP -> [Term]
 bsp2struct (Leaf pt)     = [vart . pt2text $ pt]
 bsp2struct (Not  pt)     = vart "neg" : bsp2struct pt
-bsp2struct (All _lbl xs) = concatMap bsp2struct xs
-bsp2struct (Any _lbl xs) = vart "or" : concatMap bsp2struct xs
+bsp2struct (All _lbl xs) = foldMap bsp2struct xs
+bsp2struct (Any _lbl xs) = vart "or" : foldMap bsp2struct xs
 
 bsr2struct :: BoolStructR -> [Term]
 bsr2struct (Leaf rt)     = rp2goal rt
 bsr2struct (Not  rt)     = vart "neg" : bsr2struct rt
-bsr2struct (All _lbl xs) =    concatMap bsr2struct xs
-bsr2struct (Any _lbl xs) = vart "or" : concatMap bsr2struct xs
+bsr2struct (All _lbl xs) =    foldMap bsr2struct xs
+bsr2struct (Any _lbl xs) = vart "or" : foldMap bsr2struct xs
 
 mbsr2rhs :: Maybe BoolStructR -> [Term]
 mbsr2rhs Nothing = []
@@ -259,7 +259,7 @@ rp2goal (RPMT [x])           = pure $ varmt x
 rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack (mtexpr2text x)) (varmt <$> xs)
 rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct (Text.unpack $ mt2text lhs_) <$> [bsr2struct bsr]
 rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (varmt <$> mt1) ++ (varmt <$> mt2)
-rp2goal (RPnary      rprel rps) = pure $ Struct (rel2f rprel) (concatMap rp2goal rps)
+rp2goal (RPnary      rprel rps) = pure $ Struct (rel2f rprel) (foldMap rp2goal rps)
 
 -- The equality token RPeq has three external appearances: =, ==, ===
 -- whose difference is not clear.

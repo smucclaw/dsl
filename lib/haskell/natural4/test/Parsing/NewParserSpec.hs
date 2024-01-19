@@ -15,18 +15,20 @@ import LS.Rule
 import Test.Hspec
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Text qualified as T
 import Test.Hspec.Megaparsec (shouldParse)
+import System.FilePath ((</>), (-<.>))
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile ++ ": " ++ desc ) do
-  testcsv <- BS.readFile ("test/Parsing/newparser/" <> testfile <> ".csv")
+  it (testfile <> ": " <> desc ) do
+  testcsv <- BS.readFile $ "test" </> "Parsing" </> "newparser" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
 
 spec :: Spec
 spec = do
-    let runConfig = defaultRC { sourceURL = "test/Spec" }
+    let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
     let  combine (a,b) = a ++ b
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
@@ -81,7 +83,7 @@ spec = do
           myor  = LS.Types.Or
 
       it "should inject Deeper tokens to match indentation" do
-        let testfile = "test/Parsing/newparser/indent-2-a.csv"
+        let testfile = "test" </> "Parsing" </> "newparser" </> "indent-2-a" -<.> "csv"
         testcsv <- BS.readFile testfile
         let mystreams = exampleStreams testcsv
         fmap tokenVal . unMyStream <$> mystreams `shouldBe` [

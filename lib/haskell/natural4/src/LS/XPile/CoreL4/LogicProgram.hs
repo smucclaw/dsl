@@ -70,7 +70,7 @@ babyL4ToLogicProgram ::
   LogicProgram lpLang t
 babyL4ToLogicProgram program = LogicProgram {..}
   where
-    -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
+    -- let rules = foldMap ruleDisjL (clarify (rulesOfProgram prg))
     -- putStrLn "Simplified L4 rules:"
     -- putDoc $ vsep (map (showL4 []) rules) <> line
     lpRulesWithNegs :: [(LPRule lpLang t, [(Var t, Var t, Int)])] =
@@ -182,7 +182,7 @@ negationPredicate e = pure (e, Nothing)
 -- This could possibly be remedied with NoType versions of these tactics
 -- astToASP :: (Eq t, Ord t, Show t) => Program t -> IO ()
 -- astToASP prg = do
---     -- let rules = concatMap ruleDisjL (clarify (rulesOfProgram prg))
+--     -- let rules = foldMap ruleDisjL (clarify (rulesOfProgram prg))
 --     let rules = rulesOfProgram prg
 --     -- putStrLn "Simplified L4 rules:"
 --     -- putDoc $ vsep (map (showL4 []) rules) <> line
@@ -191,7 +191,7 @@ negationPredicate e = pure (e, Nothing)
 --     let aspRulesNoFact = removeFacts aspRules
 --     let aspRulesFact = keepFacts aspRules
 --     let skolemizedLPRules = map skolemizeLPRule aspRulesNoFact  -- TODO: not used ??
---     let oppClausePrednames = nub (concatMap snd aspRulesWithNegs)
+--     let oppClausePrednames = nub (foldMap snd aspRulesWithNegs)
 --     let oppClauses = map genOppClauseNoType oppClausePrednames
 
 --     -- putStrLn "ASP rules:"

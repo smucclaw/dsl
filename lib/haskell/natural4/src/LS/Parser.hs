@@ -28,8 +28,7 @@ data MyItem lbl a =
   | MyAll     [MyItem lbl a]
   | MyAny     [MyItem lbl a]
   | MyNot     (MyItem lbl a)
-  deriving (Eq, Show)
-  deriving (Functor)
+  deriving (Eq, Functor, Show)
 
 -- hm, shouldn't this be a MyItem (Maybe MultiTerm) to capture scenarios where there is no "any of the following" text?
 type MyBoolStruct = MyItem MultiTerm

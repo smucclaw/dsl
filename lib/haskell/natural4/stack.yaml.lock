@@ -69,6 +69,13 @@ packages:
       size: 1402
   original:
     hackage: diagnose-2.4.0
+- completed:
+    hackage: holmes-0.3.2.0@sha256:3d4aeb74177bafedc55a9c21be682ad45929490d1d809dec7fe248a503df0290,4597
+    pantry-tree:
+      sha256: 414f3416b14c2cd66141e755fa4d343c9ac154dc7713cf56bee09578019170cd
+      size: 3258
+  original:
+    hackage: holmes-0.3.2.0
 snapshots:
 - completed:
     sha256: 7b975b104cb3dbf0c297dfd01f936a4d2ee523241dd0b1ae960522b833fe3027

@@ -70,13 +70,13 @@ data ExpF md stage where
        -> ExpF md stage -- ^ arg
        -> ExpF md stage
 
-  -- variable mutation
+  -- | variable mutation; prob treat as eval-ing to assigned value
   ESet :: md         
        -> VarName 
        -> ExpF md stage -- ^ arg 
        -> ExpF md stage
 
-  -- sequence of statements 
+  -- | sequence of statements; returns expression of the last
   ESeq :: md -> [ExpF md stage] -> ExpF md stage    
 
   ELet :: md 
@@ -93,6 +93,8 @@ data ExpF md stage where
      -> ExpF md stage
      -> (ExpF md 'Prelim) 
   EEmpty :: md -> ExpF md stage
+-- NOTE: will want to be able to tally the desugared nodes with the prelim nodes too, and port type info from the former to the latter
+-- since will prob need to translate one of the prelim ASTs to Meng eval ast
 
 data Lit = ENumber | EBool | EString
     deriving stock (Eq, Ord, Show)

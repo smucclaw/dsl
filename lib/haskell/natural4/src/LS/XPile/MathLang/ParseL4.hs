@@ -51,47 +51,50 @@ type TLabel = String
 data Stage = Prelim | Desugared
 
 data ExpF md stage where 
-  LitE :: Lit -> md -> ExpF md stage
-  OpE :: md 
+  ELit :: Lit -> md -> ExpF md stage
+  EOp :: md 
       -> Op 
       -> ExpF md stage -- ^ left
       -> ExpF md stage -- ^ right
       -> ExpF md stage
-  UnOpE :: md -> UnOp -> ExpF md stage -> ExpF md stage
-  VarE :: md -> VarName -> ExpF md stage
-  IfE :: md -> ExpF md stage -> ExpF md stage -> ExpF md stage
-  LamE :: md        -- ^ lam metadata
+  EUnOp :: md -> UnOp -> ExpF md stage -> ExpF md stage
+  EVar :: md -> VarName -> ExpF md stage
+  EIf :: md -> ExpF md stage -> ExpF md stage -> ExpF md stage
+  ELam :: md        -- ^ lam metadata
        -> md        -- ^ param metadata
        -> VarName      -- ^ param
        -> ExpF md stage -- ^ body
        -> ExpF md stage
-  AppE :: md 
+  EApp :: md 
        -> ExpF md stage -- ^ func 
        -> ExpF md stage -- ^ arg
        -> ExpF md stage
 
   -- variable mutation
-  SetE :: md         
+  ESet :: md         
        -> VarName 
        -> ExpF md stage -- ^ arg 
        -> ExpF md stage
-  SeqE :: md -> [ExpF md stage] -> ExpF md stage     
-  LetE :: md 
+
+  -- sequence of statements 
+  ESeq :: md -> [ExpF md stage] -> ExpF md stage    
+
+  ELet :: md 
        -> VarName 
        -> ExpF md stage -- ^ value 
        -> ExpF md stage -- ^ body
        -> ExpF md 'Prelim
-  And :: md 
+  EAnd :: md 
       -> ExpF md stage  -- ^ left
       -> ExpF md stage  -- ^ right
       -> (ExpF md 'Prelim)
-  Or :: md 
+  EOr :: md 
      -> ExpF md stage 
      -> ExpF md stage
      -> (ExpF md 'Prelim) 
-  EmptyE :: md -> ExpF md stage
+  EEmpty :: md -> ExpF md stage
 
-data Lit = NumberE | BoolE | StringE
+data Lit = ENumber | EBool | EString
     deriving stock (Eq, Ord, Show)
 
 data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
@@ -101,11 +104,19 @@ data UnOp
 -- TODO: may not need this
 
 
-data ExpMetadata = MkMdata
+data SrcPositn = MkPositn
   { row :: Int
   , col :: Int
   , filename :: String
-  , tlabel :: TLabel
+  } deriving stock (Eq, Ord, Show)
+
+data TypeMetadata = MkTMdata
+  { tlabel :: TLabel
+  } deriving stock (Eq, Ord, Show)
+
+data ExpMetadata = MkEMdata
+  { srcPos :: SrcPositn
+  , typeMd :: TypeMetadata
   } deriving stock (Eq, Ord, Show)
 makePrisms ''ExpMetadata
 

@@ -17,7 +17,6 @@ toMathLang :: Interpreted -> MyEnv -> (String, [String])
 toMathLang l4i myenv = ("NotYetImplemented", []) 
 
 --   intermediate l4i myenv
-    -- inconveniently, dumpTypescript returns IO () when we would prefer it to return String. So somebody please take on the burden of fixing this to be better.
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.
     -- the most important transformations are:
     -- starting with the rules in l4i, or the slightly transformed versions available in qaHorns,
@@ -30,7 +29,7 @@ toMathLang l4i myenv = ("NotYetImplemented", [])
 --  MyState { symtabF = Map.fromList [("maxClaim", ... -- snd element dumps to { return new tsm.Bool3 )] }
 
 intermediate :: Interpreted -> MyEnv -> (String, [String])
-intermediate l4i myenv = undefined 
+intermediate l4i myenv = ("", []) 
 {-
   let topLevelExprs = qaHorns l4i
 

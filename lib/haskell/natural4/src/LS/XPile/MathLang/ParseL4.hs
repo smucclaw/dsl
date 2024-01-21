@@ -49,8 +49,9 @@ type VarName = String
 type TLabel = String
 
 data Stage = Prelim | Desugared
+  deriving (Eq, Ord, Show)
 
-data ExpF md stage where 
+data ExpF md (stage :: Stage) where 
   ELit :: { md :: md, lit :: Lit } -> ExpF md stage
   EOp ::
     { md :: md,
@@ -105,8 +106,11 @@ data ExpF md stage where
       orRightArg :: ExpF md stage
     } -> ExpF md 'Prelim
   EEmpty :: { md :: md } -> ExpF md stage
+
 -- NOTE: will want to be able to tally the desugared nodes with the prelim nodes too, and port type info from the former to the latter
 -- since will prob need to translate one of the prelim ASTs to Meng eval ast
+
+deriving instance Show md => Show (ExpF md stage)
 
 data Lit = ENumber | EBool | EString
   deriving stock (Eq, Ord, Show)
@@ -115,6 +119,7 @@ data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
   deriving stock (Eq, Ord, Show)
 
 data UnOp 
+  deriving stock (Eq, Ord, Show)
 -- TODO: may not need this
 
 

@@ -51,9 +51,9 @@ type TLabel = String
 data Stage = Prelim | Desugared
 
 data ExpF md stage where 
-  ELit :: { lit :: Lit, md :: md } -> ExpF md stage
+  ELit :: { md :: md, lit :: Lit } -> ExpF md stage
   EOp ::
-    { md :: md, 
+    { md :: md,
       binOp :: Op,
       leftArg :: ExpF md stage, -- ^ left
       rightArg :: ExpF md stage -- ^ right
@@ -72,7 +72,7 @@ data ExpF md stage where
       body :: ExpF md stage -- ^ body
     } -> ExpF md stage
   EApp ::
-    { md :: md, 
+    { md :: md,
       func :: ExpF md stage, -- ^ func 
       arg :: ExpF md stage   -- ^ arg
     } -> ExpF md stage
@@ -89,30 +89,30 @@ data ExpF md stage where
 
   ELet ::
     -- Need to prefix field names with `let` because of https://gitlab.haskell.org/ghc/ghc/-/issues/12159
-    { letMd :: md, 
-      letVar :: VarName, 
+    { letMd :: md,
+      letVar :: VarName,
       val :: ExpF md stage, -- ^ value 
       letBody :: ExpF md stage -- ^ body
     } -> ExpF md 'Prelim
   EAnd ::
-    { andMd :: md, 
+    { andMd :: md,
       andLeftArg :: ExpF md stage,  -- ^ left
       andRightArg :: ExpF md stage  -- ^ right
-    } -> (ExpF md 'Prelim)
+    } -> ExpF md 'Prelim
   EOr ::
-    { orMd :: md, 
+    { orMd :: md,
       orLeftArg :: ExpF md stage,
       orRightArg :: ExpF md stage
-    } -> (ExpF md 'Prelim) 
+    } -> ExpF md 'Prelim
   EEmpty :: { md :: md } -> ExpF md stage
 -- NOTE: will want to be able to tally the desugared nodes with the prelim nodes too, and port type info from the former to the latter
 -- since will prob need to translate one of the prelim ASTs to Meng eval ast
 
 data Lit = ENumber | EBool | EString
-    deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show)
 
 data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
-  deriving stock (Show, Eq, Ord)
+  deriving stock (Eq, Ord, Show)
 
 data UnOp 
 -- TODO: may not need this

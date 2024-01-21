@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -foptimal-applicative-do #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, NoFieldSelectors #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -51,48 +51,60 @@ type TLabel = String
 data Stage = Prelim | Desugared
 
 data ExpF md stage where 
-  ELit :: Lit -> md -> ExpF md stage
-  EOp :: md 
-      -> Op 
-      -> ExpF md stage -- ^ left
-      -> ExpF md stage -- ^ right
-      -> ExpF md stage
-  EUnOp :: md -> UnOp -> ExpF md stage -> ExpF md stage
-  EVar :: md -> VarName -> ExpF md stage
-  EIf :: md -> ExpF md stage -> ExpF md stage -> ExpF md stage
-  ELam :: md        -- ^ lam metadata
-       -> md        -- ^ param metadata
-       -> VarName      -- ^ param
-       -> ExpF md stage -- ^ body
-       -> ExpF md stage
-  EApp :: md 
-       -> ExpF md stage -- ^ func 
-       -> ExpF md stage -- ^ arg
-       -> ExpF md stage
+  ELit :: { lit :: Lit, md :: md } -> ExpF md stage
+  EOp ::
+    { md :: md, 
+      binOp :: Op,
+      leftArg :: ExpF md stage, -- ^ left
+      rightArg :: ExpF md stage -- ^ right
+    } -> ExpF md stage
+  EUnOp :: { md :: md, unOp :: UnOp, arg :: ExpF md stage } -> ExpF md stage
+  EVar :: { md :: md, var :: VarName } -> ExpF md stage
+  EIf ::
+    { md :: md,
+      condExp :: ExpF md stage,
+      thenExp :: ExpF md stage
+    } -> ExpF md stage
+  ELam ::
+    { md :: md,             -- ^ lam metadata
+      paramMd :: md,        -- ^ param metadata
+      param :: VarName,     -- ^ param
+      body :: ExpF md stage -- ^ body
+    } -> ExpF md stage
+  EApp ::
+    { md :: md, 
+      func :: ExpF md stage, -- ^ func 
+      arg :: ExpF md stage   -- ^ arg
+    } -> ExpF md stage
 
   -- | variable mutation; prob treat as eval-ing to assigned value
-  ESet :: md         
-       -> VarName 
-       -> ExpF md stage -- ^ arg 
-       -> ExpF md stage
+  ESet ::
+    { md :: md,
+      var :: VarName, 
+      arg :: ExpF md stage -- ^ arg 
+    } -> ExpF md stage
 
   -- | sequence of statements; returns expression of the last
-  ESeq :: md -> [ExpF md stage] -> ExpF md stage    
+  ESeq :: { md :: md, stmts :: [ExpF md stage] } -> ExpF md stage    
 
-  ELet :: md 
-       -> VarName 
-       -> ExpF md stage -- ^ value 
-       -> ExpF md stage -- ^ body
-       -> ExpF md 'Prelim
-  EAnd :: md 
-      -> ExpF md stage  -- ^ left
-      -> ExpF md stage  -- ^ right
-      -> (ExpF md 'Prelim)
-  EOr :: md 
-     -> ExpF md stage 
-     -> ExpF md stage
-     -> (ExpF md 'Prelim) 
-  EEmpty :: md -> ExpF md stage
+  ELet ::
+    -- Need to prefix field names with `let` because of https://gitlab.haskell.org/ghc/ghc/-/issues/12159
+    { letMd :: md, 
+      letVar :: VarName, 
+      val :: ExpF md stage, -- ^ value 
+      letBody :: ExpF md stage -- ^ body
+    } -> ExpF md 'Prelim
+  EAnd ::
+    { andMd :: md, 
+      andLeftArg :: ExpF md stage,  -- ^ left
+      andRightArg :: ExpF md stage  -- ^ right
+    } -> (ExpF md 'Prelim)
+  EOr ::
+    { orMd :: md, 
+      orLeftArg :: ExpF md stage,
+      orRightArg :: ExpF md stage
+    } -> (ExpF md 'Prelim) 
+  EEmpty :: { md :: md } -> ExpF md stage
 -- NOTE: will want to be able to tally the desugared nodes with the prelim nodes too, and port type info from the former to the latter
 -- since will prob need to translate one of the prelim ASTs to Meng eval ast
 

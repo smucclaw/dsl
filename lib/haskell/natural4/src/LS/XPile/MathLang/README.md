@@ -19,10 +19,11 @@ Head  -> TypeSig Head'
 Head' ->     HSet:  DECIDE <VarName> IS <MathArg> 
           |  H???:  DECIDE <VarName> IS <MathExpr> 
           -- ^ distinguishing this from above because we'll need to use a different pattern synonym for this
-          |  HPred: DECIDE  VarName Function
+          |  HPred: DECIDE  <VarName> Function
                 {-  hHead = RPMT
                         [ MTT "ind"
                         , MTT "qualifies a la case 4"] -}
+          |  DECIDE <VarName> 
 
 --Function: looks in spreadsheet like | <arg> |_newcell <fn name> | --  "meets the property eligibility criteria for GSTV-Cash", "qualifies a la case 4"
 MathArg -> Lit | VarName 
@@ -100,6 +101,8 @@ Quick thought about record access and mutation
 `DECIDE <variable> IS <Lit | MathBinOp ... | VarName >` 
 * In the VarName case, it'd be translated to: -||- `"<variable>" @|. <expr>`
 
+`DECIDE <VarName> IF <Prop1> <Op> <Prop2> ...`
+* I'll take this to be sugar for: `DECIDE <VarName> IS True IF <Prop1> <Op> <Prop2> ...`
 
 #### thinking abt the if then else; eedge cases / examples to think abt
 

@@ -1,4 +1,5 @@
 module LS.XPile.MathLang.MathLang (toMathLang) where
+-- TODO: Rename `toMathLang` to something like `toMengMathLang`, and add a `toGenericMathLang` as well
 
 import LS.XPile.IntroReader (MyEnv)
 import LS.Interpreter
@@ -6,6 +7,10 @@ import Explainable.MathLang
 import LS.Rule (Interpreted)
 import Data.HashMap.Strict qualified as Map
 
+{-
+YM: This is currently more like a NOTES file,
+with comments from MEng. Will integrate these later.
+-}
 
 -- | calling the output "MyState" is misleading, but this is the most general way to cover the idea that
 -- a ruleset consists of more than one rule, similar to how the Vue interface gives more than one

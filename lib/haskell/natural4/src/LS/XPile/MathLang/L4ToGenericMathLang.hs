@@ -13,9 +13,9 @@
 
 
 {-
-Parse L4 into [? tentatively] labelled exprs 
+Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST)
 -}
-module LS.XPile.MathLang.ParseL4 where
+module LS.XPile.MathLang.L4ToGenericMathLang where
 -- TODO: Add export list
 
 import Data.Text qualified as T

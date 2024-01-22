@@ -49,7 +49,7 @@ type VarName = String
 type TLabel = String
 
 data Stage = Prelim | Desugared
-  deriving (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show)
 
 data ExpF md (stage :: Stage) where 
   ELit :: { md :: md, lit :: Lit } -> ExpF md stage

@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DataKinds, KindSignatures, AllowAmbiguousTypes, ApplicativeDo #-}
 {-# LANGUAGE TypeApplications #-}

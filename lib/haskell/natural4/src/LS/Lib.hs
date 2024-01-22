@@ -171,6 +171,7 @@ getConfig o = do
         , toJsonTp  = only o == "jsonTp"
         , toJsonUI  = only o == "jsonUI"
         , toMaude = only o == "maude"
+        , toMathLang = only o == "mathlang"
         , toLogicalEnglish = only o == "LogicalEnglish"
         , toSCasp   = only o == "scasp"
         , toUppaal  = only o == "uppaal"

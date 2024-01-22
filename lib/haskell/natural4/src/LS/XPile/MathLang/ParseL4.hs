@@ -24,9 +24,9 @@ import LS.Utils.TextUtils (int2Text, float2Text)
 
 import Control.Monad.Validate
   ( MonadValidate (..)
-    , Validate
-    , refute
-    )
+  , Validate
+  , refute
+  )
 import Optics
 -- import Data.Generics.Product.Types (types)
 import Data.String (IsString)
@@ -42,7 +42,7 @@ import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
 
 import Data.String (IsString)
-import Prettyprinter(Pretty)
+import Prettyprinter (Pretty)
 
 type VarName = String
 type TLabel = String

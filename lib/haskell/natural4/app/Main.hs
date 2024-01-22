@@ -318,7 +318,7 @@ main = do
       if null asaasvg
         then do
         createDirectoryIfMissing True dname
-        appendFile (dname </> "index.html") "<!-- this file intentionally left blank -->"
+        appendFile (dname </> "index" -<.> "html") "<!-- this file intentionally left blank -->"
         else sequence_
              [ do
                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
@@ -329,7 +329,7 @@ main = do
                mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
                let fnamext = fname -<.> ext
                    displayTxt = Text.unpack $ SFL4.mt2text n
-               appendFile (dname </> "index.html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
+               appendFile (dname </> "index" -<.> "html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
                                                     <> "</a></li>\n")
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- sortOn (fmap SFL4.mtexpr2text . fst) $ Map.toList asaasvg
            , let (fname, ext) = (take 127 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")

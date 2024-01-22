@@ -36,6 +36,7 @@ import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
 import Data.Vector qualified as V
 import Data.Void (Void)
+import Flow ((|>))
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
   ( MyBoolStruct,
@@ -48,6 +49,7 @@ import LS.RelationalPredicates
 import LS.Rule
 import LS.Tokens
 import LS.Types
+import LS.Utils ((|$>))
 import Options.Generic
   ( Generic,
     ParseFields (..),
@@ -154,35 +156,36 @@ getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
   mpn <- lookupEnv "MP_NLG"
-  return RC
-        { debug       = maybe (dbug o) (read :: String -> Bool) mpd
-        , printstream = maybe (dstream o) (read :: String -> Bool) mpd
-        , callDepth = 0
-        , oldDepth = 0
-        , parseCallStack = []
-        , sourceURL = "STDIN"
-        , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
-        , toNLG = maybe False (read :: String -> Bool) mpn
-        , toBabyL4  = only o == "babyl4" || only o == "corel4"
-        , toASP     = only o == "asp"
-        , toProlog  = only o == "prolog"
-        , toPrologTp  = only o == "prologTp"
-        , toJsonTp  = only o == "jsonTp"
-        , toJsonUI  = only o == "jsonUI"
-        , toMaude = only o == "maude"
-        , toLogicalEnglish = only o == "LogicalEnglish"
-        , toSCasp   = only o == "scasp"
-        , toUppaal  = only o == "uppaal"
-        , toGrounds = only o == "grounds"
-        , toChecklist = only o == "checklist"
-        , toVue     = only o == "vue"
-        , toHTML    = only o == "html"
-        , toTS      = only o `elem` words "typescript ts"
-        , saveAKA = False
-        , wantNotRules = False
-        , extendedGrounds = extd o
-        , runNLGtests = False
-        }
+  let str2bool :: String -> Bool = read
+  pure RC
+    { debug       = maybe (dbug o) str2bool mpd
+    , printstream = maybe (dstream o) str2bool mpd
+    , callDepth = 0
+    , oldDepth = 0
+    , parseCallStack = []
+    , sourceURL = "STDIN"
+    , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
+    , toNLG = maybe False str2bool mpn
+    , toBabyL4  = only o == "babyl4" || only o == "corel4"
+    , toASP     = only o == "asp"
+    , toProlog  = only o == "prolog"
+    , toPrologTp  = only o == "prologTp"
+    , toJsonTp  = only o == "jsonTp"
+    , toJsonUI  = only o == "jsonUI"
+    , toMaude = only o == "maude"
+    , toLogicalEnglish = only o == "LogicalEnglish"
+    , toSCasp   = only o == "scasp"
+    , toUppaal  = only o == "uppaal"
+    , toGrounds = only o == "grounds"
+    , toChecklist = only o == "checklist"
+    , toVue     = only o == "vue"
+    , toHTML    = only o == "html"
+    , toTS      = only o `elem` words "typescript ts"
+    , saveAKA = False
+    , wantNotRules = False
+    , extendedGrounds = extd o
+    , runNLGtests = False
+    }
 
 
 -- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
@@ -199,8 +202,9 @@ parseRules o = do
   let files = getNoLabel $ file o
   if null files
   then parseSTDIN runConfig { sourceURL="STDIN" }
-  else concat <$> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
-
+  else files
+        |> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file)
+        |$> mconcat
   where
     getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
@@ -224,11 +228,11 @@ parseRules o = do
         Right ([], []) -> return $ Right []
         Right (xs, xs') -> do
           when (printstream rc) $ printStream stream
-          return $ Right (xs ++ xs')
+          pure $ Right $ xs <> xs'
 
 
 dumpRules :: Opts Unwrapped -> IO [Rule]
-dumpRules opts = concat . rights <$> parseRules opts
+dumpRules opts = mconcat . rights <$> parseRules opts
 
 
 printStream :: MonadIO m => MyStream -> m ()
@@ -241,9 +245,7 @@ pRenderStream :: MyStream -> String
 pRenderStream = Text.unpack . LT.toStrict . pStringNoColor . renderStream
 
 exampleStream :: ByteString -> MyStream
-exampleStream s = case getStanzas <$> asCSV s of
-                    Left errstr -> error errstr
-                    Right rawsts -> stanzaAsStream (head rawsts)
+exampleStream = head . exampleStreams
 
 exampleStreams :: ByteString -> [MyStream]
 exampleStreams s = case getStanzas <$> asCSV s of

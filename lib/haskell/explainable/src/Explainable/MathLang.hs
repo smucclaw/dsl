@@ -364,7 +364,7 @@ unaEval title f x =
   in retitle title do
     (xval, xpl) <- eval x
     let toreturn = f xval
-    return (toreturn, Node ([], [[i|#{toreturn}: #{lhs}|]]) [xpl])
+    pure (toreturn, Node ([], [[i|#{toreturn}: #{lhs}|]]) [xpl])
 
 -- | helper function, Binary evaluation
 binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> ExplainableIO r MyState Float
@@ -772,7 +772,7 @@ dumpExplanationF depth s f = do
   (val, xpl, stab, wlog) <- xplainF () s f
 
   let stars = replicate depth '*'
-  putStrLn [i|
+  putStrLn [__i|
     #{stars} val
     #{val}
     #{stars} xpl

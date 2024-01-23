@@ -66,7 +66,8 @@ data ExpF md (stage :: Stage) where
   EIf ::
     { md :: md,
       condExp :: ExpF md stage,
-      thenExp :: ExpF md stage
+      thenExp :: ExpF md stage,
+      elseExp :: ExpF md stage
     } -> ExpF md stage
   ELam ::
     { md :: md,             -- ^ lam metadata

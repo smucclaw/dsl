@@ -79,7 +79,7 @@ runMonoidValidate :: MonoidValidate e a -> Either e a
 runMonoidValidate x = x |> coerce |> runValidate 
 
 -- | Function composition via the endomorphism monoid.
-compose :: forall a. [a -> a] -> a -> a
+compose :: [a -> a] -> a -> a
 compose = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
 
 -- | A simple lifted ('||'), copied from Control.Bool

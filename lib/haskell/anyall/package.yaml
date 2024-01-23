@@ -39,6 +39,7 @@ dependencies:
 - microlens-platform
 - QuickCheck
 - checkers
+- string-interpolate
 - explainable
 
 # - ihaskell

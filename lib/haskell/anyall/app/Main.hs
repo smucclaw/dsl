@@ -5,7 +5,7 @@
 module Main where
 
 import AnyAll
-import Control.Monad (forM_, guard, when)
+import Control.Monad (guard, when)
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Types (parseMaybe)

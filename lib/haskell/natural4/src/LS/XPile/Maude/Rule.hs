@@ -158,5 +158,5 @@ mkMeans name (otoList -> details :: [MultiTerm]) =
       details
         |$> multiExprs2qid
         |> \case
-          [qid] -> qid
-          qids -> [di|(#{qids |> intersperse "AND" |> hsep})|]
+            [qid] -> qid
+            qids -> [di|(#{qids |> intersperse "AND" |> hsep})|]

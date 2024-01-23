@@ -46,6 +46,7 @@ library
     , parser-combinators
     , prettyprinter
     , prettyprinter-interp
+    , string-interpolate
     , text
     , transformers
     , unordered-containers
@@ -71,6 +72,7 @@ executable explainable-exe
     , parser-combinators
     , prettyprinter
     , prettyprinter-interp
+    , string-interpolate
     , text
     , transformers
     , unordered-containers
@@ -99,6 +101,7 @@ test-suite explainable-test
     , parser-combinators
     , prettyprinter
     , prettyprinter-interp
+    , string-interpolate
     , text
     , transformers
     , unordered-containers

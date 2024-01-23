@@ -1,6 +1,15 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module Explainable where
+module Explainable
+  ( XP,
+    ExplainableIO,
+    drawTreeOrg,
+    historypath,
+    mkNod,
+    pathSpec,
+    retitle
+  )
+where
 
 import Control.Monad.Trans.RWS
 import Data.String.Interpolate (__i)

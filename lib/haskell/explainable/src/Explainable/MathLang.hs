@@ -3,7 +3,26 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Explainable.MathLang where
+module Explainable.MathLang
+  ( Expr(..),
+    MyState(..),
+    (|===),
+    (@|=),
+    (@|?),
+    (@|:),
+    (@|.),
+    (+||),
+    (*||),
+    (|+),
+    dumpExplanationF,
+    emptyState,
+    eval,
+    negativeElementsOf,
+    positiveElementsOf,
+    timesEach,
+    timesPositives
+  )
+where
 
 import Control.Monad (mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)
@@ -16,6 +35,14 @@ import Data.String.Interpolate (i, __i)
 -- import Data.Text qualified as T
 import Data.Tree
 import Explainable
+  ( XP,
+    ExplainableIO,
+    drawTreeOrg,
+    historypath,
+    mkNod,
+    pathSpec,
+    retitle
+  )
 import Prettyprinter
 import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)

@@ -11,12 +11,15 @@ module Explainable.MathLang
     (@|?),
     (@|:),
     (@|.),
+    (@|..),
     (+||),
     (*||),
     (|+),
+    (|*),
     dumpExplanationF,
     emptyState,
     eval,
+    getvar,
     negativeElementsOf,
     positiveElementsOf,
     timesEach,
@@ -782,7 +785,7 @@ dumpExplanationF depth s f = do
     #{wlog}
     #{stars} typescript
     \#+BEGIN_SRC typescript :tangle from-hs.ts
-    #{print $ dumpTypescript "" s f}
+    #{dumpTypescript "" s f}
     \#+END_SRC
   |]
 

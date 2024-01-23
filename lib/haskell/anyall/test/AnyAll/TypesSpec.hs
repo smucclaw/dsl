@@ -117,7 +117,7 @@ spec = do
       q `shouldBe` "{\"getMarking\":{\"key\":{\"Right\":false}}}"
 
   describe "Q functions" do
-    it "ask2hide" $ property $
+    it "ask2hide" $ property
       \q -> ask2hide q{ shouldView = Ask } `shouldBe` (q{ shouldView = Hide } :: (Q T.Text))
-    it "ask2view" $ property $
+    it "ask2view" $ property
       \q -> ask2view q{ shouldView = Ask } `shouldBe` (q{ shouldView = View } :: (Q T.Text))

@@ -35,6 +35,7 @@ dependencies:
 - fgl
 - graphviz
 - effectful
+- string-interpolate
 
 language: GHC2021
 

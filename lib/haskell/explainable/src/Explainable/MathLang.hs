@@ -3,7 +3,26 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Explainable.MathLang where
+module Explainable.MathLang
+  ( Expr(..),
+    MyState(..),
+    (|===),
+    (@|=),
+    (@|?),
+    (@|:),
+    (@|.),
+    (+||),
+    (*||),
+    (|+),
+    dumpExplanationF,
+    emptyState,
+    eval,
+    negativeElementsOf,
+    positiveElementsOf,
+    timesEach,
+    timesPositives
+  )
+where
 
 import Control.Monad (mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)
@@ -12,11 +31,20 @@ import Data.Bifunctor
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Text qualified as T
+import Data.String.Interpolate (i, __i)
+-- import Data.Text qualified as T
 import Data.Tree
 import Explainable
+  ( XP,
+    ExplainableIO,
+    drawTreeOrg,
+    historypath,
+    mkNod,
+    pathSpec,
+    retitle
+  )
 import Prettyprinter
-import Prettyprinter.Interpolate (di)
+import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)
 
 -- * Now we do a deepish embedding of an eDSL.
@@ -37,6 +65,7 @@ data MyState = MyState { symtabF :: SymTab (Expr     Float) -- numbers (numeric 
                        , symtabS :: SymTab String
                        }
   deriving (Show, Eq)
+
 emptyState :: MyState
 emptyState = MyState Map.empty Map.empty Map.empty Map.empty
 
@@ -71,17 +100,17 @@ instance (Show a) => Show (Expr a) where
   show (Undefined lbl) = unwords ["Undefined", showlbl lbl]
 
 type ExprLabel = Maybe String
+
 showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
-showlbl (Just l) = "(" ++ l ++ ")"
+showlbl (Just l) = [i|(#{l})|]
 
 parensIfNeg :: String -> String
-parensIfNeg str = case str of
-  '-':_ -> concat ["(", str, ")"]
-  _ -> str
+parensIfNeg str@('-':_) = [i|(#{str})|]
+parensIfNeg str = str
 
 cappedBy :: Expr a -> Expr a -> Expr a
-cappedBy = MathMin (Just "capped by")
+cappedBy = MathMin $ Just "capped by"
 
 discountedBy :: Expr Float -> Expr Float -> Expr Float
 discountedBy x y = x |* ("one hundred percent" @|. 1 |- y)
@@ -104,7 +133,7 @@ getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
 (<++>) Nothing Nothing  = Nothing
 (<++>) Nothing (Just y) = Just y
 (<++>) (Just x) Nothing = Just x
-(<++>) (Just x) (Just y) = Just (x ++ ", " ++ y)
+(<++>) (Just x) (Just y) = Just [i|#{x}, #{y}|]
 
 -- | basic binary operator for arithmetic
 (|+),(|-),(|*),(|/) :: Expr Float -> Expr Float -> Expr Float
@@ -128,10 +157,10 @@ less = (|-)
 -- But this is crude. There's an alternative way to say it, using MathSections in an ExprList.
 
 (+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> ExplainableIO r MyState [Float]
-x +| ys = second (Node ([],["mapping + " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Plus   x) ys
-x -| ys = second (Node ([],["mapping - " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Minus  x) ys
-x *| ys = second (Node ([],["mapping * " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Times  x) ys
-x /| ys = second (Node ([],["mapping / " ++ show x ++ " over a list"])) <$> mapAndUnzipM (eval . MathBin Nothing Divide x) ys
+x +| ys = second (Node ([],[[i|mapping + #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Plus   x) ys
+x -| ys = second (Node ([],[[i|mapping - #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Minus  x) ys
+x *| ys = second (Node ([],[[i|mapping * #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Times  x) ys
+x /| ys = second (Node ([],[[i|mapping / #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Divide x) ys
 
 -- ** Function Sections and infrastructure for folds
 
@@ -210,18 +239,18 @@ positiveElementsOf :: [Float] -> ExprList Float
 positiveElementsOf xs = Val Nothing 0 <| MathList Nothing (Val Nothing <$> xs)
 
 timesEach :: Float -> ExprList Float -> ExprList Float
-timesEach n = ListMap Nothing (MathSection Times (Val Nothing n))
+timesEach n = ListMap Nothing $ MathSection Times (Val Nothing n)
 
 timesPositives' :: Float -> ExprList Float -> ExprList Float
 timesPositives' n = ListMapIf Nothing (MathSection Times (Val Nothing n)) (Val Nothing 0) CLT
 
 timesPositives :: Float -> [Float] -> ExprList Float
-timesPositives n ns = timesPositives' n (MathList Nothing (Val Nothing <$> ns))
+timesPositives n ns = timesPositives' n $ MathList Nothing (Val Nothing <$> ns)
 
 -- | logical not
 
 (|!) :: Pred a -> Pred a
-(|!) = PredNot (Just "logical negation")
+(|!) = PredNot $ Just "logical negation"
 
 -- * Booleans
 
@@ -271,20 +300,20 @@ eval exprfloat = do
   let lbl = getExprLabel exprfloat
   -- liftIO $ putStrLn $ "lbl = " ++ show lbl
   -- i really need to learn Lens / Optics
-  unless (null lbl) $ modify (\mystate -> mystate { symtabF = Map.insert (fromMaybe "" lbl) (Val lbl x) (symtabF mystate) })
+  unless (null lbl) $ modify \mystate -> mystate { symtabF = Map.insert (fromMaybe "" lbl) (Val lbl x) (symtabF mystate) }
   -- liftIO . print =<< get
-  return (x, result)
+  pure (x, result)
 
 -- in the Haskell we default undefined to zero. In the typescript output we preserve undefined.
 eval' (Undefined lbl) = do
   (history,path) <- asks historypath
-  return (0, Node ([unlines history ++ pathSpec path ++ ": undefined as zero 0"]
+  return (0, Node ([[i|#{unlines history}#{pathSpec path}: undefined as zero 0|]]
                   ,["undefined: " ++ fromMaybe "an explicit undefined value, defaulting to zero" lbl]) [])
 
 eval' (Val lbl x) = do
   (history,path) <- asks historypath
-  return (x, Node ([unlines history ++ pathSpec path ++ ": " ++ show x]
-                  ,[show x ++ ": " ++ fromMaybe "a leaf value" lbl]) [])
+  return (x, Node ([[i|#{unlines history}#{pathSpec path}: #{x}|]]
+                  ,[[i|#{x}: #{fromMaybe "a leaf value" lbl}|]]) [])
 eval' (MathBin _lbl Plus   x y) = binEval "addition"       (+) x y
 eval' (MathBin _lbl Minus  x y) = binEval "subtraction"    (-) x y
 eval' (MathBin _lbl Times  x y) = binEval "multiplication" (*) x y
@@ -294,20 +323,20 @@ eval' (MathITE _lbl p x y)      = evalFP eval  p x y
 eval' (MathMax  lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
 eval' (MathMin  lbl x y)        = eval (ListFold lbl FoldMin (MathList lbl [x,y]))
 eval' (MathVar      str) =
-  let title = "variable expansion: " ++ str
+  let title = [i|variable expansion: #{str}|]
       (lhs,_rhs) = verbose title
-  in retitle (title <> " " <> show str) do
+  in retitle [i|#{title} #{str}|] do
     (xvar, xpl1) <- getvarF str
     (xval, xpl2) <- eval xvar
-    return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
+    pure (xval, Node ([], [[i|#{xval}: #{lhs} #{str}|]]) [xpl1, xpl2])
 eval' (MathSet     str x) =
-  let title = "variable assignment:" ++ str
-  in retitle (title <> " " <> show str <> " := " <> show x) do
+  let title :: String = [i|variable assignment: #{str}|]
+  in retitle [i|#{title} #{str} := #{x}|] do
     symtab <- gets symtabF
     let newmap = Map.union (Map.singleton str x) symtab
-    modify (\ms -> ms { symtabF = newmap })
+    modify \ms -> ms { symtabF = newmap }
     (xval,xpl) <- eval x
-    return (xval, Node ([], [show xval ++ ": " ++ " saved to " ++ str]) [xpl])
+    return (xval, Node ([], [[i|#{xval}: saved to #{str}|]]) [xpl])
 
 eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
 eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
@@ -316,13 +345,13 @@ eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
-doFold str f xs = retitle ("listfold " <> str) do
+doFold str f xs = retitle [i|listfold #{str}|] do
   (MathList _ylbl yvals,yexps) <- evalList xs
-  zs <- mapM eval yvals
-  let toreturn = f (fst <$> zs)
-  return (toreturn
-         , Node ([],(show toreturn ++ " = " ++ str ++ " of " ++ show (length zs) ++ " elements")
-                  : [ "- " ++ show e | e <- fst <$> zs ])
+  zs <- eval `traverse` yvals
+  let toreturn = f $ fst <$> zs
+  pure (toreturn
+         , Node ([],[i|#{toreturn} = #{str} of #{length zs} elements|]
+                  : [ [i|- #{e}|] | e <- fst <$> zs ])
            (yexps : (snd <$> zs)))
 
 -- | helper function, Unary evaluation of an `Expr` `Float` to some `Float`
@@ -332,7 +361,7 @@ unaEval title f x =
   in retitle title do
     (xval, xpl) <- eval x
     let toreturn = f xval
-    return (toreturn, Node ([], [show toreturn ++ ": " ++ lhs]) [xpl])
+    return (toreturn, Node ([], [[i|#{toreturn}: #{lhs}|]]) [xpl])
 
 -- | helper function, Binary evaluation
 binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> ExplainableIO r MyState Float
@@ -346,8 +375,8 @@ binEval title f x y = retitle title do
    -- we sneak in monadic history of the upper evaluations
   let toreturn = f xval yval
       (lhs,rhs) = verbose title
-  return (toreturn, Node (fst (rootLabel xpl) ++ fst (rootLabel ypl)
-                         , [show toreturn ++ ": " ++ lhs])
+  pure (toreturn, Node (fst (rootLabel xpl) ++ fst (rootLabel ypl)
+                         , [[i|#{toreturn}: #{lhs}|]])
                     [xpl, mkNod rhs, ypl] )
 
 -- | Evaluate predicates
@@ -356,15 +385,18 @@ evalP,evalP' :: Pred Float -> ExplainableIO r MyState Bool
 evalP pred = do
   (x, result) <- evalP' pred
   let lbl = getPredLabel pred
-  unless (null lbl) $ modify (\mystate -> mystate { symtabP = Map.insert (fromMaybe "" lbl) (PredVal lbl x) (symtabP mystate) })
-  return (x, result)
+  unless (null lbl) $
+    modify \mystate -> mystate { symtabP = Map.insert (fromMaybe "" lbl) (PredVal lbl x) (symtabP mystate) }
+  pure (x, result)
 
 evalP' (PredVal lbl x) = do
-  return (x, Node ([],[show x ++ ": a leaf value" ++ showlbl lbl]) [])
+  pure (x, Node ([], [[i|#{x}: a leaf value#{showlbl lbl}|]]) [])
+
 evalP' (PredNot _lbl x) = do
-  (xval,xpl) <- retitle "not" (evalP x)
+  (xval,xpl) <- retitle "not" $ evalP x
   let toreturn = not xval
-  return (toreturn, Node ([] ,[show toreturn ++ ": logical not of"]) [xpl])
+  pure (toreturn, Node ([] , [[i|#{toreturn}: logical not of|]]) [xpl])
+
 evalP' (PredBin _lbl binop x y) = do
   (xval, xpl) <- evalP x
   (yval, ypl) <- evalP y
@@ -373,10 +405,11 @@ evalP' (PredBin _lbl binop x y) = do
                    PredOr  -> xval || yval
                    PredEq  -> xval == yval
                    PredNeq -> xval /= yval
-  return (toreturn, Node ([] ,[show toreturn ++ ": logical " ++ show binop]) [xpl, ypl])
+  pure (toreturn, Node ([] , [[i|#{toreturn}: logical #{binop}|]]) [xpl, ypl])
+
 evalP' (PredComp lbl c x y) =
-  let title = "comparison" ++ showlbl lbl
-  in retitle (title <> " " <> shw c) do
+  let title :: String = [i|comparison#{showlbl lbl}|]
+  in retitle [i|#{title} #{shw c}|] do
     (xval, xpl) <- eval x
     (yval, ypl) <- eval y
     let c' = compare xval yval
@@ -389,39 +422,39 @@ evalP' (PredComp lbl c x y) =
           CNEQ | c' /= EQ           -> True
           _                         -> False
         (lhs,rhs) = verbose title
-    return (toreturn, Node ([]
-                            ,[show toreturn ++ " " ++ lhs ++ " (" ++ shw c ++ ")"])
+    pure (toreturn, Node ([]
+                            ,[[i|#{toreturn} #{lhs} (#{shw c})|]])
                        [ xpl
                        , mkNod rhs
                        , ypl ])
 
 evalP' (PredFold lbl andor ps) =
-  let title = "listfold" ++ showlbl lbl
-  in retitle (title <> " " <> show andor) do
-    evalps <- mapM evalP ps
+  let title :: String = [i|listfold#{showlbl lbl}|]
+  in retitle [i|#{title} #{andor}|] do
+    evalps <- evalP `traverse` ps
     let toreturn = case andor of
                      PLAnd -> all fst evalps
                      PLOr  -> any fst evalps
-    return (toreturn, Node ([]
-                           , [show toreturn ++ " " ++ show andor])
+    pure (toreturn, Node ([]
+                           , [[i|#{toreturn} #{andor}|]])
                       (snd <$> evalps ) )
 
 evalP' (PredVar str) =
-  let title = "variable expansion: " ++ str
+  let title :: String = [i|variable expansion: #{str}|]
       (lhs,_rhs) = verbose title
-  in retitle (title <> " " <> show str) do
+  in retitle [i|#{title} #{str}|] do
     (xvar, xpl1) <- getvarP str
     (xval, xpl2) <- evalP xvar
-    return (xval, Node ([], [show xval ++ ": " ++ lhs ++ " " ++ str]) [xpl1, xpl2])
+    pure (xval, Node ([], [[i|#{xval}: #{lhs} #{str}|]]) [xpl1, xpl2])
 
 evalP' (PredSet str x) =
-  let title = "variable assignment: " ++ str
-  in retitle (title <> " " <> show str <> " := " <> fromMaybe (show x) (getPredLabel x)) do
+  let title :: String = [i|variable assignment: #{str}|]
+  in retitle [i|#{title} #{str} := #{fromMaybe (show x) (getPredLabel x)}|] do
     symtab <- gets symtabP
     let newmap = Map.insert str x symtab
-    modify (\ms -> ms { symtabP = newmap })
+    modify \ms -> ms { symtabP = newmap }
     (xval,xpl) <- evalP x
-    return (xval, Node ([], [show xval ++ ": " ++ " saved to " ++ str]) [xpl])
+    pure (xval, Node ([], [[i|#{xval}:  saved to #{str}|]]) [xpl])
 
 evalP' (PredITE _lbl p x y) = evalFP evalP p x y
 
@@ -437,61 +470,62 @@ evalFP evf p x y = retitle "if-then-else" do
   (pval,pxpl) <- evalP p
   if pval
     then do
-    (xval,xxpl) <- evf x
-    return (xval, Node ([],["if " ++ show p ++ " then " ++ show x ++ " else " ++ show y] ) [pxpl, mkNod "thus we choose the then branch", xxpl])
+      (xval,xxpl) <- evf x
+      pure (xval, Node ([],[[i|if #{p} then #{show x} else #{show y}|]]) [pxpl, mkNod "thus we choose the then branch", xxpl])
     else do
-    (yval,yxpl) <- evf y
-    return (yval, Node ([],["if-then-else false"] ) [pxpl, mkNod "thus we choose the else branch", yxpl])
+      (yval,yxpl) <- evf y
+      pure (yval, Node ([],["if-then-else false"] ) [pxpl, mkNod "thus we choose the else branch", yxpl])
 
 -- | Evaluate an `ExprList`
 
 evalList :: ExprList Float -> ExplainableIO r MyState (ExprList Float)
-evalList (MathList lbl a) = return (MathList lbl a, Node (show <$> a,["base MathList with " ++ show (length a) ++ " elements"]) [])
+evalList (MathList lbl a) = pure (MathList lbl a, Node (show <$> a,[[i|base MathList with #{length a} elements|]]) [])
 evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
-  origs <- mapM eval ys
+  origs <- eval `traverse` ys
   -- [TODO] exclude Undefined values from origs
-  round1 <- mapM (evalP . PredComp lbl1 comp x) ys
+  round1 <- (evalP . PredComp lbl1 comp x) `traverse` ys
   let round2 = [ if not r1
                  then (Nothing, Node ([show xval]
-                                     , ["excluded " ++ show xval ++
-                                        " due to failing comparison test"]) [xpl])
+                                     , [[i|excluded #{xval} due to failing comparison test|]]) [xpl])
                  else (Just xval, Node ([show xval]
-                                       , ["included " ++ show xval ++
-                                          " due to passing comparison test"]) [xpl])
+                                     , [[i|included #{xval} due to passing comparison test|]]) [xpl])
                | ((r1,xpl), xval) <- zip round1 ys
                ]
       round3 = mapMaybe fst round2
-  return ( MathList (lbl1 <++> lbl2) round3
+  pure ( MathList (lbl1 <++> lbl2) round3
          , Node ([]
-                , (show (length round3) ++ " elements were reduced from an original " ++ show (length round1))
-                  : ["- " ++ show (fst o) | o <- origs])
+                , [i|#{length round3} elements were reduced from an original #{length round1}|]
+                  : [[i|- #{fst o}|] | o <- origs])
            $ fmap snd round2)
 evalList (ListFilt lbl x comp lf2) = do
   (lf2val, lf2xpl) <- evalList lf2
-  (lf3val, lf3xpl) <- evalList (ListFilt lbl x comp lf2val)
-  return (lf3val, Node ([],["recursing RHS ListFilt"]) [lf2xpl, mkNod "becomes", lf3xpl])
+  (lf3val, lf3xpl) <- evalList $ ListFilt lbl x comp lf2val
+  pure (lf3val, Node ([],["recursing RHS ListFilt"]) [lf2xpl, mkNod "becomes", lf3xpl])
 
-evalList (ListMap lbl Id ylist) = return (ylist, mkNod ("id on ExprList" ++ showlbl lbl))
+evalList (ListMap lbl Id ylist) = pure (ylist, mkNod ("id on ExprList" ++ showlbl lbl))
+
 evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
-  return ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
-         , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length ylist') ++ " elements"]) [yxpl] )
+  pure ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
+         , Node ([],[[i|fmap mathsection #{binop}#{x} over #{length ylist'} elements|]]) [yxpl] )
 
-evalList (ListMapIf lbl Id _c _comp ylist) = retitle ("fmap mathsection id" ++ showlbl lbl) $ evalList ylist
-evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) = retitle ("fmap mathsection if" ++ showlbl lbl1) do
-  (MathList lbl2 ylist', yxpl) <- evalList ylist
-  liveElements <- mapM (evalP . PredComp (lbl1 <++> lbl2) comp c) ylist'
+evalList (ListMapIf lbl Id _c _comp ylist) =
+  retitle [i|fmap mathsection id#{showlbl lbl}|] $ evalList ylist
 
-  return ( MathList (Just "evaled list") [ if b then MathBin (Just "boolean true") binop x y else y
-                                         | (y,b) <- zip ylist' (fst <$> liveElements) ]
-         , Node ([],["fmap mathsection " ++ show binop ++ show x ++ " over " ++ show (length (filter id (fst <$> liveElements))) ++ " relevant elements (" ++
-                    "who pass " ++ show c ++ " " ++ show comp ++ ")"])
-           [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
+evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) =
+  retitle ("fmap mathsection if" ++ showlbl lbl1) do
+    (MathList lbl2 ylist', yxpl) <- evalList ylist
+    liveElements <- (evalP . PredComp (lbl1 <++> lbl2) comp c) `traverse` ylist'
+
+    pure ( MathList (Just "evaled list") [ if b then MathBin (Just "boolean true") binop x y else y
+                                          | (y,b) <- zip ylist' (fst <$> liveElements) ]
+          , Node ([],[[i|fmap mathsection #{binop}#{x} over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{c} #{comp})|]])
+            [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
 
 evalList (ListConcat lbl xxs) = do
-  mapped <- mapM evalList xxs
-  return ( MathList lbl (concat [ f | (MathList _lbl2 f,_) <- mapped ] )
-         , Node ([], ["concatted " ++ show (length mapped) ++ " elements"])
+  mapped <- evalList `traverse` xxs
+  pure ( MathList lbl (mconcat [ f | (MathList _lbl2 f,_) <- mapped ] )
+         , Node ([], [[i|concatted #{length mapped} elements|]])
            (snd <$> mapped))
 
 evalList (ListITE _lbl p y z) = evalFP evalList p y z
@@ -501,8 +535,8 @@ evalList (ListITE _lbl p y z) = evalFP evalList p y z
 
 deepEvalList :: (ExprList Float,XP) -> ExplainableIO r MyState [Float]
 deepEvalList (MathList _lbl xs,xp) = do
-  vals <- mapM eval xs
-  return (fst <$> vals, Node ([],["deep evaluation to floats"]) (xp : (snd <$> vals)))
+  vals <- eval `traverse` xs
+  pure (fst <$> vals, Node ([],["deep evaluation to floats"]) (xp : (snd <$> vals)))
 deepEvalList (other,_xp) = deepEvalList =<< evalList other
 
 
@@ -516,16 +550,16 @@ getvarF x = do
   symtab <- gets symtabF
   case x `Map.lookup` symtab of
     Nothing -> liftIO do
-      putStrLn ("getvarF: unable to find variable `" ++ x ++ "` in symbol table")
+      putStrLn [i|getvarF: unable to find variable `#{x}` in symbol table|]
       error "MathLang fatal error in getvarF"
-    Just v  -> return (v, Node ([show v], ["variable `" ++ x ++ "` has value " ++ show v]) [])
+    Just v  -> pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
 
 -- | Get a @Pred Float@ variable
 
 getvarP :: String -> ExplainableIO r MyState (Pred Float)
 getvarP x = do
   symtab <- gets symtabP
-  return (symtab Map.! x, Node ([show $ symtab Map.! x], ["looked up " ++ x]) [])
+  pure (symtab Map.! x, Node ([show $ symtab Map.! x], [[i|looked up #{x}|]]) [])
 
 -- [TODO] ExprLists too, i suppose
 
@@ -539,8 +573,7 @@ verbose "parentheses"    = ("which is a parenthesized", "")
 verbose "negation"       = ("which is logical negation of", "")
 verbose "comparison"     = ("is the result of comparing", "with")
 verbose "variable expansion" = ("which comes from the variable", "")
-verbose x                = (x, x ++ " argument")
-
+verbose x                = (x, [i|{x} argument|])
 
 (@|+),(@|-),(@|*),(@|/) :: String -> Expr Float -> Expr Float -> Expr Float
 (@|+) lbl = MathBin (Just lbl) Plus
@@ -682,7 +715,7 @@ toplevel = for_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one")
                  , ListFold (Just "positive 2") FoldSum $ Val (Just "zero") 0 <| ml23
                  ] \topexpr -> do
   (_val, _xpl, _stab, _wlog) <- xplainF () emptyState topexpr
-  return ()
+  pure ()
   where ml23 = MathList (Just "minus two to three")
                [Val Nothing (-2), Val Nothing (-1), Val Nothing 0, Val Nothing 1, Val Nothing 2, Val Nothing 3]
 -- * Explainers  
@@ -694,12 +727,18 @@ xplainF r s expr = do
                              (eval expr)
                              (([],["toplevel"]),r)         -- reader: HistoryPath, actualReader
                              s
-  putStrLn $ "#+begin_src haskell\n" ++ show expr ++ "\n#+end_src"
-  putStrLn $ "- val :: "    ++ show val
-  putStrLn $ "- log :: "    ++ show wlog
-  putStrLn $ "- xpl :: " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
 
-  return (val, xpl, stab, wlog)
+  putStrLn [__i|
+    \#+begin_src haskell
+    #{expr}
+    \#+end_src
+    - val :: #{val}
+    - log :: #{wlog}
+    - xpl :: #{val}
+    #{drawTreeOrg 3 xpl}
+  |]
+
+  pure (val, xpl, stab, wlog)
 
 -- | Explain an @ExprList Float@
 xplainL :: r -> ExprList Float -> IO ([Float], XP, MyState, [String])
@@ -708,37 +747,48 @@ xplainL r exprList = do
                            (deepEvalList (exprList,mkNod "deep eval"))
                            (([],["toplevel"]),r)         -- reader: HistoryPath, actualReader
                            emptyState -- state: MyState
-  putStrLn $ "#+begin_src haskell\n" ++ show xl ++ "\n#+end_src"
-  putStrLn $ "- val :: "    ++ show xl
-  putStrLn $ "- log :: "    ++ show wlog
-  putStrLn $ "- xpl :: " ++ show xl ++ "\n" ++ drawTreeOrg 3 xp
-  return (xl, xp, stab, wlog) -- [TODO] note the explanation result from xs is discarded
+  putStrLn [__i|
+    \#+begin_src haskell
+    #{xl}
+    \#+end_src
+    - val :: #{xl}
+    - log :: #{wlog}
+    - xpl :: #{xl}
+    #{drawTreeOrg 3 xp}
+  |]
+
+  pure (xl, xp, stab, wlog) -- [TODO] note the explanation result from xs is discarded
 
 unMathList :: Show a => ExprList a -> [Expr a]
 unMathList (MathList _lbl xs) = xs
-unMathList x                  = error $ "unMathList: expected exprList to be fully evaluated, but got " ++ show x
+unMathList x                  = error [i|unMathList: expected exprList to be fully evaluated, but got #{x}|]
 
 -- | dump an explanation of a mathlang expression
 dumpExplanationF :: Int -> MyState -> Expr Float -> IO ()
 dumpExplanationF depth s f = do
   (val, xpl, stab, wlog) <- xplainF () s f
-  putStrLn (stars ++ " val" ); print val
-  putStrLn (stars ++ " xpl" ); print xpl
-  putStrLn (stars ++ " starting state"); print s
-  putStrLn (stars ++ " ending SymTab"); print stab
-  putStrLn (stars ++ " wlog"); print wlog
-  putStrLn (stars ++ " typescript"); do
-    putStrLn "#+BEGIN_SRC typescript :tangle from-hs.ts"
-    print $ dumpTypescript "" s f
-    putStrLn "#+END_SRC"
 
+  let stars = replicate depth '*'
+  putStrLn [i|
+    #{stars} val
+    #{val}
+    #{stars} xpl
+    #{xpl}
+    #{stars} starting state
+    #{s}
+    #{stars} ending SymTab
+    #{stab}
+    #{stars} wlog
+    #{wlog}
+    #{stars} typescript
+    \#+BEGIN_SRC typescript :tangle from-hs.ts
+    #{print $ dumpTypescript "" s f}
+    \#+END_SRC
+  |]
 
-  where stars = replicate depth '*'
-
--- | Transforms MathLang expressions to Typescript
 dumpTypescript :: Doc ann0 -> MyState -> Expr Float -> Doc ann1
 dumpTypescript realign s f =
-  [di|
+  [__di|
     // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
 
     import * as tsm from './mathlang';
@@ -760,7 +810,6 @@ dumpTypescript realign s f =
       return #{pp f} 
     }
   |]
-
 
 -- * Prettty-printing to the Typescript version of the MathLang library
 class ToTS expr a where
@@ -807,7 +856,7 @@ instance ToTS Pred a where
 
 ppst :: MyState -> Doc ann -> Doc ann
 ppst (MyState{..}) realign =
-  [di|
+  [__di|
     function realign (form_data : any) {
       var toreturn = {...form_data}
   |] <>  realign <> line <> "  return toreturn;\n}" <> line <>
@@ -821,13 +870,13 @@ ppst (MyState{..}) realign =
       , let keyString = pretty k
             valString = pretty v
       ]
-      ++
+      <>
       [ dquotes keyString <> colon <+> valString
       | (k,PredVal _lbl v) <- Map.toList symtabP
       , let keyString = pretty k
             valString = if v then "true" else "false"
       ]
-      ++
+      <>
       [ dquotes keyString <> colon <+> dquotes valString
       | (k,v) <- Map.toList symtabS
       , let keyString = pretty k

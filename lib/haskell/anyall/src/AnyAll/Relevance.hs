@@ -49,12 +49,12 @@ deriveInitVis parentValue selfValue selfValueHard
 dispositive :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> [BoolStruct l a]
 dispositive sh marking self =
   let selfValue  = evaluate sh marking self
-      recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
+      recurse cs = concatMap (dispositive sh marking) $ filter ((selfValue ==) . evaluate sh marking) cs
   in case self of
-       Leaf x          -> if isJust selfValue then return self else mempty
-       Any label items -> recurse items
-       All label items -> recurse items
-       Not       item  -> recurse [item]
+    Leaf x          -> if isJust selfValue then return self else mempty
+    Any label items -> recurse items
+    All label items -> recurse items
+    Not       item  -> recurse [item]
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool

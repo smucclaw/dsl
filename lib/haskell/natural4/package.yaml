@@ -80,6 +80,7 @@ dependencies:
   - raw-strings-qq
   - template-haskell
   - effectful
+  - log-base
 
 language: GHC2021
 

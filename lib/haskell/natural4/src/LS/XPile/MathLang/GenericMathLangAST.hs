@@ -35,7 +35,7 @@ import Optics.TH
 -- import Data.Hashable (Hashable)
 -- import GHC.Generics (Generic)
 
-type VarName = String
+type VarName = T.Text
 type TLabel = String
 
 data Stage = Prelim | Desugared
@@ -116,7 +116,8 @@ data ExpF md (stage :: Stage) where
 
 deriving instance Show md => Show (ExpF md stage)
 
-data Lit = ENumber | EBool | EString
+-- TODO: Need to figure out how best to deal with numbers, esp. wrt money. Shld not use floats for money.
+data Lit = ENumber Float | EBool Bool | EString !T.Text
   deriving stock (Eq, Ord, Show)
 
 data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
@@ -126,7 +127,7 @@ data UnOp
   deriving stock (Eq, Ord, Show)
 -- TODO: may not need this
 
-
+-- TODO; this would be a reach goal
 data ExplnImptce = HighEI | LowEI | DebugEI
   deriving stock (Eq, Ord, Show)
 
@@ -167,7 +168,11 @@ newtype Exp stage = ExpF ExpMetadata
 
 --------------------------------------------------------------------------------
 
-{- Allow L4 users to define a program-wide / global dict 
+{----------------------------------------------------------
+ Reach goals 
+==========================================================-}
+
+{- | Allow L4 users to define a program-wide / global dict 
    that can be used by downstream targets to, e.g., explain what certain bits of jargon mean
 -}
-newtype ProgramGlossary = ProgramGlossary { getProgramGlossary :: [(T.Text, T.Text)] }
+-- newtype ProgramGlossary = ProgramGlossary { getProgramGlossary :: [(T.Text, T.Text)] }

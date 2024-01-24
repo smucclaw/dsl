@@ -15,7 +15,6 @@ module LS.XPile.MathLang.GenericMathLangAST where
 
 import Data.Text qualified as T
 
-
 -- import Control.Monad.Validate
 --   ( MonadValidate (..)
 --     , Validate
@@ -35,8 +34,16 @@ import Optics.TH
 -- import Data.Hashable (Hashable)
 -- import GHC.Generics (Generic)
 
+{----------------------------------------------------------
+    AST
+==========================================================-}
+
+
 type VarName = T.Text
 type TLabel = String
+
+type Number = Float 
+-- ^ TODO: Will want to change this to something that can represent money in the future
 
 data Stage = Prelim | Desugared
   deriving stock (Eq, Ord, Show)
@@ -117,7 +124,7 @@ data ExpF md (stage :: Stage) where
 deriving instance Show md => Show (ExpF md stage)
 
 -- TODO: Need to figure out how best to deal with numbers, esp. wrt money. Shld not use floats for money.
-data Lit = ENumber Float | EBool Bool | EString !T.Text
+data Lit = ENumber Number | EBool Bool | EString !T.Text
   deriving stock (Eq, Ord, Show)
 
 data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct

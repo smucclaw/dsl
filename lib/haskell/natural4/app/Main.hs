@@ -66,7 +66,7 @@ import LS.XPile.SVG qualified as AAS
 import LS.XPile.JSONRanges (asJSONRanges)
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
-import LS.XPile.MathLang (toMathLang)
+import LS.XPile.MathLang (toMathLangMw, toMathLangGen)
 import LS.XPile.VueJSON
   ( checklist,
     groundrules,
@@ -199,7 +199,11 @@ main = do
       (toIntro5FN,  (asShoehorn, asShoehornErr)) = (workuuid </> "intro5",   toShoehorn l4i defaultReaderEnv)
       (toIntro6FN,  (asBase,     asBaseErr))     = (workuuid </> "intro6",   toBase l4i defaultReaderEnv)
 
-      (toMathLangTSFN,  (asMathLangTS,     asMathLangTSErr))     = (workuuid </> "mathlangTS",   toMathLang l4i defaultReaderEnv)
+      (toMathLangGenFN,  (asMathLangGen,     asMathLangGenErr))     = (workuuid </> "mathlangGen",   toMathLangGen l4i ) 
+      -- will upstream a generic xpiler + app env in the future, 
+      -- and have `toMathLangGen` take that as one of its inputs
+
+      (toMathLangMwTSFN,  (asMathLangMwTS,     asMathLangMwTSErr))     = (workuuid </> "mathlangTS",   toMathLangMw l4i defaultReaderEnv)
 
       (tojsrFN,     (asJSRpretty, asJSRerr))  = (workuuid </> "jsonranges",  xpLog $ asJSONRanges l4i)
       (totsFN,      (asTSpretty, asTSerr))    = (workuuid </> "ts",       xpLog $ asTypescript l4i)
@@ -270,8 +274,13 @@ main = do
       mywritefile2 True toIntro5FN   iso8601 "txt"  asShoehorn   asShoehornErr
       mywritefile2 True toIntro6FN   iso8601 "txt"  asBase       asBaseErr
 
-    when (SFL4.tomathlang opts) do
-      mywritefile2 True toMathLangTSFN   iso8601 "ts"  asMathLangTS       asMathLangTSErr
+    when (SFL4.tomathlangmw opts) do
+      mywritefile2 True toMathLangMwTSFN   iso8601 "ts"  asMathLangMwTS       asMathLangMwTSErr
+
+    -- temporarily use .txt
+    when (SFL4.togenmathlang opts) do
+      mywritefile2 True toMathLangGenFN   iso8601 "txt"  asMathLangGen       asMathLangGenErr
+
 
     when (SFL4.tovuejson opts) do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.

@@ -1,7 +1,7 @@
 module LS.XPile.MathLang 
-    (toMathLang)
+    (toMathLangMw, toMathLangGen)
 where
 
-import LS.XPile.MathLang.MathLang (
-    toMathLang
-    )
+import LS.XPile.MathLang.MathLang (toMathLangMw)
+import LS.XPile.MathLang.L4ToGenericMathLang (toMathLangGen)
+

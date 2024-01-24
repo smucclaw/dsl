@@ -1,4 +1,4 @@
-module LS.XPile.MathLang.MathLang (toMathLang) where
+module LS.XPile.MathLang.MathLang (toMathLangMw) where
 -- TODO: Rename `toMathLang` to something like `toMengMathLang`, and add a `toGenericMathLang` as well
 
 import LS.XPile.IntroReader (MyEnv)
@@ -18,8 +18,8 @@ with comments from MEng. Will integrate these later.
 --
 -- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
 -- to contain an @Expr Float@ called "must sing"
-toMathLang :: Interpreted -> MyEnv -> (String, [String])
-toMathLang l4i myenv = ("NotYetImplemented", []) 
+toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
+toMathLangMw l4i myenv = ("NotYetImplemented", []) 
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

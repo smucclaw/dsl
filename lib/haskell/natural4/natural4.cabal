@@ -73,7 +73,6 @@ library
       LS.XPile.LogicalEnglish.LogicalEnglish
       LS.XPile.LogicalEnglish.Pretty
       LS.XPile.LogicalEnglish.ReplaceTxt
-      LS.XPile.LogicalEnglish.Scratchpad
       LS.XPile.LogicalEnglish.SimplifyL4
       LS.XPile.LogicalEnglish.Types
       LS.XPile.LogicalEnglish.UtilsLEReplDev
@@ -86,7 +85,6 @@ library
       LS.XPile.MathLang.L4ToGenericMathLang
       LS.XPile.MathLang.Logging
       LS.XPile.MathLang.MathLang
-      LS.XPile.MathLang.Scratchpad
       LS.XPile.Maude
       LS.XPile.Maude.Regulative.HenceLest
       LS.XPile.Maude.Regulative.RkeywordDeonticActorAction

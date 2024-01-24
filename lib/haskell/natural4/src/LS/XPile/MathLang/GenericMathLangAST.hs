@@ -40,6 +40,7 @@ import Optics.TH
 
 
 type VarName = T.Text
+type FieldLabel = T.Text
 type TLabel = String
 
 type Number = Float 
@@ -54,44 +55,47 @@ TO THINK ABT:
 
   * Do we really want to allow for user annotations for *every* kind of expr?
   * Is it worth bothering with `stage`?
+  * Shld we factor 'statements' out?
 -}
 data ExpF md (stage :: Stage) where
-  ELit :: { md :: md, lit :: Lit } -> ExpF md stage
+  ELit :: { litMd :: md, lit :: Lit } -> ExpF md stage
   EOp ::
-    { md :: md,
+    { opMd :: md,
       binOp :: Op,
       leftArg :: ExpF md stage, -- ^ left
       rightArg :: ExpF md stage -- ^ right
     } -> ExpF md stage
   EUnOp :: { md :: md, unOp :: UnOp, arg :: ExpF md stage } -> ExpF md stage
-  EVar :: { md :: md, var :: VarName } -> ExpF md stage
   EIf ::
-    { md :: md,
+    { ifMd :: md,
       condExp :: ExpF md stage,
       thenExp :: ExpF md stage,
       elseExp :: ExpF md stage
     } -> ExpF md stage
   ELam ::
-    { md :: md,             -- ^ lam metadata
+    { lamMd :: md,          -- ^ lam metadata
       paramMd :: md,        -- ^ param metadata
       param :: VarName,     -- ^ param
       body :: ExpF md stage -- ^ body
     } -> ExpF md stage
   EApp ::
-    { md :: md,
-      func :: ExpF md stage, -- ^ func 
-      arg :: ExpF md stage   -- ^ arg
+    { appMd :: md,
+      appFunc :: ExpF md stage, -- ^ func 
+      appArg :: ExpF md stage   -- ^ arg
     } -> ExpF md stage
 
+  EVar :: { md :: md, var :: VarName } -> ExpF md stage
+  ERecdRef :: { recrefMd :: md, recdExp :: ExpF md stage, recdField :: FieldLabel } -> ExpF md stage
+
   -- | variable mutation; prob treat as eval-ing to assigned value
-  ESet ::
-    { md :: md,
-      var :: VarName,
+  EVarSet ::
+    { vsetMd :: md,
+      vsetVar :: VarName,
       arg :: ExpF md stage -- ^ arg 
     } -> ExpF md stage
 
-  -- | sequence of statements; returns expression of the last
-  ESeq :: { md :: md, stmts :: [ExpF md stage] } -> ExpF md stage
+  -- | sequence of statements; returns last of the exprs
+  ESeq :: { seqMd :: md, stmts :: [ExpF md stage] } -> ExpF md stage
 
   ELet ::
     -- Need to prefix field names with `let` because of https://gitlab.haskell.org/ghc/ghc/-/issues/12159

@@ -45,7 +45,7 @@ type VarName = T.Text
 type FieldLabel = T.Text
 type TLabel = String
 
-type Number = Float 
+type Number = Float
 -- ^ TODO: Will want to change this to something that can represent money in the future
 
 data Stage = Prelim | Desugared
@@ -146,7 +146,7 @@ data ExplnImptce = HighEI | LowEI | DebugEI
 
 data ExplnAnnot = MkExplnAnnot
   { l4RuleName :: !T.Text
-  , overridAnnot :: Maybe T.Text 
+  , overridAnnot :: Maybe T.Text
   -- ^ if L4 writer wants to override the default annotation 
   , explnImptce :: Maybe ExplnImptce 
   -- ^ how impt it is to log the relevant annotation when tracing the eval, to (optionally) be provided by L4 writer

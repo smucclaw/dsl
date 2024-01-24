@@ -38,7 +38,9 @@ import Optics.TH
     AST
 ==========================================================-}
 
-
+{- | Note: The first draft of this will ignore the complexities to do with variables and assume global scope, as Meng does
+     We may not even bother with trying to translate function definitions and applications in the first draft
+-}
 type VarName = T.Text
 type FieldLabel = T.Text
 type TLabel = String

@@ -70,12 +70,26 @@ packages:
   original:
     hackage: diagnose-2.4.0
 - completed:
+    hackage: log-effectful-1.0.0.0@sha256:126f328c9325c10998289378191dc69e55b5ffdc37a7845f2d0ee57f6f13392e,2433
+    pantry-tree:
+      sha256: e22a70263da683f2a289c9e514fd4ef32dcc3cc9b54d1c6fe04299736cc88493
+      size: 325
+  original:
+    hackage: log-effectful-1.0.0.0
+- completed:
     hackage: holmes-0.3.2.0@sha256:3d4aeb74177bafedc55a9c21be682ad45929490d1d809dec7fe248a503df0290,4597
     pantry-tree:
       sha256: 414f3416b14c2cd66141e755fa4d343c9ac154dc7713cf56bee09578019170cd
       size: 3258
   original:
     hackage: holmes-0.3.2.0
+- completed:
+    hackage: unbound-generics-0.4.3@sha256:12209c0049000d0dd8c3eb6013d0278a8b269a2421d9758083aab9f58c4b6b4c,5446
+    pantry-tree:
+      sha256: 0a62d14242839c1295c1f6763a0d435f1f3fe7d89829add21ea6d008e8cd52e2
+      size: 3171
+  original:
+    hackage: unbound-generics-0.4.3@sha256:12209c0049000d0dd8c3eb6013d0278a8b269a2421d9758083aab9f58c4b6b4c,5446
 snapshots:
 - completed:
     sha256: 7b975b104cb3dbf0c297dfd01f936a4d2ee523241dd0b1ae960522b833fe3027

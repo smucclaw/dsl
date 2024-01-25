@@ -21,7 +21,7 @@ import Text.Pretty.Simple (pShowNoColor)
 
 
 gftrees :: NLGEnv -> [Rule] -> XPileLog [BoolStructGText]
-gftrees env rl = join <$> traverse (ruleQnTrees env alias) rl
+gftrees env rl = join <$> ruleQnTrees env alias `traverse` rl
   where
     alias = listToMaybe [(you,org) | DefNameAlias you org _ _ <- rl]
 

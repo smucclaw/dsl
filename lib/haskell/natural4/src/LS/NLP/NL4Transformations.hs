@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -9,6 +10,7 @@ import AnyAll (BoolStruct (..), Label (..))
 import AnyAll qualified as AA
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
+import Data.String.Interpolate (i)
 import Debug.Trace (trace)
 import LS.NLP.NL4
 import PGF (Language, mkCId)
@@ -28,7 +30,7 @@ pushPrePostIntoMain = \case
 
   where
     hackStrVP :: GString -> GVP -> GVP
-    hackStrVP in_part vp = GAdvVP vp (GrecoverUnparsedAdv in_part)
+    hackStrVP in_part vp = GAdvVP vp $ GrecoverUnparsedAdv in_part
 
     transformWho :: GTemp -> GPol -> GV2 -> GNP -> GText -> GText
     transformWho t p consume beverage (GqWHO person (GAPWho alcoholic)) =
@@ -119,7 +121,7 @@ bs2gf conj conjPre conjPrePost mkList bs = case bs' of
   where
     f = bs2gf conj conjPre conjPrePost mkList
     bs' = bsNeg2textNeg bs
-    unexpectedNegationMsg = "bs2gf: not expecting NOT in " <> show bs'
+    unexpectedNegationMsg = [i|bs2gf: not expecting NOT in #{bs'}|]
 
 bsWho2gfWho :: BoolStructWho -> GWho
 bsWho2gfWho = bs2gf GConjWho GConjPreWho GConjPrePostWho GListWho
@@ -133,7 +135,7 @@ bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePos
 -----------------------------------------------------------------------------
 
 mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe (AA.Label a)) c ->  AA.BoolStruct (Maybe (AA.Label b)) d
-mapBSLabel f g bs = case bs of
+mapBSLabel f g = \case
   AA.Leaf x -> AA.Leaf $ g x
   AA.Any pre xs -> AA.Any (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
   AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
@@ -169,7 +171,7 @@ referNP x = composOp referNP x
 insertAP :: GAP -> Tree a -> Tree a
 insertAP ap = go
   where
-    go :: forall a . Tree a -> Tree a
+    go :: Tree b -> Tree b
     go (GMassNP cn) = GMassNP $ GAdjCN ap cn
     go cn@(GUseN _) = GAdjCN ap cn
     go x = composOp go x

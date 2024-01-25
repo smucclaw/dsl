@@ -18,7 +18,7 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, listToMaybe, maybeToList, fromMaybe)
-import Data.String.Interpolate (i)
+import Data.String.Interpolate as I (i)
 import Data.Text qualified as Text
 import Debug.Trace (trace)
 import LS.Interpreter ( expandBSR
@@ -140,7 +140,7 @@ printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
 getLang :: String -> PGF -> XPileLogE Language
 getLang str gr = do
-  mutter $ "*** getLang " ++ str
+  mutter [i|*** getLang #{str}|]
   case (readLanguage str, languages gr) of
     (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
       -> if l `elem` langs
@@ -153,7 +153,7 @@ getLang str gr = do
     (_, []) -- The PGF has no languages, truly unexpected and fatal
       -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
   where
-    fallbackMsg fblang = unwords ["language", str, "not found, falling back to", fblang]
+    fallbackMsg fblang = [i|language #{str} not found, falling back to #{fblang}|]
 
 myNLGEnv :: Interpreted -> Language -> IO (XPileLogE NLGEnv)
 myNLGEnv l4i lang = do
@@ -274,8 +274,8 @@ nlg' thl env rule = case rule of
           bodyLins = gfLin env <$> bodyTrees
       when (verbose env) do
         putStrLn "nlg': hornlike"
-        putStrLn $ unlines $ ["   head: " <> showExpr [] t | t <- headTrees]
-        putStrLn $ unlines $ ["   body: " <> showExpr [] t | t <- bodyTrees]
+        putStrLn $ unlines $ [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
+        putStrLn $ unlines $ [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
       pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
@@ -283,7 +283,7 @@ nlg' thl env rule = case rule of
       pure $ Text.strip ruleTextDebug
     DefNameAlias {} -> pure mempty
     DefTypically {} -> pure mempty
-    _ -> pure $ "NLG.hs is under construction, we don't support yet " <> Text.pack (show rule)
+    _ -> pure [I.i|NLG.hs is under construction, we don't support yet #{rule}|]
   where
     (prefix,suffix) = debugNesting (gfLang env) thl
     i = getLevel thl + 2
@@ -322,7 +322,7 @@ ruleQuestions env alias rule =
   case rule of
     Regulative {subj,who,cond,upon} -> do
       t <- text
-      mutterdhsf 4 ("ruleQuestions: regulative " ++ show (ruleLabelName rule))  pShowNoColorS t
+      mutterdhsf 4 [i|ruleQuestions: regulative #{ruleLabelName rule}|]  pShowNoColorS t
       text
     Hornlike {clauses} -> do
       rqn <- ruleQnTrees env alias rule
@@ -337,7 +337,7 @@ ruleQuestions env alias rule =
     DefNameAlias {} -> pure [] -- no questions needed to produce from DefNameAlias
     DefTypically {} -> pure [] -- no questions needed to produce from DefTypically
     RuleGroup {} -> pure []
-    _ -> pure [AA.Leaf $ Text.pack ("ruleQuestions: doesn't work yet for " <> ruleConstructor rule)]
+    _ -> pure [AA.Leaf [i|ruleQuestions: doesn't work yet for #{ruleConstructor rule}|]]
   -- [TODO] for our Logging exercise, see how to convert the _ case above to an xpError
 
     where
@@ -374,7 +374,9 @@ ruleQnTrees env alias rule = do
   case rule of
     Regulative {subj,who,cond,upon} -> do
       let subjExpr = parseSubj env subj
-          aliasExpr = if subjExpr==orgExpr then youExpr else referNP subjExpr
+          aliasExpr
+            | subjExpr == orgExpr = youExpr
+            | otherwise = referNP subjExpr
           qWhoTrees = mkWhoText env GqPREPOST (GqWHO aliasExpr) <$> who
           qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
           qUponTrees = mkUponText env aliasExpr GqUPON <$> upon

@@ -13,7 +13,7 @@ import Debug.Trace (trace)
 import LS.NLP.NL4
 import PGF (Language, mkCId)
 
-flipPolarity :: forall a . Tree a -> Tree a
+flipPolarity :: Tree a -> Tree a
 flipPolarity GPOS = GNEG
 flipPolarity GNEG = GPOS
 flipPolarity x = composOp flipPolarity x
@@ -140,48 +140,48 @@ mapBSLabel f g bs = case bs of
   AA.Not x -> AA.Not $ mapBSLabel f g x
 
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
-applyLabel f (AA.Pre a) = AA.Pre (f a)
+applyLabel f (AA.Pre a) = AA.Pre $ f a
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
 
 mapBS :: (a -> b) -> AA.BoolStruct c a ->  AA.BoolStruct c b
 mapBS f = \case
   AA.Leaf x -> AA.Leaf $ f x
-  AA.Any lbl xs -> AA.Any lbl (mapBS f <$> xs)
-  AA.All lbl xs -> AA.All lbl (mapBS f <$> xs)
+  AA.Any lbl xs -> AA.Any lbl $ mapBS f <$> xs
+  AA.All lbl xs -> AA.All lbl $ mapBS f <$> xs
   AA.Not x -> AA.Not $ mapBS f x
 -----------------------------------------------------------------------------
 -- Generic useful transformations
 -- for NP
 
-introduceNP :: forall a . Tree a -> Tree a
+introduceNP :: Tree a -> Tree a
 introduceNP (GEVERY x) = GDetCN GaSg x
 introduceNP (GMassNP x) = GDetCN GaSg x
 introduceNP (GDetCN _ x) = GDetCN GaSg x
 introduceNP x = composOp introduceNP x
 
-referNP :: forall a . Tree a -> Tree a
+referNP :: Tree a -> Tree a
 referNP (GEVERY x) = GDetCN GtheSg x
 referNP (GMassNP x) = GDetCN GtheSg x
 referNP (GDetCN GaSg x) = GDetCN GtheSg x
 --referNP (GDetCN GaPl x) = GDetCN GthePl x
 referNP x = composOp referNP x
 
-insertAP :: forall a . GAP -> Tree a -> Tree a
+insertAP :: GAP -> Tree a -> Tree a
 insertAP ap = go
   where
     go :: forall a . Tree a -> Tree a
-    go (GMassNP cn) = GMassNP (GAdjCN ap cn)
+    go (GMassNP cn) = GMassNP $ GAdjCN ap cn
     go cn@(GUseN _) = GAdjCN ap cn
     go x = composOp go x
 
-pastTense :: forall a . Tree a -> Tree a
+pastTense :: Tree a -> Tree a
 pastTense (GMkVPS _ pol vp) = GMkVPS GpastSimul pol vp
 pastTense x = composOp pastTense x
 
 -----------------------------------------------------------------------------
 -- db happens ON x or db happens AFTER x ==> db happens ON or AFTER x
 
-mergeConj :: forall a . Tree a -> Tree a
+mergeConj :: Tree a -> Tree a
 mergeConj og@(GConjCond conj (GListCond cs)) = fromMaybe og $ squeezeTrees conj cs
 mergeConj og@(GConjConstraint conj (GListConstraint cs)) = fromMaybe og $ squeezeTrees conj cs
 mergeConj x = composOp mergeConj x
@@ -189,14 +189,14 @@ mergeConj x = composOp mergeConj x
 
 -- The function that does all the repetitive work
 -- TODO: check if viewpatterns help?
-squeezeTrees :: forall a . GConj -> [Tree a] -> Maybe (Tree a)
+squeezeTrees :: GConj -> [Tree a] -> Maybe (Tree a)
 squeezeTrees conj [
     GRPConstraint cond tc1 date
   , GRPConstraint ((== cond) -> True) tc2 ((== date) -> True)]
   = pure $ GRPConstraint cond conjTC date
   where
     conjTC :: GTComparison
-    conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
+    conjTC = GConjTComparison conj $ GListTComparison [tc1, tc2]
 
 -- TODO: how to make this work without lots of copy and paste?
 -- squeezeTrees conj [GCompNP np1, GCompNP np2] = pure $ GCompNP (GConjNP conj (GListNP [np1, np2]))
@@ -222,12 +222,11 @@ isChinese = (== mkCId "NL4Chi")
 isMalay :: Language -> Bool
 isMalay = (== mkCId "NL4May")
 
-aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
-aggregateBoolStruct l bs =
-  if False -- isChinese l
-    then bs
-    else
-      (case bs of
-        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ foldMap toList xs
-        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ foldMap toList xs
-        _ -> bs)
+aggregateBoolStruct :: Language -> BoolStructGF a ->  BoolStructGF a
+aggregateBoolStruct l bs
+  | False = -- isChinese l
+    bs
+  | otherwise = case bs of
+    AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ foldMap toList xs
+    AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ foldMap toList xs
+    _ -> bs

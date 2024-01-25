@@ -1,4 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -44,17 +43,15 @@ bsMarkdown :: [NLGEnv] -> [Rule] -> IO String
 bsMarkdown envs rl = Text.unpack . Text.intercalate "  " <$> flip eachnlg rl `traverse` envs -- (sequence [eachnlg env rl | env <- envs])
 
 eachnlg :: NLGEnv -> [Rule] -> IO Text.Text
-eachnlg env rl = do
-  txt <- nlg env `traverse` rl
-  return $ Text.unwords txt
+eachnlg env = (Text.unwords <$>) . traverse (nlg env)
 
 -- bsMarkdown :: [Rule] -> String
 -- bsMarkdown rl = Text.unpack $ Text.unwords $ bs rl
 
 rpFilter :: RelationalPredicate -> MultiTerm
 rpFilter (RPParamText pt) = pt2multiterm pt
-rpFilter (RPConstraint mt1 rel mt2) = mt1 ++ mt2
-rpFilter (RPBoolStructR mt1 rel bsr) = mt1++ bs2mt bsr
+rpFilter (RPConstraint mt1 rel mt2) = mt1 <> mt2
+rpFilter (RPBoolStructR mt1 rel bsr) = mt1 <> bs2mt bsr
 rpFilter (RPnary rel rps) = foldMap rpFilter rps
 rpFilter (RPMT mt) = mt
 

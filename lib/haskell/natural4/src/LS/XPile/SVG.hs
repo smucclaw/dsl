@@ -1,5 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
-
 {-| transpiler to SVG visualization of the AnyAll and/or trees.
 
 Largely a wrapper. Most of the functionality is in the `AnyAll` lib.
@@ -20,7 +18,7 @@ import LS
 
 asAAsvg :: AAVConfig -> Interpreted -> [Rule] -> Map.HashMap RuleName (SVGElement, SVGElement, BoolStructT, QTree T.Text)
 asAAsvg aavc l4i _rs =
-  Map.fromList [ ( concat names
+  Map.fromList [ ( mconcat names
                  , (svgtiny, svgfull, bs, qtree) )
                | (names, bs) <- qaHornsT l4i
                , isInteresting bs

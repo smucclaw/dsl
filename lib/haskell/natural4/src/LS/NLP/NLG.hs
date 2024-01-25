@@ -1,5 +1,9 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE OverloadedStrings, GADTs #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module LS.NLP.NLG where
@@ -14,6 +18,7 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, listToMaybe, maybeToList, fromMaybe)
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Debug.Trace (trace)
 import LS.Interpreter ( expandBSR
@@ -172,14 +177,12 @@ rmBIND = Text.replace " &+ " ""
 uncapKeywords :: Text.Text -> Text.Text
 uncapKeywords = Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
   where
-    lowerWhole keywords word =
-      if word `elem` keywords
-        then Text.toLower word
-        else word
-
+    lowerWhole keywords word
+      | word `elem` keywords = Text.toLower word
+      | otherwise = word
 
 gfPath :: String -> String
-gfPath x = "grammars/" ++ x
+gfPath x = [i|grammars/#{x}|]
 
 -----------------------------------------------------------------------------
 -- Main
@@ -189,7 +192,7 @@ data RecursionLevel = TopLevel | MyHence Int | MyLest Int
   deriving (Eq,Ord,Show)
 
 getLevel :: RecursionLevel -> Int
-getLevel l = case l of
+getLevel = \case
   TopLevel -> 2
   MyHence i -> i
   MyLest i -> i
@@ -315,7 +318,7 @@ ruleQuestions :: NLGEnv
               -> Alias
               -> Rule
               -> XPileLog [BoolStructT]
-ruleQuestions env alias rule = do
+ruleQuestions env alias rule =
   case rule of
     Regulative {subj,who,cond,upon} -> do
       t <- text
@@ -414,16 +417,16 @@ mkGFtext env alias subj bsr = case (whoParses, condParses) of
     condParses = parseCondNoRecover env bsr
 
 parseWhoNoRecover :: NLGEnv -> BoolStructR -> [BoolStructWho]
-parseWhoNoRecover env = sequence . mapBSLabel (parsePrePost env) (parseVP env)
+parseWhoNoRecover env = sequenceA . mapBSLabel (parsePrePost env) (parseVP env)
   where
     parseVP :: NLGEnv -> RelationalPredicate -> [GWho]
-    parseVP env rp = map fg $ parseAnyNoRecover "Who" env (rp2text rp)
+    parseVP env rp = fg <$> parseAnyNoRecover "Who" env (rp2text rp)
 
 parseCondNoRecover :: NLGEnv -> BoolStructR -> [BoolStructCond]
 parseCondNoRecover env = sequence . mapBSLabel (parsePrePost env) (parseS env)
   where
     parseS :: NLGEnv -> RelationalPredicate -> [GCond]
-    parseS env rp = map fg $ parseAnyNoRecover "Cond" env (rp2text rp)
+    parseS env rp = fg <$> parseAnyNoRecover "Cond" env (rp2text rp)
 
 ----------------------------------------------------------------------
 
@@ -479,27 +482,27 @@ parseTComparison TOn = GON
 parseTComparison TVague = GVAGUE
 
 parseDate :: MultiTerm -> GDate
-parseDate mt = case Text.words $ mt2text mt of
-  [d, m, y] -> GMkDate (tDay d) (tMonth m) (mkYear y)
-  _ -> GMkDate (LexDay "Day1") (LexMonth "Jan") dummyYear
- where
-  dummyYear = mkYear "1970"
+parseDate = \case
+  (Text.words . mt2text -> [d, m, y]) ->
+    GMkDate (tDay d) (tMonth m) (mkYear y)
+  _ -> GMkDate (LexDay "Day1") (LexMonth "Jan")  dummyYear
+  where
+    dummyYear = mkYear "1970"
 
-  mkYear :: Text.Text -> GYear
-  mkYear y = GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
-    where [y1, y2, y3, y4] = splitYear y
+    mkYear :: Text.Text -> GYear
+    mkYear (splitYear -> [y1, y2, y3, y4]) =
+      GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
 
-  splitYear :: Text.Text -> [String]
-  splitYear y = case ["Y" <> [d] | d <- Text.unpack y] of
-    xs@[_, _, _, _] -> xs
-    _ -> ["Y2", "Y0", "Y0", "Y0"]
+    splitYear :: Text.Text -> [String]
+    splitYear y = case [[i|Y#{d}|] | d <- Text.unpack y] of
+      xs@[_, _, _, _] -> xs
+      _ -> ["Y2", "Y0", "Y0", "Y0"]
 
-  tDay :: Text.Text -> GDay
-  tDay t = LexDay ("Day"<> Text.unpack t)
+    tDay :: Text.Text -> GDay
+    tDay t = LexDay [i|Day#{t}|]
 
-  tMonth :: Text.Text -> GMonth
-  tMonth = LexMonth . Text.unpack
-
+    tMonth :: Text.Text -> GMonth
+    tMonth = LexMonth . Text.unpack
 
 -- TODO: stop using *2text, instead use the internal structure
   -- "respond" :| []  -> respond : VP
@@ -546,11 +549,10 @@ parseCond env rp = fg tree
     tree :| _ = parseAny "Cond" env txt
 
 parseUpon :: NLGEnv -> ParamText -> GUpon
-parseUpon env pt = case upons of
-    upon:_ -> upon
-    [] -> case nps of
-            np:_ -> GUPONnp np (LexVP "occur")
-            [] -> fg tree
+parseUpon env pt = case (upons, nps) of
+  (upon:_, _) -> upon
+  (_, np:_) -> GUPONnp np $ LexVP "occur"
+  (_, _) -> fg tree
   where
     txt = pt2text pt
     upons = fg <$> parseAnyNoRecover "Upon" env txt
@@ -558,19 +560,21 @@ parseUpon env pt = case upons of
     tree :| _ = parseAny "Upon" env txt
 
 parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
-parseTemporal env (TemporalConstraint t (Just int) text) = GTemporalConstraint tc digits unit
+parseTemporal env (TemporalConstraint t (Just int) text) =
+  GTemporalConstraint tc digits unit
   where
     tc = parseTComparison t
     digits = mkDigits int
     unit = parseTimeUnit text
 
     mkDigits :: Integer -> GDigits
-    mkDigits i = case [LexDig $ "D_" <> [d] | d <- show i] of
+    mkDigits x = case [LexDig [i|D_#{d}|] | d <- show x] of
       [] -> GIDig (LexDig "D_0") -- shouldn't happen, TODO alert user?
       [dig] -> GIDig dig
       xs -> foldr GIIDig (GIDig (last xs)) (init xs)
 
-parseTemporal _ (TemporalConstraint t Nothing text) = GTemporalConstraintNoDigits tc unit
+parseTemporal _ (TemporalConstraint t Nothing text) =
+  GTemporalConstraintNoDigits tc unit
   where
     tc = parseTComparison t
     unit = parseTimeUnit text
@@ -580,17 +584,17 @@ parseTimeUnit text = case take 3 $ Text.unpack $ Text.toLower text of
   "day" -> GDay_Unit
   "mon" -> GMonth_Unit
   "yea" -> GYear_Unit
-  _xs -> trace ("NLG.hs: unrecognised time unit: " <> Text.unpack text) (GrecoverUnparsedTimeUnit (tString text))
+  _xs -> trace [i|NLG.hs: unrecognised time unit: #{text}|] (GrecoverUnparsedTimeUnit (tString text))
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
 parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (flipPolarity $ fg vp)
-  _ -> GrecoverRPis (tString aTxt) (tString $ Text.unwords ["not", bTxt])
+  _ -> GrecoverRPis (tString aTxt) (tString [i|not #{bTxt}|])
   where
     aTxt = Text.strip $ mt2text a
     bTxt = bsr2text b
     nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
+    vps = parseAnyNoRecover "VPS" env [i|is #{bTxt}|]
 
 parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
@@ -599,13 +603,13 @@ parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
     aTxt = Text.strip $ mt2text a
     bTxt = Text.strip $ mt2text b
     nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env $ Text.unwords ["is", bTxt]
+    vps = parseAnyNoRecover "VPS" env [i|is #{bTxt}|]
 
 parseConstraint env (RPConstraint a (RPTC t) b) = case (sents,advs) of
   (s:_, adv:_) -> case s of
                     GPredVPS np (GMkVPS t p vp) -> GRPleafS np (GMkVPS t p (GAdvVP vp adv))
-                    _ -> trace ("parseConstraint: unable to parse " <> showExpr [] (gf s)) fallback
-  x -> trace ("parseConstraint: unable to parse " <> show x <> Text.unpack tTxt) fallback
+                    _ -> trace [i|parseConstraint: unable to parse #{showExpr [] $ gf s}|] fallback
+  x -> trace [i|parseConstraint: unable to parse #{x}#{tTxt}|] fallback
   where
     aTxt = Text.strip $ mt2text a
     tTxt = gfLin env $ gf $ parseTComparison t
@@ -628,8 +632,8 @@ parseConstraint env (RPConstraint a RPgt b) = case (nps,vps) of
 
     bTxt0 = Text.strip $ mt2text b
     bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> Text.unwords ["is more than", splitDigits bTxt0, "old"]
-             _ -> Text.unwords ["is greater than", bTxt0]
+             ("'s age", "years") -> [i|is more than #{splitDigits bTxt0} old|]
+             _ -> [i|is greater than #{bTxt0}|]
 
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env bTxt
@@ -645,8 +649,8 @@ parseConstraint env (RPConstraint a RPlt b) = case (nps,vps) of
 
     bTxt0 = Text.strip $ mt2text b
     bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> Text.unwords ["is less than", splitDigits bTxt0, "old"]
-             _ -> Text.unwords ["is less than", bTxt0]
+             ("'s age", "years") -> [i|is less than #{splitDigits bTxt0} old|]
+             _ -> [i|is less than #{bTxt0}|]
 
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env bTxt
@@ -662,8 +666,8 @@ parseConstraint env (RPConstraint a RPlte b) = case (nps,vps) of
 
     bTxt0 = Text.strip $ mt2text b
     bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> Text.unwords ["is at most", splitDigits bTxt0, "old"]
-             _ -> Text.unwords ["is at most", bTxt0]
+             ("'s age", "years") -> [i|is at most #{splitDigits bTxt0} old|]
+             _ -> [i|is at most #{bTxt0}|]
 
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env bTxt
@@ -679,8 +683,8 @@ parseConstraint env (RPConstraint a RPgte b) = case (nps,vps) of
 
     bTxt0 = Text.strip $ mt2text b
     bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> Text.unwords ["is at least", splitDigits bTxt0, "old"]
-             _ -> Text.unwords ["is at least", bTxt0]
+             ("'s age", "years") -> [i|is at least #{splitDigits bTxt0} old|]
+             _ -> [i|is at least #{bTxt0}|]
 
     nps = parseAnyNoRecover "NP" env aTxt
     vps = parseAnyNoRecover "VPS" env bTxt
@@ -706,7 +710,7 @@ parseAny cat env txt = res
             (Nothing, cats) -> typeError cat cats
     res = case gfParse env typ txt of
             -- [] -> parseError cat --- Alternative, if we don't want to use recoverUnparsedX
-            [] -> NE.fromList [mkApp (mkCId $ "recoverUnparsed"<>cat) [mkStr $ Text.unpack txt]]
+            [] -> NE.fromList [mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]]
             xs -> NE.fromList xs
 
 parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
@@ -722,7 +726,8 @@ parseAnyNoRecover cat env = gfParse env typ
 -- parseError cat txt = error $ unwords ["parse"<>cat, "failed to parse", Text.unpack txt]
 
 typeError :: String -> [CId] -> a
-typeError cat actualCats = error $ unwords ["category", cat, "not a valid GF cat, use one of these instead:", show actualCats]
+typeError cat actualCats =
+  error [i|category #{cat} not a valid GF cat, use one of these instead: #{actualCats}|]
 
 tString :: Text.Text -> GString
 tString = GString . Text.unpack
@@ -730,9 +735,9 @@ tString = GString . Text.unpack
 splitDigits :: Text.Text -> Text.Text
 splitDigits txt = Text.unwords (splitDigit <$> Text.words txt)
   where
-    splitDigit d = if Text.all Char.isDigit d
-                    then Text.intercalate " &+ " (Text.groupBy (\_ _ -> False) d)
-                    else d
+    splitDigit d@(Text.all Char.isDigit -> True) =
+      Text.intercalate " &+ " (Text.groupBy (\_ _ -> False) d)
+    splitDigit d = d
 
 tk, dp :: Int -> Text.Text -> Text.Text
 tk i = Text.pack . tk' i . Text.unpack
@@ -791,8 +796,7 @@ getExpandedRuleNames l4i rule = case rule of
     getNamesHC l4i clause = headNames <> bodyNames
      where
       headNames = getNamesRP l4i 1 $ hHead clause
-      bodyNames = concat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
-
+      bodyNames = mconcat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
 
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
 expandRuleForNLGE l4i depth rule = do
@@ -851,7 +855,7 @@ expandPT l4i depth pt = maybe pt ptFromRP expanded
     ptFromRP (RPMT mt)                = mt2pt mt
     ptFromRP (RPConstraint _ RPis mt) = mt2pt mt
     ptFromRP rp@(RPBoolStructR _ RPis bsr@(AA.Leaf _)) = mt2pt [MTT $ bsr2text bsr] -- Only works if the BSR is a leaf; otherwise we lose structure when trying to convert a BSR into ParamText
-    ptFromRP rp = trace ("ptFromRP: encountered " <> show rp) $ fallbackPTfromRP rp
+    ptFromRP rp = trace [i|ptFromRP: encountered #{rp}|] $ fallbackPTfromRP rp
 
     expanded = listToMaybe
                 [ outrp

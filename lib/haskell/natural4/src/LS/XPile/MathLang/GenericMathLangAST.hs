@@ -45,7 +45,7 @@ import Data.Typeable (Typeable)
 
 
 type FieldLabel = T.Text
-type TLabel = String
+type TLabel = T.Text
 
 type Number = Float
 -- ^ TODO: Will want to change this to something that can represent money in the future

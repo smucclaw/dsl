@@ -85,6 +85,7 @@ library
       LS.XPile.MathLang.L4ToGenericMathLang
       LS.XPile.MathLang.Logging
       LS.XPile.MathLang.MathLang
+      LS.XPile.MathLang.UtilsLCReplDev
       LS.XPile.Maude
       LS.XPile.Maude.Regulative.HenceLest
       LS.XPile.Maude.Regulative.RkeywordDeonticActorAction

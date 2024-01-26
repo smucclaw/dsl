@@ -12,7 +12,6 @@ import Data.List (nub)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (mapMaybe)
 import Data.Text qualified as Text
-import LS.DataFlow ()
 import LS.Interpreter
   ( attrsAsMethods,
     classGraph,

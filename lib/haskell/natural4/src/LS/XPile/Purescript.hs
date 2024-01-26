@@ -124,7 +124,7 @@ namesAndQ env rl = do
   let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
                      | q' <- q ]
                    | q <- questStruct ]
-  mutter $ "*** wut the heck are we returning? like, " ++ show (length wut) ++ " things."
+  mutter $ [i|*** wut the heck are we returning? like, #{length wut} things.|]
   sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where

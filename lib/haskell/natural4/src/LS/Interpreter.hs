@@ -37,6 +37,7 @@ import Data.List (find, (\\))
 import Data.List qualified as DL
 import Data.List.NonEmpty as NE
 import Data.Maybe
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
@@ -212,7 +213,7 @@ classRoots ct@(CT ch) =
 
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
-allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gcname)
+allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" [i|#{childname}.{gcname}|]
                                      | (childname, (_ts, childct)) <- Map.toList ct
                                      , gcname <- allCTkeys childct
                                      ]
@@ -292,7 +293,7 @@ extractEnums l4i =
                    | (gName, gEnum@(Just (InlineEnum _ _))) <- NE.toList givens
                    -- consider using getSymType in case the type is inferred, not explicit
                    , let nameEnum = (\case
-                                        (MTT mtt) -> MTT $ mtt <> "Enum"
+                                        (MTT mtt) -> MTT [i|#{mtt}Enum|]
                                         x         -> x) <$> NE.toList gName
                    ]
     go _ = []
@@ -303,7 +304,7 @@ extractEnums l4i =
 -- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree (Z) to one or more rules (X and Y).
 groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
 groupedByAOTree l4i rs =
-  Map.toList $ Map.fromListWith (++) $
+  Map.toList $ Map.fromListWith (<>) $
   (\r -> (getAndOrTree l4i 1 r, [r])) <$> rs
 
 
@@ -581,7 +582,7 @@ bsmtOfClauses l4i depth r
                             Nothing -> Nothing
                             _       ->
                               let output = bsr2bsmt bodyNonEx in
-                                expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
+                                expandTrace "bsmtOfClauses" depth [i|got output #{output}|] $
                                 Just output
             ]
       in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
@@ -595,7 +596,7 @@ bsmtOfClauses l4i depth r
 -- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
 
 expandClauses, expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
-expandClauses l4i depth hcs = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses") $ expandClauses' l4i (depth+1) hcs
+expandClauses l4i depth hcs = expandTrace "expandClauses" depth [i|running on #{Prelude.length hcs} hornclauses|] $ expandClauses' l4i (depth+1) hcs
 expandClauses' l4i depth hcs =
   let toreturn = [ newhc
                  | oldhc <- hcs
@@ -605,7 +606,7 @@ expandClauses' l4i depth hcs =
                                  HC _oldh Nothing -> HC newhead Nothing
                                  HC  oldh _       -> HC oldh    newbody
                  ]
-  in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
+  in expandTrace "expandClauses" depth [i|returning #{toreturn}|]
      toreturn
 
 -- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
@@ -847,7 +848,7 @@ isRuleAlias :: Interpreted -> RuleName -> Bool
 isRuleAlias l4i rname =
   any matchHenceLest (origrules l4i)
   where
-    matchHenceLest Regulative{..} = testMatch hence || testMatch lest
+    matchHenceLest Regulative{..} = any testMatch [hence, lest] -- testMatch hence || testMatch lest
     matchHenceLest _              = False
     testMatch :: Maybe Rule -> Bool
     testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
@@ -961,7 +962,7 @@ attrsAsMethods rs = do
         Left errs1 -> xpError errs1
         Right (headLHS, attrVal, attrCond) -> do
           gone2 <- toObjectPath headLHS
-          mutterd 3 $ show headLHS <> " ... got back gone2: " <> show gone2
+          mutterd 3 [i|#{headLHS} ... got back gone2: #{gone2}|]
           case gone2 of
             Left errs2 -> xpError errs2
             Right (objPath, attrName) -> do
@@ -974,7 +975,7 @@ attrsAsMethods rs = do
                     , attrCond
                     , origRule = Just r
                     }
-              mutterd 3 $ show headLHS <> " returning"
+              mutterd 3 [i|#{headLHS} returning|]
               mutter $ show $ srchs toreturn
               xpReturn toreturn
 
@@ -988,11 +989,11 @@ attrsAsMethods rs = do
             (RPnary RPis [RPMT headLHS, headRHS]) -> xpReturn (headLHS, Just headRHS, hBody)
 
             (RPnary RPis (RPMT headLHS : headRHS)) -> do
-              mutterd 3 $ "unexpected RHS in RPnary RPis: " <> show hHead
+              mutterd 3 [i|unexpected RHS in RPnary RPis: #{hHead}|]
               xpReturn (headLHS, listToMaybe headRHS, hBody)
 
             (RPConstraint mt1 RPis mt2) -> do
-              mutterd 3 $ "converting RPConstraint in hHead: " <> show hHead
+              mutterd 3 [i|converting RPConstraint in hHead: #{hHead}|]
               xpReturn (mt1, Just (RPMT mt2), hBody)
 
             _ -> do
@@ -1007,13 +1008,13 @@ attrsAsMethods rs = do
 toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
 toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
 toObjectPath mt = do
-  mutterd 4 $ "toObjectPath input = " <> show mt
-  mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
-  mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
-  mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-  mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-  mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-  mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 [i|toObjectPath input = #{mt}|]
+  mutterd 4 [i|DL.init mt = #{DL.init mt}|]
+  mutterd 4 [i|mt2text = #{mt2text $ DL.init mt}|]
+  mutterd 4 [i|T.replace = #{T.replace "'s" "'s" $ mt2text $ DL.init mt}|]
+  mutterd 4 [i|T.splitOn = #{T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
+  mutterd 4 [i|T.strip = #{T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
+  mutterd 4 [i|DL.filter = #{DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
   xpReturn (DL.filter (not . T.null) $
             T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
            , mt2text [DL.last mt])
@@ -1028,7 +1029,7 @@ toObjectStr :: MultiTerm -> XPileLogE EntityName
 toObjectStr mt = do
   objPath <- toObjectPath mt
   case objPath of
-    Right (oP,objName) -> xpReturn $ T.intercalate "." (oP ++ [objName])
+    Right (oP,objName) -> xpReturn $ T.intercalate "." $ oP <> [objName]
     Left err           -> xpError err
 
 -- | is a particular attribute typed as an enum?

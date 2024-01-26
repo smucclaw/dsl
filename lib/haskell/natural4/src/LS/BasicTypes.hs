@@ -25,6 +25,7 @@ import Data.Hashable (Hashable)
 import Data.List qualified as DL
 import Data.List.NonEmpty qualified as NE
 import Data.Proxy (Proxy (..))
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Vector qualified as V
 import GHC.Generics (Generic)
@@ -326,10 +327,9 @@ instance TraversableStream MyStream where
         }
     )
     where
-      prefix =
-        if sameLine
-          then pstateLinePrefix ++ preLine
-          else preLine
+      prefix
+        | sameLine = pstateLinePrefix <> preLine
+        | otherwise = preLine
       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
       newSourcePos =
         case post of
@@ -386,9 +386,9 @@ renderToken (TNumber n) = show n
 renderToken OneOf = "ONE OF"
 renderToken TypeSeparator = "::"
 renderToken (Other txt) = show txt
-renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
-renderToken (RuleMarker n "H") = "H" ++ show n
-renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
+renderToken (RuleMarker 0 txt) = [i|§0#{txt}|]
+renderToken (RuleMarker n "H") = [i|H#{n}|]
+renderToken (RuleMarker n txt) = mconcat $ replicate n $ Text.unpack txt
 
 renderToken Semicolon = ";;"
 
@@ -399,8 +399,7 @@ renderToken TokSum = "SUM"
 renderToken TokProduct = "PRODUCT"
 renderToken FMap = "MAP"
 
-
-renderToken tok = map toUpper (show tok)
+renderToken tok = toUpper <$> show tok
 
 liftMyToken :: [String] -> MyToken -> WithPos MyToken
 liftMyToken = WithPos pos 0 . Just

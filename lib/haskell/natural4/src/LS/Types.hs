@@ -1,7 +1,11 @@
-
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, DataKinds #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeFamilies #-}
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
@@ -25,6 +29,7 @@ import Data.List.NonEmpty qualified as NE
 -- import qualified Data.Map as Map
 import Data.Monoid (Endo (Endo))
 -- import Data.Set qualified as Set
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Tree qualified as Tree
 import Data.Void (Void)
@@ -551,7 +556,7 @@ mkTComp After      = Just TAfter
 mkTComp By         = Just TBy
 mkTComp On         = Just TOn
 mkTComp Eventually = Nothing
-mkTComp x          = error $ "mkTC: can't create temporal constraint from " ++ show x ++ " -- this should be handled by a Vaguely"
+mkTComp x          = error [i|mkTC: can't create temporal constraint from #{x} -- this should be handled by a Vaguely|]
 
 mkTC :: MyToken -> Maybe Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure unit

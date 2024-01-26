@@ -7,15 +7,30 @@ module LS.XPile.Uppaal where
 import AnyAll qualified as AA
 -- import qualified Data.ByteString.Char8 as T
 
-import Data.Maybe (fromMaybe)
 import Data.HashSet qualified as Set
+import Data.Maybe (fromMaybe)
 import Data.Text (unpack)
 import Data.Text qualified as TL
 import L4.PrintProg
+    ( PrintConfig(PrintSystem),
+      PrintSystem(UppaalStyle),
+      ShowL4(showL4) )
 import L4.Syntax as CoreL4
 import L4.SyntaxManipulation
+    ( conjsExpr, disjsExpr, fv, mkVarE, notExpr )
 import LS.Rule as SFL4R
+    ( Rule(RuleAlias, Regulative, cond, hence, rlabel, temporal, upon),
+      RuleLabel )
 import LS.Types as SFL4
+    ( TComparison(TOn, TBefore, TAfter, TBy),
+      ParamText,
+      BoolStructP,
+      BoolStructR,
+      RelationalPredicate,
+      TemporalConstraint(TemporalConstraint),
+      pt2text,
+      mt2text,
+      rp2text )
 
 type Ann = ()
 

@@ -23,21 +23,27 @@ import Data.String.Interpolate (i)
 import Flow ((|>))
 import L4.KeyValueMap (ValueKVM)
 import L4.Syntax
-    ( Expr(ValE, VarE, UnaOpE, AppE, unaOpOfExprUnaOpE,
-           subEOfExprUnaOpE),
-      Tp(OkT),
-      Program,
-      Rule(..),
-      VarDecl(VarDecl),
-      Val(BoolV),
-      Var(GlobalVar, LocalVar, nameOfVar),
-      QVarName(..),
-      BBoolOp(BBand),
-      BinOp(BBool),
-      UnaOp(UBool),
-      rulesOfProgram,
-      UBoolOp(UBnot),
-      Expr(subEOfExprUnaOpE) )
+  ( BBoolOp (BBand),
+    BinOp (BBool),
+    Expr
+      ( AppE,
+        UnaOpE,
+        ValE,
+        VarE,
+        subEOfExprUnaOpE,
+        unaOpOfExprUnaOpE
+      ),
+    Program,
+    QVarName (..),
+    Rule (..),
+    Tp (OkT),
+    UBoolOp (UBnot),
+    UnaOp (UBool),
+    Val (BoolV),
+    Var (GlobalVar, LocalVar, nameOfVar),
+    VarDecl (VarDecl),
+    rulesOfProgram,
+  )
 import L4.SyntaxManipulation
   ( appToFunArgs,
     applyVars,

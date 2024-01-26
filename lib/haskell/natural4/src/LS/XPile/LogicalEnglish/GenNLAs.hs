@@ -68,12 +68,39 @@ import Data.String.Interpolate ( i, __i )
 import Data.List.Split (splitOn)
 import Data.String.Conversions (cs)
 -- import           Data.String.Conversions.Monomorphic
-import Text.RawString.QQ
+import Text.RawString.QQ ( r )
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import Control.Lens.Regex.Text
+import Control.Lens.Regex.Text ( Regex, Match, regexing )
 
 import Data.Function (on)
 import Optics
+  ( Field1 (_1),
+    Ixed (ix),
+    ReversibleOptic (re),
+    Traversal,
+    allOf,
+    filteredBy,
+    folded,
+    has,
+    indices,
+    isn't,
+    itraversed,
+    lengthOf,
+    makePrisms,
+    maximumByOf,
+    to,
+    toListOf,
+    traversalVL,
+    traversed,
+    view,
+    (%),
+    (%&),
+    (%~),
+    (&),
+    (.~),
+    (^?),
+    _Right,
+  )
 -- import Data.Text.Optics (unpacked)
 import Data.HashSet.Optics (setOf)
 import Data.Sequence.Optics (seqOf)

@@ -1,10 +1,25 @@
-module Explainable.Lib where
+module Explainable.Lib (runTests_Mathlang) where
 
 import Data.HashMap.Strict qualified as Map
+import Explainable.MathLang
+  ( Expr (MathVar),
+    MyState (symtabF),
+    dumpExplanationF,
+    emptyState,
+    positiveElementsOf,
+    timesEach,
+    timesPositives,
+    (*||),
+    (+||),
+    (@|.),
+    (@|:),
+    (@|=),
+    (@|?),
+    (|+),
+    (|===),
+  )
 import Text.Megaparsec (MonadParsec (try), Parsec, choice, some)
 import Text.Megaparsec.Char (numberChar)
-
-import Explainable.MathLang
 
 someFunc :: IO ()
 someFunc = print "someFunc"

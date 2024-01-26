@@ -12,7 +12,7 @@ module LS.Utils.OpticsUtils (setInsert) where
 -- import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
 -- import Data.Hashable (Hashable, hashWithSalt, hashUsing)
-import Optics
+import Optics ( IxValue, At, Index, (&), at', (?~) )
 
 {- Optics provide a nice interface over concrete data structures,
 but they can sometimes be hard to read / understand.

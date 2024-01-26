@@ -19,7 +19,7 @@ module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libAndBuiltinTemplates) where
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
-import Data.String()
+import Data.String ()
 
 import Prettyprinter
   ( Doc,
@@ -100,7 +100,8 @@ instance Pretty a => Pretty (OpSuchTt a) where
 instance Pretty LEhcPrint where
   pretty :: LEhcPrint -> Doc ann
   pretty = \case
-    LEHcF fact -> pretty fact; LEHcR rule -> pretty rule
+    LEHcF fact -> pretty fact
+    LEHcR rule -> pretty rule
 
 instance Pretty LERuleForPrint where
   pretty :: LERuleForPrint -> Doc ann

@@ -30,23 +30,47 @@ where
 import Control.Monad (mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
-import Data.Bifunctor
+  ( RWST (runRWST),
+    asks,
+    gets,
+    local,
+    modify,
+  )
+import Data.Bifunctor (Bifunctor (second))
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String.Interpolate (i, __i)
 -- import Data.Text qualified as T
-import Data.Tree
+import Data.Tree (Tree (Node, rootLabel))
 import Explainable
-  ( XP,
-    ExplainableIO,
+  ( ExplainableIO,
+    XP,
     drawTreeOrg,
     historypath,
     mkNod,
     pathSpec,
-    retitle
+    retitle,
   )
 import Prettyprinter
+    ( (<+>),
+      encloseSep,
+      hang,
+      indent,
+      line,
+      list,
+      tupled,
+      viaShow,
+      colon,
+      comma,
+      dquotes,
+      lbrace,
+      lparen,
+      parens,
+      rbrace,
+      rparen,
+      Doc,
+      Pretty(pretty) )
 import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)
 

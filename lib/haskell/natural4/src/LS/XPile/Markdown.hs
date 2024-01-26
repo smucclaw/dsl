@@ -18,7 +18,6 @@ import LS.Types
     mt2text,
     pt2multiterm,
   )
-import Paths_natural4
 
 -- import Debug.Trace (trace)
 
@@ -56,7 +55,7 @@ rpFilter (RPnary rel rps) = foldMap rpFilter rps
 rpFilter (RPMT mt) = mt
 
 rl2bs :: [Rule] -> [BoolStructR]
-rl2bs rl = foldMap r2b rl
+rl2bs = foldMap r2b
 
 r2b :: Rule -> [BoolStructR]
 r2b (getBSR -> Just x) = [x]

@@ -10,11 +10,10 @@ import AnyAll qualified as AA
 import Control.Monad (join)
 import Data.Maybe (catMaybes, listToMaybe, mapMaybe)
 import Data.Text qualified as T
-import LS
-import LS.NLP.NL4Transformations
-import LS.NLP.NLG
+import LS.NLP.NL4Transformations (BoolStructGText)
+import LS.NLP.NLG (NLGEnv, ruleQnTrees)
+import LS.Rule (Rule (DefNameAlias))
 import LS.XPile.Logging (XPileLog)
-import Prettyprinter
 import Text.Pretty.Simple (pShowNoColor)
 
 

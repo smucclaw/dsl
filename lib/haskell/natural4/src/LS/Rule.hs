@@ -62,6 +62,7 @@ import LS.Types
     rpHead,
     defaultInferrableTypeSig
   )
+import System.FilePath ((</>))
 import Text.Megaparsec
   ( ErrorItem (Tokens),
     MonadParsec (eof, token),
@@ -287,7 +288,7 @@ rlrn2text :: Rule -> Text.Text
 rlrn2text r = mt2text $ ruleLabelName r
 
 mkTestSrcRef :: Int -> Int ->Maybe SrcRef
-mkTestSrcRef row col = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = row, srccol = col, version = Nothing})
+mkTestSrcRef row col = Just (SrcRef {url = Text.pack $ "test" </> "Spec", short = Text.pack $ "test" </> "Spec", srcrow = row, srccol = col, version = Nothing})
 
 dummyRef :: Maybe SrcRef
 dummyRef = mkTestSrcRef 1 1
@@ -524,16 +525,14 @@ pYLocation = token test Set.empty <|> pure 0 <?> "y location"
   where
     test WithPos{pos= SourcePos _ y _x } = Just (unPos y)
 
-
 pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
 pTokenMatch f c = do
   ctx <- asks parseCallStack
   token test $ Set.singleton $ Tokens $ liftMyToken ctx <$> c
   where
-    test WithPos {tokenVal = x} =
-      if f x
-        then Just x
-        else Nothing
+    test WithPos {tokenVal = x}
+      | f x = Just x
+      | otherwise = Nothing
 
 whenDebug :: Parser () -> Parser ()
 whenDebug act = do
@@ -541,7 +540,7 @@ whenDebug act = do
   when isDebug act
 
 srctest :: Int -> Int -> Rule -> Rule
-srctest srow scol r = r { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = srow, srccol = scol, version = Nothing }) }
+srctest srow scol r = r { srcref = Just (SrcRef {url = Text.pack $ "test" </> "Spec", short = Text.pack $ "test" </> "Spec", srcrow = srow, srccol = scol, version = Nothing }) }
 
 srcrow_ :: Rule -> Rule
 srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }

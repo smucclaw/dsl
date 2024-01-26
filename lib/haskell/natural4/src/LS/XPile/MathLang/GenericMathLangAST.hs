@@ -7,7 +7,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns, KindSignatures, AllowAmbiguousTypes #-}
-{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies #-}
 
 module LS.XPile.MathLang.GenericMathLangAST where
 -- TODO: Add export list
@@ -15,10 +15,6 @@ module LS.XPile.MathLang.GenericMathLangAST where
 import Data.Text qualified as T
 
 import Optics.TH
--- import Unbound.Generics.LocallyNameless
--- import Unbound.Generics.LocallyNameless.Ignore (Ignore(..))
--- import Unbound.Generics.LocallyNameless.Internal.Fold qualified as UB (toListOf)
-
 
 -- import Data.Generics.Product.Types (types)
 -- import Data.String ( IsString )
@@ -73,14 +69,14 @@ data ExplnAnnot = MkExplnAnnot
 
   -- don't need to add 'human readable' version of corresponding L4 snippet since can just use SrcPositn to get the correspondence
   } deriving stock (Eq, Ord, Show)
-makePrisms ''ExplnAnnot
+makeFieldLabelsNoPrefix ''ExplnAnnot
 
 data SrcPositn = MkPositn
   { row :: !Int
   , col :: !Int
   , filename :: !T.Text
   } deriving stock (Eq, Ord, Show)
-makePrisms ''SrcPositn
+makeFieldLabelsNoPrefix ''SrcPositn
 
 -- data TypeMetadata = MkTMdata
 --   { tlabel :: !TLabel
@@ -93,7 +89,7 @@ data ExpMetadata = MkEMdata
   , explnAnnot :: !(Maybe ExplnAnnot)
   -- , typeMd :: !(Maybe TypeMetadata)
   } deriving stock (Eq, Ord, Show)
-makePrisms ''ExpMetadata
+makeFieldLabelsNoPrefix ''ExpMetadata
 
 type MdGrp = [ExpMetadata]
 -- Hacky, but: in the case of Lam, want to have md for param too
@@ -102,14 +98,17 @@ type MdGrp = [ExpMetadata]
 ------------------------------------------------------------
 -- TODO: Look into whether the costs of using records for sum variants (eg partial functions) outweigh benefits
 
-data Exp = MkExp 
-  { exp :: !BaseExp
-  , md :: !MdGrp }
-  deriving stock (Show)
-
 type Var = T.Text
 -- Add metadata like what the original L4 string was?
 -- Or do that only at the final pretty printing stage, when we normalize the formatting etc?
+
+-- TODO: Need to figure out how best to deal with numbers, esp. wrt money. Shld not use floats for money.
+data Lit = ENumber !Number | EBool !Bool | EString !T.Text
+  deriving stock (Eq, Ord, Show)
+
+data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
+  deriving stock (Eq, Ord, Show)
+
 
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 data BaseExp =
@@ -129,7 +128,7 @@ data BaseExp =
 
   -----------------------
   -- TODO: For v2
-  -------------------------
+  -----------------------
   -- | ELam
   --   { param :: Var
   --   , body :: !Exp }
@@ -170,25 +169,23 @@ data BaseExp =
   | EEmpty
   deriving stock (Show)
 
+data Exp = MkExp 
+  { exp :: !BaseExp
+  , md :: !MdGrp }
+  deriving stock (Show)
+makeFieldLabelsNoPrefix ''Exp
 
--- TODO: Need to figure out how best to deal with numbers, esp. wrt money. Shld not use floats for money.
-data Lit = ENumber !Number | EBool !Bool | EString !T.Text
-  deriving stock (Eq, Ord, Show)
 
-data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
-  deriving stock (Eq, Ord, Show)
-
-{-----------------
-misc notes to self 
-------------------
-note re if
-prob safe to assume for now that type of each branch has to be the same
-type of IfThenElse in Meng MathLang seems to be Number | Bool
+{----------------------------------------------------------
+ Misc notes to self 
+-----------------------------------------------------------
+note re `if`:
+  prob safe to assume for now that type of each branch has to be the same
+  type of IfThenElse in Meng MathLang seems to be Number | Bool
 
 NOTE: will want to be able to tally the desugared nodes with the prelim nodes too, and port type info from the former to the latter
 since will prob need to translate one of the prelim ASTs to Meng eval ast
 -}
-
 
 
 {----------------------------------------------------------

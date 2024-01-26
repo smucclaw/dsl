@@ -7,7 +7,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns, AllowAmbiguousTypes #-}
-{-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies #-}
+{-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies, DeriveAnyClass #-}
 
 module LS.XPile.MathLang.GenericMathLangAST where
 -- TODO: Add export list
@@ -16,7 +16,6 @@ import Data.Text qualified as T
 
 import Optics.TH (makeFieldLabelsNoPrefix)
 import GHC.Generics
-
 
 -- import Data.Generics.Product.Types (types)
 -- import Data.String ( IsString )
@@ -76,7 +75,6 @@ makeFieldLabelsNoPrefix ''ExplnAnnot
 data SrcPositn = MkPositn
   { row :: !Int
   , col :: !Int
-  , filename :: !T.Text
   } deriving stock (Eq, Ord, Show)
 makeFieldLabelsNoPrefix ''SrcPositn
 
@@ -176,6 +174,25 @@ data Exp = MkExp
   , md :: !MdGrp }
   deriving stock (Show)
 makeFieldLabelsNoPrefix ''Exp
+
+
+{--------------------------------------------------
+  LC / Generic MathLang Program 
+--------------------------------------------------}
+
+{- | Metadata for programs in generic lam calc
+[TODO] Things that could be added in the future:
+    * the timestamp from Main.hs
+    * feature flags, esp. the explanation-related ones
+    * config flags that downstream targets need to know about
+-}
+data LCProgMetadata =
+  MkLCProgMdata { filename :: !T.Text }
+
+data LCProgram = 
+  MkLCProgram { progMetadata :: LCProgMetadata
+              , lcProgram :: [Exp]
+              } 
 
 
 {----------------------------------------------------------

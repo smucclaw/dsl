@@ -23,22 +23,21 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.HashMap.Strict qualified as Map
+import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
 import Data.List.NonEmpty qualified as NE
--- import qualified Data.Map as Map
 import Data.Monoid (Endo (Endo))
--- import Data.Set qualified as Set
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Tree qualified as Tree
 import Data.Void (Void)
+import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
 import Optics ()
 import Safe (headMay)
-import Text.Megaparsec ( Parsec )
-import qualified Data.HashSet as Set
+import Text.Megaparsec (Parsec)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -510,14 +509,14 @@ multiterm2bsr' :: MultiTerm -> BoolStructR
 multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt
 
 bsp2text :: BoolStructP -> Text.Text
-bsp2text (AA.Not                    x ) = Text.unwords ["not", bsp2text x]
-bsp2text (AA.Leaf                   x ) = Text.unwords (mtexpr2text <$> foldMap (toList . fst) x)
+bsp2text (AA.Not                    x ) = [i|not #{bsp2text x}|]
+bsp2text (AA.Leaf                   x ) = Text.unwords $ mtexpr2text <$> foldMap (toList . fst) x
 bsp2text (AA.Any (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
 bsp2text (AA.Any (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
-bsp2text (AA.Any Nothing                   xs) = "any of:-" <> Text.unwords (bsp2text <$> xs)
+bsp2text (AA.Any Nothing                   xs) = [i|any of:-#{Text.unwords $ bsp2text <$> xs}|]
 bsp2text (AA.All (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <$> xs)
-bsp2text (AA.All (Just (AA.PrePost p1 p2)) xs) = Text.unwords $ p1 : (bsp2text <$> xs) <> [p2]
-bsp2text (AA.All Nothing                   xs) = "all of:-" <> Text.unwords (bsp2text <$> xs)
+bsp2text (AA.All (Just (AA.PrePost p1 p2)) xs) = [i|#{Text.unwords $ p1 : (bsp2text <$> xs)} #{p2}|]
+bsp2text (AA.All Nothing                   xs) = [i|all of:-#{Text.unwords $ bsp2text <$> xs}|]
 
 bsr2text, bsr2textnl :: BoolStructR -> Text.Text
 bsr2text   = bsr2text' Text.unwords
@@ -566,12 +565,12 @@ data NatLang = NLen
 
 tc2nl :: NatLang -> Maybe (TemporalConstraint Text.Text) -> Text.Text
 tc2nl NLen Nothing = "eventually"
-tc2nl NLen (Just (TemporalConstraint TBefore n t)) = Text.unwords [ "before", maybe "" (Text.pack . show) n, t ]
-tc2nl NLen (Just (TemporalConstraint TBy     n t)) = Text.unwords [ "by",     maybe "" (Text.pack . show) n, t ]
-tc2nl NLen (Just (TemporalConstraint TAfter  n t)) = Text.unwords [ "after",  maybe "" (Text.pack . show) n, t ]
-tc2nl NLen (Just (TemporalConstraint TOn     n t)) = Text.unwords [ "on",     maybe "" (Text.pack . show) n, t ]
-tc2nl NLen (Just (TemporalConstraint TVague  n t)) = Text.unwords [ "around", maybe "" (Text.pack . show) n, t ]
-
+tc2nl NLen (Just (TemporalConstraint tComparison n t)) =
+  [i|{tComaparisonTxt} #{maybe "" show n} #{t}|]
+  where
+    tComparisonTxt :: Text.Text = case tComparison of
+      TVague -> "around"
+      _ -> tComparison |> show |> Text.pack |> Text.tail |> Text.toLower
 
 data RunConfig = RC { debug     :: Bool
                     , printstream   :: Bool

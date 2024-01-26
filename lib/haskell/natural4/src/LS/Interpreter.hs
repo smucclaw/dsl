@@ -518,7 +518,7 @@ ruleDecisionGraph rs = do
     groundTerms knownRules = []
       -- find all the body elements which 
 
-    (***->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
+    (***->) str hs = mutterdhsf 3 [i|ruleDecisionGraph: #{show str}|] pShowNoColorS hs
 
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
@@ -562,7 +562,7 @@ relPredRefs rs ridmap headElements r = do
   mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
   toreturn <- sequenceA
-    [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')
+    [ (rid, targetRuleId', ()) <$ mutterd 6 [i|relPredRefs list comp: returning #{rid}, #{targetRuleId'}|]
     | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
@@ -677,8 +677,8 @@ expandClauses l4i depth hcs = expandTrace "expandClauses" depth [i|running on #{
 expandClauses' l4i depth hcs =
   let toreturn = [ newhc
                  | oldhc <- hcs
-                 , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
-                       newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
+                 , let newhead = (expandTrace "expandClauses" depth "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
+                       newbody = (expandTrace "expandClauses" depth "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
                        newhc = case oldhc of
                                  HC _oldh Nothing -> HC newhead Nothing
                                  HC  oldh _       -> HC oldh    newbody
@@ -727,8 +727,7 @@ expandTrace :: (Show a) => String -> Int -> String -> a -> a
 expandTrace fname dpth toSay toShow =
   if expandTraceDebugging
   then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
-               "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
-       toShow
+               "#+BEGIN_SRC haskell\n" ++ TL.unpack (pShowNoColor toShow) ++ "\n#+END_SRC") toShow
   else toShow
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
@@ -854,7 +853,7 @@ onlyItemNamed l4i rs wanteds =
       found = DL.filter (\(rn, _simp) -> rn `elem` wanteds) ibr
   in
     if null found
-    then AA.mkLeaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
+    then AA.mkLeaf [i|L4 Interpreter: unable to isolate rule named #{wanteds}|]
     else snd $ DL.head found
 
 -- | return those Q&A leaf items arranged by the rule to which they contribute.
@@ -948,23 +947,8 @@ getMarkings l4i =
 
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)?|f)$|]) -> True)] = Just False
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t)$|]) -> True)] = Just True
-    -- rhsval [MTT rhs] = case T.toLower rhs of
-    --                "does not" -> Just False
-    --                "doesn't"  -> Just False
-    --                "hasn't"   -> Just False
-    --                "false"    -> Just False
-    --                "not"      -> Just False
-    --                "no"       -> Just False
-    --                "f"        -> Just False
-    --                "t"        -> Just True
-    --                "so"       -> Just True
-    --                "yes"      -> Just True
-    --                "has"      -> Just True
-    --                "true"     -> Just True
-    --                "does"     -> Just True
-    --                _            -> Nothing
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|no(t)?|f(alse)?)$|]) -> True)] = Just False
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] = Just True
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
     rhsval _  = Nothing

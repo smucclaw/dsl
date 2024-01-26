@@ -14,49 +14,51 @@ import AnyAll qualified as AA
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
+import Data.String (IsString)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
-import Debug.Trace ( trace )
-import LS.Rule ( Interpreted(scopetable, classtable) )
-import Text.Pretty.Simple ( pShowNoColor )
+import Debug.Trace (trace)
+import LS.Rule (Interpreted (classtable, scopetable))
 import LS.Types
-    ( MTExpr(..),
-      rel2txt,
-      MultiTerm,
-      RPRel(RPhas, RPis),
-      TypedMulti,
-      TypeSig(..),
-      ParamText,
-      RelationalPredicate(..),
-      ClsTab(CT),
-      ParamType(TList1, TOne, TOptional, TList0, TSet0, TSet1),
-      mtexpr2text,
-      pt2text,
-      rel2op )
+  ( ClsTab (CT),
+    MTExpr (..),
+    MultiTerm,
+    ParamText,
+    ParamType (TList0, TList1, TOne, TOptional, TSet0, TSet1),
+    RPRel (RPhas, RPis),
+    RelationalPredicate (..),
+    TypeSig (..),
+    TypedMulti,
+    mtexpr2text,
+    pt2text,
+    rel2op,
+    rel2txt,
+  )
 import Prettyprinter
-    ( Doc,
-      line,
-      comma,
-      layoutPretty,
-      Pretty(pretty),
-      (<+>),
-      defaultLayoutOptions,
-      encloseSep,
-      hcat,
-      hsep,
-      nest,
-      vsep,
-      brackets,
-      colon,
-      dquotes,
-      parens,
-      LayoutOptions(layoutPageWidth),
-      PageWidth(Unbounded) )
+  ( Doc,
+    LayoutOptions (layoutPageWidth),
+    PageWidth (Unbounded),
+    Pretty (pretty),
+    brackets,
+    colon,
+    comma,
+    defaultLayoutOptions,
+    dquotes,
+    encloseSep,
+    hcat,
+    hsep,
+    layoutPretty,
+    line,
+    nest,
+    parens,
+    vsep,
+    (<+>),
+  )
 import Prettyprinter.Interpolate (di, __di)
-import Prettyprinter.Render.Text ( renderStrict )
+import Prettyprinter.Render.Text (renderStrict)
+import Text.Pretty.Simple (pShowNoColor)
 import Text.Pretty.Simple qualified as TPS
-import Data.String (IsString)
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -355,7 +357,7 @@ prettySimpleType _        prty (SimpleType TSet1     s1) = [di|[#{prty s1}]|]
 prettySimpleType _       _prty (InlineEnum pt1       s1) =
   [di|\# InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
 
-prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
+prettyMaybeType :: String -> (T.Text -> Doc ann) -> Maybe TypeSig -> Doc ann
 prettyMaybeType _ _inner Nothing   = ""
 prettyMaybeType t inner (Just ts) = [di|: #{prettySimpleType t inner ts}|]
 

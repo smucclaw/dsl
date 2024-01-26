@@ -14,7 +14,9 @@ module LS.Parser where
 
 import AnyAll qualified as AA
 import Control.Monad.Combinators.Expr
-    ( Operator(Prefix, InfixR, Postfix), makeExprParser )
+  ( Operator (InfixR, Postfix, Prefix),
+    makeExprParser,
+  )
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text qualified as Text
 import LS.Rule ( Parser )

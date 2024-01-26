@@ -129,7 +129,6 @@ import LS.XPile.Logging
     xpLog,
     xpReturn,
   )
-import Prettyprinter ()
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 

@@ -124,7 +124,7 @@ namesAndQ env rl = do
   let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
                      | q' <- q ]
                    | q <- questStruct ]
-  mutter $ [i|*** wut the heck are we returning? like, #{length wut} things.|]
+  mutter [i|*** wut the heck are we returning? like, #{length wut} things.|]
   sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where
@@ -152,7 +152,7 @@ combine' d (b:bs) (q:qs) = do
   mutterdhsf (d+2) "fst b"    pShowNoColorS (fst b)
   mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
   mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
-  (:) <$> pure (fst b, snd b <> snd q) <*> combine' (d+1) bs qs
+  (:) (fst b, snd b <> snd q) <$> combine' (d+1) bs qs
 
 
 -- [TODO] shouldn't this recurse down into the All and Any structures?

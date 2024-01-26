@@ -1,13 +1,64 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module AnyAll.SVGLadderSpec (spec) where
 
 import AnyAll (hardnormal)
-import AnyAll.BoolStruct
-import AnyAll.SVGLadder hiding (tl)
+import AnyAll.BoolStruct (StdinSchema (andOrTree, marking))
+import AnyAll.SVGLadder
+  ( AAVConfig (cdebug, cscale),
+    BBox (dimensions),
+    BoxDimensions (boxHeight, boxWidth),
+    BoxedSVG,
+    DrawConfig (DrawConfig),
+    HAlignment (HCenter, HLeft, HRight),
+    PortStyleV (PMiddle, PTop, PVoffset),
+    Question,
+    QuestionTree,
+    SVGElement,
+    Scale (Full, Small, Tiny),
+    VAlignment (VBottom, VMiddle, VTop),
+    aavscaleHorizontalLayout,
+    bboxHeight,
+    bboxWidth,
+    bottomMargin,
+    boxMargins,
+    boxPorts,
+    columnLayouter,
+    combineAnd,
+    combineAndS,
+    defaultAAVConfig,
+    defaultBBox,
+    defaultBBox',
+    drawItemFull,
+    drawLeafR,
+    gapVertical,
+    getColorsBox,
+    getColorsText,
+    getScale,
+    hAlign,
+    leftMargin,
+    leftPort,
+    makeSvg',
+    move,
+    rightMargin,
+    rightPort,
+    rowLayouter,
+    rowLayouterS,
+    textBoxLengthFull,
+    textBoxLengthTiny,
+    topMargin,
+    vAlign,
+    (<<-*),
+  )
 import AnyAll.Types
-import Control.Monad.RWS
+  ( AndOr (And, Or, Simply),
+    Default (Default),
+    Label (Pre),
+    Q (Q, andOr, mark, prePost, shouldView),
+    ShouldView (Ask, View),
+  )
+import Control.Monad.RWS (execRWS)
 import Control.Monad.Reader (runReader)
 import Data.Aeson (eitherDecode)
 import Data.ByteString.Lazy qualified as B
@@ -17,11 +68,26 @@ import Data.Set qualified as Set
 import Data.Text (Text, pack, replace, splitOn)
 import Data.Text.Lazy qualified as TL (toStrict)
 import Data.Text.Lazy.IO qualified as TIO
-import Data.Tree
+import Data.Tree (Tree (Node, rootLabel, subForest))
 import Graphics.Svg
-import Lens.Micro.Platform
+  ( AttrTag (Fill_, Height_, Stroke_, Width_, X_, Y_),
+    Element,
+    rect_,
+    renderBS,
+    renderText,
+    (<<-),
+  )
+import Lens.Micro.Platform ((%~), (&), (.~), (^.), _1)
 import Test.Hspec
-import Test.Hspec.Golden
+  ( Spec,
+    describe,
+    it,
+    pendingWith,
+    runIO,
+    shouldBe,
+    shouldSatisfy,
+  )
+import Test.Hspec.Golden (Golden (..))
 import Text.XML.Light (Attr (attrKey))
 import Text.XML.Light qualified as XML
 import Text.XML.Light.Output (showTopElement)

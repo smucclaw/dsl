@@ -14,31 +14,51 @@ import AnyAll qualified as AA
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
+import Data.String (IsString)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
-import Debug.Trace ( trace )
-import LS.Rule ( Interpreted(scopetable, classtable) )
-import Text.Pretty.Simple ( pShowNoColor )
+import Debug.Trace (trace)
+import LS.Rule (Interpreted (classtable, scopetable))
 import LS.Types
-    ( MTExpr(..),
-      rel2txt,
-      MultiTerm,
-      RPRel(RPhas, RPis),
-      TypedMulti,
-      TypeSig(..),
-      ParamText,
-      RelationalPredicate(..),
-      ClsTab(CT),
-      ParamType(TList1, TOne, TOptional, TList0, TSet0, TSet1),
-      mtexpr2text,
-      pt2text,
-      rel2op )
+  ( ClsTab (CT),
+    MTExpr (..),
+    MultiTerm,
+    ParamText,
+    ParamType (TList0, TList1, TOne, TOptional, TSet0, TSet1),
+    RPRel (RPhas, RPis),
+    RelationalPredicate (..),
+    TypeSig (..),
+    TypedMulti,
+    mtexpr2text,
+    pt2text,
+    rel2op,
+    rel2txt,
+  )
 import Prettyprinter
+  ( Doc,
+    LayoutOptions (layoutPageWidth),
+    PageWidth (Unbounded),
+    Pretty (pretty),
+    brackets,
+    colon,
+    comma,
+    defaultLayoutOptions,
+    dquotes,
+    encloseSep,
+    hcat,
+    hsep,
+    layoutPretty,
+    line,
+    nest,
+    parens,
+    vsep,
+    (<+>),
+  )
 import Prettyprinter.Interpolate (di, __di)
-import Prettyprinter.Render.Text
+import Prettyprinter.Render.Text (renderStrict)
+import Text.Pretty.Simple (pShowNoColor)
 import Text.Pretty.Simple qualified as TPS
-import Data.String (IsString)
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -51,18 +71,18 @@ instance Pretty MTExpr where
 data MTQ = MT1 MTExpr
          | MT2 MTExpr
 instance Pretty MTQ where
-  pretty (MT1 o@(MTT t)) = dquotes (pretty o) -- ^ double quotes
+  pretty (MT1 o@(MTT t)) = [di|"o"|] -- dquotes (pretty o) -- ^ double quotes
   pretty (MT1 o)         = pretty o
-  pretty (MT2 o@(MTT t)) = squotes (pretty o) -- ^ single quotes
+  pretty (MT2 o@(MTT t)) = [di|'o'|] -- squotes (pretty o) -- ^ single quotes
   pretty (MT2 o)         = pretty o
 
 -- | Pretty RelationalPredicate: recurse
 instance Pretty RelationalPredicate where
   pretty (RPParamText   pt)            = pretty $ pt2text pt
   pretty (RPMT          mt)            = snake_join mt
-  pretty (RPConstraint  mt1 rprel mt2) = hsep [ snake_join mt1, pretty (rel2op rprel), snake_join mt2 ]
-  pretty (RPBoolStructR mt1 rprel bsr) = hsep [ snake_join mt1, pretty rprel, pretty bsr ]
-  pretty (RPnary rprel rps)            = hsep [ pretty rprel, pretty rps ]
+  pretty (RPConstraint  mt1 rprel mt2) = [di|#{snake_join mt1} #{rel2op rprel} #{snake_join mt2}|]
+  pretty (RPBoolStructR mt1 rprel bsr) = [di|#{snake_join mt1} #{rprel} #{bsr}|]
+  pretty (RPnary rprel rps)            = [di|#{rprel} #{rps}|]
 
 -- Hornlike rule transformations -- these form HC2 situations
 -- 1   p investment IS savings                     WHEN blah => if blah then investment p savings
@@ -81,8 +101,8 @@ instance Pretty RP1 where
   pretty (RP1 o@(RPConstraint  _mt1 RPis  [MTB False]))   = hsep $ "not" : (pretty <$> inPredicateForm o)
   pretty (RP1 o@(RPConstraint  _mt1 RPis  _mt2))     = hsep $ pretty <$> inPredicateForm o
   pretty (RP1 o@(RPConstraint  _mt1 RPhas _mt2))     = hsep $ pretty <$> inPredicateForm o
-  pretty (RP1   (RPConstraint   mt1 rprel  mt2))     = hsep [ pretty rprel, pred_snake mt1, hsep $ pretty . untaint . mtexpr2text <$> mt2 ]
-  pretty (RP1   (RPBoolStructR  mt1 rprel  bsr))     = hsep [ pred_snake mt1, pretty rprel, AA.haskellStyle (RP1 <$> bsr) ]
+  pretty (RP1   (RPConstraint   mt1 rprel  mt2))     = [di|#{rprel} #{pred_snake mt1} #{hsep $ pretty . untaint . mtexpr2text <$> mt2}|]
+  pretty (RP1   (RPBoolStructR  mt1 rprel  bsr))     = [di|#{pred_snake mt1} #{rprel} #{AA.haskellStyle (RP1 <$> bsr)}|]
                                                -- [TODO] confirm RP1 <$> bsr is the right thing to do
   pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o
 
@@ -95,13 +115,13 @@ inPredicateForm (RPConstraint  mt  RPis  [MTT "Yes"]) = pred_flip mt
 inPredicateForm (RPConstraint  mt  RPis  [MTB True] ) = pred_flip mt
 inPredicateForm (RPConstraint  mt  RPis  [MTT "No"])  = pred_flip mt
 inPredicateForm (RPConstraint  mt  RPis  [MTB False]) = pred_flip mt
-inPredicateForm (RPConstraint  mt1 RPis  mt2)     = pred_flip mt2 ++ pred_flip mt1
-inPredicateForm (RPConstraint  mt1 RPhas mt2)     = addHas (pred_flip mt2) ++ mt1
+inPredicateForm (RPConstraint  mt1 RPis  mt2)     = pred_flip mt2 <> pred_flip mt1
+inPredicateForm (RPConstraint  mt1 RPhas mt2)     = addHas (pred_flip mt2) <> mt1
   where
-    addHas (    x:xs) = MTT ("has"<>mtexpr2text x) : xs
+    addHas (    x:xs) = MTT [i|has#{mtexpr2text x}|] : xs
     addHas [] = []
-inPredicateForm (RPConstraint  mt1 rprel mt2)     = MTT (rel2txt rprel) : mt1 ++ mt2
-inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = mt1 ++ foldMap DF.toList (DT.traverse inPredicateForm bsr)
+inPredicateForm (RPConstraint  mt1 rprel mt2)     = MTT (rel2txt rprel) : mt1 <> mt2
+inPredicateForm (RPBoolStructR mt1 _rprel bsr)    = mt1 <> foldMap DF.toList (DT.traverse inPredicateForm bsr)
 inPredicateForm (RPnary        rprel rps)         = MTT (rel2txt rprel) : foldMap inPredicateForm rps
 
 pred_flip :: [a] -> [a]
@@ -226,22 +246,24 @@ instance Pretty ParamText3 where
 data ParamText4 = PT4 ParamText Interpreted -- VarPath
                 | PT5 ParamText Interpreted
   deriving (Eq, Show)
+
 instance Pretty ParamText4 where
   pretty (PT5 orig@(line1 :| line2s) l4i)
-    | null line2s = word1 line1 <+> equals <+> quoteBoT l4i line1
-    | otherwise   = word1 line1 <+> colon  <+> quoteBoT l4i line1
+    | null line2s = [di|#{word1 line1} = #{quoteBoT l4i line1}|]
+    | otherwise   = [di|#{word1 line1} : #{quoteBoT l4i line1}|]
     
   pretty (PT4 orig@(line1 :| line2s) l4i) -- varpath)
     | null line2s = -- "//" <+> "208:" <+> viaShow line1 <//>
-                     quoteRHS line1 <+> colon <+> pretty (MT1 (NE.head (fst line1)))
+                     [di|#{quoteRHS line1} : #{pretty (MT1 (NE.head (fst line1)))}|]
                      -- we should be in a DEFINE, printing a value; if we're not, we may be dumping values with the wrong order, so we need to create a PT5.
                      --    | line2s == [] = "-- " <> viaShow line1 <//> "199: " <> word1 line1 <> colon <+> quoteBoT line1
                      
-    | otherwise    = "//" <+> "213: " <+> viaShow orig <//> -- [TODO] need to fix this -- test by considering a DEFINE with nested records.
-                     quoteRHS line1 <> equals <+> lbrace <+> "--" <+> quoteBoT l4i line1 <> Prettyprinter.line
-                     <> nest 2 (vsep [ word1 l2 <+> colon <+> dquotes (lrest l2) <> comma | l2 <- line2s ])
-                     <> Prettyprinter.line
-                     <> rbrace
+    | otherwise    = [di|// 213: #{orig}|] <//> -- [TODO] need to fix this -- test by considering a DEFINE with nested records.
+                     [__di|
+                      #{quoteRHS line1} = { -- #{quoteBoT l4i line1}
+                        #{vsep [ word1 l2 <+> colon <+> dquotes (lrest l2) <> comma | l2 <- line2s ]}
+                      }
+                     |]
 
 word1,lrest :: TypedMulti -> Doc ann
 word1 l = typedOrNot "_"      ((NE.head . fst $ l) :| [], snd l)
@@ -317,28 +339,27 @@ typedOrNot        _ (multiterm, Just (SimpleType TList1    s1)) = [di|#{snake_ca
 typedOrNot        _ (multiterm, Just (SimpleType TSet0     s1)) = [di|#{snake_case (toList multiterm)}: #{brackets (pretty s1)}|]
 typedOrNot        _ (multiterm, Just (SimpleType TSet1     s1)) = [di|#{snake_case (toList multiterm)}: #{brackets (pretty s1)}|]
 typedOrNot        _ (multiterm, Just (InlineEnum pt1       s1)) =
-  [i|#{snake_case (toList multiterm)}\# : InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
+  [di|#{snake_case (toList multiterm)}\# : InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
 
 prettySimpleType :: String -> (T.Text -> Doc ann) -> TypeSig -> Doc ann
 prettySimpleType _        prty (SimpleType TOne      s1) = prty s1
 prettySimpleType "corel4" prty (SimpleType TOptional s1) = prty s1
 prettySimpleType "ts"     prty (SimpleType TOptional s1) = prty s1
 prettySimpleType _        prty (SimpleType TOptional s1) = [di|#{prty s1}?|]
-prettySimpleType "ts"     prty (SimpleType TList0    s1) = prty s1 <> brackets ""
-prettySimpleType "ts"     prty (SimpleType TList1    s1) = prty s1 <> brackets ""
-prettySimpleType "ts"     prty (SimpleType TSet0     s1) = prty s1 <> brackets ""
-prettySimpleType "ts"     prty (SimpleType TSet1     s1) = prty s1 <> brackets ""
-prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
-prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
-prettySimpleType _        prty (SimpleType TSet0     s1) = brackets (prty s1)
-prettySimpleType _        prty (SimpleType TSet1     s1) = brackets (prty s1)
+prettySimpleType "ts"     prty (SimpleType TList0    s1) = [di|#{prty s1}[]|]
+prettySimpleType "ts"     prty (SimpleType TList1    s1) = [di|#{prty s1}[]|]
+prettySimpleType "ts"     prty (SimpleType TSet0     s1) = [di|#{prty s1}[]|]
+prettySimpleType "ts"     prty (SimpleType TSet1     s1) = [di|#{prty s1}[]|]
+prettySimpleType _        prty (SimpleType TList0    s1) = [di|[#{prty s1}]|]
+prettySimpleType _        prty (SimpleType TList1    s1) = [di|[#{prty s1}]|]
+prettySimpleType _        prty (SimpleType TSet0     s1) = [di|[#{prty s1}]|]
+prettySimpleType _        prty (SimpleType TSet1     s1) = [di|[#{prty s1}]|]
 prettySimpleType _       _prty (InlineEnum pt1       s1) =
-  [i|\# InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
+  [di|\# InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
 
-prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
+prettyMaybeType :: String -> (T.Text -> Doc ann) -> Maybe TypeSig -> Doc ann
 prettyMaybeType _ _inner Nothing   = ""
-prettyMaybeType t inner (Just ts) = colon <+> prettySimpleType t inner ts
-
+prettyMaybeType t inner (Just ts) = [di|: #{prettySimpleType t inner ts}|]
 
 -- | comment a block of lines
 commentWith :: T.Text -> [T.Text] -> Doc ann
@@ -363,7 +384,7 @@ a <//> b = vsep  [ a, b ]
 infixr 5 </>, <//>
 
 -- | print haskell source in a way Org prefers
-srchs :: (Show a) => a -> Doc ann
+srchs :: Show a => a -> Doc ann
 srchs = orgsrc ("haskell" :: Doc ann) . pretty . TPS.pShowNoColor
 
 orgsrc lang x =

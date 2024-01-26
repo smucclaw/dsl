@@ -24,11 +24,11 @@ import System.FilePath ((</>), takeFileName)
 import Data.Coerce (coerce)
 import Data.Kind (Constraint, Type)
 import Data.List.NonEmpty (NonEmpty)
-import Control.Monad
 
 import LS.Rule(Rule(..))
 import LS.Types (MTExpr, mt2text)
 import LS.UtilsREPLDev
+    ( csvsInDir, l4csv2rules, pRules, BaseFileName )
 
 import LS (pRelPred)
 

@@ -213,7 +213,7 @@ import Control.Monad.Writer.Lazy
 import Data.Foldable qualified as DF
 import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, fromMaybe, mapMaybe, maybeToList, isNothing)
+import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe, maybeToList)
 import Data.Semigroup (sconcat)
 import Data.Text qualified as T
 import LS.Parser

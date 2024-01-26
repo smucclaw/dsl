@@ -33,10 +33,23 @@ module LS.XPile.ExportTypes (
 ) where
 
 import Data.Text qualified as T
-import Prettyprinter
-import Prettyprinter.Render.Text ()
-import Prettyprinter.Interpolate (__di, di)
 import L4.PrintProg (capitalise)
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    braces,
+    brackets,
+    comma,
+    dquotes,
+    emptyDoc,
+    hsep,
+    nest,
+    parens,
+    punctuate,
+    vsep,
+  )
+import Prettyprinter.Interpolate (di, __di)
+import Prettyprinter.Render.Text ()
 
 import LS.Rule as SFL4
   ( Rule (TypeDecl, has, name, super),

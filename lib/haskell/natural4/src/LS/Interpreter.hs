@@ -30,28 +30,105 @@ import AnyAll qualified as AA
 import Control.Applicative ((<|>))
 import Control.Monad (guard, join)
 import Data.Bifunctor (first)
-import Data.Either (partitionEithers, fromRight)
+import Data.Either (fromRight, partitionEithers)
 import Data.Graph.Inductive
+    ( Gr,
+      delEdge,
+      indeg,
+      lab,
+      nmap,
+      nodes,
+      topsort,
+      Graph(mkGraph, labNodes),
+      LEdge )
 import Data.HashMap.Strict qualified as Map
 import Data.List (find, (\\))
 import Data.List qualified as DL
-import Data.List.NonEmpty as NE
+import Data.List.NonEmpty as NE ( fromList, toList, singleton )
 import Data.Maybe
+    ( listToMaybe,
+      mapMaybe,
+      catMaybes,
+      fromJust,
+      fromMaybe,
+      isJust,
+      maybeToList )
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
-import Data.Tree
+import Data.Tree ( Tree(Node) )
 import Data.Tuple (swap)
-import Debug.Trace
-import LS.XPile.Logging (mutter, mutters, mutterd, mutterdhsf
-                        , XPileLogE, XPileLog
-                        , pShowNoColorS, xpReturn, xpError, xpLog)
-import LS.PrettyPrinter
+import Debug.Trace ( trace )
+import LS.PrettyPrinter ( srchs )
 import LS.RelationalPredicates
+    ( aaLeaves, getBSR, partitionExistentials )
 import LS.Rule
+    ( defaultHorn,
+      defaultTypeDecl,
+      defaultValuePredicate,
+      getDecisionHeads,
+      getRlabel,
+      hasClauses,
+      hasGiven,
+      hasGiveth,
+      rl2text,
+      ruleLabelName,
+      ruleName,
+      Interpreted(..),
+      Rule(TypeDecl, Regulative, RuleAlias, DefTypically, Hornlike, has,
+           clauses, symtab, wwhere, having, upon, lsource, rlabel, lest,
+           hence, temporal, action, deontic, cond, who, rkeyword, subj,
+           srcref, defaults, given, giveth, name, super, keyword),
+      RuleGraph,
+      RuleGraphEdgeLabel,
+      ValuePredicate(origRule, origHC, origBSR, objPath, attrName,
+                     attrVal, attrCond) )
 import LS.Types
-import Prettyprinter
+    ( RPRel(RPis, RPgt, RPlt),
+      MTExpr(MTT, MTB, MTF),
+      ParamText,
+      TypedMulti,
+      TypeSig(..),
+      BoolStructR,
+      RelationalPredicate(..),
+      MyToken(Decide, Means, Is, Define),
+      HornClause(HC, hBody, hHead),
+      ParamType(TOne),
+      InterpreterOptions,
+      ClsTab(..),
+      Inferrable,
+      BoolStructT,
+      MultiTerm,
+      mt2text,
+      HornClause2,
+      rel2txt,
+      pt2multiterm,
+      rp2bodytexts,
+      rp2text,
+      RuleName,
+      EntityType,
+      EntityName,
+      getUnderlyingType,
+      TypedClass,
+      ScopeTabs,
+      SymTab,
+      thisAttributes,
+      clsParent,
+      getSymType,
+      bsp2text )
+import LS.XPile.Logging
+  ( XPileLog,
+    XPileLogE,
+    mutter,
+    mutterd,
+    mutterdhsf,
+    mutters,
+    pShowNoColorS,
+    xpError,
+    xpLog,
+    xpReturn,
+  )
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 

@@ -1,10 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main
-  ( main
-  )
-where
+module Main (main) where
 
 import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)
@@ -23,13 +20,13 @@ import Data.Text.Lazy qualified as TL
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.ISO8601 (formatISO8601Millis)
 import LS qualified as SFL4
+import LS.DataFlow
 import LS.Interpreter
   ( expandClauses,
     getAndOrTree,
     l4interpret,
     onlyTheItems,
   )
-import LS.DataFlow
 import LS.NLP.NLG
   ( allLangs,
     expandRulesForNLG,
@@ -45,25 +42,25 @@ import LS.XPile.CoreL4
     sfl4ToDMN,
     sfl4ToEpilog,
   )
+import LS.XPile.ExportTypes (rulesToHaskellTp, rulesToJsonSchema, rulesToPrologTp, rulesToUISchema)
 import LS.XPile.GFTrees (gftrees)
-import LS.XPile.IntroTrivial (toTrivial)
-import LS.XPile.IntroBasic   (toBasic)
-import LS.XPile.IntroReader  (toReader, defaultReaderEnv)
-import LS.XPile.IntroLog     (toLog)
+import LS.XPile.IntroBase (toBase)
+import LS.XPile.IntroBasic (toBasic)
+import LS.XPile.IntroLog (toLog)
+import LS.XPile.IntroReader (defaultReaderEnv, toReader)
 import LS.XPile.IntroShoehorn (toShoehorn)
-import LS.XPile.IntroBase     (toBase)
-
+import LS.XPile.IntroTrivial (toTrivial)
+import LS.XPile.JSONRanges (asJSONRanges)
 import LS.XPile.Logging
+import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
-import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
-import LS.XPile.JSONRanges (asJSONRanges)
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
 import LS.XPile.VueJSON
@@ -78,11 +75,10 @@ import System.Directory
     createFileLink,
     renameFile,
   )
-import System.FilePath ((</>), (-<.>))
+import System.FilePath ((-<.>), (</>))
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
-import LS.XPile.ExportTypes (rulesToHaskellTp, rulesToPrologTp, rulesToJsonSchema, rulesToUISchema)
 
 
 myTraceM :: String -> IO ()

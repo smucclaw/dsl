@@ -1,6 +1,4 @@
 -- {-# OPTIONS_GHC -W #-}
-{-# LANGUAGE OverloadedStrings, RecordWildCards, LambdaCase #-}
-
 module LS.XPile.LogicalEnglish.ValidateL4Input
   (   L4Rules -- opaque
     , ValidHornls
@@ -11,7 +9,7 @@ module LS.XPile.LogicalEnglish.ValidateL4Input
     , loadRawL4AsUnvalid
 
     , isHornlike -- TODO: TEMP export; will remove this after implementing the prevalidation
-  ) 
+  )
   where
 
 import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
@@ -30,10 +28,8 @@ import Data.String (IsString)
 import Data.Coerce (coerce)
 -- import Optics
 
-import LS.Types as L4
 import LS.Types (RelationalPredicate(..), RPRel(..))
-import LS.Rule qualified as L4 (Rule(..)) 
-import LS.XPile.LogicalEnglish.Types
+import LS.Rule qualified as L4 (Rule(..))
 
 import Debug.Trace (trace)
 
@@ -49,7 +45,7 @@ newtype L4Rules validStatus = MkL4Rules [L4.Rule]
   deriving (Eq, Ord, Show)
 
 loadRawL4AsUnvalid :: [L4.Rule] -> L4Rules Unvalidated
-loadRawL4AsUnvalid = coerce 
+loadRawL4AsUnvalid = coerce
 
 
 -- | TODO: Work on implementing this and adding the Monad Validate or Data.Validation stuff instead of Maybe (i.e., rly doing checks upfront and carrying along the error messages and potential warnings) after getting enoguh of the main transpiler out

@@ -17,8 +17,7 @@ module LS.Verdict where
 import AnyAll qualified as AA
 -- import Explainable
 -- import Explainable.MathLang
-import LS.Interpreter
-import LS.Rule
+import LS.Rule (Interpreted)
 
 -- | User input takes the form of a Marking -- see AnyAll for more on what that means.
 type RuntimeInput = AA.TextMarking

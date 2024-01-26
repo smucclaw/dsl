@@ -10,23 +10,76 @@
 
 module AnyAll.SVGLadder (module AnyAll.SVGLadder) where
 
-import Data.List (foldl', sortBy)
-import Data.Function  (on)
-
-import AnyAll.Types hiding ((<>))
+import AnyAll.Types
+  ( AndOr (And, Neg, Or, Simply),
+    Default (..),
+    Label (..),
+    Marking (Marking),
+    Q (Q),
+    QTree,
+  )
 import Control.Monad.RWS
+  ( MonadState (get, put),
+    RWS,
+    asks,
+    execRWS,
+  )
 import Data.Foldable (traverse_)
+import Data.Function (on)
 import Data.HashMap.Strict qualified as Map
-import Data.String
+import Data.List (foldl', sortBy)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy (Text, toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
-import Data.Text.Lazy.Builder.Int
-import Data.Tree
-import Debug.Trace
+import Data.Text.Lazy.Builder.Int (decimal)
+import Data.Tree (Tree (Node))
 import Graphics.Svg
+  ( AttrTag
+      ( Class_,
+        Cx_,
+        Cy_,
+        D_,
+        Dominant_baseline_,
+        Fill_,
+        Height_,
+        R_,
+        Stroke_,
+        Stroke_width_,
+        Text_anchor_,
+        Transform_,
+        Version_,
+        Width_,
+        X1_,
+        X2_,
+        X_,
+        Y1_,
+        Y2_,
+        Y_
+      ),
+    Attribute,
+    Element,
+    ToElement (toElement),
+    bindAttr,
+    circle_,
+    doctype,
+    line_,
+    path_,
+    rect_,
+    svg11_,
+    text_,
+    with,
+    (<<-),
+  )
 import Lens.Micro.Platform
+  ( Lens',
+    lens,
+    makeLenses,
+    (%~),
+    (&),
+    (.~),
+    (^.),
+  )
 import Text.Printf (formatInteger)
 
 type Length  = Integer

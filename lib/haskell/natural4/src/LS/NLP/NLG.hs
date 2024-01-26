@@ -10,24 +10,95 @@ module LS.NLP.NLG where
 
 import AnyAll qualified as AA
 import Control.Monad (when)
-import Data.Char qualified as Char (toLower, isDigit)
+import Data.Char qualified as Char (isDigit, toLower)
 import Data.Foldable qualified as F
 import Data.HashMap.Strict (elems, keys, lookup, toList)
 import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, listToMaybe, maybeToList, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
 import Data.String.Interpolate as I (i)
 import Data.Text qualified as Text
 import Debug.Trace (trace)
-import LS.Interpreter ( expandBSR
-                      , expandBSRM
-                      , expandClause
-                      , expandClauses
-                      , expandRP
-                      , qaHornsR )
+import LS.Interpreter
+  ( expandBSR,
+    expandBSRM,
+    expandClause,
+    expandClauses,
+    expandRP,
+    qaHornsR,
+  )
 import LS.NLP.NL4
+  ( GAction,
+    GAdv,
+    GCond,
+    GConstraint,
+    GDate,
+    GDay,
+    GDeontic,
+    GDigits,
+    GMonth,
+    GNP,
+    GPrePost,
+    GS,
+    GString,
+    GTComparison,
+    GTemporal,
+    GText,
+    GTimeUnit,
+    GUpon,
+    GVPS,
+    GWho,
+    GYear,
+    Gf (fg, gf),
+    Tree
+      ( GAFTER,
+        GAdvVP,
+        GBEFORE,
+        GBY,
+        GDay_Unit,
+        GIDig,
+        GIIDig,
+        GMAY,
+        GMUST,
+        GMkDate,
+        GMkVPS,
+        GMkYear,
+        GMonth_Unit,
+        GON,
+        GPredVPS,
+        GRPConstraint,
+        GRPleafS,
+        GRegulative,
+        GSHANT,
+        GString,
+        GSubjWho,
+        GTemporalConstraint,
+        GTemporalConstraintNoDigits,
+        GUPON,
+        GUPONnp,
+        GVAGUE,
+        GWHEN,
+        GYear_Unit,
+        GYou,
+        GadvUPON,
+        GqCOND,
+        GqCONSTR,
+        GqPREPOST,
+        GqUPON,
+        GqWHO,
+        GrecoverRPis,
+        GrecoverRPmath,
+        GrecoverUnparsedConstraint,
+        GrecoverUnparsedTimeUnit,
+        LexDay,
+        LexDig,
+        LexMonth,
+        LexVP,
+        LexYearComponent
+      ),
+  )
 import LS.NLP.NL4Transformations
   ( BoolStructCond,
     BoolStructConstraint,
@@ -46,7 +117,7 @@ import LS.NLP.NL4Transformations
     pushPrePostIntoMain,
     referNP,
   )
-import LS.Rule (Interpreted (..), Rule (..), ruleLabelName, ruleName, ruleConstructor)
+import LS.Rule (Interpreted (..), Rule (..), ruleConstructor, ruleLabelName, ruleName)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
@@ -83,10 +154,10 @@ import LS.XPile.Logging
     mutterd,
     mutterdhsf,
     mutters,
+    pShowNoColorS,
     xpError,
     xpLog,
     xpReturn,
-    pShowNoColorS
   )
 import PGF
   ( CId,
@@ -109,8 +180,8 @@ import PGF
     showLanguage,
   )
 import Paths_natural4 (getDataFileName)
-import System.Environment (lookupEnv)
 import Prettyprinter.Interpolate (__di)
+import System.Environment (lookupEnv)
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF

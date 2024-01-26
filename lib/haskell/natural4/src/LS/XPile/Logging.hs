@@ -91,7 +91,7 @@ module LS.XPile.Logging
   )
 where
 
-import Data.Bifunctor (second)
+import Control.Monad.Identity (Identity)
 import Control.Monad.RWS
   ( MonadWriter (tell),
     RWS,
@@ -99,7 +99,7 @@ import Control.Monad.RWS
     evalRWS,
     evalRWST,
   )
-import Control.Monad.Identity ( Identity )
+import Data.Bifunctor (second)
 import Data.Either (fromRight)
 import Data.HashMap.Strict as Map (HashMap)
 import Data.Text.Lazy qualified as TL

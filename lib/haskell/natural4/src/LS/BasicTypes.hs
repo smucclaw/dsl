@@ -214,10 +214,10 @@ toToken "TYPICALLY" = pure Typically
 toToken ((PCRE.≈ [PCRE.re|^(CLAUSE|SECTION)$|]) -> True) =
   pure $ RuleMarker   1  "§"
 
-toToken ((PCRE.scan [PCRE.re|^-(§|¶)$|]) -> [(_, [c])]) =
+toToken (PCRE.scan [PCRE.re|^-(§|¶)$|] -> [(_, [c])]) =
   pure $ RuleMarker (-1) c
 
-toToken s@((PCRE.scan [PCRE.re|^(§|¶|H)+$|]) -> [(_, [c])]) =
+toToken s@(PCRE.scan [PCRE.re|^(§|¶|H)+$|] -> [(_, [c])]) =
   pure $ RuleMarker (Text.length s) c
 
 toToken "SCENARIO"  = pure ScenarioTok

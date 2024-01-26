@@ -1,10 +1,23 @@
 {-# LANGUAGE GADTs, UndecidableInstances #-}
 module LS.NLP.NL4 where
 
-import Control.Monad ( ap, MonadPlus(..) )
-import Control.Monad.Identity (Identity ( Identity, runIdentity) )
+import Control.Monad (MonadPlus (..), ap)
+import Control.Monad.Identity (Identity (Identity, runIdentity))
 import Data.Monoid ()
-import PGF (Expr, mkApp, mkCId, mkFloat, mkInt, mkStr, showCId, showExpr, unApp, unFloat, unInt, unStr )
+import PGF
+  ( Expr,
+    mkApp,
+    mkCId,
+    mkFloat,
+    mkInt,
+    mkStr,
+    showCId,
+    showExpr,
+    unApp,
+    unFloat,
+    unInt,
+    unStr,
+  )
 
 ----------------------------------------------------
 -- automatic translation from GF to Haskell

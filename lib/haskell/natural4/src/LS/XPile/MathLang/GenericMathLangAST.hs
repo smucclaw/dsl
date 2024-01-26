@@ -27,7 +27,7 @@ import GHC.Generics
 -- import LS.Rule as L4 (Rule(..), extractMTExprs)
 
 -- import Data.HashSet qualified as HS
--- import Data.Hashable (Hashable)
+import Data.Hashable (Hashable)
 -- import GHC.Generics (Generic)
 
 {-------------------------------------------------------
@@ -98,7 +98,9 @@ type MdGrp = [ExpMetadata]
 ------------------------------------------------------------
 -- TODO: Look into whether the costs of using records for sum variants (eg partial functions) outweigh benefits
 
-type Var = T.Text
+newtype Var = MkVar T.Text
+  deriving stock (Show)
+  deriving newtype (Eq, Hashable)
 -- Add metadata like what the original L4 string was?
 -- Or do that only at the final pretty printing stage, when we normalize the formatting etc?
 
@@ -188,11 +190,13 @@ makeFieldLabelsNoPrefix ''Exp
 -}
 data LCProgMetadata =
   MkLCProgMdata { filename :: !T.Text }
+  deriving stock (Eq, Show)
 
 data LCProgram = 
   MkLCProgram { progMetadata :: LCProgMetadata
               , lcProgram :: [Exp]
               } 
+  deriving stock (Show)
 
 
 {----------------------------------------------------------

@@ -853,7 +853,7 @@ onlyItemNamed l4i rs wanteds =
       found = DL.filter (\(rn, _simp) -> rn `elem` wanteds) ibr
   in
     if null found
-    then AA.mkLeaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
+    then AA.mkLeaf [i|L4 Interpreter: unable to isolate rule named #{wanteds}|]
     else snd $ DL.head found
 
 -- | return those Q&A leaf items arranged by the rule to which they contribute.
@@ -948,22 +948,7 @@ getMarkings l4i =
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
     rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)?|f)$|]) -> True)] = Just False
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t)$|]) -> True)] = Just True
-    -- rhsval [MTT rhs] = case T.toLower rhs of
-    --                "does not" -> Just False
-    --                "doesn't"  -> Just False
-    --                "hasn't"   -> Just False
-    --                "false"    -> Just False
-    --                "not"      -> Just False
-    --                "no"       -> Just False
-    --                "f"        -> Just False
-    --                "t"        -> Just True
-    --                "so"       -> Just True
-    --                "yes"      -> Just True
-    --                "has"      -> Just True
-    --                "true"     -> Just True
-    --                "does"     -> Just True
-    --                _            -> Nothing
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] = Just True
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
     rhsval _  = Nothing

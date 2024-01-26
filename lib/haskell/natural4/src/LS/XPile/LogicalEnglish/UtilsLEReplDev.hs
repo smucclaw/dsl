@@ -28,8 +28,6 @@ import Data.List.NonEmpty (NonEmpty)
 import LS.Rule(Rule(..))
 import LS.Types (MTExpr, mt2text)
 import LS.Utils.UtilsREPLDev (BaseFileName, pRules, csvsInDir, l4csv2rules)
-import LS.UtilsREPLDev
-    ( csvsInDir, l4csv2rules, pRules, BaseFileName )
 
 import LS (pRelPred)
 

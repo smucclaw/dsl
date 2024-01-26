@@ -18,6 +18,7 @@ import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty qualified as NE (head)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
@@ -35,6 +36,7 @@ import LS.Types
     HornClause2,
     Inferrable,
     MTExpr (..),
+    TypedMulti,
     MultiTerm,
     MyStream,
     MyToken (Means),
@@ -49,7 +51,9 @@ import LS.Types
     ScopeTabs,
     SrcRef (..),
     TemporalConstraint,
-    TypeSig,
+    TypeSig(..),
+    ParamType(..),
+    EntityType,
     WithPos (WithPos, pos, tokenVal),
     bsp2text,
     defaultInferrableTypeSig,
@@ -366,6 +370,21 @@ defaultTypeDecl =
 extractMTExprs :: forall s. (HasTypes s MTExpr) => s -> [MTExpr]
 extractMTExprs = toListOf (types @MTExpr)
 
+-- type EntityType = Text.Text
+getSimpleTypeTOne :: TypeSig -> Maybe EntityType 
+getSimpleTypeTOne = \case
+  SimpleType TOne tn -> Just tn
+  _ -> Nothing
+
+-- | Simplify a TypedMulti -- i.e. a (NonEmpty MTExpr, Maybe TypeSig) --- with a SimpleType TOne typesig
+getGivenWithSimpleType :: TypedMulti -> (Text.Text, Maybe EntityType)
+getGivenWithSimpleType tm = 
+  let 
+    var = Prelude.head (tm ^.. _1 % types @Text.Text)
+    -- safe because of the non empty lists.
+    -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
+    varType = (tm ^. _2) >>= getSimpleTypeTOne
+  in (var, varType)
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool

@@ -15,8 +15,6 @@ module LS.XPile.MathLang.GenericMathLangAST where
 import Data.Text qualified as T
 
 import Optics.TH
-import GHC.Generics (Generic)
-import Data.Typeable (Typeable)
 -- import Unbound.Generics.LocallyNameless
 -- import Unbound.Generics.LocallyNameless.Ignore (Ignore(..))
 -- import Unbound.Generics.LocallyNameless.Internal.Fold qualified as UB (toListOf)
@@ -63,7 +61,7 @@ TO THINK ABT
 
 -- TODO. ExplnImptce is a reach goal
 data ExplnImptce = HighEI | LowEI | DebugEI
-  deriving stock (Eq, Ord, Show, Generic, Typeable)
+  deriving stock (Eq, Ord, Show)
 
 data ExplnAnnot = MkExplnAnnot
   { l4RuleName :: !T.Text
@@ -94,7 +92,7 @@ data ExpMetadata = MkEMdata
   { srcPos :: !SrcPositn
   , explnAnnot :: !(Maybe ExplnAnnot)
   -- , typeMd :: !(Maybe TypeMetadata)
-  } deriving stock (Eq, Ord, Show, Generic, Typeable)
+  } deriving stock (Eq, Ord, Show)
 makePrisms ''ExpMetadata
 
 type MdGrp = [ExpMetadata]
@@ -107,9 +105,11 @@ type MdGrp = [ExpMetadata]
 data Exp = MkExp 
   { exp :: !BaseExp
   , md :: !MdGrp }
-  deriving (Show, Generic, Typeable)
+  deriving stock (Show)
 
 type Var = T.Text
+-- Add metadata like what the original L4 string was?
+-- Or do that only at the final pretty printing stage, when we normalize the formatting etc?
 
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 data BaseExp =
@@ -168,15 +168,15 @@ data BaseExp =
       right :: !BaseExp
     }
   | EEmpty
-  deriving (Show, Generic, Typeable)
+  deriving stock (Show)
 
 
 -- TODO: Need to figure out how best to deal with numbers, esp. wrt money. Shld not use floats for money.
 data Lit = ENumber !Number | EBool !Bool | EString !T.Text
-  deriving stock (Eq, Ord, Show, Generic, Typeable)
+  deriving stock (Eq, Ord, Show)
 
 data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
-  deriving stock (Eq, Ord, Show, Generic, Typeable)
+  deriving stock (Eq, Ord, Show)
 
 {-----------------
 misc notes to self 

@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns, KindSignatures, AllowAmbiguousTypes #-}
+{-# LANGUAGE PatternSynonyms, ViewPatterns, AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies #-}
 
 module LS.XPile.MathLang.GenericMathLangAST where
@@ -14,7 +14,9 @@ module LS.XPile.MathLang.GenericMathLangAST where
 
 import Data.Text qualified as T
 
-import Optics.TH
+import Optics.TH (makeFieldLabelsNoPrefix)
+import GHC.Generics
+
 
 -- import Data.Generics.Product.Types (types)
 -- import Data.String ( IsString )
@@ -112,13 +114,13 @@ data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
 
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 data BaseExp =
-    ELit { lit :: !Lit } 
+    ELit { lit :: !Lit }
   | EOp
-    { binOp :: !Op, 
+    { binOp :: !Op,
       opLeft :: !Exp, -- ^ left
       opRight :: !Exp -- ^ right
     }
-  
+
   | EIf
     { condExp :: !Exp,
       thenExp :: !Exp,
@@ -145,7 +147,7 @@ data BaseExp =
   -- | variable mutation; prob treat as also eval-ing to assigned value
   | EVarSet
     { var :: Var,
-      arg :: !Exp 
+      arg :: !Exp
     }
   | ELet
     { var :: Var
@@ -167,9 +169,9 @@ data BaseExp =
       right :: !BaseExp
     }
   | EEmpty
-  deriving stock (Show)
+  deriving stock (Show, Generic)
 
-data Exp = MkExp 
+data Exp = MkExp
   { exp :: !BaseExp
   , md :: !MdGrp }
   deriving stock (Show)

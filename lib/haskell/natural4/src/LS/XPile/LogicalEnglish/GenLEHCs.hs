@@ -13,7 +13,7 @@ import Data.Text qualified as T
 import Data.HashSet qualified as HS
 -- import Data.Foldable (toList)
 import Data.Coerce (coerce)
-import Data.Traversable
+import Data.Traversable ( mapAccumL )
 
 import LS.XPile.LogicalEnglish.Types
   ( -- L4-related types

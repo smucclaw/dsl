@@ -5,6 +5,7 @@
 
 module AnyAll.BoolStruct
   ( BoolStruct (..),
+    BoolStructLT,
     OptionallyLabeledBoolStruct,
     StdinSchema (..),
     addJust,

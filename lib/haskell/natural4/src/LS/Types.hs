@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveAnyClass #-}
+
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, DataKinds #-}
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
@@ -14,7 +14,6 @@ where
 
 import AnyAll (mkLeaf)
 import AnyAll qualified as AA
-import Control.Monad
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
@@ -34,6 +33,7 @@ import LS.BasicTypes
 import Optics ()
 import Safe (headMay)
 import Text.Megaparsec ( Parsec )
+import qualified Data.HashSet as Set
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -634,8 +634,8 @@ nestLevel = length . parseCallStack
 increaseNestLevel :: String -> RunConfig -> RunConfig
 increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 
-magicKeywords :: [Text.Text]
-magicKeywords =
+magicKeywords :: Set.HashSet Text.Text
+magicKeywords = Set.fromList
   [ "EVERY",
     "PARTY",
     "MUST,",

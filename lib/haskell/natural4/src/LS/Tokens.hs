@@ -11,10 +11,22 @@ module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import Control.Applicative (Alternative, liftA2)
 import Control.Monad
-  (MonadPlus, replicateM_, when)
+  ( MonadPlus,
+    replicateM_,
+    when,
+  )
 import Control.Monad.Reader
-  (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
+  ( MonadReader,
+    ReaderT (ReaderT, runReaderT),
+    asks,
+    local,
+  )
 import Control.Monad.Writer.Lazy
+  ( MonadTrans (lift),
+    WriterT (..),
+    censor,
+    mapWriterT,
+  )
 import Data.Functor.Identity (Identity)
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty)

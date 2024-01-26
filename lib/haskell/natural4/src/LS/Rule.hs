@@ -14,7 +14,6 @@ import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Generics.Product.Types (HasTypes, types)
-import Data.Generics.Sum.Constructors
 import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)

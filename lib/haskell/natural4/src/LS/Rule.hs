@@ -5,7 +5,35 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
 
-module LS.Rule where
+module LS.Rule 
+  ( Rule(..)
+  , RuleBody(..)
+  , RuleLabel
+  , Interpreted (..)
+  , Parser
+  , ValuePredicate (..)
+  , Expect (..)
+  , RuleGraph
+  , RuleGraphEdgeLabel
+  , ruleLabelName
+  , ruleName
+  , ruleConstructor
+  , getGivenWithSimpleType
+  , extractMTExprs
+  , defaultHorn
+  , defaultTypeDecl
+  , getRlabel
+  , rl2text
+  , pGetTokenPos
+  , pTokenMatch, pXLocation, pYLocation
+  , runMyParser
+  , whenDebug
+  , multiterm2bsr
+  , defaultValuePredicate
+  , getDecisionHeads
+  , hasClauses, hasGiven, hasGiveth, isFact
+  )
+where
 
 import AnyAll qualified as AA
 import Control.Monad (void, when)

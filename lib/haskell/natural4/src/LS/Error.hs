@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-|
@@ -16,6 +17,7 @@ import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Proxy
 import Data.Set qualified as Set
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Data.Vector (foldl1', imap)
@@ -72,12 +74,13 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
           & fmap (imap (\c -> Box.alignHoriz Box.left (maxLengths V.! c) . Box.para Box.left maxAllowedWidth) >>> hsep 3 Box.left)
           & vcat Box.left & Box.render
         outChunk =
-          "\n" <> sourcePosPretty epos <> ":\n"
-          <> parseErrorTextPretty e
-          <> "\n"
-          <> boxRepresentation <> "\n"
-          <> "\nStream:\n"
-          <> xpRenderStream (insertStarAt epos $ pstateInput pst)
+          [__i|
+            #{sourcePosPretty epos}:
+            #{parseErrorTextPretty e}
+            #{boxRepresentation}
+            Stream:
+            #{xpRenderStream (insertStarAt epos $ pstateInput pst)}
+          |]
 
 insertStarAt :: SourcePos -> MyStream -> MyStream
 insertStarAt sp (MyStream vec wps) = MyStream vec (foldMap insertIt wps)
@@ -106,13 +109,9 @@ showErrorFancy :: ShowErrorComponent e => ErrorFancy e -> String
 showErrorFancy = \case
   ErrorFail msg -> msg
   ErrorIndentation ord ref actual ->
-    "incorrect indentation (got " <> show (unPos actual)
-      <> ", should be "
-      <> p
-      <> show (unPos ref)
-      <> ")"
+    [i|incorrect indentation (got #{unPos actual}, should be #{p} #{unPos ref})|]
     where
-      p = case ord of
+      p :: String = case ord of
         LT -> "less than "
         EQ -> "equal to "
         GT -> "greater than "
@@ -128,16 +127,17 @@ errorFancyLength = \case
 
 -- | Oneline error message for debug purposes.
 onelineErrorMsg :: ParseError MyStream Void -> String
-onelineErrorMsg (TrivialError _ Nothing set) = "Expecting: " <>
-  unwords (map onelineErrorItem $ Set.toList set)
-onelineErrorMsg (TrivialError _ (Just ei) set) = "Unexpected " <>
-  onelineErrorItem ei <> " Expecting: " <>
-  unwords (map onelineErrorItem $ Set.toList set)
+onelineErrorMsg (TrivialError _ Nothing set) = 
+  [i|Expecting: #{unwords (map onelineErrorItem $ Set.toList set)}|]
+
+onelineErrorMsg (TrivialError _ (Just ei) set) =
+  [i|Unexpected #{onelineErrorItem ei} Expecting: #{unwords (map onelineErrorItem $ Set.toList set)}|]
+
 onelineErrorMsg (FancyError _ set) = unwords $ map showFancy $ Set.toList set
   where
     showFancy :: ErrorFancy Void -> String
-    showFancy (ErrorFail s) = "Fail: " <> s
-    showFancy (ErrorIndentation ord pos pos') = "Indent error: " <> show pos <> " should be " <> show ord <> show pos'
+    showFancy (ErrorFail s) = [i|Fail: #{s}|]
+    showFancy (ErrorIndentation ord pos pos') = [i|Indent error: #{pos} should be #{ord} #{pos'}|]
     showFancy (ErrorCustom vo) = case vo of {}
 
 onelineErrorItem :: ErrorItem (WithPos MyToken) -> String

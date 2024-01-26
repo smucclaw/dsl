@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -31,6 +32,7 @@ import Data.List (transpose)
 import Data.List.NonEmpty qualified as NE
 import Data.List.Split qualified as DLS
 import Data.Maybe (listToMaybe, maybeToList)
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
@@ -221,8 +223,8 @@ parseRules o = do
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
-          putStrLn $ "* error while parsing " ++ filename
-          putStrLn (errorBundlePrettyCustom bundle)
+          putStrLn [i|* error while parsing #{filename}|]
+          putStrLn $ errorBundlePrettyCustom bundle
           putStrLn "** stream"
           printStream stream
           return (Left bundle)
@@ -762,9 +764,9 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
                  , defaults = []
                  , symtab   = []
                  }
-  myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
-  myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond
-  myTraceM $ "pRegRuleNormal: returning " ++ show toreturn
+  myTraceM [i|pRegRuleNormal: the positive preamble is #{poscond}|]
+  myTraceM [i|pRegRuleNormal: the negative preamble is #{negcond}|]
+  myTraceM [i|pRegRuleNormal: returning #{toreturn}|]
   -- let appendix = pbrs ++ nbrs ++ ebrs ++ defalias
   -- myTraceM $ "pRegRuleNormal: with appendix = " ++ show appendix
   -- return ( toreturn : appendix )
@@ -772,7 +774,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
 
 
 pHenceLest :: MyToken -> Parser Rule
-pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) do
+pHenceLest henceLest = debugName [i|HenceLest-#{henceLest}|] do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
@@ -793,7 +795,7 @@ pPreamble toks = choice (try . pTokenish <$> toks)
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
 pActor :: [RegKeywords] -> Parser (RegKeywords, BoolStructP)
-pActor keywords = debugName ("pActor " ++ show keywords) do
+pActor keywords = debugName [i|pActor #{keywords}|] do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
@@ -901,9 +903,9 @@ pDA = debugName "pDA" do
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
-preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  do
+preambleBoolStructP wanted = debugName [i|preambleBoolStructP #{wanted}|] do
   condWord <- choice (try . pToken <$> wanted)
-  myTraceM ("preambleBoolStructP: found: " ++ show condWord)
+  myTraceM [i|preambleBoolStructP: found: #{condWord}|]
   ands <- dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 

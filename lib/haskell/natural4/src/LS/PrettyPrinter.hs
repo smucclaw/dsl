@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} -- the job of this module is to create orphan instances
 
 {-|
@@ -13,6 +14,7 @@ import AnyAll qualified as AA
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
 import Debug.Trace ( trace )
@@ -33,6 +35,7 @@ import LS.Types
       pt2text,
       rel2op )
 import Prettyprinter
+import Prettyprinter.Interpolate (di, __di)
 import Prettyprinter.Render.Text
 import Text.Pretty.Simple qualified as TPS
 import Data.String (IsString)
@@ -261,7 +264,7 @@ quoteRHS :: TypedMulti -> Doc ann
 quoteRHS l@(val, mts) =
   case mts of
     Just (SimpleType _ s1) -> snake_case [MTT s1]
-    unexpected             -> trace ("ERROR: PrettyPrinter PT4 quoteRHS: surprised to see the type annotation " ++ show unexpected) $
+    unexpected             -> trace [i|ERROR: PrettyPrinter PT4 quoteRHS: surprised to see the type annotation #{unexpected}|] $
                               dquotes "ERRORTYPE_PrettyPrinter_quoteRHS"
 
 -- what is the (L4) type of a given term?
@@ -305,21 +308,22 @@ typeOfTerm l4i _tm =
 --                                         walk l4i (Just ct1) xs ot
 
 typedOrNot :: String -> TypedMulti -> Doc ann
-typedOrNot        _ (multiterm, Nothing)                        = snake_case (toList multiterm) <> ":"  <+> "Object"
-typedOrNot        _ (multiterm, Just (SimpleType TOne      s1)) = snake_case (toList multiterm) <> ":"  <+> snake_case [MTT s1]
-typedOrNot "corel4" (multiterm, Just (SimpleType TOptional s1)) = snake_case (toList multiterm) <> ":"  <+> pretty [MTT s1]
-typedOrNot        _ (multiterm, Just (SimpleType TOptional s1)) = snake_case (toList multiterm) <> ":?" <+> snake_case [MTT s1]
-typedOrNot        _ (multiterm, Just (SimpleType TList0    s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
-typedOrNot        _ (multiterm, Just (SimpleType TList1    s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
-typedOrNot        _ (multiterm, Just (SimpleType TSet0     s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
-typedOrNot        _ (multiterm, Just (SimpleType TSet1     s1)) = snake_case (toList multiterm) <> ":"  <+> brackets (pretty s1)
-typedOrNot        _ (multiterm, Just (InlineEnum pt1       s1)) = snake_case (toList multiterm) <> "# :"  <+> "InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
+typedOrNot        _ (multiterm, Nothing)                        = [di|#{snake_case (toList multiterm)}: Object|]
+typedOrNot        _ (multiterm, Just (SimpleType TOne      s1)) = [di|#{snake_case (toList multiterm)}: #{snake_case [MTT s1]}|]
+typedOrNot "corel4" (multiterm, Just (SimpleType TOptional s1)) = [di|#{snake_case (toList multiterm)}: #{[MTT s1]}|]
+typedOrNot        _ (multiterm, Just (SimpleType TOptional s1)) = [di|#{snake_case (toList multiterm)}:? #{snake_case [MTT s1]}|]
+typedOrNot        _ (multiterm, Just (SimpleType TList0    s1)) = [di|#{snake_case (toList multiterm)}: #{brackets (pretty s1)}|]
+typedOrNot        _ (multiterm, Just (SimpleType TList1    s1)) = [di|#{snake_case (toList multiterm)}: #{brackets (pretty s1)}|]
+typedOrNot        _ (multiterm, Just (SimpleType TSet0     s1)) = [di|#{snake_case (toList multiterm)}: #{brackets (pretty s1)}|]
+typedOrNot        _ (multiterm, Just (SimpleType TSet1     s1)) = [di|#{snake_case (toList multiterm)}: #{brackets (pretty s1)}|]
+typedOrNot        _ (multiterm, Just (InlineEnum pt1       s1)) =
+  [i|#{snake_case (toList multiterm)}\# : InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
 
 prettySimpleType :: String -> (T.Text -> Doc ann) -> TypeSig -> Doc ann
 prettySimpleType _        prty (SimpleType TOne      s1) = prty s1
 prettySimpleType "corel4" prty (SimpleType TOptional s1) = prty s1
 prettySimpleType "ts"     prty (SimpleType TOptional s1) = prty s1
-prettySimpleType _        prty (SimpleType TOptional s1) = prty s1 <> "?"
+prettySimpleType _        prty (SimpleType TOptional s1) = [di|#{prty s1}?|]
 prettySimpleType "ts"     prty (SimpleType TList0    s1) = prty s1 <> brackets ""
 prettySimpleType "ts"     prty (SimpleType TList1    s1) = prty s1 <> brackets ""
 prettySimpleType "ts"     prty (SimpleType TSet0     s1) = prty s1 <> brackets ""
@@ -328,7 +332,8 @@ prettySimpleType _        prty (SimpleType TList0    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TList1    s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TSet0     s1) = brackets (prty s1)
 prettySimpleType _        prty (SimpleType TSet1     s1) = brackets (prty s1)
-prettySimpleType _       _prty (InlineEnum pt1       s1) = "# InlineEnum unsupported:" <+> viaShow pt1 <+> parens (pretty $ PT2 s1)
+prettySimpleType _       _prty (InlineEnum pt1       s1) =
+  [i|\# InlineEnum unsupported: #{pt1} #{parens (pretty $ PT2 s1)}|]
 
 prettyMaybeType :: String -> (T.Text -> Doc ann) -> (Maybe TypeSig) -> Doc ann
 prettyMaybeType _ _inner Nothing   = ""
@@ -349,7 +354,7 @@ vvsep = vsep . Data.List.intersperse ""
 
 -- | utility function similar to `brackets` or `parens` but with tildes, useful for org-mode
 tildes :: Doc ann -> Doc ann
-tildes x = "~" <> x <> "~"
+tildes x = [di|~#{x}~|]
 
 -- | similar to ... <> Prettyprinter.line <> ...
 (<//>), (</>) :: Doc ann -> Doc ann -> Doc ann
@@ -359,6 +364,18 @@ infixr 5 </>, <//>
 
 -- | print haskell source in a way Org prefers
 srchs :: (Show a) => a -> Doc ann
-srchs = orgsrc "haskell" . pretty . TPS.pShowNoColor
-orgsrc lang x = vsep [ "#+begin_src" <+> lang, x, "#+end_src" ]
-orgexample  x = vsep [ "#+begin_example", x, "#+end_example" ]
+srchs = orgsrc ("haskell" :: Doc ann) . pretty . TPS.pShowNoColor
+
+orgsrc lang x =
+  [__di|
+    \#+begin_src #{lang}
+    #{x}
+    \#+end_src
+  |]
+
+orgexample  x =
+  [__di|
+    \#+begin_example
+    #{x}
+    \#+end_example
+  |]

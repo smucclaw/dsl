@@ -1,10 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main
-  ( main
-  )
-where
+module Main (main) where
 
 import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)

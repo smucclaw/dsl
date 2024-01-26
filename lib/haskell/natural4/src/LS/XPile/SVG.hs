@@ -4,12 +4,23 @@ Largely a wrapper. Most of the functionality is in the `AnyAll` lib.
 
 -}
 
-module LS.XPile.SVG where
+module LS.XPile.SVG (asAAsvg) where
 
 import AnyAll as AA
+  ( AAVConfig (cscale),
+    BoolStruct (Leaf, Not),
+    QTree,
+    SVGElement,
+    Scale (Full, Tiny),
+    makeSvg,
+    q2svg',
+    softnormal,
+  )
 import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as T
-import LS
+import LS.Interpreter (getMarkings, qaHornsT)
+import LS.Rule (Interpreted, Rule)
+import LS.Types (BoolStructT, RuleName)
 
 -- import Debug.Trace (trace)
 

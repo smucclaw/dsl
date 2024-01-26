@@ -10,22 +10,65 @@ This module also provides a family of SLParser combinators ("Same Line").
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import Control.Applicative (Alternative, liftA2)
-import Control.Monad (MonadPlus, replicateM_, when)
-import Control.Monad.Reader (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
+import Control.Monad
+  (MonadPlus, replicateM_, when)
+import Control.Monad.Reader
+  (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
 import Control.Monad.Writer.Lazy
-import Data.Monoid (Sum(..))
 import Data.Functor.Identity (Identity)
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (isNothing)
+import Data.Monoid (Sum (..))
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
 import Debug.Trace (traceM)
 import LS.Error (onelineErrorMsg)
 import LS.Rule
+    ( pGetTokenPos,
+      pTokenMatch,
+      pXLocation,
+      pYLocation,
+      whenDebug,
+      Parser,
+      Rule,
+      RuleLabel )
 import LS.Types
+    ( MTExpr(..),
+      DList,
+      MyToken(TokNotIn, Must, May, Shant, TNumber, Other, EOL,
+              RuleMarker, TokTrue, TokFalse, A_An, UnDeeper, GoDeeper, Is,
+              TokAnd, TokOr, TokSum, TokProduct, TokEQ, TokLT, TokLTE, TokGT,
+              TokGTE, TokIn),
+      HasToken(..),
+      SrcRef(SrcRef),
+      Deontic(..),
+      RunConfig(parseCallStack, sourceURL, debug),
+      MyStream(MyStream, unMyStream),
+      MultiTerm,
+      singeltonDL,
+      nestLevel,
+      increaseNestLevel,
+      WithPos(WithPos, tokenVal, pos) )
 import Text.Megaparsec
+    ( Parsec,
+      (<|>),
+      optional,
+      Stream,
+      SourcePos(sourceColumn, sourceLine),
+      (<?>),
+      unPos,
+      between,
+      choice,
+      count,
+      many,
+      some,
+      MonadParsec(try, token, notFollowedBy, updateParserState, eof,
+                  lookAhead),
+      ParseError,
+      ParsecT,
+      State(State, stateInput) )
 import Text.Megaparsec.Debug (dbg)
 import Text.Megaparsec.Internal qualified as MPInternal
 

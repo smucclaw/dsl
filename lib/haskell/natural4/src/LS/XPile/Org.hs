@@ -5,55 +5,70 @@
 
 module LS.XPile.Org (toOrg) where
 
-import LS.Interpreter
-    ( qaHornsT,
-      ruleLocals,
-      getMarkings,
-      isRuleAlias,
-      qaHornsR,
-      groupedByAOTree,
-      expandBSR,
-      getAndOrTree,
-      exposedRoots,
-      globalFacts,
-      ruleDecisionGraph,
-      expandRule,
-      classGraph,
-      classRoots,
-      extractEnums,
-      defaultToSuperClass, defaultToSuperType,
-      attrsAsMethods,
-      )
-
-import LS.DataFlow
-
-import LS.RelationalPredicates ( partitionExistentials, getBSR )
-import LS.Rule
-    ( Interpreted(..),
-      Rule(..),
-      hasGiven,
-      hasClauses,
-      ruleLabelName,
-      Rule(clauses, given, super, TypeDecl)
-      )
-import LS.Types ( unCT
-                , TypeSig (InlineEnum, SimpleType)
-                , ParamType (TOne, TOptional)
-                , ClassHierarchyMap
-                )
-import LS.PrettyPrinter
-    ( myrender, vvsep, (</>), tildes, (<//>), snake_case, srchs, orgexample )
-
-import Prettyprinter
-    ( vsep, viaShow, hsep, emptyDoc, (<+>), Pretty(pretty), Doc, indent, line )
-import Data.HashMap.Strict qualified as Map
-import Data.Maybe (mapMaybe)
-import Data.List (nub)
-import Data.List.NonEmpty qualified as NE
 import Data.Bifunctor (first)
 import Data.Graph.Inductive (prettify)
+import Data.HashMap.Strict qualified as Map
+import Data.List (nub)
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe (mapMaybe)
 import Data.Text qualified as Text
+import LS.DataFlow ()
+import LS.Interpreter
+  ( attrsAsMethods,
+    classGraph,
+    classRoots,
+    defaultToSuperClass,
+    defaultToSuperType,
+    expandBSR,
+    expandRule,
+    exposedRoots,
+    extractEnums,
+    getAndOrTree,
+    getMarkings,
+    globalFacts,
+    groupedByAOTree,
+    isRuleAlias,
+    qaHornsR,
+    qaHornsT,
+    ruleDecisionGraph,
+    ruleLocals,
+  )
+import LS.PrettyPrinter
+  ( myrender,
+    orgexample,
+    snake_case,
+    srchs,
+    tildes,
+    vvsep,
+    (<//>),
+    (</>),
+  )
+import LS.RelationalPredicates (getBSR, partitionExistentials)
+import LS.Rule
+  ( Interpreted (..),
+    Rule (..),
+    hasClauses,
+    hasGiven,
+    ruleLabelName,
+  )
+import LS.Types
+  ( ClassHierarchyMap,
+    ParamType (TOne, TOptional),
+    TypeSig (InlineEnum, SimpleType),
+    unCT,
+  )
 import LS.XPile.Logging
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    emptyDoc,
+    hsep,
+    indent,
+    line,
+    viaShow,
+    vsep,
+    (<+>),
+  )
 
 -- | org-mode output
 toOrg :: Interpreted -> [Rule] -> String

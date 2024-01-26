@@ -5,8 +5,6 @@ module LS.XPile.IntroTrivial where
 
 import LS.Interpreter
        ( qaHornsT )
-import LS.PrettyPrinter
-       ( tildes, (</>), vvsep, myrender )
 import LS.Rule
        ( Interpreted(..),
          Rule(clauses, given) )
@@ -29,4 +27,4 @@ toTrivial :: Interpreted -> String
 toTrivial l4i = do
   let rules = origrules l4i
   "output from the IntroTrivial transpiler"
-  
+

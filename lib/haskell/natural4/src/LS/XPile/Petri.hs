@@ -8,12 +8,11 @@
 
 {-| transpiler to Petri net visualizer -}
 
-module LS.XPile.Petri where
+module LS.XPile.Petri (toPetri) where
 
 -- import           System.IO.Unsafe (unsafePerformIO)
 
 import AnyAll as AA (BoolStruct (All, Leaf))
-import Data.Bifunctor (first)
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad (when)
 import Control.Monad.Identity (runIdentity)
@@ -24,6 +23,7 @@ import Control.Monad.State.Strict
     gets,
     runState,
   )
+import Data.Bifunctor (first)
 import Data.Foldable (for_, traverse_)
 import Data.Graph.Inductive.Graph
   ( Context,
@@ -120,7 +120,7 @@ import LS
   )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-
+    ( mutterd, xpLog, xpReturn, XPileLog, XPileLogE )
 
 --------------------------------------------------------------------------------
 -- fgl

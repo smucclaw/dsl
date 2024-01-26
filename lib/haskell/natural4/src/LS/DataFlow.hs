@@ -6,34 +6,44 @@
 
 module LS.DataFlow where
 
-import LS.XPile.Logging
-import LS
-import LS.Interpreter
-import LS.Rule
-import Data.HashMap.Strict qualified as Map -- if you want to upgrade this to Hashmap, go ahead
-import Data.Text qualified as Text
-import Flow ((.>), (|>))
+-- if you want to upgrade this to Hashmap, go ahead
 
 -- fgl
-import Data.Graph.Inductive.Graph
+import Data.Graph.Inductive.Graph ( Node )
 import Data.Graph.Inductive.PatriciaTree (Gr)
-
 -- graphviz
 import Data.GraphViz
-    ( shape,
-      graphToDot,
-      Shape(Circle),
-      GraphID(Str),
-      NodeCluster(N, C),
-      GlobalAttributes(NodeAttrs, GraphAttrs),
-      GraphvizParams(..),
-      PrintDot (unqtDot),
-      DotGraph,
-      toLabel,
-    )
-import Data.Text.Lazy qualified as LT
-import Data.GraphViz.Printing (renderDot)
+  ( DotGraph,
+    GlobalAttributes (GraphAttrs, NodeAttrs),
+    GraphID (Str),
+    GraphvizParams (..),
+    NodeCluster (C, N),
+    PrintDot (unqtDot),
+    Shape (Circle),
+    graphToDot,
+    shape,
+    toLabel,
+  )
 import Data.GraphViz.Attributes.Complete
+    ( Attribute(Compound), Shape(Circle) )
+import Data.GraphViz.Printing (renderDot)
+import Data.HashMap.Strict qualified as Map
+import Data.Text qualified as Text
+import Data.Text.Lazy qualified as LT
+import Flow ((.>), (|>))
+import LS.Rule
+    ( ruleName,
+      Interpreted(ruleGraphErr, ruleGraph),
+      Rule,
+      RuleGraph,
+      ruleName,
+      Interpreted(ruleGraphErr, ruleGraph),
+      Rule,
+      RuleGraph )
+import LS.Types ( MTExpr(MTT), mt2text )
+import LS.Interpreter ()
+import LS.XPile.Logging
+    ( mutterd, mutterdhsf, mutters, pShowNoColorS, XPileLog )
 
 -- * Conceptually, a FlowNode is either a rule or a leaf/ground term referenced by a rule.
 --

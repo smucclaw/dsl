@@ -12,15 +12,56 @@ This module imports Control.Monad.Combinators.Expr which is the basis for the Bo
 -}
 module LS.Parser where
 
-import LS.Types
-import LS.Rule
-import LS.Tokens
 import AnyAll qualified as AA
-
 import Control.Monad.Combinators.Expr
-import Text.Megaparsec
-import Data.Text qualified as Text
+    ( Operator(Prefix, InfixR, Postfix), makeExprParser )
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Text qualified as Text
+import LS.Rule ( Parser )
+import LS.Tokens
+    ( ($*|),
+      (+>|),
+      (->|),
+      (/+=),
+      dnl,
+      godeeper,
+      liftSL,
+      manyDeep,
+      mkSL,
+      pMTExpr,
+      pOtherVal,
+      pToken,
+      pTokenOneOf,
+      runSL,
+      slMultiTerm,
+      someIndentation,
+      someLiftSL,
+      undeepers,
+      (|*|),
+      (|--),
+      (|-|),
+      (|<$),
+      (|<*),
+      (|<|),
+      (|><),
+      (|>>),
+      IsParser(debugName, debugPrint),
+      SLParser )
+import LS.Types
+    ( MTExpr(MTT),
+      MyToken(Unless, MPNot, SetLess, SetPlus, Typically, GoDeeper,
+              UnDeeper, Or, And),
+      PrependHead,
+      BoolStructT,
+      MultiTerm,
+      mt2text )
+import Text.Megaparsec
+    ( (<|>),
+      (<?>),
+      choice,
+      manyTill,
+      some,
+      MonadParsec(lookAhead, notFollowedBy, try) )
 
 data MyItem lbl a =
     MyLeaf                a

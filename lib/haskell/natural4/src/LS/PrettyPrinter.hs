@@ -35,8 +35,26 @@ import LS.Types
       pt2text,
       rel2op )
 import Prettyprinter
+    ( Doc,
+      line,
+      comma,
+      layoutPretty,
+      Pretty(pretty),
+      (<+>),
+      defaultLayoutOptions,
+      encloseSep,
+      hcat,
+      hsep,
+      nest,
+      vsep,
+      brackets,
+      colon,
+      dquotes,
+      parens,
+      LayoutOptions(layoutPageWidth),
+      PageWidth(Unbounded) )
 import Prettyprinter.Interpolate (di, __di)
-import Prettyprinter.Render.Text
+import Prettyprinter.Render.Text ( renderStrict )
 import Text.Pretty.Simple qualified as TPS
 import Data.String (IsString)
 

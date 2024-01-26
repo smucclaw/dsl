@@ -1,6 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 {-| transpiler to JSON instances representing a sampling across the
 space of possible classes, similar to QuickCheck. The JSON produced by

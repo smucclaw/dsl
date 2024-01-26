@@ -102,35 +102,34 @@ module LS.XPile.Typescript where
 
 
 -- import Debug.Trace
-import AnyAll
+import AnyAll (BoolStruct (All, Any, Leaf, Not))
 -- import L4.Syntax as CoreL4
 -- import L4.Annotation
 -- import Data.Functor ( (<&>) )
 
 import Control.Monad (join)
+import Data.Graph.Inductive (Graph (labNodes), outdeg)
 import Data.HashMap.Strict qualified as Map
-import Data.Text qualified as T
-import Data.Text.Lazy qualified as DTL
-import Data.List.NonEmpty qualified as NE
 import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
+import Data.List.NonEmpty qualified as NE
 import Data.Maybe (isJust, isNothing)
+import Data.Text qualified as T
+import Data.Text.Lazy qualified as DTL
 import Data.Tree qualified as DT
-
 import LS.Interpreter
   ( attrType,
-    getCTkeys,
-    globalFacts,
-    l4interpret,
-    topsortedClasses,
-    extractEnums,
     attrsAsMethods,
     classRoots,
     exposedRoots,
-    toObjectStr,
+    extractEnums,
+    getCTkeys,
+    globalFacts,
     isAnEnum,
+    l4interpret,
+    toObjectStr,
+    topsortedClasses,
   )
-
 import LS.PrettyPrinter
   ( ParamText4 (PT4, PT5),
     commentWith,
@@ -143,23 +142,24 @@ import LS.PrettyPrinter
     (</>),
   )
 import LS.Rule as SFL4R
-  ( Interpreted (classtable, scopetable, origrules, valuePreds, ruleGraph),
-    Rule(..),
+  ( Interpreted (classtable, origrules, ruleGraph, scopetable, valuePreds),
+    Rule (..),
+    ValuePredicate (..),
+    isFact,
     ruleLabelName,
     ruleName,
-    isFact,
-    ValuePredicate(..),
   )
 import LS.Types as SFL4
-  ( ClsTab (CT), unCT,
+  ( BoolStructR (..),
+    ClsTab (CT),
     EntityType,
     HornClause (HC, hHead),
     HornClause2,
-    BoolStructR(..),
-    MultiTerm,
     MTExpr (MTT),
+    MultiTerm,
     ParamText,
     ParamType (TOne, TOptional),
+    RPRel (..),
     RelationalPredicate
       ( RPBoolStructR,
         RPConstraint,
@@ -173,11 +173,21 @@ import LS.Types as SFL4
     getSymType,
     mt2text,
     rp2text,
-    RPRel(..),
+    unCT,
+  )
+import LS.XPile.Logging
+  ( XPileLog,
+    mutter,
+    mutterd,
+    mutterdhsf,
+    mutters,
+    pShowNoColorS,
+    xpLog,
   )
 import Prettyprinter
   ( Doc,
     Pretty (pretty),
+    braces,
     colon,
     comma,
     dquotes,
@@ -187,24 +197,20 @@ import Prettyprinter
     hang,
     indent,
     lbrace,
-    braces,
     line,
     list,
     nest,
+    parens,
     rbrace,
     semi,
-    parens,
     space,
     viaShow,
     vsep,
     (<+>),
   )
-import Text.Pretty.Simple (pShowNoColor)
-import LS.XPile.Logging
-import Data.Graph.Inductive
-
 -- JsonLogic
-import Text.JSON
+import Text.JSON (Result (Error, Ok), decode, encode)
+import Text.Pretty.Simple (pShowNoColor)
 
 -- | top-level function
 asTypescript :: SFL4R.Interpreted -> XPileLog (Doc ann)

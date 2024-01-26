@@ -8,40 +8,43 @@
 module LS.Rule where
 
 import AnyAll qualified as AA
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
-import Data.Hashable (Hashable)
+import Data.Generics.Product.Types (HasTypes, types)
+import Data.Generics.Sum.Constructors
+import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
+import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
-import Data.Generics.Sum.Constructors
-import Data.Generics.Product.Types (types, HasTypes)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
-    ClsTab(..),
-    MTExpr(..),
+    ClsTab (..),
     DList,
     Deontic (DMust),
     Depth,
+    EntityName,
     HornClause (HC, hBody),
     HornClause2,
-    MTExpr (MTT),
+    Inferrable,
+    MTExpr (..),
     MultiTerm,
     MyStream,
     MyToken (Means),
     ParamText,
     PlainParser,
     Preamble,
+    RPRel (..),
     RegKeywords (REvery),
-    RelationalPredicate (RPParamText, RPMT),
+    RelationalPredicate (RPMT, RPParamText),
     RuleName,
     RunConfig (debug, parseCallStack),
     ScopeTabs,
@@ -49,10 +52,8 @@ import LS.Types
     TemporalConstraint,
     TypeSig,
     WithPos (WithPos, pos, tokenVal),
-    EntityName,
-    RPRel(..),
-    Inferrable,
     bsp2text,
+    defaultInferrableTypeSig,
     dlToList,
     liftMyToken,
     mkLeafPT,
@@ -60,8 +61,9 @@ import LS.Types
     mt2text,
     multiterm2pt,
     rpHead,
-    defaultInferrableTypeSig
   )
+import LS.XPile.Logging (XPileLogW)
+import Optics hiding (has, (|>)) -- the Rule record has a `has` field
 import System.FilePath ((</>))
 import Text.Megaparsec
   ( ErrorItem (Tokens),
@@ -73,9 +75,6 @@ import Text.Megaparsec
     (<?>),
     (<|>),
   )
-import Data.Graph.Inductive (Gr, empty)
-import LS.XPile.Logging (XPileLogW)
-import Optics hiding ((|>), has) -- the Rule record has a `has` field
 
 -- $setup
 -- >>> :set -XDataKinds -XFlexibleContexts -XTypeApplications -XTypeFamilies -XDeriveGeneric
@@ -391,10 +390,7 @@ hasClauses             __ = False
 -- whose body is a Nothing.
 isFact :: Rule -> Bool
 isFact r
-  | hasClauses r = or [ ruleNameIsNumeric (name r) 
-                      , and [ length (clauses r) == 1
-                            , all ((Nothing ==) . hBody) (clauses r) ]
-                      ]
+  | hasClauses r = ruleNameIsNumeric (name r) || ((length (clauses r) == 1) && all ((Nothing ==) . hBody) (clauses r))
   | otherwise = False
   where
     -- when we have a numeric fact, it shows up with a name like [ MTI 0 ]
@@ -513,7 +509,7 @@ multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name
 pGetTokenPos :: Parser (WithPos ())
 pGetTokenPos = token test Set.empty <?> "some token"
   where
-    test tok = Just (() <$ tok)
+    test tok = Just $ void tok
 
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"

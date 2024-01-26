@@ -18,7 +18,7 @@ import LS.Types
     mt2text,
     pt2multiterm,
   )
-import Paths_natural4
+import Paths_natural4 ()
 
 -- import Debug.Trace (trace)
 

@@ -699,7 +699,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
     -- workaround: remove the "HAS" from the "that" line
     -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
 
-    parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
+    parseHas = debugName "parseHas" $ concat <$> many ((\ _ x -> x) $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
       myTraceM $ "got name = " <> show name
@@ -852,7 +852,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
                                                    )
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
-      gvn     = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)
+      gvn     = NE.nonEmpty $ foldMap (NE.toList . snd) (rbgiven rulebody)
       toreturn = Regulative
                  { subj     = entityname
                  , rkeyword  = RParty

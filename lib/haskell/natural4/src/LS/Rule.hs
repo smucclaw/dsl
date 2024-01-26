@@ -405,14 +405,13 @@ getSimpleTypeTOne = \case
   _ -> Nothing
 
 -- | Simplify a TypedMulti -- i.e. a (NonEmpty MTExpr, Maybe TypeSig) --- with a SimpleType TOne typesig
-getGivenWithSimpleType :: TypedMulti -> (Text.Text, Maybe EntityType)
-getGivenWithSimpleType tm = 
-  let 
-    var = Prelude.head (tm ^.. _1 % types @Text.Text)
-    -- safe because of the non empty lists.
-    -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
-    varType = (tm ^. _2) >>= getSimpleTypeTOne
-  in (var, varType)
+getGivenWithSimpleType :: TypedMulti -> Maybe (Text.Text, Maybe EntityType)
+getGivenWithSimpleType tm = do
+  let mvar = (tm ^.. _1 % types @Text.Text) ^? ix 0 
+  -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
+  let varType = (tm ^. _2) >>= getSimpleTypeTOne 
+  var <- mvar 
+  return (var, varType)
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool

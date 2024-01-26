@@ -962,7 +962,7 @@ attrsAsMethods rs = do
         Left errs1 -> xpError errs1
         Right (headLHS, attrVal, attrCond) -> do
           gone2 <- toObjectPath headLHS
-          mutterd 3 $ show headLHS <> " ... got back gone2: " <> show gone2
+          mutterd 3 [i|#{headLHS} ... got back gone2: #{gone2}|]
           case gone2 of
             Left errs2 -> xpError errs2
             Right (objPath, attrName) -> do
@@ -975,7 +975,7 @@ attrsAsMethods rs = do
                     , attrCond
                     , origRule = Just r
                     }
-              mutterd 3 $ show headLHS <> " returning"
+              mutterd 3 [i|#{headLHS} returning|]
               mutter $ show $ srchs toreturn
               xpReturn toreturn
 

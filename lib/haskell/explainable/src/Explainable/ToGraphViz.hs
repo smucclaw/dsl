@@ -1,56 +1,8 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE QuasiQuotes #-}
 
-module Explainable.ToGraphViz where
-
-import Explainable.MathLang
-
-import Data.Graph.Inductive.Graph
-  ( Context,
-    Graph (mkGraph, nodeRange),
-    Node,
-    delEdge,
-    delNode,
-    insEdge,
-    insNode,
-    lab,
-    labfilter,
-    nodes,
-    pre,
-    suc,
-  )
+module Explainable.ToGraphViz () where
 import Data.Graph.Inductive.PatriciaTree (Gr)
-import Data.GraphViz
-  ( Attribute,
-    Attributes,
-    DotGraph,
-    GlobalAttributes (GraphAttrs, NodeAttrs),
-    GraphID (Str),
-    GraphvizParams (..),
-    LNodeCluster,
-    NodeCluster (C, N),
-    PrintDot (unqtDot),
-    RankType (SameRank),
-    Shape (BoxShape, Circle, DiamondShape),
-    X11Color (Black, Brown, Green, White),
-    color,
-    fillColor,
-    fontColor,
-    graphToDot,
-    shape,
-    toLabel,
-  )
-import Data.GraphViz.Attributes.Complete
-  ( Attribute (Comment, Compound, FontName, Height, Rank, Style, TailPort),
-    CompassPoint (..),
-    PortPos (..),
-    StyleItem (..),
-    StyleName (..),
-  )
-import Data.GraphViz.Printing (renderDot)
+import Data.GraphViz (Attributes)
 
 
 data VarDeets = VD { vname :: String }

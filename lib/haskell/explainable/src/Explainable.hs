@@ -12,11 +12,16 @@ module Explainable
 where
 
 import Control.Monad.Trans.RWS
-import Data.String.Interpolate (__i)
-import Data.Tree
-import Data.List ( intercalate )
-import Data.Ord ()
+  ( RWS,
+    RWST (runRWST),
+    local,
+    runRWS,
+  )
 import Data.Bifunctor (first)
+import Data.List (intercalate)
+import Data.Ord ()
+import Data.String.Interpolate (__i)
+import Data.Tree (Tree (Node))
 
 -- | Our ExplainableIO monad supports evaluation-with-explanation of expressions in our DSL.
 -- Normally, a DSL is /evaluated/: its expressions are reduced from types in the DSL to types in the host language.

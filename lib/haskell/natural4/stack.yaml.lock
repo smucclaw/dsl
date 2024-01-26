@@ -77,13 +77,6 @@ packages:
   original:
     hackage: log-effectful-1.0.0.0
 - completed:
-    hackage: holmes-0.3.2.0@sha256:3d4aeb74177bafedc55a9c21be682ad45929490d1d809dec7fe248a503df0290,4597
-    pantry-tree:
-      sha256: 414f3416b14c2cd66141e755fa4d343c9ac154dc7713cf56bee09578019170cd
-      size: 3258
-  original:
-    hackage: holmes-0.3.2.0
-- completed:
     hackage: unbound-generics-0.4.3@sha256:12209c0049000d0dd8c3eb6013d0278a8b269a2421d9758083aab9f58c4b6b4c,5446
     pantry-tree:
       sha256: 0a62d14242839c1295c1f6763a0d435f1f3fe7d89829add21ea6d008e8cd52e2

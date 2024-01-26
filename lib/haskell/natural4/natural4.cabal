@@ -132,7 +132,6 @@ library
     , gf
     , graphviz
     , hashable
-    , holmes
     , hxt
     , iso8601-time
     , json
@@ -201,7 +200,6 @@ executable natural4-exe
     , gf
     , graphviz
     , hashable
-    , holmes
     , hxt
     , iso8601-time
     , json
@@ -273,7 +271,6 @@ test-suite doctests
     , gf
     , graphviz
     , hashable
-    , holmes
     , hxt
     , iso8601-time
     , json
@@ -365,7 +362,6 @@ test-suite natural4-test
     , gf
     , graphviz
     , hashable
-    , holmes
     , hspec
     , hspec-golden
     , hspec-megaparsec
@@ -442,7 +438,6 @@ benchmark natural4-bench
     , gf
     , graphviz
     , hashable
-    , holmes
     , hxt
     , iso8601-time
     , json

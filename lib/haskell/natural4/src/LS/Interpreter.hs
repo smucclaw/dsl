@@ -947,7 +947,7 @@ getMarkings l4i =
 
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)?|f)$|]) -> True)] = Just False
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|no(t)?|f(alse)?)$|]) -> True)] = Just False
     rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] = Just True
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here

@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.RelevanceSpec where
+module AnyAll.RelevanceSpec (spec) where
 
 import AnyAll.BoolStruct
 import AnyAll.Relevance

@@ -1,23 +1,52 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.PP (ppQTree, hardnormal, softnormal, cStyle, haskellStyle) where
+module AnyAll.PP
+  ( ppQTree,
+    hardnormal,
+    softnormal,
+    cStyle,
+    haskellStyle,
+  )
+where
 
 import AnyAll.BoolStruct
-import AnyAll.Relevance
-import AnyAll.Types hiding ((<>))
-import Control.Monad (forM_)
+  ( BoolStruct (..),
+    OptionallyLabeledBoolStruct,
+    alwaysLabeled,
+  )
+import AnyAll.Relevance (relevant)
+import AnyAll.Types
+  ( AndOr (And, Neg, Or, Simply),
+    Default (Default),
+    Hardness (Hard, Soft),
+    Label (..),
+    Marking (Marking),
+    Q (Q, mark),
+    QTree,
+    ShouldView (Ask, Hide, View),
+    asJSON,
+    getForUI,
+  )
 import Data.Aeson.Encode.Pretty (encodePretty)
-import Data.Aeson.Types
 import Data.ByteString.Lazy qualified as B
 import Data.ByteString.Lazy.UTF8 (toString)
-import Data.HashMap.Strict as Map
-import Data.List
-import Data.Maybe
+import Data.HashMap.Strict as Map (HashMap)
+import Data.List (intersperse)
 import Data.String (IsString)
 import Data.Text qualified as T
-import Data.Tree
+import Data.Tree (Tree (Node, rootLabel))
 import Prettyprinter
-import Prettyprinter.Render.Util.SimpleDocTree
+  ( Doc,
+    Pretty (pretty),
+    angles,
+    brackets,
+    hsep,
+    line,
+    nest,
+    parens,
+    vsep,
+    (<+>),
+  )
 import Text.Pretty.Simple (pPrint)
 
 data Style ann = Style
@@ -56,7 +85,7 @@ markbox (Default (Right  Nothing    )) sv = svwrap sv "  ?"
 markbox (Default (Left  (Just True ))) sv = svwrap sv "yes"
 markbox (Default (Left  (Just False))) sv = svwrap sv " no"
 markbox (Default (Left   Nothing    )) sv = svwrap sv "   "
-                                                                 
+
 hardnormal, softnormal :: Marking T.Text -> OptionallyLabeledBoolStruct T.Text -> QTree T.Text
 hardnormal m = relevant Hard m Nothing
 
@@ -77,7 +106,7 @@ ppQTree i mm = do
   let m = Marking (Default <$> mm)
       hardresult = hardnormal m i
       softresult = softnormal m i
-  print $ "*"  <+> "Marking:" <+> (pretty $ Prelude.drop 9 $ show m) <> ppline
+  print $ "*"  <+> "Marking:" <+> pretty (Prelude.drop 9 $ show m) <> ppline
   print $ "**" <+> "soft result =" <+> markbox (mark (rootLabel softresult)) View
   print $ "**" <+> "hard result =" <+> markbox (mark (rootLabel hardresult)) View
   print $ nest 3 $ "   =" <+> docQ1 m hardresult <> ppline
@@ -89,7 +118,7 @@ ppQTree i mm = do
   print $ "**" <+> "For UI:"
   B.putStr $ getForUI hardresult
   print ppline
-  
+
   print $ "**" <+> "C-style:"
   print (cStyle i)
   print ppline
@@ -114,10 +143,10 @@ ppQTree i mm = do
 instance (IsString t, Pretty t, Pretty a) => Pretty (BoolStruct (Maybe (Label t)) a) where
   pretty (Leaf a)            = pretty a
   pretty (All Nothing    xs)             = pretty (All (Just (Pre "All of the following:")) xs)
-  pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs))
   pretty (All (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
   pretty (Any Nothing    xs)             = pretty (Any (Just (Pre "Any of the following:")) xs)
-  pretty (Any (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) 
+  pretty (Any (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs))
   pretty (Any (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
   pretty (Not            x ) = "not" <+> pretty x
 

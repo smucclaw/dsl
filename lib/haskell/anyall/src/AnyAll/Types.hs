@@ -1,23 +1,54 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.Types where
+module AnyAll.Types
+  ( AndOr (And, Neg, Or, Simply),
+    Default (..),
+    Hardness (..),
+    Label (..),
+    Marking (..),
+    Q (..),
+    QTree,
+    ShouldView (..),
+    TextMarking (..),
+    asJSON,
+    asJSONDefault,
+    ask2hide,
+    ask2view,
+    fromJSON,
+    getDefault,
+    getForUI,
+    labelFirst,
+    maybeSecond
+  )
+where
 
 import Data.Aeson
+  ( FromJSON (parseJSON),
+    Key,
+    ToJSON (toEncoding),
+    ToJSONKey,
+    Value,
+    decode,
+    defaultOptions,
+    encode,
+    genericToEncoding,
+    withObject,
+  )
 import Data.Aeson.Key (toText)
-import Data.Aeson.KeyMap hiding (mapMaybe)
+import Data.Aeson.KeyMap (Key, toList)
 import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.ByteString.Lazy qualified as B
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
-import Data.Maybe
+import Data.Maybe (mapMaybe)
 import Data.String (IsString)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
-import Data.Tree
+import Data.Tree (Tree, flatten)
 import Data.Vector qualified as V
 import Debug.Trace (trace, traceM)
-import GHC.Generics
+import GHC.Generics (Generic)
 import Text.Pretty.Simple (pShowNoColor)
 
 data Label a =

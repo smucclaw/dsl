@@ -3,21 +3,47 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.BoolStruct where
+module AnyAll.BoolStruct
+  ( BoolStruct (..),
+    OptionallyLabeledBoolStruct,
+    StdinSchema (..),
+    addJust,
+    alwaysLabeled,
+    boolStructChildren,
+    extractLeaves,
+    mkLeaf,
+    mkAll,
+    mkAny,
+    mkNot,
+    nnf,
+    siblingfyBoolStruct,
+    simplifyBoolStruct
+  )
+where
 
-import AnyAll.Types
-import Control.Applicative
+import AnyAll.Types (Label (Pre), Marking (Marking))
 import Data.Aeson
-import Data.Aeson.Types
+  ( FromJSON (parseJSON),
+    ToJSON,
+    ToJSONKey,
+    withObject,
+    (.:),
+  )
+import Data.Aeson.Types (parseEither)
 import Data.Hashable (Hashable)
 import Data.List (sort)
-import Data.Maybe
 import Data.Text qualified as T
-import Data.Tree
-import Debug.Trace
+import Debug.Trace (trace)
 import GHC.Generics (Generic)
 import Test.QuickCheck
-import Test.QuickCheck.Checkers
+  ( Arbitrary (arbitrary),
+    Gen,
+    Testable (property),
+    oneof,
+    sized,
+    vectorOf,
+  )
+import Test.QuickCheck.Checkers (EqProp (..))
 
 data BoolStruct lbl a =
     Leaf                       a

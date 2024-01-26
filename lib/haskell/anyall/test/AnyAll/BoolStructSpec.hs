@@ -1,21 +1,28 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module AnyAll.BoolStructSpec where
+module AnyAll.BoolStructSpec (spec) where
 
-import Test.Hspec
-import Data.Text (Text)
 import AnyAll.BoolStruct
-import Prelude hiding (any, all)
-import AnyAll.Types
-import Test.QuickCheck.Classes
-import Test.QuickCheck.Checkers
+  ( BoolStruct (..),
+    addJust,
+    alwaysLabeled,
+    extractLeaves,
+    nnf,
+    siblingfyBoolStruct,
+    simplifyBoolStruct,
+  )
+import AnyAll.Types (Label (..))
+import Data.Aeson (decode, encode)
+import Data.ByteString.Lazy (ByteString)
+import Data.Text (Text)
+import Data.Text.Lazy (fromStrict)
+import Data.Text.Lazy.Encoding (encodeUtf8)
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.Hspec.Checkers (testBatch)
 import Test.Hspec.QuickCheck (prop)
-import Data.Aeson
-import Data.ByteString.Lazy (ByteString)
-import Data.Text.Lazy.Encoding
-import Data.Text.Lazy (fromStrict)
+import Test.QuickCheck.Classes (semigroup)
+import Prelude hiding (all, any)
 
 all :: [BoolStruct (Maybe l) a] -> BoolStruct (Maybe l) a
 all = All Nothing

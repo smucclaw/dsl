@@ -97,6 +97,7 @@ type MdGrp = [ExpMetadata]
 
 ------------ L4 declared entity types ----------------------
 
+-- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
 newtype L4EntType = MkL4EntType T.Text
   deriving stock (Show)
   deriving newtype (Eq, IsString, Hashable)

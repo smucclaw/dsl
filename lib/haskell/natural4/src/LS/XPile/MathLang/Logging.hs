@@ -53,5 +53,5 @@ data LoggingDestination
 data LogCfg = MkLogCfg 
   { logDest :: LoggingDestination
   }
-
+  deriving stock (Show)
 

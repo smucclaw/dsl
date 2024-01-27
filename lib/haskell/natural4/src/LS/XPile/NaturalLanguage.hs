@@ -1,8 +1,7 @@
 -- | example of a simple transpiler
 
-module LS.XPile.NaturalLanguage where
+module LS.XPile.NaturalLanguage (toNatLang) where
 
-import Data.Text qualified as T
 import LS.Interpreter (qaHornsT)
 import LS.Rule (Interpreted)
 

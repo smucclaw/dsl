@@ -1,6 +1,10 @@
 {-| transpiler to Uppaal, work in progress. -}
 
-module LS.XPile.Uppaal where
+module LS.XPile.Uppaal
+  ( taSysToString,
+    toL4TA
+  )
+where
 
 -- import L4.Annotation
 
@@ -12,25 +16,33 @@ import Data.Maybe (fromMaybe)
 import Data.Text (unpack)
 import Data.Text qualified as TL
 import L4.PrintProg
-    ( PrintConfig(PrintSystem),
-      PrintSystem(UppaalStyle),
-      ShowL4(showL4) )
+  ( PrintConfig (PrintSystem),
+    PrintSystem (UppaalStyle),
+    ShowL4 (showL4),
+  )
 import L4.Syntax as CoreL4
 import L4.SyntaxManipulation
-    ( conjsExpr, disjsExpr, fv, mkVarE, notExpr )
+  ( conjsExpr,
+    disjsExpr,
+    fv,
+    mkVarE,
+    notExpr,
+  )
 import LS.Rule as SFL4R
-    ( Rule(RuleAlias, Regulative, cond, hence, rlabel, temporal, upon),
-      RuleLabel )
+  ( Rule (Regulative, RuleAlias, cond, hence, rlabel, temporal, upon),
+    RuleLabel,
+  )
 import LS.Types as SFL4
-    ( TComparison(TOn, TBefore, TAfter, TBy),
-      ParamText,
-      BoolStructP,
-      BoolStructR,
-      RelationalPredicate,
-      TemporalConstraint(TemporalConstraint),
-      pt2text,
-      mt2text,
-      rp2text )
+  ( BoolStructP,
+    BoolStructR,
+    ParamText,
+    RelationalPredicate,
+    TComparison (TAfter, TBefore, TBy, TOn),
+    TemporalConstraint (TemporalConstraint),
+    mt2text,
+    pt2text,
+    rp2text,
+  )
 
 type Ann = ()
 

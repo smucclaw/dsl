@@ -8,7 +8,26 @@ This is similar to instantiating into Show, but it all happens within Prettyprin
 The pretty-printing then gets used by the transpilers.
 -}
 
-module LS.PrettyPrinter where
+module LS.PrettyPrinter
+  ( ParamText3 (..),
+    ParamText4 (..),
+    RP1 (..),
+    commentWith,
+    inPredicateForm,
+    myrender,
+    orgexample,
+    prettyMaybeType,
+    prettySimpleType,
+    snake_case,
+    snake_inner,
+    srchs,
+    tildes,
+    untaint,
+    vvsep,
+    (<//>),
+    (</>),
+  )
+where
 
 import AnyAll qualified as AA
 import Data.Foldable qualified as DF

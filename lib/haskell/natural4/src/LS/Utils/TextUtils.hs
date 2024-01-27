@@ -1,10 +1,17 @@
-module LS.Utils.TextUtils where
+module LS.Utils.TextUtils
+  ( float2Text,
+    int2Text
+  )
+where
 
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as T (toStrict)
 import Data.Text.Lazy.Builder qualified as B
 import Data.Text.Lazy.Builder.Int qualified as B
-import Data.Text.Lazy.Builder.RealFloat qualified as B (FPFormat (..), formatRealFloat)
+import Data.Text.Lazy.Builder.RealFloat qualified as B
+  ( FPFormat (..),
+    formatRealFloat,
+  )
 
 
 {-| From https://github.com/haskell/text/issues/218

@@ -1,11 +1,55 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
-module LS.Rule where
+module LS.Rule
+  ( Rule (..),
+    RuleBody (..),
+    RuleLabel,
+    Interpreted (..),
+    Parser,
+    ValuePredicate (..),
+    Expect (..),
+    RuleGraph,
+    RuleGraphEdgeLabel,
+    defaultHorn,
+    defaultL4I,
+    defaultReg,
+    defaultTypeDecl,
+    defaultValuePredicate,
+    dummyRef,
+    extractMTExprs,
+    getRlabel,
+    getDecisionHeads,
+    hasClauses,
+    hasGiven,
+    hasGiveth,
+    isFact,
+    mkTestSrcRef,
+    multiterm2bsr,
+    pGetTokenPos,
+    pTokenMatch,
+    pXLocation,
+    pYLocation,
+    rl2text,
+    ruleLabelName,
+    ruleName,
+    ruleConstructor,
+    runMyParser,
+    srccol1,
+    srcrow2,
+    srctest,
+    whenDebug,
+  )
+where
 
 import AnyAll qualified as AA
 import Control.Monad (void, when)

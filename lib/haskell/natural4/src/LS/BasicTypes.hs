@@ -17,7 +17,16 @@ These are largely:
 * stream for the parser
 -}
 
-module LS.BasicTypes where
+module LS.BasicTypes
+  ( MyStream (..),
+    MyToken (..),
+    RawStanza,
+    WithPos (..),
+    liftMyToken,
+    renderToken,
+    toToken
+  )
+where
 
 import Data.Aeson (ToJSON)
 import Data.Char (toUpper)

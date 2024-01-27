@@ -4,7 +4,25 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module LS.NLP.NL4Transformations where
+module LS.NLP.NL4Transformations
+  ( BoolStructCond,
+    BoolStructConstraint,
+    BoolStructGText,
+    BoolStructWho,
+    aggregateBoolStruct,
+    bsCond2gfCond,
+    bsConstraint2gfConstraint,
+    bsWho2gfWho,
+    flipPolarity,
+    introduceNP,
+    isChinese,
+    isMalay,
+    mapBSLabel,
+    pastTense,
+    pushPrePostIntoMain,
+    referNP,
+  )
+where
 
 import AnyAll (BoolStruct (..), Label (..))
 import AnyAll qualified as AA

@@ -6,7 +6,7 @@ space of possible classes, similar to QuickCheck. The JSON produced by
 this transpiler is meant to be composed with runtime scenarios from
 elsewhere in our codebase. -}
 
-module LS.XPile.JSONRanges where
+module LS.XPile.JSONRanges (asJSONRanges) where
 
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map

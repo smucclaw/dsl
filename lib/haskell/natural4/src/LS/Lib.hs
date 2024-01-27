@@ -12,7 +12,23 @@ Parser functions not organized into their own separate modules elsewhere.
 This includes some top-leve parsers like pRules and pBoolStruct.
 -}
 
-module LS.Lib where
+module LS.Lib
+  ( NoLabel (..),
+    Opts (..),
+    dumpRules,
+    exampleStream,
+    exampleStreams,
+    exprP,
+    getConfig,
+    pDoAction,
+    pExpect,
+    pGivens,
+    pRules,
+    pScenarioRule,
+    pToplevel,
+    pTypeDeclaration
+  )
+where
 
 -- import qualified Data.Tree      as Tree
 -- import Data.Text.Encoding (decodeUtf8)

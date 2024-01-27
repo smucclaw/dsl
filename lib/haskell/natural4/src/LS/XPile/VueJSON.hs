@@ -8,7 +8,13 @@
 
 -- [TODO] refactor and rename this module so that we distinguish Purescript from JSON.
 
-module LS.XPile.VueJSON where
+module LS.XPile.VueJSON
+  ( checklist,
+    groundrules,
+    itemRPToItemJSON,
+    toVueRules
+  )
+where
 
 import AnyAll.BoolStruct
   ( BoolStruct (All, Any, Leaf, Not),

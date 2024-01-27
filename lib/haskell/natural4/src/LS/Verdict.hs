@@ -12,7 +12,9 @@ explanation.
 
 -}
 
-module LS.Verdict where
+module LS.Verdict
+  ()
+where
 
 import AnyAll qualified as AA
 -- import Explainable

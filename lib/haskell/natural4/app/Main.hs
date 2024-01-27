@@ -20,7 +20,7 @@ import Data.Text.Lazy qualified as TL
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.ISO8601 (formatISO8601Millis)
 import LS qualified as SFL4
-import LS.DataFlow
+import LS.DataFlow (dataFlowAsDot)
 import LS.Interpreter
   ( expandClauses,
     getAndOrTree,
@@ -42,7 +42,12 @@ import LS.XPile.CoreL4
     sfl4ToDMN,
     sfl4ToEpilog,
   )
-import LS.XPile.ExportTypes (rulesToHaskellTp, rulesToJsonSchema, rulesToPrologTp, rulesToUISchema)
+import LS.XPile.ExportTypes
+  ( rulesToHaskellTp,
+    rulesToJsonSchema,
+    rulesToPrologTp,
+    rulesToUISchema,
+  )
 import LS.XPile.GFTrees (gftrees)
 import LS.XPile.IntroBase (toBase)
 import LS.XPile.IntroBasic (toBasic)
@@ -52,6 +57,12 @@ import LS.XPile.IntroShoehorn (toShoehorn)
 import LS.XPile.IntroTrivial (toTrivial)
 import LS.XPile.JSONRanges (asJSONRanges)
 import LS.XPile.Logging
+  ( XPileLogW,
+    fmapE,
+    mutter,
+    pShowNoColorS,
+    xpLog,
+  )
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Markdown (bsMarkdown)
 import LS.XPile.Maude qualified as Maude

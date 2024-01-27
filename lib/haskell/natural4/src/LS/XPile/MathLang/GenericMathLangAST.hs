@@ -18,7 +18,7 @@ import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
 
 -- import Data.Generics.Product.Types (types)
--- import Data.String ( IsString )
+import Data.String ( IsString )
 -- import Data.String.Interpolate (i)
 
 -- import AnyAll qualified as AA
@@ -93,6 +93,20 @@ makeFieldLabelsNoPrefix ''ExpMetadata
 type MdGrp = [ExpMetadata]
 -- Hacky, but: in the case of Lam, want to have md for param too
 -- This should always have either 1 or 2 elts
+
+
+------------ L4 declared entity types ----------------------
+
+newtype L4EntType = MkL4EntType T.Text
+  deriving stock (Show)
+  deriving newtype (Eq, IsString, Hashable)
+makePrisms ''L4EntType
+
+mkEntType :: T.Text -> L4EntType
+mkEntType = view (re _MkL4EntType)
+
+entTypeAsTxt :: L4EntType -> T.Text
+entTypeAsTxt = view _MkL4EntType
 
 ------------------------------------------------------------
 -- TODO: Look into whether the costs of using records for sum variants (eg partial functions) outweigh benefits

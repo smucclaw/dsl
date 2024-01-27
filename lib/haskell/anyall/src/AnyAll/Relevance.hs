@@ -1,22 +1,37 @@
-module AnyAll.Relevance where
+module AnyAll.Relevance
+  ( dispositive,
+    evaluate,
+    relevant
+  )
+where
 
 import AnyAll.BoolStruct
+  ( BoolStruct (..),
+    OptionallyLabeledBoolStruct,
+    boolStructChildren,
+  )
 import AnyAll.Types
+  ( AndOr (And, Neg, Or, Simply),
+    Default (..),
+    Hardness (..),
+    Marking (..),
+    Q (Q),
+    ShouldView (..),
+    ask2hide,
+    ask2view,
+  )
 import Control.Monad (guard, when)
-import Data.Either
 import Data.HashMap.Strict (lookup)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List (all, any)
 import Data.Maybe (isJust)
 import Data.Text qualified as T
-import Data.Tree
-import Debug.Trace
-import Explainable
+import Data.Tree (Tree (Node))
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
 relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
-relevant sh  marking parentValue self =
+relevant sh marking parentValue self =
   case self of
     Leaf x          -> mkRelevantLeaf (Map.lookup x (getMarking marking)) initVis x
     Any label items -> Node (ask2view (Q initVis  Or label   (Default $ Left selfValue))) repaintedChildren
@@ -49,12 +64,12 @@ deriveInitVis parentValue selfValue selfValueHard
 dispositive :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> [BoolStruct l a]
 dispositive sh marking self =
   let selfValue  = evaluate sh marking self
-      recurse cs = concatMap (dispositive sh marking) (filter ((selfValue ==) . evaluate sh marking) cs)
+      recurse cs = concatMap (dispositive sh marking) $ filter ((selfValue ==) . evaluate sh marking) cs
   in case self of
-       Leaf x          -> if isJust selfValue then return self else mempty
-       Any label items -> recurse items
-       All label items -> recurse items
-       Not       item  -> recurse [item]
+    Leaf x          -> if isJust selfValue then return self else mempty
+    Any label items -> recurse items
+    All label items -> recurse items
+    Not       item  -> recurse [item]
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
@@ -68,9 +83,9 @@ evaluate Hard (Marking marking) (Leaf x) = case Map.lookup x marking of
 evaluate sh   marking           (Not x)  = not <$> evaluate sh marking x
 evaluate sh marking (Any label items)
   | Just True `elem`    (evaluate sh marking <$> items) = Just True
-  | all (== Just False) (evaluate sh marking <$> items) = Just False
+  | all ((== Just False) . evaluate sh marking) items = Just False
   | otherwise = Nothing
 evaluate sh marking (All label items)
-  | all (== Just True) (evaluate sh marking <$> items) = Just True
+  | all ((== Just True) . evaluate sh marking) items = Just True
   | Just False `elem`  (evaluate sh marking <$> items) = Just False
   | otherwise = Nothing

@@ -3,21 +3,37 @@
 
 module AnyAll.TypesSpec (spec) where
 
-import Test.Hspec
-import Data.Aeson (decode, encode)
-import qualified Data.HashMap.Strict as Map
 import AnyAll.Types
+  ( AndOr (..),
+    Default (..),
+    Label (..),
+    Marking (..),
+    Q (Q, shouldView),
+    ShouldView (..),
+    TextMarking,
+    ask2hide,
+    ask2view,
+    labelFirst,
+    maybeSecond,
+  )
+import Data.Aeson (decode, encode)
+import Data.HashMap.Strict qualified as Map
+import Data.Text qualified as T
+import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.QuickCheck
-import qualified Data.Text as T
-import Test.QuickCheck.Instances.Text
+  ( Arbitrary (arbitrary),
+    Testable (property),
+    oneof,
+  )
+import Test.QuickCheck.Instances.Text ()
 
 type MarkingMap = Map.HashMap T.Text (Default Bool)
 
 markingMap :: Either (Maybe Bool) (Maybe Bool) -> MarkingMap
   -- Map.Map T.Text (Default Bool)
-markingMap payload = Map.singleton "key" (Default payload)
+markingMap payload = Map.singleton "key" $ Default payload
 
-instance Arbitrary (ShouldView) where
+instance Arbitrary ShouldView where
   arbitrary = oneof [pure View, pure Hide, pure Ask]
 
 instance (Arbitrary a) => Arbitrary (AndOr a) where
@@ -117,7 +133,7 @@ spec = do
       q `shouldBe` "{\"getMarking\":{\"key\":{\"Right\":false}}}"
 
   describe "Q functions" do
-    it "ask2hide" $ property $
+    it "ask2hide" $ property
       \q -> ask2hide q{ shouldView = Ask } `shouldBe` (q{ shouldView = Hide } :: (Q T.Text))
-    it "ask2view" $ property $
+    it "ask2view" $ property
       \q -> ask2view q{ shouldView = Ask } `shouldBe` (q{ shouldView = View } :: (Q T.Text))

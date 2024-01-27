@@ -8,7 +8,13 @@
 
 -- [TODO] refactor and rename this module so that we distinguish Purescript from JSON.
 
-module LS.XPile.VueJSON where
+module LS.XPile.VueJSON
+  ( checklist,
+    groundrules,
+    itemRPToItemJSON,
+    toVueRules
+  )
+where
 
 import AnyAll.BoolStruct
   ( BoolStruct (All, Any, Leaf, Not),
@@ -25,6 +31,7 @@ import Data.HashMap.Strict qualified as Map
 import Data.Maybe (maybeToList)
 import Data.Text qualified as T
 import Data.Traversable (for)
+import Flow ((|>))
 import LS.NLP.NLG (NLGEnv, nlgQuestion)
 import LS.RelationalPredicates (aaLeavesFilter)
 import LS.Rule
@@ -110,7 +117,7 @@ checklist env _ rs = do
 
 multiChecklist :: [NLGEnv] -> RunConfig -> [Rule] -> XPileLog Grounds
 multiChecklist env rc rs = do
-  qs <- (\e -> checklist e rc rs) `traverse` env
+  qs <- for env \e -> checklist e rc rs
   pure $ mconcat qs
 
 -- original:
@@ -162,7 +169,7 @@ rulegrounds _rc _globalrules _r = [ ]
 type Grounds = [MultiTerm]
 
 bsr2grounds :: RunConfig -> [Rule] -> Rule -> Maybe BoolStructR -> Grounds
-bsr2grounds rc globalrules r = concat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
+bsr2grounds rc globalrules r = mconcat . maybeToList . fmap (aaLeavesFilter (ignoreTypicalRP rc globalrules r))
 
 pt2grounds :: RunConfig -> [Rule] -> Rule -> ParamText -> Grounds
 pt2grounds _rc _globalrules _r _pt = [MTT <$> ["pt2grounds","unimplemented"]]
@@ -174,11 +181,11 @@ rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
 rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds rc globalrules r (Just bsr)
 rp2grounds  rc  globalrules  r (RPnary     _rprel rps) = foldMap (rp2grounds rc  globalrules  r) rps
 
-ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> (RelationalPredicate -> Bool)
-ignoreTypicalRP rc globalrules r =
-  if not $ extendedGrounds rc
-  then \rp -> not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
-  else const True
+ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> RelationalPredicate -> Bool
+ignoreTypicalRP rc globalrules r rp
+  | not $ extendedGrounds rc =
+    not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
+  | otherwise = True
 
 -- is the "head-like" key of a relationalpredicate found in the list of defaults associated with the rule?
 hasDefaultValue :: Rule -> RelationalPredicate -> Bool
@@ -191,12 +198,20 @@ defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 -- this is to be read as an "external requirement interface"
 
 groundsToChecklist :: NLGEnv -> Grounds -> XPileLog Grounds
-groundsToChecklist env mts = sequence [
-  case mtGroup of
-    [multiterm] -> groundToChecklist env multiterm
-    _ -> return $ pickOneOf mtGroup
-  | mtGroup <- groupBy groupSingletons mts
-  ]
+groundsToChecklist env mts =
+  mts
+    |> groupBy groupSingletons
+    |> traverse \case
+        [multiterm] -> groundToChecklist env multiterm
+        mtGroup -> pure $ pickOneOf mtGroup
+
+  -- sequence [
+  -- case mtGroup of
+  --   [multiterm] -> groundToChecklist env multiterm
+  --   _ -> return $ pickOneOf mtGroup
+  -- | mtGroup <- groupBy groupSingletons mts
+  -- ]
+
 groundToChecklist :: NLGEnv -> MultiTerm -> XPileLog MultiTerm
 groundToChecklist env mt = do
 {-  let txt = T.unwords mt
@@ -209,7 +224,7 @@ groundToChecklist env mt = do
         "is":"there":"parseUD:":"fail":_ -> T.pack "Is it true that " <> txt
         _ -> T.pack lin -}
   let result = T.pack "NLG is under construction"
-  return $ MTT <$> quaero [result]
+  pure $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
 pickOneOf mts = MTT "Does any of the following hold?" :

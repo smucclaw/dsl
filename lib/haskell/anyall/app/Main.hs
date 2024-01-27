@@ -1,12 +1,27 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Main (main) where
 
 import AnyAll
-import Control.Monad (forM_, guard, when)
-import Data.Aeson
+  ( AAVConfig (cdebug, cscale),
+    BoolStruct (All, Any, Leaf, Not),
+    Label (Pre),
+    Marking (getMarking),
+    Scale (Full, Tiny),
+    StdinSchema (andOrTree, marking),
+    defaultAAVConfig,
+    getDefault,
+    hardnormal,
+    makeSvg,
+    nnf,
+    ppQTree,
+    q2svg',
+  )
+import Control.Monad (guard, when)
+import Data.Aeson (eitherDecode)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy qualified as B
@@ -14,11 +29,18 @@ import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Either (fromLeft, fromRight, isLeft, isRight)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
-import Data.Maybe
 import Data.Text qualified as T
 import Options.Generic
-import System.Environment
-import System.Exit
+  ( Generic,
+    ParseRecord,
+    Unwrapped,
+    Wrapped,
+    unwrapRecord,
+    type (:::),
+    type (<!>),
+    type (<?>),
+  )
+import System.Exit (exitFailure, exitSuccess)
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"

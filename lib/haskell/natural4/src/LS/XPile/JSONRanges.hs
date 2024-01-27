@@ -1,31 +1,49 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 {-| transpiler to JSON instances representing a sampling across the
 space of possible classes, similar to QuickCheck. The JSON produced by
 this transpiler is meant to be composed with runtime scenarios from
 elsewhere in our codebase. -}
 
-module LS.XPile.JSONRanges where
+module LS.XPile.JSONRanges (asJSONRanges) where
 
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.List (groupBy, nub)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromMaybe, maybeToList)
 import Data.Text qualified as T
-import Data.Maybe (maybeToList, fromMaybe)
-import LS
+import LS.Rule (Interpreted (classtable))
+import LS.Types
+  ( EntityType,
+    MTExpr (MTB, MTI, MTT),
+    MultiTerm,
+    ParamType (TOne),
+    TypeSig (..),
+    TypedClass,
+    extendedAttributes,
+    unCT,
+  )
 import LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
-    mutter, mutterd, mutterdhsf,
+    mutter,
+    mutterd,
+    mutterdhsf,
+    pShowNoColorS,
     xpError,
     xpReturn,
-    pShowNoColorS,
   )
 import Prettyprinter
+  ( Doc,
+    colon,
+    comma,
+    encloseSep,
+    viaShow,
+    (<+>),
+  )
 import Text.Pretty.Simple (pShowNoColor)
 
 data Dimension lbl vals = Dimension lbl [vals]

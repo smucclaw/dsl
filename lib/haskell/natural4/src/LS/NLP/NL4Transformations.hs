@@ -1,19 +1,102 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module LS.NLP.NL4Transformations where
+module LS.NLP.NL4Transformations
+  ( BoolStructCond,
+    BoolStructConstraint,
+    BoolStructGText,
+    BoolStructWho,
+    aggregateBoolStruct,
+    bsCond2gfCond,
+    bsConstraint2gfConstraint,
+    bsWho2gfWho,
+    flipPolarity,
+    introduceNP,
+    isChinese,
+    isMalay,
+    mapBSLabel,
+    pastTense,
+    pushPrePostIntoMain,
+    referNP,
+  )
+where
 
 import AnyAll (BoolStruct (..), Label (..))
 import AnyAll qualified as AA
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
+import Data.String.Interpolate (i)
 import Debug.Trace (trace)
 import LS.NLP.NL4
+  ( GAP,
+    GCond,
+    GCond_,
+    GConj,
+    GConstraint,
+    GConstraint_,
+    GNP,
+    GPol,
+    GPrePost,
+    GString,
+    GTComparison,
+    GTemp,
+    GText,
+    GV2,
+    GVP,
+    GWho,
+    GWho_,
+    Gf,
+    Tree
+      ( GAPWho,
+        GAdjCN,
+        GAdvVP,
+        GAdvWho,
+        GComplV2,
+        GConjCond,
+        GConjConstraint,
+        GConjPreCond,
+        GConjPreConstraint,
+        GConjPrePostCond,
+        GConjPrePostConstraint,
+        GConjPrePostWho,
+        GConjPreWho,
+        GConjTComparison,
+        GConjVPS,
+        GConjWho,
+        GDetCN,
+        GEVERY,
+        GListCond,
+        GListConstraint,
+        GListTComparison,
+        GListVPS,
+        GListWho,
+        GMassNP,
+        GMkVPS,
+        GNEG,
+        GNP_PrePost,
+        GPOS,
+        GRPConstraint,
+        GRPleafS,
+        GUseN,
+        GV2_PrePost,
+        GWHO,
+        GaSg,
+        GpastSimul,
+        GqPREPOST,
+        GqWHO,
+        GrecoverUnparsedAdv,
+        GrecoverUnparsedPrePost,
+        GtheSg,
+        LexConj
+      ),
+    composOp,
+  )
 import PGF (Language, mkCId)
 
-flipPolarity :: forall a . Tree a -> Tree a
+flipPolarity :: Tree a -> Tree a
 flipPolarity GPOS = GNEG
 flipPolarity GNEG = GPOS
 flipPolarity x = composOp flipPolarity x
@@ -28,7 +111,7 @@ pushPrePostIntoMain = \case
 
   where
     hackStrVP :: GString -> GVP -> GVP
-    hackStrVP in_part vp = GAdvVP vp (GrecoverUnparsedAdv in_part)
+    hackStrVP in_part vp = GAdvVP vp $ GrecoverUnparsedAdv in_part
 
     transformWho :: GTemp -> GPol -> GV2 -> GNP -> GText -> GText
     transformWho t p consume beverage (GqWHO person (GAPWho alcoholic)) =
@@ -119,7 +202,7 @@ bs2gf conj conjPre conjPrePost mkList bs = case bs' of
   where
     f = bs2gf conj conjPre conjPrePost mkList
     bs' = bsNeg2textNeg bs
-    unexpectedNegationMsg = "bs2gf: not expecting NOT in " <> show bs'
+    unexpectedNegationMsg = [i|bs2gf: not expecting NOT in #{bs'}|]
 
 bsWho2gfWho :: BoolStructWho -> GWho
 bsWho2gfWho = bs2gf GConjWho GConjPreWho GConjPrePostWho GListWho
@@ -133,55 +216,55 @@ bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePos
 -----------------------------------------------------------------------------
 
 mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe (AA.Label a)) c ->  AA.BoolStruct (Maybe (AA.Label b)) d
-mapBSLabel f g bs = case bs of
+mapBSLabel f g = \case
   AA.Leaf x -> AA.Leaf $ g x
   AA.Any pre xs -> AA.Any (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
   AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
   AA.Not x -> AA.Not $ mapBSLabel f g x
 
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
-applyLabel f (AA.Pre a) = AA.Pre (f a)
+applyLabel f (AA.Pre a) = AA.Pre $ f a
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
 
 mapBS :: (a -> b) -> AA.BoolStruct c a ->  AA.BoolStruct c b
 mapBS f = \case
   AA.Leaf x -> AA.Leaf $ f x
-  AA.Any lbl xs -> AA.Any lbl (mapBS f <$> xs)
-  AA.All lbl xs -> AA.All lbl (mapBS f <$> xs)
+  AA.Any lbl xs -> AA.Any lbl $ mapBS f <$> xs
+  AA.All lbl xs -> AA.All lbl $ mapBS f <$> xs
   AA.Not x -> AA.Not $ mapBS f x
 -----------------------------------------------------------------------------
 -- Generic useful transformations
 -- for NP
 
-introduceNP :: forall a . Tree a -> Tree a
+introduceNP :: Tree a -> Tree a
 introduceNP (GEVERY x) = GDetCN GaSg x
 introduceNP (GMassNP x) = GDetCN GaSg x
 introduceNP (GDetCN _ x) = GDetCN GaSg x
 introduceNP x = composOp introduceNP x
 
-referNP :: forall a . Tree a -> Tree a
+referNP :: Tree a -> Tree a
 referNP (GEVERY x) = GDetCN GtheSg x
 referNP (GMassNP x) = GDetCN GtheSg x
 referNP (GDetCN GaSg x) = GDetCN GtheSg x
 --referNP (GDetCN GaPl x) = GDetCN GthePl x
 referNP x = composOp referNP x
 
-insertAP :: forall a . GAP -> Tree a -> Tree a
+insertAP :: GAP -> Tree a -> Tree a
 insertAP ap = go
   where
-    go :: forall a . Tree a -> Tree a
-    go (GMassNP cn) = GMassNP (GAdjCN ap cn)
+    go :: Tree b -> Tree b
+    go (GMassNP cn) = GMassNP $ GAdjCN ap cn
     go cn@(GUseN _) = GAdjCN ap cn
     go x = composOp go x
 
-pastTense :: forall a . Tree a -> Tree a
+pastTense :: Tree a -> Tree a
 pastTense (GMkVPS _ pol vp) = GMkVPS GpastSimul pol vp
 pastTense x = composOp pastTense x
 
 -----------------------------------------------------------------------------
 -- db happens ON x or db happens AFTER x ==> db happens ON or AFTER x
 
-mergeConj :: forall a . Tree a -> Tree a
+mergeConj :: Tree a -> Tree a
 mergeConj og@(GConjCond conj (GListCond cs)) = fromMaybe og $ squeezeTrees conj cs
 mergeConj og@(GConjConstraint conj (GListConstraint cs)) = fromMaybe og $ squeezeTrees conj cs
 mergeConj x = composOp mergeConj x
@@ -189,14 +272,14 @@ mergeConj x = composOp mergeConj x
 
 -- The function that does all the repetitive work
 -- TODO: check if viewpatterns help?
-squeezeTrees :: forall a . GConj -> [Tree a] -> Maybe (Tree a)
+squeezeTrees :: GConj -> [Tree a] -> Maybe (Tree a)
 squeezeTrees conj [
     GRPConstraint cond tc1 date
   , GRPConstraint ((== cond) -> True) tc2 ((== date) -> True)]
   = pure $ GRPConstraint cond conjTC date
   where
     conjTC :: GTComparison
-    conjTC = GConjTComparison conj (GListTComparison [tc1, tc2])
+    conjTC = GConjTComparison conj $ GListTComparison [tc1, tc2]
 
 -- TODO: how to make this work without lots of copy and paste?
 -- squeezeTrees conj [GCompNP np1, GCompNP np2] = pure $ GCompNP (GConjNP conj (GListNP [np1, np2]))
@@ -222,12 +305,11 @@ isChinese = (== mkCId "NL4Chi")
 isMalay :: Language -> Bool
 isMalay = (== mkCId "NL4May")
 
-aggregateBoolStruct :: forall a . Language -> BoolStructGF a ->  BoolStructGF a
-aggregateBoolStruct l bs =
-  if False -- isChinese l
-    then bs
-    else
-      (case bs of
-        AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ foldMap toList xs
-        AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ foldMap toList xs
-        _ -> bs)
+aggregateBoolStruct :: Language -> BoolStructGF a ->  BoolStructGF a
+aggregateBoolStruct l bs
+  | False = -- isChinese l
+    bs
+  | otherwise = case bs of
+    AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ foldMap toList xs
+    AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ foldMap toList xs
+    _ -> bs

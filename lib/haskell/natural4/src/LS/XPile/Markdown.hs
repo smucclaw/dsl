@@ -1,4 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -19,7 +18,6 @@ import LS.Types
     mt2text,
     pt2multiterm,
   )
-import Paths_natural4
 
 -- import Debug.Trace (trace)
 
@@ -44,22 +42,20 @@ bsMarkdown :: [NLGEnv] -> [Rule] -> IO String
 bsMarkdown envs rl = Text.unpack . Text.intercalate "  " <$> flip eachnlg rl `traverse` envs -- (sequence [eachnlg env rl | env <- envs])
 
 eachnlg :: NLGEnv -> [Rule] -> IO Text.Text
-eachnlg env rl = do
-  txt <- nlg env `traverse` rl
-  return $ Text.unwords txt
+eachnlg env = (Text.unwords <$>) . traverse (nlg env)
 
 -- bsMarkdown :: [Rule] -> String
 -- bsMarkdown rl = Text.unpack $ Text.unwords $ bs rl
 
 rpFilter :: RelationalPredicate -> MultiTerm
 rpFilter (RPParamText pt) = pt2multiterm pt
-rpFilter (RPConstraint mt1 rel mt2) = mt1 ++ mt2
-rpFilter (RPBoolStructR mt1 rel bsr) = mt1++ bs2mt bsr
+rpFilter (RPConstraint mt1 rel mt2) = mt1 <> mt2
+rpFilter (RPBoolStructR mt1 rel bsr) = mt1 <> bs2mt bsr
 rpFilter (RPnary rel rps) = foldMap rpFilter rps
 rpFilter (RPMT mt) = mt
 
 rl2bs :: [Rule] -> [BoolStructR]
-rl2bs rl = foldMap r2b rl
+rl2bs = foldMap r2b
 
 r2b :: Rule -> [BoolStructR]
 r2b (getBSR -> Just x) = [x]

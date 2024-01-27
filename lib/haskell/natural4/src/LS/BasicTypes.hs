@@ -17,7 +17,16 @@ These are largely:
 * stream for the parser
 -}
 
-module LS.BasicTypes where
+module LS.BasicTypes
+  ( MyStream (..),
+    MyToken (..),
+    RawStanza,
+    WithPos (..),
+    liftMyToken,
+    renderToken,
+    toToken
+  )
+where
 
 import Data.Aeson (ToJSON)
 import Data.Char (toUpper)
@@ -25,6 +34,7 @@ import Data.Hashable (Hashable)
 import Data.List qualified as DL
 import Data.List.NonEmpty qualified as NE
 import Data.Proxy (Proxy (..))
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Vector qualified as V
 import GHC.Generics (Generic)
@@ -213,10 +223,10 @@ toToken "TYPICALLY" = pure Typically
 toToken ((PCRE.≈ [PCRE.re|^(CLAUSE|SECTION)$|]) -> True) =
   pure $ RuleMarker   1  "§"
 
-toToken ((PCRE.scan [PCRE.re|^-(§|¶)$|]) -> [(_, [c])]) =
+toToken (PCRE.scan [PCRE.re|^-(§|¶)$|] -> [(_, [c])]) =
   pure $ RuleMarker (-1) c
 
-toToken s@((PCRE.scan [PCRE.re|^(§|¶|H)+$|]) -> [(_, [c])]) =
+toToken s@(PCRE.scan [PCRE.re|^(§|¶|H)+$|] -> [(_, [c])]) =
   pure $ RuleMarker (Text.length s) c
 
 toToken "SCENARIO"  = pure ScenarioTok
@@ -326,10 +336,9 @@ instance TraversableStream MyStream where
         }
     )
     where
-      prefix =
-        if sameLine
-          then pstateLinePrefix ++ preLine
-          else preLine
+      prefix
+        | sameLine = pstateLinePrefix <> preLine
+        | otherwise = preLine
       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
       newSourcePos =
         case post of
@@ -386,9 +395,9 @@ renderToken (TNumber n) = show n
 renderToken OneOf = "ONE OF"
 renderToken TypeSeparator = "::"
 renderToken (Other txt) = show txt
-renderToken (RuleMarker 0 txt) = "§0" ++ Text.unpack txt
-renderToken (RuleMarker n "H") = "H" ++ show n
-renderToken (RuleMarker n txt) = concat $ replicate n (Text.unpack txt)
+renderToken (RuleMarker 0 txt) = [i|§0#{txt}|]
+renderToken (RuleMarker n "H") = [i|H#{n}|]
+renderToken (RuleMarker n txt) = mconcat $ replicate n $ Text.unpack txt
 
 renderToken Semicolon = ";;"
 
@@ -399,8 +408,7 @@ renderToken TokSum = "SUM"
 renderToken TokProduct = "PRODUCT"
 renderToken FMap = "MAP"
 
-
-renderToken tok = map toUpper (show tok)
+renderToken tok = toUpper <$> show tok
 
 liftMyToken :: [String] -> MyToken -> WithPos MyToken
 liftMyToken = WithPos pos 0 . Just

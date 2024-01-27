@@ -1,47 +1,87 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
 
-module LS.Rule where
+module LS.Rule
+  ( Rule (..),
+    RuleBody (..),
+    RuleLabel,
+    Interpreted (..),
+    Parser,
+    ValuePredicate (..),
+    Expect (..),
+    RuleGraph,
+    RuleGraphEdgeLabel,
+    defaultHorn,
+    defaultL4I,
+    defaultReg,
+    defaultTypeDecl,
+    defaultValuePredicate,
+    dummyRef,
+    extractMTExprs,
+    getRlabel,
+    getDecisionHeads,
+    hasClauses,
+    hasGiven,
+    hasGiveth,
+    isFact,
+    mkTestSrcRef,
+    multiterm2bsr,
+    pGetTokenPos,
+    pTokenMatch,
+    pXLocation,
+    pYLocation,
+    rl2text,
+    ruleLabelName,
+    ruleName,
+    ruleConstructor,
+    runMyParser,
+    srccol1,
+    srcrow2,
+    srctest,
+    whenDebug,
+  )
+where
 
 import AnyAll qualified as AA
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
-import Data.Hashable (Hashable)
+import Data.Generics.Product.Types (HasTypes, types)
+import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
+import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
-import Data.Generics.Sum.Constructors
-import Data.Generics.Product.Types (types, HasTypes)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
-    ClsTab(..),
-    MTExpr(..),
+    ClsTab (..),
     DList,
     Deontic (DMust),
     Depth,
+    EntityName,
     HornClause (HC, hBody),
     HornClause2,
-    MTExpr (MTT),
+    Inferrable,
+    MTExpr (..),
     MultiTerm,
     MyStream,
     MyToken (Means),
     ParamText,
     PlainParser,
     Preamble,
+    RPRel (..),
     RegKeywords (REvery),
-    RelationalPredicate (RPParamText, RPMT),
+    RelationalPredicate (RPMT, RPParamText),
     RuleName,
     RunConfig (debug, parseCallStack),
     ScopeTabs,
@@ -49,10 +89,8 @@ import LS.Types
     TemporalConstraint,
     TypeSig,
     WithPos (WithPos, pos, tokenVal),
-    EntityName,
-    RPRel(..),
-    Inferrable,
     bsp2text,
+    defaultInferrableTypeSig,
     dlToList,
     liftMyToken,
     mkLeafPT,
@@ -60,8 +98,10 @@ import LS.Types
     mt2text,
     multiterm2pt,
     rpHead,
-    defaultInferrableTypeSig
   )
+import LS.XPile.Logging (XPileLogW)
+import Optics ( toListOf ) -- the Rule record has a `has` field
+import System.FilePath ((</>))
 import Text.Megaparsec
   ( ErrorItem (Tokens),
     MonadParsec (eof, token),
@@ -72,9 +112,6 @@ import Text.Megaparsec
     (<?>),
     (<|>),
   )
-import Data.Graph.Inductive (Gr, empty)
-import LS.XPile.Logging (XPileLogW)
-import Optics hiding ((|>), has) -- the Rule record has a `has` field
 
 -- $setup
 -- >>> :set -XDataKinds -XFlexibleContexts -XTypeApplications -XTypeFamilies -XDeriveGeneric
@@ -287,7 +324,7 @@ rlrn2text :: Rule -> Text.Text
 rlrn2text r = mt2text $ ruleLabelName r
 
 mkTestSrcRef :: Int -> Int ->Maybe SrcRef
-mkTestSrcRef row col = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = row, srccol = col, version = Nothing})
+mkTestSrcRef row col = Just (SrcRef {url = Text.pack $ "test" </> "Spec", short = Text.pack $ "test" </> "Spec", srcrow = row, srccol = col, version = Nothing})
 
 dummyRef :: Maybe SrcRef
 dummyRef = mkTestSrcRef 1 1
@@ -390,10 +427,7 @@ hasClauses             __ = False
 -- whose body is a Nothing.
 isFact :: Rule -> Bool
 isFact r
-  | hasClauses r = or [ ruleNameIsNumeric (name r) 
-                      , and [ length (clauses r) == 1
-                            , all ((Nothing ==) . hBody) (clauses r) ]
-                      ]
+  | hasClauses r = ruleNameIsNumeric (name r) || ((length (clauses r) == 1) && all ((Nothing ==) . hBody) (clauses r))
   | otherwise = False
   where
     -- when we have a numeric fact, it shows up with a name like [ MTI 0 ]
@@ -512,7 +546,7 @@ multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name
 pGetTokenPos :: Parser (WithPos ())
 pGetTokenPos = token test Set.empty <?> "some token"
   where
-    test tok = Just (() <$ tok)
+    test tok = Just $ void tok
 
 pXLocation :: Parser Depth
 pXLocation = token test Set.empty <|> pure 0 <?> "x location"
@@ -524,16 +558,14 @@ pYLocation = token test Set.empty <|> pure 0 <?> "y location"
   where
     test WithPos{pos= SourcePos _ y _x } = Just (unPos y)
 
-
 pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
 pTokenMatch f c = do
   ctx <- asks parseCallStack
   token test $ Set.singleton $ Tokens $ liftMyToken ctx <$> c
   where
-    test WithPos {tokenVal = x} =
-      if f x
-        then Just x
-        else Nothing
+    test WithPos {tokenVal = x}
+      | f x = Just x
+      | otherwise = Nothing
 
 whenDebug :: Parser () -> Parser ()
 whenDebug act = do
@@ -541,10 +573,10 @@ whenDebug act = do
   when isDebug act
 
 srctest :: Int -> Int -> Rule -> Rule
-srctest srow scol r = r { srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = srow, srccol = scol, version = Nothing }) }
+srctest srow scol r = r { srcref = Just (SrcRef {url = Text.pack $ "test" </> "Spec", short = Text.pack $ "test" </> "Spec", srcrow = srow, srccol = scol, version = Nothing }) }
 
 srcrow_ :: Rule -> Rule
-srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
+srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> hence w, lest = srcrow_ <$> lest w }
 
 srcrow1' :: Rule -> Rule
 srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }

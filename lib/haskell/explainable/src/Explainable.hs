@@ -1,10 +1,27 @@
-module Explainable where
+{-# LANGUAGE QuasiQuotes #-}
+
+module Explainable
+  ( XP,
+    ExplainableIO,
+    drawTreeOrg,
+    historypath,
+    mkNod,
+    pathSpec,
+    retitle
+  )
+where
 
 import Control.Monad.Trans.RWS
-import Data.Tree
-import Data.List ( intercalate )
-import Data.Ord ()
+  ( RWS,
+    RWST (runRWST),
+    local,
+    runRWS,
+  )
 import Data.Bifunctor (first)
+import Data.List (intercalate)
+import Data.Ord ()
+import Data.String.Interpolate (__i)
+import Data.Tree (Tree (Node))
 
 -- | Our ExplainableIO monad supports evaluation-with-explanation of expressions in our DSL.
 -- Normally, a DSL is /evaluated/: its expressions are reduced from types in the DSL to types in the host language.
@@ -108,10 +125,14 @@ xplainE r emptyState expr = do
                              expr
                              (([],["toplevel"]),r)
                              emptyState
-  putStrLn $ "** xplainE: " ++ show val
-  putStrLn $ "*** toplevel: xpl = " ++ show val ++ "\n" ++ drawTreeOrg 3 xpl
+  let valStr = show val
+  putStrLn [__i|
+    ** xplainE: #{valStr}
+    *** toplevel: xpl = #{valStr}
+    #{drawTreeOrg 3 xpl}
+  |]
 
-  return (val, xpl, stab, wlog)
+  pure (val, xpl, stab, wlog)
 
 -- | similar to xplainE but not in IO
 xplainE' :: r -> st -> ExplainableId r st e -> (e, XP, st, [String])
@@ -126,8 +147,8 @@ xplainE' r emptyState expr =
 -- | show an explanation tree, formatted for org-mode
 drawTreeOrg :: Int -> XP -> String
 drawTreeOrg depth (Node (stdout, stdexp) xs) =
-  unlines ( (replicate depth '*' ++ " " ++ unlines stdexp)
-            : [ "#+begin_example\n" ++ unlines stdout ++ "#+end_example" | not (null stdout) ] )
-  ++
+  unlines ( (replicate depth '*' <> " " <> unlines stdexp)
+            : [ "#+begin_example\n" <> unlines stdout <> "#+end_example" | not $ null stdout ] )
+  <>
   unlines ( drawTreeOrg (depth + 1) <$> xs )
 

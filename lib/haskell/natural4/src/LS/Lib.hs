@@ -1,9 +1,9 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeFamilies #-}
 
 {-|
 Parser functions not organized into their own separate modules elsewhere.
@@ -11,7 +11,23 @@ Parser functions not organized into their own separate modules elsewhere.
 This includes some top-leve parsers like pRules and pBoolStruct.
 -}
 
-module LS.Lib where
+module LS.Lib
+  ( NoLabel (..),
+    Opts (..),
+    dumpRules,
+    exampleStream,
+    exampleStreams,
+    exprP,
+    getConfig,
+    pDoAction,
+    pExpect,
+    pGivens,
+    pRules,
+    pScenarioRule,
+    pToplevel,
+    pTypeDeclaration
+  )
+where
 
 -- import qualified Data.Tree      as Tree
 -- import Data.Text.Encoding (decodeUtf8)
@@ -20,9 +36,9 @@ import AnyAll qualified as AA
 -- import LS.XPile.CoreL4
 -- import Data.ByteString.Lazy.UTF8 (toString)
 
-import Control.Monad
-import Control.Monad.Combinators.Expr
-import Control.Monad.Writer.Lazy
+import Control.Monad (join, when)
+import Control.Monad.Combinators.Expr (makeExprParser)
+import Control.Monad.Writer.Lazy (MonadIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy qualified as BS
 import Data.Csv qualified as Cassava
@@ -31,11 +47,13 @@ import Data.List (transpose)
 import Data.List.NonEmpty qualified as NE
 import Data.List.Split qualified as DLS
 import Data.Maybe (listToMaybe, maybeToList)
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
 import Data.Vector qualified as V
 import Data.Void (Void)
+import Flow ((|>))
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
   ( MyBoolStruct,
@@ -45,9 +63,171 @@ import LS.Parser
     prefix,
   )
 import LS.RelationalPredicates
+  ( addneg,
+    c2hornlike,
+    mergePBRS,
+    pBSR,
+    pBoolConnector,
+    pConstitutiveRule,
+    pHornlike,
+    pHornlike',
+    pKeyValuesAka,
+    pNameParens,
+    pOneOf,
+    pParamText,
+    pParamTextMustIndent,
+    pRelationalPredicate,
+    preambleBoolStructR,
+    preambleParamText,
+    rpSameNextLineWhen,
+    slKeyValuesAka,
+    whenCase,
+  )
 import LS.Rule
+  ( Expect (ExpRP),
+    Parser,
+    Rule
+      ( Constitutive,
+        Hornlike,
+        NotARule,
+        RegBreach,
+        RegFulfilled,
+        Regulative,
+        RuleAlias,
+        RuleGroup,
+        Scenario,
+        TypeDecl,
+        action,
+        clauses,
+        cond,
+        defaults,
+        deontic,
+        enums,
+        expect,
+        given,
+        giveth,
+        has,
+        having,
+        hence,
+        keyword,
+        lest,
+        letbind,
+        lsource,
+        name,
+        rkeyword,
+        rlabel,
+        scgiven,
+        srcref,
+        subj,
+        super,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    RuleBody (..),
+    defaultHorn,
+    pXLocation,
+    pYLocation,
+    runMyParser,
+  )
 import LS.Tokens
+  ( IsParser (debugName),
+    asks,
+    dnl,
+    getTokenNonDeep,
+    liftSLOptional,
+    manyDeep,
+    manyIndentation,
+    myTraceM,
+    pDeontic,
+    pMTExpr,
+    pNumber,
+    pOtherVal,
+    pRuleLabel,
+    pToken,
+    pTokenish,
+    pretendEmpty,
+    sameDepth,
+    someDeep,
+    someIndentation,
+    tellIdFirst,
+    ($>|),
+    (|&|),
+    (|*|),
+    (|><),
+    (|>|),
+  )
 import LS.Types
+  ( BoolStructP,
+    BoolStructR,
+    Deontic,
+    HornClause (HC, hBody, hHead),
+    HornClause2,
+    MultiTerm,
+    MyStream (MyStream, unMyStream),
+    MyToken
+      ( After,
+        And,
+        Before,
+        Breach,
+        By,
+        Declare,
+        Define,
+        Do,
+        EOF,
+        EOL,
+        Empty,
+        Eventually,
+        Expect,
+        Fulfilled,
+        Given,
+        GoDeeper,
+        Goto,
+        Has,
+        Having,
+        Hence,
+        If,
+        Lest,
+        MPNot,
+        On,
+        Or,
+        SOF,
+        ScenarioTok,
+        Semicolon,
+        TokFalse,
+        TokTrue,
+        UnDeeper,
+        Unless,
+        Upon,
+        When,
+        Where,
+        Which,
+        Who,
+        Whose
+      ),
+    ParamText,
+    Preamble,
+    RPRel (RPis),
+    RawStanza,
+    RegKeywords (..),
+    RelationalPredicate (RPBoolStructR, RPParamText),
+    RunConfig (..),
+    SrcRef (SrcRef),
+    TComparison (TVague),
+    TemporalConstraint (..),
+    WithPos (..),
+    mkTC,
+    mt2pt,
+    multiterm2pt,
+    noLSource,
+    noLabel,
+    noSrcRef,
+    renderToken,
+    toToken,
+  )
+import LS.Utils ((|$>))
 import Options.Generic
   ( Generic,
     ParseFields (..),
@@ -154,35 +334,36 @@ getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
   mpn <- lookupEnv "MP_NLG"
-  return RC
-        { debug       = maybe (dbug o) (read :: String -> Bool) mpd
-        , printstream = maybe (dstream o) (read :: String -> Bool) mpd
-        , callDepth = 0
-        , oldDepth = 0
-        , parseCallStack = []
-        , sourceURL = "STDIN"
-        , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
-        , toNLG = maybe False (read :: String -> Bool) mpn
-        , toBabyL4  = only o == "babyl4" || only o == "corel4"
-        , toASP     = only o == "asp"
-        , toProlog  = only o == "prolog"
-        , toPrologTp  = only o == "prologTp"
-        , toJsonTp  = only o == "jsonTp"
-        , toJsonUI  = only o == "jsonUI"
-        , toMaude = only o == "maude"
-        , toLogicalEnglish = only o == "LogicalEnglish"
-        , toSCasp   = only o == "scasp"
-        , toUppaal  = only o == "uppaal"
-        , toGrounds = only o == "grounds"
-        , toChecklist = only o == "checklist"
-        , toVue     = only o == "vue"
-        , toHTML    = only o == "html"
-        , toTS      = only o `elem` words "typescript ts"
-        , saveAKA = False
-        , wantNotRules = False
-        , extendedGrounds = extd o
-        , runNLGtests = False
-        }
+  let str2bool :: String -> Bool = read
+  pure RC
+    { debug       = maybe (dbug o) str2bool mpd
+    , printstream = maybe (dstream o) str2bool mpd
+    , callDepth = 0
+    , oldDepth = 0
+    , parseCallStack = []
+    , sourceURL = "STDIN"
+    , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
+    , toNLG = maybe False str2bool mpn
+    , toBabyL4  = only o == "babyl4" || only o == "corel4"
+    , toASP     = only o == "asp"
+    , toProlog  = only o == "prolog"
+    , toPrologTp  = only o == "prologTp"
+    , toJsonTp  = only o == "jsonTp"
+    , toJsonUI  = only o == "jsonUI"
+    , toMaude = only o == "maude"
+    , toLogicalEnglish = only o == "LogicalEnglish"
+    , toSCasp   = only o == "scasp"
+    , toUppaal  = only o == "uppaal"
+    , toGrounds = only o == "grounds"
+    , toChecklist = only o == "checklist"
+    , toVue     = only o == "vue"
+    , toHTML    = only o == "html"
+    , toTS      = only o `elem` words "typescript ts"
+    , saveAKA = False
+    , wantNotRules = False
+    , extendedGrounds = extd o
+    , runNLGtests = False
+    }
 
 
 -- | Each stanza gets parsed separately, which is why we have a top-level IO [Rule].
@@ -199,8 +380,9 @@ parseRules o = do
   let files = getNoLabel $ file o
   if null files
   then parseSTDIN runConfig { sourceURL="STDIN" }
-  else concat <$> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file) files
-
+  else files
+        |> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file)
+        |$> mconcat
   where
     getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
@@ -214,8 +396,8 @@ parseRules o = do
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
-          putStrLn $ "* error while parsing " ++ filename
-          putStrLn (errorBundlePrettyCustom bundle)
+          putStrLn [i|* error while parsing #{filename}|]
+          putStrLn $ errorBundlePrettyCustom bundle
           putStrLn "** stream"
           printStream stream
           return (Left bundle)
@@ -224,11 +406,11 @@ parseRules o = do
         Right ([], []) -> return $ Right []
         Right (xs, xs') -> do
           when (printstream rc) $ printStream stream
-          return $ Right (xs ++ xs')
+          pure $ Right $ xs <> xs'
 
 
 dumpRules :: Opts Unwrapped -> IO [Rule]
-dumpRules opts = concat . rights <$> parseRules opts
+dumpRules opts = mconcat . rights <$> parseRules opts
 
 
 printStream :: MonadIO m => MyStream -> m ()
@@ -241,9 +423,7 @@ pRenderStream :: MyStream -> String
 pRenderStream = Text.unpack . LT.toStrict . pStringNoColor . renderStream
 
 exampleStream :: ByteString -> MyStream
-exampleStream s = case getStanzas <$> asCSV s of
-                    Left errstr -> error errstr
-                    Right rawsts -> stanzaAsStream (head rawsts)
+exampleStream = head . exampleStreams
 
 exampleStreams :: ByteString -> [MyStream]
 exampleStreams s = case getStanzas <$> asCSV s of
@@ -531,7 +711,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
     -- workaround: remove the "HAS" from the "that" line
     -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
 
-    parseHas = debugName "parseHas" $ concat <$> many (flip const $>| pToken Has |>| sameDepth declareLimb)
+    parseHas = debugName "parseHas" $ concat <$> many ((\ _ x -> x) $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
       myTraceM $ "got name = " <> show name
@@ -684,7 +864,7 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
                                                    )
   let poscond = snd <$> mergePBRS (rbpbrs   rulebody)
   let negcond = snd <$> mergePBRS (rbpbrneg rulebody)
-      gvn     = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)
+      gvn     = NE.nonEmpty $ foldMap (NE.toList . snd) (rbgiven rulebody)
       toreturn = Regulative
                  { subj     = entityname
                  , rkeyword  = RParty
@@ -757,9 +937,9 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
                  , defaults = []
                  , symtab   = []
                  }
-  myTraceM $ "pRegRuleNormal: the positive preamble is " ++ show poscond
-  myTraceM $ "pRegRuleNormal: the negative preamble is " ++ show negcond
-  myTraceM $ "pRegRuleNormal: returning " ++ show toreturn
+  myTraceM [i|pRegRuleNormal: the positive preamble is #{poscond}|]
+  myTraceM [i|pRegRuleNormal: the negative preamble is #{negcond}|]
+  myTraceM [i|pRegRuleNormal: returning #{toreturn}|]
   -- let appendix = pbrs ++ nbrs ++ ebrs ++ defalias
   -- myTraceM $ "pRegRuleNormal: with appendix = " ++ show appendix
   -- return ( toreturn : appendix )
@@ -767,7 +947,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
 
 
 pHenceLest :: MyToken -> Parser Rule
-pHenceLest henceLest = debugName ("pHenceLest-" ++ show henceLest) do
+pHenceLest henceLest = debugName [i|HenceLest-#{henceLest}|] do
   pToken henceLest *> someIndentation innerRule
   where
     innerRule =
@@ -788,7 +968,7 @@ pPreamble toks = choice (try . pTokenish <$> toks)
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
 pActor :: [RegKeywords] -> Parser (RegKeywords, BoolStructP)
-pActor keywords = debugName ("pActor " ++ show keywords) do
+pActor keywords = debugName [i|pActor #{keywords}|] do
   -- add pConstitutiveRule here -- we could have "MEANS"
   preamble     <- pPreamble keywords
   -- entitytype   <- lookAhead pNameParens
@@ -896,9 +1076,9 @@ pDA = debugName "pDA" do
   return (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
-preambleBoolStructP wanted = debugName ("preambleBoolStructP " <> show wanted)  do
+preambleBoolStructP wanted = debugName [i|preambleBoolStructP #{wanted}|] do
   condWord <- choice (try . pToken <$> wanted)
-  myTraceM ("preambleBoolStructP: found: " ++ show condWord)
+  myTraceM [i|preambleBoolStructP: found: #{condWord}|]
   ands <- dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   return (condWord, ands)
 

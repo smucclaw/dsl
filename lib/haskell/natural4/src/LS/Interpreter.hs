@@ -30,27 +30,146 @@ import AnyAll qualified as AA
 import Control.Applicative ((<|>))
 import Control.Monad (guard, join)
 import Data.Bifunctor (first)
-import Data.Either (partitionEithers, fromRight)
+import Data.Either (fromRight, partitionEithers)
 import Data.Graph.Inductive
+  ( Gr,
+    Graph (labNodes, mkGraph),
+    LEdge,
+    delEdge,
+    indeg,
+    lab,
+    nmap,
+    nodes,
+    topsort,
+  )
 import Data.HashMap.Strict qualified as Map
 import Data.List (find, (\\))
 import Data.List qualified as DL
-import Data.List.NonEmpty as NE
+import Data.List.NonEmpty as NE (fromList, singleton, toList)
 import Data.Maybe
+  ( catMaybes,
+    fromJust,
+    fromMaybe,
+    isJust,
+    listToMaybe,
+    mapMaybe,
+    maybeToList,
+  )
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
-import Data.Tree
+import Data.Tree (Tree (Node))
 import Data.Tuple (swap)
-import Debug.Trace
-import LS.XPile.Logging (mutter, mutters, mutterd, mutterdhsf
-                        , XPileLogE, XPileLog
-                        , pShowNoColorS, xpReturn, xpError, xpLog)
-import LS.PrettyPrinter
+import Debug.Trace (trace)
+import LS.PrettyPrinter (srchs)
 import LS.RelationalPredicates
+  ( aaLeaves,
+    getBSR,
+    partitionExistentials,
+  )
 import LS.Rule
+  ( Interpreted (..),
+    Rule
+      ( DefTypically,
+        Hornlike,
+        Regulative,
+        RuleAlias,
+        TypeDecl,
+        action,
+        clauses,
+        cond,
+        defaults,
+        deontic,
+        given,
+        giveth,
+        has,
+        having,
+        hence,
+        keyword,
+        lest,
+        lsource,
+        name,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        super,
+        symtab,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    RuleGraph,
+    RuleGraphEdgeLabel,
+    ValuePredicate
+      ( attrCond,
+        attrName,
+        attrVal,
+        objPath,
+        origBSR,
+        origHC,
+        origRule
+      ),
+    defaultHorn,
+    defaultTypeDecl,
+    defaultValuePredicate,
+    getDecisionHeads,
+    getRlabel,
+    hasClauses,
+    hasGiven,
+    hasGiveth,
+    rl2text,
+    ruleLabelName,
+    ruleName,
+  )
 import LS.Types
-import Prettyprinter
+  ( BoolStructR,
+    BoolStructT,
+    ClsTab (..),
+    EntityName,
+    EntityType,
+    HornClause (HC, hBody, hHead),
+    HornClause2,
+    Inferrable,
+    InterpreterOptions,
+    MTExpr (MTB, MTF, MTT),
+    MultiTerm,
+    MyToken (Decide, Define, Is, Means),
+    ParamText,
+    ParamType (TOne),
+    RPRel (RPgt, RPis, RPlt),
+    RelationalPredicate (..),
+    RuleName,
+    ScopeTabs,
+    SymTab,
+    TypeSig (..),
+    TypedClass,
+    TypedMulti,
+    bsp2text,
+    clsParent,
+    getSymType,
+    getUnderlyingType,
+    mt2text,
+    pt2multiterm,
+    rel2txt,
+    rp2bodytexts,
+    rp2text,
+    thisAttributes,
+  )
+import LS.XPile.Logging
+  ( XPileLog,
+    XPileLogE,
+    mutter,
+    mutterd,
+    mutterdhsf,
+    mutters,
+    pShowNoColorS,
+    xpError,
+    xpLog,
+    xpReturn,
+  )
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
@@ -212,7 +331,7 @@ classRoots ct@(CT ch) =
 
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
-allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" (childname <> "." <> gcname)
+allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" [i|#{childname}.{gcname}|]
                                      | (childname, (_ts, childct)) <- Map.toList ct
                                      , gcname <- allCTkeys childct
                                      ]
@@ -292,7 +411,7 @@ extractEnums l4i =
                    | (gName, gEnum@(Just (InlineEnum _ _))) <- NE.toList givens
                    -- consider using getSymType in case the type is inferred, not explicit
                    , let nameEnum = (\case
-                                        (MTT mtt) -> MTT $ mtt <> "Enum"
+                                        (MTT mtt) -> MTT [i|#{mtt}Enum|]
                                         x         -> x) <$> NE.toList gName
                    ]
     go _ = []
@@ -303,7 +422,7 @@ extractEnums l4i =
 -- For the sake of the UI, we group such rules together and return basically a Map, of AndOrTree (Z) to one or more rules (X and Y).
 groupedByAOTree :: Interpreted -> [Rule] -> [(Maybe BoolStructT, [Rule])]
 groupedByAOTree l4i rs =
-  Map.toList $ Map.fromListWith (++) $
+  Map.toList $ Map.fromListWith (<>) $
   (\r -> (getAndOrTree l4i 1 r, [r])) <$> rs
 
 
@@ -440,7 +559,7 @@ ruleDecisionGraph rs = do
     groundTerms knownRules = []
       -- find all the body elements which 
 
-    (***->) str hs = mutterdhsf 3 ("ruleDecisionGraph: " <> str) pShowNoColorS hs
+    (***->) str hs = mutterdhsf 3 [i|ruleDecisionGraph: #{show str}|] pShowNoColorS hs
 
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
 relPredRefsAll :: RuleSet -> RuleIDMap -> XPileLog [LEdge RuleGraphEdgeLabel]
@@ -484,7 +603,7 @@ relPredRefs rs ridmap headElements r = do
   mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
   toreturn <- sequenceA
-    [ (rid, targetRuleId', ()) <$ mutterd 6 ("relPredRefs list comp: returning " <> show rid <> ", " <> show targetRuleId')
+    [ (rid, targetRuleId', ()) <$ mutterd 6 [i|relPredRefs list comp: returning #{rid}, #{targetRuleId'}|]
     | bElem <- bodyElements
      , let targetRule = Map.lookup bElem headElements
      , isJust targetRule
@@ -581,7 +700,7 @@ bsmtOfClauses l4i depth r
                             Nothing -> Nothing
                             _       ->
                               let output = bsr2bsmt bodyNonEx in
-                                expandTrace "bsmtOfClauses" depth ("got output " <> show output) $
+                                expandTrace "bsmtOfClauses" depth [i|got output #{output}|] $
                                 Just output
             ]
       in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
@@ -595,17 +714,17 @@ bsmtOfClauses l4i depth r
 -- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
 
 expandClauses, expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
-expandClauses l4i depth hcs = (expandTrace "expandClauses" depth $ "running on " ++ show (Prelude.length hcs) ++ " hornclauses") $ expandClauses' l4i (depth+1) hcs
+expandClauses l4i depth hcs = expandTrace "expandClauses" depth [i|running on #{Prelude.length hcs} hornclauses|] $ expandClauses' l4i (depth+1) hcs
 expandClauses' l4i depth hcs =
   let toreturn = [ newhc
                  | oldhc <- hcs
-                 , let newhead = (expandTrace "expandClauses" depth $ "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
-                       newbody = (expandTrace "expandClauses" depth $ "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
+                 , let newhead = (expandTrace "expandClauses" depth "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
+                       newbody = (expandTrace "expandClauses" depth "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
                        newhc = case oldhc of
                                  HC _oldh Nothing -> HC newhead Nothing
                                  HC  oldh _       -> HC oldh    newbody
                  ]
-  in expandTrace "expandClauses" depth ("returning " ++ show toreturn) $
+  in expandTrace "expandClauses" depth [i|returning #{toreturn}|]
      toreturn
 
 -- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
@@ -649,8 +768,7 @@ expandTrace :: (Show a) => String -> Int -> String -> a -> a
 expandTrace fname dpth toSay toShow =
   if expandTraceDebugging
   then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
-               "#+BEGIN_SRC haskell\n" ++ (TL.unpack (pShowNoColor toShow)) ++ "\n#+END_SRC") $
-       toShow
+               "#+BEGIN_SRC haskell\n" ++ TL.unpack (pShowNoColor toShow) ++ "\n#+END_SRC") toShow
   else toShow
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
@@ -776,7 +894,7 @@ onlyItemNamed l4i rs wanteds =
       found = DL.filter (\(rn, _simp) -> rn `elem` wanteds) ibr
   in
     if null found
-    then AA.mkLeaf $ T.pack ("L4 Interpreter: unable to isolate rule named " ++ show wanteds)
+    then AA.mkLeaf [i|L4 Interpreter: unable to isolate rule named #{wanteds}|]
     else snd $ DL.head found
 
 -- | return those Q&A leaf items arranged by the rule to which they contribute.
@@ -847,7 +965,7 @@ isRuleAlias :: Interpreted -> RuleName -> Bool
 isRuleAlias l4i rname =
   any matchHenceLest (origrules l4i)
   where
-    matchHenceLest Regulative{..} = testMatch hence || testMatch lest
+    matchHenceLest Regulative{..} = any testMatch [hence, lest] -- testMatch hence || testMatch lest
     matchHenceLest _              = False
     testMatch :: Maybe Rule -> Bool
     testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
@@ -870,23 +988,8 @@ getMarkings l4i =
 
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|false|no(t)?|f)$|]) -> True)] = Just False
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t)$|]) -> True)] = Just True
-    -- rhsval [MTT rhs] = case T.toLower rhs of
-    --                "does not" -> Just False
-    --                "doesn't"  -> Just False
-    --                "hasn't"   -> Just False
-    --                "false"    -> Just False
-    --                "not"      -> Just False
-    --                "no"       -> Just False
-    --                "f"        -> Just False
-    --                "t"        -> Just True
-    --                "so"       -> Just True
-    --                "yes"      -> Just True
-    --                "has"      -> Just True
-    --                "true"     -> Just True
-    --                "does"     -> Just True
-    --                _            -> Nothing
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|no(t)?|f(alse)?)$|]) -> True)] = Just False
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] = Just True
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
     rhsval _  = Nothing
@@ -961,7 +1064,7 @@ attrsAsMethods rs = do
         Left errs1 -> xpError errs1
         Right (headLHS, attrVal, attrCond) -> do
           gone2 <- toObjectPath headLHS
-          mutterd 3 $ show headLHS <> " ... got back gone2: " <> show gone2
+          mutterd 3 [i|#{headLHS} ... got back gone2: #{gone2}|]
           case gone2 of
             Left errs2 -> xpError errs2
             Right (objPath, attrName) -> do
@@ -974,7 +1077,7 @@ attrsAsMethods rs = do
                     , attrCond
                     , origRule = Just r
                     }
-              mutterd 3 $ show headLHS <> " returning"
+              mutterd 3 [i|#{headLHS} returning|]
               mutter $ show $ srchs toreturn
               xpReturn toreturn
 
@@ -988,11 +1091,11 @@ attrsAsMethods rs = do
             (RPnary RPis [RPMT headLHS, headRHS]) -> xpReturn (headLHS, Just headRHS, hBody)
 
             (RPnary RPis (RPMT headLHS : headRHS)) -> do
-              mutterd 3 $ "unexpected RHS in RPnary RPis: " <> show hHead
+              mutterd 3 [i|unexpected RHS in RPnary RPis: #{hHead}|]
               xpReturn (headLHS, listToMaybe headRHS, hBody)
 
             (RPConstraint mt1 RPis mt2) -> do
-              mutterd 3 $ "converting RPConstraint in hHead: " <> show hHead
+              mutterd 3 [i|converting RPConstraint in hHead: #{hHead}|]
               xpReturn (mt1, Just (RPMT mt2), hBody)
 
             _ -> do
@@ -1007,13 +1110,13 @@ attrsAsMethods rs = do
 toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
 toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
 toObjectPath mt = do
-  mutterd 4 $ "toObjectPath input = " <> show mt
-  mutterd 4 $ "DL.init mt = " <> show (DL.init mt)
-  mutterd 4 $ "mt2text = " <> show (mt2text $ DL.init mt)
-  mutterd 4 $ "T.replace = " <> show (T.replace "'s" "'s" $ mt2text $ DL.init mt)
-  mutterd 4 $ "T.splitOn = " <> show (T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-  mutterd 4 $ "T.strip = " <> show (T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
-  mutterd 4 $ "DL.filter = " <> show (DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt))
+  mutterd 4 [i|toObjectPath input = #{mt}|]
+  mutterd 4 [i|DL.init mt = #{DL.init mt}|]
+  mutterd 4 [i|mt2text = #{mt2text $ DL.init mt}|]
+  mutterd 4 [i|T.replace = #{T.replace "'s" "'s" $ mt2text $ DL.init mt}|]
+  mutterd 4 [i|T.splitOn = #{T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
+  mutterd 4 [i|T.strip = #{T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
+  mutterd 4 [i|DL.filter = #{DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
   xpReturn (DL.filter (not . T.null) $
             T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
            , mt2text [DL.last mt])
@@ -1028,7 +1131,7 @@ toObjectStr :: MultiTerm -> XPileLogE EntityName
 toObjectStr mt = do
   objPath <- toObjectPath mt
   case objPath of
-    Right (oP,objName) -> xpReturn $ T.intercalate "." (oP ++ [objName])
+    Right (oP,objName) -> xpReturn $ T.intercalate "." $ oP <> [objName]
     Left err           -> xpError err
 
 -- | is a particular attribute typed as an enum?

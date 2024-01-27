@@ -29,14 +29,19 @@ For available comparison operators, see function showLPspecialSCasp
   The tokens == and === are synonymes of = and are also rendered as term1 = term2 in sCasp
 -}
 
-module LS.XPile.Prolog where
+module LS.XPile.Prolog
+  ( bsp2struct,
+    rulesToProlog,
+    rulesToSCasp,
+    vart
+  )
+where
 
 import AnyAll (BoolStruct (All, Any, Leaf, Not), Dot (xPos))
-import Data.List.NonEmpty as NE (NonEmpty (..), toList)
+import Data.Functor.Classes (showsBinary1)
 import Data.HashMap.Strict qualified as Map
+import Data.List.NonEmpty as NE (NonEmpty (..), toList)
 import Data.Text qualified as Text
-import Prettyprinter
-import Prettyprinter.Render.Text (putDoc)
 import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, clauses, enums, has, name, super),
   )
@@ -58,8 +63,17 @@ import LS.Types as SFL4
     rel2txt,
     untypePT,
   )
-import Language.Prolog (Clause (Clause), Term (Struct, Var, Wildcard, Cut), Atom, var)
-import Data.Functor.Classes (showsBinary1)
+import Language.Prolog
+  (Atom, Clause (Clause), Term (Cut, Struct, Var, Wildcard), var)
+import Prettyprinter
+  ( Doc,
+    Pretty (pretty),
+    comma,
+    nest,
+    punctuate,
+    vsep,
+  )
+import Prettyprinter.Render.Text (putDoc)
 
 
 -- Document generation for Logic Programs 

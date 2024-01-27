@@ -10,22 +10,108 @@ This module also provides a family of SLParser combinators ("Same Line").
 module LS.Tokens (module LS.Tokens, module Control.Monad.Reader) where
 
 import Control.Applicative (Alternative, liftA2)
-import Control.Monad (MonadPlus, replicateM_, when)
-import Control.Monad.Reader (MonadReader, ReaderT (ReaderT, runReaderT), asks, local)
+import Control.Monad
+  ( MonadPlus,
+    replicateM_,
+    when,
+  )
+import Control.Monad.Reader
+  ( MonadReader,
+    ReaderT (ReaderT, runReaderT),
+    asks,
+    local,
+  )
 import Control.Monad.Writer.Lazy
-import Data.Monoid (Sum(..))
+  ( MonadTrans (lift),
+    WriterT (..),
+    censor,
+    mapWriterT,
+  )
 import Data.Functor.Identity (Identity)
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (isNothing)
+import Data.Monoid (Sum (..))
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
 import Debug.Trace (traceM)
 import LS.Error (onelineErrorMsg)
 import LS.Rule
+  ( Parser,
+    Rule,
+    RuleLabel,
+    pGetTokenPos,
+    pTokenMatch,
+    pXLocation,
+    pYLocation,
+    whenDebug,
+  )
 import LS.Types
+  ( DList,
+    Deontic (..),
+    HasToken (..),
+    MTExpr (..),
+    MultiTerm,
+    MyStream (MyStream, unMyStream),
+    MyToken
+      ( A_An,
+        EOL,
+        GoDeeper,
+        Is,
+        May,
+        Must,
+        Other,
+        RuleMarker,
+        Shant,
+        TNumber,
+        TokAnd,
+        TokEQ,
+        TokFalse,
+        TokGT,
+        TokGTE,
+        TokIn,
+        TokLT,
+        TokLTE,
+        TokNotIn,
+        TokOr,
+        TokProduct,
+        TokSum,
+        TokTrue,
+        UnDeeper
+      ),
+    RunConfig (debug, parseCallStack, sourceURL),
+    SrcRef (SrcRef),
+    WithPos (WithPos, pos, tokenVal),
+    increaseNestLevel,
+    nestLevel,
+    singeltonDL,
+  )
 import Text.Megaparsec
+  ( MonadParsec
+      ( eof,
+        lookAhead,
+        notFollowedBy,
+        token,
+        try,
+        updateParserState
+      ),
+    ParseError,
+    Parsec,
+    ParsecT,
+    SourcePos (sourceColumn, sourceLine),
+    State (State, stateInput),
+    Stream,
+    between,
+    choice,
+    count,
+    many,
+    optional,
+    some,
+    unPos,
+    (<?>),
+    (<|>),
+  )
 import Text.Megaparsec.Debug (dbg)
 import Text.Megaparsec.Internal qualified as MPInternal
 

@@ -1,5 +1,8 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- usage:
 -- cat out/example-or.json | stack run -- --only svg > out/example4.svg
@@ -7,45 +10,107 @@
 
 module AnyAll.SVGLadder (module AnyAll.SVGLadder) where
 
-import Data.List (foldl', sortBy)
-import Data.Function  (on)
-
-import AnyAll.Types hiding ((<>))
+import AnyAll.Types
+  ( AndOr (And, Neg, Or, Simply),
+    Default (..),
+    Label (..),
+    Marking (Marking),
+    Q (Q),
+    QTree,
+  )
 import Control.Monad.RWS
+  ( MonadState (get, put),
+    RWS,
+    asks,
+    execRWS,
+  )
 import Data.Foldable (traverse_)
+import Data.Function (on)
 import Data.HashMap.Strict qualified as Map
-import Data.String
+import Data.List (foldl', sortBy)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy (Text, toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
-import Data.Text.Lazy.Builder.Int
-import Data.Tree
-import Debug.Trace
+import Data.Text.Lazy.Builder.Int (decimal)
+import Data.Tree (Tree (Node))
 import Graphics.Svg
+  ( AttrTag
+      ( Class_,
+        Cx_,
+        Cy_,
+        D_,
+        Dominant_baseline_,
+        Fill_,
+        Height_,
+        R_,
+        Stroke_,
+        Stroke_width_,
+        Text_anchor_,
+        Transform_,
+        Version_,
+        Width_,
+        X1_,
+        X2_,
+        X_,
+        Y1_,
+        Y2_,
+        Y_
+      ),
+    Attribute,
+    Element,
+    ToElement (toElement),
+    bindAttr,
+    circle_,
+    doctype,
+    line_,
+    path_,
+    rect_,
+    svg11_,
+    text_,
+    with,
+    (<<-),
+  )
 import Lens.Micro.Platform
+  ( Lens',
+    lens,
+    makeLenses,
+    (%~),
+    (&),
+    (.~),
+    (^.),
+  )
 import Text.Printf (formatInteger)
 
 type Length  = Integer
 type SVGElement = Element
 
 intToText :: Integral a => a -> T.Text
-intToText = toStrict . toLazyText . decimal
+intToText x = [i|#{decimal x}|]
 
 mAInt :: Integral a => a -> a -> T.Text
-mAInt x y = T.concat ["M " , intToText x, ",",  intToText y, " "]
+mAInt (intToText -> x) (intToText -> y) =
+  [i|M #{x},#{y} |]
+  -- mconcat ["M " , intToText x, ",",  intToText y, " "]
 
 cRInt :: Integral a =>  a -> a -> a -> a -> a -> a -> T.Text
-cRInt dc1x dc1y dc2x dc2y dx dy = T.concat
-  [ "c ", intToText dc1x, ",", intToText dc1y, " ", intToText dc2x
-  , ",", intToText dc2y, " ", intToText dx, " ", intToText dy]
+cRInt (intToText -> dc1x) (intToText -> dc1y) (intToText -> dc2x) (intToText -> dc2y) (intToText -> dx) (intToText -> dy) =
+  [i|c #{dc1x},#{dc1y} #{dc2x},#{dc2y} #{dx} #{dy}|]
+  -- mconcat
+  -- [ "c ", intToText dc1x, ",", intToText dc1y, " ", intToText dc2x
+  -- , ",", intToText dc2y, " ", intToText dx, " ", intToText dy]
 
 cAInt :: Integral a =>  a -> a -> a -> a -> a -> a -> T.Text
-cAInt c1x c1y c2x c2y x y = T.concat
-  [ "C ", intToText c1x, ",", intToText c1y, " ", intToText c2x, ","
-  , intToText c2y, " ", intToText x, " ", intToText y]
+cAInt (intToText -> c1x) (intToText -> c1y) (intToText -> c2x) (intToText -> c2y) (intToText -> x) (intToText -> y) =
+  [i|C #{c1x},#{c1y} #{c2x},#{c2y} #{x} #{y}|]
+  -- T.concat
+  -- [ "C ", intToText c1x, ",", intToText c1y, " ", intToText c2x, ","
+  -- , intToText c2y, " ", intToText x, " ", intToText y]
 
 translateCommand :: Integral a =>  a -> a -> T.Text
-translateCommand x y = T.concat ["translate(", intToText x, " ", intToText y, ")"]
+translateCommand (intToText -> x) (intToText -> y) =
+  [i|translate(#{x} #{y})|]
+  -- T.concat ["translate(", intToText x, " ", intToText y, ")"]
 
 move :: Integral a => (a, a) -> SVGElement -> SVGElement
 move (x, y) geoms =
@@ -88,22 +153,22 @@ data Ports = Ports
   deriving (Eq, Show)
 
 boxPorts :: Lens' BBox Ports
-boxPorts = lens ports (\x y -> x { ports = y })
+boxPorts = lens ports \x y -> x { ports = y }
 
 boxMargins :: Lens' BBox Margins
-boxMargins = lens margins (\x y -> x { margins = y })
+boxMargins = lens margins \x y -> x { margins = y }
 
 boxDims :: Lens' BBox BoxDimensions
-boxDims = lens dimensions (\x y -> x { dimensions = y })
+boxDims = lens dimensions \x y -> x { dimensions = y }
 
 boxConnect :: Lens' BBox Connect
-boxConnect = lens connect (\x y -> x { connect = y })
+boxConnect = lens connect \x y -> x { connect = y }
 
 dimWidth :: Lens' BoxDimensions Length
-dimWidth = lens boxWidth (\x y -> x { boxWidth = y })
+dimWidth = lens boxWidth \x y -> x { boxWidth = y }
 
 dimHeight :: Lens' BoxDimensions Length
-dimHeight = lens boxHeight (\x y -> x { boxHeight = y })
+dimHeight = lens boxHeight \x y -> x { boxHeight = y }
 
 makeLenses ''Ports
 
@@ -216,16 +281,16 @@ data AAVScale = AAVScale
   } deriving (Show, Eq)
 
 aavscaleDims :: Lens' AAVScale BoxDimensions
-aavscaleDims = lens scaleDims (\x y -> x { scaleDims = y })
+aavscaleDims = lens scaleDims \x y -> x { scaleDims = y }
 
 aavscaleMargins :: Lens' AAVScale Margins
-aavscaleMargins = lens scaleMargins (\x y -> x { scaleMargins = y })
+aavscaleMargins = lens scaleMargins \x y -> x { scaleMargins = y }
 
 aavscaleHorizontalLayout :: Lens' AAVScale GapDimensions
-aavscaleHorizontalLayout = lens horizontalLayout (\x y -> x { horizontalLayout = y })
+aavscaleHorizontalLayout = lens horizontalLayout \x y -> x { horizontalLayout = y }
 
 aavscaleVerticalLayout :: Lens' AAVScale GapDimensions
-aavscaleVerticalLayout = lens verticalLayout (\x y -> x { verticalLayout = y })
+aavscaleVerticalLayout = lens verticalLayout \x y -> x { verticalLayout = y }
 
 getScale :: Scale -> AAVScale --                 sbw sbh slm srm stm sbm slrv slrh stbv stbh
 getScale Full      = AAVScale    (BoxDimensions 120  44)  (Margins 22  22  20  20)  (GapDimensions 10   10)    (GapDimensions 10   10)
@@ -263,14 +328,14 @@ getColorsText    _        False   = "white"
 getBoxColorsR :: SVGCanvas (T.Text, T.Text)
 getBoxColorsR = do
   m <- asks markingR
-  return $ getColorsBox (confidence m)
+  pure $ getColorsBox (confidence m)
 
 
 getTextColorsR :: SVGCanvas T.Text
 getTextColorsR = do
   m <- asks markingR
   sc <- asks contextScale
-  return $ getColorsText sc (confidence m)
+  pure $ getColorsText sc (confidence m)
 
 type ItemStyle = Maybe Bool
 
@@ -401,8 +466,8 @@ rowLayouter sc (bbold, old) (bbnew, new) =
         then svgConnector $ rowConnectorData sc bbold bbnew
         else mempty
 
-data Dot = Dot {xPos::Length, yPos::Length}
-data Curve = Curve {start::Dot, startGuide::Dot, endGuide::Dot, end::Dot}
+data Dot = Dot {xPos :: Length, yPos :: Length}
+data Curve = Curve {start :: Dot, startGuide :: Dot, endGuide :: Dot, end :: Dot}
 
 rowConnectorData :: Scale -> BBox -> BBox -> Curve
 rowConnectorData sc bbold bbnew =
@@ -683,8 +748,8 @@ drawItemFull sc negContext (Node (Q sv ao pp m) childqs) =
 deriveBoxCap :: Bool -> Default Bool -> (LineHeight, LineHeight, LineHeight)
 deriveBoxCap negContext m =
   case extractSoft m of
-    (Just True) -> (HalfLine, notLine HalfLine, topLine (not negContext))
-    (Just False) -> (FullLine, notLine NoLine, topLine negContext)
+    Just True -> (HalfLine, notLine HalfLine, topLine (not negContext))
+    Just False -> (FullLine, notLine NoLine, topLine negContext)
     Nothing -> (NoLine, notLine NoLine, NoLine)
   where
     notLine = if negContext then const FullLine else id
@@ -749,8 +814,8 @@ renderVerticalLine xPosition length lineClass strokeColor =
 drawHorizontalLine :: Length -> Length -> LineHeight -> T.Text -> SVGElement
 drawHorizontalLine yPosition length lineType linePosition =
   case lineType of
-    FullLine -> renderHorizontalLine yPosition length (T.append linePosition ".full")
-    HalfLine -> renderHorizontalLine yPosition (length `div` 2) (T.append linePosition ".half")
+    FullLine -> renderHorizontalLine yPosition length $ T.append linePosition ".full"
+    HalfLine -> renderHorizontalLine yPosition (length `div` 2) $ T.append linePosition ".half"
     NoLine -> mempty
 
 renderHorizontalLine :: Length -> Length -> T.Text -> SVGElement

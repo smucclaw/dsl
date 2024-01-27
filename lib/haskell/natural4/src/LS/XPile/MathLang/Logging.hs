@@ -13,16 +13,13 @@
 
 
 {- VERY WIP! more of a stub / outline rn -}
-module LS.XPile.MathLang.Logging (
-  LoggingDestination(..), 
-  LogConfig(..), 
-  defaultLogConfig
-  ) 
-  where
+module LS.XPile.MathLang.Logging where
+-- TODO: Add export list
 
--- import Log (LogT, Logger, defaultLogLevel, object, (.=))
--- import Log qualified
--- import Log.Backend.StandardOutput qualified as Log
+import Data.Time qualified as Time
+import Log (LogT, Logger, defaultLogLevel, object, (.=))
+import Log qualified
+import Log.Backend.StandardOutput qualified as Log
 
 -- will uncomment when get to implementing this
 -- import Effectful
@@ -53,10 +50,8 @@ data LoggingDestination
   deriving (Show, Generic)
 
 
-data LogConfig = MkLogConfig 
+data LogCfg = MkLogCfg 
   { logDest :: LoggingDestination
   }
   deriving stock (Show)
 
-defaultLogConfig :: LogConfig
-defaultLogConfig = MkLogConfig { logDest = StdOut }

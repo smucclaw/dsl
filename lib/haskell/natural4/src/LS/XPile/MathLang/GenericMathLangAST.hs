@@ -13,8 +13,8 @@ module LS.XPile.MathLang.GenericMathLangAST where
 -- TODO: Add export list
 
 import Data.Text qualified as T
-
-import Optics.TH (makeFieldLabelsNoPrefix)
+import Optics (re, view)
+import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
 
 -- import Data.Generics.Product.Types (types)
@@ -37,7 +37,6 @@ import Data.Hashable (Hashable)
 {- | Note: The first draft of this will ignore the complexities to do with variables and assume global scope, as Meng does
      We may not even bother with trying to translate function definitions and applications in the first draft
 -}
-
 
 type FieldLabel = T.Text
 type TLabel = T.Text
@@ -101,10 +100,17 @@ type MdGrp = [ExpMetadata]
 newtype Var = MkVar T.Text
   deriving stock (Show)
   deriving newtype (Eq, Hashable)
+makePrisms ''Var
 -- Add metadata like what the original L4 string was?
 -- Or do that only at the final pretty printing stage, when we normalize the formatting etc?
 
--- TODO: Need to figure out how best to deal with numbers, esp. wrt money. Shld not use floats for money.
+mkVar :: T.Text -> Var
+mkVar = view (re _MkVar)
+
+varAsTxt :: Var -> T.Text
+varAsTxt = view _MkVar
+
+
 data Lit = ENumber !Number | EBool !Bool | EString !T.Text
   deriving stock (Eq, Ord, Show)
 
@@ -192,10 +198,10 @@ data LCProgMetadata =
   MkLCProgMdata { filename :: !T.Text }
   deriving stock (Eq, Show)
 
-data LCProgram = 
+data LCProgram =
   MkLCProgram { progMetadata :: LCProgMetadata
               , lcProgram :: [Exp]
-              } 
+              }
   deriving stock (Show)
 
 

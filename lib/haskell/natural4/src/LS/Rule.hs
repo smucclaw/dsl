@@ -22,6 +22,7 @@ module LS.Rule
     dummyRef,
     extractMTExprs,
     getRlabel,
+    getGivenWithSimpleType,
     getDecisionHeads,
     hasClauses,
     hasGiven,
@@ -41,7 +42,7 @@ module LS.Rule
     srccol1,
     srcrow2,
     srctest,
-    whenDebug,
+    whenDebug
   )
 where
 

@@ -1,14 +1,8 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module LS.Rule
   ( Rule (..),
@@ -582,7 +576,7 @@ srctest :: Int -> Int -> Rule -> Rule
 srctest srow scol r = r { srcref = Just (SrcRef {url = Text.pack $ "test" </> "Spec", short = Text.pack $ "test" </> "Spec", srcrow = srow, srccol = scol, version = Nothing }) }
 
 srcrow_ :: Rule -> Rule
-srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
+srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> hence w, lest = srcrow_ <$> lest w }
 
 srcrow1' :: Rule -> Rule
 srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }

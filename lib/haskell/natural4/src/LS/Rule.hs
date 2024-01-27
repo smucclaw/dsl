@@ -1,37 +1,47 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts, TypeFamilies, TypeApplications, DataKinds #-}
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
 
-module LS.Rule 
-  ( Rule(..)
-  , RuleBody(..)
-  , RuleLabel
-  , Interpreted (..)
-  , Parser
-  , ValuePredicate (..)
-  , Expect (..)
-  , RuleGraph
-  , RuleGraphEdgeLabel
-  , ruleLabelName
-  , ruleName
-  , ruleConstructor
-  , getGivenWithSimpleType
-  , extractMTExprs
-  , defaultHorn
-  , defaultTypeDecl
-  , getRlabel
-  , rl2text
-  , pGetTokenPos
-  , pTokenMatch, pXLocation, pYLocation
-  , runMyParser
-  , whenDebug
-  , multiterm2bsr
-  , defaultValuePredicate
-  , getDecisionHeads
-  , hasClauses, hasGiven, hasGiveth, isFact
+module LS.Rule
+  ( Rule (..),
+    RuleBody (..),
+    RuleLabel,
+    Interpreted (..),
+    Parser,
+    ValuePredicate (..),
+    Expect (..),
+    RuleGraph,
+    RuleGraphEdgeLabel,
+    defaultHorn,
+    defaultL4I,
+    defaultReg,
+    defaultTypeDecl,
+    defaultValuePredicate,
+    dummyRef,
+    extractMTExprs,
+    getRlabel,
+    getDecisionHeads,
+    hasClauses,
+    hasGiven,
+    hasGiveth,
+    isFact,
+    mkTestSrcRef,
+    multiterm2bsr,
+    pGetTokenPos,
+    pTokenMatch,
+    pXLocation,
+    pYLocation,
+    rl2text,
+    ruleLabelName,
+    ruleName,
+    ruleConstructor,
+    runMyParser,
+    srccol1,
+    srcrow2,
+    srctest,
+    whenDebug,
   )
 where
 
@@ -94,7 +104,16 @@ import LS.Types
     rpHead,
   )
 import LS.XPile.Logging (XPileLogW)
-import Optics hiding (has, (|>)) -- the Rule record has a `has` field
+import Optics
+  ( Field1 (_1),
+    Field2 (_2),
+    Ixed (ix),
+    toListOf,
+    (%),
+    (^.),
+    (^..),
+    (^?),
+  ) -- the Rule record has a `has` field
 import System.FilePath ((</>))
 import Text.Megaparsec
   ( ErrorItem (Tokens),
@@ -586,7 +605,7 @@ srctest :: Int -> Int -> Rule -> Rule
 srctest srow scol r = r { srcref = Just (SrcRef {url = Text.pack $ "test" </> "Spec", short = Text.pack $ "test" </> "Spec", srcrow = srow, srccol = scol, version = Nothing }) }
 
 srcrow_ :: Rule -> Rule
-srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> (hence w), lest = srcrow_ <$> (lest w) }
+srcrow_   w = w { srcref = Nothing, hence = srcrow_ <$> hence w, lest = srcrow_ <$> lest w }
 
 srcrow1' :: Rule -> Rule
 srcrow1'  w = w { srcref = (\x -> x  { srcrow = 1 }) <$> srcref defaultReg }

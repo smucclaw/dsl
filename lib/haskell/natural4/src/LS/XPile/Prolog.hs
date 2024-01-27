@@ -29,7 +29,13 @@ For available comparison operators, see function showLPspecialSCasp
   The tokens == and === are synonymes of = and are also rendered as term1 = term2 in sCasp
 -}
 
-module LS.XPile.Prolog where
+module LS.XPile.Prolog
+  ( bsp2struct,
+    rulesToProlog,
+    rulesToSCasp,
+    vart
+  )
+where
 
 import AnyAll (BoolStruct (All, Any, Leaf, Not), Dot (xPos))
 import Data.Functor.Classes (showsBinary1)
@@ -57,7 +63,8 @@ import LS.Types as SFL4
     rel2txt,
     untypePT,
   )
-import Language.Prolog (Atom, Clause (Clause), Term (Cut, Struct, Var, Wildcard), var)
+import Language.Prolog
+  (Atom, Clause (Clause), Term (Cut, Struct, Var, Wildcard), var)
 import Prettyprinter
   ( Doc,
     Pretty (pretty),

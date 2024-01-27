@@ -44,9 +44,9 @@ import LS.NLP.NLG
   ( NLGEnv (..),
     expandRulesForNLG,
     expandRulesForNLGE,
+    parseSubj,
     ruleQuestions,
     ruleQuestionsNamed,
-    parseSubj,
     textViaQaHorns
   )
 import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)

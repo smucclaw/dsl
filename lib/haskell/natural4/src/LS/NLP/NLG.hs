@@ -6,7 +6,25 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module LS.NLP.NLG where
+module LS.NLP.NLG
+  ( NLGEnv (..),
+    allLangs,
+    expandRulesForNLG,
+    expandRulesForNLGE,
+    langEng,
+    linBStext,
+    mkConstraintText,
+    myNLGEnv,
+    nlg,
+    nlgQuestion,
+    parseSubj,
+    printLangs,
+    ruleQnTrees,
+    ruleQuestions,
+    ruleQuestionsNamed,
+    textViaQaHorns
+  )
+where
 
 import AnyAll qualified as AA
 import Control.Monad (when)

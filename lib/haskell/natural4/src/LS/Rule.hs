@@ -100,7 +100,7 @@ import LS.Types
     rpHead,
   )
 import LS.XPile.Logging (XPileLogW)
-import Optics hiding (has, (|>)) -- the Rule record has a `has` field
+import Optics ( toListOf ) -- the Rule record has a `has` field
 import System.FilePath ((</>))
 import Text.Megaparsec
   ( ErrorItem (Tokens),

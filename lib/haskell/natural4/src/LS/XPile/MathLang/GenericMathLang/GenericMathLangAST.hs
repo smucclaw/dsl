@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns, AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies, DeriveAnyClass #-}
+{-# LANGUAGE StrictData #-}
 
 module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 -- TODO: Add export list
@@ -61,10 +62,10 @@ data ExplnImptce = HighEI | LowEI | DebugEI
   deriving stock (Eq, Ord, Show)
 
 data ExplnAnnot = MkExplnAnnot
-  { l4RuleName :: !T.Text
-  , overridAnnot :: !(Maybe T.Text)
+  { l4RuleName :: T.Text
+  , overridAnnot :: Maybe T.Text
   -- ^ if L4 writer wants to override the default annotation 
-  , explnImptce :: !(Maybe ExplnImptce)
+  , explnImptce :: Maybe ExplnImptce
   -- ^ how impt it is to log the relevant annotation when tracing the eval, to (optionally) be provided by L4 writer
   -- what the default shld be can be a configurable L4 setting (and can made configurable on the downstream side as well)
 
@@ -73,8 +74,8 @@ data ExplnAnnot = MkExplnAnnot
 makeFieldLabelsNoPrefix ''ExplnAnnot
 
 data SrcPositn = MkPositn
-  { row :: !Int
-  , col :: !Int
+  { row :: Int
+  , col :: Int
   } deriving stock (Eq, Ord, Show, Generic)
 makeFieldLabelsNoPrefix ''SrcPositn
 
@@ -145,14 +146,17 @@ data BaseExp =
     ELit { lit :: !Lit }
   | EOp
     { binOp :: !Op,
-      opLeft :: !Exp, -- ^ left
-      opRight :: !Exp -- ^ right
+      opLeft :: Exp, -- ^ left
+      opRight :: Exp -- ^ right
     }
-
-  | EIf
-    { condExp :: !Exp,
-      thenExp :: !Exp,
-      elseExp :: !Exp
+  | EIfThen
+    { condExp :: Exp,
+      thenExp :: Exp 
+    }
+  | EIfTE
+    { condExp :: Exp,
+      thenExp :: Exp,
+      elseExp :: Exp
     }
   | EVar { var :: Var }
 
@@ -161,10 +165,10 @@ data BaseExp =
   -----------------------
   -- | ELam
   --   { param :: Var
-  --   , body :: !Exp }
+  --   , body :: Exp }
   -- | EApp
-  --   { func :: !Exp, -- ^ func 
-  --     arg :: !Exp   -- ^ arg
+  --   { func :: Exp, -- ^ func 
+  --     arg :: Exp   -- ^ arg
   --   }
   -- | ERecdRef -- with fake records
   --   { rcdName :: T.Text
@@ -175,33 +179,33 @@ data BaseExp =
   -- | variable mutation; prob treat as also eval-ing to assigned value
   | EVarSet
     { var :: Var,
-      arg :: !Exp
+      arg :: Exp
     }
   | ELet
     { var :: Var
-    , val :: !Exp
-    , body :: !Exp
+    , val :: Exp
+    , body :: Exp
     }
 
   -- TODO: mostly for V2
   -- | Block / sequence of nested bindings,
   -- where each binding expression can refer to previously bound variables
-  | ESeq { seq :: !SeqExp }
+  | ESeq { seq :: SeqExp }
 
   | EAnd
-    { left :: !Exp,  -- ^ left
-      right :: !Exp  -- ^ right
+    { left :: Exp,  -- ^ left
+      right :: Exp  -- ^ right
     }
   | EOr
-    { left :: !Exp,
-      right :: !Exp
+    { left :: Exp,
+      right :: Exp
     }
   | EEmpty
   deriving stock (Show, Generic)
 
 data Exp = MkExp
-  { exp :: !BaseExp
-  , md :: !MdGrp }
+  { exp :: BaseExp
+  , md :: MdGrp }
   deriving stock (Show)
 makeFieldLabelsNoPrefix ''Exp
 

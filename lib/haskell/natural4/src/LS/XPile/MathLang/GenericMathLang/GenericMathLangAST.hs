@@ -85,7 +85,6 @@ instance Hashable SrcPositn
 --   } deriving stock (Eq, Ord, Show)
 -- makePrisms ''TypeMetadata
 
-
 data ExpMetadata = MkEMdata
   { srcPos :: !SrcPositn
   , explnAnnot :: !(Maybe ExplnAnnot)
@@ -141,6 +140,7 @@ data SeqExp = EmptySeqE
   deriving stock (Show, Generic)
 
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
+-- | May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn
 data BaseExp =
     ELit { lit :: !Lit }
   | EOp

@@ -28,10 +28,6 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 -- TODO: Add import list
 import LS.XPile.MathLang.Logging (LogConfig)
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
-
--- import AnyAll qualified as AA
--- import LS.Types qualified as L4
-import LS.Types as L4 (RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType, HornClause (..))
 -- import LS.Interpreter (qaHornsT)
 import LS.Rule (Interpreted(..), extractMTExprs, getGivenWithSimpleType,
                 defaultHorn)
@@ -48,21 +44,18 @@ import Effectful.State.Static.Shared (State, runState)
 --     , refute
 --     )
 import Data.HashSet qualified as HS
-import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
-import Data.Hashable (Hashable)
 import Optics
 import Data.Generics.Sum.Constructors
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
-import Data.String.Interpolate (__i)
+-- import Data.String.Interpolate (__i)
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList)
 
-import LS.Types (TypeSig(..), TypedMulti)
-import LS.XPile.MathLang.UtilsLCReplDev
+-- import LS.XPile.MathLang.UtilsLCReplDev
 
 
 {-------------------------------------------------------------------------------

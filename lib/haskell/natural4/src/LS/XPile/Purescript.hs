@@ -25,7 +25,7 @@ import Control.Monad (guard, join, liftM, unless, when)
 import Data.Bifunctor (Bifunctor (..), first, second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
-import Data.Foldable (for_)
+import Data.Foldable (for_, sequenceA_)
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
@@ -107,7 +107,7 @@ mutterRuleNameAndBS rnbss = do
 -- two boolstructT: one question and one phrase
 namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndStruct l4i rl = do
-  mutter $ "*** namesAndStruct: running on " ++ show (length rl) ++ " rules"
+  mutter [i|*** namesAndStruct: running on #{length rl} rules|]
   mutter "calling qaHornsT against l4i"
   mutterdhsf 3 "we know qaHornsT returns" pShowNoColorS (qaHornsT l4i)
   mutterRuleNameAndBS [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
@@ -125,7 +125,7 @@ namesAndQ env rl = do
                      | q' <- q ]
                    | q <- questStruct ]
   mutter [i|*** wut the heck are we returning? like, #{length wut} things.|]
-  sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
+  sequenceA_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where
     name = map ruleLabelName rl
@@ -178,7 +178,7 @@ labelQs = map alwaysLabeled
 
 biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env rl = do
-  mutter $ "*** biggestQ: running"
+  mutter "*** biggestQ: running"
   let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rl]
   q <- ruleQuestionsNamed env alias `traverse` expandRulesForNLG env rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
@@ -193,7 +193,7 @@ biggestQ env rl = do
 
 biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
 biggestS env rl = do
-  mutter $ "*** biggestS running"
+  mutter "*** biggestS running"
   q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
 
@@ -301,9 +301,9 @@ translate2PS nlgEnvs eng rules = do
   -------------------------------------------------------------
   -- topBit
   -------------------------------------------------------------
-  mutter $ "** calling biggestQ"
+  mutter "** calling biggestQ"
   bigQ <- biggestQ eng rules
-  mutter $ "** got back bigQ"
+  mutter "** got back bigQ"
   mutter $ show bigQ
   let topBit =
         bigQ
@@ -369,7 +369,7 @@ translate2PS nlgEnvs eng rules = do
 
 qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
 qaHornsByLang rules langEnv = do
-  mutterd 3 ("qaHornsByLang for language " ++ show (gfLang langEnv))
+  mutterd 3 [i|qaHornsByLang for language #{gfLang langEnv}|]
   let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
       subject = listToMaybe [ parseSubj langEnv person | Regulative{subj = person} <- rules]
       qaHT = textViaQaHorns langEnv alias subject

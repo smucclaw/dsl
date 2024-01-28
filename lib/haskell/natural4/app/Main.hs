@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main (main) where
 
@@ -91,6 +92,7 @@ import System.FilePath ((-<.>), (</>))
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
+import qualified Text.Regex.PCRE.Heavy as PCRE
 
 
 myTraceM :: String -> IO ()
@@ -169,17 +171,12 @@ main = do
 
 
           when (SFL4.toNLG rc && null (SFL4.only opts)) do
-            DF.traverse_ (\env -> do
+            DF.for_ allNLGEnvR \env -> do
                       -- using expandRulesForNLG for demo purposes here
                      -- I think it's better suited for questions, not full NLG
                       -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
-                      naturalLangSents <- traverse (nlg env) (expandRulesForNLG env rules)
-                      DF.traverse_ (putStrLn . Text.unpack) naturalLangSents) allNLGEnvR
-
-
-
-
-
+                      naturalLangSents <- nlg env `traverse` expandRulesForNLG env rules
+                      DF.for_ naturalLangSents $ putStrLn . Text.unpack
 
   -- end of the section that deals with NLG
 
@@ -341,7 +338,7 @@ main = do
         then do
         createDirectoryIfMissing True dname
         appendFile (dname </> "index" -<.> "html") "<!-- this file intentionally left blank -->"
-        else sequence_
+        else DF.sequenceA_
              [ do
                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
                mywritefile False dname (fname<>"-full")   ext (show svgfull)
@@ -442,9 +439,10 @@ snakeScrub :: [Text.Text] -> String
 snakeScrub =
   Text.intercalate "-"
     >>> Text.replace " " "_"
+    >>> PCRE.gsub [PCRE.re|[^a-zA-Z0-9_\-]|] ("" :: Text.Text)
     >>> Text.unpack
-    >>> partition (`elem` ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "_-")
-    >>> fst
+    -- >>> partition (`elem` ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "_-")
+    -- >>> fst
 
 -- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
 commentIfError :: String -> Either XPileLogW String -> String

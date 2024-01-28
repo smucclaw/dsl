@@ -323,7 +323,7 @@ main = do
         then do
         createDirectoryIfMissing True dname
         appendFile (dname </> "index" -<.> "html") "<!-- this file intentionally left blank -->"
-        else sequence_
+        else DF.sequenceA_
              [ do
                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
                mywritefile False dname (fname<>"-full")   ext (show svgfull)

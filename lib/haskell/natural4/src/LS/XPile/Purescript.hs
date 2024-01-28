@@ -25,7 +25,7 @@ import Control.Monad (guard, join, liftM, unless, when)
 import Data.Bifunctor (Bifunctor (..), first, second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
-import Data.Foldable (for_)
+import Data.Foldable (for_, sequenceA_)
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
@@ -125,7 +125,7 @@ namesAndQ env rl = do
                      | q' <- q ]
                    | q <- questStruct ]
   mutter [i|*** wut the heck are we returning? like, #{length wut} things.|]
-  sequence_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
+  sequenceA_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where
     name = map ruleLabelName rl

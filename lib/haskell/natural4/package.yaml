@@ -80,6 +80,7 @@ dependencies:
   - raw-strings-qq
   - template-haskell
   - effectful
+  - effectful-th
   - log-base
   - log-effectful
   - diagnose

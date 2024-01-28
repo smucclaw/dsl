@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {-|
 This module provides token-level parsers, (though the tokens themselves are defined in BasicTypes).
@@ -33,6 +34,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (isNothing)
 import Data.Monoid (Sum (..))
 import Data.Set qualified as Set
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Void (Void)
 import Debug.Trace (traceM)
@@ -270,7 +272,7 @@ p1 |<<| _ = mkSL do
     pos <- lookAhead pGetTokenPos
     replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
   return (result, remaining)
-  
+
 infixl 4 |<<|
 
 liftedDBG :: Show a => String -> Parser a -> Parser a
@@ -290,21 +292,22 @@ liftRawPFun f = WriterT . ReaderT . (\x -> f . runReaderT x) . runWriterT
 
 printErrors :: String -> RunConfig -> Parser a -> Parser a
 printErrors dname r = runOnErrors \ cnsmp err s res -> do
-  let consumption = case cnsmp of
+  let consumption :: String = case cnsmp of
         MPInternal.Consumed -> "Consumed"
         MPInternal.NotConsumed -> "Unconsumed"
   let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s
                            (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) \_ _ -> error "eerr"
-  magicRunParser . myTraceM $ "\\ !" <> consumption <> " Error: " <> dname <> ": " <> onelineErrorMsg err
+  magicRunParser . myTraceM $
+    [i|\\ !#{consumption} Error: #{dname}: #{onelineErrorMsg err}|]
 
 debugNameP :: Show a => String -> Parser a -> Parser a
 debugNameP dname p = -- label dname $
   do
   -- debugPrint dname
-  myTraceM $ "/ " <> dname
+  myTraceM [i|/ #{dname}|]
   r <- asks id
   res <- printErrors dname r $ local (increaseNestLevel dname) $ liftedDBG dname p
-  myTraceM $ "\\ " <> dname <> " has returned " <> show res
+  myTraceM [i|\\ #{dname} has returned #{show res}|]
   return res
 
 debugNameSL :: Show a => String -> SLParser a -> SLParser a
@@ -369,7 +372,7 @@ pText ts tok = do
   p <- pOtherVal
   if p `elem` ts
     then return tok
-    else fail ("pText: got " ++ show p ++ " which doesn't match input text " ++ show ts)
+    else fail [i|pText: got #{p} which doesn't match input text #{ts}|]
 
 -- | parse a multiterm
 pMultiTerm :: Parser MultiTerm
@@ -389,7 +392,7 @@ slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pMTExpr
 sameOrNextLine :: (Show a, Show b) => SLParser a -> SLParser b -> Parser (a, b)
 sameOrNextLine pa pb =
   try (debugName "sameOrNextLine: trying next line" $ (,) >*| (pa <* liftSL (optional dnl)) |^| (liftSL (optional dnl) *> pb) |<$ undeepers)
-  <|> (debugName "sameOrNextLine: trying same line" $ (,) >*| pa |*| pb |<$ undeepers)
+  <|> debugName "sameOrNextLine: trying same line" ((,) >*| pa |*| pb |<$ undeepers)
 
 -- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
 
@@ -778,7 +781,7 @@ infixl 4 $+/
 
 p1 /+/ p2 = do
   (uncurry <$> p1 <*> p2)
-    |-- \n -> debugPrint $ "/+/ pending " ++ show n ++ " UnDeepers"
+    |-- \n -> debugPrint [i|/+/ pending #{n} UnDeepers|]
 infixl 4 /+/
 
 p1 $>/ p2 = debugPrintSL "$>/" >> p1 $+/ (|>>) p2
@@ -805,7 +808,7 @@ p1 |-- p2 = mkSL do
 infixl 4 |--
 
 l ->| n = do
-  debugPrint ("->| trying to consume " ++ show n ++ " GoDeepers")
+  debugPrint [i|->| trying to consume #{n} GoDeepers|]
   f <- l
   _ <- godeeper n
   debugPrint "->| success"
@@ -825,8 +828,8 @@ finishSL p = p |<$ undeepers
 -- | Like `someUndeepers`, but only consumes up to n UnDeepers
 upToNUndeepers :: Int -> SLParser ()
 upToNUndeepers 0 = debugName "upToNUndeepers(0)/done" $ return ()
-upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") do
-  (slUnDeeper *> upToNUndeepers (n-1)) <|> debugPrint ("upToNUndeepers: remaining: " ++ show n)
+upToNUndeepers n = debugName [i|upToNUndeepers(#{n})/undeeper|] do
+  (slUnDeeper *> upToNUndeepers (n-1)) <|> debugPrint [i|upToNUndeepers: remaining: #{n}|]
 
 
 -- consume all the UnDeepers that have been stacked off to the right
@@ -835,12 +838,12 @@ upToNUndeepers n = debugName ("upToNUndeepers(" ++ show n ++ ")/undeeper") do
 undeepers :: Int -> Parser ()
 undeepers n | n < 0 =  debugName "undeepers" $ fail "undeepers: negative number of undeepers"
 undeepers n = debugName "undeepers" do
-  debugPrint $ "sameLine/undeepers: reached end of line; now need to clear " ++ show n ++ " UnDeepers"
+  debugPrint [i|sameLine/undeepers: reached end of line; now need to clear #{n} UnDeepers|]
   _ <- count n (pToken UnDeeper)
   debugPrint "sameLine: success!"
 
 godeeper :: Int -> SLParser ()
-godeeper n = mkSL $ debugName ("godeeper " ++ show n) do
+godeeper n = mkSL $ debugName [i|godeeper #{n}|] do
   _ <- count n (pToken GoDeeper)
   debugPrint "matched!"
   return ((),n)
@@ -863,7 +866,7 @@ infixl 4 $>>
   where
     base = debugName "|>>/base" do
       out <- p
-      debugPrint $ "|>>/base got " ++ show out
+      debugPrint [i||>>/base got #{show out}|]
       return out
     recurse = debugName "|>>/recurse" do
       slDeeper >> (|>>) p
@@ -894,7 +897,7 @@ p1 |<* p2 = debugPrint "|<* starting" >> do
     goleft = debugPrint "|<*/recurse" >> do
       uds <- some slUnDeeper
       out <- p2
-      debugPrint $ "|<*/recurse matched " ++ show (length uds) ++ " UnDeepers"
+      debugPrint [i||<*/recurse matched #{length uds} UnDeepers|]
       return out
 infixl 4 |<*
 

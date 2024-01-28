@@ -168,17 +168,12 @@ main = do
 
 
           when (SFL4.toNLG rc && null (SFL4.only opts)) do
-            DF.traverse_ (\env -> do
+            DF.for_ allNLGEnvR \env -> do
                       -- using expandRulesForNLG for demo purposes here
                      -- I think it's better suited for questions, not full NLG
                       -- because everything is so nested, not a good reading experience. Original is better, where it's split in different rules.
-                      naturalLangSents <- traverse (nlg env) (expandRulesForNLG env rules)
-                      DF.traverse_ (putStrLn . Text.unpack) naturalLangSents) allNLGEnvR
-
-
-
-
-
+                      naturalLangSents <- nlg env `traverse` expandRulesForNLG env rules
+                      DF.for_ naturalLangSents $ putStrLn . Text.unpack
 
   -- end of the section that deals with NLG
 

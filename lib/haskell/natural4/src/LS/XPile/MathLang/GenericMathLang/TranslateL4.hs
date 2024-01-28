@@ -59,7 +59,7 @@ import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList)
 
-import LS.Types (TypeSig(..), TypedMulti)
+import LS.Types (TypeSig(..), TypedMulti, SimplHC(..), BaseHC(..), HeadOnlyHC(..), HnBHC(..))
 import LS.XPile.MathLang.UtilsLCReplDev
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST)

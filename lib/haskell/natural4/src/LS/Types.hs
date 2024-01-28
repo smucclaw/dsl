@@ -50,6 +50,10 @@ type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
+newtype BoolSR = MkBSR BoolStructR
+  deriving newtype (Eq)
+  deriving stock (Show, Generic)
+
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
            | RPmin | RPmax
@@ -197,6 +201,34 @@ data HornClause a = HC
 instance Hashable a => Hashable (HornClause a)
 
 type HornClause2 = HornClause BoolStructR
+
+----- Slightly better representation for L4 rules --------------------
+
+-- | Though this is still quite 'syntactic'; would be even better if it were repns for a specific semantics
+data SimplHC a b =
+  MkSimplHC { shcGivens :: a
+            , shcRet :: b
+            , baseHC :: BaseHC
+            -- , srcref :: NOT A MAYBE
+            }
+  deriving stock (Eq, Show)
+
+data BaseHC = HeadOnly HeadOnlyHC
+            | HeadAndBody HnBHC
+            -- | Complex
+  deriving stock (Eq, Show)
+
+newtype HeadOnlyHC = MkHeadOnlyHC { head  :: [MTExpr] }
+  deriving stock (Show)
+  deriving newtype (Eq)
+
+data HnBHC = 
+  MkHnBHC { hbHead :: [MTExpr] 
+          , hbBody :: BoolSR
+          }
+  deriving stock (Eq, Show)
+
+------------------------------------------------------------------
 
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Ord, Show, Generic, ToJSON)

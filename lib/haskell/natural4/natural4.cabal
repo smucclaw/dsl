@@ -81,8 +81,9 @@ library
       LS.XPile.MathLang
       LS.XPile.MathLang.ForMengEval.GenericMathLangToMengMathLang
       LS.XPile.MathLang.ForMengEval.TypeInferForMengEval
-      LS.XPile.MathLang.GenericMathLangAST
-      LS.XPile.MathLang.L4ToGenericMathLang
+      LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
+      LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
+      LS.XPile.MathLang.GenericMathLang.TranslateL4
       LS.XPile.MathLang.Logging
       LS.XPile.MathLang.MathLang
       LS.XPile.MathLang.UtilsLCReplDev
@@ -121,6 +122,7 @@ library
     , diagnose
     , directory
     , effectful
+    , effectful-th
     , explainable
     , extra
     , fgl
@@ -190,6 +192,7 @@ executable natural4-exe
     , diagnose
     , directory
     , effectful
+    , effectful-th
     , explainable
     , extra
     , fgl
@@ -261,6 +264,7 @@ test-suite doctests
     , directory
     , doctest-parallel >=0.1
     , effectful
+    , effectful-th
     , explainable
     , extra
     , fgl
@@ -351,6 +355,7 @@ test-suite natural4-test
     , diagnose
     , directory
     , effectful
+    , effectful-th
     , explainable
     , extra
     , fgl
@@ -428,6 +433,7 @@ benchmark natural4-bench
     , diagnose
     , directory
     , effectful
+    , effectful-th
     , explainable
     , extra
     , fgl

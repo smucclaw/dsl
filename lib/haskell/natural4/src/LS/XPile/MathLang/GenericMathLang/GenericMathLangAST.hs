@@ -9,7 +9,7 @@
 {-# LANGUAGE PatternSynonyms, ViewPatterns, AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies, DeriveAnyClass #-}
 
-module LS.XPile.MathLang.GenericMathLangAST where
+module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 -- TODO: Add export list
 
 import Data.Text qualified as T
@@ -27,6 +27,7 @@ import Data.String ( IsString )
 -- import LS.Rule as L4 (Rule(..), extractMTExprs)
 
 -- import Data.HashSet qualified as HS
+import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable)
 -- import GHC.Generics (Generic)
 
@@ -74,8 +75,10 @@ makeFieldLabelsNoPrefix ''ExplnAnnot
 data SrcPositn = MkPositn
   { row :: !Int
   , col :: !Int
-  } deriving stock (Eq, Ord, Show)
+  } deriving stock (Eq, Ord, Show, Generic)
 makeFieldLabelsNoPrefix ''SrcPositn
+
+instance Hashable SrcPositn
 
 -- data TypeMetadata = MkTMdata
 --   { tlabel :: !TLabel
@@ -133,6 +136,10 @@ data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
   deriving stock (Eq, Ord, Show)
 
 
+data SeqExp = EmptySeqE
+            | ConsSE Exp SeqExp
+  deriving stock (Show, Generic)
+
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 data BaseExp =
     ELit { lit :: !Lit }
@@ -176,18 +183,18 @@ data BaseExp =
     , body :: !Exp
     }
 
-  -- TODO: For V2
+  -- TODO: mostly for V2
   -- | Block / sequence of nested bindings,
   -- where each binding expression can refer to previously bound variables
-  -- | ESeq { stmts :: ![Exp] }
+  | ESeq { seq :: !SeqExp }
 
   | EAnd
-    { left :: !BaseExp,  -- ^ left
-      right :: !BaseExp  -- ^ right
+    { left :: !Exp,  -- ^ left
+      right :: !Exp  -- ^ right
     }
   | EOr
-    { left :: !BaseExp,
-      right :: !BaseExp
+    { left :: !Exp,
+      right :: !Exp
     }
   | EEmpty
   deriving stock (Show, Generic)
@@ -203,6 +210,17 @@ makeFieldLabelsNoPrefix ''Exp
   LC / Generic MathLang Program 
 --------------------------------------------------}
 
+{- | Keeps track of *global* var bindings, e.g. 'globally' declared GIVENs
+This should be useful b/c most langs require more upfront declaration of global vars than Meng seems to want in L4
+-}
+newtype GlobalVars = MkGlobalVars (HashMap Var (Maybe L4EntType))
+  deriving stock (Show)
+makePrisms ''GlobalVars
+
+mkGlobalVars :: HashMap Var (Maybe L4EntType) -> GlobalVars
+mkGlobalVars = view (re _MkGlobalVars)
+
+
 {- | Metadata for programs in generic lam calc
 [TODO] Things that could be added in the future:
     * the timestamp from Main.hs
@@ -215,7 +233,8 @@ data LCProgMetadata =
 
 data LCProgram =
   MkLCProgram { progMetadata :: LCProgMetadata
-              , lcProgram :: [Exp]
+              , lcProgram :: Exp
+              , globalVars :: GlobalVars
               }
   deriving stock (Show)
 

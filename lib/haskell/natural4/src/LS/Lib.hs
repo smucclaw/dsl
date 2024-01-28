@@ -1095,7 +1095,7 @@ exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" do
   raw <- expr pParamText
 
-  return $ case raw of
+  return case raw of
     MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where

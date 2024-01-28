@@ -32,6 +32,7 @@ module LS.XPile.ExportTypes (
     , FieldType(..), typeDeclSuperToFieldType, showTypesJson
 ) where
 
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import L4.PrintProg (capitalise)
 import Prettyprinter
@@ -301,14 +302,14 @@ instance ShowTypesHaskell JSchemaExp where
 rulesToHaskellTp :: [SFL4.Rule] -> String
 rulesToHaskellTp rs =
     let ets = foldMap rule2ExpType rs in
-        (case ets of
+        case ets of
             [] -> ""
             rt : _rts ->
                 let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef (typeName rt))]
                     entries = entry:ets
-                in trace ("Entries: " ++ show entries) $
-                   show (vsep (map showTypesHaskell entries ++
-                        translationTable (genTranslationTable entries))))
+                in trace [i|Entries: #{entries}|] $
+                   show (vsep (map showTypesHaskell entries <>
+                        translationTable (genTranslationTable entries)))
 
 translationTable :: [(T.Text, T.Text)] -> [Doc ann]
 translationTable tab =
@@ -384,11 +385,11 @@ entrypointName = "toplevel"
 rulesToPrologTp :: [SFL4.Rule] -> String
 rulesToPrologTp rs =
     let ets = foldMap rule2ExpType rs in
-        (case ets of
+        case ets of
             [] -> ""
             rt : _rts ->
                 let entry = ExpTypeRecord entrypointName [Field entrypointName (FTRef rt.typeName)] in
-                show (vsep (map showTypesProlog (entry:ets))))
+                show (vsep (map showTypesProlog (entry:ets)))
 
 ------------------------------------
 -- Output of types to Json Schema
@@ -481,11 +482,11 @@ pprintJsonObj key values final =
 
 jsonPreamble :: TypeName -> Doc ann
 jsonPreamble tn =
-    [__di|
-        "$schema":"http://json-schema.org/draft-07/schema\#",
-        "type": "object",
-        "properties":{"#{pretty entrypointName}":{#{showTypesJson (FTRef tn)}}}
-    |]
+  [__di|
+    "$schema":"http://json-schema.org/draft-07/schema\#",
+    "type": "object",
+    "properties":{"#{pretty entrypointName}":{#{showTypesJson (FTRef tn)}}}
+  |]
 
 rulesToJsonSchema :: [SFL4.Rule] -> String
 rulesToJsonSchema rs =
@@ -494,7 +495,7 @@ rulesToJsonSchema rs =
         -- Partitioning in advance because we want to group the means HLikes into one object
         ets = foldMap rule2NonmdJsonExp rs
         subJsonObjs = map showTypesJson ets
-    in (case ets of
+    in case ets of
             [] -> show $ braces emptyDoc
             (rt : _rts) ->
                 -- trace ("ets: " ++ show ets) $
@@ -504,12 +505,11 @@ rulesToJsonSchema rs =
                 {#{vsep (punctuate comma subJsonObjs)}}
                 }
                 |]
-        )
 
 rulesToUISchema :: [SFL4.Rule] -> String
 rulesToUISchema rs =
     let ets = foldMap rule2NonmdJsonExp rs in
-        (case ets of
+        case ets of
             [] -> show $ braces emptyDoc
             rts ->
                 -- trace ("ets: " ++ show ets) $
@@ -527,5 +527,3 @@ rulesToUISchema rs =
                     )
                     ) )
                 )
-        )
-

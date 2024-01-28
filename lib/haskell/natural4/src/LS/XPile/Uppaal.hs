@@ -1,4 +1,6 @@
 {-| transpiler to Uppaal, work in progress. -}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.XPile.Uppaal
   ( taSysToString,
@@ -13,6 +15,7 @@ import AnyAll qualified as AA
 
 import Data.HashSet qualified as Set
 import Data.Maybe (fromMaybe)
+import Data.String.Interpolate (i)
 import Data.Text (unpack)
 import Data.Text qualified as TL
 import L4.PrintProg
@@ -43,6 +46,8 @@ import LS.Types as SFL4
     pt2text,
     rp2text,
   )
+import Control.Monad (void)
+import qualified Text.Regex.PCRE.Heavy as PCRE
 
 type Ann = ()
 
@@ -88,21 +93,21 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     }, ifCondDecls)
   where
     rName = maybe "TODO_generate_unique_name" (unpack . thrd) rlabel
-    ruleTimer = Clock $ "time" ++ rName
+    ruleTimer = Clock [i|time#{rName}|]
     initialLoc = Loc "Initial"
-    uponLoc = Loc $ "Upon_" ++ fromMaybe "START" (pt2varname <$> upn) -- TODO: Make this urgent when supported
+    uponLoc = Loc [i|Upon_#{maybe "START" pt2varname upn}|] -- TODO: Make this urgent when supported
     uponTransition = (simpleTransition initialLoc uponLoc) {
                                  actionOfTransition = TransitionAction [ruleTimer] (Skip ())
                                  }
     ifBranchOkLoc = Loc "RuleTriggers"
     successLoc = Loc "Sucess"
     ifCond = boolStructRToExpr cnd
-    ifCondDecls = extractDecls (fv ifCond)
+    ifCondDecls = extractDecls $ fv ifCond
     ifBranchTransition = (simpleTransition uponLoc ifBranchOkLoc) {
-                                 guardOfTransition = TransitionGuard [] (Just (() <$ ifCond))
+                                 guardOfTransition = TransitionGuard [] $ Just $ void ifCond
                                  }
     successTransition = (simpleTransition uponLoc successLoc) {
-                                 guardOfTransition = TransitionGuard [] (Just (() <$ notExpr ifCond))
+                                 guardOfTransition = TransitionGuard [] $ Just $ void $ notExpr ifCond
                                  }
     -- TODO: Handle Lest
     breachLoc = Loc "Breach"
@@ -113,7 +118,7 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     timeConstraintFailedTransition = (simpleTransition ifBranchOkLoc breachLoc) {
                                  guardOfTransition = TransitionGuard [ClConstr ruleTimer (negateCompar $ mkCompar tcmp) (fromMaybe 1 time)] Nothing
                                  }
-ruleToTA r _ = error $ "Unexpected rule type: " ++ show r
+ruleToTA r _ = error [i|Unexpected rule type: #{r}|]
 
 extractDecls :: Set.HashSet (Var (Tp ())) -> [VarDecl ()]
 extractDecls = map varToVarDecl . Set.toList
@@ -128,7 +133,7 @@ mkCompar TAfter = BCgte
 mkCompar TBy = BClte
 mkCompar TOn = BCeq
 -- mkCompar TVague = _
-mkCompar other = error $ "Unsupported time constraint: " ++ show other
+mkCompar other = error [i|Unsupported time constraint: #{other}|]
 
 negateCompar :: BComparOp -> BComparOp
 negateCompar BCeq = BCne
@@ -147,14 +152,14 @@ rp2varname = toValidName  . unpack . rp2text
 boolStructPToExpr :: BoolStructP -> CoreL4.Expr (Tp ())
 boolStructPToExpr (AA.Leaf pt) = mkVarE . GlobalVar . QVarName BooleanT $ pt2varname pt
 boolStructPToExpr (AA.Not  x)  = notExpr (boolStructPToExpr x)
-boolStructPToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructPToExpr <$> xs)
-boolStructPToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructPToExpr <$> xs)
+boolStructPToExpr (AA.Any _maybeprepost xs)  = disjsExpr $ boolStructPToExpr <$> xs
+boolStructPToExpr (AA.All _maybeprepost xs)  = conjsExpr $ boolStructPToExpr <$> xs
 
 boolStructRToExpr :: BoolStructR -> CoreL4.Expr (Tp ())
 boolStructRToExpr (AA.Leaf rp) = mkVarE . GlobalVar . QVarName BooleanT $ rp2varname rp
 boolStructRToExpr (AA.Not  bs)  = notExpr (boolStructRToExpr bs)
-boolStructRToExpr (AA.Any _maybeprepost xs)  = disjsExpr (boolStructRToExpr <$> xs)
-boolStructRToExpr (AA.All _maybeprepost xs)  = conjsExpr (boolStructRToExpr <$> xs)
+boolStructRToExpr (AA.Any _maybeprepost xs)  = disjsExpr $ boolStructRToExpr <$> xs
+boolStructRToExpr (AA.All _maybeprepost xs)  = conjsExpr $ boolStructRToExpr <$> xs
 
 simpleTransition :: Loc -> Loc -> Transition ()
 simpleTransition src tgt = Transition { sourceOfTransition = src
@@ -168,13 +173,12 @@ thrd :: RuleLabel -> TL.Text
 thrd (_,_,t) = t
 
 toValidName :: [Char] -> [Char]
-toValidName = map underscorize
-  where
-    underscorize ' ' = '_'
-    underscorize '(' = '_'
-    underscorize ')' = '_'
-    underscorize '§' = '_'
-    underscorize c = c
+toValidName = PCRE.gsub [PCRE.re| \(|\)|§|] "_"
+    -- underscorize ' ' = '_'
+    -- underscorize '(' = '_'
+    -- underscorize ')' = '_'
+    -- underscorize '§' = '_'
+    -- underscorize c = c
 
 
 

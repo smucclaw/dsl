@@ -405,7 +405,7 @@ mtExprToExprNoType :: [String] -> MTExpr -> ExprM ann ()
 mtExprToExprNoType cont (MTT (T.unpack -> t)) =
   pure $ VarE () $ varNameToVarNoType cont t
 mtExprToExprNoType _ mtExpr =
-  pure $ ValE () $ case mtExpr of
+  pure $ ValE () case mtExpr of
     MTI i -> IntV i
     MTF i -> FloatV i
     MTB i -> BoolV i
@@ -630,7 +630,8 @@ prettyTypedMulti :: ParamText -> Doc ann
 prettyTypedMulti pt = pretty $ PT3 pt
 
 prettyRuleName :: Int -> Bool -> RuleName -> Doc ann
-prettyRuleName cnum needed text = snake_case text <> (if needed then "_" <> pretty cnum else mempty)
+prettyRuleName cnum needed text =
+  snake_case text <> if needed then "_" <> pretty cnum else mempty
 
 -- deal with this properly rather than doing all this icky string manipulation
 --- -- but we would have to refactor the output from hc2decls to not be a Doc, and it would be harder to insert manual overrides
@@ -721,10 +722,10 @@ prettyDefnCs rname cs = do
       replacements =
         [ T.replace t $ T.pack $ show n
         | (t, n) <- zip (nub myterms) x123 ]
-      outstr = compose replacements $ rhss
+      outstr = compose replacements rhss
       returntype = "Integer"
 
-  pure $ if null myterms
+  pure if null myterms
     then
       [__di|
         fact #{angles rname}

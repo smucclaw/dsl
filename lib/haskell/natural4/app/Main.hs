@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main (main) where
 
@@ -90,6 +91,7 @@ import System.FilePath ((-<.>), (</>))
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.XML.HXT.Core qualified as HXT
+import qualified Text.Regex.PCRE.Heavy as PCRE
 
 
 myTraceM :: String -> IO ()
@@ -422,9 +424,10 @@ snakeScrub :: [Text.Text] -> String
 snakeScrub =
   Text.intercalate "-"
     >>> Text.replace " " "_"
+    >>> PCRE.gsub [PCRE.re|[^a-zA-Z0-9_\-]|] ("" :: Text.Text)
     >>> Text.unpack
-    >>> partition (`elem` ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "_-")
-    >>> fst
+    -- >>> partition (`elem` ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "_-")
+    -- >>> fst
 
 -- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
 commentIfError :: String -> Either XPileLogW String -> String

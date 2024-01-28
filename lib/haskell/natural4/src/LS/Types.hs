@@ -218,7 +218,7 @@ data BaseHC = HeadOnly HeadOnlyHC
             -- | Complex
   deriving stock (Eq, Show)
 
-newtype HeadOnlyHC = MkHeadOnlyHC { head  :: [MTExpr] }
+newtype HeadOnlyHC = MkHeadOnlyHC { hcHead  :: [MTExpr] }
   deriving stock (Show)
   deriving newtype (Eq)
 

@@ -16,9 +16,10 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
 import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 
--- import AnyAll qualified as AA
+import AnyAll qualified as AA
 -- import LS.Types qualified as L4
-import LS.Types as L4 (RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType, HornClause (..))
+import LS.Types as L4 (RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType, 
+                       HornClause (..), BoolStructR)
 -- import LS.Interpreter (qaHornsT)
 import LS.Rule (
                 -- Interpreted(..), 
@@ -26,7 +27,7 @@ import LS.Rule (
                 defaultHorn)
 import LS.Rule qualified as L4 (Rule(..))
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, join)
 import Effectful (Effect, Eff, runPureEff)
 import Effectful.TH (makeEffect)
 import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
@@ -47,6 +48,7 @@ import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
 import Optics
+import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
 import Data.Generics.Sum.Constructors
 -- import Data.Generics.Product.Types (types)
@@ -187,9 +189,11 @@ b/c in L4 it might be possible to declare and initalize a global var from, e.g.,
 
 data ToLCError = NotYetImplemented T.Text -- SrcPositn
                | MiscError T.Text
+               | NotSupported T.Text
   deriving stock (Eq, Show, Generic)
 
 instance Hashable ToLCError
+
 
 stringifyToLCError :: ToLCError -> T.Text
 stringifyToLCError = undefined
@@ -230,6 +234,13 @@ newtype ToLC a = ToLC (Eff '[Reader Env, State GlobalVars, Error ToLCError] a)
 --   Refute errs -> localSeqUnlift localEnv $ \unlift -> do
 --     V.refute errs
 
+---------------- Specialized error throwing convenience funcs ------------------------------------
+-- | TODO: make this better with `pretty` and better structured errors later
+throwNotYetImplError :: Show a => a -> ToLC b
+throwNotYetImplError l4ds = ToLC $ throwError $ NotYetImplemented (view packed . show $ l4ds) 
+
+
+--------------------------------------------------------------------------------------------------
 
 -- TODO: Adapting MonadValidate is prob going to be more complicated than in the WT presentation
 runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
@@ -238,7 +249,7 @@ runToLC (ToLC m) = runPureEff . runErrorNoCallStack . runState initialState . ru
     initialState = mkGlobalVars HM.empty
 
 
---------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
 
 isDeclaredVar :: MTExpr -> ToLC (Maybe Var)
 isDeclaredVar = undefined
@@ -290,35 +301,50 @@ ruleToExp rule = addMdataToBaseExp rule (ruleToBaseExp rule)
     addMdataToBaseExp = undefined
 
 ruleToBaseExp :: L4.Rule -> ToLC BaseExp
-ruleToBaseExp (isIf -> baseIfExp) = undefined
-ruleToBaseExp l4rule = undefined --not yet implemented or not supported
--- $ refute [(MiscError "not yet implemented or not supported")]
--- TODO: For future versions
--- ruleToBaseExp (isLamDef -> baseLamExp) = undefined
--- ruleToBaseExp (isBlockOfExps -> seqBaseExps) = undefined
+ruleToBaseExp (isIf -> Just (rule, ruleHc, bodyHc)) = toIfExp rule ruleHc bodyHc
+ruleToBaseExp rule = throwNotYetImplError rule
+-- for the future, stuff like
+-- ruleToBaseExp (isLamDef -> ...) = toLamDef ...
 
-isIf :: L4.Rule -> BaseExp
-isIf rule = undefined
+isIf :: L4.Rule -> Maybe (L4.Rule, L4.HornClause L4.BoolStructR, L4.BoolStructR)
+isIf rule =
+  if length rule.clauses == 1 -- not sure abt this but go on for now
+     && bodyOfTheHCIsNotNothing
+  then (\bodyHc -> (rule, ruleHc, bodyHc)) <$> mBodyOfTheHC
+  else Nothing
+  where
+    mBodyOfTheHC :: Maybe L4.BoolStructR = join (rule.clauses ^? ix 0 % #hBody)
+    bodyOfTheHCIsNotNothing = isn't _Nothing mBodyOfTheHC
+    ruleHc :: L4.HornClause L4.BoolStructR
+    ruleHc = Prelude.head rule.clauses -- safe b/c check first
 
-notL4BlockOfStatements :: L4.Rule -> Bool
-notL4BlockOfStatements rule = length rule.clauses > 1
+toIfExp :: L4.Rule -> L4.HornClause L4.BoolStructR -> L4.BoolStructR -> ToLC BaseExp
+toIfExp rule ruleHc ruleBody = EIfThen <$> condE <*> thenE
+  where
+    condE = processHcBody ruleBody
+    thenE = processHchead ruleHc.hHead
 
--- write this first as a way to help myself undrestand this better; can scrap it later
-isIfHelper :: L4.Rule -> Bool
-isIfHelper rule =
-  length rule.clauses == 1 -- not sure abt this but go on for now
-  && isn't _Nothing (rule.clauses ^? ix 0 % #hBody)
+-- TODO: If Then with ELSE for v2
+
+
 
 --------------------------------------------------------------------
 
 {- | What can be in hHead?
-* Set Var
-    * Simple Set Var: 
+1. Set Var
+    (i) Simple Set Var: 
       * `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
-    * Set Var True IF ...:
+    (ii) Set Var True (typically with an IF):
       * `RPMT [ MTT "case 1 qualifies" ]
 -}
-processHChead = undefined
+processHchead :: L4.RelationalPredicate -> ToLC Exp
+processHchead = undefined
+
+processHcBody :: L4.BoolStructR -> ToLC Exp
+processHcBody = undefined
 
 
+---------------------------------------------------------
 
+isL4BlockOfStatements :: L4.Rule -> Bool
+isL4BlockOfStatements rule = length rule.clauses > 1

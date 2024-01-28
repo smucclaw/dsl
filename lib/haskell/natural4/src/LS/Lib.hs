@@ -389,10 +389,10 @@ parseRules o = do
     getBS other = BS.readFile other
     parseSTDIN rc = do
       bs <- BS.getContents
-      traverse (parseStream rc "STDIN") (exampleStreams bs)
+      parseStream rc "STDIN" `traverse` exampleStreams bs
     parseFile rc filename = do
       bs <- getBS filename
-      traverse (parseStream rc filename) (exampleStreams bs)
+      parseStream rc filename `traverse` exampleStreams bs
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
@@ -403,11 +403,10 @@ parseRules o = do
           return (Left bundle)
         -- Left bundle -> putStr (errorBundlePretty bundle)
         -- Left bundle -> pPrint bundle
-        Right ([], []) -> return $ Right []
         Right (xs, xs') -> do
-          when (printstream rc) $ printStream stream
-          pure $ Right $ xs <> xs'
-
+          let toreturn = xs <> xs'
+          when ((not . null) toreturn && printstream rc) $ printStream stream
+          pure $ Right toreturn
 
 dumpRules :: Opts Unwrapped -> IO [Rule]
 dumpRules opts = mconcat . rights <$> parseRules opts
@@ -500,10 +499,9 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
     rD row col "\"" = -- first non-blank above
       let aboves = V.filter (`notElem` ["", "\""]) $ (! col) <$> V.slice 0 row vvt
       in if V.null aboves
-         then error $ "line " ++ show (row+1) ++ " column " ++ show (col+1) ++ ": ditto lacks referent (upward nonblank cell)"
+         then error [i|line #{row+1} column #{col+1}: ditto lacks referent (upward nonblank cell)|]
          else V.last aboves
     rD _   _   orig = orig
-
 
 getStanzas :: RawStanza -> [RawStanza]
 getStanzas rs = splitPilcrows `foldMap` chunks
@@ -640,7 +638,7 @@ pToplevel = pRules <* eof
 
 pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
 pRulesOnly = do
-  debugName "pRulesOnly: some" $ concat <$>
+  debugName "pRulesOnly: some" $ mconcat <$>
     some (debugName "trying semicolon *> pRule" $
           try (debugName "semicolon" semicolonBetweenRules
                *> optional dnl
@@ -651,7 +649,8 @@ pRulesOnly = do
     <* eof
 
 semicolonBetweenRules :: Parser [MyToken]
-semicolonBetweenRules = many (manyIndentation (Semicolon <$ some (pToken Semicolon)))
+semicolonBetweenRules =
+  many $ manyIndentation (Semicolon <$ some (pToken Semicolon))
 
 pRules = pRulesOnly
 
@@ -782,7 +781,7 @@ pScenarioRule = debugName "pScenarioRule" do
     <$$> some (manyIndentation pExpect)
     <|?> ([], many ( pretendEmpty $ pToken Given >> someIndentation pGivens) )
   return $ Scenario
-    { scgiven = concat givens
+    { scgiven = mconcat givens
     , expect  = expects
     , rlabel  = Just ("SCENARIO",1,Text.unwords rlabel)
     , lsource = Nothing, srcref = Nothing
@@ -910,7 +909,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
   let keynamewho = (,) <$> pActor [REvery,RParty,RTokAll]
                    <*> optional (manyIndentation (preambleBoolStructR [Who,Which,Whose]))
   rulebody <- permutationsReg keynamewho
-  let gvn     = NE.nonEmpty $ foldMap NE.toList (snd <$> rbgiven rulebody)
+  let gvn     = NE.nonEmpty $ foldMap (NE.toList . snd) (rbgiven rulebody)
       poscond = snd <$> mergePBRS (rbpbrs   rulebody)
       negcond = snd <$> mergePBRS (rbpbrneg rulebody)
   henceLimb                   <- optional $ stackGiven gvn <$> pHenceLest Hence
@@ -1053,7 +1052,7 @@ permutationsReg keynamewho =
                 <|?> ([], some $ preambleParamText [Upon])   -- upon
                 <|?> ([], some $ preambleParamText [Given])  -- given
                 <|?> (Nothing, Just . snd <$> preambleParamText [Having])  -- having
-                <|?> ([], (debugName "WHERE" $ pToken Where) >> someIndentation (some (pHornlike' False)))  -- WHERE ends up in the wwhere attribute of a Regulative
+                <|?> ([], debugName "WHERE" (pToken Where) >> someIndentation (some (pHornlike' False)))  -- WHERE ends up in the wwhere attribute of a Regulative
 
     (<&&>) = flip ($) -- or we could import Data.Functor ((&))
     infixl 1 <&&>
@@ -1086,10 +1085,10 @@ preambleBoolStructP wanted = debugName [i|preambleBoolStructP #{wanted}|] do
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" do
   makeExprParser (manyIndentation $ AA.mkLeaf <$> pParamText)
-         [ [ prefix MPNot   (\x   -> AA.mkNot x) ]
-         , [ binary Or      (\x y -> AA.mkAny Nothing [x, y]) ]
-         , [ binary Unless  (\x y -> AA.mkAll Nothing [x, AA.mkNot y]) ]
-         , [ binary And     (\x y -> AA.mkAll Nothing [x, y]) ]
+         [ [ prefix MPNot   AA.mkNot ]
+         , [ binary Or      \x y -> AA.mkAny Nothing [x, y] ]
+         , [ binary Unless  \x y -> AA.mkAll Nothing [x, AA.mkNot y] ]
+         , [ binary And     \x y -> AA.mkAll Nothing [x, y] ]
          ]
 
 exprP :: Parser (MyBoolStruct ParamText)
@@ -1111,7 +1110,7 @@ exprP = debugName "expr pParamText" do
     prefixFirstLeaf p (MyNot  x    )       = MyNot (prefixFirstLeaf p x)
 
     prefixItem :: MultiTerm -> ParamText -> ParamText
-    prefixItem t pt = NE.cons (NE.fromList t, Nothing) pt
+    prefixItem t = NE.cons (NE.fromList t, Nothing)
 
 
 pAndGroup ::  Parser BoolStructP
@@ -1127,9 +1126,9 @@ pOrGroup ::  Parser BoolStructP
 pOrGroup = debugName "pOrGroup" do
   elem1    <- pElement
   elems    <- many $ pToken Or *> pElement
-  let toreturn = if null elems
-                 then elem1
-                 else AA.mkAny Nothing (elem1 : elems)
+  let toreturn
+        | null elems = elem1
+        | otherwise = AA.mkAny Nothing $ elem1 : elems
   return toreturn
 
 pAtomicElement ::  Parser BoolStructP
@@ -1157,7 +1156,7 @@ pNotElement = debugName "pNotElement" do
 pLeafVal ::  Parser BoolStructP
 pLeafVal = debugName "pLeafVal" do
   leafVal <- pParamText
-  myTraceM $ "pLeafVal returning " ++ show leafVal
+  myTraceM [i|pLeafVal returning #{leafVal}|]
   return $ AA.mkLeaf leafVal
 
 -- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
@@ -1166,7 +1165,7 @@ pNestedBool ::  Parser BoolStructP
 pNestedBool = debugName "pNestedBool" do
   -- "foo AND bar" is a nestedBool; but just "foo" is a leafval.
   (leftX,foundBool) <- lookAhead (pLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
-  myTraceM $ "pNestedBool matched " ++ show foundBool ++ " at location " ++ show leftX
+  myTraceM [i|pNestedBool matched #{foundBool} at location #{leftX}|]
   dBoolStructP
 
 -- helper functions for parsing
@@ -1174,15 +1173,11 @@ pNestedBool = debugName "pNestedBool" do
 anything :: Parser [WithPos MyToken]
 anything = many anySingle
 
-
-
-
 pHornClause2 :: Parser HornClause2
 pHornClause2 = do
   hhead <- pHornHead2
   _when <- pToken When
-  hbody <- pHornBody2
-  return $ HC hhead (Just hbody)
+  HC hhead . Just <$> pHornBody2
 
 pHornHead2 :: Parser RelationalPredicate
 pHornHead2 = pRelationalPredicate

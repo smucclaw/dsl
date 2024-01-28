@@ -195,22 +195,6 @@ stringifyToLCError :: ToLCError -> T.Text
 stringifyToLCError = undefined
 
 
--------- Abortive attempt at adapting Monad Validate for Effectful ---------- 
-
--- data EffValidate e :: Effect where
---   Refute :: e -> EffValidate e m a
---   Dispute :: e -> EffValidate e m ()
---   Tolerate :: m a -> EffValidate e m (Maybe a)
--- makeEffect ''EffValidate
-
--- type instance DispatchOf (EffValidate e) = Dynamic
-
--- instance (Semigroup e, V.MonadValidate e (Eff es), EffValidate e :> es) => V.MonadValidate e (Eff es) where
---   refute = send . Refute
---   dispute = send . Dispute
-------------------------------------------------
-
-
 data Env =
   MkEnv { localVars :: !(HashMap Var (Maybe L4EntType))
         -- ^ would *not* include 'global' GIVEN-declared vars --- just the local ones 

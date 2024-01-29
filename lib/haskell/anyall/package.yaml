@@ -42,7 +42,6 @@ dependencies:
 - string-interpolate
 - prettyprinter-interp
 - filepath
-- flow
 - explainable
 
 # - ihaskell

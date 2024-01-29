@@ -12,22 +12,10 @@
 
 module LS.XPile.MathLang.EffValidate where
 
-import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
-
 import Data.Kind (Type)
 
--- import AnyAll qualified as AA
--- import LS.Types qualified as L4
-import LS.Types as L4 (RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType, HornClause (..))
 -- import LS.Interpreter (qaHornsT)
-import LS.Rule (
-                -- Interpreted(..), 
-                extractMTExprs, getGivenWithSimpleType,
-                defaultHorn)
-import LS.Rule qualified as L4 (Rule(..))
 
-import Control.Monad (foldM)
 import Effectful (Effect, Eff, runPureEff)
 import Effectful.TH (makeEffect)
 import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
@@ -47,18 +35,13 @@ import Data.HashSet qualified as HS
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
-import Optics
+-- import Optics
 import GHC.Generics (Generic)
-import Data.Generics.Sum.Constructors
+-- import Data.Generics.Sum.Constructors
 -- import Data.Generics.Product.Types (types)
--- import Prettyprinter (Pretty)
-import Data.String.Interpolate (__i)
-import Data.String (IsString)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
-import Data.Foldable qualified as F (toList)
-
-import LS.Types (TypeSig(..), TypedMulti)
+-- import Data.Foldable qualified as F (toList)
 
 -- | Delete this later
 data ToLCError = NotYetImplemented T.Text -- SrcPositn

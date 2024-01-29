@@ -169,8 +169,8 @@ attemptMergeHeads  x  y = Unmerged x y
 -}
 mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
 mergeMatch =
-    unfoldr smallStep -- Iterate small step semantics to fixed point
-      >>> catMaybes   -- Obtain trace of all transition steps
+  unfoldr smallStep -- Iterate small step semantics to fixed point
+    >>> catMaybes   -- Obtain trace of all transition steps
   where
     smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
       Merged m -> Just (Nothing, m:zs)

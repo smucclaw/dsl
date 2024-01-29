@@ -159,14 +159,18 @@ instance Show a => Show (DList a) where
   show = show . dlToList
 
 singeltonDL :: a -> DList a
-singeltonDL a = DList $ Endo (a:)
+singeltonDL = coerce . (:)
 
+-- | Continuation passing style transformation for lists, aka the
+-- Yoneda embedding of the free monoid into the corresponding Endomorphism
+-- monoid.
 listToDL :: [a] -> DList a
-listToDL as = DList $ Endo (as ++)
+listToDL = coerce . (<>)
 
-dlToList :: DList a -> [a]
-dlToList (DList (Endo f)) = f []
-
+-- | Embed the endomorphism monoid over the free monoid back into the free monoid
+-- by running the continuation against the identiy element.
+dlToList :: forall a. DList a -> [a]
+dlToList f = (coerce f :: [a] -> [a]) []
 
 -- maybe we should have a proper dict orientation here
 data KW a = KW { dictK :: MyToken

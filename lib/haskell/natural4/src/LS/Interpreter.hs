@@ -5,31 +5,28 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-
-{-|
-
-The Interpreter runs after the Parser. It prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
-
-In future, we may be so ambitious as to attempt some type checking and type inference, and so on, here, though that may be better left to corel4 or other backends.
-
-See also documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
-
-Typical usage: an XPile module is handed the output of `l4interpret`, and makes use of the values returned in the `l4i` object.
-
-Sometimes it will access the original rules directly. It is preferable, however, that downstream transpilers should access via the Interpreter's API.
-
-The Interpreter can thereby handle expansion and other transformations in ways that are consistent across multiple transpilers.
-
-To view the various endpoints exposed by the Interpreter, see @org/LATEST.org@.
-
--}
-
+-- |
+--
+-- The Interpreter runs after the Parser. It prepares for transpilation by organizing the ruleset and providing helper functions used by multiple XPile backends.
+--
+-- In future, we may be so ambitious as to attempt some type checking and type inference, and so on, here, though that may be better left to corel4 or other backends.
+--
+-- See also documentation at https://github.com/smucclaw/dsl/tree/tab-mustsing#interpretation-requirements
+--
+-- Typical usage: an XPile module is handed the output of `l4interpret`, and makes use of the values returned in the `l4i` object.
+--
+-- Sometimes it will access the original rules directly. It is preferable, however, that downstream transpilers should access via the Interpreter's API.
+--
+-- The Interpreter can thereby handle expansion and other transformations in ways that are consistent across multiple transpilers.
+--
+-- To view the various endpoints exposed by the Interpreter, see @org/LATEST.org@.
 module LS.Interpreter where
 
 import AnyAll qualified as AA
 import Control.Applicative ((<|>))
 import Control.Monad (guard, join)
 import Data.Bifunctor (first)
+import Data.Coerce (coerce)
 import Data.Either (fromRight, partitionEithers)
 import Data.Graph.Inductive
   ( Gr,
@@ -718,8 +715,8 @@ expandClauses l4i depth hcs = expandTrace "expandClauses" depth [i|running on #{
 expandClauses' l4i depth hcs =
   let toreturn = [ newhc
                  | oldhc <- hcs
-                 , let newhead = (expandTrace "expandClauses" depth "expanding the head") $                expandRP l4i (depth+1)   $  hHead oldhc
-                       newbody = (expandTrace "expandClauses" depth "expanding the body") $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
+                 , let newhead = expandTrace "expandClauses" depth "expanding the head" $                expandRP l4i (depth+1)   $  hHead oldhc
+                       newbody = expandTrace "expandClauses" depth "expanding the body" $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
                        newhc = case oldhc of
                                  HC _oldh Nothing -> HC newhead Nothing
                                  HC  oldh _       -> HC oldh    newbody
@@ -820,7 +817,7 @@ expandBSRM l4i depth x = do
   mutterdhsf depth "expandBSR() called with" pShowNoColorS x
   let toreturn = expandBSR l4i depth x
   mutterdhsf depth "expandBSR() returning" pShowNoColorS toreturn
-  return toreturn
+  pure toreturn
 
 -- | Do expansion, throwing away the LHS IS part of any `RPBoolStructR` elements we encounter.
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
@@ -868,7 +865,7 @@ expandRule rules r@Hornlike{..} =
         , mt <- -- trace ("aaLeaves returned " ++ show (aaLeaves (AA.Leaf bsr)))
                 aaLeaves (AA.mkLeaf bsr)
         -- map each multiterm to a rulelabel's rl2text, and if it's found, return the rule
-        , q <- expandRulesByLabel rules (mt2text mt)
+        , q <- expandRulesByLabel rules $ mt2text mt
         ]
   in -- trace ("expandRule: called with input " ++ show rlabel)
      -- trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
@@ -975,24 +972,27 @@ isRuleAlias l4i rname =
 
 getMarkings :: Interpreted -> AA.TextMarking
 getMarkings l4i =
-  AA.Marking $ Map.fromList $
-  [ (defkey, defval)
-  | DefTypically{..} <- origrules l4i
-  , (defkey,defval) <- mapMaybe markings defaults
-  ]
+  coerce $
+    Map.fromList $
+      [ (defkey, defval)
+        | DefTypically {..} <- origrules l4i,
+          (defkey, defval) <- mapMaybe markings defaults
+      ]
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
     markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
-    markings (RPConstraint          xs  RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
-    markings _                                    = Nothing
+    markings (RPConstraint xs RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
+    markings _ = Nothing
 
     rhsval [MTB rhs] = Just rhs
-    rhsval [MTF rhs] = Just $ rhs /= 0 -- if rhs == 0 then Just False else Just True
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|no(t)?|f(alse)?)$|]) -> True)] = Just False
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] = Just True
+    rhsval [MTF rhs] = Just $ rhs /= 0
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|no(t)?|f(alse)?)$|]) -> True)] =
+      Just False
+    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] =
+      Just True
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
-    rhsval _  = Nothing
+    rhsval _ = Nothing
 
 -- | local variables
 -- a list of the typed multiterms which show up inside the GIVEN and GIVETH attributes of a rule.
@@ -1057,51 +1057,49 @@ globalFacts l4i =
 attrsAsMethods :: RuleSet -> XPileLogE [ValuePredicate]
 attrsAsMethods rs = do
   outs <-
-    for [ r | r@Hornlike{keyword=Decide} <- rs ] \r -> do
-    for (clauses r) \hc -> do
-      gone1 <- go hc
-      case gone1 of
-        Left errs1 -> xpError errs1
-        Right (headLHS, attrVal, attrCond) -> do
-          gone2 <- toObjectPath headLHS
-          mutterd 3 [i|#{headLHS} ... got back gone2: #{gone2}|]
-          case gone2 of
-            Left errs2 -> xpError errs2
-            Right (objPath, attrName) -> do
-              let toreturn = defaultValuePredicate
-                    { origHC = Just hc
-                    , origBSR = hBody hc
-                    , objPath
-                    , attrName
-                    , attrVal
-                    , attrCond
-                    , origRule = Just r
-                    }
-              mutterd 3 [i|#{headLHS} returning|]
-              mutter $ show $ srchs toreturn
-              xpReturn toreturn
+    for [r | r@Hornlike {keyword = Decide} <- rs] \r -> do
+      for (clauses r) \hc -> do
+        gone1 <- go hc
+        case gone1 of
+          Left errs1 -> xpError errs1
+          Right (headLHS, attrVal, attrCond) -> do
+            gone2 <- toObjectPath headLHS
+            mutterd 3 [i|#{headLHS} ... got back gone2: #{gone2}|]
+            case gone2 of
+              Left errs2 -> xpError errs2
+              Right (objPath, attrName) -> do
+                let toreturn =
+                      defaultValuePredicate
+                        { origHC = Just hc,
+                          origBSR = hBody hc,
+                          objPath,
+                          attrName,
+                          attrVal,
+                          attrCond,
+                          origRule = Just r
+                        }
+                mutterd 3 [i|#{headLHS} returning|]
+                mutter $ show $ srchs toreturn
+                xpReturn toreturn
 
-  let (errs, successes) = partitionEithers (concat outs)
-  mutters (concat errs)
+  let (errs, successes) = partitionEithers $ mconcat outs
+  mutters $ mconcat errs
   xpReturn successes
-
-  where go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
-        go hc@HC{..} =
-          case hHead of
-            (RPnary RPis [RPMT headLHS, headRHS]) -> xpReturn (headLHS, Just headRHS, hBody)
-
-            (RPnary RPis (RPMT headLHS : headRHS)) -> do
-              mutterd 3 [i|unexpected RHS in RPnary RPis: #{hHead}|]
-              xpReturn (headLHS, listToMaybe headRHS, hBody)
-
-            (RPConstraint mt1 RPis mt2) -> do
-              mutterd 3 [i|converting RPConstraint in hHead: #{hHead}|]
-              xpReturn (mt1, Just (RPMT mt2), hBody)
-
-            _ -> do
-              mutterd 3 "attrsAsMethods: encountered unexpected form of RelationalPredicate"
-              mutter $ show $ srchs hHead
-              xpError ["unhandled RelationalPredicate", show hHead]
+  where
+    go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
+    go hc@HC {..} =
+      case hHead of
+        (RPnary RPis [RPMT headLHS, headRHS]) -> xpReturn (headLHS, Just headRHS, hBody)
+        (RPnary RPis (RPMT headLHS : headRHS)) -> do
+          mutterd 3 [i|unexpected RHS in RPnary RPis: #{hHead}|]
+          xpReturn (headLHS, listToMaybe headRHS, hBody)
+        (RPConstraint mt1 RPis mt2) -> do
+          mutterd 3 [i|converting RPConstraint in hHead: #{hHead}|]
+          xpReturn (mt1, Just (RPMT mt2), hBody)
+        _ -> do
+          mutterd 3 "attrsAsMethods: encountered unexpected form of RelationalPredicate"
+          mutter $ show $ srchs hHead
+          xpError ["unhandled RelationalPredicate", show hHead]
 
 
 -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
@@ -1168,7 +1166,7 @@ enumMatch enumNames mt (givenName, Just mgiven@(SimpleType TOne etype)) =
 
 -- | lowercase a multiterm to support isAnEnum comparison
 lowerMT :: MTExpr -> MTExpr
-lowerMT (MTT t) = MTT (T.toLower t)
+lowerMT (MTT t) = MTT $ T.toLower t
 lowerMT x       = x
 
 -- actually i think this is not needed because we can use `extendedAttributes`

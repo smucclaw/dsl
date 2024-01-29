@@ -491,7 +491,6 @@ equalizeLines stanza = fmap (pad maxLen) stanza
 pad :: Int -> V.Vector Text.Text -> V.Vector Text.Text
 pad n v = v <> V.replicate (n - V.length v) ""
 
-
 rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
 rewriteDitto vvt = V.imap (V.imap . rD) vvt
   where
@@ -718,7 +717,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
-      return $ TypeDecl
+      pure TypeDecl
         { name = NE.toList name
         , super
         , has
@@ -780,7 +779,7 @@ pScenarioRule = debugName "pScenarioRule" do
   (expects,givens) <- permute $ (,)
     <$$> some (manyIndentation pExpect)
     <|?> ([], many ( pretendEmpty $ pToken Given >> someIndentation pGivens) )
-  return $ Scenario
+  pure Scenario
     { scgiven = mconcat givens
     , expect  = expects
     , rlabel  = Just ("SCENARIO",1,Text.unwords rlabel)

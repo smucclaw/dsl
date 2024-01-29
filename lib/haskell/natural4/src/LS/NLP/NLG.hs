@@ -37,7 +37,7 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
-import Data.String.Interpolate as I (i)
+import Data.String.Interpolate as I (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Read (decimal)
 import Debug.Trace (trace)
@@ -323,70 +323,78 @@ nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg = nlg' TopLevel
 
 nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
-nlg' thl env rule = case rule of
-    Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
-      let subjExpr = introduceNP $ parseSubj env subj
-          deonticExpr = parseDeontic deontic
-          actionExpr = parseAction env action
-          whoSubjExpr = case who of
-                        Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
-                        Nothing -> subjExpr
-          ruleTree = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
-          ruleText = gfLin env ruleTree
-          uponText = case upon of  -- TODO: doesn't work once we add another language
-                      Just u ->
-                        let uponExpr = gf $ GadvUPON $ parseUpon env u
-                         in gfLin env uponExpr <> ", "
-                      Nothing -> mempty
-          tcText = case temporal of
-                      Just t -> " " <> gfLin env (gf $ parseTemporal env t)
-                      Nothing -> mempty
-          condText = case cond of
-                      Just c ->
-                        let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
-                         in getIf (gfLang env) <> gfLin env condExpr <> ", "
-                      Nothing -> mempty
-          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> tcText <> condText, suffix]
-      lestText <- case lest of
-                    Just r -> do
-                      rt <- nlg' (MyLest i) env r
-                      pure $ pad rt
-                    Nothing -> pure mempty
-      henceText <- case hence of
-                    Just r -> do
-                      rt <- nlg' (MyHence i) env r
-                      pure $ pad rt
-                    Nothing -> pure mempty
-      when (verbose env) do
-        putStrLn "nlg': regulative"
-        putStrLn $ "    " <> showExpr [] ruleTree
-      pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
-    Hornlike {clauses} -> do
-      let headTrees = gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
-          headLins = gfLin env <$> headTrees
-          parseBodyHC cl = case hBody cl of
-            Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
-            Nothing -> []
-          bodyTrees = foldMap parseBodyHC clauses
-          bodyLins = gfLin env <$> bodyTrees
-      when (verbose env) do
-        putStrLn "nlg': hornlike"
-        putStrLn $ unlines $
-          [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
-            <> [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
-      pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
-    RuleAlias mt -> do
-      let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
-          ruleTextDebug = [I.i|#{prefix} #{ruleText} #{suffix}|]
-      pure $ Text.strip ruleTextDebug
-    DefNameAlias {} -> pure mempty
-    DefTypically {} -> pure mempty
-    _ -> pure [I.i|NLG.hs is under construction, we don't support yet #{rule}|]
+nlg' thl env = \case
+  Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
+    let subjExpr = introduceNP $ parseSubj env subj
+        deonticExpr = parseDeontic deontic
+        actionExpr = parseAction env action
+        whoSubjExpr = case who of
+                      Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
+                      Nothing -> subjExpr
+        ruleTree = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+        ruleText :: Text.Text = gfLin env ruleTree
+        uponText :: Text.Text = case upon of  -- TODO: doesn't work once we add another language
+                    Just u ->
+                      let uponExpr = gf $ GadvUPON $ parseUpon env u
+                      in [I.i|#{gfLin env uponExpr}, |]
+                    Nothing -> mempty
+        tcText :: Text.Text = case temporal of
+                    Just t -> [I.i| #{gfLin env (gf $ parseTemporal env t)}|]
+                    Nothing -> mempty
+        condText :: Text.Text = case cond of
+                    Just c ->
+                      let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
+                      in [I.i|#{getIf $ gfLang env}#{gfLin env condExpr}, |]
+                    Nothing -> mempty
+        ruleTextDebug :: Text.Text =
+          [I.i|#{prefix} #{uponText}#{ruleText}#{tcText}#{condText} #{suffix}|]
+    lestText <- henceLest2text MyLest lest
+    henceText <- henceLest2text MyHence hence 
+    when (verbose env) do
+      putStrLn [__i|
+        nlg': regulative"
+            #{showExpr [] ruleTree}
+      |]
+    pure $ Text.strip [__i|
+      #{ruleTextDebug}
+      #{henceText}
+      #{lestText}
+    |]
+  Hornlike {clauses} -> do
+    let headTrees = gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+        headLins = gfLin env <$> headTrees
+        parseBodyHC cl = case hBody cl of
+          Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
+          Nothing -> []
+        bodyTrees = foldMap parseBodyHC clauses
+        bodyLins = gfLin env <$> bodyTrees
+    when (verbose env) do
+      putStrLn "nlg': hornlike"
+      putStrLn $ unlines $
+        [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
+          <> [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
+    pure [__i|
+      #{headLins}
+      #{getWhen (gfLang env)}
+      #{bodyLins}
+    |]
+  RuleAlias mt -> do
+    let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
+        ruleTextDebug = [I.i|#{prefix} #{ruleText} #{suffix}|]
+    pure $ Text.strip ruleTextDebug
+  DefNameAlias {} -> pure mempty
+  DefTypically {} -> pure mempty
+  rule -> pure [I.i|NLG.hs is under construction, we don't support yet #{rule}|]
   where
     (prefix,suffix) = debugNesting (gfLang env) thl
     i = getLevel thl + 2
     pad x = Text.replicate i " " <> x
 
+    henceLest2text :: (Int -> RecursionLevel) -> Maybe Rule -> IO Text.Text
+    henceLest2text myHenceMyLest =
+      maybe (pure mempty) \r -> do
+        rt <- nlg' (myHenceMyLest i) env r
+        pure $ pad rt
 
 -- | rewrite statements into questions, for use by the Q&A web UI
 --
@@ -442,7 +450,7 @@ ruleQuestions env alias rule =
       text :: XPileLog [BoolStructT]
       text = do
         t1 <- ruleQnTrees env alias rule
-        pure ( linBStext env <$> t1 )
+        pure $ linBStext env <$> t1
 
 ruleQuestionsNamed :: NLGEnv
                    -> Maybe (MultiTerm, MultiTerm)

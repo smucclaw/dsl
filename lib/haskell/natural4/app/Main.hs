@@ -16,6 +16,7 @@ import Data.Either (lefts, rights)
 import Data.Foldable qualified as DF
 import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate, isPrefixOf, partition, sortOn)
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as TL
 import Data.Time.Clock (getCurrentTime)
@@ -91,8 +92,8 @@ import System.Directory
 import System.FilePath ((-<.>), (</>))
 import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
-import qualified Text.Regex.PCRE.Heavy as PCRE
 
 
 myTraceM :: String -> IO ()
@@ -289,7 +290,9 @@ main = do
     when (SFL4.tovuejson opts) do
       -- [TODO] this is terrible. we should have a way to represent this inside of a data structure that gets prettyprinted. We should not be outputting raw JSON fragments.
       let toWriteVue =  [ ( case out' of
-                              Right _ -> show (Text.unpack (SFL4.mt2text rname)) <> ": \n"
+                              Right _ -> [__i|
+                                SFL4.mt2text #{rname}:
+                              |]
                               Left  _ -> "" -- this little section is inelegant
                               -- If   error, dump // "!! error"
                               -- Else dump out' <> ', \n"
@@ -309,10 +312,10 @@ main = do
 
           -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
           removeLastComma :: String -> String
-          removeLastComma unlined =
-            if length lined > 3 -- only if there's a valid json in there
-               then unlines $ take (length lined - 3) lined <> ["}"] <> drop (length lined - 2) lined
-               else unlined
+          removeLastComma unlined
+            | length lined > 3 = -- only if there's a valid json in there
+              unlines $ take (length lined - 3) lined <> ["}"] <> drop (length lined - 2) lined
+            | otherwise = unlined
             where lined = lines unlined
 
       mywritefile2 True tovuejsonFN iso8601 "vuejson"
@@ -342,26 +345,34 @@ main = do
              [ do
                mywritefile False dname (fname<>"-tiny")   ext (show svgtiny)
                mywritefile False dname (fname<>"-full")   ext (show svgfull)
-               mywritefile False dname (fname<>"-anyall") "hs"   (TL.unpack $ pShowNoColor hsAnyAllTree)
-               mywritefile False dname (fname<>"-anyall") "json" (toString $ encodePretty hsAnyAllTree)
-               mywritefile False dname (fname<>"-qtree")  "hs"   (TL.unpack $ pShowNoColor hsQtree)
-               mywritefile False dname (fname<>"-qjson")  "json" (toString $ encodePretty hsQtree)
+               mywritefile False dname (fname<>"-anyall") "hs"   [i|#{pShowNoColor hsAnyAllTree}|]
+               mywritefile False dname (fname<>"-anyall") "json" [i|#{encodePretty hsAnyAllTree}|]
+               mywritefile False dname (fname<>"-qtree")  "hs"   [i|#{pShowNoColor hsQtree}|]
+               mywritefile False dname (fname<>"-qjson")  "json" [i|#{encodePretty hsQtree}|]
                let fnamext = fname -<.> ext
                    displayTxt = Text.unpack $ SFL4.mt2text n
-               appendFile (dname </> "index" -<.> "html") ("<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt
-                                                    <> "</a></li>\n")
+               appendFile (dname </> "index" -<.> "html")
+                  [__i|
+                    <li>
+                      <a target="aasvg" href="#{fnamext}">
+                        #{displayTxt}
+                      </a>
+                    </li>
+                  |]
+                -- "<li> " <> "<a target=\"aasvg\" href=\"" <> fnamext <> "\">" <> displayTxt <> "</a></li>\n"
            | (n,(svgtiny,svgfull,hsAnyAllTree,hsQtree)) <- sortOn (fmap SFL4.mtexpr2text . fst) $ Map.toList asaasvg
            , let (fname, ext) = (take 127 (snakeScrub (SFL4.mtexpr2text <$> n)), "svg")
            ]
-      myMkLink iso8601 (toaasvgFN </> "LATEST")
-
+      myMkLink iso8601 $ toaasvgFN </> "LATEST"
 
     putStrLn "natural4: output to workdir done"
 
   -- when workdir is not specified, --only will dump to STDOUT
   unless toworkdir do
-    when (SFL4.only opts == "petri")  $ putStrLn (commentIfError "//" asPetri)
-    when (SFL4.only opts == "aatree") $ DF.traverse_ (pPrint . getAndOrTree l4i 1) rules
+    when (SFL4.only opts == "petri")  $
+      putStrLn $ commentIfError "//" asPetri
+    when (SFL4.only opts == "aatree") $
+      DF.for_ rules $ pPrint . getAndOrTree l4i 1
 
     when (SFL4.asJSON rc) $ putStrLn asJSONstr
 
@@ -379,8 +390,8 @@ main = do
 
     when (SFL4.only opts == "" && SFL4.workdir opts == "") $ pPrint rules
     when (SFL4.only opts == "native")  $ pPrint rules
-    when (SFL4.only opts == "classes") $ pPrint (SFL4.classtable l4i)
-    when (SFL4.only opts == "symtab")  $ pPrint (SFL4.scopetable l4i)
+    when (SFL4.only opts == "classes") $ pPrint $ SFL4.classtable l4i
+    when (SFL4.only opts == "symtab")  $ pPrint $ SFL4.scopetable l4i
 
     when (SFL4.only opts == "maude") $
       putStrLn $ Maude.rules2maudeStr rules
@@ -431,21 +442,22 @@ mywritefileDMN doLink dirname filename ext xmltree = do
 
 myMkLink :: FilePath -> FilePath -> IO ()
 myMkLink filename mylink = do
-  let mylink_tmp = mylink <> "-tmp"
+  let mylink_tmp = [i|#{mylink}-tmp|]
   createFileLink filename mylink_tmp
   renameFile mylink_tmp mylink
 
 snakeScrub :: [Text.Text] -> String
 snakeScrub =
   Text.intercalate "-"
-    >>> Text.replace " " "_"
-    >>> PCRE.gsub [PCRE.re|[^a-zA-Z0-9_\-]|] ("" :: Text.Text)
+    >>> PCRE.gsub [PCRE.re|[^a-zA-Z0-9_\-]|\s+|] ("" :: Text.Text)
     >>> Text.unpack
     -- >>> partition (`elem` ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "_-")
     -- >>> fst
 
 -- | if the return value of an xpLog is a Left, dump to output file with the error message commented; otherwise dump the regular output.
 commentIfError :: String -> Either XPileLogW String -> String
-commentIfError comment (Left x) = foldMap ((comment <> " ") <>) x
-commentIfError _      (Right x) = x
-
+commentIfError commentPrefix = either (foldMap prependCommentPrefix) id
+  -- Disjunction elimination, prepending the comment prefix to each line before
+  -- concating when eliminating the error log (ie XPileLogW) to String.
+  where
+    prependCommentPrefix str = [i|#{commentPrefix} #{str}|]

@@ -114,17 +114,17 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             deriving (Eq)
 
 instance (Show a) => Show (Expr a) where
-  show (Val Nothing a) = "Val " <> parensIfNeg (show a)
-  show (Val lbl a) = unwords ["Val", showlbl lbl, parensIfNeg (show a)]
-  show (Parens lbl e) = unwords ["Parens", showlbl lbl, show e]
-  show (MathBin lbl binop e1 e2) = unwords ["MathBinOp", showlbl lbl, show binop, show e1, show e2]
-  show (MathVar str) = unwords ["MathVar", str]
-  show (MathSet str e) = unwords ["MathSet", str, show e]
-  show (MathITE lbl pred e1 e2) = unwords ["MathITE", showlbl lbl, show pred, show e1, show e2]
-  show (MathMax lbl e1 e2) = unwords ["MathMax", showlbl lbl, show e1, show e2]
-  show (MathMin lbl e1 e2) = unwords ["MathMin", showlbl lbl, show e1, show e2]
-  show (ListFold lbl f el) = unwords ["ListFold", showlbl lbl, show f, show el]
-  show (Undefined lbl) = unwords ["Undefined", showlbl lbl]
+  show (Val Nothing a) = [i|Val #{parensIfNeg (show a)}|]
+  show (Val lbl a) = [i|Val #{showlbl lbl} #{parensIfNeg (show a)}|]
+  show (Parens lbl e) = [i|Parens #{showlbl lbl} #{e}|]
+  show (MathBin lbl binop e1 e2) = [i|MathBinOp #{showlbl lbl} #{binop} #{e1} #{e2}|]
+  show (MathVar str) = [i|MathVar #{str}|]
+  show (MathSet str e) = [i|MathSet #{str} #{e}|]
+  show (MathITE lbl pred e1 e2) = [i|MathITE #{showlbl lbl} #{pred} #{e1} #{e2}|]
+  show (MathMax lbl e1 e2) = [i|MathMax #{showlbl lbl} #{e1} #{e2}|]
+  show (MathMin lbl e1 e2) = [i|MathMin #{showlbl lbl} #{e1} #{e2}|]
+  show (ListFold lbl f el) = [i|ListFold #{showlbl lbl} #{f} #{el}|]
+  show (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
 
 type ExprLabel = Maybe String
 

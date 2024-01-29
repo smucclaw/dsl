@@ -22,11 +22,12 @@ module LS.NLP.NLG
     ruleQnTrees,
     ruleQuestions,
     ruleQuestionsNamed,
-    textViaQaHorns
+    textViaQaHorns,
   )
 where
 
 import AnyAll qualified as AA
+import Control.Arrow ((>>>))
 import Control.Monad (when)
 import Data.Char qualified as Char (isDigit, toLower)
 import Data.Foldable qualified as F
@@ -36,9 +37,11 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
-import Data.String.Interpolate as I (i)
+import Data.String.Interpolate as I (i, __i)
 import Data.Text qualified as Text
+import Data.Text.Read (decimal)
 import Debug.Trace (trace)
+import Flow ((|>))
 import LS.Interpreter
   ( expandBSR,
     expandBSRM,
@@ -200,6 +203,7 @@ import PGF
 import Paths_natural4 (getDataFileName)
 import Prettyprinter.Interpolate (__di)
 import System.Environment (lookupEnv)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -261,14 +265,18 @@ myNLGEnv l4i lang = do
         xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
-rmBIND = Text.replace " &+ " ""
+rmBIND = PCRE.gsub [PCRE.re|\s+&\+\s+|] ("" :: Text.Text)
 
 uncapKeywords :: Text.Text -> Text.Text
-uncapKeywords = Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
-  where
-    lowerWhole keywords word
-      | word `elem` keywords = Text.toLower word
-      | otherwise = word
+uncapKeywords =
+  PCRE.gsub [PCRE.re|(BEFORE|AFTER|IS)|]
+    \(keyword:_) -> Text.toLower keyword
+
+  -- Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
+  -- where
+  --   lowerWhole keywords word
+  --     | word `elem` keywords = Text.toLower word
+  --     | otherwise = word
 
 gfPath :: String -> String
 gfPath x = [i|grammars/#{x}|]
@@ -287,13 +295,13 @@ getLevel = \case
   MyLest i -> i
 
 debugNesting :: Language -> RecursionLevel -> (Text.Text, Text.Text)
-debugNesting lang level = (getPrefix lang level, Text.pack "")
+debugNesting lang level = (getPrefix lang level, "")
   where
-    getPrefix _ TopLevel = Text.pack ""
+    getPrefix _ TopLevel = ""
     getPrefix lang (MyHence _)
-      | isChinese lang = Text.pack "在此之后，做:"
-      | isMalay lang = Text.pack "Tindakan seterusnya:"
-      | otherwise = Text.pack "Follow by:"
+      | isChinese lang = "在此之后，做:"
+      | isMalay lang = "Tindakan seterusnya:"
+      | otherwise = "Follow by:"
     getPrefix lang (MyLest _)
       | isChinese lang = Text.pack "万一失败，"
       | isMalay lang = Text.pack "Dalam kes kegagalan:"
@@ -315,69 +323,78 @@ nlg :: NLGEnv -> Rule -> IO Text.Text
 nlg = nlg' TopLevel
 
 nlg' :: RecursionLevel -> NLGEnv -> Rule -> IO Text.Text
-nlg' thl env rule = case rule of
-    Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
-      let subjExpr = introduceNP $ parseSubj env subj
-          deonticExpr = parseDeontic deontic
-          actionExpr = parseAction env action
-          whoSubjExpr = case who of
-                        Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
-                        Nothing -> subjExpr
-          ruleTree = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
-          ruleText = gfLin env ruleTree
-          uponText = case upon of  -- TODO: doesn't work once we add another language
-                      Just u ->
-                        let uponExpr = gf $ GadvUPON $ parseUpon env u
-                         in gfLin env uponExpr <> ", "
-                      Nothing -> mempty
-          tcText = case temporal of
-                      Just t -> " " <> gfLin env (gf $ parseTemporal env t)
-                      Nothing -> mempty
-          condText = case cond of
-                      Just c ->
-                        let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
-                         in getIf (gfLang env) <> gfLin env condExpr <> ", "
-                      Nothing -> mempty
-          ruleTextDebug = Text.unwords [prefix, uponText <> ruleText <> tcText <> condText, suffix]
-      lestText <- case lest of
-                    Just r -> do
-                      rt <- nlg' (MyLest i) env r
-                      pure $ pad rt
-                    Nothing -> pure mempty
-      henceText <- case hence of
-                    Just r -> do
-                      rt <- nlg' (MyHence i) env r
-                      pure $ pad rt
-                    Nothing -> pure mempty
-      when (verbose env) do
-        putStrLn "nlg': regulative"
-        putStrLn $ "    " <> showExpr [] ruleTree
-      pure $ Text.strip $ Text.unlines [ruleTextDebug, henceText, lestText]
-    Hornlike {clauses} -> do
-      let headTrees = gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
-          headLins = gfLin env <$> headTrees
-          parseBodyHC cl = case hBody cl of
-            Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
-            Nothing -> []
-          bodyTrees = foldMap parseBodyHC clauses
-          bodyLins = gfLin env <$> bodyTrees
-      when (verbose env) do
-        putStrLn "nlg': hornlike"
-        putStrLn $ unlines $ [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
-        putStrLn $ unlines $ [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
-      pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
-    RuleAlias mt -> do
-      let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
-          ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
-      pure $ Text.strip ruleTextDebug
-    DefNameAlias {} -> pure mempty
-    DefTypically {} -> pure mempty
-    _ -> pure [I.i|NLG.hs is under construction, we don't support yet #{rule}|]
+nlg' thl env = \case
+  Regulative {subj,upon,temporal,cond,who,deontic,action,lest,hence} -> do
+    let subjExpr = introduceNP $ parseSubj env subj
+        deonticExpr = parseDeontic deontic
+        actionExpr = parseAction env action
+        whoSubjExpr = case who of
+                      Just w -> GSubjWho subjExpr (bsWho2gfWho (parseWhoBS env w))
+                      Nothing -> subjExpr
+        ruleTree = gf $ GRegulative whoSubjExpr deonticExpr actionExpr
+        ruleText :: Text.Text = gfLin env ruleTree
+        uponText :: Text.Text = case upon of  -- TODO: doesn't work once we add another language
+                    Just u ->
+                      let uponExpr = gf $ GadvUPON $ parseUpon env u
+                      in [I.i|#{gfLin env uponExpr}, |]
+                    Nothing -> mempty
+        tcText :: Text.Text = case temporal of
+                    Just t -> [I.i| #{gfLin env (gf $ parseTemporal env t)}|]
+                    Nothing -> mempty
+        condText :: Text.Text = case cond of
+                    Just c ->
+                      let condExpr = gf $ pastTense $ bsCond2gfCond (parseCondBS env c)
+                      in [I.i|#{getIf $ gfLang env}#{gfLin env condExpr}, |]
+                    Nothing -> mempty
+        ruleTextDebug :: Text.Text =
+          [I.i|#{prefix} #{uponText}#{ruleText}#{tcText}#{condText} #{suffix}|]
+    lestText <- henceLest2text MyLest lest
+    henceText <- henceLest2text MyHence hence
+    when (verbose env) do
+      putStrLn [__i|
+        nlg': regulative"
+            #{showExpr [] ruleTree}
+      |]
+    pure $ Text.strip [__i|
+      #{ruleTextDebug}
+      #{henceText}
+      #{lestText}
+    |]
+  Hornlike {clauses} -> do
+    let headTrees = gf . parseConstraint env . hHead <$> clauses -- :: [GConstraint] -- this will not become a question
+        headLins = gfLin env <$> headTrees
+        parseBodyHC cl = case hBody cl of
+          Just bs -> [gf $ bsConstraint2gfConstraint $ parseConstraintBS env bs]
+          Nothing -> []
+        bodyTrees = foldMap parseBodyHC clauses
+        bodyLins = gfLin env <$> bodyTrees
+    when (verbose env) do
+      putStrLn "nlg': hornlike"
+      putStrLn $ unlines $
+        [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
+          <> [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
+    pure [__i|
+      #{headLins}
+      #{getWhen (gfLang env)}
+      #{bodyLins}
+    |]
+  RuleAlias mt -> do
+    let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
+        ruleTextDebug = [I.i|#{prefix} #{ruleText} #{suffix}|]
+    pure $ Text.strip ruleTextDebug
+  DefNameAlias {} -> pure mempty
+  DefTypically {} -> pure mempty
+  rule -> pure [I.i|NLG.hs is under construction, we don't support yet #{rule}|]
   where
     (prefix,suffix) = debugNesting (gfLang env) thl
     i = getLevel thl + 2
     pad x = Text.replicate i " " <> x
 
+    henceLest2text :: (Int -> RecursionLevel) -> Maybe Rule -> IO Text.Text
+    henceLest2text myHenceMyLest =
+      maybe (pure mempty) \r -> do
+        rt <- nlg' (myHenceMyLest i) env r
+        pure $ pad rt
 
 -- | rewrite statements into questions, for use by the Q&A web UI
 --
@@ -433,7 +450,7 @@ ruleQuestions env alias rule =
       text :: XPileLog [BoolStructT]
       text = do
         t1 <- ruleQnTrees env alias rule
-        return ( linBStext env <$> t1 )
+        pure $ linBStext env <$> t1
 
 ruleQuestionsNamed :: NLGEnv
                    -> Maybe (MultiTerm, MultiTerm)
@@ -442,7 +459,7 @@ ruleQuestionsNamed :: NLGEnv
 ruleQuestionsNamed env alias rule = do
   let rn = ruleLabelName rule
   rq    <- ruleQuestions env alias rule
-  return (rn, rq)
+  pure (rn, rq)
 
 -- | like ruleQuestions, this function is rule-oriented; it returns a list of
 -- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which
@@ -475,7 +492,7 @@ ruleQnTrees env alias rule = do
       mutterdhsf 4 "Regulative/qCondTrees" show qCondTrees
       mutterdhsf 4 "Regulative/qUponTrees" show qUponTrees
 
-      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+      pure $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
       mutterdhsf 4 "Hornlike/bodyTrees" show bodyTrees
@@ -484,8 +501,8 @@ ruleQnTrees env alias rule = do
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
       mutterdhsf 4 "Constitutive/qCOndTrees" show qCondTrees
-      return $ catMaybes [qCondTrees]
-    DefNameAlias {} -> return []
+      pure $ maybeToList qCondTrees
+    -- DefNameAlias {} -> return []
     _ -> return []
 
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
@@ -623,16 +640,22 @@ parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
     cond = parseCond env (RPMT c)
     tc = parseTComparison t
     date = parseDate d
-parseCond env (RPConstraint a RPis b) = case (nps,vps) of
-  (np:_, (GMkVPS t p vp):_) -> GWHEN np t p vp
-  _ -> parseCond env (RPMT [MTT $ Text.unwords [aTxt, "is", bTxt]])
-  where
-    aTxt = Text.strip $ mt2text a
-    bTxt = Text.strip $ mt2text b
-    nps :: [GNP]
-    nps = fg <$> parseAnyNoRecover "NP" env aTxt
-    vps :: [GVPS]
-    vps = fg <$> parseAnyNoRecover "VPS" env (Text.unwords ["is", bTxt])
+
+parseCond
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      RPis
+      (Text.strip . mt2text -> b)
+    ) = case (nps, vps) of
+    (np : _, (GMkVPS t p vp) : _) -> GWHEN np t p vp
+    _ -> parseCond env $ RPMT [MTT [i|#{a} is #{b}|]]
+    where
+      nps :: [GNP]
+      nps = fg <$> parseAnyNoRecover "NP" env a
+
+      vps :: [GVPS]
+      vps = fg <$> parseAnyNoRecover "VPS" env [i|is #{b}|]
 
 parseCond env rp = fg tree
   where
@@ -671,114 +694,85 @@ parseTemporal _ (TemporalConstraint t Nothing text) =
     unit = parseTimeUnit text
 
 parseTimeUnit :: Text.Text -> GTimeUnit
-parseTimeUnit text = case take 3 $ Text.unpack $ Text.toLower text of
+parseTimeUnit text = case Text.take 3 $ Text.toLower text of
   "day" -> GDay_Unit
   "mon" -> GMonth_Unit
   "yea" -> GYear_Unit
-  _xs -> trace [i|NLG.hs: unrecognised time unit: #{text}|] (GrecoverUnparsedTimeUnit (tString text))
+  _xs ->
+    trace [i|NLG.hs: unrecognised time unit: #{text}|] $
+      GrecoverUnparsedTimeUnit (tString text)
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
-parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (flipPolarity $ fg vp)
-  _ -> GrecoverRPis (tString aTxt) (tString [i|not #{bTxt}|])
-  where
-    aTxt = Text.strip $ mt2text a
-    bTxt = bsr2text b
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env [i|is #{bTxt}|]
+parseConstraint
+  env
+  ( RPBoolStructR
+      (Text.strip . mt2text -> a)
+      RPis
+      (AA.Not (bsr2text -> b))
+    ) = case (nps, vps) of
+    (np : _, vp : _) -> GRPleafS (fg np) (flipPolarity $ fg vp)
+    _ -> GrecoverRPis (tString a) (tString [i|not #{b}|])
+    where
+      nps = parseAnyNoRecover "NP" env a
+      vps = parseAnyNoRecover "VPS" env [i|is #{b}|]
 
-parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPis (tString aTxt) (tString bTxt)
-  where
-    aTxt = Text.strip $ mt2text a
-    bTxt = Text.strip $ mt2text b
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env [i|is #{bTxt}|]
+parseConstraint
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      RPis
+      (Text.strip . mt2text -> b)
+    ) = case (nps, vps) of
+    (np : _, vp : _) -> GRPleafS (fg np) (fg vp)
+    _ -> GrecoverRPis (tString a) (tString b)
+    where
+      nps = parseAnyNoRecover "NP" env a
+      vps = parseAnyNoRecover "VPS" env [i|is #{b}|]
 
-parseConstraint env (RPConstraint a (RPTC t) b) = case (sents,advs) of
-  (s:_, adv:_) -> case s of
-                    GPredVPS np (GMkVPS t p vp) -> GRPleafS np (GMkVPS t p (GAdvVP vp adv))
-                    _ -> trace [i|parseConstraint: unable to parse #{showExpr [] $ gf s}|] fallback
-  x -> trace [i|parseConstraint: unable to parse #{x}#{tTxt}|] fallback
-  where
-    aTxt = Text.strip $ mt2text a
-    tTxt = gfLin env $ gf $ parseTComparison t
-    bTxt = Text.strip $ mt2text b
-    sents :: [GS]
-    sents = fg <$> parseAnyNoRecover "S" env aTxt
-    advs :: [GAdv]
-    advs = fg <$> parseAnyNoRecover "Adv" env (Text.unwords [tTxt, bTxt])
-    fallback = GrecoverUnparsedConstraint (tString $ Text.unwords [aTxt, tTxt, bTxt])
+parseConstraint
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      (RPTC (gfLin env . gf . parseTComparison -> t))
+      (Text.strip . mt2text -> b)
+    ) = case (sents, advs) of
+    (s : _, adv : _) -> case s of
+      GPredVPS np (GMkVPS t p vp) -> GRPleafS np (GMkVPS t p (GAdvVP vp adv))
+      _ -> trace [i|parseConstraint: unable to parse #{showExpr [] $ gf s}|] fallback
+    x -> trace [i|parseConstraint: unable to parse #{x}#{t}|] fallback
+    where
+      sents :: [GS]
+      sents = fg <$> parseAnyNoRecover "S" env a
+      advs :: [GAdv]
+      advs = fg <$> parseAnyNoRecover "Adv" env (Text.unwords [t, b])
+      fallback = GrecoverUnparsedConstraint (tString $ Text.unwords [a, t, b])
 
+parseConstraint
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      op@((`elem` [RPlt, RPlte, RPgt, RPgte]) -> True)
+      (Text.strip . mt2text -> b)
+    ) =
+    case (nps, vps) of
+      (np : _, vp : _) -> GRPleafS (fg np) (fg vp)
+      _ -> GrecoverRPmath (tString opTxt) (tString a') (tString b')
+    where
+      aPrefix = Text.stripSuffix "'s age" a
+      a' = fromMaybe a aPrefix -- policy holder's age -> policy holder
 
-parseConstraint env (RPConstraint a RPgt b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString ">") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
+      b' = case sequenceA [aPrefix, Text.stripSuffix "years" b] of
+        Just _ -> [i|is #{opEng} #{splitDigits b} old|]
+        Nothing -> [i|is #{opEng'} #{b}|]
 
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is more than #{splitDigits bTxt0} old|]
-             _ -> [i|is greater than #{bTxt0}|]
+      (opTxt, opEng :: Text.Text, opEng' :: Text.Text) = case op of
+        RPlt -> ("<", "less than", "less than")
+        RPlte -> ("<=", "at most", "at most")
+        RPgt -> (">", "more than", "greater than")
+        RPgte -> (">=", "at least", "at least")
 
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
-
-parseConstraint env (RPConstraint a RPlt b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
-
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is less than #{splitDigits bTxt0} old|]
-             _ -> [i|is less than #{bTxt0}|]
-
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
-
-parseConstraint env (RPConstraint a RPlte b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
-
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is at most #{splitDigits bTxt0} old|]
-             _ -> [i|is at most #{bTxt0}|]
-
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
-
-parseConstraint env (RPConstraint a RPgte b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
-
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is at least #{splitDigits bTxt0} old|]
-             _ -> [i|is at least #{bTxt0}|]
-
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
+      nps = parseAnyNoRecover "NP" env a'
+      vps = parseAnyNoRecover "VPS" env b'
 
 parseConstraint env rp = fg tree
   where
@@ -824,20 +818,36 @@ tString :: Text.Text -> GString
 tString = GString . Text.unpack
 
 splitDigits :: Text.Text -> Text.Text
-splitDigits txt = Text.unwords (splitDigit <$> Text.words txt)
+splitDigits =
+  Text.words
+    >>> map splitDigitsOfWord
+    >>> Text.unwords
   where
-    splitDigit d@(Text.all Char.isDigit -> True) =
-      Text.intercalate " &+ " (Text.groupBy (\_ _ -> False) d)
-    splitDigit d = d
+    -- splitDigits' "123" == "1 &+ 2 &+ 3"
+    splitDigitsOfWord str
+      | isNumeric str =
+          str
+            |> Text.intersperse '&'
+            |> PCRE.gsub [PCRE.re|&|] (" &+ " :: Text.Text)
+      | otherwise = str
 
-tk, dp :: Int -> Text.Text -> Text.Text
-tk i = Text.pack . tk' i . Text.unpack
-dp i = Text.pack . dp' i . Text.unpack
+    -- Note that this is NOT the same as (Text.all Char.isDigit str)
+    -- because that allows for the c ase when str is empty, but this does not.
+    isNumeric (decimal -> Right (_, "")) = True
+    isNumeric _ = False
+
+    -- splitDigit d
+    --   | Text.all Char.isDigit d =
+    --       Text.intercalate " &+ " $ Text.groupBy (\_ _ -> False) d
+    -- splitDigit d = d
+
+-- tk i = Text.pack . tk' i . Text.unpack
+-- dp i = Text.pack . dp' i . Text.unpack
 
 
-tk', dp' :: Int -> String -> String
-tk' i = reverse . drop i . reverse -- tk 2 "hello" == "hel"
-dp' i = reverse . take i . reverse -- dp 2 "hello" == "lo"
+-- tk', dp' :: Int -> String -> String
+-- tk' i = reverse . drop i . reverse -- tk 2 "hello" == "hel"
+-- dp' i = reverse . take i . reverse -- dp 2 "hello" == "lo"
 
 
 -----------------------------------------------------------------------------
@@ -849,7 +859,7 @@ expandRulesForNLGE env rules = do
   mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
   toreturn <- traverse (expandRuleForNLGE l4i $ depth+1) uniqrs
   mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
-  return toreturn
+  pure toreturn
   where
     l4i = interpreted env
     usedrules = getExpandedRuleNames l4i `foldMap` rules
@@ -864,7 +874,7 @@ expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
 getExpandedRuleNames l4i rule = case rule of
-  Regulative {} -> concat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
+  Regulative {} -> mconcat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
   Hornlike {} -> getNamesHC l4i `foldMap` clauses rule
   _ -> []
 
@@ -873,10 +883,10 @@ getExpandedRuleNames l4i rule = case rule of
     getNamesBSR l4i depth (AA.Leaf rp)  =
       case expandRP l4i (depth + 1) rp of
         RPBoolStructR mt1 RPis _bsr -> [mt1]
-        o                           -> []
+        _                           -> []
     getNamesBSR l4i depth (AA.Not item)   = getNamesBSR l4i (depth + 1) item
     getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
-    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
+    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i depth $ AA.All lbl xs
 
     getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
     getNamesRP l4i depth (RPConstraint  mt1 RPis mt2) = [mt2]
@@ -890,30 +900,41 @@ getExpandedRuleNames l4i rule = case rule of
       bodyNames = mconcat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
 
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
-expandRuleForNLGE l4i depth rule = do
-  case rule of
-    Regulative{who, cond, upon, hence, lest} -> mutterd depth "expandRuleForNLGE: running Regulative" >> do
-      -- Maybe (XPileLogE BoolStructR)
-      -- XPileLogE (Maybe BoolStructR)
-      who'   <- go who
-      cond'  <- go cond
-      hence' <- traverse (expandRuleForNLGE l4i depth) hence
-      lest'  <- traverse (expandRuleForNLGE l4i depth) lest
-      upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon )
-      return $ rule
-        { who = who'
-        , cond = cond'
-        , upon = upon'
-        , hence = hence'
-        , lest = lest'
-        }
-    Hornlike {} -> mutterd 4 "expandRuleForNLGE: running Hornlike" >> return (
-      rule { clauses = expandClauses l4i depth $ clauses rule } )
-    Constitutive {} -> mutterd 4 "expandRuleForNLGE: running Constitutive" >> return (
-      rule { cond = expandBSR l4i depth <$> cond rule } )
-    _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
+expandRuleForNLGE l4i depth rule@Regulative{who, cond, upon, hence, lest} = do
+  mutterd depth "expandRuleForNLGE: running Regulative"
+  -- Maybe (XPileLogE BoolStructR)
+  -- XPileLogE (Maybe BoolStructR)
+  who'   <- travExpandBSRM who
+  cond'  <- travExpandBSRM cond
+  hence' <- travExpandRule hence
+  lest'  <- travExpandRule lest
+  mutterd depth "running expandPT"
+  let upon' = expandPT l4i depth <$> upon
+  pure $ rule
+    { who = who'
+    , cond = cond'
+    , upon = upon'
+    , hence = hence'
+    , lest = lest'
+    }
   where
-    go = traverse $ expandBSRM l4i depth
+    travExpandBSRM :: Maybe BoolStructR -> XPileLog (Maybe BoolStructR)
+    travExpandBSRM bsr = expandBSRM l4i depth `traverse` bsr
+
+    travExpandRule :: Maybe Rule -> XPileLog (Maybe Rule)
+    travExpandRule rule = expandRuleForNLGE l4i depth `traverse` rule
+
+expandRuleForNLGE l4i depth rule@Hornlike {} = do
+  mutterd 4 "expandRuleForNLGE: running Hornlike"
+  pure rule {clauses = expandClauses l4i depth $ clauses rule}
+
+expandRuleForNLGE l4i depth rule@Constitutive {} = do
+  mutterd 4 "expandRuleForNLGE: running Constitutive"
+  pure rule {cond = expandBSR l4i depth <$> cond rule}
+
+expandRuleForNLGE _ _ rule = do
+  mutterd 4 "expandRuleForNLGE: running some other rule"
+  pure rule
 
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions

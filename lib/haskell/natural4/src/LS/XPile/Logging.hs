@@ -184,7 +184,7 @@ mutterd3 d = mutterd (d+3)
 
 -- | output haskell source to org-mode
 mutterdhs :: (Show a, Monad m) => Int -> XPileLogW' -> a -> XPileLogT m ()
-mutterdhs d s hs = mutterdhsf d s show hs
+mutterdhs d s = mutterdhsf d s show
 
 -- | with a custom show function, such as pShowNoColor
 mutterdhsf :: (Show a, Monad m)

@@ -14,6 +14,7 @@ import Control.Applicative (Alternative, liftA2)
 import Control.Monad
   ( MonadPlus,
     replicateM_,
+    void,
     when,
   )
 import Control.Monad.Reader
@@ -124,9 +125,9 @@ dnl = pToken EOL
 -- dnl = some $ pToken EOL
 
 pDeontic :: Parser Deontic
-pDeontic = (pToken Must  >> return DMust)
-           <|> (pToken May   >> return DMay)
-           <|> (pToken Shant >> return DShant)
+pDeontic = (pToken Must  >> pure DMust)
+           <|> (pToken May   >> pure DMay)
+           <|> (pToken Shant >> pure DShant)
 
 
 
@@ -137,7 +138,7 @@ pNumber = token test Set.empty <?> "number"
     test WithPos {tokenVal = TNumber n} = Just n
     test _ = Nothing
 
--- return the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
+-- pure the text inside an Other value. This implicitly serves to test for Other, similar to a pToken test.
 pOtherVal :: Parser Text.Text
 pOtherVal = token test Set.empty <?> "Other text"
   where
@@ -174,17 +175,19 @@ myTraceM x = whenDebug do
     leftPad str n = take n $ str <> repeat ' '
 
 getTokenNonDeep :: Parser MyToken
-getTokenNonDeep = token test Set.empty <?> "any token except GoDeeper / UnDeeper"
+getTokenNonDeep =
+  token test Set.empty <?> "any token except GoDeeper / UnDeeper"
   where
-    test WithPos {tokenVal = GoDeeper} = Nothing
-    test WithPos {tokenVal = UnDeeper} = Nothing
-    test WithPos {tokenVal = tok} = Just tok
+    test WithPos {tokenVal = tok}
+      | tok `elem` [GoDeeper, UnDeeper] = Nothing
+      | otherwise = Just tok
 
 getTokenNonEOL :: Parser MyToken
 getTokenNonEOL = token test Set.empty <?> "any token except EOL"
   where
-    test WithPos {tokenVal = EOL} = Nothing
-    test WithPos {tokenVal = tok} = Just tok
+    test WithPos {tokenVal = tok} = case tok of
+      EOL -> Nothing
+      _ -> Just tok
 
 
 -- pInt :: Parser Int
@@ -198,7 +201,7 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 --   a <- pInt
 --   _ <- pToken Plus
 --   b <- pInt
---   return (a, b)
+--   pure (a, b)
 
 -- egStream :: String -> MyStream
 -- egStream x = MyStream x (parseMyStream x)
@@ -215,12 +218,12 @@ pSrcRef = debugName "pSrcRef" do
   leftY  <- lookAhead pYLocation -- this is the column where we expect IF/AND/OR etc.
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
-  return (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
+  pure (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
 
 
 
 myEOL :: Parser ()
-myEOL = () <$ pToken EOL <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
+myEOL = void (pToken EOL) <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])
 
 pRuleLabel :: Parser RuleLabel
 pRuleLabel = debugName "pRuleLabel" . pretendEmpty . someUndeepersOrEOL $ do
@@ -230,7 +233,7 @@ pRuleLabel = debugName "pRuleLabel" . pretendEmpty . someUndeepersOrEOL $ do
                                      |*| (Text.unwords <$> manyLiftSL pOtherVal)
                                      -- <*  (someUndeepers <|> liftSL myEOL) -- effectively, we push a GoDeeper into the stream so we can pretend we started afresh. a pushback list is what we want: https://www.metalevel.at/prolog/dcg
 
-  return (sym, i, actualLabel)
+  pure (sym, i, actualLabel)
   where
     isRuleMarker (RuleMarker _ _) = True
     isRuleMarker _                = False
@@ -242,10 +245,13 @@ refillDeepers n = do
 
 -- | push back a token into the stream.
 pushBackToken :: WithPos MyToken -> Parser ()
-pushBackToken tok = updateParserState \s@State {stateInput} -> s{stateInput = pushTokenStream tok stateInput}
+pushBackToken tok =
+  updateParserState
+    \s@State {stateInput} -> s{stateInput = pushTokenStream tok stateInput}
 
 pushTokenStream :: WithPos MyToken -> MyStream -> MyStream
-pushTokenStream tok str@MyStream {unMyStream} = str {unMyStream = tok : unMyStream}
+pushTokenStream tok str@MyStream {unMyStream} =
+  str {unMyStream = tok : unMyStream}
 
 -- | This is like `(someUndeepers <|> liftSL myEOL)`, but doesn't consume too many undeepers
 -- We should probably invent a new operator (something like "|<?$") to clean this up a bit.
@@ -258,8 +264,8 @@ someUndeepersOrEOL p = do
   let remaining = n + m
   eof <|> do
     pos <- lookAhead pGetTokenPos
-    replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
-  return x
+    replicateM_ remaining $ pushBackToken $ GoDeeper <$ pos
+  pure x
 
 -- calls upToNUndeepers and continues. Usage: ... |<<| () ...
 (|<<|) :: SLParser a -> () -> SLParser a
@@ -267,11 +273,11 @@ p1 |<<| _ = mkSL do
   (result, n) <- runSL p1
   (_, u) <- runSL $ upToNUndeepers n
   let remaining = n + u
-  debugPrint $ "|<<| consumed " ++ show (-1*u) ++ " of " ++ show n ++ " undeepers; " ++ show remaining ++ " remain"
+  debugPrint [i||<<| consumed #{-1*u} of #{n} undeepers; #{remaining} remain|]
   eof <|> do
     pos <- lookAhead pGetTokenPos
     replicateM_ remaining $ pushBackToken (GoDeeper <$ pos)
-  return (result, remaining)
+  pure (result, remaining)
 
 infixl 4 |<<|
 
@@ -291,24 +297,24 @@ liftRawPFun :: (RawParser a -> RawParser a) -> Parser a -> Parser a
 liftRawPFun f = WriterT . ReaderT . (\x -> f . runReaderT x) . runWriterT
 
 printErrors :: String -> RunConfig -> Parser a -> Parser a
-printErrors dname r = runOnErrors \ cnsmp err s res -> do
+printErrors dname r = runOnErrors \cnsmp err s res -> do
   let consumption :: String = case cnsmp of
         MPInternal.Consumed -> "Consumed"
         MPInternal.NotConsumed -> "Unconsumed"
   let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s
-                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr") (\_ _ _ -> res) \_ _ -> error "eerr"
+                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr")
+                           (\_ _ _ -> res) \_ _ -> error "eerr"
   magicRunParser . myTraceM $
     [i|\\ !#{consumption} Error: #{dname}: #{onelineErrorMsg err}|]
 
 debugNameP :: Show a => String -> Parser a -> Parser a
-debugNameP dname p = -- label dname $
-  do
+debugNameP dname p = do -- label dname $
   -- debugPrint dname
   myTraceM [i|/ #{dname}|]
   r <- asks id
   res <- printErrors dname r $ local (increaseNestLevel dname) $ liftedDBG dname p
-  myTraceM [i|\\ #{dname} has returned #{show res}|]
-  return res
+  myTraceM [i|\\ #{dname} has pureed #{show res}|]
+  pure res
 
 debugNameSL :: Show a => String -> SLParser a -> SLParser a
 debugNameSL dname = mkSL . debugNameP dname . runSL
@@ -335,7 +341,7 @@ debugPrintP :: String -> Parser ()
 debugPrintP str = -- whenDebug do
 --  lookingAt <- lookAhead getToken <|> (EOF <$ eof)
 --  leftX     <- lookAhead pXLocation
-  myTraceM $ "> " <> str
+  myTraceM [i|> #{str}|]
     -- <> "; currently at " ++ show leftX
     -- <> "; looking at: " <> show lookingAt
 
@@ -358,7 +364,7 @@ pMTExpr =
     isIntegral pn = do
       x <- pn
       if (fromIntegral (floor x :: Int) :: Float) == x
-        then return $ floor x
+        then pure $ floor x
         else fail "not an integer"
 
 -- | parse a TRUE or FALSE to an MTEXpr. But see also `getMarkings` in Interpreter.hs.
@@ -371,7 +377,7 @@ pText :: [Text.Text] -> MyToken -> Parser MyToken
 pText ts tok = do
   p <- pOtherVal
   if p `elem` ts
-    then return tok
+    then pure tok
     else fail [i|pText: got #{p} which doesn't match input text #{ts}|]
 
 -- | parse a multiterm
@@ -397,22 +403,22 @@ sameOrNextLine pa pb =
 -- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
 
 
--- | one or more P, monotonically moving to the right, returned in a list.
+-- | one or more P, monotonically moving to the right, pureed in a list.
 -- if you don't want moving to the right, but want the things all to fall at the same indentation level, just use `some` or `many`.
 someDeep :: (Show a) => Parser a -> Parser [a]
 someDeep p = debugName "someDeep"
   ( (:)
     <$> debugName "someDeep first part calls base directly" p
     <*> ( debugName "someDeep second part recurses with someIndentation" (try $ someIndentation $ someDeep p)
-        <|> (debugPrint "someDeep no luck, returning []" >> return [])) )
+        <|> (debugPrint "someDeep no luck, pureing []" >> pure [])) )
 
--- zero or more P, monotonically moving to the right, returned in a list
+-- zero or more P, monotonically moving to the right, pureed in a list
 manyDeep :: (Show a) => Parser a -> Parser [a]
 manyDeep p =
   debugName "manyDeep"
   (debugName "manyDeep calling someDeep" (try $ someDeep p)
     <|>
-    (debugPrint "someDeep failed, manyDeep defaulting to return []" >> return [])
+    (debugPrint "someDeep failed, manyDeep defaulting to pure []" >> pure [])
   )
 
 someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
@@ -426,27 +432,27 @@ someDeepThenMaybe p1 p2 = someIndentation $ manyDeepThenMaybe p1 p2
 -- foo foo foo foo foo (bar)
 manyDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
 manyDeepThen p1 p2 = debugName "manyDeepThen" do
-  p <- try (debugName "manyDeepThen/initial" p1)
+  p <- try $ debugName "manyDeepThen/initial" p1
   (lhs, rhs) <- donext
-  return (p:lhs, rhs)
+  pure (p:lhs, rhs)
   where
     donext = debugName "manyDeepThen/going inner" (try $ someIndentation $ manyDeepThen p1 p2)
              <|> debugName "manyDeepThen/donext-rhs" base
     base = debugName "manyDeepThen/base" do
       rhs <- try (manyIndentation p2)
-      return ([], rhs)
+      pure ([], rhs)
 
 manyDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
 manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
   p <- try (debugName "manyDeepThenMaybe/initial" p1)
   (lhs, rhs) <- donext
-  return (p:lhs, rhs)
+  pure (p:lhs, rhs)
   where
     donext = debugName "going inner" (try $ someIndentation $ manyDeepThenMaybe p1 p2)
              <|> debugName "going rhs" base
     base = debugName "manyDeepThenMaybe/base" do
       rhs <- optional $ try (manyIndentation p2)
-      return ([], rhs)
+      pure ([], rhs)
 
 
 
@@ -515,9 +521,9 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
    In the type definition table below we refer to `Parser (a,Int)` as "fancy" and `Parser a` as "plain".
 
    What do the characters mean? Generally:
-   - $ means a function, typically a data constructor, which consumes one or more arguments to return a value
-   - > means an argument to that constructor, typically a plain parser that returns the value needed by the constructor
-   - | means a fancified curry coming from the left, that is part of the chain; or returning a fancified curry to the right
+   - $ means a function, typically a data constructor, which consumes one or more arguments to pure a value
+   - > means an argument to that constructor, typically a plain parser that pures the value needed by the constructor
+   - | means a fancified curry coming from the left, that is part of the chain; or pureing a fancified curry to the right
    - * means an argument to the constructor which itself has been fancified
    - < means this combinator is responsible for consuming undeepers
 
@@ -576,7 +582,7 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 
 (|&|)  ::(Show a, Show b)  => SLParser  a       -> SLParser b  ->   Parser (a,b) -- ^ standalone fancy fancy on same or next line
 
--- * greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. return both lhs and rhs
+-- * greedy match of LHS until RHS; and if there is overlap between LHS and RHS, keep backtracking LHS to be less greedy until RHS succeeds. pure both lhs and rhs
 (+?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- force the LHS to be nongreedy before matching the right.
 (*?|)  :: Show a           =>   Parser a        -> SLParser b  -> SLParser ([a],b)  -- plain nongreedy kleene star
 (|+?)  :: Show a           => SLParser a        -> SLParser b  -> SLParser ([a],b)  -- fancy nongreedy kleene plus
@@ -605,8 +611,8 @@ censorSL f = SLParser . censor (Sum . f . getSum) . runSLParser_
 (|?|) p = debugNameSL "|?| optional something" do
   try (do
           out <- (|>>) p
-          return (Just out))
-    <|> return Nothing
+          pure $ Just out)
+    <|> pure Nothing
 
 -- we have convenience combinators for some, many, and optional.
 someSL          :: Show a => SLParser a ->       SLParser [a] -- some
@@ -627,7 +633,7 @@ _fourIs = debugName "fourIs" $
     |>| pT
     |>| pT
     |>< pT
-  where pT = debugName "Is/An" (pToken Is <|> pToken A_An)
+  where pT = debugName "Is/An" $ pToken Is <|> pToken A_An
 
 -- instead of ending with a |>< you can keep it going and end with an explicit undeepers.
 _threeIs :: Parser (MyToken, (MyToken,MyToken) ,MyToken)
@@ -637,7 +643,7 @@ _threeIs = debugName "threeIs" $
     |*| pTT
     |>| pT
     |<$ undeepers
-  where pT  = debugName "Is" (pToken Is)
+  where pT  = debugName "Is" $ pToken Is
         pTT = debugNameSL "(pT,pT)" $ (,) $>| pT |>| pT
         --- because the final sigil in the chain ends with a |, pTT is suitable for use with a * in the parent expression
 
@@ -647,8 +653,8 @@ _twoIsSomeAn = debugName "twoIsSomeAn" $
     $*| pT
     |*| pAn
     |*< pT
-  where pT  = liftSL (pToken Is)
-        pAn = someLiftSL (pToken A_An)
+  where pT  = liftSL $ pToken Is
+        pAn = someLiftSL $ pToken A_An
 
 -- implementation of the combinators
 manyLiftSL x    = manySL $ liftSL x            -- usage: manyLiftSL pOtherVal   is       many pOtherVal
@@ -664,12 +670,12 @@ someSL p = debugNameSL "someSL" $ (:) <$> p <*> many (try $ some slDeeper *> p)
 -- someSL p = debugNameSL "|:| some" do
 --   p1 <- debugNameSL "|:| base parser" p
 --   ps <- try deeper <|> nomore
---   return (p1:ps)
+--   pure (p1:ps)
 --   where
 --     deeper = debugName "|:| deeper" do
 --       _ <- debugName "|:| some GoDeeper" $ some slDeeper
 --       someSL p
---     nomore = debugName "|:| noMore" $ return []
+--     nomore = debugName "|:| noMore" $ pure []
 -- infixl 4 |:|
 
 -- manySL :: Show a => SLParser a -> SLParser [a]
@@ -679,16 +685,16 @@ manySL p = debugNameSL "|.| manyLike" do
 
 f $>| p2 = do
   r <- liftSL $ debugName "$>|" p2
-  return (f r)
+  pure $ f r
 infixl 4 $>|
 
 f +>| n = do
-  mkSL $ return (f, n)
+  mkSL $ pure (f, n)
 infixl 4 +>|
 
 f >>| p2 = do
   r <- debugNameSL ">>|" $ ($>>) p2
-  return (f r)
+  pure (f r)
 infixl 4 >>|
 
 f $*| p2 = do
@@ -701,7 +707,7 @@ infixl 4 >*|
 p1 |>| p2 = do
   l <- p1
   r <- debugNameSL "|>| calling $>> to consume goDeeper" $ ($>>) p2
-  return (l r)
+  pure $ l r
 infixl 4 |>|
 
 p1 |*| p2 = p1 <*> (|>>) p2
@@ -718,21 +724,21 @@ p1 +?| p2 = do
   l     <- liftSL $ optional p1
   when (isNothing l) slDeeper
   (r,x) <- p1 *?| p2
-  return (maybe r (:r) l,x)
+  pure (maybe r (:r) l,x)
 
 -- | (p1)+(?=p2) greedy lookahead, some
 p1 /+= p2 = do
   l     <- liftSL $ optional p1
   when (isNothing l) slDeeper
   (r,x) <- p1 /*= p2
-  return (maybe r (:r) l, x)
+  pure (maybe r (:r) l, x)
 
 -- | (p1)*(?=p2) positive greedy lookahead, many
 p1 /*= p2 = try (do
                     x   <- censorSL (const 0) $ try (lookAhead p2)
                     (debugPrint "/*= lookAhead succeeded, recursing greedily" >> try (p1 /+= p2))
                       <|>
-                      (debugPrint "/*= lookAhead succeeded, greedy recursion failed (no p1); returning p2." >> return ([],x))
+                      (debugPrint "/*= lookAhead succeeded, greedy recursion failed (no p1); pureing p2." >> pure ([],x))
                 )
              <|> (debugPrint "/*= lookAhead failed, delegating to plain /+=" >> try (p1 /+= p2))
 
@@ -741,19 +747,19 @@ p1 /+?= p2 = do
   l      <- liftSL $ optional p1
   when (isNothing l) slDeeper
   (r,x)  <- p1 /*?= p2
-  return (maybe r (:r) l, x)
+  pure (maybe r (:r) l, x)
 
 -- | (p1)*?(?=p2) nongreedy lookahead, many
 p1 /*?= p2 = try (do
                     x   <- censorSL (const 0) $ try (lookAhead p2)
-                    debugPrint "/*?= lookAhead succeeded, nongreedy, so returning p2." >> return ([],x)
+                    debugPrint "/*?= lookAhead succeeded, nongreedy, so pureing p2." >> pure ([],x)
                  )
              <|> (debugPrint "/*= lookAhead failed, delegating to plain /+?=" >> try (p1 /+?= p2))
 
 infixl 5 +?|, *?|, |+?, |*? , /+=, /*=, /+?=, /*?=
 p1 *?| p2 =  try (do
                      x'   <- p2
-                     return ([],x'))
+                     pure ([],x'))
              <|> (p1 +?| p2)
 
 -- the above is very similar to
@@ -769,11 +775,11 @@ p1 *?| p2 =  try (do
 p1 |+? p2 = do
   l     <- p1 <* slDeeper
   (r,x) <- p1 |*? p2
-  return (l:r,x)
+  pure (l:r,x)
 
 p1 |*? p2 = try (do
                     x'   <- p2
-                    return ([],x'))
+                    pure ([],x'))
             <|> (p1 |+? p2)
 
 f $+/ p = uncurry f <$> p
@@ -798,13 +804,13 @@ infixl 4 |*<
 p1 |<$ p2 = do
   (result, n) <- runSL p1
   p2 n
-  return result
+  pure result
 infixl 4 |<$
 
 p1 |-- p2 = mkSL do
   (result, n) <- runSL p1
   p2 n
-  return (result, n)
+  pure (result, n)
 infixl 4 |--
 
 l ->| n = do
@@ -812,14 +818,14 @@ l ->| n = do
   f <- l
   _ <- godeeper n
   debugPrint "->| success"
-  return f
+  pure f
 
 infixl 4 ->|
 
 howDeep :: SLParser Int
 howDeep = mkSL do
   (_, n) <- runSL $ pure ()
-  return (n,n)
+  pure (n,n)
 
 -- | Complete an SL parser and consume any outstanding UnDeepers
 finishSL :: SLParser a -> Parser a
@@ -827,37 +833,38 @@ finishSL p = p |<$ undeepers
 
 -- | Like `someUndeepers`, but only consumes up to n UnDeepers
 upToNUndeepers :: Int -> SLParser ()
-upToNUndeepers 0 = debugName "upToNUndeepers(0)/done" $ return ()
+upToNUndeepers 0 = debugName "upToNUndeepers(0)/done" $ pure ()
 upToNUndeepers n = debugName [i|upToNUndeepers(#{n})/undeeper|] do
-  (slUnDeeper *> upToNUndeepers (n-1)) <|> debugPrint [i|upToNUndeepers: remaining: #{n}|]
-
+  (slUnDeeper *> upToNUndeepers (n-1))
+    <|> debugPrint [i|upToNUndeepers: remaining: #{n}|]
 
 -- consume all the UnDeepers that have been stacked off to the right
 -- which is to say, inside the snd of the Parser (_,Int)
 
 undeepers :: Int -> Parser ()
-undeepers n | n < 0 =  debugName "undeepers" $ fail "undeepers: negative number of undeepers"
-undeepers n = debugName "undeepers" do
-  debugPrint [i|sameLine/undeepers: reached end of line; now need to clear #{n} UnDeepers|]
-  _ <- count n (pToken UnDeeper)
-  debugPrint "sameLine: success!"
+undeepers n
+  | n < 0 = debugName "undeepers" $ fail "undeepers: negative number of undeepers"
+  | otherwise = debugName "undeepers" do
+      debugPrint [i|sameLine/undeepers: reached end of line; now need to clear #{n} UnDeepers|]
+      count n $ pToken UnDeeper
+      debugPrint "sameLine: success!"
 
 godeeper :: Int -> SLParser ()
 godeeper n = mkSL $ debugName [i|godeeper #{n}|] do
-  _ <- count n (pToken GoDeeper)
+  count n $ pToken GoDeeper
   debugPrint "matched!"
-  return ((),n)
+  pure ((),n)
 
 manyUndeepers :: SLParser ()
 manyUndeepers = debugNameSL "manyUndeepers" do
-  (slUnDeeper >> manyUndeepers) <|> return ()
+  (slUnDeeper >> manyUndeepers) <|> pure ()
 
 someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" do
   slUnDeeper >> manyUndeepers
 
 -- | consume any GoDeepers, then parse -- plain
-($>>) p = (|>>) (liftSL p)
+($>>) p = (|>>) $ liftSL p
 infixl 4 $>>
 
 -- | consume any GoDeepers, then parse -- fancy
@@ -867,7 +874,7 @@ infixl 4 $>>
     base = debugName "|>>/base" do
       out <- p
       debugPrint [i||>>/base got #{show out}|]
-      return out
+      pure out
     recurse = debugName "|>>/recurse" do
       slDeeper >> (|>>) p
 infixl 4 |>>
@@ -891,23 +898,23 @@ infixl 4 |^|
 p1 |<* p2 = debugPrint "|<* starting" >> do
   l <- p1
   r <- debugName "|<*/parent" $ try goleft <|> base
-  return $ l r
+  pure $ l r
   where
     base = debugName "|<*/base" p2
     goleft = debugPrint "|<*/recurse" >> do
       uds <- some slUnDeeper
       out <- p2
       debugPrint [i||<*/recurse matched #{length uds} UnDeepers|]
-      return out
+      pure out
 infixl 4 |<*
 
 -- indent at least 1 tab from current location
 someIndentation :: (Show a) => Parser a -> Parser a
 someIndentation p = debugName "someIndentation" $
-  myindented (manyIndentation p)
+  myindented $ manyIndentation p
 
 someIndentation' :: Parser a -> Parser a
-someIndentation' p = myindented' (manyIndentation' p)
+someIndentation' p = myindented' $ manyIndentation' p
 
 -- 0 or more tabs indented from current location
 manyIndentation :: (Show a) => Parser a -> Parser a
@@ -947,13 +954,12 @@ indented d p1 p2 = do
   y     <- case d of
     0 -> manyIndentation p2
     _ -> someIndentation p2
-  return $ f y
+  pure $ f y
 
 indentedTuple :: (Show a, Show b) => Int -> Parser a -> Parser b -> Parser (a,b)
-indentedTuple d p1 p2 = do
-  indented d ((,) <$> p1) p2
+indentedTuple d p1 = indented d $ (,) <$> p1
 
--- return one or more items at the same depth.
+-- pure one or more items at the same depth.
 -- the interesting thing about this function is the *absence* of someIndentation/manyIndentation
 sameDepth, sameMany :: (Show a) => Parser a -> Parser [a]
 sameDepth p = debugName "sameDepth" $ some p
@@ -979,7 +985,7 @@ infixl 4 `indented1`
 indent3 :: (Show a, Show b, Show c, Show d) => (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
 indent3 f p1 p2 p3 = debugName "indent3" do
   p1' <- p1
-  someIndentation $ liftA2 (f p1') p2 (someIndentation p3)
+  someIndentation $ liftA2 (f p1') p2 $ someIndentation p3
 
 -- [TODO] deprecate these in favour of slparser or something even better. this is janky.
 optIndentedTuple :: (Show a, Show b) => Parser a -> Parser b -> Parser (a, Maybe b)
@@ -990,8 +996,8 @@ optIndented :: (Show a, Show b) => Parser (Maybe a -> b) -> Parser a -> Parser b
 infixl 4 `optIndented`
 optIndented p1 p2 = debugName "optIndented" do
   f <- p1
-  y <- optional (someIndentation p2)
-  return $ f y
+  y <- optional $ someIndentation p2
+  pure $ f y
 
 -- let's do us a combinator that does the same as `indentedTuple0` but in applicative style
 indentChain :: Parser (a -> b) -> Parser a -> Parser b
@@ -1001,7 +1007,7 @@ infixl 4 `indentChain`
 showStack :: Parser String
 showStack = do
   callStack <- asks parseCallStack
-  return $ intercalate " > " $ reverse callStack
+  pure $ intercalate " > " $ reverse callStack
 
 pAnyText :: Parser Text.Text
 pAnyText = tok2text <|> pOtherVal
@@ -1022,14 +1028,14 @@ tok2text = choice
     , "NOT IN" <$ pToken TokNotIn
     ]
 
--- | Like `\m -> do a <- m; tell [a]; return a` but add the value before the child elements instead of after.
+-- | Like `\m -> do a <- m; tell [a]; pure a` but add the value before the child elements instead of after.
 --
 -- This supports the defintion of inline sub-rules using MEANS.
 tellIdFirst :: (Functor m) => WriterT (DList w) m w -> WriterT (DList w) m w
 tellIdFirst = mapWriterT . fmap $ \(a, m) -> (a, singeltonDL a <> m)
 
 pToken :: MyToken -> Parser MyToken
-pToken c = pTokenMatch (== c) (pure c)
+pToken c = pTokenMatch (== c) $ pure c
 
 -- | Parse tokens that are not MyToken
 pTokenish :: HasToken a => a -> Parser a
@@ -1051,12 +1057,18 @@ iPretendEmpty pt = MPInternal.ParsecT \s _ _ eok eerr ->
    let eerr' err _ = eerr err s
    in MPInternal.unParser pt s eok eerr' eok eerr'
 
-runOnErrors :: (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) -> Parser a -> Parser a
+runOnErrors ::
+  (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) ->
+  Parser a ->
+  Parser a
 runOnErrors f = liftRawPFun (iRunOnErrors f)
 
-iRunOnErrors :: (Stream s, Ord e, Monad m) => (forall b. MPInternal.Consumption -> ParseError s e -> State s e -> m b -> m b) -> ParsecT e  s m a -> ParsecT e s m a
+iRunOnErrors ::
+  (Stream s, Ord e, Monad m) =>
+  (forall b. MPInternal.Consumption -> ParseError s e -> State s e -> m b -> m b) ->
+  ParsecT e s m a ->
+  ParsecT e s m a
 iRunOnErrors f pt = MPInternal.ParsecT \s cok cerr eok eerr ->
-    let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
-        eerr' err s' = f MPInternal.NotConsumed err s' (eerr err s')
-    in
-    MPInternal.unParser pt s cok cerr' eok eerr'
+  let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
+      eerr' err s' = f MPInternal.NotConsumed err s' (eerr err s')
+   in MPInternal.unParser pt s cok cerr' eok eerr'

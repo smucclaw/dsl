@@ -19,7 +19,6 @@ module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libAndBuiltinTemplates) where
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
 -- import Data.HashSet qualified as HS
-import Data.String ()
 
 import Prettyprinter
   ( Doc,

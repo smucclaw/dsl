@@ -100,9 +100,7 @@ data MyToken = Every | Party | TokAll
              | SetPlus | SetLess -- set union and subtraction
              | Where -- like in Haskell
              | Semicolon -- rule separator
-  deriving (Ord, Eq, Show, Generic, ToJSON)
-
-instance Hashable MyToken
+  deriving (Ord, Eq, Show, Generic, Hashable, ToJSON)
 
 -- the Rule types employ these tokens, which are meaningful to L4.
 --

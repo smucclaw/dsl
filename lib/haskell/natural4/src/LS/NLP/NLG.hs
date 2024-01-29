@@ -364,12 +364,13 @@ nlg' thl env rule = case rule of
           bodyLins = gfLin env <$> bodyTrees
       when (verbose env) do
         putStrLn "nlg': hornlike"
-        putStrLn $ unlines $ [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
-        putStrLn $ unlines $ [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
+        putStrLn $ unlines $
+          [[I.i|   head: #{showExpr [] t}|] | t <- headTrees]
+            <> [[I.i|   body: #{showExpr [] t}|] | t <- bodyTrees]
       pure $ Text.unlines $ headLins <> [getWhen (gfLang env)] <> bodyLins
     RuleAlias mt -> do
       let ruleText = gfLin env $ gf $ parseSubj env $ mkLeafPT $ mt2text mt
-          ruleTextDebug = Text.unwords [prefix, ruleText, suffix]
+          ruleTextDebug = [I.i|#{prefix} #{ruleText} #{suffix}|]
       pure $ Text.strip ruleTextDebug
     DefNameAlias {} -> pure mempty
     DefTypically {} -> pure mempty
@@ -434,7 +435,7 @@ ruleQuestions env alias rule =
       text :: XPileLog [BoolStructT]
       text = do
         t1 <- ruleQnTrees env alias rule
-        return ( linBStext env <$> t1 )
+        pure ( linBStext env <$> t1 )
 
 ruleQuestionsNamed :: NLGEnv
                    -> Maybe (MultiTerm, MultiTerm)
@@ -443,7 +444,7 @@ ruleQuestionsNamed :: NLGEnv
 ruleQuestionsNamed env alias rule = do
   let rn = ruleLabelName rule
   rq    <- ruleQuestions env alias rule
-  return (rn, rq)
+  pure (rn, rq)
 
 -- | like ruleQuestions, this function is rule-oriented; it returns a list of
 -- boolstructGTexts, which is defined in NL4.hs as a boolstruct of GTexts, which
@@ -624,6 +625,7 @@ parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
     cond = parseCond env (RPMT c)
     tc = parseTComparison t
     date = parseDate d
+
 parseCond env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, (GMkVPS t p vp):_) -> GWHEN np t p vp
   _ -> parseCond env (RPMT [MTT $ Text.unwords [aTxt, "is", bTxt]])
@@ -821,7 +823,7 @@ expandRulesForNLGE env rules = do
   mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
   toreturn <- traverse (expandRuleForNLGE l4i $ depth+1) uniqrs
   mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
-  return toreturn
+  pure toreturn
   where
     l4i = interpreted env
     usedrules = getExpandedRuleNames l4i `foldMap` rules

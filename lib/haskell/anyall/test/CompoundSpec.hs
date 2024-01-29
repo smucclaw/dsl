@@ -1,24 +1,40 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module CompoundSpec(spec) where
+module CompoundSpec (spec) where
 
-import Test.Hspec
-import AnyAll.Types
-import AnyAll.Relevance
 import AnyAll.BoolStruct
+  ( BoolStruct (All, Any, Not),
+    OptionallyLabeledBoolStruct,
+    mkLeaf,
+  )
+import AnyAll.Relevance (dispositive, relevant)
+import AnyAll.Types
+  ( AndOr (And, Or, Simply),
+    Default (..),
+    Hardness (Hard, Soft),
+    Label (Pre),
+    Marking (Marking),
+    Q (Q),
+    ShouldView (Ask, Hide, View),
+    asJSON,
+    asJSONDefault,
+    fromJSON,
+    mkDefault
+  )
 import Data.HashMap.Strict qualified as Map
-import Data.Tree
 import Data.Maybe (fromJust)
-import Data.Text as T
+import Data.Text as T (Text)
+import Data.Tree (Tree (Node))
+import Test.Hspec (Spec, describe, it, shouldBe)
 
 ln, lt, lf, rt, rf, rn :: Default Bool
-ln = Default $ Left Nothing
-lt = Default $ Left $ Just True
-lf = Default $ Left $ Just False
-rt = Default $ Right $ Just True
-rf = Default $ Right $ Just False
-rn = Default $ Right Nothing
+ln = mkDefault $ Left Nothing
+lt = mkDefault $ Left $ Just True
+lf = mkDefault $ Left $ Just False
+rt = mkDefault $ Right $ Just True
+rf = mkDefault $ Right $ Just False
+rn = mkDefault $ Right Nothing
 
 spec :: Spec
 spec = do
@@ -309,11 +325,11 @@ spec = do
 
   describe "JSON conversion" do
     it "should encode Default left just true" do
-      asJSONDefault (Default (Left (Just True))) `shouldBe` "{\"Left\":true}"
+      asJSONDefault (mkDefault (Left (Just True))) `shouldBe` "{\"Left\":true}"
     it "should encode Default left just false" do
-      asJSONDefault (Default (Left (Just False))) `shouldBe` "{\"Left\":false}"
+      asJSONDefault (mkDefault (Left (Just False))) `shouldBe` "{\"Left\":false}"
     it "should encode Default left nothing" do
-      asJSONDefault (Default (Left (Nothing :: Maybe Bool))) `shouldBe` "{\"Left\":null}"
+      asJSONDefault (mkDefault (Left (Nothing :: Maybe Bool))) `shouldBe` "{\"Left\":null}"
     it "should encode Q mustSing" $ do
       asJSON (rlv mustSing (Map.fromList [("walk",  Left  $ Just True)
                                          ,("eat",   Left  $ Just True)

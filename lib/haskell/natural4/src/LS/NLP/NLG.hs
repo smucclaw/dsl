@@ -22,7 +22,7 @@ module LS.NLP.NLG
     ruleQnTrees,
     ruleQuestions,
     ruleQuestionsNamed,
-    textViaQaHorns
+    textViaQaHorns,
   )
 where
 
@@ -200,6 +200,7 @@ import PGF
 import Paths_natural4 (getDataFileName)
 import Prettyprinter.Interpolate (__di)
 import System.Environment (lookupEnv)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -261,7 +262,7 @@ myNLGEnv l4i lang = do
         xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
 
 rmBIND :: Text.Text -> Text.Text
-rmBIND = Text.replace " &+ " ""
+rmBIND = PCRE.gsub [PCRE.re|\s+&\+\s+|] ("" :: Text.Text)
 
 uncapKeywords :: Text.Text -> Text.Text
 uncapKeywords = Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
@@ -287,13 +288,13 @@ getLevel = \case
   MyLest i -> i
 
 debugNesting :: Language -> RecursionLevel -> (Text.Text, Text.Text)
-debugNesting lang level = (getPrefix lang level, Text.pack "")
+debugNesting lang level = (getPrefix lang level, "")
   where
-    getPrefix _ TopLevel = Text.pack ""
+    getPrefix _ TopLevel = ""
     getPrefix lang (MyHence _)
-      | isChinese lang = Text.pack "在此之后，做:"
-      | isMalay lang = Text.pack "Tindakan seterusnya:"
-      | otherwise = Text.pack "Follow by:"
+      | isChinese lang = "在此之后，做:"
+      | isMalay lang = "Tindakan seterusnya:"
+      | otherwise = "Follow by:"
     getPrefix lang (MyLest _)
       | isChinese lang = Text.pack "万一失败，"
       | isMalay lang = Text.pack "Dalam kes kegagalan:"
@@ -671,114 +672,85 @@ parseTemporal _ (TemporalConstraint t Nothing text) =
     unit = parseTimeUnit text
 
 parseTimeUnit :: Text.Text -> GTimeUnit
-parseTimeUnit text = case take 3 $ Text.unpack $ Text.toLower text of
+parseTimeUnit text = case Text.take 3 $ Text.toLower text of
   "day" -> GDay_Unit
   "mon" -> GMonth_Unit
   "yea" -> GYear_Unit
-  _xs -> trace [i|NLG.hs: unrecognised time unit: #{text}|] (GrecoverUnparsedTimeUnit (tString text))
+  _xs ->
+    trace [i|NLG.hs: unrecognised time unit: #{text}|] $
+      GrecoverUnparsedTimeUnit (tString text)
 
 parseConstraint :: NLGEnv -> RelationalPredicate -> GConstraint
-parseConstraint env (RPBoolStructR a RPis (AA.Not b)) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (flipPolarity $ fg vp)
-  _ -> GrecoverRPis (tString aTxt) (tString [i|not #{bTxt}|])
-  where
-    aTxt = Text.strip $ mt2text a
-    bTxt = bsr2text b
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env [i|is #{bTxt}|]
+parseConstraint
+  env
+  ( RPBoolStructR
+      (Text.strip . mt2text -> a)
+      RPis
+      (AA.Not (bsr2text -> b))
+    ) = case (nps, vps) of
+    (np : _, vp : _) -> GRPleafS (fg np) (flipPolarity $ fg vp)
+    _ -> GrecoverRPis (tString a) (tString [i|not #{b}|])
+    where
+      nps = parseAnyNoRecover "NP" env a
+      vps = parseAnyNoRecover "VPS" env [i|is #{b}|]
 
-parseConstraint env (RPConstraint a RPis b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPis (tString aTxt) (tString bTxt)
-  where
-    aTxt = Text.strip $ mt2text a
-    bTxt = Text.strip $ mt2text b
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env [i|is #{bTxt}|]
+parseConstraint
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      RPis
+      (Text.strip . mt2text -> b)
+    ) = case (nps, vps) of
+    (np : _, vp : _) -> GRPleafS (fg np) (fg vp)
+    _ -> GrecoverRPis (tString a) (tString b)
+    where
+      nps = parseAnyNoRecover "NP" env a
+      vps = parseAnyNoRecover "VPS" env [i|is #{b}|]
 
-parseConstraint env (RPConstraint a (RPTC t) b) = case (sents,advs) of
-  (s:_, adv:_) -> case s of
-                    GPredVPS np (GMkVPS t p vp) -> GRPleafS np (GMkVPS t p (GAdvVP vp adv))
-                    _ -> trace [i|parseConstraint: unable to parse #{showExpr [] $ gf s}|] fallback
-  x -> trace [i|parseConstraint: unable to parse #{x}#{tTxt}|] fallback
-  where
-    aTxt = Text.strip $ mt2text a
-    tTxt = gfLin env $ gf $ parseTComparison t
-    bTxt = Text.strip $ mt2text b
-    sents :: [GS]
-    sents = fg <$> parseAnyNoRecover "S" env aTxt
-    advs :: [GAdv]
-    advs = fg <$> parseAnyNoRecover "Adv" env (Text.unwords [tTxt, bTxt])
-    fallback = GrecoverUnparsedConstraint (tString $ Text.unwords [aTxt, tTxt, bTxt])
+parseConstraint
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      (RPTC (gfLin env . gf . parseTComparison -> t))
+      (Text.strip . mt2text -> b)
+    ) = case (sents, advs) of
+    (s : _, adv : _) -> case s of
+      GPredVPS np (GMkVPS t p vp) -> GRPleafS np (GMkVPS t p (GAdvVP vp adv))
+      _ -> trace [i|parseConstraint: unable to parse #{showExpr [] $ gf s}|] fallback
+    x -> trace [i|parseConstraint: unable to parse #{x}#{t}|] fallback
+    where
+      sents :: [GS]
+      sents = fg <$> parseAnyNoRecover "S" env a
+      advs :: [GAdv]
+      advs = fg <$> parseAnyNoRecover "Adv" env (Text.unwords [t, b])
+      fallback = GrecoverUnparsedConstraint (tString $ Text.unwords [a, t, b])
 
+parseConstraint
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      op@((`elem` [RPlt, RPlte, RPgt, RPgte]) -> True)
+      (Text.strip . mt2text -> b)
+    ) =
+    case (nps, vps) of
+      (np : _, vp : _) -> GRPleafS (fg np) (fg vp)
+      _ -> GrecoverRPmath (tString opTxt) (tString a') (tString b')
+    where
+      aPrefix = Text.stripSuffix "'s age" a
+      a' = fromMaybe a aPrefix -- policy holder's age -> policy holder
 
-parseConstraint env (RPConstraint a RPgt b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString ">") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
+      b' = case sequenceA [aPrefix, Text.stripSuffix "years" b] of
+        Just _ -> [i|is #{opEng} #{splitDigits b} old|]
+        Nothing -> [i|is #{opEng'} #{b}|]
 
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is more than #{splitDigits bTxt0} old|]
-             _ -> [i|is greater than #{bTxt0}|]
+      (opTxt, opEng :: Text.Text, opEng' :: Text.Text) = case op of
+        RPlt -> ("<", "less than", "less than")
+        RPlte -> ("<=", "at most", "at most")
+        RPgt -> (">", "more than", "greater than")
+        RPgte -> (">=", "at least", "at least")
 
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
-
-parseConstraint env (RPConstraint a RPlt b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
-
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is less than #{splitDigits bTxt0} old|]
-             _ -> [i|is less than #{bTxt0}|]
-
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
-
-parseConstraint env (RPConstraint a RPlte b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
-
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is at most #{splitDigits bTxt0} old|]
-             _ -> [i|is at most #{bTxt0}|]
-
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
-
-parseConstraint env (RPConstraint a RPgte b) = case (nps,vps) of
-  (np:_, vp:_) -> GRPleafS (fg np) (fg vp)
-  _ -> GrecoverRPmath (tString "<") (tString aTxt) (tString bTxt)
-  where
-    aTxt0 = Text.strip $ mt2text a
-    aTxt = case dp 6 aTxt0 of
-             "'s age" -> tk 6 aTxt0 -- policy holder's age -> policy holder
-             _ -> aTxt0
-
-    bTxt0 = Text.strip $ mt2text b
-    bTxt = case (dp 6 aTxt0, dp 5 bTxt0) of
-             ("'s age", "years") -> [i|is at least #{splitDigits bTxt0} old|]
-             _ -> [i|is at least #{bTxt0}|]
-
-    nps = parseAnyNoRecover "NP" env aTxt
-    vps = parseAnyNoRecover "VPS" env bTxt
+      nps = parseAnyNoRecover "NP" env a'
+      vps = parseAnyNoRecover "VPS" env b'
 
 parseConstraint env rp = fg tree
   where
@@ -824,20 +796,20 @@ tString :: Text.Text -> GString
 tString = GString . Text.unpack
 
 splitDigits :: Text.Text -> Text.Text
-splitDigits txt = Text.unwords (splitDigit <$> Text.words txt)
+splitDigits txt = Text.unwords $ splitDigit <$> Text.words txt
   where
-    splitDigit d@(Text.all Char.isDigit -> True) =
-      Text.intercalate " &+ " (Text.groupBy (\_ _ -> False) d)
+    splitDigit d
+      | Text.all Char.isDigit d =
+          Text.intercalate " &+ " $ Text.groupBy (\_ _ -> False) d
     splitDigit d = d
 
-tk, dp :: Int -> Text.Text -> Text.Text
-tk i = Text.pack . tk' i . Text.unpack
-dp i = Text.pack . dp' i . Text.unpack
+-- tk i = Text.pack . tk' i . Text.unpack
+-- dp i = Text.pack . dp' i . Text.unpack
 
 
-tk', dp' :: Int -> String -> String
-tk' i = reverse . drop i . reverse -- tk 2 "hello" == "hel"
-dp' i = reverse . take i . reverse -- dp 2 "hello" == "lo"
+-- tk', dp' :: Int -> String -> String
+-- tk' i = reverse . drop i . reverse -- tk 2 "hello" == "hel"
+-- dp' i = reverse . take i . reverse -- dp 2 "hello" == "lo"
 
 
 -----------------------------------------------------------------------------

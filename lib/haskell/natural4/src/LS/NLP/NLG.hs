@@ -39,7 +39,9 @@ import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
 import Data.String.Interpolate as I (i)
 import Data.Text qualified as Text
+import Data.Text.Read (decimal)
 import Debug.Trace (trace)
+import Flow ((|>))
 import LS.Interpreter
   ( expandBSR,
     expandBSRM,
@@ -803,12 +805,23 @@ tString :: Text.Text -> GString
 tString = GString . Text.unpack
 
 splitDigits :: Text.Text -> Text.Text
-splitDigits txt =
-  Text.unwords $ splitDigit <$> Text.words txt
+splitDigits =
+  Text.words
+    >>> map splitDigitsOfWord
+    >>> Text.unwords
   where
-    splitDigit =
-      PCRE.sub [PCRE.re|^\d+$|] (Text.intersperse '&')
-        >>> Text.replace "&" " &+ "
+    -- splitDigits' "123" == "1 &+ 2 &+ 3"
+    splitDigitsOfWord str
+      | isNumeric str =
+          str
+            |> Text.intersperse '&'
+            |> PCRE.gsub [PCRE.re|&|] (" &+ " :: Text.Text)
+      | otherwise = str
+
+    -- Note that this is NOT the same as (Text.all Char.isDigit str)
+    -- because that allows for the c ase when str is empty, but this does not.
+    isNumeric (decimal -> Right (_, "")) = True
+    isNumeric _ = False
 
     -- splitDigit d
     --   | Text.all Char.isDigit d =

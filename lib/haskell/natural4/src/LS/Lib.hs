@@ -1,9 +1,11 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExplicitNamespaces #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-|
 Parser functions not organized into their own separate modules elsewhere.
@@ -228,7 +230,7 @@ import LS.Types
     renderToken,
     toToken,
   )
-import LS.Utils ((|$>))
+import LS.Utils (pairs, (|$>))
 import Options.Generic
   ( Generic,
     ParseFields (..),
@@ -539,12 +541,19 @@ firstAndLast xs = (NE.head xs, NE.last xs)
 
 -- because sometimes a chunk followed by another chunk is really part of the same chunk.
 -- so we glue contiguous chunks together.
-glueLineNumbers :: [(Int,Int)] -> [(Int,Int)]
-glueLineNumbers ((a0, a1) : (b0, b1) : xs)
-  | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
-  | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
-glueLineNumbers [x] = [x]
-glueLineNumbers [] = []
+glueLineNumbers :: [(Int, Int)] -> [(Int, Int)]
+glueLineNumbers xs =
+  xs
+    |> pairs
+    |$> \case
+      ((a0, a1), ((== a1 + 1) -> True, b1)) -> (a0, b1)
+      ((a0, a1), _) -> (a0, a1)
+
+-- glueLineNumbers ((a0, a1) : (b0, b1) : xs)
+--   | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
+--   | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
+-- glueLineNumbers [x] = [x]
+-- glueLineNumbers [] = []
 
 extractLines :: RawStanza -> (Int,Int) -> RawStanza
 extractLines rs (y0, yLast) = V.slice y0 (yLast - y0 + 1) rs

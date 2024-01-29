@@ -79,7 +79,6 @@ library
       LS.XPile.LogicalEnglish.ValidateL4Input
       LS.XPile.Markdown
       LS.XPile.MathLang
-      LS.XPile.MathLang.EffValidate
       LS.XPile.MathLang.ForMengEval.GenericMathLangToMengMathLang
       LS.XPile.MathLang.ForMengEval.TypeInferForMengEval
       LS.XPile.MathLang.GenericMathLang.GenericMathLangAST

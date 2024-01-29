@@ -40,7 +40,7 @@ import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.Reader.Static (runReader, local, Reader)
 -- import Effectful.State.Static.Shared (State, runState)
--- experimenting with Effectful.Error rn; will switch over to Control.Monad.Validate later
+-- experimenting with Effectful.Error rn
 -- import Control.Monad.Validate qualified as V
 --   ( ValidateT
 --     , MonadValidate
@@ -258,16 +258,7 @@ _ToLC = coerced
 unToLC :: ToLC a -> Eff [Reader Env, Error ToLCError] a
 unToLC = view _ToLC
 
--- | https://hackage.haskell.org/package/effectful-core-2.3.0.1/docs/Effectful-Dispatch-Dynamic.html#g:3
--- runValidate :: Eff (EffValidate e : es) a -> Eff es a
--- runValidate = interpret $ \localEnv -> \case
---   Refute errs -> localSeqUnlift localEnv $ \unlift -> do
---     V.refute errs
 
-
---------------------------------------------------------------------------------------------------
-
--- TODO: Adapting MonadValidate is prob going to be more complicated than in the WT presentation
 -- runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
 runToLC :: ToLC a -> Either ToLCError a
 runToLC (ToLC m) = runPureEff
@@ -363,7 +354,6 @@ l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
     mkExpFrSeqExp :: SeqExp -> Exp
     mkExpFrSeqExp seqExp = MkExp (ESeq seqExp) []
 
-
 l4sHLsToLCSeqExp ::  [SimpleHL] -> ToLC SeqExp
 l4sHLsToLCSeqExp = foldM go EmptySeqE
   where
@@ -394,7 +384,6 @@ isIf hl =
         HeadAndBody hc -> Just (hl, hc)
 
 toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
--- toIfExp = undefined
 toIfExp hl hc = do
   condE <- withinGivenAugmentedEnv $ processHcBody hc.hbBody
   thenE <- withinGivenAugmentedEnv $ processHchead hc.hbHead

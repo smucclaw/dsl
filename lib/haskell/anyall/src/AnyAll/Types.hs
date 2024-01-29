@@ -119,9 +119,11 @@ instance Hashable a => Hashable (Default a)
 
 mkDefault :: Either (Maybe a) (Maybe a) -> Default a
 mkDefault = coerce
+{-# INLINE mkDefault #-}
 
 getDefault :: Default a -> Either (Maybe a) (Maybe a)
 getDefault = coerce
+{-# INLINE getDefault #-}
 
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
 instance (FromJSON a) => FromJSON (Default a)

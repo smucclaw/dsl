@@ -29,6 +29,7 @@ import Data.List (all, any)
 import Data.Maybe (isJust)
 import Data.Text qualified as T
 import Data.Tree (Tree (Node))
+import Data.Coerce (coerce)
 
 -- paint a tree as View, Hide, or Ask, depending on the dispositivity of the current node and its children.
 relevant :: Hardness -> Marking T.Text -> Maybe Bool -> OptionallyLabeledBoolStruct T.Text-> Tree (Q T.Text)
@@ -49,9 +50,12 @@ relevant sh marking parentValue self =
       else paintedChildren
 
 mkRelevantLeaf :: Maybe (Default Bool) -> ShouldView -> a -> Tree (Q a)
-mkRelevantLeaf (Just (getDefault -> (Right b))) _       x = Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
-mkRelevantLeaf (Just (getDefault -> (Left  b))) initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left  b)) []
+mkRelevantLeaf (coerceMaybeDefaultBool -> Just (Right b)) _       x = Node (Q View                                     (Simply x) Nothing (Default $ Right b)) []
+mkRelevantLeaf (coerceMaybeDefaultBool -> Just (Left  b)) initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left  b)) []
 mkRelevantLeaf _                    initVis x = Node (Q (if initVis == Hide then Hide else Ask)  (Simply x) Nothing (Default $ Left Nothing)) []
+
+coerceMaybeDefaultBool :: Maybe (Default Bool) -> Maybe (Either (Maybe Bool) (Maybe Bool))
+coerceMaybeDefaultBool = coerce
 
 deriveInitVis :: Maybe Bool -> Maybe Bool -> Maybe Bool -> ShouldView
 deriveInitVis parentValue selfValue selfValueHard

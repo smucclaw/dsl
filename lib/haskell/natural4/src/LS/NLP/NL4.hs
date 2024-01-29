@@ -3,7 +3,6 @@ module LS.NLP.NL4 where
 
 import Control.Monad (MonadPlus (..), ap)
 import Control.Monad.Identity (Identity (Identity, runIdentity))
-import Data.Monoid ()
 import PGF
   ( Expr,
     mkApp,

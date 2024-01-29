@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {-| transpiler to JSON instances representing a sampling across the
 space of possible classes, similar to QuickCheck. The JSON produced by
@@ -14,6 +15,7 @@ import Data.List (groupBy, nub)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe, maybeToList)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS.Rule (Interpreted (classtable))
 import LS.Types
@@ -146,7 +148,7 @@ quickPretty [MTB True] = "true"
 quickPretty [MTB False] = "false"
 quickPretty [MTI myint] = viaShow myint
 quickPretty [MTT str]   = viaShow str
-quickPretty x           = error $ "quickPretty error in pattern match: unhandled case: " ++ show x
+quickPretty x           = error [i|quickPretty error in pattern match: unhandled case: #{x}|]
 
 type Point  lbl val = [(lbl, val)]
 type Points lbl val = [Point lbl val]

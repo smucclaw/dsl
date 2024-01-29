@@ -1,25 +1,75 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 
 module Parsing.PDPASpec (spec, expected_pdpadbno1) where
 
-import Text.Megaparsec
-import LS.Lib
-import AnyAll hiding (asJSON)
-import LS.BasicTypes
-import LS.Types
-import LS.Rule
-import Test.Hspec
+import AnyAll (BoolStruct (All, Any, Leaf, Not), mkLeaf)
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
-import Test.Hspec.Megaparsec (shouldParse)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
-import System.FilePath ((</>), (-<.>))
+import LS.BasicTypes (MyStream, MyToken (Decide, Means))
+import LS.Lib (exampleStreams, pToplevel)
+import LS.Rule
+  ( Rule
+      ( DefNameAlias,
+        RuleAlias,
+        action,
+        clauses,
+        cond,
+        deontic,
+        detail,
+        given,
+        hence,
+        keyword,
+        lest,
+        lsource,
+        name,
+        nlhint,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        temporal,
+        upon,
+        who,
+        wwhere
+      ),
+    defaultHorn,
+    defaultReg,
+    dummyRef,
+    mkTestSrcRef,
+    runMyParser,
+    srctest,
+  )
+import LS.Types
+  ( Deontic (DMay, DMust),
+    HornClause (HC, hBody, hHead),
+    MTExpr (MTT),
+    MyStream,
+    MyToken (Decide, Means),
+    ParamText,
+    RPRel (RPTC, RPis),
+    RegKeywords (REvery, RParty),
+    RelationalPredicate (RPBoolStructR, RPConstraint, RPMT),
+    RunConfig (debug, sourceURL),
+    TComparison (TAfter, TBefore, TOn, TVague),
+    TemporalConstraint (TemporalConstraint),
+    TypedMulti,
+    defaultRC,
+    mkRpmt,
+    mkRpmtLeaf,
+  )
+import System.FilePath ((-<.>), (</>))
+import Test.Hspec (HasCallStack, Spec, SpecWith, describe, it)
+import Test.Hspec.Megaparsec (shouldParse)
+import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile <> ": " <> desc ) do
+  it [i|#{testfile}: #{desc}|] do
   testcsv <- BS.readFile $ "test" </> "Parsing" </> "pdpa" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -34,7 +84,7 @@ spec :: Spec
 spec = do
     let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
-    let  combine (a,b) = a ++ b
+    let  combine = uncurry (<>)
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
     let  parseR       x y s = runMyParser combine runConfig x y s
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s

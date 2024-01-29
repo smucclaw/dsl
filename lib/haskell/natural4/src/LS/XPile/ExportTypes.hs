@@ -50,7 +50,6 @@ import Prettyprinter
     vsep,
   )
 import Prettyprinter.Interpolate (di, __di)
-import Prettyprinter.Render.Text ()
 
 import LS.Rule as SFL4
   ( Rule (TypeDecl, has, name, super),

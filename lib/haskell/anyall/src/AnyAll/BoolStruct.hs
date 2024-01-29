@@ -22,7 +22,7 @@ module AnyAll.BoolStruct
   )
 where
 
-import AnyAll.Types (Label (Pre), Marking (Marking))
+import AnyAll.Types (Label (Pre), Marking (..))
 import Data.Aeson
   ( FromJSON (parseJSON),
     ToJSON,
@@ -74,8 +74,8 @@ type BoolStructLT = BoolStruct (Label T.Text) T.Text
 
 nnf :: BoolStruct lbl a -> BoolStruct lbl a
 nnf (Not (Not p)) = nnf p
-nnf (Not (All l ps)) = Any l $ (nnf . Not) <$> ps
-nnf (Not (Any l ps)) = All l $ (nnf . Not) <$> ps
+nnf (Not (All l ps)) = Any l $ nnf . Not <$> ps
+nnf (Not (Any l ps)) = All l $ nnf . Not <$> ps
 nnf (All l ps) = All l $ nnf <$> ps
 nnf (Any l ps) = Any l $ nnf <$> ps
 nnf x = x
@@ -128,8 +128,8 @@ simplifyBoolStruct :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl
 simplifyBoolStruct (Not (Not x)) = simplifyBoolStruct x
 simplifyBoolStruct (All _ [x])   = simplifyBoolStruct x
 simplifyBoolStruct (Any _ [x])   = simplifyBoolStruct x
-simplifyBoolStruct (All l1 xs)   = All l1 $ foldMap (\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) $ simplifyBoolStruct <$> xs
-simplifyBoolStruct (Any l1 xs)   = Any l1 $ foldMap (\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) $ simplifyBoolStruct <$> xs
+simplifyBoolStruct (All l1 xs)   = All l1 $ foldMap ((\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) . simplifyBoolStruct) xs
+simplifyBoolStruct (Any l1 xs)   = Any l1 $ foldMap ((\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) . simplifyBoolStruct) xs
 simplifyBoolStruct orig = orig
 
 data MergeResult a = Merged a | Unmerged a a
@@ -175,7 +175,7 @@ instance FromJSON (StdinSchema T.Text) where
     aotreeO  <- o .: "andOrTree"
     let marking = parseEither parseJSON markingO
         aotree  = parseEither parseJSON aotreeO
-    
+
     pure $ StdinSchema
       (case marking of
          Left err -> trace ("AnyAll/BoolStruct ERROR parsing marking: " ++ err) $

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {-| transpiler from NaturaL4 to Prolog. This module useful as a point of
 reference for L4's operational semantics. If you know Prolog, you can
@@ -33,7 +34,7 @@ module LS.XPile.Prolog
   ( bsp2struct,
     rulesToProlog,
     rulesToSCasp,
-    vart
+    vart,
   )
 where
 
@@ -41,6 +42,7 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), Dot (xPos))
 import Data.Functor.Classes (showsBinary1)
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty as NE (NonEmpty (..), toList)
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import LS.Rule as SFL4
   ( Rule (Hornlike, TypeDecl, clauses, enums, has, name, super),
@@ -64,7 +66,11 @@ import LS.Types as SFL4
     untypePT,
   )
 import Language.Prolog
-  (Atom, Clause (Clause), Term (Cut, Struct, Var, Wildcard), var)
+  ( Atom,
+    Clause (Clause),
+    Term (Cut, Struct, Var, Wildcard),
+    var,
+  )
 import Prettyprinter
   ( Doc,
     Pretty (pretty),
@@ -73,8 +79,6 @@ import Prettyprinter
     punctuate,
     vsep,
   )
-import Prettyprinter.Render.Text (putDoc)
-
 
 -- Document generation for Logic Programs 
 -- Currently supported: Prolog and SCasp
@@ -198,16 +202,22 @@ describeDict st tname mparent rules =
   ]
 
 showtype :: TypeSig -> EntityType
-showtype (SimpleType TOne      tt) = tt
-showtype (SimpleType TOptional tt) = "optional("     <> tt <> ")"
-showtype (SimpleType TList0    tt) = "listOf("       <> tt <> ")"
-showtype (SimpleType TList1    tt) = "nonEmptyList(" <> tt <> ")"
-showtype (SimpleType TSet0     tt) = "setOf("        <> tt <> ")"
-showtype (SimpleType TSet1     tt) = "nonEmptySet("  <> tt <> ")"
-showtype (InlineEnum pt        tt) = showtype (SimpleType pt (inEnums (fmap mtexpr2text <$> untypePT tt)))
+showtype (SimpleType t tt) = [i|#{t'}#{tt'}|]
+  where
+    (t' :: Text.Text, tt') = case t of
+      TOne -> ("", tt) 
+      TOptional -> ("optional", parenthesise tt)
+      TList0 -> ("listOf", parenthesise tt)
+      TList1 -> ("nonEmptyList", parenthesise tt)
+      TSet0 -> ("setOf", parenthesise tt)
+      TSet1 -> ("nonEmptySet", parenthesise tt)
+    parenthesise str = [i|(#{str})|]
+
+showtype (InlineEnum pt        tt) =
+  showtype $ SimpleType pt (inEnums (fmap mtexpr2text <$> untypePT tt))
 
 inEnums :: NonEmpty (NonEmpty Text.Text) -> Text.Text
-inEnums pt = "enums(" <> Text.unwords [ h | (h :| _) <- NE.toList pt ] <> ")"
+inEnums pt = [i|enums(#{Text.unwords [ h | (h :| _) <- NE.toList pt ]})|]
              -- we gonna need the same writer magic to append top-level output.
              -- in future, run clpEnums
              -- for now, just blurt it out
@@ -270,9 +280,9 @@ rp2goal :: RelationalPredicate -> [Term]
 rp2goal (RPParamText _pt)     = pure $ vart "ERROR: rp2goal: paramtext not supported"
 rp2goal (RPMT [])            = pure $ vart ""
 rp2goal (RPMT [x])           = pure $ varmt x
-rp2goal (RPMT (x:xs))        = pure $ Struct (Text.unpack (mtexpr2text x)) (varmt <$> xs)
-rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct (Text.unpack $ mt2text lhs_) <$> [bsr2struct bsr]
-rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (varmt <$> mt1) ++ (varmt <$> mt2)
+rp2goal (RPMT (x:xs))        = pure $ Struct [i|#{mtexpr2text x}|] (varmt <$> xs)
+rp2goal (RPBoolStructR lhs_ _rel bsr) = Struct [i|#{mt2text lhs_}|] <$> [bsr2struct bsr]
+rp2goal (RPConstraint mt1 rel mt2) = pure $ Struct (rel2f rel) $ (varmt <$> mt1) <> (varmt <$> mt2)
 rp2goal (RPnary      rprel rps) = pure $ Struct (rel2f rprel) (foldMap rp2goal rps)
 
 -- The equality token RPeq has three external appearances: =, ==, ===
@@ -281,7 +291,7 @@ rp2goal (RPnary      rprel rps) = pure $ Struct (rel2f rprel) (foldMap rp2goal r
 -- Prolog's "unifiable". TODO: a bad hack.
 rel2f :: RPRel -> String
 rel2f RPeq = "="
-rel2f r = Text.unpack (rel2txt r)
+rel2f r = [i|#{rel2txt r}|]
 
 analyze :: [SFL4.Rule] -> Analysis
 analyze _rs = Map.fromList [("enumPrimaryKey", "1")] -- sorry, gonna have to read and show this all the time, slightly lame

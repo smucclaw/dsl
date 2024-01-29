@@ -4,14 +4,29 @@
 module AnyAll.RelevanceSpec (spec) where
 
 import AnyAll.BoolStruct
-import AnyAll.Relevance
+  ( BoolStruct (Leaf),
+    mkAll,
+    mkAny,
+    mkLeaf,
+    mkNot,
+  )
+import AnyAll.Relevance (dispositive, evaluate, relevant)
 import AnyAll.Types
+  ( AndOr (And, Neg, Or, Simply),
+    Default (..),
+    Hardness (Hard, Soft),
+    Label,
+    Marking (..),
+    Q (Q, andOr, mark, prePost, shouldView),
+    ShouldView (Ask, Hide, View),
+  )
 import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as T
-import Data.Tree
+import Data.Tree (Tree (Node))
 import Test.Hspec
+    ( Spec, Expectation, describe, it, shouldBe, xit )
 import Test.Hspec.QuickCheck (prop)
-import Test.QuickCheck.Instances.Text
+import Test.QuickCheck.Instances.Text ()
 
 markingMap :: Either (Maybe Bool) (Maybe Bool) -> Map.HashMap T.Text (Default Bool)
 markingMap payload = Map.singleton "key" (Default payload)

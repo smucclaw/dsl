@@ -265,21 +265,25 @@ pastTense x = composOp pastTense x
 -- db happens ON x or db happens AFTER x ==> db happens ON or AFTER x
 
 mergeConj :: Tree a -> Tree a
-mergeConj og@(GConjCond conj (GListCond cs)) = fromMaybe og $ squeezeTrees conj cs
-mergeConj og@(GConjConstraint conj (GListConstraint cs)) = fromMaybe og $ squeezeTrees conj cs
+mergeConj og@(GConjCond conj (GListCond cs)) =
+  fromMaybe og $ squeezeTrees conj cs
+mergeConj og@(GConjConstraint conj (GListConstraint cs)) =
+  fromMaybe og $ squeezeTrees conj cs
 mergeConj x = composOp mergeConj x
 
 
 -- The function that does all the repetitive work
 -- TODO: check if viewpatterns help?
 squeezeTrees :: GConj -> [Tree a] -> Maybe (Tree a)
-squeezeTrees conj [
-    GRPConstraint cond tc1 date
-  , GRPConstraint ((== cond) -> True) tc2 ((== date) -> True)]
-  = pure $ GRPConstraint cond conjTC date
-  where
-    conjTC :: GTComparison
-    conjTC = GConjTComparison conj $ GListTComparison [tc1, tc2]
+squeezeTrees
+  conj
+  [ GRPConstraint cond tc1 date,
+    GRPConstraint ((== cond) -> True) tc2 ((== date) -> True)
+    ] =
+    pure $ GRPConstraint cond conjTC date
+    where
+      conjTC :: GTComparison
+      conjTC = GConjTComparison conj $ GListTComparison [tc1, tc2]
 
 -- TODO: how to make this work without lots of copy and paste?
 -- squeezeTrees conj [GCompNP np1, GCompNP np2] = pure $ GCompNP (GConjNP conj (GListNP [np1, np2]))
@@ -292,10 +296,12 @@ squeezeTrees conj [
 --     newComp <- squeezeTrees conj [comp1, comp2]
 --     pure $ GRPleafS subj1 (GMkVPS temp1 pol1 (GUseComp newComp))
 
-squeezeTrees conj [
-    GRPleafS subj vps1
-  , GRPleafS ((== subj) -> True) vps2]
-  = pure $ GRPleafS subj (GConjVPS conj (GListVPS [vps1, vps2]))
+squeezeTrees
+  conj
+  [ GRPleafS subj vps1,
+    GRPleafS ((== subj) -> True) vps2
+    ] =
+    pure $ GRPleafS subj (GConjVPS conj (GListVPS [vps1, vps2]))
 
 squeezeTrees _ _ = Nothing
 

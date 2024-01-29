@@ -1,27 +1,84 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Parsing.SLParserSpec (spec) where
 
-import Text.Megaparsec
-import LS.Lib
-import LS.Parser
-import LS.RelationalPredicates
-import LS.Tokens
-import AnyAll hiding (asJSON)
-import LS.BasicTypes
-import LS.Types
-import LS.Rule
-import Test.Hspec
+import AnyAll (BoolStruct (Any), Label (Pre, PrePost), mkLeaf)
+import Control.Monad (guard, when)
 import Data.ByteString.Lazy qualified as BS
-import Control.Monad (when, guard)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import LS.BasicTypes
+  ( MyStream,
+    MyToken (Declare, Has, Means, Other),
+  )
+import LS.Lib (exampleStream, exampleStreams)
+import LS.Parser (aboveNextLineKeyword2)
+import LS.RelationalPredicates (pBSR)
+import LS.Rule
+  ( Rule (DefTypically, defaults, name, srcref),
+    mkTestSrcRef,
+    runMyParser,
+  )
+import LS.Tokens
+  ( IsParser (debugName, debugPrint),
+    SLParser,
+    liftSL,
+    mkSL,
+    myindented,
+    pMultiTerm,
+    pNumber,
+    pOtherVal,
+    pToken,
+    runSL,
+    sameOrNextLine,
+    slMultiTerm,
+    someIndentation,
+    someLiftSL,
+    someSL,
+    undeepers,
+    ($*|),
+    ($>>),
+    ($>|),
+    (/*=),
+    (/*?=),
+    (/+=),
+    (/+?=),
+    (>*|),
+    (>><),
+    (>>|),
+    (|*|),
+    (|-|),
+    (|<$),
+    (|<|),
+    (|><),
+    (|>|),
+  )
+import LS.Types
+  ( MTExpr (MTB, MTT),
+    MultiTerm,
+    MyToken (Or),
+    RPRel (RPis),
+    RelationalPredicate (RPConstraint, RPMT),
+    RunConfig (debug, sourceURL),
+    defaultRC,
+  )
+import System.FilePath ((-<.>), (</>))
+import Test.Hspec
+  ( HasCallStack,
+    Spec,
+    SpecWith,
+    describe,
+    it,
+    xit,
+  )
 import Test.Hspec.Megaparsec (shouldParse)
-import System.FilePath ((</>), (-<.>))
+import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile <> ": " <> desc ) do
+  it [i|#{testfile}: #{desc}|] do
   testcsv <- BS.readFile $ "test" </> "Parsing" </> "slparser" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -37,7 +94,7 @@ spec :: Spec
 spec = do
     let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
-    let  combine (a,b) = a ++ b
+    let  combine = uncurry (<>)
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
     let  parseR       x y s = runMyParser combine runConfig x y s
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s

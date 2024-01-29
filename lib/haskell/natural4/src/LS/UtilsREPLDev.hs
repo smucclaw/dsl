@@ -5,34 +5,33 @@
 Simple utils / convenience functions for prototyping / dev-ing at the REPL.
 -}
 
-
 module LS.UtilsREPLDev
-  ( StartDir, BaseFileName,
+  ( StartDir,
+    BaseFileName,
     pPrint, -- reexport
     filesInDirWithExtn,
     findFileByNameInDir,
     csvsInDir,
     l4csv2rules,
-    pRules
+    pRules,
   )
 where
 
-import Flow ((|>))
+import Data.Coerce (coerce)
 import Data.Maybe (fromMaybe, listToMaybe)
-
-import System.FilePath ((</>), takeFileName)
-import System.FilePath.Find
-  ( always,
-    fileName,
-    find,
-    (==?),
-    extension
-  )
-import Text.Pretty.Simple   ( pShowNoColor, pPrint )
-
+import Flow ((|>))
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
 import LS.Utils ((|$>))
+import System.FilePath (takeFileName, (</>))
+import System.FilePath.Find
+  ( always,
+    extension,
+    fileName,
+    find,
+    (==?),
+  )
+import Text.Pretty.Simple (pPrint, pShowNoColor)
 
 -- $setup
 -- >>> import System.FilePath ((</>))
@@ -83,7 +82,7 @@ l4csv2rules startdir csvFpath =
         -- remember, this is meant to be for internal use by a developer in the REPL
       Just file -> LS.dumpRules
                           Opts
-                            { file = NoLabel [file],
+                            { file = coerce ([file] :: [FilePath]),
                               dbug = False,
                               dstream = False
                             }

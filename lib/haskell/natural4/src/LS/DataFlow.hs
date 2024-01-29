@@ -34,7 +34,6 @@ import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Flow ((.>), (|>))
-import LS.Interpreter ()
 import LS.Rule
   ( Interpreted (ruleGraph, ruleGraphErr),
     Rule,

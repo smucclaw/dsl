@@ -2,14 +2,16 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Main (main) where
 
 import AnyAll
   ( AAVConfig (cdebug, cscale),
     BoolStruct (All, Any, Leaf, Not),
+    Default (..),
     Label (Pre),
-    Marking (getMarking),
+    Marking (..),
     Scale (Full, Tiny),
     StdinSchema (andOrTree, marking),
     defaultAAVConfig,
@@ -26,9 +28,11 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy qualified as B
 import Data.ByteString.Lazy.UTF8 (toString)
+import Data.Coerce (coerce)
 import Data.Either (fromLeft, fromRight, isLeft, isRight)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Options.Generic
   ( Generic,
@@ -41,6 +45,7 @@ import Options.Generic
     type (<?>),
   )
 import System.Exit (exitFailure, exitSuccess)
+import System.FilePath (FilePath, (</>), (<.>))
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
@@ -65,7 +70,10 @@ main = do
   mycontents <- B.getContents
   let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
   when (isLeft myinput) do
-    putStrLn $ "JSON decoding error: " ++ show (fromLeft "see smucclaw/dsl/lib/haskell/anyall/app/Main.hs source" myinput)
+    let fileName :: FilePath =
+          "dsl" </> "lib" </> "haskell" </> "anyall" </> "app" </> "Main" <.> "hs"
+        s :: String = [i|see #{fileName} source|]
+    putStrLn [i|JSON decoding error: #{fromLeft s myinput}|]
     exitFailure
   when (only opts == "native") $ print myinput
 
@@ -77,7 +85,7 @@ main = do
     putStrLn $ toString $ encodePretty myright
 
   when (only opts == "tree") $
-    ppQTree mytree (getDefault <$> (getMarking $ marking myright))
+    ppQTree mytree $ coerce $ marking myright
 
   when (only opts `elem` words "svg svgtiny") $
     print (makeSvg $
@@ -123,25 +131,27 @@ maindemo = do
                    ,("drink", Left  $ Just True )]
     ] $ ppQTree myqtree
 
-  putStrLn "* just the AndOr tree as JSON"
-  putStrLn $ toString $ encodePretty myqtree
-  
-  putStrLn "* LEGEND"
-  putStrLn ""
-  putStrLn "  <    >  View: UI should display this node or subtree."
-  putStrLn "                Typically this marks either past user input or a computed value."
-  putStrLn "  [    ]  Ask:  UI should ask user for input."
-  putStrLn "                Without this input, we cannot make a hard decision."
-  putStrLn "  (    )  Hide: UI can hide subtree or display it in a faded, grayed-out way."
-  putStrLn "                This subtree has been made irrelevant by other input."
-  putStrLn ""
-  putStrLn "   YES    user input True"
-  putStrLn "    NO    user input False"
-  putStrLn "     ?    user input Unknown"
-  putStrLn ""
-  putStrLn "   yes    default True"
-  putStrLn "    no    default False"
-  putStrLn "          default Unknown"
-  putStrLn ""
-  putStrLn "  Hard means we ignore defaults and consider user input only."
-  putStrLn "  Soft means we consider defaults as well to arrive at the answer."
+  putStrLn [__i|
+    * just the AndOr tree as JSON"
+    #{encodePretty myqtree}
+
+    * LEGEND
+
+    <    >  View: UI should display this node or subtree.
+                  Typically this marks either past user input or a computed value.
+    [    ]  Ask:  UI should ask user for input.
+                  Without this input, we cannot make a hard decision.
+    (    )  Hide: UI can hide subtree or display it in a faded, grayed-out way.
+                  This subtree has been made irrelevant by other input.
+
+      YES    user input True
+       NO    user input False
+        ?    user input Unknown
+
+      yes    default True
+       no    default False
+             default Unknown
+
+    Hard means we ignore defaults and consider user input only.
+    Soft means we consider defaults as well to arrive at the answer.
+  |]

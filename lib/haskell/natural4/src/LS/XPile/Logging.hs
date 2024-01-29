@@ -1,71 +1,70 @@
-{-| A module for wrapping transpilation errors and STDERR trace mumbling.
+{-# LANGUAGE QuasiQuotes #-}
 
-This section explains the developer motivation for this library.
-
-* Users want to mutter: incidental logging
-
-Sometimes it's useful to do a bit of "printf debugging". "What is
-going on here? Let's dump it somehow, and inspect it on the next run."
-
-If you're in IO, easy: just @print@ it. With a bit more discipline, actually, @hPutStrLn stderr@ it.
-
-If you're not in IO? Well, that's why they invented @Debug.Trace@.
-
-But is that the Right Way? No. The Right Way would provide some
-mechanism to @mutter@ a bit of output, and that output would be
-gracefully and cleanly handled by the rest of the program.
-
-For instance, if we are producing ten output files named @0.out@
-through @9.out@, maybe the incidental mutters should be streamed
-elegantly to companion files @0.err@ through @9.err@.
-
-@putStrLn@ and @trace@ won't do that for you.
-
-The pattern we want is essentially the Writer monad. We could alias
-@mutter = tell@ and wrap all our mumbly little computations in that
-monad, and we would have most of the functionality we want.
-
-Sadly, a naive Writer monad is discouraged by the gurus because of
-inefficiencies around list appending and things to do with strictness.
-And that casts a pall on the whole RWS family of monad transformers.
-
-That's why other modules were invented:
-
-- monad-logger
-- fast-logger
-- validation (Data.Valiation)
-- monad-validate (Control.Monad.Validate)
-
-Those last two do another thing that users want.
-
-* Users want to throw: fatal errors
-
-The above mutterings provide a mechanism for logging warnings.
-Warnings aren't severe enough to prematurely terminate the
-computation, but they're worth heeding nonetheless.
-
-Fatal errors do terminate the computation. We want to bubble those
-errors back up the call stack so the top-level caller can decide how
-to handle them.
-
-The solution presented by most introductory tutorials is an @Either@,
-which puts errors on the @Left@ and happy output on the @Right@.
-@Either@ implements Control.Monad.Except, which provides the
-@MonadError@ class with a `throwError` method.
-
-Naively, one might want to wrap an RWS around an Either, so as to be
-able to @tell@ both log warnings and incidental mutterings, and
-@throwError@ fatal errors distinguished from desired output.
-
-The current (first-draft) version of this module does that. In future
-we may switch to some combination of ValidateT and monad-chronicle or
-monad-logger.
-
-For gory details around @RWST (Either String) a@ versus @RWS (Either String a)@, see
-https://gist.github.com/mengwong/73af81ad600a533f12ef42fc655fed0f
-
--}
-
+-- | A module for wrapping transpilation errors and STDERR trace mumbling.
+--
+-- This section explains the developer motivation for this library.
+--
+-- * Users want to mutter: incidental logging
+--
+-- Sometimes it's useful to do a bit of "printf debugging". "What is
+-- going on here? Let's dump it somehow, and inspect it on the next run."
+--
+-- If you're in IO, easy: just @print@ it. With a bit more discipline, actually, @hPutStrLn stderr@ it.
+--
+-- If you're not in IO? Well, that's why they invented @Debug.Trace@.
+--
+-- But is that the Right Way? No. The Right Way would provide some
+-- mechanism to @mutter@ a bit of output, and that output would be
+-- gracefully and cleanly handled by the rest of the program.
+--
+-- For instance, if we are producing ten output files named @0.out@
+-- through @9.out@, maybe the incidental mutters should be streamed
+-- elegantly to companion files @0.err@ through @9.err@.
+--
+-- @putStrLn@ and @trace@ won't do that for you.
+--
+-- The pattern we want is essentially the Writer monad. We could alias
+-- @mutter = tell@ and wrap all our mumbly little computations in that
+-- monad, and we would have most of the functionality we want.
+--
+-- Sadly, a naive Writer monad is discouraged by the gurus because of
+-- inefficiencies around list appending and things to do with strictness.
+-- And that casts a pall on the whole RWS family of monad transformers.
+--
+-- That's why other modules were invented:
+--
+-- - monad-logger
+-- - fast-logger
+-- - validation (Data.Valiation)
+-- - monad-validate (Control.Monad.Validate)
+--
+-- Those last two do another thing that users want.
+--
+-- * Users want to throw: fatal errors
+--
+-- The above mutterings provide a mechanism for logging warnings.
+-- Warnings aren't severe enough to prematurely terminate the
+-- computation, but they're worth heeding nonetheless.
+--
+-- Fatal errors do terminate the computation. We want to bubble those
+-- errors back up the call stack so the top-level caller can decide how
+-- to handle them.
+--
+-- The solution presented by most introductory tutorials is an @Either@,
+-- which puts errors on the @Left@ and happy output on the @Right@.
+-- @Either@ implements Control.Monad.Except, which provides the
+-- @MonadError@ class with a `throwError` method.
+--
+-- Naively, one might want to wrap an RWS around an Either, so as to be
+-- able to @tell@ both log warnings and incidental mutterings, and
+-- @throwError@ fatal errors distinguished from desired output.
+--
+-- The current (first-draft) version of this module does that. In future
+-- we may switch to some combination of ValidateT and monad-chronicle or
+-- monad-logger.
+--
+-- For gory details around @RWST (Either String) a@ versus @RWS (Either String a)@, see
+-- https://gist.github.com/mengwong/73af81ad600a533f12ef42fc655fed0f
 module LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
@@ -87,7 +86,7 @@ module LS.XPile.Logging
     fmapE,
     fmapTE,
     fromxpLogE,
-    pShowNoColorS
+    pShowNoColorS,
   )
 where
 
@@ -99,9 +98,11 @@ import Control.Monad.RWS
     evalRWS,
     evalRWST,
   )
-import Data.Bifunctor (second)
+import Data.Bifunctor (Bifunctor, second)
 import Data.Either (fromRight)
+import Data.Foldable (traverse_)
 import Data.HashMap.Strict as Map (HashMap)
+import Data.String.Interpolate (i)
 import Data.Text.Lazy qualified as TL
 import Flow ((|>))
 import Text.Pretty.Simple (pShowNoColor)
@@ -146,7 +147,8 @@ type XPileLog  = XPileLogT Identity
 type XPileLogR = HashMap String String
 
 -- | mutterings are basically lists of strings. Any structure in here should be up to the conventions of your logging style; in this project we frequently use org-mode conventions living inside these strings.
-type XPileLogW = [XPileLogW'];       type XPileLogW' = String
+type XPileLogW = [XPileLogW']
+type XPileLogW' = String
 type XPileLogS = HashMap String String
 
 -- | XPileLog as a monad transformer, allowing specialization of the base monad to something besides Identity.
@@ -175,8 +177,7 @@ mutters = tell
 mutterd,mutterd1,mutterd2,mutterd3 :: Monad m => Int -> XPileLogW' -> XPileLogT m ()
 mutterd d s = do
   let stars = replicate d '*'
-  mutter (stars ++ " " ++ s)
-  return ()
+  mutter [i|#{stars} #{s}|]
 
 mutterd1 d = mutterd (d+1)
 mutterd2 d = mutterd (d+2)
@@ -195,44 +196,44 @@ mutterdhsf :: (Show a, Monad m)
            -> XPileLogT m ()
 mutterdhsf d s f hs = do
   mutterd d s
-  mutter "#+BEGIN_SRC haskell"
-  mutter (f hs)
-  mutter "#+END_SRC"
-
+  traverse_ mutter ["#+BEGIN_SRC haskell", f hs, "#+END_SRC"]
 
 -- | But if there is a need to throw an unrecoverable error, then
 -- return a Left value, by using `xpError`. And that error will appear
 -- in the actual output file, commented.
 
-xpError, xpLeft :: Monad m => XPileLogW -> XPileLogTE m a
+xpError :: Monad m => XPileLogW -> XPileLogTE m a
 xpError = xpLeft
 
 -- | xpLeft is the underlying mechanism, private to this module, so
 -- can be swapped out if one day we change the underlying.
+xpLeft :: Monad m => XPileLogW -> XPileLogTE m a
 xpLeft  = pure . Left
 
 -- | Normal output then gets returned via `xpReturn`.
-xpReturn, xpRight :: Monad m => a -> XPileLogTE m a
+xpReturn :: Monad m => a -> XPileLogTE m a
 xpReturn = xpRight
 
 -- | xpRight is the underlying mechanism for xpReturn.
+xpRight :: Monad m => a -> XPileLogTE m a
 xpRight = pure . Right
 
 -- | fmap over the right value of an XPileLogE
 fmapE :: (a -> a) -> XPileLogE a -> XPileLogE a
-fmapE f = fmap (second f)
+fmapE = fmapETE
 
 -- | fmap over the right value of an XPileLogTE
 fmapTE :: Monad m => (a -> a) -> XPileLogTE m a -> XPileLogTE m a
-fmapTE f = fmap (second f)
+fmapTE = fmapETE
+
+fmapETE :: (Functor f, Bifunctor p) => (b -> c) -> f (p a b) -> f (p a c)
+fmapETE = fmap . second
 
 -- | Convenience function to silently swallow errors
 -- by turning lefts into mempty.
 fromxpLogE :: Monoid a => XPileLogE a -> a
 fromxpLogE xpLogE = xpLogE |> xpLog |> fst |> fromRight mempty
 
-
 -- | helper function; basically a better show, from the pretty-simple package
-pShowNoColorS :: (Show a) => a -> String
+pShowNoColorS :: Show a => a -> String
 pShowNoColorS = TL.unpack . pShowNoColor
-

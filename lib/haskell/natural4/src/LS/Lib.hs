@@ -476,7 +476,7 @@ asCSV s =
     trimComment _       []                           = V.empty
     trimComment True  (_x:xs)                        = V.cons "" $ trimComment True xs
     trimComment False (x:xs) | Text.take 2 (Text.dropWhile (== ' ') x)
-                               `elem` Text.words "// -- ##"
+                               `elem` ["//", "--", "##"]
                                                      = trimComment True (x:xs) -- a bit baroque, why not just short-circuit here?
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 

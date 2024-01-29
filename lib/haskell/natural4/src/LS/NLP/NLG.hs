@@ -23,6 +23,7 @@ module LS.NLP.NLG
     ruleQuestions,
     ruleQuestionsNamed,
     textViaQaHorns,
+    splitDigits
   )
 where
 
@@ -201,6 +202,7 @@ import Paths_natural4 (getDataFileName)
 import Prettyprinter.Interpolate (__di)
 import System.Environment (lookupEnv)
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import Control.Arrow ((>>>))
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -265,11 +267,15 @@ rmBIND :: Text.Text -> Text.Text
 rmBIND = PCRE.gsub [PCRE.re|\s+&\+\s+|] ("" :: Text.Text)
 
 uncapKeywords :: Text.Text -> Text.Text
-uncapKeywords = Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
-  where
-    lowerWhole keywords word
-      | word `elem` keywords = Text.toLower word
-      | otherwise = word
+uncapKeywords =
+  PCRE.gsub [PCRE.re|(BEFORE|AFTER|IS)|]
+    \(keyword:_) -> Text.toLower keyword
+
+  -- Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
+  -- where
+  --   lowerWhole keywords word
+  --     | word `elem` keywords = Text.toLower word
+  --     | otherwise = word
 
 gfPath :: String -> String
 gfPath x = [i|grammars/#{x}|]
@@ -628,7 +634,7 @@ parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
 
 parseCond env (RPConstraint a RPis b) = case (nps,vps) of
   (np:_, (GMkVPS t p vp):_) -> GWHEN np t p vp
-  _ -> parseCond env (RPMT [MTT $ Text.unwords [aTxt, "is", bTxt]])
+  _ -> parseCond env $ RPMT [MTT [i|#{aTxt} is #{bTxt}|]]
   where
     aTxt = Text.strip $ mt2text a
     bTxt = Text.strip $ mt2text b
@@ -798,12 +804,17 @@ tString :: Text.Text -> GString
 tString = GString . Text.unpack
 
 splitDigits :: Text.Text -> Text.Text
-splitDigits txt = Text.unwords $ splitDigit <$> Text.words txt
+splitDigits txt =
+  Text.unwords $ splitDigit <$> Text.words txt
   where
-    splitDigit d
-      | Text.all Char.isDigit d =
-          Text.intercalate " &+ " $ Text.groupBy (\_ _ -> False) d
-    splitDigit d = d
+    splitDigit =
+      PCRE.sub [PCRE.re|^\d+$|] (Text.intersperse '&')
+        >>> Text.replace "&" " &+ "
+
+    -- splitDigit d
+    --   | Text.all Char.isDigit d =
+    --       Text.intercalate " &+ " $ Text.groupBy (\_ _ -> False) d
+    -- splitDigit d = d
 
 -- tk i = Text.pack . tk' i . Text.unpack
 -- dp i = Text.pack . dp' i . Text.unpack

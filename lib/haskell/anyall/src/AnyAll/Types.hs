@@ -19,7 +19,8 @@ module AnyAll.Types
     getDefault,
     getForUI,
     labelFirst,
-    maybeSecond
+    maybeSecond,
+    mkDefault,
   )
 where
 
@@ -39,6 +40,7 @@ import Data.Aeson.Key (toText)
 import Data.Aeson.KeyMap (Key, toList)
 import Data.Aeson.Types (Parser, parse, parseMaybe)
 import Data.ByteString.Lazy qualified as B
+import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.Maybe (mapMaybe)
@@ -115,8 +117,11 @@ newtype Default a = Default (Either (Maybe a) (Maybe a))
 
 instance Hashable a => Hashable (Default a)
 
+mkDefault :: Either (Maybe a) (Maybe a) -> Default a
+mkDefault = coerce
+
 getDefault :: Default a -> Either (Maybe a) (Maybe a)
-getDefault (Default x) = x
+getDefault = coerce
 
 instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
 instance (FromJSON a) => FromJSON (Default a)

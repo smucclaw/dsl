@@ -37,7 +37,6 @@ import Data.List (sort, unfoldr)
 import Data.Maybe (catMaybes)
 import Data.Text qualified as T
 import Debug.Trace (trace)
-import Flow ((|>))
 import GHC.Generics (Generic)
 import Test.QuickCheck
   ( Arbitrary (arbitrary),

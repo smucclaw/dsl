@@ -544,9 +544,9 @@ firstAndLast xs = (NE.head xs, NE.last xs)
 glueLineNumbers :: [(Int, Int)] -> [(Int, Int)]
 glueLineNumbers xs = zipWith f xs $ tail xs
   where
-    f (a0, a1) = \case
-      ((== a1 + 1) -> True, b1) -> (a0, b1)
-      _ -> (a0, a1)
+    f a01@(a0, a1) (b0, b1)
+      | a1 + 1 == b0 = (a0, b1)
+      | otherwise = a01
 
 -- glueLineNumbers ((a0, a1) : (b0, b1) : xs)
 --   | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs

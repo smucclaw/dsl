@@ -77,9 +77,8 @@ data SrcPositn = MkPositn
   { row :: Int
   , col :: Int
   } deriving stock (Eq, Ord, Show, Generic)
+    deriving Hashable
 makeFieldLabelsNoPrefix ''SrcPositn
-
-instance Hashable SrcPositn
 
 -- data TypeMetadata = MkTMdata
 --   { tlabel :: !TLabel

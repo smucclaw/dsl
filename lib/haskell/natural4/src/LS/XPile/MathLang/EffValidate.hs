@@ -1,6 +1,7 @@
 {- | Experiments adapting Monad Validate to Effectful -}
 {-# OPTIONS_GHC -W #-}
 
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels, UndecidableInstances #-}
 {-# LANGUAGE OverloadedLists, OverloadedStrings #-}
@@ -98,7 +99,7 @@ runValidate :: forall (e :: Type) (es :: [Effect]) (a :: Type)
              . (Semigroup e, V.MonadValidate e (Eff es))
             => Eff (EffValidate e : es) a
             -> Eff es a
-runValidate = interpret $ \localEnv -> \case
+runValidate = interpret \localEnv -> \case
   Refute errs -> localSeqUnlift localEnv $ \unlift -> do
     unlift $ refute errs
     -- I think I need to learn more about how Effectful works before proceeding with the adaption

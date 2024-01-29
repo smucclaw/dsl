@@ -589,7 +589,7 @@ relPredRefs rs ridmap headElements r = do
       myLeaves = foldMap AA.extractLeaves myGetBSR
       bodyElements = foldMap rp2bodytexts myLeaves
 
-  mutterd 4 (T.unpack $ mt2text $ ruleLabelName r)
+  mutterd 4 $ T.unpack $ mt2text $ ruleLabelName r
 
   mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
   mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
@@ -623,9 +623,9 @@ relPredRefs rs ridmap headElements r = do
 -- Examine the rulegraph for rules which have no indegrees, as far as decisioning goes.
 
 decisionRoots :: RuleGraph -> XPileLog [Rule]
-decisionRoots rg = do
+decisionRoots rg =
   let rg' = dereflexed rg
-  return $
+  in pure $
     catMaybes [ lab rg' r
               | r <- nodes rg'
               ,  indeg rg' r == 0
@@ -635,7 +635,7 @@ decisionRoots rg = do
 -- remove reflexive edges that go from node n to node n
 dereflexed :: Gr a b -> Gr a b
 dereflexed gr =
-  foldr (\n g -> delEdge (n,n) g) gr (nodes gr)
+  foldr (\n g -> delEdge (n,n) g) gr $ nodes gr
 
 
 -- | extract a data flow graph
@@ -727,9 +727,9 @@ expandClauses' l4i depth hcs =
 -- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
 unleaf :: BoolStructR -> BoolStructR
 unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
-unleaf (AA.All  lbl xs) = AA.mkAll lbl (unleaf <$> xs)
-unleaf (AA.Any  lbl xs) = AA.mkAny lbl (unleaf <$> xs)
-unleaf (AA.Not      x ) = AA.mkNot     (unleaf     x )
+unleaf (AA.All  lbl xs) = AA.mkAll lbl $ unleaf <$> xs
+unleaf (AA.Any  lbl xs) = AA.mkAny lbl $ unleaf <$> xs
+unleaf (AA.Not      x ) = AA.mkNot     $ unleaf     x 
 unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
@@ -980,8 +980,8 @@ getMarkings l4i =
       ]
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
-    markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
-    markings (RPConstraint xs RPis rhs) = Just (mt2text xs, AA.Default (Left $ rhsval rhs))
+    markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) = Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
+    markings (RPConstraint xs RPis rhs) = Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
     markings _ = Nothing
 
     rhsval [MTB rhs] = Just rhs

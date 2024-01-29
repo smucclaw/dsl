@@ -31,7 +31,6 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
-import Optics ()
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
 

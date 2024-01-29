@@ -146,10 +146,11 @@ attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
 attemptMergeHeads  x  y = Unmerged x y
 
 {-
-  mergeMatch yields as output, a trace of the (deterministic) fixed point
+  mergeMatch yields as output, a (finite) trace of the (deterministic) fixed point
   iteration of the following small-step operational semantics.
-  This fixed point iteration strongly normalises a configuration to the (unique)
-  normal form (which is the empty list).
+  Transfinite iteration terminates before ω, thereby guaranteeing the
+  termination of mergeMatch, because configurations decrease in size with each
+  transition.
 
   Configurations C are lists of bool structs, ie the type [BoolStruct lbl a]
   Actions A are bool structs, ie the type (BoolStruct lbl a)
@@ -159,9 +160,6 @@ attemptMergeHeads  x  y = Unmerged x y
     visible transition: C =A=> C'
 
   Transition rules:
-
-  ----------------- [smallStep-empty-terminal]
-    [] =τ=> []
 
   ----------------- [smallStep-singleton]
     [z] =z=> []
@@ -179,12 +177,14 @@ mergeMatch =
   unfoldr smallStep -- Iterate small step semantics to fixed point
     >>> catMaybes   -- Obtain trace of all transition steps
   where
+    -- Stop iteration when configuration is empty.
     smallStep [] = Nothing
+    -- smallStep-singleton
     smallStep [z] = Just (Just z, [])
     smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
-      -- Nothing is used to encode tau transitions.
+      -- smallStep-merged
       Merged m -> Just (Nothing, m : zs)
-      -- (Just x) encodes the action of the transition.
+      -- smallStep-unmerged
       Unmerged x y -> Just (Just x, y : zs)
 
 -- mergeMatch [] = []

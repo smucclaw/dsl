@@ -167,10 +167,10 @@ singeltonDL = coerce . (:)
 listToDL :: [a] -> DList a
 listToDL = coerce . (<>)
 
--- | Embed the endomorphism monoid over the free monoid back into the free monoid
--- by running the continuation against the identiy element.
-dlToList :: forall a. DList a -> [a]
-dlToList f = (coerce f :: [a] -> [a]) []
+-- | Embed the endomorphism monoid over the free monoid into the free monoid
+-- by running the input continuation on the identiy element.
+dlToList :: DList a -> [a]
+dlToList = ($ []) . (coerce :: DList a -> [a] -> [a])
 
 -- maybe we should have a proper dict orientation here
 data KW a = KW { dictK :: MyToken

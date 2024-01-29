@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module LS.XPile.CoreL4.LogicProgram.Common
@@ -57,9 +58,7 @@ import L4.Syntax
 data LPLang
   = ASP
   | Epilog
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable LPLang
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)
 
 {-
   Logic program rules and logic programs are types indexed by:
@@ -73,9 +72,7 @@ data LPRule (lpLang :: LPLang) t = LPRule
     preconds :: [Expr t],
     postcond :: Expr t
   }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable t => Hashable (LPRule lpLang t)
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)
 
 type ASPRule = LPRule ASP
 type EpilogRule = LPRule Epilog
@@ -85,9 +82,7 @@ data LogicProgram (lpLang :: LPLang) t = LogicProgram
     lpRulesFact :: [LPRule lpLang t],
     oppClauses :: [OpposesClause t]
   }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable t => Hashable (LogicProgram lpLang t)
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)
 
 type ASPProgram = LogicProgram ASP
 type EpilogProgram = LogicProgram Epilog
@@ -96,6 +91,4 @@ data OpposesClause t = OpposesClause
   { posLit :: Expr t,
     negLit :: Expr t
   }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable t => Hashable (OpposesClause t)
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)

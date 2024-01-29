@@ -1,23 +1,23 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedLists #-}
 
-module LibSpec where
+module LibSpec (spec) where
 
-import Control.Monad.RWS
+import Control.Monad.RWS (RWST (runRWST))
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
-import Data.Tree
-import Test.Hspec
-
+import Data.Tree (Tree (..))
 import Explainable.MathLang
-    ( (*||),
-      (+||),
-      eval,
-      negativeElementsOf,
-      positiveElementsOf,
-      timesEach,
-      timesPositives,
-      MyState(MyState) )
+  ( MyState (MyState),
+    eval,
+    negativeElementsOf,
+    positiveElementsOf,
+    timesEach,
+    timesPositives,
+    (*||),
+    (+||),
+  )
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 
 scenarios :: Map.HashMap String Scenario
 scenarios =

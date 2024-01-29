@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -67,9 +68,7 @@ data TranslationMode t
   | VarSubs4R t
   | AddFacts t
   -- | FixedCode t
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable t => Hashable (TranslationMode t)
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)
 
 instance Show t => Pretty (Expr t) where
   pretty = showL4 [PrintVarCase CapitalizeLocalVar, PrintCurried MultiArg]

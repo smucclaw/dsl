@@ -1,27 +1,88 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Parsing.NewParserSpec (spec) where
 
-import Text.Megaparsec
-import LS.Lib
-import LS.Parser
-import LS.RelationalPredicates
-import LS.Tokens
-import AnyAll hiding (asJSON)
-import LS.BasicTypes
-import LS.Types
-import LS.Rule
-import Test.Hspec
+import AnyAll (BoolStruct (All, Any), Label (PrePost), mkLeaf)
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import LS.BasicTypes
+  ( MyStream (unMyStream),
+    MyToken (A_An, Decide, GoDeeper, Is, MPNot, Other, UnDeeper),
+    WithPos (tokenVal),
+  )
+import LS.Lib
+  ( exampleStream,
+    exampleStreams,
+    exprP,
+    pDoAction,
+    pToplevel,
+  )
+import LS.Parser (MyItem (MyAll, MyAny, MyLabel, MyLeaf, MyNot))
+import LS.RelationalPredicates (pBSR, pParamText, pRelPred)
+import LS.Rule
+  ( Rule
+      ( DefNameAlias,
+        clauses,
+        detail,
+        keyword,
+        name,
+        nlhint,
+        rlabel,
+        srcref,
+        who
+      ),
+    defaultHorn,
+    defaultReg,
+    mkTestSrcRef,
+    runMyParser,
+  )
+import LS.Tokens (_fourIs, _threeIs)
+import LS.Types
+  ( BoolStructP,
+    HornClause (HC, hBody, hHead),
+    MTExpr (MTT),
+    MyStream (unMyStream),
+    MyToken
+      ( A_An,
+        And,
+        Decide,
+        GoDeeper,
+        Is,
+        MPNot,
+        Or,
+        Other,
+        UnDeeper
+      ),
+    ParamText,
+    ParamType (TOne),
+    RPRel (RPgt, RPis),
+    RelationalPredicate (RPBoolStructR, RPConstraint, RPMT),
+    RunConfig (debug, sourceURL),
+    TypeSig (SimpleType),
+    WithPos (tokenVal),
+    defaultRC,
+    mkRpmtLeaf,
+    text2pt,
+  )
+import System.FilePath ((-<.>), (</>))
+import Test.Hspec
+  ( HasCallStack,
+    Spec,
+    SpecWith,
+    describe,
+    it,
+    shouldBe,
+  )
 import Test.Hspec.Megaparsec (shouldParse)
-import System.FilePath ((</>), (-<.>))
+import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile <> ": " <> desc ) do
+  it [i|#{testfile}: #{desc}|] do
   testcsv <- BS.readFile $ "test" </> "Parsing" </> "newparser" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -30,7 +91,7 @@ spec :: Spec
 spec = do
     let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
-    let  combine (a,b) = a ++ b
+    let  combine = uncurry (<>)
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
     let  parseR       x y s = runMyParser combine runConfig x y s
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s

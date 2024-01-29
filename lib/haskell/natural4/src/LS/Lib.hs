@@ -41,13 +41,14 @@ import Control.Monad.Combinators.Expr (makeExprParser)
 import Control.Monad.Writer.Lazy (MonadIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy qualified as BS
+import Data.Coerce (coerce)
 import Data.Csv qualified as Cassava
 import Data.Either (rights)
 import Data.List (transpose)
 import Data.List.NonEmpty qualified as NE
 import Data.List.Split qualified as DLS
 import Data.Maybe (listToMaybe, maybeToList)
-import Data.String.Interpolate (i)
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
@@ -326,9 +327,7 @@ newtype NoLabel a = NoLabel a
 
 instance ParseFields a => ParseRecord (NoLabel a)
 instance ParseFields a => ParseFields (NoLabel a) where
-  parseFields msg _ _ def = NoLabel <$> parseFields msg Nothing Nothing def
-
-
+  parseFields msg _ _ def = coerce $ parseFields msg Nothing Nothing def
 
 getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
@@ -377,14 +376,13 @@ getConfig o = do
 parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
 parseRules o = do
   runConfig <- getConfig o
-  let files = getNoLabel $ file o
+  let files = coerce $ file o
   if null files
   then parseSTDIN runConfig { sourceURL="STDIN" }
   else files
         |> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file)
         |$> mconcat
   where
-    getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
     getBS other = BS.readFile other
     parseSTDIN rc = do
@@ -396,11 +394,13 @@ parseRules o = do
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
-          putStrLn [i|* error while parsing #{filename}|]
-          putStrLn $ errorBundlePrettyCustom bundle
-          putStrLn "** stream"
+          putStrLn [__i|
+            * error while parsing #{filename}
+            #{errorBundlePrettyCustom bundle}
+            ** stream
+          |]
           printStream stream
-          return (Left bundle)
+          pure $ Left bundle
         -- Left bundle -> putStr (errorBundlePretty bundle)
         -- Left bundle -> pPrint bundle
         Right (xs, xs') -> do
@@ -476,7 +476,7 @@ asCSV s =
     trimComment _       []                           = V.empty
     trimComment True  (_x:xs)                        = V.cons "" $ trimComment True xs
     trimComment False (x:xs) | Text.take 2 (Text.dropWhile (== ' ') x)
-                               `elem` Text.words "// -- ##"
+                               `elem` ["//", "--", "##"]
                                                      = trimComment True (x:xs) -- a bit baroque, why not just short-circuit here?
     trimComment False (x:xs)                         = V.cons x $ trimComment False xs
 
@@ -490,7 +490,6 @@ equalizeLines stanza = fmap (pad maxLen) stanza
 
 pad :: Int -> V.Vector Text.Text -> V.Vector Text.Text
 pad n v = v <> V.replicate (n - V.length v) ""
-
 
 rewriteDitto :: V.Vector (V.Vector Text.Text) -> RawStanza
 rewriteDitto vvt = V.imap (V.imap . rD) vvt
@@ -718,7 +717,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
       myTraceM $ "got has = " <> show has
       enums <- optional pOneOf
       myTraceM $ "got enums = " <> show enums
-      return $ TypeDecl
+      pure TypeDecl
         { name = NE.toList name
         , super
         , has
@@ -780,7 +779,7 @@ pScenarioRule = debugName "pScenarioRule" do
   (expects,givens) <- permute $ (,)
     <$$> some (manyIndentation pExpect)
     <|?> ([], many ( pretendEmpty $ pToken Given >> someIndentation pGivens) )
-  return $ Scenario
+  pure Scenario
     { scgiven = mconcat givens
     , expect  = expects
     , rlabel  = Just ("SCENARIO",1,Text.unwords rlabel)

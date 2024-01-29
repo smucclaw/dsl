@@ -3,10 +3,26 @@
 
 module LS.TypesSpec (spec) where
 
-import AnyAll
-import Data.List.NonEmpty
+import AnyAll (BoolStruct (Leaf))
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import LS.Types
-import Test.Hspec
+  ( MTExpr (MTF, MTT),
+    ParamType (TOne),
+    PrependHead (prependHead),
+    RPRel (RPis, RPnot),
+    RelationalPredicate
+      ( RPBoolStructR,
+        RPConstraint,
+        RPParamText,
+        RPnary
+      ),
+    TypeSig (SimpleType),
+    mkRpmt,
+    pt2text,
+    rp2mt,
+    rpHead,
+  )
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 
 spec :: Spec
 spec = do

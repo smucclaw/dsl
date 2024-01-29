@@ -18,6 +18,7 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
+import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
@@ -31,7 +32,6 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
-import Optics ()
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
 
@@ -55,9 +55,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
            | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable RPRel
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
@@ -67,9 +65,7 @@ data MTExpr = MTT Text.Text -- ^ Text string
             | MTB Bool      -- ^ Boolean
 --            | MTC Text.Text -- ^ Currency money
 --            | MTD Text.Text -- ^ Date
-            deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable MTExpr
+            deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- | the parser returns a list of MTExpr, to be parsed further at some later point
 type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
@@ -116,8 +112,8 @@ text2pt x = pure (pure (MTT x), Nothing)
 
 mtexpr2text :: MTExpr -> Text.Text
 mtexpr2text (MTT t) = t
-mtexpr2text (MTI n) = Text.pack $ show n
-mtexpr2text (MTF n) = Text.pack $ show n
+mtexpr2text (MTI n) = [i|#{n}|]
+mtexpr2text (MTF n) = [i|#{n}|]
 mtexpr2text (MTB True) = "TRUE"
 mtexpr2text (MTB False) = "FALSE"
 
@@ -159,14 +155,18 @@ instance Show a => Show (DList a) where
   show = show . dlToList
 
 singeltonDL :: a -> DList a
-singeltonDL a = DList $ Endo (a:)
+singeltonDL = coerce . (:)
 
+-- | Continuation passing style transformation for lists, aka the
+-- Yoneda embedding of the free monoid into the corresponding Endomorphism
+-- monoid.
 listToDL :: [a] -> DList a
-listToDL as = DList $ Endo (as ++)
+listToDL = coerce . (<>)
 
+-- | Embed the endomorphism monoid over the free monoid into the free monoid
+-- by running the input continuation on the identiy element.
 dlToList :: DList a -> [a]
-dlToList (DList (Endo f)) = f []
-
+dlToList = ($ []) . (coerce :: DList a -> [a] -> [a])
 
 -- maybe we should have a proper dict orientation here
 data KW a = KW { dictK :: MyToken
@@ -174,9 +174,7 @@ data KW a = KW { dictK :: MyToken
 
 data RegKeywords =
   REvery | RParty | RTokAll
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable RegKeywords
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 class HasToken a where
   tokenOf :: a -> MyToken
@@ -192,9 +190,7 @@ data HornClause a = HC
   { hHead :: RelationalPredicate
   , hBody :: Maybe a
   }
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable a => Hashable (HornClause a)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 type HornClause2 = HornClause BoolStructR
 
@@ -207,12 +203,12 @@ class PrependHead a where
 
 instance PrependHead MTExpr where
   prependHead t (MTT mtt) = MTT (prependHead t mtt)
-  prependHead t (MTI mti) = MTT (prependHead t (Text.pack . show $ mti))
-  prependHead t (MTF mtn) = MTT (prependHead t (Text.pack . show $ mtn))
-  prependHead t (MTB mtb) = MTT (prependHead t (Text.pack . show $ mtb))
+  prependHead t (MTI mti) = MTT (prependHead t [i|#{mti}|])
+  prependHead t (MTF mtn) = MTT (prependHead t [i|#{mtn}|])
+  prependHead t (MTB mtb) = MTT (prependHead t [i|#{mtb}|])
 
 instance PrependHead Text.Text where
-  prependHead s = ((s <> " ") <>)
+  prependHead s t = [i|#{s} #{t}|]
 instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
@@ -265,12 +261,10 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
-  deriving (Eq, Ord, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
-
-instance Hashable RelationalPredicate
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT (MTT <$> a)
@@ -358,28 +352,25 @@ newtype RelName = RN { getName :: RuleName }
 
 noLabel :: Maybe (Text.Text, Int, Text.Text)
 noLabel   = Nothing
+
 noLSource :: Maybe Text.Text
 noLSource = Nothing
+
 noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing
+
 noDeem   :: Maybe ParamText
 noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1 | TSet0 | TSet1
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable ParamType
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                 deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable TComparison
+                 deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
-                          deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable a => Hashable (TemporalConstraint a)
+                          deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 type RuleName   = MultiTerm
 type EntityType = Text.Text
@@ -387,15 +378,13 @@ type EntityName = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
-             deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable TypeSig
+             deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- for use by the interpreter
 
 type VarPath = [TypedMulti]
 
-data InterpreterOptions = IOpts
+newtype InterpreterOptions = IOpts
   { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
   }
   deriving (Eq, Ord, Show)
@@ -428,7 +417,8 @@ newtype ClsTab = CT ClassHierarchyMap
   deriving (Show, Ord, Eq, Generic)
 
 unCT :: ClsTab -> ClassHierarchyMap
-unCT (CT x) = x
+unCT = coerce
+{-# INLINABLE unCT #-}
 
 type TypedClass = (Inferrable TypeSig, ClsTab)
 
@@ -458,6 +448,7 @@ type SymTab = Map.HashMap MultiTerm (Inferrable TypeSig, [HornClause2])
 --   If type checking / inference have not been implemented the snd will be empty.
 type Inferrable ts = (Maybe ts, [ts])
 
+defaultInferrableTypeSig :: (Maybe a1, [a2])
 defaultInferrableTypeSig = (Nothing, [])
 
 thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
@@ -531,9 +522,7 @@ bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (
 -- and possibily we want to have interspersed BoolStructs along the way
 
 data Deontic = DMust | DMay | DShant
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable Deontic
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
@@ -541,9 +530,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      , srccol   :: Int
                      , version  :: Maybe Text.Text
                      }
-              deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable SrcRef
+              deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 mkTComp :: MyToken -> Maybe TComparison
 mkTComp Before     = Just TBefore
@@ -634,23 +621,25 @@ nestLevel = length . parseCallStack
 increaseNestLevel :: String -> RunConfig -> RunConfig
 increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 
-magicKeywords :: Set.HashSet Text.Text
-magicKeywords = Set.fromList
-  [ "EVERY",
-    "PARTY",
-    "MUST,",
-    "MAY",
-    "WHEN",
-    "INCLUDES",
-    "MEANS",
-    "IS",
-    "IF",
-    "UNLESS",
-    "DEFINE"
-  ]
+-- magicKeywords :: Set.HashSet Text.Text
+-- magicKeywords = Set.fromList
+--   [ "EVERY",
+--     "PARTY",
+--     "MUST,",
+--     "MAY",
+--     "WHEN",
+--     "INCLUDES",
+--     "MEANS",
+--     "IS",
+--     "IF",
+--     "UNLESS",
+--     "DEFINE"
+--   ]
 
 -- | we actually want @[Text]@ here not just `MultiTerm`
-enumLabels, enumLabels_ :: ParamText -> [Text.Text]
-enumLabels nelist = fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
+enumLabels :: ParamText -> [Text.Text]
+enumLabels nelist =
+  fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
 
+enumLabels_ :: ParamText -> [Text.Text]
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels

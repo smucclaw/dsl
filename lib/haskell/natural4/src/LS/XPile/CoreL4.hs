@@ -33,6 +33,7 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 
 -- TODO: the following is only for testing purposes, can be removed later
 
+import AnyAll qualified as AA
 import Control.Applicative (Applicative (liftA2))
 import Control.Monad (guard, join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
@@ -41,10 +42,10 @@ import Data.Coerce (coerce)
 import Data.Either (fromRight, isRight, rights)
 import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
-import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
-import Data.List.NonEmpty qualified as NE
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
+import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
+import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
@@ -184,9 +185,9 @@ import LS.Types as SFL4
   )
 import LS.Utils
   ( MonoidValidate,
+    compose,
     mapThenSwallowErrs,
     (|$>),
-    compose
   )
 import LS.XPile.CoreL4.LogicProgram
   ( LPLang (..),
@@ -209,7 +210,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
-import Prettyprinter.Interpolate (__di, di)
+import Prettyprinter.Interpolate (di, __di)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
 import ToDMN.FromL4 (genXMLTreeNoType)
@@ -570,7 +571,7 @@ directToCore r@Hornlike{keyword}
           vsep
           [ "rule" <+> angles rname
           , maybe "# for-limb absent" (\x -> "for"  <+> prettyTypedMulti x) (given r <> bsr2pt bodyEx )
-          ,                                  "if"   <+> haskellStyle (RP1 <$> bodyNonEx )
+          ,                                  "if"   <+> haskellStyle (coerce' bodyNonEx )
           ,                                  "then" <+> pretty (RP1  $  hHead c)
           , Prettyprinter.line
           ]
@@ -582,6 +583,8 @@ directToCore r@Hornlike{keyword}
       , let rname = prettyRuleName cnum needClauseNumbering $ ruleLabelName r
       ]
   | otherwise = "# DEFINE rules unsupported at the moment"
+  where
+    coerce' :: AA.OptionallyLabeledBoolStruct RelationalPredicate -> AA.OptionallyLabeledBoolStruct RP1 = coerce
 -- fact <rulename> multiterm
 
 -- [TODO] -- we can relate classes and attributes by saying in babyl4:

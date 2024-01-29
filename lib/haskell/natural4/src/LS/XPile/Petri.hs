@@ -19,11 +19,13 @@ import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS (lift)
 import Control.Monad.State.Strict
   ( MonadState (get, put),
-    State,
+    State (..),
+    StateT (..),
     gets,
     runState,
   )
 import Data.Bifunctor (first)
+import Data.Coerce (coerce)
 import Data.Foldable (for_, traverse_)
 import Data.Graph.Inductive.Graph
   ( Context,
@@ -571,6 +573,14 @@ data GraphState = GS { lastNode :: Node, currentGraph :: PetriD }
 newtype GraphMonad a = GM { runGM_ :: State GraphState a }
   deriving newtype (Functor, Applicative, Monad)
 
+mkGM :: State GraphState a -> GraphMonad a
+mkGM = coerce
+{-# INLINABLE mkGM #-}
+
+getGM :: GraphMonad a -> State GraphState a
+getGM = coerce
+{-# INLINABLE getGM #-}
+
 -- instance Semigroup a => Semigroup (GraphMonad a) where
 --   a <> b = (<>) <$> a <*> b
 
@@ -579,39 +589,39 @@ newtype GraphMonad a = GM { runGM_ :: State GraphState a }
 
 newNode :: PNodeD -> GraphMonad Node
 newNode lbl = do
-  gs@GS {lastNode = n, currentGraph = g} <- GM get
+  gs@GS {lastNode = n, currentGraph = g} <- mkGM get
   let n' = succ n
   -- myTraceM $ "newNode: " <> show n' <> " " <> show lbl
-  GM . put $ gs {lastNode = n' , currentGraph = insNode (n', lbl) g }
-  return n'
+  mkGM . put $ gs {lastNode = n' , currentGraph = insNode (n', lbl) g }
+  pure n'
 
 newEdge :: Node -> Node -> PLabel -> GraphMonad ()
 newEdge n1 n2 lbl = do
-  gs@GS {currentGraph} <- GM get
-  GM . put $ gs {currentGraph = insEdge (n1, n2, lbl) currentGraph}
+  gs@GS {currentGraph} <- mkGM get
+  mkGM . put $ gs {currentGraph = insEdge (n1, n2, lbl) currentGraph}
 
 newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
 newEdge' (a,b,c) = newEdge a b c
 
 overwriteNode :: Node -> PNodeD -> GraphMonad Node
 overwriteNode n pn = do
-  gs@GS {currentGraph} <- GM get
-  GM . put $ gs {currentGraph = insNode (n, pn) currentGraph}
+  gs@GS {currentGraph} <- mkGM get
+  mkGM . put $ gs {currentGraph = insNode (n, pn) currentGraph}
   pure n
 
 delEdge' :: (Node, Node) -> GraphMonad ()
 delEdge' (n1,n2) = do
-  gs@GS {currentGraph} <- GM get
-  GM . put $ gs {currentGraph = delEdge (n1, n2) currentGraph}
+  gs@GS {currentGraph} <- mkGM get
+  mkGM . put $ gs {currentGraph = delEdge (n1, n2) currentGraph}
 
 delNode' :: Node -> GraphMonad ()
 delNode' n1 = do
-  gs@GS {currentGraph} <- GM get
-  GM . put $ gs {currentGraph = delNode n1 currentGraph}
+  gs@GS {currentGraph} <- mkGM get
+  mkGM . put $ gs {currentGraph = delNode n1 currentGraph}
 
 -- runGM :: PetriD -> GraphMonad a -> a
 runGM :: PetriD -> GraphMonad a -> PetriD
-runGM gr (GM m) = cg
+runGM gr (getGM -> m) = cg
 -- runGM gr (GM m) = traceShow (neNodes res, neNodes cg) res
   where (_, n0) = nodeRange gr
         (_res, GS _ln cg) = runState m $ GS n0 gr
@@ -619,7 +629,7 @@ runGM gr (GM m) = cg
 
 -- This is currently kind of inefficient, but when NE is replaced by a real graph, it becomes simpler and faster
 getGraph :: GraphMonad PetriD
-getGraph = GM $ gets currentGraph
+getGraph = mkGM $ gets currentGraph
 
 -- | discards the stderr log
 runLog :: XPileLog a -> a
@@ -649,7 +659,7 @@ r2fgl rs defRL Regulative{..} = pure do
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
   -- mutterd 2 $ "Petri/r2fgl: rkeyword = " <> show rkeyword
-  let everywho = Text.unwords ( ( [Text.pack (show (tokenOf rkeyword)) | rkeyword == REvery] )
+  let everywho = Text.unwords ( ( [[i|#{tokenOf rkeyword}|] | rkeyword == REvery] )
                                 <> [ subj2nl NLen subj ] )
   -- mutterd 2 $ "Petri/r2fgl: everywho = " <> show everywho
 

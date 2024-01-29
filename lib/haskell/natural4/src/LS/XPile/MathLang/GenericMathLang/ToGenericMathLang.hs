@@ -78,7 +78,7 @@ Note:
 toMathLangGen' :: Analyzed -> (String, [String])
 toMathLangGen' l4a =
   let l4Hornlikes = l4a.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
-  in case l4ToLCProgram l4Hornlikes of
+  in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (printLC lamCalcProgram, [])
 

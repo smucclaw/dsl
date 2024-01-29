@@ -2,7 +2,7 @@
 -- {-# OPTIONS_GHC -foptimal-applicative-do #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels, UndecidableInstances #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels, UndecidableInstances, RecordWildCards #-}
 {-# LANGUAGE OverloadedLists, OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies, FunctionalDependencies #-}
@@ -17,9 +17,15 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import 
 import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 
 import AnyAll qualified as AA
--- import LS.Types qualified as L4
-import LS.Types as L4 (RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType, 
-                       HornClause (..), BoolStructR)
+import LS.Types as L4
+  (SrcRef(..), RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType,
+  HornClause (..), HornClause2, BoolStructR,
+  TypeSig(..), TypedMulti,
+  SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
+  MultiClauseHL, _MkMultiClauseHL, mkMultiClauseHL,
+  HeadOnlyHC, _MkHeadOnlyHC, mkHeadOnlyAtomicHC, mkHeadOnlyHC, headOnlyHLasMTEs,
+  HnBodHC(..)
+  )
 -- import LS.Interpreter (qaHornsT)
 import LS.Rule (
                 -- Interpreted(..), 
@@ -32,8 +38,8 @@ import Effectful (Effect, Eff, runPureEff)
 import Effectful.TH (makeEffect)
 import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
-import Effectful.Reader.Static (runReader, Reader)
-import Effectful.State.Static.Shared (State, runState)
+import Effectful.Reader.Static (runReader, local, Reader)
+-- import Effectful.State.Static.Shared (State, runState)
 -- experimenting with Effectful.Error rn; will switch over to Control.Monad.Validate later
 -- import Control.Monad.Validate qualified as V
 --   ( ValidateT
@@ -59,7 +65,6 @@ import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList)
 
-import LS.Types (TypeSig(..), TypedMulti, SimplHC(..), BaseHC(..), HeadOnlyHC(..), HnBHC(..))
 import LS.XPile.MathLang.UtilsLCReplDev
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST)
@@ -186,8 +191,10 @@ OK I think main thing is must have a way of keeping trakc of what the global vs 
 b/c in L4 it might be possible to declare and initalize a global var from, e.g., within an if block, whereas that may not be possible in other langs (in some other langs may need to decalre first)
 -}
 
+---------------- Errors related ---------------------------------------------------
 
 data ToLCError = NotYetImplemented T.Text -- SrcPositn
+               | ParserProblem T.Text
                | MiscError T.Text
                | NotSupported T.Text
   deriving stock (Eq, Show, Generic)
@@ -198,20 +205,33 @@ instance Hashable ToLCError
 stringifyToLCError :: ToLCError -> T.Text
 stringifyToLCError = undefined
 
+---- Specialized error throwing convenience funcs ---------------------------------
+-- | TODO: make this better with `pretty` and better structured errors later
+throwNotYetImplError :: Show a => a -> ToLC b
+throwNotYetImplError l4ds = ToLC $ throwError $ NotYetImplemented (T.pack . show $ l4ds)
+
+throwParserParserProblem :: (Show a) => a -> T.Text -> ToLC c
+throwParserParserProblem l4ds msg = ToLC $ throwError $ ParserProblem $ (T.pack . show $ l4ds) <> msg
+
+-------- Env -----------------------------------------------------------------------
+
+type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
+type RetVarInfo = [(Var, Maybe L4EntType)]
 
 data Env =
-  MkEnv { localVars :: !(HashMap Var (Maybe L4EntType))
+  MkEnv { localVars :: VarTypeDeclMap
         -- ^ would *not* include 'global' GIVEN-declared vars --- just the local ones 
-        , retVarInfo :: !(Maybe [(Var, Maybe L4EntType)])
-          -- ^ not sure this is necessary
+        -- , retVarInfo :: Maybe RetVarInfo
+          -- ^ not sure we need retVarInfo
         , logConfig :: LogConfig }
-  deriving stock (Show)
-makeFieldLabelsNoPrefix ''Env
+  deriving stock (Show, Generic)
 
 initialEnv :: Env
 initialEnv = MkEnv { localVars = HM.empty
-                   , retVarInfo = Nothing
+                  --  , retVarInfo = Nothing
                    , logConfig = defaultLogConfig }
+
+------------------------------------------------------------------------------------
 
 {- | TODO: Revise this when time permits --- this is not 'idiomatic'
 something like the following more idiomatic:
@@ -225,8 +245,18 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
   https://haskell-explained.gitlab.io/blog/posts/2019/07/28/polysemy-is-cool-part-1/
   https://code.well-typed.com/cclaw/haskell-course/-/blob/main/error-handling/ErrorHandling.hs
 -}
-newtype ToLC a = ToLC (Eff '[Reader Env, State GlobalVars, Error ToLCError] a)
+newtype ToLC a =
+  ToLC (Eff '[Reader Env,
+        -- State GlobalVars,
+        -- Might be better to just do a separate pass that finds the global vars --- not sure rn 
+        Error ToLCError] a )
   deriving newtype (Functor, Applicative, Monad)
+
+_ToLC :: Iso' (ToLC a) (Eff '[Reader Env, Error ToLCError] a)
+_ToLC = coerced
+
+unToLC :: ToLC a -> Eff [Reader Env, Error ToLCError] a
+unToLC = view _ToLC
 
 -- | https://hackage.haskell.org/package/effectful-core-2.3.0.1/docs/Effectful-Dispatch-Dynamic.html#g:3
 -- runValidate :: Eff (EffValidate e : es) a -> Eff es a
@@ -234,19 +264,18 @@ newtype ToLC a = ToLC (Eff '[Reader Env, State GlobalVars, Error ToLCError] a)
 --   Refute errs -> localSeqUnlift localEnv $ \unlift -> do
 --     V.refute errs
 
----------------- Specialized error throwing convenience funcs ------------------------------------
--- | TODO: make this better with `pretty` and better structured errors later
-throwNotYetImplError :: Show a => a -> ToLC b
-throwNotYetImplError l4ds = ToLC $ throwError $ NotYetImplemented (view packed . show $ l4ds) 
-
 
 --------------------------------------------------------------------------------------------------
 
 -- TODO: Adapting MonadValidate is prob going to be more complicated than in the WT presentation
-runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
-runToLC (ToLC m) = runPureEff . runErrorNoCallStack . runState initialState . runReader initialEnv $ m
-  where
-    initialState = mkGlobalVars HM.empty
+-- runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
+runToLC :: ToLC a -> Either ToLCError a
+runToLC (ToLC m) = runPureEff
+                 . runErrorNoCallStack
+                --  . runState initialState 
+                 . runReader initialEnv $ m
+  -- where
+    -- initialState = mkGlobalVars HM.empty
 
 
 --------------------------------------------------------------------------------------------------
@@ -254,76 +283,128 @@ runToLC (ToLC m) = runPureEff . runErrorNoCallStack . runState initialState . ru
 isDeclaredVar :: MTExpr -> ToLC (Maybe Var)
 isDeclaredVar = undefined
 
+{- | Look for the global vars in a separate pass for now. 
+May need Reader, but only going to think abt that when we get there -}
+findGlobalVars :: Exp -> (Exp, GlobalVars)
+findGlobalVars exp = (exp, placeholderTODO)
+  where placeholderTODO = mkGlobalVars HM.empty
 
 {- | Translate L4 program consisting of Hornlike rules to a LC Program -}
-l4ToLCProgram :: (Foldable seq, Traversable seq) => seq L4.Rule -> Either ToLCError LCProgram
+l4ToLCProgram :: (Foldable t, Traversable t) => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
-  (lcProg, globalVars) <- runToLC . l4RulesToLCExp . F.toList $ rules
+  l4HLs <- traverse simplifyL4Hlike rules
+  (lcProg, globalVars) <- fmap findGlobalVars . l4sHLsToLCExp . F.toList $ l4HLs
   return $ MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                        , lcProgram = lcProg
                        , globalVars = globalVars}
 
 
+{-==============================================================================
+  1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL 
+===============================================================================-}
 
-mkVarEntMap :: Foldable f => f TypedMulti -> HM.HashMap Var (Maybe L4EntType)
-mkVarEntMap = processL4VarAssocList . declaredVarsToAssocList
+type SimpleHL = SimpleHlike VarTypeDeclMap RetVarInfo
+
+simplifyL4Hlike :: L4.Rule -> ToLC SimpleHL
+simplifyL4Hlike rule =
+  case rule.srcref of
+    Just srcref -> do
+      baseHL <- extractBaseHL rule
+      return $ MkSimpleHL { shcSrcRef = srcref
+                          , shcGiven = maybe HM.empty mkVarEntMap rule.given
+                          , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
+                          , baseHL = baseHL
+                          }
+    Nothing -> throwParserParserProblem rule "Parser should not be returning L4 rules with Nothing in src ref"
+{- this always takes up more time than one expects:
+given :: Maybe ParamText = Maybe (NonEmpty TypedMulti) 
+        = Maybe (NonEmpty 
+                    (NonEmpty MTExpr, Maybe TypeSig))
+-}
+
+l4HcToAtomicHC :: L4.HornClause2 -> AtomicHC
+l4HcToAtomicHC hc =
+  case hc.hBody of
+    Just hbody -> HeadAndBody $ MkHnBHC { hbHead = hc.hHead, hbBody = hbody }
+    Nothing -> mkHeadOnlyAtomicHC hc.hHead
+
+extractBaseHL :: L4.Rule -> ToLC BaseHL
+extractBaseHL rule =
+  case rule.clauses of
+    [] -> throwParserParserProblem rule "Parser should not return L4 Hornlikes with no clauses"
+    [hc] -> pure $ OneClause . l4HcToAtomicHC $ hc
+    multipleHCs -> pure $ MultiClause . mkMultiClauseHL $ fmap l4HcToAtomicHC multipleHCs
+
+
+--- Utils for dealing with 'Maybe ParamText' -------------------------------------
+mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
+mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
   where
     declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe L4.EntityType)]
     declaredVarsToAssocList dvars = dvars ^.. folded % to getGivenWithSimpleType % folded
 
-    processL4VarAssocList :: [(T.Text, Maybe L4.EntityType)] -> HM.HashMap Var (Maybe L4EntType)
-    processL4VarAssocList al =
+    convertL4Types :: [(T.Text, Maybe L4.EntityType)] -> [(Var, Maybe L4EntType)]
+    convertL4Types al =
       al
         & each % _1 %~ mkVar
         & each % _2 %~ fmap mkEntType
-        & HM.fromList
+
+mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
+mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList
+
+{-================================================================================
+  2. SimpleHL to Exp
+=================================================================================-}
 
 -- | Treat the seq of L4 rules as being a block of statements
-l4RulesToLCExp :: [L4.Rule] -> ToLC Exp
-l4RulesToLCExp rules = fmap mkExpFrSeqExp (l4RulesToLCSeqExp rules)
+l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
+l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
   where
     mkExpFrSeqExp :: SeqExp -> Exp
     mkExpFrSeqExp seqExp = MkExp (ESeq seqExp) []
 
 
-l4RulesToLCSeqExp ::  [L4.Rule] -> ToLC SeqExp
-l4RulesToLCSeqExp = foldM go EmptySeqE
+l4sHLsToLCSeqExp ::  [SimpleHL] -> ToLC SeqExp
+l4sHLsToLCSeqExp = foldM go EmptySeqE
   where
-    go :: SeqExp -> L4.Rule -> ToLC SeqExp
-    go seqExp rule = ConsSE <$> ruleToExp rule <*> pure seqExp
+    go :: SeqExp -> SimpleHL -> ToLC SeqExp
+    go seqExp hornlike = ConsSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
 
-ruleToExp :: L4.Rule -> ToLC Exp
-ruleToExp rule = addMdataToBaseExp rule (ruleToBaseExp rule)
+expifyHL :: SimpleHL -> ToLC Exp
+expifyHL hl = addMdataToBaseExp hl (baseExpify hl)
    where
-    addMdataToBaseExp :: L4.Rule -> ToLC BaseExp -> ToLC Exp
+    addMdataToBaseExp :: SimpleHL -> ToLC BaseExp -> ToLC Exp
     addMdataToBaseExp = undefined
 
-ruleToBaseExp :: L4.Rule -> ToLC BaseExp
-ruleToBaseExp (isIf -> Just (rule, ruleHc, bodyHc)) = toIfExp rule ruleHc bodyHc
-ruleToBaseExp rule = throwNotYetImplError rule
+baseExpify :: SimpleHL -> ToLC BaseExp
+baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
+baseExpify hornlike = throwNotYetImplError hornlike
 -- for the future, stuff like
--- ruleToBaseExp (isLamDef -> ...) = toLamDef ...
+-- baseExpify (isLamDef -> ...) = toLamDef ...
 
-isIf :: L4.Rule -> Maybe (L4.Rule, L4.HornClause L4.BoolStructR, L4.BoolStructR)
-isIf rule =
-  if length rule.clauses == 1 -- not sure abt this but go on for now
-     && bodyOfTheHCIsNotNothing
-  then (\bodyHc -> (rule, ruleHc, bodyHc)) <$> mBodyOfTheHC
-  else Nothing
+isIf :: SimpleHL -> Maybe (SimpleHL, HnBodHC)
+isIf hl =
+  case hl.baseHL of
+    MultiClause _ -> Nothing
+    OneClause atomicHC ->
+      case atomicHC of
+        HeadOnly _ -> Nothing
+        HeadAndBody hc -> Just (hl, hc)
+
+toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
+-- toIfExp = undefined
+toIfExp hl hc = do
+  condE <- withinGivenAugmentedEnv $ processHcBody hc.hbBody
+  thenE <- withinGivenAugmentedEnv $ processHchead hc.hbHead
+  return $ EIfThen condE thenE
   where
-    mBodyOfTheHC :: Maybe L4.BoolStructR = join (rule.clauses ^? ix 0 % #hBody)
-    bodyOfTheHCIsNotNothing = isn't _Nothing mBodyOfTheHC
-    ruleHc :: L4.HornClause L4.BoolStructR
-    ruleHc = Prelude.head rule.clauses -- safe b/c check first
+    withinGivenAugmentedEnv = over _ToLC (local setLocalVars)
+    setLocalVars :: Env -> Env
+    setLocalVars = set #localVars hl.shcGiven
 
-toIfExp :: L4.Rule -> L4.HornClause L4.BoolStructR -> L4.BoolStructR -> ToLC BaseExp
-toIfExp rule ruleHc ruleBody = EIfThen <$> condE <*> thenE
-  where
-    condE = processHcBody ruleBody
-    thenE = processHchead ruleHc.hHead
-
+-- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
 
 

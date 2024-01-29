@@ -1,5 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -53,9 +53,7 @@ data BoolStruct lbl a =
   | All lbl [BoolStruct lbl a] -- and
   | Any lbl [BoolStruct lbl a] --  or
   | Not             (BoolStruct lbl a)
-  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-
-instance (Hashable lbl, Hashable a) => Hashable (BoolStruct lbl a)
+  deriving (Eq, Ord, Show, Generic, Hashable, Functor, Foldable, Traversable)
 
 mkLeaf :: a -> BoolStruct lbl a
 mkLeaf = Leaf

@@ -743,7 +743,7 @@ pHornlike' needDkeyword = debugName [i|pHornlike(needDkeyword=#{needDkeyword})|]
     inferRuleName (RPConstraint  mt _ _) = mt
     inferRuleName (RPBoolStructR mt _ _) = mt
     inferRuleName (RPnary     _rprel []) = [MTT "unnamed RPnary"]
-    inferRuleName (RPnary     _rprel rp) = inferRuleName (head rp)
+    inferRuleName (RPnary     _rprel rp) = inferRuleName $ head rp
 
 rpSameNextLineWhen :: Parser (RelationalPredicate, Maybe BoolStructR)
 rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
@@ -968,9 +968,8 @@ pTypeSig = debugName "pTypeSig" do
                             , TSet1     <$ pToken Set1
                             ]
       base        <- someIndentation pOtherVal
-      return $ SimpleType cardinality base
-    inlineenum = do
-      InlineEnum TOne <$> pOneOf
+      pure $ SimpleType cardinality base
+    inlineenum = InlineEnum TOne <$> pOneOf
 
 pOneOf :: Parser ParamText
 pOneOf = do
@@ -978,7 +977,7 @@ pOneOf = do
 --  if length pt == 1
 --  then
 -- see https://github.com/smucclaw/dsl/issues/466
-  return pt
+  pure pt
                                          -- i thought we could use sequence, but i guess not?
 
 -- sometimes we want a multiterm, just a list of text
@@ -1014,7 +1013,7 @@ writeTypically :: MultiTerm -> Maybe MultiTerm -> Parser ()
 writeTypically somekey someval = do
   srcref' <- getSrcRef
   tell $ maybe mempty (\t -> singeltonDL (DefTypically somekey [RPConstraint somekey RPis t] (Just srcref'))) someval
-  return ()
+  pure ()
 
 slTypeSig :: SLParser TypeSig
 slTypeSig = debugNameSL "slTypeSig" do
@@ -1162,8 +1161,7 @@ mustNestHorn toMT toRN connector pbsr basesl =
                                }
   debugPrint "constructed simpleHorn; running tellIdFirst"
   liftSL $ tellIdFirst $ pure simpleHorn
-  return subj
-
+  pure subj
 
 meansIs,meansIsWhose :: Parser MyToken
 meansIs = debugName "meansIs" $ choice $ pToken <$> [Means, Is]
@@ -1226,7 +1224,7 @@ getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
     prependSubject :: Maybe BoolStructR -> Maybe BoolStructR
     prependSubject mbsrwho = do
       whobsr <- mbsrwho
-      return $ prependToRP [bsp2text subj] <$> whobsr
+      pure $ prependToRP [bsp2text subj] <$> whobsr
       where
         prependToRP :: [T.Text] -> RelationalPredicate -> RelationalPredicate
         prependToRP ts (RPMT        mt) = RPMT $ (MTT <$> ts) <> mt

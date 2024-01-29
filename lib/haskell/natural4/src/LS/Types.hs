@@ -115,8 +115,8 @@ text2pt x = pure (pure (MTT x), Nothing)
 
 mtexpr2text :: MTExpr -> Text.Text
 mtexpr2text (MTT t) = t
-mtexpr2text (MTI n) = Text.pack $ show n
-mtexpr2text (MTF n) = Text.pack $ show n
+mtexpr2text (MTI n) = [i|#{n}|]
+mtexpr2text (MTF n) = [i|#{n}|]
 mtexpr2text (MTB True) = "TRUE"
 mtexpr2text (MTB False) = "FALSE"
 
@@ -394,7 +394,7 @@ instance Hashable TypeSig
 
 type VarPath = [TypedMulti]
 
-data InterpreterOptions = IOpts
+newtype InterpreterOptions = IOpts
   { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
   }
   deriving (Eq, Ord, Show)
@@ -531,9 +531,7 @@ bsr2text'  joiner (AA.All Nothing                   xs) = joiner ("all of:-" : (
 -- and possibily we want to have interspersed BoolStructs along the way
 
 data Deontic = DMust | DMay | DShant
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable Deontic
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 data SrcRef = SrcRef { url      :: Text.Text
                      , short    :: Text.Text
@@ -541,9 +539,7 @@ data SrcRef = SrcRef { url      :: Text.Text
                      , srccol   :: Int
                      , version  :: Maybe Text.Text
                      }
-              deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable SrcRef
+              deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 mkTComp :: MyToken -> Maybe TComparison
 mkTComp Before     = Just TBefore
@@ -634,24 +630,25 @@ nestLevel = length . parseCallStack
 increaseNestLevel :: String -> RunConfig -> RunConfig
 increaseNestLevel name rc = rc { parseCallStack = name : parseCallStack rc }
 
-magicKeywords :: Set.HashSet Text.Text
-magicKeywords = Set.fromList
-  [ "EVERY",
-    "PARTY",
-    "MUST,",
-    "MAY",
-    "WHEN",
-    "INCLUDES",
-    "MEANS",
-    "IS",
-    "IF",
-    "UNLESS",
-    "DEFINE"
-  ]
+-- magicKeywords :: Set.HashSet Text.Text
+-- magicKeywords = Set.fromList
+--   [ "EVERY",
+--     "PARTY",
+--     "MUST,",
+--     "MAY",
+--     "WHEN",
+--     "INCLUDES",
+--     "MEANS",
+--     "IS",
+--     "IF",
+--     "UNLESS",
+--     "DEFINE"
+--   ]
 
 -- | we actually want @[Text]@ here not just `MultiTerm`
-enumLabels, enumLabels_ :: ParamText -> [Text.Text]
+enumLabels :: ParamText -> [Text.Text]
 enumLabels nelist =
   fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
 
+enumLabels_ :: ParamText -> [Text.Text]
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels

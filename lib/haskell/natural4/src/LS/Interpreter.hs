@@ -436,7 +436,7 @@ exposedRoots :: Interpreted -> XPileLog [Rule]
 exposedRoots l4i = do
   let decisionGraph = ruleGraph l4i
   decisionroots <- decisionRoots decisionGraph
-  return [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
+  pure [ r | r <- decisionroots, not $ isRuleAlias l4i (ruleLabelName r) ]
 
 -- | the (inner) type of a particular class's attribute
 attrType :: ClsTab -> EntityType -> Maybe TypeSig
@@ -573,7 +573,7 @@ relPredRefsAll rs ridmap = do
                      ]
   mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
 
-  concat <$> traverse (relPredRefs rs ridmap headElements) rs
+  mconcat <$> traverse (relPredRefs rs ridmap headElements) rs
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known rule heads from the entire ruleset.
@@ -615,7 +615,7 @@ relPredRefs rs ridmap headElements r = do
      ]
 
   mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
-  return toreturn
+  pure toreturn
 
 -- | Which rules are "top-level", "entry-point" rules?
 --
@@ -1108,7 +1108,9 @@ attrsAsMethods rs = do
 -- 
 --  output: (["foo", "bar"], "baz")
 toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
-toObjectPath [] = do mutter "error: toObjectPath given an empty list!" >> xpReturn ([], "errorEntityname")
+toObjectPath [] = do
+  mutter "error: toObjectPath given an empty list!"
+  xpReturn ([], "errorEntityname")
 toObjectPath mt = do
   mutterd 4 [i|toObjectPath input = #{mt}|]
   mutterd 4 [i|DL.init mt = #{DL.init mt}|]
@@ -1152,7 +1154,8 @@ isAnEnum l4i mgiven mt =
 -- [TODO] refactor this together with the above function to a single function
 isGivenEnum :: Maybe ParamText -> [MultiTerm] -> MultiTerm -> Bool
 isGivenEnum Nothing _ mt = False
-isGivenEnum (Just typedMultis) enumNames mt = any (enumMatch enumNames mt) $ NE.toList typedMultis
+isGivenEnum (Just typedMultis) enumNames mt =
+  any (enumMatch enumNames mt) $ NE.toList typedMultis
 
 -- | does a specific typedmulti match an enum
 enumMatch :: [MultiTerm] -> MultiTerm -> TypedMulti -> Bool

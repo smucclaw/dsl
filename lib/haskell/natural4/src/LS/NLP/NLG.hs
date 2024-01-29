@@ -349,7 +349,7 @@ nlg' thl env = \case
         ruleTextDebug :: Text.Text =
           [I.i|#{prefix} #{uponText}#{ruleText}#{tcText}#{condText} #{suffix}|]
     lestText <- henceLest2text MyLest lest
-    henceText <- henceLest2text MyHence hence 
+    henceText <- henceLest2text MyHence hence
     when (verbose env) do
       putStrLn [__i|
         nlg': regulative"
@@ -874,7 +874,7 @@ expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
 getExpandedRuleNames l4i rule = case rule of
-  Regulative {} -> concat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
+  Regulative {} -> mconcat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
   Hornlike {} -> getNamesHC l4i `foldMap` clauses rule
   _ -> []
 
@@ -900,30 +900,41 @@ getExpandedRuleNames l4i rule = case rule of
       bodyNames = mconcat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
 
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
-expandRuleForNLGE l4i depth rule = do
-  case rule of
-    Regulative{who, cond, upon, hence, lest} -> mutterd depth "expandRuleForNLGE: running Regulative" >> do
-      -- Maybe (XPileLogE BoolStructR)
-      -- XPileLogE (Maybe BoolStructR)
-      who'   <- go who
-      cond'  <- go cond
-      hence' <- traverse (expandRuleForNLGE l4i depth) hence
-      lest'  <- traverse (expandRuleForNLGE l4i depth) lest
-      upon'  <- mutterd depth "running expandPT" >> return ( expandPT l4i depth <$> upon )
-      return $ rule
-        { who = who'
-        , cond = cond'
-        , upon = upon'
-        , hence = hence'
-        , lest = lest'
-        }
-    Hornlike {} -> mutterd 4 "expandRuleForNLGE: running Hornlike" >> return (
-      rule { clauses = expandClauses l4i depth $ clauses rule } )
-    Constitutive {} -> mutterd 4 "expandRuleForNLGE: running Constitutive" >> return (
-      rule { cond = expandBSR l4i depth <$> cond rule } )
-    _ -> mutterd 4 "expandRuleForNLGE: running some other rule" >>  return rule
+expandRuleForNLGE l4i depth rule@Regulative{who, cond, upon, hence, lest} = do
+  mutterd depth "expandRuleForNLGE: running Regulative"
+  -- Maybe (XPileLogE BoolStructR)
+  -- XPileLogE (Maybe BoolStructR)
+  who'   <- travExpandBSRM who
+  cond'  <- travExpandBSRM cond
+  hence' <- travExpandRule hence
+  lest'  <- travExpandRule lest
+  mutterd depth "running expandPT"
+  let upon' = expandPT l4i depth <$> upon
+  pure $ rule
+    { who = who'
+    , cond = cond'
+    , upon = upon'
+    , hence = hence'
+    , lest = lest'
+    }
   where
-    go = traverse $ expandBSRM l4i depth
+    travExpandBSRM :: Maybe BoolStructR -> XPileLog (Maybe BoolStructR)
+    travExpandBSRM bsr = expandBSRM l4i depth `traverse` bsr
+
+    travExpandRule :: Maybe Rule -> XPileLog (Maybe Rule)
+    travExpandRule rule = expandRuleForNLGE l4i depth `traverse` rule
+
+expandRuleForNLGE l4i depth rule@Hornlike {} = do
+  mutterd 4 "expandRuleForNLGE: running Hornlike"
+  pure rule {clauses = expandClauses l4i depth $ clauses rule}
+
+expandRuleForNLGE l4i depth rule@Constitutive {} = do
+  mutterd 4 "expandRuleForNLGE: running Constitutive"
+  pure rule {cond = expandBSR l4i depth <$> cond rule}
+
+expandRuleForNLGE _ _ rule = do
+  mutterd 4 "expandRuleForNLGE: running some other rule"
+  pure rule
 
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions

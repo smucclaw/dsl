@@ -641,16 +641,21 @@ parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
     tc = parseTComparison t
     date = parseDate d
 
-parseCond env (RPConstraint a RPis b) = case (nps,vps) of
-  (np:_, (GMkVPS t p vp):_) -> GWHEN np t p vp
-  _ -> parseCond env $ RPMT [MTT [i|#{aTxt} is #{bTxt}|]]
-  where
-    aTxt = Text.strip $ mt2text a
-    bTxt = Text.strip $ mt2text b
-    nps :: [GNP]
-    nps = fg <$> parseAnyNoRecover "NP" env aTxt
-    vps :: [GVPS]
-    vps = fg <$> parseAnyNoRecover "VPS" env (Text.unwords ["is", bTxt])
+parseCond
+  env
+  ( RPConstraint
+      (Text.strip . mt2text -> a)
+      RPis
+      (Text.strip . mt2text -> b)
+    ) = case (nps, vps) of
+    (np : _, (GMkVPS t p vp) : _) -> GWHEN np t p vp
+    _ -> parseCond env $ RPMT [MTT [i|#{a} is #{b}|]]
+    where
+      nps :: [GNP]
+      nps = fg <$> parseAnyNoRecover "NP" env a
+
+      vps :: [GVPS]
+      vps = fg <$> parseAnyNoRecover "VPS" env [i|is #{b}|]
 
 parseCond env rp = fg tree
   where

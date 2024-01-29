@@ -32,7 +32,7 @@ import Data.Coerce (coerce)
 import Data.Either (fromLeft, fromRight, isLeft, isRight)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
-import Data.String.Interpolate (__i)
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Options.Generic
   ( Generic,
@@ -45,6 +45,7 @@ import Options.Generic
     type (<?>),
   )
 import System.Exit (exitFailure, exitSuccess)
+import System.FilePath (FilePath, (</>), (<.>))
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
@@ -69,7 +70,10 @@ main = do
   mycontents <- B.getContents
   let myinput = eitherDecode mycontents :: Either String (StdinSchema T.Text)
   when (isLeft myinput) do
-    putStrLn $ "JSON decoding error: " ++ show (fromLeft "see smucclaw/dsl/lib/haskell/anyall/app/Main.hs source" myinput)
+    let fileName :: FilePath =
+          "dsl" </> "lib" </> "haskell" </> "anyall" </> "app" </> "Main" <.> "hs"
+        s :: String = [i|see #{fileName} source|]
+    putStrLn [i|JSON decoding error: #{fromLeft s myinput}|]
     exitFailure
   when (only opts == "native") $ print myinput
 

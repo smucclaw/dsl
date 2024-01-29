@@ -175,7 +175,9 @@ mergeMatch =
     smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
       Merged m -> Just (Nothing, m:zs)
       Unmerged x y -> Just (Just x, y:zs)
+
     smallStep [z] = Just (Just z, [])
+
     smallStep _ = Nothing
 
 -- mergeMatch [] = []

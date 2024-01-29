@@ -14,7 +14,7 @@ import AnyAll.Types
   ( AndOr (And, Neg, Or, Simply),
     Default (..),
     Label (..),
-    Marking (Marking),
+    Marking (..),
     Q (Q),
     QTree,
   )

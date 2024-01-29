@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -34,9 +35,7 @@ data RkeywordActor = RkeywordActor
   { rkeyword :: RegKeywords,
     actor :: ParamText
   }
-  deriving (Eq, Generic, Ord, Show)
-
-instance Hashable RkeywordActor
+  deriving (Eq, Generic, Hashable, Ord, Show)
 
 {-
   This function handles things like:
@@ -57,9 +56,7 @@ data DeonticAction = DeonticAction
   { deontic :: Deontic,
     action :: ParamText
   }
-  deriving (Eq, Generic, Ord, Show)
-
-instance Hashable DeonticAction
+  deriving (Eq, Generic, Hashable, Ord, Show)
 
 deonticAction2doc :: DeonticAction -> MonoidValidate (Doc ann1) (Doc ann2)
 deonticAction2doc

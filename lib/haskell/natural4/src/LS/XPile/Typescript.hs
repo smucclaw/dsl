@@ -95,10 +95,7 @@ style of computation is implicit in the method-call approach.
 
 -}
 
-module LS.XPile.Typescript where
-
-
-
+module LS.XPile.Typescript (asTypescript) where
 
 -- import Debug.Trace
 import AnyAll (BoolStruct (All, Any, Leaf, Not))
@@ -371,7 +368,7 @@ tsClasses l4i = do
           <//> let myMethods = concat [ methods l4i [MTT attrname]
                                       | attrname <- getCTkeys children
                                       ]
-               in if (not $ null myMethods)
+               in if not $ null myMethods
                   then indent 2 ( encloseSep (lbrace <> line) (line <> rbrace) (comma <> space)
                                   myMethods
                                 )
@@ -408,8 +405,7 @@ tsClasses l4i = do
 --
 
 methodFor :: Interpreted -> EntityType -> Maybe TypeSig -> Doc ann
-methodFor l4i entype mtsig =
-  defaultMethod mtsig
+methodFor l4i entype = defaultMethod
 
 -- | if we can't find a decision rule defining this particular attribute as a method, we return a default method
 defaultMethod :: Maybe TypeSig -> Doc ann
@@ -454,18 +450,6 @@ jsInstances l4i = return $
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
           "// symtab' = " <+> commentWith "// " [DTL.toStrict (pShowNoColor symtab')] <//>
-          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
-          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
-          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
-          -- the above DTL.toStrict is needed otherwise the pShowNoColor get typed as Data.Text.Lazy.Internal.Text which is a little too deep into the internals for me to be comfortable with.
-
-          -- [TODO] there is a mysterious dup here for alice in micromvp3
-
-          -- [TODO] there is a mysterious dup here for alice in micromvp3
-
-          -- [TODO] there is a mysterious dup here for alice in micromvp3
-
-          -- [TODO] there is a mysterious dup here for alice in micromvp3
           vvsep [ "const" <+> snake_case mt <+> prettyMaybeType "ts" (snake_inner . MTT) (getSymType symtype) <+> equals <+> nest 2 value
 --                  </> "// symtype = " <+> viaShow symtype
 --                  </> "// val = " <+> viaShow val
@@ -566,7 +550,7 @@ vpToTS l4i ValPred{..}
     -- upgrade a value Monday to a DaysEnum.Monday 
     handleEnum :: MultiTerm -> MultiTerm -> Doc ann
     handleEnum mt1 mt2 =
-      if isAnEnum l4i (join (given <$> origRule)) mt1
+      if isAnEnum l4i (given =<< origRule) mt1
       then snake_case mt1 <> "Enum" <> "." <> snake_case mt2
       else pretty (mt2text mt2)
 

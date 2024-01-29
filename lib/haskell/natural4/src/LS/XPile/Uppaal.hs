@@ -12,7 +12,7 @@ where
 
 import AnyAll qualified as AA
 -- import qualified Data.ByteString.Char8 as T
-
+import Control.Monad (void)
 import Data.HashSet qualified as Set
 import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
@@ -46,8 +46,7 @@ import LS.Types as SFL4
     pt2text,
     rp2text,
   )
-import Control.Monad (void)
-import qualified Text.Regex.PCRE.Heavy as PCRE
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 type Ann = ()
 

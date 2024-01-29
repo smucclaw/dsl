@@ -39,7 +39,6 @@ import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
 import Flow ((|>))
 import LS.Interpreter (getMarkings, qaHornsT)
-import LS.NLP.NL4Transformations ()
 import LS.NLP.NLG
   ( NLGEnv (..),
     expandRulesForNLG,

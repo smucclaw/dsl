@@ -40,6 +40,8 @@ dependencies:
 - QuickCheck
 - checkers
 - string-interpolate
+- prettyprinter-interp
+- filepath
 - explainable
 
 # - ihaskell

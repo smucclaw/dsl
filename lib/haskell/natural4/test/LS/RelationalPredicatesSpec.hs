@@ -3,12 +3,20 @@
 
 module LS.RelationalPredicatesSpec (spec) where
 
-import AnyAll
+import AnyAll (mkAll, mkAny, mkLeaf)
 import Data.HashMap.Strict qualified as Map
-import Data.List.NonEmpty
-import LS.RelationalPredicates
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import LS.RelationalPredicates (partitionExistentials)
 import LS.Types
-import Test.Hspec
+  ( HornClause (HC, hBody, hHead),
+    MTExpr (MTT),
+    ParamType (TOne),
+    RelationalPredicate (RPParamText),
+    TypeSig (SimpleType),
+    mkRpmt,
+    mkRpmtLeaf,
+  )
+import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec = do

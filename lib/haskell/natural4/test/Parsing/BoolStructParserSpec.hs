@@ -4,20 +4,70 @@
 
 module Parsing.BoolStructParserSpec (spec) where
 
-import Text.Megaparsec
-import LS.Lib
-import LS.Parser
-import LS.Interpreter
-import LS.RelationalPredicates
-import LS.Tokens
-import AnyAll hiding (asJSON)
-import LS.BasicTypes
-import LS.Types
-import LS.Rule
-import LS.XPile.VueJSON
-import Test.Hspec
+import AnyAll (BoolStruct (All, Any, Not), mkLeaf)
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import LS.BasicTypes (MyStream, MyToken (Given))
+import LS.Interpreter (getAndOrTree, l4interpret)
+import LS.Lib
+  ( exampleStreams,
+    pExpect,
+    pGivens,
+    pRules,
+    pScenarioRule,
+    pToplevel,
+  )
+import LS.Parser (pBoolStruct)
+import LS.RelationalPredicates (pBoolStructPT)
+import LS.Rule
+  ( Expect (ExpRP),
+    Rule
+      ( Scenario,
+        clauses,
+        defaults,
+        expect,
+        has,
+        lsource,
+        name,
+        rlabel,
+        scgiven,
+        srcref,
+        symtab
+      ),
+    defaultHorn,
+    defaultTypeDecl,
+    mkTestSrcRef,
+    runMyParser,
+  )
+import LS.Tokens (pRuleLabel, pToken)
+import LS.Types
+  ( HornClause (HC, hBody, hHead),
+    MTExpr (MTI, MTT),
+    ParamType (TOne),
+    RPRel (RPis),
+    RelationalPredicate
+      ( RPBoolStructR,
+        RPConstraint,
+        RPMT,
+        RPParamText
+      ),
+    RunConfig (debug, extendedGrounds, sourceURL),
+    TypeSig (InlineEnum),
+    defaultInterpreterOptions,
+    defaultRC,
+    mkRpmt,
+    mkRpmtLeaf,
+  )
+import LS.XPile.VueJSON (groundrules)
+import Test.Hspec
+  ( HasCallStack,
+    Spec,
+    SpecWith,
+    describe,
+    it,
+    xit,
+  )
+import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Encoding qualified as TLE
@@ -167,7 +217,7 @@ spec :: Spec
 spec = do
     let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
-    let  combine (a,b) = a ++ b
+    let  combine = uncurry (<>)
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
 
     let  parseWith  f x y s = f <$> runMyParser combine runConfig x y s

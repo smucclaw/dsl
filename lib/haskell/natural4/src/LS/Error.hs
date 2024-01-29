@@ -51,7 +51,6 @@ import Text.Megaparsec
     sourcePosPretty,
     unPos,
   )
-import Text.Megaparsec.Pos ()
 import Text.Pretty.Simple (pStringNoColor)
 import Text.PrettyPrint.Boxes (hsep, vcat)
 import Text.PrettyPrint.Boxes qualified as Box

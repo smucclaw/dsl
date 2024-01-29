@@ -297,10 +297,10 @@ main = do
 
           -- [TODO] Terrible hack to make it a legal json, to remove the last trailing comma
           removeLastComma :: String -> String
-          removeLastComma unlined =
-            if length lined > 3 -- only if there's a valid json in there
-               then unlines $ take (length lined - 3) lined <> ["}"] <> drop (length lined - 2) lined
-               else unlined
+          removeLastComma unlined
+            | length lined > 3 = -- only if there's a valid json in there
+              unlines $ take (length lined - 3) lined <> ["}"] <> drop (length lined - 2) lined
+            | otherwise = unlined
             where lined = lines unlined
 
       mywritefile2 True tovuejsonFN iso8601 "vuejson"

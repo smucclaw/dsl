@@ -49,7 +49,7 @@ import Effectful.Reader.Static (runReader, local, Reader)
 --     , dispute
 --     , tolerate
 --     )
-import Data.HashSet qualified as HS
+-- import Data.HashSet qualified as HS
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
@@ -385,11 +385,11 @@ isIf hl =
 
 toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
 toIfExp hl hc = do
-  condE <- withinGivenAugmentedEnv $ processHcBody hc.hbBody
-  thenE <- withinGivenAugmentedEnv $ processHchead hc.hbHead
+  condE <- inLightOfGivenVars $ processHcBody hc.hbBody
+  thenE <- inLightOfGivenVars $ processHchead hc.hbHead
   return $ EIfThen condE thenE
   where
-    withinGivenAugmentedEnv = over _ToLC (local setLocalVars)
+    inLightOfGivenVars = over _ToLC (local setLocalVars)
     setLocalVars :: Env -> Env
     setLocalVars = set #localVars hl.shcGiven
 
@@ -415,6 +415,3 @@ processHcBody = undefined
 
 
 ---------------------------------------------------------
-
-isL4BlockOfStatements :: L4.Rule -> Bool
-isL4BlockOfStatements rule = length rule.clauses > 1

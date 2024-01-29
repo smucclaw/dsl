@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 {-| A module for wrapping transpilation errors and STDERR trace mumbling.
 
 This section explains the developer motivation for this library.
@@ -99,9 +101,10 @@ import Control.Monad.RWS
     evalRWS,
     evalRWST,
   )
-import Data.Bifunctor (second)
+import Data.Bifunctor (second, Bifunctor)
 import Data.Either (fromRight)
 import Data.HashMap.Strict as Map (HashMap)
+import Data.String.Interpolate (i)
 import Data.Text.Lazy qualified as TL
 import Flow ((|>))
 import Text.Pretty.Simple (pShowNoColor)
@@ -146,7 +149,8 @@ type XPileLog  = XPileLogT Identity
 type XPileLogR = HashMap String String
 
 -- | mutterings are basically lists of strings. Any structure in here should be up to the conventions of your logging style; in this project we frequently use org-mode conventions living inside these strings.
-type XPileLogW = [XPileLogW'];       type XPileLogW' = String
+type XPileLogW = [XPileLogW']
+type XPileLogW' = String
 type XPileLogS = HashMap String String
 
 -- | XPileLog as a monad transformer, allowing specialization of the base monad to something besides Identity.
@@ -175,8 +179,7 @@ mutters = tell
 mutterd,mutterd1,mutterd2,mutterd3 :: Monad m => Int -> XPileLogW' -> XPileLogT m ()
 mutterd d s = do
   let stars = replicate d '*'
-  mutter (stars ++ " " ++ s)
-  return ()
+  mutter [i|#{stars} #{s}|]
 
 mutterd1 d = mutterd (d+1)
 mutterd2 d = mutterd (d+2)
@@ -199,40 +202,42 @@ mutterdhsf d s f hs = do
   mutter (f hs)
   mutter "#+END_SRC"
 
-
 -- | But if there is a need to throw an unrecoverable error, then
 -- return a Left value, by using `xpError`. And that error will appear
 -- in the actual output file, commented.
 
-xpError, xpLeft :: Monad m => XPileLogW -> XPileLogTE m a
+xpError :: Monad m => XPileLogW -> XPileLogTE m a
 xpError = xpLeft
 
 -- | xpLeft is the underlying mechanism, private to this module, so
 -- can be swapped out if one day we change the underlying.
+xpLeft :: Monad m => XPileLogW -> XPileLogTE m a
 xpLeft  = pure . Left
 
 -- | Normal output then gets returned via `xpReturn`.
-xpReturn, xpRight :: Monad m => a -> XPileLogTE m a
+xpReturn :: Monad m => a -> XPileLogTE m a
 xpReturn = xpRight
 
 -- | xpRight is the underlying mechanism for xpReturn.
+xpRight :: Monad m => a -> XPileLogTE m a
 xpRight = pure . Right
 
 -- | fmap over the right value of an XPileLogE
 fmapE :: (a -> a) -> XPileLogE a -> XPileLogE a
-fmapE f = fmap (second f)
+fmapE = fmapETE
 
 -- | fmap over the right value of an XPileLogTE
 fmapTE :: Monad m => (a -> a) -> XPileLogTE m a -> XPileLogTE m a
-fmapTE f = fmap (second f)
+fmapTE = fmapETE
+
+fmapETE :: (Functor f, Bifunctor p) => (b -> c) -> f (p a b) -> f (p a c)
+fmapETE = fmap . second
 
 -- | Convenience function to silently swallow errors
 -- by turning lefts into mempty.
 fromxpLogE :: Monoid a => XPileLogE a -> a
 fromxpLogE xpLogE = xpLogE |> xpLog |> fst |> fromRight mempty
 
-
 -- | helper function; basically a better show, from the pretty-simple package
-pShowNoColorS :: (Show a) => a -> String
+pShowNoColorS :: Show a => a -> String
 pShowNoColorS = TL.unpack . pShowNoColor
-

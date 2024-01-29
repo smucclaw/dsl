@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: b3bbecd4b8f9c9206583c948501c778eb699d405f97e24623b47edd893f6b5ef
+      sha256: 6ce59b074ae3c7e8804eb17bfe7d98e72f0eec76a3c4a73581447e942b4f7c7a
       size: 12537
-    sha256: 0a57a1870226cd589a29958f91a5f3db1bdead30507afd7583d13963f87ff9ff
-    size: 3188631
-    url: https://github.com/smucclaw/baby-l4/archive/6e31fcc01e6a8e279a627371f762331ee74267c4.tar.gz
+    sha256: bcd5122c335ff6cbba5e3ca08e76db3af682cf9a219121f004a0c6a80be5109b
+    size: 3188642
+    url: https://github.com/smucclaw/baby-l4/archive/8f72fcbd507c9a6da9ee4a9d571c9fa57b97cda3.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/6e31fcc01e6a8e279a627371f762331ee74267c4.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/8f72fcbd507c9a6da9ee4a9d571c9fa57b97cda3.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -64,7 +64,7 @@ packages:
     hackage: simple-smt-0.9.7
 snapshots:
 - completed:
-    sha256: 7b975b104cb3dbf0c297dfd01f936a4d2ee523241dd0b1ae960522b833fe3027
-    size: 714096
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/7.yaml
-  original: lts-22.7
+    sha256: 56ef9e03804cb4827866e762dc9752eeb392adda8f4811690da110dd9a165b9e
+    size: 714105
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/8.yaml
+  original: lts-22.8

@@ -22,7 +22,7 @@ import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Monoid (Endo (Endo))
 import Data.String.Interpolate (i)
@@ -32,6 +32,7 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
+import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
 
@@ -50,9 +51,6 @@ type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
-newtype BoolSR = MkBSR BoolStructR
-  deriving newtype (Eq)
-  deriving stock (Show, Generic)
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
@@ -198,31 +196,54 @@ data HornClause a = HC
 
 type HornClause2 = HornClause BoolStructR
 
------ Slightly better representation for L4 rules --------------------
+----- More ergonomic representation for L4 rules --------------------
 
 -- | Though this is still quite 'syntactic'; would be even better if it were repns for a specific semantics
-data SimplHC a b =
-  MkSimplHC { shcGivens :: a
-            , shcRet :: b
-            , baseHC :: BaseHC
-            -- , srcref :: NOT A MAYBE
-            }
-  deriving stock (Eq, Show)
+data SimpleHlike a b =
+  MkSimpleHL { shcGiven :: a
+             , shcRet :: b
+             , baseHL :: BaseHL
+             , shcSrcRef :: SrcRef
+             -- ^ may want to parametrize this
+             }
+  deriving stock (Eq, Show, Generic)
 
-data BaseHC = HeadOnly HeadOnlyHC
-            | HeadAndBody HnBHC
-            -- | Complex
-  deriving stock (Eq, Show)
+data BaseHL = OneClause AtomicHC | MultiClause MultiClauseHL
+  deriving stock (Eq, Show, Generic)
 
-newtype HeadOnlyHC = MkHeadOnlyHC { hcHead  :: [MTExpr] }
+data HnBodHC = 
+  MkHnBHC { hbHead :: RelationalPredicate
+          , hbBody :: BoolStructR
+          }
+  deriving stock (Eq, Show, Generic)
+
+data AtomicHC = HeadOnly HeadOnlyHC
+              | HeadAndBody HnBodHC
+  deriving stock (Eq, Show, Generic)
+
+newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
   deriving stock (Show)
   deriving newtype (Eq)
 
-data HnBHC = 
-  MkHnBHC { hbHead :: [MTExpr] 
-          , hbBody :: BoolSR
-          }
-  deriving stock (Eq, Show)
+_MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
+_MkMultiClauseHL = coerced
+mkMultiClauseHL :: [AtomicHC] -> MultiClauseHL
+mkMultiClauseHL = view (re _MkMultiClauseHL) . NE.fromList
+getMCHLhcs :: MultiClauseHL -> [AtomicHC]
+getMCHLhcs = NE.toList . view _MkMultiClauseHL
+
+newtype HeadOnlyHC = MkHeadOnlyHC { hcHead  :: RelationalPredicate }
+  deriving stock (Show)
+  deriving newtype (Eq)
+
+_MkHeadOnlyHC :: Iso' HeadOnlyHC RelationalPredicate
+_MkHeadOnlyHC = coerced
+mkHeadOnlyHC :: RelationalPredicate -> HeadOnlyHC
+mkHeadOnlyHC = view (re _MkHeadOnlyHC)
+mkHeadOnlyAtomicHC :: RelationalPredicate -> AtomicHC
+mkHeadOnlyAtomicHC = HeadOnly . mkHeadOnlyHC
+headOnlyHLasMTEs :: HeadOnlyHC -> RelationalPredicate
+headOnlyHLasMTEs = view _MkHeadOnlyHC
 
 ------------------------------------------------------------------
 

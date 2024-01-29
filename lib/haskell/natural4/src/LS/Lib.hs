@@ -329,8 +329,6 @@ instance ParseFields a => ParseRecord (NoLabel a)
 instance ParseFields a => ParseFields (NoLabel a) where
   parseFields msg _ _ def = coerce $ parseFields msg Nothing Nothing def
 
-
-
 getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
@@ -378,14 +376,13 @@ getConfig o = do
 parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
 parseRules o = do
   runConfig <- getConfig o
-  let files = getNoLabel $ file o
+  let files = coerce $ file o
   if null files
   then parseSTDIN runConfig { sourceURL="STDIN" }
   else files
         |> traverse (\file -> parseFile runConfig {sourceURL=Text.pack file} file)
         |$> mconcat
   where
-    getNoLabel (NoLabel x) = x
     getBS "-"   = BS.getContents
     getBS other = BS.readFile other
     parseSTDIN rc = do

@@ -9,6 +9,7 @@ module LS.XPile.CoreL4.LogicProgramSpec (spec) where
 import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Char (isSpace)
+import Data.Coerce (coerce)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as HM
 import Data.HashSet qualified as HS
@@ -22,7 +23,7 @@ import LS.Lib (NoLabel (..), Opts (..))
 import LS.Utils ((|$>))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
-import LS.XPile.Logging (XPileLogE, xpLog, xpReturn, fromxpLogE)
+import LS.XPile.Logging (XPileLogE, fromxpLogE, xpLog, xpReturn)
 import System.FilePath ((</>))
 import System.FilePath.Find
   ( always,
@@ -74,7 +75,7 @@ testcase2spec lpLang LPTestcase {..} =
     rules :: [LS.Rule] <-
       LS.dumpRules
         Opts
-          { file = NoLabel [csvFile],
+          { file = coerce ([csvFile] :: [FilePath]),
             dbug = False,
             dstream = False
           }

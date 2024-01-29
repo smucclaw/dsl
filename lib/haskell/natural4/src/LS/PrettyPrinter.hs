@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 -- the job of this module is to create orphan instances
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
@@ -30,6 +31,7 @@ where
 
 import AnyAll qualified as AA
 import Control.Arrow ((>>>))
+import Data.Coerce (coerce)
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
@@ -40,7 +42,7 @@ import Data.Traversable qualified as DT
 import Debug.Trace (trace)
 import LS.Rule (Interpreted (classtable, scopetable))
 import LS.Types
-  ( ClsTab (CT),
+  ( ClsTab (..),
     MTExpr (..),
     MultiTerm,
     ParamText,
@@ -116,15 +118,17 @@ instance Pretty RelationalPredicate where
 -- or add a string argument to RP1 String RelationalPredicate, so we can say RP1 "corel4" ....
 newtype RP1 = RP1 RelationalPredicate
 instance Pretty RP1 where
-  pretty (RP1   (RPMT     [MTT "OTHERWISE"])     )   = "TRUE # default case"
-  pretty (RP1 o@(RPConstraint  _mt1 RPis  [MTT "No"]))    = hsep $ "not" : (pretty <$> inPredicateForm o)
-  pretty (RP1 o@(RPConstraint  _mt1 RPis  [MTB False]))   = hsep $ "not" : (pretty <$> inPredicateForm o)
-  pretty (RP1 o@(RPConstraint  _mt1 RPis  _mt2))     = hsep $ pretty <$> inPredicateForm o
-  pretty (RP1 o@(RPConstraint  _mt1 RPhas _mt2))     = hsep $ pretty <$> inPredicateForm o
-  pretty (RP1   (RPConstraint   mt1 rprel  mt2))     = [di|#{rprel} #{pred_snake mt1} #{hsep $ pretty . untaint . mtexpr2text <$> mt2}|]
-  pretty (RP1   (RPBoolStructR  mt1 rprel  bsr))     = [di|#{pred_snake mt1} #{rprel} #{AA.haskellStyle (RP1 <$> bsr)}|]
+  pretty (coerce ->   (RPMT     [MTT "OTHERWISE"])     )   = "TRUE # default case"
+  pretty (coerce -> o@(RPConstraint  _mt1 RPis  [MTT "No"]))    = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (coerce -> o@(RPConstraint  _mt1 RPis  [MTB False]))   = hsep $ "not" : (pretty <$> inPredicateForm o)
+  pretty (coerce -> o@(RPConstraint  _mt1 RPis  _mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (coerce -> o@(RPConstraint  _mt1 RPhas _mt2))     = hsep $ pretty <$> inPredicateForm o
+  pretty (coerce ->   (RPConstraint   mt1 rprel  mt2))     = [di|#{rprel} #{pred_snake mt1} #{hsep $ pretty . untaint . mtexpr2text <$> mt2}|]
+  pretty (coerce ->   (RPBoolStructR  mt1 rprel  bsr))     = [di|#{pred_snake mt1} #{rprel} #{AA.haskellStyle $ coerce' bsr}|]
+    where
+      coerce' :: AA.OptionallyLabeledBoolStruct RelationalPredicate -> AA.OptionallyLabeledBoolStruct RP1 = coerce
                                                -- [TODO] confirm RP1 <$> bsr is the right thing to do
-  pretty (RP1 o) = hsep $ pretty <$> inPredicateForm o
+  pretty (coerce -> o) = hsep $ pretty <$> inPredicateForm o
 
 -- | [TODO] this is lossy -- preserve the original cell type information from the underlying multiterm in the relationalpredicate
 inPredicateForm :: RelationalPredicate -> MultiTerm

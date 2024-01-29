@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -64,9 +65,7 @@ data LPTestcase = LPTestcase
     csvFile :: FilePath,
     expectedOutputFiles :: HM.HashMap LPLang FilePath
   }
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable LPTestcase
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)
 
 testcase2spec :: LPLang -> LPTestcase -> Spec
 testcase2spec lpLang LPTestcase {..} =

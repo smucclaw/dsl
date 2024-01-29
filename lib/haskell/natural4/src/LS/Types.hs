@@ -55,9 +55,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
            | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable RPRel
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
@@ -67,9 +65,7 @@ data MTExpr = MTT Text.Text -- ^ Text string
             | MTB Bool      -- ^ Boolean
 --            | MTC Text.Text -- ^ Currency money
 --            | MTD Text.Text -- ^ Date
-            deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable MTExpr
+            deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- | the parser returns a list of MTExpr, to be parsed further at some later point
 type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
@@ -178,9 +174,7 @@ data KW a = KW { dictK :: MyToken
 
 data RegKeywords =
   REvery | RParty | RTokAll
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable RegKeywords
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 class HasToken a where
   tokenOf :: a -> MyToken
@@ -196,9 +190,7 @@ data HornClause a = HC
   { hHead :: RelationalPredicate
   , hBody :: Maybe a
   }
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable a => Hashable (HornClause a)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 type HornClause2 = HornClause BoolStructR
 
@@ -269,12 +261,10 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                         -- [TODO] consider adding a new approach, actually a very old Lispy approach
 
                      --  | RPDefault      in practice we use RPMT ["OTHERWISE"], but if we ever refactor, we would want an RPDefault
-  deriving (Eq, Ord, Show, Generic, ToJSON)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
                  -- RPBoolStructR (["eyes"] RPis (AA.Leaf (RPParamText ("blue" :| [], Nothing))))
                  -- would need to reduce to
                  -- RPConstraint ["eyes"] Rpis ["blue"]
-
-instance Hashable RelationalPredicate
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT (MTT <$> a)
@@ -362,28 +352,25 @@ newtype RelName = RN { getName :: RuleName }
 
 noLabel :: Maybe (Text.Text, Int, Text.Text)
 noLabel   = Nothing
+
 noLSource :: Maybe Text.Text
 noLSource = Nothing
+
 noSrcRef :: Maybe SrcRef
 noSrcRef  = Nothing
+
 noDeem   :: Maybe ParamText
 noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1 | TSet0 | TSet1
-  deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable ParamType
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                 deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable TComparison
+                 deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
-                          deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable a => Hashable (TemporalConstraint a)
+                          deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 type RuleName   = MultiTerm
 type EntityType = Text.Text
@@ -391,9 +378,7 @@ type EntityName = Text.Text
 
 data TypeSig = SimpleType ParamType EntityType
              | InlineEnum ParamType ParamText
-             deriving (Eq, Ord, Show, Generic, ToJSON)
-
-instance Hashable TypeSig
+             deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- for use by the interpreter
 

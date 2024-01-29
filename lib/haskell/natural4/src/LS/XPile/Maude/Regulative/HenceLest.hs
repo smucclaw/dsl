@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -22,9 +23,7 @@ import Prettyprinter.Interpolate (di)
 data HenceLest where
   HENCE :: HenceLest
   LEST :: HenceLest
-  deriving (Eq, Generic, Ord, Read, Show)
-
-instance Hashable HenceLest
+  deriving (Eq, Generic, Hashable, Ord, Read, Show)
 
 -- instance Pretty HenceLest where
 --   pretty = viaShow
@@ -33,9 +32,7 @@ data HenceLestClause = HenceLestClause
   { henceLest :: HenceLest,
     clause :: Maybe Rule
   }
-  deriving (Eq, Generic, Ord, Show)
-
-instance Hashable HenceLestClause
+  deriving (Eq, Generic, Hashable, Ord, Show)
 
 henceLest2doc ::
   HenceLestClause ->

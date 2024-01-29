@@ -492,7 +492,7 @@ ruleQnTrees env alias rule = do
       mutterdhsf 4 "Regulative/qCondTrees" show qCondTrees
       mutterdhsf 4 "Regulative/qUponTrees" show qUponTrees
 
-      return $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+      pure $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
       mutterdhsf 4 "Hornlike/bodyTrees" show bodyTrees
@@ -501,8 +501,8 @@ ruleQnTrees env alias rule = do
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
       mutterdhsf 4 "Constitutive/qCOndTrees" show qCondTrees
-      return $ catMaybes [qCondTrees]
-    DefNameAlias {} -> return []
+      pure $ maybeToList qCondTrees
+    -- DefNameAlias {} -> return []
     _ -> return []
 
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
@@ -883,10 +883,10 @@ getExpandedRuleNames l4i rule = case rule of
     getNamesBSR l4i depth (AA.Leaf rp)  =
       case expandRP l4i (depth + 1) rp of
         RPBoolStructR mt1 RPis _bsr -> [mt1]
-        o                           -> []
+        _                           -> []
     getNamesBSR l4i depth (AA.Not item)   = getNamesBSR l4i (depth + 1) item
     getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
-    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
+    getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i depth $ AA.All lbl xs
 
     getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
     getNamesRP l4i depth (RPConstraint  mt1 RPis mt2) = [mt2]

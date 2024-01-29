@@ -41,13 +41,14 @@ import Control.Monad.Combinators.Expr (makeExprParser)
 import Control.Monad.Writer.Lazy (MonadIO)
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy qualified as BS
+import Data.Coerce (coerce)
 import Data.Csv qualified as Cassava
 import Data.Either (rights)
 import Data.List (transpose)
 import Data.List.NonEmpty qualified as NE
 import Data.List.Split qualified as DLS
 import Data.Maybe (listToMaybe, maybeToList)
-import Data.String.Interpolate (i)
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
@@ -326,7 +327,7 @@ newtype NoLabel a = NoLabel a
 
 instance ParseFields a => ParseRecord (NoLabel a)
 instance ParseFields a => ParseFields (NoLabel a) where
-  parseFields msg _ _ def = NoLabel <$> parseFields msg Nothing Nothing def
+  parseFields msg _ _ def = coerce $ parseFields msg Nothing Nothing def
 
 
 
@@ -396,11 +397,13 @@ parseRules o = do
     parseStream rc filename stream = do
       case runMyParser id rc pToplevel filename stream of
         Left bundle -> do
-          putStrLn [i|* error while parsing #{filename}|]
-          putStrLn $ errorBundlePrettyCustom bundle
-          putStrLn "** stream"
+          putStrLn [__i|
+            * error while parsing #{filename}
+            #{errorBundlePrettyCustom bundle}
+            ** stream
+          |]
           printStream stream
-          return (Left bundle)
+          pure $ Left bundle
         -- Left bundle -> putStr (errorBundlePretty bundle)
         -- Left bundle -> pPrint bundle
         Right (xs, xs') -> do

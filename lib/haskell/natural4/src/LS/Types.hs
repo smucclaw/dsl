@@ -18,6 +18,7 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
+import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
@@ -427,7 +428,8 @@ newtype ClsTab = CT ClassHierarchyMap
   deriving (Show, Ord, Eq, Generic)
 
 unCT :: ClsTab -> ClassHierarchyMap
-unCT (CT x) = x
+unCT = coerce
+{-# INLINABLE unCT #-}
 
 type TypedClass = (Inferrable TypeSig, ClsTab)
 

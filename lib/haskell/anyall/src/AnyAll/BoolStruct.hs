@@ -18,11 +18,12 @@ module AnyAll.BoolStruct
     mkNot,
     nnf,
     siblingfyBoolStruct,
-    simplifyBoolStruct
+    simplifyBoolStruct,
   )
 where
 
 import AnyAll.Types (Label (Pre), Marking (..))
+import Control.Arrow ((>>>))
 import Data.Aeson
   ( FromJSON (parseJSON),
     ToJSON,
@@ -32,9 +33,11 @@ import Data.Aeson
   )
 import Data.Aeson.Types (parseEither)
 import Data.Hashable (Hashable)
-import Data.List (sort)
+import Data.List (sort, unfoldr)
+import Data.Maybe (catMaybes)
 import Data.Text qualified as T
 import Debug.Trace (trace)
+import Flow ((|>))
 import GHC.Generics (Generic)
 import Test.QuickCheck
   ( Arbitrary (arbitrary),
@@ -143,14 +146,46 @@ attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
   | otherwise = Unmerged x y
 attemptMergeHeads  x  y = Unmerged x y
 
+{-
+  mergeMatch yields as output, a trace representing the fixed point iteration of
+  the following small-step operational semantics.
+
+  Configurations C have type [BoolStruct lbl a]
+  Actions A have the type (BoolStruct lbl a)
+
+  Judgment forms:
+    tau transition: C =>(τ) C'
+    visible transition: C =>(A) C'
+
+    attemptMergeHeads bs1 bs2 = Merged m
+  ----------------------------------------
+    bs1:bs2:zs =>(tau) m:zs
+
+    attemptMergeHeads bs1 bs2 = Unmerged x y
+  -------------------------------------------
+    bs1:bs2:zs =>(x) y:zs
+
+  -----------------              -------------------
+    [z] =>(z) []                    [] =>(tau) []
+-}
 mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
-mergeMatch []  = []
-mergeMatch [k] = [k]
-mergeMatch (bs1 : bs2 : zs) = case x of
-  Merged m -> mergeMatch (m:zs)
-  Unmerged x y -> x : mergeMatch (y:zs)
+mergeMatch =
+    unfoldr smallStep -- Iterate small step semantics to fixed point
+      >>> catMaybes   -- Obtain trace of all transition steps
   where
-    x = attemptMergeHeads bs1 bs2
+    smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
+      Merged m -> Just (Nothing, m:zs)
+      Unmerged x y -> Just (Just x, y:zs)
+    smallStep [z] = Just (Just z, [])
+    smallStep _ = Nothing
+
+-- mergeMatch [] = []
+-- mergeMatch [x] = [x]
+-- mergeMatch (bs1 : bs2 : zs) = case x of
+--   Merged m -> mergeMatch (m:zs)
+--   Unmerged x y -> x : mergeMatch (y:zs)
+--   where
+--     x = attemptMergeHeads bs1 bs2
 
 -- | utility for simplifyBoolStruct: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
 -- example:

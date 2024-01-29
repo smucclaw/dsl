@@ -11,7 +11,7 @@ import AnyAll
     BoolStruct (All, Any, Leaf, Not),
     Default (..),
     Label (Pre),
-    Marking (getMarking),
+    Marking (..),
     Scale (Full, Tiny),
     StdinSchema (andOrTree, marking),
     defaultAAVConfig,
@@ -85,7 +85,7 @@ main = do
     putStrLn $ toString $ encodePretty myright
 
   when (only opts == "tree") $
-    ppQTree mytree $ coerce $ getMarking $ marking myright
+    ppQTree mytree $ coerce $ marking myright
 
   when (only opts `elem` words "svg svgtiny") $
     print (makeSvg $

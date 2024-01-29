@@ -78,11 +78,11 @@ dispositive sh marking self =
 
 -- well, it depends on what values the children have. and that depends on whether we're assessing them in soft or hard mode.
 evaluate :: Hashable a => Hardness -> Marking a -> BoolStruct l a -> Maybe Bool
-evaluate Soft (Marking marking) (Leaf x) = case Map.lookup x marking of
+evaluate Soft (coerce -> marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              Just (Default (Left  (Just x))) -> Just x
                                              _                               -> Nothing
-evaluate Hard (Marking marking) (Leaf x) = case Map.lookup x marking of
+evaluate Hard (coerce -> marking) (Leaf x) = case Map.lookup x marking of
                                              Just (Default (Right (Just x))) -> Just x
                                              _                               -> Nothing
 evaluate sh   marking           (Not x)  = not <$> evaluate sh marking x

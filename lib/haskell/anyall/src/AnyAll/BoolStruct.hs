@@ -22,7 +22,7 @@ module AnyAll.BoolStruct
   )
 where
 
-import AnyAll.Types (Label (Pre), Marking (Marking))
+import AnyAll.Types (Label (Pre), Marking (..))
 import Data.Aeson
   ( FromJSON (parseJSON),
     ToJSON,

@@ -20,10 +20,10 @@ import AnyAll.BoolStruct
 import AnyAll.Relevance (relevant)
 import AnyAll.Types
   ( AndOr (And, Neg, Or, Simply),
-    Default (Default),
+    Default (..),
     Hardness (Hard, Soft),
     Label (..),
-    Marking (Marking),
+    Marking (..),
     Q (Q, mark),
     QTree,
     ShouldView (Ask, Hide, View),
@@ -112,9 +112,8 @@ docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> p
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
 
 ppQTree :: OptionallyLabeledBoolStruct T.Text -> Map.HashMap T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
-ppQTree i mm = do
-  let m = Marking $ coerce mm
-      hardresult = hardnormal m i
+ppQTree i (coerce -> m) = do
+  let hardresult = hardnormal m i
       softresult = softnormal m i
   print [__di|
     * Marking: #{drop 9 $ show m}

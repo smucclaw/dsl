@@ -20,13 +20,14 @@ import AnyAll.Types
     asJSON,
     asJSONDefault,
     fromJSON,
-    mkDefault
+    mkDefault,
   )
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (fromJust)
 import Data.Text as T (Text)
 import Data.Tree (Tree (Node))
 import Test.Hspec (Spec, describe, it, shouldBe)
+import Data.Coerce (coerce)
 
 ln, lt, lf, rt, rf, rn :: Default Bool
 ln = mkDefault $ Left Nothing
@@ -38,7 +39,7 @@ rn = mkDefault $ Right Nothing
 
 spec :: Spec
 spec = do
-  let markup m = Marking (Default <$> m)
+  let markup = coerce
       rlv item marking = relevant Hard (markup marking) Nothing item
   describe "with mustSing," do
     it "should ask for confirmation of assumptions, even if true" do

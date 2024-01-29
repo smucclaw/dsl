@@ -146,39 +146,46 @@ attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
 attemptMergeHeads  x  y = Unmerged x y
 
 {-
-  mergeMatch yields as output, a trace representing the fixed point iteration of
-  the following small-step operational semantics.
+  mergeMatch yields as output, a trace of the (deterministic) fixed point
+  iteration of the following small-step operational semantics.
+  This fixed point iteration strongly normalises a configuration to the (unique)
+  normal form (which is the empty list).
 
-  Configurations C have type [BoolStruct lbl a]
-  Actions A have the type (BoolStruct lbl a)
+  Configurations C are lists of bool structs, ie the type [BoolStruct lbl a]
+  Actions A are bool structs, ie the type (BoolStruct lbl a)
 
   Judgment forms:
-    tau transition: C =>(τ) C'
-    visible transition: C =>(A) C'
+    tau transition: C =τ=> C'
+    visible transition: C =A=> C'
+
+  Transition rules:
+
+  ----------------- [smallStep-empty-terminal]
+    [] =τ=> []
+
+  ----------------- [smallStep-singleton]
+    [z] =z=> []
 
     attemptMergeHeads bs1 bs2 = Merged m
-  ----------------------------------------
-    bs1:bs2:zs =>(tau) m:zs
+  ---------------------------------------- [smallStep-merged]
+    bs1:bs2:zs =τ=> m:zs
 
     attemptMergeHeads bs1 bs2 = Unmerged x y
-  -------------------------------------------
-    bs1:bs2:zs =>(x) y:zs
-
-  -----------------              -------------------
-    [z] =>(z) []                    [] =>(tau) []
+  ------------------------------------------- [smallStep-unmerged]
+    bs1:bs2:zs =x=> y:zs
 -}
 mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
 mergeMatch =
   unfoldr smallStep -- Iterate small step semantics to fixed point
     >>> catMaybes   -- Obtain trace of all transition steps
   where
-    smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
-      Merged m -> Just (Nothing, m:zs)
-      Unmerged x y -> Just (Just x, y:zs)
-
+    smallStep [] = Nothing
     smallStep [z] = Just (Just z, [])
-
-    smallStep _ = Nothing
+    smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
+      -- Nothing is used to encode tau transitions.
+      Merged m -> Just (Nothing, m : zs)
+      -- (Just x) encodes the action of the transition.
+      Unmerged x y -> Just (Just x, y : zs)
 
 -- mergeMatch [] = []
 -- mergeMatch [x] = [x]

@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-|
@@ -243,6 +244,7 @@ import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe, maybeToList)
 import Data.Semigroup (sconcat)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS.Parser (prePostParse)
 import LS.Rule
@@ -477,8 +479,8 @@ rpHornlikeAsElement =  multiterm2bsr
 rpLeafVal :: Parser BoolStructR
 rpLeafVal = debugName "rpLeafVal" do
   leafVal <- pRelationalPredicate
-  myTraceM $ "rpLeafVal returning " ++ show leafVal
-  return $ AA.mkLeaf leafVal
+  myTraceM [i|rpLeafVal returning #{leafVal}|]
+  pure $ AA.mkLeaf leafVal
 
 -- | in the body of a HornClause, any elements which are defined with a type signature are considered local/private existential variables internal to the body.
 -- we partition the body of the Horn Clause into such existential variables, vs the rest of the logic.
@@ -490,7 +492,9 @@ partitionExistentials c = -- [TODO] can we restructure this to use the actual `p
       aaFilter :: (AA.BoolStruct lbl a -> Bool) -> AA.BoolStruct lbl a -> AA.BoolStruct lbl a
       aaFilter f (AA.Any lbl xs) = AA.mkAny lbl (filter f (aaFilter f <$> xs))
       aaFilter f (AA.All lbl xs) = AA.mkAll lbl (filter f (aaFilter f <$> xs))
-      aaFilter f x = if f x then x else x -- not super great, should really replace the else with True or False or something?
+      aaFilter f x
+        | f x = x
+        | otherwise = x -- not super great, should really replace the else with True or False or something?
 
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> Maybe ParamText
@@ -507,13 +511,15 @@ hc2preds (HC _headRP Nothing) = mkLeaf (RPMT [MTT "TRUE"]) -- [TODO] turn this i
 hc2preds (HC _headRP (Just bsr)) = bsr
 
 aaLeaves :: BoolStructR -> [MultiTerm]
-aaLeaves = aaLeavesFilter (const True)
+aaLeaves = aaLeavesFilter $ const True
 
 aaLeavesFilter :: (RelationalPredicate -> Bool) -> BoolStructR -> [MultiTerm]
-aaLeavesFilter f (AA.All _ xs) = foldMap (aaLeavesFilter f) xs
-aaLeavesFilter f (AA.Any _ xs) = foldMap (aaLeavesFilter f) xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
+aaLeavesFilter f (AA.All _ xs) = aaLeavesFilter f `foldMap` xs
+aaLeavesFilter f (AA.Any _ xs) = aaLeavesFilter f `foldMap` xs -- these actually need to be treated differently -- i think the Any needs a join transition in the Petri net? revisit this when more awake and thinking more clearly.
 aaLeavesFilter f (AA.Not x) = aaLeavesFilter f x
-aaLeavesFilter f (AA.Leaf rp) = if f rp then rp2mts rp else []
+aaLeavesFilter f (AA.Leaf rp)
+  | f rp = rp2mts rp
+  | otherwise = []
   where
     rp2mts :: RelationalPredicate -> [MultiTerm]
     rp2mts (RPMT mt)                     = [mt]
@@ -568,7 +574,7 @@ pConstitutiveRule = debugName "pConstitutiveRule" do
     , cond = addneg
              (snd <$> mergePBRS whenifs)
              (snd <$> mergePBRS unlesses)
-    , given = nonEmpty $ foldMap toList (snd <$> givens)
+    , given = nonEmpty $ foldMap (toList . snd) givens
     , rlabel = maybeLabel
     , lsource = noLSource
     , srcref = Just srcref'
@@ -618,27 +624,20 @@ pNameParens = pMultiTermAka
 pPTParens :: Parser ParamText
 pPTParens = debugName "pPTParens" $ pAKA slParamText pt2multiterm
 
-
 preambleBoolStructR :: [MyToken] -> Parser (Preamble, BoolStructR)
-preambleBoolStructR wanted = debugName ("preambleBoolStructR " <> show wanted)  do
+preambleBoolStructR wanted = debugName [i|preambleBoolStructR #{wanted}|]  do
   -- leftX     <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   condWord <- choice (pToken <$> wanted)
   -- myTraceM ("preambleBoolStructR: found: " ++ show condWord ++ " at depth " ++ show leftX)
   ands <- pBSR -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
-  return (condWord, ands)
-
-
-
-
-
+  pure (condWord, ands)
 
 preambleParamText :: [MyToken] -> Parser (Preamble, ParamText)
-preambleParamText preambles = debugName ("preambleParamText:" ++ show preambles) do
-  (,)
-    $>| choice (try . pToken <$> preambles)
-    |>< pParamText
-
-
+preambleParamText preambles =
+  debugName [i|preambleParamText:#{preambles}|] do
+    (,)
+      $>| choice (try . pToken <$> preambles)
+      |>< pParamText
 
 -- | a Hornlike rule does double duty, due to the underlying logical/functional/object paradigms.
 -- on the logical side of things,            it has to handle a DECIDE xx MEANS yy WHEN zz.
@@ -649,7 +648,7 @@ pHornlike = pHornlike' True
 -- and sometimes, when pHornlike is being used to parse the WHERE limb of a regulative rule, we say we don't need the DEFINE/DECIDE keyword;
 -- this tries to give the behaviour of the ambitious parser but in a someStructure parser.
 pHornlike' :: Bool -> Parser Rule
-pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyword <> ")") do
+pHornlike' needDkeyword = debugName [i|pHornlike(needDkeyword=#{needDkeyword})|] do
   rlabel <- optional pRuleLabel
   let dKeyword = if needDkeyword
                  then Just <$> choice [ pToken Decide ]
@@ -667,19 +666,22 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
   ( (keyword, name, clauses)
     , given, giveth, upon, topwhen
     , wwhere ) <- permutepart
-  return $ defaultHorn { name = name
-                       , super = Nothing -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
-                       , keyword = fromMaybe Means keyword
-                       , given = given
-                       , giveth
-                       , clauses = addWhen topwhen clauses
-                       , upon = upon, rlabel = rlabel
-                       , wwhere = wwhere
-                       -- [TODO] attach srcrefs to the inner WHERE bindings; test for allowing multiple WHERE statements
-                       }
+  pure $
+    defaultHorn
+      { name = name,
+        super = Nothing, -- [TODO] need to extract this from the DECIDE line -- can we involve a 'slAka' somewhere downstream?
+        keyword = fromMaybe Means keyword,
+        given = given,
+        giveth,
+        clauses = addWhen topwhen clauses,
+        upon = upon,
+        rlabel = rlabel,
+        wwhere = wwhere
+        -- [TODO] attach srcrefs to the inner WHERE bindings; test for allowing multiple WHERE statements
+      }
   where
     wKeyword = Where
-    mkWhere (whereKeyword, whereName, whereClauses) = 
+    mkWhere (whereKeyword, whereName, whereClauses) =
       [ defaultHorn { name    = whereName
                     , keyword = fromMaybe wKeyword whereKeyword
                     , clauses = whereClauses } ]
@@ -721,12 +723,15 @@ pHornlike' needDkeyword = debugName ("pHornlike(needDkeyword=" <> show needDkeyw
     someStructure :: Parser (Maybe MyToken) -> Parser (Maybe MyToken, RuleName, [HornClause BoolStructR])
     someStructure dKeyword = do
       keyword  <- dKeyword -- usually testing for pToken Define or Decide or some such, but sometimes it's not needed, so dKeyword is a Nothing parser
-      debugName ("pHornlike/someStructure(" ++ show keyword ++ ")" ) do
+      debugName [i|pHornlike/someStructure(#{keyword})|] do
         relwhens <- (if isNothing keyword then manyIndentation else someIndentation) $ sameDepth rpSameNextLineWhen
-        return (keyword
-               , inferRuleName (fst . head $ relwhens)
-               , [HC relPred whenpart
-                 | (relPred, whenpart) <- relwhens ])
+        pure
+          ( keyword,
+            inferRuleName (fst . head $ relwhens),
+            [ HC relPred whenpart
+              | (relPred, whenpart) <- relwhens
+            ]
+          )
 
     givenLimb  = debugName "pHornlike/givenLimb"  $ preambleParamText [Given]
     givethLimb = debugName "pHornlike/givethLimb" $ preambleParamText [Giveth]
@@ -746,7 +751,6 @@ rpSameNextLineWhen = slRelPred |&| (fmap join <$> liftSL $ optional whenCase)
 pRelPred :: Parser RelationalPredicate
 pRelPred = debugName "pRelPred" do
   slRelPred |<$ undeepers
-
 
 -- foo IS bar                   Nothing                                becomes a fact
 -- foo IS bar WHEN baz          Just Leaf baz                          becomes a body to the horn clause
@@ -804,16 +808,15 @@ rpParamTextWithTypesig :: SLParser RelationalPredicate
 rpParamTextWithTypesig = do
   pt <- slParamText
   if hasTypeSig pt
-    then return $ RPParamText pt
+    then pure $ RPParamText pt
     else empty
 
 -- | this variant allows paramtexts over multiple lines, but without type signatures or TYPICALLY (i think)
 rpMultiParamText :: SLParser RelationalPredicate
 rpMultiParamText = do
   pt@(tm :| tms) <- liftSL pParamText
-  guard (not $ null tms)
-  return (RPParamText pt)
-
+  guard $ not $ null tms
+  pure $ RPParamText pt
 
 rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
@@ -823,7 +826,6 @@ rpMT          = RPMT          $*| slAKA slMultiTerm id
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = nestedHorn rpHead id meansIs pBSR
                 (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
-                
 
 -- | parse a RelationalPredicate BoolStructR
 rpBoolStructR :: SLParser RelationalPredicate
@@ -848,8 +850,7 @@ rpISnary = debugName "rpISnary" do
     $*| debugName "rpISnary/slMultiTerm" slMultiTerm
     |>| parseIS
     |*| debugName "rpISnary/rpnary" rpNary
-  return $ RPnary RPis [RPMT lhs, rhs]
-  
+  pure $ RPnary RPis [RPMT lhs, rhs]
 
 -- | parse a RelationalPredicate RPnary.
 -- Note that once we are in the RPnary universe the subexpressions have to be rpNary or rpMT. No more boolstruct.
@@ -937,12 +938,12 @@ pTreeSomeWords = debugName "pTreeSomeWords" do
                               -- it should be possible to merge the pTree*Words functions into a single function that just matches   pMultiTermAka <|> dnl
                               <*> debugName "pTreeSomeWords: subsequent lines at the same indented level, recursing"
                                (sameDepth pPTree)
-    return (firstLine, nextLines)
-  return $ mkPTree firstLine inners
+    pure (firstLine, nextLines)
+  pure $ mkPTree firstLine inners
 
 -- | extract one or more type signatures from a paramtext, which, as you recall, could have multiple lines, each of which has their own typesig.
 pt2typesigs :: ParamText -> [TypeSig]
-pt2typesigs pt = mapMaybe snd (toList pt)
+pt2typesigs pt = mapMaybe snd $ toList pt
 
 hasTypeSig :: ParamText -> Bool
 hasTypeSig ((_,Nothing) :| _) = False
@@ -1037,7 +1038,7 @@ slTypeSig = debugNameSL "slTypeSig" do
 
 slOneOf :: SLParser ParamText
 slOneOf = do
-  (flip const)
+  (\ _ x -> x)
     $>| pToken OneOf
     |>| pParamText
 
@@ -1066,21 +1067,19 @@ slKeyValues = debugNameSL "slKeyValues" do
     ((\l rt -> (l,([],rt)))
      $>| pMTExpr
      |*| (|?|) slTypeSig)
-  return (fromList (lhs : rhs), typesig)
-
+  pure (fromList (lhs : rhs), typesig)
 
 getSrcRef :: Parser SrcRef
 getSrcRef = do
   leftY  <- lookAhead pYLocation
   leftX  <- lookAhead pXLocation
   srcurl <- asks sourceURL
-  return $ SrcRef srcurl srcurl leftX leftY Nothing
-
+  pure $ SrcRef srcurl srcurl leftX leftY Nothing
 
 -- utility function for the above
 pAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> Parser a
 pAKA baseParser toMultiTerm = debugName "pAKA" do
-  manyIndentation (slAKA baseParser toMultiTerm |<$ undeepers)
+  manyIndentation $ slAKA baseParser toMultiTerm |<$ undeepers
 
 slAKA :: (Show a) => SLParser a -> (a -> MultiTerm) -> SLParser a
 slAKA baseParser toMultiTerm = debugNameSL "slAKA" do
@@ -1089,18 +1088,17 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" do
     debugNameSL "slAKA base (multiterm,aka,typically)" $
     (,,)
       $*| debugName "slAKA base" baseParser
-      |*| debugName "slAKA optional akapart"   ((|?|) akapart)
-      |*| debugName "slAKA optional typically" ((|?|) typically)
+      |*| debugName "slAKA optional akapart"   (akapart |?|)
+      |*| debugName "slAKA optional typically" (typically |?|)
 
   debugPrint "slAKA: proceeding after base and entityalias are retrieved ..."
   let detail' = toMultiTerm base
 
-  debugPrint $ "pAKA: entityalias = " ++ show entityalias
+  debugPrint [i|pAKA: entityalias = #{entityalias}|]
   srcref' <- liftSL getSrcRef
   let defalias = maybe mempty (\t -> singeltonDL (DefNameAlias t detail' Nothing (Just srcref'))) entityalias
-  liftSL $ tell defalias
-  liftSL $ writeTypically detail' typicalval
-  return base
+  DF.traverse_ liftSL [tell defalias, writeTypically detail' typicalval]
+  pure base
 -- a BoolStructR is the new ombibus type for the WHO and COND keywords,
 -- being an AnyAll tree of RelationalPredicates.
 
@@ -1111,7 +1109,7 @@ slAKA baseParser toMultiTerm = debugNameSL "slAKA" do
       (_akatoken, akaval) <- (,)
                                 $>| debugName "Aka Token" (pToken Aka)
                                 |*| someLiftSL pOtherVal
-      return (MTT <$> akaval)
+      pure (MTT <$> akaval)
 
 -- | parse a TYPICALLY annotation and return its value.
 --
@@ -1123,7 +1121,7 @@ typically = debugName "typically" do
   (_typically, someterm) <- (,)
                                 $>| pToken Typically
                                 |*| slMultiTerm
-  return someterm
+  pure someterm
 
 
 -- | we'll return an RPMT as requested, but if there's a MEANS immediately below,
@@ -1146,35 +1144,35 @@ nestedHorn toMT toRN connector pbsr basesl =
 mustNestHorn toMT toRN connector pbsr basesl =
   debugNameSL "trying hasNested to match an inline MEANS" do
   srcref   <- liftSL getSrcRef
-              |-- (\n -> debugPrint $ "mustNestHorn before basesl: " ++ show n ++ " UnDeepers")
+              |-- \n -> debugPrint [i|mustNestHorn before basesl: #{n} UnDeepers|]
   (subj, meansTok, bsr) <- (,,)
                            $*| basesl
-                           |-- (\n -> debugPrint $ "mustNestHorn after basesl: " ++ show n ++ " UnDeepers")
+                           |-- (\n -> debugPrint [i|mustNestHorn after basesl: #{n} UnDeepers|])
                            |<<| ()
-                           |-- (\n -> debugPrint $ "mustNestHorn after undeepering: " ++ show n ++ " UnDeepers")
+                           |-- (\n -> debugPrint [i|mustNestHorn after undeepering: #{n} UnDeepers|])
                            |-| connector
                            |-| pbsr
 
   -- the conceptual positioning of the cursor above is critical
 
-  let simpleHorn = defaultHorn { name = toRN (toMT subj)
+  let simpleHorn = defaultHorn { name = toRN $ toMT subj
                                , keyword = meansTok
-                               , clauses = [ HC (RPBoolStructR (toMT subj) RPis bsr) Nothing ]
+                               , clauses = [HC (RPBoolStructR (toMT subj) RPis bsr) Nothing]
                                , srcref = Just srcref
                                }
   debugPrint "constructed simpleHorn; running tellIdFirst"
-  _ <- liftSL $ tellIdFirst (return simpleHorn)
+  liftSL $ tellIdFirst $ pure simpleHorn
   return subj
 
 
 meansIs,meansIsWhose :: Parser MyToken
-meansIs = debugName "meansIs" $ choice [ pToken Means, pToken Is ]
-meansIsWhose = choice $ pToken <$> [ Means, Is, Who, Whose ]
+meansIs = debugName "meansIs" $ choice $ pToken <$> [Means, Is]
+meansIsWhose = choice $ pToken <$> [Means, Is, Who, Whose]
 
 -- | the main parser for a BoolStruct of RelationalPredicates.
 pBSR :: Parser BoolStructR
 pBSR = debugName "pBSR" $
-  try (debugName "pBSR/prePostParse" (prePostParse pRelPred))
+  try $ debugName "pBSR/prePostParse" $ prePostParse pRelPred
 
 -- | convert all decision logic in a rule to BoolStructR format.
 --   the `who` of a regulative rule gets shoehorned into the head of a BoolStructR.
@@ -1201,27 +1199,28 @@ pBSR = debugName "pBSR" $
 getBSR :: Rule -> Maybe BoolStructR
 getBSR Hornlike{..}   = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
                         catMaybes [ hbody | HC _hhead hbody <- clauses ] <//>
-                        concat [ go headRP
-                               | HC headRP _body <- clauses ]
-                           
+                        mconcat [ go headRP
+                                | HC headRP _body <- clauses ]
+
   where
     go :: RelationalPredicate -> [BoolStructR]
-    go c = case c of
-             RPBoolStructR _rp1 _rprel bsr -> [bsr]
-             RPnary        RPis (r:rps)    -> foldMap go rps -- we assume r is the subject of the rule and doesn't bear further scrutiny
-             RPnary        rprel rps       -> foldMap go rps
-             RPMT          mt              -> pure $ AA.mkLeaf (RPMT mt)
-             _                             -> []
+    go = \case
+      RPBoolStructR _rp1 _rprel bsr -> [bsr]
+      RPnary RPis (r : rps) -> foldMap go rps -- we assume r is the subject of the rule and doesn't bear further scrutiny
+      RPnary rprel rps -> foldMap go rps
+      RPMT mt -> pure $ AA.mkLeaf $ RPMT mt
+      _ -> []
 
     -- | monochrom on IRC commented that I'm basically doing Prolog's `cut`, here.
     -- I would have used (<||>) but that's already in use by the permutation parser
     (<//>) :: Foldable t => t a -> t a -> t a
-    x <//> y = if not (null x) then x else y
+    x <//> y
+      | not $ null x = x
+      | otherwise = y
     infix 1 <//>
 
-
 getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
-                        maybeToList (prependSubject who) ++
+                        maybeToList (prependSubject who) <>
                         maybeToList cond
   where
     prependSubject :: Maybe BoolStructR -> Maybe BoolStructR
@@ -1230,15 +1229,11 @@ getBSR Regulative{..} = Just $ AA.simplifyBoolStruct $ AA.mkAll Nothing $
       return $ prependToRP [bsp2text subj] <$> whobsr
       where
         prependToRP :: [T.Text] -> RelationalPredicate -> RelationalPredicate
-        prependToRP ts (RPMT        mt) = RPMT $ (MTT <$> ts) ++ mt
-        prependToRP ts (RPParamText pt) = RPParamText (NE.fromList [ (myPrependList (MTT <$> ts) netext, mtypesig)
+        prependToRP ts (RPMT        mt) = RPMT $ (MTT <$> ts) <> mt
+        prependToRP ts (RPParamText pt) = RPParamText (NE.fromList [ (NE.prependList (MTT <$> ts) netext, mtypesig)
                                                                    | (netext, mtypesig) <- NE.toList pt ])
-          where
-            -- when we upgrade to base 4.17 we can use the real NE.prependList
-            myPrependList pfix nelist = NE.fromList (pfix ++ NE.toList nelist)
         prependToRP ts (RPConstraint  mt1 rpr mt2) = RPConstraint  mt1 rpr ((MTT <$> ts) ++ mt2)
         prependToRP ts (RPBoolStructR mt1 rpr bsr) = RPBoolStructR mt1 rpr (prependToRP ts <$> bsr)
         prependToRP ts (RPnary        rprel rps)   = RPnary        rprel   (prependToRP ts <$> rps)
 
 getBSR _              = Nothing
-

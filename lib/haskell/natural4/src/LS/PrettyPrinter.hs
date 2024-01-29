@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-} -- the job of this module is to create orphan instances
+-- the job of this module is to create orphan instances
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-{-|
-This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
-This is similar to instantiating into Show, but it all happens within Prettyprinter's "Doc ann" rather than String.
-The pretty-printing then gets used by the transpilers.
--}
-
+-- |
+-- This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
+-- This is similar to instantiating into Show, but it all happens within Prettyprinter's "Doc ann" rather than String.
+-- The pretty-printing then gets used by the transpilers.
 module LS.PrettyPrinter
   ( ParamText3 (..),
     ParamText4 (..),
@@ -30,6 +29,7 @@ module LS.PrettyPrinter
 where
 
 import AnyAll qualified as AA
+import Control.Arrow ((>>>))
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
@@ -78,6 +78,7 @@ import Prettyprinter.Interpolate (di, __di)
 import Prettyprinter.Render.Text (renderStrict)
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Pretty.Simple qualified as TPS
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 -- | Pretty MTExpr
 instance Pretty MTExpr where
@@ -231,14 +232,9 @@ snake_inner :: MTExpr -> Doc ann
 snake_inner = pretty . untaint . mtexpr2text
 
 untaint :: T.Text -> T.Text
-untaint = T.replace " " "_" .
-          T.replace "," "_" .
-          T.replace "'" "_" .
-          T.replace "%" "pct" .
-          T.replace "(" "_" .
-          T.replace ")" "_" .
-          T.replace "-" "_" .
-          T.replace "–" "_"
+untaint =
+  PCRE.gsub [PCRE.re| |,|'|\(|\)|-|–|] ("_" :: T.Text)
+    >>> PCRE.gsub [PCRE.re|%|] ("pct" :: T.Text)
 --          T.replace "\’" "_" -- [TODO] we need to replace all non-low-unicode characters with underscores.
 
 

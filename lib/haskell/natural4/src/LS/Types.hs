@@ -207,12 +207,12 @@ class PrependHead a where
 
 instance PrependHead MTExpr where
   prependHead t (MTT mtt) = MTT (prependHead t mtt)
-  prependHead t (MTI mti) = MTT (prependHead t (Text.pack . show $ mti))
-  prependHead t (MTF mtn) = MTT (prependHead t (Text.pack . show $ mtn))
-  prependHead t (MTB mtb) = MTT (prependHead t (Text.pack . show $ mtb))
+  prependHead t (MTI mti) = MTT (prependHead t [i|#{mti}|])
+  prependHead t (MTF mtn) = MTT (prependHead t [i|#{mtn}|])
+  prependHead t (MTB mtb) = MTT (prependHead t [i|#{mtb}|])
 
 instance PrependHead Text.Text where
-  prependHead s = ((s <> " ") <>)
+  prependHead s t = [i|#{s} #{t}|]
 instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
@@ -458,6 +458,7 @@ type SymTab = Map.HashMap MultiTerm (Inferrable TypeSig, [HornClause2])
 --   If type checking / inference have not been implemented the snd will be empty.
 type Inferrable ts = (Maybe ts, [ts])
 
+defaultInferrableTypeSig :: (Maybe a1, [a2])
 defaultInferrableTypeSig = (Nothing, [])
 
 thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
@@ -651,6 +652,7 @@ magicKeywords = Set.fromList
 
 -- | we actually want @[Text]@ here not just `MultiTerm`
 enumLabels, enumLabels_ :: ParamText -> [Text.Text]
-enumLabels nelist = fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
+enumLabels nelist =
+  fmap mtexpr2text $ mconcat $ NE.toList $ NE.toList . fst <$> nelist
 
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels

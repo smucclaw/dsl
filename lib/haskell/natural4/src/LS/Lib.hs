@@ -765,7 +765,7 @@ pVarDefn = debugName "pVarDefn" do
       myTraceM $ "got mytype = " <> show mytype
       hases   <- mconcat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
-      return $ defaultHorn
+      pure defaultHorn
         { name = NE.toList name
         , keyword = Define
         , super = mytype
@@ -813,7 +813,7 @@ pExpect = debugName "pExpect" do
                      return tmp
                  )
              <|> RPBoolStructR [] RPis <$> pBSR
-  return $ ExpRP relPred
+  pure $ ExpRP relPred
 
 -- | we want to parse two syntaxes:
 -- @

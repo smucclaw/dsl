@@ -1,25 +1,69 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
 
 module Parsing.MegaparsingSpec (spec) where
 
-import Text.Megaparsec
-import LS.Lib
-import AnyAll hiding (asJSON)
-import LS.BasicTypes
-import LS.Types
-import LS.Rule
-import Test.Hspec
+import AnyAll (BoolStruct (All, Any, Leaf), mkLeaf)
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import LS.BasicTypes (MyStream, MyToken (Means))
+import LS.Lib (exampleStream, exampleStreams, pRules)
+import LS.Rule
+  ( Rule
+      ( DefNameAlias,
+        RuleGroup,
+        action,
+        clauses,
+        cond,
+        deontic,
+        given,
+        hence,
+        keyword,
+        lest,
+        name,
+        rkeyword,
+        rlabel,
+        srcref,
+        subj,
+        temporal,
+        upon,
+        who
+      ),
+    defaultHorn,
+    defaultReg,
+    mkTestSrcRef,
+    runMyParser,
+    srccol1,
+    srcrow2,
+    srctest,
+  )
+import LS.Types
+  ( Deontic (DMay, DMust),
+    HornClause (HC, hBody, hHead),
+    MTExpr (MTT),
+    RPRel (RPis),
+    RegKeywords (REvery, RParty),
+    RelationalPredicate (RPBoolStructR),
+    RunConfig (debug, sourceURL),
+    TComparison (TAfter, TBefore),
+    TemporalConstraint (TemporalConstraint),
+    defaultRC,
+    mkLeafPT,
+    mkLeafR,
+    mkRpmt,
+  )
+import System.FilePath ((-<.>), (</>))
+import Test.Hspec (HasCallStack, Spec, SpecWith, describe, it)
 import Test.Hspec.Megaparsec (shouldParse)
-import System.FilePath ((</>), (-<.>))
+import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent)
 
 filetest :: (HasCallStack, ShowErrorComponent e, Show b, Eq b) => String -> String -> (String -> MyStream -> Either (ParseErrorBundle MyStream e) b) -> b -> SpecWith ()
 filetest testfile desc parseFunc expected =
-  it (testfile <> ": " <> desc ) do
+  it [i|#{testfile}: #{desc}|] do
   testcsv <- BS.readFile $ "test" </> "Parsing" </> "megaparsing" </> testfile -<.> "csv"
   parseFunc testfile `traverse` exampleStreams testcsv
     `shouldParse` [ expected ]
@@ -28,7 +72,7 @@ spec :: Spec
 spec = do
     let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
-    let  combine (a,b) = a ++ b
+    let  combine = uncurry (<>)
     let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
     let  parseR       x y s = runMyParser combine runConfig x y s
     let _parseR1      x y s = runMyParser combine runConfigDebug x y s

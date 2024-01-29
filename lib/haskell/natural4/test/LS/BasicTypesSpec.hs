@@ -3,14 +3,41 @@
 
 module LS.BasicTypesSpec (spec) where
 
-import AnyAll
-import Data.List.NonEmpty
 import Data.Text qualified as T
-import Data.Text.Arbitrary
+import Data.Text.Arbitrary ()
 import LS.Types
-import Test.Hspec
+  ( MyToken
+      ( As,
+        Distinct,
+        EOF,
+        EOL,
+        Empty,
+        GoDeeper,
+        Other,
+        RuleMarker,
+        SOF,
+        TokFalse,
+        TokTrue,
+        TypeSeparator,
+        UnDeeper
+      ),
+    renderToken,
+    toToken,
+  )
+import Test.Hspec (Spec, describe, it)
 import Test.QuickCheck
+  ( Arbitrary (..),
+    Property,
+    Testable (property),
+    genericShrink,
+    (===),
+    (==>),
+  )
 import Test.QuickCheck.Arbitrary.Generic
+  ( Arbitrary (..),
+    genericArbitrary,
+    genericShrink,
+  )
 
 instance Arbitrary MyToken where
   arbitrary = genericArbitrary

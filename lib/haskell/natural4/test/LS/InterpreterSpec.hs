@@ -3,12 +3,20 @@
 
 module LS.InterpreterSpec (spec) where
 
-import AnyAll
+import AnyAll (mkAll, mkAny, mkLeaf, mkNot)
 import Data.HashMap.Strict qualified as Map
-import LS.Interpreter
+import LS.Interpreter (expandBSR')
 import LS.Rule
+  ( Interpreted (L4I, classtable, origrules, scopetable),
+  )
 import LS.Types
-import Test.Hspec
+  ( ClsTab (CT),
+    MTExpr (MTT),
+    RPRel (RPhas, RPis),
+    RelationalPredicate (RPBoolStructR),
+    mkRpmtLeaf,
+  )
+import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec = do

@@ -225,7 +225,7 @@ type RetVarInfo = [(Var, Maybe L4EntType)]
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
         -- ^ would *not* include 'global' GIVEN-declared vars --- just the local ones 
-        -- , retVarInfo :: Maybe RetVarInfo
+        -- , retVarInfo :: RetVarInfo
           -- ^ not sure we need retVarInfo
         , logConfig :: LogConfig }
   deriving stock (Show, Generic)
@@ -348,10 +348,10 @@ mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
 mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList
 
 {-================================================================================
-  2. SimpleHL to Exp
+  2. SimpleHL to LC Exp
 =================================================================================-}
 
--- | For when there's no (additional) metadata to add to base exp
+-- | Convenience fn: For when there's no (additional) metadata to add to base exp
 noExtraMdata :: BaseExp -> Exp
 noExtraMdata baseexp = MkExp baseexp []
 
@@ -378,11 +378,17 @@ expifyHL hl = addMdataFromSimpleHL hl (baseExpify hl)
     addMdataFromSimpleHL :: SimpleHL -> ToLC BaseExp -> ToLC Exp
     addMdataFromSimpleHL = undefined --TODO
 
+{- | My current understanding is that the LC Exps that a SimpleHL can be are:
+1. If Then (maybe also If Then Else; not sure offhand)
+2. Lam Def
+3. Block of statements / expressions
+-}
 baseExpify :: SimpleHL -> ToLC BaseExp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
 baseExpify hornlike = throwNotYetImplError hornlike
--- for the future, stuff like
--- baseExpify (isLamDef -> ...) = toLamDef ...
+-- for the future, remove the catch all `baseExpify hornlike` and add stuff like
+-- baseExpify (isLamDef -> ...) = ...
+-- baseExpify (isBlockOfExps -> ...)) = ...
 
 isIf :: SimpleHL -> Maybe (SimpleHL, HnBodHC)
 isIf hl =
@@ -407,6 +413,7 @@ toIfExp hl hc = do
 
 
 
+
 --------------------- Head of HL and Var Set ------------------------------------------------------------
 
 {- | What can be in hHead?
@@ -427,11 +434,7 @@ processHcHead rp = throwNotSupportedError rp
 isSetVarToTrue :: L4.RelationalPredicate -> Maybe [MTExpr]
 isSetVarToTrue = \case
   RPMT mtes  -> Just mtes 
-  -- $ noExtraMdata $ mkVarSetToTrueNoExtraMdata mtes
   _ -> Nothing
-  -- where
-  --   mkVarSetToTrueNoExtraMdata :: [MTExpr] -> BaseExp
-  --   mkVarSetToTrueNoExtraMdata mtes = EVarSet (varFromMTEs mtes) (noExtraMdata $ ELit EBoolTrue)
     -- TODO: think about how to handle metadata specifically for vars (and if that is even necessary)
 
 {- | Is a Set Var that's NOT Set Var to True

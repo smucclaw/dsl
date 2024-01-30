@@ -529,8 +529,18 @@ Helps to remember:
     it evals to a Bool / is a Propn / Condn of some sort
 
 So the things that can be part of hBody are:
-  * fn app
-  * if just a var: shorthand for 'var == True'
+  
+  1. fn app
+
+      Leaf
+        ( RPConstraint
+            [ MTT "ind's"
+            , MTT "place of residence"
+            ] RPis
+            [ MTT "Singapore" ]
+        )
+        
+  2. if just a var: shorthand for 'var == True'
 
         HC { hHead = RPConstraint
                   [ MTT "taxesPayable" ] RPis
@@ -540,8 +550,8 @@ So the things that can be part of hBody are:
                       ( RPMT
                           [ MTT "vivacity" ]
                       ))}
-  * boolean propn
-  * (edge case: OTHERWISE --- haven't thought too much abt this yet)
+  3. boolean propn
+  4. (edge case: OTHERWISE --- haven't thought too much abt this yet)
 
 This is where we might want to use pattern synonyms
 -}

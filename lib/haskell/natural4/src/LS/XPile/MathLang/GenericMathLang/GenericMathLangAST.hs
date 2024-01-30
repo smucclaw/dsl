@@ -185,13 +185,13 @@ data BaseExp =
 
   -- | variable mutation; prob treat as also eval-ing to assigned value
   | EVarSet
-    { var :: Var,
+    { vsetVar :: Exp,
       arg :: Exp
     }
   | ELet
-    { var :: Var
-    , val :: Exp
-    , body :: Exp
+    { letVar :: Exp
+    , letVal :: Exp
+    , letBody :: Exp
     }
 
   -- TODO: mostly for V2

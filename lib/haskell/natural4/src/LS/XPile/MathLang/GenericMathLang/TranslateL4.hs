@@ -468,7 +468,7 @@ mkVarExp var = do
 
 mkSetVarHelper :: [MTExpr] -> Exp -> ToLC BaseExp
 mkSetVarHelper putativeVar argE = do
-  varE <- varFromMTEs putativeVar >>= mkVarExp
+  varE <- mkVarExp =<< varFromMTEs putativeVar
   return $ EVarSet varE argE
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp

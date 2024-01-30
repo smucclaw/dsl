@@ -35,11 +35,12 @@ import LS.Rule (
 import LS.Rule qualified as L4 (Rule(..))
 
 import Control.Monad (foldM, join)
-import Effectful (Effect, Eff, runPureEff)
+import Effectful (Effect, Eff, runPureEff, raise)
 import Effectful.TH (makeEffect)
 import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
-import Effectful.Reader.Static (runReader, local, Reader)
+import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
+-- import Control.Monad.Reader (MonadReader(..))
 -- import Effectful.State.Static.Shared (State, runState)
 -- experimenting with Effectful.Error rn
 -- import Control.Monad.Validate qualified as V
@@ -196,8 +197,9 @@ b/c in L4 it might be possible to declare and initalize a global var from, e.g.,
 
 data ToLCError = NotYetImplemented T.Text -- SrcPositn
                | ParserProblem T.Text
-               | MiscError T.Text
                | NotSupported T.Text
+               | MiscError T.Text
+
   deriving stock (Eq, Show, Generic)
 
 instance Hashable ToLCError
@@ -224,15 +226,17 @@ type RetVarInfo = [(Var, Maybe L4EntType)]
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
-        -- ^ would *not* include 'global' GIVEN-declared vars --- just the local ones 
+        -- ^ vars declared in GIVENs and WHERE (but NOT including those declared in GIVETH)
         -- , retVarInfo :: RetVarInfo
           -- ^ not sure we need retVarInfo
+        , currSrcPos :: SrcPositn
         , logConfig :: LogConfig }
   deriving stock (Show, Generic)
 
 initialEnv :: Env
 initialEnv = MkEnv { localVars = HM.empty
-                  --  , retVarInfo = Nothing
+                  --  , retVarInfo = []
+                   , currSrcPos = undefined
                    , logConfig = defaultLogConfig }
 
 ------------------------------------------------------------------------------------
@@ -351,6 +355,9 @@ mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList
   2. SimpleHL to LC Exp
 =================================================================================-}
 
+srcRefToSrcPos :: SrcRef -> SrcPositn
+srcRefToSrcPos sr = MkPositn { row = sr.srcrow, col = sr.srccol }
+
 -- | Convenience fn: For when there's no (additional) metadata to add to base exp
 noExtraMdata :: BaseExp -> Exp
 noExtraMdata baseexp = MkExp baseexp []
@@ -401,12 +408,13 @@ isIf hl =
 
 toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
 toIfExp hl hc = do
-  condE <- inLightOfGivenVars $ processHcBody hc.hbBody
-  thenE <- inLightOfGivenVars $ processHcHead hc.hbHead
+  condE <- withLocalVarsAndSrcPos $ processHcBody hc.hbBody
+  thenE <- withLocalVarsAndSrcPos $ processHcHead hc.hbHead
   return $ EIfThen condE thenE
   where
-    inLightOfGivenVars = over _ToLC (local setLocalVars)
-    setLocalVars :: Env -> Env
+    withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
+    setCurrSrcPos, setLocalVars :: Env -> Env
+    setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
     setLocalVars = set #localVars hl.shcGiven
 -- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
@@ -433,7 +441,7 @@ processHcHead rp = throwNotSupportedError rp
 
 isSetVarToTrue :: L4.RelationalPredicate -> Maybe [MTExpr]
 isSetVarToTrue = \case
-  RPMT mtes  -> Just mtes 
+  RPMT mtes  -> Just mtes
   _ -> Nothing
     -- TODO: think about how to handle metadata specifically for vars (and if that is even necessary)
 
@@ -445,10 +453,23 @@ isOtherSetVar = \case
   RPConstraint lefts RPis rights -> Just (lefts, rights)
   _ -> Nothing
 
+lookupVar :: Var -> VarTypeDeclMap -> Maybe L4EntType
+lookupVar var = preview (ix var % _Just)
+
+-- | Annotate with TLabel metadata if available
+mkVarExp :: Var -> ToLC Exp
+mkVarExp var = do
+  env :: Env <- ToLC ask
+  let varExpMetadata = MkExpMetadata { srcPos = env.currSrcPos
+                                     , typeLabel = FromUser <$> lookupVar var env.localVars
+                                     , explnAnnot = Nothing --Temp plceholder; TODO 
+                                     }
+  return $ MkExp (EVar var) [varExpMetadata]
+
 mkSetVarHelper :: [MTExpr] -> Exp -> ToLC BaseExp
-mkSetVarHelper putativeVar arg = do
-  var <- varFromMTEs putativeVar
-  return $ EVarSet var arg
+mkSetVarHelper putativeVar argE = do
+  varE <- varFromMTEs putativeVar >>= mkVarExp
+  return $ EVarSet varE argE
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
 mkSetVarTrue putativeVar = mkSetVarHelper putativeVar (noExtraMdata $ ELit EBoolTrue)
@@ -463,7 +484,7 @@ mkOtherSetVar putativeVar argMTEs = do
 and throw an error if not
 -}
 varFromMTEs :: [MTExpr] -> ToLC Var
-varFromMTEs mtes = pure $ 
+varFromMTEs mtes = pure $
   mkVar . T.intercalate " " . fmap mtexpr2text $ mtes -- NOT doing any validation rn!
 
 {- | 

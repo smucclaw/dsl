@@ -128,8 +128,9 @@ varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar
 
 
-data Lit = ENumber !Number | EBool !Bool | EString !T.Text
+data Lit = EBoolTrue | EBoolFalse | ENumber Number | EString T.Text
   deriving stock (Eq, Ord, Show)
+
 
 data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
   deriving stock (Eq, Ord, Show)
@@ -142,9 +143,9 @@ data SeqExp = EmptySeqE
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 -- | May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn
 data BaseExp =
-    ELit { lit :: !Lit }
+    ELit { lit :: Lit }
   | EOp
-    { binOp :: !Op,
+    { binOp :: Op,
       opLeft :: Exp, -- ^ left
       opRight :: Exp -- ^ right
     }

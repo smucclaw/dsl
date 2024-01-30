@@ -24,7 +24,8 @@ import LS.Types as L4
   SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
   MultiClauseHL, _MkMultiClauseHL, mkMultiClauseHL,
   HeadOnlyHC, _MkHeadOnlyHC, mkHeadOnlyAtomicHC, mkHeadOnlyHC, headOnlyHLasMTEs,
-  HnBodHC(..)
+  HnBodHC(..),
+  mtexpr2text
   )
 -- import LS.Interpreter (qaHornsT)
 import LS.Rule (
@@ -210,6 +211,9 @@ stringifyToLCError = undefined
 throwNotYetImplError :: Show a => a -> ToLC b
 throwNotYetImplError l4ds = ToLC $ throwError $ NotYetImplemented (T.pack . show $ l4ds)
 
+throwNotSupportedError :: Show a => a -> ToLC b
+throwNotSupportedError l4ds = ToLC $ throwError $ NotSupported (T.pack . show $ l4ds)
+
 throwParserParserProblem :: (Show a) => a -> T.Text -> ToLC c
 throwParserParserProblem l4ds msg = ToLC $ throwError $ ParserProblem $ (T.pack . show $ l4ds) <> msg
 
@@ -347,12 +351,18 @@ mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList
   2. SimpleHL to Exp
 =================================================================================-}
 
+-- | For when there's no (additional) metadata to add to base exp
+noExtraMdata :: BaseExp -> Exp
+noExtraMdata baseexp = MkExp baseexp []
+
 -- | Treat the seq of L4 rules as being a block of statements
 l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
 l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
   where
     mkExpFrSeqExp :: SeqExp -> Exp
-    mkExpFrSeqExp seqExp = MkExp (ESeq seqExp) []
+    mkExpFrSeqExp seqExp = noExtraMdata (ESeq seqExp)
+    -- TODO: Can add metadata here in the future if needed. 
+    -- Bear in mind already adding metadata at level of L4Prog and in `expifyHL`
 
 l4sHLsToLCSeqExp ::  [SimpleHL] -> ToLC SeqExp
 l4sHLsToLCSeqExp = foldM go EmptySeqE
@@ -363,10 +373,10 @@ l4sHLsToLCSeqExp = foldM go EmptySeqE
 --------------------------------------------------------------------
 
 expifyHL :: SimpleHL -> ToLC Exp
-expifyHL hl = addMdataToBaseExp hl (baseExpify hl)
+expifyHL hl = addMdataFromSimpleHL hl (baseExpify hl)
    where
-    addMdataToBaseExp :: SimpleHL -> ToLC BaseExp -> ToLC Exp
-    addMdataToBaseExp = undefined
+    addMdataFromSimpleHL :: SimpleHL -> ToLC BaseExp -> ToLC Exp
+    addMdataFromSimpleHL = undefined --TODO
 
 baseExpify :: SimpleHL -> ToLC BaseExp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
@@ -386,32 +396,87 @@ isIf hl =
 toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
 toIfExp hl hc = do
   condE <- inLightOfGivenVars $ processHcBody hc.hbBody
-  thenE <- inLightOfGivenVars $ processHchead hc.hbHead
+  thenE <- inLightOfGivenVars $ processHcHead hc.hbHead
   return $ EIfThen condE thenE
   where
     inLightOfGivenVars = over _ToLC (local setLocalVars)
     setLocalVars :: Env -> Env
     setLocalVars = set #localVars hl.shcGiven
-
 -- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
 
 
 
---------------------------------------------------------------------
+--------------------- Head of HL and Var Set ------------------------------------------------------------
 
 {- | What can be in hHead?
-1. Set Var
-    (i) Simple Set Var: 
-      * `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
-    (ii) Set Var True (typically with an IF):
-      * `RPMT [ MTT "case 1 qualifies" ]
+Set Var
+  (i) Simple Set Var: 
+    * `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+  (ii) Set Var True (typically with an IF):
+    * `RPMT [ MTT "case 1 qualifies" ]
+
+Things like arithmetic constraints (<, >, etc) 
+don't appear here -- they appear in hBody
 -}
-processHchead :: L4.RelationalPredicate -> ToLC Exp
-processHchead = undefined
+processHcHead :: L4.RelationalPredicate -> ToLC Exp
+processHcHead (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
+processHcHead (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
+processHcHead rp = throwNotSupportedError rp
+
+isSetVarToTrue :: L4.RelationalPredicate -> Maybe [MTExpr]
+isSetVarToTrue = \case
+  RPMT mtes  -> Just mtes 
+  -- $ noExtraMdata $ mkVarSetToTrueNoExtraMdata mtes
+  _ -> Nothing
+  -- where
+  --   mkVarSetToTrueNoExtraMdata :: [MTExpr] -> BaseExp
+  --   mkVarSetToTrueNoExtraMdata mtes = EVarSet (varFromMTEs mtes) (noExtraMdata $ ELit EBoolTrue)
+    -- TODO: think about how to handle metadata specifically for vars (and if that is even necessary)
+
+{- | Is a Set Var that's NOT Set Var to True
+      eg: `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+-}
+isOtherSetVar :: L4.RelationalPredicate -> Maybe ([MTExpr], [MTExpr])
+isOtherSetVar = \case
+  RPConstraint lefts RPis rights -> Just (lefts, rights)
+  _ -> Nothing
+
+mkSetVarHelper :: [MTExpr] -> Exp -> ToLC BaseExp
+mkSetVarHelper putativeVar arg = do
+  var <- varFromMTEs putativeVar
+  return $ EVarSet var arg
+
+mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
+mkSetVarTrue putativeVar = mkSetVarHelper putativeVar (noExtraMdata $ ELit EBoolTrue)
+
+mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
+mkOtherSetVar putativeVar argMTEs = do
+  arg <- noExtraMdata <$> expifyMTEs argMTEs
+  mkSetVarHelper putativeVar arg
+
+{- | TODO: Check that it meets the formatting etc requirements for a variable,
+(e.g. prob don't want var names to start with numbers, and probably want to error if the MTE is a MTB)
+and throw an error if not
+-}
+varFromMTEs :: [MTExpr] -> ToLC Var
+varFromMTEs mtes = pure $ 
+  mkVar . T.intercalate " " . fmap mtexpr2text $ mtes -- NOT doing any validation rn!
+
+{- | 
+We want to handle things like
+  * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+
+To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github.com/mrkkrp/parser-combinators/Control/Monad/Combinators/Expr.hs)
+
+TODO: Think about what kind of validation we might want to do here
+-}
+expifyMTEs :: [MTExpr] -> ToLC BaseExp
+expifyMTEs = undefined
+
+---------------------------------------------------------
+
 
 processHcBody :: L4.BoolStructR -> ToLC Exp
 processHcBody = undefined
 
-
----------------------------------------------------------

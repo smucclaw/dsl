@@ -62,6 +62,7 @@ type Number = Double
 data TLabel = FromUser L4EntType 
             | Inferred T.Text
   deriving stock (Eq, Show)
+makePrisms ''TLabel
 
 {-----------
 TO THINK ABT

@@ -455,6 +455,12 @@ isOtherSetVar = \case
 lookupVar :: Var -> VarTypeDeclMap -> Maybe L4EntType
 lookupVar var = preview (ix var % _Just)
 
+{- | Returns true iff input text (a T.Text!) corresponds to a local var (i.e., either a GIVEN or a type decl in WHERE)
+(though the WHERE bit hasn't been implemented yet in rest of the code)
+-}
+isUserDeclaredVarTxt :: T.Text -> VarTypeDeclMap -> Bool
+isUserDeclaredVarTxt vartxt = HM.member (mkVar vartxt)
+
 -- | Annotate with TLabel metadata if available
 mkVarExp :: Var -> ToLC Exp
 mkVarExp var = do

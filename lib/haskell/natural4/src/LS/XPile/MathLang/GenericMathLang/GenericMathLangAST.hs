@@ -32,6 +32,21 @@ import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable)
 -- import GHC.Generics (Generic)
 
+------------ L4 declared entity types ----------------------
+
+-- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
+newtype L4EntType = MkL4EntType T.Text
+  deriving stock (Show)
+  deriving newtype (Eq, IsString, Hashable)
+makePrisms ''L4EntType
+
+mkEntType :: T.Text -> L4EntType
+mkEntType = view (re _MkL4EntType)
+
+entTypeAsTxt :: L4EntType -> T.Text
+entTypeAsTxt = view _MkL4EntType
+
+
 {-------------------------------------------------------
     AST
 ==========================================================-}
@@ -41,16 +56,17 @@ import Data.Hashable (Hashable)
 -}
 
 type FieldLabel = T.Text
-type TLabel = T.Text
-
 type Number = Double
 -- ^ TODO: Will want to change this to something that can represent money in the future
+
+data TLabel = FromUser L4EntType 
+            | Inferred T.Text
+  deriving stock (Eq, Show)
 
 {-----------
 TO THINK ABT
 ------------
   * Do we really want to allow for user annotations for *every* kind of expr?
-  * Shld we factor 'statements' out?
 -}
 
 {----------------------------------------------------------
@@ -61,6 +77,14 @@ TO THINK ABT
 data ExplnImptce = HighEI | LowEI | DebugEI
   deriving stock (Eq, Ord, Show)
 
+{- |
+To think about:
+  * Inari: Might it make sense to stick GF trees in here (or some other metadata type associated with each Exp)?
+  YM's quick thought / reaction: Will want some way of toggling 
+  whether to parse to GF regardless, since can imagine that for
+  some applications / users, they may not need the GF trees.
+  May want to look into HKDs too.
+-}
 data ExplnAnnot = MkExplnAnnot
   { l4RuleName :: T.Text
   , overridAnnot :: Maybe T.Text
@@ -80,36 +104,35 @@ data SrcPositn = MkPositn
     deriving Hashable
 makeFieldLabelsNoPrefix ''SrcPositn
 
--- data TypeMetadata = MkTMdata
---   { tlabel :: !TLabel
---   } deriving stock (Eq, Ord, Show)
--- makePrisms ''TypeMetadata
+data EMDWithType = 
+  MkEMDWithType { srcPos :: SrcPositn
+                , typeLabel :: TLabel }
+    deriving stock (Eq, Show)
+makeFieldLabelsNoPrefix ''EMDWithType
+  
+data EMDWithTypeExplnAnn =
+  MkEMDWithTE { srcPos :: SrcPositn
+              , typeLabel :: TLabel }
+    deriving stock (Eq, Show)
+makeFieldLabelsNoPrefix ''EMDWithTypeExplnAnn
 
-data ExpMetadata = MkEMdata
-  { srcPos :: !SrcPositn
-  , explnAnnot :: !(Maybe ExplnAnnot)
-  -- , typeMd :: !(Maybe TypeMetadata)
-  } deriving stock (Eq, Ord, Show)
-makeFieldLabelsNoPrefix ''ExpMetadata
+newtype EMDBase =
+  MkEMDBase { srcPos :: SrcPositn }
+    deriving stock (Show)
+    deriving newtype (Eq)
+makeFieldLabelsNoPrefix ''EMDBase
+
+-- | Could use HKDs, but that'd make things more complex in other ways
+data ExpMetadata = EMDBase EMDBase
+                 | EMDWithType EMDWithType
+                 | EMDWithTypeExplnAnn EMDWithTypeExplnAnn 
+  deriving stock (Eq, Show)
+makePrisms ''ExpMetadata
+
 
 type MdGrp = [ExpMetadata]
 -- Hacky, but: in the case of Lam, want to have md for param too
 -- This should always have either 1 or 2 elts
-
-
------------- L4 declared entity types ----------------------
-
--- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
-newtype L4EntType = MkL4EntType T.Text
-  deriving stock (Show)
-  deriving newtype (Eq, IsString, Hashable)
-makePrisms ''L4EntType
-
-mkEntType :: T.Text -> L4EntType
-mkEntType = view (re _MkL4EntType)
-
-entTypeAsTxt :: L4EntType -> T.Text
-entTypeAsTxt = view _MkL4EntType
 
 ------------------------------------------------------------
 -- TODO: Look into whether the costs of using records for sum variants (eg partial functions) outweigh benefits
@@ -188,8 +211,8 @@ data BaseExp =
     }
 
   -- TODO: mostly for V2
-  -- | Block / sequence of nested bindings,
-  -- where each binding expression can refer to previously bound variables
+  -- | Block / sequence of expressions (likely to be variable assignments,
+  -- where each expression can refer to previously bound variables
   | ESeq { seq :: SeqExp }
 
   | EAnd
@@ -232,7 +255,7 @@ mkGlobalVars = view (re _MkGlobalVars)
     * config flags that downstream targets need to know about
 -}
 data LCProgMetadata =
-  MkLCProgMdata { filename :: !T.Text }
+  MkLCProgMdata { filename :: T.Text }
   deriving stock (Eq, Show)
 
 data LCProgram =

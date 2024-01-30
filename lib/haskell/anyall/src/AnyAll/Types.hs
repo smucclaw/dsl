@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 module AnyAll.Types
   ( AndOr (And, Neg, Or, Simply),
@@ -57,10 +58,7 @@ import Text.Pretty.Simple (pShowNoColor)
 data Label a =
     Pre a
   | PrePost a a
-  deriving (Eq, Show, Generic, Ord)
-instance ToJSON a => ToJSON (Label a)
-instance FromJSON a => FromJSON (Label a)
-instance Hashable a => Hashable (Label a)
+  deriving (Eq, Show, Generic, Hashable, FromJSON, ToJSON, Ord)
 
 labelFirst :: Label p -> p
 labelFirst (Pre x      ) = x
@@ -79,9 +77,7 @@ anyof = Just $ Pre "any of:"
 
 data Hardness = Soft -- use Left defaults
               | Hard -- require Right input
-  deriving (Eq, Ord, Show, Generic)
-
-instance Hashable Hardness
+  deriving (Eq, Ord, Show, Generic, Hashable)
 
 type AnswerToExplain = Bool
 
@@ -112,8 +108,7 @@ instance Hashable a => Hashable (AndOr a)
 -- using data instead of newtype because it makes it easier to prettyprint to Purescript via Show
 newtype Default a = Default (Either (Maybe a) (Maybe a))
   deriving (Eq, Ord, Show, Generic)
-
-instance Hashable a => Hashable (Default a)
+  deriving newtype (Hashable, FromJSON, ToJSON)
 
 mkDefault :: Either (Maybe a) (Maybe a) -> Default a
 mkDefault = coerce
@@ -123,19 +118,16 @@ getDefault :: Default a -> Either (Maybe a) (Maybe a)
 getDefault = coerce
 {-# INLINE getDefault #-}
 
-instance (ToJSON a, ToJSONKey a) => ToJSON (Default a)
-instance (FromJSON a) => FromJSON (Default a)
 asJSONDefault :: (ToJSON a, ToJSONKey a) => Default a -> B.ByteString
 asJSONDefault = encode
 
 newtype Marking a = Marking { getMarking :: Map.HashMap a (Default Bool) }
   deriving (Eq, Ord, Show, Generic)
-
-instance Hashable a => Hashable (Marking a)
+  deriving newtype Hashable
+  deriving anyclass ToJSON
 
 type TextMarking = Marking T.Text
 
-instance (ToJSON a, ToJSONKey a) => ToJSON (Marking a)
 instance FromJSON (Marking T.Text) where
   -- the keys in the object correspond to leaf contents, so we have to process them "manually"
   parseJSON = parseMarking
@@ -150,17 +142,14 @@ parseMarking :: Value -> Parser (Marking T.Text)
 parseMarking = withObject "marking" \o -> do
   pure $ coerce $ Map.fromList $ mapMaybe parseMarkingKV (toList o)
 
-data ShouldView = View | Hide | Ask deriving (Eq, Ord, Show, Generic)
-instance ToJSON ShouldView; instance FromJSON ShouldView
-instance Hashable ShouldView
+data ShouldView = View | Hide | Ask
+  deriving (Eq, Ord, Show, Generic, Hashable, FromJSON, ToJSON)
 
 data Q a = Q { shouldView :: ShouldView
              , andOr      :: AndOr a
              , prePost    :: Maybe (Label a)
              , mark       :: Default Bool
-             } deriving (Eq, Ord, Show, Generic)
-
-instance Hashable a => Hashable (Q a)
+             } deriving (Eq, Ord, Show, Generic, Hashable, FromJSON, ToJSON)
 
 ask2hide :: Q a -> Q a
 ask2hide q@Q{shouldView=Ask} = q{shouldView=Hide}
@@ -175,9 +164,8 @@ ask2view x = x
 
 type QTree a = Tree (Q a)
 
-instance ToJSON a => ToJSON (Q a) where
-  toEncoding = genericToEncoding defaultOptions
-instance FromJSON a => FromJSON (Q a)
+-- instance ToJSON a => ToJSON (Q a) where
+--   toEncoding = genericToEncoding defaultOptions
 
 asJSON :: ToJSON a => QTree a -> B.ByteString
 asJSON = encode

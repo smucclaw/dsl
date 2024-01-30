@@ -8,7 +8,6 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns, AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies, DeriveAnyClass #-}
-{-# LANGUAGE StrictData #-}
 
 module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 -- TODO: Add export list

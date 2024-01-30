@@ -199,6 +199,7 @@ data BaseExp =
   -- where each expression can refer to previously bound variables
   | ESeq { seq :: SeqExp }
 
+  | ENot { arg :: Exp }
   | EAnd
     { left :: Exp,  -- ^ left
       right :: Exp  -- ^ right

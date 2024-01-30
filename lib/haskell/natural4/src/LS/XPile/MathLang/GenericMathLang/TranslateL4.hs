@@ -34,7 +34,7 @@ import LS.Rule (
                 defaultHorn)
 import LS.Rule qualified as L4 (Rule(..))
 
-import Control.Monad (foldM, join)
+import Control.Monad (join)
 import Effectful (Effect, Eff, runPureEff, raise)
 import Effectful.TH (makeEffect)
 import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
@@ -421,9 +421,6 @@ toIfExp hl hc = do
 -- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
 
-
-
-
 --------------------- Head of HL and Var Set ------------------------------------------------------------
 
 {- | What can be in hHead?
@@ -487,7 +484,10 @@ and throw an error if not
 -}
 varFromMTEs :: [MTExpr] -> ToLC Var
 varFromMTEs mtes = pure $
-  mkVar . T.intercalate " " . fmap mtexpr2text $ mtes -- NOT doing any validation rn!
+  mkVar . textifyMTEs $ mtes -- NOT doing any validation rn! TODO
+
+textifyMTEs :: [MTExpr] -> T.Text
+textifyMTEs = T.intercalate " " . fmap mtexpr2text
 
 {- | 
 We want to handle things like
@@ -502,7 +502,48 @@ expifyMTEs = undefined
 
 ---------------------------------------------------------
 
-
 processHcBody :: L4.BoolStructR -> ToLC Exp
-processHcBody = undefined
+processHcBody = \case
+  AA.Leaf rp -> expifyBodyRP rp
+  -- TODO: Consider using the `mlbl` to augment with metadata
+  AA.All mlbl propns -> F.foldrM (makeOp EAnd) emptyExp propns
+  AA.Any mlbl propns -> F.foldrM (makeOp EOr) emptyExp propns
+  AA.Not propn -> noExtraMdata . ENot <$> processHcBody propn
+  where
+    emptyExp :: Exp = noExtraMdata EEmpty
 
+    -- TODO: Can try augmenting with `mlbl` here
+    makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
+    makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
+
+  -- foldM go EmptySeqE
+  -- where
+  --   go :: SeqExp -> SimpleHL -> ToLC SeqExp
+  --   go seqExp hornlike = ConsSE <$> expifyHL hornlike <*> pure seqExp
+
+
+{- |
+Helps to remember: 
+  * if it's in the hBody, 
+    with the impt exception of OTHERWISE, 
+    it evals to a Bool / is a Propn / Condn of some sort
+
+So the things that can be part of hBody are:
+  * fn app
+  * if just a var: shorthand for 'var == True'
+
+        HC { hHead = RPConstraint
+                  [ MTT "taxesPayable" ] RPis
+                  [ MTT "taxesPayableAlive" ]
+              , hBody = Just
+                  ( Leaf
+                      ( RPMT
+                          [ MTT "vivacity" ]
+                      ))}
+  * boolean propn
+  * (edge case: OTHERWISE --- haven't thought too much abt this yet)
+
+This is where we might want to use pattern synonyms
+-}
+expifyBodyRP :: RelationalPredicate -> ToLC Exp
+expifyBodyRP rp = undefined

@@ -65,7 +65,7 @@ import Data.String.Interpolate (__i)
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
-import Data.Foldable qualified as F (toList)
+import Data.Foldable qualified as F (toList, foldrM)
 
 import LS.XPile.MathLang.UtilsLCReplDev
 
@@ -371,11 +371,13 @@ l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
     -- TODO: Can add metadata here in the future if needed. 
     -- Bear in mind already adding metadata at level of L4Prog and in `expifyHL`
 
+{- | Right now I don't think the order in which we compile the HLs actually matters,
+so just using a foldrM -}
 l4sHLsToLCSeqExp ::  [SimpleHL] -> ToLC SeqExp
-l4sHLsToLCSeqExp = foldM go EmptySeqE
+l4sHLsToLCSeqExp = F.foldrM go EmptySeqE
   where
-    go :: SeqExp -> SimpleHL -> ToLC SeqExp
-    go seqExp hornlike = ConsSE <$> expifyHL hornlike <*> pure seqExp
+    go :: SimpleHL -> SeqExp -> ToLC SeqExp
+    go hornlike seqExp = ConsSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
 

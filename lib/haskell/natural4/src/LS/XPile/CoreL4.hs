@@ -187,6 +187,7 @@ import LS.Utils
   ( MonoidValidate,
     compose,
     mapThenSwallowErrs,
+    pairs,
     (|$>),
   )
 import LS.XPile.CoreL4.LogicProgram
@@ -677,22 +678,9 @@ prettyBoilerplate ct@(CT ch) =
                 for x:#{c_name} #{encloseSep "" "" " || " ((\x -> parens ("x" <+> "==" <+> pretty x)) <$> enumList)}
 
                 fact #{angles $ c_name <> "Disj"}
-                #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairwise enumList)}
+                #{encloseSep "" "" " && " ((\(x, y) -> parens (snake_inner (MTT x) <+> "/=" <+> snake_inner (MTT y))) <$> pairs enumList)}
               |]
           _ -> mempty
-  where
-    pairwise :: [a] -> [(a, a)]
-    pairwise xs =
-      xs                   -- [x0, x1 ...]
-        |> tails           -- [[x0, x1 ...], [x1 ...], ...]
-        |> mapMaybe uncons -- [(x0, [x1 ... xn]) ...]
-        -- This does NOT play nice with infinite lists in that if xs is infinite,
-        -- then tail is also always infinite, so that the order type is > ω.
-        -- Consequently, some pairs may never get enumerated over.
-        |> foldMap \(x, tail) -> [(x, y) | y <- tail]
-
--- pairwise [] = []
--- pairwise (x:xs) = [(x, y) | y <- xs] ++ pairwise xs
 
 -- | print arithmetic elements as defn
 -- eg: defn minsavings : Integer -> Integer = \x : Integer ->         5000 * x

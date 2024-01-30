@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE BlockArguments #-}
 
 module LS.Utils
   ( (|$>),
@@ -9,8 +10,9 @@ module LS.Utils
     swallowErrs,
     MonoidValidate,
     compose,
+    pairs,
     (<||>),
-    (<&&>)
+    (<&&>),
   )
 where
 
@@ -18,12 +20,15 @@ import Control.Applicative (liftA2)
 import Control.Monad.Validate
   ( MonadValidate (refute),
     Validate,
-    runValidate
+    runValidate,
   )
 import Data.Coerce (coerce)
-import Data.Either (rights, partitionEithers)
+import Data.Either (partitionEithers, rights)
+import Data.List (tails)
+import Data.Maybe (mapMaybe)
 import Data.Monoid (Ap (Ap), Endo (Endo))
-import Flow ((|>), (.>))
+import Data.Sequences (uncons)
+import Flow ((.>), (|>))
 
 infixl 0 |$>
 
@@ -89,3 +94,13 @@ compose = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
 (<&&>) :: Applicative f => f Bool -> f Bool -> f Bool
 (<&&>) = liftA2 (&&)
 {-# INLINE (<&&>) #-}
+
+pairs :: [a] -> [(a, a)]
+pairs xs =
+  xs                   -- [x0, x1 ...]
+    |> tails           -- [[x0, x1 ...], [x1 ...], ...]
+    |> mapMaybe uncons -- [(x0, [x1 ... xn]) ...]
+    -- This does NOT play nice with infinite lists in that if xs is infinite,
+    -- then tail is also always infinite, so that the order type is > ω.
+    -- Consequently, some pairs may never get enumerated over.
+    |> foldMap \(x, tail) -> [(x, y) | y <- tail]

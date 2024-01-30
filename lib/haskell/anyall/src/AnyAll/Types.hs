@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module AnyAll.Types
@@ -89,10 +90,7 @@ data BinExpr a b =
   | BEAll b [BinExpr a b]
   | BEAny b [BinExpr a b]
   | BENot (BinExpr a b)
-  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-
-instance (ToJSON a, ToJSON b) => ToJSON (BinExpr a b)
-instance (Hashable a, Hashable b) => Hashable (BinExpr a b)
+  deriving (Eq, Ord, Show, Generic, Hashable, Functor, Foldable, ToJSON, Traversable)
 
 instance Semigroup t => Semigroup (Label t) where
   (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2) -- this is semantically incorrect, can we improve it?
@@ -149,8 +147,8 @@ parseMarkingKV (k,v) =
     Nothing -> Nothing
 
 parseMarking :: Value -> Parser (Marking T.Text)
-parseMarking = withObject "marking" $ \o -> do
-    return $ Marking $ Map.fromList $ mapMaybe parseMarkingKV (toList o)
+parseMarking = withObject "marking" \o -> do
+  pure $ coerce $ Map.fromList $ mapMaybe parseMarkingKV (toList o)
 
 data ShouldView = View | Hide | Ask deriving (Eq, Ord, Show, Generic)
 instance ToJSON ShouldView; instance FromJSON ShouldView

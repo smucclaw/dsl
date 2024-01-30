@@ -471,7 +471,7 @@ newtype ClsTab = CT ClassHierarchyMap
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT = coerce
-{-# INLINABLE unCT #-}
+{-# INLINE unCT #-}
 
 type TypedClass = (Inferrable TypeSig, ClsTab)
 

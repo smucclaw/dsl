@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module AnyAll.BoolStruct
   ( BoolStruct (..),
@@ -134,18 +135,24 @@ simplifyBoolStruct orig = orig
 
 data MergeResult a = Merged a | Unmerged a a
 
-attemptMergeHeads :: Eq lbl => BoolStruct lbl a -> BoolStruct lbl a -> MergeResult (BoolStruct lbl a)
-attemptMergeHeads  x@(All xl xs)  y@(All yl ys)
-  | xl == yl = Merged (All xl (xs ++ ys))
-  | otherwise = Unmerged x y
-attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
-  | xl == yl = Merged $ Any xl (xs ++ ys)
-  | otherwise = Unmerged x y
-attemptMergeHeads  x  y = Unmerged x y
+attemptMergeHeads ::
+  (Eq lbl) =>
+  BoolStruct lbl a ->
+  BoolStruct lbl a ->
+  MergeResult (BoolStruct lbl a)
+attemptMergeHeads = curry \case
+  (All xl xs, All ((== xl) -> True) ys) -> merge All xl xs ys
+  (Any xl xs, Any ((== xl) -> True) ys) -> merge Any xl xs ys
+  (x, y) -> Unmerged x y
+  where
+    merge anyAll xl xs ys = Merged $ anyAll xl $ xs <> ys
 
 {-
-  mergeMatch yields as output, a (finite) trace of the (deterministic) fixed point
-  iteration of the following small-step operational semantics.
+  mergeMatch yields as output, a (finite) trace of the (deterministic) fixed
+  point iteration of the following small-step operational semantics of a
+  labelled transition system.
+  This is essentially a simple process algebra with tau transitions but no
+  composition combinators.
   Transfinite iteration terminates before ω, thereby guaranteeing the
   termination of mergeMatch, because configurations decrease in size with each
   transition.
@@ -172,8 +179,10 @@ attemptMergeHeads  x  y = Unmerged x y
 -}
 mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
 mergeMatch =
-  unfoldr smallStep -- Iterate small step semantics to fixed point
-    >>> catMaybes   -- Obtain trace of all transition steps
+  -- Iterate small step transitions to fixed point, obtaining a trace in the process.
+  unfoldr smallStep
+  -- Filter away tau transitions.
+    >>> catMaybes
   where
     -- Stop iteration when configuration is empty.
     smallStep [] = Nothing

@@ -105,30 +105,13 @@ data SrcPositn = MkPositn
     deriving Hashable
 makeFieldLabelsNoPrefix ''SrcPositn
 
-data EMDWithType = 
-  MkEMDWithType { srcPos :: SrcPositn
-                , typeLabel :: TLabel }
-    deriving stock (Eq, Show)
-makeFieldLabelsNoPrefix ''EMDWithType
-  
-data EMDWithTypeExplnAnn =
-  MkEMDWithTE { srcPos :: SrcPositn
-              , typeLabel :: TLabel }
-    deriving stock (Eq, Show)
-makeFieldLabelsNoPrefix ''EMDWithTypeExplnAnn
-
-newtype EMDBase =
-  MkEMDBase { srcPos :: SrcPositn }
-    deriving stock (Show)
-    deriving newtype (Eq)
-makeFieldLabelsNoPrefix ''EMDBase
-
 -- | Could use HKDs, but that'd make things more complex in other ways
-data ExpMetadata = EMDBase EMDBase
-                 | EMDWithType EMDWithType
-                 | EMDWithTypeExplnAnn EMDWithTypeExplnAnn 
+data ExpMetadata = 
+  MkExpMetadata { srcPos :: SrcPositn
+                , typeLabel :: Maybe TLabel
+                , explnAnnot :: Maybe ExplnAnnot }
   deriving stock (Eq, Show)
-makePrisms ''ExpMetadata
+makeFieldLabelsNoPrefix ''ExpMetadata
 
 
 type MdGrp = [ExpMetadata]

@@ -228,7 +228,7 @@ import LS.Types
     renderToken,
     toToken,
   )
-import LS.Utils ((|$>))
+import LS.Utils (pairs, (|$>))
 import Options.Generic
   ( Generic,
     ParseFields (..),
@@ -539,12 +539,20 @@ firstAndLast xs = (NE.head xs, NE.last xs)
 
 -- because sometimes a chunk followed by another chunk is really part of the same chunk.
 -- so we glue contiguous chunks together.
-glueLineNumbers :: [(Int,Int)] -> [(Int,Int)]
-glueLineNumbers ((a0, a1) : (b0, b1) : xs)
-  | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
-  | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
-glueLineNumbers [x] = [x]
+glueLineNumbers :: [(Int, Int)] -> [(Int, Int)]
 glueLineNumbers [] = []
+glueLineNumbers [x] = [x]
+glueLineNumbers xs = zipWith f xs $ tail xs
+  where
+    f a01@(a0, a1) (b0, b1)
+      | a1 + 1 == b0 = (a0, b1)
+      | otherwise = a01
+
+-- glueLineNumbers ((a0, a1) : (b0, b1) : xs)
+--   | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
+--   | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
+-- glueLineNumbers [x] = [x]
+-- glueLineNumbers [] = []
 
 extractLines :: RawStanza -> (Int,Int) -> RawStanza
 extractLines rs (y0, yLast) = V.slice y0 (yLast - y0 + 1) rs
@@ -759,7 +767,7 @@ pVarDefn = debugName "pVarDefn" do
       myTraceM $ "got mytype = " <> show mytype
       hases   <- mconcat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
       myTraceM $ "got hases = " <> show hases
-      return $ defaultHorn
+      pure defaultHorn
         { name = NE.toList name
         , keyword = Define
         , super = mytype
@@ -807,7 +815,7 @@ pExpect = debugName "pExpect" do
                      return tmp
                  )
              <|> RPBoolStructR [] RPis <$> pBSR
-  return $ ExpRP relPred
+  pure $ ExpRP relPred
 
 -- | we want to parse two syntaxes:
 -- @

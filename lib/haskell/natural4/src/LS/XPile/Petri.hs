@@ -575,11 +575,11 @@ newtype GraphMonad a = GM { runGM_ :: State GraphState a }
 
 mkGM :: State GraphState a -> GraphMonad a
 mkGM = coerce
-{-# INLINABLE mkGM #-}
+{-# INLINE mkGM #-}
 
 getGM :: GraphMonad a -> State GraphState a
 getGM = coerce
-{-# INLINABLE getGM #-}
+{-# INLINE getGM #-}
 
 -- instance Semigroup a => Semigroup (GraphMonad a) where
 --   a <> b = (<>) <$> a <*> b

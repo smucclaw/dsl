@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-| transpiler to Purescript and JSON types intended for consumption by Vue. -}
@@ -29,6 +30,7 @@ import Data.List (groupBy, nub)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (maybeToList)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable (for)
 import Flow ((|>))
@@ -223,12 +225,12 @@ groundToChecklist env mt = do
   let result = case words lin of
         "is":"there":"parseUD:":"fail":_ -> T.pack "Is it true that " <> txt
         _ -> T.pack lin -}
-  let result = T.pack "NLG is under construction"
+  let result = "NLG is under construction"
   pure $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
 pickOneOf mts = MTT "Does any of the following hold?" :
-  [ MTT $ "* " <> mt2text mt | mt <- mts ]
+  [ MTT [i|* #{mt2text mt}|] | mt <- mts ]
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
 groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word

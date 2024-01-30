@@ -1,7 +1,8 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module AnyAll.BoolStruct
   ( BoolStruct (..),
@@ -18,11 +19,12 @@ module AnyAll.BoolStruct
     mkNot,
     nnf,
     siblingfyBoolStruct,
-    simplifyBoolStruct
+    simplifyBoolStruct,
   )
 where
 
 import AnyAll.Types (Label (Pre), Marking (..))
+import Control.Arrow ((>>>))
 import Data.Aeson
   ( FromJSON (parseJSON),
     ToJSON,
@@ -32,7 +34,8 @@ import Data.Aeson
   )
 import Data.Aeson.Types (parseEither)
 import Data.Hashable (Hashable)
-import Data.List (sort)
+import Data.List (sort, unfoldr)
+import Data.Maybe (catMaybes)
 import Data.Text qualified as T
 import Debug.Trace (trace)
 import GHC.Generics (Generic)
@@ -51,9 +54,7 @@ data BoolStruct lbl a =
   | All lbl [BoolStruct lbl a] -- and
   | Any lbl [BoolStruct lbl a] --  or
   | Not             (BoolStruct lbl a)
-  deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
-
-instance (Hashable lbl, Hashable a) => Hashable (BoolStruct lbl a)
+  deriving (Eq, Ord, Show, Generic, Hashable, Functor, Foldable, Traversable)
 
 mkLeaf :: a -> BoolStruct lbl a
 mkLeaf = Leaf
@@ -134,23 +135,72 @@ simplifyBoolStruct orig = orig
 
 data MergeResult a = Merged a | Unmerged a a
 
-attemptMergeHeads :: Eq lbl => BoolStruct lbl a -> BoolStruct lbl a -> MergeResult (BoolStruct lbl a)
-attemptMergeHeads  x@(All xl xs)  y@(All yl ys)
-  | xl == yl = Merged (All xl (xs ++ ys))
-  | otherwise = Unmerged x y
-attemptMergeHeads  x@(Any xl xs)  y@(Any yl ys)
-  | xl == yl = Merged $ Any xl (xs ++ ys)
-  | otherwise = Unmerged x y
-attemptMergeHeads  x  y = Unmerged x y
-
-mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
-mergeMatch []  = []
-mergeMatch [k] = [k]
-mergeMatch (bs1 : bs2 : zs) = case x of
-  Merged m -> mergeMatch (m:zs)
-  Unmerged x y -> x : mergeMatch (y:zs)
+attemptMergeHeads ::
+  (Eq lbl) =>
+  BoolStruct lbl a ->
+  BoolStruct lbl a ->
+  MergeResult (BoolStruct lbl a)
+attemptMergeHeads = curry \case
+  (All xl xs, All ((== xl) -> True) ys) -> merge All xl xs ys
+  (Any xl xs, Any ((== xl) -> True) ys) -> merge Any xl xs ys
+  (x, y) -> Unmerged x y
   where
-    x = attemptMergeHeads bs1 bs2
+    merge anyAll xl xs ys = Merged $ anyAll xl $ xs <> ys
+
+{-
+  mergeMatch yields as output, a (finite) trace of the (deterministic) fixed
+  point iteration of the following small-step operational semantics of a
+  labelled transition system.
+  This is essentially a simple process algebra with tau transitions but no
+  composition combinators.
+  Transfinite iteration terminates before ω, thereby guaranteeing the
+  termination of mergeMatch, because configurations decrease in size with each
+  transition.
+
+  Configurations C are lists of bool structs, ie the type [BoolStruct lbl a]
+  Actions A are bool structs, ie the type (BoolStruct lbl a)
+
+  Judgment forms:
+    tau transition: C =τ=> C'
+    visible transition: C =A=> C'
+
+  Transition rules:
+
+  ----------------- [smallStep-singleton]
+    [z] =z=> []
+
+    attemptMergeHeads bs1 bs2 = Merged m
+  ---------------------------------------- [smallStep-merged]
+    bs1:bs2:zs =τ=> m:zs
+
+    attemptMergeHeads bs1 bs2 = Unmerged x y
+  ------------------------------------------- [smallStep-unmerged]
+    bs1:bs2:zs =x=> y:zs
+-}
+mergeMatch :: (Eq lbl, Monoid lbl) => [BoolStruct lbl a] -> [BoolStruct lbl a]
+mergeMatch =
+  -- Iterate small step transitions to fixed point, obtaining a trace in the process.
+  unfoldr smallStep
+  -- Filter away tau transitions.
+    >>> catMaybes
+  where
+    -- Stop iteration when configuration is empty.
+    smallStep [] = Nothing
+    -- smallStep-singleton
+    smallStep [z] = Just (Just z, [])
+    smallStep (bs1 : bs2 : zs) = case attemptMergeHeads bs1 bs2 of
+      -- smallStep-merged
+      Merged m -> Just (Nothing, m : zs)
+      -- smallStep-unmerged
+      Unmerged x y -> Just (Just x, y : zs)
+
+-- mergeMatch [] = []
+-- mergeMatch [x] = [x]
+-- mergeMatch (bs1 : bs2 : zs) = case x of
+--   Merged m -> mergeMatch (m:zs)
+--   Unmerged x y -> x : mergeMatch (y:zs)
+--   where
+--     x = attemptMergeHeads bs1 bs2
 
 -- | utility for simplifyBoolStruct: flatten sibling (Any|All) elements that have the same (Any|All) Label prefix into the same group
 -- example:

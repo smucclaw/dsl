@@ -83,6 +83,7 @@ toMathLangGen' l4a =
 
 -- runAndValidate = undefined
 
+-- | Makes report for errors; can try using `diagnose` package / lib for this
 makeErrorOut :: ToLCError -> (String, [String])
 -- makeErrorOut :: [ToLCError] -> (String, [String])
 makeErrorOut errors = ("not yet implemented", ["not yet implemented"])

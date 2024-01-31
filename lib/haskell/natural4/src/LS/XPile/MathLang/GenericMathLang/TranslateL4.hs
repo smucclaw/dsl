@@ -449,6 +449,25 @@ isOtherSetVar = \case
   RPConstraint lefts RPis rights -> Just (lefts, rights)
   _ -> Nothing
 
+
+{- | 
+We want to handle things like
+  * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+
+To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github.com/mrkkrp/parser-combinators/Control/Monad/Combinators/Expr.hs)
+
+One future complication I can see has to do with fun app.
+If we cannot tell from the syntax alone whether
+something is meant to be a func / 'in the func position of a func app', 
+we'd prob need to do a prelim pass to find all the function declarations first
+
+TODO: Think about what kind of validation we might want to do here
+-}
+expifyMTEs :: [MTExpr] -> ToLC BaseExp
+expifyMTEs = undefined
+
+----- Util funcs for looking up / annotating / making Vars -------------------------------------
+
 lookupVar :: Var -> VarTypeDeclMap -> Maybe L4EntType
 lookupVar var = preview (ix var % _Just)
 
@@ -460,9 +479,14 @@ isDeclaredVarTxt vartxt varTypeMap =
   let putativeVar = mkVar vartxt 
   in if HM.member putativeVar varTypeMap then Just putativeVar else Nothing
 
+-- TODO: Look into trying to add Maybe to our ToLC transformer stack
 -- | Use this to check if some MTE is a Var
 isDeclaredVar :: MTExpr -> ToLC (Maybe Var)
-isDeclaredVar = undefined
+isDeclaredVar = \case
+  MTT mteTxt -> do
+    localVars :: VarTypeDeclMap <- ToLC $ asks localVars
+    return $ isDeclaredVarTxt mteTxt localVars
+  _ -> return Nothing
 
 
 -- | Annotate with TLabel metadata if available
@@ -498,17 +522,6 @@ varFromMTEs mtes = pure $
 
 textifyMTEs :: [MTExpr] -> T.Text
 textifyMTEs = T.intercalate " " . fmap mtexpr2text
-
-{- | 
-We want to handle things like
-  * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
-
-To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github.com/mrkkrp/parser-combinators/Control/Monad/Combinators/Expr.hs)
-
-TODO: Think about what kind of validation we might want to do here
--}
-expifyMTEs :: [MTExpr] -> ToLC BaseExp
-expifyMTEs = undefined
 
 ---------------------------------------------------------
 

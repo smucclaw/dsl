@@ -208,6 +208,7 @@ data SimpleHlike a b =
              }
   deriving stock (Eq, Show, Generic)
 
+-- TODO: Meng pointed out that AtomicHC can be thought of as a special case of MultiClauseHL too. Need to think more abt this.
 data BaseHL = OneClause AtomicHC | MultiClause MultiClauseHL
   deriving stock (Eq, Show, Generic)
 

@@ -540,11 +540,6 @@ processHcBody = \case
     makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
     makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
 
-  -- foldM go EmptySeqE
-  -- where
-  --   go :: SeqExp -> SimpleHL -> ToLC SeqExp
-  --   go seqExp hornlike = ConsSE <$> expifyHL hornlike <*> pure seqExp
-
 
 {- |
 Helps to remember: 

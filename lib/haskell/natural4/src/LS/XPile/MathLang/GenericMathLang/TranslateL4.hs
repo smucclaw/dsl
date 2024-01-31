@@ -470,7 +470,6 @@ toIfExp hl hc = do
 {- | Preconditions / assumptions: The L4 rule that's being processed corresponds to an EIf in our LC AST; 
 i.e., the RelationalPredicate comes from an L4 rule tt's been identified as corresponding to an EIf
 
-
 What can be in hHead if the ambient L4 rule is an EIf?
   Set Var
     (i) Simple Set Var: 
@@ -485,6 +484,31 @@ processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
 processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
 processHcHeadForIf rp = throwNotSupportedError rp
+
+{- Note that processing hcHead for *function definitions* would need to consider cases like the following,
+   though do check if the conventions have changed --- this example might be outdated
+    
+      HC
+        { hHead = RPMT
+            [ MTT "ind"
+            , MTT "meets the property eligibility criteria for GSTV-Cash"
+            ]
+        , hBody = Just
+            ( Any Nothing
+                [ Not
+                    ( Leaf
+                        ( RPMT
+                            [ MTT "ind"
+                            , MTT "owns more than one property"
+                            ]
+                        )
+                    )
+                , Leaf
+                    ( RPMT
+                        [ MTT "ind"
+                        , MTT "owns 2 or more HDB flats and no other property"
+                        ] ) ] ) }
+-}
 
 isSetVarToTrue :: L4.RelationalPredicate -> Maybe [MTExpr]
 isSetVarToTrue = \case

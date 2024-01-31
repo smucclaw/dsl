@@ -35,7 +35,7 @@ import LS.Rule (
 import LS.Rule qualified as L4 (Rule(..))
 
 import Control.Monad (join)
-import Effectful (Effect, Eff, runPureEff, raise)
+import Effectful (Effect, Eff, (:>), runPureEff, raise)
 import Effectful.TH (makeEffect)
 import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
@@ -222,11 +222,11 @@ b/c in L4 it might be possible to declare and initalize a global var from, e.g.,
 
 ---------------- Errors related ---------------------------------------------------
 
-data ToLCError = NotYetImplemented T.Text -- SrcPositn
-               | ParserProblem T.Text
-               | NotSupported T.Text
-               | MiscError T.Text
-
+-- TODO: Add SrcPositn
+data ToLCError = NotYetImplemented T.Text T.Text
+               | ParserProblem T.Text T.Text
+               | NotSupported T.Text T.Text
+               | MiscError T.Text T.Text
   deriving stock (Eq, Show, Generic)
 
 instance Hashable ToLCError
@@ -511,7 +511,7 @@ lookupVar var = preview (ix var % _Just)
 -}
 isDeclaredVarTxt :: T.Text -> VarTypeDeclMap -> Maybe Var
 isDeclaredVarTxt vartxt varTypeMap =
-  let putativeVar = mkVar vartxt 
+  let putativeVar = mkVar vartxt
   in if HM.member putativeVar varTypeMap then Just putativeVar else Nothing
 
 -- TODO: Look into trying to add Maybe to our ToLC transformer stack
@@ -533,18 +533,32 @@ mkVarExp var = do
                                      }
   return $ MkExp (EVar var) [varExpMetadata]
 
-mkSetVarHelper :: [MTExpr] -> Exp -> ToLC BaseExp
-mkSetVarHelper putativeVar argE = do
-  varE <- mkVarExp =<< varFromMTEs putativeVar
-  return $ EVarSet varE argE
+-- | Make a var set exp, when you know it's a var
+mkVarSetFromVar :: Var -> Exp -> ToLC BaseExp
+mkVarSetFromVar var argE = EVarSet <$> mkVarExp var <*> pure argE
+
+mkSetVarFromMTEsHelper :: [MTExpr] -> Exp -> ToLC BaseExp
+mkSetVarFromMTEsHelper putativeVar argE = do
+  var <- varFromMTEs putativeVar
+  mkVarSetFromVar var argE
+
+mkVarSetTrueFromVar :: Var
+                    -> (BaseExp -> Exp)
+                    -- ^ Func that augments base exp with metadata
+                    -> ToLC BaseExp
+mkVarSetTrueFromVar var mdFunc = mkVarSetFromVar var (mdFunc $ ELit EBoolTrue)
+
+mkSetVarTrueExpFromVarNoMd :: Var -> ToLC Exp
+mkSetVarTrueExpFromVarNoMd var = noExtraMdata <$> mkVarSetTrueFromVar var noExtraMdata
+
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
-mkSetVarTrue putativeVar = mkSetVarHelper putativeVar (noExtraMdata $ ELit EBoolTrue)
+mkSetVarTrue putativeVar = mkSetVarFromMTEsHelper putativeVar (noExtraMdata $ ELit EBoolTrue)
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
   arg <- noExtraMdata <$> expifyMTEs argMTEs
-  mkSetVarHelper putativeVar arg
+  mkSetVarFromMTEsHelper putativeVar arg
 
 {- | TODO: Check that it meets the formatting etc requirements for a variable,
 (e.g. prob don't want var names to start with numbers, and probably want to error if the MTE is a MTB)
@@ -614,10 +628,37 @@ So the things that can be part of hBody are:
                       ( RPMT
                           [ MTT "vivacity" ]
                       ))}
+
   3. boolean propn
+
+      e.g.: arithmetic comparisons
+          , Leaf
+              ( RPConstraint
+                  [ MTT "ind's"
+                  , MTT "age"
+                  ] RPgte
+                  [ MTI 21 ]
+              )
+
   4. (edge case: OTHERWISE --- haven't thought too much abt this yet)
 
 This is where we might want to use pattern synonyms
 -}
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
-expifyBodyRP rp = undefined
+expifyBodyRP = \case
+
+  -- 'var == True'
+  rp@(RPMT [mte]) -> do
+    mvar <- isDeclaredVar mte
+    case mvar of
+      Just var -> mkSetVarTrueExpFromVarNoMd var
+      Nothing -> throwNotSupportedWithMsgError rp "Not sure if we can assume this means: 'check if <var> == True' --- would need to think through spec / conventions more"
+
+  -- func app
+  RPConstraint lefts RPis rights -> throwNotYetImplError "Func app not implemented / supported yet, but will hopefully be in next release"
+
+  -- arithmetic comparisons
+  RPConstraint lefts rel rights -> arithComparisons lefts rights rel
+
+
+arithComparisons = undefined

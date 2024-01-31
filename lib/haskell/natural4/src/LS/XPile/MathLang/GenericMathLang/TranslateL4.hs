@@ -236,15 +236,22 @@ stringifyToLCError :: ToLCError -> T.Text
 stringifyToLCError = undefined
 
 ---- Specialized error throwing convenience funcs ---------------------------------
--- | TODO: make this better with `pretty` and better structured errors later
+
+-- | TODO: make this better with `pretty` and better structured errors later; see also `diagnose` package
+throwErrorBase :: (Error e :> '[Error ToLCError], Show p) => (T.Text -> T.Text -> e) -> p -> T.Text -> ToLC a
+throwErrorBase errorType l4ds msg = ToLC $ throwError $ errorType (T.pack . show $ l4ds) msg
+
 throwNotYetImplError :: Show a => a -> ToLC b
-throwNotYetImplError l4ds = ToLC $ throwError $ NotYetImplemented (T.pack . show $ l4ds)
+throwNotYetImplError l4ds = throwErrorBase NotYetImplemented l4ds ""
 
 throwNotSupportedError :: Show a => a -> ToLC b
-throwNotSupportedError l4ds = ToLC $ throwError $ NotSupported (T.pack . show $ l4ds)
+throwNotSupportedError l4ds = throwErrorBase NotSupported l4ds ""
 
-throwParserProblem :: (Show a) => a -> T.Text -> ToLC c
-throwParserProblem l4ds msg = ToLC $ throwError $ ParserProblem $ (T.pack . show $ l4ds) <> msg
+throwNotSupportedWithMsgError :: Show a => a -> T.Text  -> ToLC b
+throwNotSupportedWithMsgError = throwErrorBase NotSupported
+
+throwParserProblemWithMsg :: (Show a) => a -> T.Text -> ToLC c
+throwParserProblemWithMsg = throwErrorBase ParserProblem
 
 -------- Env -----------------------------------------------------------------------
 
@@ -338,7 +345,7 @@ simplifyL4Hlike rule =
                           , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
                           , baseHL = baseHL
                           }
-    Nothing -> throwParserProblem rule "Parser should not be returning L4 rules with Nothing in src ref"
+    Nothing -> throwParserProblemWithMsg rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
 given :: Maybe ParamText = Maybe (NonEmpty TypedMulti) 
         = Maybe (NonEmpty 
@@ -354,7 +361,7 @@ l4HcToAtomicHC hc =
 extractBaseHL :: L4.Rule -> ToLC BaseHL
 extractBaseHL rule =
   case rule.clauses of
-    [] -> throwParserProblem rule "Parser should not return L4 Hornlikes with no clauses"
+    [] -> throwParserProblemWithMsg rule "Parser should not return L4 Hornlikes with no clauses"
     [hc] -> pure $ OneClause . l4HcToAtomicHC $ hc
     multipleHCs -> pure $ MultiClause . mkMultiClauseHL $ fmap l4HcToAtomicHC multipleHCs
 

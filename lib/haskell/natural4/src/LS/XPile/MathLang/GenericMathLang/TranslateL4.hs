@@ -434,6 +434,15 @@ baseExpify hornlike = throwNotYetImplError hornlike
 -- baseExpify (isLamDef -> ...) = ...
 -- baseExpify (isBlockOfExps -> ...)) = ...
 
+
+{- | TODO: Need to figure out (and decide) how to distinguish function definitions from IFs,
+since right now this would consider something like the following to be an IF:
+    GIVEN		ind		IS	A	Person	
+        t		IS	A	Timepoint	
+    DECIDE		ind	meets the property eligibility criteria for GSTV-Cash				
+    IF	NOT	ind	owns more than one property				
+    OR		ind	owns 2 or more HDB flats and no other property				
+-}
 isIf :: SimpleHL -> Maybe (SimpleHL, HnBodHC)
 isIf hl =
   case hl.baseHL of
@@ -446,7 +455,7 @@ isIf hl =
 toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
 toIfExp hl hc = do
   condE <- withLocalVarsAndSrcPos $ processHcBody hc.hbBody
-  thenE <- withLocalVarsAndSrcPos $ processHcHead hc.hbHead
+  thenE <- withLocalVarsAndSrcPos $ processHcHeadForIf hc.hbHead
   return $ EIfThen condE thenE
   where
     withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
@@ -458,20 +467,24 @@ toIfExp hl hc = do
 
 --------------------- Head of HL and Var Set ------------------------------------------------------------
 
-{- | What can be in hHead?
-Set Var
-  (i) Simple Set Var: 
-    * `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
-  (ii) Set Var True (typically with an IF):
-    * `RPMT [ MTT "case 1 qualifies" ]
+{- | Preconditions / assumptions: The L4 rule that's being processed corresponds to an EIf in our LC AST; 
+i.e., the RelationalPredicate comes from an L4 rule tt's been identified as corresponding to an EIf
+
+
+What can be in hHead if the ambient L4 rule is an EIf?
+  Set Var
+    (i) Simple Set Var: 
+      * `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+    (ii) Set Var True (typically with an IF):
+      * `RPMT [ MTT "case 1 qualifies" ]
 
 Things like arithmetic constraints (<, >, etc) 
 don't appear here -- they appear in hBody
 -}
-processHcHead :: L4.RelationalPredicate -> ToLC Exp
-processHcHead (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
-processHcHead (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
-processHcHead rp = throwNotSupportedError rp
+processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
+processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
+processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
+processHcHeadForIf rp = throwNotSupportedError rp
 
 isSetVarToTrue :: L4.RelationalPredicate -> Maybe [MTExpr]
 isSetVarToTrue = \case
@@ -600,10 +613,6 @@ processHcBody = \case
     makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
 
 
--- patterns for `expifyBodyRP`
-
-
-
 {- |
 Helps to remember: 
   * if it's in the hBody, 
@@ -650,6 +659,7 @@ This is where we might want to use pattern synonyms
 -}
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
 expifyBodyRP = \case
+  RPMT (MTT "OTHERWISE" : _mtes) -> throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
   -- 'var == True'
   rp@(RPMT [mte]) -> do
@@ -662,7 +672,8 @@ expifyBodyRP = \case
   RPConstraint lefts RPis rights -> throwNotYetImplError "Func app not implemented / supported yet, but will hopefully be in next release"
 
   -- arithmetic comparisons
-  RPConstraint lefts rel rights -> arithComparisons lefts rights rel
+  RPConstraint lefts rel rights -> expifyArithComparisons lefts rights rel
 
 
-arithComparisons = undefined
+expifyArithComparisons :: [MTExpr] -> [MTExpr] -> RPRel -> ToLC Exp
+expifyArithComparisons = undefined

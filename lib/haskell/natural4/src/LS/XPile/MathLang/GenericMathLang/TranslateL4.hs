@@ -216,8 +216,8 @@ throwNotYetImplError l4ds = ToLC $ throwError $ NotYetImplemented (T.pack . show
 throwNotSupportedError :: Show a => a -> ToLC b
 throwNotSupportedError l4ds = ToLC $ throwError $ NotSupported (T.pack . show $ l4ds)
 
-throwParserParserProblem :: (Show a) => a -> T.Text -> ToLC c
-throwParserParserProblem l4ds msg = ToLC $ throwError $ ParserProblem $ (T.pack . show $ l4ds) <> msg
+throwParserProblem :: (Show a) => a -> T.Text -> ToLC c
+throwParserProblem l4ds msg = ToLC $ throwError $ ParserProblem $ (T.pack . show $ l4ds) <> msg
 
 -------- Env -----------------------------------------------------------------------
 
@@ -311,7 +311,7 @@ simplifyL4Hlike rule =
                           , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
                           , baseHL = baseHL
                           }
-    Nothing -> throwParserParserProblem rule "Parser should not be returning L4 rules with Nothing in src ref"
+    Nothing -> throwParserProblem rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
 given :: Maybe ParamText = Maybe (NonEmpty TypedMulti) 
         = Maybe (NonEmpty 
@@ -327,7 +327,7 @@ l4HcToAtomicHC hc =
 extractBaseHL :: L4.Rule -> ToLC BaseHL
 extractBaseHL rule =
   case rule.clauses of
-    [] -> throwParserParserProblem rule "Parser should not return L4 Hornlikes with no clauses"
+    [] -> throwParserProblem rule "Parser should not return L4 Hornlikes with no clauses"
     [hc] -> pure $ OneClause . l4HcToAtomicHC $ hc
     multipleHCs -> pure $ MultiClause . mkMultiClauseHL $ fmap l4HcToAtomicHC multipleHCs
 
@@ -456,10 +456,11 @@ We want to handle things like
 
 To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github.com/mrkkrp/parser-combinators/Control/Monad/Combinators/Expr.hs)
 
-One future complication I can see has to do with fun app.
+One future complication I can see has to do with fun app (when it appears inline).
+  EG: 'n1 + f n2'
 If we cannot tell from the syntax alone whether
 something is meant to be a func / 'in the func position of a func app', 
-we'd prob need to do a prelim pass to find all the function declarations first
+we'd prob need to do a prelim pass to find all the function defns / declarations first
 
 TODO: Think about what kind of validation we might want to do here
 -}

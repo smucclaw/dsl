@@ -79,7 +79,7 @@ toMathLangGen' l4a =
   let l4Hornlikes = l4a.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
-    Right lamCalcProgram -> (printLC lamCalcProgram, [])
+    Right lamCalcProgram -> (renderLC lamCalcProgram, [])
 
 -- runAndValidate = undefined
 
@@ -96,6 +96,6 @@ makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
         -- Not 'DRY' b/c the error reporting is intended, and will be made, to be more sophisticated than just listing the errors
 
 
--- | Print LC program to some sort of interchange format for subsequent serialization
-printLC :: LCProgram -> String
-printLC program = "Not Yet Implemented"
+-- | 'Print' LC program to some sort of interchange format for subsequent serialization
+renderLC :: LCProgram -> String
+renderLC program = "Not Yet Implemented"

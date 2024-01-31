@@ -134,13 +134,15 @@ varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar
 
 
-data Lit = EBoolTrue | EBoolFalse | ENumber Number | EString T.Text
+data Lit = EBoolTrue | EBoolFalse | EInteger Integer | EFloat Float | EString T.Text
   deriving stock (Eq, Ord, Show)
 
 
-data Op = OpPlus | OpNumEq | OpStrEq | OpMaxOf | OpSum | OpProduct
-  deriving stock (Eq, Ord, Show)
+data NumOp = OpPlus | OpMinus | OpMul | OpDiv | OpMaxOf | OpSum | OpProduct
+  deriving stock (Eq, Show)
 
+data CompOp = OpNumEq | OpLt | OpLte | OpGt | OpGte
+  deriving stock (Eq, Show)
 
 data SeqExp = EmptySeqE
             | ConsSE Exp SeqExp
@@ -150,11 +152,17 @@ data SeqExp = EmptySeqE
 -- | May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn
 data BaseExp =
     ELit { lit :: Lit }
-  | EOp
-    { binOp :: Op,
+  | ENumOp
+    { numOp :: NumOp,
       opLeft :: Exp, -- ^ left
       opRight :: Exp -- ^ right
     }
+  | ECompOp
+    { compOp :: CompOp,
+      compLeft :: Exp, 
+      compRight :: Exp
+    }
+
   | EIfThen
     { condExp :: Exp,
       thenExp :: Exp 
@@ -223,6 +231,13 @@ data Exp = MkExp
   deriving stock (Show)
 makeFieldLabelsNoPrefix ''Exp
 
+-- Consider doing something like the following in the future (http://blog.vmchale.com/article/ir-instances)
+-- instance Num Exp where
+--     (+) = ENumOp OpPlus
+--     (*) = ENumOp OpMul
+--     (-) = ENumOp OpMinus
+
+-- fromInteger = ...<TO ADD>... ELit . EInteger
 
 {--------------------------------------------------
   LC / Generic MathLang Program 

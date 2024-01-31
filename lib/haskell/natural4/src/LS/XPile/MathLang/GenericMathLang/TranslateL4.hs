@@ -3,7 +3,7 @@
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels, UndecidableInstances, RecordWildCards #-}
-{-# LANGUAGE OverloadedLists, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies, FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
@@ -149,7 +149,8 @@ Another way of carving up the space
 
 ---- Set Var ---------------------------------------- 
 
--------- Set Var to True If ...
+-------- Set Var to ...
+
     A hc with no body, and where RPis in head
 
     , HC
@@ -178,6 +179,32 @@ Another way of carving up the space
 
 
 ---------------------
+
+Block of clauses examples
+
+  * example of recursive sum / prod
+
+      , HC
+          { hHead = RPnary RPis
+              [ RPMT
+                  [ MTT "o3b" ]
+              , RPnary RPsum
+                  [ RPnary RPproduct
+                      [ RPMT
+                          [ MTT "o1" ]
+                      , RPMT
+                          [ MTF 1.0e-2 ]
+                      ]
+                  , RPnary RPproduct
+                      [ RPMT
+                          [ MTT "o2" ]
+                      , RPMT
+                          [ MTF 7.0e-2 ]
+                      ]
+                  ]
+              ]
+          , hBody = Nothing
+          }
 
 -}
 
@@ -546,6 +573,10 @@ processHcBody = \case
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
     makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
+
+
+-- patterns for `expifyBodyRP`
+
 
 
 {- |

@@ -76,13 +76,6 @@ packages:
       size: 325
   original:
     hackage: log-effectful-1.0.0.0
-- completed:
-    hackage: unbound-generics-0.4.3@sha256:12209c0049000d0dd8c3eb6013d0278a8b269a2421d9758083aab9f58c4b6b4c,5446
-    pantry-tree:
-      sha256: 0a62d14242839c1295c1f6763a0d435f1f3fe7d89829add21ea6d008e8cd52e2
-      size: 3171
-  original:
-    hackage: unbound-generics-0.4.3@sha256:12209c0049000d0dd8c3eb6013d0278a8b269a2421d9758083aab9f58c4b6b4c,5446
 snapshots:
 - completed:
     sha256: 56ef9e03804cb4827866e762dc9752eeb392adda8f4811690da110dd9a165b9e

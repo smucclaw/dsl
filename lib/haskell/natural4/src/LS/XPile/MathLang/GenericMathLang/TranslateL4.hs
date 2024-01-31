@@ -231,6 +231,7 @@ data ToLCError = NotYetImplemented ShowReprOfData Msg
                | ParserProblem ShowReprOfData Msg
                | NotSupported ShowReprOfData Msg
                | MiscError ShowReprOfData Msg
+               | ErrImpossible ShowReprOfData Msg
   deriving stock (Eq, Show, Generic)
 
 instance Hashable ToLCError
@@ -256,6 +257,9 @@ throwNotSupportedWithMsgError = throwErrorBase NotSupported
 
 throwParserProblemWithMsg :: (Show a) => a -> T.Text -> ToLC c
 throwParserProblemWithMsg = throwErrorBase ParserProblem
+
+throwErrorImpossibleWithMsg :: (Show a) => a -> T.Text -> ToLC c
+throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 -------- Env -----------------------------------------------------------------------
 
@@ -487,7 +491,7 @@ processHcHeadForIf rp = throwNotSupportedError rp
 
 {- Note that processing hcHead for *function definitions* would need to consider cases like the following,
    though do check if the conventions have changed --- this example might be outdated
-    
+
       HC
         { hHead = RPMT
             [ MTT "ind"
@@ -538,9 +542,14 @@ something is meant to be a func / 'in the func position of a func app',
 we'd prob need to do a prelim pass to find all the function defns / declarations first
 
 TODO: Think about what kind of validation we might want to do here
+
+NOTE: If it seems like literals will appear here (e.g. number literals), see defn of `mteToLitExp` for how to translate to literals
 -}
-expifyMTEs :: [MTExpr] -> ToLC BaseExp
-expifyMTEs = undefined
+baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
+baseExpifyMTEs = undefined
+
+expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
+expifyMTEsNoMd mtes = noExtraMdata <$> baseExpifyMTEs mtes
 
 ----- Util funcs for looking up / annotating / making Vars -------------------------------------
 
@@ -598,7 +607,7 @@ mkSetVarTrue putativeVar = mkSetVarFromMTEsHelper putativeVar (noExtraMdata $ EL
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
-  arg <- noExtraMdata <$> expifyMTEs argMTEs
+  arg <- noExtraMdata <$> baseExpifyMTEs argMTEs
   mkSetVarFromMTEsHelper putativeVar arg
 
 {- | TODO: Check that it meets the formatting etc requirements for a variable,
@@ -620,7 +629,7 @@ mteToLitExp = \case
   MTI integer -> ELit $ EInteger integer -- TODO: Can always change this if we want just one type for numbers
   MTF float -> ELit $ EFloat float
 
----------------------------------------------------------
+---------------- Processing HC Body --------------------------------------------
 
 processHcBody :: L4.BoolStructR -> ToLC Exp
 processHcBody = \case
@@ -678,11 +687,10 @@ So the things that can be part of hBody are:
               )
 
   4. (edge case: OTHERWISE --- haven't thought too much abt this yet)
-
-This is where we might want to use pattern synonyms
 -}
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
 expifyBodyRP = \case
+  -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
   -- 'var == True'
@@ -696,8 +704,38 @@ expifyBodyRP = \case
   RPConstraint lefts RPis rights -> throwNotYetImplError "Func app not implemented / supported yet, but will hopefully be in next release"
 
   -- arithmetic comparisons
-  RPConstraint lefts rel rights -> expifyArithComparisons lefts rights rel
+  RPConstraint lefts rel rights -> noExtraMdata <$> bexpifyArithComparisons lefts rights rel
+  -- TODO: yet another place where we might consider adding metadata (just replace `noExtraMdata`); see also defn of `toCompOpBExp`
 
+{- | Turns L4 arithmetic comparisons in body of RP to ToLC BaseExp
 
-expifyArithComparisons :: [MTExpr] -> [MTExpr] -> RPRel -> ToLC Exp
-expifyArithComparisons = undefined
+Examples:
+    , Leaf
+        ( RPConstraint
+            [ MTT "age" ] RPgte
+            [ MTI 21 ]
+        )
+    , Leaf
+        ( RPConstraint
+            [ MTT "property annual value" ] RPlte
+            [ MTI 21000 ]
+        )
+-}
+bexpifyArithComparisons :: [MTExpr] -> [MTExpr] -> RPRel -> ToLC BaseExp
+bexpifyArithComparisons lefts rights = \case
+  -- arith comparison ops
+  RPlt  -> toCompOpBExp OpLt
+  RPlte -> toCompOpBExp OpLte
+  RPgt  -> toCompOpBExp OpGt
+  RPgte -> toCompOpBExp OpGte
+  RPeq  -> toCompOpBExp OpNumEq
+
+  -- TODO: cases like these show we should stuff the ambient L4 rule into Env as well (or at least have a way of pushing that into some kind of 'log context') so tt we can pass them along when reporting errors
+  RPis -> throwErrorImpossibleWithMsg RPis "Should not be seeing this case again here --- the RPis case should already have been handed before this function (`bexpifyArithComparisons`) was called"
+  RPor -> throwNotSupportedError RPor
+  RPand -> throwNotSupportedError RPand
+
+  where
+    toCompOpBExp :: CompOp -> ToLC BaseExp
+    toCompOpBExp comp = ECompOp comp <$> expifyMTEsNoMd lefts <*> expifyMTEsNoMd rights
+    -- TODO: yet another place where we might consider adding metadata -- i.e., in the lefts and rights exps

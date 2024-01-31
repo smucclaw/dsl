@@ -154,8 +154,8 @@ data BaseExp =
     ELit { lit :: Lit }
   | ENumOp
     { numOp :: NumOp,
-      opLeft :: Exp, -- ^ left
-      opRight :: Exp -- ^ right
+      nopLeft :: Exp, -- ^ left
+      nopRight :: Exp -- ^ right
     }
   | ECompOp
     { compOp :: CompOp,

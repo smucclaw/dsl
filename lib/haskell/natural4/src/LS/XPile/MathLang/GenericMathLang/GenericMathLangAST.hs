@@ -182,7 +182,11 @@ data BaseExp =
   {- For now assume record labels are unique and won't clash with non-record varnames
   -}
 
-  -- | variable mutation; prob treat as also eval-ing to assigned value
+  {- | My impression from Meng's examples had been that he wanted variable mutation,
+       but he just told me on Wed Jan 31 that he actually prefers variables to be immutable.
+       This does help to simplify things.
+       TODO: Change AST and implmenetation in TranslateL4.hs accordingly if necessary
+  -}
   | EVarSet
     { vsetVar :: Exp,
       arg :: Exp

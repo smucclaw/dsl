@@ -279,9 +279,6 @@ runToLC (ToLC m) = runPureEff
 
 --------------------------------------------------------------------------------------------------
 
-isDeclaredVar :: MTExpr -> ToLC (Maybe Var)
-isDeclaredVar = undefined
-
 {- | Look for the global vars in a separate pass for now. 
 May need Reader, but only going to think abt that when we get there -}
 findGlobalVars :: Exp -> (Exp, GlobalVars)
@@ -455,11 +452,18 @@ isOtherSetVar = \case
 lookupVar :: Var -> VarTypeDeclMap -> Maybe L4EntType
 lookupVar var = preview (ix var % _Just)
 
-{- | Returns true iff input text (a T.Text!) corresponds to a local var (i.e., either a GIVEN or a type decl in WHERE)
+{- | Returns (Just $ Var <txt>) iff input text (a T.Text!) corresponds to a local var (i.e., either a GIVEN or a type decl in WHERE)
 (though the WHERE bit hasn't been implemented yet in rest of the code)
 -}
-isUserDeclaredVarTxt :: T.Text -> VarTypeDeclMap -> Bool
-isUserDeclaredVarTxt vartxt = HM.member (mkVar vartxt)
+isDeclaredVarTxt :: T.Text -> VarTypeDeclMap -> Maybe Var
+isDeclaredVarTxt vartxt varTypeMap =
+  let putativeVar = mkVar vartxt 
+  in if HM.member putativeVar varTypeMap then Just putativeVar else Nothing
+
+-- | Use this to check if some MTE is a Var
+isDeclaredVar :: MTExpr -> ToLC (Maybe Var)
+isDeclaredVar = undefined
+
 
 -- | Annotate with TLabel metadata if available
 mkVarExp :: Var -> ToLC Exp

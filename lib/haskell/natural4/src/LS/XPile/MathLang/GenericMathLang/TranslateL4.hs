@@ -222,11 +222,15 @@ b/c in L4 it might be possible to declare and initalize a global var from, e.g.,
 
 ---------------- Errors related ---------------------------------------------------
 
--- TODO: Add SrcPositn
-data ToLCError = NotYetImplemented T.Text T.Text
-               | ParserProblem T.Text T.Text
-               | NotSupported T.Text T.Text
-               | MiscError T.Text T.Text
+type Msg = T.Text
+type ShowReprOfData = T.Text
+{- | TODO: Add SrcPositn; 
+     also would be nice to just do something like NotYetImplemented :: Show a -> a -> ErrorMsg -> ToLCError
+-}
+data ToLCError = NotYetImplemented ShowReprOfData Msg
+               | ParserProblem ShowReprOfData Msg
+               | NotSupported ShowReprOfData Msg
+               | MiscError ShowReprOfData Msg
   deriving stock (Eq, Show, Generic)
 
 instance Hashable ToLCError
@@ -238,7 +242,7 @@ stringifyToLCError = undefined
 ---- Specialized error throwing convenience funcs ---------------------------------
 
 -- | TODO: make this better with `pretty` and better structured errors later; see also `diagnose` package
-throwErrorBase :: (Error e :> '[Error ToLCError], Show p) => (T.Text -> T.Text -> e) -> p -> T.Text -> ToLC a
+throwErrorBase :: (Error e :> '[Error ToLCError], Show p) => (ShowReprOfData -> Msg -> e) -> p -> Msg -> ToLC a
 throwErrorBase errorType l4ds msg = ToLC $ throwError $ errorType (T.pack . show $ l4ds) msg
 
 throwNotYetImplError :: Show a => a -> ToLC b

@@ -295,6 +295,8 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tomaude   :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
                    , tologicalenglish      :: w ::: Bool   <!> "True"  <?> "logical english"
+                   , tomathlangmw      :: w ::: Bool   <!> "True"  <?> "Meng's typed lambda calculus with arithmetic ops and convenience hofs, TS"
+                   , togenmathlang      :: w ::: Bool   <!> "True"  <?> "generic version of untyped lambda calculus with arithmetic ops and convenience hofs"
 
                    , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 
@@ -350,6 +352,7 @@ getConfig o = do
     , toJsonTp  = only o == "jsonTp"
     , toJsonUI  = only o == "jsonUI"
     , toMaude = only o == "maude"
+    , toMathLang = only o == "mathlang"
     , toLogicalEnglish = only o == "LogicalEnglish"
     , toSCasp   = only o == "scasp"
     , toUppaal  = only o == "uppaal"

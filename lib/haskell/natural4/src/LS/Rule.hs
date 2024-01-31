@@ -22,6 +22,7 @@ module LS.Rule
     dummyRef,
     extractMTExprs,
     getRlabel,
+    getGivenWithSimpleType,
     getDecisionHeads,
     hasClauses,
     hasGiven,
@@ -41,7 +42,7 @@ module LS.Rule
     srccol1,
     srcrow2,
     srctest,
-    whenDebug,
+    whenDebug
   )
 where
 
@@ -56,6 +57,7 @@ import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty qualified as NE (head)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
@@ -73,6 +75,7 @@ import LS.Types
     HornClause2,
     Inferrable,
     MTExpr (..),
+    TypedMulti,
     MultiTerm,
     MyStream,
     MyToken (Means),
@@ -87,7 +90,9 @@ import LS.Types
     ScopeTabs,
     SrcRef (..),
     TemporalConstraint,
-    TypeSig,
+    TypeSig(..),
+    ParamType(..),
+    EntityType,
     WithPos (WithPos, pos, tokenVal),
     bsp2text,
     defaultInferrableTypeSig,
@@ -100,7 +105,16 @@ import LS.Types
     rpHead,
   )
 import LS.XPile.Logging (XPileLogW)
-import Optics ( toListOf ) -- the Rule record has a `has` field
+import Optics
+  ( Field1 (_1),
+    Field2 (_2),
+    Ixed (ix),
+    toListOf,
+    (%),
+    (^.),
+    (^..),
+    (^?),
+  ) -- the Rule record has a `has` field
 import System.FilePath ((</>))
 import Text.Megaparsec
   ( ErrorItem (Tokens),
@@ -277,7 +291,9 @@ data RuleBody = RuleBody { rbaction   :: BoolStructP -- pay(to=Seller, amount=$1
 
 -- | find some unique name for the rule for purposes of scoping the symbol table.
 -- if a rule label is provided, we use that.
--- if it's not provided, we use the name.
+-- if it's not provided, we use the most relevant clue we can find.
+-- in the case of a deontic rule, it's the party in the rule.
+-- in the case of a constitutive rule, it's the name of the thing being decided.
 -- NOTE: we currently do not detect name collisions. In a future, more sophisticated version of this code, we would track the path to the rule.
 
 ruleLabelName :: Rule -> RuleName
@@ -409,6 +425,20 @@ defaultTypeDecl =
 extractMTExprs :: HasTypes s MTExpr => s -> [MTExpr]
 extractMTExprs = toListOf $ types @MTExpr
 
+-- type EntityType = Text.Text
+getSimpleTypeTOne :: TypeSig -> Maybe EntityType 
+getSimpleTypeTOne = \case
+  SimpleType TOne tn -> Just tn
+  _ -> Nothing
+
+-- | Simplify a TypedMulti -- i.e. a (NonEmpty MTExpr, Maybe TypeSig) --- with a SimpleType TOne typesig
+getGivenWithSimpleType :: TypedMulti -> Maybe (Text.Text, Maybe EntityType)
+getGivenWithSimpleType tm = do
+  let mvar = (tm ^.. _1 % types @Text.Text) ^? ix 0 
+  -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
+  let varType = (tm ^. _2) >>= getSimpleTypeTOne 
+  var <- mvar 
+  return (var, varType)
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool

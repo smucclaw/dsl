@@ -1,4 +1,4 @@
--- {-# OPTIONS_GHC -W #-}
+-- {-# OPTIONS_GHC -W #-}!
 -- {-# OPTIONS_GHC -foptimal-applicative-do #-}
 
 {-# LANGUAGE LambdaCase #-}
@@ -489,7 +489,6 @@ isDeclaredVar = \case
     return $ isDeclaredVarTxt mteTxt localVars
   _ -> return Nothing
 
-
 -- | Annotate with TLabel metadata if available
 mkVarExp :: Var -> ToLC Exp
 mkVarExp var = do
@@ -523,6 +522,14 @@ varFromMTEs mtes = pure $
 
 textifyMTEs :: [MTExpr] -> T.Text
 textifyMTEs = T.intercalate " " . fmap mtexpr2text
+
+mteToLitExp :: MTExpr -> BaseExp
+mteToLitExp = \case
+  MTT txt -> ELit . EString $ txt
+  MTB True -> ELit EBoolTrue
+  MTB False -> ELit EBoolFalse
+  MTI integer -> ELit $ EInteger integer -- TODO: Can always change this if we want just one type for numbers
+  MTF float -> ELit $ EFloat float
 
 ---------------------------------------------------------
 

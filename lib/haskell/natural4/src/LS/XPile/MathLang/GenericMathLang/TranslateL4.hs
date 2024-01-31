@@ -428,8 +428,8 @@ expifyHL hl = addMdataFromSimpleHL hl (baseExpify hl)
 
 {- | My current understanding is that the LC Exps that a SimpleHL can be are:
 1. If Then (maybe also If Then Else; not sure offhand)
-2. Lam Def
-3. Block of statements / expressions
+2. Lam Def (TODO)
+3. Block of statements / expressions (TODO)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc

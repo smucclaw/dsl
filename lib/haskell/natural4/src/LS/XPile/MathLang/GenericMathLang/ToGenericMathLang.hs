@@ -26,7 +26,6 @@ module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang where
 
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig)
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 -- import LS.Interpreter (qaHornsT)
 import LS.Rule (Interpreted(..), extractMTExprs, getGivenWithSimpleType,
@@ -37,7 +36,7 @@ import Effectful
 import Effectful.Error.Dynamic
 import Effectful.Reader.Static (runReader, Reader)
 import Effectful.State.Static.Shared (State, runState)
--- experimenting with Effectful.Error rn; will switch over to Control.Monad.Validate later
+-- experimenting with Effectful.Error rn; may switch over to Control.Monad.Validate later
 -- import Control.Monad.Validate
 --   ( MonadValidate (..)
 --     , Validate

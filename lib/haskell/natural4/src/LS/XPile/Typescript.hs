@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-| transpiler to Typescript.
@@ -110,6 +111,9 @@ import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (isJust, isNothing)
+-- JsonLogic
+
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as DTL
 import Data.Tree qualified as DT
@@ -204,7 +208,7 @@ import Prettyprinter
     vsep,
     (<+>),
   )
--- JsonLogic
+import Prettyprinter.Interpolate (di)
 import Text.JSON (Result (Error, Ok), decode, encode)
 import Text.Pretty.Simple (pShowNoColor)
 
@@ -437,15 +441,12 @@ tsEnums l4i = pure $
                              ] )
         <//> rbrace
 
-
-
-
 -- | all the instance symbols we know about, including those that show up in GIVEN, DEFINE, and DECIDE.
 -- This is probably not the best way to do it because we're commingling local and global variables here.
 -- Happy to rethink all of this.
 -- Also, not yet done, classes and variables need to be topologically sorted because typescript is picky about that.
 jsInstances :: Interpreted -> XPileLog (Doc ann)
-jsInstances l4i = return $
+jsInstances l4i = pure $
   let sctabs = scopetable l4i
   in
   vvsep [ "//" <+> "scope" <+> scopenameStr scopename <//>
@@ -463,7 +464,7 @@ jsInstances l4i = return $
 
                              -- also, we should preorganize all the constContents into a canonical data structure hierarchy, rather than try to fit things into the sctabs
                               HC { hHead = RPParamText {} } ->
-                                let constContents = asValuePT l4i vals ++ methods l4i mt
+                                let constContents = asValuePT l4i vals <> methods l4i mt
                                 in [ encloseSep (lbrace <> line) (line <> rbrace) (comma <> space) constContents ]
                               _ ->
                                 ["// hc2ts" <> line, hc2ts l4i val]
@@ -500,8 +501,8 @@ methods l4i mt =
 vpToTS :: Interpreted -> ValuePredicate -> Doc ann
 vpToTS l4i ValPred{..}
   | attrCond == Just (Leaf (RPMT [MTT "OTHERWISE"]))
-    || isNothing attrCond                = "return" <+> pretty attrVal
-  | isJust    attrCond && isJust attrVal = "if" <+> parens (rp2ts attrCond) <+> braces ("return" <+> pretty attrVal)
+    || isNothing attrCond                = [di|return #{attrVal}|]
+  | isJust    attrCond && isJust attrVal = [di|if (#{rp2ts attrCond}) { return #{attrVal}}|]
   | otherwise                            = "return null // [TODO]"
   where
     rp2ts :: Maybe BoolStructR -> Doc ann
@@ -514,7 +515,7 @@ vpToTS l4i ValPred{..}
       let rp = mt2objStr mt1
       in -- "// vpToTS case 1" <> line <>
          -- "// GIVENs in the original rule" <> viaShow (given <$> origRule) <> line <>
-         pretty rp <+> renderRPrel rprel <+> handleEnum [last mt1] mt2
+         [di|#{rp} #{renderRPrel rprel :: Doc ann} #{handleEnum [last mt1] mt2}|]
 
     -- special case, but we need to handle the general case better below
     bsr2ts (Leaf (RPnary RPis [RPMT mt1, RPMT mt2])) =
@@ -539,7 +540,7 @@ vpToTS l4i ValPred{..}
     mt2objStr mt =
       let (outStr, outLog) = xpLog $ toObjectStr mt
       in case outStr of
-           Left err -> "// error encountered in bsr2ts conversion of ValuePredicate to Typescript code: " <> show err
+           Left err -> [i|// error encountered in bsr2ts conversion of ValuePredicate to Typescript code: #{err}|]
            Right rp -> T.unpack rp
 
     renderRPrel RPis = "=="
@@ -549,22 +550,21 @@ vpToTS l4i ValPred{..}
 
     -- upgrade a value Monday to a DaysEnum.Monday 
     handleEnum :: MultiTerm -> MultiTerm -> Doc ann
-    handleEnum mt1 mt2 =
-      if isAnEnum l4i (given =<< origRule) mt1
-      then snake_case mt1 <> "Enum" <> "." <> snake_case mt2
-      else pretty (mt2text mt2)
+    handleEnum mt1 mt2
+      | isAnEnum l4i (given =<< origRule) mt1 =
+        [i|#{snake_case mt1}Enum.#{snake_case mt2}|]
+      | otherwise = pretty $ mt2text mt2
 
 -- | top-level DEFINEs, going rule by rule
 -- just the facts.
 globalDefinitions :: Interpreted -> XPileLog (Doc ann)
-globalDefinitions l4i = return $
+globalDefinitions l4i = pure $
   vvsep [ "const" <+> dumpNestedClass l4i f
         | f <- globalFacts l4i
         ]
 
 -- | What's going on with nested classes?
 -- See the discussion in localvars.org
-
 
 dumpNestedClass :: Interpreted -> DT.Tree ParamText -> Doc ann
 dumpNestedClass l4i (DT.Node pt children)
@@ -575,7 +575,6 @@ dumpNestedClass l4i (DT.Node pt children)
   | otherwise =
     -- "// pt:"       <+> viaShow pt <//>
     pretty (PT4 pt l4i)
-
 
 -- | convert the decision logic into functions that do the right thing.
 --
@@ -614,7 +613,7 @@ hc2ts  l4i  hc2@HC { hHead = RPnary      _rprel rps }        = hc2ts l4i hc2 {hH
 -- | for debugging at the moment only.
 toPlainTS :: Interpreted -> XPileLog (Doc ann)
 toPlainTS l4i = do
-  return $ vvsep [ "//" <+> viaShow valpred
+  pure $ vvsep [ [di|// #{valpred}|]
                  | valpred <- valuePreds l4i
                  ]
 
@@ -623,15 +622,13 @@ toJsonLogic l4i = do
   mutterd 1 "toJsonLogic"
   -- 2 + 2
   varData <- case decode "{ \"foo\" : \"bar\" }" of
-               Ok jsVarData -> return jsVarData
+               Ok jsVarData -> pure jsVarData
                Error err    -> mutterd 2 "error while decoding" >> mutter err
 
-  return $ "const varData" <+> equals <+> pretty (encode varData)
+  pure [di|const varData = #{encode varData}|]
 
 -- dump only the paramtexts
 asValuePT :: Interpreted -> [HornClause2] -> [Doc ann]
 asValuePT l4i hc2s = -- trace ("asValuePT: " <> show hc2s) $
-  [ "// hc2s: " <> viaShow hc2s <>
-    pretty (PT4 pt l4i)
+  [ [di|// hc2s: #{hc2s} $ PT4 pt l4i|]
   | HC { hHead = RPParamText pt } <- hc2s ]
-

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-| transpiler from NaturaL4 to Prolog. This module useful as a point of
 reference for L4's operational semantics. If you know Prolog, you can
@@ -79,6 +80,7 @@ import Prettyprinter
     punctuate,
     vsep,
   )
+import Prettyprinter.Interpolate (di)
 
 -- Document generation for Logic Programs 
 -- Currently supported: Prolog and SCasp
@@ -100,10 +102,8 @@ instance ShowLP Clause where
   showLP t c = pretty (show c)
 
 instance ShowLP Term where
-  showLP SCasp trm@(Struct atom terms) =
-    if showLPIsSpecial atom
-    then showLPspecialSCasp atom terms
-    else pretty (show trm)
+  showLP SCasp trm@(Struct atom@(showLPIsSpecial -> True) terms) =
+    showLPspecialSCasp atom terms
   showLP t trm = pretty (show trm)
 
 showLPIsSpecial :: Atom -> Bool
@@ -117,7 +117,6 @@ showLPIsSpecial "=" = True
 showLPIsSpecial "==" = True
 showLPIsSpecial _ = False
 
-
 showLPspecialSCasp :: Atom -> [Term] -> Doc ann
 showLPspecialSCasp "IS" = showBinaryInfixSCasp "#="
 showLPspecialSCasp "<"  = showBinaryInfixSCasp "#<"
@@ -130,9 +129,10 @@ showLPspecialSCasp "==" = showBinaryInfixSCasp "#="
 
 showBinaryInfixSCasp :: Text.Text -> [Term] -> Doc ann
 showBinaryInfixSCasp sym (trm1:trm2:trms) =
-  pretty (show trm1) <>
-  pretty (sym :: Text.Text) <>
-  pretty (show trm2)
+  [di|#{trm1}#{sym :: Text.Text}#{trm2}|]
+  -- pretty (show trm1) <>
+  -- pretty (sym :: Text.Text) <>
+  -- pretty (show trm2)
 
 prologExamples :: [Clause]
 prologExamples =
@@ -190,12 +190,12 @@ rule2clause st TypeDecl {} = []
 --     , super = Just
 --         ( SimpleType TOne "Chirality" )
 
-rule2clause _st _ = [ mkComment "clause Not Handled" ]
+rule2clause _st _ = [mkComment "clause Not Handled"]
 
 describeDict :: Analysis -> Text.Text -> Maybe TypeSig -> [Rule] -> [Clause]
 describeDict st tname mparent rules =
   maybe [] (\parent -> [describeParent st tname parent]) mparent
-  ++
+  <>
   [ Clause (Struct "l4type" [var "class", vart tname, var "attr", vart (mt2text $ name rule), vart typeDesc]) []
   | rule <- rules
   , let typeDesc = maybe "untyped" showtype (super rule)
@@ -217,7 +217,7 @@ showtype (InlineEnum pt        tt) =
   showtype $ SimpleType pt (inEnums (fmap mtexpr2text <$> untypePT tt))
 
 inEnums :: NonEmpty (NonEmpty Text.Text) -> Text.Text
-inEnums pt = [i|enums(#{Text.unwords [ h | (h :| _) <- NE.toList pt ]})|]
+inEnums pt = [i|enums(#{Text.unwords [h | h :| _ <- NE.toList pt]})|]
              -- we gonna need the same writer magic to append top-level output.
              -- in future, run clpEnums
              -- for now, just blurt it out
@@ -227,14 +227,18 @@ describeParent _st tname parent =
   Clause (Struct "l4type" [var "class", vart tname, var "extends", vart (showtype parent)]) []
 
 varmt :: MTExpr -> Term
-varmt (MTT t) = var (Text.unpack t)
-varmt (MTB b) = var (show b)
-varmt (MTF n) = var (show n)
-varmt (MTI i) = var (show i)
+varmt (MTT t) = var [i|#{t}|]
+varmt (MTB b) = var [i|#{b}|]
+varmt (MTF n) = var [i|#{n}|]
+varmt (MTI i) = var $ show i
 
-vart, vartl, vartu :: Text.Text -> Term
+vart :: Text.Text -> Term
 vart  = var  . Text.unpack
+
+vartl :: Text.Text -> Term
 vartl = vart . Text.toLower
+
+vartu :: Text.Text -> Term
 vartu = vart . Text.toTitle
 
 vari :: Int -> Term
@@ -242,8 +246,8 @@ vari = var . show
 
 clpEnums :: Analysis -> Text.Text -> ParamText -> [Clause]
 clpEnums _st tname ens =
-  [ Clause (Struct "l4enum" [vartl tname, vari i, vartl (mtexpr2text v)]) []
-  | (v :| _, i) <- Prelude.zip (NE.toList $ untypePT ens) [n..] ]
+  [Clause (Struct "l4enum" [vartl tname, vari i, vartl (mtexpr2text v)]) []
+  | (v :| _, i) <- zip (NE.toList $ untypePT ens) [n..]]
   where n = 1 :: Int
   -- [TODO]: get n out of Analysis which should become a State monad and then use it as a primary index across all enums
 
@@ -269,7 +273,7 @@ bsp2struct (Any _lbl xs) = vart "or" : foldMap bsp2struct xs
 bsr2struct :: BoolStructR -> [Term]
 bsr2struct (Leaf rt)     = rp2goal rt
 bsr2struct (Not  rt)     = vart "neg" : bsr2struct rt
-bsr2struct (All _lbl xs) =    foldMap bsr2struct xs
+bsr2struct (All _lbl xs) = foldMap bsr2struct xs
 bsr2struct (Any _lbl xs) = vart "or" : foldMap bsr2struct xs
 
 mbsr2rhs :: Maybe BoolStructR -> [Term]
@@ -295,4 +299,3 @@ rel2f r = [i|#{rel2txt r}|]
 
 analyze :: [SFL4.Rule] -> Analysis
 analyze _rs = Map.fromList [("enumPrimaryKey", "1")] -- sorry, gonna have to read and show this all the time, slightly lame
-

@@ -726,9 +726,13 @@ r2fgl rs defRL Regulative{..} = pure do
                      -- vp2np
                      -- ( actionWord $ head $ actionFragments action) <> " " <>
                      henceWord deontic
-    traverse_ myTraceM [[i|Petri/r2fgl: actn = #{actn}|], [i|Petri/r2fgl: oblLab = #{actn}|]]
+    traverse_
+      myTraceM
+      [ [i|Petri/r2fgl: actn = #{actn}|],
+        [i|Petri/r2fgl: oblLab = #{actn}|]
+      ]
 
-    obligationN <- newNode (addDeet oblLab IsDeon)
+    obligationN <- newNode $ addDeet oblLab IsDeon
     onSuccessN <- newNode successLab
     traverse_ myTraceM
       [ [i|Petri/r2fgl: deontic = #{deontic}|],

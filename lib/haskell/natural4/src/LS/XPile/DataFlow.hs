@@ -1,26 +1,30 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 {-| transpiler to show dataflow for both arithmetic and boolean logic -}
 
-module LS.XPile.DataFlow where
+module LS.XPile.DataFlow () where
 
-import LS.XPile.Logging
-import LS
-import LS.Interpreter
-import LS.Rule
-
-import qualified Data.Map as Map -- if you want to upgrade this to Hashmap, go ahead
+-- if you want to upgrade this to Hashmap, go ahead
 
 -- fgl
-import Data.Graph.Inductive.Graph
+import Data.Graph.Inductive.Graph (Graph (mkGraph), Node)
 import Data.Graph.Inductive.PatriciaTree (Gr)
-
 -- graphviz
 import Data.GraphViz
+  ( DotGraph,
+    GlobalAttributes (GraphAttrs, NodeAttrs),
+    GraphID (Str),
+    GraphvizParams (..),
+    NodeCluster (C, N),
+    Shape (Circle),
+    graphToDot,
+    shape,
+  )
+import Data.GraphViz.Attributes.Complete (Attribute (Compound))
 import Data.GraphViz.Printing (renderDot)
-import Data.GraphViz.Attributes.Complete
+import Data.HashMap.Strict qualified as Map
+import LS
+import LS.XPile.Logging (XPileLog)
 
 -- * Conceptually, a FlowNode is either a rule or a leaf/ground term referenced by a rule.
 --
@@ -57,7 +61,7 @@ import Data.GraphViz.Attributes.Complete
 type FlowNode = RuleName
 
 -- | it is our responsibility to maintain a mapping between node label and node number for use with fgl.
-type FlowMap = Map.Map FlowNode Int
+type FlowMap = Map.HashMap FlowNode Int
 
 -- | We don't need edge labels. In the future, if we really wanted to, we could encode the control logic into an edge label, such that NOT is a 1, AND is a 2, etc etc.
 type DataFlowGraph = Gr FlowNode ()
@@ -69,7 +73,7 @@ dataFlowAsDot l4i = do
   -- https://hackage.haskell.org/package/fgl-5.8.1.1/docs/Data-Graph-Inductive-Graph.html#v:mkGraph
   let dfg :: DataFlowGraph
       dfg = mkGraph
-            (Map.toList ruleNodes ++ Map.toList leafNodes)
+            (Map.toList ruleNodes <> Map.toList leafNodes)
             ruleEdges
 
   let dot :: DotGraph Node
@@ -108,6 +112,3 @@ dataFlowAsDot l4i = do
       , fmtNode          = const []
       , fmtEdge          = const []
       }
-
-
-

@@ -391,7 +391,7 @@ text2rp :: Text.Text -> RelationalPredicate
 text2rp = RPParamText . text2pt
 
 pt2multiterm :: ParamText -> MultiTerm
-pt2multiterm pt = concat (toList (toList <$> untypePT pt))
+pt2multiterm = mconcat . toList . (toList <$>) . untypePT
 
 -- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
 rpHead :: RelationalPredicate -> MultiTerm
@@ -560,9 +560,11 @@ bsp2text (AA.All (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <
 bsp2text (AA.All (Just (AA.PrePost p1 p2)) xs) = [i|#{Text.unwords $ p1 : (bsp2text <$> xs)} #{p2}|]
 bsp2text (AA.All Nothing                   xs) = [i|all of:-#{Text.unwords $ bsp2text <$> xs}|]
 
-bsr2text, bsr2textnl :: BoolStructR -> Text.Text
+bsr2text :: BoolStructR -> Text.Text
 bsr2text   = bsr2text' Text.unwords
-bsr2textnl = bsr2text' (Text.intercalate "\\n")
+
+bsr2textnl :: BoolStructR -> Text.Text
+bsr2textnl = bsr2text' $ Text.intercalate "\\n"
 
 bsr2text' :: ([Text.Text] -> Text.Text) -> BoolStructR -> Text.Text
 bsr2text'  joiner (AA.Not                           x ) = joiner ["not",       bsr2text' joiner x]

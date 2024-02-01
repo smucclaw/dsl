@@ -546,6 +546,7 @@ data ValuePredicate = ValPred
   }
   deriving (Show, Eq, Ord, Generic)
 
+defaultValuePredicate :: ValuePredicate
 defaultValuePredicate = ValPred
   { moduleName = []
   , scopeName  = []

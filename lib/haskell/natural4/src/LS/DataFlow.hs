@@ -144,6 +144,3 @@ dataFlowAsDot l4i = do
 
 fmtRuleNode :: (Node, Rule) -> [Attribute]
 fmtRuleNode (n, r) = pure $ toLabel (Text.pack (show n) <> "\\n" <> mt2text (ruleName r))
-
-
-

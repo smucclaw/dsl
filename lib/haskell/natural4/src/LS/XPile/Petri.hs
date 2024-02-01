@@ -14,6 +14,7 @@ module LS.XPile.Petri (toPetri) where
 
 import AnyAll as AA (BoolStruct (All, Leaf))
 import Control.Applicative (Alternative ((<|>)))
+import Control.Arrow ((>>>))
 import Control.Monad (when)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS (lift)
@@ -26,7 +27,7 @@ import Control.Monad.State.Strict
   )
 import Data.Bifunctor (first)
 import Data.Coerce (coerce)
-import Data.Foldable (for_, traverse_)
+import Data.Foldable (foldl', for_, traverse_)
 import Data.Graph.Inductive.Graph
   ( Context,
     Graph (mkGraph, nodeRange),
@@ -77,7 +78,8 @@ import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
-import Flow ((.>), (|>))
+import Data.Tuple.Extra (uncurry3)
+import Flow ((|>))
 import LS
   ( BoolStructP,
     Deontic (DMay, DMust, DShant),
@@ -139,18 +141,29 @@ data PNode a = PN { ntype  :: NType
 
 type Petri a = Gr (PNode a) PLabel
 
-mkPlace,mkTrans,mkDecis :: Text -> PNode a
-mkPlace x = PN Place x [] []
-mkTrans x = PN Trans x [] []
-mkDecis x = PN Decis x [] []
+mkPlace :: Text -> PNode a
+mkPlace = mkPlaceTransDecis Place
+
+mkTrans :: Text -> PNode a
+mkTrans = mkPlaceTransDecis Trans
+
+mkDecis :: Text -> PNode a
+mkDecis = mkPlaceTransDecis Decis
 
 -- usage: mkPlaceC "start node" "comment label for start node"
 mkXC :: NType -> [a] -> Text -> PNode a
 mkXC x a l = PN x l [] a
 
-mkPlaceA,mkTransA,mkDecisA :: [a] -> Text -> PNode a
+mkPlaceTransDecis :: NType -> Text -> PNode a
+mkPlaceTransDecis x = mkXC x []
+
+mkPlaceA :: [a] -> Text -> PNode a
 mkPlaceA = mkXC Place
+
+mkTransA :: [a] -> Text -> PNode a
 mkTransA = mkXC Trans
+
+mkDecisA :: [a] -> Text -> PNode a
 mkDecisA = mkXC Decis
 
 pAddAttribute :: Attribute -> PNode a -> PNode a
@@ -173,7 +186,10 @@ petriGP = graphToDot (petriParams mySecondFGL) mySecondFGL
 
 -- main = putStrLn . Text.unpack $ renderDot $ unqtDot petriGP
 
-petriParams :: (Show a) => Gr (PNode a) PLabel -> GraphvizParams Int (PNode a) PLabel Int (PNode a)
+petriParams ::
+  (Show a) =>
+  Gr (PNode a) PLabel ->
+  GraphvizParams Int (PNode a) PLabel Int (PNode a)
 petriParams g = Params
   { isDirected       = True
   , globalAttributes = [GraphAttrs [Compound True]]
@@ -185,7 +201,7 @@ petriParams g = Params
   , fmtEdge          = fmtPetriEdge g
   }
 
-clusterby :: (Int,PNode a) -> LNodeCluster Int (PNode a)
+clusterby :: (Int, PNode a) -> LNodeCluster Int (PNode a)
 clusterby a@( 0,PN Place _ _ _) = C 3 (N a) -- breach
 clusterby a@( 1,PN Place _ _ _) = C 3 (N a) -- fulfilled
 clusterby a@(_n,PN Place _ _ _) = C 1 (N a)
@@ -286,7 +302,6 @@ elideNodes limit1 desc pnpred og = runGM og do
         , z   <- outdegrees
         ] id
 
-
 reorder :: [Rule] -> PetriD -> PetriD
 reorder _rules og = runGM og do
   -- x You if then must -> x if then you must
@@ -297,20 +312,21 @@ reorder _rules og = runGM og do
         , then3 <- suc og if2    , maybe False (hasDeet IsThen) (lab og then3)
         , must4 <- suc og then3  , maybe False (hasDeet IsDeon) (lab og must4)
         ] \(x0, you1, if2, then3, must4) -> do
-    delEdge' (x0, you1)
-    delEdge' (    you1, if2)
-    delEdge' (               then3, must4)
-    newEdge' (x0,       if2,                     [Comment "reordered"])
-    newEdge' (               then3, you1,        [Comment "reordered"])
-    newEdge' (                      you1, must4, [Comment "reordered"])
-
+    traverse_ delEdge' [(x0, you1), (you1, if2), (then3, must4)]
+    traverse_
+      newEdge'
+      [ (x0, if2, [Comment "reordered"]),
+        (then3, you1, [Comment "reordered"]),
+        (you1, must4, [Comment "reordered"])
+      ]
 
 mergePetri :: [Rule] -> PetriD -> PetriD
-mergePetri rules og = foldl (mergePetri' rules) og (nodes $ labfilter (hasDeet IsSplit) og)
+mergePetri rules og =
+  foldl' (mergePetri' rules) og $ nodes $ labfilter (hasDeet IsSplit) og
 
 mergePetri' :: [Rule] -> PetriD -> Node -> PetriD
 mergePetri' rules og splitNode = runGM og do
-  -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 3) (4 5 6)
+  -- rulealias split (x y 1 2 3) (x y 4 5 6) -> x y split (1 2 ) (4 5 6)
   -- myTraceM ("mergePetri': considering node " ++ show splitNode ++ ": " ++ (show $ lab og splitNode))
   for_ [ twins
         | let twins = suc og splitNode
@@ -320,8 +336,9 @@ mergePetri' rules og splitNode = runGM og do
     let grandchildren = foldMap (suc og) twins
         survivor : excess = twins
         parents = pre og splitNode
-    for_ twins         \n -> delEdge' (splitNode,n)
-    for_ twins         \n -> for_ grandchildren (\gc -> delEdge' (n,gc))
+    for_ twins \n -> do
+      delEdge' (splitNode, n)
+      for_ grandchildren \gc -> delEdge' (n, gc)
     for_ grandchildren \gc -> newEdge' (splitNode,gc,[Comment "due to mergePetri"])
     for_ parents       \n  -> do
                             newEdge' (n, survivor, [Comment "due to mergePetri"])
@@ -332,8 +349,8 @@ mergePetri' rules og splitNode = runGM og do
     -- myTraceM $ "mergePetri' " ++ show splitNode ++ ": leaving survivor " ++ show survivor
     -- myTraceM $ "mergePetri' " ++ show splitNode ++ ": recursing."
     newPetri <- getGraph
-    gs <- GM get
-    GM . put $ gs {currentGraph = mergePetri' rules newPetri splitNode }
+    gs <- mkGM get
+    mkGM $ put gs {currentGraph = mergePetri' rules newPetri splitNode }
 
 condElimination :: [Rule] -> PetriD -> PetriD
 condElimination _rules og = runGM og do
@@ -421,10 +438,12 @@ splitJoin _rs og _sj sgs entry = runGM og do
     -- If the entry node has children, then we need to care about splitting and
     -- joining. We first make a split node and connect:
     --    entry node -> split node -> children of entry node
-    splitnode <- newNode (PN Trans splitText [ Comment $ LT.pack $ "split node coming from entry " ++ show entry ] [IsInfra,IsAnd,IsSplit])
+    splitnode <- newNode (PN Trans splitText [Comment [i|split node coming from entry #{entry}|]] [IsInfra,IsAnd,IsSplit])
     newEdge' (entry,splitnode, [Comment "added by split from parent node"])
-    traverse_ newEdge' [ (splitnode, headnode, [Comment "added by split to headnode"])
-                   | headnode <- headsOfChildren ]
+    traverse_
+      newEdge'
+      [(splitnode, headnode, [Comment "added by split to headnode"])
+      | headnode <- headsOfChildren ]
     -- Now we check how many tail nodes there are in successTails.
     -- If there's only 1, then there's no need to make a join node and link that up.
     -- Doing this prevents redundant "All done" join nodes like
@@ -434,25 +453,29 @@ splitJoin _rs og _sj sgs entry = runGM og do
     --                                           |
     --                                        Fulfilled                      
     when (length successTails > 1) do
-      joinnode  <- newNode (PN Trans joinText [ Comment $ LT.pack $ "corresponding to splitnode " ++ show splitnode ++ " and successTails " ++ show successTails] [IsInfra,IsAnd,IsJoin] )
-      newEdge'         (           joinnode,fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
-      traverse_ newEdge' [ ( tailnode, joinnode,               [Comment "added by join from tailnode",    color Green]) | tailnode <- successTails    ]
+      joinnode  <- newNode (PN Trans joinText [ Comment [i|corresponding to splitnode #{splitnode} and successTails #{successTails}|]] [IsInfra,IsAnd,IsJoin] )
+      newEdge' (joinnode, fulfilledNode, [Comment "added by join to fulfilledNode", color Green])
+      traverse_ newEdge' [(tailnode, joinnode, [Comment "added by join from tailnode", color Green]) | tailnode <- successTails]
       -- myTraceM $ "splitJoin for joinnode " ++ show joinnode ++ " now calling delEdge' for successTails " ++ show successTails ++ ", fulfilledNode " ++ show fulfilledNode
-      traverse_ delEdge' [ ( tailnode, fulfilledNode ) | tailnode <- successTails ]
+      traverse_ delEdge' [(tailnode, fulfilledNode) | tailnode <- successTails]
 
 hasText :: Text -> PNode a -> Bool
-hasText  x  (PN _ nt _ _) = x == nt
+hasText x PN {ntext} = x == ntext
+
 hasDeet :: Eq a => a -> PNode a -> Bool
-hasDeet  x  (PN _ _ _ deets) =     x `elem` deets
+hasDeet x PN {ndeets} = x `elem` ndeets
+
 hasDeets :: (Foldable t, Eq a) => t a -> PNode a -> Bool
-hasDeets xs (PN _ _ _ deets) = all ( `elem` deets ) xs
+hasDeets xs pn = all (`hasDeet` pn) xs
+
 addDeet :: PNode a -> a -> PNode a
-addDeet  (PN a b c d) dt  = PN a b c (dt:d)
+addDeet pn@PN {ndeets} dt = pn {ndeets = dt : ndeets}
+
 addDeets :: PNode a -> [a] -> PNode a
-addDeets (PN a b c d) dts = PN a b c (dts++d)
+addDeets = foldl' addDeet
 
 getOrigRL :: PNodeD -> Maybe Text
-getOrigRL (PN _ _ _ ds) = listToMaybe [ t | (OrigRL t) <- ds ]
+getOrigRL PN {ndeets} = listToMaybe [t | OrigRL t <- ndeets]
 
 -- [TODO] we should refactor this into something that is output-independent and lives in Interpreter.
 connectRules :: PetriD -> [Rule] -> PetriD
@@ -511,7 +534,7 @@ connectRules sg rules =
       -- trace ("we need to expand RuleAlias nodes " ++ show aliasNodes)
       -- trace ("maybe they expand to headnodes " ++ show headNodes)
       -- trace ("and the outgraphs have happy tails " ++ show tailNodes)
-      foldl (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
+      foldl' (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
 
 
@@ -592,32 +615,32 @@ newNode lbl = do
   gs@GS {lastNode = n, currentGraph = g} <- mkGM get
   let n' = succ n
   -- myTraceM $ "newNode: " <> show n' <> " " <> show lbl
-  mkGM . put $ gs {lastNode = n' , currentGraph = insNode (n', lbl) g }
+  mkGM $ put gs {lastNode = n' , currentGraph = insNode (n', lbl) g }
   pure n'
 
 newEdge :: Node -> Node -> PLabel -> GraphMonad ()
 newEdge n1 n2 lbl = do
   gs@GS {currentGraph} <- mkGM get
-  mkGM . put $ gs {currentGraph = insEdge (n1, n2, lbl) currentGraph}
+  mkGM $ put gs {currentGraph = insEdge (n1, n2, lbl) currentGraph}
 
 newEdge' :: (Node, Node, PLabel) -> GraphMonad ()
-newEdge' (a,b,c) = newEdge a b c
+newEdge' = uncurry3 newEdge
 
 overwriteNode :: Node -> PNodeD -> GraphMonad Node
 overwriteNode n pn = do
   gs@GS {currentGraph} <- mkGM get
-  mkGM . put $ gs {currentGraph = insNode (n, pn) currentGraph}
+  mkGM $ put gs {currentGraph = insNode (n, pn) currentGraph}
   pure n
 
 delEdge' :: (Node, Node) -> GraphMonad ()
-delEdge' (n1,n2) = do
+delEdge' (n1, n2) = do
   gs@GS {currentGraph} <- mkGM get
-  mkGM . put $ gs {currentGraph = delEdge (n1, n2) currentGraph}
+  mkGM $ put gs {currentGraph = delEdge (n1, n2) currentGraph}
 
 delNode' :: Node -> GraphMonad ()
 delNode' n1 = do
   gs@GS {currentGraph} <- mkGM get
-  mkGM . put $ gs {currentGraph = delNode n1 currentGraph}
+  mkGM $ put gs {currentGraph = delNode n1 currentGraph}
 
 -- runGM :: PetriD -> GraphMonad a -> a
 runGM :: PetriD -> GraphMonad a -> PetriD
@@ -681,15 +704,13 @@ r2fgl rs defRL Regulative{..} = pure do
                         Just pt -> do
                               uponN <- newNode $ addDeet (mkPlace "upon") IsUpon
                               uponCondN <- newNode $ addDeets (mkTrans $ pt2text pt) [IsUpon,IsCond]
-                              newEdge' ( whoN,      uponN, [])
-                              newEdge' ( uponN, uponCondN, [])
+                              traverse_ newEdge' [( whoN, uponN, []), ( uponN, uponCondN, [])]
                               pure uponCondN
   conN  <- case cond of Nothing  -> pure upoN
                         Just bsr -> do
                             ifN     <- newNode $ (addDeet $ mkDecis [i|if #{bsr2textnl bsr}|]) IsCond
                             ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
-                            newEdge' ( upoN,    ifN, [] )
-                            newEdge' ( ifN, ifCondN, [] )
+                            traverse_ newEdge' [(upoN, ifN, []), (ifN, ifCondN, [])]
                             pure ifCondN
   (onSuccessN, mbOnFailureN) <- do
     myTraceM [i|Petri/r2fgl: action = #{action}|]
@@ -705,26 +726,29 @@ r2fgl rs defRL Regulative{..} = pure do
                      -- vp2np
                      -- ( actionWord $ head $ actionFragments action) <> " " <>
                      henceWord deontic
-    myTraceM [i|Petri/r2fgl: actn = #{actn}|]
-    myTraceM [i|Petri/r2fgl: oblLab = #{actn}|]
+    traverse_ myTraceM [[i|Petri/r2fgl: actn = #{actn}|], [i|Petri/r2fgl: oblLab = #{actn}|]]
 
     obligationN <- newNode (addDeet oblLab IsDeon)
     onSuccessN <- newNode successLab
-    myTraceM [i|Petri/r2fgl: deontic = #{deontic}|]
-    myTraceM [i|Petri/r2fgl: lestWord deontic = #{lestWord deontic}|]
+    traverse_ myTraceM
+      [ [i|Petri/r2fgl: deontic = #{deontic}|],
+        [i|Petri/r2fgl: lestWord deontic = #{lestWord deontic}|]
+      ]
     mbOnFailureN <- case (deontic /= DMay, lestWord deontic) of
                       (True, Right lWord) -> do
                         onFailureN <- newNode $ mkTrans lWord
-                        myTraceM [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|]
-                        myTraceM [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
-                        newEdge' ( obligationN, onFailureN, swport)
-                        pure (Just onFailureN)
+                        traverse_
+                          myTraceM
+                          [ [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|],
+                            [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
+                          ]
+                        newEdge' (obligationN, onFailureN, swport)
+                        pure $ Just onFailureN
                       _ -> do
                         myTraceM [i|Petri/r2fgl: mbOnFailureN: returning Nothing}|]
                         pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
-    newEdge' (conN, obligationN, [] )
-    newEdge' (obligationN, onSuccessN, seport)
+    traverse_ newEdge' [(conN, obligationN, []), (obligationN, onSuccessN, seport)]
     pure (onSuccessN, mbOnFailureN)
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
@@ -761,7 +785,6 @@ r2fgl rs defRL Regulative{..} = pure do
 
 -- r2fgl rs r@Hornlike{} = pure Nothing
 r2fgl _rs _defRL _r = pure $ pure Nothing
-
 
 c2n :: Context a b -> Node
 c2n (_, n, _nl, _) = n
@@ -803,4 +826,4 @@ actionFragments (AA.Leaf x) = [x]
 actionFragments _           = []
 
 actionWord :: ParamText -> Text.Text
-actionWord = NE.head .> fst .> NE.head .> mtexpr2text
+actionWord = NE.head >>> fst >>> NE.head >>> mtexpr2text

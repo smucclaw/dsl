@@ -24,4 +24,3 @@ import LS.Types
 
 myTraceM :: Monad m => String -> m ()
 myTraceM x = when False $ traceM x
-

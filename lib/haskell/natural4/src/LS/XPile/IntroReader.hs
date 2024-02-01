@@ -24,7 +24,7 @@ inner l4i = do
   let rules = origrules l4i
   genv <- asks globalEnv
   aenv <- asks appEnv
-  return $
+  pure $
     "* output from the IntroReader transpiler" </>
     "** the global environment is" <//> pretty (pShowNoColor genv) </>
     "** the app environment is"    <//> pretty (pShowNoColor aenv) </>

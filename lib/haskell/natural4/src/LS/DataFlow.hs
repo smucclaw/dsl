@@ -102,7 +102,7 @@ dataFlowAsDot l4i = do
   mutterdhsf 3 "dataFlowasDot: first, let's dump the rulegraph" pShowNoColorS rG
 
   mutterd 3 "dataFlowasDot: heeere's ruleGraphErr"
-  mutters (ruleGraphErr l4i)
+  mutters $ ruleGraphErr l4i
 
   let toreturn = dfg
                   |> graphToDot flowParams
@@ -112,7 +112,7 @@ dataFlowAsDot l4i = do
                   |> Text.unpack
 
   mutterdhsf 3 "and now we should get some dot goodness" pShowNoColorS toreturn
-  return toreturn
+  pure toreturn
 
 
   where

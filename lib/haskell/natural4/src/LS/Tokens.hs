@@ -902,7 +902,7 @@ p1 |<* p2 = debugPrint "|<* starting" >> do
 infixl 4 |<*
 
 -- indent at least 1 tab from current location
-someIndentation :: (Show a) => Parser a -> Parser a
+someIndentation :: Show a => Parser a -> Parser a
 someIndentation p = debugName "someIndentation" $
   myindented $ manyIndentation p
 
@@ -910,7 +910,7 @@ someIndentation' :: Parser a -> Parser a
 someIndentation' p = myindented' $ manyIndentation' p
 
 -- 0 or more tabs indented from current location
-manyIndentation :: (Show a) => Parser a -> Parser a
+manyIndentation :: Show a => Parser a -> Parser a
 manyIndentation p =
   try (debugName "manyIndentation/leaf?" p)
   <|>
@@ -1036,7 +1036,7 @@ pTokenish c = c <$ pTokenMatch (== tok) (pure tok)
   where tok = tokenOf c
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
-pTokenAnyDepth c = pTokenMatch (== c) (pure c)
+pTokenAnyDepth c = pTokenMatch (== c) $ pure c
 
 pTokenOneOf :: NonEmpty MyToken -> Parser MyToken
 pTokenOneOf cs = pTokenMatch (`elem` cs) cs
@@ -1047,14 +1047,14 @@ pretendEmpty = liftRawPFun iPretendEmpty
 -- | Like 'try' but allows backtracking on success as well (as long as no later step consumes tokens before the branching).
 iPretendEmpty :: (Stream s, Ord e) => Parsec e s a -> Parsec e s a
 iPretendEmpty pt = MPInternal.ParsecT \s _ _ eok eerr ->
-   let eerr' err _ = eerr err s
-   in MPInternal.unParser pt s eok eerr' eok eerr'
+  let eerr' err _ = eerr err s
+  in MPInternal.unParser pt s eok eerr' eok eerr'
 
 runOnErrors ::
   (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) ->
   Parser a ->
   Parser a
-runOnErrors f = liftRawPFun (iRunOnErrors f)
+runOnErrors f = liftRawPFun $ iRunOnErrors f
 
 iRunOnErrors ::
   (Stream s, Ord e, Monad m) =>

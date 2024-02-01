@@ -322,7 +322,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
-mkRpmt a = RPMT (MTT <$> a)
+mkRpmt a = RPMT $ MTT <$> a
 
 mkRpmtLeaf :: [Text.Text] -> BoolStructR
 mkRpmtLeaf a = mkLeaf (mkRpmt a)
@@ -506,21 +506,21 @@ type Inferrable ts = (Maybe ts, [ts])
 defaultInferrableTypeSig :: (Maybe a1, [a2])
 defaultInferrableTypeSig = (Nothing, [])
 
-thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-
 -- | attributes defined in the type declaration for this class specifically
+thisAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 thisAttributes (CT clstab) subclass = do
   ((_mts, _tss), ct) <- Map.lookup subclass clstab
-  return ct
+  pure ct
 
 -- | attributes including superclass attributes
+extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 extendedAttributes o@(CT clstab) subclass = do
   ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
   let eAttrs = case extendedAttributes o <$> clsParent o subclass of
                  Nothing               -> Map.empty
                  Just Nothing        -> Map.empty
                  Just (Just (CT ea)) -> ea
-  return $ CT $ ct <> eAttrs
+  pure $ CT $ ct <> eAttrs
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
@@ -604,7 +604,7 @@ mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure uni
 data NatLang = NLen
 
 tc2nl :: NatLang -> Maybe (TemporalConstraint Text.Text) -> Text.Text
-tc2nl NLen Nothing = "eventually"
+tc2nl _ Nothing = "eventually"
 tc2nl NLen (Just (TemporalConstraint tComparison n t)) =
   [i|{tComaparisonTxt} #{maybe "" show n} #{t}|]
   where

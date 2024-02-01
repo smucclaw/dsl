@@ -342,12 +342,14 @@ mkTestSrcRef :: Int -> Int -> Maybe SrcRef
 mkTestSrcRef row col =
   Just $
     SrcRef
-      { url = Text.pack $ "test" </> "Spec",
-        short = Text.pack $ "test" </> "Spec",
+      { url = txt,
+        short = txt,
         srcrow = row,
         srccol = col,
         version = Nothing
       }
+  where
+    txt = Text.pack $ "test" </> "Spec"
 
 dummyRef :: Maybe SrcRef
 dummyRef = mkTestSrcRef 1 1
@@ -438,7 +440,7 @@ getGivenWithSimpleType tm = do
   -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
   let varType = (tm ^. _2) >>= getSimpleTypeTOne 
   var <- mvar 
-  return (var, varType)
+  pure (var, varType)
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool
@@ -470,9 +472,9 @@ isFact r
   | otherwise = False
   where
     -- when we have a numeric fact, it shows up with a name like [ MTI 0 ]
-    ruleNameIsNumeric = all ( \case
-                                MTI _ -> True
-                                _     -> False )
+    ruleNameIsNumeric = all \case
+                              MTI _ -> True
+                              _ -> False
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead
                                 | HC hhead _hbody <- clauses ]
@@ -561,9 +563,6 @@ defaultValuePredicate = ValPred
   , origRule   = Nothing
   }
 
-
-
-
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
 --
@@ -575,8 +574,6 @@ defaultValuePredicate = ValPred
 
 type RuleGraphEdgeLabel = ()
 type RuleGraph = Gr Rule RuleGraphEdgeLabel
-
-
 
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name

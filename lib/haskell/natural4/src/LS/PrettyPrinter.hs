@@ -386,11 +386,11 @@ commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> foldMap T.lines xs) <
 
 -- | pretty print output without folding
 myrender :: Doc ann -> T.Text
-myrender = renderStrict . layoutPretty (defaultLayoutOptions { layoutPageWidth = Unbounded })
+myrender = renderStrict . layoutPretty defaultLayoutOptions { layoutPageWidth = Unbounded }
 
 -- | utility function to add newlines between vsep output lines
 vvsep :: [Doc ann] -> Doc ann
-vvsep = vsep . Data.List.intersperse ""
+vvsep = vsep . intersperse ""
 
 -- | utility function similar to `brackets` or `parens` but with tildes, useful for org-mode
 tildes :: Doc ann -> Doc ann

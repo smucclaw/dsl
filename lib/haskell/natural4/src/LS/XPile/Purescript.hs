@@ -99,9 +99,8 @@ mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
 mutterRuleNameAndBS rnbss = do
   mutterd 3 "rulename, bs pairs:"
   for_ rnbss \(names, bs) -> do
-    mutterdhsf 4 (slashNames names)
-      pShowNoColorS bs
-  return rnbss
+    mutterdhsf 4 (slashNames names) pShowNoColorS bs
+  pure rnbss
 
 -- two boolstructT: one question and one phrase
 namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
@@ -234,7 +233,7 @@ asPurescript env rl = do
   c'  <- combine nAS nAQ
   mutterdhsf 3 "c' =" pShowNoColorS c'
 
-  guts <- sequence [
+  guts <- sequenceA [
     do
       mutterdhsf 3 "names: " show ( mt2text <$> names )
       mutterdhsf 4 "hbs = head boolstruct" show hbs

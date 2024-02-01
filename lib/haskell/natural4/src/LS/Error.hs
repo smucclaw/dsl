@@ -157,7 +157,8 @@ onelineErrorMsg (FancyError _ set) = unwords $ map showFancy $ Set.toList set
     showFancy :: ErrorFancy Void -> String
     showFancy (ErrorFail s) = [i|Fail: #{s}|]
     showFancy (ErrorIndentation ord pos pos') = [i|Indent error: #{pos} should be #{ord} #{pos'}|]
-    showFancy (ErrorCustom vo) = case vo of {}
+    showFancy _ = ""
+    -- showFancy (ErrorCustom vo) = case vo of {}
 
 onelineErrorItem :: ErrorItem (WithPos MyToken) -> String
 onelineErrorItem = showErrorItem @MyStream Proxy

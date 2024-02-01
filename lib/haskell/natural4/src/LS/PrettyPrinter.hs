@@ -190,7 +190,7 @@ possessiveToObject str = T.intercalate " " $ reverse $ T.splitOn "'s " str
 -- "foo bar" "baz" --> "baz foo_bar
 -- "fooBar" "baz"  --> "baz fooBar"
 pred_snake :: MultiTerm -> Doc ann
-pred_snake xs = encloseSep "" "" " " (snake_inner <$> last xs : init xs)
+pred_snake xs = encloseSep "" "" " " $ snake_inner <$> last xs : init xs
 
 -- generalize the elimination of the units, across all the {pred,space}_{snake,join} functions.
 
@@ -202,32 +202,32 @@ pred_join :: MultiTerm -> Doc ann
 pred_join (x:[MTT "years"]) = pred_join [x]
 pred_join (x:[MTT "meters"]) = pred_join [x]
 pred_join (x:[MTT "kg"]) = pred_join [x]
-pred_join xs = encloseSep "" "" " " (pretty <$> last xs : init xs)
+pred_join xs = encloseSep "" "" " " $ pretty <$> last xs : init xs
 
 
 -- | space_join
 -- "foo bar" "baz" --> "foo bar baz"
 -- "fooBar" "baz"  --> "fooBar baz"
 space_join :: MultiTerm -> Doc ann
-space_join xs = encloseSep "" "" " " (pretty <$> xs)
+space_join xs = encloseSep "" "" " " $ pretty <$> xs
 
 -- | dot_join
 -- "foo bar" "baz" --> "foo bar.baz"
 -- "fooBar" "baz"  --> "fooBar.baz"
 dot_join :: MultiTerm -> Doc ann
-dot_join xs = encloseSep "" "" "." (pretty <$> xs)
+dot_join xs = encloseSep "" "" "." $ pretty <$> xs
 
 -- | snake_join
 -- "foo bar" "baz" --> "foo bar_baz"
 -- "fooBar" "baz"  --> "fooBar_baz"
 snake_join :: MultiTerm -> Doc ann
-snake_join xs = encloseSep "" "" "_" (pretty <$> xs)
+snake_join xs = encloseSep "" "" "_" $ pretty <$> xs
 
 -- | snake_case
 -- "foo bar" "baz" --> "foo_bar_baz"
 -- "fooBar" "baz"  --> "fooBar_baz"
 snake_case :: MultiTerm -> Doc ann
-snake_case xs = encloseSep "" "" "_" (snake_inner <$> xs)
+snake_case xs = encloseSep "" "" "_" $ snake_inner <$> xs
 
 -- | snake_inner
 -- "foo bar" --> "foo_bar"
@@ -258,7 +258,7 @@ instance Pretty ParamText2 where
 -- | ParamText3 is used by the CoreL4 transpiler to produce colon-annotated paramtexts.
 newtype ParamText3 = PT3 ParamText
 instance Pretty ParamText3 where
-  pretty (PT3 pt) = hcat (intersperse ", " (toList $ typedOrNot "_" <$> pt))
+  pretty (PT3 pt) = hcat $ intersperse ", " $ toList $ typedOrNot "_" <$> pt
 
 -- | ParamText4 is used to approximate a recursive record. currently we can only go 2 deep.
 -- in future we will have to upgrade ParamText to a full Tree type which can nest arbitrarily deep.
@@ -296,7 +296,7 @@ quoteBoT l4i l@(net, _mts) =
                                  "string" -> dquotes $ lrest l
                                  "number" -> unquoted
                                  "num"    -> unquoted
-                                 _        -> snake_case (NE.tail net)
+                                 _        -> snake_case $ NE.tail net
     Just (InlineEnum _p _s) -> dquotes $ lrest l
     Nothing                 -> unquoted
 -- quote for a DEFINE value, where we are saying X IS THE Y
@@ -386,11 +386,11 @@ commentWith c xs = vsep ((\x -> pretty c <+> pretty x) <$> foldMap T.lines xs) <
 
 -- | pretty print output without folding
 myrender :: Doc ann -> T.Text
-myrender = renderStrict . layoutPretty (defaultLayoutOptions { layoutPageWidth = Unbounded })
+myrender = renderStrict . layoutPretty defaultLayoutOptions { layoutPageWidth = Unbounded }
 
 -- | utility function to add newlines between vsep output lines
 vvsep :: [Doc ann] -> Doc ann
-vvsep = vsep . Data.List.intersperse ""
+vvsep = vsep . intersperse ""
 
 -- | utility function similar to `brackets` or `parens` but with tildes, useful for org-mode
 tildes :: Doc ann -> Doc ann

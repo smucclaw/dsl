@@ -62,6 +62,20 @@ packages:
       size: 253
   original:
     hackage: simple-smt-0.9.7
+- completed:
+    hackage: diagnose-2.4.0@sha256:c594a0b512a8d3aa58b240070467d6f337ef0769e367a0e74f2081307b1b13d7,5941
+    pantry-tree:
+      sha256: 60de1c15ada5dd82f9ac70065ed52eb36da733111962a692f0a66db2c7313d78
+      size: 1402
+  original:
+    hackage: diagnose-2.4.0
+- completed:
+    hackage: log-effectful-1.0.0.0@sha256:126f328c9325c10998289378191dc69e55b5ffdc37a7845f2d0ee57f6f13392e,2433
+    pantry-tree:
+      sha256: e22a70263da683f2a289c9e514fd4ef32dcc3cc9b54d1c6fe04299736cc88493
+      size: 325
+  original:
+    hackage: log-effectful-1.0.0.0
 snapshots:
 - completed:
     sha256: 56ef9e03804cb4827866e762dc9752eeb392adda8f4811690da110dd9a165b9e

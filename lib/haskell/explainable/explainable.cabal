@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -38,6 +38,7 @@ library
       base >=4.7 && <5
     , boxes
     , containers
+    , effectful
     , fgl
     , graphviz
     , megaparsec
@@ -63,6 +64,7 @@ executable explainable-exe
       base >=4.7 && <5
     , boxes
     , containers
+    , effectful
     , explainable
     , fgl
     , graphviz
@@ -91,6 +93,7 @@ test-suite explainable-test
       base >=4.7 && <5
     , boxes
     , containers
+    , effectful
     , explainable
     , fgl
     , graphviz

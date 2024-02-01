@@ -225,6 +225,7 @@ data AtomicHC = HeadOnly HeadOnlyHC
 newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
   deriving stock (Show)
   deriving newtype (Eq)
+   -- ^ MultiClause is meant to be '*2* or more' clauses
 
 _MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL = coerced

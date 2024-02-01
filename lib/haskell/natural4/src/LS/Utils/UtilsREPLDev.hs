@@ -5,7 +5,7 @@
 Simple utils / convenience functions for prototyping / dev-ing at the REPL.
 -}
 
-module LS.UtilsREPLDev
+module LS.Utils.UtilsREPLDev
   ( StartDir,
     BaseFileName,
     pPrint, -- reexport

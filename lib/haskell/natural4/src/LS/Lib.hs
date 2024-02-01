@@ -1,16 +1,15 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExplicitNamespaces #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
-{-|
-Parser functions not organized into their own separate modules elsewhere.
-
-This includes some top-leve parsers like pRules and pBoolStruct.
--}
-
+-- |
+-- Parser functions not organized into their own separate modules elsewhere.
+--
+-- This includes some top-leve parsers like pRules and pBoolStruct.
 module LS.Lib
   ( NoLabel (..),
     Opts (..),
@@ -25,7 +24,7 @@ module LS.Lib
     pRules,
     pScenarioRule,
     pToplevel,
-    pTypeDeclaration
+    pTypeDeclaration,
   )
 where
 
@@ -44,6 +43,7 @@ import Data.ByteString.Lazy qualified as BS
 import Data.Coerce (coerce)
 import Data.Csv qualified as Cassava
 import Data.Either (rights)
+import Data.Foldable (traverse_)
 import Data.List (transpose)
 import Data.List.NonEmpty qualified as NE
 import Data.List.Split qualified as DLS
@@ -295,6 +295,8 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , tomaude   :: w ::: Bool   <!> "True"  <?> "maude"
                    , tocheckl  :: w ::: Bool   <!> "False" <?> "ground terms phrased in checklist syntax"
                    , tologicalenglish      :: w ::: Bool   <!> "True"  <?> "logical english"
+                   , tomathlangmw      :: w ::: Bool   <!> "True"  <?> "Meng's typed lambda calculus with arithmetic ops and convenience hofs, TS"
+                   , togenmathlang      :: w ::: Bool   <!> "True"  <?> "generic version of untyped lambda calculus with arithmetic ops and convenience hofs"
 
                    , tointro   :: w ::: Bool   <!> "True" <?> "introduction to transpilation"
 
@@ -350,6 +352,7 @@ getConfig o = do
     , toJsonTp  = only o == "jsonTp"
     , toJsonUI  = only o == "jsonUI"
     , toMaude = only o == "maude"
+    , toMathLang = only o == "mathlang"
     , toLogicalEnglish = only o == "LogicalEnglish"
     , toSCasp   = only o == "scasp"
     , toUppaal  = only o == "uppaal"
@@ -643,7 +646,7 @@ pToplevel = pRules <* eof
 
 -- do not allow NotARule parsing
 
-pRules, pRulesOnly, pRulesAndNotRules :: Parser [Rule]
+pRulesOnly :: Parser [Rule]
 pRulesOnly = do
   debugName "pRulesOnly: some" $ mconcat <$>
     some (debugName "trying semicolon *> pRule" $
@@ -657,16 +660,18 @@ pRulesOnly = do
 
 semicolonBetweenRules :: Parser [MyToken]
 semicolonBetweenRules =
-  many $ manyIndentation (Semicolon <$ some (pToken Semicolon))
+  many $ manyIndentation $ Semicolon <$ some (pToken Semicolon)
 
+pRules :: Parser [Rule]
 pRules = pRulesOnly
 
+pRulesAndNotRules :: Parser [Rule]
 pRulesAndNotRules = do
   wanted   <- try $ many pRule
   notarule <- optional (notFollowedBy eof *> pNotARule)
   next <- [] <$ eof <|> pRules
   wantNotRules <- asks wantNotRules
-  return $ wanted ++ next ++
+  pure $ wanted <> next <>
     if wantNotRules then maybeToList notarule else []
 
 pNotARule :: Parser Rule
@@ -674,7 +679,7 @@ pNotARule = debugName "pNotARule" do
   myTraceM "pNotARule: starting"
   toreturn <- NotARule <$> manyDeep getTokenNonDeep
   myTraceM "pNotARule: returning"
-  return toreturn
+  pure toreturn
 
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
@@ -695,7 +700,7 @@ pRule = debugName "pRule" do
     <|> try (pHornlike <?> "DECIDE ... IS ... Horn rule")
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
 
-  return $ foundRule { srcref = Just srcref }
+  pure foundRule { srcref = Just srcref }
 
 
 -- TypeDecl
@@ -706,7 +711,7 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
     <$$> pToken Declare *> someIndentation declareLimb
     <|?> (Nothing, givenLimb)
     <|?> (Nothing, uponLimb)
-  return $ proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
+  pure proto { given = snd <$> g, upon = snd <$> u, rlabel = maybeLabel }
   where
     -- [TODO] this doesn't correctly parse something that looks like
     -- DECLARE whatever
@@ -717,14 +722,17 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
     -- workaround: remove the "HAS" from the "that" line
     -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
 
-    parseHas = debugName "parseHas" $ concat <$> many ((\ _ x -> x) $>| pToken Has |>| sameDepth declareLimb)
+    parseHas = debugName "parseHas" $ mconcat <$> many ((\ _ x -> x) $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
-      myTraceM $ "got name = " <> show name
-      myTraceM $ "got super = " <> show super
-      myTraceM $ "got has = " <> show has
+      traverse_
+        myTraceM
+        [ [i|got name = #{name}|],
+          [i|got super = #{super}|],
+          [i|got has = #{has}|]
+        ]
       enums <- optional pOneOf
-      myTraceM $ "got enums = " <> show enums
+      myTraceM [i|got enums = #{enums}|]
       pure TypeDecl
         { name = NE.toList name
         , super
@@ -763,10 +771,9 @@ pVarDefn = debugName "pVarDefn" do
   where
     defineLimb = debugName "pVarDefn/defineLimb" do
       (name,mytype) <- manyIndentation pKeyValuesAka
-      myTraceM $ "got name = " <> show name
-      myTraceM $ "got mytype = " <> show mytype
+      traverse_ myTraceM [[i|got name = #{name}|], [i|got mytype = #{mytype}|]]
       hases   <- mconcat <$> some (pToken Has *> someIndentation (debugName "sameDepth pParamTextMustIndent" $ sameDepth pParamTextMustIndent))
-      myTraceM $ "got hases = " <> show hases
+      myTraceM [i|got hases = #{hases}|]
       pure defaultHorn
         { name = NE.toList name
         , keyword = Define
@@ -836,7 +843,6 @@ pGivens :: Parser [RelationalPredicate]
 pGivens = debugName "pGivens" do
   sameDepth pRelationalPredicate
 
-
 pRegRule :: Parser Rule
 pRegRule = debugName "pRegRule" do
   maybeLabel <- optional pRuleLabel -- TODO: Handle the SL
@@ -891,10 +897,13 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
                  , defaults = []
                  , symtab   = []
                  }
-  myTraceM $ "pRegRuleSugary: the positive preamble is " ++ show poscond
-  myTraceM $ "pRegRuleSugary: the negative preamble is " ++ show negcond
-  myTraceM $ "pRegRuleSugary: returning " ++ show toreturn
-  return toreturn
+  traverse_
+    myTraceM
+    [ [i|pRegRuleSugary: the positive preamble is #{poscond}|],
+      [i|pRegRuleSugary: the negative preamble is #{negcond}|],
+      [i|pRegRuleSugary: returning #{toreturn}|]
+    ]
+  pure toreturn
 
 -- EVERY   person
 -- WHO     sings
@@ -905,11 +914,14 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
 --    AND  the potato is not green
 
 stackGiven :: Maybe ParamText -> Rule -> Rule
-stackGiven gvn r@Regulative  {..} = r { given = gvn <> given }
-stackGiven gvn r@Hornlike    {..} = r { given = gvn <> given }
-stackGiven gvn r@TypeDecl    {..} = r { given = gvn <> given }
-stackGiven gvn r@Constitutive{..} = r { given = gvn <> given }
-stackGiven _   r                  = r
+stackGiven gvn = \case
+  r@Regulative {given} -> go r given
+  r@Hornlike {given} -> go r given
+  r@TypeDecl {given} -> go r given
+  r@Constitutive {given} -> go r given
+  r -> r
+  where
+    go r given = r {given = gvn <> given}
 
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" do
@@ -921,7 +933,7 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
       negcond = snd <$> mergePBRS (rbpbrneg rulebody)
   henceLimb                   <- optional $ stackGiven gvn <$> pHenceLest Hence
   lestLimb                    <- optional $ stackGiven gvn <$> pHenceLest Lest
-  myTraceM $ "pRegRuleNormal: permutations returned rulebody " ++ show rulebody
+  myTraceM [i|pRegRuleNormal: permutations returned rulebody #{rulebody}|]
 
   let toreturn = Regulative
                  { subj     = snd $ rbkeyname rulebody
@@ -983,7 +995,7 @@ pActor keywords = debugName [i|pActor #{keywords}|] do
   -- omgARule <- pure <$> try pConstitutiveRule <|> (mempty <$ pNameParens)
   -- myTraceM $ "pActor: omgARule = " ++ show omgARule
   -- tell $ listToDL omgARule
-  return (preamble, boolEntity)
+  pure (preamble, boolEntity)
 
 -- Every man AND woman     AKA Adult
 --       MEANS human
@@ -1072,7 +1084,7 @@ pDT = debugName "pDT" do
   (pd,pt) <- (,)
     $>| pDeontic
     |>< optional pTemporal
-  return (pd, join pt)
+  pure (pd, join pt)
 
 -- the Deontic/Action/Temporal form
 pDA :: Parser (Deontic, BoolStructP)
@@ -1086,8 +1098,7 @@ preambleBoolStructP wanted = debugName [i|preambleBoolStructP #{wanted}|] do
   condWord <- choice (try . pToken <$> wanted)
   myTraceM [i|preambleBoolStructP: found: #{condWord}|]
   ands <- dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
-  return (condWord, ands)
-
+  pure (condWord, ands)
 
 dBoolStructP ::  Parser BoolStructP
 dBoolStructP = debugName "dBoolStructP" do
@@ -1102,7 +1113,7 @@ exprP :: Parser (MyBoolStruct ParamText)
 exprP = debugName "expr pParamText" do
   raw <- expr pParamText
 
-  return case raw of
+  pure case raw of
     MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
     x -> x
   where
@@ -1119,24 +1130,22 @@ exprP = debugName "expr pParamText" do
     prefixItem :: MultiTerm -> ParamText -> ParamText
     prefixItem t = NE.cons (NE.fromList t, Nothing)
 
-
 pAndGroup ::  Parser BoolStructP
-pAndGroup = debugName "pAndGroup" do
-  orGroup1 <- pOrGroup
-  orGroupN <- many $ pToken And *> pOrGroup
-  let toreturn = if null orGroupN
-                 then orGroup1
-                 else AA.mkAll Nothing (orGroup1 : orGroupN)
-  return toreturn
+pAndGroup = pAndOrGroup "pAndGroup" pOrGroup And AA.mkAll
 
 pOrGroup ::  Parser BoolStructP
-pOrGroup = debugName "pOrGroup" do
-  elem1    <- pElement
-  elems    <- many $ pToken Or *> pElement
-  let toreturn
-        | null elems = elem1
-        | otherwise = AA.mkAny Nothing $ elem1 : elems
-  return toreturn
+pOrGroup = pAndOrGroup "pOrGroup" pElement Or AA.mkAny
+
+pAndOrGroup ::
+  String ->
+  Parser BoolStructP ->
+  MyToken ->
+  (Maybe (AA.Label Text.Text) -> [AA.BoolStruct (Maybe (AA.Label Text.Text)) ParamText] -> AA.BoolStruct (Maybe (AA.Label Text.Text)) ParamText) ->
+  Parser BoolStructP
+pAndOrGroup name group tok ctor = debugName name do
+  group1 <- group
+  groupN <- many $ pToken tok *> group
+  pure if null groupN then group1 else ctor Nothing $ group1 : groupN
 
 pAtomicElement ::  Parser BoolStructP
 pAtomicElement = debugName "pAtomicElement" do
@@ -1158,13 +1167,13 @@ hornlikeAsElement hlr = AA.mkLeaf $ multiterm2pt $ name hlr
 pNotElement :: Parser BoolStructP
 pNotElement = debugName "pNotElement" do
   inner <- pToken MPNot *> pElement
-  return $ AA.mkNot inner
+  pure $ AA.mkNot inner
 
 pLeafVal ::  Parser BoolStructP
 pLeafVal = debugName "pLeafVal" do
   leafVal <- pParamText
   myTraceM [i|pLeafVal returning #{leafVal}|]
-  return $ AA.mkLeaf leafVal
+  pure $ AA.mkLeaf leafVal
 
 -- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 

@@ -22,7 +22,7 @@ import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList, toList)
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Monoid (Endo (Endo))
 import Data.String.Interpolate (i)
@@ -32,6 +32,7 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
+import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
 
@@ -49,6 +50,7 @@ type TypedMulti = (NonEmpty MTExpr, Maybe TypeSig)
 type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
+
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
@@ -194,6 +196,59 @@ data HornClause a = HC
 
 type HornClause2 = HornClause BoolStructR
 
+----- More ergonomic representation for L4 rules --------------------
+
+-- | Though this is still quite 'syntactic'; would be even better if it were repns for a specific semantics
+data SimpleHlike a b =
+  MkSimpleHL { shcGiven :: a
+             , shcRet :: b
+             , baseHL :: BaseHL
+             , shcSrcRef :: SrcRef
+             -- ^ may want to parametrize this
+             }
+  deriving stock (Eq, Show, Generic)
+
+-- TODO: Meng pointed out that AtomicHC can be thought of as a special case of MultiClauseHL too. Need to think more abt this.
+data BaseHL = OneClause AtomicHC | MultiClause MultiClauseHL
+  deriving stock (Eq, Show, Generic)
+
+data HnBodHC = 
+  MkHnBHC { hbHead :: RelationalPredicate
+          , hbBody :: BoolStructR
+          }
+  deriving stock (Eq, Show, Generic)
+
+data AtomicHC = HeadOnly HeadOnlyHC
+              | HeadAndBody HnBodHC
+  deriving stock (Eq, Show, Generic)
+
+newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
+  deriving stock (Show)
+  deriving newtype (Eq)
+   -- ^ MultiClause is meant to be '*2* or more' clauses
+
+_MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
+_MkMultiClauseHL = coerced
+mkMultiClauseHL :: [AtomicHC] -> MultiClauseHL
+mkMultiClauseHL = view (re _MkMultiClauseHL) . NE.fromList
+getMCHLhcs :: MultiClauseHL -> [AtomicHC]
+getMCHLhcs = NE.toList . view _MkMultiClauseHL
+
+newtype HeadOnlyHC = MkHeadOnlyHC { hcHead  :: RelationalPredicate }
+  deriving stock (Show)
+  deriving newtype (Eq)
+
+_MkHeadOnlyHC :: Iso' HeadOnlyHC RelationalPredicate
+_MkHeadOnlyHC = coerced
+mkHeadOnlyHC :: RelationalPredicate -> HeadOnlyHC
+mkHeadOnlyHC = view (re _MkHeadOnlyHC)
+mkHeadOnlyAtomicHC :: RelationalPredicate -> AtomicHC
+mkHeadOnlyAtomicHC = HeadOnly . mkHeadOnlyHC
+headOnlyHLasMTEs :: HeadOnlyHC -> RelationalPredicate
+headOnlyHLasMTEs = view _MkHeadOnlyHC
+
+------------------------------------------------------------------
+
 data IsPredicate = IP ParamText ParamText
   deriving (Eq, Ord, Show, Generic, ToJSON)
 
@@ -336,7 +391,7 @@ text2rp :: Text.Text -> RelationalPredicate
 text2rp = RPParamText . text2pt
 
 pt2multiterm :: ParamText -> MultiTerm
-pt2multiterm pt = concat (toList (toList <$> untypePT pt))
+pt2multiterm = mconcat . toList . (toList <$>) . untypePT
 
 -- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
 rpHead :: RelationalPredicate -> MultiTerm
@@ -505,9 +560,11 @@ bsp2text (AA.All (Just (AA.Pre p1       )) xs) = Text.unwords $ p1 : (bsp2text <
 bsp2text (AA.All (Just (AA.PrePost p1 p2)) xs) = [i|#{Text.unwords $ p1 : (bsp2text <$> xs)} #{p2}|]
 bsp2text (AA.All Nothing                   xs) = [i|all of:-#{Text.unwords $ bsp2text <$> xs}|]
 
-bsr2text, bsr2textnl :: BoolStructR -> Text.Text
+bsr2text :: BoolStructR -> Text.Text
 bsr2text   = bsr2text' Text.unwords
-bsr2textnl = bsr2text' (Text.intercalate "\\n")
+
+bsr2textnl :: BoolStructR -> Text.Text
+bsr2textnl = bsr2text' $ Text.intercalate "\\n"
 
 bsr2text' :: ([Text.Text] -> Text.Text) -> BoolStructR -> Text.Text
 bsr2text'  joiner (AA.Not                           x ) = joiner ["not",       bsr2text' joiner x]
@@ -571,6 +628,7 @@ data RunConfig = RC { debug     :: Bool
                     , toJsonUI  :: Bool
                     , toMaude :: Bool
                     , toLogicalEnglish :: Bool
+                    , toMathLang :: Bool
                     , toSCasp   :: Bool
                     , toUppaal  :: Bool
                     , toHTML    :: Bool
@@ -602,6 +660,7 @@ defaultRC = RC
         , toJsonUI = False
         , toMaude = False
         , toLogicalEnglish = False
+        , toMathLang = False
         , toSCasp  = False
         , toUppaal = False
         , saveAKA = False

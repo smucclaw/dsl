@@ -15,10 +15,7 @@
 module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
 
 import Data.Text qualified as T
-import Data.Text.Lazy qualified as T (toStrict)
-import Data.Text.Lazy.Builder qualified as B
-import Data.Text.Lazy.Builder.Int qualified as B
-import Data.Text.Lazy.Builder.RealFloat qualified as B (FPFormat (..), formatRealFloat)
+import LS.Utils.TextUtils (int2Text, float2Text)
 
 import Control.Monad.Validate
   ( MonadValidate (..)
@@ -419,7 +416,7 @@ textifyMTE constrtr =
   constrtr . \case
     MTT t -> replaceTxt t
     MTI i -> int2Text i
-    MTF f -> float2Text f
+    MTF f -> leFloat2Text f
     MTB b -> T.toLower [i|#{b}|]
 
 mte2cell :: L4.MTExpr -> Cell
@@ -439,24 +436,11 @@ mtes2cells :: [L4.MTExpr] -> [Cell]
 mtes2cells = fmap mte2cell
 
 ------ Other misc utils
-{-| From https://github.com/haskell/text/issues/218
-Thanks to Jo Hsi for finding these!
--}
-float2Text :: RealFloat a => a -> T.Text
-float2Text f
-  | isInfinite f = if f > 0 then "inf" else "-inf"
-  | otherwise = T.toStrict . B.toLazyText . decFloat $ f
 
-{- | Differs from B.realFloat only in that we use standard decimal notation (i.e., in the choice of FPFormat)
-See https://hackage.haskell.org/package/text-2.1/docs/src/Data.Text.Lazy.Builder.RealFloat.html
--}
-decFloat :: RealFloat a => a -> B.Builder
-{-# SPECIALIZE decFloat :: Float -> B.Builder #-}
-{-# SPECIALIZE decFloat :: Double -> B.Builder #-}
-decFloat = B.formatRealFloat B.Fixed Nothing
-
-int2Text :: Integral a => a -> T.Text
-int2Text = T.toStrict . B.toLazyText . B.decimal
+leFloat2Text :: RealFloat a => a -> T.Text
+leFloat2Text f
+  | isInfinite f = if f > 0 then "inf" else "-inf" -- ^ le-specific
+  | otherwise = float2Text f
 
 
 --- misc notes

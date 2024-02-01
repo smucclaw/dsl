@@ -3,18 +3,21 @@ module Explainable.Lib (runTests_Mathlang) where
 import Data.HashMap.Strict qualified as Map
 import Explainable.MathLang
   ( Expr (MathVar),
-    MyState (symtabF),
+    MyState (..),
     dumpExplanationF,
     emptyState,
+    getvar,
     positiveElementsOf,
     timesEach,
     timesPositives,
     (*||),
     (+||),
     (@|.),
+    (@|..),
     (@|:),
     (@|=),
     (@|?),
+    (|*),
     (|+),
     (|===),
   )

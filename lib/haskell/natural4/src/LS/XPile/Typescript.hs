@@ -323,7 +323,7 @@ tsRuleEngine l4i = do
 
 -- | a convention for preserving the original strings and data structures for downstream use
 tsPrelude :: Interpreted -> XPileLog (Doc ann)
-tsPrelude l4i = return $
+tsPrelude l4i = pure $
   vsep [ "// tsPrelude"
        , "export const L4Orig = { enums: { }, classes: { } }"
        ]
@@ -415,7 +415,7 @@ defaultMethod _                                 = " return undefined "
 
 -- | output enum declarations
 tsEnums :: Interpreted -> XPileLog (Doc ann)
-tsEnums l4i = return $
+tsEnums l4i = pure $
   vvsep ( showEnum <$> extractEnums l4i )
   where
     showEnum r@TypeDecl{super=Just (InlineEnum TOne enumNEList)} =

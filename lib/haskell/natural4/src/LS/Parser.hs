@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-|
@@ -10,7 +11,17 @@ Abstract parser functions that help build other parsers.
 This module imports Control.Monad.Combinators.Expr which is the basis for the BoolStruct family of parsers.
 
 -}
-module LS.Parser where
+module LS.Parser
+  ( MyBoolStruct,
+    MyItem (MyAll, MyAny, MyLabel, MyLeaf, MyNot),
+    aboveNextLineKeyword2,
+    binary,
+    expr,
+    pBoolStruct,
+    prefix,
+    prePostParse,
+  )
+where
 
 import AnyAll qualified as AA
 import Control.Monad.Combinators.Expr
@@ -18,6 +29,7 @@ import Control.Monad.Combinators.Expr
     makeExprParser,
   )
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import LS.Rule (Parser)
 import LS.Tokens
@@ -124,26 +136,26 @@ termIndent p = debugName "termIndent p" do
         (lbl, inner) <- (,)
           $*| (someLiftSL pMTExpr <* liftSL (lookAhead pMTExpr))
           |>< expr p
-        debugPrint $ "1a: got label, then inner immediately below: " ++ show lbl
-        debugPrint $ "1a: got inner: " <> show inner
-        return $ MyLabel lbl Nothing inner)
+        debugPrint [i|1a: got label, then inner immediately below: #{lbl}|]
+        debugPrint [i|1a: got inner: #{inner}|]
+        pure $ MyLabel lbl Nothing inner)
     <|>
     try (debugName "term p/1b:label ends to the left of line below, with EOL" do
         (lbl, inner) <- (,)
           $*| someLiftSL pMTExpr <* liftSL (debugName "matching EOL" dnl)
           |>< expr p
-        debugPrint $ "1b: got label to the left, with EOL: " ++ show lbl
-        debugPrint $ "1b: got inner: " ++ show inner
-        return $ MyLabel lbl Nothing inner)
+        debugPrint [i|1b: got label to the left, with EOL: #{lbl}|]
+        debugPrint [i|1b: got inner: #{inner}|]
+        pure $ MyLabel lbl Nothing inner)
     <|>
     try (debugName "term p/1c:label ends to the right of line below" do
         (lbl,inner) <- (,)
           $*| someLiftSL pMTExpr
           |<| expr p
           |<$ undeepers
-        debugPrint $ "1c: got label to the right of next line: " ++ show lbl
-        debugPrint $ "1c: got inner: " ++ show inner
-        return $ MyLabel lbl Nothing inner)
+        debugPrint [i|1c: got label to the right of next line: #{lbl}|]
+        debugPrint [i|1c: got inner: #{inner}|]
+        pure $ MyLabel lbl Nothing inner)
     <|>
      debugName "term p/notLabelTerm" (notLabelTerm p)
 
@@ -209,24 +221,19 @@ getAny (MyAny xs) = xs
 getAny x = [x]
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
-binary  tname f = InfixR  (f <$ debugName ("binary(" <> show tname <> ")") (pToken tname))
-prefix,postfix :: MyToken -> (a -> a) -> Operator Parser a
+binary  tname f = InfixR  (f <$ debugName [i|binary(#{tname})|] (pToken tname))
+
+prefix :: MyToken -> (a -> a) -> Operator Parser a
 prefix  tname f = Prefix  (f <$ pToken tname)
+
+postfix :: MyToken -> (a -> a) -> Operator Parser a
 postfix tname f = Postfix (f <$ pToken tname)
+
 mylabel :: Operator Parser (MyBoolStruct Text.Text)
 mylabel         = Prefix  (MyLabel <$> try (manyDeep pMTExpr) <*> pure Nothing)
 
 plain :: Functor f => f a -> f (MyItem lbl a)
 plain p = MyLeaf <$> p
-
-
-
-
-
-
-
-
-
 
 ppp :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 ppp base = -- local (\rc -> rc { debug = True }) $
@@ -240,11 +247,10 @@ ppp base = -- local (\rc -> rc { debug = True }) $
 expectUnDeepers :: Parser Int
 expectUnDeepers = debugName "expectUnDeepers" $ lookAhead do
   ignored <- manyTill (pMTExpr <|> MTT "GD" <$ pToken GoDeeper) (lookAhead (pToken UnDeeper))
-  debugPrint $ "ignoring " ++ show ignored
+  debugPrint [i|ignoring #{ignored}|]
   udps <- some (pToken UnDeeper)
-  debugPrint $ "matched undeepers " ++ show udps
-  return $ length udps
-
+  debugPrint [i|matched undeepers #{udps}|]
+  pure $ length udps
 
 withPrePost, withPreOnly :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
 withPrePost basep = debugName "withPrePost" do
@@ -267,11 +273,10 @@ withPreOnly basep = do -- debugName "withPreOnly" do
     $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
     |-| debugName "made it to inner parser" basep
     |<$ undeepers
-  return $ relabelp body pre
+  pure $ relabelp body pre
   where
     relabelp :: MyBoolStruct a -> MultiTerm -> MyBoolStruct  a
     relabelp bs pre = MyLabel pre Nothing bs
-
 
 -- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct
 --
@@ -289,19 +294,19 @@ withPreOnly basep = do -- debugName "withPreOnly" do
 aboveNextLineKeyword :: SLParser (MultiTerm,MyToken)
 aboveNextLineKeyword = mkSL $ debugName "aboveNextLineKeyword" do
   undp_count <- expectUnDeepers
-  debugPrint $ "aNLK: determined undp_count = " ++ show undp_count
+  debugPrint [i|aNLK: determined undp_count = #{undp_count}|]
   (slmt,n) <- runSL $ godeeper 1
                  *> (|>>) slMultiTerm
-                 |-- (\d -> debugPrint $ "aNLK: current depth is " ++ show d)
+                 |-- (\d -> debugPrint [i|aNLK: current depth is #{d}|])
   (tok,m) <- runSL $ id
              +>| n
              |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
 
-  debugPrint $ "aNLK: slMultiTerm is " ++ show slmt
+  debugPrint [i|aNLK: slMultiTerm is #{slmt}|]
 
   if n == undp_count
-    then return ((slmt, tok), m)
-    else fail $ "aNLK: expecting depth " ++ show undp_count ++ " but the cursor seems to be placed such that we have " ++ show n ++ "; a different backtrack will probably fare better"
+    then pure ((slmt, tok), m)
+    else fail [i|aNLK: expecting depth #{undp_count} but the cursor seems to be placed such that we have #{n}; a different backtrack will probably fare better|]
 
 -- aboveNextLineKeyword has returned ((["foo1","foo2","foo3"],Or),1)
 -- aboveNextLineKeyword has returned ((["foo2","foo3"],       Or),0)
@@ -315,5 +320,4 @@ aboveNextLineKeyword2 = debugName "aboveNextLineKeyword2" do
                  ->| 1
                  |*| slMultiTerm
                  |<| choice (pToken <$> [ LS.Types.Or, LS.Types.And, LS.Types.Unless ])
-  return (x,y)
-
+  pure (x,y)

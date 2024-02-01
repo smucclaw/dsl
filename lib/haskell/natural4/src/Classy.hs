@@ -1,7 +1,7 @@
-{-# LANGUAGE TemplateHaskell #-}
+-- {-# LANGUAGE TemplateHaskell #-}
 -- -- {-# OPTIONS_GHC -ddump-splices -dsuppress-uniques #-}
 
-module Classy where
+module Classy () where
 
 -- import Control.Lens
 --  -- we use a little lens magic

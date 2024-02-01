@@ -1,0 +1,478 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           natural4
+version:        0.1.0.0
+description:    natural4 parses a Legal Spreadsheet's CSV and transpiles to multiple output formats. For more details, please see <https://github.com/smucclaw/dsl/lib/haskell/natural4>
+homepage:       https://github.com/smucclaw/dsl#readme
+bug-reports:    https://github.com/smucclaw/dsl/issues
+author:         Wong Meng Weng
+maintainer:     mwwong@smu.edu.sg
+copyright:      2022
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.org
+    ChangeLog.md
+data-files:
+    grammars/NL4.pgf
+
+source-repository head
+  type: git
+  location: https://github.com/smucclaw/dsl
+
+library
+  exposed-modules:
+      Classy
+      LS
+      LS.BasicTypes
+      LS.DataFlow
+      LS.Error
+      LS.Interpreter
+      LS.Lib
+      LS.NLP.NL4
+      LS.NLP.NL4Transformations
+      LS.NLP.NLG
+      LS.Parser
+      LS.PrettyPrinter
+      LS.RelationalPredicates
+      LS.Rule
+      LS.Tokens
+      LS.Types
+      LS.Utils
+      LS.Utils.OpticsUtils
+      LS.Utils.TextUtils
+      LS.Utils.UtilsREPLDev
+      LS.Verdict
+      LS.XPile.CoreL4
+      LS.XPile.CoreL4.LogicProgram
+      LS.XPile.CoreL4.LogicProgram.Common
+      LS.XPile.CoreL4.LogicProgram.Pretty
+      LS.XPile.CoreL4.LogicProgram.Pretty.Utils
+      LS.XPile.CoreL4.LogicProgram.Skolemize
+      LS.XPile.DataFlow
+      LS.XPile.DumpRule
+      LS.XPile.ExportTypes
+      LS.XPile.GFTrees
+      LS.XPile.IntroBase
+      LS.XPile.IntroBasic
+      LS.XPile.IntroLog
+      LS.XPile.IntroReader
+      LS.XPile.IntroShoehorn
+      LS.XPile.IntroTrivial
+      LS.XPile.JSONRanges
+      LS.XPile.Logging
+      LS.XPile.LogicalEnglish
+      LS.XPile.LogicalEnglish.GenLEHCs
+      LS.XPile.LogicalEnglish.GenNLAs
+      LS.XPile.LogicalEnglish.IdVars
+      LS.XPile.LogicalEnglish.LogicalEnglish
+      LS.XPile.LogicalEnglish.Pretty
+      LS.XPile.LogicalEnglish.ReplaceTxt
+      LS.XPile.LogicalEnglish.SimplifyL4
+      LS.XPile.LogicalEnglish.Types
+      LS.XPile.LogicalEnglish.UtilsLEReplDev
+      LS.XPile.LogicalEnglish.ValidateL4Input
+      LS.XPile.Markdown
+      LS.XPile.MathLang
+      LS.XPile.MathLang.ForMengEval.GenericMathLangToMengMathLang
+      LS.XPile.MathLang.ForMengEval.TypeInferForMengEval
+      LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
+      LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
+      LS.XPile.MathLang.GenericMathLang.TranslateL4
+      LS.XPile.MathLang.Logging
+      LS.XPile.MathLang.MathLang
+      LS.XPile.MathLang.UtilsLCReplDev
+      LS.XPile.Maude
+      LS.XPile.Maude.Regulative.HenceLest
+      LS.XPile.Maude.Regulative.RkeywordDeonticActorAction
+      LS.XPile.Maude.Regulative.TempConstr
+      LS.XPile.Maude.Rule
+      LS.XPile.Maude.Rules
+      LS.XPile.Maude.Utils
+      LS.XPile.NaturalLanguage
+      LS.XPile.Org
+      LS.XPile.Petri
+      LS.XPile.Prolog
+      LS.XPile.Purescript
+      LS.XPile.SVG
+      LS.XPile.Typescript
+      LS.XPile.Uppaal
+      LS.XPile.VueJSON
+  other-modules:
+      Paths_natural4
+  hs-source-dirs:
+      src
+  ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , diagnose
+    , directory
+    , effectful
+    , effectful-th
+    , explainable
+    , extra
+    , fgl
+    , filemanip
+    , filepath
+    , flow
+    , generic-arbitrary
+    , generic-optics
+    , gf
+    , graphviz
+    , hashable
+    , hxt
+    , iso8601-time
+    , json
+    , lens-regex-pcre
+    , log-base
+    , log-effectful
+    , megaparsec
+    , monad-validate
+    , mono-traversable
+    , mtl
+    , nonempty-containers
+    , optics
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pcre-heavy
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , prolog
+    , quickcheck-text
+    , raw-strings-qq
+    , safe
+    , split
+    , string-conversions
+    , string-interpolate
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector
+    , witherable
+  default-language: GHC2021
+
+executable natural4-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_natural4
+  hs-source-dirs:
+      app
+  ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , diagnose
+    , directory
+    , effectful
+    , effectful-th
+    , explainable
+    , extra
+    , fgl
+    , filepath
+    , flow
+    , generic-arbitrary
+    , generic-optics
+    , gf
+    , graphviz
+    , hashable
+    , hxt
+    , iso8601-time
+    , json
+    , lens-regex-pcre
+    , log-base
+    , log-effectful
+    , megaparsec
+    , monad-validate
+    , mono-traversable
+    , mtl
+    , natural4
+    , nonempty-containers
+    , optics
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pcre-heavy
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , prolog
+    , quickcheck-text
+    , raw-strings-qq
+    , safe
+    , split
+    , string-conversions
+    , string-interpolate
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector
+    , witherable
+  default-language: GHC2021
+
+test-suite doctests
+  type: exitcode-stdio-1.0
+  main-is: Doctests.hs
+  other-modules:
+      Paths_natural4
+  hs-source-dirs:
+      test/doctests
+  ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie -threaded -Wno-unused-packages
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , diagnose
+    , directory
+    , doctest-parallel >=0.1
+    , effectful
+    , effectful-th
+    , explainable
+    , extra
+    , fgl
+    , filepath
+    , flow
+    , generic-arbitrary
+    , generic-optics
+    , gf
+    , graphviz
+    , hashable
+    , hxt
+    , iso8601-time
+    , json
+    , lens-regex-pcre
+    , log-base
+    , log-effectful
+    , megaparsec
+    , monad-validate
+    , mono-traversable
+    , mtl
+    , natural4
+    , nonempty-containers
+    , optics
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pcre-heavy
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , prolog
+    , quickcheck-text
+    , raw-strings-qq
+    , safe
+    , split
+    , string-conversions
+    , string-interpolate
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector
+    , witherable
+  default-language: GHC2021
+
+test-suite natural4-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      LS.BasicTypesSpec
+      LS.InterpreterSpec
+      LS.NLGSpec
+      LS.RelationalPredicatesSpec
+      LS.TypesSpec
+      LS.XPile.CoreL4.LogicProgramSpec
+      LS.XPile.JSONSchemaSpec
+      LS.XPile.LogicalEnglish.GoldenUtils
+      LS.XPile.LogicalEnglish.LogicalEnglishSpec
+      LS.XPile.LogicalEnglish.SpecUtils
+      LS.XPile.LogicalEnglish.Testcase
+      LS.XPile.PrologSpec
+      Parsing.BoolStructParserSpec
+      Parsing.CoreL4ParserSpec
+      Parsing.MegaparsingMeansSpec
+      Parsing.MegaparsingSpec
+      Parsing.MegaparsingUnlessSpec
+      Parsing.NewParserSpec
+      Parsing.PDPASpec
+      Parsing.SLParserSpec
+      Paths_natural4
+  hs-source-dirs:
+      test
+  ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , diagnose
+    , directory
+    , effectful
+    , effectful-th
+    , explainable
+    , extra
+    , fgl
+    , filemanip
+    , filepath
+    , flow
+    , generic-arbitrary
+    , generic-optics
+    , gf
+    , graphviz
+    , hashable
+    , hspec
+    , hspec-golden
+    , hspec-megaparsec
+    , hxt
+    , iso8601-time
+    , json
+    , lens-regex-pcre
+    , log-base
+    , log-effectful
+    , megaparsec
+    , monad-validate
+    , mono-traversable
+    , mtl
+    , natural4
+    , nonempty-containers
+    , optics
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pcre-heavy
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , prolog
+    , quickcheck-text
+    , raw-strings-qq
+    , safe
+    , split
+    , string-conversions
+    , string-interpolate
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector
+    , witherable
+    , yaml
+  default-language: GHC2021
+
+benchmark natural4-bench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  other-modules:
+      Paths_natural4
+  hs-source-dirs:
+      benchmarks
+  ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , baby-l4
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , criterion
+    , deepseq
+    , diagnose
+    , directory
+    , effectful
+    , effectful-th
+    , explainable
+    , extra
+    , fgl
+    , filepath
+    , flow
+    , generic-arbitrary
+    , generic-optics
+    , gf
+    , graphviz
+    , hashable
+    , hxt
+    , iso8601-time
+    , json
+    , lens-regex-pcre
+    , log-base
+    , log-effectful
+    , megaparsec
+    , monad-validate
+    , mono-traversable
+    , mtl
+    , natural4
+    , nonempty-containers
+    , optics
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pcre-heavy
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , prolog
+    , quickcheck-text
+    , raw-strings-qq
+    , safe
+    , split
+    , string-conversions
+    , string-interpolate
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector
+    , witherable
+  default-language: GHC2021

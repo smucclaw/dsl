@@ -5,12 +5,12 @@
 
 module LS.XPile.IntroBasic (toBasic) where
 
-import LS.Interpreter       ( qaHornsT )
-import LS.PrettyPrinter     ( myrender, (</>) )
-import LS.Rule              ( Interpreted(..) )
-import Prettyprinter        ( Doc, pretty )
-import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as Text
+import LS.Interpreter (qaHornsT)
+import LS.PrettyPrinter (myrender, (</>))
+import LS.Rule (Interpreted (..))
+import Prettyprinter (Doc, pretty)
+import Text.Pretty.Simple (pShowNoColor)
 
 toBasic :: Interpreted -> String
 toBasic = Text.unpack . myrender . toBasicPP

@@ -7,6 +7,8 @@ here we shoehorn the environment into the R of the XPileLog's RWST
 
 module LS.XPile.IntroShoehorn (toShoehorn) where
 
+import Control.Monad.Identity (Identity)
+import Control.Monad.RWS (RWST, ask, evalRWS, evalRWST, tell)
 import Data.Bifunctor (first)
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as Map
@@ -18,9 +20,6 @@ import LS.XPile.IntroReader (MyEnv (..), defaultReaderEnv)
 import LS.XPile.Logging (XPileLogS, XPileLogW)
 import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)
-
-import Control.Monad.Identity ( Identity )
-import Control.Monad.RWS ( ask, tell, RWST, evalRWS, evalRWST )
 
 toShoehorn :: Interpreted -> MyEnv -> (String, [String])
 toShoehorn l4i myenv = first (Text.unpack . myrender) $ xpLog' (inner l4i) myenv

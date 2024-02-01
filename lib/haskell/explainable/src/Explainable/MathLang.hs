@@ -11,12 +11,15 @@ module Explainable.MathLang
     (@|?),
     (@|:),
     (@|.),
+    (@|..),
     (+||),
     (*||),
     (|+),
+    (|*),
     dumpExplanationF,
     emptyState,
     eval,
+    getvar,
     negativeElementsOf,
     positiveElementsOf,
     timesEach,
@@ -83,9 +86,9 @@ import Prelude hiding (pred)
 -- Grab the `MyState` by calling @<- get@. If you know which symtab you want, you can call
 -- @<- gets symtabX@.
 type SymTab = Map.HashMap String
-data MyState = MyState { symtabF :: SymTab (Expr     Float)
-                       , symtabP :: SymTab (Pred     Float)
-                       , symtabL :: SymTab (ExprList Float)
+data MyState = MyState { symtabF :: SymTab (Expr     Float) -- numbers (numeric expressions)
+                       , symtabP :: SymTab (Pred     Float) -- booleans (propositional expressions)
+                       , symtabL :: SymTab (ExprList Float) -- lists of numeric expressions
                        , symtabS :: SymTab String
                        }
   deriving (Show, Eq)
@@ -830,8 +833,9 @@ dumpTypescript realign s f =
       return expr
     }
     #{ppst s realign}
-    export const maxClaim = () => { return #{pp f}
-  }
+    export const maxClaim = () => {
+      return #{pp f} 
+    }
   |]
 
 -- * Prettty-printing to the Typescript version of the MathLang library

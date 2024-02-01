@@ -256,7 +256,7 @@ toToken ";;"        = pure Semicolon
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toToken s | [(n,"")] <- reads $ Text.unpack s = pure $ TNumber n
+toToken (reads . Text.unpack -> [(n, "")]) = pure $ TNumber n
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toToken x = pure $ Other x
@@ -358,9 +358,6 @@ data WithPos a = WithPos
   , parserCtx :: Maybe [String]
   , tokenVal :: a
   } deriving (Eq, Ord, Show, Functor)
-
-
-
 
 pxy :: Proxy MyStream
 pxy = Proxy

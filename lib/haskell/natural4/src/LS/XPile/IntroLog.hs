@@ -28,7 +28,7 @@ inner l4i myenv = do
   mutter . Text.unpack . myrender $
     "** the global environment is" <//> pretty (pShowNoColor genv) </>
     "** the app environment is"    <//> pretty (pShowNoColor aenv)
-  return $
+  pure $
     "* output from the IntroLogging transpiler" </>
     "** qaHornsT is"               <//> pretty (pShowNoColor (qaHornsT l4i))
 

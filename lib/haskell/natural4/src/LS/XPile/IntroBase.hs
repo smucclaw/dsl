@@ -20,7 +20,7 @@ import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- import Control.Monad.Identity ( Identity )
-import Control.Monad.Reader
+import Control.Monad.Reader ( MonadReader(ask), runReader, Reader )
 import Control.Monad.RWS ( tell, RWST, evalRWS, evalRWST )
 
 toBase :: Interpreted -> MyEnv -> (String, [String])

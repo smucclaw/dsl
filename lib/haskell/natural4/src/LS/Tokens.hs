@@ -151,16 +151,18 @@ getToken = token test Set.empty <?> "any token"
     test WithPos {tokenVal = tok} = Just tok
 
 getWithPos :: Parser String
-getWithPos = token test Set.empty <?> "any token"
+getWithPos = token showpos Set.empty <?> "any token"
   where
-    test wp@WithPos {tokenVal = tok}
-      | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
-      | otherwise                            = showpos wp
-    showpos wp = Just $
-      show (unPos $ sourceLine   $ pos wp) ++ "_" ++
-      show (unPos $ sourceColumn $ pos wp) ++ ":" ++
-      show (tokenVal wp)
-    _showtok wp = Just $ show $ tokenVal wp
+    -- test wp@WithPos {tokenVal = tok}
+    --   | tok `elem` [GoDeeper, UnDeeper, EOL] = showpos wp
+    --   | otherwise                            = showpos wp
+    showpos wp =
+      let poswp = pos wp in
+      Just [i|#{unPos $ sourceLine $ poswp}_#{unPos $ sourceColumn $ poswp}:#{tokenVal wp}|]
+      -- show (unPos $ sourceLine   $ pos wp) ++ "_" ++
+      -- show (unPos $ sourceColumn $ pos wp) ++ ":" ++
+      -- show (tokenVal wp)
+    -- _showtok wp = Just $ show $ tokenVal wp
 
 tokenViewColumnSize :: Int
 tokenViewColumnSize = 15
@@ -171,7 +173,7 @@ myTraceM x = whenDebug do
   lookingAt <- lookAhead getWithPos <|> ("EOF" <$ eof)
   traceM $ leftPad lookingAt tokenViewColumnSize <> indentShow nestDepth <> x
   where
-    indentShow depth = concat $ replicate depth "| "
+    indentShow depth = mconcat $ replicate depth "| "
     leftPad str n = take n $ str <> repeat ' '
 
 getTokenNonDeep :: Parser MyToken
@@ -189,7 +191,6 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
       EOL -> Nothing
       _ -> Just tok
 
-
 -- pInt :: Parser Int
 -- pInt = token test Set.empty <?> "integer"
 --   where
@@ -206,12 +207,6 @@ getTokenNonEOL = token test Set.empty <?> "any token except EOL"
 -- egStream :: String -> MyStream
 -- egStream x = MyStream x (parseMyStream x)
 
-
-
-
-
-
-
 pSrcRef :: Parser (Maybe RuleLabel, Maybe SrcRef)
 pSrcRef = debugName "pSrcRef" do
   rlabel' <- optional pRuleLabel
@@ -219,8 +214,6 @@ pSrcRef = debugName "pSrcRef" do
   leftX  <- lookAhead pXLocation -- this is the column where we expect IF/AND/OR etc.
   srcurl <- asks sourceURL
   pure (rlabel', Just $ SrcRef srcurl srcurl leftX leftY Nothing)
-
-
 
 myEOL :: Parser ()
 myEOL = void (pToken EOL) <|> eof <|> notFollowedBy (choice [ pToken GoDeeper, pToken UnDeeper ])

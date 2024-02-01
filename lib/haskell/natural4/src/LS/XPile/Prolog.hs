@@ -248,7 +248,7 @@ clpEnums _st tname ens =
   -- [TODO]: get n out of Analysis which should become a State monad and then use it as a primary index across all enums
 
 mkComment :: String -> Clause
-mkComment str = Clause (Struct "comment" [var (Prelude.filter (/= ' ') str)]) []
+mkComment str = Clause (Struct "comment" [var (filter (/= ' ') str)]) []
 
 hornlike2clauses :: Analysis -> Text.Text -> [HornClause2] -> [Clause]
 hornlike2clauses _st _fname hc2s =

@@ -35,6 +35,7 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 
 import AnyAll qualified as AA
 import Control.Applicative (Applicative (liftA2))
+import Control.Arrow ((>>>))
 import Control.Monad (guard, join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Bifunctor (Bifunctor (..))
@@ -51,10 +52,11 @@ import Data.MonoTraversable (Element, otoList)
 import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
 import Data.Sequences (IsSequence)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable (for)
 import Debug.Trace (trace)
-import Flow ((.>), (|>))
+import Flow ((|>))
 import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
 import L4.Syntax as L4
@@ -230,7 +232,7 @@ sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToBabyl4 :: Interpreted -> String
-sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
+sfl4ToBabyl4 = show . sfl4ToCorel4Program
 
 sfl4ToASP :: [SFL4.Rule] -> XPileLogE String
 sfl4ToASP = xpReturn . sfl4ToLogicProgramStr @ASP
@@ -299,7 +301,7 @@ sfl4ToCorel4 rs =
     , "\n\n## boilerplate\n",               T.unpack pBoilerplate
 
     , "\n\n## decls for predicates used in rules (and not defined above already)\n"
-    , T.unpack . myrender $ prettyDecls (T.pack hardCoded <> pclasses <> pBoilerplate) rs
+    , T.unpack . myrender $ prettyDecls [i|#{hardCoded}#{pclasses}#{pBoilerplate}|] rs
 
     -- honestly i think we can just live without these
     --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
@@ -402,7 +404,7 @@ multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 multiTermToExprNoType cont mt = do
   expr <- for mt $ mtExprToExprNoType cont
   case expr of
-    var@(VarE t v) : args -> pure $ funArgsToAppNoType var args
+    var@(VarE _ _) : args -> pure $ funArgsToAppNoType var args
     [e] -> pure e
     _ -> refute "non-variable name in function position"
 
@@ -602,7 +604,6 @@ directToCore r@Hornlike{keyword}
 directToCore TypeDecl{} = ""
 directToCore _ = ""
 
-
 hc2decls :: SFL4.Rule -> Doc ann
 hc2decls r
   | hasClauses r =
@@ -753,7 +754,6 @@ prettyDefns rs =
                  | r <- rs
                  , hasClauses r
                  ]
-
 
 {-
  a word or two about our type system.
@@ -1174,7 +1174,7 @@ hornlikeToContext Hornlike {given} =
   (given :: Maybe (NE.NonEmpty (NE.NonEmpty MTExpr, Maybe TypeSig)))
     |> maybe [] Fold.toList
     -- extract the MTExprs from given
-    |> foldMap (fst .> Fold.toList)
+    |> foldMap (fst >>> Fold.toList)
     |> mapMaybe
       -- destructMTT
       \case

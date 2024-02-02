@@ -10,25 +10,16 @@ module LS.XPile.LogicalEnglish.ValidateL4Input
 
     , isHornlike -- TODO: TEMP export; will remove this after implementing the prevalidation
   )
-  where
+where
 
 import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
 
 import Data.Text qualified as T
-import Data.List.NonEmpty qualified as NE
 
-import Data.HashMap.Strict qualified as HM
-import Data.HashSet qualified as HS
-import Data.Hashable (Hashable)
 import Data.Maybe (fromMaybe, listToMaybe)
-import Data.HashMap.Strict qualified as Map
-import Control.Monad.Identity ( Identity )
-import Data.Bifunctor       ( first )
-import Data.String (IsString)
 import Data.Coerce (coerce)
 -- import Optics
 
-import LS.Types (RelationalPredicate(..), RPRel(..))
 import LS.Rule qualified as L4 (Rule(..))
 
 import Debug.Trace (trace)

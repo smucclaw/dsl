@@ -12,7 +12,12 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 
-module LS.XPile.LogicalEnglish.SimplifyL4 (simplifyL4rule, SimpL4(..), SimL4Error(..)) where
+module LS.XPile.LogicalEnglish.SimplifyL4
+  ( simplifyL4rule,
+    SimpL4 (..),
+    SimL4Error (..),
+  )
+where
 
 import Data.Text qualified as T
 import LS.Utils.TextUtils (int2Text, float2Text)
@@ -21,7 +26,7 @@ import Control.Monad.Validate
   ( MonadValidate (..)
     , Validate
     , refute
-    )
+  )
 -- import Optics
 -- import Data.Generics.Product.Types (types)
 import Data.HashSet qualified as HS

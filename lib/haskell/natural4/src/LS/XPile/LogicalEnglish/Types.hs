@@ -9,7 +9,8 @@
 {-# LANGUAGE PatternSynonyms, ViewPatterns, DataKinds, GADTs #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
 
-module LS.XPile.LogicalEnglish.Types (
+module LS.XPile.LogicalEnglish.Types
+  (
     -- Common types 
       OrigVarName
     , BoolPropn(..)
@@ -71,8 +72,8 @@ module LS.XPile.LogicalEnglish.Types (
     , LEFactForPrint
     , LERuleForPrint
     , LEhcPrint(..)
-) where
-
+  )
+where
 
 import Data.Text qualified as T
 import Data.HashSet qualified as HS

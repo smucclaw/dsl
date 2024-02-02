@@ -9,8 +9,9 @@
 {-# LANGUAGE QuasiQuotes, TemplateHaskell #-}
 
 
-module LS.XPile.LogicalEnglish.GenNLAs (
-      nlasFromVarsHC
+module LS.XPile.LogicalEnglish.GenNLAs
+  (
+    nlasFromVarsHC
     , NLATxt(..)
     , _MkNLATxt
 

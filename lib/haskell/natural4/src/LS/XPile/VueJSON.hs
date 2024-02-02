@@ -160,7 +160,7 @@ rulegrounds rc globalrules r@Hornlike{..} =
 
   in mconcat $ mconcat [givenGrounds, uponGrounds, clauseGrounds]
 
-rulegrounds _rc _globalrules _r = [ ]
+rulegrounds _rc _globalrules _r = []
 
 -- [TODO]: other forms of Rule need their ground terms expressed.
 -- [TODO]: also, we should return the terms as a plain BoolStruct (Item T.T) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item T.
@@ -176,7 +176,7 @@ bsr2grounds rc globalrules r = mconcat . maybeToList . fmap (aaLeavesFilter (ign
 pt2grounds :: RunConfig -> [Rule] -> Rule -> ParamText -> Grounds
 pt2grounds _rc _globalrules _r _pt = [MTT <$> ["pt2grounds","unimplemented"]]
 
-rp2grounds :: RunConfig -> [Rule] -> Rule ->  RelationalPredicate -> Grounds
+rp2grounds :: RunConfig -> [Rule] -> Rule -> RelationalPredicate -> Grounds
 rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
 rp2grounds _rc _globalrules _r (RPMT mt) = [mt]
 rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
@@ -233,10 +233,11 @@ pickOneOf mts =
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
 groupSingletons mt1 mt2 =
-  all @[] isSingletonWithOnlyOneWord [mt1, mt2]
+  all' isSingletonWithOnlyOneWord [mt1, mt2]
   where
     isSingletonWithOnlyOneWord mtt =
-      all @[] (== 1) [length mtt, length $ foldMap (T.words . mtexpr2text) mtt]
+      all' (== 1) [length mtt, length $ foldMap (T.words . mtexpr2text) mtt]
+    all' = all @[]
 
 quaero :: [T.Text] -> [T.Text]
 quaero [x] = [T.unwords $ quaero $ T.words x]
@@ -252,22 +253,25 @@ toVueRule :: Rule -> XPileLogE BoolStructR
 toVueRule r@(Hornlike {clauses=[HC {hBody=Just t}]}) = do
   mutter "branch 1: handling Hornlike rule"
   xpReturn t
+
 toVueRule r@(Regulative {who=Just whoRP, cond=Just condRP}) = do
   mutter "branch 2: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpReturn $ All Nothing [whoRP, condRP]
   -- xpError ["handling branch2, whoRP && condRP"]
+
 toVueRule r@(Regulative {who=Just whoRP}) = do
   mutter "branch 3: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpReturn whoRP
   -- xpError ["handling branch 3, whoRP"]
+
 toVueRule r@(Regulative {cond=Just condRP}) = do
   mutter "branch 4: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpReturn condRP
   -- xpError ["handling branch 4, condRP"]
+
 toVueRule _ = do
   mutter "branch 5: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpError ["toVueRules not handling any other type of rule"]
-
 
 -- define custom types here for things we care about in purescript
 

@@ -22,7 +22,7 @@ import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)
 
 toShoehorn :: Interpreted -> MyEnv -> (String, [String])
-toShoehorn l4i myenv = first (Text.unpack . myrender) $ xpLog' (inner l4i) myenv
+toShoehorn l4i = first (Text.unpack . myrender) . xpLog' (inner l4i)
 
 inner :: Interpreted -> MyLog (Doc ann)
 inner l4i = do
@@ -33,7 +33,7 @@ inner l4i = do
   mutter . Text.unpack . myrender $
     "** the global environment is" <//> pretty (pShowNoColor genv) </>
     "** the app environment is"    <//> pretty (pShowNoColor aenv)
-  return $
+  pure $
     "* output from the IntroShoehorn transpiler" </>
     "** qaHornsT is"               <//> pretty (pShowNoColor (qaHornsT l4i))
 
@@ -43,4 +43,5 @@ type MyLog    = MyLogT Identity
 xpLog' :: MyLog a -> MyEnv -> (a, XPileLogW)
 xpLog' x r = evalRWS x r mempty
 
+mutter :: String -> MyLog ()
 mutter = tell . pure

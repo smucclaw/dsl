@@ -271,7 +271,8 @@ sfl4ToDMN rules = rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
 sfl4ToCorel4 :: [SFL4.Rule] -> XPileLogE String
 sfl4ToCorel4 rs =
-  let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
+  let interpreted =
+        l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
       -- sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
@@ -309,7 +310,7 @@ sfl4ToCorel4 rs =
 
     , "\n# directToCore\n\n"
     ] ++
-    [ T.unpack $ myrender (directToCore r)
+    [ T.unpack $ myrender $ directToCore r
     | r <- rs
     ]
   )
@@ -371,9 +372,15 @@ pptle tle                 =
 
 -- TODO: remove after import from BabyL4 works correctly
 trueVNoType :: Expr ()
-trueVNoType = ValE () $ BoolV True
+trueVNoType = fst trueFalseVNoType
+
 falseVNoType :: Expr ()
-falseVNoType = ValE () $ BoolV False
+falseVNoType = snd trueFalseVNoType
+
+trueFalseVNoType :: (Expr (), Expr ())
+trueFalseVNoType = (go True, go False)
+  where
+    go = ValE () . BoolV
 
 -- TODO: BEGIN helper functions
 -- maybe move into BabyL4/SyntaxManipulations.hs
@@ -540,6 +547,7 @@ sfl4ToCorel4Rule TypeDecl {name} =
             }
         )
     ]
+
 sfl4ToCorel4Rule DefNameAlias {} = mempty
 sfl4ToCorel4Rule RuleAlias {} = refute "sfl4ToCorel4Rule: erroring on RuleAlias"  -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled  = refute "sfl4ToCorel4Rule: erroring on RegFulfilled"

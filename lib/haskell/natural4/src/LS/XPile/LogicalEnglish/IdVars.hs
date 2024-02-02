@@ -72,8 +72,7 @@ idVarsInAP gvars = fmap makeVCell
 --   others          -> others
 
 idVarsInBody :: GVarSet -> BoolPropn L4AtomicP -> BoolPropn AtomicPWithVars
-idVarsInBody gvars = fmap $ idVarsInAP gvars
-
+idVarsInBody = fmap . idVarsInAP
 
 ---- helpers
 
@@ -105,13 +104,14 @@ celltxt2vcell gvars (T.stripSuffix "'s" -> Just prefix) =
 -- NOTE / TODO: this matching on "'s" is a bit brittle cos unicode
     if txtIsAGivenVar gvars prefix 
     then TempVar (EndsInApos prefix)
-    else AposAtom prefix 
+    else AposAtom prefix
+
 celltxt2vcell gvars celltxt
   | txtIsAGivenVar gvars celltxt = TempVar (MatchGVar celltxt)
   | otherwise = NonVarOrNonAposAtom celltxt
 
 txtIsAGivenVar :: GVarSet -> T.Text -> Bool
-txtIsAGivenVar gvars txt = HS.member (coerce txt) gvars
+txtIsAGivenVar gvars txt = coerce txt `elem` gvars
 
 
 -- {-  Deprecating this and the next fn b/c the encoding suggests terms other than the args for op of might not just be either MatchGVar or EndsInApos --- they can also be atoms / non-variables

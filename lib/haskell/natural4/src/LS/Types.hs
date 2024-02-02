@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
@@ -63,7 +65,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
 data MTExpr = MTT Text.Text -- ^ Text string
             | MTI Integer   -- ^ Integer
-            | MTF Float     -- ^ Float
+            | MTF Double     -- ^ Float
             | MTB Bool      -- ^ Boolean
 --            | MTC Text.Text -- ^ Currency money
 --            | MTD Text.Text -- ^ Date
@@ -229,8 +231,10 @@ newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
 
 _MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL = coerced
+
 mkMultiClauseHL :: [AtomicHC] -> MultiClauseHL
 mkMultiClauseHL = view (re _MkMultiClauseHL) . NE.fromList
+
 getMCHLhcs :: MultiClauseHL -> [AtomicHC]
 getMCHLhcs = NE.toList . view _MkMultiClauseHL
 
@@ -240,10 +244,13 @@ newtype HeadOnlyHC = MkHeadOnlyHC { hcHead  :: RelationalPredicate }
 
 _MkHeadOnlyHC :: Iso' HeadOnlyHC RelationalPredicate
 _MkHeadOnlyHC = coerced
+
 mkHeadOnlyHC :: RelationalPredicate -> HeadOnlyHC
 mkHeadOnlyHC = view (re _MkHeadOnlyHC)
+
 mkHeadOnlyAtomicHC :: RelationalPredicate -> AtomicHC
 mkHeadOnlyAtomicHC = HeadOnly . mkHeadOnlyHC
+
 headOnlyHLasMTEs :: HeadOnlyHC -> RelationalPredicate
 headOnlyHLasMTEs = view _MkHeadOnlyHC
 
@@ -257,13 +264,17 @@ class PrependHead a where
   prependHead :: Text.Text -> a -> a
 
 instance PrependHead MTExpr where
-  prependHead t (MTT mtt) = MTT (prependHead t mtt)
-  prependHead t (MTI mti) = MTT (prependHead t [i|#{mti}|])
-  prependHead t (MTF mtn) = MTT (prependHead t [i|#{mtn}|])
-  prependHead t (MTB mtb) = MTT (prependHead t [i|#{mtb}|])
+  prependHead t = \case
+    MTT mtt -> go mtt
+    MTI mti -> go [i|#{mti}|]
+    MTF mtn -> go [i|#{mtn}|]
+    MTB mtb -> go [i|#{mtb}|]
+    where
+      go = MTT . prependHead t
 
 instance PrependHead Text.Text where
   prependHead s t = [i|#{s} #{t}|]
+
 instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
@@ -322,7 +333,7 @@ data RelationalPredicate = RPParamText   ParamText                     -- cloudl
                  -- RPConstraint ["eyes"] Rpis ["blue"]
 
 mkRpmt :: [Text.Text] -> RelationalPredicate
-mkRpmt a = RPMT (MTT <$> a)
+mkRpmt a = RPMT $ MTT <$> a
 
 mkRpmtLeaf :: [Text.Text] -> BoolStructR
 mkRpmtLeaf a = mkLeaf (mkRpmt a)
@@ -442,7 +453,7 @@ type VarPath = [TypedMulti]
 newtype InterpreterOptions = IOpts
   { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Show)
 
 -- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
 defaultInterpreterOptions :: InterpreterOptions
@@ -453,13 +464,9 @@ defaultInterpreterOptions = IOpts
 -- | a basic symbol table to track "variable names" and their associated types.
 
 getUnderlyingType :: TypeSig -> Either String EntityType
-getUnderlyingType   (SimpleType TOne      s1) = Right s1
-getUnderlyingType   (SimpleType TOptional s1) = Right s1
-getUnderlyingType   (SimpleType TList0    s1) = Right s1
-getUnderlyingType   (SimpleType TList1    s1) = Right s1
-getUnderlyingType   (SimpleType TSet0     s1) = Right s1
-getUnderlyingType   (SimpleType TSet1     s1) = Right s1
-getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
+getUnderlyingType (SimpleType _ s1) = Right s1
+getUnderlyingType (InlineEnum _pt1 _) =
+  Left "type declaration cannot inherit from _enum_ superclass"
 
 -- * what's the difference between SymTab, ClsTab, and ScopeTabs?
 
@@ -469,7 +476,11 @@ newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
-  deriving (Show, Ord, Eq, Generic)
+  deriving (Eq, Show)
+
+mkCT :: ClassHierarchyMap -> ClsTab
+mkCT = coerce
+{-# INLINE mkCT #-}
 
 unCT :: ClsTab -> ClassHierarchyMap
 unCT = coerce
@@ -506,21 +517,21 @@ type Inferrable ts = (Maybe ts, [ts])
 defaultInferrableTypeSig :: (Maybe a1, [a2])
 defaultInferrableTypeSig = (Nothing, [])
 
-thisAttributes, extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-
 -- | attributes defined in the type declaration for this class specifically
-thisAttributes (CT clstab) subclass = do
+thisAttributes :: ClsTab -> EntityType -> Maybe ClsTab
+thisAttributes (unCT -> clstab) subclass = do
   ((_mts, _tss), ct) <- Map.lookup subclass clstab
-  return ct
+  pure ct
 
 -- | attributes including superclass attributes
-extendedAttributes o@(CT clstab) subclass = do
-  ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
+extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
+extendedAttributes o@(unCT -> clstab) subclass = do
+  ((_mts, _tss), unCT -> ct) <- Map.lookup subclass clstab
   let eAttrs = case extendedAttributes o <$> clsParent o subclass of
                  Nothing               -> Map.empty
                  Just Nothing        -> Map.empty
                  Just (Just (CT ea)) -> ea
-  return $ CT $ ct <> eAttrs
+  pure $ mkCT $ ct <> eAttrs
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
@@ -530,7 +541,7 @@ getSymType (_, xs) = headMay xs
 -- a subclass extends a superclass.
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
-clsParent (CT clstab) subclass = do
+clsParent (unCT -> clstab) subclass = do
   ((mts, tss), _st) <- Map.lookup subclass clstab
   case getUnderlyingType <$> getSymType (mts, tss) of
     Just (Right s1) -> Just s1
@@ -604,7 +615,7 @@ mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure uni
 data NatLang = NLen
 
 tc2nl :: NatLang -> Maybe (TemporalConstraint Text.Text) -> Text.Text
-tc2nl NLen Nothing = "eventually"
+tc2nl _ Nothing = "eventually"
 tc2nl NLen (Just (TemporalConstraint tComparison n t)) =
   [i|{tComaparisonTxt} #{maybe "" show n} #{t}|]
   where

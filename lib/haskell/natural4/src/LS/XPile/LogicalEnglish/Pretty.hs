@@ -14,7 +14,11 @@
 {-# LANGUAGE DataKinds, AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 
-module LS.XPile.LogicalEnglish.Pretty (LEProg(..), libAndBuiltinTemplates) where
+module LS.XPile.LogicalEnglish.Pretty
+  ( LEProg(..),
+    libAndBuiltinTemplates
+  )
+where
 
 -- import Text.Pretty.Simple   ( pShowNoColor )
 import Data.Text qualified as T
@@ -35,15 +39,19 @@ import Prettyprinter
     -- viaShow,
     -- encloseSep,
     concatWith,
-    dot)
+    dot
+  )
 import LS.PrettyPrinter
-    ( vvsep, (<//>), myrender )
-import Prettyprinter.Interpolate (__di, di)
+  ( myrender,
+    vvsep,
+    (<//>),
+  )
+import Prettyprinter.Interpolate (di, __di)
 -- import Optics
 -- import Optics.State.Operators
 -- import Optics.TH
 -- import Data.Set.Optics (setOf)
-import Data.List ( sort )
+import Data.List (sort)
 
 import LS.XPile.LogicalEnglish.Types
 import LS.XPile.LogicalEnglish.GenNLAs (NLATxt)
@@ -68,6 +76,7 @@ data LEProg = MkLEProg {  keptnlats :: [NLATxt]
 
 -- | config record for pretty printing
 data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int} deriving stock (Show)
+
 printcfg :: PrintCfg
 printcfg = MkPrintCfg { numIndentSpcs = 2 }
 

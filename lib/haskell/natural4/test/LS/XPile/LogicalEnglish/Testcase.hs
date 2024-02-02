@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -79,9 +80,7 @@ data Config = Config
   { description :: String,
     enabled :: Bool
   }
-  deriving (Generic, Show)
-
-instance Y.FromJSON Config
+  deriving (Generic, Y.FromJSON, Show)
 
 data Error = Error
   { directory :: FilePath,

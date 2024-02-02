@@ -102,5 +102,5 @@ pairs xs =
     |> mapMaybe uncons -- [(x0, [x1 ... xn]) ...]
     -- This does NOT play nice with infinite lists in that if xs is infinite,
     -- then tail is also always infinite, so that the order type is > ω.
-    -- Consequently, some pairs may never get enumerated over.
+    -- Consequently, some pairs may never get enumerated over (unless once has an ordinal turing machine).
     |> foldMap \(x, tail) -> [(x, y) | y <- tail]

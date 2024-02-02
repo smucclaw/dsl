@@ -9,8 +9,9 @@
 {-# LANGUAGE QuasiQuotes, TemplateHaskell #-}
 
 
-module LS.XPile.LogicalEnglish.GenNLAs (
-      nlasFromVarsHC
+module LS.XPile.LogicalEnglish.GenNLAs
+  (
+    nlasFromVarsHC
     , NLATxt(..)
     , _MkNLATxt
 
@@ -131,8 +132,10 @@ data NLA =
 
 instance Eq NLA where
   a == b = a.getNLATxt' == b.getNLATxt'
+
 instance Ord NLA where
   a `compare` b = a.getNLATxt' `compare` b.getNLATxt'
+
 instance Show NLA where
   show :: NLA -> String
   show nla =
@@ -169,10 +172,10 @@ mkNLA :: forall f. (Foldable f, HasNonEmpty (f VCell)) => f VCell -> Maybe NLA
 mkNLA (seqOf folded -> vcells) = do
   nmtVcells <- nonEmpty vcells
   regex     <- regexifyVCells nmtVcells ^? _Right
-  return $ MkNLA { getBase    = nmtVcells
-                  , numVars    = lengthOf (folded % filteredBy _TempVar) vcells
-                  , getNLATxt' = annotxtify vcells
-                  , regex      = traversify regex}
+  return MkNLA { getBase    = nmtVcells
+                , numVars    = lengthOf (folded % filteredBy _TempVar) vcells
+                , getNLATxt' = annotxtify vcells
+                , regex      = traversify regex}
 
 --- helpers for making NLAs
 
@@ -280,10 +283,9 @@ data FilterResult a = MkFResult { subsumed :: a, kept :: a }
 
 instance Semigroup a => Semigroup (FilterResult a) where
   MkFResult s1 k1 <> MkFResult s2 k2 =  MkFResult (s1 <> s2) (k1 <> k2)
+
 instance Monoid a => Monoid (FilterResult a) where
   mempty = MkFResult mempty mempty
-
-type DeBruijnNLA = [DeBruijnVCell]
 
 data DeBruijnVCell where
   Var :: DeBruijnVCell
@@ -293,7 +295,7 @@ data DeBruijnVCell where
 removeAlphaEquivNLAs :: Wither.Witherable t => t NLA -> t NLA
 removeAlphaEquivNLAs = Wither.hashNubOn abstractVarsFromNLA
   where
-    abstractVarsFromNLA :: NLA -> DeBruijnNLA =
+    abstractVarsFromNLA :: NLA -> [DeBruijnVCell] =
       (.getBase) >>> toList >>> map abstractVcell
 
     abstractVcell :: VCell -> DeBruijnVCell = \case

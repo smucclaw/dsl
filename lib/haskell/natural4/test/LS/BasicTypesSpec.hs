@@ -22,7 +22,7 @@ import LS.Types
         UnDeeper
       ),
     renderToken,
-    toToken,
+    toTokens,
   )
 import Test.Hspec (Spec, describe, it)
 import Test.QuickCheck
@@ -51,7 +51,7 @@ notOther _ = True
 prop_rendertoken :: MyToken -> Property
 prop_rendertoken mytok =
   mytok `notElem` [Distinct, TokTrue, TokFalse, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
-  toToken (T.pack $ renderToken mytok) === [mytok]
+  toTokens (T.pack $ renderToken mytok) === [mytok]
 
 spec :: Spec
 spec = do

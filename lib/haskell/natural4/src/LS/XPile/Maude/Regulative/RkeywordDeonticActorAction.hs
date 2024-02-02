@@ -56,7 +56,7 @@ data DeonticAction = DeonticAction
   { deontic :: Deontic,
     action :: ParamText
   }
-  deriving (Eq, Generic, Hashable, Ord, Show)
+  deriving (Eq, Generic, Hashable, Show)
 
 deonticAction2doc :: DeonticAction -> MonoidValidate (Doc ann1) (Doc ann2)
 deonticAction2doc

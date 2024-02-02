@@ -36,7 +36,7 @@ rules2maudeStr rules = rules |> rules2doc |> show
   only outputs those that do to plaintext.
 -}
 rules2doc :: forall ann t. (IsSequence t, Element t ~ Rule) => t -> Doc ann
-rules2doc (otoList -> rules :: [Rule]) =
+rules2doc (otoList -> rules) =
     -- TODO:
     -- Don't just swallow up errors and turn them into mempty.
     -- Actually output a comment indicating what went wrong while transpiling

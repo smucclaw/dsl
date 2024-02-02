@@ -23,7 +23,7 @@ module LS.BasicTypes
   )
 where
 
-import Data.Aeson (ToJSON)
+import Control.Arrow ((>>>))
 import Data.Char (toUpper)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
@@ -68,14 +68,17 @@ toTokens (\txt -> Map.lookup [i|#{txt}|] $(lift tokenTable) -> Just tokens) =
   tokens
 
 toTokens (PCRE.scan [PCRE.re|^-(§|¶)$|] -> [(_, [c])]) =
-  pure $ RuleMarker (-1) c
+  [RuleMarker (-1) c]
 
-toTokens s@(PCRE.scan [PCRE.re|^(§|¶|H)+$|] -> [(_, [c])]) =
-  pure $ RuleMarker (Text.length s) c
+toTokens s@(PCRE.scan [PCRE.re|^(§|¶)+$|] -> [(_, [c])]) =
+  [RuleMarker (Text.length s) c]
+
+toTokens (PCRE.scan [PCRE.re|^H([1-9](\d)*)$|] -> [(_, [n, _])]) =
+  [RuleMarker (read $ Text.unpack n) "H"]
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toTokens (reads . Text.unpack -> [(n, "")]) = [TNumber n]
+toTokens (Text.unpack >>> reads -> [(n, "")]) = [TNumber n]
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toTokens txt = [Other txt]

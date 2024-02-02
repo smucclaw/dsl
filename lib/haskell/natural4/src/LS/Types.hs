@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-|
@@ -262,13 +263,17 @@ class PrependHead a where
   prependHead :: Text.Text -> a -> a
 
 instance PrependHead MTExpr where
-  prependHead t (MTT mtt) = MTT (prependHead t mtt)
-  prependHead t (MTI mti) = MTT (prependHead t [i|#{mti}|])
-  prependHead t (MTF mtn) = MTT (prependHead t [i|#{mtn}|])
-  prependHead t (MTB mtb) = MTT (prependHead t [i|#{mtb}|])
+  prependHead t = \case
+    MTT mtt -> go mtt
+    MTI mti -> go [i|#{mti}|]
+    MTF mtn -> go [i|#{mtn}|]
+    MTB mtb -> go [i|#{mtb}|]
+    where
+      go = MTT . prependHead t
 
 instance PrependHead Text.Text where
   prependHead s t = [i|#{s} #{t}|]
+
 instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
@@ -458,13 +463,9 @@ defaultInterpreterOptions = IOpts
 -- | a basic symbol table to track "variable names" and their associated types.
 
 getUnderlyingType :: TypeSig -> Either String EntityType
-getUnderlyingType   (SimpleType TOne      s1) = Right s1
-getUnderlyingType   (SimpleType TOptional s1) = Right s1
-getUnderlyingType   (SimpleType TList0    s1) = Right s1
-getUnderlyingType   (SimpleType TList1    s1) = Right s1
-getUnderlyingType   (SimpleType TSet0     s1) = Right s1
-getUnderlyingType   (SimpleType TSet1     s1) = Right s1
-getUnderlyingType   (InlineEnum _pt1      __) = Left "type declaration cannot inherit from _enum_ superclass"
+getUnderlyingType (SimpleType _ s1) = Right s1
+getUnderlyingType (InlineEnum _pt1 _) =
+  Left "type declaration cannot inherit from _enum_ superclass"
 
 -- * what's the difference between SymTab, ClsTab, and ScopeTabs?
 

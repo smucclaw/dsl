@@ -1085,7 +1085,7 @@ permutationsReg keynamewho =
 --  -> pay
 pDT :: Parser (Deontic, Maybe (TemporalConstraint Text.Text))
 pDT = debugName "pDT" do
-  (pd,pt) <- (,)
+  (pd, pt) <- (,)
     $>| pDeontic
     |>< optional pTemporal
   pure (pd, join pt)
@@ -1182,7 +1182,10 @@ pLeafVal = debugName "pLeafVal" do
 pNestedBool ::  Parser BoolStructP
 pNestedBool = debugName "pNestedBool" do
   -- "foo AND bar" is a nestedBool; but just "foo" is a leafval.
-  (leftX,foundBool) <- lookAhead (pLeafVal >> optional dnl >> (,) <$> lookAhead pXLocation <*> pBoolConnector)
+  (leftX,foundBool) <- lookAhead do
+      pLeafVal
+      optional dnl
+      (,) <$> lookAhead pXLocation <*> pBoolConnector
   myTraceM [i|pNestedBool matched #{foundBool} at location #{leftX}|]
   dBoolStructP
 

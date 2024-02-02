@@ -51,6 +51,7 @@ import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
 import Data.Text qualified as T
 import Debug.Trace (trace)
+import Data.Traversable (for)
 import Flow ((.>), (|>))
 import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
@@ -397,7 +398,7 @@ varsToExprNoType vars =
 multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
 multiTermToExprNoType cont mt = do
-  expr <- traverse (mtExprToExprNoType cont) mt
+  expr <- for mt $ mtExprToExprNoType cont
   case expr of
     var@(VarE t v) : args -> pure $ funArgsToAppNoType var args
     [e] -> pure e
@@ -406,6 +407,7 @@ multiTermToExprNoType cont mt = do
 mtExprToExprNoType :: [String] -> MTExpr -> ExprM ann ()
 mtExprToExprNoType cont (MTT (T.unpack -> t)) =
   pure $ VarE () $ varNameToVarNoType cont t
+
 mtExprToExprNoType _ mtExpr =
   pure $ ValE () case mtExpr of
     MTI i -> IntV i

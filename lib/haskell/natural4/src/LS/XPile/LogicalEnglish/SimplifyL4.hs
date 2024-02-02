@@ -33,6 +33,7 @@ import Data.HashSet qualified as HS
 import Data.Hashable (Hashable)
 import Data.String (IsString)
 import Data.String.Interpolate (i)
+import Data.Traversable (for)
 
 import AnyAll qualified as AA
 import LS.Types qualified as L4
@@ -80,7 +81,7 @@ newtype SimL4Error = MkErr { unpackErr :: T.Text }
   deriving stock (Show)
 
 newtype SimpL4 a = SimpL4 { runSimpL4 :: Validate (HS.HashSet SimL4Error) a }
-    deriving newtype (Functor, Applicative, Monad, MonadValidate (HS.HashSet SimL4Error))
+  deriving newtype (Functor, Applicative, Monad, MonadValidate (HS.HashSet SimL4Error))
 {- ^ TODOs: 
   * When time permits, we probably want to switch to validateT add Reader in there for metadata like the location of the erroring rule
 -}
@@ -114,7 +115,6 @@ simplifyL4hc gvars l4hc = do
       simpBod <- simplifyHcBodyBsr rbod
       pure $ MkL4RuleHc {rgiven = gvars, rhead = simpHead, rbody = simpBod}
 
-
 {-------------------------------------------------------------------------------
     Simplifying L4 HCs
 -------------------------------------------------------------------------------}
@@ -139,8 +139,6 @@ simplifyHead = \case
   RPParamText _                  -> refute [MkErr "RPParamText in head of HC not supported"]
   RPnary {}                      -> refute [MkErr "RPnary in the head of HC not supported."]
 
-
-
 {- |  Simplifies the RPConstraint in the head of a L4 HC (from an encoding that conforms to the L4->LE spec).
 Right now, the only RPConstraint tt can appear in head of L4 HC, according to spec, is RPis
 -}
@@ -156,7 +154,6 @@ simpRPCis exprsl exprsr =
   let (lefts, rights) = (mtes2cells exprsl, mtes2cells exprsr)
   in ABPBaseIs lefts rights
 
-
 {-------------------------------------------------------------------------------
     simplifying body of L4 HC
 -------------------------------------------------------------------------------}
@@ -164,9 +161,11 @@ simpRPCis exprsl exprsr =
 simplifyHcBodyBsr :: L4.BoolStructR -> SimpL4 (BoolPropn L4AtomicP)
 simplifyHcBodyBsr = \case
   AA.Leaf rp      -> simplifybodyRP rp
-  AA.All _ propns -> And <$> traverse simplifyHcBodyBsr propns
-  AA.Any _ propns -> Or <$> traverse simplifyHcBodyBsr propns
-  AA.Not propn    -> Not <$> simplifyHcBodyBsr propn
+  AA.All _ propns -> go And $ for propns
+  AA.Any _ propns -> go Or $ for propns
+  AA.Not propn    -> go Not ($ propn)
+  where
+    go ctor propns = ctor <$> propns simplifyHcBodyBsr
 {- ^ where a 'L4 propn' = BoolStructR =  BoolStruct _lbl RelationalPredicate.
 Note that a BoolStructR is NOT a 'RPBoolStructR' --- a RPBoolStructR is one of the data constructors for the RelationalPredicate sum type
 -}

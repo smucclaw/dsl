@@ -691,8 +691,9 @@ r2fgl rs defRL Regulative{..} = pure do
                                 <> [ subj2nl NLen subj ] )
   -- mutterd 2 $ "Petri/r2fgl: everywho = " <> show everywho
 
-  let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
-                                    Just _bsr  -> mkDecis everywho
+  let firstNodeLabel0 = ($ everywho) case who of
+        Nothing -> mkPlace
+        Just _bsr -> mkDecis
       firstNodeLabel1 = addDeet firstNodeLabel0 IsParty
       firstNodeLabel = maybe firstNodeLabel1 (addDeets firstNodeLabel1) myLabel
  -- myTraceM $ "Petri: firstNodeLabel0 = " <> show firstNodeLabel0
@@ -701,22 +702,30 @@ r2fgl rs defRL Regulative{..} = pure do
   everyN <- case already of
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
-  whoN  <- case who of Nothing  -> pure everyN
-                       Just bsr -> do whoN <- newNode $ mkTrans [i|who #{bsr2textnl bsr}|]
-                                      newEdge everyN whoN []
-                                      pure whoN
-  upoN  <- case upon of Nothing -> pure whoN
-                        Just pt -> do
-                              uponN <- newNode $ addDeet (mkPlace "upon") IsUpon
-                              uponCondN <- newNode $ addDeets (mkTrans $ pt2text pt) [IsUpon,IsCond]
-                              traverse_ newEdge' [( whoN, uponN, []), ( uponN, uponCondN, [])]
-                              pure uponCondN
-  conN  <- case cond of Nothing  -> pure upoN
-                        Just bsr -> do
-                            ifN     <- newNode $ (addDeet $ mkDecis [i|if #{bsr2textnl bsr}|]) IsCond
-                            ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
-                            traverse_ newEdge' [(upoN, ifN, []), (ifN, ifCondN, [])]
-                            pure ifCondN
+
+  whoN <- case who of
+    Nothing  -> pure everyN
+    Just bsr -> do
+      whoN <- newNode $ mkTrans [i|who #{bsr2textnl bsr}|]
+      newEdge everyN whoN []
+      pure whoN
+
+  upoN <- case upon of
+    Nothing -> pure whoN
+    Just pt -> do
+      uponN <- newNode $ addDeet (mkPlace "upon") IsUpon
+      uponCondN <- newNode $ addDeets (mkTrans $ pt2text pt) [IsUpon,IsCond]
+      traverse_ newEdge' [( whoN, uponN, []), ( uponN, uponCondN, [])]
+      pure uponCondN
+
+  conN  <- case cond of
+    Nothing -> pure upoN
+    Just bsr -> do
+      ifN <- newNode $ (addDeet $ mkDecis [i|if #{bsr2textnl bsr}|]) IsCond
+      ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
+      traverse_ newEdge' [(upoN, ifN, []), (ifN, ifCondN, [])]
+      pure ifCondN
+
   (onSuccessN, mbOnFailureN) <- do
     myTraceM [i|Petri/r2fgl: action = #{action}|]
     -- convert DMUST/DMAY/DSHANT into must/may/shant
@@ -739,40 +748,38 @@ r2fgl rs defRL Regulative{..} = pure do
 
     obligationN <- newNode $ addDeet oblLab IsDeon
     onSuccessN <- newNode successLab
+
     traverse_ myTraceM
       [ [i|Petri/r2fgl: deontic = #{deontic}|],
         [i|Petri/r2fgl: lestWord deontic = #{lestWord deontic}|]
       ]
+
     mbOnFailureN <- case (deontic /= DMay, lestWord deontic) of
-                      (True, Right lWord) -> do
-                        onFailureN <- newNode $ mkTrans lWord
-                        traverse_
-                          myTraceM
-                          [ [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|],
-                            [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
-                          ]
-                        newEdge' (obligationN, onFailureN, swport)
-                        pure $ Just onFailureN
-                      _ -> do
-                        myTraceM [i|Petri/r2fgl: mbOnFailureN: returning Nothing}|]
-                        pure Nothing
+      (True, Right lWord) -> do
+        onFailureN <- newNode $ mkTrans lWord
+        traverse_
+          myTraceM
+          [ [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|],
+            [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
+          ]
+        newEdge' (obligationN, onFailureN, swport)
+        pure $ Just onFailureN
+      _ -> do
+        myTraceM [i|Petri/r2fgl: mbOnFailureN: returning Nothing|]
+        pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
     traverse_ newEdge' [(conN, obligationN, []), (obligationN, onSuccessN, seport)]
     pure (onSuccessN, mbOnFailureN)
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
-  let r2fgl' = xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)
-  let (henceN', henceErr) = case hence of
-                              Just henceR -> first (fmap (fromMaybe fulfilledNode)) (r2fgl' henceR)
-                              Nothing     -> (pure fulfilledNode, [])
-  let ( lestN',  lestErr) = case lest of
-                              Just lestR  -> first (fmap (fromMaybe     breachNode)) (r2fgl' lestR)
-                              Nothing     -> (pure breachNode, [])
+  let (henceN', _henceErr) = goHenceLestN hence fulfilledNode
+      (lestN', _lestErr) = goHenceLestN lest breachNode
 
   henceN <- henceN'
   lestN <- lestN'
 
   newEdge onSuccessN henceN []
+
   case mbOnFailureN of
     Just onFailureN -> newEdge onFailureN lestN []
     Nothing -> pure ()
@@ -782,6 +789,13 @@ r2fgl rs defRL Regulative{..} = pure do
   where
     -- vp2np :: Text -> Text
     -- vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
+
+    goHenceLestN (Just henceLestR) fulfilledBreachNode =
+      first (fmap $ fromMaybe fulfilledBreachNode) $ r2fgl' henceLestR
+    goHenceLestN Nothing fulfilledBreachNode =
+      (pure fulfilledBreachNode, [])
+
+    r2fgl' = xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)
 
     seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive", color Green]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]

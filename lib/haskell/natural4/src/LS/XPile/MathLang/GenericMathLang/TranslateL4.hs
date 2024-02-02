@@ -613,7 +613,7 @@ textifyMTEs = T.intercalate " " . fmap mtexpr2text
 
 mteToLitExp :: MTExpr -> BaseExp
 mteToLitExp = \case
-  MTT txt -> ELit . EString $ txt
+  MTT txt -> ELit $  EString $ txt
   MTB True -> ELit EBoolTrue
   MTB False -> ELit EBoolFalse
   MTI integer -> ELit $ EInteger integer -- TODO: Can always change this if we want just one type for numbers
@@ -634,7 +634,6 @@ processHcBody = \case
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
     makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
-
 
 {- |
 Helps to remember: 

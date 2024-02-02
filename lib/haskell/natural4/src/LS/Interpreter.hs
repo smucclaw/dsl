@@ -911,7 +911,8 @@ itemsByRule l4i rs =
 -- Should we relocate this to the RelationalPredicate module?
 extractRPMT2Text :: RelationalPredicate -> T.Text
 extractRPMT2Text (RPMT ts) = mt2text ts
-extractRPMT2Text _         = error "extractRPMT2Text: expecting RPMT only, other constructors not supported."
+extractRPMT2Text _         =
+  error "extractRPMT2Text: expecting RPMT only, other constructors not supported."
 
 ruleNameStr :: Rule -> String
 ruleNameStr r = T.unpack (mt2text (ruleLabelName r))
@@ -980,8 +981,10 @@ getMarkings l4i =
       ]
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
-    markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) = Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
-    markings (RPConstraint xs RPis rhs) = Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
+    markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) =
+      Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
+    markings (RPConstraint xs RPis rhs) =
+      Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
     markings _ = Nothing
 
     rhsval [MTB rhs] = Just rhs
@@ -1101,7 +1104,6 @@ attrsAsMethods rs = do
           mutterd 3 "attrsAsMethods: encountered unexpected form of RelationalPredicate"
           mutter $ show $ srchs hHead
           xpError ["unhandled RelationalPredicate", show hHead]
-
 
 -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
 -- 

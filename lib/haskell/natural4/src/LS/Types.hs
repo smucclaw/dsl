@@ -453,7 +453,7 @@ type VarPath = [TypedMulti]
 newtype InterpreterOptions = IOpts
   { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Show)
 
 -- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
 defaultInterpreterOptions :: InterpreterOptions
@@ -476,8 +476,7 @@ newtype ClsTab = CT ClassHierarchyMap
   -- a class has attributes; those attributes live in a map keyed by classname.
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
-  deriving (Show, Ord, Eq, Generic)
-
+  deriving (Eq, Show)
 
 mkCT :: ClassHierarchyMap -> ClsTab
 mkCT = coerce

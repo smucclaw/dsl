@@ -409,7 +409,7 @@ mtExprToExprNoType cont (MTT (T.unpack -> t)) =
 mtExprToExprNoType _ mtExpr =
   pure $ ValE () case mtExpr of
     MTI i -> IntV i
-    MTF i -> FloatV $ realToFrac i
+    MTF i -> FloatV i
     MTB i -> BoolV i
 
 rpRelToBComparOp :: RPRel -> MonoidValidate (Doc ann) BinOp

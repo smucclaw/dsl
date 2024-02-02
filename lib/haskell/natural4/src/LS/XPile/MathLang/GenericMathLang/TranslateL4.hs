@@ -1,4 +1,4 @@
--- {-# OPTIONS_GHC -W #-}!
+{-# OPTIONS_GHC -W #-}
 -- {-# OPTIONS_GHC -foptimal-applicative-do #-}
 
 {-# LANGUAGE LambdaCase #-}
@@ -14,7 +14,9 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 -- TODO: Add export list
 
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
+import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig) 
+-- TODO: Haven't actually finished setting up logging infra, unfortunately. 
+-- But it's also not really necessary for working on the transpiler
 
 import AnyAll qualified as AA
 import LS.Types as L4
@@ -34,13 +36,11 @@ import LS.Rule (
                 defaultHorn)
 import LS.Rule qualified as L4 (Rule(..))
 
-import Control.Monad (join)
-import Effectful (Effect, Eff, (:>), runPureEff, raise)
-import Effectful.TH (makeEffect)
-import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
+import Effectful (Effect, Eff, (:>), runPureEff)
+-- import Effectful.TH (makeEffect)
+-- import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
--- import Control.Monad.Reader (MonadReader(..))
 -- import Effectful.State.Static.Shared (State, runState)
 -- experimenting with Effectful.Error rn
 -- import Control.Monad.Validate qualified as V
@@ -69,17 +69,7 @@ import Data.Foldable qualified as F (toList, foldrM)
 
 import LS.XPile.MathLang.UtilsLCReplDev
 
-{- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST)
-
-If prototyping in GHCi / REPL, use these:
-
-    :set -XTypeApplications
-    :set -XDataKinds
-    :set -XDeriveGeneric
-    :set -XFlexibleContexts
-    :set -XTypeFamilies
-    import GHC.Generics
--}
+{- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
 {-----------------------------------------------------
   Translating / parsing L4 to generic lamda calculus
@@ -635,8 +625,8 @@ processHcBody :: L4.BoolStructR -> ToLC Exp
 processHcBody = \case
   AA.Leaf rp -> expifyBodyRP rp
   -- TODO: Consider using the `mlbl` to augment with metadata
-  AA.All mlbl propns -> F.foldrM (makeOp EAnd) emptyExp propns
-  AA.Any mlbl propns -> F.foldrM (makeOp EOr) emptyExp propns
+  AA.All _mlbl propns -> F.foldrM (makeOp EAnd) emptyExp propns
+  AA.Any _mlbl propns -> F.foldrM (makeOp EOr) emptyExp propns
   AA.Not propn -> noExtraMdata . ENot <$> processHcBody propn
   where
     emptyExp :: Exp = noExtraMdata EEmpty
@@ -699,13 +689,21 @@ expifyBodyRP = \case
     case mvar of
       Just var -> mkSetVarTrueExpFromVarNoMd var
       Nothing -> throwNotSupportedWithMsgError rp "Not sure if we can assume this means: 'check if <var> == True' --- would need to think through spec / conventions more"
+  rp@(RPMT _) -> throwNotSupportedWithMsgError rp "Not sure if this is supported; not sure if spec is clear on this"
 
   -- func app
-  RPConstraint lefts RPis rights -> throwNotYetImplError "Func app not implemented / supported yet, but will hopefully be in next release"
+  RPConstraint _lefts RPis _rights -> throwNotYetImplError "Func app not implemented / supported yet, but will hopefully be in next release"
 
   -- arithmetic comparisons
   RPConstraint lefts rel rights -> noExtraMdata <$> bexpifyArithComparisons lefts rights rel
   -- TODO: yet another place where we might consider adding metadata (just replace `noExtraMdata`); see also defn of `toCompOpBExp`
+
+  -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
+  rp@RPnary{} -> throwNotSupportedWithMsgError rp "RPnary{} case of expifyBodyRP"
+  rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
+  rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
+
+
 
 {- | Turns L4 arithmetic comparisons in body of RP to ToLC BaseExp
 
@@ -724,16 +722,18 @@ Examples:
 bexpifyArithComparisons :: [MTExpr] -> [MTExpr] -> RPRel -> ToLC BaseExp
 bexpifyArithComparisons lefts rights = \case
   -- arith comparison ops
-  RPlt  -> toCompOpBExp OpLt
-  RPlte -> toCompOpBExp OpLte
-  RPgt  -> toCompOpBExp OpGt
-  RPgte -> toCompOpBExp OpGte
-  RPeq  -> toCompOpBExp OpNumEq
+  RPlt    -> toCompOpBExp OpLt
+  RPlte   -> toCompOpBExp OpLte
+  RPgt    -> toCompOpBExp OpGt
+  RPgte   -> toCompOpBExp OpGte
+  RPeq    -> toCompOpBExp OpNumEq
 
   -- TODO: cases like these show we should stuff the ambient L4 rule into Env as well (or at least have a way of pushing that into some kind of 'log context') so tt we can pass them along when reporting errors
   RPis -> throwErrorImpossibleWithMsg RPis "Should not be seeing this case again here --- the RPis case should already have been handed before this function (`bexpifyArithComparisons`) was called"
   RPor -> throwNotSupportedError RPor
   RPand -> throwNotSupportedError RPand
+
+  otherRp -> throwNotYetImplError otherRp
 
   where
     toCompOpBExp :: CompOp -> ToLC BaseExp

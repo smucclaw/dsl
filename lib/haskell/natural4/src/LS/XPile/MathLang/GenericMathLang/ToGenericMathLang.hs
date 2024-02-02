@@ -8,42 +8,37 @@ If prototyping in GHCi / REPL, use these:
     :set -XFlexibleContexts
     :set -XTypeFamilies
     import GHC.Generics
+
+Yes, these are more high-powered than what I 'really' need in this file 
+(the only thing that requires them rn is ` (_Ctor @"Hornlike")`);
+I had used them b/c I was prototyping and wasn't sure from the outset
+how much would be needed to in effect parse the notoriously complicated L4 data structures.
 -}
 
 {-# OPTIONS_GHC -W #-}
--- {-# OPTIONS_GHC -foptimal-applicative-do #-}
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels #-}
 {-# LANGUAGE OverloadedLists, OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang where
--- TODO: Add export list
+module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen) where
 
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 -- TODO: Add import list
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 -- import LS.Interpreter (qaHornsT)
-import LS.Rule (Interpreted(..), extractMTExprs, getGivenWithSimpleType,
-                defaultHorn)
-import LS.Rule qualified as L4 (Rule(..))
+import LS.Rule (Interpreted(..),
+                -- defaultHorn
+                -- defaultHorn is useful for prototyping in the REPL
+                )
+-- import LS.Rule qualified as L4 (Rule(..))
 
-import Effectful
-import Effectful.Error.Dynamic
-import Effectful.Reader.Static (runReader, Reader)
-import Effectful.State.Static.Shared (State, runState)
--- experimenting with Effectful.Error rn; may switch over to Control.Monad.Validate later
--- import Control.Monad.Validate
---   ( MonadValidate (..)
---     , Validate
---     , refute
---     )
-import Data.HashSet qualified as HS
-import Data.HashMap.Strict qualified as HM
+-- import Effectful
+-- experimenting with Effectful.Error rn
+-- see Mattermost slack for discussion of error handling and MonadValidate
 import Optics
 import Data.Generics.Sum.Constructors
 -- import Data.Generics.Product.Types (types)
@@ -52,7 +47,7 @@ import Data.Generics.Sum.Constructors
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
-import Data.Foldable qualified as F (toList)
+-- import Data.Foldable qualified as F (toList)
 
 -- import LS.XPile.MathLang.UtilsLCReplDev
 
@@ -66,7 +61,9 @@ type Analyzed = Interpreted
 toMathLangGen :: Analyzed -> (String, [String])
 toMathLangGen _ = ("not yet implemented", [])
 
-{- | Entry point for transforming the original L4 rules into generic lamda calculus 
+{- | TODO: Remove the ' in the name once we have filled in `undefined`s along the way and are sure it won't crash
+
+    Entry point for transforming the original L4 rules into generic lamda calculus 
      Outputs either the LC repn or errors if there're errors.
 Note:
 * Not using qaHornsT 
@@ -81,11 +78,8 @@ toMathLangGen' l4a =
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (renderLC lamCalcProgram, [])
 
--- runAndValidate = undefined
-
 -- | Makes report for errors; can try using `diagnose` package / lib for this
 makeErrorOut :: ToLCError -> (String, [String])
--- makeErrorOut :: [ToLCError] -> (String, [String])
 makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
   -- (makeErrorReport errors, map (T.unpack . stringifyToLCError) errors)
   --   where

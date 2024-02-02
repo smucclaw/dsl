@@ -47,7 +47,7 @@ import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.MonoTraversable (Element, otoList)
 import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
@@ -629,13 +629,11 @@ hc2decls r
     , T.take 3 (mtexpr2text pf) /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
-          typeMap = Map.fromList [ (varName, fromJust varType) -- safe due to isJust test below
+          typeMap = Map.fromList [ (varName, varType) -- safe due to isJust test below
                                  | (varName, mtypesig) <- maybe [] (fmap (first NE.head) . NE.toList) localEnv
                                  , let underlyingm = getUnderlyingType <$> mtypesig
-                                 , isJust underlyingm
-                                 , isRight $ fromJust underlyingm
-                                 , let varType = rightToMaybe =<< underlyingm
-                                 , isJust varType
+                                 , Right _ <- maybeToList underlyingm
+                                 , varType <- maybeToList $ rightToMaybe =<< underlyingm
                                  ]
           declType = pretty <$> mapMaybe (`Map.lookup` typeMap) pfs
     ]

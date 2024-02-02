@@ -73,7 +73,7 @@ import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Printing (renderDot)
 import Data.List (nub)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromJust, fromMaybe, isJust, listToMaybe, maybeToList)
+import Data.Maybe (fromMaybe, isJust, listToMaybe, maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -514,8 +514,7 @@ connectRules sg rules =
                    , let rlouts = fmap rl2text <$> (rlabel <$> outs)
                    , let outgraph = labfilter (\pn -> any ($ pn) [ hasDeet (OrigRL rlout')
                                                                        | rlout <- rlouts
-                                                                       , isJust rlout
-                                                                       , let rlout' = fromJust rlout -- safe due to above isJust test
+                                                                       , rlout' <- maybeToList rlout
                                                                        ] ) sg
                    ]
       -- headNodes = [ headNode

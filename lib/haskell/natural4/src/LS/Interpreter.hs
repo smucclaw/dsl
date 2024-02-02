@@ -83,7 +83,6 @@ import Data.List qualified as DL
 import Data.List.NonEmpty as NE (fromList, singleton, toList)
 import Data.Maybe
   ( catMaybes,
-    fromJust,
     fromMaybe,
     isJust,
     listToMaybe,
@@ -640,16 +639,15 @@ relPredRefs rs ridmap headElements r = do
   mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
   toreturn <- sequenceA
-    [ (rid, targetRuleId', ()) <$ mutterd 6 [i|relPredRefs list comp: returning #{rid}, #{targetRuleId'}|]
-    | bElem <- bodyElements
-     , let targetRule = Map.lookup bElem headElements
-     , isJust targetRule
-     , let targetRule' = fromJust targetRule -- safe due to above isJust test
-     , let targetRuleId = Map.lookup targetRule' ridmap
-     , isJust targetRuleId
-     , let targetRuleId' = fromJust targetRuleId -- safe due to above isJust test
-           rid = ridmap Map.! r
-     ]
+    [ (rid, targetRuleId', ()) <$
+        mutterd 6 [i|relPredRefs list comp: returning #{rid}, #{targetRuleId'}|]
+    | bElem <- bodyElements,
+      let targetRule = Map.lookup bElem headElements,
+      targetRule' <- maybeToList targetRule,
+      let targetRuleId = Map.lookup targetRule' ridmap,
+      let rid = ridmap Map.! r,
+      targetRuleId' <- maybeToList targetRuleId
+    ]
 
   mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
   pure toreturn
@@ -769,7 +767,7 @@ unleaf :: BoolStructR -> BoolStructR
 unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
 unleaf (AA.All  lbl xs) = AA.mkAll lbl $ unleaf <$> xs
 unleaf (AA.Any  lbl xs) = AA.mkAny lbl $ unleaf <$> xs
-unleaf (AA.Not      x ) = AA.mkNot     $ unleaf     x 
+unleaf (AA.Not      x ) = AA.mkNot     $ unleaf     x
 unleaf (AA.Leaf x     ) = AA.mkLeaf    x
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
@@ -940,8 +938,7 @@ itemsByRule l4i rs =
   [ (ruleLabelName r, simplified)
   | r <- rs
   , let aot = getAndOrTree l4i 1 r
-        simplified = fromJust aot
-  , isJust aot
+  , simplified <- maybeToList aot
   ]
 
 -- | we must be certain it's always going to be an RPMT

@@ -438,12 +438,15 @@ splitJoin _rs og _sj sgs entry = runGM og do
     -- If the entry node has children, then we need to care about splitting and
     -- joining. We first make a split node and connect:
     --    entry node -> split node -> children of entry node
-    splitnode <- newNode (PN Trans splitText [Comment [i|split node coming from entry #{entry}|]] [IsInfra,IsAnd,IsSplit])
+    splitnode <- newNode $
+      PN Trans splitText
+        [Comment [i|split node coming from entry #{entry}|]]
+        [IsInfra,IsAnd,IsSplit]
     newEdge' (entry,splitnode, [Comment "added by split from parent node"])
     traverse_
       newEdge'
-      [(splitnode, headnode, [Comment "added by split to headnode"])
-      | headnode <- headsOfChildren ]
+      [ (splitnode, headnode, [Comment "added by split to headnode"])
+      | headnode <- headsOfChildren]
     -- Now we check how many tail nodes there are in successTails.
     -- If there's only 1, then there's no need to make a join node and link that up.
     -- Doing this prevents redundant "All done" join nodes like
@@ -508,14 +511,18 @@ connectRules sg rules =
       -- later on we will probably want to use a join transition to model an OR.
       aliasRules = [ (n,outgraph)
                    | n <- aliasNodes
-                   , let nrl = {- trace "OrigRL = " $ traceShowId $ -} getOrigRL =<< lab sg n
-                   , let r = getRuleByLabel rules =<< nrl
-                   , let outs = maybe [] (expandRule rules) r
-                   , let rlouts = fmap rl2text <$> (rlabel <$> outs)
-                   , let outgraph = labfilter (\pn -> any ($ pn) [ hasDeet (OrigRL rlout')
-                                                                       | rlout <- rlouts
-                                                                       , rlout' <- maybeToList rlout
-                                                                       ] ) sg
+                   , let nrl = {- trace "OrigRL = " $ traceShowId $ -}
+                          lab sg n >>= getOrigRL
+                         r = nrl >>= getRuleByLabel rules
+                         outs = maybe [] (expandRule rules) r
+                         rlouts = fmap rl2text <$> (rlabel <$> outs)
+                         outgraph =
+                          sg
+                            |> labfilter \pn -> any ($ pn)
+                                [ hasDeet $ OrigRL rlout'
+                                | rlout <- rlouts
+                                , rlout' <- maybeToList rlout
+                                ]
                    ]
       -- headNodes = [ headNode
       --             | (_orign, outgraph) <- aliasRules
@@ -535,7 +542,6 @@ connectRules sg rules =
       -- trace ("and the outgraphs have happy tails " ++ show tailNodes)
       foldl' (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
-
 
 
 showNode :: PNodeD -> Text

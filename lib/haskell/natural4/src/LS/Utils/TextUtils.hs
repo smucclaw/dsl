@@ -25,9 +25,10 @@ float2Text = T.toStrict . B.toLazyText . decFloat
 See https://hackage.haskell.org/package/text-2.1/docs/src/Data.Text.Lazy.Builder.RealFloat.html
 -}
 decFloat :: RealFloat a => a -> B.Builder
+decFloat = B.formatRealFloat B.Fixed Nothing
+
 {-# SPECIALIZE decFloat :: Float -> B.Builder #-}
 {-# SPECIALIZE decFloat :: Double -> B.Builder #-}
-decFloat = B.formatRealFloat B.Fixed Nothing
 
 int2Text :: Integral a => a -> T.Text
 int2Text = T.toStrict . B.toLazyText . B.decimal

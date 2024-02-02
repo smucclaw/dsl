@@ -269,7 +269,7 @@ aposSuffix = "'s"
 {-| This is best understood in the context of the other VarsX data types -}
 data VCell = TempVar             TemplateVar
            | AposAtom            !OrigVarPrefix
-           | NonVarOrNonAposAtom !T.Text 
+           | NonVarOrNonAposAtom !T.Text
           deriving stock (Eq, Ord, Show)
           deriving (Generic, Hashable)
 makePrisms ''VCell
@@ -303,7 +303,6 @@ data BaseRule a = MkBaseRule { rhead :: a
   deriving (Eq, Ord, Show, Generic, Functor, Foldable, Traversable)
 
 type VarsRule = BaseRule AtomicPWithVars
-
 
 pattern MkVarsFact :: AtomicPWithVars -> VarsHC
 pattern MkVarsFact{vfhead}
@@ -367,8 +366,6 @@ type LEFactForPrint = AtomicBPropn LETemplateTxt
 type LERule = BaseRule (AtomicBPropn LEhcCell)
 type RuleWithUnivsMarked = BaseRule (AtomicBPropn UnivStatus)
 type LERuleForPrint = BaseRule TxtAtomicBP
-
-
 
 --- to remove once we are sure we won't want to go back to this way of doing this: 
 -- LE Rule

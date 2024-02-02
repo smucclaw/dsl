@@ -438,10 +438,11 @@ mtes2cells = fmap mte2cell
 ------ Other misc utils
 
 leFloat2Text :: RealFloat a => a -> T.Text
-leFloat2Text f
-  | isInfinite f = if f > 0 then "inf" else "-inf" -- ^ le-specific
-  | otherwise = float2Text f
-
+leFloat2Text f =
+  case (isInfinite f, f > 0) of
+    (True, True) -> "inf"
+    (True, False) -> "-inf"
+    _ -> float2Text f
 
 --- misc notes
 -- wrapper :: L4Rules ValidHornls -> [(NE.NonEmpty MTExpr, Maybe TypeSig)]

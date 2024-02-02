@@ -68,6 +68,7 @@ data LEProg = MkLEProg {  keptnlats :: [NLATxt]
 
 -- | config record for pretty printing
 data PrintCfg = MkPrintCfg { numIndentSpcs :: !Int} deriving stock (Show)
+
 printcfg :: PrintCfg
 printcfg = MkPrintCfg { numIndentSpcs = 2 }
 

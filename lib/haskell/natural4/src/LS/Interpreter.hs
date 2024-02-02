@@ -59,6 +59,7 @@ import Data.Traversable (for)
 import Data.Tree (Tree (Node))
 import Data.Tuple (swap)
 import Debug.Trace (trace)
+import Flow ((|>))
 import LS.PrettyPrinter (srchs)
 import LS.RelationalPredicates
   ( aaLeaves,
@@ -155,6 +156,7 @@ import LS.Types
     rp2text,
     thisAttributes,
   )
+import LS.Utils (pairs2map)
 import LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
@@ -991,25 +993,15 @@ getMarkings l4i =
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0
     rhsval [MTT rhs] = table Map.!? rhs
+    rhsval _ = Nothing
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
 
     table :: Map.HashMap T.Text Bool =
-      Map.fromList
-        [ ("does not", False),
-          ("doesn't", False),
-          ("has not", False),
-          ("hasn't", False),
-          ("no", False),
-          ("false", False),
-          ("f", False),
-          ("so", True),
-          ("yes", True),
-          ("has", True),
-          ("does", True),
-          ("true", True),
-          ("t", True)
-        ]
+      [ (["does not", "doesn't", "has not", "hasn't", "no", "false", "f"], False),
+        (["so", "yes", "has", "does", "true", "t"], True)
+      ]
+        |> pairs2map
 
 -- | local variables
 -- a list of the typed multiterms which show up inside the GIVEN and GIVETH attributes of a rule.

@@ -13,7 +13,7 @@ module LS.XPile.VueJSON
   ( checklist,
     groundrules,
     itemRPToItemJSON,
-    toVueRules
+    toVueRules,
   )
 where
 
@@ -26,9 +26,11 @@ import AnyAll.BoolStruct
     mkNot,
   )
 import AnyAll.Types (Label (Pre, PrePost))
-import Data.List (groupBy, nub)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
+
+import Control.Arrow ((>>>))
 import Data.HashMap.Strict qualified as Map
+import Data.List (groupBy, nub)
 import Data.Maybe (maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
@@ -236,7 +238,8 @@ groupSingletons mt1 mt2 =
   all' isSingletonWithOnlyOneWord [mt1, mt2]
   where
     isSingletonWithOnlyOneWord mtt =
-      all' (== 1) [length mtt, length $ foldMap (T.words . mtexpr2text) mtt]
+      all' (== 1) [length mtt, length $ mtt2words mtt]
+    mtt2words = foldMap $ mtexpr2text >>> T.words
     all' = all @[]
 
 quaero :: [T.Text] -> [T.Text]

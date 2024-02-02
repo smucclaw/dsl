@@ -47,11 +47,13 @@ import Data.HashMap.Strict qualified as Map
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
+import Data.MonoTraversable (Element, otoList)
 import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
+import Data.Sequences (IsSequence)
 import Data.Text qualified as T
-import Debug.Trace (trace)
 import Data.Traversable (for)
+import Debug.Trace (trace)
 import Flow ((.>), (|>))
 import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
@@ -246,11 +248,11 @@ sfl4ToUntypedBabyL4 rules = Program {..}
         |> mconcat
 
 sfl4ToLogicProgramStr ::
-  forall (lpLang :: LPLang).
-  (Pretty (LogicProgram lpLang ())) =>
-  [SFL4.Rule] ->
+  forall (lpLang :: LPLang) t.
+  (Pretty (LogicProgram lpLang ()), IsSequence t, Element t ~ SFL4.Rule) =>
+  t ->
   String
-sfl4ToLogicProgramStr rules =
+sfl4ToLogicProgramStr (otoList -> rules) =
   rules
     |> sfl4ToUntypedBabyL4
     |> babyL4ToLogicProgram @lpLang
@@ -887,9 +889,9 @@ prettyClasses ct =
                 child_simpletype = maybe emptyDoc (prettySimpleType "corel4" (snake_inner . MTT)) child_ts
          ]
     -- guard to exclude certain forms which should not appear in the output
-  , case (ctype,children) of
-      ((Nothing, []),                 CT m) -> not $ null m
-      ((Just (SimpleType TOne _), []),CT m) -> not $ null m
+  , case (ctype, unCT children) of
+      ((Nothing, []),                  m) -> not $ null m
+      ((Just (SimpleType TOne _), []), m) -> not $ null m
       _                                   -> True -- commentShow "# ctype:" ctype
       -- [TODO] and how do we treat enum types?
   ]
@@ -920,8 +922,6 @@ prettyClasses ct =
     lcfirst "" = ""
     lcfirst x = T.toLower (T.singleton $ T.head x) <> T.tail x
 
-
-
 -- runTestrules :: IO()
 runTestrules :: [Doc ann]
 runTestrules =
@@ -943,9 +943,7 @@ then Foo,rule
 if ((green Bloo) && (red Blubs))
 then Foo]
 
-
 -}
-
 
 {-
 §	Rule_exceeds1								
@@ -983,7 +981,6 @@ r1 = defaultHorn
     , defaults = []
     , symtab = []
     }
-
 
 {-
 DECIDE		Foo		

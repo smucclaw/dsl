@@ -5,17 +5,16 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-{-| transpiler to SVG visualization of the AnyAll and/or trees.
-
-Largely a wrapper. Most of the functionality is in the anyall lib.
-
--}
-
 -- [TODO] export list
+
+-- | transpiler to SVG visualization of the AnyAll and/or trees.
+--
+-- Largely a wrapper. Most of the functionality is in the anyall lib.
 module LS.XPile.Purescript
-  -- * These are the top-level entry points for the Purescript transpiler
-  ( asPurescript
-  , translate2PS)
+  ( -- * These are the top-level entry points for the Purescript transpiler
+    asPurescript,
+    translate2PS,
+  )
 where
 
 import AnyAll qualified as AA
@@ -25,7 +24,7 @@ import Control.Monad (guard, join, liftM, unless, when)
 import Data.Bifunctor (Bifunctor (..), first, second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
-import Data.Foldable (for_, sequenceA_)
+import Data.Foldable (for_, sequenceA_, traverse_)
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
@@ -46,7 +45,7 @@ import LS.NLP.NLG
     parseSubj,
     ruleQuestions,
     ruleQuestionsNamed,
-    textViaQaHorns
+    textViaQaHorns,
   )
 import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)
 import LS.Types
@@ -59,6 +58,7 @@ import LS.Utils ((|$>))
 import LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
+    XPileLogW,
     mutter,
     mutterd,
     mutterd1,
@@ -66,9 +66,9 @@ import LS.XPile.Logging
     mutterdhs,
     mutterdhsf,
     mutters,
+    pShowNoColorS,
     xpError,
-    xpReturn, XPileLogW,
-    pShowNoColorS
+    xpReturn,
   )
 import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
@@ -292,17 +292,19 @@ asPurescript env rl = do
 
 translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
 translate2PS nlgEnvs eng rules = do
-  mutter [__i|** translate2PS: running against #{length rules} rules|]
-  mutter [i|*** nlgEnvs has #{length nlgEnvs} elements|]
-  mutter [i|*** eng.gfLang = #{gfLang eng}|]
+  traverse_
+    mutter
+    [ [__i|** translate2PS: running against #{length rules} rules|],
+      [i|*** nlgEnvs has #{length nlgEnvs} elements|],
+      [i|*** eng.gfLang = #{gfLang eng}|]
+    ]
 
   -------------------------------------------------------------
   -- topBit
   -------------------------------------------------------------
   mutter "** calling biggestQ"
   bigQ <- biggestQ eng rules
-  mutter "** got back bigQ"
-  mutter $ show bigQ
+  traverse_ mutter ["** got back bigQ", show bigQ]
   let topBit =
         bigQ
           |$> alwaysLabeled
@@ -378,7 +380,7 @@ qaHornsByLang rules langEnv = do
   mutterdhsf d "all qaHT" pShowNoColorS qaHT
   mutterdhsf d "qaHornNames" show qaHornNames
   mutterd d "traversing ruleQuestionsNamed"
-  allRQs <- traverse (ruleQuestionsNamed langEnv alias) $ expandRulesForNLG langEnv rules
+  allRQs <- ruleQuestionsNamed langEnv alias `traverse` expandRulesForNLG langEnv rules
   -- first we see which of these actually returned anything useful
   mutterd d "all rulequestionsNamed returned"
 
@@ -390,8 +392,8 @@ qaHornsByLang rules langEnv = do
       EQ -> xpReturn (rn, head asqn)
       _ -> xpError [[i|ruleQuestion not of interest: #{rn}|]]
 
-  mutterdhsf d "measured RQs, rights (successes) ->" show (rights measuredRQs)
-  mutterdhsf d "measured RQs, lefts (failures) ->"   show (lefts  measuredRQs)
+  mutterdhsf d "measured RQs, rights (successes) ->" show $ rights measuredRQs
+  mutterdhsf d "measured RQs, lefts (failures) ->"   show $ lefts  measuredRQs
 
   -- now we filter for only those bits of questStruct whose names match the names from qaHorns.
   wantedRQs <- for (rights measuredRQs) \case
@@ -399,21 +401,24 @@ qaHornsByLang rules langEnv = do
     (rn, _) -> xpError [[i| #{rn} not named in qaHorns"|]]
 
   mutterd d "wanted RQs, rights (successes) ->"
-  for_ (rights wantedRQs) \(rn, asqn) -> mutterdhsf (d+1) (show rn) pShowNoColorS asqn
+  for_ (rights wantedRQs) \(rn, asqn) ->
+    mutterdhsf (d+1) (show rn) pShowNoColorS asqn
   mutterdhsf d "wanted RQs, lefts (failures) ->"   show (lefts  wantedRQs)
 
-  let rqMap = Map.fromList (rights wantedRQs)
+  let rqMap = Map.fromList $ rights wantedRQs
 
-  let qaHornsWithQuestions = foldMap catMaybes
-        [ [ if Map.member n rqMap then Just (names, rqMap Map.! n) else Nothing
-          | n <- names ]
-        | names <- fst <$> qaHT ]
+  let qaHornsWithQuestions = catMaybes do
+        ruleNames <- fst <$> qaHT
+        ruleName <- ruleNames
+        let rq :: Maybe (AA.BoolStruct (Maybe (AA.Label T.Text)) T.Text) =
+              rqMap Map.!? ruleName
+        pure $ (ruleNames,) <$> rq
 
   mutterdhsf d "qaHornsWithQuestions" pShowNoColorS qaHornsWithQuestions
 
   let qaHTBit = qaHornsWithQuestions
-                |$> bimap slashNames alwaysLabeled
-                |$> toTuple
+                  |$> bimap slashNames alwaysLabeled
+                  |$> toTuple
 
   mutterdhsf d "qaHTBit =" pShowNoColorS qaHTBit
   xpReturn qaHTBit

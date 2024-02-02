@@ -215,32 +215,43 @@ bsConstraint2gfConstraint = bs2gf GConjConstraint GConjPreConstraint GConjPrePos
 
 -----------------------------------------------------------------------------
 
-mapBSLabel :: (a -> b) -> (c -> d) -> AA.BoolStruct (Maybe (AA.Label a)) c ->  AA.BoolStruct (Maybe (AA.Label b)) d
+mapBSLabel ::
+  (a -> b) ->
+  (c -> d) ->
+  AA.BoolStruct (Maybe (AA.Label a)) c ->
+  AA.BoolStruct (Maybe (AA.Label b)) d
 mapBSLabel f g = \case
   AA.Leaf x -> AA.Leaf $ g x
-  AA.Any pre xs -> AA.Any (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
-  AA.All pre xs -> AA.All (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
+  AA.Any pre xs -> go AA.Any pre xs
+  AA.All pre xs -> go AA.All pre xs
   AA.Not x -> AA.Not $ mapBSLabel f g x
+  where
+    go ctor pre xs = ctor (applyLabel f <$> pre) (mapBSLabel f g <$> xs) 
 
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
 applyLabel f (AA.Pre a) = AA.Pre $ f a
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
 
-mapBS :: (a -> b) -> AA.BoolStruct c a ->  AA.BoolStruct c b
+mapBS :: (a -> b) -> AA.BoolStruct c a -> AA.BoolStruct c b
 mapBS f = \case
   AA.Leaf x -> AA.Leaf $ f x
-  AA.Any lbl xs -> AA.Any lbl $ mapBS f <$> xs
-  AA.All lbl xs -> AA.All lbl $ mapBS f <$> xs
+  AA.Any lbl xs -> go AA.Any lbl xs
+  AA.All lbl xs -> go AA.All lbl xs
   AA.Not x -> AA.Not $ mapBS f x
+  where
+    go ctor lbl xs = ctor lbl $ mapBS f <$> xs
 -----------------------------------------------------------------------------
 -- Generic useful transformations
 -- for NP
 
 introduceNP :: Tree a -> Tree a
-introduceNP (GEVERY x) = GDetCN GaSg x
-introduceNP (GMassNP x) = GDetCN GaSg x
-introduceNP (GDetCN _ x) = GDetCN GaSg x
-introduceNP x = composOp introduceNP x
+introduceNP = \case
+  GEVERY x -> go x
+  GMassNP x -> go x
+  GDetCN _ x -> go x
+  x -> composOp introduceNP x
+  where
+    go = GDetCN GaSg
 
 referNP :: Tree a -> Tree a
 referNP (GEVERY x) = GDetCN GtheSg x
@@ -265,12 +276,12 @@ pastTense x = composOp pastTense x
 -- db happens ON x or db happens AFTER x ==> db happens ON or AFTER x
 
 mergeConj :: Tree a -> Tree a
-mergeConj og@(GConjCond conj (GListCond cs)) =
-  fromMaybe og $ squeezeTrees conj cs
-mergeConj og@(GConjConstraint conj (GListConstraint cs)) =
-  fromMaybe og $ squeezeTrees conj cs
-mergeConj x = composOp mergeConj x
-
+mergeConj = \case
+  og@(GConjCond conj (GListCond cs)) -> go og conj cs
+  og@(GConjConstraint conj (GListConstraint cs)) -> go og conj cs
+  x -> composOp mergeConj x
+  where
+    go og conj cs = fromMaybe og $ squeezeTrees conj cs
 
 -- The function that does all the repetitive work
 -- TODO: check if viewpatterns help?

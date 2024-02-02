@@ -668,7 +668,7 @@ pRules = pRulesOnly
 pRulesAndNotRules :: Parser [Rule]
 pRulesAndNotRules = do
   wanted   <- try $ many pRule
-  notarule <- optional (notFollowedBy eof *> pNotARule)
+  notarule <- optional $ notFollowedBy eof *> pNotARule
   next <- [] <$ eof <|> pRules
   wantNotRules <- asks wantNotRules
   pure $ wanted <> next <>
@@ -722,7 +722,8 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
     -- workaround: remove the "HAS" from the "that" line
     -- but it would be better to fix up the parser here so that we don't allow too many undeepers.
 
-    parseHas = debugName "parseHas" $ mconcat <$> many ((\ _ x -> x) $>| pToken Has |>| sameDepth declareLimb)
+    parseHas =
+      debugName "parseHas" $ mconcat <$> many ((\ _ x -> x) $>| pToken Has |>| sameDepth declareLimb)
     declareLimb = do
       ((name,super),has) <- debugName "pTypeDeclaration/declareLimb: sameOrNextLine slKeyValuesAka parseHas" $ slKeyValuesAka |&| parseHas
       traverse_
@@ -746,8 +747,9 @@ pTypeDeclaration = debugName "pTypeDeclaration" do
         , defaults = mempty, symtab = mempty
         }
 
-    givenLimb = debugName "pTypeDeclaration/givenLimb" . pretendEmpty $ Just <$> preambleParamText [Given]
-    uponLimb  = debugName "pTypeDeclaration/uponLimb"  . pretendEmpty $ Just <$> preambleParamText [Upon]
+    givenLimb = mkLimb "pTypeDeclaration/givenLimb" Given
+    uponLimb  = mkLimb "pTypeDeclaration/uponLimb"  Upon
+    mkLimb str givenUpon = debugName str . pretendEmpty $ Just <$> preambleParamText [givenUpon]
 
 
 -- VarDefn gets turned into a Hornlike rule
@@ -955,14 +957,16 @@ pRegRuleNormal = debugName "pRegRuleNormal" do
                  , defaults = []
                  , symtab   = []
                  }
-  myTraceM [i|pRegRuleNormal: the positive preamble is #{poscond}|]
-  myTraceM [i|pRegRuleNormal: the negative preamble is #{negcond}|]
-  myTraceM [i|pRegRuleNormal: returning #{toreturn}|]
+  traverse_
+    myTraceM
+      [ [i|pRegRuleNormal: the positive preamble is #{poscond}|],
+        [i|pRegRuleNormal: the negative preamble is #{negcond}|],
+        [i|pRegRuleNormal: returning #{toreturn}|]
+      ]
   -- let appendix = pbrs ++ nbrs ++ ebrs ++ defalias
   -- myTraceM $ "pRegRuleNormal: with appendix = " ++ show appendix
   -- return ( toreturn : appendix )
-  return toreturn
-
+  pure toreturn
 
 pHenceLest :: MyToken -> Parser Rule
 pHenceLest henceLest = debugName [i|HenceLest-#{henceLest}|] do
@@ -981,7 +985,7 @@ pTemporal = eventually <|> specifically <|> vaguely
     sometime     = choice $ map pToken [ Before, After, By, On ]
 
 pPreamble :: [RegKeywords] -> Parser RegKeywords
-pPreamble toks = choice (try . pTokenish <$> toks)
+pPreamble = choice . (try . pTokenish <$>)
 
 -- "PARTY Bob       AKA "Seller"
 -- "EVERY Seller"
@@ -1007,7 +1011,7 @@ pDoAction ::  Parser BoolStructP
 pDoAction = debugName "pDoAction" $ snd <$> preambleBoolStructP [ Do ]
 
 pAction :: Parser BoolStructP
-pAction = debugName "pAction calling pParamText" (AA.mkLeaf <$> pParamText)
+pAction = debugName "pAction calling pParamText" $ AA.mkLeaf <$> pParamText
 
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
@@ -1091,11 +1095,11 @@ pDA :: Parser (Deontic, BoolStructP)
 pDA = debugName "pDA" do
   pd <- pDeontic
   pa <- someIndentation dBoolStructP
-  return (pd, pa)
+  pure (pd, pa)
 
 preambleBoolStructP :: [MyToken] -> Parser (Preamble, BoolStructP)
 preambleBoolStructP wanted = debugName [i|preambleBoolStructP #{wanted}|] do
-  condWord <- choice (try . pToken <$> wanted)
+  condWord <- choice $ try . pToken <$> wanted
   myTraceM [i|preambleBoolStructP: found: #{condWord}|]
   ands <- dBoolStructP -- (foo AND (bar OR baz), [constitutive and regulative sub-rules])
   pure (condWord, ands)
@@ -1115,7 +1119,7 @@ exprP = debugName "expr pParamText" do
 
   pure case raw of
     MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
-    x -> x
+    _ -> raw
   where
     prefixFirstLeaf :: MultiTerm -> MyBoolStruct ParamText -> MyBoolStruct ParamText
     -- locate the first MyLeaf in the boolstruct and jam the lbl in as the first line
@@ -1130,22 +1134,20 @@ exprP = debugName "expr pParamText" do
     prefixItem :: MultiTerm -> ParamText -> ParamText
     prefixItem t = NE.cons (NE.fromList t, Nothing)
 
-pAndGroup ::  Parser BoolStructP
-pAndGroup = pAndOrGroup "pAndGroup" pOrGroup And AA.mkAll
+pAndGroup :: Parser BoolStructP
+pAndGroup = fst pAndOrGroup
 
-pOrGroup ::  Parser BoolStructP
-pOrGroup = pAndOrGroup "pOrGroup" pElement Or AA.mkAny
+pOrGroup :: Parser BoolStructP
+pOrGroup = snd pAndOrGroup
 
-pAndOrGroup ::
-  String ->
-  Parser BoolStructP ->
-  MyToken ->
-  (Maybe (AA.Label Text.Text) -> [AA.BoolStruct (Maybe (AA.Label Text.Text)) ParamText] -> AA.BoolStruct (Maybe (AA.Label Text.Text)) ParamText) ->
-  Parser BoolStructP
-pAndOrGroup name group tok ctor = debugName name do
-  group1 <- group
-  groupN <- many $ pToken tok *> group
-  pure if null groupN then group1 else ctor Nothing $ group1 : groupN
+pAndOrGroup :: (Parser BoolStructP, Parser BoolStructP)
+pAndOrGroup =
+  (go "pAndGroup" pOrGroup And AA.mkAll, go "pOrGroup" pElement Or AA.mkAny)
+  where
+    go name group tok ctor = debugName name do
+      group1 <- group
+      groupN <- many $ pToken tok *> group
+      pure if null groupN then group1 else ctor Nothing $ group1 : groupN
 
 pAtomicElement ::  Parser BoolStructP
 pAtomicElement = debugName "pAtomicElement" do
@@ -1200,6 +1202,3 @@ pHornHead2 = pRelationalPredicate
 
 pHornBody2 :: Parser BoolStructR
 pHornBody2 = pBSR
-
-
-

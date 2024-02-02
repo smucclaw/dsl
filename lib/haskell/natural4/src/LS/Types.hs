@@ -229,8 +229,10 @@ newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
 
 _MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL = coerced
+
 mkMultiClauseHL :: [AtomicHC] -> MultiClauseHL
 mkMultiClauseHL = view (re _MkMultiClauseHL) . NE.fromList
+
 getMCHLhcs :: MultiClauseHL -> [AtomicHC]
 getMCHLhcs = NE.toList . view _MkMultiClauseHL
 
@@ -240,10 +242,13 @@ newtype HeadOnlyHC = MkHeadOnlyHC { hcHead  :: RelationalPredicate }
 
 _MkHeadOnlyHC :: Iso' HeadOnlyHC RelationalPredicate
 _MkHeadOnlyHC = coerced
+
 mkHeadOnlyHC :: RelationalPredicate -> HeadOnlyHC
 mkHeadOnlyHC = view (re _MkHeadOnlyHC)
+
 mkHeadOnlyAtomicHC :: RelationalPredicate -> AtomicHC
 mkHeadOnlyAtomicHC = HeadOnly . mkHeadOnlyHC
+
 headOnlyHLasMTEs :: HeadOnlyHC -> RelationalPredicate
 headOnlyHLasMTEs = view _MkHeadOnlyHC
 

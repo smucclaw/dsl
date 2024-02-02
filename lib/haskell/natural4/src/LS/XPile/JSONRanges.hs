@@ -46,7 +46,9 @@ import Prettyprinter
     viaShow,
     (<+>),
   )
+import Prettyprinter.Interpolate (di)
 import Text.Pretty.Simple (pShowNoColor)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 data Dimension lbl vals = Dimension lbl [vals]
   deriving (Show, Eq)
@@ -68,12 +70,12 @@ asJSONRanges l4i = do
         dims <- sequenceA
           [ do
               mutterdhsf 3 ("attribute: " <> T.unpack attrName) pShowNoColorS explicitTS
-              return $ Dimension attrName (variants explicitTS)
+              pure $ Dimension attrName (variants explicitTS)
               -- [TODO] we do not recurse into attribute children; when we need to have proper support for nested records, add.
           | (attrName, ((explicitTS, _inferredTS), children)) <- ea3
           ]
         mutterdhsf 3 "dimensions" pShowNoColorS dims
-        return (thisclass, dims)
+        pure (thisclass, dims)
     | (thisclass, (itypesig, ct)) <- Map.toList ct
     , let ea1 = extendedAttributes (classtable l4i) thisclass
           ea2 = maybe [] (Map.toList . unCT) ea1
@@ -82,24 +84,22 @@ asJSONRanges l4i = do
 
   mutterd 1 "classDimensions cardinality"
   for_ classDimensions \(et, space) -> do
-    mutterd 2 ("class " <> show et <> " expecting " <>
-               show (product [ length values | Dimension lbl values <- space ])
-               <> " points in configuration space, i.e. JSON instances")
+    mutterd 2 [i|class #{et} expecting #{product [ length values | Dimension lbl values <- space ]} points in configuration space, i.e. JSON instances|]
     for_ space \(Dimension lbl values) -> do
-      mutterd 3 (show (length values) <> " " <> show lbl)
+      mutterd 3 [i|#{length values} #{lbl}|]
 
   mutterdhsf 1 "classDimensions" pShowNoColorS classDimensions
 
   curlyList <$> sequenceA
     [ do
-        mutterdhsf 2 ("dims for " <> show className) pShowNoColorS dims
+        mutterdhsf 2 [i|dims for #{className}|] pShowNoColorS dims
 
         let points = take 1000 $ extend dims []
-        mutterdhsf 2 ("points for " <> show className) pShowNoColorS points
+        mutterdhsf 2 [i|points for #{className}|] pShowNoColorS points
 
-        return $ viaShow className <> colon <+>
+        pure $ [di|#{className}: |] <+>
           curlyList
-            [ viaShow i <> colon <+> curlyList [ viaShow k <> colon <+> quickPretty v | (k, v) <- point ]
+            [ [di|#{show i}: |] <+> curlyList [[di|#{k}: #{quickPretty v}|] | (k, v) <- point]
             | (point, i) <- zip points [1..]
             ]
 
@@ -111,11 +111,7 @@ asJSONRanges l4i = do
     isArbitrary (_, ((Just (SimpleType TOne st), _), _)) = isBool st
     isArbitrary _                                        = False
 
-    isBool "Boolean" = True
-    isBool "Bool"    = True
-    isBool "boolean" = True
-    isBool "bool"    = True
-    isBool _         = False
+    isBool = (PCRE.≈ [PCRE.re|^(b|B)ool(ean)?$|]) 
 
     curlyList = encloseSep "{" "}" comma
 

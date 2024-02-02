@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-|
 This module provides token-level parsers, (though the tokens themselves are defined in BasicTypes).
@@ -437,7 +438,7 @@ manyDeepThen p1 p2 = debugName "manyDeepThen" do
 
 manyDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
 manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
-  p <- try (debugName "manyDeepThenMaybe/initial" p1)
+  p <- try $ debugName "manyDeepThenMaybe/initial" p1
   (lhs, rhs) <- donext
   pure (p:lhs, rhs)
   where
@@ -836,7 +837,8 @@ upToNUndeepers n = debugName [i|upToNUndeepers(#{n})/undeeper|] do
 
 undeepers :: Int -> Parser ()
 undeepers n
-  | n < 0 = debugName "undeepers" $ fail "undeepers: negative number of undeepers"
+  | n < 0 =
+      debugName "undeepers" $ fail "undeepers: negative number of undeepers"
   | otherwise = debugName "undeepers" do
       debugPrint [i|sameLine/undeepers: reached end of line; now need to clear #{n} UnDeepers|]
       count n $ pToken UnDeeper
@@ -846,7 +848,7 @@ godeeper :: Int -> SLParser ()
 godeeper n = mkSL $ debugName [i|godeeper #{n}|] do
   count n $ pToken GoDeeper
   debugPrint "matched!"
-  pure ((),n)
+  pure ((), n)
 
 manyUndeepers :: SLParser ()
 manyUndeepers = debugNameSL "manyUndeepers" do
@@ -854,10 +856,11 @@ manyUndeepers = debugNameSL "manyUndeepers" do
 
 someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" do
-  slUnDeeper >> manyUndeepers
+  slUnDeeper
+  manyUndeepers
 
 -- | consume any GoDeepers, then parse -- plain
-($>>) p = (|>>) $ liftSL p
+($>>) = (|>>) . liftSL
 infixl 4 $>>
 
 -- | consume any GoDeepers, then parse -- fancy
@@ -881,20 +884,23 @@ infixl 4 |<|
 p1 |<> p2 = debugPrintSL "|<>" >> p1 |<* ($>>) p2
 infixl 4 |<>
 
-p1 |^| p2 = debugPrintSL "|^|" >> do
+p1 |^| p2 = do
+  debugPrintSL "|^|"
   l <- p1
   _  <- debugName "|^| deeps" $ some slDeeper <|> many slUnDeeper
   l <$> p2
 infixl 4 |^|
 
 -- fancy
-p1 |<* p2 = debugPrint "|<* starting" >> do
+p1 |<* p2 = do
+  debugPrint "|<* starting"
   l <- p1
   r <- debugName "|<*/parent" $ try goleft <|> base
   pure $ l r
   where
     base = debugName "|<*/base" p2
-    goleft = debugPrint "|<*/recurse" >> do
+    goleft = do
+      debugPrint "|<*/recurse"
       uds <- some slUnDeeper
       out <- p2
       debugPrint [i||<*/recurse matched #{length uds} UnDeepers|]
@@ -907,7 +913,7 @@ someIndentation p = debugName "someIndentation" $
   myindented $ manyIndentation p
 
 someIndentation' :: Parser a -> Parser a
-someIndentation' p = myindented' $ manyIndentation' p
+someIndentation' = myindented' . manyIndentation'
 
 -- 0 or more tabs indented from current location
 manyIndentation :: Show a => Parser a -> Parser a
@@ -986,11 +992,11 @@ optIndentedTuple p1 p2 = debugName "optIndentedTuple" do
   (,) <$> p1 `optIndented` p2
 
 optIndented :: (Show a, Show b) => Parser (Maybe a -> b) -> Parser a -> Parser b
-infixl 4 `optIndented`
 optIndented p1 p2 = debugName "optIndented" do
   f <- p1
   y <- optional $ someIndentation p2
   pure $ f y
+infixl 4 `optIndented`
 
 -- let's do us a combinator that does the same as `indentedTuple0` but in applicative style
 indentChain :: Parser (a -> b) -> Parser a -> Parser b
@@ -1033,7 +1039,8 @@ pToken c = pTokenMatch (== c) $ pure c
 -- | Parse tokens that are not MyToken
 pTokenish :: HasToken a => a -> Parser a
 pTokenish c = c <$ pTokenMatch (== tok) (pure tok)
-  where tok = tokenOf c
+  where
+    tok = tokenOf c
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
 pTokenAnyDepth c = pTokenMatch (== c) $ pure c
@@ -1064,4 +1071,4 @@ iRunOnErrors ::
 iRunOnErrors f pt = MPInternal.ParsecT \s cok cerr eok eerr ->
   let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
       eerr' err s' = f MPInternal.NotConsumed err s' (eerr err s')
-   in MPInternal.unParser pt s cok cerr' eok eerr'
+  in MPInternal.unParser pt s cok cerr' eok eerr'

@@ -127,6 +127,7 @@ errorItemLength pxy_ = \case
 showErrorFancy :: ShowErrorComponent e => ErrorFancy e -> String
 showErrorFancy = \case
   ErrorFail msg -> msg
+  ErrorCustom a -> showErrorComponent a
   ErrorIndentation ord ref actual ->
     [i|incorrect indentation (got #{unPos actual}, should be #{p} #{unPos ref})|]
     where
@@ -134,7 +135,6 @@ showErrorFancy = \case
         LT -> "less than "
         EQ -> "equal to "
         GT -> "greater than "
-  ErrorCustom a -> showErrorComponent a
 
 -- | Get length of the “pointer” to display under a given 'ErrorFancy'.
 errorFancyLength :: ShowErrorComponent e => ErrorFancy e -> Int
@@ -146,19 +146,21 @@ errorFancyLength = \case
 
 -- | Oneline error message for debug purposes.
 onelineErrorMsg :: ParseError MyStream Void -> String
-onelineErrorMsg (TrivialError _ Nothing set) = 
-  [i|Expecting: #{unwords (map onelineErrorItem $ Set.toList set)}|]
-
-onelineErrorMsg (TrivialError _ (Just ei) set) =
-  [i|Unexpected #{onelineErrorItem ei} Expecting: #{unwords (map onelineErrorItem $ Set.toList set)}|]
-
-onelineErrorMsg (FancyError _ set) = unwords $ map showFancy $ Set.toList set
+onelineErrorMsg = \case
+  TrivialError _ Nothing set -> goExpecting set
+  TrivialError _ (Just ei) set ->
+    [i|Unexpected #{onelineErrorItem ei} #{goExpecting set}|]
+  FancyError _ set -> go showFancy set 
   where
     showFancy :: ErrorFancy Void -> String
     showFancy (ErrorFail s) = [i|Fail: #{s}|]
-    showFancy (ErrorIndentation ord pos pos') = [i|Indent error: #{pos} should be #{ord} #{pos'}|]
+    showFancy (ErrorIndentation ord pos pos') =
+      [i|Indent error: #{pos} should be #{ord} #{pos'}|]
     showFancy _ = ""
     -- showFancy (ErrorCustom vo) = case vo of {}
+
+    go f = unwords . (f <$>) . Set.toList
+    goExpecting set = [i|Expecting: #{go onelineErrorItem set}|] :: String
 
 onelineErrorItem :: ErrorItem (WithPos MyToken) -> String
 onelineErrorItem = showErrorItem @MyStream Proxy

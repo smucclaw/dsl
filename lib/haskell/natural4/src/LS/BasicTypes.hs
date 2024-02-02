@@ -64,7 +64,7 @@ data MyStream = MyStream
 -- the Rule types employ these tokens, which are meaningful to L4.
 --
 toTokens :: Text.Text -> [MyToken]
-toTokens (\txt -> Map.lookup [i|#{txt}|] $(lift tokenTable) -> Just tokens) =
+toTokens (\txt -> $(lift tokenTable) Map.!? [i|#{txt}|] -> Just tokens) =
   tokens
 
 toTokens (PCRE.scan [PCRE.re|^-(§|¶)$|] -> [(_, [c])]) =

@@ -196,7 +196,6 @@ hasDefaultValue r rp = rpHead rp `elem` (rpHead <$> defaults r)
 defaultInGlobals :: [Rule] -> RelationalPredicate -> Bool
 defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
 
-
 -- this is to be read as an "external requirement interface"
 
 groundsToChecklist :: NLGEnv -> Grounds -> XPileLog Grounds
@@ -229,8 +228,9 @@ groundToChecklist env mt = do
   pure $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
-pickOneOf mts = MTT "Does any of the following hold?" :
-  [ MTT [i|* #{mt2text mt}|] | mt <- mts ]
+pickOneOf mts =
+  MTT "Does any of the following hold?" :
+  [MTT [i|* #{mt2text mt}|] | mt <- mts]
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
 groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word
@@ -246,7 +246,7 @@ quaero xs = xs
 toVueRules :: [Rule] -> [(RuleName, XPileLogE BoolStructR)]
 -- [TODO] is there something in RelationalPredicates or elsewhere that knows how to extract the Item from an HC2. there is a lot going on so we need to sort out the semantics first.
 -- clearly this is not ready for primetime, we need to get this transpiler at least as functional as the Purescript outputter that it is meant to replace.
-toVueRules rs = [ (ruleLabelName r, toVueRule r) | r <- rs ]
+toVueRules = map \r -> (ruleLabelName r, toVueRule r)
 
 toVueRule :: Rule -> XPileLogE BoolStructR
 toVueRule r@(Hornlike {clauses=[HC {hBody=Just t}]}) = do

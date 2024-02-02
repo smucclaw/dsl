@@ -1,22 +1,17 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Use camelCase" #-}
-
-{-|
-Foundational types imported by all other modules.
-
-These are largely:
-
-* tokens for the parser and renderer
-* stream for the parser
--}
-
+-- |
+-- Foundational types imported by all other modules.
+--
+-- These are largely:
+--
+-- * tokens for the parser and renderer
+-- * stream for the parser
 module LS.BasicTypes
   ( MyStream (..),
     MyToken (..),
@@ -24,12 +19,13 @@ module LS.BasicTypes
     WithPos (..),
     liftMyToken,
     renderToken,
-    toToken
+    toTokens,
   )
 where
 
 import Data.Aeson (ToJSON)
 import Data.Char (toUpper)
+import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List qualified as DL
 import Data.List.NonEmpty qualified as NE
@@ -38,6 +34,8 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Vector qualified as V
 import GHC.Generics (Generic)
+import LS.TokenTable (MyToken (..), tokenTable)
+import Language.Haskell.TH.Syntax (lift)
 import Text.Megaparsec
   ( PosState
       ( PosState,
@@ -63,203 +61,24 @@ data MyStream = MyStream
   }
   deriving Show
 
-data MyToken = Every | Party | TokAll
-             | Who | Which | Whose
-             | Must | May | Shant
-             | If | When | Always | Never
-             | Or | And | MPNot
-             | Before | After | By | On | Eventually -- TVague is a temporal constraint but not a token
-             | Means | Includes  | Is
-             | Given | Giveth | Having | Upon
-             | Declare | Define | OneOf | Holds
-             | Decide
-             | A_An
-             | Deem | As | Has
-             -- | AsOf -- used to evaluate a term not under the live context but at some previous time
-             | TypeSeparator -- ::, TYPE, AS, shrug
-             | One | Optional | List0 | List1 -- list-like modifiers, List1=NonEmpty
-             |                   Set0 | Set1  -- set; set.nonempty
-             | Distinct -- entity modifier in GIVEN
-             | Unless
-             | Hence | Lest | Fulfilled | Breach | Goto
-             | Then | Else
-             | TNumber Float
-             | Other Text.Text
-             | Do | FMap
-             | TokTrue | TokFalse
-             | Aka -- also known as, for AKA Receiving Party
-             | Typically -- to provide default values
-             | Empty | EOL
-             | RuleMarker Int Text.Text
-             | Expect | ScenarioTok
-             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr | TokSum | TokProduct | TokMin | TokMax
-             | Notwithstanding | Despite | SubjectTo
-             | Otherwise
-             | SOF | EOF
-             | GoDeeper | UnDeeper
-             | SetPlus | SetLess -- set union and subtraction
-             | Where -- like in Haskell
-             | Semicolon -- rule separator
-  deriving (Ord, Eq, Show, Generic, Hashable, ToJSON)
-
 -- the Rule types employ these tokens, which are meaningful to L4.
 --
-toToken :: Text.Text -> [MyToken]
+toTokens :: Text.Text -> [MyToken]
+toTokens (\txt -> Map.lookup [i|#{txt}|] $(lift tokenTable) -> Just tokens) =
+  tokens
 
--- start a regulative rule
-toToken "EVERY" =  pure Every
-toToken "PARTY" =  pure Party
-toToken "ALL"   =  pure TokAll -- when parties are treated as a collective, e.g. ALL diners. TokAll means "Token All"
-
--- start a boolstruct
-toToken "ALWAYS" = pure Always
-toToken "NEVER"  = pure Never
-
--- qualify a subject
-toToken "WHO" =    pure Who
-toToken "WHICH" =  pure Which
-toToken "WHOSE" =  pure Whose
-
-toToken "WHEN" =   pure When
-toToken "IF" =     pure If
-toToken "UPON" =   pure Upon
-toToken "GIVEN" =  pure Given
-toToken "GIVETH" = pure Giveth
-toToken "HAVING" = pure Having
-
-toToken "MEANS" =  pure Means -- "infix"-starts a constitutive rule "Name MEANS x OR y OR z"
-toToken "INCLUDES" =  pure Includes
-toToken "IS" =     pure Is
-
--- boolean connectors
-toToken "OR" =     pure Or
-toToken ((PCRE.≈ [PCRE.re|^(AND|\.\.\.|…)$|]) -> True) =
-  pure And -- Elipses are CNL sugar to allow phrases to follow
-toToken ((PCRE.≈ [PCRE.re|^(UNLESS|EXCEPT|IF NOT)$|]) -> True) = pure Unless
-toToken "NOT"    = pure MPNot
-
--- set operators
-toToken "PLUS"   = pure SetPlus
-toToken "LESS"   = pure SetLess
-
--- deontics
-toToken "MUST" =   pure Must
-toToken "MAY" =    pure May
-toToken "SHANT" =  pure Shant
-
--- temporals
-toToken ((PCRE.≈ [PCRE.re|^(UNTIL|BEFORE)$|]) -> True)  = pure Before  -- <
-toToken "WITHIN" = pure Before  -- <=
-toToken "AFTER"  = pure After   -- >
-toToken "BY"     = pure By
-toToken ((PCRE.≈ [PCRE.re|^(ON|AT)$|]) -> True)  = pure On -- ==
-toToken "EVENTUALLY" = pure Eventually
-
--- the rest of the regulative rule
-toToken ((PCRE.≈ [PCRE.re|^(➔|->|DO|PERFORM)$|]) -> True)      = pure Do
-
--- for discarding
-toToken "" =       pure Empty
-toToken "TRUE" =   pure TokTrue
-toToken "FALSE" =  pure TokFalse
-toToken "HOLDS" =  pure Holds
-
--- regulative chains
-toToken ((PCRE.≈ [PCRE.re|^(HENCE|THUS)$|]) -> True)      = pure Hence
-
--- alternative formulations intended to be closer to natural language
--- for the obligation case
-toToken "IF FULFILLED"      = pure Hence
-toToken ((PCRE.≈ [PCRE.re|^IF (NOT FULFILLED|VIOLATED)$|]) -> True)      = pure Lest
--- for the permission case
-toToken ((PCRE.≈ [PCRE.re|^IF EXERCI(S|Z)ED$|]) -> True)      = pure Hence
-toToken ((PCRE.≈ [PCRE.re|^IF NOT EXERCI(S|Z)ED$|]) -> True)      = pure Lest
--- for the prohibition case
-toToken "IF PROHIBITION VIOLATED"      = pure Lest
-toToken ((PCRE.≈ [PCRE.re|^IF (PROHIBITION NOT|NOT (PROHIBITION)?) VIOLATED$|]) -> True)      = pure Hence
-
--- mutable state variables are modified by UPON THEN ELSE
-toToken     "THEN" = pure Then
-toToken ((PCRE.≈ [PCRE.re|^(((X)?OR |X)?ELSE)$|]) -> True)      = pure Else
-
--- trivial contracts
-toToken  "FULFILLED" = pure Fulfilled
-toToken  "BREACH" = pure Breach
-
-toToken     "LEST" = pure Lest
-toToken  "GOTO" = pure Goto
-
-toToken ";"      = pure EOL
-
-toToken ((PCRE.≈ [PCRE.re|^(:(:)?|TYPE|IS (A(N)?|THE))$|]) -> True) =
-  [TypeSeparator, A_An]
-toToken ((PCRE.≈ [PCRE.re|^(A(N)?|THE)$|]) -> True) = pure A_An -- [TODO] this is going to break entirely innocent end-user phrasing like 7 8 9 A B C D E
-
-toToken "DECLARE"   = pure Declare
-toToken "DEFINE"    = pure Define -- [TODO] rephrase DEFINE to support DECIDE and possibly overloaded DATA?
-toToken "DATA"      = pure Define
-toToken "DECIDE"    = pure Decide
-toToken ((PCRE.≈ [PCRE.re|^(ONEOF|((I|A)?S )?ONE OF)$|]) -> True) =
-  pure OneOf
-toToken "DEEM"      = pure Deem
-toToken "HAS"       = pure Has
-
-toToken "ONE"       = pure One
-toToken "OPTIONAL"  = pure Optional
-
-toToken "LIST0"     = pure List0
-toToken ((PCRE.≈ [PCRE.re|^(LIST(1|( )?OF)?)$|]) -> True) = pure List1
-
-toToken "SET0"     = pure Set0
-toToken ((PCRE.≈ [PCRE.re|^(SET(1|( )?OF)?)$|]) -> True) = pure Set1
-
-toToken "MAP"       = pure FMap
-
-toToken "AKA"       = pure Aka
-toToken "TYPICALLY" = pure Typically
-
-toToken ((PCRE.≈ [PCRE.re|^(CLAUSE|SECTION)$|]) -> True) =
-  pure $ RuleMarker   1  "§"
-
-toToken (PCRE.scan [PCRE.re|^-(§|¶)$|] -> [(_, [c])]) =
+toTokens (PCRE.scan [PCRE.re|^-(§|¶)$|] -> [(_, [c])]) =
   pure $ RuleMarker (-1) c
 
-toToken s@(PCRE.scan [PCRE.re|^(§|¶|H)+$|] -> [(_, [c])]) =
+toTokens s@(PCRE.scan [PCRE.re|^(§|¶|H)+$|] -> [(_, [c])]) =
   pure $ RuleMarker (Text.length s) c
-
-toToken "SCENARIO"  = pure ScenarioTok
-toToken "EXPECT"    = pure Expect
-toToken "<"         = pure TokLT
-toToken ((PCRE.≈ [PCRE.re|^MIN( OF)?$|]) -> True)     = pure TokMin
-toToken ((PCRE.≈ [PCRE.re|^(<=|=>)?$|]) -> True)      = pure TokLTE
-toToken ">"         = pure TokGT
-toToken ((PCRE.≈ [PCRE.re|^MAX( OF)?$|]) -> True)     = pure TokMax
-toToken ">="        = pure TokGTE
-toToken "&&"        = pure TokAnd
-toToken "||"        = pure TokOr
-toToken ((PCRE.≈ [PCRE.re|^SUM( OF)?$|]) -> True)     = pure TokSum
-toToken ((PCRE.≈ [PCRE.re|^PRODUCT( OF)?$|]) -> True) = pure TokProduct
-toToken ((PCRE.≈ [PCRE.re|^=(=)?(=)?$|]) -> True)     = pure TokEQ
-toToken "IN"        = pure TokIn
-toToken "NOT IN"    = pure TokNotIn
-
--- rule priority interactions and "defeasibility"
-toToken "SUBJECT TO" = pure SubjectTo
-toToken "DESPITE"    = pure Despite
-toToken "NOTWITHSTANDING" = pure Notwithstanding
-
-toToken "OTHERWISE" = pure Otherwise
-
-toToken "WHERE"     = pure Where
-
-toToken ";;"        = pure Semicolon
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toToken (reads . Text.unpack -> [(n, "")]) = pure $ TNumber n
+toTokens (reads . Text.unpack -> [(n, "")]) = [TNumber n]
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
-toToken x = pure $ Other x
+toTokens txt = [Other txt]
 
 -- note: we choose not to treat NOTIFY as keyword.
 -- we parse it downstream when dealing with actions.

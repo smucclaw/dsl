@@ -54,6 +54,8 @@ import Text.Megaparsec
 import Text.Pretty.Simple (pStringNoColor)
 import Text.PrettyPrint.Boxes (hsep, vcat)
 import Text.PrettyPrint.Boxes qualified as Box
+import Flow ((|>))
+import LS.Utils ((|$>))
 
 -- custom version of https://hackage.haskell.org/package/megaparsec-9.2.0/docs/src/Text.Megaparsec.Error.html#errorBundlePretty
 errorBundlePrettyCustom ::
@@ -77,45 +79,60 @@ errorBundlePrettyCustom ParseErrorBundle {..} =
         epos = pstateSourcePos pst'
         row = unPos (sourceLine epos) - 1
         col = unPos (sourceColumn epos) - 1
-        excelTable = pst & pstateInput & myStreamInput
+        excelTable = pst |> pstateInput |> myStreamInput
         numCols = maximum $ fmap length excelTable
-        paddedExcelTable = excelTable & fmap \x -> x <> V.replicate (numCols - length x) ""
+        paddedExcelTable = excelTable |$> \x -> x <> V.replicate (numCols - length x) ""
         excelTableMarked =
-          imap (\i -> if i == row then imap \j -> if j == col then ("✳ " <>) else id else id ) paddedExcelTable
-          & fmap (fmap Text.unpack)
+          paddedExcelTable
+            |> imap (\i -> if i == row then imap \j -> if j == col then ("✳ " <>) else id else id)
+            |$> fmap Text.unpack
           -- & fmap (fmap (Text.unpack. ("(" <>) . (<>")")))
         -- foldMax = foldl' _ 1
         maxAllowedWidth = 35
-        maxLengths = fmap (fmap (min maxAllowedWidth . length)) excelTableMarked & foldl1' (V.zipWith max) & fmap (fromIntegral @_ @Int)
-        boxRepresentation = excelTableMarked
-          -- & sequenceA -- NOTE: This only works if the table is actually rectangular and doesn't have jagged rows
-          -- & fmap (vcat Box.left . fmap Box.text )
-          & fmap (imap (\c -> Box.alignHoriz Box.left (maxLengths V.! c) . Box.para Box.left maxAllowedWidth) >>> hsep 3 Box.left)
-          & vcat Box.left & Box.render
+        maxLengths =
+          excelTableMarked
+            |$> fmap (min maxAllowedWidth . length)
+            |> foldl1' (V.zipWith max)
+            |$> fromIntegral
+        boxRepresentation =
+          excelTableMarked
+          -- |> sequenceA -- NOTE: This only works if the table is actually rectangular and doesn't have jagged rows
+          -- |> fmap (vcat Box.left . fmap Box.text )
+            |$> imap (\c -> Box.alignHoriz Box.left (maxLengths V.! c) . Box.para Box.left maxAllowedWidth)
+            >>> hsep 3 Box.left
+            |> vcat Box.left
+            |> Box.render
         outChunk =
           [__i|
             #{sourcePosPretty epos}:
             #{parseErrorTextPretty e}
             #{boxRepresentation}
             Stream:
-            #{xpRenderStream (insertStarAt epos $ pstateInput pst)}
+            #{xpRenderStream $ insertStarAt epos $ pstateInput pst}
           |]
 
 insertStarAt :: SourcePos -> MyStream -> MyStream
-insertStarAt sp (MyStream vec wps) = MyStream vec (foldMap insertIt wps)
+insertStarAt sp (MyStream vec wps) = MyStream vec $ foldMap insertIt wps
   where
     insertIt :: WithPos MyToken -> [WithPos MyToken]
-    insertIt t | pos t == sp = [Other "✳" <$ t, t]
-               | otherwise = [t]
+    insertIt t
+      | pos t == sp = [Other "✳" <$ t, t]
+      | otherwise = [t]
 
 ----------------------------------------------------------------------------
 -- Helpers
 
 xrenderStream :: MyStream -> String
-xrenderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
+xrenderStream =
+  unMyStream
+    >>> (renderToken . tokenVal <$>)
+    >>> unwords
 
 xpRenderStream :: MyStream -> String
-xpRenderStream = Text.unpack . LT.toStrict . pStringNoColor . xrenderStream
+xpRenderStream =
+  xrenderStream
+    >>> pStringNoColor
+    >>> \x -> [i|#{x}|]
 
 -- | Get length of the “pointer” to display under a given 'ErrorItem'.
 errorItemLength :: VisualStream s => Proxy s -> ErrorItem (Token s) -> Int

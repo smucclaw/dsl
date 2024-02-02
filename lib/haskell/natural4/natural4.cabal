@@ -42,6 +42,7 @@ library
       LS.RelationalPredicates
       LS.Rule
       LS.Tokens
+      LS.TokenTable
       LS.Types
       LS.Utils
       LS.Utils.OpticsUtils

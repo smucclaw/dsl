@@ -20,7 +20,45 @@
 -- The Interpreter can thereby handle expansion and other transformations in ways that are consistent across multiple transpilers.
 --
 -- To view the various endpoints exposed by the Interpreter, see @org/LATEST.org@.
-module LS.Interpreter where
+module LS.Interpreter
+  ( RuleSet,
+    allCTkeys,
+    attrsAsMethods,
+    attrType,
+    classGraph,
+    classHierarchy,
+    classRoots,
+    defaultToSuperClass,
+    defaultToSuperType,
+    expandBSR,
+    expandBSR',
+    expandBSRM,
+    expandClause,
+    expandClauses,
+    expandRP,
+    expandRule,
+    exposedRoots,
+    extractEnums,
+    getAndOrTree,
+    getAttrTypesIn,
+    getCTkeys,
+    getMarkings,
+    getRuleByLabel,
+    globalFacts,
+    groupedByAOTree,
+    isAnEnum,
+    isRuleAlias,
+    itemsByRule,
+    l4interpret,
+    onlyTheItems,
+    qaHornsR,
+    qaHornsT,
+    ruleDecisionGraph,
+    ruleLocals,
+    toObjectStr,
+    topsortedClasses
+  )
+where
 
 import AnyAll qualified as AA
 import Control.Applicative ((<|>))

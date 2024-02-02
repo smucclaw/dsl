@@ -65,7 +65,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
 data MTExpr = MTT Text.Text -- ^ Text string
             | MTI Integer   -- ^ Integer
-            | MTF Float     -- ^ Float
+            | MTF Double     -- ^ Float
             | MTB Bool      -- ^ Boolean
 --            | MTC Text.Text -- ^ Currency money
 --            | MTD Text.Text -- ^ Date

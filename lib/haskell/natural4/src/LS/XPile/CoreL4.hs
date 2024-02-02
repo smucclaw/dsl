@@ -409,7 +409,7 @@ mtExprToExprNoType cont (MTT (T.unpack -> t)) =
 mtExprToExprNoType _ mtExpr =
   pure $ ValE () case mtExpr of
     MTI i -> IntV i
-    MTF i -> FloatV i
+    MTF i -> FloatV $ realToFrac i
     MTB i -> BoolV i
 
 rpRelToBComparOp :: RPRel -> MonoidValidate (Doc ann) BinOp
@@ -424,7 +424,8 @@ rpRelToBComparOp RPelem = refute "rpRelToBComparOp: erroring on RPelem"
 rpRelToBComparOp RPnotElem = refute "rpRelToBComparOp: erroring on RPnotElem"
 rpRelToBComparOp RPnot = refute "rpRelToBComparOp: erroring on RPnot"
 rpRelToBComparOp RPTC {}  = refute "rpRelToBComparOp: erroring on RPTC"
-rpRelToBComparOp x = refute ("rpRelToBComparOp: erroring on " <> pretty (show x))
+rpRelToBComparOp x = refute [di|rpRelToBComparOp: erroring on #{x}|]
+
 -- END helper functions
 
 boolStructRToExpr :: [String] -> BoolStructR -> ExprM ann ()

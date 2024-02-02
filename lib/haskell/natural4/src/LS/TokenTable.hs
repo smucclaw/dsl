@@ -39,7 +39,7 @@ data MyToken = Every | Party | TokAll
             | Unless
             | Hence | Lest | Fulfilled | Breach | Goto
             | Then | Else
-            | TNumber Float
+            | TNumber Double
             | Other Text.Text
             | Do | FMap
             | TokTrue | TokFalse

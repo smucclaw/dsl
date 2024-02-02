@@ -134,7 +134,7 @@ varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar
 
 
-data Lit = EBoolTrue | EBoolFalse | EInteger Integer | EFloat Float | EString T.Text
+data Lit = EBoolTrue | EBoolFalse | EInteger Integer | EFloat Double | EString T.Text
   deriving stock (Eq, Ord, Show)
 
 

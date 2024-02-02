@@ -133,7 +133,7 @@ pDeontic = (pToken Must  >> pure DMust)
 
 
 -- | parse a number.
-pNumber :: Parser Float
+pNumber :: Parser Double
 pNumber = token test Set.empty <?> "number"
   where
     test WithPos {tokenVal = TNumber n} = Just n
@@ -357,7 +357,7 @@ pMTExpr =
   where
     isIntegral pn = do
       x <- pn
-      if (fromIntegral (floor x :: Int) :: Float) == x
+      if (fromIntegral (floor x :: Int) :: Double) == x
         then pure $ floor x
         else fail "not an integer"
 

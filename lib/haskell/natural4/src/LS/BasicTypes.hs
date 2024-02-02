@@ -51,6 +51,7 @@ import Text.Megaparsec
     VisualStream (..),
     initialPos,
   )
+import Text.Read (readMaybe)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
@@ -78,7 +79,7 @@ toTokens (PCRE.scan [PCRE.re|^H([1-9](\d)*)$|] -> [(_, [n, _])]) =
 
 -- we recognize numbers
 -- let's not recognize numbers yet; treat them as strings to be pOtherVal'ed.
-toTokens (Text.unpack >>> reads -> [(n, "")]) = [TNumber n]
+toTokens (Text.unpack >>> readMaybe -> Just n) = [TNumber n]
 
 -- any other value becomes an Other -- "walks", "runs", "eats", "drinks"
 toTokens txt = [Other txt]

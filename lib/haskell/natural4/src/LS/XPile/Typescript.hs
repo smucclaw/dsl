@@ -322,8 +322,8 @@ tsRuleEngine l4i = do
     , "}"
     ]
   where
-    prettyRuleName r =
-      dquotes (pretty . mt2text $ ruleName r) <+> "?" <> colon <+> "any" <> semi
+    prettyRuleName r = [di|"#{mt2text $ ruleName r}" ?: any;|]
+      -- dquotes (pretty . mt2text $ ruleName r) <+> "?" <> colon <+> "any" <> semi
 
 -- | a convention for preserving the original strings and data structures for downstream use
 tsPrelude :: Interpreted -> XPileLog (Doc ann)
@@ -347,7 +347,7 @@ tsClasses l4i = do
     [ do
         mutterdhsf 3 "tsClasses / className" pShowNoColorS className
         mutterdhsf 3 "tsClasses / children" pShowNoColorS children
-        return $ "class" <+> snake_case [MTT className] <> classExtension
+        pure $ [di|class #{snake_case [MTT className]}#{classExtension}|]
           -- attributes of the class are shown as decls
           <+> lbrace
       --    <//> "  //" <+> viaShow csuper

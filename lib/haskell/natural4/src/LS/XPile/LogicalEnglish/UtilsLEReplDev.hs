@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.XPile.LogicalEnglish.UtilsLEReplDev
-    ( 
+  ( 
     prl,
     leTestcasesDir,
     leTestCSVs,
@@ -16,8 +16,7 @@ module LS.XPile.LogicalEnglish.UtilsLEReplDev
     -- re-export from LS.UtilsREPLDev
     csvsInDir,
     l4csv2rules
-    )
-
+  )
 where
 
 import System.FilePath ((</>), takeFileName)

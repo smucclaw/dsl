@@ -525,10 +525,10 @@ ruleDecisionGraph rs = do
                   | rulename <- difference ]
 
   mutterd 3 "(2.6) then we rebuild the graph with those rules included"
-  let expandedRuleMap   = Map.fromList (Prelude.zip (decisionRules ++ stubRules) [1..])
+  let expandedRuleMap   = Map.fromList (Prelude.zip (decisionRules <> stubRules) [1..])
   expandedRuleGraph :: RuleGraph <- mkGraph
                                     (swap <$> Map.toList expandedRuleMap)
-                                    <$> relPredRefsAll (rs ++ stubRules) expandedRuleMap
+                                    <$> relPredRefsAll (rs <> stubRules) expandedRuleMap
 
   "(2.7) expandedRuleGraph" ***-> expandedRuleGraph
 
@@ -959,11 +959,11 @@ bsr2bsmt (AA.Not     x ) = AA.mkNot     (bsr2bsmt x)
 -- | is a given RuleName the target of a Hence or Lest "GOTO"-style pointer?
 -- If it is, we deem it a RuleAlias.
 isRuleAlias :: Interpreted -> RuleName -> Bool
-isRuleAlias l4i rname =
-  any matchHenceLest (origrules l4i)
+isRuleAlias l4i rname = any matchHenceLest $ origrules l4i
   where
-    matchHenceLest Regulative{..} = any testMatch [hence, lest] -- testMatch hence || testMatch lest
+    matchHenceLest Regulative{..} = any testMatch [hence, lest]
     matchHenceLest _              = False
+
     testMatch :: Maybe Rule -> Bool
     testMatch r = r == Just (RuleAlias rname) || maybe False matchHenceLest r
 
@@ -1089,7 +1089,8 @@ attrsAsMethods rs = do
     go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
     go hc@HC {..} =
       case hHead of
-        (RPnary RPis [RPMT headLHS, headRHS]) -> xpReturn (headLHS, Just headRHS, hBody)
+        (RPnary RPis [RPMT headLHS, headRHS]) ->
+          xpReturn (headLHS, Just headRHS, hBody)
         (RPnary RPis (RPMT headLHS : headRHS)) -> do
           mutterd 3 [i|unexpected RHS in RPnary RPis: #{hHead}|]
           xpReturn (headLHS, listToMaybe headRHS, hBody)

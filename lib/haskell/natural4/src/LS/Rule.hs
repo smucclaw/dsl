@@ -342,12 +342,14 @@ mkTestSrcRef :: Int -> Int -> Maybe SrcRef
 mkTestSrcRef row col =
   Just $
     SrcRef
-      { url = Text.pack $ "test" </> "Spec",
-        short = Text.pack $ "test" </> "Spec",
+      { url = txt,
+        short = txt,
         srcrow = row,
         srccol = col,
         version = Nothing
       }
+  where
+    txt = Text.pack $ "test" </> "Spec"
 
 dummyRef :: Maybe SrcRef
 dummyRef = mkTestSrcRef 1 1
@@ -438,7 +440,7 @@ getGivenWithSimpleType tm = do
   -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
   let varType = (tm ^. _2) >>= getSimpleTypeTOne 
   var <- mvar 
-  return (var, varType)
+  pure (var, varType)
 
 -- | does a rule have a Given attribute?
 hasGiven :: Rule -> Bool
@@ -466,13 +468,14 @@ isFact :: Rule -> Bool
 isFact r
   | hasClauses r =
       ruleNameIsNumeric (name r)
-        || ((length (clauses r) == 1) && all ((Nothing ==) . hBody) (clauses r))
+        || ((length (clauses r) == 1) && all (null . hBody) (clauses r))
   | otherwise = False
   where
     -- when we have a numeric fact, it shows up with a name like [ MTI 0 ]
-    ruleNameIsNumeric = all ( \case
-                                MTI _ -> True
-                                _     -> False )
+    ruleNameIsNumeric = all isMTI
+    isMTI (MTI _) = True
+    isMTI _ = False
+
 getDecisionHeads :: Rule -> [MultiTerm]
 getDecisionHeads Hornlike{..} = [ rpHead hhead
                                 | HC hhead _hbody <- clauses ]
@@ -561,9 +564,6 @@ defaultValuePredicate = ValPred
   , origRule   = Nothing
   }
 
-
-
-
 -- | structure the rules as a graph.
 -- in the simple case, the graph is one or more trees, each rooted at a "top-level" rule which is not "used" by any another rule.
 --
@@ -576,25 +576,24 @@ defaultValuePredicate = ValPred
 type RuleGraphEdgeLabel = ()
 type RuleGraph = Gr Rule RuleGraphEdgeLabel
 
-
-
 multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name
 
 pGetTokenPos :: Parser (WithPos ())
-pGetTokenPos = token test Set.empty <?> "some token"
-  where
-    test tok = Just $ void tok
+pGetTokenPos = token (Just . void) Set.empty <?> "some token"
 
 pXLocation :: Parser Depth
-pXLocation = token test Set.empty <|> pure 0 <?> "x location"
-  where
-    test WithPos {pos= SourcePos _ _y x} = Just (unPos x)
+pXLocation = fst pXYLocation
 
 pYLocation :: Parser Depth
-pYLocation = token test Set.empty <|> pure 0 <?> "y location"
+pYLocation = snd pXYLocation
+
+pXYLocation :: (Parser Depth, Parser Depth)
+pXYLocation = (go testx "x location", go testy "y location")
   where
-    test WithPos{pos= SourcePos _ y _x } = Just (unPos y)
+    go test txt = token (pure . unPos . test) Set.empty <|> pure 0 <?> txt 
+    testx WithPos {pos= SourcePos _ _y x} = x
+    testy WithPos {pos= SourcePos _ y _x} = y
 
 pTokenMatch :: (MyToken -> Bool) -> NonEmpty MyToken -> Parser MyToken
 pTokenMatch f c = do
@@ -616,13 +615,15 @@ srctest srow scol r =
     { srcref =
         Just $
           SrcRef
-            { url = Text.pack $ "test" </> "Spec",
-              short = Text.pack $ "test" </> "Spec",
+            { url = testSpec,
+              short = testSpec,
               srcrow = srow,
               srccol = scol,
               version = Nothing
             }
     }
+  where
+    testSpec = Text.pack $ "test" </> "Spec"
 
 srcrow_ :: Rule -> Rule
 srcrow_ w =

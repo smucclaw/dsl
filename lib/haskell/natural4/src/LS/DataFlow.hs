@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 {-| transpiler to show dataflow for both arithmetic and boolean logic -}
 
@@ -31,6 +32,7 @@ import Data.GraphViz.Attributes.Complete
   )
 import Data.GraphViz.Printing (renderDot)
 import Data.HashMap.Strict qualified as Map
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as LT
 import Flow ((.>), (|>))
@@ -86,11 +88,8 @@ import LS.XPile.Logging
 dataFlowAsDot :: Interpreted -> XPileLog String
 dataFlowAsDot l4i = do
   -- https://hackage.haskell.org/package/fgl-5.8.1.1/docs/Data-Graph-Inductive-Graph.html#v:mkGraph
-  let dfg :: RuleGraph
-      dfg = ruleGraph l4i
-
-  let dot :: DotGraph Node
-      dot = graphToDot flowParams dfg
+  let dfg :: RuleGraph = ruleGraph l4i
+      dot :: DotGraph Node = graphToDot flowParams dfg
 
   -- if you look at Petri.hs you will see its graph construction delves deep into the logical relationship between rules.
   -- That code was written before we had the Intepreter available to analyze rules for us.
@@ -102,19 +101,17 @@ dataFlowAsDot l4i = do
   mutterdhsf 3 "dataFlowasDot: first, let's dump the rulegraph" pShowNoColorS rG
 
   mutterd 3 "dataFlowasDot: heeere's ruleGraphErr"
-  mutters (ruleGraphErr l4i)
+  mutters $ ruleGraphErr l4i
 
-  let toreturn = dfg
-                  |> graphToDot flowParams
-                  |> unqtDot
-                  |> renderDot
-                  |> LT.toStrict
-                  |> Text.unpack
+  let toreturn =
+        dfg
+          |> graphToDot flowParams
+          |> unqtDot
+          |> renderDot
+          |> \x -> [i|#{x}|]
 
   mutterdhsf 3 "and now we should get some dot goodness" pShowNoColorS toreturn
-  return toreturn
-
-
+  pure toreturn
   where
     ruleNodes = Map.fromList ( zip [(1 :: Int)..] [ [MTT "pretend rule R1" ] -- 1
                                          , [MTT "pretend rule R2" ] -- 2
@@ -136,11 +133,12 @@ dataFlowAsDot l4i = do
       , globalAttributes = [GraphAttrs [Compound True]]
       , clusterBy        = C 1 . N -- in future we may want to partition all leaf nodes into a separate cluster to better identify them
       , isDotCluster     = const False
-      , clusterID        = const (Str "clusterId")
+      , clusterID        = const $ Str "clusterId"
       , fmtCluster       = const [NodeAttrs [ shape Circle ] ]
       , fmtNode          = fmtRuleNode
       , fmtEdge          = const []
       }
 
 fmtRuleNode :: (Node, Rule) -> [Attribute]
-fmtRuleNode (n, r) = pure $ toLabel (Text.pack (show n) <> "\\n" <> mt2text (ruleName r))
+fmtRuleNode (n, r) =
+  [toLabel ([i|#{n}\n#{mt2text $ ruleName r}|] :: Text.Text)]

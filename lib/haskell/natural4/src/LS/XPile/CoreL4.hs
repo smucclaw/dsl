@@ -35,6 +35,7 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 
 import AnyAll qualified as AA
 import Control.Applicative (Applicative (liftA2))
+import Control.Arrow ((>>>))
 import Control.Monad (guard, join)
 import Control.Monad.Validate (MonadValidate (refute), runValidate)
 import Data.Bifunctor (Bifunctor (..))
@@ -47,11 +48,15 @@ import Data.HashMap.Strict qualified as Map
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
+import Data.MonoTraversable (Element, otoList)
 import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
+import Data.Sequences (IsSequence)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import Data.Traversable (for)
 import Debug.Trace (trace)
-import Flow ((.>), (|>))
+import Flow ((|>))
 import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
 import L4.Syntax as L4
@@ -195,7 +200,7 @@ import LS.XPile.CoreL4.LogicProgram
     LogicProgram,
     babyL4ToLogicProgram,
   )
-import LS.XPile.Logging
+import LS.XPile.Logging (XPileLogE, xpReturn)
 import Prettyprinter
   ( Doc,
     Pretty (pretty),
@@ -227,7 +232,7 @@ sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
 
 sfl4ToBabyl4 :: Interpreted -> String
-sfl4ToBabyl4 l4i = show $ sfl4ToCorel4Program l4i
+sfl4ToBabyl4 = show . sfl4ToCorel4Program
 
 sfl4ToASP :: [SFL4.Rule] -> XPileLogE String
 sfl4ToASP = xpReturn . sfl4ToLogicProgramStr @ASP
@@ -245,11 +250,11 @@ sfl4ToUntypedBabyL4 rules = Program {..}
         |> mconcat
 
 sfl4ToLogicProgramStr ::
-  forall (lpLang :: LPLang).
-  (Pretty (LogicProgram lpLang ())) =>
-  [SFL4.Rule] ->
+  forall (lpLang :: LPLang) t.
+  (Pretty (LogicProgram lpLang ()), IsSequence t, Element t ~ SFL4.Rule) =>
+  t ->
   String
-sfl4ToLogicProgramStr rules =
+sfl4ToLogicProgramStr (otoList -> rules) =
   rules
     |> sfl4ToUntypedBabyL4
     |> babyL4ToLogicProgram @lpLang
@@ -296,7 +301,7 @@ sfl4ToCorel4 rs =
     , "\n\n## boilerplate\n",               T.unpack pBoilerplate
 
     , "\n\n## decls for predicates used in rules (and not defined above already)\n"
-    , T.unpack . myrender $ prettyDecls (T.pack hardCoded <> pclasses <> pBoilerplate) rs
+    , T.unpack . myrender $ prettyDecls [i|#{hardCoded}#{pclasses}#{pBoilerplate}|] rs
 
     -- honestly i think we can just live without these
     --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
@@ -397,15 +402,16 @@ varsToExprNoType vars =
 multiTermToExprNoType :: [String] -> MultiTerm -> ExprM ann ()
 -- multiTermToExprNoType = varsToExprNoType . map (varNameToVarNoType . T.unpack . mtexpr2text)
 multiTermToExprNoType cont mt = do
-  expr <- traverse (mtExprToExprNoType cont) mt
+  expr <- for mt $ mtExprToExprNoType cont
   case expr of
-    var@(VarE t v) : args -> pure $ funArgsToAppNoType var args
+    var@(VarE _ _) : args -> pure $ funArgsToAppNoType var args
     [e] -> pure e
     _ -> refute "non-variable name in function position"
 
 mtExprToExprNoType :: [String] -> MTExpr -> ExprM ann ()
 mtExprToExprNoType cont (MTT (T.unpack -> t)) =
   pure $ VarE () $ varNameToVarNoType cont t
+
 mtExprToExprNoType _ mtExpr =
   pure $ ValE () case mtExpr of
     MTI i -> IntV i
@@ -424,7 +430,8 @@ rpRelToBComparOp RPelem = refute "rpRelToBComparOp: erroring on RPelem"
 rpRelToBComparOp RPnotElem = refute "rpRelToBComparOp: erroring on RPnotElem"
 rpRelToBComparOp RPnot = refute "rpRelToBComparOp: erroring on RPnot"
 rpRelToBComparOp RPTC {}  = refute "rpRelToBComparOp: erroring on RPTC"
-rpRelToBComparOp x = refute ("rpRelToBComparOp: erroring on " <> pretty (show x))
+rpRelToBComparOp x = refute [di|rpRelToBComparOp: erroring on #{x}|]
+
 -- END helper functions
 
 boolStructRToExpr :: [String] -> BoolStructR -> ExprM ann ()
@@ -597,7 +604,6 @@ directToCore r@Hornlike{keyword}
 directToCore TypeDecl{} = ""
 directToCore _ = ""
 
-
 hc2decls :: SFL4.Rule -> Doc ann
 hc2decls r
   | hasClauses r =
@@ -749,7 +755,6 @@ prettyDefns rs =
                  , hasClauses r
                  ]
 
-
 {-
  a word or two about our type system.
 
@@ -884,9 +889,9 @@ prettyClasses ct =
                 child_simpletype = maybe emptyDoc (prettySimpleType "corel4" (snake_inner . MTT)) child_ts
          ]
     -- guard to exclude certain forms which should not appear in the output
-  , case (ctype,children) of
-      ((Nothing, []),                 CT m) -> not $ null m
-      ((Just (SimpleType TOne _), []),CT m) -> not $ null m
+  , case (ctype, unCT children) of
+      ((Nothing, []),                  m) -> not $ null m
+      ((Just (SimpleType TOne _), []), m) -> not $ null m
       _                                   -> True -- commentShow "# ctype:" ctype
       -- [TODO] and how do we treat enum types?
   ]
@@ -917,8 +922,6 @@ prettyClasses ct =
     lcfirst "" = ""
     lcfirst x = T.toLower (T.singleton $ T.head x) <> T.tail x
 
-
-
 -- runTestrules :: IO()
 runTestrules :: [Doc ann]
 runTestrules =
@@ -940,9 +943,7 @@ then Foo,rule
 if ((green Bloo) && (red Blubs))
 then Foo]
 
-
 -}
-
 
 {-
 §	Rule_exceeds1								
@@ -980,7 +981,6 @@ r1 = defaultHorn
     , defaults = []
     , symtab = []
     }
-
 
 {-
 DECIDE		Foo		
@@ -1174,7 +1174,7 @@ hornlikeToContext Hornlike {given} =
   (given :: Maybe (NE.NonEmpty (NE.NonEmpty MTExpr, Maybe TypeSig)))
     |> maybe [] Fold.toList
     -- extract the MTExprs from given
-    |> foldMap (fst .> Fold.toList)
+    |> foldMap (fst >>> Fold.toList)
     |> mapMaybe
       -- destructMTT
       \case

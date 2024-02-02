@@ -1,8 +1,9 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 -- the job of this module is to create orphan instances
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- This module instantiates a number of LS types into the Pretty typeclass used by Prettyprinter.
@@ -37,6 +38,7 @@ import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
 import Data.String (IsString)
 import Data.String.Interpolate (i)
+import Data.String.Interpolate.Conversion (Interpolatable)
 import Data.Text qualified as T
 import Data.Traversable qualified as DT
 import Debug.Trace (trace)
@@ -398,14 +400,19 @@ tildes x = [di|~#{x}~|]
 
 -- | similar to ... <> Prettyprinter.line <> ...
 (<//>), (</>) :: Doc ann -> Doc ann -> Doc ann
-a </>  b = vvsep [ a, b ]
-a <//> b = vsep  [ a, b ]
+a </>  b = vvsep [a, b]
+a <//> b = vsep [a, b]
 infixr 5 </>, <//>
 
 -- | print haskell source in a way Org prefers
 srchs :: Show a => a -> Doc ann
 srchs = orgsrc ("haskell" :: Doc ann) . pretty . TPS.pShowNoColor
 
+orgsrc ::
+  (Interpolatable True src1 T.Text,  Interpolatable True src2 T.Text) =>
+  src1 ->
+  src2 ->
+  Doc ann
 orgsrc lang x =
   [__di|
     \#+begin_src #{lang}
@@ -413,7 +420,8 @@ orgsrc lang x =
     \#+end_src
   |]
 
-orgexample  x =
+orgexample :: Interpolatable True src T.Text => src -> Doc ann
+orgexample x =
   [__di|
     \#+begin_example
     #{x}

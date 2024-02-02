@@ -32,12 +32,13 @@ import Text.Regex.PCRE.Heavy qualified as PCRE
 import Language.Haskell.TH.Syntax (lift)
 
 import Prettyprinter
-
   ( Doc,
-    Pretty (pretty))
+    Pretty (pretty),
+  )
 import LS.PrettyPrinter
-    ( myrender)
-import LS.XPile.LogicalEnglish.Pretty(LEProg(..), libAndBuiltinTemplates)
+  ( myrender,
+  )
+import LS.XPile.LogicalEnglish.Pretty (LEProg (..), libAndBuiltinTemplates)
 
 -- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr, BoolStructR, BoolStructT)
 import LS.Rule qualified as L4 (Rule(..))
@@ -46,11 +47,11 @@ import LS.XPile.LogicalEnglish.Types
     , VarsHC
   )
 import LS.XPile.LogicalEnglish.ValidateL4Input
-      (
-        isHornlike
-      --   L4Rules, ValidHornls, Unvalidated,
-      -- check, refine, loadRawL4AsUnvalid, 
-      )
+  (
+    isHornlike
+  --   L4Rules, ValidHornls, Unvalidated,
+  -- check, refine, loadRawL4AsUnvalid, 
+  )
 import LS.XPile.LogicalEnglish.SimplifyL4 (SimpL4(..), SimL4Error(..), simplifyL4rule)
 import LS.XPile.LogicalEnglish.IdVars (idVarsInHC)
 import LS.XPile.LogicalEnglish.GenNLAs
@@ -158,7 +159,6 @@ xpileSimplifiedL4hcs simpL4HCs =
                                            , leHCs = lehcs 
                                            , commentSym = "%"}
   in doc2str . pretty $ leProgram
-
 
 doc2str :: Doc ann -> String
 doc2str = T.unpack . myrender

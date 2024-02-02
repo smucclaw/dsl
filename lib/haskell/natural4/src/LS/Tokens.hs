@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-|
 This module provides token-level parsers, (though the tokens themselves are defined in BasicTypes).
@@ -129,10 +130,8 @@ pDeontic = (pToken Must  >> pure DMust)
            <|> (pToken May   >> pure DMay)
            <|> (pToken Shant >> pure DShant)
 
-
-
 -- | parse a number.
-pNumber :: Parser Float
+pNumber :: Parser Double
 pNumber = token test Set.empty <?> "number"
   where
     test WithPos {tokenVal = TNumber n} = Just n
@@ -356,7 +355,7 @@ pMTExpr =
   where
     isIntegral pn = do
       x <- pn
-      if (fromIntegral (floor x :: Int) :: Float) == x
+      if (fromIntegral (floor x :: Int) :: Double) == x
         then pure $ floor x
         else fail "not an integer"
 
@@ -381,7 +380,6 @@ pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pMTExpr
 slMultiTerm :: SLParser MultiTerm
 slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pMTExpr
 
-
 -- | sameline: foo foo bar bar
 --   nextline: foo foo
 --             bar bar
@@ -394,7 +392,6 @@ sameOrNextLine pa pb =
   <|> debugName "sameOrNextLine: trying same line" ((,) >*| pa |*| pb |<$ undeepers)
 
 -- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
-
 
 -- | one or more P, monotonically moving to the right, pureed in a list.
 -- if you don't want moving to the right, but want the things all to fall at the same indentation level, just use `some` or `many`.
@@ -416,9 +413,9 @@ manyDeep p =
 
 someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
 someDeepThen p1 p2 = someIndentation $ manyDeepThen p1 p2
+
 someDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
 someDeepThenMaybe p1 p2 = someIndentation $ manyDeepThenMaybe p1 p2
-
 
 -- continuation:
 -- what if you want to match something like
@@ -437,7 +434,7 @@ manyDeepThen p1 p2 = debugName "manyDeepThen" do
 
 manyDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
 manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
-  p <- try (debugName "manyDeepThenMaybe/initial" p1)
+  p <- try $ debugName "manyDeepThenMaybe/initial" p1
   (lhs, rhs) <- donext
   pure (p:lhs, rhs)
   where
@@ -446,8 +443,6 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
     base = debugName "manyDeepThenMaybe/base" do
       rhs <- optional $ try (manyIndentation p2)
       pure ([], rhs)
-
-
 
 {- ABOUT THE SAMELINE COMBINATORS
    We need combinators for compound expressions on the same line.
@@ -836,7 +831,8 @@ upToNUndeepers n = debugName [i|upToNUndeepers(#{n})/undeeper|] do
 
 undeepers :: Int -> Parser ()
 undeepers n
-  | n < 0 = debugName "undeepers" $ fail "undeepers: negative number of undeepers"
+  | n < 0 =
+      debugName "undeepers" $ fail "undeepers: negative number of undeepers"
   | otherwise = debugName "undeepers" do
       debugPrint [i|sameLine/undeepers: reached end of line; now need to clear #{n} UnDeepers|]
       count n $ pToken UnDeeper
@@ -846,7 +842,7 @@ godeeper :: Int -> SLParser ()
 godeeper n = mkSL $ debugName [i|godeeper #{n}|] do
   count n $ pToken GoDeeper
   debugPrint "matched!"
-  pure ((),n)
+  pure ((), n)
 
 manyUndeepers :: SLParser ()
 manyUndeepers = debugNameSL "manyUndeepers" do
@@ -854,10 +850,11 @@ manyUndeepers = debugNameSL "manyUndeepers" do
 
 someUndeepers :: SLParser ()
 someUndeepers = debugNameSL "someUndeepers" do
-  slUnDeeper >> manyUndeepers
+  slUnDeeper
+  manyUndeepers
 
 -- | consume any GoDeepers, then parse -- plain
-($>>) p = (|>>) $ liftSL p
+($>>) = (|>>) . liftSL
 infixl 4 $>>
 
 -- | consume any GoDeepers, then parse -- fancy
@@ -881,20 +878,23 @@ infixl 4 |<|
 p1 |<> p2 = debugPrintSL "|<>" >> p1 |<* ($>>) p2
 infixl 4 |<>
 
-p1 |^| p2 = debugPrintSL "|^|" >> do
+p1 |^| p2 = do
+  debugPrintSL "|^|"
   l <- p1
   _  <- debugName "|^| deeps" $ some slDeeper <|> many slUnDeeper
   l <$> p2
 infixl 4 |^|
 
 -- fancy
-p1 |<* p2 = debugPrint "|<* starting" >> do
+p1 |<* p2 = do
+  debugPrint "|<* starting"
   l <- p1
   r <- debugName "|<*/parent" $ try goleft <|> base
   pure $ l r
   where
     base = debugName "|<*/base" p2
-    goleft = debugPrint "|<*/recurse" >> do
+    goleft = do
+      debugPrint "|<*/recurse"
       uds <- some slUnDeeper
       out <- p2
       debugPrint [i||<*/recurse matched #{length uds} UnDeepers|]
@@ -902,15 +902,15 @@ p1 |<* p2 = debugPrint "|<* starting" >> do
 infixl 4 |<*
 
 -- indent at least 1 tab from current location
-someIndentation :: (Show a) => Parser a -> Parser a
+someIndentation :: Show a => Parser a -> Parser a
 someIndentation p = debugName "someIndentation" $
   myindented $ manyIndentation p
 
 someIndentation' :: Parser a -> Parser a
-someIndentation' p = myindented' $ manyIndentation' p
+someIndentation' = myindented' . manyIndentation'
 
 -- 0 or more tabs indented from current location
-manyIndentation :: (Show a) => Parser a -> Parser a
+manyIndentation :: Show a => Parser a -> Parser a
 manyIndentation p =
   try (debugName "manyIndentation/leaf?" p)
   <|>
@@ -986,11 +986,11 @@ optIndentedTuple p1 p2 = debugName "optIndentedTuple" do
   (,) <$> p1 `optIndented` p2
 
 optIndented :: (Show a, Show b) => Parser (Maybe a -> b) -> Parser a -> Parser b
-infixl 4 `optIndented`
 optIndented p1 p2 = debugName "optIndented" do
   f <- p1
   y <- optional $ someIndentation p2
   pure $ f y
+infixl 4 `optIndented`
 
 -- let's do us a combinator that does the same as `indentedTuple0` but in applicative style
 indentChain :: Parser (a -> b) -> Parser a -> Parser b
@@ -1033,10 +1033,11 @@ pToken c = pTokenMatch (== c) $ pure c
 -- | Parse tokens that are not MyToken
 pTokenish :: HasToken a => a -> Parser a
 pTokenish c = c <$ pTokenMatch (== tok) (pure tok)
-  where tok = tokenOf c
+  where
+    tok = tokenOf c
 
 pTokenAnyDepth :: MyToken -> Parser MyToken
-pTokenAnyDepth c = pTokenMatch (== c) (pure c)
+pTokenAnyDepth c = pTokenMatch (== c) $ pure c
 
 pTokenOneOf :: NonEmpty MyToken -> Parser MyToken
 pTokenOneOf cs = pTokenMatch (`elem` cs) cs
@@ -1047,14 +1048,14 @@ pretendEmpty = liftRawPFun iPretendEmpty
 -- | Like 'try' but allows backtracking on success as well (as long as no later step consumes tokens before the branching).
 iPretendEmpty :: (Stream s, Ord e) => Parsec e s a -> Parsec e s a
 iPretendEmpty pt = MPInternal.ParsecT \s _ _ eok eerr ->
-   let eerr' err _ = eerr err s
-   in MPInternal.unParser pt s eok eerr' eok eerr'
+  let eerr' err _ = eerr err s
+  in MPInternal.unParser pt s eok eerr' eok eerr'
 
 runOnErrors ::
   (forall b. MPInternal.Consumption -> ParseError MyStream Void -> State MyStream Void -> Identity b -> Identity b) ->
   Parser a ->
   Parser a
-runOnErrors f = liftRawPFun (iRunOnErrors f)
+runOnErrors f = liftRawPFun $ iRunOnErrors f
 
 iRunOnErrors ::
   (Stream s, Ord e, Monad m) =>
@@ -1064,4 +1065,4 @@ iRunOnErrors ::
 iRunOnErrors f pt = MPInternal.ParsecT \s cok cerr eok eerr ->
   let cerr' err s' = f MPInternal.Consumed err s' (cerr err s')
       eerr' err s' = f MPInternal.NotConsumed err s' (eerr err s')
-   in MPInternal.unParser pt s cok cerr' eok eerr'
+  in MPInternal.unParser pt s cok cerr' eok eerr'

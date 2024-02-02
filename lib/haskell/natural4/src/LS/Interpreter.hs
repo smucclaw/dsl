@@ -982,20 +982,34 @@ getMarkings l4i =
   where
     markings :: RelationalPredicate -> Maybe (T.Text, AA.Default Bool)
     markings (RPConstraint (MTT ((PCRE.≈ [PCRE.re|^(ha|i)s$|]) -> True) : xs) RPis rhs) =
-      Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
-    markings (RPConstraint xs RPis rhs) =
-      Just (mt2text xs, AA.mkDefault (Left $ rhsval rhs))
+      go xs rhs
+    markings (RPConstraint xs RPis rhs) = go xs rhs
     markings _ = Nothing
+
+    go xs rhs = Just (mt2text xs, AA.mkDefault $ Left $ rhsval rhs)
 
     rhsval [MTB rhs] = Just rhs
     rhsval [MTF rhs] = Just $ rhs /= 0
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(does( not|n't)|hasn't|no(t)?|f(alse)?)$|]) -> True)] =
-      Just False
-    rhsval [MTT ((PCRE.≈ [PCRE.re|^(so|(ye|ha|doe)s|t(rue)?)$|]) -> True)] =
-      Just True
+    rhsval [MTT rhs] = table Map.!? rhs
     -- rhsval [] = Nothing
     -- [TODO] we need to think through a situation where the RHS multiterm has multiple elements in it ... we're a bit brittle here
-    rhsval _ = Nothing
+
+    table :: Map.HashMap T.Text Bool =
+      Map.fromList
+        [ ("does not", False),
+          ("doesn't", False),
+          ("has not", False),
+          ("hasn't", False),
+          ("no", False),
+          ("false", False),
+          ("f", False),
+          ("so", True),
+          ("yes", True),
+          ("has", True),
+          ("does", True),
+          ("true", True),
+          ("t", True)
+        ]
 
 -- | local variables
 -- a list of the typed multiterms which show up inside the GIVEN and GIVETH attributes of a rule.

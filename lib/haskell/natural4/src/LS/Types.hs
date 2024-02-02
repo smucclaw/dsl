@@ -3,6 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
@@ -477,6 +478,11 @@ newtype ClsTab = CT ClassHierarchyMap
   -- the snd part is the recursive HAS containing attributes of the class
   deriving (Show, Ord, Eq, Generic)
 
+
+mkCT :: ClassHierarchyMap -> ClsTab
+mkCT = coerce
+{-# INLINE mkCT #-}
+
 unCT :: ClsTab -> ClassHierarchyMap
 unCT = coerce
 {-# INLINE unCT #-}
@@ -514,19 +520,19 @@ defaultInferrableTypeSig = (Nothing, [])
 
 -- | attributes defined in the type declaration for this class specifically
 thisAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-thisAttributes (CT clstab) subclass = do
+thisAttributes (unCT -> clstab) subclass = do
   ((_mts, _tss), ct) <- Map.lookup subclass clstab
   pure ct
 
 -- | attributes including superclass attributes
 extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-extendedAttributes o@(CT clstab) subclass = do
-  ((_mts, _tss), CT ct) <- Map.lookup subclass clstab
+extendedAttributes o@(unCT -> clstab) subclass = do
+  ((_mts, _tss), unCT -> ct) <- Map.lookup subclass clstab
   let eAttrs = case extendedAttributes o <$> clsParent o subclass of
                  Nothing               -> Map.empty
                  Just Nothing        -> Map.empty
                  Just (Just (CT ea)) -> ea
-  pure $ CT $ ct <> eAttrs
+  pure $ mkCT $ ct <> eAttrs
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
@@ -536,7 +542,7 @@ getSymType (_, xs) = headMay xs
 -- a subclass extends a superclass.
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
-clsParent (CT clstab) subclass = do
+clsParent (unCT -> clstab) subclass = do
   ((mts, tss), _st) <- Map.lookup subclass clstab
   case getUnderlyingType <$> getSymType (mts, tss) of
     Just (Right s1) -> Just s1

@@ -69,7 +69,6 @@ type DataFlowGraph = Gr FlowNode ()
 -- | This is the top-level entry point for this file; we produce a dotfile and rely on other elements of the L4 runtime to produce SVG from the Dot.
 dataFlowAsDot :: Interpreted -> XPileLog String
 dataFlowAsDot l4i = do
-
   -- https://hackage.haskell.org/package/fgl-5.8.1.1/docs/Data-Graph-Inductive-Graph.html#v:mkGraph
   let dfg :: DataFlowGraph
       dfg = mkGraph
@@ -84,7 +83,7 @@ dataFlowAsDot l4i = do
   -- So, we grab one tree of rules at a time from the RuleGraph provided by the interpreter, and dump those;
   -- then we dump the ground term leaves in those rules.
 
-  return "/*  coming soon: this will be a data flow diagram  */"
+  pure "/*  coming soon: this will be a data flow diagram  */"
 
   where
     ruleNodes = Map.fromList ( zip [1..] [ [MTT "pretend rule R1" ] -- 1

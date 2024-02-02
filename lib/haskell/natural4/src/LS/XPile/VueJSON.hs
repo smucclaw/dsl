@@ -228,14 +228,15 @@ groundToChecklist env mt = do
 
 pickOneOf :: [MultiTerm] -> MultiTerm
 pickOneOf mts =
-  MTT "Does any of the following hold?" :
-  [MTT [i|* #{mt2text mt}|] | mt <- mts]
+  MTT "Does any of the following hold?"
+    : [MTT [i|* #{mt2text mt}|] | mt <- mts]
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
-groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word
-                | [_t1] <- T.words (mtexpr2text mt1)
-                , [_t2] <- T.words (mtexpr2text mt2) = True
-groupSingletons _ _ = False -- a) one/both mts not singleton, or b) are singletons but contain >1 word
+groupSingletons mt1 mt2 =
+  all @[] isSingletonWithOnlyOneWord [mt1, mt2]
+  where
+    isSingletonWithOnlyOneWord mtt =
+      all @[] (== 1) [length mtt, length $ foldMap (T.words . mtexpr2text) mtt]
 
 quaero :: [T.Text] -> [T.Text]
 quaero [x] = [T.unwords $ quaero $ T.words x]

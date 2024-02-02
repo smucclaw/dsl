@@ -580,9 +580,7 @@ multiterm2bsr :: Rule -> BoolStructR
 multiterm2bsr = AA.mkLeaf . RPParamText . multiterm2pt . name
 
 pGetTokenPos :: Parser (WithPos ())
-pGetTokenPos = token test Set.empty <?> "some token"
-  where
-    test tok = Just $ void tok
+pGetTokenPos = token (Just . void) Set.empty <?> "some token"
 
 pXLocation :: Parser Depth
 pXLocation = fst pXYLocation

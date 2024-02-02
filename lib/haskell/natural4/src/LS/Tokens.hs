@@ -130,8 +130,6 @@ pDeontic = (pToken Must  >> pure DMust)
            <|> (pToken May   >> pure DMay)
            <|> (pToken Shant >> pure DShant)
 
-
-
 -- | parse a number.
 pNumber :: Parser Double
 pNumber = token test Set.empty <?> "number"
@@ -382,7 +380,6 @@ pMultiTerm = debugName "pMultiTerm calling someDeep choice" $ someDeep pMTExpr
 slMultiTerm :: SLParser MultiTerm
 slMultiTerm = debugNameSL "slMultiTerm" $ someLiftSL pMTExpr
 
-
 -- | sameline: foo foo bar bar
 --   nextline: foo foo
 --             bar bar
@@ -395,7 +392,6 @@ sameOrNextLine pa pb =
   <|> debugName "sameOrNextLine: trying same line" ((,) >*| pa |*| pb |<$ undeepers)
 
 -- [TODO] -- are the undeepers above disruptive? we may want a version of the above which stays in SLParser context the whole way through.
-
 
 -- | one or more P, monotonically moving to the right, pureed in a list.
 -- if you don't want moving to the right, but want the things all to fall at the same indentation level, just use `some` or `many`.
@@ -417,9 +413,9 @@ manyDeep p =
 
 someDeepThen :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],b)
 someDeepThen p1 p2 = someIndentation $ manyDeepThen p1 p2
+
 someDeepThenMaybe :: (Show a, Show b) => Parser a -> Parser b -> Parser ([a],Maybe b)
 someDeepThenMaybe p1 p2 = someIndentation $ manyDeepThenMaybe p1 p2
-
 
 -- continuation:
 -- what if you want to match something like
@@ -447,8 +443,6 @@ manyDeepThenMaybe p1 p2 = debugName "manyDeepThenMaybe" do
     base = debugName "manyDeepThenMaybe/base" do
       rhs <- optional $ try (manyIndentation p2)
       pure ([], rhs)
-
-
 
 {- ABOUT THE SAMELINE COMBINATORS
    We need combinators for compound expressions on the same line.

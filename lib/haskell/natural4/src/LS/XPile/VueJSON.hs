@@ -184,10 +184,9 @@ rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds 
 rp2grounds  rc  globalrules  r (RPnary     _rprel rps) = foldMap (rp2grounds rc  globalrules  r) rps
 
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> RelationalPredicate -> Bool
-ignoreTypicalRP rc globalrules r rp
-  | not $ extendedGrounds rc =
-    not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
-  | otherwise = True
+ignoreTypicalRP rc globalrules r rp =
+  extendedGrounds rc
+    || not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
 
 -- is the "head-like" key of a relationalpredicate found in the list of defaults associated with the rule?
 hasDefaultValue :: Rule -> RelationalPredicate -> Bool

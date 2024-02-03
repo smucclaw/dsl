@@ -34,6 +34,7 @@ import Data.Text.Lazy (Text, toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
 import Data.Text.Lazy.Builder.Int (decimal)
 import Data.Tree (Tree (Node))
+import Flow ((|>))
 import Graphics.Svg
   ( AttrTag
       ( Class_,
@@ -391,8 +392,8 @@ alignV alignment maxHeight (box, el) = (adjustMargins (box & bboxHeight .~ maxHe
 adjustBoxMargins :: VAlignment -> Length -> BBox -> BBox
 adjustBoxMargins alignment alignmentPad bx =
   bx
-    & boxMargins.topMargin    %~ (+ topPadding)
-    & boxMargins.bottomMargin %~ (+ bottomPadding)
+    |> boxMargins.topMargin    %~ (+ topPadding)
+    |> boxMargins.bottomMargin %~ (+ bottomPadding)
   where
     (topPadding, bottomPadding) = columnAlignMargins alignment alignmentPad
 

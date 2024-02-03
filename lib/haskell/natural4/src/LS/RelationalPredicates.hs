@@ -432,9 +432,7 @@ import Text.Megaparsec
   )
 import Text.Parser.Permutation (permute, (<$$>), (<|?>))
 
-
 -- * parse RelationalPredicates
-
 
 pRelationalPredicate :: Parser RelationalPredicate
 pRelationalPredicate = pRelPred
@@ -490,11 +488,13 @@ partitionExistentials c = -- [TODO] can we restructure this to use the actual `p
   , aaFilter (\case { AA.Leaf (RPParamText x) -> not (hasTypeSig x) ; _ -> True  }) (hc2preds c) )
     where
       aaFilter :: (AA.BoolStruct lbl a -> Bool) -> AA.BoolStruct lbl a -> AA.BoolStruct lbl a
-      aaFilter f (AA.Any lbl xs) = AA.mkAny lbl (filter f (aaFilter f <$> xs))
-      aaFilter f (AA.All lbl xs) = AA.mkAll lbl (filter f (aaFilter f <$> xs))
+      aaFilter f (AA.Any lbl xs) = go f AA.mkAny lbl xs
+      aaFilter f (AA.All lbl xs) = go f AA.mkAll lbl xs
       aaFilter f x
         | f x = x
         | otherwise = x -- not super great, should really replace the else with True or False or something?
+
+      go f ctor lbl xs = ctor lbl $ filter f $ aaFilter f <$> xs
 
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> Maybe ParamText
@@ -527,7 +527,6 @@ aaLeavesFilter f (AA.Leaf rp)
     rp2mts (RPConstraint  _mt1 _rpr mt2) = [mt2]
     rp2mts (RPBoolStructR _mt1 _rpr bsr) = aaLeavesFilter f bsr
     rp2mts (RPnary        _rprel rps)    = rp2mt <$> rps
-
 
 -- this is probably going to need cleanup
 addneg :: Maybe BoolStructR -> Maybe BoolStructR -> Maybe BoolStructR
@@ -733,9 +732,13 @@ pHornlike' needDkeyword = debugName [i|pHornlike(needDkeyword=#{needDkeyword})|]
             ]
           )
 
-    givenLimb  = debugName "pHornlike/givenLimb"  $ preambleParamText [Given]
-    givethLimb = debugName "pHornlike/givethLimb" $ preambleParamText [Giveth]
-    uponLimb  = debugName "pHornlike/uponLimb"  $ preambleParamText [Upon]
+    givenLimb  = go Given
+    givethLimb = go Giveth
+    uponLimb  = go Upon
+
+    go givenGivethUpon =
+      debugName [i|pHornLike/#{givenGivethUpon}Limb|] $
+        preambleParamText [givenGivethUpon]
 
     inferRuleName :: RelationalPredicate -> RuleName
     inferRuleName (RPParamText pt)       = pt2multiterm pt

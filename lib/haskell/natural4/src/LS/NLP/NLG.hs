@@ -947,21 +947,23 @@ expandRuleForNLGE _ _ rule = do
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
-expandRuleForNLG l4i depth rule = case rule of
-  Regulative{} -> rule {
-    who = expandBSR l4i depth <$> who rule
-  , cond = expandBSR l4i depth <$> cond rule
-  , upon = expandPT l4i depth <$> upon rule
-  , hence = expandRuleForNLG l4i depth <$> hence rule
-  , lest = expandRuleForNLG l4i depth <$> lest rule
-  }
-  Hornlike {} -> rule {
-    clauses = expandClauses l4i depth $ clauses rule
-  }
-  Constitutive {} -> rule {
-    cond = expandBSR l4i depth <$> cond rule
-  }
-  _ -> rule
+expandRuleForNLG l4i depth = fst . xpLog . expandRuleForNLGE l4i depth
+
+-- expandRuleForNLG l4i depth rule = case rule of
+--   Regulative{} -> rule {
+--     who = expandBSR l4i depth <$> who rule
+--   , cond = expandBSR l4i depth <$> cond rule
+--   , upon = expandPT l4i depth <$> upon rule
+--   , hence = expandRuleForNLG l4i depth <$> hence rule
+--   , lest = expandRuleForNLG l4i depth <$> lest rule
+--   }
+--   Hornlike {} -> rule {
+--     clauses = expandClauses l4i depth $ clauses rule
+--   }
+--   Constitutive {} -> rule {
+--     cond = expandBSR l4i depth <$> cond rule
+--   }
+--   _ -> rule
 
 -- I suspect that original intention was to not include expansions in UPON?
 -- But in any case, here is a function that is applied in expandRuleForNLG to expand the UPON field.

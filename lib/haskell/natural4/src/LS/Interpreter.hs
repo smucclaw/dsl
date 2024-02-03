@@ -609,7 +609,7 @@ relPredRefsAll rs ridmap = do
                      ]
   mutterdhsf 5 "relPredRefs: headElements"  pShowNoColorS headElements
 
-  mconcat <$> traverse (relPredRefs rs ridmap headElements) rs
+  mconcat <$> for rs (relPredRefs rs ridmap headElements)
 
 -- | in a particular rule, walk all the relational predicates available, and show outdegree links
 -- that correspond to known rule heads from the entire ruleset.
@@ -619,11 +619,14 @@ relPredRefsAll rs ridmap = do
 -- so we show that rule R1 relies on, or refers to, rule R2: R1 -> R2.
 -- there is some overlap here with the idea of scopetabs in the symbol table, but let's just do it
 -- the brute way first and then refactor later once we have a better idea if this approach even works.
-relPredRefs :: RuleSet -> RuleIDMap -> Map.HashMap MultiTerm Rule
-            -> Rule
-            -> XPileLog [LEdge RuleGraphEdgeLabel]
+relPredRefs ::
+  RuleSet ->
+  RuleIDMap ->
+  Map.HashMap MultiTerm Rule ->
+  Rule ->
+  XPileLog [LEdge RuleGraphEdgeLabel]
 relPredRefs rs ridmap headElements r = do
-      -- given a rule, see which terms it relies on
+  -- given a rule, see which terms it relies on
   let myGetBSR = getBSR r
       myLeaves = foldMap AA.extractLeaves myGetBSR
       bodyElements = foldMap rp2bodytexts myLeaves
@@ -631,23 +634,25 @@ relPredRefs rs ridmap headElements r = do
   mutterd 4 $ T.unpack $ mt2text $ ruleLabelName r
 
   mutterdhsf 5 "relPredRefs: original rule" pShowNoColorS r
-  mutterdhsf 5 "relPredRefs: getBSR"        pShowNoColorS myGetBSR
+  mutterdhsf 5 "relPredRefs: getBSR" pShowNoColorS myGetBSR
   mutterdhsf 5 "relPredRefs: extractLeaves" pShowNoColorS myLeaves
-  mutterdhsf 5 "relPredRefs: bodyElements"  pShowNoColorS bodyElements
+  mutterdhsf 5 "relPredRefs: bodyElements" pShowNoColorS bodyElements
 
   -- [BUG] at some point we lose the moon
   mutterd 5 "relPredReffs: will exclude various things not found in headElements"
   -- given a rule R, for each term relied on by rule R, identify all the subsidiary rules which define those terms.
-  toreturn <- sequenceA
-    [ (rid, targetRuleId', ()) <$
-        mutterd 6 [i|relPredRefs list comp: returning #{rid}, #{targetRuleId'}|]
-    | bElem <- bodyElements,
-      let targetRule = Map.lookup bElem headElements,
-      targetRule' <- maybeToList targetRule,
-      let targetRuleId = Map.lookup targetRule' ridmap,
-      let rid = ridmap Map.! r,
-      targetRuleId' <- maybeToList targetRuleId
-    ]
+  let toreturn :: [(XPileLog (), LEdge ())] =
+        flip mapMaybe bodyElements \bElem -> do
+          targetRule <- headElements Map.!? bElem
+          targetRuleId <- ridmap Map.!? targetRule
+          rid <- ridmap Map.!? r
+
+          pure
+            ( mutterd 6 [i|relPredRefs list comp: returning #{rid}, #{targetRuleId}|],
+              (rid, targetRuleId, ())
+            )
+
+  toreturn <- for toreturn \(action, edge) -> action >> pure edge
 
   mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
   pure toreturn
@@ -661,20 +666,16 @@ relPredRefs rs ridmap headElements r = do
 -- Examine the rulegraph for rules which have no indegrees, as far as decisioning goes.
 
 decisionRoots :: RuleGraph -> XPileLog [Rule]
-decisionRoots rg =
-  let rg' = dereflexed rg
-  in pure $
-    catMaybes [ lab rg' r
-              | r <- nodes rg'
-              ,  indeg rg' r == 0
-              -- , outdeg rg' r  > 0
-              ]
+decisionRoots (dereflexed -> rg) =
+  pure $ flip mapMaybe (nodes rg) \r -> do
+    guard $ indeg rg r == 0
+    -- guard $ outdeg rg r > 0
+    lab rg r
 
 -- remove reflexive edges that go from node n to node n
 dereflexed :: Gr a b -> Gr a b
 dereflexed gr =
-  foldr (\n g -> delEdge (n,n) g) gr $ nodes gr
-
+  foldr (\n -> delEdge (n,n)) gr $ nodes gr
 
 -- | extract a data flow graph
 -- suitable for drawing as SVG

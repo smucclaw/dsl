@@ -215,7 +215,7 @@ renderToken TypeSeparator = "::"
 renderToken (Other txt) = show txt
 renderToken (RuleMarker 0 txt) = [i|§0#{txt}|]
 renderToken (RuleMarker n "H") = [i|H#{n}|]
-renderToken (RuleMarker n txt) = mconcat $ replicate n $ Text.unpack txt
+renderToken (RuleMarker n (Text.unpack -> txt)) = foldMap (replicate n) txt
 
 renderToken Semicolon = ";;"
 

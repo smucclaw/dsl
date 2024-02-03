@@ -149,18 +149,23 @@ multiChecklist env rc rs = do
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
-  let whoGrounds  = (MTT (bsp2text subj) :) <$> bsr2grounds rc globalrules r who
-      condGrounds =                             bsr2grounds rc globalrules r cond
-  in mconcat [whoGrounds, condGrounds]
+  mconcat [whoGrounds, condGrounds]
+  where
+    whoGrounds  = (MTT (bsp2text subj) :) <$> go who
+    condGrounds =                             go cond
+    go = bsr2grounds rc globalrules r
 
 rulegrounds rc globalrules r@Hornlike{..} =
-  let givenGrounds  = pt2grounds rc globalrules r <$> maybeToList given
-      uponGrounds   = pt2grounds rc globalrules r <$> maybeToList upon
-      clauseGrounds = [ rp2grounds  rc globalrules r (hHead clause) ++
-                        bsr2grounds rc globalrules r (hBody clause)
-                      | clause <- clauses ]
+  foldMap @[] mconcat [givenGrounds, uponGrounds, clauseGrounds]
+  where
+    givenGrounds  = goGivenUpon given
+    uponGrounds   = goGivenUpon upon
+    goGivenUpon = (pt2grounds rc globalrules r <$>) . maybeToList
 
-  in mconcat $ mconcat [givenGrounds, uponGrounds, clauseGrounds]
+    clauseGrounds = [ goClause rp2grounds hHead clause <>
+                      goClause bsr2grounds hBody clause
+                    | clause <- clauses ]
+    goClause f hHeadBody = f rc globalrules r . hHeadBody
 
 rulegrounds _rc _globalrules _r = []
 

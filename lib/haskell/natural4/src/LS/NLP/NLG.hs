@@ -41,6 +41,7 @@ import Data.Set qualified as Set
 import Data.String.Interpolate as I (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Read (decimal)
+import Data.Traversable (for)
 import Debug.Trace (trace)
 import Flow ((|>))
 import LS.Interpreter
@@ -169,6 +170,7 @@ import LS.Types
     rp2mt,
     rp2text,
   )
+import LS.Utils ((|$>))
 import LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
@@ -205,7 +207,6 @@ import Paths_natural4 (getDataFileName)
 import Prettyprinter.Interpolate (__di)
 import System.Environment (lookupEnv)
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import LS.Utils ((|$>))
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -495,20 +496,21 @@ ruleQnTrees env alias rule = do
       mutterdhsf 4 "Regulative/qUponTrees" show qUponTrees
 
       pure $ catMaybes [qWhoTrees, qCondTrees, qUponTrees]
+
     Hornlike {clauses} -> do
       let bodyTrees = fmap (mkConstraintText env GqPREPOST GqCONSTR) . hBody <$> clauses
       mutterdhsf 4 "Hornlike/bodyTrees" show bodyTrees
-      return $ catMaybes bodyTrees
+      pure $ catMaybes bodyTrees
 
     Constitutive {cond} -> do
       let qCondTrees = mkCondText env GqPREPOST GqCOND <$> cond
       mutterdhsf 4 "Constitutive/qCOndTrees" show qCondTrees
       pure $ maybeToList qCondTrees
     -- DefNameAlias {} -> return []
-    _ -> return []
+
+    _ -> pure []
 
 -- | convert a BoolStructGText into a BoolStructT for `ruleQuestions`
-
 
 ----------------------------------------------------------------------
 
@@ -526,17 +528,20 @@ mkGFtext env alias subj bsr = case (whoParses, condParses) of
     whoParses = parseWhoNoRecover env bsr
     condParses = parseCondNoRecover env bsr
 
+parseTxtToGFNoRecover :: Gf a => NLGEnv -> String -> Text.Text -> [a]
+parseTxtToGFNoRecover env cat = (fg <$>) . parseAnyNoRecover cat env
+
 parseWhoNoRecover :: NLGEnv -> BoolStructR -> [BoolStructWho]
-parseWhoNoRecover env = sequenceA . mapBSLabel (parsePrePost env) (parseVP env)
-  where
-    parseVP :: NLGEnv -> RelationalPredicate -> [GWho]
-    parseVP env rp = fg <$> parseAnyNoRecover "Who" env (rp2text rp)
+parseWhoNoRecover = parseWhoCondNoRecover "Who" 
 
 parseCondNoRecover :: NLGEnv -> BoolStructR -> [BoolStructCond]
-parseCondNoRecover env = sequence . mapBSLabel (parsePrePost env) (parseS env)
+parseCondNoRecover= parseWhoCondNoRecover "Cond"
+
+parseWhoCondNoRecover :: Gf a => String -> NLGEnv -> BoolStructR -> [AA.BoolStruct (Maybe (AA.Label GPrePost)) a]
+parseWhoCondNoRecover whoCond env =
+  sequenceA . mapBSLabel (parsePrePost env) parseS
   where
-    parseS :: NLGEnv -> RelationalPredicate -> [GCond]
-    parseS env rp = fg <$> parseAnyNoRecover "Cond" env (rp2text rp)
+    parseS = parseTxtToGFNoRecover env whoCond . rp2text
 
 ----------------------------------------------------------------------
 
@@ -619,27 +624,18 @@ parseDate = \case
   -- "demand" :| [ "an explanation for your inaction" ] -> demand : V2, NP complement, call ComplV2
   -- "assess" :| [ "if it is a Notifiable Data Breach" ] -> assess : VS, S complement, call ComplS2
 parseAction :: NLGEnv -> BoolStructP -> GAction
-parseAction env bsp = fg tree
-  where
-    txt = bsp2text bsp
-    tree :| _ = parseAny "Action" env txt
+parseAction env = parseTxtToGF "Action" env . bsp2text
 
 parseSubj :: NLGEnv -> BoolStructP -> GNP
-parseSubj env bsp = fg tree
-  where
-    txt = bsp2text bsp
-    tree :| _ = parseAny "NP" env txt
+parseSubj env = parseTxtToGF "NP" env . bsp2text 
 
 parseWho :: NLGEnv -> RelationalPredicate -> GWho
-parseWho env rp = fg tree
-  where
-    txt = rp2text rp
-    tree :| _ = parseAny "Who" env txt
+parseWho env = parseTxtToGF "Who" env . rp2text
 
 parseCond :: NLGEnv -> RelationalPredicate -> GCond
 parseCond env (RPConstraint c (RPTC t) d) = GRPConstraint cond tc date
   where
-    cond = parseCond env (RPMT c)
+    cond = parseCond env $ RPMT c
     tc = parseTComparison t
     date = parseDate d
 
@@ -860,28 +856,26 @@ splitDigits =
 -- Expand a set of rules
 
 expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
-expandRulesForNLGE env rules = do
-  let depth = 4
+expandRulesForNLGE = expandRulesForNLGE' 4
+
+expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
+expandRulesForNLG env = fst . xpLog . expandRulesForNLGE' 0 env
+
+expandRulesForNLGE' :: Int -> NLGEnv -> [Rule] -> XPileLog [Rule]
+expandRulesForNLGE' depth env rules = do
   mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
-  toreturn <- traverse (expandRuleForNLGE l4i $ depth+1) uniqrs
+  toreturn <- for uniqrs $ expandRuleForNLGE l4i $ depth + 1
   mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
   pure toreturn
   where
     l4i = interpreted env
     usedrules = getExpandedRuleNames l4i `foldMap` rules
-    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
-
-expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
-expandRulesForNLG env rules = expandRuleForNLG l4i 1 <$> uniqrs
-  where
-    l4i = interpreted env
-    usedrules = getExpandedRuleNames l4i `foldMap` rules
-    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules ]
+    uniqrs = [r | r <- rules, ruleName r `notElem` usedrules]
 
 getExpandedRuleNames :: Interpreted -> Rule -> [RuleName]
-getExpandedRuleNames l4i rule = case rule of
-  Regulative {} -> mconcat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
-  Hornlike {} -> getNamesHC l4i `foldMap` clauses rule
+getExpandedRuleNames l4i = \case
+  Regulative {who} -> go getNamesBSR `foldMap` who
+  Hornlike {clauses} -> getNamesHC l4i `foldMap` clauses
   _ -> []
   where
     getNamesBSR :: Interpreted -> Int -> BoolStructR -> [RuleName]
@@ -904,8 +898,8 @@ getExpandedRuleNames l4i rule = case rule of
         headNames = go getNamesRP $ hHead clause
         bodyNames = clause |> hBody |> maybeToList |> foldMap (go getNamesBSR)
 
-        go :: (Interpreted -> Int -> a -> [RuleName]) -> a -> [RuleName]
-        go get = get l4i 1
+    go :: (Interpreted -> Int -> a -> [RuleName]) -> a -> [RuleName]
+    go get = get l4i 1
 
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
 expandRuleForNLGE l4i depth rule@Regulative{who, cond, upon, hence, lest} = do
@@ -948,22 +942,6 @@ expandRuleForNLGE _ _ rule = do
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
 expandRuleForNLG l4i depth = fst . xpLog . expandRuleForNLGE l4i depth
-
--- expandRuleForNLG l4i depth rule = case rule of
---   Regulative{} -> rule {
---     who = expandBSR l4i depth <$> who rule
---   , cond = expandBSR l4i depth <$> cond rule
---   , upon = expandPT l4i depth <$> upon rule
---   , hence = expandRuleForNLG l4i depth <$> hence rule
---   , lest = expandRuleForNLG l4i depth <$> lest rule
---   }
---   Hornlike {} -> rule {
---     clauses = expandClauses l4i depth $ clauses rule
---   }
---   Constitutive {} -> rule {
---     cond = expandBSR l4i depth <$> cond rule
---   }
---   _ -> rule
 
 -- I suspect that original intention was to not include expansions in UPON?
 -- But in any case, here is a function that is applied in expandRuleForNLG to expand the UPON field.

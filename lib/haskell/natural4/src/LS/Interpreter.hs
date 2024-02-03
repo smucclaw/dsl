@@ -67,6 +67,7 @@ import Control.Monad (guard, join)
 import Data.Bifunctor (first)
 import Data.Coerce (coerce)
 import Data.Either (fromRight, partitionEithers)
+import Data.Foldable (traverse_)
 import Data.Graph.Inductive
   ( Gr,
     Graph (labNodes, mkGraph),
@@ -90,7 +91,7 @@ import Data.Maybe
     mapMaybe,
     maybeToList,
   )
-import Data.String.Interpolate (i)
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
@@ -883,7 +884,6 @@ expandBSR' l4i depth = \case
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
 expandBody _l4i = id
 
-
 -- | used by the Petri xpiler.
 expandRulesByLabel :: [Rule] -> T.Text -> [Rule]
 expandRulesByLabel rules txt =
@@ -921,7 +921,6 @@ expandRule rules r@Hornlike{..} =
      -- trace ("expandRule: about to return " ++ show (ruleName <$> toreturn))
      toreturn
 expandRule _ _ = []
-
 
 -- | What are the leaf nodes -- "items" in AnyAll parlance -- that
 -- form the basis for the input widgets, or questions, in the end-user
@@ -1145,14 +1144,17 @@ attrsAsMethods rs = do
     go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
     go hc@HC {..} =
       case hHead of
-        (RPnary RPis [RPMT headLHS, headRHS]) ->
+        RPnary RPis [RPMT headLHS, headRHS] ->
           xpReturn (headLHS, Just headRHS, hBody)
-        (RPnary RPis (RPMT headLHS : headRHS)) -> do
+
+        RPnary RPis (RPMT headLHS : headRHS)-> do
           mutterd 3 [i|unexpected RHS in RPnary RPis: #{hHead}|]
           xpReturn (headLHS, listToMaybe headRHS, hBody)
-        (RPConstraint mt1 RPis mt2) -> do
+
+        RPConstraint mt1 RPis mt2 -> do
           mutterd 3 [i|converting RPConstraint in hHead: #{hHead}|]
           xpReturn (mt1, Just (RPMT mt2), hBody)
+
         _ -> do
           mutterd 3 "attrsAsMethods: encountered unexpected form of RelationalPredicate"
           mutter $ show $ srchs hHead
@@ -1165,14 +1167,18 @@ toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
 toObjectPath [] = do
   mutter "error: toObjectPath given an empty list!"
   xpReturn ([], "errorEntityname")
+
 toObjectPath mt = do
-  mutterd 4 [i|toObjectPath input = #{mt}|]
-  mutterd 4 [i|DL.init mt = #{DL.init mt}|]
-  mutterd 4 [i|mt2text = #{mt2text $ DL.init mt}|]
-  mutterd 4 [i|T.replace = #{T.replace "'s" "'s" $ mt2text $ DL.init mt}|]
-  mutterd 4 [i|T.splitOn = #{T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
-  mutterd 4 [i|T.strip = #{T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
-  mutterd 4 [i|DL.filter = #{DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}|]
+  traverse_ (mutterd 4) $ lines
+    [__i|
+      toObjectPath input = #{mt}
+      DL.init mt = #{DL.init mt}
+      mt2text = #{mt2text $ DL.init mt}
+      T.replace = #{T.replace "'s" "'s" $ mt2text $ DL.init mt}
+      T.splitOn = #{T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}
+      T.strip = #{T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}
+      DL.filter = #{DL.filter (not . T.null) $ T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)}
+    |]
   xpReturn (DL.filter (not . T.null) $
             T.strip <$> T.splitOn "'s" (T.replace "'s" "'s" $ mt2text $ DL.init mt)
            , mt2text [DL.last mt])
@@ -1187,8 +1193,8 @@ toObjectStr :: MultiTerm -> XPileLogE EntityName
 toObjectStr mt = do
   objPath <- toObjectPath mt
   case objPath of
-    Right (oP,objName) -> xpReturn $ T.intercalate "." $ oP <> [objName]
-    Left err           -> xpError err
+    Right (oP, objName) -> xpReturn $ T.intercalate "." $ oP <> [objName]
+    Left err            -> xpError err
 
 -- | is a particular attribute typed as an enum?
 --

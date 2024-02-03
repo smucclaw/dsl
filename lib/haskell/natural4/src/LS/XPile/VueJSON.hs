@@ -17,14 +17,7 @@ module LS.XPile.VueJSON
   )
 where
 
-import AnyAll.BoolStruct
-  ( BoolStruct (All, Any, Leaf, Not),
-    BoolStructLT,
-    mkAll,
-    mkAny,
-    mkLeaf,
-    mkNot,
-  )
+import AnyAll.BoolStruct qualified as AABS
 import AnyAll.Types (Label (Pre, PrePost))
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 
@@ -264,7 +257,7 @@ toVueRule r@(Hornlike {clauses=[HC {hBody=Just t}]}) = do
 
 toVueRule r@(Regulative {who=Just whoRP, cond=Just condRP}) = do
   mutter "branch 2: this goes to stderr and is a more principled alternative to Debug.Trace"
-  xpReturn $ All Nothing [whoRP, condRP]
+  xpReturn $ AABS.All Nothing [whoRP, condRP]
   -- xpError ["handling branch2, whoRP && condRP"]
 
 toVueRule r@(Regulative {who=Just whoRP}) = do
@@ -283,17 +276,12 @@ toVueRule _ = do
 
 -- define custom types here for things we care about in purescript
 
-itemRPToItemJSON :: BoolStructR -> BoolStructLT
-itemRPToItemJSON (Leaf b)                            = mkLeaf (rp2text b)
-itemRPToItemJSON (All Nothing items)                 = mkAll (Pre "all of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (All (Just pre@(Pre _)) items)      = AnyAll.BoolStruct.All pre (map itemRPToItemJSON items)
-itemRPToItemJSON (All (Just pp@(PrePost _ _)) items) = AnyAll.BoolStruct.All pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Any Nothing items)                 = mkAny (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (Any (Just pre@(Pre _)) items)      = mkAny pre (map itemRPToItemJSON items)
-itemRPToItemJSON (Any (Just pp@(PrePost _ _)) items) = mkAny pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Not item)                          = mkNot (itemRPToItemJSON item)
+itemRPToItemJSON :: BoolStructR -> AABS.BoolStructLT
+itemRPToItemJSON =
+  AABS.alwaysLabeled' "any of the following" "all of the following"
+    >>> fmap rp2text
 
-type RuleJSON = Map.HashMap String BoolStructLT
+type RuleJSON = Map.HashMap String AABS.BoolStructLT
 
 rulesToRuleJSON :: [Rule] -> RuleJSON
 rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
@@ -314,4 +302,4 @@ ruleToRuleJSON RuleGroup {}    = Map.empty
 ruleToRuleJSON RegFulfilled {} = Map.empty
 ruleToRuleJSON RegBreach {}    = Map.empty
 ruleToRuleJSON NotARule {}     = Map.empty
-ruleToRuleJSON x               = [(T.unpack $ mt2text $ ruleName x, mkLeaf "unimplemented")]
+ruleToRuleJSON x               = [(T.unpack $ mt2text $ ruleName x, AABS.mkLeaf "unimplemented")]

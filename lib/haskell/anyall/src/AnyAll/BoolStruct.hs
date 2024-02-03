@@ -11,6 +11,7 @@ module AnyAll.BoolStruct
     OptionallyLabeledBoolStruct,
     StdinSchema (..),
     addJust,
+    alwaysLabeled',
     alwaysLabeled,
     boolStructChildren,
     extractLeaves,
@@ -113,10 +114,17 @@ addJust = \case
 -- the Purescript types require a `Label T.Text`, so we convert a `Label (Maybe T.Text)` accordingly.
 
 alwaysLabeled :: OptionallyLabeledBoolStruct a -> BoolStruct (Label T.Text) a
-alwaysLabeled = \case
-  Any maybeLbl xs -> go Any "any of:" maybeLbl xs
-  All maybeLbl xs -> go All "all of:" maybeLbl xs 
-  Not x -> Not $ alwaysLabeled x
+alwaysLabeled = alwaysLabeled' "any of:" "all of:"
+
+alwaysLabeled' ::
+  T.Text ->
+  T.Text ->
+  OptionallyLabeledBoolStruct a ->
+  BoolStruct (Label T.Text) a
+alwaysLabeled' anyLabel allLabel = \case
+  Any maybeLbl xs -> go Any anyLabel maybeLbl xs
+  All maybeLbl xs -> go All allLabel maybeLbl xs 
+  Not x -> Not $ alwaysLabeled' anyLabel allLabel x
   Leaf x -> Leaf x
   where
     go ctor defaultLbl maybeLbl xs =

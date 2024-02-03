@@ -252,7 +252,7 @@ instance FromJSON (StdinSchema T.Text) where
 
     pure $ StdinSchema
       (case marking of
-         Left err -> trace ("AnyAll/BoolStruct ERROR parsing marking: " ++ err) $
+         Left err -> trace [i|AnyAll/BoolStruct ERROR parsing marking: #{err}|] $
                      Marking mempty
          Right m  -> Marking m)
       (case aotree of

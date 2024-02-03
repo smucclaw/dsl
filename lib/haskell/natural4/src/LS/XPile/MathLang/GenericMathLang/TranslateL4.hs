@@ -379,8 +379,8 @@ mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
     convertL4Types :: [(T.Text, Maybe L4.EntityType)] -> [(Var, Maybe L4EntType)]
     convertL4Types al =
       al
-        & each % _1 %~ mkVar
-        & each % _2 %~ fmap mkEntType
+        |> each % _1 %~ mkVar
+        |> each % _2 %~ fmap mkEntType
 
 mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
 mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList

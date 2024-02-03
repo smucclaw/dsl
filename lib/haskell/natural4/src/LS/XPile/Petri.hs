@@ -6,8 +6,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
-{-| transpiler to Petri net visualizer -}
-
+-- | transpiler to Petri net visualizer
 module LS.XPile.Petri (toPetri) where
 
 -- import           System.IO.Unsafe (unsafePerformIO)
@@ -124,7 +123,13 @@ import LS
   )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-    ( mutterd, xpLog, xpReturn, XPileLog, XPileLogE )
+  ( XPileLog,
+    XPileLogE,
+    mutterd,
+    runLog,
+    xpLog,
+    xpReturn,
+  )
 
 --------------------------------------------------------------------------------
 -- fgl
@@ -659,10 +664,6 @@ runGM gr (getGM -> m) = cg
 getGraph :: GraphMonad PetriD
 getGraph = mkGM $ gets currentGraph
 
--- | discards the stderr log
-runLog :: XPileLog a -> a
-runLog = fst . xpLog
-
 -- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLog (GraphMonad (Maybe Node))
 r2fgl _rs _defRL RegFulfilled   = pure $ pure Nothing
@@ -677,13 +678,13 @@ r2fgl _rs _defRL (RuleAlias rn) = pure do
   let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode, OrigRL ntxt]
   maybe (fmap Just . newNode $
-         mkPlaceA [IsFirstNode, FromRuleAlias, OrigRL ntxt] ntxt ) (pure . Just) already
+         mkPlaceA [IsFirstNode, FromRuleAlias, OrigRL ntxt] ntxt) (pure . Just) already
 
 r2fgl rs defRL Regulative{..} = pure do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel
-        return [IsFirstNode,OrigRL (rl2text rl), IsParty]
+        pure [IsFirstNode, OrigRL (rl2text rl), IsParty]
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
   -- mutterd 2 $ "Petri/r2fgl: rkeyword = " <> show rkeyword

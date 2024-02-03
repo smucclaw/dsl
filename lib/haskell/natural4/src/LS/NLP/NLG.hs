@@ -179,6 +179,7 @@ import LS.XPile.Logging
     mutterdhsf,
     mutters,
     pShowNoColorS,
+    runLog,
     xpError,
     xpLog,
     xpReturn,
@@ -859,7 +860,7 @@ expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
 expandRulesForNLGE = expandRulesForNLGE' 4
 
 expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
-expandRulesForNLG env = fst . xpLog . expandRulesForNLGE' 0 env
+expandRulesForNLG env = runLog . expandRulesForNLGE' 0 env
 
 expandRulesForNLGE' :: Int -> NLGEnv -> [Rule] -> XPileLog [Rule]
 expandRulesForNLGE' depth env rules = do
@@ -941,7 +942,7 @@ expandRuleForNLGE _ _ rule = do
 -- This is used for creating questions from the rule, so we only expand
 -- the fields that are used in ruleQuestions
 expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
-expandRuleForNLG l4i depth = fst . xpLog . expandRuleForNLGE l4i depth
+expandRuleForNLG l4i depth = runLog . expandRuleForNLGE l4i depth
 
 -- I suspect that original intention was to not include expansions in UPON?
 -- But in any case, here is a function that is applied in expandRuleForNLG to expand the UPON field.

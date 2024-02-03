@@ -87,6 +87,7 @@ module LS.XPile.Logging
     fmapTE,
     fromxpLogE,
     pShowNoColorS,
+    runLog
   )
 where
 
@@ -204,6 +205,10 @@ mutterdhsf d s f hs = do
 
 xpError :: Monad m => XPileLogW -> XPileLogTE m a
 xpError = xpLeft
+
+-- | discards the stderr log
+runLog :: XPileLog a -> a
+runLog = fst . xpLog
 
 -- | xpLeft is the underlying mechanism, private to this module, so
 -- can be swapped out if one day we change the underlying.

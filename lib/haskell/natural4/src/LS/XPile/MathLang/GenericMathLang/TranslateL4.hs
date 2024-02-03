@@ -613,7 +613,7 @@ textifyMTEs = T.intercalate " " . fmap mtexpr2text
 
 mteToLitExp :: MTExpr -> BaseExp
 mteToLitExp = \case
-  MTT txt -> ELit $  EString $ txt
+  MTT txt -> ELit $ EString txt
   MTB True -> ELit EBoolTrue
   MTB False -> ELit EBoolFalse
   MTI integer -> ELit $ EInteger integer -- TODO: Can always change this if we want just one type for numbers

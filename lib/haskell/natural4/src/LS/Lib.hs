@@ -443,11 +443,9 @@ indentedDummySing :: ByteString
 indentedDummySing =
   ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,AND,runs,,\n,AND,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,>,sing,,\n"
 
-
 --
 -- the desired output has type Rule
 --
-
 
 --
 -- we begin by stripping comments and extracting the stanzas. Cassava gives us Vector Vector Text.
@@ -456,7 +454,6 @@ indentedDummySing =
 asBoxes :: RawStanza -> String
 asBoxes _rs =
   render $ nullBox Box.<> nullBox Box.<> nullBox Box.<> Box.char 'a' Box.<> Box.char 'b' Box.<> Box.char 'c'
-
 
 asCSV :: ByteString -> Either String RawStanza
 asCSV s =
@@ -563,11 +560,7 @@ extractLines rs (y0, yLast) = V.slice y0 (yLast - y0 + 1) rs
 vvlookup :: RawStanza -> (Int, Int) -> Maybe Text.Text
 vvlookup rs (x,y) = rs !? y >>= (!? x)
 
-
 -- gaze Down 1 (== "UNLESS") >> gaze rs Right 1
-
-
-
 
 
 -- a multistanza is multiple stanzas separated by pilcrow symbols
@@ -701,7 +694,6 @@ pRule = debugName "pRule" do
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
 
   pure foundRule { srcref = Just srcref }
-
 
 -- TypeDecl
 pTypeDeclaration :: Parser Rule
@@ -916,12 +908,12 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
 --    AND  the potato is not green
 
 stackGiven :: Maybe ParamText -> Rule -> Rule
-stackGiven gvn = \case
-  r@Regulative {given} -> go r given
-  r@Hornlike {given} -> go r given
-  r@TypeDecl {given} -> go r given
-  r@Constitutive {given} -> go r given
-  r -> r
+stackGiven gvn r = case r of
+  Regulative {given} -> go r given
+  Hornlike {given} -> go r given
+  TypeDecl {given} -> go r given
+  Constitutive {given} -> go r given
+  _ -> r
   where
     go r given = r {given = gvn <> given}
 

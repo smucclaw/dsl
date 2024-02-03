@@ -14,7 +14,7 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 -- TODO: Add export list
 
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig) 
+import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 -- TODO: Haven't actually finished setting up logging infra, unfortunately. 
 -- But it's also not really necessary for working on the transpiler
 
@@ -52,13 +52,16 @@ import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
 --     , tolerate
 --     )
 -- import Data.HashSet qualified as HS
+import Control.Arrow ((>>>))
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
-import Optics
+import Flow ((|>))
+import Optics hiding ((|>))
 import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
 import Data.Generics.Sum.Constructors
+import Data.List.NonEmpty qualified as NE
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 import Data.String.Interpolate (__i)
@@ -68,6 +71,7 @@ import Data.Text qualified as T
 import Data.Foldable qualified as F (toList, foldrM)
 
 import LS.XPile.MathLang.UtilsLCReplDev
+import LS.Utils ((|$>))
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -338,11 +342,11 @@ simplifyL4Hlike rule =
   case rule.srcref of
     Just srcref -> do
       baseHL <- extractBaseHL rule
-      return $ MkSimpleHL { shcSrcRef = srcref
-                          , shcGiven = maybe HM.empty mkVarEntMap rule.given
-                          , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
-                          , baseHL = baseHL
-                          }
+      pure MkSimpleHL { shcSrcRef = srcref
+                      , shcGiven = maybe HM.empty mkVarEntMap rule.given
+                      , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
+                      , baseHL = baseHL
+                      }
     Nothing -> throwParserProblemWithMsg rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
 given :: Maybe ParamText = Maybe (NonEmpty TypedMulti) 
@@ -353,16 +357,17 @@ given :: Maybe ParamText = Maybe (NonEmpty TypedMulti)
 l4HcToAtomicHC :: L4.HornClause2 -> AtomicHC
 l4HcToAtomicHC hc =
   case hc.hBody of
-    Just hbody -> HeadAndBody $ MkHnBHC { hbHead = hc.hHead, hbBody = hbody }
+    Just hbody -> HeadAndBody MkHnBHC {hbHead = hc.hHead, hbBody = hbody}
     Nothing -> mkHeadOnlyAtomicHC hc.hHead
 
 extractBaseHL :: L4.Rule -> ToLC BaseHL
 extractBaseHL rule =
   case rule.clauses of
     [] -> throwParserProblemWithMsg rule "Parser should not return L4 Hornlikes with no clauses"
-    [hc] -> pure $ OneClause . l4HcToAtomicHC $ hc
-    multipleHCs -> pure $ MultiClause . mkMultiClauseHL $ fmap l4HcToAtomicHC multipleHCs
-
+    [hc] -> pure $ OneClause $ l4HcToAtomicHC hc
+    hc : hcs ->
+      (hc NE.:| hcs)
+        |$> l4HcToAtomicHC |> mkMultiClauseHL |> MultiClause |> pure
 
 --- Utils for dealing with 'Maybe ParamText' -------------------------------------
 mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]

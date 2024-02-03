@@ -214,7 +214,7 @@ data SimpleHlike a b =
 data BaseHL = OneClause AtomicHC | MultiClause MultiClauseHL
   deriving stock (Eq, Show, Generic)
 
-data HnBodHC = 
+data HnBodHC =
   MkHnBHC { hbHead :: RelationalPredicate
           , hbBody :: BoolStructR
           }
@@ -232,8 +232,8 @@ newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL = coerced
 
-mkMultiClauseHL :: [AtomicHC] -> MultiClauseHL
-mkMultiClauseHL = view (re _MkMultiClauseHL) . NE.fromList
+mkMultiClauseHL :: NonEmpty AtomicHC -> MultiClauseHL
+mkMultiClauseHL = view $ re _MkMultiClauseHL
 
 getMCHLhcs :: MultiClauseHL -> [AtomicHC]
 getMCHLhcs = NE.toList . view _MkMultiClauseHL

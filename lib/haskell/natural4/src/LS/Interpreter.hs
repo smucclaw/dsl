@@ -82,7 +82,7 @@ import Data.Graph.Inductive
 import Data.HashMap.Strict qualified as Map
 import Data.List (find, (\\))
 import Data.List qualified as DL
-import Data.List.NonEmpty as NE (fromList, singleton, toList)
+import Data.List.NonEmpty as NE (fromList, singleton, toList, NonEmpty (..))
 import Data.Maybe
   ( catMaybes,
     fromMaybe,
@@ -95,7 +95,7 @@ import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
-import Data.Tree (Tree (Node))
+import Data.Tree (Tree (..))
 import Data.Tuple (swap)
 import Debug.Trace (trace)
 import Flow ((|>))
@@ -1081,14 +1081,16 @@ type NestedClass = Tree ParamText
 -- DEFINEs that have horn clause heads but no bodies are constant facts, so we'll define them as such here.
 -- DEFINEs that have horn clauses with bodies are functions that need to be set up a little differently. We'll deal with those separately.
 globalFacts :: Interpreted -> [NestedClass]
-globalFacts l4i =
-  [ Node (NE.singleton (NE.fromList (name r), super r) :: ParamText)
-    [ Node pt []
-    | HC { hHead = RPParamText pt, hBody = Nothing } <- clauses r
-    ]
-  | r@Hornlike{} <- origrules l4i
-  , hasClauses r, Define == keyword r
-  ]
+globalFacts l4i = do
+  Hornlike {name = name@(x : xs), keyword = Define, clauses, super} <-
+    origrules l4i
+  pure
+    Node
+      { rootLabel = pure (x :| xs, super) :: ParamText,
+        subForest = do
+          HC {hHead = RPParamText pt, hBody = Nothing} <- clauses
+          pure $ Node pt []
+      }
 
 -- * Extract everything that looks like a method.
 --

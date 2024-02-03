@@ -56,12 +56,13 @@ module LS.Interpreter
     ruleDecisionGraph,
     ruleLocals,
     toObjectStr,
-    topsortedClasses
+    topsortedClasses,
   )
 where
 
 import AnyAll qualified as AA
 import Control.Applicative ((<|>))
+import Control.Arrow ((>>>))
 import Control.Monad (guard, join)
 import Data.Bifunctor (first)
 import Data.Coerce (coerce)
@@ -186,14 +187,16 @@ import LS.Types
     clsParent,
     getSymType,
     getUnderlyingType,
+    mkCT,
     mt2text,
     pt2multiterm,
     rel2txt,
     rp2bodytexts,
     rp2text,
     thisAttributes,
+    unCT,
   )
-import LS.Utils (pairs2map)
+import LS.Utils (eitherToList, pairs2map)
 import LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
@@ -321,7 +324,7 @@ classHierarchy :: [Rule] -> ClsTab
 classHierarchy rs =
   -- multiple DECLARE of the same class are allowed, so we have to merge.
   -- we do some violence to the inferred types here.
-  CT $ Map.fromListWith mergeClassTypes
+  mkCT $ Map.fromListWith mergeClassTypes
   [ (thisclass, (superclass, attributes))
   | r@TypeDecl{} <- rs
   , let thisclass = mt2text (name r)
@@ -334,11 +337,11 @@ mergeClassTypes :: Semigroup b
                 -> ((Maybe a, b), ClsTab)
                 -> ((Maybe a, b), ClsTab)
 mergeClassTypes
-  ((ts1inf,ts1s),CT clstab1)
-  ((ts2inf,ts2s),CT clstab2) =
+  ((ts1inf,ts1s), unCT -> clstab1)
+  ((ts2inf,ts2s), unCT -> clstab2) =
   ( (listToMaybe (maybeToList ts1inf <> maybeToList ts2inf)
     , ts1s <> ts2s)
-  , CT $ clstab1 <> clstab2)
+  , mkCT $ clstab1 <> clstab2)
 
 -- | A graph of all the classes we know about.
 --
@@ -348,33 +351,32 @@ mergeClassTypes
 -- considering the attributes.
 
 classGraph :: ClsTab -> [EntityType] -> [([EntityType], TypedClass)]
-classGraph (CT ch) ancestors = concat
-  [ pure (nodePath, (_itypesig, childct))
-  | (childname, (_itypesig, childct)) <- Map.toList ch
-  , let nodePath = childname : ancestors
-  ]
+classGraph (unCT >>> Map.toList -> ch) ancestors =
+  flip foldMap ch \(childname, (_itypesig, childct)) -> do
+    let nodePath = childname : ancestors
+    pure (nodePath, (_itypesig, childct))
 
 -- | classes at the root of the container hierarchies.
 -- Basically, these classes have other classes, but no other classes have them.
 classRoots :: ClsTab -> [(EntityType, TypedClass)]
-classRoots ct@(CT ch) =
+classRoots ct@(unCT -> ch) =
   let cg = classGraphFGL ct
   in [ (className, typedClass)
      | (n, className) <- labNodes cg
      , indeg cg n == 0
-     , (Just typedClass) <- [Map.lookup className ch]
+     , typedClass <- maybeToList $ Map.lookup className ch
      ]
 
 -- | deprecated, use classGraph instead.
 allCTkeys :: ClsTab -> [EntityType]
-allCTkeys o@(CT ct) = getCTkeys o ++ [ T.replace " " "_" [i|#{childname}.{gcname}|]
+allCTkeys o@(unCT -> ct) = getCTkeys o ++ [ T.replace " " "_" [i|#{childname}.{gcname}|]
                                      | (childname, (_ts, childct)) <- Map.toList ct
                                      , gcname <- allCTkeys childct
                                      ]
 
 -- | attributes of a given class. Enums are dealt with separately.
 getCTkeys :: ClsTab -> [EntityType]
-getCTkeys (CT ct) = Map.keys ct
+getCTkeys (unCT -> ct) = Map.keys ct
 
 -- | passthrough type, present in case we decide to represent the names of classes differently.
 type MyClassName = EntityType
@@ -387,7 +389,7 @@ topsortedClasses ct =
   let cGraph = classGraphFGL ct
   in [ cn
      | n <- topsort cGraph
-     , (Just cn) <- [lab cGraph n]
+     , cn <- maybeToList $ lab cGraph n
      ]
 
 classGraphFGL :: ClsTab -> Gr MyClassName ()
@@ -397,20 +399,22 @@ classGraphFGL ct =
       class2attrtypes = [ (cn, ut)            -- class depends on attribute types
                         | cn <- getCTkeys ct
                         , ts <- getAttrTypesIn ct cn
-                        , Right ut <- [getUnderlyingType ts]
+                        , ut <- eitherToList $ getUnderlyingType ts
                         ]
   in mkGraph (Map.toList idToType) (myEdges (child2parent ++ class2attrtypes))
   where
     myEdges :: [(MyClassName, MyClassName)] -> [(Int, Int, ())]
     myEdges abab = [ (aid, bid, ())
                    | (a,b) <- abab
-                   , (Just aid) <- [Map.lookup a typeToID]
-                   , (Just bid) <- [Map.lookup b typeToID]
+                   , aid <- maybeToList $ Map.lookup a typeToID
+                   , bid <- maybeToList $ Map.lookup b typeToID
                    ]
     allTypes :: [MyClassName]
     allTypes = allClasses ct -- ++ allSymTypes stabs [TODO] if it turns out there are hidden classnames lurking in the symbol table
+
     allClasses :: ClsTab -> [MyClassName]
     allClasses = getCTkeys
+
     -- first let's assign integer identifiers to each type found in the class hierarchy
     typeToID = Map.fromList (Prelude.zip allTypes [1..])
     idToType = Map.fromList $ swap <$> Map.toList typeToID
@@ -496,18 +500,16 @@ defaultToSuperClass = fromMaybe "DefaultSuperClass"
 
 -- | same thing but for typesigs
 defaultToSuperType :: Maybe TypeSig -> TypeSig
-defaultToSuperType = fromMaybe (SimpleType TOne (defaultToSuperClass Nothing))
+defaultToSuperType = fromMaybe $ SimpleType TOne $ defaultToSuperClass Nothing
 
 -- | recursively return all attribute types found under a given class, i think?
 getAttrTypesIn :: ClsTab -> EntityType -> [TypeSig]
-getAttrTypesIn ct classname =
-  case thisAttributes ct classname of
-    Nothing         -> []
-    (Just (CT ct')) -> concat [ ts : foldMap (getAttrTypesIn ct'') (getCTkeys ct'')
-                              | (_attrname, (its, ct'')) <- Map.toList ct' -- EntityType (Inferrable TypeSig, ClsTab)
-                              , Just ts <- [getSymType its]
-                              ]
+getAttrTypesIn ct (thisAttributes ct -> Just (unCT >>> Map.toList -> ct')) =
+  flip foldMap ct' \(_attrName, (its, ct'')) -> do -- EntityType (Inferrable TypeSig, ClsTab)
+    ts <- maybeToList $ getSymType its
+    ts : foldMap (getAttrTypesIn ct'') (getCTkeys ct'')
 
+getAttrTypesIn _ _ = []
 
 -- | used by `ruleDecisionGraph`; a map from a rule to a unique integer identifier for that rule, used in the `RuleGraph`
 type RuleIDMap = Map.HashMap Rule Int
@@ -724,9 +726,8 @@ bsmtOfClauses l4i depth r
       let toreturn =
             [ listToMaybe $ maybeToList $ mbody <|> mhead
             | c <- expandClauses l4i 2 (clauses r)
-            , (hhead, hbody)  <- [(hHead c, hBody c)]
-            , let (_bodyEx, bodyNonEx) = partitionExistentials c
-            , let mhead, mbody :: Maybe BoolStructR
+            , let (hhead, hbody) = (hHead c, hBody c)
+                  (_bodyEx, bodyNonEx) = partitionExistentials c
                   mhead = case hhead of
                             RPBoolStructR _mt1 _rprel1 bsr1 -> expandTrace "bsmtOfClauses" depth "returning bsr part of head's RPBoolStructRJust" $
                                                                Just (bsr2bsmt bsr1)
@@ -739,7 +740,7 @@ bsmtOfClauses l4i depth r
                                 expandTrace "bsmtOfClauses" depth [i|got output #{output}|] $
                                 Just output
             ]
-      in expandTrace "bsmtOfClauses" depth ("either mbody or mhead") toreturn
+      in expandTrace "bsmtOfClauses" depth "either mbody or mhead" toreturn
   | otherwise = []
 
 -- * Expansion of decision rules: we insert sub-rules into parent rules.
@@ -749,19 +750,24 @@ bsmtOfClauses l4i depth r
 -- If we encounter a term that is itself the head of a different rule, we substitute it with the body of that rule.
 -- That's the general idea. As always, the devil is in the details, complicated by the fact that we're dealing with predicates, not propositions.
 
-expandClauses, expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
+expandClauses :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
 expandClauses l4i depth hcs = expandTrace "expandClauses" depth [i|running on #{Prelude.length hcs} hornclauses|] $ expandClauses' l4i (depth+1) hcs
+
+expandClauses' :: Interpreted -> Int -> [HornClause2] -> [HornClause2]
 expandClauses' l4i depth hcs =
-  let toreturn = [ newhc
-                 | oldhc <- hcs
-                 , let newhead = expandTrace "expandClauses" depth "expanding the head" $                expandRP l4i (depth+1)   $  hHead oldhc
-                       newbody = expandTrace "expandClauses" depth "expanding the body" $ unleaf . fmap (expandRP l4i (depth+1)) <$> hBody oldhc
-                       newhc = case oldhc of
-                                 HC _oldh Nothing -> HC newhead Nothing
-                                 HC  oldh _       -> HC oldh    newbody
-                 ]
-  in expandTrace "expandClauses" depth [i|returning #{toreturn}|]
-     toreturn
+  expandTrace "expandClauses" depth [i|returning #{toreturn}|] toreturn
+  where
+    toreturn = do
+      oldhc <- hcs
+      let newhead = go oldhc "head" id ($) hHead
+          newbody = go oldhc "body" ((unleaf .) . fmap) (<$>) hBody
+      pure case oldhc of
+        HC _oldh Nothing -> HC newhead Nothing
+        HC  oldh _       -> HC oldh    newbody
+
+    go oldhc txt f g h =
+      expandTrace "expandClauses" depth [i|expanding the #{txt :: String}|] $
+        f (expandRP l4i $ depth + 1) `g` h oldhc
 
 -- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
 unleaf :: BoolStructR -> BoolStructR
@@ -801,11 +807,11 @@ expandTraceDebugging = False
 
 -- | a little helper function to do trace debugging of the expansion process
 expandTrace :: (Show a) => String -> Int -> String -> a -> a
-expandTrace fname dpth toSay toShow =
-  if expandTraceDebugging
-  then trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
-               "#+BEGIN_SRC haskell\n" ++ TL.unpack (pShowNoColor toShow) ++ "\n#+END_SRC") toShow
-  else toShow
+expandTrace fname dpth toSay toShow
+  | expandTraceDebugging =
+    trace (replicate dpth '*' ++ " " ++ fname ++ ": " {- ++ replicate dpth '|' ++ " " -} ++ toSay ++ "\n" ++
+      "#+BEGIN_SRC haskell\n" ++ TL.unpack (pShowNoColor toShow) ++ "\n#+END_SRC") toShow
+  | otherwise = toShow
 
 -- | is a given multiterm defined as a head somewhere in the ruleset?
 -- later, we shall have to limit the scope of such a definition based on UPON \/ WHEN \/ GIVEN preconditions.
@@ -848,7 +854,8 @@ expandClause _l4i _depth _                                                      
 
 -- | expand a BoolStructR. If any terms in a BoolStructR are names of other rules, insert the content of those other rules intelligently.
 expandBSR :: Interpreted -> Int -> BoolStructR -> BoolStructR
-expandBSR  l4i depth x = expandTrace "expandBSR" depth (show x) $ AA.nnf $ expandBSR' l4i depth x
+expandBSR l4i depth x =
+  expandTrace "expandBSR" depth (show x) $ AA.nnf $ expandBSR' l4i depth x
 
 -- | monadic version with logging turned on
 expandBSRM :: Interpreted -> Int -> BoolStructR -> XPileLog BoolStructR
@@ -860,13 +867,17 @@ expandBSRM l4i depth x = do
 
 -- | Do expansion, throwing away the LHS IS part of any `RPBoolStructR` elements we encounter.
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
-expandBSR' l4i depth (AA.Leaf rp)  =
-  case expandRP l4i (depth + 1) rp of
+expandBSR' l4i depth = \case
+  AA.Leaf rp -> case expandRP l4i depth1 rp of
     RPBoolStructR _mt1 RPis bsr -> bsr
     o                           -> AA.mkLeaf o
-expandBSR' l4i depth (AA.Not item)   = {- AA.nnf $ -} AA.mkNot     (expandBSR' l4i (depth + 1) item)
-expandBSR' l4i depth (AA.All lbl xs) = AA.mkAll lbl (expandBSR' l4i (depth + 1) <$> xs)
-expandBSR' l4i depth (AA.Any lbl xs) = AA.mkAny lbl (expandBSR' l4i (depth + 1) <$> xs)
+  AA.Not item   -> {- AA.nnf $ -} AA.mkNot $ go item
+  AA.All lbl xs -> goAnyAll AA.mkAll lbl xs
+  AA.Any lbl xs -> goAnyAll AA.mkAny lbl xs
+  where
+    depth1 = depth + 1
+    go = expandBSR' l4i depth1
+    goAnyAll ctor lbl xs = ctor lbl $ go <$> xs
 
 -- | unimplemented
 expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR

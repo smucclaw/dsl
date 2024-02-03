@@ -594,9 +594,9 @@ directToCore r@Hornlike{keyword}
             -- [TODO] when testing for an optional boolean, add a hasAttrname test inside bodyNonEx
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
-      , (HC _headRP hBod) <- [c]
-      , let needClauseNumbering = length (clauses r) > 1
-      , let rname = prettyRuleName cnum needClauseNumbering $ ruleLabelName r
+      , let HC _headRP hBod = c
+            needClauseNumbering = length (clauses r) > 1
+            rname = prettyRuleName cnum needClauseNumbering $ ruleLabelName r
       ]
   | otherwise = "# DEFINE rules unsupported at the moment"
   where
@@ -846,7 +846,7 @@ prettyClasses ct =
                    _               -> Nothing
         extends = maybe emptyDoc ((" extends" <+>) . pretty) mytype
         enumDecls = [ "decl" <+> pretty member <> ":" <+> uc_name
-                    | (Just (InlineEnum TOne nelist), _) <- [ctype]
+                    | InlineEnum TOne nelist <- maybeToList $ fst ctype
                     , member <- enumLabels_ nelist
                     ]
 

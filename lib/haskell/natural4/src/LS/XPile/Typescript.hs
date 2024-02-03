@@ -110,7 +110,7 @@ import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust, isNothing, maybeToList)
 -- JsonLogic
 
 import Data.String.Interpolate (i)
@@ -382,7 +382,7 @@ tsClasses l4i = do
 
           <//> rbrace
         | className <- reverse $ topsortedClasses ct
-        , (Just (csuper, children)) <- [Map.lookup className ch]
+        , (csuper, children) <- maybeToList $ Map.lookup className ch
         , case csuper of
             (Just (SimpleType _ _), _) -> True
             (Just (InlineEnum _ _), _) -> False -- we deal with enums separately below

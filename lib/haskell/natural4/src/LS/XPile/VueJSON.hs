@@ -284,14 +284,16 @@ itemRPToItemJSON =
 type RuleJSON = Map.HashMap String AABS.BoolStructLT
 
 rulesToRuleJSON :: [Rule] -> RuleJSON
-rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
+rulesToRuleJSON = foldMap ruleToRuleJSON
 
 ruleToRuleJSON :: Rule -> RuleJSON
 ruleToRuleJSON Hornlike {clauses=[HC {hHead=RPMT mt,hBody=Just itemRP}]}
   = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
+
 ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
   =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (mt2text $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
   <> maybe Map.empty (Map.singleton (T.unpack (mt2text $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
+
 ruleToRuleJSON Constitutive{}  = Map.empty
 ruleToRuleJSON TypeDecl{}      = Map.empty
 ruleToRuleJSON Scenario{}      = Map.empty

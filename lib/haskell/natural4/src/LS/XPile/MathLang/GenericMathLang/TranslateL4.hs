@@ -8,6 +8,7 @@
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies, FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
@@ -227,9 +228,7 @@ data ToLCError = NotYetImplemented ShowReprOfData Msg
                | MiscError ShowReprOfData Msg
                | ErrImpossible ShowReprOfData Msg
   deriving stock (Eq, Show, Generic)
-
-instance Hashable ToLCError
-
+  deriving anyclass Hashable
 
 stringifyToLCError :: ToLCError -> T.Text
 stringifyToLCError = undefined
@@ -238,7 +237,8 @@ stringifyToLCError = undefined
 
 -- | TODO: make this better with `pretty` and better structured errors later; see also `diagnose` package
 throwErrorBase :: (Error e :> '[Error ToLCError], Show p) => (ShowReprOfData -> Msg -> e) -> p -> Msg -> ToLC a
-throwErrorBase errorType l4ds msg = ToLC $ throwError $ errorType (T.pack . show $ l4ds) msg
+throwErrorBase errorType l4ds =
+  mkToLC . throwError . errorType (T.pack . show $ l4ds)
 
 throwNotYetImplError :: Show a => a -> ToLC b
 throwNotYetImplError l4ds = throwErrorBase NotYetImplemented l4ds ""
@@ -249,10 +249,10 @@ throwNotSupportedError l4ds = throwErrorBase NotSupported l4ds ""
 throwNotSupportedWithMsgError :: Show a => a -> T.Text  -> ToLC b
 throwNotSupportedWithMsgError = throwErrorBase NotSupported
 
-throwParserProblemWithMsg :: (Show a) => a -> T.Text -> ToLC c
+throwParserProblemWithMsg :: Show a => a -> T.Text -> ToLC c
 throwParserProblemWithMsg = throwErrorBase ParserProblem
 
-throwErrorImpossibleWithMsg :: (Show a) => a -> T.Text -> ToLC c
+throwErrorImpossibleWithMsg :: Show a => a -> T.Text -> ToLC c
 throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 -------- Env -----------------------------------------------------------------------
@@ -299,19 +299,22 @@ newtype ToLC a =
 _ToLC :: Iso' (ToLC a) (Eff '[Reader Env, Error ToLCError] a)
 _ToLC = coerced
 
+mkToLC :: Eff [Reader Env, Error ToLCError] a -> ToLC a
+mkToLC = view (re _ToLC)
+
 unToLC :: ToLC a -> Eff [Reader Env, Error ToLCError] a
 unToLC = view _ToLC
 
-
 -- runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
 runToLC :: ToLC a -> Either ToLCError a
-runToLC (ToLC m) = runPureEff
-                 . runErrorNoCallStack
-                --  . runState initialState 
-                 . runReader initialEnv $ m
+runToLC (unToLC -> m) =
+  m
+    |> runReader initialEnv
+    -- |> runState initialState 
+    |> runErrorNoCallStack
+    |> runPureEff
   -- where
     -- initialState = mkGlobalVars HM.empty
-
 
 --------------------------------------------------------------------------------------------------
 
@@ -322,14 +325,13 @@ findGlobalVars exp = (exp, placeholderTODO)
   where placeholderTODO = mkGlobalVars HM.empty
 
 {- | Translate L4 program consisting of Hornlike rules to a LC Program -}
-l4ToLCProgram :: (Foldable t, Traversable t) => t L4.Rule -> ToLC LCProgram
+l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   (lcProg, globalVars) <- fmap findGlobalVars . l4sHLsToLCExp . F.toList $ l4HLs
-  return $ MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
-                       , lcProgram = lcProg
-                       , globalVars = globalVars}
-
+  pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
+                   , lcProgram = lcProg
+                   , globalVars = globalVars}
 
 {-==============================================================================
   1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL 

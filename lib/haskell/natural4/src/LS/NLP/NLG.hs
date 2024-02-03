@@ -37,6 +37,7 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, listToMaybe, maybeToList)
+import Data.Set qualified as Set
 import Data.String.Interpolate as I (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Read (decimal)
@@ -204,6 +205,7 @@ import Paths_natural4 (getDataFileName)
 import Prettyprinter.Interpolate (__di)
 import System.Environment (lookupEnv)
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import LS.Utils ((|$>))
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -669,9 +671,12 @@ parseUpon env pt = case (upons, nps) of
   (_, _) -> fg tree
   where
     txt = pt2text pt
-    upons = fg <$> parseAnyNoRecover "Upon" env txt
-    nps = fg <$> parseAnyNoRecover "NP" env txt
+    upons = go "Upon"
+    nps = go "NP"
     tree :| _ = parseAny "Upon" env txt
+
+    go :: Gf a => String -> [a]
+    go txt' = fg <$> parseAnyNoRecover txt' env txt
 
 parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
 parseTemporal env (TemporalConstraint t (Just int) text) =
@@ -774,38 +779,39 @@ parseConstraint
       nps = parseAnyNoRecover "NP" env a'
       vps = parseAnyNoRecover "VPS" env b'
 
-parseConstraint env rp = fg tree
-  where
-    txt = rp2text rp
-    tree :| _ = parseAny "Constraint" env txt
+parseConstraint env (rp2text -> txt) = parseTxtToGF "Constraint" env txt
 
 parsePrePost :: NLGEnv -> Text.Text -> GPrePost
-parsePrePost env txt = fg tree
-  where
-    tree :| _ = parseAny "PrePost" env txt
+parsePrePost = parseTxtToGF "PrePost"
 
--- TODO: later if grammar is ambiguous, should we rank trees here?
-parseAny :: String -> NLGEnv -> Text.Text -> NonEmpty Expr
-parseAny cat env txt = res
+parseTxtToGF :: Gf a => String -> NLGEnv -> Text.Text -> a
+parseTxtToGF cat env txt = fg tree
   where
-    typ = case (readType cat, categories (gfGrammar env)) of
-            (Just t, cats) -> if t `elem` [mkType [] c [] | c <- cats]
-                                then t
-                                else typeError cat cats
-            (Nothing, cats) -> typeError cat cats
-    res = case gfParse env typ txt of
-            -- [] -> parseError cat --- Alternative, if we don't want to use recoverUnparsedX
-            [] -> NE.fromList [mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]]
-            xs -> NE.fromList xs
+    tree :| _ = parseAny cat env txt
+
+parseAny :: String -> NLGEnv -> Text.Text -> NonEmpty Expr
+parseAny cat env = snd . parseAnyRecoverNoRecover cat env
 
 parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
-parseAnyNoRecover cat env = gfParse env typ
+parseAnyNoRecover cat env = fst . parseAnyRecoverNoRecover cat env 
+
+parseAnyRecoverNoRecover :: String -> NLGEnv -> Text.Text -> ([Expr], NonEmpty Expr)
+parseAnyRecoverNoRecover cat env txt = (toreturn, toreturnRecovered)
   where
-    typ = case (readType cat, categories (gfGrammar env)) of
-            (Just t, cats) -> if t `elem` [mkType [] c [] | c <- cats]
-                                then t
-                                else typeError cat cats
-            (Nothing, cats) -> typeError cat cats
+    cats = categories $ gfGrammar env
+    types = Set.fromList [mkType [] c [] | c <- cats]
+
+    typ = case readType cat of
+      Just t@((`elem` types) -> True) -> t
+      _ -> typeError cat cats
+
+    toreturn = gfParse env typ txt
+
+    -- TODO: later if grammar is ambiguous, should we rank trees here?
+    toreturnRecovered = case toreturn of
+      -- [] -> parseError cat --- Alternative, if we don't want to use recoverUnparsedX
+      [] -> pure $ mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]
+      x:xs -> x :| xs
 
 -- parseError :: String -> Text.Text -> a
 -- parseError cat txt = error $ unwords ["parse"<>cat, "failed to parse", Text.unpack txt]
@@ -877,7 +883,6 @@ getExpandedRuleNames l4i rule = case rule of
   Regulative {} -> mconcat $ maybeToList $ getNamesBSR l4i 1 <$> who rule
   Hornlike {} -> getNamesHC l4i `foldMap` clauses rule
   _ -> []
-
   where
     getNamesBSR :: Interpreted -> Int -> BoolStructR -> [RuleName]
     getNamesBSR l4i depth (AA.Leaf rp)  =
@@ -895,9 +900,12 @@ getExpandedRuleNames l4i rule = case rule of
 
     getNamesHC :: Interpreted -> HornClause2 -> [RuleName]
     getNamesHC l4i clause = headNames <> bodyNames
-     where
-      headNames = getNamesRP l4i 1 $ hHead clause
-      bodyNames = mconcat $ maybeToList $ getNamesBSR l4i 1 <$> hBody clause
+      where
+        headNames = go getNamesRP $ hHead clause
+        bodyNames = clause |> hBody |> maybeToList |> foldMap (go getNamesBSR)
+
+        go :: (Interpreted -> Int -> a -> [RuleName]) -> a -> [RuleName]
+        go get = get l4i 1
 
 expandRuleForNLGE :: Interpreted -> Int -> Rule -> XPileLog Rule
 expandRuleForNLGE l4i depth rule@Regulative{who, cond, upon, hence, lest} = do
@@ -910,7 +918,7 @@ expandRuleForNLGE l4i depth rule@Regulative{who, cond, upon, hence, lest} = do
   lest'  <- travExpandRule lest
   mutterd depth "running expandPT"
   let upon' = expandPT l4i depth <$> upon
-  pure $ rule
+  pure rule
     { who = who'
     , cond = cond'
     , upon = upon'
@@ -918,11 +926,11 @@ expandRuleForNLGE l4i depth rule@Regulative{who, cond, upon, hence, lest} = do
     , lest = lest'
     }
   where
-    travExpandBSRM :: Maybe BoolStructR -> XPileLog (Maybe BoolStructR)
-    travExpandBSRM bsr = expandBSRM l4i depth `traverse` bsr
+    travExpandBSRM = goTrav expandBSRM
+    travExpandRule = goTrav expandRuleForNLGE
 
-    travExpandRule :: Maybe Rule -> XPileLog (Maybe Rule)
-    travExpandRule rule = expandRuleForNLGE l4i depth `traverse` rule
+    goTrav :: (Interpreted -> Int -> a -> XPileLog a) -> Maybe a -> XPileLog (Maybe a)
+    goTrav f = traverse $ f l4i depth
 
 expandRuleForNLGE l4i depth rule@Hornlike {} = do
   mutterd 4 "expandRuleForNLGE: running Hornlike"

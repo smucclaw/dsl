@@ -110,13 +110,14 @@ import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate, nub, partition)
 import Data.List.Extra (groupSort)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust, isNothing, maybeToList)
 -- JsonLogic
 
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as DTL
 import Data.Tree qualified as DT
+import Debug.Trace (trace)
 import LS.Interpreter
   ( attrType,
     attrsAsMethods,
@@ -382,7 +383,7 @@ tsClasses l4i = do
 
           <//> rbrace
         | className <- reverse $ topsortedClasses ct
-        , (Just (csuper, children)) <- [Map.lookup className ch]
+        , (csuper, children) <- maybeToList $ Map.lookup className ch
         , case csuper of
             (Just (SimpleType _ _), _) -> True
             (Just (InlineEnum _ _), _) -> False -- we deal with enums separately below
@@ -535,7 +536,7 @@ vpToTS l4i ValPred{..}
     bsr2ts (Any pp rps) = "any" <> parens (list (bsr2ts <$> rps))
     bsr2ts (All pp rps) = "all" <> parens (list (bsr2ts <$> rps))
     bsr2ts (Not rp) = "not" <> parens (bsr2ts rp)
-    bsr2ts _ = error "bsr2ts needs more cases"
+    bsr2ts _ = trace "bsr2ts needs more cases" ""
 
     mt2objStr mt =
       let (outStr, outLog) = xpLog $ toObjectStr mt
@@ -546,7 +547,7 @@ vpToTS l4i ValPred{..}
     renderRPrel RPis = "=="
     renderRPrel RPgt = ">"
     renderRPrel RPlt = "<"
-    renderRPrel _    = error "add a renderRPrel in Typescript.hs"
+    renderRPrel _    = trace "add a renderRPrel in Typescript.hs" ""
 
     -- upgrade a value Monday to a DaysEnum.Monday 
     handleEnum :: MultiTerm -> MultiTerm -> Doc ann

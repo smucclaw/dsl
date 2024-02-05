@@ -13,22 +13,17 @@ module LS.XPile.VueJSON
   ( checklist,
     groundrules,
     itemRPToItemJSON,
-    toVueRules
+    toVueRules,
   )
 where
 
-import AnyAll.BoolStruct
-  ( BoolStruct (All, Any, Leaf, Not),
-    BoolStructLT,
-    mkAll,
-    mkAny,
-    mkLeaf,
-    mkNot,
-  )
+import AnyAll.BoolStruct qualified as AABS
 import AnyAll.Types (Label (Pre, PrePost))
-import Data.List (groupBy, nub)
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
+
+import Control.Arrow ((>>>))
 import Data.HashMap.Strict qualified as Map
+import Data.List (groupBy, nub)
 import Data.Maybe (maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
@@ -147,20 +142,25 @@ multiChecklist env rc rs = do
 
 rulegrounds :: RunConfig -> [Rule] -> Rule -> Grounds
 rulegrounds rc globalrules r@Regulative{..} =
-  let whoGrounds  = (MTT (bsp2text subj) :) <$> bsr2grounds rc globalrules r who
-      condGrounds =                             bsr2grounds rc globalrules r cond
-  in mconcat [whoGrounds, condGrounds]
+  mconcat [whoGrounds, condGrounds]
+  where
+    whoGrounds  = (MTT (bsp2text subj) :) <$> go who
+    condGrounds =                             go cond
+    go = bsr2grounds rc globalrules r
 
 rulegrounds rc globalrules r@Hornlike{..} =
-  let givenGrounds  = pt2grounds rc globalrules r <$> maybeToList given
-      uponGrounds   = pt2grounds rc globalrules r <$> maybeToList upon
-      clauseGrounds = [ rp2grounds  rc globalrules r (hHead clause) ++
-                        bsr2grounds rc globalrules r (hBody clause)
-                      | clause <- clauses ]
+  foldMap @[] mconcat [givenGrounds, uponGrounds, clauseGrounds]
+  where
+    givenGrounds  = goGivenUpon given
+    uponGrounds   = goGivenUpon upon
+    goGivenUpon = (pt2grounds rc globalrules r <$>) . maybeToList
 
-  in mconcat $ mconcat [givenGrounds, uponGrounds, clauseGrounds]
+    clauseGrounds = [ goClause rp2grounds hHead clause <>
+                      goClause bsr2grounds hBody clause
+                    | clause <- clauses ]
+    goClause f hHeadBody = f rc globalrules r . hHeadBody
 
-rulegrounds _rc _globalrules _r = [ ]
+rulegrounds _rc _globalrules _r = []
 
 -- [TODO]: other forms of Rule need their ground terms expressed.
 -- [TODO]: also, we should return the terms as a plain BoolStruct (Item T.T) so we don't lose the structure. but for now we work out just the plain dumping, then we put back the logic so Grounds becomes Item T.
@@ -176,7 +176,7 @@ bsr2grounds rc globalrules r = mconcat . maybeToList . fmap (aaLeavesFilter (ign
 pt2grounds :: RunConfig -> [Rule] -> Rule -> ParamText -> Grounds
 pt2grounds _rc _globalrules _r _pt = [MTT <$> ["pt2grounds","unimplemented"]]
 
-rp2grounds :: RunConfig -> [Rule] -> Rule ->  RelationalPredicate -> Grounds
+rp2grounds :: RunConfig -> [Rule] -> Rule -> RelationalPredicate -> Grounds
 rp2grounds  rc  globalrules  r (RPParamText pt) = pt2grounds rc globalrules r pt
 rp2grounds _rc _globalrules _r (RPMT mt) = [mt]
 rp2grounds _rc _globalrules _r (RPConstraint mt1 _rprel mt2) = [mt1, mt2]
@@ -184,10 +184,9 @@ rp2grounds  rc  globalrules  r (RPBoolStructR mt _rprel bsr) = mt : bsr2grounds 
 rp2grounds  rc  globalrules  r (RPnary     _rprel rps) = foldMap (rp2grounds rc  globalrules  r) rps
 
 ignoreTypicalRP :: RunConfig -> [Rule] -> Rule -> RelationalPredicate -> Bool
-ignoreTypicalRP rc globalrules r rp
-  | not $ extendedGrounds rc =
-    not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
-  | otherwise = True
+ignoreTypicalRP rc globalrules r rp =
+  extendedGrounds rc
+    || not (hasDefaultValue r rp || defaultInGlobals globalrules rp)
 
 -- is the "head-like" key of a relationalpredicate found in the list of defaults associated with the rule?
 hasDefaultValue :: Rule -> RelationalPredicate -> Bool
@@ -195,7 +194,6 @@ hasDefaultValue r rp = rpHead rp `elem` (rpHead <$> defaults r)
 
 defaultInGlobals :: [Rule] -> RelationalPredicate -> Bool
 defaultInGlobals rs rp = any (`hasDefaultValue` rp) rs
-
 
 -- this is to be read as an "external requirement interface"
 
@@ -229,14 +227,18 @@ groundToChecklist env mt = do
   pure $ MTT <$> quaero [result]
 
 pickOneOf :: [MultiTerm] -> MultiTerm
-pickOneOf mts = MTT "Does any of the following hold?" :
-  [ MTT [i|* #{mt2text mt}|] | mt <- mts ]
+pickOneOf mts =
+  MTT "Does any of the following hold?"
+    : [MTT [i|* #{mt2text mt}|] | mt <- mts]
 
 groupSingletons :: MultiTerm -> MultiTerm -> Bool
-groupSingletons [mt1] [mt2] -- both multiterms are singletons and contain only 1 word
-                | [_t1] <- T.words (mtexpr2text mt1)
-                , [_t2] <- T.words (mtexpr2text mt2) = True
-groupSingletons _ _ = False -- a) one/both mts not singleton, or b) are singletons but contain >1 word
+groupSingletons mt1 mt2 =
+  all' isSingletonWithOnlyOneWord [mt1, mt2]
+  where
+    isSingletonWithOnlyOneWord mtt =
+      all' (== 1) [length mtt, length $ mtt2words mtt]
+    mtt2words = foldMap $ mtexpr2text >>> T.words
+    all' = all @[]
 
 quaero :: [T.Text] -> [T.Text]
 quaero [x] = [T.unwords $ quaero $ T.words x]
@@ -246,52 +248,52 @@ quaero xs = xs
 toVueRules :: [Rule] -> [(RuleName, XPileLogE BoolStructR)]
 -- [TODO] is there something in RelationalPredicates or elsewhere that knows how to extract the Item from an HC2. there is a lot going on so we need to sort out the semantics first.
 -- clearly this is not ready for primetime, we need to get this transpiler at least as functional as the Purescript outputter that it is meant to replace.
-toVueRules rs = [ (ruleLabelName r, toVueRule r) | r <- rs ]
+toVueRules = map \r -> (ruleLabelName r, toVueRule r)
 
 toVueRule :: Rule -> XPileLogE BoolStructR
 toVueRule r@(Hornlike {clauses=[HC {hBody=Just t}]}) = do
   mutter "branch 1: handling Hornlike rule"
   xpReturn t
+
 toVueRule r@(Regulative {who=Just whoRP, cond=Just condRP}) = do
   mutter "branch 2: this goes to stderr and is a more principled alternative to Debug.Trace"
-  xpReturn $ All Nothing [whoRP, condRP]
+  xpReturn $ AABS.All Nothing [whoRP, condRP]
   -- xpError ["handling branch2, whoRP && condRP"]
+
 toVueRule r@(Regulative {who=Just whoRP}) = do
   mutter "branch 3: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpReturn whoRP
   -- xpError ["handling branch 3, whoRP"]
+
 toVueRule r@(Regulative {cond=Just condRP}) = do
   mutter "branch 4: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpReturn condRP
   -- xpError ["handling branch 4, condRP"]
+
 toVueRule _ = do
   mutter "branch 5: this goes to stderr and is a more principled alternative to Debug.Trace"
   xpError ["toVueRules not handling any other type of rule"]
 
-
 -- define custom types here for things we care about in purescript
 
-itemRPToItemJSON :: BoolStructR -> BoolStructLT
-itemRPToItemJSON (Leaf b)                            = mkLeaf (rp2text b)
-itemRPToItemJSON (All Nothing items)                 = mkAll (Pre "all of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (All (Just pre@(Pre _)) items)      = AnyAll.BoolStruct.All pre (map itemRPToItemJSON items)
-itemRPToItemJSON (All (Just pp@(PrePost _ _)) items) = AnyAll.BoolStruct.All pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Any Nothing items)                 = mkAny (AnyAll.Types.Pre "any of the following") (map itemRPToItemJSON items)
-itemRPToItemJSON (Any (Just pre@(Pre _)) items)      = mkAny pre (map itemRPToItemJSON items)
-itemRPToItemJSON (Any (Just pp@(PrePost _ _)) items) = mkAny pp (map itemRPToItemJSON items)
-itemRPToItemJSON (Not item)                          = mkNot (itemRPToItemJSON item)
+itemRPToItemJSON :: BoolStructR -> AABS.BoolStructLT
+itemRPToItemJSON =
+  AABS.alwaysLabeled' "any of the following" "all of the following"
+    >>> fmap rp2text
 
-type RuleJSON = Map.HashMap String BoolStructLT
+type RuleJSON = Map.HashMap String AABS.BoolStructLT
 
 rulesToRuleJSON :: [Rule] -> RuleJSON
-rulesToRuleJSON rs = mconcat $ fmap ruleToRuleJSON rs
+rulesToRuleJSON = foldMap ruleToRuleJSON
 
 ruleToRuleJSON :: Rule -> RuleJSON
 ruleToRuleJSON Hornlike {clauses=[HC {hHead=RPMT mt,hBody=Just itemRP}]}
   = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
+
 ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
   =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (mt2text $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
   <> maybe Map.empty (Map.singleton (T.unpack (mt2text $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
+
 ruleToRuleJSON Constitutive{}  = Map.empty
 ruleToRuleJSON TypeDecl{}      = Map.empty
 ruleToRuleJSON Scenario{}      = Map.empty
@@ -302,4 +304,4 @@ ruleToRuleJSON RuleGroup {}    = Map.empty
 ruleToRuleJSON RegFulfilled {} = Map.empty
 ruleToRuleJSON RegBreach {}    = Map.empty
 ruleToRuleJSON NotARule {}     = Map.empty
-ruleToRuleJSON x               = [(T.unpack $ mt2text $ ruleName x, mkLeaf "unimplemented")]
+ruleToRuleJSON x               = [(T.unpack $ mt2text $ ruleName x, AABS.mkLeaf "unimplemented")]

@@ -8,13 +8,14 @@
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies, FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 -- TODO: Add export list
 
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig) 
+import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 -- TODO: Haven't actually finished setting up logging infra, unfortunately. 
 -- But it's also not really necessary for working on the transpiler
 
@@ -52,13 +53,16 @@ import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
 --     , tolerate
 --     )
 -- import Data.HashSet qualified as HS
+import Control.Arrow ((>>>))
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
-import Optics
+import Flow ((|>))
+import Optics hiding ((|>))
 import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
 import Data.Generics.Sum.Constructors
+import Data.List.NonEmpty qualified as NE
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 import Data.String.Interpolate (__i)
@@ -68,6 +72,7 @@ import Data.Text qualified as T
 import Data.Foldable qualified as F (toList, foldrM)
 
 import LS.XPile.MathLang.UtilsLCReplDev
+import LS.Utils ((|$>))
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -223,9 +228,7 @@ data ToLCError = NotYetImplemented ShowReprOfData Msg
                | MiscError ShowReprOfData Msg
                | ErrImpossible ShowReprOfData Msg
   deriving stock (Eq, Show, Generic)
-
-instance Hashable ToLCError
-
+  deriving anyclass Hashable
 
 stringifyToLCError :: ToLCError -> T.Text
 stringifyToLCError = undefined
@@ -234,7 +237,8 @@ stringifyToLCError = undefined
 
 -- | TODO: make this better with `pretty` and better structured errors later; see also `diagnose` package
 throwErrorBase :: (Error e :> '[Error ToLCError], Show p) => (ShowReprOfData -> Msg -> e) -> p -> Msg -> ToLC a
-throwErrorBase errorType l4ds msg = ToLC $ throwError $ errorType (T.pack . show $ l4ds) msg
+throwErrorBase errorType l4ds =
+  mkToLC . throwError . errorType (T.pack . show $ l4ds)
 
 throwNotYetImplError :: Show a => a -> ToLC b
 throwNotYetImplError l4ds = throwErrorBase NotYetImplemented l4ds ""
@@ -245,10 +249,10 @@ throwNotSupportedError l4ds = throwErrorBase NotSupported l4ds ""
 throwNotSupportedWithMsgError :: Show a => a -> T.Text  -> ToLC b
 throwNotSupportedWithMsgError = throwErrorBase NotSupported
 
-throwParserProblemWithMsg :: (Show a) => a -> T.Text -> ToLC c
+throwParserProblemWithMsg :: Show a => a -> T.Text -> ToLC c
 throwParserProblemWithMsg = throwErrorBase ParserProblem
 
-throwErrorImpossibleWithMsg :: (Show a) => a -> T.Text -> ToLC c
+throwErrorImpossibleWithMsg :: Show a => a -> T.Text -> ToLC c
 throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 -------- Env -----------------------------------------------------------------------
@@ -295,19 +299,22 @@ newtype ToLC a =
 _ToLC :: Iso' (ToLC a) (Eff '[Reader Env, Error ToLCError] a)
 _ToLC = coerced
 
+mkToLC :: Eff [Reader Env, Error ToLCError] a -> ToLC a
+mkToLC = view (re _ToLC)
+
 unToLC :: ToLC a -> Eff [Reader Env, Error ToLCError] a
 unToLC = view _ToLC
 
-
 -- runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
 runToLC :: ToLC a -> Either ToLCError a
-runToLC (ToLC m) = runPureEff
-                 . runErrorNoCallStack
-                --  . runState initialState 
-                 . runReader initialEnv $ m
+runToLC (unToLC -> m) =
+  m
+    |> runReader initialEnv
+    -- |> runState initialState 
+    |> runErrorNoCallStack
+    |> runPureEff
   -- where
     -- initialState = mkGlobalVars HM.empty
-
 
 --------------------------------------------------------------------------------------------------
 
@@ -318,14 +325,13 @@ findGlobalVars exp = (exp, placeholderTODO)
   where placeholderTODO = mkGlobalVars HM.empty
 
 {- | Translate L4 program consisting of Hornlike rules to a LC Program -}
-l4ToLCProgram :: (Foldable t, Traversable t) => t L4.Rule -> ToLC LCProgram
+l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   (lcProg, globalVars) <- fmap findGlobalVars . l4sHLsToLCExp . F.toList $ l4HLs
-  return $ MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
-                       , lcProgram = lcProg
-                       , globalVars = globalVars}
-
+  pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
+                   , lcProgram = lcProg
+                   , globalVars = globalVars}
 
 {-==============================================================================
   1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL 
@@ -338,11 +344,11 @@ simplifyL4Hlike rule =
   case rule.srcref of
     Just srcref -> do
       baseHL <- extractBaseHL rule
-      return $ MkSimpleHL { shcSrcRef = srcref
-                          , shcGiven = maybe HM.empty mkVarEntMap rule.given
-                          , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
-                          , baseHL = baseHL
-                          }
+      pure MkSimpleHL { shcSrcRef = srcref
+                      , shcGiven = maybe HM.empty mkVarEntMap rule.given
+                      , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
+                      , baseHL = baseHL
+                      }
     Nothing -> throwParserProblemWithMsg rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
 given :: Maybe ParamText = Maybe (NonEmpty TypedMulti) 
@@ -353,16 +359,17 @@ given :: Maybe ParamText = Maybe (NonEmpty TypedMulti)
 l4HcToAtomicHC :: L4.HornClause2 -> AtomicHC
 l4HcToAtomicHC hc =
   case hc.hBody of
-    Just hbody -> HeadAndBody $ MkHnBHC { hbHead = hc.hHead, hbBody = hbody }
+    Just hbody -> HeadAndBody MkHnBHC {hbHead = hc.hHead, hbBody = hbody}
     Nothing -> mkHeadOnlyAtomicHC hc.hHead
 
 extractBaseHL :: L4.Rule -> ToLC BaseHL
 extractBaseHL rule =
   case rule.clauses of
     [] -> throwParserProblemWithMsg rule "Parser should not return L4 Hornlikes with no clauses"
-    [hc] -> pure $ OneClause . l4HcToAtomicHC $ hc
-    multipleHCs -> pure $ MultiClause . mkMultiClauseHL $ fmap l4HcToAtomicHC multipleHCs
-
+    [hc] -> pure $ OneClause $ l4HcToAtomicHC hc
+    hc : hcs ->
+      (hc NE.:| hcs)
+        |$> l4HcToAtomicHC |> mkMultiClauseHL |> MultiClause |> pure
 
 --- Utils for dealing with 'Maybe ParamText' -------------------------------------
 mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
@@ -374,8 +381,8 @@ mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
     convertL4Types :: [(T.Text, Maybe L4.EntityType)] -> [(Var, Maybe L4EntType)]
     convertL4Types al =
       al
-        & each % _1 %~ mkVar
-        & each % _2 %~ fmap mkEntType
+        |> each % _1 %~ mkVar
+        |> each % _2 %~ fmap mkEntType
 
 mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
 mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList
@@ -613,7 +620,7 @@ textifyMTEs = T.intercalate " " . fmap mtexpr2text
 
 mteToLitExp :: MTExpr -> BaseExp
 mteToLitExp = \case
-  MTT txt -> ELit . EString $ txt
+  MTT txt -> ELit $ EString txt
   MTB True -> ELit EBoolTrue
   MTB False -> ELit EBoolFalse
   MTI integer -> ELit $ EInteger integer -- TODO: Can always change this if we want just one type for numbers
@@ -634,7 +641,6 @@ processHcBody = \case
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
     makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
-
 
 {- |
 Helps to remember: 

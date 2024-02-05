@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module AnyAll.BoolStruct
@@ -10,6 +11,7 @@ module AnyAll.BoolStruct
     OptionallyLabeledBoolStruct,
     StdinSchema (..),
     addJust,
+    alwaysLabeled',
     alwaysLabeled,
     boolStructChildren,
     extractLeaves,
@@ -35,7 +37,8 @@ import Data.Aeson
 import Data.Aeson.Types (parseEither)
 import Data.Hashable (Hashable)
 import Data.List (sort, unfoldr)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Debug.Trace (trace)
 import GHC.Generics (Generic)
@@ -49,12 +52,12 @@ import Test.QuickCheck
   )
 import Test.QuickCheck.Checkers (EqProp (..))
 
-data BoolStruct lbl a =
-    Leaf                       a
+data BoolStruct lbl a
+  = Leaf a
   | All lbl [BoolStruct lbl a] -- and
   | Any lbl [BoolStruct lbl a] --  or
-  | Not             (BoolStruct lbl a)
-  deriving (Eq, Ord, Show, Generic, Hashable, Functor, Foldable, Traversable)
+  | Not (BoolStruct lbl a)
+  deriving (Eq, Ord, Show, Generic, Hashable, FromJSON, ToJSON, Functor, Foldable, Traversable)
 
 mkLeaf :: a -> BoolStruct lbl a
 mkLeaf = Leaf
@@ -74,12 +77,15 @@ type BoolStructLT = BoolStruct (Label T.Text) T.Text
 -- | negation normal form applies De Morgan's laws to push the Nots down to the Leaves.
 
 nnf :: BoolStruct lbl a -> BoolStruct lbl a
-nnf (Not (Not p)) = nnf p
-nnf (Not (All l ps)) = Any l $ nnf . Not <$> ps
-nnf (Not (Any l ps)) = All l $ nnf . Not <$> ps
-nnf (All l ps) = All l $ nnf <$> ps
-nnf (Any l ps) = Any l $ nnf <$> ps
-nnf x = x
+nnf = \case
+  Not (Not p) -> nnf p
+  Not (All l ps) -> go Any l Not ps 
+  Not (Any l ps) -> go All l Not ps
+  All l ps -> go All l id ps
+  Any l ps -> go Any l id ps
+  x -> x
+  where
+    go ctor l f ps = ctor l $ nnf . f <$> ps
 
 boolStructChildren :: BoolStruct lbl a -> [BoolStruct lbl a]
 boolStructChildren (Leaf _) = []
@@ -91,26 +97,38 @@ extractLeaves :: BoolStruct lbl a -> [a]
 extractLeaves (Leaf x) = [x]
 extractLeaves (Not x)  = extractLeaves x
 extractLeaves (All _ xs) = foldMap extractLeaves xs
-extractLeaves (Any _ xs) = foldMap extractLeaves xs
+extractLeaves (Any lbl xs) = extractLeaves $ All lbl xs
 
 -- | more or less the inverse of `alwaysLabeled` below.
 
 addJust ::  BoolStruct lbl a -> BoolStruct (Maybe lbl) a
-addJust (Any lbl xs) = Any (Just lbl) $ addJust <$> xs
-addJust (All lbl xs) = All (Just lbl) $ addJust <$> xs
-addJust (Leaf x)     = Leaf x
-addJust (Not x)      = Not $ addJust x
+addJust = \case
+  Any lbl xs -> go Any lbl xs
+  All lbl xs -> go All lbl xs
+  Leaf x     -> Leaf x
+  Not x      -> Not $ addJust x
+  where
+    go ctor lbl xs = ctor (Just lbl) $ addJust <$> xs
 
 -- | used in the conversion to Purescript output.
 -- the Purescript types require a `Label T.Text`, so we convert a `Label (Maybe T.Text)` accordingly.
 
 alwaysLabeled :: OptionallyLabeledBoolStruct a -> BoolStruct (Label T.Text) a
-alwaysLabeled (Any Nothing    xs) = Any (Pre "any of:") $ alwaysLabeled <$> xs
-alwaysLabeled (All Nothing    xs) = All (Pre "all of:") $ alwaysLabeled <$> xs
-alwaysLabeled (Any (Just lbl) xs) = Any lbl $ alwaysLabeled <$> xs
-alwaysLabeled (All (Just lbl) xs) = All lbl $ alwaysLabeled <$> xs
-alwaysLabeled (Leaf x)            = Leaf x
-alwaysLabeled (Not x)             = Not (alwaysLabeled x)
+alwaysLabeled = alwaysLabeled' "any of:" "all of:"
+
+alwaysLabeled' ::
+  T.Text ->
+  T.Text ->
+  OptionallyLabeledBoolStruct a ->
+  BoolStruct (Label T.Text) a
+alwaysLabeled' anyLabel allLabel = \case
+  Any maybeLbl xs -> go Any anyLabel maybeLbl xs
+  All maybeLbl xs -> go All allLabel maybeLbl xs 
+  Not x -> Not $ alwaysLabeled' anyLabel allLabel x
+  Leaf x -> Leaf x
+  where
+    go ctor defaultLbl maybeLbl xs =
+      ctor (fromMaybe (Pre defaultLbl) maybeLbl) $ alwaysLabeled <$> xs
 
 instance Monoid lbl => Semigroup (BoolStruct lbl a) where
   (All x xs)  <> (All y ys) = All (x<>y) (xs <> ys)
@@ -126,12 +144,26 @@ instance Monoid lbl => Semigroup (BoolStruct lbl a) where
 --        All [x1, x2,       Any [y1, y2], Leaf z]
 -- but only if the labels match
 simplifyBoolStruct :: (Eq lbl, Monoid lbl) => BoolStruct lbl a -> BoolStruct lbl a
-simplifyBoolStruct (Not (Not x)) = simplifyBoolStruct x
-simplifyBoolStruct (All _ [x])   = simplifyBoolStruct x
-simplifyBoolStruct (Any _ [x])   = simplifyBoolStruct x
-simplifyBoolStruct (All l1 xs)   = All l1 $ foldMap ((\case { (All l2 cs) | l1 == l2 -> cs; x -> [x] }) . simplifyBoolStruct) xs
-simplifyBoolStruct (Any l1 xs)   = Any l1 $ foldMap ((\case { (Any l2 cs) | l1 == l2 -> cs; x -> [x] }) . simplifyBoolStruct) xs
-simplifyBoolStruct orig = orig
+simplifyBoolStruct = \case
+  Not (Not x) -> simplifyBoolStruct x
+  All _ [x] -> simplifyBoolStruct x
+  Any _ [x] -> simplifyBoolStruct x
+  All l1 xs -> go All l1 xs viewAsAll
+  Any l1 xs -> go Any l1 xs viewAsAny
+  orig -> orig
+  where
+    go ctor lbl xs view =
+      ctor lbl $ flip foldMap xs $
+        simplifyBoolStruct
+          >>> \case
+                (view -> Just ((== lbl) -> True, children)) -> children
+                bs -> [bs]
+
+    viewAsAny (Any lbl children) = Just (lbl, children)
+    viewAsAny _ = Nothing
+
+    viewAsAll (All lbl children) = Just (lbl, children)
+    viewAsAll _ = Nothing
 
 data MergeResult a = Merged a | Unmerged a a
 
@@ -217,8 +249,8 @@ siblingfyBoolStruct = mergeMatch
 --   This is eerily consistent with modern web dev React architecture. Coincidence?
 data StdinSchema a = StdinSchema { marking   :: Marking a
                                  , andOrTree :: OptionallyLabeledBoolStruct T.Text }
-  deriving (Eq, Ord, Show, Generic)
-instance (ToJSON a, ToJSONKey a) => ToJSON (StdinSchema a)
+  deriving (Eq, Ord, Show, Generic, ToJSON)
+
 instance FromJSON (StdinSchema T.Text) where
   parseJSON = withObject "StdinSchema" \o -> do
     markingO <- o .: "marking"
@@ -228,26 +260,27 @@ instance FromJSON (StdinSchema T.Text) where
 
     pure $ StdinSchema
       (case marking of
-         Left err -> trace ("AnyAll/BoolStruct ERROR parsing marking: " ++ err) $
+         Left err -> trace [i|AnyAll/BoolStruct ERROR parsing marking: #{err}|] $
                      Marking mempty
          Right m  -> Marking m)
       (case aotree of
-         Left err -> Leaf ("ERROR: " <> T.pack err)
+         Left err -> Leaf [i|ERROR #{err}|]
          Right m  -> m
       )
 
-instance   (ToJSON lbl, ToJSON a) =>  ToJSON (BoolStruct lbl a)
 -- TODO: Superfluous because covered by the above?
 -- instance   ToJSON ItemJSON
 
-instance   (FromJSON lbl, FromJSON a) =>  FromJSON (BoolStruct lbl a)
-
 instance (Eq lbl, Eq a, Ord a, Ord lbl) => EqProp (BoolStruct lbl a) where
-  (Leaf x) =-= (Leaf y) = property (x == y)
-  (Not x) =-= (Not y) = property (x == y)
-  (All xl xbs) =-= (All yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
-  (Any xl xbs) =-= (Any yl ybs) = property ((xl == yl) && (sort xbs == sort ybs))
-  _ =-= _ = property False
+  All xl xbs =-= All yl ybs = property ((xl == yl) && (sort xbs == sort ybs))
+  Any xl xbs =-= Any yl ybs = All xl xbs =-= All yl ybs
+
+  bs =-= bs' = case (bs, bs') of
+    (Leaf x, Leaf y) -> go x y
+    (Not x, Not y) -> go x y
+    _ -> property False
+    where
+      go x y = property $ x == y
 
 instance (Arbitrary a, Arbitrary lbl) => Arbitrary (BoolStruct lbl a) where
   arbitrary = boolStruct
@@ -256,10 +289,11 @@ boolStruct :: (Arbitrary a, Arbitrary lbl) => Gen (BoolStruct lbl a)
 boolStruct = sized boolStruct'
 
 boolStruct' :: (Arbitrary a, Arbitrary lbl) => Int -> Gen (BoolStruct lbl a)
-boolStruct' 0 = Leaf <$> arbitrary
-boolStruct' n =
-  oneof [fmap Leaf arbitrary,
-         liftA2 All arbitrary (vectorOf 2 subtree),
-         liftA2 Any arbitrary (vectorOf 2 subtree),
-         fmap Not subtree]
-  where subtree = boolStruct' (n `div` 2)
+boolStruct' = \case
+  0 -> arbitraryLeaf
+  n -> oneof [arbitraryLeaf, go All, go Any, Not <$> subtree]
+    where
+      subtree = boolStruct' $ n `div` 2
+      go ctor = liftA2 ctor arbitrary $ vectorOf 2 subtree
+  where
+    arbitraryLeaf = Leaf <$> arbitrary

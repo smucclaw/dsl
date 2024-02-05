@@ -26,6 +26,7 @@ where
 
 import AnyAll (BoolStruct (..), Label (..))
 import AnyAll qualified as AA
+import Control.Arrow ((>>>))
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
@@ -101,14 +102,12 @@ flipPolarity GPOS = GNEG
 flipPolarity GNEG = GPOS
 flipPolarity x = composOp flipPolarity x
 
-
 pushPrePostIntoMain :: BoolStructGText -> BoolStructGText
 pushPrePostIntoMain = \case
   Leaf x -> Leaf x
   All l xs -> tryTransformWhole (All l (pushPrePostIntoMain <$> xs))
   Any l xs -> tryTransformWhole (Any l (pushPrePostIntoMain <$> xs))
   Not x -> Not (pushPrePostIntoMain x)
-
   where
     hackStrVP :: GString -> GVP -> GVP
     hackStrVP in_part vp = GAdvVP vp $ GrecoverUnparsedAdv in_part
@@ -157,7 +156,6 @@ pushPrePostIntoMain = \case
                   (transformWho t p consume beverage `mapBS`) <$> inpart_inwhole)
             : restOfInnerRules )
       bs -> bs
-
 
 type BoolStructGF a = AA.BoolStruct (Maybe (AA.Label GPrePost)) (Tree a)
 
@@ -312,7 +310,7 @@ squeezeTrees
   [ GRPleafS subj vps1,
     GRPleafS ((== subj) -> True) vps2
     ] =
-    pure $ GRPleafS subj (GConjVPS conj (GListVPS [vps1, vps2]))
+    pure $ GRPleafS subj $ GConjVPS conj (GListVPS [vps1, vps2])
 
 squeezeTrees _ _ = Nothing
 
@@ -323,10 +321,11 @@ isMalay :: Language -> Bool
 isMalay = (== mkCId "NL4May")
 
 aggregateBoolStruct :: Language -> BoolStructGF a ->  BoolStructGF a
-aggregateBoolStruct l bs
-  | False = -- isChinese l
-    bs
-  | otherwise = case bs of
-    AA.Any _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "OR") $ foldMap toList xs
-    AA.All _ xs -> maybe bs AA.Leaf $ squeezeTrees (LexConj "AND") $ foldMap toList xs
-    _ -> bs
+aggregateBoolStruct (const False -> True) {- isChinese l -} bs = bs
+aggregateBoolStruct _ bs = case bs of
+  AA.Any _ xs -> go "OR" xs
+  AA.All _ xs -> go "AND" xs
+  _ -> bs
+  where
+    go txt =
+      foldMap toList >>> squeezeTrees (LexConj txt) >>> maybe bs AA.mkLeaf

@@ -3,6 +3,7 @@
 
 module LS.Utils
   ( (|$>),
+    eitherToList,
     maybe2validate,
     mapThenRunValidate,
     mapThenSwallowErrs,
@@ -11,6 +12,7 @@ module LS.Utils
     MonoidValidate,
     compose,
     pairs,
+    pairs2map,
     (<||>),
     (<&&>),
   )
@@ -24,8 +26,11 @@ import Control.Monad.Validate
   )
 import Data.Coerce (coerce)
 import Data.Either (partitionEithers, rights)
+import Data.Either.Extra (eitherToMaybe)
+import Data.HashMap.Strict qualified as Map
+import Data.Hashable (Hashable)
 import Data.List (tails)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, maybeToList)
 import Data.Monoid (Ap (Ap), Endo (Endo))
 import Data.Sequences (uncons)
 import Flow ((.>), (|>))
@@ -104,3 +109,12 @@ pairs xs =
     -- then tail is also always infinite, so that the order type is > ω.
     -- Consequently, some pairs may never get enumerated over (unless once has an ordinal turing machine).
     |> foldMap \(x, tail) -> [(x, y) | y <- tail]
+
+pairs2map :: (Foldable t, Hashable a) => t ([a], b) -> Map.HashMap a b
+pairs2map pairs =
+  pairs
+    |> foldMap \(keys, tokens) -> [(key, tokens) | key <- keys]
+    |> Map.fromList
+
+eitherToList :: Either a b -> [b]
+eitherToList x = x |> eitherToMaybe |> maybeToList

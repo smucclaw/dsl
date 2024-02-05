@@ -128,7 +128,7 @@ makePrisms ''Var
 -- Or do that only at the final pretty printing stage, when we normalize the formatting etc?
 
 mkVar :: T.Text -> Var
-mkVar = view (re _MkVar)
+mkVar = view $ re _MkVar
 
 varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar

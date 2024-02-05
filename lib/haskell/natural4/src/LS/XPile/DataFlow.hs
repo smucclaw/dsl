@@ -70,13 +70,12 @@ type DataFlowGraph = Gr FlowNode ()
 dataFlowAsDot :: Interpreted -> XPileLog String
 dataFlowAsDot l4i = do
   -- https://hackage.haskell.org/package/fgl-5.8.1.1/docs/Data-Graph-Inductive-Graph.html#v:mkGraph
-  let dfg :: DataFlowGraph
-      dfg = mkGraph
-            (Map.toList ruleNodes <> Map.toList leafNodes)
-            ruleEdges
+  let dfg :: DataFlowGraph =
+        mkGraph
+          (Map.toList ruleNodes <> Map.toList leafNodes)
+          ruleEdges
 
-  let dot :: DotGraph Node
-      dot = graphToDot (flowParams dfg) dfg
+      dot :: DotGraph Node = graphToDot (flowParams dfg) dfg
 
   -- if you look at Petri.hs you will see its graph construction delves deep into the logical relationship between rules.
   -- That code was written before we had the Intepreter available to analyze rules for us.
@@ -84,7 +83,6 @@ dataFlowAsDot l4i = do
   -- then we dump the ground term leaves in those rules.
 
   pure "/*  coming soon: this will be a data flow diagram  */"
-
   where
     ruleNodes = Map.fromList ( zip [1..] [ [MTT "pretend rule R1" ] -- 1
                                          , [MTT "pretend rule R2" ] -- 2

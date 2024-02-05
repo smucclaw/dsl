@@ -17,6 +17,8 @@ import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe, maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import Data.Traversable (for)
+import Debug.Trace (trace)
 import LS.Rule (Interpreted (classtable))
 import LS.Types
   ( EntityType,
@@ -61,26 +63,23 @@ type Space     lbl vals = [Dimension lbl vals]
 asJSONRanges :: Interpreted -> XPileLog (Doc ann)
 asJSONRanges l4i = do
   mutterd 1 "asJSONRanges"
-  let ct = unCT $ classtable l4i
+  let ct = Map.toList $ unCT $ classtable l4i
 
   classDimensions :: [(EntityType, Space EntityType MultiTerm)] <-
-    sequenceA
-    [ do
-        mutterdhsf 2 ("class " <> show thisclass) pShowNoColorS (itypesig, ct)
-        dims <- sequenceA
-          [ do
-              mutterdhsf 3 ("attribute: " <> T.unpack attrName) pShowNoColorS explicitTS
-              pure $ Dimension attrName (variants explicitTS)
-              -- [TODO] we do not recurse into attribute children; when we need to have proper support for nested records, add.
-          | (attrName, ((explicitTS, _inferredTS), children)) <- ea3
-          ]
-        mutterdhsf 3 "dimensions" pShowNoColorS dims
-        pure (thisclass, dims)
-    | (thisclass, (itypesig, ct)) <- Map.toList ct
-    , let ea1 = extendedAttributes (classtable l4i) thisclass
+    for ct \(thisclass, (itypesig, ct)) -> do
+      let ea1 = extendedAttributes (classtable l4i) thisclass
           ea2 = maybe [] (Map.toList . unCT) ea1
           ea3 = filter isArbitrary ea2
-    ]
+
+      mutterdhsf 2 ("class " <> show thisclass) pShowNoColorS (itypesig, ct)
+
+      dims <- for ea3 \(attrName, ((explicitTS, _inferredTS), children)) -> do
+        mutterdhsf 3 ("attribute: " <> T.unpack attrName) pShowNoColorS explicitTS
+        pure $ Dimension attrName (variants explicitTS)
+        -- [TODO] we do not recurse into attribute children; when we need to have proper support for nested records, add.
+
+      mutterdhsf 3 "dimensions" pShowNoColorS dims
+      pure (thisclass, dims)
 
   mutterd 1 "classDimensions cardinality"
   for_ classDimensions \(et, space) -> do
@@ -90,21 +89,17 @@ asJSONRanges l4i = do
 
   mutterdhsf 1 "classDimensions" pShowNoColorS classDimensions
 
-  curlyList <$> sequenceA
-    [ do
-        mutterdhsf 2 [i|dims for #{className}|] pShowNoColorS dims
+  curlyList <$> for classDimensions \(className, dims) -> do
+    mutterdhsf 2 [i|dims for #{className}|] pShowNoColorS dims
 
-        let points = take 1000 $ extend dims []
-        mutterdhsf 2 [i|points for #{className}|] pShowNoColorS points
+    let points = take 1000 $ extend dims []
+    mutterdhsf 2 [i|points for #{className}|] pShowNoColorS points
 
-        pure $ [di|#{className}: |] <+>
-          curlyList
-            [ [di|#{show i}: |] <+> curlyList [[di|#{k}: #{quickPretty v}|] | (k, v) <- point]
-            | (point, i) <- zip points [1..]
-            ]
-
-    | (className, dims) <- classDimensions
-    ]
+    pure $ [di|#{className}: |] <+>
+      curlyList
+        [ [di|#{show i}: |] <+> curlyList [[di|#{k}: #{quickPretty v}|] | (k, v) <- point]
+        | (point, i) <- zip points [1..]
+        ]
   where
     isArbitrary :: (EntityType, TypedClass) -> Bool
     isArbitrary (_, ((Just (InlineEnum _    _ ), _), _)) = True
@@ -144,7 +139,7 @@ quickPretty [MTB True] = "true"
 quickPretty [MTB False] = "false"
 quickPretty [MTI myint] = viaShow myint
 quickPretty [MTT str]   = viaShow str
-quickPretty x           = error [i|quickPretty error in pattern match: unhandled case: #{x}|]
+quickPretty x           = trace [i|quickPretty error in pattern match: unhandled case: #{x}|] ""
 
 type Point  lbl val = [(lbl, val)]
 type Points lbl val = [Point lbl val]

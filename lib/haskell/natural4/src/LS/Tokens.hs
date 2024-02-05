@@ -294,8 +294,10 @@ printErrors dname r = runOnErrors \cnsmp err s res -> do
         MPInternal.Consumed -> "Consumed"
         MPInternal.NotConsumed -> "Unconsumed"
   let magicRunParser p = MPInternal.unParser (runReaderT (runWriterT p) r) s
-                           (\_ _ _ -> error "cok") (\_ _ -> error "cerr")
-                           (\_ _ _ -> res) \_ _ -> error "eerr"
+                           (\_ _ _ -> traceM "cok" >> res)
+                           (\_ _ -> traceM "cerr" >> res)
+                           (\_ _ _ -> res)
+                           \_ _ -> traceM "eerr" >> res
   magicRunParser . myTraceM $
     [i|\\ !#{consumption} Error: #{dname}: #{onelineErrorMsg err}|]
 

@@ -71,8 +71,10 @@ maybeSecond :: Label p -> Maybe p
 maybeSecond (PrePost _ x) = Just x
 maybeSecond _ = Nothing
 
-allof, anyof :: Maybe (Label T.Text)
+allof :: Maybe (Label T.Text)
 allof = Just $ Pre "all of:"
+
+anyof :: Maybe (Label String)
 anyof = Just $ Pre "any of:"
 
 data Hardness = Soft -- use Left defaults
@@ -89,17 +91,16 @@ data BinExpr a b =
   deriving (Eq, Ord, Show, Generic, Hashable, Functor, Foldable, ToJSON, Traversable)
 
 instance Semigroup t => Semigroup (Label t) where
-  (<>)  (Pre pr1) (Pre pr2) = Pre (pr1 <> pr2) -- this is semantically incorrect, can we improve it?
-  (<>)  (Pre pr1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) po2
-  (<>)  (PrePost pr1 po1) (Pre pr2) = PrePost (pr1 <> pr2) po1
-  (<>)  (PrePost pr1 po1) (PrePost pr2 po2) = PrePost (pr1 <> pr2) (po1 <> po2)
+  Pre pr1 <> Pre pr2 = Pre (pr1 <> pr2) -- this is semantically incorrect, can we improve it?
+  Pre pr1 <> PrePost pr2 po2 = PrePost (pr1 <> pr2) po2
+  PrePost pr1 po1 <> Pre pr2 = PrePost (pr1 <> pr2) po1
+  PrePost pr1 po1 <> PrePost pr2 po2 = PrePost (pr1 <> pr2) (po1 <> po2)
 
+strPrefix :: TL.Text -> TL.Text -> TL.Text
 strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt
 
-
-data AndOr a = And | Or | Simply a | Neg deriving (Eq, Ord, Show, Generic)
-instance ToJSON a => ToJSON (AndOr a); instance FromJSON a => FromJSON (AndOr a)
-instance Hashable a => Hashable (AndOr a)
+data AndOr a = And | Or | Simply a | Neg
+  deriving (Eq, Ord, Show, Generic, Hashable, FromJSON, ToJSON)
 
 -- | Left: no user input; default value from system.
 --

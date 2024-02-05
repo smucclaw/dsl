@@ -54,6 +54,7 @@ import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
 import Data.Vector qualified as V
 import Data.Void (Void)
+import Debug.Trace (trace)
 import Flow ((|>))
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
@@ -166,6 +167,7 @@ import LS.Types
     Deontic,
     HornClause (HC, hBody, hHead),
     HornClause2,
+    MTExpr,
     MultiTerm,
     MyStream (MyStream, unMyStream),
     MyToken
@@ -429,7 +431,7 @@ exampleStream = head . exampleStreams
 
 exampleStreams :: ByteString -> [MyStream]
 exampleStreams s = case getStanzas <$> asCSV s of
-                    Left errstr -> error errstr
+                    Left errstr -> trace errstr []
                     Right rawsts -> stanzaAsStream <$> rawsts
 
     -- the raw input looks like this:
@@ -443,11 +445,9 @@ indentedDummySing :: ByteString
 indentedDummySing =
   ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,AND,runs,,\n,AND,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,>,sing,,\n"
 
-
 --
 -- the desired output has type Rule
 --
-
 
 --
 -- we begin by stripping comments and extracting the stanzas. Cassava gives us Vector Vector Text.
@@ -456,7 +456,6 @@ indentedDummySing =
 asBoxes :: RawStanza -> String
 asBoxes _rs =
   render $ nullBox Box.<> nullBox Box.<> nullBox Box.<> Box.char 'a' Box.<> Box.char 'b' Box.<> Box.char 'c'
-
 
 asCSV :: ByteString -> Either String RawStanza
 asCSV s =
@@ -501,7 +500,7 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
     rD row col "\"" = -- first non-blank above
       let aboves = V.filter (`notElem` ["", "\""]) $ (! col) <$> V.slice 0 row vvt
       in if V.null aboves
-         then error [i|line #{row+1} column #{col+1}: ditto lacks referent (upward nonblank cell)|]
+         then trace [i|line #{row+1} column #{col+1}: ditto lacks referent (upward nonblank cell)|] ""
          else V.last aboves
     rD _   _   orig = orig
 
@@ -563,11 +562,7 @@ extractLines rs (y0, yLast) = V.slice y0 (yLast - y0 + 1) rs
 vvlookup :: RawStanza -> (Int, Int) -> Maybe Text.Text
 vvlookup rs (x,y) = rs !? y >>= (!? x)
 
-
 -- gaze Down 1 (== "UNLESS") >> gaze rs Right 1
-
-
-
 
 
 -- a multistanza is multiple stanzas separated by pilcrow symbols
@@ -701,7 +696,6 @@ pRule = debugName "pRule" do
     <|> ((\rl -> RuleGroup (Just rl) Nothing) <$> pRuleLabel <?> "standalone rule section heading")
 
   pure foundRule { srcref = Just srcref }
-
 
 -- TypeDecl
 pTypeDeclaration :: Parser Rule
@@ -916,12 +910,12 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
 --    AND  the potato is not green
 
 stackGiven :: Maybe ParamText -> Rule -> Rule
-stackGiven gvn = \case
-  r@Regulative {given} -> go r given
-  r@Hornlike {given} -> go r given
-  r@TypeDecl {given} -> go r given
-  r@Constitutive {given} -> go r given
-  r -> r
+stackGiven gvn r = case r of
+  Regulative {given} -> go r given
+  Hornlike {given} -> go r given
+  TypeDecl {given} -> go r given
+  Constitutive {given} -> go r given
+  _ -> r
   where
     go r given = r {given = gvn <> given}
 
@@ -1118,21 +1112,21 @@ exprP = debugName "expr pParamText" do
   raw <- expr pParamText
 
   pure case raw of
-    MyLabel pre _post myitem -> prefixFirstLeaf pre myitem
+    MyLabel (x : xs) _post myitem -> prefixFirstLeaf (x NE.:| xs) myitem
     _ -> raw
   where
-    prefixFirstLeaf :: MultiTerm -> MyBoolStruct ParamText -> MyBoolStruct ParamText
+    prefixFirstLeaf :: NE.NonEmpty MTExpr -> MyBoolStruct ParamText -> MyBoolStruct ParamText
     -- locate the first MyLeaf in the boolstruct and jam the lbl in as the first line
     prefixFirstLeaf p (MyLeaf x)           = MyLeaf (prefixItem p x)
     prefixFirstLeaf p (MyLabel pre post myitem) = MyLabel pre post (prefixFirstLeaf p myitem)
     prefixFirstLeaf p (MyAll (x:xs))       = MyAll (prefixFirstLeaf p x : xs)
-    prefixFirstLeaf p (MyAll [])           = MyAll [MyLeaf $ mt2pt p]
-    prefixFirstLeaf p (MyAny [])           = MyAny [MyLeaf $ mt2pt p]
+    prefixFirstLeaf p (MyAll [])           = MyAll [MyLeaf $ mt2pt $ NE.toList p]
+    prefixFirstLeaf p (MyAny [])           = MyAny [MyLeaf $ mt2pt $ NE.toList p]
     prefixFirstLeaf p (MyAny (x:xs))       = MyAny (prefixFirstLeaf p x : xs)
     prefixFirstLeaf p (MyNot  x    )       = MyNot (prefixFirstLeaf p x)
 
-    prefixItem :: MultiTerm -> ParamText -> ParamText
-    prefixItem t = NE.cons (NE.fromList t, Nothing)
+    prefixItem :: NE.NonEmpty MTExpr -> ParamText -> ParamText
+    prefixItem t = NE.cons (t, Nothing)
 
 pAndGroup :: Parser BoolStructP
 pAndGroup = fst pAndOrGroup

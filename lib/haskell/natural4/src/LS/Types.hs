@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -16,16 +17,18 @@ where
 
 import AnyAll (mkLeaf)
 import AnyAll qualified as AA
-import Control.Monad.Reader (ReaderT (runReaderT), asks)
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
+import Control.Arrow ((>>>))
+import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
-import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, toList)
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), toList)
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromMaybe)
 import Data.Monoid (Endo (Endo))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
@@ -34,6 +37,7 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
+import LS.Utils ((|$>))
 import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
@@ -52,7 +56,6 @@ type TypedMulti = (NonEmpty MTExpr, Maybe TypeSig)
 type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
-
 
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
@@ -112,7 +115,7 @@ type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
 type ParamText = NonEmpty TypedMulti
 
 text2pt :: Text.Text -> ParamText
-text2pt x = pure (pure (MTT x), Nothing)
+text2pt x = pure (pure $ MTT x, Nothing)
 
 mtexpr2text :: MTExpr -> Text.Text
 mtexpr2text (MTT t) = t
@@ -143,10 +146,12 @@ tm2mt :: TypedMulti -> MultiTerm
 tm2mt = toList . fst
 
 mt2tm :: MultiTerm -> TypedMulti
-mt2tm x = (fromList x, Nothing)
+mt2tm ts = (mtexprs, Nothing)
+  where
+    mtexprs :: NonEmpty MTExpr = ts |> NE.nonEmpty |> fromMaybe (pure $ MTT "")
 
 mt2pt :: MultiTerm -> ParamText
-mt2pt ts = pure (fromList ts, Nothing)
+mt2pt = pure . mt2tm
 
 mt2text :: MultiTerm -> Text.Text
 mt2text = Text.unwords . fmap mtexpr2text
@@ -214,7 +219,7 @@ data SimpleHlike a b =
 data BaseHL = OneClause AtomicHC | MultiClause MultiClauseHL
   deriving stock (Eq, Show, Generic)
 
-data HnBodHC = 
+data HnBodHC =
   MkHnBHC { hbHead :: RelationalPredicate
           , hbBody :: BoolStructR
           }
@@ -232,8 +237,8 @@ newtype MultiClauseHL = MkMultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL :: Iso' MultiClauseHL (NonEmpty AtomicHC)
 _MkMultiClauseHL = coerced
 
-mkMultiClauseHL :: [AtomicHC] -> MultiClauseHL
-mkMultiClauseHL = view (re _MkMultiClauseHL) . NE.fromList
+mkMultiClauseHL :: NonEmpty AtomicHC -> MultiClauseHL
+mkMultiClauseHL = view $ re _MkMultiClauseHL
 
 getMCHLhcs :: MultiClauseHL -> [AtomicHC]
 getMCHLhcs = NE.toList . view _MkMultiClauseHL
@@ -246,7 +251,7 @@ _MkHeadOnlyHC :: Iso' HeadOnlyHC RelationalPredicate
 _MkHeadOnlyHC = coerced
 
 mkHeadOnlyHC :: RelationalPredicate -> HeadOnlyHC
-mkHeadOnlyHC = view (re _MkHeadOnlyHC)
+mkHeadOnlyHC = view $ re _MkHeadOnlyHC
 
 mkHeadOnlyAtomicHC :: RelationalPredicate -> AtomicHC
 mkHeadOnlyAtomicHC = HeadOnly . mkHeadOnlyHC
@@ -279,11 +284,11 @@ instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
 instance PrependHead RelationalPredicate where
-  prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
-  prependHead s (RPMT mtes)             = RPMT (MTT s : mtes)
+  prependHead s (RPParamText ne)        = RPParamText $ prependHead s ne
+  prependHead s (RPMT mtes)             = RPMT $ MTT s : mtes
   prependHead s (RPConstraint l rr r)   = RPConstraint (MTT s : l) rr r
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (MTT s : l) rr it
-  prependHead s (RPnary rel rps)        = RPnary rel (RPMT [MTT s] : rps)
+  prependHead s (RPnary rel rps)        = RPnary rel $ RPMT [MTT s] : rps
 
 -- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
 --
@@ -336,7 +341,7 @@ mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT $ MTT <$> a
 
 mkRpmtLeaf :: [Text.Text] -> BoolStructR
-mkRpmtLeaf a = mkLeaf (mkRpmt a)
+mkRpmtLeaf = mkLeaf . mkRpmt
 
 -- | [TODO] figure out why there are two very similar functions, this and `rel2op`
 rel2txt :: RPRel -> Text.Text
@@ -402,7 +407,7 @@ text2rp :: Text.Text -> RelationalPredicate
 text2rp = RPParamText . text2pt
 
 pt2multiterm :: ParamText -> MultiTerm
-pt2multiterm = mconcat . toList . (toList <$>) . untypePT
+pt2multiterm = untypePT >>> foldMap toList
 
 -- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
 rpHead :: RelationalPredicate -> MultiTerm
@@ -477,6 +482,7 @@ newtype ClsTab = CT ClassHierarchyMap
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
   deriving (Eq, Show)
+  deriving newtype (Semigroup, Monoid)
 
 mkCT :: ClassHierarchyMap -> ClsTab
 mkCT = coerce
@@ -519,31 +525,34 @@ defaultInferrableTypeSig = (Nothing, [])
 
 -- | attributes defined in the type declaration for this class specifically
 thisAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-thisAttributes (unCT -> clstab) subclass = do
-  ((_mts, _tss), ct) <- Map.lookup subclass clstab
-  pure ct
+thisAttributes clstab = fmap fst . attributes clstab
 
 -- | attributes including superclass attributes
 extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-extendedAttributes o@(unCT -> clstab) subclass = do
-  ((_mts, _tss), unCT -> ct) <- Map.lookup subclass clstab
-  let eAttrs = case extendedAttributes o <$> clsParent o subclass of
-                 Nothing               -> Map.empty
-                 Just Nothing        -> Map.empty
-                 Just (Just (CT ea)) -> ea
-  pure $ mkCT $ ct <> eAttrs
+extendedAttributes clstab = fmap snd . attributes clstab
+
+attributes :: ClsTab -> EntityType -> Maybe (ClsTab, ClsTab)
+attributes o@(unCT -> clstab) subclass =
+  subclass
+    |> (Map.!?) clstab
+    |$> \((_mts, _tss), ct) -> (ct, ct <> eAttrs)
+  where
+    eAttrs = mkCT case extendedAttributes o <$> clsParent o subclass of
+      Nothing -> Map.empty
+      Just Nothing -> Map.empty
+      Just (Just (CT ea)) -> ea
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
-getSymType (Just x, _)    = Just x
+getSymType (x@(Just _), _) = x
 getSymType (_, xs) = headMay xs
 
 -- a subclass extends a superclass.
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
 clsParent (unCT -> clstab) subclass = do
-  ((mts, tss), _st) <- Map.lookup subclass clstab
-  case getUnderlyingType <$> getSymType (mts, tss) of
+  (typesig, _st) <- Map.lookup subclass clstab
+  case getUnderlyingType <$> getSymType typesig of
     Just (Right s1) -> Just s1
     Just (Left _)   -> Nothing
     Nothing         -> Nothing
@@ -556,7 +565,7 @@ clsParent (unCT -> clstab) subclass = do
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
 
 multiterm2pt :: MultiTerm -> ParamText
-multiterm2pt x = pure (fromList x, Nothing)
+multiterm2pt = mt2pt
 
 multiterm2bsr' :: MultiTerm -> BoolStructR
 multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt

@@ -233,23 +233,19 @@ asPurescript env rl = do
   c'  <- combine nAS nAQ
   mutterdhsf 3 "c' =" pShowNoColorS c'
 
-  guts <- sequenceA [
-    do
-      mutterdhsf 3 "names: " show ( mt2text <$> names )
-      mutterdhsf 4 "hbs = head boolstruct" show hbs
-      mutterdhsf 4 "tbs = tail boolstruct" show tbs
-      mutterdhsf 4 "fixedNot" show fixedNot
-      mutterdhsf 4 "jq" show jq
-      mutterdhsf 4 "labeled" show labeled
-      -- return as an Either
-      xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
-
-    | (names,bs) <- c'
-    , let Just (hbs, tbs) = DL.uncons bs
-          fixedNot = map fixNot tbs
-          jq       = justQuestions hbs fixedNot
-          labeled  = alwaysLabeled jq
-    ]
+  guts <- for c' \(names, bs) -> do
+    let Just (hbs, tbs) = DL.uncons bs
+        fixedNot = map fixNot tbs
+        jq       = justQuestions hbs fixedNot
+        labeled  = alwaysLabeled jq
+    mutterdhsf 3 "names: " show ( mt2text <$> names )
+    mutterdhsf 4 "hbs = head boolstruct" show hbs
+    mutterdhsf 4 "tbs = tail boolstruct" show tbs
+    mutterdhsf 4 "fixedNot" show fixedNot
+    mutterdhsf 4 "jq" show jq
+    mutterdhsf 4 "labeled" show labeled
+    -- return as an Either
+    xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
 
   let nlgEnvStrLower = Char.toLower <$> nlgEnvStr
       listOfMarkings = Map.toList . AA.getMarking $ getMarkings l4i
@@ -260,13 +256,11 @@ asPurescript env rl = do
   mutterdhsf 3 "Guts, Rights (successful results)" pShowNoColorS gutsRights
 
   mutter "*** Markings"
-  mutters [
-    [__i|
+  mutters do
+    m <- listOfMarkings
+    pure [__i|
       **** #{fst m}
-      #{snd m}
-    |]
-    | m <- listOfMarkings
-    ]
+      #{snd m}|]
 
   xpReturn [__i|
     #{nlgEnvStrLower} :: Object.Object (Item String)

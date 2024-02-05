@@ -246,7 +246,7 @@ _MkHeadOnlyHC :: Iso' HeadOnlyHC RelationalPredicate
 _MkHeadOnlyHC = coerced
 
 mkHeadOnlyHC :: RelationalPredicate -> HeadOnlyHC
-mkHeadOnlyHC = view (re _MkHeadOnlyHC)
+mkHeadOnlyHC = view $ re _MkHeadOnlyHC
 
 mkHeadOnlyAtomicHC :: RelationalPredicate -> AtomicHC
 mkHeadOnlyAtomicHC = HeadOnly . mkHeadOnlyHC

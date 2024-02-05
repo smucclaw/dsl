@@ -36,6 +36,7 @@ import Data.Void (Void)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
+import LS.Utils ((|$>))
 import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
@@ -529,14 +530,16 @@ extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
 extendedAttributes clstab = fmap snd . attributes clstab
 
 attributes :: ClsTab -> EntityType -> Maybe (ClsTab, ClsTab)
-attributes o@(unCT -> clstab) subclass = do
-  ((_mts, _tss), ct) <- Map.lookup subclass clstab
-  let eAttrs =
-        mkCT case extendedAttributes o <$> clsParent o subclass of
-          Nothing -> Map.empty
-          Just Nothing -> Map.empty
-          Just (Just (CT ea)) -> ea
-  pure (ct, ct <> eAttrs)
+attributes o@(unCT -> clstab) subclass =
+  subclass
+    |> (Map.!?) clstab
+    |$> \((_mts, _tss), ct) -> (ct, ct <> eAttrs)
+  where
+  eAttrs =
+    mkCT case extendedAttributes o <$> clsParent o subclass of
+      Nothing -> Map.empty
+      Just Nothing -> Map.empty
+      Just (Just (CT ea)) -> ea
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts

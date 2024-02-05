@@ -26,8 +26,9 @@ import Data.Coerce (coerce)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
-import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList, toList)
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), toList)
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromMaybe)
 import Data.Monoid (Endo (Endo))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
@@ -147,9 +148,7 @@ tm2mt = toList . fst
 mt2tm :: MultiTerm -> TypedMulti
 mt2tm ts = (mtexprs, Nothing)
   where
-    mtexprs :: NonEmpty MTExpr = case ts of
-      x : xs -> x :| xs
-      [] -> pure $ MTT ""
+    mtexprs :: NonEmpty MTExpr = ts |> NE.nonEmpty |> fromMaybe (pure $ MTT "")
 
 mt2pt :: MultiTerm -> ParamText
 mt2pt = pure . mt2tm
@@ -566,7 +565,7 @@ clsParent (unCT -> clstab) subclass = do
 --                                   --               , Node "arg4"  [ Node "val5" [], Node "val6" [] ] ]
 
 multiterm2pt :: MultiTerm -> ParamText
-multiterm2pt x = pure (fromList x, Nothing)
+multiterm2pt = mt2pt
 
 multiterm2bsr' :: MultiTerm -> BoolStructR
 multiterm2bsr' = AA.mkLeaf . RPParamText . multiterm2pt

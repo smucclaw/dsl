@@ -237,15 +237,17 @@ where
 
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (mkLeaf)
+import Control.Arrow (first, (>>>))
 import Control.Monad (guard, join)
 import Control.Monad.Writer.Lazy (MonadWriter (tell))
 import Data.Foldable qualified as DF
-import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty, toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe, maybeToList)
 import Data.Semigroup (sconcat)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import Flow ((|>))
 import LS.Parser (prePostParse)
 import LS.Rule
   ( Parser,
@@ -416,12 +418,15 @@ import LS.Types
     TypedMulti,
     bsp2text,
     mkPTree,
+    mt2pt,
     noLSource,
     pt2multiterm,
     rp2mt,
     rpHead,
     singeltonDL,
+    tm2mt,
   )
+import LS.Utils ((|$>))
 import Text.Megaparsec
   ( MonadParsec (lookAhead, try),
     choice,
@@ -431,7 +436,6 @@ import Text.Megaparsec
     (<|>),
   )
 import Text.Parser.Permutation (permute, (<$$>), (<|?>))
-import Control.Arrow (first)
 
 -- * parse RelationalPredicates
 
@@ -500,10 +504,10 @@ partitionExistentials c = -- [TODO] can we restructure this to use the actual `p
 -- extract the ParamTexts from the existentials for use as "let" bindings. When extracting to CoreL4 they are basically treated as universals in the GIVEN part.
 bsr2pt :: BoolStructR -> Maybe ParamText
 bsr2pt bsr =
-  let ptlist = [ pt | RPParamText pt <- DF.toList bsr ]
-  in if null ptlist
-     then Nothing
-     else Just $ sconcat $ fromList ptlist
+  [pt | RPParamText pt <- DF.toList bsr]
+    |> nonEmpty
+    |$> sconcat
+
 -- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
@@ -977,12 +981,15 @@ pTypeSig = debugName "pTypeSig" do
 
 pOneOf :: Parser ParamText
 pOneOf = do
-  pt <- pToken OneOf *> someIndentation (fromList . foldMap toList <$> sameDepth pParamText)
---  if length pt == 1
---  then
--- see https://github.com/smucclaw/dsl/issues/466
+  pt <- pToken OneOf *> someIndentation (go <$> sameDepth pParamText)
+  --  if length pt == 1
+  --  then
+  -- see https://github.com/smucclaw/dsl/issues/466
+  -- i thought we could use sequence, but i guess not?
   pure pt
-                                         -- i thought we could use sequence, but i guess not?
+  where
+    go :: [NonEmpty TypedMulti] -> ParamText =
+      foldMap toList >>> foldMap tm2mt >>> mt2pt
 
 -- sometimes we want a multiterm, just a list of text
 pMultiTermAka :: Parser MultiTerm
@@ -990,7 +997,7 @@ pMultiTermAka = debugName "pMultiTermAka" $ pAKA slMultiTerm id
 
 -- head of nonempty list
 pSingleTermAka :: Parser TypedMulti
-pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti (toList . fst)
+pSingleTermAka = debugName "pSingleTermAka" $ pAKA slTypedMulti $ toList . fst
 
 pSingleTerm :: Parser TypedMulti
 pSingleTerm = debugName "pSingleTerm" $ (pure . MTT <$> pAnyText) `optIndentedTuple` pTypeSig
@@ -1007,7 +1014,9 @@ slTypedMulti = debugNameSL "slTypedMulti with TYPICALLY" do
     |*| (|?|) slTypeSig
     |*| (|?|) typically
   liftSL $ writeTypically l typicalval
-  return (fromList l, ts)
+  case l of
+    [] -> fail ""
+    x : xs -> pure (x :| xs, ts)
 
 -- | record a TYPICALLY annotation.
 --
@@ -1070,7 +1079,7 @@ slKeyValues = debugNameSL "slKeyValues" do
     ((\l rt -> (l,([],rt)))
      $>| pMTExpr
      |*| (|?|) slTypeSig)
-  pure (fromList (lhs : rhs), typesig)
+  pure (lhs :| rhs, typesig)
 
 getSrcRef :: Parser SrcRef
 getSrcRef = do

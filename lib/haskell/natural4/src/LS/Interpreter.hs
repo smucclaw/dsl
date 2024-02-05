@@ -82,7 +82,7 @@ import Data.Graph.Inductive
 import Data.HashMap.Strict qualified as Map
 import Data.List (find, (\\))
 import Data.List qualified as DL
-import Data.List.NonEmpty as NE (fromList, singleton, toList, NonEmpty (..))
+import Data.List.NonEmpty as NE (toList, NonEmpty (..))
 import Data.Maybe
   ( catMaybes,
     fromMaybe,

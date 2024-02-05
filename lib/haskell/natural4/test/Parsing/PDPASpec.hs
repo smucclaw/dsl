@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wno-incomplete-record-updates #-}
@@ -6,8 +7,10 @@
 module Parsing.PDPASpec (spec, expected_pdpadbno1) where
 
 import AnyAll (BoolStruct (All, Any, Leaf, Not), mkLeaf)
+import Control.Arrow ((>>>))
 import Data.ByteString.Lazy qualified as BS
-import Data.List.NonEmpty (NonEmpty ((:|)), fromList)
+import Data.List.NonEmpty (NonEmpty ((:|)), fromList, nonEmpty)
+import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS.BasicTypes (MyStream, MyToken (Decide, Means))
@@ -61,6 +64,8 @@ import LS.Types
     defaultRC,
     mkRpmt,
     mkRpmtLeaf,
+    mt2tm,
+    text2pt,
   )
 import System.FilePath ((-<.>), (</>))
 import Test.Hspec (HasCallStack, Spec, SpecWith, describe, it)
@@ -75,21 +80,21 @@ filetest testfile desc parseFunc expected =
     `shouldParse` [ expected ]
 
 mkMTExprMulti :: [T.Text] -> TypedMulti
-mkMTExprMulti xs = (MTT <$> fromList xs, Nothing)
+mkMTExprMulti = fmap MTT >>> mt2tm
 
 mkParamText :: [[T.Text]] -> ParamText
-mkParamText = fromList . fmap mkMTExprMulti
+mkParamText = fmap mkMTExprMulti >>> nonEmpty >>> fromMaybe (text2pt "")
 
 spec :: Spec
 spec = do
     let runConfig = defaultRC { sourceURL = T.pack $ "test" </> "Spec" }
         runConfigDebug = runConfig { debug = True }
-    let  combine = uncurry (<>)
-    let _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
-    let  parseR       x y s = runMyParser combine runConfig x y s
-    let _parseR1      x y s = runMyParser combine runConfigDebug x y s
-    let  parseOther   x y s = runMyParser id      runConfig x y s
-    let _parseOther1  x y s = runMyParser id      runConfigDebug x y s
+        combine = uncurry (<>)
+        _parseWith1 f x y s = f <$> runMyParser combine runConfigDebug x y s
+        parseR       x y s = runMyParser combine runConfig x y s
+        _parseR1      x y s = runMyParser combine runConfigDebug x y s
+        parseOther   x y s = runMyParser id      runConfig x y s
+        _parseOther1  x y s = runMyParser id      runConfigDebug x y s
 
     describe "PDPA" do
       filetest "pdpadbno-1"   "must assess" (parseR pToplevel) expected_pdpadbno1

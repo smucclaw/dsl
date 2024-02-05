@@ -85,7 +85,7 @@ spec  = do
       xit "should output a class declaration for seca.csv" do
         let testfile = "seca"
         testcsv <- BS.readFile $ "test" </> testfile -<.> "csv"
-        let rules  = parseR pRules "" `traverse` (exampleStreams testcsv)
+        let rules  = parseR pRules "" `traverse` exampleStreams testcsv
         (fmap (fromxpLogE . sfl4ToCorel4) <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
 
       filetest "class-1" "type definitions"

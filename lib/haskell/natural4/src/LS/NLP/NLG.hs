@@ -805,10 +805,13 @@ parseAnyRecoverNoRecover cat env txt = (toreturn, toreturnRecovered)
     toreturn = gfParse env typ txt
 
     -- TODO: later if grammar is ambiguous, should we rank trees here?
-    toreturnRecovered = case toreturn of
+    toreturnRecovered =
+      toreturn
+        |> NE.nonEmpty
+        |> fromMaybe recovered
       -- [] -> parseError cat --- Alternative, if we don't want to use recoverUnparsedX
-      [] -> pure $ mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]
-      x:xs -> x :| xs
+    recovered =
+      pure $ mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]
 
 -- parseError :: String -> Text.Text -> a
 -- parseError cat txt = error $ unwords ["parse"<>cat, "failed to parse", Text.unpack txt]

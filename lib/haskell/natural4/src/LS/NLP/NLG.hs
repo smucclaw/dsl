@@ -28,7 +28,7 @@ where
 
 import AnyAll qualified as AA
 import Control.Arrow ((>>>))
-import Control.Monad (when)
+import Control.Monad (when, guard)
 import Data.Char qualified as Char (isDigit, toLower)
 import Data.Foldable qualified as F
 import Data.HashMap.Strict (elems, keys, lookup, toList)
@@ -787,38 +787,43 @@ parseTxtToGF cat env txt = fg tree
     tree :| _ = parseAny cat env txt
 
 parseAny :: String -> NLGEnv -> Text.Text -> NonEmpty Expr
-parseAny cat env = snd . parseAnyRecoverNoRecover cat env
+parseAny cat env = snd . parseAny' cat env
 
 parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
-parseAnyNoRecover cat env = fst . parseAnyRecoverNoRecover cat env 
+parseAnyNoRecover cat env = fst . parseAny' cat env 
 
-parseAnyRecoverNoRecover :: String -> NLGEnv -> Text.Text -> ([Expr], NonEmpty Expr)
-parseAnyRecoverNoRecover cat env txt = (toreturn, toreturnRecovered)
+parseAny' :: String -> NLGEnv -> Text.Text -> ([Expr], NonEmpty Expr)
+parseAny' cat env txt = (toreturn, toreturnRecovered)
   where
     cats = categories $ gfGrammar env
     types = Set.fromList [mkType [] c [] | c <- cats]
 
-    typ = case readType cat of
-      Just t@((`elem` types) -> True) -> t
-      _ -> typeError cat cats
+    typ :: Maybe Type = do
+      typ <- readType cat
+      guard $ typ `elem` types
+      pure typ
 
-    toreturn = gfParse env typ txt
+    toreturn :: [Expr] =
+      typ
+        |$> (\typ -> gfParse env typ txt)
+        |> fromMaybe (typeError cat cats [])
 
     -- TODO: later if grammar is ambiguous, should we rank trees here?
-    toreturnRecovered =
+    toreturnRecovered :: NonEmpty Expr =
       toreturn
         |> NE.nonEmpty
-        |> fromMaybe recovered
+        |> fromMaybe (pure recovered)
+
       -- [] -> parseError cat --- Alternative, if we don't want to use recoverUnparsedX
-    recovered =
-      pure $ mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]
+    recovered :: Expr =
+      mkApp (mkCId [i|recoverUnparsed#{cat}|]) [mkStr $ Text.unpack txt]
 
 -- parseError :: String -> Text.Text -> a
 -- parseError cat txt = error $ unwords ["parse"<>cat, "failed to parse", Text.unpack txt]
 
-typeError :: String -> [CId] -> a
+typeError :: String -> [CId] -> a -> a
 typeError cat actualCats =
-  error [i|category #{cat} not a valid GF cat, use one of these instead: #{actualCats}|]
+  trace [i|category #{cat} not a valid GF cat, use one of these instead: #{actualCats}|]
 
 tString :: Text.Text -> GString
 tString = GString . Text.unpack

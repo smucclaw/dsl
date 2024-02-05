@@ -960,10 +960,10 @@ itemsByRule l4i rs =
 extractRPMT2Text :: RelationalPredicate -> T.Text
 extractRPMT2Text (RPMT ts) = mt2text ts
 extractRPMT2Text _         =
-  error "extractRPMT2Text: expecting RPMT only, other constructors not supported."
+  trace "extractRPMT2Text: expecting RPMT only, other constructors not supported." ""
 
 ruleNameStr :: Rule -> String
-ruleNameStr r = T.unpack (mt2text (ruleLabelName r))
+ruleNameStr r = T.unpack $ mt2text $ ruleLabelName r
 
 -- | A RuleSet is a list of rules. We occasionally see this alias used here and there across the codebase.
 type RuleSet = [Rule]

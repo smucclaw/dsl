@@ -1,6 +1,7 @@
 {-| transpiler to Uppaal, work in progress. -}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module LS.XPile.Uppaal
   ( taSysToString,
@@ -47,6 +48,7 @@ import LS.Types as SFL4
     rp2text,
   )
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import Debug.Trace (trace)
 
 type Ann = ()
 
@@ -117,14 +119,24 @@ ruleToTA Regulative{rlabel, temporal = Just (TemporalConstraint tcmp time _unit)
     timeConstraintFailedTransition = (simpleTransition ifBranchOkLoc breachLoc) {
                                  guardOfTransition = TransitionGuard [ClConstr ruleTimer (negateCompar $ mkCompar tcmp) (fromMaybe 1 time)] Nothing
                                  }
-ruleToTA r _ = error [i|Unexpected rule type: #{r}|]
+ruleToTA r _ = trace [i|Unexpected rule type: #{r}|] (TA {..}, [])
+  where
+    annotOfTA = ()
+    nameOfTA = ""
+    locsOfTA = []
+    transitionsOfTA = []
+    initialLocOfTA = Loc ""
+    urgentLocsOfTA = []
+    clocksOfTA = []
+    invarsOfTA = []
+    labellingOfTA = []
 
 extractDecls :: Set.HashSet (Var (Tp ())) -> [VarDecl ()]
 extractDecls = map varToVarDecl . Set.toList
 
 varToVarDecl :: Var (Tp ()) -> VarDecl ()
 varToVarDecl (GlobalVar (QVarName t varName)) = VarDecl () varName t
-varToVarDecl _ = error "varToVarDecl: Impossible"
+varToVarDecl _ = trace "varToVarDecl: Impossible" $ VarDecl () "" OkT
 
 mkCompar :: TComparison -> BComparOp
 mkCompar TBefore = BClte

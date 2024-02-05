@@ -17,6 +17,8 @@ import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe, maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import Data.Traversable (for)
+import Debug.Trace (trace)
 import LS.Rule (Interpreted (classtable))
 import LS.Types
   ( EntityType,
@@ -49,7 +51,6 @@ import Prettyprinter
 import Prettyprinter.Interpolate (di)
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import Data.Traversable (for)
 
 data Dimension lbl vals = Dimension lbl [vals]
   deriving (Show, Eq)
@@ -138,7 +139,7 @@ quickPretty [MTB True] = "true"
 quickPretty [MTB False] = "false"
 quickPretty [MTI myint] = viaShow myint
 quickPretty [MTT str]   = viaShow str
-quickPretty x           = error [i|quickPretty error in pattern match: unhandled case: #{x}|]
+quickPretty x           = trace [i|quickPretty error in pattern match: unhandled case: #{x}|] ""
 
 type Point  lbl val = [(lbl, val)]
 type Points lbl val = [Point lbl val]

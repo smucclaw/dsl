@@ -54,6 +54,7 @@ import Data.Text.Lazy qualified as LT
 import Data.Vector ((!), (!?))
 import Data.Vector qualified as V
 import Data.Void (Void)
+import Debug.Trace (trace)
 import Flow ((|>))
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
@@ -166,6 +167,7 @@ import LS.Types
     Deontic,
     HornClause (HC, hBody, hHead),
     HornClause2,
+    MTExpr,
     MultiTerm,
     MyStream (MyStream, unMyStream),
     MyToken
@@ -226,7 +228,7 @@ import LS.Types
     noLabel,
     noSrcRef,
     renderToken,
-    toTokens, MTExpr,
+    toTokens,
   )
 import LS.Utils (pairs, (|$>))
 import Options.Generic
@@ -429,7 +431,7 @@ exampleStream = head . exampleStreams
 
 exampleStreams :: ByteString -> [MyStream]
 exampleStreams s = case getStanzas <$> asCSV s of
-                    Left errstr -> error errstr
+                    Left errstr -> trace errstr []
                     Right rawsts -> stanzaAsStream <$> rawsts
 
     -- the raw input looks like this:
@@ -498,7 +500,7 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
     rD row col "\"" = -- first non-blank above
       let aboves = V.filter (`notElem` ["", "\""]) $ (! col) <$> V.slice 0 row vvt
       in if V.null aboves
-         then error [i|line #{row+1} column #{col+1}: ditto lacks referent (upward nonblank cell)|]
+         then trace [i|line #{row+1} column #{col+1}: ditto lacks referent (upward nonblank cell)|] ""
          else V.last aboves
     rD _   _   orig = orig
 

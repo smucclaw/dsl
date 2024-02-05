@@ -520,23 +520,24 @@ defaultInferrableTypeSig = (Nothing, [])
 
 -- | attributes defined in the type declaration for this class specifically
 thisAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-thisAttributes (unCT -> clstab) subclass = do
-  ((_mts, _tss), ct) <- Map.lookup subclass clstab
-  pure ct
+thisAttributes clstab = fmap fst . attributes clstab
 
 -- | attributes including superclass attributes
 extendedAttributes :: ClsTab -> EntityType -> Maybe ClsTab
-extendedAttributes o@(unCT -> clstab) subclass = do
-  ((_mts, _tss), unCT -> ct) <- Map.lookup subclass clstab
+extendedAttributes clstab = fmap snd . attributes clstab
+
+attributes :: ClsTab -> EntityType -> Maybe (ClsTab, ClsTab)
+attributes o@(unCT -> clstab) subclass = do
+  ((_mts, _tss), ct@(unCT -> ct')) <- Map.lookup subclass clstab
   let eAttrs = case extendedAttributes o <$> clsParent o subclass of
-                 Nothing               -> Map.empty
-                 Just Nothing        -> Map.empty
-                 Just (Just (CT ea)) -> ea
-  pure $ mkCT $ ct <> eAttrs
+        Nothing -> Map.empty
+        Just Nothing -> Map.empty
+        Just (Just (CT ea)) -> ea
+  pure (ct, mkCT $ ct' <> eAttrs)
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts
-getSymType (Just x, _)    = Just x
+getSymType (x@(Just _), _) = x
 getSymType (_, xs) = headMay xs
 
 -- a subclass extends a superclass.

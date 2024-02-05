@@ -56,7 +56,6 @@ type BoolStructT  = AA.OptionallyLabeledBoolStruct Text.Text
 type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
-
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
            | RPmin | RPmax
@@ -115,7 +114,7 @@ type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
 type ParamText = NonEmpty TypedMulti
 
 text2pt :: Text.Text -> ParamText
-text2pt x = pure (pure (MTT x), Nothing)
+text2pt x = pure (pure $ MTT x, Nothing)
 
 mtexpr2text :: MTExpr -> Text.Text
 mtexpr2text (MTT t) = t
@@ -146,10 +145,14 @@ tm2mt :: TypedMulti -> MultiTerm
 tm2mt = toList . fst
 
 mt2tm :: MultiTerm -> TypedMulti
-mt2tm x = (fromList x, Nothing)
+mt2tm ts = (mtexprs, Nothing)
+  where
+    mtexprs :: NonEmpty MTExpr = case ts of
+      x : xs -> x :| xs
+      [] -> pure $ MTT ""
 
 mt2pt :: MultiTerm -> ParamText
-mt2pt ts = pure (fromList ts, Nothing)
+mt2pt = pure . mt2tm
 
 mt2text :: MultiTerm -> Text.Text
 mt2text = Text.unwords . fmap mtexpr2text
@@ -549,8 +552,8 @@ getSymType (_, xs) = headMay xs
 -- but if the type definition for the class is anything other than the simple TOne, it's actually a polymorphic newtype and not a superclass
 clsParent :: ClsTab -> EntityType -> Maybe EntityType
 clsParent (unCT -> clstab) subclass = do
-  ((mts, tss), _st) <- Map.lookup subclass clstab
-  case getUnderlyingType <$> getSymType (mts, tss) of
+  (typesig, _st) <- Map.lookup subclass clstab
+  case getUnderlyingType <$> getSymType typesig of
     Just (Right s1) -> Just s1
     Just (Left _)   -> Nothing
     Nothing         -> Nothing

@@ -535,8 +535,7 @@ attributes o@(unCT -> clstab) subclass =
     |> (Map.!?) clstab
     |$> \((_mts, _tss), ct) -> (ct, ct <> eAttrs)
   where
-  eAttrs =
-    mkCT case extendedAttributes o <$> clsParent o subclass of
+    eAttrs = mkCT case extendedAttributes o <$> clsParent o subclass of
       Nothing -> Map.empty
       Just Nothing -> Map.empty
       Just (Just (CT ea)) -> ea

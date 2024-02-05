@@ -129,7 +129,7 @@ processTopLvlNameTextForJsonSchema = PCRE.gsub [PCRE.re|\s+|] ("_" :: T.Text)
 -- stringifyMTEwrapper f = T.unpack . f . mtexpr2text
 
 typeDeclNameToTypeName :: RuleName -> TypeName
-typeDeclNameToTypeName [ MTT n ] = n
+typeDeclNameToTypeName [MTT n] = processTopLvlNameTextForJsonSchema n
 typeDeclNameToTypeName _ = "" -- TODO: should be an error case
 
 typeDeclNameToFieldName :: RuleName -> T.Text

@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -478,6 +479,7 @@ newtype ClsTab = CT ClassHierarchyMap
   -- the fst part is the type of the class -- X IS A Y basically means X extends Y, but more complex types are possible, e.g. X :: LIST1 Y
   -- the snd part is the recursive HAS containing attributes of the class
   deriving (Eq, Show)
+  deriving newtype (Semigroup, Monoid)
 
 mkCT :: ClassHierarchyMap -> ClsTab
 mkCT = coerce
@@ -528,12 +530,13 @@ extendedAttributes clstab = fmap snd . attributes clstab
 
 attributes :: ClsTab -> EntityType -> Maybe (ClsTab, ClsTab)
 attributes o@(unCT -> clstab) subclass = do
-  ((_mts, _tss), ct@(unCT -> ct')) <- Map.lookup subclass clstab
-  let eAttrs = case extendedAttributes o <$> clsParent o subclass of
-        Nothing -> Map.empty
-        Just Nothing -> Map.empty
-        Just (Just (CT ea)) -> ea
-  pure (ct, mkCT $ ct' <> eAttrs)
+  ((_mts, _tss), ct) <- Map.lookup subclass clstab
+  let eAttrs =
+        mkCT case extendedAttributes o <$> clsParent o subclass of
+          Nothing -> Map.empty
+          Just Nothing -> Map.empty
+          Just (Just (CT ea)) -> ea
+  pure (ct, ct <> eAttrs)
 
 -- | get out whatever type signature has been user defined or inferred.
 getSymType :: Inferrable ts -> Maybe ts

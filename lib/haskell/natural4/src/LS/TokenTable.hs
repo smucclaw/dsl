@@ -17,6 +17,7 @@ import Data.Hashable (Hashable)
 import Data.Text qualified as Text
 import Flow ((|>))
 import GHC.Generics (Generic)
+import LS.Utils (pairs2map)
 import Language.Haskell.TH.Syntax (Lift)
 
 data MyToken = Every | Party | TokAll
@@ -206,5 +207,4 @@ tokenTable =
     (["WHERE"], [Where]),
     ([";;"], [Semicolon])
   ]
-    |> foldMap \(keys, tokens) -> [(key, tokens) | key <- keys]
-    |> Map.fromList
+    |> pairs2map 

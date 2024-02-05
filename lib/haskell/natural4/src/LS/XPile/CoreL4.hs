@@ -47,7 +47,7 @@ import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.MonoTraversable (Element, otoList)
 import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
@@ -271,7 +271,8 @@ sfl4ToDMN rules = rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
 sfl4ToCorel4 :: [SFL4.Rule] -> XPileLogE String
 sfl4ToCorel4 rs =
-  let interpreted = l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
+  let interpreted =
+        l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
       -- sTable = scopetable interpreted
       cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
@@ -309,7 +310,7 @@ sfl4ToCorel4 rs =
 
     , "\n# directToCore\n\n"
     ] ++
-    [ T.unpack $ myrender (directToCore r)
+    [ T.unpack $ myrender $ directToCore r
     | r <- rs
     ]
   )
@@ -371,9 +372,15 @@ pptle tle                 =
 
 -- TODO: remove after import from BabyL4 works correctly
 trueVNoType :: Expr ()
-trueVNoType = ValE () $ BoolV True
+trueVNoType = fst trueFalseVNoType
+
 falseVNoType :: Expr ()
-falseVNoType = ValE () $ BoolV False
+falseVNoType = snd trueFalseVNoType
+
+trueFalseVNoType :: (Expr (), Expr ())
+trueFalseVNoType = (go True, go False)
+  where
+    go = ValE () . BoolV
 
 -- TODO: BEGIN helper functions
 -- maybe move into BabyL4/SyntaxManipulations.hs
@@ -540,6 +547,7 @@ sfl4ToCorel4Rule TypeDecl {name} =
             }
         )
     ]
+
 sfl4ToCorel4Rule DefNameAlias {} = mempty
 sfl4ToCorel4Rule RuleAlias {} = refute "sfl4ToCorel4Rule: erroring on RuleAlias"  -- internal softlink to a constitutive rule label = _
 sfl4ToCorel4Rule RegFulfilled  = refute "sfl4ToCorel4Rule: erroring on RegFulfilled"
@@ -586,9 +594,9 @@ directToCore r@Hornlike{keyword}
             -- [TODO] when testing for an optional boolean, add a hasAttrname test inside bodyNonEx
         Nothing -> vsep ( "#####" <+> rname : prettyDefnCs rname [ c ]) <> Prettyprinter.line
       | (c,cnum) <- zip (clauses r) [1..]
-      , (HC _headRP hBod) <- [c]
-      , let needClauseNumbering = length (clauses r) > 1
-      , let rname = prettyRuleName cnum needClauseNumbering $ ruleLabelName r
+      , let HC _headRP hBod = c
+            needClauseNumbering = length (clauses r) > 1
+            rname = prettyRuleName cnum needClauseNumbering $ ruleLabelName r
       ]
   | otherwise = "# DEFINE rules unsupported at the moment"
   where
@@ -621,13 +629,11 @@ hc2decls r
     , T.take 3 (mtexpr2text pf) /= "rel"
     , let (bodyEx, _bodyNonEx) = partitionExistentials c
           localEnv = given r <> bsr2pt bodyEx
-          typeMap = Map.fromList [ (varName, fromJust varType) -- safe due to isJust test below
+          typeMap = Map.fromList [ (varName, varType) -- safe due to isJust test below
                                  | (varName, mtypesig) <- maybe [] (fmap (first NE.head) . NE.toList) localEnv
                                  , let underlyingm = getUnderlyingType <$> mtypesig
-                                 , isJust underlyingm
-                                 , isRight $ fromJust underlyingm
-                                 , let varType = rightToMaybe =<< underlyingm
-                                 , isJust varType
+                                 , Right _ <- maybeToList underlyingm
+                                 , varType <- maybeToList $ rightToMaybe =<< underlyingm
                                  ]
           declType = pretty <$> mapMaybe (`Map.lookup` typeMap) pfs
     ]
@@ -840,7 +846,7 @@ prettyClasses ct =
                    _               -> Nothing
         extends = maybe emptyDoc ((" extends" <+>) . pretty) mytype
         enumDecls = [ "decl" <+> pretty member <> ":" <+> uc_name
-                    | (Just (InlineEnum TOne nelist), _) <- [ctype]
+                    | InlineEnum TOne nelist <- maybeToList $ fst ctype
                     , member <- enumLabels_ nelist
                     ]
 

@@ -124,7 +124,6 @@ genSkolem varDecl _ _ _ = varDecl {nameOfVarDecl = "extVar"}
 genSkolemList :: Eq t => [VarDecl t] -> [VarDecl t] -> [VarDecl t] -> String -> [VarDecl t]
 genSkolemList xs y w z = [genSkolem x y w z | x <- xs]
 
-
 -- var to var expr
 -- mkVarE :: Var t -> Expr t
 -- mkVarE v = VarE {annotOfExpr = annotOfQVarName (nameOfVar v), varOfExprVarE = v}
@@ -136,7 +135,7 @@ varDeclToExpr VarDecl {annotOfVarDecl, nameOfVarDecl} =
   where
     annotOfExpr = annotOfVarDecl
     varOfExprVarE =
-      GlobalVar $
+      GlobalVar
         QVarName
           { annotOfQVarName = annotOfVarDecl,
             nameOfQVarName = nameOfVarDecl

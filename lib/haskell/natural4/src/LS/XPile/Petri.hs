@@ -6,8 +6,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
-{-| transpiler to Petri net visualizer -}
-
+-- | transpiler to Petri net visualizer
 module LS.XPile.Petri (toPetri) where
 
 -- import           System.IO.Unsafe (unsafePerformIO)
@@ -73,7 +72,7 @@ import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Printing (renderDot)
 import Data.List (nub)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromJust, fromMaybe, isJust, listToMaybe, maybeToList)
+import Data.Maybe (fromMaybe, isJust, listToMaybe, maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -124,7 +123,13 @@ import LS
   )
 import LS.Utils ((|$>))
 import LS.XPile.Logging
-    ( mutterd, xpLog, xpReturn, XPileLog, XPileLogE )
+  ( XPileLog,
+    XPileLogE,
+    mutterd,
+    runLog,
+    xpLog,
+    xpReturn,
+  )
 
 --------------------------------------------------------------------------------
 -- fgl
@@ -438,12 +443,15 @@ splitJoin _rs og _sj sgs entry = runGM og do
     -- If the entry node has children, then we need to care about splitting and
     -- joining. We first make a split node and connect:
     --    entry node -> split node -> children of entry node
-    splitnode <- newNode (PN Trans splitText [Comment [i|split node coming from entry #{entry}|]] [IsInfra,IsAnd,IsSplit])
+    splitnode <- newNode $
+      PN Trans splitText
+        [Comment [i|split node coming from entry #{entry}|]]
+        [IsInfra,IsAnd,IsSplit]
     newEdge' (entry,splitnode, [Comment "added by split from parent node"])
     traverse_
       newEdge'
-      [(splitnode, headnode, [Comment "added by split to headnode"])
-      | headnode <- headsOfChildren ]
+      [ (splitnode, headnode, [Comment "added by split to headnode"])
+      | headnode <- headsOfChildren]
     -- Now we check how many tail nodes there are in successTails.
     -- If there's only 1, then there's no need to make a join node and link that up.
     -- Doing this prevents redundant "All done" join nodes like
@@ -508,15 +516,18 @@ connectRules sg rules =
       -- later on we will probably want to use a join transition to model an OR.
       aliasRules = [ (n,outgraph)
                    | n <- aliasNodes
-                   , let nrl = {- trace "OrigRL = " $ traceShowId $ -} getOrigRL =<< lab sg n
-                   , let r = getRuleByLabel rules =<< nrl
-                   , let outs = maybe [] (expandRule rules) r
-                   , let rlouts = fmap rl2text <$> (rlabel <$> outs)
-                   , let outgraph = labfilter (\pn -> any ($ pn) [ hasDeet (OrigRL rlout')
-                                                                       | rlout <- rlouts
-                                                                       , isJust rlout
-                                                                       , let rlout' = fromJust rlout -- safe due to above isJust test
-                                                                       ] ) sg
+                   , let nrl = {- trace "OrigRL = " $ traceShowId $ -}
+                          lab sg n >>= getOrigRL
+                         r = nrl >>= getRuleByLabel rules
+                         outs = maybe [] (expandRule rules) r
+                         rlouts = fmap rl2text <$> (rlabel <$> outs)
+                         outgraph =
+                          sg
+                            |> labfilter \pn -> any ($ pn)
+                                [ hasDeet $ OrigRL rlout'
+                                | rlout <- rlouts
+                                , rlout' <- maybeToList rlout
+                                ]
                    ]
       -- headNodes = [ headNode
       --             | (_orign, outgraph) <- aliasRules
@@ -536,7 +547,6 @@ connectRules sg rules =
       -- trace ("and the outgraphs have happy tails " ++ show tailNodes)
       foldl' (\g (n,outgraph) -> splitJoin rules g SJAll outgraph n) sg aliasRules
       -- now we set up the appropriate edges to the revealed rules, and delete the original rulealias node
-
 
 
 showNode :: PNodeD -> Text
@@ -654,10 +664,6 @@ runGM gr (getGM -> m) = cg
 getGraph :: GraphMonad PetriD
 getGraph = mkGM $ gets currentGraph
 
--- | discards the stderr log
-runLog :: XPileLog a -> a
-runLog = fst . xpLog
-
 -- | we convert each rule to a list of nodes and edges which can be inserted into an existing graph
 r2fgl :: RuleSet -> Maybe Text -> Rule -> XPileLog (GraphMonad (Maybe Node))
 r2fgl _rs _defRL RegFulfilled   = pure $ pure Nothing
@@ -672,13 +678,13 @@ r2fgl _rs _defRL (RuleAlias rn) = pure do
   let ntxt = mt2text rn
   let already = getNodeByDeets sg [IsFirstNode, OrigRL ntxt]
   maybe (fmap Just . newNode $
-         mkPlaceA [IsFirstNode, FromRuleAlias, OrigRL ntxt] ntxt ) (pure . Just) already
+         mkPlaceA [IsFirstNode, FromRuleAlias, OrigRL ntxt] ntxt) (pure . Just) already
 
 r2fgl rs defRL Regulative{..} = pure do
   sg <- getGraph
   let myLabel = do
         rl <- rlabel
-        return [IsFirstNode,OrigRL (rl2text rl), IsParty]
+        pure [IsFirstNode, OrigRL (rl2text rl), IsParty]
       origRLdeet = maybeToList (OrigRL <$> ((rl2text <$> rlabel) <|> defRL))
   let already = getNodeByDeets sg =<< myLabel
   -- mutterd 2 $ "Petri/r2fgl: rkeyword = " <> show rkeyword
@@ -686,8 +692,9 @@ r2fgl rs defRL Regulative{..} = pure do
                                 <> [ subj2nl NLen subj ] )
   -- mutterd 2 $ "Petri/r2fgl: everywho = " <> show everywho
 
-  let firstNodeLabel0 = case who of Nothing    -> mkPlace everywho
-                                    Just _bsr  -> mkDecis everywho
+  let firstNodeLabel0 = ($ everywho) case who of
+        Nothing -> mkPlace
+        Just _bsr -> mkDecis
       firstNodeLabel1 = addDeet firstNodeLabel0 IsParty
       firstNodeLabel = maybe firstNodeLabel1 (addDeets firstNodeLabel1) myLabel
  -- myTraceM $ "Petri: firstNodeLabel0 = " <> show firstNodeLabel0
@@ -696,22 +703,30 @@ r2fgl rs defRL Regulative{..} = pure do
   everyN <- case already of
     Nothing -> newNode firstNodeLabel
     Just n  -> overwriteNode n firstNodeLabel
-  whoN  <- case who of Nothing  -> pure everyN
-                       Just bsr -> do whoN <- newNode $ mkTrans [i|who #{bsr2textnl bsr}|]
-                                      newEdge everyN whoN []
-                                      pure whoN
-  upoN  <- case upon of Nothing -> pure whoN
-                        Just pt -> do
-                              uponN <- newNode $ addDeet (mkPlace "upon") IsUpon
-                              uponCondN <- newNode $ addDeets (mkTrans $ pt2text pt) [IsUpon,IsCond]
-                              traverse_ newEdge' [( whoN, uponN, []), ( uponN, uponCondN, [])]
-                              pure uponCondN
-  conN  <- case cond of Nothing  -> pure upoN
-                        Just bsr -> do
-                            ifN     <- newNode $ (addDeet $ mkDecis [i|if #{bsr2textnl bsr}|]) IsCond
-                            ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
-                            traverse_ newEdge' [(upoN, ifN, []), (ifN, ifCondN, [])]
-                            pure ifCondN
+
+  whoN <- case who of
+    Nothing  -> pure everyN
+    Just bsr -> do
+      whoN <- newNode $ mkTrans [i|who #{bsr2textnl bsr}|]
+      newEdge everyN whoN []
+      pure whoN
+
+  upoN <- case upon of
+    Nothing -> pure whoN
+    Just pt -> do
+      uponN <- newNode $ addDeet (mkPlace "upon") IsUpon
+      uponCondN <- newNode $ addDeets (mkTrans $ pt2text pt) [IsUpon,IsCond]
+      traverse_ newEdge' [( whoN, uponN, []), ( uponN, uponCondN, [])]
+      pure uponCondN
+
+  conN  <- case cond of
+    Nothing -> pure upoN
+    Just bsr -> do
+      ifN <- newNode $ (addDeet $ mkDecis [i|if #{bsr2textnl bsr}|]) IsCond
+      ifCondN <- newNode $ (addDeet $ mkTrans "then") IsThen
+      traverse_ newEdge' [(upoN, ifN, []), (ifN, ifCondN, [])]
+      pure ifCondN
+
   (onSuccessN, mbOnFailureN) <- do
     myTraceM [i|Petri/r2fgl: action = #{action}|]
     -- convert DMUST/DMAY/DSHANT into must/may/shant
@@ -734,40 +749,38 @@ r2fgl rs defRL Regulative{..} = pure do
 
     obligationN <- newNode $ addDeet oblLab IsDeon
     onSuccessN <- newNode successLab
+
     traverse_ myTraceM
       [ [i|Petri/r2fgl: deontic = #{deontic}|],
         [i|Petri/r2fgl: lestWord deontic = #{lestWord deontic}|]
       ]
+
     mbOnFailureN <- case (deontic /= DMay, lestWord deontic) of
-                      (True, Right lWord) -> do
-                        onFailureN <- newNode $ mkTrans lWord
-                        traverse_
-                          myTraceM
-                          [ [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|],
-                            [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
-                          ]
-                        newEdge' (obligationN, onFailureN, swport)
-                        pure $ Just onFailureN
-                      _ -> do
-                        myTraceM [i|Petri/r2fgl: mbOnFailureN: returning Nothing}|]
-                        pure Nothing
+      (True, Right lWord) -> do
+        onFailureN <- newNode $ mkTrans lWord
+        traverse_
+          myTraceM
+          [ [i|Petri/r2fgl: mbOnFailureN: first branch; onFailureN=#{onFailureN}|],
+            [i|Petri/r2fgl: drawing edge between obligationN and onFailureN|]
+          ]
+        newEdge' (obligationN, onFailureN, swport)
+        pure $ Just onFailureN
+      _ -> do
+        myTraceM [i|Petri/r2fgl: mbOnFailureN: returning Nothing|]
+        pure Nothing
     -- let failureNE = NE [( onFailureN, mkTrans $ lestWord deontic ) | deontic /= DMay] [( obligationN, onFailureN, swport) | deontic /= DMay]
     traverse_ newEdge' [(conN, obligationN, []), (obligationN, onSuccessN, seport)]
     pure (onSuccessN, mbOnFailureN)
 
   -- let sg1 = insertNE (dNE <> dtaNE) sg
-  let r2fgl' = xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)
-  let (henceN', henceErr) = case hence of
-                              Just henceR -> first (fmap (fromMaybe fulfilledNode)) (r2fgl' henceR)
-                              Nothing     -> (pure fulfilledNode, [])
-  let ( lestN',  lestErr) = case lest of
-                              Just lestR  -> first (fmap (fromMaybe     breachNode)) (r2fgl' lestR)
-                              Nothing     -> (pure breachNode, [])
+  let (henceN', _henceErr) = goHenceLestN hence fulfilledNode
+      (lestN', _lestErr) = goHenceLestN lest breachNode
 
   henceN <- henceN'
   lestN <- lestN'
 
   newEdge onSuccessN henceN []
+
   case mbOnFailureN of
     Just onFailureN -> newEdge onFailureN lestN []
     Nothing -> pure ()
@@ -777,6 +790,13 @@ r2fgl rs defRL Regulative{..} = pure do
   where
     -- vp2np :: Text -> Text
     -- vp2np = unsafePerformIO . wnNounDerivations . Text.toLower
+
+    goHenceLestN (Just henceLestR) fulfilledBreachNode =
+      first (fmap $ fromMaybe fulfilledBreachNode) $ r2fgl' henceLestR
+    goHenceLestN Nothing fulfilledBreachNode =
+      (pure fulfilledBreachNode, [])
+
+    r2fgl' = xpLog . r2fgl rs (rl2text <$> rlabel <|> defRL)
 
     seport = [TailPort (CompassPoint SouthEast), Comment "southeast for positive", color Green]
     swport = [TailPort (CompassPoint SouthWest), Comment "southwest for negative"]

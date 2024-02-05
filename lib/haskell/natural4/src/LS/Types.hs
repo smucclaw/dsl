@@ -16,8 +16,9 @@ where
 
 import AnyAll (mkLeaf)
 import AnyAll qualified as AA
-import Control.Monad.Reader (ReaderT (runReaderT), asks)
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
+import Control.Arrow ((>>>))
+import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
@@ -279,11 +280,11 @@ instance PrependHead ParamText where
   prependHead s ((xs, ts) :| xss) = (pure (MTT s) <> xs, ts) :| xss
 
 instance PrependHead RelationalPredicate where
-  prependHead s (RPParamText ne)        = RPParamText (prependHead s ne)
-  prependHead s (RPMT mtes)             = RPMT (MTT s : mtes)
+  prependHead s (RPParamText ne)        = RPParamText $ prependHead s ne
+  prependHead s (RPMT mtes)             = RPMT $ MTT s : mtes
   prependHead s (RPConstraint l rr r)   = RPConstraint (MTT s : l) rr r
   prependHead s (RPBoolStructR l rr it) = RPBoolStructR (MTT s : l) rr it
-  prependHead s (RPnary rel rps)        = RPnary rel (RPMT [MTT s] : rps)
+  prependHead s (RPnary rel rps)        = RPnary rel $ RPMT [MTT s] : rps
 
 -- | the catch-all datatype used for decision elements, action specifications, and just strings of text wrapped as RP.
 --
@@ -336,7 +337,7 @@ mkRpmt :: [Text.Text] -> RelationalPredicate
 mkRpmt a = RPMT $ MTT <$> a
 
 mkRpmtLeaf :: [Text.Text] -> BoolStructR
-mkRpmtLeaf a = mkLeaf (mkRpmt a)
+mkRpmtLeaf = mkLeaf . mkRpmt
 
 -- | [TODO] figure out why there are two very similar functions, this and `rel2op`
 rel2txt :: RPRel -> Text.Text
@@ -402,7 +403,7 @@ text2rp :: Text.Text -> RelationalPredicate
 text2rp = RPParamText . text2pt
 
 pt2multiterm :: ParamText -> MultiTerm
-pt2multiterm = mconcat . toList . (toList <$>) . untypePT
+pt2multiterm = untypePT >>> foldMap toList
 
 -- the "key-like" part of a relationalpredicate, used for TYPICALLY value assignment
 rpHead :: RelationalPredicate -> MultiTerm

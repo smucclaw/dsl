@@ -25,28 +25,24 @@ spec :: Spec
 spec = do
   describe "expandBSR'" do
     it "expand Leaf" do
-      let
-        bsr = mkRpmtLeaf ["it is a Notifiable Data Breach"]
-      expandBSR' emptyInt 0 bsr `shouldBe` bsr
+      let bsr = mkRpmtLeaf ["it is a Notifiable Data Breach"]
+      expandBSR'' bsr `shouldBe` bsr
     
     it "expand Leaf RPBoolStructR is" do
-      let
-        l2 = mkRpmtLeaf ["sky", "is", "blue"]
-        l1 = mkLeaf (RPBoolStructR (MTT <$> ["head2"]) RPis l2)
-        bsr = mkLeaf (RPBoolStructR (MTT <$> ["head1"]) RPis l1)
-      expandBSR' emptyInt 0 bsr `shouldBe` l2
+      let l2 = mkRpmtLeaf ["sky", "is", "blue"]
+          l1 = mkLeaf (RPBoolStructR (MTT <$> ["head2"]) RPis l2)
+          bsr = mkLeaf (RPBoolStructR (MTT <$> ["head1"]) RPis l1)
+      expandBSR'' bsr `shouldBe` l2
 
     it "expand Leaf RPBoolStructR has" do
-      let
-        l = mkRpmtLeaf ["rose", "has", "red"]
-        bsr = mkLeaf (RPBoolStructR (MTT <$> ["head"]) RPhas l)
-      expandBSR' emptyInt 0 bsr `shouldBe` bsr
+      let l = mkRpmtLeaf ["rose", "has", "red"]
+          bsr = mkLeaf (RPBoolStructR (MTT <$> ["head"]) RPhas l)
+      expandBSR'' bsr `shouldBe` bsr
 
     it "expand Not RPBoolStructR " do
-      let
-        l = mkRpmtLeaf ["rose", "has", "red"]
-        bsr = mkNot l
-      expandBSR' emptyInt 0 bsr `shouldBe` bsr
+      let l = mkRpmtLeaf ["rose", "has", "red"]
+          bsr = mkNot l
+      expandBSR'' bsr `shouldBe` bsr
 
     testExpandAnyAll "All" mkAll
     testExpandAnyAll "Any" mkAny
@@ -58,9 +54,11 @@ spec = do
             origrules = []
           }
 
+      expandBSR'' = expandBSR' emptyInt 0
+
       testExpandAnyAll (txt :: String) ctor =
         it [i|expand #{txt} RPBoolStructR is|] $
-          expandBSR' emptyInt 0 bsr `shouldBe` bsr
+          expandBSR'' bsr `shouldBe` bsr
         where
           l2 = mkRpmtLeaf ["sky", "is", "blue"]
           l1 = mkRpmtLeaf ["rose", "is", "red"]

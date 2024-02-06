@@ -26,21 +26,22 @@ spec = do
   describe "partitionExistentials" do
     it "expand Leaf (not RPParamText)" do
       let l = mkRpmtLeaf ["sky", "is", "blue"]
-          hc = mkHc l
-      partitionExistentials hc `shouldBe` (l,l)
+          partitionedHc = mkAndPartitionHc l
+      partitionedHc `shouldBe` (l, l)
 
     it "expand Leaf RPParamText" do
       let typeSig = Just (SimpleType TOne "Fruit")
           typedWords = "apple" :| ["orange", "banana"]
           rp = RPParamText $ (MTT <$> typedWords, typeSig) :| []
           l = mkLeaf rp
-          hc = mkHc l
-      partitionExistentials hc `shouldBe` (l,l)
+          partitionedHc = mkAndPartitionHc l
+      partitionedHc `shouldBe` (l, l)
 
     testPartitionAnyAll "All" mkAll
     testPartitionAnyAll "Any" mkAny
   where
-    mkHc l = HC {hHead = mkRpmt [""], hBody = Just l} 
+    mkAndPartitionHc l =
+      partitionExistentials HC {hHead = mkRpmt [""], hBody = Just l} 
 
     testPartitionAnyAll (txt :: String) ctor = it [i|partition #{txt}|] $
       partitionExistentials hc `shouldBe` (ctor Nothing [l1], ctor Nothing [l2])

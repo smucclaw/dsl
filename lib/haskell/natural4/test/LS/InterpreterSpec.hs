@@ -46,20 +46,20 @@ spec = do
 
     testExpandAnyAll "All" mkAll
     testExpandAnyAll "Any" mkAny
-    where
-      emptyInt =
-        L4I
-          { classtable = mkCT Map.empty,
-            scopetable = Map.empty,
-            origrules = []
-          }
+  where
+    emptyInt =
+      L4I
+        { classtable = mkCT Map.empty,
+          scopetable = Map.empty,
+          origrules = []
+        }
 
-      expandBSR'' = expandBSR' emptyInt 0
+    expandBSR'' = expandBSR' emptyInt 0
 
-      testExpandAnyAll (txt :: String) ctor =
-        it [i|expand #{txt} RPBoolStructR is|] $
-          expandBSR'' bsr `shouldBe` bsr
-        where
-          l2 = mkRpmtLeaf ["sky", "is", "blue"]
-          l1 = mkRpmtLeaf ["rose", "is", "red"]
-          bsr = ctor Nothing [l1, l2]
+    testExpandAnyAll (txt :: String) ctor =
+      it [i|expand #{txt} RPBoolStructR is|] $
+        expandBSR'' bsr `shouldBe` bsr
+      where
+        l2 = mkRpmtLeaf ["sky", "is", "blue"]
+        l1 = mkRpmtLeaf ["rose", "is", "red"]
+        bsr = ctor Nothing [l1, l2]

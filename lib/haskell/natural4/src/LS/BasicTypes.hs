@@ -29,6 +29,7 @@ import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List qualified as DL
 import Data.List.NonEmpty qualified as NE
+import Data.MonoTraversable (headMay)
 import Data.Proxy (Proxy (..))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
@@ -54,7 +55,6 @@ import Text.Megaparsec
   )
 import Text.Read (readMaybe)
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import Data.MonoTraversable (headMay)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 

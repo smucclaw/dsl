@@ -1,8 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.BasicTypesSpec (spec) where
 
+import Data.HashSet qualified as Set
 import Data.Text qualified as T
 import Data.Text.Arbitrary ()
 import LS.Types
@@ -50,8 +52,22 @@ notOther _ = True
 
 prop_rendertoken :: MyToken -> Property
 prop_rendertoken mytok =
-  mytok `notElem` [Distinct, TokTrue, TokFalse, As, EOL, GoDeeper, UnDeeper, Empty, SOF, EOF, TypeSeparator, Other "", RuleMarker 0 ""] && notOther mytok ==>
-  toTokens (T.pack $ renderToken mytok) === [mytok]
+  mytok `notElem` tokens && notOther mytok ==>
+    toTokens (T.pack $ renderToken mytok) === [mytok]
+  where
+    tokens :: Set.HashSet MyToken =
+      [ Distinct,
+        TokTrue,
+        TokFalse,
+        As,
+        EOL,
+        GoDeeper,
+        UnDeeper,
+        Empty,
+        SOF,
+        EOF,
+        TypeSeparator
+      ]
 
 spec :: Spec
 spec = do

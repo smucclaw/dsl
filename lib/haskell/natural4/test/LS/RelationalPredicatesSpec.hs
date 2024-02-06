@@ -44,9 +44,9 @@ spec = do
       partitionExistentials HC {hHead = mkRpmt [""], hBody = Just l} 
 
     testPartitionAnyAll (txt :: String) ctor = it [i|partition #{txt}|] $
-      partitionExistentials hc `shouldBe` (ctor Nothing [l1], ctor Nothing [l2])
+      partitionedHc `shouldBe` (ctor Nothing [l1], ctor Nothing [l2])
       where
         fruitType = Just $ SimpleType TOne "Fruit"
         l1 = mkLeaf $ RPParamText $ (MTT <$> "apple" :| ["orange", "banana"], fruitType) :| []
         l2 = mkLeaf $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], Nothing) :| []
-        hc = HC {hHead = mkRpmt [""], hBody = Just $ ctor Nothing [l1, l2]}
+        partitionedHc = mkAndPartitionHc $ ctor Nothing [l1, l2]

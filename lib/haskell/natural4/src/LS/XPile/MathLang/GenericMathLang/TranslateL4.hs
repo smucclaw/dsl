@@ -543,7 +543,27 @@ TODO: Think about what kind of validation we might want to do here
 NOTE: If it seems like literals will appear here (e.g. number literals), see defn of `mteToLitExp` for how to translate to literals
 -}
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
-baseExpifyMTEs = undefined
+baseExpifyMTEs mtes = case mtes of
+  [mte] -> do
+    -- Inari: assuming that the Var will be used for comparison
+    -- because SetVar is handled elsewhere, by extracting it
+    -- from RPConstraint
+    mvar <- isDeclaredVar mte
+    case mvar of
+      Just var -> return $ EVar var
+      Nothing -> return $ parseExpr mte
+
+  _     -> do
+    let parsedExs = parseExpr <$> mtes
+    return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
+
+  where
+    parseExpr :: MTExpr -> BaseExp
+    parseExpr x@(MTT str) = mteToLitExp x  -- TODO: actually parse x
+    parseExpr x = mteToLitExp x
+
+    consSeqExp :: BaseExp -> SeqExp -> SeqExp
+    consSeqExp be = ConsSE (noExtraMdata be)
 
 expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
 expifyMTEsNoMd mtes = noExtraMdata <$> baseExpifyMTEs mtes

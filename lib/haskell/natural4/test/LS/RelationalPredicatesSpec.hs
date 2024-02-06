@@ -46,7 +46,9 @@ spec = do
     testPartitionAnyAll (txt :: String) ctor = it [i|partition #{txt}|] $
       partitionedHc `shouldBe` (ctor Nothing [l1], ctor Nothing [l2])
       where
-        fruitType = Just $ SimpleType TOne "Fruit"
-        l1 = mkLeaf $ RPParamText $ (MTT <$> "apple" :| ["orange", "banana"], fruitType) :| []
-        l2 = mkLeaf $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], Nothing) :| []
         partitionedHc = mkAndPartitionHc $ ctor Nothing [l1, l2]
+        l1 = go "apple" "banana" fruitType
+        l2 = go "red" "yellow" Nothing
+        go txt txt' typ =
+          mkLeaf $ RPParamText $ (MTT <$> txt :| ["orange", txt'], typ) :| []
+        fruitType = Just $ SimpleType TOne "Fruit"

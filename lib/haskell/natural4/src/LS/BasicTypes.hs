@@ -145,7 +145,7 @@ showTokenWithContext WithPos {tokenVal = t} = showMyToken t
 
 instance TraversableStream MyStream where
   reachOffset o PosState {..} =
-    ( Just (prefix <> restOfLine)
+    ( Just $ prefix <> restOfLine
     , PosState
         { pstateInput = MyStream
             -- { myStreamInput = postStr

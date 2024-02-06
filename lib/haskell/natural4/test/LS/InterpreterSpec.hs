@@ -1,10 +1,12 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.InterpreterSpec (spec) where
 
 import AnyAll (mkAll, mkAny, mkLeaf, mkNot)
 import Data.HashMap.Strict qualified as Map
+import Data.String.Interpolate (i)
 import LS.Interpreter (expandBSR')
 import LS.Rule
   ( Interpreted (L4I, classtable, origrules, scopetable),
@@ -21,12 +23,6 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec = do
-  let emptyInt =
-        L4I
-          { classtable = mkCT Map.empty,
-            scopetable = Map.empty,
-            origrules = []
-          }
   describe "expandBSR'" do
     it "expand Leaf" do
       let
@@ -52,16 +48,20 @@ spec = do
         bsr = mkNot l
       expandBSR' emptyInt 0 bsr `shouldBe` bsr
 
-    it "expand All RPBoolStructR is" do
-      let
-        l2 = mkRpmtLeaf ["sky", "is", "blue"]
-        l1 = mkRpmtLeaf ["rose", "is", "red"]
-        bsr = mkAll Nothing [l1 , l2]
-      expandBSR' emptyInt 0 bsr `shouldBe` bsr
+    testExpandAnyAll "All" mkAll
+    testExpandAnyAll "Any" mkAny
+    where
+      emptyInt =
+        L4I
+          { classtable = mkCT Map.empty,
+            scopetable = Map.empty,
+            origrules = []
+          }
 
-    it "expand Any RPBoolStructR is" do
-      let
-        l2 = mkRpmtLeaf ["sky", "is", "blue"]
-        l1 = mkRpmtLeaf ["rose", "is", "red"]
-        bsr = mkAny Nothing [l1 , l2]
-      expandBSR' emptyInt 0 bsr `shouldBe` bsr
+      testExpandAnyAll (txt :: String) ctor =
+        it [i|expand #{txt} RPBoolStructR is|] $
+          expandBSR' emptyInt 0 bsr `shouldBe` bsr
+        where
+          l2 = mkRpmtLeaf ["sky", "is", "blue"]
+          l1 = mkRpmtLeaf ["rose", "is", "red"]
+          bsr = ctor Nothing [l1, l2]

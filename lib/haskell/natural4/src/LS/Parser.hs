@@ -176,11 +176,14 @@ table = [ [ prefix  MPNot  MyNot  ]
         ]
 
 labelPrefix :: Parser (MyBoolStruct a -> MyBoolStruct a)
-labelPrefix = fmap (flip MyLabel Nothing . (:[])) . debugName "labelPrefix" $ do
-  try (pMTExpr <* notEnd)
+labelPrefix =
+  flip MyLabel Nothing . (: [])
+    <$> debugName "labelPrefix" do try (pMTExpr <* notEnd)
 
 notEnd :: Parser ()
-notEnd = notFollowedBy (pToken UnDeeper <|> pToken GoDeeper *> pTokenOneOf (Typically :| []))
+notEnd =
+  notFollowedBy $
+    pToken UnDeeper <|> pToken GoDeeper *> pTokenOneOf (Typically :| [])
 
 -- SetPlus is an Or
 -- SetLess is an And Not:   X LESS Y is X AND NOT Y
@@ -287,7 +290,7 @@ withPrePostOnly ::
   ([MTExpr] -> a -> b3) ->
   (SLParser b3 -> SLParser t) ->
   b2 ->
-  Parser a -> Parser b1 
+  Parser a -> Parser b1
 withPrePostOnly tupleCtor postPart relabel basep = do
   preBodyPost <-
     -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,

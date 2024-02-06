@@ -240,7 +240,7 @@ groupSingletons mt1 mt2 =
 
 quaero :: [T.Text] -> [T.Text]
 quaero [x] = [T.unwords $ quaero $ T.words x]
-quaero (x:xs) = T.toTitle x : init xs ++ [last xs <> "?"]
+quaero (x:xs) = T.toTitle x : init xs <> [[i|#{last xs}?|]]
 quaero xs = xs
 
 toVueRules :: [Rule] -> [(RuleName, XPileLogE BoolStructR)]

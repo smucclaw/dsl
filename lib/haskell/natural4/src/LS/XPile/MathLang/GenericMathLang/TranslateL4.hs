@@ -430,6 +430,7 @@ expifyHL hl = addMdataFromSimpleHL hl (baseExpify hl)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
+baseExpify hl@(MkSimpleHL _ _ (OneClause (HeadOnly hc)) _) = toHeadOnlyExp hl hc
 baseExpify hornlike = throwNotYetImplError hornlike
 -- for the future, remove the catch all `baseExpify hornlike` and add stuff like
 -- baseExpify (isLamDef -> ...) = ...
@@ -465,6 +466,15 @@ toIfExp hl hc = do
     setLocalVars = set #localVars hl.shcGiven
 -- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
+
+toHeadOnlyExp :: SimpleHL -> HeadOnlyHC -> ToLC BaseExp
+toHeadOnlyExp hl hc =
+  withLocalVarsAndSrcPos $ LS.XPile.MathLang.GenericMathLang.GenericMathLangAST.exp <$> processHcHeadForIf hc.hcHead
+  where
+    withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
+    setCurrSrcPos, setLocalVars :: Env -> Env
+    setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
+    setLocalVars = set #localVars hl.shcGiven
 
 --------------------- Head of HL and Var Set ------------------------------------------------------------
 

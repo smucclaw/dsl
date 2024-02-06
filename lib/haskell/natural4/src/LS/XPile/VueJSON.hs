@@ -301,15 +301,15 @@ ruleToRuleJSON r@Regulative {who, cond} =
   -- maybe Map.empty (\bsr -> Map.singleton (T.unpack (mt2text $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
   -- <> maybe Map.empty (Map.singleton (T.unpack (mt2text $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
 
-ruleToRuleJSON Constitutive{}  = Map.empty
-ruleToRuleJSON TypeDecl{}      = Map.empty
-ruleToRuleJSON Scenario{}      = Map.empty
-ruleToRuleJSON DefNameAlias{}  = Map.empty
-ruleToRuleJSON DefTypically{}  = Map.empty
-ruleToRuleJSON RuleAlias {}    = Map.empty
-ruleToRuleJSON RuleGroup {}    = Map.empty
-ruleToRuleJSON RegFulfilled {} = Map.empty
-ruleToRuleJSON RegBreach {}    = Map.empty
-ruleToRuleJSON NotARule {}     = Map.empty
+ruleToRuleJSON Constitutive{}  = mempty
+ruleToRuleJSON TypeDecl{}      = mempty
+ruleToRuleJSON Scenario{}      = mempty
+ruleToRuleJSON DefNameAlias{}  = mempty
+ruleToRuleJSON DefTypically{}  = mempty
+ruleToRuleJSON RuleAlias {}    = mempty
+ruleToRuleJSON RuleGroup {}    = mempty
+ruleToRuleJSON RegFulfilled {} = mempty
+ruleToRuleJSON RegBreach {}    = mempty
+ruleToRuleJSON NotARule {}     = mempty
 ruleToRuleJSON x               =
   [(T.unpack $ mt2text $ ruleName x, AABS.mkLeaf "unimplemented")]

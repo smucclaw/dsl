@@ -111,28 +111,28 @@ instance Stream MyStream where
     -- , MyStream (drop (tokensLength pxy (t:|[])) str) ts
     , MyStream str ts
     )
-  takeN_ n (MyStream str s)
-    | n <= 0    = Just ([], MyStream str s)
-    | null s    = Nothing
-    | otherwise =
-        let (x, s') = splitAt n s
-        in case NE.nonEmpty x of
-          Nothing -> Just (x, MyStream str s')
-          -- Just nex -> Just (x, MyStream (drop (tokensLength pxy nex) str) s')
-          Just _nex -> Just (x, MyStream str s')
-  takeWhile_ f (MyStream str s) =
-    let (x, s') = DL.span f s
-    in case NE.nonEmpty x of
-      Nothing -> (x, MyStream str s')
-      -- Just nex -> (x, MyStream (drop (tokensLength pxy nex) str) s')
-      Just _nex -> (x, MyStream str s')
+  takeN_ n stream@(MyStream _str s)
+    | n < 0 = takeN_ 0 stream -- Just ([], MyStream str s)
+    | n > 0 && null s = Nothing
+    | otherwise = Just $ takeNWhile_ (splitAt n) stream
+  takeWhile_ = takeNWhile_ . DL.span
+
+takeNWhile_ ::
+  Foldable t =>
+  ([WithPos MyToken] -> (t a, [WithPos MyToken])) ->
+  MyStream ->
+  (t a, MyStream)
+takeNWhile_ f (MyStream str s)
+  | null x = go id
+  | otherwise = go id -- go $ drop (tokensLength pxy nex) str)
+  where
+    (x, s') = f s
+    go g = (x, MyStream (g str) s')
 
 instance VisualStream MyStream where
-  tokensLength Proxy xs = sum (tokenLength <$> xs)
+  tokensLength Proxy = fmap tokenLength >>> sum
   -- showTokens Proxy (x NE.:| []) = show (tokenVal x)
-  showTokens Proxy = unwords
-    . NE.toList
-    . fmap showTokenWithContext
+  showTokens Proxy = fmap showTokenWithContext >>> NE.toList >>> unwords
 
 showTokenWithContext :: WithPos MyToken -> String
 showTokenWithContext WithPos {tokenVal = t} = showMyToken t

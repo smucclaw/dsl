@@ -33,6 +33,7 @@ import Data.Proxy (Proxy (..))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Vector qualified as V
+import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.TokenTable (MyToken (..), tokenTable)
 import Language.Haskell.TH.Syntax (lift)
@@ -53,6 +54,7 @@ import Text.Megaparsec
   )
 import Text.Read (readMaybe)
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import Data.MonoTraversable (headMay)
 
 type RawStanza = V.Vector (V.Vector Text.Text) -- "did I stammer?"
 
@@ -161,18 +163,15 @@ instance TraversableStream MyStream where
         | sameLine = pstateLinePrefix <> preLine
         | otherwise = preLine
       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
-      newSourcePos =
-        case post of
-          [] -> if null pre then pstateSourcePos else pos (last pre)
-          (x:_) -> pos x
+      newSourcePos = case (headMay post, null pre) of
+        (Nothing, True) -> pstateSourcePos
+        (Nothing, False) -> pos $ last pre
+        (Just x, _) -> pos x
       (pre, post) = splitAt (o - pstateOffset) (unMyStream pstateInput)
       -- (preStr, postStr) = splitAt tokensConsumed (myStreamInput pstateInput)
       (preStr, postStr) = ("<not implemented #173a>", "<not implemented #173b>")
       preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
-      _tokensConsumed =
-        case NE.nonEmpty pre of
-          Nothing -> 0
-          Just nePre -> tokensLength pxy nePre
+      _tokensConsumed = pre |> NE.nonEmpty |> maybe 0 (tokensLength pxy)
       restOfLine = takeWhile (/= '\n') postStr
 
 data WithPos a = WithPos

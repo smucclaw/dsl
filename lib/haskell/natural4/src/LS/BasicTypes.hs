@@ -113,10 +113,9 @@ instance Stream MyStream where
     -- , MyStream (drop (tokensLength pxy (t:|[])) str) ts
     , MyStream str ts
     )
-  takeN_ n stream@(MyStream _str s)
-    | n < 0 = takeN_ 0 stream -- Just ([], MyStream str s)
-    | n > 0 && null s = Nothing
-    | otherwise = Just $ takeNWhile_ (splitAt n) stream
+  takeN_ ((< 0) -> True) stream = takeN_ 0 stream -- Just ([], MyStream str s)
+  takeN_ ((> 0) -> True) (MyStream _ (null -> True)) = Nothing
+  takeN_ n stream = Just $ takeNWhile_ (splitAt n) stream
   takeWhile_ = takeNWhile_ . DL.span
 
 takeNWhile_ ::

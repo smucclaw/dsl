@@ -31,6 +31,7 @@ import Control.Monad.Combinators.Expr
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
+import Data.Tuple.Curry (Curry, uncurryN)
 import LS.Rule (Parser)
 import LS.Tokens
   ( IsParser (debugName, debugPrint),
@@ -268,31 +269,37 @@ expectUnDeepers = debugName "expectUnDeepers" $ lookAhead do
   pure $ length udps
 
 withPrePost :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
-withPrePost basep = debugName "withPrePost" do
-  (pre, body, post) <- (,,)
-   -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
-    -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
-    |-| debugName "made it to inner base parser" basep
-    |<* debugName "post part" slMultiTerm -- post part
-    |<$ undeepers
-  pure $ relabelpp body pre post
+withPrePost = debugName "withPrePost"
+  . withPrePostOnly (,,) (|<* debugName "post part" slMultiTerm) relabelpp
   where
-    relabelpp :: MyBoolStruct a -> MultiTerm -> MultiTerm -> MyBoolStruct a
-    relabelpp bs pre post = MyLabel pre (Just post) bs
+    relabelpp :: MultiTerm -> MyBoolStruct a -> MultiTerm -> MyBoolStruct a
+    relabelpp pre bs post = MyLabel pre (Just post) bs
 
 withPreOnly :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
-withPreOnly basep = do -- debugName "withPreOnly" do
-  (pre, body) <- (,)
-   -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
-    -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
-    |-| debugName "made it to inner parser" basep
-    |<$ undeepers
-  pure $ relabelp body pre
+withPreOnly = -- debugName "withPreOnly" .
+  withPrePostOnly (,) id relabelp
   where
-    relabelp :: MyBoolStruct a -> MultiTerm -> MyBoolStruct  a
-    relabelp bs pre = MyLabel pre Nothing bs
+    relabelp :: MultiTerm -> MyBoolStruct a -> MyBoolStruct a
+    relabelp pre = MyLabel pre Nothing
+
+withPrePostOnly ::
+  (Show a, Curry (t -> b1) b2) =>
+  ([MTExpr] -> a -> b3) ->
+  (SLParser b3 -> SLParser t) ->
+  b2 ->
+  Parser a -> Parser b1 
+withPrePostOnly tupleCtor postPart relabel basep = do
+  preBodyPost <-
+    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
+    -- and to the left of the first, topmost term in the boolstruct
+    postPart
+      ( tupleCtor
+          $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
+          |-| debugName "made it to inner base parser" basep
+      )
+      -- \|<* debugName "" slMultiTerm
+      |<$ undeepers
+  pure $ uncurryN relabel preBodyPost
 
 -- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct
 --

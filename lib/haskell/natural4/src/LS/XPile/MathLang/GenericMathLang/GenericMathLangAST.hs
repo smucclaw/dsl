@@ -141,7 +141,7 @@ data Lit = EBoolTrue | EBoolFalse | EInteger Integer | EFloat Double | EString T
 data NumOp = OpPlus | OpMinus | OpMul | OpDiv | OpMaxOf | OpSum | OpProduct
   deriving stock (Eq, Show)
 
-data CompOp = OpNumEq | OpLt | OpLte | OpGt | OpGte
+data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
   deriving stock (Eq, Show)
 
 data SeqExp = EmptySeqE

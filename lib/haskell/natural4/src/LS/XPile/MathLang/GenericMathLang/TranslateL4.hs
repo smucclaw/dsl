@@ -694,11 +694,18 @@ expifyBodyRP = \case
     mvar <- isDeclaredVar mte
     case mvar of
       Just var -> mkSetVarTrueExpFromVarNoMd var
-      Nothing -> throwNotSupportedWithMsgError rp "Not sure if we can assume this means: 'check if <var> == True' --- would need to think through spec / conventions more"
+      Nothing ->
+        -- TODO: parse internally to see if it's
+        -- a function applied to a declared variable,
+        -- like `fib n` (in the same cell, since we only pattern match a singleton list in the RPMT)
+        -- NB. we assume that subject + predicate are in diff cells
+        -- like `ind,is a singaporean citizen`
+        let varAsUserData = noExtraMdata $ mteToLitExp mte
+            defaultValue = noExtraMdata (ELit EBoolTrue) -- or EEmpty?
+        in return $ noExtraMdata $ ECompOp OpBoolEq
+                                   varAsUserData
+                                   defaultValue
   rp@(RPMT _) -> throwNotSupportedWithMsgError rp "Not sure if this is supported; not sure if spec is clear on this"
-
-  -- func app
-  RPConstraint _lefts RPis _rights -> throwNotYetImplError "Func app not implemented / supported yet, but will hopefully be in next release"
 
   -- arithmetic comparisons
   RPConstraint lefts rel rights -> noExtraMdata <$> bexpifyArithComparisons lefts rights rel
@@ -733,9 +740,9 @@ bexpifyArithComparisons lefts rights = \case
   RPgt    -> toCompOpBExp OpGt
   RPgte   -> toCompOpBExp OpGte
   RPeq    -> toCompOpBExp OpNumEq
+  RPis    -> toCompOpBExp OpStringEq -- TODO: how about booleans?
 
   -- TODO: cases like these show we should stuff the ambient L4 rule into Env as well (or at least have a way of pushing that into some kind of 'log context') so tt we can pass them along when reporting errors
-  RPis -> throwErrorImpossibleWithMsg RPis "Should not be seeing this case again here --- the RPis case should already have been handed before this function (`bexpifyArithComparisons`) was called"
   RPor -> throwNotSupportedError RPor
   RPand -> throwNotSupportedError RPand
 

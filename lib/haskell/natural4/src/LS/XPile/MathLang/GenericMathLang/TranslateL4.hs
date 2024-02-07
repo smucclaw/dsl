@@ -74,6 +74,16 @@ import Data.Foldable qualified as F (toList, foldrM)
 import LS.XPile.MathLang.UtilsLCReplDev
 import LS.Utils ((|$>))
 
+-- for parsing expressions that are just strings inside MTExpr
+import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
+import Text.Megaparsec (Parsec, parse, (<?>), (<|>), some, between)
+import Text.Megaparsec.Char (alphaNumChar, space1)
+import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Void ( Void )
+
+import Debug.Trace (trace)
+
+
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
 {-----------------------------------------------------
@@ -569,11 +579,65 @@ baseExpifyMTEs mtes = case mtes of
 
   where
     parseExpr :: MTExpr -> BaseExp
-    parseExpr x@(MTT str) = mteToLitExp x  -- TODO: actually parse x
+    parseExpr x@(MTT str) =
+      case parse pExpr "dummy" str of
+        Right result -> result
+        Left error -> trace ("can't parse with pExpr: " <> show x) $ mteToLitExp x
+
     parseExpr x = mteToLitExp x
 
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
     consSeqExp be = ConsSE (noExtraMdata be)
+
+
+---------------- Expr parser ------------------------------------------------------
+type Parser = Parsec Void T.Text
+
+pExpr :: Parser BaseExp
+pExpr = makeExprParser pTerm table <?> "expression"
+
+pTerm = parens pExpr <|> pIdentifier <?> "term"
+
+table = [ [ binary  "*" mul'
+          , binary  "/" div' ]
+        , [ binary  "+" plus'
+          , binary  "-" minus' ]
+        , [ binary  "<" lt'
+          , binary  "<=" lte'
+          , binary  ">" gt'
+          , binary  ">=" gte'
+          , binary  "==" numeq']
+        ]
+
+binary name f = InfixL (f <$ symbol name)
+
+mul' x y = ENumOp OpMul (noExtraMdata x) (noExtraMdata y)
+div' x y = ENumOp OpDiv (noExtraMdata x) (noExtraMdata y)
+plus' x y = ENumOp OpPlus (noExtraMdata x) (noExtraMdata y)
+minus' x y =  ENumOp OpMinus (noExtraMdata x) (noExtraMdata y)
+lt' x y =  ECompOp OpLt (noExtraMdata x) (noExtraMdata y)
+lte' x y =  ECompOp OpLte (noExtraMdata x) (noExtraMdata y)
+gt' x y =  ECompOp OpGt (noExtraMdata x) (noExtraMdata y)
+gte' x y =  ECompOp OpGte (noExtraMdata x) (noExtraMdata y)
+numeq' x y = ECompOp OpNumEq (noExtraMdata x) (noExtraMdata y)
+
+pIdentifier :: Parser BaseExp
+pIdentifier = ELit . EString . T.pack <$> lexeme (some alphaNumChar)
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+symbol :: T.Text -> Parser T.Text
+symbol = L.symbol sc
+
+parens :: Parser a -> Parser a
+parens = between (symbol "(") (symbol ")")
+
+sc :: Parser ()
+sc = L.space
+  space1
+  (L.skipLineComment "//")       -- just copied and pasted this from the internet
+  (L.skipBlockComment "/*" "*/") -- don't think L4 has this kind of comments but ¯\_(ツ)_/¯
 
 expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
 expifyMTEsNoMd mtes = noExtraMdata <$> baseExpifyMTEs mtes

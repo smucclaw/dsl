@@ -5,10 +5,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
-{-| transpiler to Purescript and JSON types intended for consumption by Vue. -}
-
 -- [TODO] refactor and rename this module so that we distinguish Purescript from JSON.
 
+-- | transpiler to Purescript and JSON types intended for consumption by Vue.
 module LS.XPile.VueJSON
   ( checklist,
     groundrules,
@@ -94,14 +93,13 @@ import LS.XPile.Logging
     xpError,
     xpReturn,
   )
+import Witherable qualified as Wither
 
 -- https://en.wikipedia.org/wiki/Ground_expression
 groundrules :: RunConfig -> [Rule] -> Grounds
-groundrules rc rs = nub $ foldMap (rulegrounds rc globalrules) rs
+groundrules rc rs = Wither.hashNub $ foldMap (rulegrounds rc globalrules) rs
   where
-    globalrules :: [Rule]
-    globalrules = [ r
-                  | r@DefTypically{} <- rs ]
+    globalrules :: [Rule] = [r | r@DefTypically{} <- rs ]
 
 checklist :: NLGEnv -> RunConfig -> [Rule] -> XPileLog Grounds
 checklist env _ rs = do
@@ -242,7 +240,7 @@ groupSingletons mt1 mt2 =
 
 quaero :: [T.Text] -> [T.Text]
 quaero [x] = [T.unwords $ quaero $ T.words x]
-quaero (x:xs) = T.toTitle x : init xs ++ [last xs <> "?"]
+quaero (x:xs) = T.toTitle x : init xs <> [[i|#{last xs}?|]]
 quaero xs = xs
 
 toVueRules :: [Rule] -> [(RuleName, XPileLogE BoolStructR)]
@@ -287,21 +285,31 @@ rulesToRuleJSON :: [Rule] -> RuleJSON
 rulesToRuleJSON = foldMap ruleToRuleJSON
 
 ruleToRuleJSON :: Rule -> RuleJSON
-ruleToRuleJSON Hornlike {clauses=[HC {hHead=RPMT mt,hBody=Just itemRP}]}
-  = Map.fromList [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
+ruleToRuleJSON Hornlike {clauses=[HC {hHead=RPMT mt,hBody=Just itemRP}]} =
+  [(T.unpack $ mt2text mt, itemRPToItemJSON itemRP)]
 
-ruleToRuleJSON r@Regulative {who=whoRP, cond=condRP}
-  =  maybe Map.empty (\bsr -> Map.singleton (T.unpack (mt2text $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
-  <> maybe Map.empty (Map.singleton (T.unpack (mt2text $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
+ruleToRuleJSON r@Regulative {who, cond} =
+  who' <> cond'
+  where
+    who' =
+      who |> go "relative to subj" (fmap \txt -> [i|#{bsp2text $ subj r} #{txt}|])
+    cond' = cond |> go "absolute condition" id
 
-ruleToRuleJSON Constitutive{}  = Map.empty
-ruleToRuleJSON TypeDecl{}      = Map.empty
-ruleToRuleJSON Scenario{}      = Map.empty
-ruleToRuleJSON DefNameAlias{}  = Map.empty
-ruleToRuleJSON DefTypically{}  = Map.empty
-ruleToRuleJSON RuleAlias {}    = Map.empty
-ruleToRuleJSON RuleGroup {}    = Map.empty
-ruleToRuleJSON RegFulfilled {} = Map.empty
-ruleToRuleJSON RegBreach {}    = Map.empty
-ruleToRuleJSON NotARule {}     = Map.empty
-ruleToRuleJSON x               = [(T.unpack $ mt2text $ ruleName x, AABS.mkLeaf "unimplemented")]
+    go (txt :: String) f = maybe mempty \bsr ->
+      [([i|#{mt2text $ ruleName r} (#{txt})|], f $ itemRPToItemJSON bsr)]
+
+  -- maybe Map.empty (\bsr -> Map.singleton (T.unpack (mt2text $ ruleName r) <> " (relative to subj)") (((bsp2text (subj r) <> " ") <>) <$> itemRPToItemJSON bsr)) whoRP
+  -- <> maybe Map.empty (Map.singleton (T.unpack (mt2text $ ruleName r) <> " (absolute condition)") . itemRPToItemJSON) condRP
+
+ruleToRuleJSON Constitutive{}  = mempty
+ruleToRuleJSON TypeDecl{}      = mempty
+ruleToRuleJSON Scenario{}      = mempty
+ruleToRuleJSON DefNameAlias{}  = mempty
+ruleToRuleJSON DefTypically{}  = mempty
+ruleToRuleJSON RuleAlias {}    = mempty
+ruleToRuleJSON RuleGroup {}    = mempty
+ruleToRuleJSON RegFulfilled {} = mempty
+ruleToRuleJSON RegBreach {}    = mempty
+ruleToRuleJSON NotARule {}     = mempty
+ruleToRuleJSON x               =
+  [(T.unpack $ mt2text $ ruleName x, AABS.mkLeaf "unimplemented")]

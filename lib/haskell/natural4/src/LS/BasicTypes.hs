@@ -29,10 +29,12 @@ import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List qualified as DL
 import Data.List.NonEmpty qualified as NE
+import Data.MonoTraversable (headMay)
 import Data.Proxy (Proxy (..))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Vector qualified as V
+import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.TokenTable (MyToken (..), tokenTable)
 import Language.Haskell.TH.Syntax (lift)
@@ -111,28 +113,28 @@ instance Stream MyStream where
     -- , MyStream (drop (tokensLength pxy (t:|[])) str) ts
     , MyStream str ts
     )
-  takeN_ n (MyStream str s)
-    | n <= 0    = Just ([], MyStream str s)
-    | null s    = Nothing
-    | otherwise =
-        let (x, s') = splitAt n s
-        in case NE.nonEmpty x of
-          Nothing -> Just (x, MyStream str s')
-          -- Just nex -> Just (x, MyStream (drop (tokensLength pxy nex) str) s')
-          Just _nex -> Just (x, MyStream str s')
-  takeWhile_ f (MyStream str s) =
-    let (x, s') = DL.span f s
-    in case NE.nonEmpty x of
-      Nothing -> (x, MyStream str s')
-      -- Just nex -> (x, MyStream (drop (tokensLength pxy nex) str) s')
-      Just _nex -> (x, MyStream str s')
+  takeN_ n stream@(MyStream _str s)
+    | n < 0 = takeN_ 0 stream -- Just ([], MyStream str s)
+    | n > 0 && null s = Nothing
+    | otherwise = Just $ takeNWhile_ (splitAt n) stream
+  takeWhile_ = takeNWhile_ . DL.span
+
+takeNWhile_ ::
+  Foldable t =>
+  ([WithPos MyToken] -> (t a, [WithPos MyToken])) ->
+  MyStream ->
+  (t a, MyStream)
+takeNWhile_ f (MyStream str s)
+  | null x = go id
+  | otherwise = go id -- go $ drop (tokensLength pxy nex) str)
+  where
+    (x, s') = f s
+    go g = (x, MyStream (g str) s')
 
 instance VisualStream MyStream where
-  tokensLength Proxy xs = sum (tokenLength <$> xs)
+  tokensLength Proxy = fmap tokenLength >>> sum
   -- showTokens Proxy (x NE.:| []) = show (tokenVal x)
-  showTokens Proxy = unwords
-    . NE.toList
-    . fmap showTokenWithContext
+  showTokens Proxy = fmap showTokenWithContext >>> NE.toList >>> unwords
 
 showTokenWithContext :: WithPos MyToken -> String
 showTokenWithContext WithPos {tokenVal = t} = showMyToken t
@@ -143,7 +145,7 @@ showTokenWithContext WithPos {tokenVal = t} = showMyToken t
 
 instance TraversableStream MyStream where
   reachOffset o PosState {..} =
-    ( Just (prefix <> restOfLine)
+    ( Just $ prefix <> restOfLine
     , PosState
         { pstateInput = MyStream
             -- { myStreamInput = postStr
@@ -161,18 +163,15 @@ instance TraversableStream MyStream where
         | sameLine = pstateLinePrefix <> preLine
         | otherwise = preLine
       sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
-      newSourcePos =
-        case post of
-          [] -> if null pre then pstateSourcePos else pos (last pre)
-          (x:_) -> pos x
+      newSourcePos = case (headMay post, null pre) of
+        (Nothing, True) -> pstateSourcePos
+        (Nothing, False) -> pos $ last pre
+        (Just x, _) -> pos x
       (pre, post) = splitAt (o - pstateOffset) (unMyStream pstateInput)
       -- (preStr, postStr) = splitAt tokensConsumed (myStreamInput pstateInput)
       (preStr, postStr) = ("<not implemented #173a>", "<not implemented #173b>")
       preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
-      _tokensConsumed =
-        case NE.nonEmpty pre of
-          Nothing -> 0
-          Just nePre -> tokensLength pxy nePre
+      _tokensConsumed = pre |> NE.nonEmpty |> maybe 0 (tokensLength pxy)
       restOfLine = takeWhile (/= '\n') postStr
 
 data WithPos a = WithPos

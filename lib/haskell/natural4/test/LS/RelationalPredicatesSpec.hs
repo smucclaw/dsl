@@ -1,14 +1,17 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.RelationalPredicatesSpec (spec) where
 
-import AnyAll (mkAll, mkAny, mkLeaf)
+import AnyAll (BoolStruct, mkAll, mkAny, mkLeaf)
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String.Interpolate (i)
 import LS.RelationalPredicates (partitionExistentials)
 import LS.Types
-  ( HornClause (HC, hBody, hHead),
+  ( BoolStructR,
+    HornClause (HC, hBody, hHead),
     MTExpr (MTT),
     ParamType (TOne),
     RelationalPredicate (RPParamText),
@@ -22,37 +25,30 @@ spec :: Spec
 spec = do
   describe "partitionExistentials" do
     it "expand Leaf (not RPParamText)" do
-      let
-        l = mkRpmtLeaf ["sky", "is", "blue"]
-        hc = HC {hHead = mkRpmt [""], hBody = Just l}
-      partitionExistentials hc `shouldBe` (l,l)
+      let l = mkRpmtLeaf ["sky", "is", "blue"]
+          partitionedHc = mkAndPartitionHc l
+      partitionedHc `shouldBe` (l, l)
 
     it "expand Leaf RPParamText" do
-      let
-        typeSig = Just (SimpleType TOne "Fruit")
-        typedWords = "apple" :| ["orange", "banana"]
-        rp = RPParamText $ (MTT <$> typedWords, typeSig) :| []
-        l = mkLeaf rp
-        hc = HC {hHead = mkRpmt [""], hBody = Just l}
-      partitionExistentials hc `shouldBe` (l,l)
+      let typeSig = Just (SimpleType TOne "Fruit")
+          typedWords = "apple" :| ["orange", "banana"]
+          rp = RPParamText $ (MTT <$> typedWords, typeSig) :| []
+          l = mkLeaf rp
+          partitionedHc = mkAndPartitionHc l
+      partitionedHc `shouldBe` (l, l)
 
-    it "partition All" do
-      let
-        fruitType = Just (SimpleType TOne "Fruit")
-        l1 = mkLeaf $ RPParamText $ (MTT <$> "apple" :| ["orange", "banana"], fruitType) :| []
+    testPartitionAnyAll "All" mkAll
+    testPartitionAnyAll "Any" mkAny
+  where
+    mkAndPartitionHc l =
+      partitionExistentials HC {hHead = mkRpmt [""], hBody = Just l} 
 
-        colorType = Just (SimpleType TOne "Color")
-        l2 = mkLeaf $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], colorType) :| []
-
-        hc = HC {hHead = mkRpmt [""], hBody = Just (mkAll Nothing [l1, l2])}
-      partitionExistentials hc `shouldBe` (mkAll Nothing [l1, l2], mkAll Nothing [])
-
-    it "partition Any" do
-      let
-        fruitType = Just (SimpleType TOne "Fruit")
-        l1 = mkLeaf $ RPParamText $ (MTT <$> "apple" :| ["orange", "banana"], fruitType) :| []
-
-        l2 = mkLeaf $ RPParamText $ (MTT <$> "red" :| ["orange", "yellow"], Nothing) :| []
-
-        hc = HC {hHead = mkRpmt [""], hBody = Just (mkAny Nothing [l1, l2])}
-      partitionExistentials hc `shouldBe` (mkAny Nothing [l1], mkAny Nothing [l2])
+    testPartitionAnyAll (txt :: String) ctor = it [i|partition #{txt}|] $
+      partitionedHc `shouldBe` (ctor Nothing [l1], ctor Nothing [l2])
+      where
+        partitionedHc = mkAndPartitionHc $ ctor Nothing [l1, l2]
+        l1 = go "apple" "banana" fruitType
+        l2 = go "red" "yellow" Nothing
+        go txt txt' typ =
+          mkLeaf $ RPParamText $ (MTT <$> txt :| ["orange", txt'], typ) :| []
+        fruitType = Just $ SimpleType TOne "Fruit"

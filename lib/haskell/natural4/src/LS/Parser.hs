@@ -31,6 +31,7 @@ import Control.Monad.Combinators.Expr
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
+import Data.Tuple.Curry (Curry, uncurryN)
 import LS.Rule (Parser)
 import LS.Tokens
   ( IsParser (debugName, debugPrint),
@@ -175,11 +176,14 @@ table = [ [ prefix  MPNot  MyNot  ]
         ]
 
 labelPrefix :: Parser (MyBoolStruct a -> MyBoolStruct a)
-labelPrefix = fmap (flip MyLabel Nothing . (:[])) . debugName "labelPrefix" $ do
-  try (pMTExpr <* notEnd)
+labelPrefix =
+  flip MyLabel Nothing . (: [])
+    <$> debugName "labelPrefix" do try (pMTExpr <* notEnd)
 
 notEnd :: Parser ()
-notEnd = notFollowedBy (pToken UnDeeper <|> pToken GoDeeper *> pTokenOneOf (Typically :| []))
+notEnd =
+  notFollowedBy $
+    pToken UnDeeper <|> pToken GoDeeper *> pTokenOneOf (Typically :| [])
 
 -- SetPlus is an Or
 -- SetLess is an And Not:   X LESS Y is X AND NOT Y
@@ -193,13 +197,23 @@ getAll (MyAll xs) = xs
 getAll x = [x]
 
 -- | Extracts leaf labels and combine 'All's into a single 'All'
-myAnd,myOr,myUnless,setLess :: (Show lbl, Show a) => MyItem lbl a -> MyItem lbl a -> MyItem lbl a
-myAnd (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAll (a :  getAll b)
-myAnd a b                          = MyAll (getAll a <> getAll b)
+myAnd :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myAnd = myAndOr MyAll getAll
 
-myOr (MyLabel pre post a@(MyLeaf _)) b = MyLabel pre post $ MyAny (a :  getAny b)
-myOr a b                          = MyAny (getAny a <> getAny b)
+myOr :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+myOr = myAndOr MyAny getAny
 
+myAndOr ::
+  ([MyItem lbl a1] -> MyItem lbl a2) ->
+  (MyItem lbl a1 -> [MyItem lbl a1]) ->
+  MyItem lbl a1 ->
+  MyItem lbl a1 ->
+  MyItem lbl a2
+myAndOr ctor get (MyLabel pre post a@(MyLeaf _)) b =
+  MyLabel pre post $ ctor $ a : get b
+myAndOr ctor get a b = ctor $ get a <> get b
+
+myUnless :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
 myUnless (MyLabel pre post (MyAll as)) b = -- trace "myUnless: path 1" $
                                            MyLabel pre post $ MyAll (as ++ [MyNot b])
 myUnless a (MyLabel pre post (MyAll bs)) = -- trace "myUnless: path 2" $
@@ -209,25 +223,30 @@ myUnless a b                             = -- trace "myUnless: path 3" $
                                            -- trace ("myUnless: path 3: b = " <> show b) $
                                            MyAll (a : [MyNot b])
 
-setLess a (MyAll ((MyLeaf l):bs))
-  | all (\case
-            MyNot _ -> True
-            _       -> False
-        ) bs = MyAll (a : MyNot (MyLeaf l) : bs)
-setLess a b = MyAll (getAll a <> [MyNot b])
+setLess :: MyItem lbl a -> MyItem lbl a -> MyItem lbl a
+setLess a (MyAll (MyLeaf l : bs))
+  | all isMyNot bs = MyAll (a : MyNot (MyLeaf l) : bs)
+  where
+    isMyNot (MyNot _) = True
+    isMyNot _ = False
+setLess a b = MyAll $ getAll a <> [MyNot b]
 
 getAny :: MyItem lbl a -> [MyItem lbl a]
 getAny (MyAny xs) = xs
 getAny x = [x]
 
 binary :: MyToken -> (a -> a -> a) -> Operator Parser a
-binary  tname f = InfixR  (f <$ debugName [i|binary(#{tname})|] (pToken tname))
+binary = binaryPrefixPostfix InfixR \tname -> debugName [i|binary(#{tname})|]
 
 prefix :: MyToken -> (a -> a) -> Operator Parser a
-prefix  tname f = Prefix  (f <$ pToken tname)
+prefix  = binaryPrefixPostfix Prefix \_ x -> x
 
 postfix :: MyToken -> (a -> a) -> Operator Parser a
-postfix tname f = Postfix (f <$ pToken tname)
+postfix  = binaryPrefixPostfix Postfix \_ x -> x
+
+binaryPrefixPostfix ::
+  Functor f => (f a -> b1) -> (MyToken -> Parser MyToken -> f b2) -> MyToken -> a -> b1
+binaryPrefixPostfix ctor debug tname f = ctor $ f <$ debug tname (pToken tname)
 
 mylabel :: Operator Parser (MyBoolStruct Text.Text)
 mylabel         = Prefix  (MyLabel <$> try (manyDeep pMTExpr) <*> pure Nothing)
@@ -252,31 +271,38 @@ expectUnDeepers = debugName "expectUnDeepers" $ lookAhead do
   debugPrint [i|matched undeepers #{udps}|]
   pure $ length udps
 
-withPrePost, withPreOnly :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
-withPrePost basep = debugName "withPrePost" do
-  (pre, body, post) <- (,,)
-   -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
-    -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
-    |-| debugName "made it to inner base parser" basep
-    |<* debugName "post part" slMultiTerm -- post part
-    |<$ undeepers
-  return $ relabelpp body pre post
+withPrePost :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
+withPrePost = debugName "withPrePost"
+  . withPrePostOnly (,,) (|<* debugName "post part" slMultiTerm) relabelpp
   where
-    relabelpp :: MyBoolStruct a -> MultiTerm -> MultiTerm -> MyBoolStruct a
-    relabelpp bs pre post = MyLabel pre (Just post) bs
+    relabelpp :: MultiTerm -> MyBoolStruct a -> MultiTerm -> MyBoolStruct a
+    relabelpp pre bs post = MyLabel pre (Just post) bs
 
-withPreOnly basep = do -- debugName "withPreOnly" do
-  (pre, body) <- (,)
-   -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
-    -- and to the left of the first, topmost term in the boolstruct
-    $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
-    |-| debugName "made it to inner parser" basep
-    |<$ undeepers
-  pure $ relabelp body pre
+withPreOnly :: Show a => Parser (MyBoolStruct a) -> Parser (MyBoolStruct a)
+withPreOnly = -- debugName "withPreOnly" .
+  withPrePostOnly (,) id relabelp
   where
-    relabelp :: MyBoolStruct a -> MultiTerm -> MyBoolStruct  a
-    relabelp bs pre = MyLabel pre Nothing bs
+    relabelp :: MultiTerm -> MyBoolStruct a -> MyBoolStruct a
+    relabelp pre = MyLabel pre Nothing
+
+withPrePostOnly ::
+  (Show a, Curry (t -> b1) b2) =>
+  ([MTExpr] -> a -> b3) ->
+  (SLParser b3 -> SLParser t) ->
+  b2 ->
+  Parser a -> Parser b1
+withPrePostOnly tupleCtor postPart relabel basep = do
+  preBodyPost <-
+    -- this places the "cursor" in the column above the OR, after a sequence of pOtherVals,
+    -- and to the left of the first, topmost term in the boolstruct
+    postPart
+      ( tupleCtor
+          $*| debugName "pre part" (fst <$> (pMTExpr /+= aboveNextLineKeyword))
+          |-| debugName "made it to inner base parser" basep
+      )
+      -- \|<* debugName "" slMultiTerm
+      |<$ undeepers
+  pure $ uncurryN relabel preBodyPost
 
 -- | represent the RHS part of an (LHS = Label Pre, RHS = first-term-of-a-BoolStruct) start of a BoolStruct
 --

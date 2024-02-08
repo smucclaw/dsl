@@ -329,11 +329,14 @@ data Transpiler = XPiler
 newtype NoLabel a = NoLabel a
   deriving (Generic, Show)
 
+mkNoLabel :: a -> NoLabel a
+mkNoLabel = coerce
+
 instance ParseFields a => ParseRecord (NoLabel a)
 instance ParseFields a => ParseFields (NoLabel a) where
   -- Note (Joe, 2024-2-8): Changing (NoLabel <$>) to (coerce $) causes unwrapRecord
   -- in Main.hs to loop infinitely.
-  parseFields msg _ _ def = NoLabel <$> parseFields msg Nothing Nothing def
+  parseFields msg _ _ def = mkNoLabel <$> parseFields msg Nothing Nothing def
 
 getConfig :: Opts Unwrapped -> IO RunConfig
 getConfig o = do

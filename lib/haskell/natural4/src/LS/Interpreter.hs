@@ -1065,14 +1065,15 @@ ruleLocals l4i r = ruleLocalsIn l4i r <> ruleLocalsOut l4i r
 --   | otherwise = foldMap NE.toList (maybeToList (giveth r))
 
 ruleLocalsIn :: Interpreted -> Rule -> [TypedMulti]
-ruleLocalsIn = ruleLocalsInOut given
+ruleLocalsIn = ruleLocalsInOut given hasGiven
 
 ruleLocalsOut :: Interpreted -> Rule -> [TypedMulti]
-ruleLocalsOut = ruleLocalsInOut giveth
+ruleLocalsOut = ruleLocalsInOut giveth hasGiveth
 
-ruleLocalsInOut :: (Rule -> Maybe ParamText) -> Interpreted -> Rule -> [TypedMulti]
-ruleLocalsInOut givenGiveth _l4i = 
-  givenGiveth >>> maybeToList >>> foldMap NE.toList
+ruleLocalsInOut :: (a1 -> Maybe (NonEmpty a2)) -> (a1 -> Bool) -> p -> a1 -> [a2]
+ruleLocalsInOut givenGiveth hasGivenGiveth _l4i r
+  | hasGivenGiveth r = r |> givenGiveth |> maybeToList |> foldMap NE.toList
+  | otherwise = []
 
 type NestedClass = Tree ParamText
 

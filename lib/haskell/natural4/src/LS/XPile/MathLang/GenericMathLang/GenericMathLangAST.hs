@@ -208,6 +208,16 @@ data BaseExp =
     , letBody :: Exp
     }
 
+  | EPred1
+    { predExp :: Exp  -- meets eligibility criteria
+    , predArg :: Var  -- ind
+    } -- can be translated into a single predicate ind_meets_eligibility_criteria in Prolog
+
+  | EPred2
+    { predExp :: Exp   -- place of residence
+    , predArg1 :: Var  -- ind
+    , predArg2 :: Exp  -- Singapore
+    }
   -- TODO: mostly for V2
   -- | Block / sequence of expressions (likely to be variable assignments,
   -- where each expression can refer to previously bound variables

@@ -573,17 +573,36 @@ baseExpifyMTEs mtes = case mtes of
       Just var -> return $ EVar var
       Nothing -> return $ parseExpr mte
 
-  _     -> do
+  [mte1@(MTT _), mte2@(MTT _)] -> do
+    mvar1 <- isDeclaredVar (removeGenitive mte1)
+    mvar2 <- isDeclaredVar (removeGenitive mte2)
+    case (mvar1, mvar2) of
+      (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
+        let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
+        return $ EPred1 litWeAssumeToBePred var1
+      (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
+        let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
+        return $ EPred1 litWeAssumeToBePred var2
+      (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
+
+  _     -> trace ("baseExpifyMTEs: " <> show mtes) $ do
     let parsedExs = parseExpr <$> mtes
     return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
 
   where
+    removeGenitive :: MTExpr -> MTExpr
+    removeGenitive (MTT text) = MTT $ case reverse $ T.unpack text of
+      's':'\'':rest -> T.pack $ reverse rest
+      _ -> text
+    removeGenitive x = x
+
     parseExpr :: MTExpr -> BaseExp
     parseExpr x@(MTT str) =
       case parse pExpr "dummy" str of
-        Right result -> result
+        Right (ELit (EString _)) -> mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
+          -- TODO: find the right megaparsec way to fail if single term contains whitespace
+        Right notStringLit -> notStringLit
         Left error -> trace ("can't parse with pExpr: " <> show x) $ mteToLitExp x
-
     parseExpr x = mteToLitExp x
 
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
@@ -785,21 +804,35 @@ expifyBodyRP = \case
 
   -- 'var == True'
   rp@(RPMT [mte]) -> do
-    mvar <- isDeclaredVar mte
-    case mvar of
-      Just var -> mkSetVarTrueExpFromVarNoMd var
-      Nothing ->
-        -- TODO: parse internally to see if it's
-        -- a function applied to a declared variable,
-        -- like `fib n` (in the same cell, since we only pattern match a singleton list in the RPMT)
-        -- NB. we assume that subject + predicate are in diff cells
-        -- like `ind,is a singaporean citizen`
-        let varAsUserData = noExtraMdata $ mteToLitExp mte
-            defaultValue = noExtraMdata (ELit EBoolTrue) -- or EEmpty?
-        in return $ noExtraMdata $ ECompOp OpBoolEq
-                                   varAsUserData
+    baseExp <- baseExpifyMTEs [mte]
+    case baseExp of
+      EVar var -> mkSetVarTrueExpFromVarNoMd var
+      ELit _ -> do
+        let defaultValue = noExtraMdata (ELit EBoolTrue) -- or EEmpty?
+        return $ noExtraMdata $ ECompOp OpBoolEq
+                                   (noExtraMdata baseExp)
                                    defaultValue
+      _ -> return $ noExtraMdata baseExp -- it was internally some other expression, it was parsed in baseExpifyMTEs
+
+  rp@(RPMT mtes@[mte1, mte2]) -> noExtraMdata <$> baseExpifyMTEs mtes
+
   rp@(RPMT _) -> throwNotSupportedWithMsgError rp "Not sure if this is supported; not sure if spec is clear on this"
+
+  RPConstraint lefts RPis rights -> do
+    baseLeft <- baseExpifyMTEs lefts
+    baseRight <- baseExpifyMTEs rights
+    let rightExp = noExtraMdata baseRight
+    case (baseLeft, baseRight) of
+
+      -- 1) 2-place predicate
+      -- ind's, place of residence, IS, Singapore
+      (EPred1 pr arg, _) -> return $ noExtraMdata $ EPred2 pr arg rightExp
+
+      -- ind, IS, Singaporean citizen
+      (EVar var, ELit _) -> return $ noExtraMdata $ EPred1 rightExp var
+
+      _ -> noExtraMdata <$> bexpifyArithComparisons lefts rights RPis
+
 
   -- arithmetic comparisons
   RPConstraint lefts rel rights -> noExtraMdata <$> bexpifyArithComparisons lefts rights rel

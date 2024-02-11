@@ -78,7 +78,7 @@ packages:
     hackage: log-effectful-1.0.0.0
 snapshots:
 - completed:
-    sha256: ad2884d5d84ed4ea576897103606212da3be693eef30591efe2d8d2965895500
-    size: 714105
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/9.yaml
-  original: lts-22.9
+    sha256: 1ecd36c6af82cd6940fd16e4ecf40ac6e3844ba8f49873e34f1cf12bd1f9dfb1
+    size: 712886
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/10.yaml
+  original: lts-22.10

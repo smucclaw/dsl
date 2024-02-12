@@ -241,7 +241,12 @@ data ToLCError = NotYetImplemented ShowReprOfData Msg
   deriving anyclass Hashable
 
 stringifyToLCError :: ToLCError -> T.Text
-stringifyToLCError = undefined
+stringifyToLCError lce = case lce of
+  NotYetImplemented repr msg -> "NotYetImplemented: " <> repr <> "msg: " <> msg
+  ParserProblem repr msg -> "ParserProblem: " <> repr <> "msg: " <> msg
+  NotSupported repr msg -> "NotSupported: " <> repr <> "msg: " <> msg
+  MiscError repr msg -> "MiscError: " <> repr <> "msg: " <> msg
+  ErrImpossible repr msg -> "ErrImpossible: " <> repr <> "msg: " <> msg
 
 ---- Specialized error throwing convenience funcs ---------------------------------
 
@@ -282,7 +287,7 @@ data Env =
 initialEnv :: Env
 initialEnv = MkEnv { localVars = HM.empty
                   --  , retVarInfo = []
-                   , currSrcPos = undefined
+                   , currSrcPos = MkPositn 0 0
                    , logConfig = defaultLogConfig }
 
 ------------------------------------------------------------------------------------
@@ -428,10 +433,21 @@ l4sHLsToLCSeqExp = F.foldrM go EmptySeqE
 --------------------------------------------------------------------
 
 expifyHL :: SimpleHL -> ToLC Exp
-expifyHL hl = addMdataFromSimpleHL hl (baseExpify hl)
+expifyHL hl = do
+  bexp <- baseExpify hl
+  return $ MkExp bexp [mdata]
    where
-    addMdataFromSimpleHL :: SimpleHL -> ToLC BaseExp -> ToLC Exp
-    addMdataFromSimpleHL = undefined --TODO
+    returnType = case hl.shcRet of
+      [(_, mReturnType)] -> mReturnType
+      [] -> Nothing
+      xs -> error $ "expifyHL: the SimpleHL's shcRet has multiple return types, is this weird? " <> show xs
+      -- TODO: when would this list have more than 1 element? if there are multiple GIVETHs?
+
+    mdata = MkExpMetadata {
+              srcPos = srcRefToSrcPos $ shcSrcRef hl
+            , typeLabel = FromUser <$> returnType
+            , explnAnnot = Nothing
+            }
 
 {- | My current understanding is that the LC Exps that a SimpleHL can be are:
 1. If Then (maybe also If Then Else; not sure offhand)

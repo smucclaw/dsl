@@ -57,22 +57,16 @@ import Data.Text qualified as T
 -------------------------------------------------------------------------------}
 type Analyzed = Interpreted
 
--- | placeholder so natural L4 won't crash while I prototype 
-toMathLangGen :: Analyzed -> (String, [String])
-toMathLangGen _ = ("not yet implemented", [])
-
-{- | TODO: Remove the ' in the name once we have filled in `undefined`s along the way and are sure it won't crash
-
-    Entry point for transforming the original L4 rules into generic lamda calculus 
+{- | Entry point for transforming the original L4 rules into generic lamda calculus
      Outputs either the LC repn or errors if there're errors.
 Note:
-* Not using qaHornsT 
-    b/c it looks like it'll be a lot more work and result in convoluted code, 
-    for very little benefit. Can always refactor down the road to use it if nec 
+* Not using qaHornsT
+    b/c it looks like it'll be a lot more work and result in convoluted code,
+    for very little benefit. Can always refactor down the road to use it if nec
 * TODO re filtering for Hornlikes: Will want to work with type decls / record decls etc in the future
 -}
-toMathLangGen' :: Analyzed -> (String, [String])
-toMathLangGen' l4a =
+toMathLangGen :: Analyzed -> (String, [String])
+toMathLangGen l4a =
   let l4Hornlikes = l4a.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors

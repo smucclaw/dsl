@@ -146,7 +146,7 @@ data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
 
 data SeqExp = EmptySeqE
             | ConsSE Exp SeqExp
-  deriving stock (Show, Generic)
+  deriving stock (Show, Generic, Eq)
 
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 -- | May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn
@@ -233,12 +233,12 @@ data BaseExp =
       right :: Exp
     }
   | EEmpty
-  deriving stock (Show, Generic)
+  deriving stock (Show, Generic, Eq)
 
 data Exp = MkExp
   { exp :: BaseExp
   , md :: MdGrp }
-  deriving stock (Show)
+  deriving stock (Show, Eq)
 makeFieldLabelsNoPrefix ''Exp
 
 -- Consider doing something like the following in the future (http://blog.vmchale.com/article/ir-instances)

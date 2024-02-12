@@ -830,7 +830,7 @@ expifyBodyRP = \case
                                    defaultValue
       _ -> return $ noExtraMdata baseExp -- it was internally some other expression, it was parsed in baseExpifyMTEs
 
-  rp@(RPMT mtes@[mte1, mte2]) -> noExtraMdata <$> baseExpifyMTEs mtes
+  rp@(RPMT mtes@[_, _]) -> noExtraMdata <$> baseExpifyMTEs mtes
 
   rp@(RPMT _) -> throwNotSupportedWithMsgError rp "Not sure if this is supported; not sure if spec is clear on this"
 

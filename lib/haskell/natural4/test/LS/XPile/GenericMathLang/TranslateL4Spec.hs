@@ -11,7 +11,7 @@ import Data.List.NonEmpty (NonEmpty(..), fromList)
 import AnyAll qualified as AA
 import qualified Data.Text as T
 import Data.Maybe (fromJust)
-import Prelude hiding (exp)
+import Prelude hiding (exp, seq)
 
 
 spec :: Spec
@@ -35,6 +35,11 @@ spec = do
       it "should become something with records?" $ do
         let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike rule3predicate
         toTest `shouldBe` rule3predicate_gold
+
+    describe "arithmetics testcase 2" $ do
+      it "should parse inside a cell, 3 variants" $ do
+        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike arithRule2
+        toTest `shouldBe` arithRule2_gold
 -----------------------------------------------------------------------------
 -- Test rules
 
@@ -83,7 +88,7 @@ rule3predicate_gold = EIfThen
                 }, right = MkExp
                 { exp = EAnd
                     { left = MkExp
-                        { exp = EPred2
+                        { exp = EPred2 -- placeOfRes(ind, Sg)
                             { predExp = MkExp
                                 { exp = ELit
                                     { lit = EString "place of residence" }, md = []
@@ -97,6 +102,7 @@ rule3predicate_gold = EIfThen
                             { left = MkExp
                                 { exp = ECompOp
                                     { compOp = OpGte, compLeft = MkExp
+
                                         { exp = EPred1
                                             { predExp = MkExp
                                                 { exp = ELit
@@ -104,6 +110,7 @@ rule3predicate_gold = EIfThen
                                                 }, predArg = MkVar "ind"
                                             }, md = []
                                         }, compRight = MkExp
+
                                         { exp = ELit
                                             { lit = EInteger 21 }, md = []
                                         }
@@ -399,6 +406,100 @@ rule2nogivens_gold = EIfThen
         }
     }
 
+arithRule2 = mkTestRule
+                [ MTT "m3a" ]
+                (mkGivens [("m1", Just ( SimpleType TOne "Number" )), ("m2", Just ( SimpleType TOne "Number" ))])
+                [ HC { hHead = RPConstraint
+                                [ MTT "m3a" ] RPis
+                                [ MTT "m1"
+                                , MTT "*"
+                                , MTT "m2"
+                                ]
+                    , hBody = Nothing}
+                , HC { hHead = RPnary RPis
+                        [ RPMT
+                            [ MTT "m3b" ]
+                        , RPnary RPproduct
+                            [ RPMT
+                                [ MTT "m1" ]
+                            , RPMT
+                                [ MTT "m2" ]
+                            ]
+                        ]
+                    , hBody = Nothing }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "m3c" ] RPis
+                        [ MTT "m1 * m2" ]
+                    , hBody = Nothing }
+                ]
+
+
+arithRule2_gold = ESeq
+    { seq = ConsSE
+        ( MkExp
+            { exp = EVarSet
+                { vsetVar = MkExp
+                    { exp = EVar
+                        { var = MkVar "m3a" }, md = dummyMetadata
+                    }, arg = MkExp
+                    { exp = ENumOp
+                        { numOp = OpMul, nopLeft = MkExp
+                            { exp = ELit
+                                { lit = EString "m1" }, md = []
+                            }, nopRight = MkExp
+                            { exp = ELit { lit = EString "m2" }, md = [] }
+                        }, md = []
+                    }
+                }, md = dummyMetadata
+            }
+        )
+        ( ConsSE
+            ( MkExp
+                { exp = EIs
+                    { isArg1 = MkExp
+                        { exp = ECompOp
+                            { compOp = OpBoolEq, compLeft = MkExp
+                                { exp = ELit
+                                    { lit = EString "m3b" }, md = []
+                                }, compRight = MkExp
+                                { exp = ELit { lit = EBoolTrue }, md = [] }
+                            }, md = []
+                        }, isArg2 = MkExp
+                        { exp = ENumOp
+                            { numOp = OpProduct, nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m1" }, md = []
+                                }, nopRight = MkExp
+                                { exp = EVar { var = MkVar "m2" }, md = [] }
+                            }, md = []
+                        }
+                    }, md = dummyMetadata
+                }
+            )
+            ( ConsSE
+                ( MkExp
+                    { exp = EVarSet
+                        { vsetVar = MkExp
+                            { exp = EVar
+                                { var = MkVar "m3c" }, md = dummyMetadata
+                            }, arg = MkExp
+                            { exp = ENumOp
+                                { numOp = OpMul, nopLeft = MkExp
+                                    { exp = ELit
+                                        { lit = EString "m1" }, md = []
+                                    }, nopRight = MkExp
+                                    { exp = ELit
+                                        { lit = EString "m2" }, md = []
+                                    }
+                                }, md = []
+                            }
+                        }, md = dummyMetadata
+                    }
+                ) EmptySeqE
+            )
+        )
+    }
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens [] = Nothing
 mkGivens xs = Just $ fromList $ map mkTypedMulti xs

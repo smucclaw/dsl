@@ -16,7 +16,7 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
 import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
--- TODO: Haven't actually finished setting up logging infra, unfortunately. 
+-- TODO: Haven't actually finished setting up logging infra, unfortunately.
 -- But it's also not really necessary for working on the transpiler
 
 import AnyAll qualified as AA
@@ -25,14 +25,14 @@ import LS.Types as L4
   HornClause (..), HornClause2, BoolStructR,
   TypeSig(..), TypedMulti,
   SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
-  MultiClauseHL, _MkMultiClauseHL, mkMultiClauseHL,
+  MultiClauseHL(..), _MkMultiClauseHL, mkMultiClauseHL,
   HeadOnlyHC, _MkHeadOnlyHC, mkHeadOnlyAtomicHC, mkHeadOnlyHC, headOnlyHLasMTEs,
   HnBodHC(..),
   mtexpr2text
   )
--- import LS.Interpreter (qaHornsT)
+
 import LS.Rule (
-                -- Interpreted(..), 
+                -- Interpreted(..),
                 extractMTExprs, getGivenWithSimpleType,
                 defaultHorn)
 import LS.Rule qualified as L4 (Rule(..))
@@ -74,6 +74,8 @@ import Data.Foldable qualified as F (toList, foldrM)
 import LS.XPile.MathLang.UtilsLCReplDev
 import LS.Utils ((|$>))
 
+import qualified Data.List.NonEmpty as NE
+
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Text.Megaparsec (Parsec, parse, (<?>), (<|>), some, between)
@@ -101,8 +103,8 @@ the patterns in the head:
         , MTT "qualifies a la case 3"
         ]
 
-* RPConstraint  MultiTerm RPRel MultiTerm 
-  
+* RPConstraint  MultiTerm RPRel MultiTerm
+
     [ MTT "incomeTaxRate" ] RPis [ MTF 1.0e-2 ]
 
 * RPBoolStructR MultiTerm RPRel BoolStructR
@@ -135,7 +137,7 @@ the patterns in the head:
                 , hBody = Nothing
                 }
             ]
-* RPnary RPRel [RelationalPredicate] --- potentially recursive 
+* RPnary RPRel [RelationalPredicate] --- potentially recursive
 
       RPnary RPis
         [ RPMT
@@ -152,7 +154,7 @@ the patterns in the head:
 Another way of carving up the space
 -----------------------------------
 
----- Set Var ---------------------------------------- 
+---- Set Var ----------------------------------------
 
 -------- Set Var to ...
 
@@ -229,7 +231,7 @@ b/c in L4 it might be possible to declare and initalize a global var from, e.g.,
 
 type Msg = T.Text
 type ShowReprOfData = T.Text
-{- | TODO: Add SrcPositn; 
+{- | TODO: Add SrcPositn;
      also would be nice to just do something like NotYetImplemented :: Show a -> a -> ErrorMsg -> ToLCError
 -}
 data ToLCError = NotYetImplemented ShowReprOfData Msg
@@ -294,7 +296,7 @@ initialEnv = MkEnv { localVars = HM.empty
 
 {- | TODO: Revise this when time permits --- this is not 'idiomatic'
 something like the following more idiomatic:
-  type ToLCEffs es = 
+  type ToLCEffs es =
     ( Reader Env :> es
     , State GlobalVars :> es
     , ValidateT (HS.HashSet ToLCError) :> es
@@ -307,7 +309,7 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
 newtype ToLC a =
   ToLC (Eff '[Reader Env,
         -- State GlobalVars,
-        -- Might be better to just do a separate pass that finds the global vars --- not sure rn 
+        -- Might be better to just do a separate pass that finds the global vars --- not sure rn
         Error ToLCError] a )
   deriving newtype (Functor, Applicative, Monad)
 
@@ -325,7 +327,7 @@ runToLC :: ToLC a -> Either ToLCError a
 runToLC (unToLC -> m) =
   m
     |> runReader initialEnv
-    -- |> runState initialState 
+    -- |> runState initialState
     |> runErrorNoCallStack
     |> runPureEff
   -- where
@@ -333,7 +335,7 @@ runToLC (unToLC -> m) =
 
 --------------------------------------------------------------------------------------------------
 
-{- | Look for the global vars in a separate pass for now. 
+{- | Look for the global vars in a separate pass for now.
 May need Reader, but only going to think abt that when we get there -}
 findGlobalVars :: Exp -> (Exp, GlobalVars)
 findGlobalVars exp = (exp, placeholderTODO)
@@ -349,7 +351,7 @@ l4ToLCProgram rules = do
                    , globalVars = globalVars}
 
 {-==============================================================================
-  1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL 
+  1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL
 ===============================================================================-}
 
 type SimpleHL = SimpleHlike VarTypeDeclMap RetVarInfo
@@ -366,8 +368,8 @@ simplifyL4Hlike rule =
                       }
     Nothing -> throwParserProblemWithMsg rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
-given :: Maybe ParamText = Maybe (NonEmpty TypedMulti) 
-        = Maybe (NonEmpty 
+given :: Maybe ParamText = Maybe (NonEmpty TypedMulti)
+        = Maybe (NonEmpty
                     (NonEmpty MTExpr, Maybe TypeSig))
 -}
 
@@ -419,7 +421,7 @@ l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
   where
     mkExpFrSeqExp :: SeqExp -> Exp
     mkExpFrSeqExp seqExp = noExtraMdata (ESeq seqExp)
-    -- TODO: Can add metadata here in the future if needed. 
+    -- TODO: Can add metadata here in the future if needed.
     -- Bear in mind already adding metadata at level of L4Prog and in `expifyHL`
 
 {- | Right now I don't think the order in which we compile the HLs actually matters,
@@ -457,6 +459,7 @@ expifyHL hl = do
 baseExpify :: SimpleHL -> ToLC BaseExp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
 baseExpify hl@(MkSimpleHL _ _ (OneClause (HeadOnly hc)) _) = toHeadOnlyExp hl hc
+baseExpify (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
 baseExpify hornlike = throwNotYetImplError hornlike
 -- for the future, remove the catch all `baseExpify hornlike` and add stuff like
 -- baseExpify (isLamDef -> ...) = ...
@@ -465,11 +468,11 @@ baseExpify hornlike = throwNotYetImplError hornlike
 
 {- | TODO: Need to figure out (and decide) how to distinguish function definitions from IFs,
 since right now this would consider something like the following to be an IF:
-    GIVEN		ind		IS	A	Person	
-        t		IS	A	Timepoint	
-    DECIDE		ind	meets the property eligibility criteria for GSTV-Cash				
-    IF	NOT	ind	owns more than one property				
-    OR		ind	owns 2 or more HDB flats and no other property				
+    GIVEN		ind		IS	A	Person
+        t		IS	A	Timepoint
+    DECIDE		ind	meets the property eligibility criteria for GSTV-Cash
+    IF	NOT	ind	owns more than one property
+    OR		ind	owns 2 or more HDB flats and no other property
 -}
 isIf :: SimpleHL -> Maybe (SimpleHL, HnBodHC)
 isIf hl =
@@ -479,6 +482,15 @@ isIf hl =
       case atomicHC of
         HeadOnly _ -> Nothing
         HeadAndBody hc -> Just (hl, hc)
+
+isMultiClause :: SimpleHL -> [SimpleHL]
+isMultiClause hl =
+  case hl.baseHL of
+    MultiClause (MkMultiClauseHL hls) -> keepOgHL <$> NE.toList hls
+    _ -> []
+  where
+    keepOgHL :: AtomicHC -> SimpleHL
+    keepOgHL hc = hl {baseHL = OneClause hc}
 
 toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
 toIfExp hl hc = do
@@ -504,23 +516,24 @@ toHeadOnlyExp hl hc =
 
 --------------------- Head of HL and Var Set ------------------------------------------------------------
 
-{- | Preconditions / assumptions: The L4 rule that's being processed corresponds to an EIf in our LC AST; 
+{- | Preconditions / assumptions: The L4 rule that's being processed corresponds to an EIf in our LC AST;
 i.e., the RelationalPredicate comes from an L4 rule tt's been identified as corresponding to an EIf
 
 What can be in hHead if the ambient L4 rule is an EIf?
   Set Var
-    (i) Simple Set Var: 
+    (i) Simple Set Var:
       * `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
     (ii) Set Var True (typically with an IF):
       * `RPMT [ MTT "case 1 qualifies" ]
 
-Things like arithmetic constraints (<, >, etc) 
+Things like arithmetic constraints (<, >, etc)
 don't appear here -- they appear in hBody
 -}
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
 processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
-processHcHeadForIf rp = throwNotSupportedError rp
+processHcHeadForIf rp = expifyBodyRP rp -- TODO: this is body, make a different version for head?
+-- processHcHeadForIf rp = throwNotSupportedError rp
 
 {- Note that processing hcHead for *function definitions* would need to consider cases like the following,
    though do check if the conventions have changed --- this example might be outdated
@@ -562,7 +575,7 @@ isOtherSetVar = \case
   _ -> Nothing
 
 
-{- | 
+{- |
 We want to handle things like
   * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
 
@@ -571,7 +584,7 @@ To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github
 One future complication I can see has to do with fun app (when it appears inline).
   EG: 'n1 + f n2'
 If we cannot tell from the syntax alone whether
-something is meant to be a func / 'in the func position of a func app', 
+something is meant to be a func / 'in the func position of a func app',
 we'd prob need to do a prelim pass to find all the function defns / declarations first
 
 TODO: Think about what kind of validation we might want to do here
@@ -602,8 +615,13 @@ baseExpifyMTEs mtes = case mtes of
       (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
 
   _     -> trace ("baseExpifyMTEs: " <> show mtes) $ do
-    let parsedExs = parseExpr <$> mtes
-    return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
+    case parseExpr $ allInOne mtes of
+      -- TODO: this should definitely not be a sequence, what should it be instead???
+      ELit _ -> do
+        let parsedExs = parseExpr <$> mtes
+        return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
+      -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
+      notStringLit -> return notStringLit
 
   where
     removeGenitive :: MTExpr -> MTExpr
@@ -611,6 +629,11 @@ baseExpifyMTEs mtes = case mtes of
       's':'\'':rest -> T.pack $ reverse rest
       _ -> text
     removeGenitive x = x
+
+    allInOne :: [MTExpr] -> MTExpr
+    allInOne = foldl1 mergeMTT
+      where
+        mergeMTT mt1 mt2 = MTT (mtexpr2text mt1 <> " " <> mtexpr2text mt2)
 
     parseExpr :: MTExpr -> BaseExp
     parseExpr x@(MTT str) =
@@ -705,7 +728,7 @@ mkVarExp var = do
   env :: Env <- ToLC ask
   let varExpMetadata = MkExpMetadata { srcPos = env.currSrcPos
                                      , typeLabel = FromUser <$> lookupVar var env.localVars
-                                     , explnAnnot = Nothing --Temp plceholder; TODO 
+                                     , explnAnnot = Nothing --Temp plceholder; TODO
                                      }
   return $ MkExp (EVar var) [varExpMetadata]
 
@@ -772,13 +795,13 @@ processHcBody = \case
     makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
 
 {- |
-Helps to remember: 
-  * if it's in the hBody, 
-    with the impt exception of OTHERWISE, 
+Helps to remember:
+  * if it's in the hBody,
+    with the impt exception of OTHERWISE,
     it evals to a Bool / is a Propn / Condn of some sort
 
 So the things that can be part of hBody are:
-  
+
   1. fn app
 
       Leaf
@@ -788,7 +811,7 @@ So the things that can be part of hBody are:
             ] RPis
             [ MTT "Singapore" ]
         )
-        
+
   2. if just a var: shorthand for 'var == True'
 
         HC { hHead = RPConstraint
@@ -849,13 +872,18 @@ expifyBodyRP = \case
 
       _ -> noExtraMdata <$> bexpifyArithComparisons lefts rights RPis
 
+  -- TODO: RPnary for 2 arguments, change RPproduct to RPmul etc?
+  RPnary rel [RPMT mt1, RPMT mt2] -> expifyBodyRP $ RPConstraint mt1 rel mt2
+  RPnary RPis [rp1, rp2] -> do
+    exp1 <- expifyBodyRP rp1
+    exp2 <- expifyBodyRP rp2
+    return $ noExtraMdata $ EIs exp1 exp2
 
   -- arithmetic comparisons
   RPConstraint lefts rel rights -> noExtraMdata <$> bexpifyArithComparisons lefts rights rel
   -- TODO: yet another place where we might consider adding metadata (just replace `noExtraMdata`); see also defn of `toCompOpBExp`
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
-  rp@RPnary{} -> throwNotSupportedWithMsgError rp "RPnary{} case of expifyBodyRP"
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
 
@@ -884,6 +912,8 @@ bexpifyArithComparisons lefts rights = \case
   RPgte   -> toCompOpBExp OpGte
   RPeq    -> toCompOpBExp OpNumEq
   RPis    -> toCompOpBExp OpStringEq -- TODO: how about booleans?
+  RPproduct -> toNumOpBExp OpProduct
+  RPsum -> toNumOpBExp OpSum
 
   -- TODO: cases like these show we should stuff the ambient L4 rule into Env as well (or at least have a way of pushing that into some kind of 'log context') so tt we can pass them along when reporting errors
   RPor -> throwNotSupportedError RPor
@@ -892,6 +922,9 @@ bexpifyArithComparisons lefts rights = \case
   otherRp -> throwNotYetImplError otherRp
 
   where
+    toNumOpBExp :: NumOp -> ToLC BaseExp
+    toNumOpBExp op = ENumOp op <$> expifyMTEsNoMd lefts <*> expifyMTEsNoMd rights
+
     toCompOpBExp :: CompOp -> ToLC BaseExp
     toCompOpBExp comp = ECompOp comp <$> expifyMTEsNoMd lefts <*> expifyMTEsNoMd rights
     -- TODO: yet another place where we might consider adding metadata -- i.e., in the lefts and rights exps

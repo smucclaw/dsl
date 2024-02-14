@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 77d3d087813118ed830733c4da1ba2f73a75768c1bf400915c5dc96ca3720d58
+      sha256: f42514ffc6151acd8df63837d2ec00a48496f74d97001a7b1f26b189d1398ad9
       size: 12537
-    sha256: ea10f9d079bee257db86e80b19978345fe03f3fd2e64738ae4e88d9c1f312a68
-    size: 3188636
-    url: https://github.com/smucclaw/baby-l4/archive/155c4090ddba52aab03191951cf98e26d5f39f6e.tar.gz
+    sha256: f9dd1cfbd8c856b34d2fdeffa77ccc396b0c74c31bb1f41f1d158828aba77454
+    size: 3188627
+    url: https://github.com/smucclaw/baby-l4/archive/a0228bcb949dbab81ea8f8682cb8421084ac54ad.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/155c4090ddba52aab03191951cf98e26d5f39f6e.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/a0228bcb949dbab81ea8f8682cb8421084ac54ad.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -78,7 +78,7 @@ packages:
     hackage: log-effectful-1.0.0.0
 snapshots:
 - completed:
-    sha256: 1ecd36c6af82cd6940fd16e4ecf40ac6e3844ba8f49873e34f1cf12bd1f9dfb1
-    size: 712886
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/10.yaml
-  original: lts-22.10
+    sha256: 2fdd7d3e54540062ef75ca0a73ca3a804c527dbf8a4cadafabf340e66ac4af40
+    size: 712469
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/11.yaml
+  original: lts-22.11

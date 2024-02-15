@@ -340,21 +340,21 @@ rule2nogivens_gold = EIfThen
     { condExp = MkExp
         { exp = EAnd
             { left = MkExp
-                { exp = ECompOp
-                    { compOp = OpBoolEq, compLeft = MkExp
-                        { exp = ELit
-                            { lit = EString "Singapore citizen" }, md = []
-                        }, compRight = MkExp
-                        { exp = ELit { lit = EBoolTrue }, md = [] }
-                    }, md = []
-                }, right = MkExp
+                { exp = ECompOp {
+                     compOp = OpBoolEq
+                   , compLeft = MkExp {
+                        exp = ELit { lit = EString "Singapore citizen" }, md = [] }
+                   , compRight = MkExp {
+                        exp = ELit {lit = EBoolTrue}, md = []}}
+                , md = [] }
+            , right = MkExp
                 { exp = EAnd
                     { left = MkExp
-                        { exp = ECompOp
-                            { compOp = OpStringEq, compLeft = MkExp
+                        { exp = EIs
+                            { isLeft = MkExp
                                 { exp = ELit
                                     { lit = EString "place of residence" }, md = []
-                                }, compRight = MkExp
+                                }, isRight = MkExp
                                 { exp = ELit
                                     { lit = EString "Singapore" }, md = []
                                 }

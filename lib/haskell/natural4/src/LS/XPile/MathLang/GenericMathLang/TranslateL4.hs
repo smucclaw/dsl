@@ -533,7 +533,7 @@ don't appear here -- they appear in hBody
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
 processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
-processHcHeadForIf rp = expifyBodyRP rp -- TODO: this is body, make a different version for head?
+processHcHeadForIf rp = trace (show rp) $ expifyHeadRP rp
 -- processHcHeadForIf rp = throwNotSupportedError rp
 
 {- Note that processing hcHead for *function definitions* would need to consider cases like the following,
@@ -573,6 +573,7 @@ isSetVarToTrue = \case
 isOtherSetVar :: L4.RelationalPredicate -> Maybe ([MTExpr], [MTExpr])
 isOtherSetVar = \case
   RPConstraint lefts RPis rights -> Just (lefts, rights)
+--  RPnary RPis [MTT mtes, rp] -- this is handled in expifyHeadRP
   _ -> Nothing
 
 
@@ -595,8 +596,8 @@ NOTE: If it seems like literals will appear here (e.g. number literals), see def
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (genitives@(g:_), rest)) = do
   -- ind's parent's sibling's … income
-  recname <- noExtraMdata <$> baseExpifyMTEs [g] -- TODO fix later, just doing the first one now
-  fieldname <- noExtraMdata <$> baseExpifyMTEs rest -- income
+  recname <- expifyMTEsNoMd [g] -- TODO fix later, just doing the first one now! Also check if it's a variable and if so, add metadata
+  fieldname <- expifyMTEsNoMd rest -- income
   return $ ERec fieldname recname
 baseExpifyMTEs mtes = case mtes of
   [mte] -> do
@@ -614,28 +615,23 @@ baseExpifyMTEs mtes = case mtes of
     case (mvar1, mvar2) of
       (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
-        return $ EPred1 litWeAssumeToBePred var1
+        return $ EApp litWeAssumeToBePred var1
       (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
-        return $ EPred1 litWeAssumeToBePred var2
+        return $ EApp litWeAssumeToBePred var2
       (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
 
   _     -> trace ("baseExpifyMTEs: " <> show mtes) $ do
-    case parseExpr $ allInOne mtes of
+    case parseExpr $ MTT $ textifyMTEs mtes of
       -- TODO: this should definitely not be a sequence, what should it be instead???
       ELit _ -> do
         let parsedExs = parseExpr <$> mtes
         return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
+
       -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
       notStringLit -> return notStringLit
 
   where
-
-    allInOne :: [MTExpr] -> MTExpr
-    allInOne = foldl1 mergeMTT
-      where
-        mergeMTT mt1 mt2 = MTT (mtexpr2text mt1 <> " " <> mtexpr2text mt2)
-
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
     consSeqExp be = ConsSE (noExtraMdata be)
 
@@ -690,8 +686,10 @@ gt' x y =  ECompOp OpGt (noExtraMdata x) (noExtraMdata y)
 gte' x y =  ECompOp OpGte (noExtraMdata x) (noExtraMdata y)
 numeq' x y = ECompOp OpNumEq (noExtraMdata x) (noExtraMdata y)
 
+-- TODO: should we identify already here whether things are Vars or Lits?
+-- Or make everything by default Var, and later on correct if the Var is not set.
 pIdentifier :: Parser BaseExp
-pIdentifier = ELit . EString . T.pack <$> lexeme (some (alphaNumChar <|> char '.') )
+pIdentifier = EVar . MkVar . T.pack <$> lexeme (some (alphaNumChar <|> char '.') )
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
@@ -709,7 +707,14 @@ sc = L.space
   (L.skipBlockComment "/*" "*/") -- don't think L4 has this kind of comments but ¯\_(ツ)_/¯
 
 expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
-expifyMTEsNoMd mtes = noExtraMdata <$> baseExpifyMTEs mtes
+expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
+ where
+  -- TODO: here use the composOp style thing to do this transformation in all sub-BaseExps in the BaseExp!
+  addMetadataToVar :: BaseExp -> ToLC Exp
+  -- TODO: check that if isDeclaredVar, use the actual metadata, otherwise use inferred metadata
+  addMetadataToVar bexp = case bexp of
+                            EVar var -> mkVarExp var
+                            _ -> return $ noExtraMdata bexp
 
 ----- Util funcs for looking up / annotating / making Vars -------------------------------------
 
@@ -803,7 +808,12 @@ processHcBody = \case
 
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
-    makeOp op bsr exp = noExtraMdata <$> (op <$> processHcBody bsr <*> pure exp)
+    makeOp op bsr exp = noExtraMdata <$> (op <$> (toBoolEq <$> processHcBody bsr) <*> pure exp)
+
+    toBoolEq e = e {exp = toBoolEqBE e.exp}
+    toBoolEqBE e@(ELit _) = ECompOp OpBoolEq (noExtraMdata e) (noExtraMdata (ELit EBoolTrue))
+    toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (noExtraMdata e) (noExtraMdata (ELit EBoolTrue))
+    toBoolEqBE e = e
 
 {- |
 Helps to remember:
@@ -847,100 +857,69 @@ So the things that can be part of hBody are:
 
   4. (edge case: OTHERWISE --- haven't thought too much abt this yet)
 -}
+expifyHeadRP :: RelationalPredicate -> ToLC Exp
+expifyHeadRP = \case
+  -- This is
+  RPConstraint lefts RPis rights -> expifyHeadRP $ RPnary RPis [RPMT lefts, RPMT rights]
+  RPnary RPis [RPMT [mte], rp]   -> do
+    mvar <- isDeclaredVar mte
+    exp <- expifyBodyRP rp
+    varMd <- case mvar of
+              Just var -> md <$> mkVarExp var -- only call mkVarExp to get the metadata
+              Nothing -> return []
+    varSet <- mkSetVarFromMTEsHelper [mte] exp -- metadata doesn't come here!
+    return $ MkExp varSet varMd
+
+  rp -> expifyBodyRP rp
+
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
 expifyBodyRP = \case
   -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
-  -- 'var == True'
-  rp@(RPMT [mte]) -> do
-    baseExp <- baseExpifyMTEs [mte]
-    case baseExp of
-      EVar var -> mkSetVarTrueExpFromVarNoMd var
-      ELit _ -> do
-        let defaultValue = noExtraMdata (ELit EBoolTrue) -- or EEmpty?
-        return $ noExtraMdata $ ECompOp OpBoolEq
-                                   (noExtraMdata baseExp)
-                                   defaultValue
-      _ -> return $ noExtraMdata baseExp -- it was internally some other expression, it was parsed in baseExpifyMTEs
+  -- A single term could often be interpreted as 'var == True',
+  -- but we choose to do that transformation later.
+  rp@(RPMT [mte]) -> expifyMTEsNoMd [mte] -- adds metadata to Var, not others
 
-  rp@(RPMT mtes@[_, _]) -> noExtraMdata <$> baseExpifyMTEs mtes
+  -- probably a good idea to merge with above, but keeping them separate just to remind myself to rethink
+  rp@(RPMT mtes) -> expifyMTEsNoMd mtes
 
   rp@(RPMT _) -> throwNotSupportedWithMsgError rp "Not sure if this is supported; not sure if spec is clear on this"
 
-  RPConstraint lefts RPis rights -> do
-    baseLeft <- baseExpifyMTEs lefts
-    baseRight <- baseExpifyMTEs rights
-    let rightExp = noExtraMdata baseRight
-    case (baseLeft, baseRight) of
-
-      -- 1) 2-place predicate
-      -- ind's, place of residence, IS, Singapore
-      (EPred1 pr arg, _) -> return $ noExtraMdata $ EPred2 pr arg rightExp
-
-      -- ind, IS, Singaporean citizen
-      (EVar var, ELit _) -> return $ noExtraMdata $ EPred1 rightExp var
-
-      _ -> noExtraMdata <$> bexpifyArithComparisons lefts rights RPis
-
-  -- TODO: RPnary for 2 arguments, change RPproduct to RPmul etc?
-  RPnary rel [RPMT mt1, RPMT mt2] -> expifyBodyRP $ RPConstraint mt1 rel mt2
-  RPnary rel [rp1, rp2] -> return $ noExtraMdata EEmpty
-  --   exp <- expifyBodyRP rp
-  -- RPnary RPsum [RPnary RPproduct [RPMT [MTT \"o1\"],RPMT [MTF 1.0e-2]],RPnary RPproduct [RPMT [MTT \"o2\"],RPMT [MTF 7.0e-2]]]
-
+  RPConstraint lefts rel rights -> expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
   RPnary RPis [rp1, rp2] -> do
     exp1 <- expifyBodyRP rp1
     exp2 <- expifyBodyRP rp2
     return $ noExtraMdata $ EIs exp1 exp2
-
-  -- arithmetic comparisons
-  RPConstraint lefts rel rights -> noExtraMdata <$> bexpifyArithComparisons lefts rights rel
-  -- TODO: yet another place where we might consider adding metadata (just replace `noExtraMdata`); see also defn of `toCompOpBExp`
+  RPnary rel [rp1, rp2] -> do
+    expLeft <- expifyBodyRP rp1
+    expRight <- expifyBodyRP rp2
+    numOrCompOp rel expLeft expRight
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
   rp -> throwNotSupportedWithMsgError rp "unknown rp"
-
-
-
-{- | Turns L4 arithmetic comparisons in body of RP to ToLC BaseExp
-
-Examples:
-    , Leaf
-        ( RPConstraint
-            [ MTT "age" ] RPgte
-            [ MTI 21 ]
-        )
-    , Leaf
-        ( RPConstraint
-            [ MTT "property annual value" ] RPlte
-            [ MTI 21000 ]
-        )
--}
-bexpifyArithComparisons :: [MTExpr] -> [MTExpr] -> RPRel -> ToLC BaseExp
-bexpifyArithComparisons lefts rights = \case
-  -- arith comparison ops
-  RPlt    -> toCompOpBExp OpLt
-  RPlte   -> toCompOpBExp OpLte
-  RPgt    -> toCompOpBExp OpGt
-  RPgte   -> toCompOpBExp OpGte
-  RPeq    -> toCompOpBExp OpNumEq
-  RPis    -> toCompOpBExp OpStringEq -- TODO: how about booleans?
-  RPproduct -> toNumOpBExp OpProduct
-  RPsum -> toNumOpBExp OpSum
-
-  -- TODO: cases like these show we should stuff the ambient L4 rule into Env as well (or at least have a way of pushing that into some kind of 'log context') so tt we can pass them along when reporting errors
-  RPor -> throwNotSupportedError RPor
-  RPand -> throwNotSupportedError RPand
-
-  otherRp -> throwNotYetImplError otherRp
-
   where
-    toNumOpBExp :: NumOp -> ToLC BaseExp
-    toNumOpBExp op = ENumOp op <$> expifyMTEsNoMd lefts <*> expifyMTEsNoMd rights
+    numOrCompOp :: RPRel -> Exp -> Exp -> ToLC Exp
+    numOrCompOp (rprel2compop -> Just compOp) = \x y -> return $ noExtraMdata $ ECompOp compOp x y
+    numOrCompOp (rprel2numop -> Just numOp) = \x y -> return $  noExtraMdata $ ENumOp numOp x y
+    numOrCompOp rprel = error $ "not implemented" <> show rprel
 
-    toCompOpBExp :: CompOp -> ToLC BaseExp
-    toCompOpBExp comp = ECompOp comp <$> expifyMTEsNoMd lefts <*> expifyMTEsNoMd rights
-    -- TODO: yet another place where we might consider adding metadata -- i.e., in the lefts and rights exps
+    rprel2numop :: RPRel -> Maybe NumOp
+    rprel2numop rel = case rel of
+      RPsum     -> Just OpPlus
+      RPproduct -> Just OpMul
+      RPmax     -> Just OpMaxOf
+      RPmin     -> Just OpMinOf
+      _         -> Nothing
+
+    rprel2compop :: RPRel -> Maybe CompOp
+    rprel2compop rel = case rel of
+      RPlt   -> Just OpLt
+      RPlte  -> Just OpLte
+      RPgt   -> Just OpGt
+      RPgte  -> Just OpGte
+      RPeq   -> Just OpNumEq
+      _      -> Nothing
+

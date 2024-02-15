@@ -58,7 +58,7 @@ type FieldLabel = T.Text
 type Number = Double
 -- ^ TODO: Will want to change this to something that can represent money in the future
 
-data TLabel = FromUser L4EntType 
+data TLabel = FromUser L4EntType
             | Inferred T.Text
   deriving stock (Eq, Show)
 makePrisms ''TLabel
@@ -80,7 +80,7 @@ data ExplnImptce = HighEI | LowEI | DebugEI
 {- |
 To think about:
   * Inari: Might it make sense to stick GF trees in here (or some other metadata type associated with each Exp)?
-  YM's quick thought / reaction: Will want some way of toggling 
+  YM's quick thought / reaction: Will want some way of toggling
   whether to parse to GF regardless, since can imagine that for
   some applications / users, they may not need the GF trees.
   May want to look into HKDs too.
@@ -88,7 +88,7 @@ To think about:
 data ExplnAnnot = MkExplnAnnot
   { l4RuleName :: T.Text
   , overridAnnot :: Maybe T.Text
-  -- ^ if L4 writer wants to override the default annotation 
+  -- ^ if L4 writer wants to override the default annotation
   , explnImptce :: Maybe ExplnImptce
   -- ^ how impt it is to log the relevant annotation when tracing the eval, to (optionally) be provided by L4 writer
   -- what the default shld be can be a configurable L4 setting (and can made configurable on the downstream side as well)
@@ -105,7 +105,7 @@ data SrcPositn = MkPositn
 makeFieldLabelsNoPrefix ''SrcPositn
 
 -- | Could use HKDs, but that'd make things more complex in other ways
-data ExpMetadata = 
+data ExpMetadata =
   MkExpMetadata { srcPos :: SrcPositn
                 , typeLabel :: Maybe TLabel
                 , explnAnnot :: Maybe ExplnAnnot }
@@ -138,7 +138,7 @@ data Lit = EBoolTrue | EBoolFalse | EInteger Integer | EFloat Double | EString T
   deriving stock (Eq, Ord, Show)
 
 
-data NumOp = OpPlus | OpMinus | OpMul | OpDiv | OpMaxOf | OpSum | OpProduct
+data NumOp = OpPlus | OpMinus | OpMul | OpDiv | OpMaxOf | OpMinOf | OpSum | OpProduct
   deriving stock (Eq, Show)
 
 data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
@@ -159,13 +159,13 @@ data BaseExp =
     }
   | ECompOp
     { compOp :: CompOp,
-      compLeft :: Exp, 
+      compLeft :: Exp,
       compRight :: Exp
     }
 
   | EIfThen
     { condExp :: Exp,
-      thenExp :: Exp 
+      thenExp :: Exp
     }
   | EIfTE
     { condExp :: Exp,
@@ -180,21 +180,21 @@ data BaseExp =
   -- | ELam
   --   { param :: Var
   --   , body :: Exp }
-  -- | EApp
-  --   { func :: Exp, -- ^ func 
-  --     arg :: Exp   -- ^ arg
-  --   }
+  | EApp
+    { func :: Exp, -- ^ func
+      appArg :: Var   -- ^ arg
+    }
   -- | ERecdRef -- with fake records
   --   { rcdName :: T.Text
   --   , rcdField :: FieldLabel }
   {- For now assume record labels are unique and won't clash with non-record varnames
   -}
 
-  {- | 
+  {- |
   My impression from Meng's examples had been that he wanted variable mutation,
   but he just told me on Wed Jan 31 that he actually prefers variables to be immutable.
   This does help to simplify things.
-  
+
   TODO: Change AST and implmenetation in TranslateL4.hs accordingly if necessary
     Need to think more about exactly to model Meng's L4 examples if vars are immutable
   -}
@@ -208,8 +208,8 @@ data BaseExp =
     , letBody :: Exp
     }
   | EIs
-    { isArg1 :: Exp
-    , isArg2 :: Exp
+    { isLeft :: Exp
+    , isRight :: Exp
     }
   | ERec
     { fieldName :: Exp -- this can become a predicate
@@ -257,7 +257,7 @@ makeFieldLabelsNoPrefix ''Exp
 -- fromInteger = ...<TO ADD>... ELit . EInteger
 
 {--------------------------------------------------
-  LC / Generic MathLang Program 
+  LC / Generic MathLang Program
 --------------------------------------------------}
 
 {- | Keeps track of *global* var bindings, e.g. 'globally' declared GIVENs
@@ -290,7 +290,7 @@ data LCProgram =
 
 
 {----------------------------------------------------------
- Misc notes to self 
+ Misc notes to self
 -----------------------------------------------------------
 note re `if`:
   prob safe to assume for now that type of each branch has to be the same
@@ -304,19 +304,19 @@ since will prob need to translate one of the prelim ASTs to Meng eval ast
 {----------------------------------------------------------
  Reach goals / Future TODOs
 ==========================================================
-  
+
 * Var binding stuff; LetStar / Seq
 
 
 Architecture / design
-* Figure out how to do records and record accessors with `unbound-generics` --- or maybe don't even worry about 
+* Figure out how to do records and record accessors with `unbound-generics` --- or maybe don't even worry about
 collisions if record accessors will always be on external data
 * figure out how to use GADTs with Generic and Typeable
 
 -}
 
 
-{- | Allow L4 users to define a program-wide / global dict 
+{- | Allow L4 users to define a program-wide / global dict
    that can be used by downstream targets to, e.g., explain what certain bits of jargon mean
 -}
 -- newtype ProgramGlossary = ProgramGlossary { getProgramGlossary :: [(T.Text, T.Text)] }

@@ -85,6 +85,7 @@ dependencies:
   - log-effectful
   - diagnose
   - tuple
+  - utility-ht
   # - unbound-generics
   # - holmes
 # Note: when adding `extra-deps` in `stack.yaml`, have to add them under the relevant package in `package.yaml` too

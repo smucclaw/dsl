@@ -40,6 +40,17 @@ spec = do
       it "should parse inside a cell, 3 variants" $ do
         let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike arithRule2
         toTest `shouldBe` arithRule2_gold
+    
+    describe "arithmetics testcase 3" $ do
+      it "should parse inside a cell, 3 variants" $ do
+        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike arithRule3
+        toTest `shouldBe` EEmpty
+
+
+
+
+
+
 -----------------------------------------------------------------------------
 -- Test rules
 
@@ -448,6 +459,46 @@ arithRule2 = mkTestRule
                     , hBody = Nothing }
                 ]
 
+arithRule3 = mkTestRule
+                [ MTT "o3a" ]
+                (mkGivens [("o1", Just ( SimpleType TOne "Number" )), ("o2", Just ( SimpleType TOne "Number" ))])
+                [ HC
+                            { hHead = RPConstraint
+                                [ MTT "o3a" ] RPis
+                                [ MTT "o1 * 0.01"
+                                , MTT "+"
+                                , MTT "o2 * 0.07"
+                                ]
+                            , hBody = Nothing
+                            }
+                        , HC
+                            { hHead = RPnary RPis
+                                [ RPMT
+                                    [ MTT "o3b" ]
+                                , RPnary RPsum
+                                    [ RPnary RPproduct
+                                        [ RPMT
+                                            [ MTT "o1" ]
+                                        , RPMT
+                                            [ MTF 1.0e-2 ]
+                                        ]
+                                    , RPnary RPproduct
+                                        [ RPMT
+                                            [ MTT "o2" ]
+                                        , RPMT
+                                            [ MTF 7.0e-2 ]
+                                        ]
+                                    ]
+                                ]
+                            , hBody = Nothing
+                            }
+                        , HC
+                            { hHead = RPConstraint
+                                [ MTT "o3c" ] RPis
+                                [ MTT "o1 * 0.01 + (o2 * 0.03 + o2 * 0.04)" ]
+                            , hBody = Nothing
+                            }
+                        ]
 
 arithRule2_gold = ESeq
     { seq = ConsSE

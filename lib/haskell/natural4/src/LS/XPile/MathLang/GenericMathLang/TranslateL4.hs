@@ -79,7 +79,7 @@ import qualified Data.List.NonEmpty as NE
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Text.Megaparsec (Parsec, parse, (<?>), (<|>), some, between)
-import Text.Megaparsec.Char (alphaNumChar, space1)
+import Text.Megaparsec.Char (alphaNumChar, space1, char)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void ( Void )
 import Data.List.HT (partitionMaybe)
@@ -691,7 +691,7 @@ gte' x y =  ECompOp OpGte (noExtraMdata x) (noExtraMdata y)
 numeq' x y = ECompOp OpNumEq (noExtraMdata x) (noExtraMdata y)
 
 pIdentifier :: Parser BaseExp
-pIdentifier = ELit . EString . T.pack <$> lexeme (some alphaNumChar)
+pIdentifier = ELit . EString . T.pack <$> lexeme (some (alphaNumChar <|> char '.') )
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
@@ -885,6 +885,10 @@ expifyBodyRP = \case
 
   -- TODO: RPnary for 2 arguments, change RPproduct to RPmul etc?
   RPnary rel [RPMT mt1, RPMT mt2] -> expifyBodyRP $ RPConstraint mt1 rel mt2
+  RPnary rel [rp1, rp2] -> return $ noExtraMdata EEmpty
+  --   exp <- expifyBodyRP rp
+  -- RPnary RPsum [RPnary RPproduct [RPMT [MTT \"o1\"],RPMT [MTF 1.0e-2]],RPnary RPproduct [RPMT [MTT \"o2\"],RPMT [MTF 7.0e-2]]]
+
   RPnary RPis [rp1, rp2] -> do
     exp1 <- expifyBodyRP rp1
     exp2 <- expifyBodyRP rp2
@@ -897,6 +901,7 @@ expifyBodyRP = \case
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
+  rp -> throwNotSupportedWithMsgError rp "unknown rp"
 
 
 

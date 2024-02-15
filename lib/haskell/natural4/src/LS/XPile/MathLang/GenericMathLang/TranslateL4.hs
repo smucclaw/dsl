@@ -82,6 +82,7 @@ import Text.Megaparsec (Parsec, parse, (<?>), (<|>), some, between)
 import Text.Megaparsec.Char (alphaNumChar, space1)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void ( Void )
+import Data.List.HT (partitionMaybe)
 
 import Debug.Trace (trace)
 
@@ -592,6 +593,11 @@ TODO: Think about what kind of validation we might want to do here
 NOTE: If it seems like literals will appear here (e.g. number literals), see defn of `mteToLitExp` for how to translate to literals
 -}
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
+baseExpifyMTEs (splitGenitives -> (genitives@(g:_), rest)) = do
+  -- ind's parent's sibling's … income
+  recname <- noExtraMdata <$> baseExpifyMTEs [g] -- TODO fix later, just doing the first one now
+  fieldname <- noExtraMdata <$> baseExpifyMTEs rest -- income
+  return $ ERec fieldname recname
 baseExpifyMTEs mtes = case mtes of
   [mte] -> do
     -- Inari: assuming that the Var will be used for comparison
@@ -603,8 +609,8 @@ baseExpifyMTEs mtes = case mtes of
       Nothing -> return $ parseExpr mte
 
   [mte1@(MTT _), mte2@(MTT _)] -> do
-    mvar1 <- isDeclaredVar (removeGenitive mte1)
-    mvar2 <- isDeclaredVar (removeGenitive mte2)
+    mvar1 <- isDeclaredVar mte1
+    mvar2 <- isDeclaredVar mte2
     case (mvar1, mvar2) of
       (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
@@ -624,16 +630,14 @@ baseExpifyMTEs mtes = case mtes of
       notStringLit -> return notStringLit
 
   where
-    removeGenitive :: MTExpr -> MTExpr
-    removeGenitive (MTT text) = MTT $ case reverse $ T.unpack text of
-      's':'\'':rest -> T.pack $ reverse rest
-      _ -> text
-    removeGenitive x = x
 
     allInOne :: [MTExpr] -> MTExpr
     allInOne = foldl1 mergeMTT
       where
         mergeMTT mt1 mt2 = MTT (mtexpr2text mt1 <> " " <> mtexpr2text mt2)
+
+    consSeqExp :: BaseExp -> SeqExp -> SeqExp
+    consSeqExp be = ConsSE (noExtraMdata be)
 
     parseExpr :: MTExpr -> BaseExp
     parseExpr x@(MTT str) =
@@ -644,9 +648,16 @@ baseExpifyMTEs mtes = case mtes of
         Left error -> trace ("can't parse with pExpr: " <> show x) $ mteToLitExp x
     parseExpr x = mteToLitExp x
 
-    consSeqExp :: BaseExp -> SeqExp -> SeqExp
-    consSeqExp be = ConsSE (noExtraMdata be)
 
+splitGenitives :: [MTExpr] -> ([MTExpr], [MTExpr])
+splitGenitives = partitionMaybe isGenitive
+
+-- removes the genitive s if it is genitive
+isGenitive :: MTExpr -> Maybe MTExpr
+isGenitive (MTT text) = case reverse $ T.unpack text of
+  's':'\'':rest -> Just $ MTT $ T.pack $ reverse rest
+  _ -> Nothing
+isGenitive x = Nothing
 
 ---------------- Expr parser ------------------------------------------------------
 type Parser = Parsec Void T.Text

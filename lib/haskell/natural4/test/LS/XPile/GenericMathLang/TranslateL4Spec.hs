@@ -88,11 +88,18 @@ rule3predicate_gold = EIfThen
                 }, right = MkExp
                 { exp = EAnd
                     { left = MkExp
-                        { exp = EPred2 -- placeOfRes(ind, Sg)
-                            { predExp = MkExp
-                                { exp = ELit
-                                    { lit = EString "place of residence" }, md = []
-                                }, predArg1 = MkVar "ind", predArg2 = MkExp
+                        { exp = ECompOp
+                            { compOp = OpStringEq, compLeft = MkExp
+                                { exp = ERec
+                                    { fieldName = MkExp
+                                        { exp = ELit
+                                            { lit = EString "place of residence" }, md = []
+                                        }, recName = MkExp
+                                        { exp = EVar
+                                            { var = MkVar "ind" }, md = []
+                                        }
+                                    }, md = []
+                                }, compRight = MkExp
                                 { exp = ELit
                                     { lit = EString "Singapore" }, md = []
                                 }
@@ -102,15 +109,16 @@ rule3predicate_gold = EIfThen
                             { left = MkExp
                                 { exp = ECompOp
                                     { compOp = OpGte, compLeft = MkExp
-
-                                        { exp = EPred1
-                                            { predExp = MkExp
+                                        { exp = ERec
+                                            { fieldName = MkExp
                                                 { exp = ELit
                                                     { lit = EString "age" }, md = []
-                                                }, predArg = MkVar "ind"
+                                                }, recName = MkExp
+                                                { exp = EVar
+                                                    { var = MkVar "ind" }, md = []
+                                                }
                                             }, md = []
                                         }, compRight = MkExp
-
                                         { exp = ELit
                                             { lit = EInteger 21 }, md = []
                                         }
@@ -120,11 +128,14 @@ rule3predicate_gold = EIfThen
                                     { left = MkExp
                                         { exp = ECompOp
                                             { compOp = OpLte, compLeft = MkExp
-                                                { exp = EPred1
-                                                    { predExp = MkExp
+                                                { exp = ERec
+                                                    { fieldName = MkExp
                                                         { exp = ELit
                                                             { lit = EString "property annual value" }, md = []
-                                                        }, predArg = MkVar "ind"
+                                                        }, recName = MkExp
+                                                        { exp = EVar
+                                                            { var = MkVar "ind" }, md = []
+                                                        }
                                                     }, md = []
                                                 }, compRight = MkExp
                                                 { exp = ELit
@@ -145,11 +156,14 @@ rule3predicate_gold = EIfThen
                                                     { left = MkExp
                                                         { exp = ECompOp
                                                             { compOp = OpLte, compLeft = MkExp
-                                                                { exp = EPred1
-                                                                    { predExp = MkExp
+                                                                { exp = ERec
+                                                                    { fieldName = MkExp
                                                                         { exp = ELit
                                                                             { lit = EString "annual income" }, md = []
-                                                                        }, predArg = MkVar "ind"
+                                                                        }, recName = MkExp
+                                                                        { exp = EVar
+                                                                            { var = MkVar "ind" }, md = []
+                                                                        }
                                                                     }, md = []
                                                                 }, compRight = MkExp
                                                                 { exp = ELit

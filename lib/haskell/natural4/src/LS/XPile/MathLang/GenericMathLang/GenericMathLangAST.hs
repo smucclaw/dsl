@@ -207,7 +207,14 @@ data BaseExp =
     , letVal :: Exp
     , letBody :: Exp
     }
-
+  | EIs
+    { isArg1 :: Exp
+    , isArg2 :: Exp
+    }
+  | ERec
+    { fieldName :: Exp -- this can become a predicate
+    , recName :: Exp -- can be nested: ind's parent's (income)
+    }
   | EPred1
     { predExp :: Exp  -- meets eligibility criteria
     , predArg :: Var  -- ind

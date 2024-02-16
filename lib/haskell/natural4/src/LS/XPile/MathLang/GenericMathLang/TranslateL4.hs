@@ -78,8 +78,9 @@ import qualified Data.List.NonEmpty as NE
 
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
-import Text.Megaparsec (Parsec, parse, (<?>), (<|>), some, between)
-import Text.Megaparsec.Char (alphaNumChar, space1, char)
+import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), (<|>), some, many, between, choice, satisfy, parseError)
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
+import Data.Char (isAlphaNum)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void ( Void )
 import Data.List.HT (partitionMaybe)
@@ -532,7 +533,7 @@ don't appear here -- they appear in hBody
 -}
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
-processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
+--processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
 processHcHeadForIf rp = trace (show rp) $ expifyHeadRP rp
 -- processHcHeadForIf rp = throwNotSupportedError rp
 
@@ -607,7 +608,7 @@ baseExpifyMTEs mtes = case mtes of
     mvar <- isDeclaredVar mte
     case mvar of
       Just var -> return $ EVar var
-      Nothing -> return $ parseExpr mte
+      Nothing -> parseExpr mte
 
   [mte1@(MTT _), mte2@(MTT _)] -> do
     mvar1 <- isDeclaredVar mte1
@@ -621,48 +622,65 @@ baseExpifyMTEs mtes = case mtes of
         return $ EApp litWeAssumeToBePred var2
       (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
 
-  _     -> trace ("baseExpifyMTEs: " <> show mtes) $ do
-    case parseExpr $ MTT $ textifyMTEs mtes of
-      -- TODO: this should definitely not be a sequence, what should it be instead???
-      ELit _ -> do
-        let parsedExs = parseExpr <$> mtes
-        return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
+  _ -> trace ("baseExpifyMTEs: " <> show mtes) $ do
+      expParsedAsText <- parseExpr $ MTT $ textifyMTEs mtes
+      case expParsedAsText of
+        ELit _ -> do
+        -- TODO: this should definitely not be a sequence, what should it be instead???
+          parsedExs <- mapM parseExpr mtes
+          return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
 
-      -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
-      notStringLit -> return notStringLit
+        -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
+        notStringLit -> return notStringLit
 
   where
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
     consSeqExp be = ConsSE (noExtraMdata be)
 
-    parseExpr :: MTExpr -> BaseExp
-    parseExpr x@(MTT str) =
-      case parse pExpr "dummy" str of
-        Right (ELit (EString _)) -> mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
+    parseExpr :: MTExpr -> ToLC BaseExp
+    parseExpr x@(MTT str) = do
+      res <- runParserT pExpr "" str
+--      res <- mres
+      case res of
+      -- case parse pExpr "dummy" str of
+        Right exp@(EVar (MkVar str')) ->
+          if str /= str'
+            then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
+            else return $ exp
           -- TODO: find the right megaparsec way to fail if single term contains whitespace
-        Right notStringLit -> notStringLit
-        Left error -> trace ("can't parse with pExpr: " <> show x) $ mteToLitExp x
-    parseExpr x = mteToLitExp x
+        Right notStringLit -> return notStringLit
+        Left error -> trace ("can't parse with pExpr: " <> show x) $ return $ mteToLitExp x
+    parseExpr x = return $ mteToLitExp x
 
 
 splitGenitives :: [MTExpr] -> ([MTExpr], [MTExpr])
 splitGenitives = partitionMaybe isGenitive
-
--- removes the genitive s if it is genitive
-isGenitive :: MTExpr -> Maybe MTExpr
-isGenitive (MTT text) = case reverse $ T.unpack text of
-  's':'\'':rest -> Just $ MTT $ T.pack $ reverse rest
-  _ -> Nothing
-isGenitive x = Nothing
+  where
+    -- removes the genitive s if it is genitive
+    isGenitive :: MTExpr -> Maybe MTExpr
+    isGenitive (MTT text) = case reverse $ T.unpack text of
+      's':'\'':rest -> Just $ MTT $ T.pack $ reverse rest
+      _ -> Nothing
+    isGenitive x = Nothing
 
 ---------------- Expr parser ------------------------------------------------------
-type Parser = Parsec Void T.Text
+--type Parser = Parsec Void T.Text
+type Parser = ParsecT Void T.Text ToLC
 
 pExpr :: Parser BaseExp
 pExpr = makeExprParser pTerm table <?> "expression"
 
-pTerm = parens pExpr <|> pIdentifier <?> "term"
+--pTerm = parens pExpr <|> pIdentifier <?> "term"
+pTerm :: Parser BaseExp
+pTerm = choice
+  [ parens pExpr
+  , pVariable
+  , pInteger
+  , pFloat
+  ]
 
+
+table :: [[Operator Parser BaseExp]]
 table = [ [ binary  "*" mul'
           , binary  "/" div' ]
         , [ binary  "+" plus'
@@ -674,8 +692,10 @@ table = [ [ binary  "*" mul'
           , binary  "==" numeq']
         ]
 
+binary :: T.Text -> (BaseExp -> BaseExp -> BaseExp) -> Operator Parser BaseExp
 binary name f = InfixL (f <$ symbol name)
 
+mul', div', plus', minus', lt', lte', gt', gte', numeq' :: BaseExp -> BaseExp -> BaseExp
 mul' x y = ENumOp OpMul (noExtraMdata x) (noExtraMdata y)
 div' x y = ENumOp OpDiv (noExtraMdata x) (noExtraMdata y)
 plus' x y = ENumOp OpPlus (noExtraMdata x) (noExtraMdata y)
@@ -688,8 +708,30 @@ numeq' x y = ECompOp OpNumEq (noExtraMdata x) (noExtraMdata y)
 
 -- TODO: should we identify already here whether things are Vars or Lits?
 -- Or make everything by default Var, and later on correct if the Var is not set.
-pIdentifier :: Parser BaseExp
-pIdentifier = EVar . MkVar . T.pack <$> lexeme (some (alphaNumChar <|> char '.') )
+
+pVariable :: Parser BaseExp
+pVariable = do
+  -- TODO: can we check here if the var is defined
+  -- localVars :: VarTypeDeclMap <- ToLC $ asks localVars
+  -- putativeVar <- T.pack <$> ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
+  -- case isDeclaredVarTxt putativeVar localVars of
+  --   Just var -> return $ EVar var
+  --   Nothing -> parseError undefined
+
+  EVar . MkVar . T.pack <$> lexeme
+    ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
+
+pInteger :: Parser BaseExp
+pInteger = ELit . EInteger <$> lexeme L.decimal <?> "integer"
+
+pFloat :: Parser BaseExp
+pFloat = ELit . EFloat <$> lexeme L.float <?> "float"
+
+-- NB. assuming that a literal cannot be inside an arithmetic expression, that's why we try to consume the whole input
+pLiteral :: Parser BaseExp
+pLiteral = ELit . EString . T.pack <$> lexeme (some $ satisfy alphaNumOrSpaceChar <* eof)
+  where
+    alphaNumOrSpaceChar c = isAlphaNum c || c == ' '
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
@@ -889,7 +931,7 @@ expifyBodyRP = \case
   RPConstraint lefts rel rights -> expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
   RPnary RPis [rp1, rp2] -> do
     exp1 <- expifyBodyRP rp1
-    exp2 <- expifyBodyRP rp2
+    exp2 <- var2lit <$> expifyBodyRP rp2
     return $ noExtraMdata $ EIs exp1 exp2
   RPnary rel [rp1, rp2] -> do
     expLeft <- expifyBodyRP rp1
@@ -923,3 +965,7 @@ expifyBodyRP = \case
       RPeq   -> Just OpNumEq
       _      -> Nothing
 
+
+    var2lit :: Exp -> Exp
+    var2lit (MkExp (EVar (MkVar t)) x) = (MkExp (ELit (EString t)) [])
+    var2lit x = x

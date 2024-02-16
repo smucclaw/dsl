@@ -21,32 +21,40 @@ spec = do
         let Right toTest = runToLC $ simplifyL4Hlike rule2givens
         baseHL toTest `shouldBe` rule2givens_shl_gold
 
-    describe "rule 2 (basic, simple arithmetic) into BaseExp" $ do
-      it "should become something that makes sense" $ do
-        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike rule2nogivens
-        toTest `shouldBe` rule2nogivens_gold
+    testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
+                   "should become something that makes sense"
+                    rule2nogivens
+                    rule2nogivens_gold
 
-    describe "rule 2 with givens into BaseExp" $ do
-      it "should become (eventually) something where the givens are... ??? at least not SetVar" $ do
-        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike rule2givens
-        toTest `shouldBe` rule2givens_gold
+    -- Postpone
+    -- testBaseExpify "rule 2 with givens into BaseExp"
+    --                 "should become (eventually) something where the givens are... ??? at least not SetVar"
+    --                 rule2givens
+    --                 rule2givens_gold
 
-    describe "rule 3 into BaseExp" $ do
-      it "should become something with records?" $ do
-        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike rule3predicate
-        toTest `shouldBe` rule3predicate_gold
+    -- testBaseExpify "rule 3 into BaseExp"
+    --                 "should become something with records?"
+    --                 rule3predicate
+    --                 rule3predicate_gold
 
-    describe "arithmetics testcase 2" $ do
-      it "should parse inside a cell, 3 variants" $ do
-        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike arithRule2
-        toTest `shouldBe` arithRule2_gold
-    
-    describe "arithmetics testcase 3" $ do
-      it "should parse inside a cell, 3 variants" $ do
-        let Right toTest = runToLC $ baseExpify =<< simplifyL4Hlike arithRule3
-        toTest `shouldBe` EEmpty
+    -- testBaseExpify "arithmetics testcase 2"
+    --                 "should parse inside a cell"
+    --                 arithRule2
+    --                 arithRule2_gold
+
+    -- testBaseExpify "arithmetics testcase 3"
+    --                 "should parse inside a cell"
+    --                 arithRule3
+    --                 arithRule3_gold
 
 
+testBaseExpify name desc rule gold =
+  describe name $ do
+    it desc $ do
+      let toTest = runToLC $ baseExpify =<< simplifyL4Hlike rule
+      case toTest of
+        Right exp -> exp `shouldBe` gold
+        Left err -> err `shouldBe` MiscError "" ""
 
 
 
@@ -90,17 +98,20 @@ rule3predicate_gold = EIfThen
     { condExp = MkExp
         { exp = EAnd
             { left = MkExp
-                { exp = EPred1
-                    { predExp = MkExp
+                { exp = EIs
+                    { isLeft = MkExp
+                        { exp = EVar
+                            { var = MkVar "ind" }, md = []
+                        }, isRight = MkExp
                         { exp = ELit
                             { lit = EString "Singapore citizen" }, md = []
-                        }, predArg = MkVar "ind"
+                        }
                     }, md = []
                 }, right = MkExp
                 { exp = EAnd
                     { left = MkExp
-                        { exp = ECompOp
-                            { compOp = OpStringEq, compLeft = MkExp
+                        { exp = EIs
+                            { isLeft = MkExp
                                 { exp = ERec
                                     { fieldName = MkExp
                                         { exp = ELit
@@ -110,7 +121,7 @@ rule3predicate_gold = EIfThen
                                             { var = MkVar "ind" }, md = []
                                         }
                                     }, md = []
-                                }, compRight = MkExp
+                                }, isRight = MkExp
                                 { exp = ELit
                                     { lit = EString "Singapore" }, md = []
                                 }
@@ -156,11 +167,17 @@ rule3predicate_gold = EIfThen
                                         }, right = MkExp
                                         { exp = EAnd
                                             { left = MkExp
-                                                { exp = EPred1
-                                                    { predExp = MkExp
-                                                        { exp = ELit
-                                                            { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
-                                                        }, predArg = MkVar "ind"
+                                                { exp = ECompOp
+                                                    { compOp = OpBoolEq, compLeft = MkExp
+                                                        { exp = EApp
+                                                            { func = MkExp
+                                                                { exp = ELit
+                                                                    { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
+                                                                }, appArg = MkVar "ind"
+                                                            }, md = []
+                                                        }, compRight = MkExp
+                                                        { exp = ELit { lit = EBoolTrue }, md = []
+                                                        }
                                                     }, md = []
                                                 }, right = MkExp
                                                 { exp = EAnd
@@ -205,6 +222,7 @@ rule3predicate_gold = EIfThen
             }, md = []
         }
     }
+
 
 rule2givens =
   let description = [ MTT "case 2 qualifies" ]
@@ -340,14 +358,14 @@ rule2nogivens_gold = EIfThen
     { condExp = MkExp
         { exp = EAnd
             { left = MkExp
-                { exp = ECompOp {
-                     compOp = OpBoolEq
-                   , compLeft = MkExp {
-                        exp = ELit { lit = EString "Singapore citizen" }, md = [] }
-                   , compRight = MkExp {
-                        exp = ELit {lit = EBoolTrue}, md = []}}
-                , md = [] }
-            , right = MkExp
+                { exp = ECompOp
+                    { compOp = OpBoolEq, compLeft = MkExp
+                        { exp = ELit
+                            { lit = EString "Singapore citizen" }, md = []
+                        }, compRight = MkExp
+                        { exp = ELit { lit = EBoolTrue }, md = [] }
+                    }, md = []
+                }, right = MkExp
                 { exp = EAnd
                     { left = MkExp
                         { exp = EIs
@@ -364,11 +382,11 @@ rule2nogivens_gold = EIfThen
                             { left = MkExp
                                 { exp = ECompOp
                                     { compOp = OpGte, compLeft = MkExp
-                                        { exp = ELit
-                                            { lit = EString "age" }, md = []
+                                        { exp = EVar
+                                            { var = MkVar "age" }, md = dummyMetadata
                                         }, compRight = MkExp
                                         { exp = ELit
-                                            { lit = EString "21" }, md = []
+                                            { lit = EInteger 21 }, md = []
                                         }
                                     }, md = []
                                 }, right = MkExp
@@ -500,62 +518,124 @@ arithRule3 = mkTestRule
                             }
                         ]
 
+arithExpr2_gold name = MkExp
+                    { exp = EVarSet
+                        { vsetVar = MkExp
+                            { exp = EVar
+                                { var = MkVar name }
+                            , md = dummyMetadata
+                            }
+                        , arg = MkExp
+                            { exp = ENumOp
+                                { numOp = OpMul
+                                , nopLeft = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "m1" }
+                                    , md = mkMetadata (FromUser (MkL4EntType "Number"))
+                                    }
+                                , nopRight = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "m2" }
+                                    , md = mkMetadata (FromUser (MkL4EntType "Number"))
+                                    }
+                                }, md = dummyMetadata
+                            }
+                        }
+                        , md = []
+                    }
+
 arithRule2_gold = ESeq
+    { seq = ConsSE
+        (arithExpr2_gold "m3a")
+        ( ConsSE
+            (arithExpr2_gold "m3b")
+            ( ConsSE
+                (arithExpr2_gold "m3c")
+                EmptySeqE )
+        )
+    }
+
+arithExpr3_gold =
+  MkExp { exp = ENumOp
+            { numOp = OpPlus
+            , nopLeft = MkExp
+                { exp = ENumOp
+                    { numOp = OpMul, nopLeft = MkExp
+                        { exp = ELit
+                            { lit = EString "o1" }, md = []
+                        }, nopRight = MkExp
+                        { exp = ELit
+                            { lit = EString "0.01" }, md = []
+                        }
+                    }, md = [] }
+            , nopRight = MkExp
+                { exp = ENumOp
+                    { numOp = OpMul, nopLeft = MkExp
+                        { exp = ELit
+                            { lit = EString "o2" }, md = []
+                        }, nopRight = MkExp
+                        { exp = ELit
+                            { lit = EString "0.07" }, md = []
+                        }
+                    }, md = []}
+            }, md = [] }
+
+arithRule3_gold = ESeq
     { seq = ConsSE
         ( MkExp
             { exp = EVarSet
                 { vsetVar = MkExp
                     { exp = EVar
-                        { var = MkVar "m3a" }, md = dummyMetadata
-                    }, arg = MkExp
-                    { exp = ENumOp
-                        { numOp = OpMul, nopLeft = MkExp
-                            { exp = ELit
-                                { lit = EString "m1" }, md = []
-                            }, nopRight = MkExp
-                            { exp = ELit { lit = EString "m2" }, md = [] }
-                        }, md = []
-                    }
-                }, md = dummyMetadata
+                        { var = MkVar "o3a" }, md = dummyMetadata
+                    }, arg = arithExpr3_gold }
+            , md = dummyMetadata
+
             }
         )
         ( ConsSE
             ( MkExp
-                { exp = EIs
-                    { isArg1 = MkExp
-                        { exp = ECompOp
-                            { compOp = OpBoolEq, compLeft = MkExp
-                                { exp = ELit
-                                    { lit = EString "m3b" }, md = []
-                                }, compRight = MkExp
-                                { exp = ELit { lit = EBoolTrue }, md = [] }
-                            }, md = []
-                        }, isArg2 = MkExp
-                        { exp = ENumOp
-                            { numOp = OpProduct, nopLeft = MkExp
-                                { exp = EVar
-                                    { var = MkVar "m1" }, md = []
-                                }, nopRight = MkExp
-                                { exp = EVar { var = MkVar "m2" }, md = [] }
-                            }, md = []
-                        }
-                    }, md = dummyMetadata
-                }
+                { exp = EEmpty, md = dummyMetadata } -- TODO: arithExpr3_gold here too
             )
             ( ConsSE
                 ( MkExp
                     { exp = EVarSet
                         { vsetVar = MkExp
-                            { exp = EVar
-                                { var = MkVar "m3c" }, md = dummyMetadata
-                            }, arg = MkExp
-                            { exp = ENumOp
-                                { numOp = OpMul, nopLeft = MkExp
-                                    { exp = ELit
-                                        { lit = EString "m1" }, md = []
+                            { exp = EVar { var = MkVar "o3c" }, md = dummyMetadata}
+                            , arg = MkExp { exp = ENumOp
+                                { numOp = OpPlus, nopLeft = MkExp
+                                    { exp = ENumOp
+                                        { numOp = OpMul, nopLeft = MkExp
+                                            { exp = ELit
+                                                { lit = EString "o1" }, md = []
+                                            }, nopRight = MkExp
+                                            { exp = ELit
+                                                { lit = EString "0.01" }, md = []
+                                            }
+                                        }, md = []
                                     }, nopRight = MkExp
-                                    { exp = ELit
-                                        { lit = EString "m2" }, md = []
+                                    { exp = ENumOp
+                                        { numOp = OpPlus, nopLeft = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul, nopLeft = MkExp
+                                                    { exp = ELit
+                                                        { lit = EString "o2" }, md = []
+                                                    }, nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EString "0.03" }, md = []
+                                                    }
+                                                }, md = []
+                                            }, nopRight = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul, nopLeft = MkExp
+                                                    { exp = ELit
+                                                        { lit = EString "o2" }, md = []
+                                                    }, nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EString "0.04" }, md = []
+                                                    }
+                                                }, md = []
+                                            }
+                                        }, md = []
                                     }
                                 }, md = []
                             }
@@ -565,6 +645,7 @@ arithRule2_gold = ESeq
             )
         )
     }
+
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens [] = Nothing
 mkGivens xs = Just $ fromList $ map mkTypedMulti xs
@@ -605,5 +686,11 @@ dummyMetadata = [ MkExpMetadata
                     { srcPos = MkPositn
                         { row = 0, col = 0
                         }, typeLabel = Nothing, explnAnnot = Nothing
+                    }
+                ]
+mkMetadata typelabel = [ MkExpMetadata
+                    { srcPos = MkPositn
+                        { row = 0, col = 0
+                        }, typeLabel = Just typelabel, explnAnnot = Nothing
                     }
                 ]

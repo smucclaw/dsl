@@ -78,7 +78,8 @@ import qualified Data.List.NonEmpty as NE
 
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
-import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), (<|>), some, many, between, choice, satisfy, parseError)
+import Control.Monad.Trans (lift)
+import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), (<|>), try, some, many, between, choice, satisfy, parseError, notFollowedBy)
 import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
 import Data.Char (isAlphaNum)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -672,11 +673,11 @@ pExpr = makeExprParser pTerm table <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp
-pTerm = choice
+pTerm = choice $ map try
   [ parens pExpr
   , pVariable
-  , pInteger
   , pFloat
+  , pInteger
   ]
 
 
@@ -711,18 +712,14 @@ numeq' x y = ECompOp OpNumEq (noExtraMdata x) (noExtraMdata y)
 
 pVariable :: Parser BaseExp
 pVariable = do
-  -- TODO: can we check here if the var is defined
-  -- localVars :: VarTypeDeclMap <- ToLC $ asks localVars
-  -- putativeVar <- T.pack <$> ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
-  -- case isDeclaredVarTxt putativeVar localVars of
-  --   Just var -> return $ EVar var
-  --   Nothing -> parseError undefined
-
-  EVar . MkVar . T.pack <$> lexeme
-    ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
+  localVars :: VarTypeDeclMap <- lift $ ToLC $ asks localVars
+  putativeVar <- T.pack <$> lexeme ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
+  case isDeclaredVarTxt putativeVar localVars of
+    Just var -> return $ EVar var
+    Nothing -> fail "not a declared variable"
 
 pInteger :: Parser BaseExp
-pInteger = ELit . EInteger <$> lexeme L.decimal <?> "integer"
+pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
 
 pFloat :: Parser BaseExp
 pFloat = ELit . EFloat <$> lexeme L.float <?> "float"

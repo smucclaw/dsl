@@ -418,6 +418,18 @@ srcRefToSrcPos sr = MkPositn { row = sr.srcrow, col = sr.srccol }
 noExtraMdata :: BaseExp -> Exp
 noExtraMdata baseexp = MkExp baseexp []
 
+typeMdata :: T.Text -> BaseExp -> Exp
+typeMdata typ bexp = MkExp bexp (inferredType [] typ)
+
+inferredType :: MdGrp -> T.Text -> MdGrp
+inferredType (md:mds) typ = md {typeLabel = Just $ Inferred typ}:mds
+inferredType [] typ = [ MkExpMetadata
+                          (MkPositn 0 0) -- TODO: inherit this from somewhere
+                          (Just $ Inferred typ)
+                          Nothing
+                      ]
+
+
 -- | Treat the seq of L4 rules as being a block of statements
 l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
 l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
@@ -849,7 +861,7 @@ processHcBody = \case
     makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
     makeOp op bsr exp = noExtraMdata <$> (op <$> (toBoolEq <$> processHcBody bsr) <*> pure exp)
 
-    toBoolEq e = e {exp = toBoolEqBE e.exp}
+    toBoolEq e = e {exp = toBoolEqBE e.exp, md = inferredType e.md "Bool"}
     toBoolEqBE e@(ELit _) = ECompOp OpBoolEq (noExtraMdata e) (noExtraMdata (ELit EBoolTrue))
     toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (noExtraMdata e) (noExtraMdata (ELit EBoolTrue))
     toBoolEqBE e = e
@@ -914,7 +926,7 @@ expifyHeadRP = \case
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
 expifyBodyRP = \case
   -- OTHERWISE
-  RPMT (MTT "OTHERWISE" : _mtes) -> throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
+  RPMT (MTT "OTHERWISE" : _mtes) -> return $ typeMdata "Bool" (ELit EBoolTrue) -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
   -- A single term could often be interpreted as 'var == True',
   -- but we choose to do that transformation later.
@@ -927,13 +939,14 @@ expifyBodyRP = \case
 
   RPConstraint lefts rel rights -> expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
   RPnary RPis [rp1, rp2] -> do
-    exp1 <- expifyBodyRP rp1
-    exp2 <- var2lit <$> expifyBodyRP rp2
+    exp1maybeUntyped <- expifyBodyRP rp1
+    exp2 <- inferTypeRHS <$> expifyBodyRP rp2
+    let exp1 = inferTypeLHS exp1maybeUntyped exp2
     return $ noExtraMdata $ EIs exp1 exp2
   RPnary rel [rp1, rp2] -> do
     expLeft <- expifyBodyRP rp1
     expRight <- expifyBodyRP rp2
-    numOrCompOp rel expLeft expRight
+    numOrCompOp rel (numberType expLeft) (numberType expRight)
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
@@ -962,7 +975,25 @@ expifyBodyRP = \case
       RPeq   -> Just OpNumEq
       _      -> Nothing
 
+    numberType :: Exp -> Exp
+    numberType (MkExp bexp []) = MkExp bexp (inferredType [] "Number")
+    numberType exp = exp
 
-    var2lit :: Exp -> Exp
-    var2lit (MkExp (EVar (MkVar t)) x) = (MkExp (ELit (EString t)) [])
-    var2lit x = x
+    inferTypeLHS :: Exp -> Exp -> Exp
+    inferTypeLHS exp1 exp2 = case exp1.md of
+      m:_ -> case m.typeLabel of
+                Just _ -> exp1 -- exp1 has already a type, coming from localVars
+                _ -> exp1 {md = exp2.md}
+      [] -> exp1 {md = exp2.md} -- exp2 has potentially more reliable type info
+
+    inferTypeRHS :: Exp -> Exp
+    inferTypeRHS x@(MkExp bexp md) = case bexp of
+      EVar (MkVar t)
+        -> MkExp (ELit (EString t)) (inferredType md "String")
+      ELit (EString _)
+        -> MkExp bexp (inferredType md "String")
+      ELit (EInteger _)
+        -> MkExp bexp (inferredType md "Number")
+      ELit (EFloat _)
+        -> MkExp bexp (inferredType md "Number")
+      _ -> x

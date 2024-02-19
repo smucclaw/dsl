@@ -79,7 +79,7 @@ import qualified Data.List.NonEmpty as NE
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Control.Monad.Trans (lift)
-import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), (<|>), try, some, many, between, choice, satisfy, parseError, notFollowedBy)
+import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy)
 import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
 import Data.Char (isAlphaNum)
 import qualified Text.Megaparsec.Char.Lexer as L

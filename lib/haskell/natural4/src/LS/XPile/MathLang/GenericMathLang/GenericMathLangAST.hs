@@ -63,6 +63,13 @@ data TLabel = FromUser L4EntType
   deriving stock (Eq, Show)
 makePrisms ''TLabel
 
+-- only used for debugging purposes, TODO remove later
+instance Semigroup TLabel where
+  FromUser (MkL4EntType x) <> FromUser (MkL4EntType y) = FromUser (MkL4EntType $ x <> y)
+  FromUser (MkL4EntType x) <> Inferred y = FromUser (MkL4EntType $ x <> y)
+  Inferred x <> FromUser (MkL4EntType y) = FromUser (MkL4EntType $ x <> y)
+  Inferred x <> Inferred y = Inferred $ x <> y
+
 {-----------
 TO THINK ABT
 ------------

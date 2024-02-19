@@ -429,6 +429,9 @@ inferredType [] typ = [ MkExpMetadata
                           Nothing
                       ]
 
+leaveTrace :: T.Text -> MdGrp -> MdGrp
+leaveTrace str (md:mds) = md{typeLabel = (<> Inferred str) <$> md.typeLabel}:mds
+leaveTrace str [] = inferredType [] str
 
 -- | Treat the seq of L4 rules as being a block of statements
 l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
@@ -983,8 +986,8 @@ expifyBodyRP = \case
     inferTypeLHS exp1 exp2 = case exp1.md of
       m:_ -> case m.typeLabel of
                 Just _ -> exp1 -- exp1 has already a type, coming from localVars
-                _ -> exp1 {md = exp2.md}
-      [] -> exp1 {md = exp2.md} -- exp2 has potentially more reliable type info
+                _ -> exp1 {md = leaveTrace (T.pack $ " copied over from " <> show exp2) exp2.md}
+      [] -> exp1 {md = leaveTrace (T.pack $ " copied over from " <> show exp2) exp2.md} -- exp2 has potentially more reliable type info
 
     inferTypeRHS :: Exp -> Exp
     inferTypeRHS x@(MkExp bexp md) = case bexp of

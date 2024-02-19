@@ -729,9 +729,10 @@ pVariable :: Parser BaseExp
 pVariable = do
   localVars :: VarTypeDeclMap <- lift $ ToLC $ asks localVars
   putativeVar <- T.pack <$> lexeme ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
-  case isDeclaredVarTxt putativeVar localVars of
-    Just var -> return $ EVar var
-    Nothing -> fail "not a declared variable"
+  return $ EVar (MkVar putativeVar)
+  -- case isDeclaredVarTxt putativeVar localVars of
+  --   Just var -> return $ EVar var
+  --   Nothing -> fail "not a declared variable"
 
 pInteger :: Parser BaseExp
 pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"

@@ -9,7 +9,7 @@ If prototyping in GHCi / REPL, use these:
     :set -XTypeFamilies
     import GHC.Generics
 
-Yes, these are more high-powered than what I 'really' need in this file 
+Yes, these are more high-powered than what I 'really' need in this file
 (the only thing that requires them rn is ` (_Ctor @"Hornlike")`);
 I had used them b/c I was prototyping and wasn't sure from the outset
 how much would be needed to in effect parse the notoriously complicated L4 data structures.
@@ -29,6 +29,7 @@ module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen) where
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 -- TODO: Add import list
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
+    ( ToLCError, runToLC, l4ToLCProgram )
 -- import LS.Interpreter (qaHornsT)
 import LS.Rule (Interpreted(..),
                 -- defaultHorn
@@ -39,8 +40,8 @@ import LS.Rule (Interpreted(..),
 -- import Effectful
 -- experimenting with Effectful.Error rn
 -- see Mattermost slack for discussion of error handling and MonadValidate
-import Optics
-import Data.Generics.Sum.Constructors
+import Optics ( folded, (%), filteredBy, (^..) )
+import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 -- import Data.String.Interpolate (__i)

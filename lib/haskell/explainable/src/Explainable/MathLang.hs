@@ -6,6 +6,7 @@
 module Explainable.MathLang
   ( Expr(..),
     MyState(..),
+    Pred(..), MathBinOp(..), Comp(..),
     (|===),
     (@|=),
     (@|?),

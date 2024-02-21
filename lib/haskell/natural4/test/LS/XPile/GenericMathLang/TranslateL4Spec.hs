@@ -18,15 +18,17 @@ spec :: Spec
 spec = do
     describe "rule 2 into SimpleHL" $ do
       it "should become a SimpleHL" $ do
-        let Right toTest = runToLC $ simplifyL4Hlike rule2givens
-        baseHL toTest `shouldBe` rule2givens_shl_gold
-
-    testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
-                   "should become something that makes sense"
-                    rule2nogivens
-                    rule2nogivens_gold
+        let toTest = runToLC $ simplifyL4Hlike rule2givens
+        case toTest of
+            Left err -> err `shouldBe` MiscError "" ""
+            Right res -> baseHL res `shouldBe` rule2givens_shl_gold
 
     -- Postpone
+    -- testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
+    --                "should become something that makes sense"
+    --                 rule2nogivens
+    --                 EEmpty
+
     -- testBaseExpify "rule 2 with givens into BaseExp"
     --                 "should become (eventually) something where the givens are... ??? at least not SetVar"
     --                 rule2givens
@@ -37,23 +39,29 @@ spec = do
     --                 rule3predicate
     --                 rule3predicate_gold
 
-    -- testBaseExpify "arithmetics testcase 2"
-    --                 "should parse inside a cell"
-    --                 arithRule2
-    --                 arithRule2_gold
+    testBaseExpify "arithmetics testcase 2"
+                    "should parse inside a cell"
+                    arithRule2
+                    arithRule2_gold
 
-    -- testBaseExpify "arithmetics testcase 3"
-    --                 "should parse inside a cell"
-    --                 arithRule3
-    --                 arithRule3_gold
+    testBaseExpify "arithmetics testcase 3"
+                    "should parse inside a cell"
+                    arithRule3
+                    arithRule3_gold
 
+    testBaseExpify "arithmetics testcase 4"
+                    "meng's complex case"
+                    arithRule4
+                    arithRule4_gold
 
+testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
   describe name $ do
     it desc $ do
-      let toTest = runToLC $ baseExpify =<< simplifyL4Hlike rule
+      let toTest = runToLC $ l4ToLCProgram [rule]
+--      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
       case toTest of
-        Right exp -> exp `shouldBe` gold
+        Right p -> exp (lcProgram p) `shouldBe` gold
         Left err -> err `shouldBe` MiscError "" ""
 
 
@@ -246,101 +254,6 @@ rule2givens =
                         )
                     ])}]
 
--- NB: this is weird/wrong right now, just recording it to track its evolution
--- What should happen if GIVEN includes stuff that looks like predicates?
-rule2givens_gold = EIfThen
-    { condExp = MkExp
-        { exp = EAnd
-            { left = MkExp
-                { exp = ECompOp
-                    { compOp = OpBoolEq, compLeft = MkExp
-                        { exp = ELit
-                            { lit = EString "Singapore citizen" }, md = []
-                        }, compRight = MkExp
-                        { exp = ELit { lit = EBoolTrue }, md = [] }
-                    }, md = []
-                }, right = MkExp
-                { exp = EAnd
-                    { left = MkExp
-                        { exp = EPred1
-                            { predExp = MkExp
-                                { exp = ELit
-                                    { lit = EString "Singapore" }, md = []
-                                }, predArg = MkVar "place of residence"
-                            }, md = []
-                        }, right = MkExp
-                        { exp = EAnd
-                            { left = MkExp
-                                { exp = ECompOp
-                                    { compOp = OpGte, compLeft = MkExp
-                                        { exp = EVar
-                                            { var = MkVar "age" }, md = []
-                                        }, compRight = MkExp
-                                        { exp = ELit
-                                            { lit = EString "21" }, md = []
-                                        }
-                                    }, md = []
-                                }, right = MkExp
-                                { exp = EAnd
-                                    { left = MkExp
-                                        { exp = ECompOp
-                                            { compOp = OpLte, compLeft = MkExp
-                                                { exp = EVar
-                                                    { var = MkVar "property annual value" }, md = []
-                                                }, compRight = MkExp
-                                                { exp = ELit
-                                                    { lit = EInteger 21000 }, md = []
-                                                }
-                                            }, md = []
-                                        }, right = MkExp
-                                        { exp = EAnd
-                                            { left = MkExp
-                                                { exp = EVarSet
-                                                    { vsetVar = MkExp
-                                                        { exp = EVar
-                                                            { var = MkVar "meets the property eligibility criteria for GSTV-Cash" }
-                                                            , md = dummyMetadata
-
-                                                        }, arg = MkExp
-                                                        { exp = ELit { lit = EBoolTrue }, md = []
-                                                        }
-                                                    }, md = []
-                                                }, right = MkExp
-                                                { exp = EAnd
-                                                    { left = MkExp
-                                                        { exp = ECompOp
-                                                            { compOp = OpLte, compLeft = MkExp
-                                                                { exp = EVar
-                                                                    { var = MkVar "annual income" }, md = []
-                                                                }, compRight = MkExp
-                                                                { exp = ELit
-                                                                    { lit = EInteger 34000 }, md = []
-                                                                }
-                                                            }, md = []
-                                                        }, right = MkExp
-                                                        { exp = EEmpty, md = []
-                                                        }
-                                                    }, md = []
-                                                }
-                                            }, md = []
-                                        }
-                                    }, md = []
-                                }
-                            }, md = []
-                        }
-                    }, md = []
-                }
-            }, md = []
-        }, thenExp = MkExp
-        { exp = EVarSet
-            { vsetVar = MkExp
-                { exp = EVar
-                    { var = MkVar "case 2 qualifies" }, md = dummyMetadata
-                }, arg = MkExp
-                { exp = ELit { lit = EBoolTrue }, md = [] }
-            }, md = []
-        }
-    }
 rule2givens_shl_gold = OneClause (HeadAndBody MkHnBHC {
                    hbHead = RPMT [MTT "case 2 qualifies"],
                    hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTT "21"]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
@@ -523,7 +436,7 @@ arithExpr2_gold name = MkExp
                         { vsetVar = MkExp
                             { exp = EVar
                                 { var = MkVar name }
-                            , md = dummyMetadata
+                            , md = mkMetadata (Inferred "Number")
                             }
                         , arg = MkExp
                             { exp = ENumOp
@@ -557,28 +470,29 @@ arithRule2_gold = ESeq
 
 arithExpr3_gold =
   MkExp { exp = ENumOp
-            { numOp = OpPlus
-            , nopLeft = MkExp
-                { exp = ENumOp
-                    { numOp = OpMul, nopLeft = MkExp
-                        { exp = ELit
-                            { lit = EString "o1" }, md = []
-                        }, nopRight = MkExp
-                        { exp = ELit
-                            { lit = EString "0.01" }, md = []
-                        }
-                    }, md = [] }
-            , nopRight = MkExp
-                { exp = ENumOp
-                    { numOp = OpMul, nopLeft = MkExp
-                        { exp = ELit
-                            { lit = EString "o2" }, md = []
-                        }, nopRight = MkExp
-                        { exp = ELit
-                            { lit = EString "0.07" }, md = []
-                        }
-                    }, md = []}
-            }, md = [] }
+    { numOp = OpPlus, nopLeft = MkExp
+        { exp = ENumOp
+            { numOp = OpMul, nopLeft = MkExp
+                { exp = EVar
+                    { var = MkVar "o1" }, md = mkMetadata ( FromUser ( MkL4EntType "Number" ))
+                }, nopRight = MkExp
+                { exp = ELit
+                    { lit = EFloat 1.0e-2 }, md = mkMetadata ( Inferred "Number" )
+                }
+            }, md = mkMetadata ( Inferred "Number" )
+        }, nopRight = MkExp
+        { exp = ENumOp
+            { numOp = OpMul, nopLeft = MkExp
+                { exp = EVar
+                    { var = MkVar "o2" }, md = mkMetadata ( FromUser ( MkL4EntType "Number" ))
+                }, nopRight = MkExp
+                { exp = ELit
+                    { lit = EFloat 7.0e-2 }, md = mkMetadata ( Inferred "Number" )
+                }
+            }, md = mkMetadata (Inferred "Number")
+        }
+    }, md = mkMetadata (Inferred "Number")
+  }
 
 arithRule3_gold = ESeq
     { seq = ConsSE
@@ -586,30 +500,33 @@ arithRule3_gold = ESeq
             { exp = EVarSet
                 { vsetVar = MkExp
                     { exp = EVar
-                        { var = MkVar "o3a" }, md = dummyMetadata
+                        { var = MkVar "o3a" }, md = mkMetadata ( Inferred "Number" )
                     }, arg = arithExpr3_gold }
-            , md = dummyMetadata
-
-            }
+            , md = [] }
         )
         ( ConsSE
             ( MkExp
-                { exp = EEmpty, md = dummyMetadata } -- TODO: arithExpr3_gold here too
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "o3b" }, md = mkMetadata ( Inferred "Number" )
+                        }, arg = arithExpr3_gold }
+                , md = [] }
             )
             ( ConsSE
                 ( MkExp
                     { exp = EVarSet
                         { vsetVar = MkExp
-                            { exp = EVar { var = MkVar "o3c" }, md = dummyMetadata}
+                            { exp = EVar { var = MkVar "o3c" }, md = mkMetadata ( Inferred "Number" )}
                             , arg = MkExp { exp = ENumOp
                                 { numOp = OpPlus, nopLeft = MkExp
                                     { exp = ENumOp
                                         { numOp = OpMul, nopLeft = MkExp
-                                            { exp = ELit
-                                                { lit = EString "o1" }, md = []
+                                            { exp = EVar
+                                                { var = MkVar "o1" }, md = mkMetadata ( FromUser ( MkL4EntType "Number" ))
                                             }, nopRight = MkExp
                                             { exp = ELit
-                                                { lit = EString "0.01" }, md = []
+                                                { lit = EFloat 0.01 }, md = mkMetadata ( Inferred "Number" )
                                             }
                                         }, md = []
                                     }, nopRight = MkExp
@@ -617,34 +534,86 @@ arithRule3_gold = ESeq
                                         { numOp = OpPlus, nopLeft = MkExp
                                             { exp = ENumOp
                                                 { numOp = OpMul, nopLeft = MkExp
-                                                    { exp = ELit
-                                                        { lit = EString "o2" }, md = []
+                                                    { exp = EVar
+                                                        { var = MkVar "o2" }, md = mkMetadata ( FromUser ( MkL4EntType "Number" ))
                                                     }, nopRight = MkExp
                                                     { exp = ELit
-                                                        { lit = EString "0.03" }, md = []
+                                                        { lit = EFloat 0.03 }, md = mkMetadata ( Inferred "Number" )
                                                     }
                                                 }, md = []
                                             }, nopRight = MkExp
                                             { exp = ENumOp
                                                 { numOp = OpMul, nopLeft = MkExp
-                                                    { exp = ELit
-                                                        { lit = EString "o2" }, md = []
+                                                    { exp = EVar
+                                                        { var = MkVar "o2" }, md = mkMetadata ( FromUser ( MkL4EntType "Number" ))
                                                     }, nopRight = MkExp
                                                     { exp = ELit
-                                                        { lit = EString "0.04" }, md = []
+                                                        { lit = EFloat 0.04 }, md = mkMetadata ( Inferred "Number" )
                                                     }
-                                                }, md = []
+                                                }, md = mkMetadata ( Inferred "Number" )
                                             }
-                                        }, md = []
+                                        }, md = mkMetadata ( Inferred "Number" )
                                     }
-                                }, md = []
+                                }, md = mkMetadata ( Inferred "Number" )
                             }
-                        }, md = dummyMetadata
+                        }, md = []
                     }
                 ) EmptySeqE
             )
         )
     }
+
+arithRule4 = mkTestRule'
+                [ MTT "taxesPayable" ]
+                (Just (
+                    ( MTT "annualIncome" :| [] , Just ( SimpleType TOne "Number" )) :|
+                    [ ( MTT "netWorth" :| [], Just ( SimpleType TOne "Number" ))
+                    , ( MTT "vivacity" :| [], Just ( SimpleType TOne "Boolean" ))
+                    , ( MTT "phaseOfMoon" :| []
+                      , Just ( InlineEnum TOne (
+                                ( MTT "new" :| [ MTT "waxing", MTT "full", MTT "gibbous"] , Nothing ) :| []
+                                )
+                             )
+                      )
+                    ]
+                ))
+                (mkGivens [("taxesPayable", Just ( SimpleType TOne "Number"))])
+                [ HC { hHead = RPConstraint
+                                [ MTT "taxesPayable" ] RPis [ MTT "taxesPayableAlive / 2" ]
+                     , hBody = Just ( AA.Leaf ( RPConstraint
+                                [ MTT "phaseOfMoon" ] RPis [ MTT "gibbous" ]))}
+                , HC { hHead = RPConstraint
+                                [ MTT "taxesPayable" ] RPis [ MTT "taxesPayableAlive" ]
+                     , hBody = Just ( AA.Leaf ( RPMT [ MTT "vivacity" ]))}
+                , HC { hHead = RPConstraint [ MTT "taxesPayable" ] RPis [ MTT "taxesPayableAlive"
+                                                                        , MTT "/"
+                                                                        , MTI 3
+                                                                        ]
+                     , hBody = Just ( AA.Leaf ( RPConstraint
+                                [ MTT "phaseOfMoon" ] RPis [ MTT "waxing" ]))}
+                , HC { hHead = RPConstraint [ MTT "taxesPayable" ] RPis [ MTT "waived" ]
+                     , hBody = Just ( AA.Leaf ( RPConstraint
+                                [ MTT "phaseOfMoon" ] RPis [ MTT "full" ]))}
+                , HC { hHead = RPConstraint [ MTT "taxesPayable" ] RPis [ MTI 0 ]
+                    , hBody = Just ( AA.Leaf ( RPMT [ MTT "OTHERWISE" ]))}
+                , HC { hHead = RPnary RPis [ RPMT [ MTT "taxesPayableAlive" ]
+                                          , RPnary RPsum [ RPMT [ MTT "income tax component" ]
+                                                         , RPMT [ MTT "asset tax component" ]]]
+                     , hBody = Nothing }
+                , HC { hHead = RPnary RPis [ RPMT [ MTT "income tax component" ]
+                                           , RPnary RPproduct [ RPMT [ MTT "annualIncome" ]
+                                                              , RPMT [ MTT "incomeTaxRate" ]]]
+                     , hBody = Nothing }
+                , HC { hHead = RPnary RPis [ RPMT [ MTT "asset tax component" ]
+                                           , RPnary RPproduct [ RPMT [ MTT "netWorth" ]
+                                                              , RPMT [ MTT "assetTaxRate" ]]]
+                     , hBody = Nothing }
+                , HC { hHead = RPConstraint [ MTT "incomeTaxRate" ] RPis [ MTF 1.0e-2 ]
+                     , hBody = Nothing }
+                , HC { hHead = RPConstraint [ MTT "assetTaxRate" ] RPis [ MTF 7.0e-2 ]
+                     , hBody = Nothing }
+            ]
+arithRule4_gold = ESeq {seq = ConsSE (MkExp {exp = ESeq {seq = ConsSE (MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, isRight = MkExp {exp = EVar {var = MkVar "gibbous"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []}) (ConsSE (MkExp {exp = EIfThen {condExp = MkExp {exp = EVar {var = MkVar "vivacity"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (MkL4EntType "Boolean")), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}) (ConsSE (MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, isRight = MkExp {exp = EVar {var = MkVar "waxing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 3}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []}) (ConsSE (MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, isRight = MkExp {exp = EVar {var = MkVar "full"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "waived"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}) (ConsSE (MkExp {exp = EIfThen {condExp = MkExp {exp = ELit {lit = EBoolTrue}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Bool"), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 0}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []}) (ConsSE (MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ELit {lit = EString "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EString "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}) (ConsSE (MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "annualIncome"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (MkL4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}) (ConsSE (MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "netWorth"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (MkL4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}) (ConsSE (MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}) (ConsSE (MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}) EmptySeqE)))))))))}, md = []}) EmptySeqE}
 
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens [] = Nothing
@@ -656,12 +625,19 @@ mkTestRule :: RuleName
            -> Maybe ParamText  -- given
            -> [HornClause2]    -- clauses
            -> Rule
-mkTestRule name given clauses = Hornlike
+mkTestRule n g = mkTestRule' n g Nothing
+
+mkTestRule' :: RuleName
+           -> Maybe ParamText  -- given
+           -> Maybe ParamText  -- giveth
+           -> [HornClause2]    -- clauses
+           -> Rule
+mkTestRule' name given giveth clauses = Hornlike
     { name = name
     , super = Nothing
     , keyword = Decide
     , given = given
-    , giveth = Nothing
+    , giveth = giveth
     , upon = Nothing
     , clauses = clauses
     , rlabel = Nothing

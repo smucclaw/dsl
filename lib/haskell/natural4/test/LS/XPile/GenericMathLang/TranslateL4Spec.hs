@@ -4,9 +4,11 @@ module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 
 import Test.Hspec ( describe, it, xit, shouldBe, Spec )
 import LS.Types
-import LS.Rule (Rule(..))
+import LS.Rule (Rule(..), Interpreted(..), defaultL4I)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
+import qualified LS.XPile.MathLang.MathLang as ML
+import Explainable.MathLang
 import Data.List.NonEmpty (NonEmpty(..), fromList)
 import AnyAll qualified as AA
 import qualified Data.Text as T
@@ -54,6 +56,11 @@ spec = do
                     arithRule4
                     arithRule4_gold
 
+    describe "toMathLang" $ do
+      it "should turn Rules straight to MathLang (via GenericMathLang)" $ do
+        let l4i = defaultL4I {origrules = [arithRule2, arithRule3, arithRule4]}
+        ML.toMathLang l4i `shouldBe` mathLangGold
+
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
   describe name $ do
@@ -64,8 +71,123 @@ testBaseExpify name desc rule gold =
         Right p -> exp (lcProgram p) `shouldBe` gold
         Left err -> err `shouldBe` MiscError "" ""
 
+-----------------------------------------------------------------------------
+-- gold for mathlang transformation
 
-
+mathLangGold = [ MathSet "m3a"
+    ( MathBin Nothing Times
+        ( MathVar "m1" )
+        ( MathVar "m2" )
+    )
+  , MathSet "m3b"
+    ( MathBin Nothing Times
+        ( MathVar "m1" )
+        ( MathVar "m2" )
+    )
+  , MathSet "m3c"
+    ( MathBin Nothing Times
+        ( MathVar "m1" )
+        ( MathVar "m2" )
+    )
+  , MathSet "o3a"
+    ( MathBin Nothing Plus
+        ( MathBin Nothing Times
+            ( MathVar "o1" )
+            ( Val Nothing 1.0e-2 )
+        )
+        ( MathBin Nothing Times
+            ( MathVar "o2" )
+            ( Val Nothing 7.0e-2 )
+        )
+    )
+  , MathSet "o3b"
+    ( MathBin Nothing Plus
+        ( MathBin Nothing Times
+            ( MathVar "o1" )
+            ( Val Nothing 1.0e-2 )
+        )
+        ( MathBin Nothing Times
+            ( MathVar "o2" )
+            ( Val Nothing 7.0e-2 )
+        )
+    )
+  , MathSet "o3c"
+    ( MathBin Nothing Plus
+        ( MathBin Nothing Times
+            ( MathVar "o1" )
+            ( Val Nothing 1.0e-2 )
+        )
+        ( MathBin Nothing Plus
+            ( MathBin Nothing Times
+                ( MathVar "o2" )
+                ( Val Nothing 3.0e-2 )
+            )
+            ( MathBin Nothing Times
+                ( MathVar "o2" )
+                ( Val Nothing 4.0e-2 )
+            )
+        )
+    )
+  , MathITE Nothing
+    ( PredComp Nothing CEQ
+        ( MathVar "phaseOfMoon" )
+        ( MathVar "gibbous" )
+    )
+    ( MathSet "taxesPayable"
+        ( MathBin Nothing Divide
+            ( MathVar "taxesPayableAlive" )
+            ( Val Nothing 2.0 )
+        )
+    ) ( Undefined Nothing )
+  , MathITE Nothing
+    ( PredVar "vivacity" )
+    ( MathSet "taxesPayable"
+        ( MathVar "taxesPayableAlive" )
+    ) ( Undefined Nothing )
+  , MathITE Nothing
+    ( PredComp Nothing CEQ
+        ( MathVar "phaseOfMoon" )
+        ( MathVar "waxing" )
+    )
+    ( MathSet "taxesPayable"
+        ( MathBin Nothing Divide
+            ( MathVar "taxesPayableAlive" )
+            ( Val Nothing 3.0 )
+        )
+    ) ( Undefined Nothing )
+  , MathITE Nothing
+    ( PredComp Nothing CEQ
+        ( MathVar "phaseOfMoon" )
+        ( MathVar "full" )
+    )
+    ( MathSet "taxesPayable"
+        ( MathVar "waived" )
+    ) ( Undefined Nothing )
+  , MathITE Nothing
+    ( PredVar "TODO: not implemented yet" )
+    ( MathSet "taxesPayable"
+        ( Val Nothing 0.0 )
+    ) ( Undefined Nothing )
+  , MathSet "taxesPayableAlive"
+    ( MathBin Nothing Plus
+        ( MathVar "income tax component" )
+        ( MathVar "asset tax component" )
+    )
+  , MathSet "income tax component"
+    ( MathBin Nothing Times
+        ( MathVar "annualIncome" )
+        ( MathVar "incomeTaxRate" )
+    )
+  , MathSet "asset tax component"
+    ( MathBin Nothing Times
+        ( MathVar "netWorth" )
+        ( MathVar "assetTaxRate" )
+    )
+  , MathSet "incomeTaxRate"
+    ( Val Nothing 1.0e-2 )
+  , MathSet "assetTaxRate"
+    ( Val Nothing 7.0e-2 )
+  ]
 
 -----------------------------------------------------------------------------
 -- Test rules

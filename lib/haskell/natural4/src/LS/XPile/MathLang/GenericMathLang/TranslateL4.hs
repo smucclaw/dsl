@@ -37,41 +37,21 @@ import LS.Rule (
                 defaultHorn)
 import LS.Rule qualified as L4 (Rule(..))
 
-import Effectful (Effect, Eff, (:>), runPureEff)
--- import Effectful.TH (makeEffect)
--- import Effectful.Dispatch.Dynamic (send, interpret, localSeqUnlift)
+import Effectful (Eff, (:>), runPureEff)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
--- import Effectful.State.Static.Shared (State, runState)
--- experimenting with Effectful.Error rn
--- import Control.Monad.Validate qualified as V
---   ( ValidateT
---     , MonadValidate
---     -- , Validate
---     , refute
---     , dispute
---     , tolerate
---     )
--- import Data.HashSet qualified as HS
-import Control.Arrow ((>>>))
-import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
 import Flow ((|>))
 import Optics hiding ((|>))
-import Data.Text.Optics (packed, unpacked)
+-- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
-import Data.Generics.Sum.Constructors
 import Data.List.NonEmpty qualified as NE
--- import Data.Generics.Product.Types (types)
--- import Prettyprinter (Pretty)
 import Data.String.Interpolate (__i)
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList, foldrM)
-
-import LS.XPile.MathLang.UtilsLCReplDev
 import LS.Utils ((|$>))
 
 import qualified Data.List.NonEmpty as NE
@@ -455,7 +435,8 @@ l4sHLsToLCSeqExp = F.foldrM go EmptySeqE
 expifyHL :: SimpleHL -> ToLC Exp
 expifyHL hl = do
   bexp <- baseExpify hl
-  return $ MkExp bexp [mdata]
+  return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
+--  return $ MkExp bexp [mdata]
    where
     returnType = case hl.shcRet of
       [(_, mReturnType)] -> mReturnType
@@ -637,6 +618,7 @@ baseExpifyMTEs mtes = case mtes of
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
         return $ EApp litWeAssumeToBePred var2
       (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
+      (Just _, Just _) -> throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
 
   _ -> trace ("baseExpifyMTEs: " <> show mtes) $ do
       expParsedAsText <- parseExpr $ MTT $ textifyMTEs mtes
@@ -659,7 +641,7 @@ baseExpifyMTEs mtes = case mtes of
 --      res <- mres
       case res of
       -- case parse pExpr "dummy" str of
-        Right exp@(EVar (MkVar str')) ->
+        Right exp@(EVar (MkVar str')) -> trace ("parseExpr returned " <> show res) $
           if str /= str'
             then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
             else return $ exp
@@ -712,15 +694,15 @@ binary :: T.Text -> (BaseExp -> BaseExp -> BaseExp) -> Operator Parser BaseExp
 binary name f = InfixL (f <$ symbol name)
 
 mul', div', plus', minus', lt', lte', gt', gte', numeq' :: BaseExp -> BaseExp -> BaseExp
-mul' x y = ENumOp OpMul (noExtraMdata x) (noExtraMdata y)
-div' x y = ENumOp OpDiv (noExtraMdata x) (noExtraMdata y)
-plus' x y = ENumOp OpPlus (noExtraMdata x) (noExtraMdata y)
-minus' x y =  ENumOp OpMinus (noExtraMdata x) (noExtraMdata y)
-lt' x y =  ECompOp OpLt (noExtraMdata x) (noExtraMdata y)
-lte' x y =  ECompOp OpLte (noExtraMdata x) (noExtraMdata y)
-gt' x y =  ECompOp OpGt (noExtraMdata x) (noExtraMdata y)
-gte' x y =  ECompOp OpGte (noExtraMdata x) (noExtraMdata y)
-numeq' x y = ECompOp OpNumEq (noExtraMdata x) (noExtraMdata y)
+mul' x y = ENumOp OpMul (typeMdata "Number" x) (typeMdata "Number" y)
+div' x y = ENumOp OpDiv (typeMdata "Number" x) (typeMdata "Number" y)
+plus' x y = ENumOp OpPlus (typeMdata "Number" x) (typeMdata "Number" y)
+minus' x y =  ENumOp OpMinus (typeMdata "Number" x) (typeMdata "Number" y)
+lt' x y =  ECompOp OpLt (typeMdata "Number" x) (typeMdata "Number" y)
+lte' x y =  ECompOp OpLte (typeMdata "Number" x) (typeMdata "Number" y)
+gt' x y =  ECompOp OpGt (typeMdata "Number" x) (typeMdata "Number" y)
+gte' x y =  ECompOp OpGte (typeMdata "Number" x) (typeMdata "Number" y)
+numeq' x y = ECompOp OpNumEq (typeMdata "Number" x) (typeMdata "Number" y)
 
 -- TODO: should we identify already here whether things are Vars or Lits?
 -- Or make everything by default Var, and later on correct if the Var is not set.
@@ -766,7 +748,10 @@ expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
  where
   -- TODO: here use the composOp style thing to do this transformation in all sub-BaseExps in the BaseExp!
   addMetadataToVar :: BaseExp -> ToLC Exp
-  -- TODO: check that if isDeclaredVar, use the actual metadata, otherwise use inferred metadata
+  -- This is supposed to work as follows:
+  -- baseExpifyMTEs for a single [mte] only returns a Var if it is declared
+  -- baseExpifyMTEs for [mte1, mte2] returns an EApp
+  -- baseExpifyMTEs for [mte1, mte2, …] returns an arithmetic expression
   addMetadataToVar bexp = case bexp of
                             EVar var -> mkVarExp var
                             _ -> return $ noExtraMdata bexp
@@ -823,7 +808,7 @@ mkSetVarTrueExpFromVarNoMd var = noExtraMdata <$> mkVarSetTrueFromVar var noExtr
 
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
-mkSetVarTrue putativeVar = mkSetVarFromMTEsHelper putativeVar (noExtraMdata $ ELit EBoolTrue)
+mkSetVarTrue putativeVar = mkSetVarFromMTEsHelper putativeVar (typeMdata "Bool" $ ELit EBoolTrue)
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
@@ -857,7 +842,7 @@ processHcBody = \case
   -- TODO: Consider using the `mlbl` to augment with metadata
   AA.All _mlbl propns -> F.foldrM (makeOp EAnd) emptyExp propns
   AA.Any _mlbl propns -> F.foldrM (makeOp EOr) emptyExp propns
-  AA.Not propn -> noExtraMdata . ENot <$> processHcBody propn
+  AA.Not propn -> typeMdata "Bool" . ENot <$> processHcBody propn
   where
     emptyExp :: Exp = noExtraMdata EEmpty
 
@@ -866,8 +851,10 @@ processHcBody = \case
     makeOp op bsr exp = noExtraMdata <$> (op <$> (toBoolEq <$> processHcBody bsr) <*> pure exp)
 
     toBoolEq e = e {exp = toBoolEqBE e.exp, md = inferredType e.md "Bool"}
-    toBoolEqBE e@(ELit _) = ECompOp OpBoolEq (noExtraMdata e) (noExtraMdata (ELit EBoolTrue))
-    toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (noExtraMdata e) (noExtraMdata (ELit EBoolTrue))
+    toBoolEqBE e@(ELit (EString str)) =
+      let varExp = EVar (MkVar str)
+      in ECompOp OpBoolEq (typeMdata "Bool" varExp) (typeMdata "Bool" (ELit EBoolTrue))
+    toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (typeMdata "Bool" e) (typeMdata "Bool" (ELit EBoolTrue))
     toBoolEqBE e = e
 
 {- |
@@ -919,12 +906,16 @@ expifyHeadRP = \case
   RPnary RPis [RPMT [mte], rp]   -> do
     mvar <- isDeclaredVar mte
     exp <- expifyBodyRP rp
-    varMd <- case mvar of
-              Just var -> md <$> mkVarExp var -- only call mkVarExp to get the metadata
-              Nothing -> return []
-    varSet <- mkSetVarFromMTEsHelper [mte] exp -- metadata doesn't come here!
-    return $ MkExp varSet varMd
-
+    case mvar of
+      Just var -> do -- The var is given and has a type
+        varExp <- mkVarExp var
+        let valExp = inferTypeFromOtherExp exp varExp
+        return $ noExtraMdata $ EVarSet varExp valExp
+      Nothing -> do -- Var is not given, but we can try to infer it from the RHS
+        varNoType <- noExtraMdata . EVar <$> varFromMTEs [mte]
+        let valExp = inferTypeRHS exp
+        let varExp = inferTypeFromOtherExp varNoType valExp
+        return $ noExtraMdata $ EVarSet varExp valExp
   rp -> expifyBodyRP rp
 
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
@@ -934,7 +925,7 @@ expifyBodyRP = \case
 
   -- A single term could often be interpreted as 'var == True',
   -- but we choose to do that transformation later.
-  rp@(RPMT [mte]) -> expifyMTEsNoMd [mte] -- adds metadata to Var, not others
+  -- rp@(RPMT [mte]) -> expifyMTEsNoMd [mte] -- we get its type later, if it's an argument of numerical or comp op
 
   -- probably a good idea to merge with above, but keeping them separate just to remind myself to rethink
   rp@(RPMT mtes) -> expifyMTEsNoMd mtes
@@ -945,12 +936,12 @@ expifyBodyRP = \case
   RPnary RPis [rp1, rp2] -> do
     exp1maybeUntyped <- expifyBodyRP rp1
     exp2 <- inferTypeRHS <$> expifyBodyRP rp2
-    let exp1 = inferTypeLHS exp1maybeUntyped exp2
+    let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
     return $ noExtraMdata $ EIs exp1 exp2
   RPnary rel [rp1, rp2] -> do
     expLeft <- expifyBodyRP rp1
     expRight <- expifyBodyRP rp2
-    numOrCompOp rel (numberType expLeft) (numberType expRight)
+    numOrCompOp rel expLeft expRight
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
@@ -958,8 +949,10 @@ expifyBodyRP = \case
   rp -> throwNotSupportedWithMsgError rp "unknown rp"
   where
     numOrCompOp :: RPRel -> Exp -> Exp -> ToLC Exp
-    numOrCompOp (rprel2compop -> Just compOp) = \x y -> return $ noExtraMdata $ ECompOp compOp x y
-    numOrCompOp (rprel2numop -> Just numOp) = \x y -> return $  noExtraMdata $ ENumOp numOp x y
+    numOrCompOp (rprel2compop -> Just compOp) = \x y ->
+      return $ typeMdata "Boolean" $ ECompOp compOp (coerceType "Number" x) (coerceType "Number" y)
+    numOrCompOp (rprel2numop -> Just numOp) = \x y ->
+      return $ typeMdata "Number" $ ENumOp numOp (coerceType "Number" x) (coerceType "Number" y)
     numOrCompOp rprel = error $ "not implemented" <> show rprel
 
     rprel2numop :: RPRel -> Maybe NumOp
@@ -979,25 +972,29 @@ expifyBodyRP = \case
       RPeq   -> Just OpNumEq
       _      -> Nothing
 
-    numberType :: Exp -> Exp
-    numberType (MkExp bexp []) = MkExp bexp (inferredType [] "Number")
-    numberType exp = exp
+    -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
+    coerceType :: T.Text -> Exp -> Exp
+    coerceType typ exp@(MkExp bexp _) = inferTypeFromOtherExp exp (MkExp bexp (inferredType [] typ))
 
-    inferTypeLHS :: Exp -> Exp -> Exp
-    inferTypeLHS exp1 exp2 = case exp1.md of
-      m:_ -> case m.typeLabel of
-                Just _ -> exp1 -- exp1 has already a type, coming from localVars
-                _ -> exp1 {md = leaveTrace (T.pack $ " copied over from " <> show exp2) exp2.md}
-      [] -> exp1 {md = leaveTrace (T.pack $ " copied over from " <> show exp2) exp2.md} -- exp2 has potentially more reliable type info
+inferTypeFromOtherExp :: Exp -> Exp -> Exp
+inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of
+  m:_ -> case m.typeLabel of
+            Just _  -> copyTarget -- copyTarget has already a type, don't override
+            Nothing -> copyTarget {md = copySource.md}
+  [] -> copyTarget {md = copySource.md} -- copySource has potentially more reliable type info
 
-    inferTypeRHS :: Exp -> Exp
-    inferTypeRHS x@(MkExp bexp md) = case bexp of
-      EVar (MkVar t)
-        -> MkExp (ELit (EString t)) (inferredType md "String")
-      ELit (EString _)
-        -> MkExp bexp (inferredType md "String")
-      ELit (EInteger _)
-        -> MkExp bexp (inferredType md "Number")
-      ELit (EFloat _)
-        -> MkExp bexp (inferredType md "Number")
-      _ -> x
+inferTypeRHS :: Exp -> Exp
+inferTypeRHS x@(MkExp bexp md) = case bexp of
+  ELit (EString _)
+    -> MkExp bexp (inferredType md "String")
+  ELit (EInteger _)
+    -> MkExp bexp (inferredType md "Number")
+  ELit (EFloat _)
+    -> MkExp bexp (inferredType md "Number")
+  ENumOp{}
+    -> MkExp bexp (inferredType md "Number")
+  ECompOp{}
+    -> MkExp bexp (inferredType md "Bool")
+  _ -> x
+--  EVar (MkVar t) -> ??? -- NB. a Var can be defined outside givens, like "incomeTaxRate,IS,0.01"
+-- so when incomeTaxRate appears in another expression, we could check elsewhere in the program what its type is.

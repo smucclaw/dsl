@@ -9,12 +9,13 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import qualified LS.XPile.MathLang.MathLang as ML
 import Explainable.MathLang
+import Explainable
 import Data.List.NonEmpty (NonEmpty(..), fromList)
 import AnyAll qualified as AA
 import qualified Data.Text as T
 import Data.Maybe (fromJust)
 import Prelude hiding (exp, seq)
-
+import Data.HashMap.Strict (HashMap)
 
 spec :: Spec
 spec = do
@@ -60,6 +61,13 @@ spec = do
       it "should turn Rules straight to MathLang (via GenericMathLang)" $ do
         let l4i = defaultL4I {origrules = [arithRule2, arithRule3, arithRule4]}
         ML.toMathLang l4i `shouldBe` mathLangGold
+
+    describe "eval" $ do
+      it "should evaluate 2+2" $ do
+        let l4i = defaultL4I {origrules = [arithRule1]}
+            expr:_ = ML.toMathLang l4i
+        (e, _xp, _st, _strs) <- xplainE (mempty :: HashMap () ()) emptyState $ eval expr
+        e `shouldBe` 4.0
 
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
@@ -483,6 +491,15 @@ rule2nogivens_gold = EIfThen
             }, md = []
         }
     }
+
+arithRule1 = mkTestRule
+               [ MTT "two plus two" ]
+               Nothing
+               [ HC { hHead = RPConstraint
+                    [ MTT "m1" ] RPis
+                    [ MTT "2 + 2" ]
+                , hBody = Nothing } ]
+
 
 arithRule2 = mkTestRule
                 [ MTT "m3a" ]

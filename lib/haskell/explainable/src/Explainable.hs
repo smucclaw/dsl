@@ -7,7 +7,8 @@ module Explainable
     historypath,
     mkNod,
     pathSpec,
-    retitle
+    retitle,
+    xplainE
   )
 where
 

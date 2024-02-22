@@ -3,32 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Explainable.MathLang
-  ( Expr(..),
-    MyState(..),
-    Pred(..), MathBinOp(..), Comp(..),
-    (|===),
-    (@|=),
-    (@|?),
-    (@|%),
-    (@|:),
-    (@|.),
-    (@|..),
-    (+||),
-    (*||),
-    (|+),
-    (|*),
-    (|%),
-    dumpExplanationF,
-    emptyState,
-    eval,
-    getvar,
-    negativeElementsOf,
-    positiveElementsOf,
-    timesEach,
-    timesPositives
-  )
-where
+module Explainable.MathLang where
 
 import Control.Monad (mapAndUnzipM, unless)
 import Control.Monad.Trans (liftIO)

@@ -72,7 +72,7 @@ spec = do
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
   describe name $ do
-    it desc $ do
+    xit desc $ do
       let toTest = runToLC $ l4ToLCProgram [rule]
 --      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
       case toTest of

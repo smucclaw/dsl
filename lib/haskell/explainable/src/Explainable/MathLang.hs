@@ -10,6 +10,7 @@ module Explainable.MathLang
     (|===),
     (@|=),
     (@|?),
+    (@|%),
     (@|:),
     (@|.),
     (@|..),
@@ -17,6 +18,7 @@ module Explainable.MathLang
     (*||),
     (|+),
     (|*),
+    (|%),
     dumpExplanationF,
     emptyState,
     eval,
@@ -74,6 +76,7 @@ import Prettyprinter
       Pretty(pretty) )
 import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)
+import GHC.Float.RealFracMethods (roundFloatInt, int2Float)
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:
@@ -164,11 +167,12 @@ getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
 (<++>) (Just x) (Just y) = Just [i|#{x}, #{y}|]
 
 -- | basic binary operator for arithmetic
-(|+),(|-),(|*),(|/) :: Expr Float -> Expr Float -> Expr Float
+(|+),(|-),(|*),(|/),(|%) :: Expr Float -> Expr Float -> Expr Float
 x |+ y = MathBin Nothing Plus   x y
 x |- y = MathBin Nothing Minus  x y
 x |* y = MathBin Nothing Times  x y
 x |/ y = MathBin Nothing Divide x y
+x |% y = MathBin Nothing Modulo x y
 
 infixl 5 |*, |/
 infixl 4 |+, |-
@@ -177,18 +181,19 @@ less :: Expr Float -> Expr Float -> Expr Float
 less = (|-)
 
 -- | fmap.
--- 
+--
 -- In Haskell, we would say @(+2) <$> [1,2,3]@
 --
 -- Here, we would say @2 +| [1,2,3]@
 --
 -- But this is crude. There's an alternative way to say it, using MathSections in an ExprList.
 
-(+|),(-|),(*|),(/|) :: Expr Float -> [Expr Float] -> ExplainableIO r MyState [Float]
+(+|),(-|),(*|),(/|),(%|) :: Expr Float -> [Expr Float] -> ExplainableIO r MyState [Float]
 x +| ys = second (Node ([],[[i|mapping + #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Plus   x) ys
 x -| ys = second (Node ([],[[i|mapping - #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Minus  x) ys
 x *| ys = second (Node ([],[[i|mapping * #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Times  x) ys
 x /| ys = second (Node ([],[[i|mapping / #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Divide x) ys
+x %| ys = second (Node ([],[[i|mapping / #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Modulo x) ys
 
 -- ** Function Sections and infrastructure for folds
 
@@ -199,7 +204,7 @@ data MathSection a
   | MathSection MathBinOp (Expr a)
   deriving (Eq, Show)
 
-data MathBinOp = Plus | Minus | Times | Divide
+data MathBinOp = Plus | Minus | Times | Divide | Modulo
   deriving (Eq, Show)
 
 -- | we can reduce a list of expressions to a single value...
@@ -346,6 +351,7 @@ eval' (MathBin _lbl Plus   x y) = binEval "addition"       (+) x y
 eval' (MathBin _lbl Minus  x y) = binEval "subtraction"    (-) x y
 eval' (MathBin _lbl Times  x y) = binEval "multiplication" (*) x y
 eval' (MathBin _lbl Divide x y) = binEval "division"       (/) x y
+eval' (MathBin _lbl Modulo x y) = binEval "modulo"         (\x y -> int2Float (roundFloatInt x `mod` roundFloatInt y)) x y
 eval' (Parens  _lbl x)          = unaEval "parentheses"    id  x
 eval' (MathITE _lbl p x y)      = evalFP eval  p x y
 eval' (MathMax  lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
@@ -603,11 +609,12 @@ verbose "comparison"     = ("is the result of comparing", "with")
 verbose "variable expansion" = ("which comes from the variable", "")
 verbose x                = (x, [i|{x} argument|])
 
-(@|+),(@|-),(@|*),(@|/) :: String -> Expr Float -> Expr Float -> Expr Float
+(@|+),(@|-),(@|*),(@|/),(@|%) :: String -> Expr Float -> Expr Float -> Expr Float
 (@|+) lbl = MathBin (Just lbl) Plus
 (@|-) lbl = MathBin (Just lbl) Minus
 (@|*) lbl = MathBin (Just lbl) Times
 (@|/) lbl = MathBin (Just lbl) Divide
+(@|%) lbl = MathBin (Just lbl) Modulo
 
 class Exprlbl expr a where
   (@|=) :: String -> expr a -> expr a
@@ -746,7 +753,7 @@ toplevel = for_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one")
   pure ()
   where ml23 = MathList (Just "minus two to three")
                [Val Nothing (-2), Val Nothing (-1), Val Nothing 0, Val Nothing 1, Val Nothing 2, Val Nothing 3]
--- * Explainers  
+-- * Explainers
 
 -- | Explain an @Expr Float@
 xplainF :: r -> MyState -> Expr Float -> IO (Float, XP, MyState, [String])
@@ -835,7 +842,7 @@ dumpTypescript realign s f =
     }
     #{ppst s realign}
     export const maxClaim = () => {
-      return #{pp f} 
+      return #{pp f}
     }
   |]
 
@@ -851,7 +858,7 @@ instance ToTS Expr a where
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.
   pp (MathBin  lbl mbop x y ) = "new tsm.Num2"    <+> h0tupled [ dquotes $ maybe ("binop " <> viaShow mbop) pretty lbl
-                                                                      , "tsm.NumBinOp." <> case mbop of { Plus -> "Add"; Minus -> "Sub"; Times -> "Mul"; Divide -> "Div" }
+                                                                      , "tsm.NumBinOp." <> case mbop of { Plus -> "Add"; Minus -> "Sub"; Times -> "Mul"; Divide -> "Div"; Modulo -> "Mod" }
                                                                       , pp x , pp y ]
   pp (MathVar  str          ) = "new tsm.GetVar"  <+> h0parens ( dqpretty str)
   pp (MathSet  str x        ) = "new tsm.SetVar"  <+> h0tupled [ dqpretty str, parens (pp x) <> ".val" ]

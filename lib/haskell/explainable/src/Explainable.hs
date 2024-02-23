@@ -4,6 +4,7 @@ module Explainable
   ( XP,
     ExplainableIO,
     drawTreeOrg,
+    emptyXP,
     historypath,
     mkNod,
     pathSpec,
@@ -22,7 +23,7 @@ import Data.Bifunctor (first)
 import Data.List (intercalate)
 import Data.Ord ()
 import Data.String.Interpolate (__i)
-import Data.Tree (Tree (Node))
+import Data.Tree (Tree (..))
 
 -- | Our ExplainableIO monad supports evaluation-with-explanation of expressions in our DSL.
 -- Normally, a DSL is /evaluated/: its expressions are reduced from types in the DSL to types in the host language.
@@ -107,6 +108,9 @@ retitle str = local (first (fmap (str:)))
 type XP = Tree (Stdout, Stdexp)
 type Stdout = [String]
 type Stdexp = [String]
+
+emptyXP :: Tree ([a1], [a2])
+emptyXP = Node {rootLabel = ([], []), subForest = []}
 
 -- | Helper function to make a child-free explanation node
 mkNod :: a -> Tree ([b],[a])

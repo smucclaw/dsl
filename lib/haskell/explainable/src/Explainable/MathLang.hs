@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Explainable.MathLang where
 
@@ -15,16 +16,19 @@ import Control.Monad.Trans.RWS
     modify,
   )
 import Data.Bifunctor (Bifunctor (second))
+-- import Data.Text qualified as T
+
+import Data.Coerce (coerce)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String.Interpolate (i, __i)
--- import Data.Text qualified as T
-import Data.Tree (Tree (Node, rootLabel))
+import Data.Tree (Tree (..))
 import Explainable
   ( ExplainableIO,
     XP,
     drawTreeOrg,
+    emptyXP,
     historypath,
     mkNod,
     pathSpec,
@@ -32,26 +36,28 @@ import Explainable
   )
 import Numeric.Extras (fmod)
 import Prettyprinter
-    ( (<+>),
-      encloseSep,
-      hang,
-      indent,
-      line,
-      list,
-      tupled,
-      viaShow,
-      colon,
-      comma,
-      dquotes,
-      lbrace,
-      lparen,
-      parens,
-      rbrace,
-      rparen,
-      Doc,
-      Pretty(pretty) )
+  ( Doc,
+    Pretty (pretty),
+    colon,
+    comma,
+    dquotes,
+    encloseSep,
+    hang,
+    indent,
+    lbrace,
+    line,
+    list,
+    lparen,
+    parens,
+    rbrace,
+    rparen,
+    tupled,
+    viaShow,
+    (<+>),
+  )
 import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)
+import Debug.Trace (trace)
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:
@@ -557,18 +563,24 @@ deepEvalList (other,_xp) = deepEvalList =<< evalList other
 getvarF :: String -> ExplainableIO r MyState (Expr Double)
 getvarF x = do
   symtab <- gets symtabF
-  case x `Map.lookup` symtab of
-    Nothing -> liftIO do
-      putStrLn [i|getvarF: unable to find variable `#{x}` in symbol table|]
-      error "MathLang fatal error in getvarF"
-    Just v  -> pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+  case symtab Map.!? x of
+    Just v ->
+      pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+    _ -> liftIO do
+      putStrLn [__i|
+        getvarF: unable to find variable `#{x}` in symbol table
+        MathLang fatal error in getvarF
+      |]
+      pure (Val Nothing 0, emptyXP)
 
 -- | Get a @Pred Double@ variable
 
 getvarP :: String -> ExplainableIO r MyState (Pred Double)
 getvarP x = do
   symtab <- gets symtabP
-  pure (symtab Map.! x, Node ([show $ symtab Map.! x], [[i|looked up #{x}|]]) [])
+  case symtab Map.!? x of
+    Just v -> pure (v, Node ([show v], [[i|looked up #{x}|]]) [])
+    _ -> pure (PredVar "", emptyXP)
 
 -- [TODO] ExprLists too, i suppose
 
@@ -617,9 +629,11 @@ instance Exprlbl Expr a where
   (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
   (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
 
-  (@|$<) lbl   = MathVar lbl
-  (@|$>) lbl x = MathSet lbl x
+  (@|$<) :: String -> Expr a
+  (@|$<) = MathVar
 
+  (@|$>) :: String -> Expr a -> Expr a
+  (@|$>) = MathSet
 
 (@|.) :: String -> a -> Expr a
 (@|.) = Val . Just
@@ -634,10 +648,11 @@ infixl 4 @|+, @|-
 infixl 5 @|*, @|/
 
 -- | syntactic sugar for ternary syntax. The trick is to join up the branches into a single thing
-data TernaryRHS a = TRHS a a deriving (Eq, Show)
+newtype TernaryRHS a = TRHS (a, a)
+  deriving (Eq, Show)
 
 (@|:) :: expr -> expr -> TernaryRHS expr
-(@|:) tbranch fbranch = TRHS tbranch fbranch
+(@|:) = curry coerce
 
 class ExprTernary expr a where
   (@|?) :: Pred a -> TernaryRHS (expr a) -> expr a
@@ -646,13 +661,16 @@ infixr 2 @|?
 infixr 3 @|:
 
 instance ExprTernary Expr a where
-  (@|?) pred (TRHS tbranch fbranch) = MathITE Nothing pred tbranch fbranch
+  (@|?) pred (coerce -> (tbranch, fbranch)) =
+    MathITE Nothing pred tbranch fbranch
 
 instance ExprTernary ExprList a where
-  (@|?) pred (TRHS tbranch fbranch) = ListITE Nothing pred tbranch fbranch
+  (@|?) pred (coerce -> (tbranch, fbranch)) =
+    ListITE Nothing pred tbranch fbranch
 
 instance ExprTernary Pred a where
-  (@|?) pred (TRHS tbranch fbranch) = PredITE Nothing pred tbranch fbranch
+  (@|?) pred (coerce -> (tbranch, fbranch)) =
+    PredITE Nothing pred tbranch fbranch
 
 -- | syntactic sugar for the predicate expressions
 instance Exprlbl Pred a where
@@ -671,19 +689,22 @@ instance Exprlbl Pred a where
   (@|=) lbl ( PredFold (Just old) x y   ) = PredFold (Just lbl <++> Just ("previously " ++ old)) x y
   (@|=) lbl ( PredITE  (Just old) x y z ) = PredITE  (Just lbl <++> Just ("previously " ++ old)) x y z
 
-  (@|$<) lbl   = PredVar lbl
-  (@|$>) lbl x = PredSet lbl x
+  (@|$<) :: String -> Pred a
+  (@|$<) = PredVar
 
+  (@|$>) :: String -> Pred a -> Pred a
+  (@|$>) = PredSet
 
 (@|..) :: String -> Bool -> Pred a
 (@|..) = PredVal . Just
 
 (|&&),(|||),(|==),(|/=),(|!=) :: Pred a -> Pred a -> Pred a
-(|&&) x y = PredBin Nothing PredAnd x y
-(|||) x y = PredBin Nothing PredOr  x y
-(|==) x y = PredBin Nothing PredEq  x y
-(|!=) x y = PredBin Nothing PredNeq x y
-(|/=) x y = PredBin Nothing PredNeq x y
+(|&&) = PredBin Nothing PredAnd
+(|||) = PredBin Nothing PredOr
+(|==) = PredBin Nothing PredEq
+(|!=) = PredBin Nothing PredNeq
+(|/=) = PredBin Nothing PredNeq
+
 infix 2 |||, @|||
 infix 3 |&&, @|&&
 infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
@@ -703,11 +724,11 @@ infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 (@|!==) s = PredComp (Just s) CNEQ
 
 (@|&&),(@|||),(@|==),(@|!=),(@|/=) :: String -> Pred a -> Pred a -> Pred a
-(@|&&) s x y = PredBin (Just s) PredAnd  x y
-(@|||) s x y = PredBin (Just s) PredOr   x y
-(@|==) s x y = PredBin (Just s) PredEq   x y
-(@|!=) s x y = PredBin (Just s) PredNeq  x y
-(@|/=) s x y = PredBin (Just s) PredNeq  x y
+(@|&&) s = PredBin (Just s) PredAnd
+(@|||) s =  PredBin (Just s) PredOr
+(@|==) s = PredBin (Just s) PredEq
+(@|!=) s = PredBin (Just s) PredNeq
+(@|/=) s = PredBin (Just s) PredNeq
 
 (@|!) :: String -> Pred a -> Pred a
 (@|!) s = PredNot (Just s)
@@ -771,7 +792,8 @@ xplainL r exprList = do
 
 unMathList :: Show a => ExprList a -> [Expr a]
 unMathList (MathList _lbl xs) = xs
-unMathList x                  = error [i|unMathList: expected exprList to be fully evaluated, but got #{x}|]
+unMathList x                  =
+  trace [i|unMathList: expected exprList to be fully evaluated, but got #{x}|] []
 
 -- | dump an explanation of a mathlang expression
 dumpExplanationF :: Int -> MyState -> Expr Double -> IO ()
@@ -844,7 +866,7 @@ instance ToTS Expr a where
                                                                            , "tsm.NumFoldOp." <> case f of { FoldSum -> "Sum"; FoldProduct -> "Product"; FoldMax -> "Max"; FoldMin -> "Min" }
                                                                            , hang 2 $ list (pp <$> xs) ]
 
-  pp x = error $ "MathLang:ToTS pp unimplemented; " <> show x
+  pp x = trace [i|MathLang:ToTS pp unimplemented; #{x}|] ""
 
 instance ToTS Pred a where
   pp (PredVal  lbl a    ) = "new tsm.Bool0"      <+> h0tupled [ dquotes $ maybe (viaShow a) pretty lbl, tf a ]
@@ -916,7 +938,4 @@ h0tupled = hang 0 . tupled
 -- waht to ask the end user for.
 
 allVars :: Expr Double -> ExplainableIO r MyState (Expr Double)
-allVars inexpr = do
-  return (inexpr, Node ([],[]) [])
-
-
+allVars inexpr = pure (inexpr, emptyXP)

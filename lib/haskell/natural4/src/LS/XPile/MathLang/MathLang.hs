@@ -42,14 +42,14 @@ toMathLang l4i =
 
 
 numOptoMl :: GML.NumOp -> MathBinOp
-numOptoMl op = case op of
+numOptoMl = \case
   GML.OpPlus -> Plus
   GML.OpSum -> Plus
   GML.OpMinus -> Minus
   GML.OpMul -> Times
   GML.OpProduct -> Times
   GML.OpDiv -> Divide
-  _ -> error [i|numOptoMl: encountered #{op}|]
+  op -> error [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp
 compOptoMl = \case

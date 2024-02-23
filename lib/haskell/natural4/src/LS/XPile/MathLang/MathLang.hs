@@ -17,6 +17,7 @@ import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString.Builder (generic)
 import Data.Coerce (coerce)
 import Data.Either (rights)
+import Data.List (groupBy)
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
@@ -78,12 +79,46 @@ exp2pred exp = case exp.exp of
     ex2 <- genericMLtoML e2
     pure $ PredComp Nothing (compOptoMl op) ex1 ex2
   EIs e1 e2 -> PredComp Nothing CEQ <$> genericMLtoML e1 <*> genericMLtoML e2
+  ELit GML.EBoolTrue -> pure $ PredVal Nothing True
+  ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   _ -> pure $ PredVar "TODO: not implemented yet"
+
+chainITEs :: [Expr Double] -> [Expr Double]
+chainITEs es = concat [chain x xs | (x:xs) <- groupBy sameVarSet es]
+  where
+    chain :: Expr Double -> [Expr Double] -> [Expr Double]
+    chain x@(MathITE lbl condP thenEx (Undefined _)) xs = case xs of
+
+      -- the list of expressions ends in OTHERWISE, so we found the final ELSE
+      [MathITE _ (PredVal _ True) otherwiseEx (Undefined _)]
+        -> pure $ MathITE lbl condP thenEx otherwiseEx
+
+      -- the list of expressions continues, keep going deeper into ELSE
+      (MathITE lbl' condP' thenEx' (Undefined _):elseEx:rest) -- the new else
+        -> MathITE lbl condP thenEx     -- original x
+                <$> MathITE lbl' condP' thenEx' -- first item of the list here
+                        <$> chain elseEx rest      -- recursive call to chain
+
+      -- singleton list = there was never an else branch in the original
+      [] -> [x]
+
+      -- first item is MathITE but isn't followed by more, unclear what to do—leave as is
+      -- TODO: later add some logging
+      xs -> (x:xs)
+
+    -- if the first item is not a MathITE, just return the list as is
+    chain x xs = x:xs
+
+    sameVarSet :: Expr Double -> Expr Double -> Bool
+    sameVarSet (MathITE _ _ (MathSet var1 _) _ )
+               (MathITE _ _ (MathSet var2 _) _ ) = var1 == var2
+    sameVarSet _ _ = False
+
 
 genericMLtoML :: GML.Exp -> [Expr Double]
 genericMLtoML exp = case exp.exp of
   EEmpty -> []
-  ESeq seq -> foldMap genericMLtoML $ GML.seqExpToExprs seq
+  ESeq seq -> chainITEs $ foldMap genericMLtoML $ GML.seqExpToExprs seq
   ELit lit -> eitherToList $ mkVal lit
   EVar (GML.MkVar var) -> [MathVar $ T.unpack var]
   ENumOp op e1 e2 -> do

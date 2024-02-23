@@ -13,7 +13,7 @@ module LS.XPile.MathLang.MathLang
 where
 -- TODO: Rename `toMathLang` to something like `toMengMathLang`, and add a `toGenericMathLang` as well
 
-import Control.Monad.Except (throwError)
+import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString.Builder (generic)
 import Data.Coerce (coerce)
 import Data.Either (rights)
@@ -43,7 +43,7 @@ toMathLang l4i =
     Left errors -> [] -- GML.makeErrorOut errors
     Right lamCalcProgram -> genericMLtoML lamCalcProgram.lcProgram
 
-numOptoMl :: GML.NumOp -> Either T.Text MathBinOp
+numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl = \case
   GML.OpPlus -> pure Plus
   GML.OpSum -> pure Plus
@@ -63,7 +63,7 @@ compOptoMl = \case
   _ -> CNEQ -----
 
 -- TODO: needs an env to retrieve values for variables
-mkVal :: GML.Lit -> Either T.Text (Expr Double)
+mkVal :: MonadError T.Text m => GML.Lit -> m (Expr Double)
 mkVal = \case
   GML.EInteger int -> pure $ Val Nothing $ fromInteger int
   GML.EFloat float -> pure $ Val Nothing float

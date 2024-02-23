@@ -1,13 +1,22 @@
 {-# OPTIONS_GHC -W #-}
 
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns, AllowAmbiguousTypes #-}
-{-# LANGUAGE TemplateHaskell, QuasiQuotes, UndecidableInstances, DataKinds, TypeFamilies, DeriveAnyClass #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 -- TODO: Add export list
@@ -29,6 +38,7 @@ import Data.String ( IsString )
 -- import Data.HashSet qualified as HS
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable)
+import Data.Coerce (coerce)
 -- import GHC.Generics (Generic)
 
 ------------ L4 declared entity types ----------------------
@@ -151,9 +161,18 @@ data NumOp = OpPlus | OpMinus | OpMul | OpDiv | OpMaxOf | OpMinOf | OpSum | OpPr
 data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
   deriving stock (Eq, Show)
 
-data SeqExp = EmptySeqE
-            | ConsSE Exp SeqExp
+newtype SeqExp = SeqExp [Exp]
   deriving stock (Show, Generic, Eq)
+  deriving (Semigroup, Monoid) via [Exp]
+
+seqExpToExprs :: SeqExp -> [Exp]
+seqExpToExprs = coerce
+
+exprsToSeqExp :: [Exp] -> SeqExp
+exprsToSeqExp = coerce
+
+consSE :: Exp -> SeqExp -> SeqExp
+consSE expr (seqExpToExprs -> exprs) = exprsToSeqExp $ expr : exprs
 
 -- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
 -- | May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn

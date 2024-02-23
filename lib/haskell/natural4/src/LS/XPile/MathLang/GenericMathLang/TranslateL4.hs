@@ -425,10 +425,10 @@ l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
 {- | Right now I don't think the order in which we compile the HLs actually matters,
 so just using a foldrM -}
 l4sHLsToLCSeqExp ::  [SimpleHL] -> ToLC SeqExp
-l4sHLsToLCSeqExp = F.foldrM go EmptySeqE
+l4sHLsToLCSeqExp = F.foldrM go mempty
   where
     go :: SimpleHL -> SeqExp -> ToLC SeqExp
-    go hornlike seqExp = ConsSE <$> expifyHL hornlike <*> pure seqExp
+    go hornlike seqExp = consSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
 
@@ -626,14 +626,14 @@ baseExpifyMTEs mtes = case mtes of
         ELit _ -> do
         -- TODO: this should definitely not be a sequence, what should it be instead???
           parsedExs <- mapM parseExpr mtes
-          return $ ESeq $ foldr consSeqExp EmptySeqE parsedExs
+          return $ ESeq $ foldr consSeqExp mempty parsedExs
 
         -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
         notStringLit -> return notStringLit
 
   where
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
-    consSeqExp be = ConsSE (noExtraMdata be)
+    consSeqExp = consSE . noExtraMdata
 
     parseExpr :: MTExpr -> ToLC BaseExp
     parseExpr x@(MTT str) = do

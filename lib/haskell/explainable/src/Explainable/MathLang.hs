@@ -30,6 +30,7 @@ import Explainable
     pathSpec,
     retitle,
   )
+import Numeric.Extras (fmod)
 import Prettyprinter
     ( (<+>),
       encloseSep,
@@ -51,7 +52,6 @@ import Prettyprinter
       Pretty(pretty) )
 import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)
-import GHC.Float.RealFracMethods (roundFloatInt, int2Float)
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:
@@ -65,9 +65,9 @@ import GHC.Float.RealFracMethods (roundFloatInt, int2Float)
 -- Grab the `MyState` by calling @<- get@. If you know which symtab you want, you can call
 -- @<- gets symtabX@.
 type SymTab = Map.HashMap String
-data MyState = MyState { symtabF :: SymTab (Expr     Float) -- numbers (numeric expressions)
-                       , symtabP :: SymTab (Pred     Float) -- booleans (propositional expressions)
-                       , symtabL :: SymTab (ExprList Float) -- lists of numeric expressions
+data MyState = MyState { symtabF :: SymTab (Expr     Double) -- numbers (numeric expressions)
+                       , symtabP :: SymTab (Pred     Double) -- booleans (propositional expressions)
+                       , symtabL :: SymTab (ExprList Double) -- lists of numeric expressions
                        , symtabS :: SymTab String
                        }
   deriving (Show, Eq)
@@ -76,10 +76,10 @@ emptyState :: MyState
 emptyState = MyState Map.empty Map.empty Map.empty Map.empty
 
 
--- ** Simple Float Expressions
+-- ** Simple Double Expressions
 
 -- | Numeric expressions are things that evaluate to a number.
--- The @a@ here is pretty much always a @Float@.
+-- The @a@ here is pretty much always a @Double@.
 data Expr a = Val      ExprLabel a                            -- ^ simple value
             | Parens   ExprLabel           (Expr a)           -- ^ parentheses for grouping
             | MathBin  ExprLabel MathBinOp (Expr a) (Expr a)  -- ^ binary arithmetic operation
@@ -89,7 +89,7 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMax  ExprLabel           (Expr a) (Expr a)  -- ^ max of two expressions
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
-            | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Float ) or perhaps a Maybe (Expr Float)
+            | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
             deriving (Eq)
 
 instance (Show a) => Show (Expr a) where
@@ -118,7 +118,7 @@ parensIfNeg str = str
 cappedBy :: Expr a -> Expr a -> Expr a
 cappedBy = MathMin $ Just "capped by"
 
-discountedBy :: Expr Float -> Expr Float -> Expr Float
+discountedBy :: Expr Double -> Expr Double -> Expr Double
 discountedBy x y = x |* ("one hundred percent" @|. 1 |- y)
 
 -- | shouldn't this move into the Exprlbl class?
@@ -142,7 +142,7 @@ getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
 (<++>) (Just x) (Just y) = Just [i|#{x}, #{y}|]
 
 -- | basic binary operator for arithmetic
-(|+),(|-),(|*),(|/),(|%) :: Expr Float -> Expr Float -> Expr Float
+(|+),(|-),(|*),(|/),(|%) :: Expr Double -> Expr Double -> Expr Double
 x |+ y = MathBin Nothing Plus   x y
 x |- y = MathBin Nothing Minus  x y
 x |* y = MathBin Nothing Times  x y
@@ -152,7 +152,7 @@ x |% y = MathBin Nothing Modulo x y
 infixl 5 |*, |/
 infixl 4 |+, |-
 
-less :: Expr Float -> Expr Float -> Expr Float
+less :: Expr Double -> Expr Double -> Expr Double
 less = (|-)
 
 -- | fmap.
@@ -163,7 +163,7 @@ less = (|-)
 --
 -- But this is crude. There's an alternative way to say it, using MathSections in an ExprList.
 
-(+|),(-|),(*|),(/|),(%|) :: Expr Float -> [Expr Float] -> ExplainableIO r MyState [Float]
+(+|),(-|),(*|),(/|),(%|) :: Expr Double -> [Expr Double] -> ExplainableIO r MyState [Double]
 x +| ys = second (Node ([],[[i|mapping + #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Plus   x) ys
 x -| ys = second (Node ([],[[i|mapping - #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Minus  x) ys
 x *| ys = second (Node ([],[[i|mapping * #{x} over a list|]])) <$> mapAndUnzipM (eval . MathBin Nothing Times  x) ys
@@ -191,7 +191,7 @@ data SomeFold = FoldSum      -- ^ by taking the sum
 
 -- ** Lists
 
--- | We can filter, map, and mapIf over lists of expressions. Here, @a@ is pretty much always a @Float@.
+-- | We can filter, map, and mapIf over lists of expressions. Here, @a@ is pretty much always a @Double@.
 data ExprList a
   = MathList  ExprLabel [Expr a]                                    -- ^ a basic list of `Expr` expressions
   | ListMap   ExprLabel (MathSection a)               (ExprList a) -- ^ apply the function to everything
@@ -209,7 +209,7 @@ data ExprList a
 --
 -- Here, we would say @ 0 <| [-2,-1,0,1,2] @
 
-(<|),(|>) :: Expr Float -> ExprList Float -> ExprList Float
+(<|),(|>) :: Expr Double -> ExprList Double -> ExprList Double
 x <| ys = ListFilt Nothing x CLT ys
 x |> ys = ListFilt Nothing x CGT ys
 
@@ -240,19 +240,19 @@ productOf = (*||) . MathList Nothing
 minOf     = (<||) . MathList Nothing
 maxOf     = (>||) . MathList Nothing
 
-negativeElementsOf :: [Float] -> ExprList Float
+negativeElementsOf :: [Double] -> ExprList Double
 negativeElementsOf xs = Val Nothing 0 |> MathList Nothing (Val Nothing <$> xs)
 
-positiveElementsOf :: [Float] -> ExprList Float
+positiveElementsOf :: [Double] -> ExprList Double
 positiveElementsOf xs = Val Nothing 0 <| MathList Nothing (Val Nothing <$> xs)
 
-timesEach :: Float -> ExprList Float -> ExprList Float
+timesEach :: Double -> ExprList Double -> ExprList Double
 timesEach n = ListMap Nothing $ MathSection Times (Val Nothing n)
 
-timesPositives' :: Float -> ExprList Float -> ExprList Float
+timesPositives' :: Double -> ExprList Double -> ExprList Double
 timesPositives' n = ListMapIf Nothing (MathSection Times (Val Nothing n)) (Val Nothing 0) CLT
 
-timesPositives :: Float -> [Float] -> ExprList Float
+timesPositives :: Double -> [Double] -> ExprList Double
 timesPositives n ns = timesPositives' n $ MathList Nothing (Val Nothing <$> ns)
 
 -- | logical not
@@ -302,7 +302,7 @@ data Var a
 
 -- | Evaluate floats
 
-eval,eval' :: Expr Float -> ExplainableIO r MyState Float
+eval,eval' :: Expr Double -> ExplainableIO r MyState Double
 eval exprfloat = do
   (x, result) <- eval' exprfloat
   let lbl = getExprLabel exprfloat
@@ -326,7 +326,7 @@ eval' (MathBin _lbl Plus   x y) = binEval "addition"       (+) x y
 eval' (MathBin _lbl Minus  x y) = binEval "subtraction"    (-) x y
 eval' (MathBin _lbl Times  x y) = binEval "multiplication" (*) x y
 eval' (MathBin _lbl Divide x y) = binEval "division"       (/) x y
-eval' (MathBin _lbl Modulo x y) = binEval "modulo"         (\x y -> int2Float (roundFloatInt x `mod` roundFloatInt y)) x y
+eval' (MathBin _lbl Modulo x y) = binEval "modulo"         fmod x y
 eval' (Parens  _lbl x)          = unaEval "parentheses"    id  x
 eval' (MathITE _lbl p x y)      = evalFP eval  p x y
 eval' (MathMax  lbl x y)        = eval (ListFold lbl FoldMax (MathList lbl [x,y]))
@@ -353,7 +353,7 @@ eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
 eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
 -- | do a fold over an `ExprList`
-doFold :: String -> ([Float] -> Float) -> ExprList Float -> ExplainableIO r MyState Float
+doFold :: String -> ([Double] -> Double) -> ExprList Double -> ExplainableIO r MyState Double
 doFold str f xs = retitle [i|listfold #{str}|] do
   (MathList _ylbl yvals,yexps) <- evalList xs
   zs <- eval `traverse` yvals
@@ -363,8 +363,8 @@ doFold str f xs = retitle [i|listfold #{str}|] do
                   : [ [i|- #{e}|] | e <- fst <$> zs ])
            (yexps : (snd <$> zs)))
 
--- | helper function, Unary evaluation of an `Expr` `Float` to some `Float`
-unaEval :: String -> (Float -> Float) -> Expr Float -> ExplainableIO r MyState Float
+-- | helper function, Unary evaluation of an `Expr` `Double` to some `Double`
+unaEval :: String -> (Double -> Double) -> Expr Double -> ExplainableIO r MyState Double
 unaEval title f x =
   let (lhs,_rhs) = verbose title
   in retitle title do
@@ -373,7 +373,7 @@ unaEval title f x =
     pure (toreturn, Node ([], [[i|#{toreturn}: #{lhs}|]]) [xpl])
 
 -- | helper function, Binary evaluation
-binEval :: String -> (Float -> Float -> Float) -> Expr Float -> Expr Float -> ExplainableIO r MyState Float
+binEval :: String -> (Double -> Double -> Double) -> Expr Double -> Expr Double -> ExplainableIO r MyState Double
 binEval title f x y = retitle title do
   -- liftIO putStrLn should be treated as more of a Debug.Trace.
   -- "normal" output gets returned in the fst part of the Node.
@@ -390,7 +390,7 @@ binEval title f x y = retitle title do
 
 -- | Evaluate predicates
 
-evalP,evalP' :: Pred Float -> ExplainableIO r MyState Bool
+evalP,evalP' :: Pred Double -> ExplainableIO r MyState Bool
 evalP pred = do
   (x, result) <- evalP' pred
   let lbl = getPredLabel pred
@@ -471,7 +471,7 @@ evalP' (PredITE _lbl p x y) = evalFP evalP p x y
 -- This works for both boolean Predicates and float Exprs.
 evalFP :: Show t
        => (t -> ExplainableIO r MyState a)
-       -> Pred Float
+       -> Pred Double
        -> t
        -> t
        -> ExplainableIO r MyState a
@@ -487,7 +487,7 @@ evalFP evf p x y = retitle "if-then-else" do
 
 -- | Evaluate an `ExprList`
 
-evalList :: ExprList Float -> ExplainableIO r MyState (ExprList Float)
+evalList :: ExprList Double -> ExplainableIO r MyState (ExprList Double)
 evalList (MathList lbl a) = pure (MathList lbl a, Node (show <$> a,[[i|base MathList with #{length a} elements|]]) [])
 evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
   origs <- eval `traverse` ys
@@ -542,7 +542,7 @@ evalList (ListITE _lbl p y z) = evalFP evalList p y z
 -- | deepEvalList means we reduce the `ExprList` to a plain haskell list of floats.
 -- I supposed this is analogous to "unboxed" types.
 
-deepEvalList :: (ExprList Float,XP) -> ExplainableIO r MyState [Float]
+deepEvalList :: (ExprList Double,XP) -> ExplainableIO r MyState [Double]
 deepEvalList (MathList _lbl xs,xp) = do
   vals <- eval `traverse` xs
   pure (fst <$> vals, Node ([],["deep evaluation to floats"]) (xp : (snd <$> vals)))
@@ -552,9 +552,9 @@ deepEvalList (other,_xp) = deepEvalList =<< evalList other
 -- * Variable retrieval and assignment into the symbol table.
 -- At present we have no notion of scope.
 
--- | Get an @Expr Float@ variable
+-- | Get an @Expr Double@ variable
 
-getvarF :: String -> ExplainableIO r MyState (Expr Float)
+getvarF :: String -> ExplainableIO r MyState (Expr Double)
 getvarF x = do
   symtab <- gets symtabF
   case x `Map.lookup` symtab of
@@ -563,9 +563,9 @@ getvarF x = do
       error "MathLang fatal error in getvarF"
     Just v  -> pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
 
--- | Get a @Pred Float@ variable
+-- | Get a @Pred Double@ variable
 
-getvarP :: String -> ExplainableIO r MyState (Pred Float)
+getvarP :: String -> ExplainableIO r MyState (Pred Double)
 getvarP x = do
   symtab <- gets symtabP
   pure (symtab Map.! x, Node ([show $ symtab Map.! x], [[i|looked up #{x}|]]) [])
@@ -584,7 +584,7 @@ verbose "comparison"     = ("is the result of comparing", "with")
 verbose "variable expansion" = ("which comes from the variable", "")
 verbose x                = (x, [i|{x} argument|])
 
-(@|+),(@|-),(@|*),(@|/),(@|%) :: String -> Expr Float -> Expr Float -> Expr Float
+(@|+),(@|-),(@|*),(@|/),(@|%) :: String -> Expr Double -> Expr Double -> Expr Double
 (@|+) lbl = MathBin (Just lbl) Plus
 (@|-) lbl = MathBin (Just lbl) Minus
 (@|*) lbl = MathBin (Just lbl) Times
@@ -625,7 +625,7 @@ instance Exprlbl Expr a where
 (@|.) = Val . Just
 infix 6 @|., @|.., @|??
 
-undef,(@|??) :: String -> Expr Float
+undef,(@|??) :: String -> Expr Double
 (@|??) = undef
 undef = Undefined . Just
 
@@ -730,8 +730,8 @@ toplevel = for_ [ Val (Just "two") 2 |+ (Val (Just "five") 5 |- Val (Just "one")
                [Val Nothing (-2), Val Nothing (-1), Val Nothing 0, Val Nothing 1, Val Nothing 2, Val Nothing 3]
 -- * Explainers
 
--- | Explain an @Expr Float@
-xplainF :: r -> MyState -> Expr Float -> IO (Float, XP, MyState, [String])
+-- | Explain an @Expr Double@
+xplainF :: r -> MyState -> Expr Double -> IO (Double, XP, MyState, [String])
 xplainF r s expr = do
   ((val,xpl), stab, wlog) <- runRWST
                              (eval expr)
@@ -750,8 +750,8 @@ xplainF r s expr = do
 
   pure (val, xpl, stab, wlog)
 
--- | Explain an @ExprList Float@
-xplainL :: r -> ExprList Float -> IO ([Float], XP, MyState, [String])
+-- | Explain an @ExprList Double@
+xplainL :: r -> ExprList Double -> IO ([Double], XP, MyState, [String])
 xplainL r exprList = do
   ((xl,xp), stab, wlog) <- runRWST
                            (deepEvalList (exprList,mkNod "deep eval"))
@@ -774,7 +774,7 @@ unMathList (MathList _lbl xs) = xs
 unMathList x                  = error [i|unMathList: expected exprList to be fully evaluated, but got #{x}|]
 
 -- | dump an explanation of a mathlang expression
-dumpExplanationF :: Int -> MyState -> Expr Float -> IO ()
+dumpExplanationF :: Int -> MyState -> Expr Double -> IO ()
 dumpExplanationF depth s f = do
   (val, xpl, stab, wlog) <- xplainF () s f
 
@@ -796,7 +796,7 @@ dumpExplanationF depth s f = do
     \#+END_SRC
   |]
 
-dumpTypescript :: Doc ann0 -> MyState -> Expr Float -> Doc ann1
+dumpTypescript :: Doc ann0 -> MyState -> Expr Double -> Doc ann1
 dumpTypescript realign s f =
   [__di|
     // this is machine generated from explainable/src/Explainable/MathLang.hs and also ToMathlang.hs
@@ -915,7 +915,7 @@ h0tupled = hang 0 . tupled
 -- [TODO] this allows us to return a full default emptyState symtab that tells the expert system
 -- waht to ask the end user for.
 
-allVars :: Expr Float -> ExplainableIO r MyState (Expr Float)
+allVars :: Expr Double -> ExplainableIO r MyState (Expr Double)
 allVars inexpr = do
   return (inexpr, Node ([],[]) [])
 

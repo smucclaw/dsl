@@ -1,27 +1,39 @@
-{-# LANGUAGE OverloadedRecordDot, AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies #-}
-module LS.XPile.MathLang.MathLang (toMathLangMw, toMathLang) where
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
+
+module LS.XPile.MathLang.MathLang
+  (toMathLangMw, toMathLang)
+where
 -- TODO: Rename `toMathLang` to something like `toMengMathLang`, and add a `toGenericMathLang` as well
 
-import LS.XPile.IntroReader (MyEnv)
-import LS.Interpreter
-import Explainable.MathLang
-import qualified LS.XPile.MathLang.GenericMathLang.TranslateL4 as GML
-import qualified LS.XPile.MathLang.GenericMathLang.GenericMathLangAST as GML
-import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp(..))
-import LS.Rule (Interpreted(..))
-import Data.HashMap.Strict qualified as Map
-import Optics ( folded, (%), filteredBy, (^..) )
-import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 import Data.ByteString.Builder (generic)
-import qualified Data.Text as T
-import GHC.Float (double2Float)
+import Data.Coerce (coerce)
+import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
+import Data.HashMap.Strict qualified as Map
+import Data.String.Interpolate (i)
+import Data.Text qualified as T
+import Explainable.MathLang
+import LS.Interpreter
+import LS.Rule (Interpreted (..))
+import LS.XPile.IntroReader (MyEnv)
+import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
+import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
+import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
+import Optics (filteredBy, folded, (%), (^..))
 
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
 -}
 
-toMathLang :: Interpreted -> [Expr Float]
+toMathLang :: Interpreted -> [Expr Double]
 toMathLang l4i =
   let l4Hornlikes = l4i.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
@@ -37,7 +49,7 @@ numOptoMl op = case op of
   GML.OpMul -> Times
   GML.OpProduct -> Times
   GML.OpDiv -> Divide
-  _ -> error $ "numOptoMl: encountered " <> show op
+  _ -> error [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp
 compOptoMl op = case op of
@@ -50,18 +62,14 @@ compOptoMl op = case op of
 
 
 -- TODO: needs an env to retrieve values for variables
-mkVal :: GML.Lit -> Expr Float
-mkVal lit = case lit of
-  GML.EInteger int -> Val Nothing (fromInteger int :: Float)
-  GML.EFloat float -> Val Nothing (double2Float float :: Float)
+mkVal :: GML.Lit -> Expr Double
+mkVal = \case
+  GML.EInteger int -> Val Nothing (fromInteger int :: Double)
+  GML.EFloat float -> Val Nothing float
   GML.EString lit -> MathVar (T.unpack lit)
-  _ -> error $ "mkVal: encountered " <> show lit
+  lit -> error [i|mkVal: encountered #{lit}|]
 
-seqExpToExprs :: GML.SeqExp -> [GML.Exp]
-seqExpToExprs GML.EmptySeqE = []
-seqExpToExprs (GML.ConsSE e es) = e : seqExpToExprs es
-
-exp2pred :: GML.Exp -> [Pred Float]
+exp2pred :: GML.Exp -> [Pred Double]
 exp2pred exp = case exp.exp of
   EVar (GML.MkVar var) -> pure $ PredVar (T.unpack var)
   ECompOp op e1 e2 -> do
@@ -72,10 +80,10 @@ exp2pred exp = case exp.exp of
   _ -> pure $ PredVar "TODO: not implemented yet"
 
 
-genericMLtoML :: GML.Exp -> [Expr Float]
+genericMLtoML :: GML.Exp -> [Expr Double]
 genericMLtoML exp = case exp.exp of
   EEmpty -> []
-  ESeq seq -> concatMap genericMLtoML $ seqExpToExprs seq
+  ESeq seq -> foldMap genericMLtoML $ GML.seqExpToExprs seq
   ELit lit -> pure $ mkVal lit
   EVar (GML.MkVar var) -> [MathVar (T.unpack var)]
   ENumOp op e1 e2 -> do
@@ -105,7 +113,7 @@ genericMLtoML exp = case exp.exp of
 -- element in the left nav; each of the different rules will have its own entry in the SymTab dictionary.
 --
 -- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
--- to contain an @Expr Float@ called "must sing"
+-- to contain an @Expr Double@ called "must sing"
 toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
 toMathLangMw l4i myenv = ("NotYetImplemented", [])
 
@@ -249,7 +257,7 @@ intermediate l4i myenv = ("", [])
 --    AND quux
 --
 -- we would want the MathLang output to be
--- output :: Pred Float
+-- output :: Pred Double
 -- output = PredBin Nothing PredAnd (PredVar "foo")
 --                                  (PredBin Nothing PredAnd (PredVar "bar")
 --                                                           (PredBin Nothing PredAnd (PredVar "baz")
@@ -260,7 +268,7 @@ intermediate l4i myenv = ("", [])
 --                   baz
 --                   quux
 --
--- output :: Pred Float
+-- output :: Pred Double
 -- output = PredFold Nothing PLAnd [PredVar "foo"
 --                                 ,PredVar "bar"
 --                                 ,PredVar "baz"

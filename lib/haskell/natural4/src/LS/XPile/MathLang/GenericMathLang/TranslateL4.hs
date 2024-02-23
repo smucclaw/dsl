@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -W #-}
 -- {-# OPTIONS_GHC -foptimal-applicative-do #-}
 
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels, UndecidableInstances, RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -47,7 +48,7 @@ import Optics hiding ((|>))
 -- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
 import Data.List.NonEmpty qualified as NE
-import Data.String.Interpolate (__i)
+import Data.String.Interpolate (__i, i)
 import Data.String (IsString)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
@@ -641,13 +642,13 @@ baseExpifyMTEs mtes = case mtes of
 --      res <- mres
       case res of
       -- case parse pExpr "dummy" str of
-        Right exp@(EVar (MkVar str')) -> trace ("parseExpr returned " <> show res) $
+        Right exp@(EVar (MkVar str')) -> trace [i|parseExpr returned #{res}|]
           if str /= str'
             then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
             else return $ exp
           -- TODO: find the right megaparsec way to fail if single term contains whitespace
         Right notStringLit -> return notStringLit
-        Left error -> trace ("can't parse with pExpr: " <> show x) $ return $ mteToLitExp x
+        Left error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
     parseExpr x = return $ mteToLitExp x
 
 

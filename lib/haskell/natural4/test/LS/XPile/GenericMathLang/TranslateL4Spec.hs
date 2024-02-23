@@ -1,26 +1,26 @@
-
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 
-import Test.Hspec ( describe, it, xit, shouldBe, Spec )
+import AnyAll qualified as AA
+import Data.HashMap.Strict qualified as Map
+import Data.List.NonEmpty (NonEmpty (..), fromList)
+import Data.Maybe (fromJust)
+import Data.Text qualified as T
+import Explainable
+import Explainable.MathLang
+import LS.Rule (Interpreted (..), Rule (..), defaultL4I)
 import LS.Types
-import LS.Rule (Rule(..), Interpreted(..), defaultL4I)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
-import qualified LS.XPile.MathLang.MathLang as ML
-import Explainable.MathLang
-import Explainable
-import Data.List.NonEmpty (NonEmpty(..), fromList)
-import AnyAll qualified as AA
-import qualified Data.Text as T
-import Data.Maybe (fromJust)
+import LS.XPile.MathLang.MathLang qualified as ML
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Prelude hiding (exp, seq)
-import Data.HashMap.Strict (HashMap)
 
 spec :: Spec
 spec = do
-    describe "rule 2 into SimpleHL" $ do
-      it "should become a SimpleHL" $ do
+    describe "rule 2 into SimpleHL" do
+      it "should become a SimpleHL" do
         let toTest = runToLC $ simplifyL4Hlike rule2givens
         case toTest of
             Left err -> err `shouldBe` MiscError "" ""
@@ -57,22 +57,22 @@ spec = do
                     arithRule4
                     arithRule4_gold
 
-    describe "toMathLang" $ do
-      it "should turn Rules straight to MathLang (via GenericMathLang)" $ do
+    describe "toMathLang" do
+      it "should turn Rules straight to MathLang (via GenericMathLang)" do
         let l4i = defaultL4I {origrules = [arithRule2, arithRule3, arithRule4]}
         ML.toMathLang l4i `shouldBe` mathLangGold
 
-    describe "eval" $ do
-      it "should evaluate 2+2" $ do
+    describe "eval" do
+      it "should evaluate 2+2" do
         let l4i = defaultL4I {origrules = [arithRule1]}
             expr:_ = ML.toMathLang l4i
-        (e, _xp, _st, _strs) <- xplainE (mempty :: HashMap () ()) emptyState $ eval expr
+        (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval expr
         e `shouldBe` 4.0
 
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
-  describe name $ do
-    xit desc $ do
+  describe name do
+    xit desc do
       let toTest = runToLC $ l4ToLCProgram [rule]
 --      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
       case toTest of

@@ -13,8 +13,10 @@ module LS.XPile.MathLang.MathLang
 where
 -- TODO: Rename `toMathLang` to something like `toMengMathLang`, and add a `toGenericMathLang` as well
 
+import Control.Monad.Except (throwError)
 import Data.ByteString.Builder (generic)
 import Data.Coerce (coerce)
+import Data.Either (rights)
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
@@ -22,6 +24,7 @@ import Data.Text qualified as T
 import Explainable.MathLang
 import LS.Interpreter
 import LS.Rule (Interpreted (..))
+import LS.Utils (eitherToList)
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
@@ -40,16 +43,15 @@ toMathLang l4i =
     Left errors -> [] -- GML.makeErrorOut errors
     Right lamCalcProgram -> genericMLtoML lamCalcProgram.lcProgram
 
-
-numOptoMl :: GML.NumOp -> MathBinOp
+numOptoMl :: GML.NumOp -> Either T.Text MathBinOp
 numOptoMl = \case
-  GML.OpPlus -> Plus
-  GML.OpSum -> Plus
-  GML.OpMinus -> Minus
-  GML.OpMul -> Times
-  GML.OpProduct -> Times
-  GML.OpDiv -> Divide
-  op -> error [i|numOptoMl: encountered #{op}|]
+  GML.OpPlus -> pure Plus
+  GML.OpSum -> pure Plus
+  GML.OpMinus -> pure Minus
+  GML.OpMul -> pure Times
+  GML.OpProduct -> pure Times
+  GML.OpDiv -> pure Divide
+  op -> throwError [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp
 compOptoMl = \case
@@ -61,12 +63,12 @@ compOptoMl = \case
   _ -> CNEQ -----
 
 -- TODO: needs an env to retrieve values for variables
-mkVal :: GML.Lit -> Expr Double
+mkVal :: GML.Lit -> Either T.Text (Expr Double)
 mkVal = \case
-  GML.EInteger int -> Val Nothing $ fromInteger int
-  GML.EFloat float -> Val Nothing float
-  GML.EString lit -> MathVar $ T.unpack lit
-  lit -> error [i|mkVal: encountered #{lit}|]
+  GML.EInteger int -> pure $ Val Nothing $ fromInteger int
+  GML.EFloat float -> pure $ Val Nothing float
+  GML.EString lit -> pure $ MathVar $ T.unpack lit
+  lit -> throwError [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> [Pred Double]
 exp2pred exp = case exp.exp of
@@ -78,17 +80,17 @@ exp2pred exp = case exp.exp of
   EIs e1 e2 -> PredComp Nothing CEQ <$> genericMLtoML e1 <*> genericMLtoML e2
   _ -> pure $ PredVar "TODO: not implemented yet"
 
-
 genericMLtoML :: GML.Exp -> [Expr Double]
 genericMLtoML exp = case exp.exp of
   EEmpty -> []
   ESeq seq -> foldMap genericMLtoML $ GML.seqExpToExprs seq
-  ELit lit -> pure $ mkVal lit
+  ELit lit -> eitherToList $ mkVal lit
   EVar (GML.MkVar var) -> [MathVar $ T.unpack var]
   ENumOp op e1 e2 -> do
     ex1 <- genericMLtoML e1
     ex2 <- genericMLtoML e2
-    pure $ MathBin Nothing (numOptoMl op) ex1 ex2
+    op <- eitherToList $ numOptoMl op
+    pure $ MathBin Nothing op ex1 ex2
   EVarSet var val -> do
     MathVar varEx <- genericMLtoML var
     valEx <- genericMLtoML val

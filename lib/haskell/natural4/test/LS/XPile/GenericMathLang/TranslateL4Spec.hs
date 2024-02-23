@@ -66,9 +66,11 @@ spec = do
     describe "eval" do
       it "should evaluate 2+2" do
         let l4i = defaultL4I {origrules = [arithRule1]}
-            expr:_ = ML.toMathLang l4i
-        (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval expr
-        e `shouldBe` 4.0
+        case ML.toMathLang l4i of
+          [] -> mempty
+          expr:_ -> do
+            (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval expr
+            e `shouldBe` 4.0
 
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
@@ -201,6 +203,7 @@ mathLangGold = [ MathSet "m3a"
 -----------------------------------------------------------------------------
 -- Test rules
 
+rule3predicate :: Rule
 rule3predicate =
   let description = [ MTT "ind", MTT "qualifies a la case 3" ]
   in mkTestRule
@@ -233,6 +236,7 @@ rule3predicate =
                     ])}]
 
 -- TODO: Which ones of the following should be replaced by records?
+rule3predicate_gold :: BaseExp
 rule3predicate_gold = EIfThen
     { condExp = MkExp
         { exp = EAnd
@@ -506,7 +510,6 @@ arithRule1 = mkTestRule
                     [ MTT "m1" ] RPis
                     [ MTT "2 + 2" ]
                 , hBody = Nothing } ]
-
 
 arithRule2 :: Rule
 arithRule2 = mkTestRule

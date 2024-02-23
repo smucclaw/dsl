@@ -50,11 +50,10 @@ newtype L4EntType = MkL4EntType T.Text
 makePrisms ''L4EntType
 
 mkEntType :: T.Text -> L4EntType
-mkEntType = view (re _MkL4EntType)
+mkEntType = view $ re _MkL4EntType
 
 entTypeAsTxt :: L4EntType -> T.Text
 entTypeAsTxt = view _MkL4EntType
-
 
 {-------------------------------------------------------
     AST

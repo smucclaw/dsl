@@ -52,7 +52,7 @@ numOptoMl op = case op of
   _ -> error [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp
-compOptoMl op = case op of
+compOptoMl = \case
   GML.OpNumEq -> CEQ
   GML.OpLt -> CLT
   GML.OpLte -> CLTE
@@ -60,18 +60,17 @@ compOptoMl op = case op of
   GML.OpGte -> CGTE
   _ -> CNEQ -----
 
-
 -- TODO: needs an env to retrieve values for variables
 mkVal :: GML.Lit -> Expr Double
 mkVal = \case
-  GML.EInteger int -> Val Nothing (fromInteger int :: Double)
+  GML.EInteger int -> Val Nothing $ fromInteger int
   GML.EFloat float -> Val Nothing float
-  GML.EString lit -> MathVar (T.unpack lit)
+  GML.EString lit -> MathVar $ T.unpack lit
   lit -> error [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> [Pred Double]
 exp2pred exp = case exp.exp of
-  EVar (GML.MkVar var) -> pure $ PredVar (T.unpack var)
+  EVar (GML.MkVar var) -> pure $ PredVar $ T.unpack var
   ECompOp op e1 e2 -> do
     ex1 <- genericMLtoML e1
     ex2 <- genericMLtoML e2
@@ -85,7 +84,7 @@ genericMLtoML exp = case exp.exp of
   EEmpty -> []
   ESeq seq -> foldMap genericMLtoML $ GML.seqExpToExprs seq
   ELit lit -> pure $ mkVal lit
-  EVar (GML.MkVar var) -> [MathVar (T.unpack var)]
+  EVar (GML.MkVar var) -> [MathVar $ T.unpack var]
   ENumOp op e1 e2 -> do
     ex1 <- genericMLtoML e1
     ex2 <- genericMLtoML e2
@@ -98,7 +97,7 @@ genericMLtoML exp = case exp.exp of
   EIfThen condE thenE -> do
     condP <- exp2pred condE
     thenEx <- genericMLtoML thenE
-    pure $ MathITE Nothing condP thenEx (Undefined Nothing)
+    pure $ MathITE Nothing condP thenEx $ Undefined Nothing
   _ -> pure $ Undefined Nothing
 {-  ECompOp
     EApp

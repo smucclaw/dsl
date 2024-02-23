@@ -657,10 +657,11 @@ splitGenitives = partitionMaybe isGenitive
   where
     -- removes the genitive s if it is genitive
     isGenitive :: MTExpr -> Maybe MTExpr
-    isGenitive (MTT text) = case reverse $ T.unpack text of
-      's':'\'':rest -> Just $ MTT $ T.pack $ reverse rest
-      _ -> Nothing
-    isGenitive x = Nothing
+    isGenitive (MTT text) =
+      text
+        |> T.stripSuffix "'s"
+        |$> MTT
+    isGenitive _ = Nothing
 
 ---------------- Expr parser ------------------------------------------------------
 --type Parser = Parsec Void T.Text
@@ -753,9 +754,9 @@ expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
   -- baseExpifyMTEs for a single [mte] only returns a Var if it is declared
   -- baseExpifyMTEs for [mte1, mte2] returns an EApp
   -- baseExpifyMTEs for [mte1, mte2, …] returns an arithmetic expression
-  addMetadataToVar bexp = case bexp of
-                            EVar var -> mkVarExp var
-                            _ -> return $ noExtraMdata bexp
+  addMetadataToVar = \case
+    EVar var -> mkVarExp var
+    bexp -> return $ noExtraMdata bexp
 
 ----- Util funcs for looking up / annotating / making Vars -------------------------------------
 
@@ -802,14 +803,16 @@ mkVarSetTrueFromVar :: Var
                     -> (BaseExp -> Exp)
                     -- ^ Func that augments base exp with metadata
                     -> ToLC BaseExp
-mkVarSetTrueFromVar var mdFunc = mkVarSetFromVar var (mdFunc $ ELit EBoolTrue)
+mkVarSetTrueFromVar var mdFunc =
+  mkVarSetFromVar var $ mdFunc $ ELit EBoolTrue
 
 mkSetVarTrueExpFromVarNoMd :: Var -> ToLC Exp
-mkSetVarTrueExpFromVarNoMd var = noExtraMdata <$> mkVarSetTrueFromVar var noExtraMdata
-
+mkSetVarTrueExpFromVarNoMd var =
+  noExtraMdata <$> mkVarSetTrueFromVar var noExtraMdata
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
-mkSetVarTrue putativeVar = mkSetVarFromMTEsHelper putativeVar (typeMdata "Bool" $ ELit EBoolTrue)
+mkSetVarTrue putativeVar =
+  mkSetVarFromMTEsHelper putativeVar $ typeMdata "Bool" $ ELit EBoolTrue
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
@@ -957,7 +960,7 @@ expifyBodyRP = \case
     numOrCompOp rprel = error $ "not implemented" <> show rprel
 
     rprel2numop :: RPRel -> Maybe NumOp
-    rprel2numop rel = case rel of
+    rprel2numop = \case
       RPsum     -> Just OpPlus
       RPproduct -> Just OpMul
       RPmax     -> Just OpMaxOf
@@ -965,7 +968,7 @@ expifyBodyRP = \case
       _         -> Nothing
 
     rprel2compop :: RPRel -> Maybe CompOp
-    rprel2compop rel = case rel of
+    rprel2compop = \case
       RPlt   -> Just OpLt
       RPlte  -> Just OpLte
       RPgt   -> Just OpGt

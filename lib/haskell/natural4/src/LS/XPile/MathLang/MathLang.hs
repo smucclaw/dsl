@@ -74,11 +74,16 @@ mkVal = \case
 exp2pred :: GML.Exp -> [Pred Double]
 exp2pred exp = case exp.exp of
   EVar (GML.MkVar var) -> pure $ PredVar $ T.unpack var
-  ECompOp op e1 e2 -> do
+  ECompOp op e1 e2 ->
+    PredComp Nothing (compOptoMl op) <$> genericMLtoML e1 <*> genericMLtoML e2
+  EIs e1 e2 -> do
     ex1 <- genericMLtoML e1
     ex2 <- genericMLtoML e2
-    pure $ PredComp Nothing (compOptoMl op) ex1 ex2
-  EIs e1 e2 -> PredComp Nothing CEQ <$> genericMLtoML e1 <*> genericMLtoML e2
+    let ex2withLabel = case (ex1, ex2) of
+          (MathVar var, Val Nothing val) -> Val (Just var) val
+--          (MathVar var, MathVar val) -> TODO: what if they are both strings? like phaseOfMoon IS gibbous
+          _ -> ex2
+    pure $ PredComp Nothing CEQ ex1 ex2withLabel
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   _ -> pure $ PredVar "TODO: not implemented yet"
@@ -129,7 +134,10 @@ genericMLtoML exp = case exp.exp of
   EVarSet var val -> do
     MathVar varEx <- genericMLtoML var
     valEx <- genericMLtoML val
-    pure $ MathSet varEx valEx
+    let valExWithLabel = case valEx of
+            Val Nothing val -> Val (Just varEx) val
+            _ -> valEx
+    pure $ MathSet varEx valExWithLabel
 
   EIfThen condE thenE -> do
     condP <- exp2pred condE

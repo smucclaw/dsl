@@ -5,6 +5,7 @@ module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 
 import AnyAll qualified as AA
 import Control.Arrow ((>>>))
+import Control.Monad (forM_)
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty)
 import Data.Text qualified as T
@@ -71,6 +72,8 @@ spec = do
           expr:_ -> do
             (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval expr
             e `shouldBe` 4.0
+    
+
 
     describe "evalComplex" do
       it "should evaluate result" do
@@ -82,6 +85,13 @@ spec = do
             (res, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st2 $ eval e3
             res `shouldBe` 45.14
           _ -> mempty
+    
+    describe "extractVariables" $ do
+        it "extracts variables and their values from rules" $ do
+            let rl = arithRule4
+                expected = Map.fromList [("incomeTaxRate", 0.07), ("assetTaxRate", 0.01)]
+            getVarVals rl `shouldBe` expected
+
 
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =

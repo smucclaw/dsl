@@ -60,8 +60,8 @@ import qualified Data.List.NonEmpty as NE
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Control.Monad.Trans (lift)
-import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy)
-import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
+import Text.Megaparsec (ParsecT, Parsec, ParseErrorBundle, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy,  parse, sepBy)
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char, string)
 import Data.Char (isAlphaNum)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Void ( Void )
@@ -275,6 +275,29 @@ initialEnv = MkEnv { localVars = HM.empty
                   --  , retVarInfo = []
                    , currSrcPos = MkPositn 0 0
                    , logConfig = defaultLogConfig }
+
+-- vars and vals
+getVarVals :: L4.Rule -> HM.HashMap String Double
+getVarVals rule =
+    case rule of
+        L4.Hornlike {clauses = hornClauses} -> extractFromHornClauses hornClauses HM.empty
+        _ -> HM.empty
+
+extractFromHornClauses :: [HornClause2] -> HM.HashMap String Double -> HM.HashMap String Double
+extractFromHornClauses hornClauses hashmap =
+    foldr extractFromHornClause hashmap hornClauses
+
+extractFromHornClause :: HornClause2 -> HM.HashMap String Double -> HM.HashMap String Double
+extractFromHornClause clause hashmap =
+    case hHead clause of
+        RPConstraint vars _ expr -> case expr of
+            [MTF value] -> foldr (\(MTT var) -> HM.insert (T.unpack var) value) hashmap vars
+            _ -> hashmap
+        _ -> hashmap
+
+
+
+
 
 ------------------------------------------------------------------------------------
 

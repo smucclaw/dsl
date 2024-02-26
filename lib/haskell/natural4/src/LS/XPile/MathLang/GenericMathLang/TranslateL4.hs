@@ -532,7 +532,7 @@ don't appear here -- they appear in hBody
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
 --processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
-processHcHeadForIf rp = trace (show rp) $ expifyHeadRP rp
+processHcHeadForIf rp = expifyHeadRP rp
 -- processHcHeadForIf rp = throwNotSupportedError rp
 
 {- Note that processing hcHead for *function definitions* would need to consider cases like the following,
@@ -621,7 +621,7 @@ baseExpifyMTEs mtes = case mtes of
       (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
       (Just _, Just _) -> throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
 
-  _ -> trace ("baseExpifyMTEs: " <> show mtes) $ do
+  _ -> do
       expParsedAsText <- parseExpr $ MTT $ textifyMTEs mtes
       case expParsedAsText of
         ELit _ -> do
@@ -639,10 +639,8 @@ baseExpifyMTEs mtes = case mtes of
     parseExpr :: MTExpr -> ToLC BaseExp
     parseExpr x@(MTT str) = do
       res <- runParserT pExpr "" str
---      res <- mres
       case res of
-      -- case parse pExpr "dummy" str of
-        Right exp@(EVar (MkVar str')) -> trace [i|parseExpr returned #{res}|]
+        Right exp@(EVar (MkVar str')) ->
           if str /= str'
             then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
             else return $ exp

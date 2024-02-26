@@ -61,9 +61,9 @@ spec = do
     describe "toMathLang" do
       it "should turn Rules straight to MathLang (via GenericMathLang)" do
         let l4i = defaultL4I {origrules = [arithRule2, arithRule3, arithRule4]}
-        ML.toMathLang l4i `shouldBe` mathLangGold
+        ML.toMathLang l4i `shouldBe` (mathLangGold23 <> mathLangGold4)
 
-    describe "eval" do
+    describe "evalSimple" do
       it "should evaluate 2+2" do
         let l4i = defaultL4I {origrules = [arithRule1]}
         case ML.toMathLang l4i of
@@ -71,6 +71,17 @@ spec = do
           expr:_ -> do
             (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval expr
             e `shouldBe` 4.0
+
+    describe "evalComplex" do
+      it "should evaluate result" do
+        let l4i = defaultL4I {origrules = [arithRule2withInitializedValues]}
+        case ML.toMathLang l4i of
+          e1:e2:e3:_ -> do -- TODO: how to do this automatically? just give a list of 3 exprs and no matter in which order the variables are assigned, it should find the
+            (_res, _xp, st1, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval e1
+            (_res, _xp, st2, _strs) <- xplainE (mempty :: Map.HashMap () ()) st1 $ eval e2
+            (res, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st2 $ eval e3
+            res `shouldBe` 45.14
+          _ -> mempty
 
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
@@ -84,8 +95,8 @@ testBaseExpify name desc rule gold =
 
 -----------------------------------------------------------------------------
 -- gold for mathlang transformation
-
-mathLangGold = [ MathSet "m3a"
+mathLangGold23 = [
+   MathSet "m3a"
     ( MathBin Nothing Times
         ( MathVar "m1" )
         ( MathVar "m2" )
@@ -138,8 +149,10 @@ mathLangGold = [ MathSet "m3a"
                 ( Val Nothing 4.0e-2 )
             )
         )
-    )
-  , MathITE Nothing
+    )]
+
+mathLangGold4 = [
+  MathITE Nothing
     ( PredComp Nothing CEQ
         ( MathVar "phaseOfMoon" )
         ( MathVar "gibbous" )
@@ -149,56 +162,60 @@ mathLangGold = [ MathSet "m3a"
             ( MathVar "taxesPayableAlive" )
             ( Val Nothing 2.0 )
         )
-    ) ( Undefined Nothing )
-  , MathITE Nothing
-    ( PredVar "vivacity" )
-    ( MathSet "taxesPayable"
-        ( MathVar "taxesPayableAlive" )
-    ) ( Undefined Nothing )
-  , MathITE Nothing
-    ( PredComp Nothing CEQ
-        ( MathVar "phaseOfMoon" )
-        ( MathVar "waxing" )
     )
-    ( MathSet "taxesPayable"
-        ( MathBin Nothing Divide
+    ( MathITE Nothing
+        ( PredVar "vivacity" )
+        ( MathSet "taxesPayable"
             ( MathVar "taxesPayableAlive" )
-            ( Val Nothing 3.0 )
         )
-    ) ( Undefined Nothing )
-  , MathITE Nothing
-    ( PredComp Nothing CEQ
-        ( MathVar "phaseOfMoon" )
-        ( MathVar "full" )
+        ( MathITE Nothing
+            ( PredComp Nothing CEQ
+                ( MathVar "phaseOfMoon" )
+                ( MathVar "waxing" )
+            )
+            ( MathSet "taxesPayable"
+                ( MathBin Nothing Divide
+                    ( MathVar "taxesPayableAlive" )
+                    ( Val Nothing 3.0 )
+                )
+            )
+            ( MathITE Nothing
+                ( PredComp Nothing CEQ
+                    ( MathVar "phaseOfMoon" )
+                    ( MathVar "full" )
+                )
+                ( MathSet "taxesPayable"
+                    ( MathVar "waived" )
+                )
+                ( MathITE Nothing ( PredVal Nothing True )
+                    ( MathSet "taxesPayable"
+                        ( Val (Just "taxesPayable") 0.0 )
+                    ) ( Undefined Nothing )
+                )
+            )
+        )
     )
-    ( MathSet "taxesPayable"
-        ( MathVar "waived" )
-    ) ( Undefined Nothing )
-  , MathITE Nothing
-    ( PredVar "TODO: not implemented yet" )
-    ( MathSet "taxesPayable"
-        ( Val Nothing 0.0 )
-    ) ( Undefined Nothing )
-  , MathSet "taxesPayableAlive"
-    ( MathBin Nothing Plus
-        ( MathVar "income tax component" )
-        ( MathVar "asset tax component" )
-    )
-  , MathSet "income tax component"
-    ( MathBin Nothing Times
-        ( MathVar "annualIncome" )
-        ( MathVar "incomeTaxRate" )
-    )
-  , MathSet "asset tax component"
-    ( MathBin Nothing Times
-        ( MathVar "netWorth" )
-        ( MathVar "assetTaxRate" )
-    )
-  , MathSet "incomeTaxRate"
-    ( Val Nothing 1.0e-2 )
-  , MathSet "assetTaxRate"
-    ( Val Nothing 7.0e-2 )
-  ]
+    , MathSet "taxesPayableAlive"
+        ( MathBin Nothing Plus
+            ( MathVar "income tax component" )
+            ( MathVar "asset tax component" )
+        )
+    , MathSet "income tax component"
+        ( MathBin Nothing Times
+            ( MathVar "annualIncome" )
+            ( MathVar "incomeTaxRate" )
+        )
+    , MathSet "asset tax component"
+        ( MathBin Nothing Times
+            ( MathVar "netWorth" )
+            ( MathVar "assetTaxRate" )
+        )
+    , MathSet "incomeTaxRate"
+        ( Val (Just "incomeTaxRate") 1.0e-2 )
+    , MathSet "assetTaxRate"
+        ( Val (Just "assetTaxRate") 7.0e-2 )
+    ]
+
 
 -----------------------------------------------------------------------------
 -- Test rules
@@ -510,6 +527,33 @@ arithRule1 = mkTestRule
                     [ MTT "m1" ] RPis
                     [ MTT "2 + 2" ]
                 , hBody = Nothing } ]
+
+arithRule2withInitializedValues :: Rule
+arithRule2withInitializedValues = mkTestRule'
+                [ MTT "result" ]
+                (mkGivens [("m1", Just ( SimpleType TOne "Number" )), ("m2", Just ( SimpleType TOne "Number" ))])
+                (mkGivens [("result", Just ( SimpleType TOne "Number"))])
+                [ HC { hHead = RPConstraint
+                        [ MTT "m1" ] RPis
+                        [ MTT "42.0" ]
+                    , hBody = Nothing }
+                , HC { hHead = RPConstraint
+                        [ MTT "m2" ] RPis
+                        [ MTT "3.14" ]
+                    , hBody = Nothing }
+                , HC { hHead = RPnary RPis
+                        [ RPMT
+                            [ MTT "result" ]
+                        , RPnary RPsum
+                            [ RPMT
+                                [ MTT "m1" ]
+                            , RPMT
+                                [ MTT "m2" ]
+                            ]
+                        ]
+                    , hBody = Nothing }
+                ]
+
 
 arithRule2 :: Rule
 arithRule2 = mkTestRule

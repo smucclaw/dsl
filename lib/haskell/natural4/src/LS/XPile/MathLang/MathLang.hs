@@ -11,7 +11,6 @@
 module LS.XPile.MathLang.MathLang
   (toMathLangMw, toMathLang)
 where
--- TODO: Rename `toMathLang` to something like `toMengMathLang`, and add a `toGenericMathLang` as well
 
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString.Builder (generic)
@@ -31,7 +30,7 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
 import Optics (cosmosOf, filteredBy, folded, gplate, (%), (^..))
-
+import Debug.Trace (trace)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
@@ -44,7 +43,8 @@ toMathLang l4i =
 
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
     Left errors -> [] -- GML.makeErrorOut errors
-    Right lamCalcProgram -> genericMLtoML lamCalcProgram.lcProgram
+    Right lamCalcProgram -> gml2ml lamCalcProgram.lcProgram
+
 
 numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl = \case
@@ -71,16 +71,19 @@ mkVal = \case
   GML.EInteger int -> pure $ Val Nothing $ fromInteger int
   GML.EFloat float -> pure $ Val Nothing float
   GML.EString lit -> pure $ MathVar $ T.unpack lit
+  GML.EBoolTrue -> pure $ MathVar "True" -- TODO: this is from GenericMathLang `SetVar var True`. Should do deeper tree transformations so we don't end up here at all.
+  GML.EBoolFalse -> pure $ MathVar "False" -- Just a placeholder, see comment above. Should represent "if COND then foo=True" in another way in GML AST.
   lit -> throwError [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> [Pred Double]
 exp2pred exp = case exp.exp of
+--  EEmpty -> [] -- !!!!!!
   EVar (GML.MkVar var) -> pure $ PredVar $ T.unpack var
   ECompOp op e1 e2 ->
-    PredComp Nothing (compOptoMl op) <$> genericMLtoML e1 <*> genericMLtoML e2
+    PredComp Nothing (compOptoMl op) <$> gml2ml e1 <*> gml2ml e2
   EIs e1 e2 -> do
-    ex1 <- genericMLtoML e1
-    ex2 <- genericMLtoML e2
+    ex1 <- gml2ml e1
+    ex2 <- gml2ml e2
     let ex2withLabel = case (ex1, ex2) of
           (MathVar var, Val Nothing val) -> Val (Just var) val
 --          (MathVar var, MathVar val) -> TODO: what if they are both strings? like phaseOfMoon IS gibbous
@@ -88,7 +91,21 @@ exp2pred exp = case exp.exp of
     pure $ PredComp Nothing CEQ ex1 ex2withLabel
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
-  _ -> pure $ PredVar "TODO: not implemented yet"
+  ELit (GML.EString lit) -> pure $ PredVar $ T.unpack lit
+  EOr l r -> pure $ PredFold Nothing PLOr (foldPredOr exp)
+    --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
+  EAnd l r -> PredBin Nothing PredAnd <$> exp2pred l <*> exp2pred r
+  e -> trace ("exp2pred: not yet implemented\n    " <> show e) (do
+    mlEx <- gml2ml exp
+    trace ("but it is implemented in gml2ml\n    " <> show mlEx) $ pure $ case mlEx of
+      MathVar x -> PredVar x
+      x -> PredVar $ "Not implemented yet: " <> show x)
+
+foldPredOr :: GML.Exp -> PredList Double
+foldPredOr e = case e.exp of
+  EOr l r -> exp2pred l <> foldPredOr r
+  _ -> exp2pred e
+
 
 chainITEs :: [Expr Double] -> [Expr Double]
 chainITEs es = concat [chain x xs | (x:xs) <- groupBy sameVarSet es]
@@ -121,21 +138,27 @@ chainITEs es = concat [chain x xs | (x:xs) <- groupBy sameVarSet es]
                (MathITE _ _ (MathSet var2 _) _ ) = var1 == var2
     sameVarSet _ _ = False
 
+placeholderITE :: Expr Double
+placeholderITE = Undefined (Just "placeholder for ITE")
 
-genericMLtoML :: GML.Exp -> [Expr Double]
-genericMLtoML exp = case exp.exp of
+gml2ml :: GML.Exp -> [Expr Double]
+gml2ml exp = case exp.exp of
   EEmpty -> []
-  ESeq seq -> chainITEs $ foldMap genericMLtoML $ GML.seqExpToExprs seq
+  ESeq seq -> chainITEs $ foldMap gml2ml $ GML.seqExpToExprs seq
   ELit lit -> eitherToList $ mkVal lit
   EVar (GML.MkVar var) -> [MathVar $ T.unpack var]
+  ENumOp GML.OpMinOf e1 e2 -> do -- TODO: make it into a fold
+    MathMin Nothing <$> gml2ml e1 <*> gml2ml e2
+  ENumOp GML.OpMaxOf e1 e2 -> do
+    MathMax Nothing <$> gml2ml e1 <*> gml2ml e2
   ENumOp op e1 e2 -> do
-    ex1 <- genericMLtoML e1
-    ex2 <- genericMLtoML e2
+    ex1 <- gml2ml e1
+    ex2 <- gml2ml e2
     op <- eitherToList $ numOptoMl op
     pure $ MathBin Nothing op ex1 ex2
   EVarSet var val -> do
-    MathVar varEx <- genericMLtoML var
-    valEx <- genericMLtoML val
+    MathVar varEx <- gml2ml var
+    valEx <- gml2ml val
     let valExWithLabel = case valEx of
             Val Nothing val -> Val (Just varEx) val
             _ -> valEx
@@ -143,9 +166,15 @@ genericMLtoML exp = case exp.exp of
 
   EIfThen condE thenE -> do
     condP <- exp2pred condE
-    thenEx <- genericMLtoML thenE
-    pure $ MathITE Nothing condP thenEx $ Undefined Nothing
-  _ -> pure $ Undefined Nothing
+    thenEx <- gml2ml thenE
+    pure $ MathITE Nothing condP thenEx placeholderITE
+  ERec fieldname recname -> do
+    fnEx <- gml2ml fieldname
+    rnEx <- gml2ml recname
+    case (fnEx, rnEx) of
+      (MathVar fname, MathVar rname) -> pure $ MathVar (rname <> "." <> fname)
+      x -> pure $ MathVar ("gml2ml: unsupported record " <> show exp.exp)
+  _ -> pure $ MathVar ("gml2ml: not implemented yet " <> show exp.exp) --Undefined Nothing
 {-  ECompOp
     EApp
     ELet

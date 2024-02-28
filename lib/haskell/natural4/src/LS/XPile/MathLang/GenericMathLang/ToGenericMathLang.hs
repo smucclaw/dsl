@@ -31,7 +31,7 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
     ( ToLCError, runToLC, l4ToLCProgram )
 -- import LS.Interpreter (qaHornsT)
-import LS.Rule (Interpreted(..),
+import LS.Rule (Rule, Interpreted(..),
                 -- defaultHorn
                 -- defaultHorn is useful for prototyping in the REPL
                 )
@@ -40,7 +40,7 @@ import LS.Rule (Interpreted(..),
 -- import Effectful
 -- experimenting with Effectful.Error rn
 -- see Mattermost slack for discussion of error handling and MonadValidate
-import Optics ( folded, (%), filteredBy, (^..) )
+import Optics (cosmosOf, gplate, folded, (%), filteredBy, (^..) )
 import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
@@ -68,7 +68,7 @@ Note:
 -}
 toMathLangGen :: Analyzed -> (String, [String])
 toMathLangGen l4a =
-  let l4Hornlikes = l4a.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
+  let l4Hornlikes = l4a.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (renderLC lamCalcProgram, [])

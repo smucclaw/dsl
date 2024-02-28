@@ -24,13 +24,13 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Explainable.MathLang
 import LS.Interpreter
-import LS.Rule (Interpreted (..))
+import LS.Rule (Rule, Interpreted (..))
 import LS.Utils (eitherToList)
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
-import Optics (filteredBy, folded, (%), (^..))
+import Optics (cosmosOf, filteredBy, folded, gplate, (%), (^..))
 
 {-
 YM: This is currently more like a NOTES file,
@@ -39,7 +39,9 @@ with comments from MEng. Will integrate these later.
 
 toMathLang :: Interpreted -> [Expr Double]
 toMathLang l4i =
-  let l4Hornlikes = l4i.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
+  let l4Hornlikes =
+       l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
+
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
     Left errors -> [] -- GML.makeErrorOut errors
     Right lamCalcProgram -> genericMLtoML lamCalcProgram.lcProgram

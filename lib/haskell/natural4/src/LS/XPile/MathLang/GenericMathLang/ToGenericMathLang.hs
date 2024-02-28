@@ -45,8 +45,8 @@ import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 -- import Data.String.Interpolate (__i)
-import Data.String (IsString)
-import Data.Text qualified as T
+import qualified Data.Text.Lazy
+import Text.Pretty.Simple (pShowNoColor)
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 -- import Data.Foldable qualified as F (toList)
 
@@ -88,4 +88,4 @@ makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
 
 -- | 'Print' LC program to some sort of interchange format for subsequent serialization
 renderLC :: LCProgram -> String
-renderLC program = "Not Yet Implemented"
+renderLC program = Data.Text.Lazy.unpack $ pShowNoColor $ program.lcProgram

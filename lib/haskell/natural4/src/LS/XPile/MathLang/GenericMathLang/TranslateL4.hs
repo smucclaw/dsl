@@ -29,7 +29,7 @@ import LS.Types as L4
   MultiClauseHL(..), _MkMultiClauseHL, mkMultiClauseHL,
   HeadOnlyHC, _MkHeadOnlyHC, mkHeadOnlyAtomicHC, mkHeadOnlyHC, headOnlyHLasMTEs,
   HnBodHC(..),
-  mtexpr2text
+  mtexpr2text, ParamText, pt2text
   )
 
 import LS.Rule (
@@ -54,8 +54,6 @@ import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList, foldrM)
 import LS.Utils ((|$>))
-
-import qualified Data.List.NonEmpty as NE
 
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
@@ -277,26 +275,45 @@ initialEnv = MkEnv { localVars = HM.empty
                    , logConfig = defaultLogConfig }
 
 -- vars and vals
-getVarVals :: L4.Rule -> HM.HashMap String Double
+getTypeString :: MTExpr -> String
+getTypeString expr =
+  case expr of
+    MTT _ -> "text"
+    MTI _ -> "integer"
+    MTF _ -> "double"
+    MTB _ -> "boolean"
+
+getVarVals :: L4.Rule -> HM.HashMap String String
 getVarVals rule =
-    case rule of
-        L4.Hornlike {clauses = hornClauses} -> extractFromHornClauses hornClauses HM.empty
-        _ -> HM.empty
+  case rule of
+    L4.Hornlike { given = givens, clauses = hornClauses } ->
+      let givensMap = extractFromGivens givens HM.empty
+          clausesMap = extractFromHornClauses hornClauses HM.empty
+      in givensMap `HM.union` clausesMap
+    _ -> HM.empty
 
-extractFromHornClauses :: [HornClause2] -> HM.HashMap String Double -> HM.HashMap String Double
+extractFromGivens :: Maybe L4.ParamText -> HM.HashMap String String -> HM.HashMap String String
+extractFromGivens Nothing acc = acc
+extractFromGivens (Just (givens)) acc =
+  foldr (\(mtExpr NE.:| _, maybeTypeSig) hm ->
+          case (mtExpr, maybeTypeSig) of
+            (MTT t, Just (SimpleType _ ts)) -> HM.insert (T.unpack t) (T.unpack ts) hm
+            (MTT t, Just (InlineEnum _ values)) -> HM.insert (T.unpack t) (T.unpack $ pt2text values) hm
+            _ -> hm) acc givens
+
+extractFromHornClauses :: [HornClause2] -> HM.HashMap String String -> HM.HashMap String String
 extractFromHornClauses hornClauses hashmap =
-    foldr extractFromHornClause hashmap hornClauses
+  foldr extractFromHornClause hashmap hornClauses
 
-extractFromHornClause :: HornClause2 -> HM.HashMap String Double -> HM.HashMap String Double
+extractFromHornClause :: HornClause2 -> HM.HashMap String String -> HM.HashMap String String
 extractFromHornClause clause hashmap =
-    case hHead clause of
-        RPConstraint vars _ expr -> case expr of
-            [MTF value] -> foldr (\(MTT var) -> HM.insert (T.unpack var) value) hashmap vars
-            _ -> hashmap
-        _ -> hashmap
-
-
-
+  case hHead clause of
+    RPConstraint vars _ expr -> case expr of
+      [MTF val] -> foldr (\(MTT var) -> HM.insert (T.unpack var) (show val)) hashmap vars
+      [MTI val] -> foldr (\(MTT var) -> HM.insert (T.unpack var) (show val)) hashmap vars
+      [MTT txt] -> foldr (\(MTT var) -> HM.insert (T.unpack var) (T.unpack txt)) hashmap vars
+      _ -> hashmap
+    _ -> hashmap
 
 
 ------------------------------------------------------------------------------------

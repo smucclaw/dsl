@@ -87,10 +87,10 @@ spec = do
           _ -> mempty
     
     describe "extractVariables" $ do
-        it "extracts variables and their values from rules" $ do
-            let rl = arithRule4
-                expected = Map.fromList [("incomeTaxRate", 0.07), ("assetTaxRate", 0.01)]
-            getVarVals rl `shouldBe` expected
+      it "extracts variables and their values from rules" $ do
+        let rl = arithRule4
+            expected = Map.fromList [("taxesPayable", "taxesPayableAlive"), ("taxesPayable", "taxesPayableAlive / 2"), ("incomeTaxRate", "1.0e-2"), ("assetTaxRate", "7.0e-2")]
+        getVarVals rl `shouldBe` expected
 
 
 testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec

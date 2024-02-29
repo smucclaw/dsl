@@ -108,30 +108,19 @@ foldPredOr e = case e.exp of
 
 
 chainITEs :: [Expr Double] -> [Expr Double]
-chainITEs es = concat [chain x xs | (x:xs) <- groupBy sameVarSet es]
+chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
   where
-    chain :: Expr Double -> [Expr Double] -> [Expr Double]
-    chain x@(MathITE lbl condP thenEx (Undefined _)) xs = case xs of
-
-      -- the list of expressions ends in OTHERWISE, so we found the final ELSE
-      [MathITE _ (PredVal _ True) otherwiseEx (Undefined _)]
-        -> pure $ MathITE lbl condP thenEx otherwiseEx
-
-      -- the list of expressions continues, keep going deeper into ELSE
-      (MathITE lbl' condP' thenEx' (Undefined _):elseEx:rest) -- the new else
-        -> MathITE lbl condP thenEx     -- original x
-                <$> MathITE lbl' condP' thenEx' -- first item of the list here
-                        <$> chain elseEx rest      -- recursive call to chain
-
-      -- singleton list = there was never an else branch in the original
-      [] -> [x]
-
-      -- first item is MathITE but isn't followed by more, unclear what to do—leave as is
-      -- TODO: later add some logging
-      xs -> (x:xs)
-
-    -- if the first item is not a MathITE, just return the list as is
-    chain x xs = x:xs
+    moveVarsetToTop :: Expr Double -> [Expr Double] -> Expr Double
+    moveVarsetToTop
+      (MathITE lbl condP (MathSet var1 val1) (Undefined _)) xs =
+        MathSet var1 (MathITE lbl condP val1 (go xs))
+      where
+        go [MathITE _ (PredVal _ True) (MathSet var2 val2) (Undefined _)] = val2
+        go ((MathITE lbl2 condP2 (MathSet var2 val2) (Undefined _)):xs)
+          | var1 == var2 = MathITE lbl2 condP2 val2 (go xs)
+        go [] = Undefined (Just "No otherwise case")
+    moveVarsetToTop x [] = x
+    moveVarsetToTop _ _ = error "moveVarsetToTop: groupBy didn't do what's expected"
 
     sameVarSet :: Expr Double -> Expr Double -> Bool
     sameVarSet (MathITE _ _ (MathSet var1 _) _ )
@@ -160,8 +149,9 @@ gml2ml exp = case exp.exp of
     MathVar varEx <- gml2ml var
     valEx <- gml2ml val
     let valExWithLabel = case valEx of
-            Val Nothing val -> Val (Just varEx) val
-            _ -> valEx
+          MathVar _ -> valEx
+          MathSet _ _ -> valEx
+          _ -> varEx @|= valEx
     pure $ MathSet varEx valExWithLabel
 
   EIfThen condE thenE -> do

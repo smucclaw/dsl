@@ -46,17 +46,17 @@ spec = do
 
     testBaseExpify "arithmetics testcase 2"
                     "should parse inside a cell"
-                    arithRule2
+                    [arithRule2]
                     arithRule2_gold
 
     testBaseExpify "arithmetics testcase 3"
                     "should parse inside a cell"
-                    arithRule3
+                    [arithRule3]
                     arithRule3_gold
 
     testBaseExpify "arithmetics testcase 4"
                     "meng's complex case"
-                    arithRule4
+                    [arithRule4]
                     arithRule4_gold
 
     describe "toMathLang" do
@@ -93,11 +93,11 @@ spec = do
         getVarVals rl `shouldBe` expected
 
 
-testBaseExpify :: String -> String -> Rule -> BaseExp -> Spec
+testBaseExpify :: String -> String -> [Rule] -> BaseExp -> Spec
 testBaseExpify name desc rule gold =
   describe name do
     xit desc do
-      let toTest = runToLC $ l4ToLCProgram [rule]
+      let toTest = runToLC $ l4ToLCProgram rule
 --      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
       case toTest of
         Right p -> exp (lcProgram p) `shouldBe` gold
@@ -107,22 +107,22 @@ testBaseExpify name desc rule gold =
 -- gold for mathlang transformation
 mathLangGold23 = [
    MathSet "m3a"
-    ( MathBin Nothing Times
+    ( MathBin (Just "m3a") Times
         ( MathVar "m1" )
         ( MathVar "m2" )
     )
   , MathSet "m3b"
-    ( MathBin Nothing Times
+    ( MathBin (Just "m3b") Times
         ( MathVar "m1" )
         ( MathVar "m2" )
     )
   , MathSet "m3c"
-    ( MathBin Nothing Times
+    ( MathBin  (Just "m3c") Times
         ( MathVar "m1" )
         ( MathVar "m2" )
     )
   , MathSet "o3a"
-    ( MathBin Nothing Plus
+    ( MathBin (Just "o3a") Plus
         ( MathBin Nothing Times
             ( MathVar "o1" )
             ( Val Nothing 1.0e-2 )
@@ -133,7 +133,7 @@ mathLangGold23 = [
         )
     )
   , MathSet "o3b"
-    ( MathBin Nothing Plus
+    ( MathBin (Just "o3b")  Plus
         ( MathBin Nothing Times
             ( MathVar "o1" )
             ( Val Nothing 1.0e-2 )
@@ -144,7 +144,7 @@ mathLangGold23 = [
         )
     )
   , MathSet "o3c"
-    ( MathBin Nothing Plus
+    ( MathBin (Just "o3c") Plus
         ( MathBin Nothing Times
             ( MathVar "o1" )
             ( Val Nothing 1.0e-2 )
@@ -161,69 +161,70 @@ mathLangGold23 = [
         )
     )]
 
-mathLangGold4 = [
-  MathITE Nothing
+mathLangGold4 :: [Expr Double]
+mathLangGold4 = [ MathSet "taxesPayable"
+    ( MathITE Nothing
     ( PredComp Nothing CEQ
         ( MathVar "phaseOfMoon" )
         ( MathVar "gibbous" )
     )
-    ( MathSet "taxesPayable"
-        ( MathBin Nothing Divide
+        ( MathBin
+            ( Just "taxesPayable" ) Divide
             ( MathVar "taxesPayableAlive" )
             ( Val Nothing 2.0 )
-        )
     )
     ( MathITE Nothing
         ( PredVar "vivacity" )
-        ( MathSet "taxesPayable"
             ( MathVar "taxesPayableAlive" )
-        )
         ( MathITE Nothing
             ( PredComp Nothing CEQ
                 ( MathVar "phaseOfMoon" )
                 ( MathVar "waxing" )
             )
-            ( MathSet "taxesPayable"
-                ( MathBin Nothing Divide
+                ( MathBin
+                    ( Just "taxesPayable" ) Divide
                     ( MathVar "taxesPayableAlive" )
                     ( Val Nothing 3.0 )
-                )
             )
             ( MathITE Nothing
                 ( PredComp Nothing CEQ
                     ( MathVar "phaseOfMoon" )
                     ( MathVar "full" )
                 )
-                ( MathSet "taxesPayable"
                     ( MathVar "waived" )
+                    ( Val
+                        ( Just "taxesPayable" ) 0.0
                 )
-                ( MathITE Nothing ( PredVal Nothing True )
-                    ( MathSet "taxesPayable"
-                        ( Val (Just "taxesPayable") 0.0 )
-                    ) ( Undefined Nothing )
                 )
             )
         )
     )
     , MathSet "taxesPayableAlive"
-        ( MathBin Nothing Plus
+    ( MathBin
+        ( Just "taxesPayableAlive" ) Plus
             ( MathVar "income tax component" )
             ( MathVar "asset tax component" )
         )
     , MathSet "income tax component"
-        ( MathBin Nothing Times
+    ( MathBin
+        ( Just "income tax component" ) Times
             ( MathVar "annualIncome" )
             ( MathVar "incomeTaxRate" )
         )
     , MathSet "asset tax component"
-        ( MathBin Nothing Times
+    ( MathBin
+        ( Just "asset tax component" ) Times
             ( MathVar "netWorth" )
             ( MathVar "assetTaxRate" )
         )
     , MathSet "incomeTaxRate"
-        ( Val (Just "incomeTaxRate") 1.0e-2 )
+    ( Val
+        ( Just "incomeTaxRate" ) 1.0e-2
+    )
     , MathSet "assetTaxRate"
-        ( Val (Just "assetTaxRate") 7.0e-2 )
+    ( Val
+        ( Just "assetTaxRate" ) 7.0e-2
+    )
     ]
 
 

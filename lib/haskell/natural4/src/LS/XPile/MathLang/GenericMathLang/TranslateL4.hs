@@ -61,7 +61,7 @@ import Control.Monad.Trans (lift)
 import Text.Megaparsec (ParsecT, Parsec, ParseErrorBundle, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy,  parse, sepBy)
 import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char, string)
 import Data.Char (isAlphaNum)
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Data.List.HT (partitionMaybe)
 

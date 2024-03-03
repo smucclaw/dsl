@@ -95,6 +95,14 @@ exp2pred exp = case exp.exp of
   EOr l r -> pure $ PredFold Nothing PLOr (foldPredOr exp)
     --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
   EAnd l r -> PredBin Nothing PredAnd <$> exp2pred l <*> exp2pred r
+  EPredSet (GML.MkVar var) val -> do
+    let varStr = T.unpack var
+    valEx <- exp2pred val
+    let valExWithLabel = case valEx of
+          PredVar _ -> valEx
+          PredSet _ _ -> valEx
+          _ -> varStr @|= valEx
+    pure $ PredSet varStr valExWithLabel
   e -> trace ("exp2pred: not yet implemented\n    " <> show e) (do
     mlEx <- gml2ml exp
     trace ("but it is implemented in gml2ml\n    " <> show mlEx) $ pure $ case mlEx of
@@ -153,7 +161,10 @@ gml2ml exp = case exp.exp of
           MathSet _ _ -> valEx
           _ -> varEx @|= valEx
     pure $ MathSet varEx valExWithLabel
-
+  EPredSet _ _ -> do
+    pr <- exp2pred exp
+    pure $ MathITE (Just "TODO: actually add this to environment, this is just placeholder to print it out") pr
+            (Undefined Nothing) (Undefined Nothing)
   EIfThen condE thenE -> do
     condP <- exp2pred condE
     thenEx <- gml2ml thenE

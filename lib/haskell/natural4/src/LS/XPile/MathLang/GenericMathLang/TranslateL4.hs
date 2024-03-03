@@ -64,6 +64,7 @@ import Data.Char (isAlphaNum)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Data.List.HT (partitionMaybe)
+import Prelude hiding (exp)
 
 import Debug.Trace (trace)
 
@@ -536,7 +537,9 @@ toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
 toIfExp hl hc = do
   condE <- withLocalVarsAndSrcPos $ processHcBody hc.hbBody
   thenE <- withLocalVarsAndSrcPos $ processHcHeadForIf hc.hbHead
-  return $ EIfThen condE thenE
+  case thenE.exp of
+    EPredSet var (exp -> ELit EBoolTrue) -> pure $ EPredSet var condE
+    _ -> pure $ EIfThen condE thenE
   where
     withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
     setCurrSrcPos, setLocalVars :: Env -> Env
@@ -570,8 +573,8 @@ Things like arithmetic constraints (<, >, etc)
 don't appear here -- they appear in hBody
 -}
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
-processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = noExtraMdata <$> mkSetVarTrue putativeVar
---processHcHeadForIf (isOtherSetVar -> Just (lefts, rights)) = noExtraMdata <$> mkOtherSetVar lefts rights
+processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = pure $ noExtraMdata $ EPredSet (mkVar . textifyMTEs $ putativeVar) (typeMdata "Boolean" $ ELit EBoolTrue)
+  --noExtraMdata <$> mkSetVarTrue putativeVar
 processHcHeadForIf rp = expifyHeadRP rp
 -- processHcHeadForIf rp = throwNotSupportedError rp
 

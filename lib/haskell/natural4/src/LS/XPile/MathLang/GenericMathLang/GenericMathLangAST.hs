@@ -209,12 +209,6 @@ data BaseExp =
     { func :: Exp, -- ^ func
       appArg :: Var   -- ^ arg
     }
-  -- | ERecdRef -- with fake records
-  --   { rcdName :: T.Text
-  --   , rcdField :: FieldLabel }
-  {- For now assume record labels are unique and won't clash with non-record varnames
-  -}
-
   {- |
   My impression from Meng's examples had been that he wanted variable mutation,
   but he just told me on Wed Jan 31 that he actually prefers variables to be immutable.
@@ -224,8 +218,12 @@ data BaseExp =
     Need to think more about exactly to model Meng's L4 examples if vars are immutable
   -}
   | EVarSet
-    { vsetVar :: Exp,
+    { vsetVar :: Exp, -- IF n==1 THEN f n = 0
       arg :: Exp
+    }
+  | EPredSet -- Inari experiment: in mathlang we have Pred and PredSet, easier translation
+    { psetVar :: Var,
+      parg :: Exp -- evaluates to Bool eventually, we assume, e.g. ITE, CompOp
     }
   | ELet
     { letVar :: Exp

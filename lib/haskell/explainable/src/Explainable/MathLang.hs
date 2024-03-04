@@ -81,6 +81,13 @@ data MyState = MyState { symtabF :: SymTab (Expr     Double) -- numbers (numeric
 emptyState :: MyState
 emptyState = MyState Map.empty Map.empty Map.empty Map.empty
 
+instance Semigroup MyState where
+  (MyState f p l s) <> (MyState f' p' l' s') =
+    MyState (f <> f') (p <> p') (l <> l') (s <> s')
+
+instance Monoid MyState where
+  mempty = emptyState
+
 
 -- ** Simple Double Expressions
 

@@ -373,7 +373,11 @@ l4ToLCProgram rules = do
   (lcProg, globalVars) <- fmap findGlobalVars . l4sHLsToLCExp . F.toList $ l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = lcProg
-                   , globalVars = globalVars}
+                   , globalVars = globalVars
+                   , givethVar = giveths}
+  where
+    giveths :: [T.Text]
+    giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
 {-==============================================================================
   1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL

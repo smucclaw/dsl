@@ -298,6 +298,7 @@ data LCProgram =
   MkLCProgram { progMetadata :: LCProgMetadata
               , lcProgram :: Exp
               , globalVars :: GlobalVars
+              , givethVar :: [T.Text] -- if the L4 program specifies what it giveth, record it here
               }
   deriving stock (Show)
 

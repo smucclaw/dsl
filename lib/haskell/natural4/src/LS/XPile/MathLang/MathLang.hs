@@ -24,29 +24,41 @@ import Data.Text qualified as T
 import Explainable.MathLang
 import LS.Interpreter
 import LS.Rule (Rule, Interpreted (..))
-import LS.Utils (eitherToList)
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
 import Optics (cosmosOf, filteredBy, folded, gplate, (%), (^..))
 import Debug.Trace (trace)
+import Control.Monad (MonadPlus(mzero))
+import Control.Monad.RWS.Class (MonadWriter(tell))
+import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
+import Control.Monad.Trans.Writer (Writer, runWriter)
+import Data.Maybe (maybeToList, catMaybes)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
 -}
 
-toMathLang :: Interpreted -> [Expr Double]
+toMathLang :: Interpreted -> ([Expr Double], MyState)
 toMathLang l4i =
   let l4Hornlikes =
        l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
 
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
-    Left errors -> [] -- GML.makeErrorOut errors
-    Right lamCalcProgram -> gml2ml lamCalcProgram.lcProgram
+    Left errors -> ([], emptyState) -- GML.makeErrorOut errors
+    Right lamCalcProgram ->
+      let (_, st) = runWriter $ runMaybeT $ gml2ml lamCalcProgram.lcProgram
+          toplevels = case lamCalcProgram.givethVar of
+            [] -> Map.elems st.symtabF
+            ks -> case catMaybes [ Map.lookup (T.unpack k) st.symtabF | k <- ks ] of
+                   [] -> Map.elems st.symtabF
+                   exprs -> exprs
+        in (toplevels, st)
 
 
-numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
+--numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
+numOptoMl :: GML.NumOp -> MyStack MathBinOp
 numOptoMl = \case
   GML.OpPlus -> pure Plus
   GML.OpSum -> pure Plus
@@ -54,7 +66,8 @@ numOptoMl = \case
   GML.OpMul -> pure Times
   GML.OpProduct -> pure Times
   GML.OpDiv -> pure Divide
-  op -> throwError [i|numOptoMl: encountered #{op}|]
+  _ -> mzero
+--  op -> throwError [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp
 compOptoMl = \case
@@ -65,19 +78,19 @@ compOptoMl = \case
   GML.OpGte -> CGTE
   _ -> CNEQ -----
 
--- TODO: needs an env to retrieve values for variables
-mkVal :: MonadError T.Text m => GML.Lit -> m (Expr Double)
+--mkVal :: MonadError T.Text m => GML.Lit -> m (Expr Double)
+mkVal :: GML.Lit -> Expr Double
 mkVal = \case
-  GML.EInteger int -> pure $ Val Nothing $ fromInteger int
-  GML.EFloat float -> pure $ Val Nothing float
-  GML.EString lit -> pure $ MathVar $ T.unpack lit
-  GML.EBoolTrue -> pure $ MathVar "True" -- TODO: this is from GenericMathLang `SetVar var True`. Should do deeper tree transformations so we don't end up here at all.
-  GML.EBoolFalse -> pure $ MathVar "False" -- Just a placeholder, see comment above. Should represent "if COND then foo=True" in another way in GML AST.
-  lit -> throwError [i|mkVal: encountered #{lit}|]
+  GML.EInteger int -> Val Nothing $ fromInteger int
+  GML.EFloat float -> Val Nothing float
+  GML.EString lit -> MathVar $ T.unpack lit
+  GML.EBoolTrue -> MathVar "True" -- TODO: this is from GenericMathLang `SetVar var True`. Should do deeper tree transformations so we don't end up here at all.
+  GML.EBoolFalse -> MathVar "False" -- Just a placeholder, see comment above. Should represent "if COND then foo=True" in another way in GML AST.
+--  lit -> throwError [i|mkVal: encountered #{lit}|]
 
-exp2pred :: GML.Exp -> [Pred Double]
+exp2pred :: GML.Exp -> MyStack (Pred Double)
 exp2pred exp = case exp.exp of
---  EEmpty -> [] -- !!!!!!
+  EEmpty -> mzero
   EVar (GML.MkVar var) -> pure $ PredVar $ T.unpack var
   ECompOp op e1 e2 ->
     PredComp Nothing (compOptoMl op) <$> gml2ml e1 <*> gml2ml e2
@@ -92,7 +105,7 @@ exp2pred exp = case exp.exp of
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   ELit (GML.EString lit) -> pure $ PredVar $ T.unpack lit
-  EOr l r -> pure $ PredFold Nothing PLOr (foldPredOr exp)
+  EOr l r -> PredFold Nothing PLOr <$> foldPredOr exp
     --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
   EAnd l r -> PredBin Nothing PredAnd <$> exp2pred l <*> exp2pred r
   EPredSet (GML.MkVar var) val -> do
@@ -109,10 +122,13 @@ exp2pred exp = case exp.exp of
       MathVar x -> PredVar x
       x -> PredVar $ "Not implemented yet: " <> show x)
 
-foldPredOr :: GML.Exp -> PredList Double
+foldPredOr :: GML.Exp -> MyStack (PredList Double)
 foldPredOr e = case e.exp of
-  EOr l r -> exp2pred l <> foldPredOr r
-  _ -> exp2pred e
+  EOr l r -> do
+    predL <- exp2pred l
+    predR <- foldPredOr r
+    pure $ predL : predR
+  _ -> (:[]) <$> exp2pred e
 
 
 chainITEs :: [Expr Double] -> [Expr Double]
@@ -138,12 +154,24 @@ chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
 placeholderITE :: Expr Double
 placeholderITE = Undefined (Just "placeholder for ITE")
 
-gml2ml :: GML.Exp -> [Expr Double]
+type MyStack = MaybeT (Writer MyState)
+
+gml2ml :: GML.Exp -> MyStack (Expr Double)
 gml2ml exp = case exp.exp of
-  EEmpty -> []
-  ESeq seq -> chainITEs $ foldMap gml2ml $ GML.seqExpToExprs seq
-  ELit lit -> eitherToList $ mkVal lit
-  EVar (GML.MkVar var) -> [MathVar $ T.unpack var]
+  EEmpty -> mzero
+  ESeq seq -> do
+    seqs <- mapM gml2ml $ GML.seqExpToExprs seq
+    let newSeqs = chainITEs seqs
+        newF = Map.fromList [(var, val) | MathSet var val <- newSeqs]
+
+    tell $ emptyState { symtabF = newF}
+    let !headName = case newSeqs of
+         MathSet headName _ : _ -> headName
+         MathVar headName : _ -> headName
+         _ -> error $ "Unexpected thing: " ++ show newSeqs ++ "\n\nFrom " ++ show seqs ++ "\n\nFrom " ++ show seq
+    pure $ MathVar headName
+  ELit lit -> pure $ mkVal lit
+  EVar (GML.MkVar var) -> pure $ MathVar $ T.unpack var
   ENumOp GML.OpMinOf e1 e2 -> do -- TODO: make it into a fold
     MathMin Nothing <$> gml2ml e1 <*> gml2ml e2
   ENumOp GML.OpMaxOf e1 e2 -> do
@@ -151,7 +179,7 @@ gml2ml exp = case exp.exp of
   ENumOp op e1 e2 -> do
     ex1 <- gml2ml e1
     ex2 <- gml2ml e2
-    op <- eitherToList $ numOptoMl op
+    op <- numOptoMl op
     pure $ MathBin Nothing op ex1 ex2
   EVarSet var val -> do
     MathVar varEx <- gml2ml var
@@ -162,9 +190,10 @@ gml2ml exp = case exp.exp of
           _ -> varEx @|= valEx
     pure $ MathSet varEx valExWithLabel
   EPredSet _ _ -> do
-    pr <- exp2pred exp
-    pure $ MathITE (Just "TODO: actually add this to environment, this is just placeholder to print it out") pr
-            (Undefined Nothing) (Undefined Nothing)
+    PredSet name pr <- exp2pred exp
+    let myState = emptyState { symtabP = Map.singleton name pr }
+    tell myState
+    mzero
   EIfThen condE thenE -> do
     condP <- exp2pred condE
     thenEx <- gml2ml thenE

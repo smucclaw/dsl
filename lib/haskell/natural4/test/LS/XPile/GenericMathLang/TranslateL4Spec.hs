@@ -4,6 +4,7 @@
 module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 
 import AnyAll qualified as AA
+import AnyAll (BoolStruct(..))
 import Control.Arrow ((>>>))
 import Control.Monad (forM_)
 import Data.HashMap.Strict qualified as Map
@@ -16,6 +17,7 @@ import LS.Types
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import LS.XPile.MathLang.MathLang qualified as ML
+--import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen)
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Prelude hiding (exp, seq)
 
@@ -60,32 +62,48 @@ spec = do
                     arithRule4_gold
 
     describe "toMathLang" do
+      let l4i = defaultL4I {origrules = [arithRule4]}
+          res@(exprs,st) = ML.toMathLang l4i
+
       it "should turn Rules straight to MathLang (via GenericMathLang)" do
-        let l4i = defaultL4I {origrules = [arithRule2, arithRule3, arithRule4]}
-        ML.toMathLang l4i `shouldBe` (mathLangGold23 <> mathLangGold4)
+        res `shouldBe` mathLangGold4
+
+      it "should evaluate taxesPayable correctly when info is lacking" do
+        case exprs of
+          [expr] -> do
+            (taxes, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+            taxes `shouldBe` 0.0 -- because we don't know what the phase of the moon is, defaults to 0.0
+          _ -> mempty
+
+      it "should evaluate taxesPayable correctly when more info is given" do
+        let st' = st {symtabP = Map.singleton "vivacity" (PredVal (Just "vivacity") True), symtabF = symtabF st <> Map.singleton "annualIncome" (Val (Just "annualIncome") 10000)}
+        case exprs of
+          [expr] -> do
+            (taxes, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+            taxes `shouldBe` 50.0 -- now we should know vivacity and annual income
+          _ -> mempty
 
     describe "evalSimple" do
       it "should evaluate 2+2" do
         let l4i = defaultL4I {origrules = [arithRule1]}
         case ML.toMathLang l4i of
-          [] -> mempty
-          expr:_ -> do
-            (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval expr
+          ([],_) -> mempty
+          (expr:_,st) -> do
+            (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st $ eval expr
             e `shouldBe` 4.0
-    
 
+    -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
 
     describe "evalComplex" do
+
       it "should evaluate result" do
         let l4i = defaultL4I {origrules = [arithRule2withInitializedValues]}
         case ML.toMathLang l4i of
-          e1:e2:e3:_ -> do -- TODO: how to do this automatically? just give a list of 3 exprs and no matter in which order the variables are assigned, it should find the
-            (_res, _xp, st1, _strs) <- xplainE (mempty :: Map.HashMap () ()) emptyState $ eval e1
-            (_res, _xp, st2, _strs) <- xplainE (mempty :: Map.HashMap () ()) st1 $ eval e2
-            (res, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st2 $ eval e3
+          ([],_) -> mempty
+          (expr:_,st) -> do
+            (res, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st $ eval expr
             res `shouldBe` 45.14
-          _ -> mempty
-    
+
     describe "extractVariables" $ do
       it "extracts variables and their values from rules" $ do
         let rl = arithRule4
@@ -161,71 +179,99 @@ mathLangGold23 = [
         )
     )]
 
-mathLangGold4 :: [Expr Double]
-mathLangGold4 = [ MathSet "taxesPayable"
-    ( MathITE Nothing
-    ( PredComp Nothing CEQ
-        ( MathVar "phaseOfMoon" )
-        ( MathVar "gibbous" )
-    )
+mathLangGold4 :: ([Expr Double], MyState)
+mathLangGold4 = (
+    [ MathITE Nothing
+        ( PredComp Nothing CEQ
+            ( MathVar "phaseOfMoon" )
+            ( MathVar "gibbous" )
+        )
         ( MathBin
             ( Just "taxesPayable" ) Divide
             ( MathVar "taxesPayableAlive" )
             ( Val Nothing 2.0 )
-    )
-    ( MathITE Nothing
-        ( PredVar "vivacity" )
-            ( MathVar "taxesPayableAlive" )
+        )
         ( MathITE Nothing
-            ( PredComp Nothing CEQ
-                ( MathVar "phaseOfMoon" )
-                ( MathVar "waxing" )
-            )
+            ( PredVar "vivacity" )
+            ( MathVar "taxesPayableAlive" )
+            ( MathITE Nothing
+                ( PredComp Nothing CEQ
+                    ( MathVar "phaseOfMoon" )
+                    ( MathVar "waxing" )
+                )
                 ( MathBin
                     ( Just "taxesPayable" ) Divide
                     ( MathVar "taxesPayableAlive" )
                     ( Val Nothing 3.0 )
+                )
+                ( MathITE Nothing
+                    ( PredComp Nothing CEQ
+                        ( MathVar "phaseOfMoon" )
+                        ( MathVar "full" )
+                    )
+                    ( MathVar "waived" )
+                    ( Val ( Just "taxesPayable" ) 0.0 )
+                )
             )
-            ( MathITE Nothing
+        )
+    ], MyState
+    { symtabF = Map.fromList
+        [
+            ( "income tax component", MathBin
+                ( Just "income tax component" ) Times
+                ( MathVar "annualIncome" )
+                ( MathVar "incomeTaxRate" )
+            ),
+            ( "taxesPayable", MathITE Nothing
                 ( PredComp Nothing CEQ
                     ( MathVar "phaseOfMoon" )
-                    ( MathVar "full" )
+                    ( MathVar "gibbous" )
                 )
-                    ( MathVar "waived" )
-                    ( Val
-                        ( Just "taxesPayable" ) 0.0
+                ( MathBin
+                    ( Just "taxesPayable" ) Divide
+                    ( MathVar "taxesPayableAlive" )
+                    ( Val Nothing 2.0 )
                 )
+                ( MathITE Nothing
+                    ( PredVar "vivacity" )
+                    ( MathVar "taxesPayableAlive" )
+                    ( MathITE Nothing
+                        ( PredComp Nothing CEQ
+                            ( MathVar "phaseOfMoon" )
+                            ( MathVar "waxing" )
+                        )
+                        ( MathBin
+                            ( Just "taxesPayable" ) Divide
+                            ( MathVar "taxesPayableAlive" )
+                            ( Val Nothing 3.0 )
+                        )
+                        ( MathITE Nothing
+                            ( PredComp Nothing CEQ
+                                ( MathVar "phaseOfMoon" )
+                                ( MathVar "full" )
+                            )
+                            ( MathVar "waived" )
+                            ( Val ( Just "taxesPayable" ) 0.0 )
+                        )
+                    )
                 )
+            ),
+            ( "asset tax component", MathBin
+                ( Just "asset tax component" ) Times
+                ( MathVar "netWorth" )
+                ( MathVar "assetTaxRate" )
+            ),
+            ( "assetTaxRate", Val ( Just "assetTaxRate" ) 7.0e-2 ),
+            ( "incomeTaxRate", Val ( Just "incomeTaxRate" ) 1.0e-2 ),
+            ( "taxesPayableAlive", MathBin
+                ( Just "taxesPayableAlive" ) Plus
+                ( MathVar "income tax component" )
+                ( MathVar "asset tax component" )
             )
-        )
-    )
-    , MathSet "taxesPayableAlive"
-    ( MathBin
-        ( Just "taxesPayableAlive" ) Plus
-            ( MathVar "income tax component" )
-            ( MathVar "asset tax component" )
-        )
-    , MathSet "income tax component"
-    ( MathBin
-        ( Just "income tax component" ) Times
-            ( MathVar "annualIncome" )
-            ( MathVar "incomeTaxRate" )
-        )
-    , MathSet "asset tax component"
-    ( MathBin
-        ( Just "asset tax component" ) Times
-            ( MathVar "netWorth" )
-            ( MathVar "assetTaxRate" )
-        )
-    , MathSet "incomeTaxRate"
-    ( Val
-        ( Just "incomeTaxRate" ) 1.0e-2
-    )
-    , MathSet "assetTaxRate"
-    ( Val
-        ( Just "assetTaxRate" ) 7.0e-2
-    )
-    ]
+        ], symtabP = Map.empty , symtabL = Map.empty , symtabS = Map.empty
+    }
+  )
+
 
 
 -----------------------------------------------------------------------------
@@ -885,3 +931,4 @@ mkMetadata typelabel = [ MkExpMetadata
                         }, typeLabel = Just typelabel, explnAnnot = Nothing
                     }
                 ]
+

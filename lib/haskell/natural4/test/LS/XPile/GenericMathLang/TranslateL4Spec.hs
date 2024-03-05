@@ -96,13 +96,18 @@ spec = do
 
     describe "evalComplex" do
 
-      it "should evaluate result" do
+      it "should evaluate arithRule2" do
         let l4i = defaultL4I {origrules = [arithRule2withInitializedValues]}
         case ML.toMathLang l4i of
           ([],_) -> mempty
           (expr:_,st) -> do
             (res, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st $ eval expr
             res `shouldBe` 45.14
+
+      let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
+          res_ar3@(exprs,state) = ML.toMathLang l4i_ar3
+      it "toMathLang for arithRule3 should take m3a as the toplevel" do
+        symtabF state `shouldBe` arithRule3_gold_symtab
 
     describe "extractVariables" $ do
       it "extracts variables and their values from rules" $ do
@@ -642,35 +647,35 @@ arithRule2 = mkTestRule
                 ]
 
 arithRule3 :: Rule
-arithRule3 = mkTestRule
+arithRule3 = mkTestRule'
                 [ MTT "o3a" ]
                 (mkGivens [("o1", Just ( SimpleType TOne "Number" )), ("o2", Just ( SimpleType TOne "Number" ))])
-                [ HC
-                            { hHead = RPConstraint
-                                [ MTT "o3a" ] RPis
+                (mkGivens [("o3a_plus_times", Just ( SimpleType TOne "Number" ))])
+                [ HC { hHead = RPConstraint
+                        [ MTT "o3a_plus_times" ] RPis
                                 [ MTT "o1 * 0.01"
                                 , MTT "+"
                                 , MTT "o2 * 0.07"
                                 ]
-                            , hBody = Nothing
-                            }
+                    , hBody = Nothing }
+                , HC { hHead = RPConstraint
+                        [ MTT "o3a_times_plus" ] RPis
+                        [ MTT "o1 + 0.01"
+                        , MTT "*"
+                        , MTT "o2 + 0.07"
+                        ]
+                    , hBody = Nothing }
                         , HC
                             { hHead = RPnary RPis
                                 [ RPMT
                                     [ MTT "o3b" ]
                                 , RPnary RPsum
                                     [ RPnary RPproduct
-                                        [ RPMT
-                                            [ MTT "o1" ]
-                                        , RPMT
-                                            [ MTF 1.0e-2 ]
-                                        ]
+                                [ RPMT [ MTT "o1" ]
+                                , RPMT [ MTF 1.0e-2 ] ]
                                     , RPnary RPproduct
-                                        [ RPMT
-                                            [ MTT "o2" ]
-                                        , RPMT
-                                            [ MTF 7.0e-2 ]
-                                        ]
+                                [ RPMT [ MTT "o2" ]
+                                , RPMT [ MTF 7.0e-2 ] ]
                                     ]
                                 ]
                             , hBody = Nothing

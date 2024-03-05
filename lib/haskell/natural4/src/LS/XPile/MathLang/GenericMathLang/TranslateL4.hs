@@ -669,7 +669,7 @@ baseExpifyMTEs mtes = case mtes of
       (Just _, Just _) -> throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
 
   _ -> do
-      expParsedAsText <- parseExpr $ MTT $ textifyMTEs mtes
+      expParsedAsText <- parseExpr $ MTT $ textifyMTEs $ parenExps mtes
       case expParsedAsText of
         ELit _ -> do
         -- TODO: this should definitely not be a sequence, what should it be instead???
@@ -696,6 +696,29 @@ baseExpifyMTEs mtes = case mtes of
         Left error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
     parseExpr x = return $ mteToLitExp x
 
+    parenExps :: [MTExpr] -> [MTExpr]
+    parenExps mtes
+      | any (\(MTT t) -> isOp t) mtes = parenNestedExprs <$> mtes
+      | otherwise = mtes
+
+    ops :: [Char]
+    ops = ['+', '*', '-', '/']
+
+    isOp :: T.Text -> Bool
+    isOp t = case T.unpack t of
+               [c] -> c `elem` ops
+               _   -> False
+
+    -- don't parenthesize single variables or literals, like "taxesPayable" or "Singapore citizen"
+    -- do parenthesize "(x + 6)"
+    parenNestedExprs :: MTExpr -> MTExpr
+    parenNestedExprs mte = MTT $ parenNE (T.unpack t)
+      where
+        t = mtexpr2text mte
+        parenNE :: String -> T.Text
+        parenNE str
+          | ' ' `elem` str && any (`elem` ops) str = "(" <> t <> ")"
+          | otherwise = t
 
 splitGenitives :: [MTExpr] -> ([MTExpr], [MTExpr])
 splitGenitives = partitionMaybe isGenitive

@@ -278,6 +278,7 @@ This should be useful b/c most langs require more upfront declaration of global 
 -}
 newtype GlobalVars = MkGlobalVars (HashMap Var (Maybe L4EntType))
   deriving stock (Show)
+  deriving (Semigroup, Monoid) via (HashMap Var (Maybe L4EntType))
 makePrisms ''GlobalVars
 
 mkGlobalVars :: HashMap Var (Maybe L4EntType) -> GlobalVars

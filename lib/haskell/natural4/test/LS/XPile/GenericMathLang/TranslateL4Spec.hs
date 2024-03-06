@@ -77,7 +77,9 @@ spec = do
           _ -> mempty
 
       it "should evaluate taxesPayable correctly when more info is given" do
-        let st' = st {symtabP = Map.singleton "vivacity" (PredVal (Just "vivacity") True), symtabF = symtabF st <> Map.singleton "annualIncome" (Val (Just "annualIncome") 10000)}
+        let st' = st {
+            symtabP = Map.singleton "vivacity" (PredVal (Just "vivacity") True),
+            symtabF = symtabF st <> Map.singleton "annualIncome" (Val (Just "annualIncome") 10000)}
         case exprs of
           [expr] -> do
             (taxes, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
@@ -109,8 +111,7 @@ spec = do
       let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
           res_ar3@(exprs,state) = ML.toMathLang l4i_ar3
       it "toMathLang for arithRule3 should take m3a as the toplevel" do
-        -- symtabF state `shouldBe` arithRule3_gold_symtab
-        pending
+        symtabF state `shouldBe` arithRule3_gold_symtab
 
     describe "extractVariables" do
       it "extracts variables and their values from rules" do
@@ -760,6 +761,42 @@ arithExpr3_gold =
         }
     }, md = mkMetadata (Inferred "Number")
   }
+
+arithRule3_gold_symtab :: Explainable.MathLang.SymTab (Expr Double)
+arithRule3_gold_symtab = Map.fromList
+  [ ( "o3b", MathBin
+        ( Just "o3b" ) Plus
+        ( MathBin Nothing Times ( MathVar "o1" ) ( Val Nothing 1.0e-2 ) )
+        ( MathBin Nothing Times ( MathVar "o2" ) ( Val Nothing 7.0e-2 ) )
+    ),
+    ( "o3a_plus_times", MathBin
+        ( Just "o3a_plus_times" ) Plus
+        ( MathBin Nothing Times
+            ( MathVar "o1" )
+            ( Val Nothing 1.0e-2 )
+        )
+        ( MathBin Nothing Times
+            ( MathVar "o2" )
+            ( Val Nothing 7.0e-2 )
+        )
+    ),
+    ( "o3c", MathBin
+        ( Just "o3c" ) Plus
+        ( MathBin Nothing Times ( MathVar "o1" ) ( Val Nothing 1.0e-2 ) )
+        ( MathBin Nothing Plus
+            ( MathBin Nothing Times ( MathVar "o2" ) ( Val Nothing 3.0e-2 ) )
+            ( MathBin Nothing Times ( MathVar "o2" ) ( Val Nothing 4.0e-2 ) )
+        )
+    ),
+    ( "o3a_times_plus", MathBin
+        ( Just "o3a_times_plus" ) Times
+        ( MathBin Nothing Plus
+            ( MathVar "o1" )
+            ( Val Nothing 1.0e-2 )
+        )
+        ( MathBin Nothing Plus ( MathVar "o2" ) ( Val Nothing 7.0e-2 ) )
+    )
+  ]
 
 arithRule3_gold :: BaseExp
 arithRule3_gold = ESeq

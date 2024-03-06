@@ -48,10 +48,10 @@ toMathLang l4i =
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
     Left errors -> ([], emptyState) -- GML.makeErrorOut errors
     Right lamCalcProgram ->
-      let (_, st) = runWriter $ runMaybeT $ gml2ml lamCalcProgram.lcProgram
-          toplevels = case lamCalcProgram.givethVar of
+      let st = gmls2ml lamCalcProgram.lcProgram
+          toplevels = case T.unpack  <$> lamCalcProgram.givethVar of
             [] -> Map.elems st.symtabF
-            ks -> case catMaybes [ Map.lookup (T.unpack k) st.symtabF | k <- ks ] of
+            ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
                    [] -> Map.elems st.symtabF
                    exprs -> exprs
         in (toplevels, st)
@@ -155,6 +155,13 @@ placeholderITE :: Expr Double
 placeholderITE = Undefined (Just "placeholder for ITE")
 
 type MyStack = MaybeT (Writer MyState)
+
+-- all of the results are in MyState, so we can ignore the actual res
+gmls2ml :: [GML.Exp] -> MyState
+gmls2ml [] = emptyState
+gmls2ml (e:es) = st <> gmls2ml es
+  where
+    (_res, st) = runWriter $ runMaybeT $ gml2ml e
 
 gml2ml :: GML.Exp -> MyStack (Expr Double)
 gml2ml exp = case exp.exp of

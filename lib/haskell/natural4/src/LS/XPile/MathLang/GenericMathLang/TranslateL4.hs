@@ -370,12 +370,13 @@ findGlobalVars exp = (exp, placeholderTODO)
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
-  (lcProg, globalVars) <- fmap findGlobalVars . l4sHLsToLCExp . F.toList $ l4HLs
+  lcProg <- mapM expifyHL $ F.toList l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = lcProg
                    , globalVars = globalVars
                    , givethVar = giveths}
   where
+    globalVars = mkGlobalVars HM.empty
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 

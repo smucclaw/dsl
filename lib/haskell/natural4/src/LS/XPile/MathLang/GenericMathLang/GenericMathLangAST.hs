@@ -297,7 +297,7 @@ data LCProgMetadata =
 
 data LCProgram =
   MkLCProgram { progMetadata :: LCProgMetadata
-              , lcProgram :: Exp
+              , lcProgram :: [Exp]
               , globalVars :: GlobalVars
               , givethVar :: [T.Text] -- if the L4 program specifies what it giveth, record it here
               }

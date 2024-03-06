@@ -194,7 +194,7 @@ mathLangGold23 = [
 
 mathLangGold4 :: ([Expr Double], MyState)
 mathLangGold4 = (
-    [ MathITE Nothing
+    [ MathSet "taxesPayable" ( MathITE Nothing
         ( PredComp Nothing CEQ
             ( MathVar "phaseOfMoon" )
             ( MathVar "gibbous" )
@@ -227,6 +227,7 @@ mathLangGold4 = (
                 )
             )
         )
+    )
     ], MyState
     { symtabF = Map.fromList
         [

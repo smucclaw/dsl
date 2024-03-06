@@ -66,7 +66,7 @@ numOptoMl = \case
   GML.OpMul -> pure Times
   GML.OpProduct -> pure Times
   GML.OpDiv -> pure Divide
-  _ -> mzero
+  op -> trace [i|numOptoMl: encountered #{op}|] mzero
 --  op -> throwError [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp
@@ -105,9 +105,9 @@ exp2pred exp = case exp.exp of
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   ELit (GML.EString lit) -> pure $ PredVar $ T.unpack lit
-  EOr l r -> PredFold Nothing PLOr <$> foldPredOr exp
+  EOr {} -> PredFold Nothing PLOr <$> foldPredOr exp
     --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
-  EAnd l r -> PredBin Nothing PredAnd <$> exp2pred l <*> exp2pred r
+  EAnd {} -> PredFold Nothing PLAnd <$> foldPredAnd exp
   EPredSet (GML.MkVar var) val -> do
     let varStr = T.unpack var
     valEx <- exp2pred val
@@ -128,8 +128,17 @@ foldPredOr e = case e.exp of
     predL <- exp2pred l
     predR <- foldPredOr r
     pure $ predL : predR
-  _ -> (:[]) <$> exp2pred e
+  EEmpty -> pure []
+  x -> trace [i|foldPredOr: encountered #{x}|] $ (:[]) <$> exp2pred e
 
+foldPredAnd :: GML.Exp -> MyStack (PredList Double)
+foldPredAnd e = case e.exp of
+  EAnd l r -> do
+    predL <- exp2pred l
+    predR <- foldPredOr r
+    pure $ predL : predR
+  EEmpty -> pure []
+  x -> trace [i|foldPredAnd: encountered #{x}|] $ (:[]) <$> exp2pred e
 
 chainITEs :: [Expr Double] -> [Expr Double]
 chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
@@ -168,14 +177,16 @@ gml2ml exp = case exp.exp of
   EEmpty -> mzero
   ESeq seq -> do
     seqs <- mapM gml2ml $ GML.seqExpToExprs seq
-    let newSeqs = chainITEs seqs
-        newF = Map.fromList [(var, val) | MathSet var val <- newSeqs]
+    let newSeqs = --trace [i|\ngml2ml: seqs #{seqs}\n|] $
+                  chainITEs seqs
+        newF = -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
+               Map.fromList [(var, val) | MathSet var val <- newSeqs]
 
     tell $ emptyState { symtabF = newF}
     let !headName = case newSeqs of
          MathSet headName _ : _ -> headName
          MathVar headName : _ -> headName
-         _ -> error $ "Unexpected thing: " ++ show newSeqs ++ "\n\nFrom " ++ show seqs ++ "\n\nFrom " ++ show seq
+         _ -> error [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{seq}|]
     pure $ MathVar headName
   ELit lit -> pure $ mkVal lit
   EVar (GML.MkVar var) -> pure $ MathVar $ T.unpack var
@@ -198,9 +209,8 @@ gml2ml exp = case exp.exp of
     pure $ MathSet varEx valExWithLabel
   EPredSet _ _ -> do
     PredSet name pr <- exp2pred exp
-    let myState = emptyState { symtabP = Map.singleton name pr }
-    tell myState
-    mzero
+    tell $ emptyState { symtabP = Map.singleton name pr }
+    pure (Undefined Nothing) -- this is just dummy to not have it crash, this value won't be present in the final result
   EIfThen condE thenE -> do
     condP <- exp2pred condE
     thenEx <- gml2ml thenE

@@ -26,8 +26,8 @@ import LS.Types as L4
   HornClause (..), HornClause2, BoolStructR,
   TypeSig(..), TypedMulti,
   SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
-  MultiClauseHL(..), _MkMultiClauseHL, mkMultiClauseHL,
-  HeadOnlyHC, _MkHeadOnlyHC, mkHeadOnlyAtomicHC, mkHeadOnlyHC, headOnlyHLasMTEs,
+  MultiClauseHL(..), mkMultiClauseHL,
+  HeadOnlyHC, mkHeadOnlyAtomicHC,
   HnBodHC(..),
   mtexpr2text, ParamText, pt2text
   )
@@ -48,8 +48,7 @@ import Optics hiding ((|>))
 -- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
 import Data.List.NonEmpty qualified as NE
-import Data.String.Interpolate (__i, i)
-import Data.String (IsString)
+import Data.String.Interpolate (i)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList, foldrM)
@@ -58,8 +57,8 @@ import LS.Utils ((|$>))
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Control.Monad.Trans (lift)
-import Text.Megaparsec (ParsecT, Parsec, ParseErrorBundle, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy,  parse, sepBy)
-import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char, string)
+import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy)
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
 import Data.Char (isAlphaNum)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )

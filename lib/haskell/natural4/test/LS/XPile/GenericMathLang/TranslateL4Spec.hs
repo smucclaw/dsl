@@ -27,8 +27,8 @@ spec = do
       it "should become a SimpleHL" do
         let toTest = runToLC $ simplifyL4Hlike rule2givens
         case toTest of
-            Left err -> err `shouldBe` MiscError "" ""
-            Right res -> baseHL res `shouldBe` rule2givens_shl_gold
+          Left err -> err `shouldBe` MiscError "" ""
+          Right res -> baseHL res `shouldBe` rule2givens_shl_gold
 
     -- Postpone
     -- testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
@@ -90,18 +90,18 @@ spec = do
         case ML.toMathLang l4i of
           ([],_) -> mempty
           (expr:_,st) -> do
-            (e, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+            (e, _xp, _st, _strs) <-
+              xplainE (mempty :: Map.HashMap () ()) st $ eval expr
             e `shouldBe` 4.0
 
     -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
 
     describe "evalComplex" do
-
       it "should evaluate arithRule2" do
         let l4i = defaultL4I {origrules = [arithRule2withInitializedValues]}
         case ML.toMathLang l4i of
-          ([],_) -> mempty
-          (expr:_,st) -> do
+          ([], _) -> mempty
+          (expr:_, st) -> do
             (res, _xp, _st, _strs) <-
               xplainE (mempty :: Map.HashMap () ()) st $ eval expr
             res `shouldBe` 45.14
@@ -115,9 +115,13 @@ spec = do
     describe "extractVariables" do
       it "extracts variables and their values from rules" do
         let rl = arithRule4
-            expected = Map.fromList [("taxesPayable", "taxesPayableAlive"), ("taxesPayable", "taxesPayableAlive / 2"), ("incomeTaxRate", "1.0e-2"), ("assetTaxRate", "7.0e-2")]
+            expected = Map.fromList
+              [ ("taxesPayable", "taxesPayableAlive"),
+                ("taxesPayable", "taxesPayableAlive / 2"),
+                ("incomeTaxRate", "1.0e-2"),
+                ("assetTaxRate", "7.0e-2")
+              ]
         getVarVals rl `shouldBe` expected
-
 
 testBaseExpify :: String -> String -> [Rule] -> BaseExp -> Spec
 testBaseExpify name desc rule gold =

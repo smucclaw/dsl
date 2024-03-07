@@ -49,17 +49,17 @@ spec = do
     testBaseExpify "arithmetics testcase 2"
                     "should parse inside a cell"
                     [arithRule2]
-                    arithRule2_gold
+                    [arithRule2_gold]
 
     testBaseExpify "arithmetics testcase 3"
                     "should parse inside a cell"
                     [arithRule3]
-                    arithRule3_gold
+                    [arithRule3_gold]
 
     testBaseExpify "arithmetics testcase 4"
                     "meng's complex case"
                     [arithRule4]
-                    arithRule4_gold
+                    [arithRule4_gold]
 
     describe "toMathLang" do
       let l4i = defaultL4I {origrules = [arithRule4]}
@@ -124,14 +124,14 @@ spec = do
               ]
         getVarVals rl `shouldBe` expected
 
-testBaseExpify :: String -> String -> [Rule] -> BaseExp -> Spec
+testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify name desc rule gold =
   describe name do
     xit desc do
       let toTest = runToLC $ l4ToLCProgram rule
 --      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
       case toTest of
-        Right p -> exp (lcProgram p) `shouldBe` gold
+        Right p -> exp <$> lcProgram p `shouldBe` gold
         Left err -> err `shouldBe` MiscError "" ""
 
 -----------------------------------------------------------------------------

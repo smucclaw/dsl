@@ -310,10 +310,17 @@ extractFromHornClause (hHead -> RPConstraint vars _ expr) hashmap =
   case expr of
     [MTF val] -> go $ show val
     [MTI val] -> go $ show val
-    [MTT txt] -> go $ T.unpack txt 
+    [MTT txt] -> go $ T.unpack txt
     _ -> hashmap
-  where 
-    go str = foldr (\(MTT var) -> HM.insert (T.unpack var) str) hashmap vars
+  where
+    go str =
+      foldr
+        ( \case
+            MTT var -> HM.insert (T.unpack var) str
+            _ -> id
+        )
+        hashmap
+        vars
 
 extractFromHornClause _ hashmap = hashmap
 

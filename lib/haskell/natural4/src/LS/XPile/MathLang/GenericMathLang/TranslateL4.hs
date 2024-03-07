@@ -225,12 +225,14 @@ data ToLCError = NotYetImplemented ShowReprOfData Msg
   deriving anyclass Hashable
 
 stringifyToLCError :: ToLCError -> T.Text
-stringifyToLCError lce = case lce of
-  NotYetImplemented repr msg -> "NotYetImplemented: " <> repr <> "msg: " <> msg
-  ParserProblem repr msg -> "ParserProblem: " <> repr <> "msg: " <> msg
-  NotSupported repr msg -> "NotSupported: " <> repr <> "msg: " <> msg
-  MiscError repr msg -> "MiscError: " <> repr <> "msg: " <> msg
-  ErrImpossible repr msg -> "ErrImpossible: " <> repr <> "msg: " <> msg
+stringifyToLCError = \case
+  NotYetImplemented repr msg -> go "NotYetImplemented" repr msg
+  ParserProblem repr msg -> go "ParserProblem" repr msg
+  NotSupported repr msg -> go "NotSupported" repr msg
+  MiscError repr msg -> go "MiscError" repr msg
+  ErrImpossible repr msg -> go "ErrImpossible" repr msg
+  where
+    go (s :: T.Text) repr msg = [i|#{s}: #{repr} msg: #{msg}|]
 
 ---- Specialized error throwing convenience funcs ---------------------------------
 
@@ -276,21 +278,19 @@ initialEnv = MkEnv { localVars = HM.empty
 
 -- vars and vals
 getTypeString :: MTExpr -> String
-getTypeString expr =
-  case expr of
-    MTT _ -> "text"
-    MTI _ -> "integer"
-    MTF _ -> "double"
-    MTB _ -> "boolean"
+getTypeString = \case
+  MTT _ -> "text"
+  MTI _ -> "integer"
+  MTF _ -> "double"
+  MTB _ -> "boolean"
 
 getVarVals :: L4.Rule -> HM.HashMap String String
-getVarVals rule =
-  case rule of
-    L4.Hornlike { given = givens, clauses = hornClauses } ->
-      let givensMap = extractFromGivens givens HM.empty
-          clausesMap = extractFromHornClauses hornClauses HM.empty
-      in givensMap `HM.union` clausesMap
-    _ -> HM.empty
+getVarVals = \case
+  L4.Hornlike { given = givens, clauses = hornClauses } ->
+    let givensMap = extractFromGivens givens HM.empty
+        clausesMap = extractFromHornClauses hornClauses HM.empty
+    in givensMap `HM.union` clausesMap
+  _ -> mempty
 
 extractFromGivens :: Maybe L4.ParamText -> HM.HashMap String String -> HM.HashMap String String
 extractFromGivens Nothing acc = acc
@@ -306,15 +306,16 @@ extractFromHornClauses hornClauses hashmap =
   foldr extractFromHornClause hashmap hornClauses
 
 extractFromHornClause :: HornClause2 -> HM.HashMap String String -> HM.HashMap String String
-extractFromHornClause clause hashmap =
-  case hHead clause of
-    RPConstraint vars _ expr -> case expr of
-      [MTF val] -> foldr (\(MTT var) -> HM.insert (T.unpack var) (show val)) hashmap vars
-      [MTI val] -> foldr (\(MTT var) -> HM.insert (T.unpack var) (show val)) hashmap vars
-      [MTT txt] -> foldr (\(MTT var) -> HM.insert (T.unpack var) (T.unpack txt)) hashmap vars
-      _ -> hashmap
+extractFromHornClause (hHead -> RPConstraint vars _ expr) hashmap =
+  case expr of
+    [MTF val] -> go $ show val
+    [MTI val] -> go $ show val
+    [MTT txt] -> go $ T.unpack txt 
     _ -> hashmap
+  where 
+    go str = foldr (\(MTT var) -> HM.insert (T.unpack var) str) hashmap vars
 
+extractFromHornClause _ hashmap = hashmap
 
 ------------------------------------------------------------------------------------
 

@@ -452,20 +452,17 @@ srcRefToSrcPos sr = MkPositn { row = sr.srcrow, col = sr.srccol }
 noExtraMdata :: BaseExp -> Exp
 noExtraMdata baseexp = MkExp baseexp []
 
-typeMdata :: T.Text -> BaseExp -> Exp
-typeMdata typ bexp = MkExp bexp (inferredType [] typ)
+typeMdata :: SrcPositn -> T.Text -> BaseExp -> Exp
+typeMdata pos typ bexp = MkExp bexp (inferredType pos [] typ)
 
-inferredType :: MdGrp -> T.Text -> MdGrp
-inferredType (md:mds) typ = md {typeLabel = Just $ Inferred typ}:mds
-inferredType [] typ = [ MkExpMetadata
-                          (MkPositn 0 0) -- TODO: inherit this from somewhere
+inferredType :: SrcPositn -> MdGrp -> T.Text -> MdGrp
+inferredType pos (md:mds) typ = md {typeLabel = Just $ Inferred typ}:mds
+inferredType pos [] typ = [ MkExpMetadata
+                              pos
                           (Just $ Inferred typ)
                           Nothing
                       ]
 
-leaveTrace :: T.Text -> MdGrp -> MdGrp
-leaveTrace str (md:mds) = md{typeLabel = (<> Inferred str) <$> md.typeLabel}:mds
-leaveTrace str [] = inferredType [] str
 
 -- | Treat the seq of L4 rules as being a block of statements
 l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
@@ -585,7 +582,11 @@ Things like arithmetic constraints (<, >, etc)
 don't appear here -- they appear in hBody
 -}
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
-processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = pure $ noExtraMdata $ EPredSet (mkVar . textifyMTEs $ putativeVar) (typeMdata "Boolean" $ ELit EBoolTrue)
+processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = do
+  pos <- ToLC $ asks currSrcPos
+  pure $ noExtraMdata $
+            EPredSet (mkVar . textifyMTEs $ putativeVar)
+            (typeMdata pos "Boolean" $ ELit EBoolTrue)
   --noExtraMdata <$> mkSetVarTrue putativeVar
 processHcHeadForIf rp = expifyHeadRP rp
 -- processHcHeadForIf rp = throwNotSupportedError rp
@@ -744,7 +745,9 @@ splitGenitives = partitionMaybe isGenitive
 type Parser = ParsecT Void T.Text ToLC
 
 pExpr :: Parser BaseExp
-pExpr = makeExprParser pTerm table <?> "expression"
+pExpr = do
+  pos <- lift $ ToLC $ asks currSrcPos
+  makeExprParser pTerm (table pos) <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp
@@ -756,31 +759,31 @@ pTerm = choice $ map try
   ]
 
 
-table :: [[Operator Parser BaseExp]]
-table = [ [ binary  "*" mul'
-          , binary  "/" div' ]
-        , [ binary  "+" plus'
-          , binary  "-" minus' ]
-        , [ binary  "<" lt'
-          , binary  "<=" lte'
-          , binary  ">" gt'
-          , binary  ">=" gte'
-          , binary  "==" numeq']
+table :: SrcPositn -> [[Operator Parser BaseExp]]
+table pos = [ [ binary  "*" (mul' pos)
+            , binary  "/" (div' pos) ]
+          , [ binary  "+" (plus' pos)
+            , binary  "-" (minus' pos) ]
+          , [ binary  "<" (lt' pos)
+            , binary  "<=" (lte' pos)
+            , binary  ">" (gt' pos)
+            , binary  ">=" (gte' pos)
+            , binary  "==" (numeq' pos)]
         ]
 
 binary :: T.Text -> (BaseExp -> BaseExp -> BaseExp) -> Operator Parser BaseExp
 binary name f = InfixL (f <$ symbol name)
 
-mul', div', plus', minus', lt', lte', gt', gte', numeq' :: BaseExp -> BaseExp -> BaseExp
-mul' x y = ENumOp OpMul (typeMdata "Number" x) (typeMdata "Number" y)
-div' x y = ENumOp OpDiv (typeMdata "Number" x) (typeMdata "Number" y)
-plus' x y = ENumOp OpPlus (typeMdata "Number" x) (typeMdata "Number" y)
-minus' x y =  ENumOp OpMinus (typeMdata "Number" x) (typeMdata "Number" y)
-lt' x y =  ECompOp OpLt (typeMdata "Number" x) (typeMdata "Number" y)
-lte' x y =  ECompOp OpLte (typeMdata "Number" x) (typeMdata "Number" y)
-gt' x y =  ECompOp OpGt (typeMdata "Number" x) (typeMdata "Number" y)
-gte' x y =  ECompOp OpGte (typeMdata "Number" x) (typeMdata "Number" y)
-numeq' x y = ECompOp OpNumEq (typeMdata "Number" x) (typeMdata "Number" y)
+mul', div', plus', minus', lt', lte', gt', gte', numeq' :: SrcPositn -> BaseExp -> BaseExp -> BaseExp
+mul' pos x y = ENumOp OpMul (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+div' pos x y = ENumOp OpDiv (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+plus' pos x y = ENumOp OpPlus (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+minus' pos x y =  ENumOp OpMinus (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+lt' pos x y =  ECompOp OpLt (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+lte' pos x y =  ECompOp OpLte (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+gt' pos x y =  ECompOp OpGt (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+gte' pos x y =  ECompOp OpGte (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+numeq' pos x y = ECompOp OpNumEq (typeMdata pos "Number" x) (typeMdata pos "Number" y)
 
 -- TODO: should we identify already here whether things are Vars or Lits?
 -- Or make everything by default Var, and later on correct if the Var is not set.
@@ -887,8 +890,9 @@ mkSetVarTrueExpFromVarNoMd var =
   noExtraMdata <$> mkVarSetTrueFromVar var noExtraMdata
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
-mkSetVarTrue putativeVar =
-  mkSetVarFromMTEsHelper putativeVar $ typeMdata "Bool" $ ELit EBoolTrue
+mkSetVarTrue putativeVar = do
+  pos <- ToLC $ asks currSrcPos
+  mkSetVarFromMTEsHelper putativeVar $ typeMdata pos "Boolean" $ ELit EBoolTrue
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
@@ -917,24 +921,28 @@ mteToLitExp = \case
 ---------------- Processing HC Body --------------------------------------------
 
 processHcBody :: L4.BoolStructR -> ToLC Exp
-processHcBody = \case
+processHcBody bsr = do
+  pos <- ToLC $ asks currSrcPos
+  case bsr of
   AA.Leaf rp -> expifyBodyRP rp
   -- TODO: Consider using the `mlbl` to augment with metadata
-  AA.All _mlbl propns -> F.foldrM (makeOp EAnd) emptyExp propns
-  AA.Any _mlbl propns -> F.foldrM (makeOp EOr) emptyExp propns
-  AA.Not propn -> typeMdata "Bool" . ENot <$> processHcBody propn
+    AA.All _mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp propns
+    AA.Any _mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp propns
+    AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
   where
     emptyExp :: Exp = noExtraMdata EEmpty
 
     -- TODO: Can try augmenting with `mlbl` here
-    makeOp :: (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
-    makeOp op bsr exp = noExtraMdata <$> (op <$> (toBoolEq <$> processHcBody bsr) <*> pure exp)
+    makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
+    makeOp pos op bsr exp = noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
 
-    toBoolEq e = e {exp = toBoolEqBE e.exp, md = inferredType e.md "Bool"}
+    toBoolEq pos e = e {exp = toBoolEqBE e.exp, md = inferredType pos e.md "Boolean"}
+      where
+        inferredBool = typeMdata pos "Boolean"
     toBoolEqBE e@(ELit (EString str)) =
       let varExp = EVar (MkVar str)
-      in ECompOp OpBoolEq (typeMdata "Bool" varExp) (typeMdata "Bool" (ELit EBoolTrue))
-    toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (typeMdata "Bool" e) (typeMdata "Bool" (ELit EBoolTrue))
+          in ECompOp OpBoolEq (inferredBool varExp) (inferredBool (ELit EBoolTrue))
+        toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (inferredBool e) (inferredBool (ELit EBoolTrue))
     toBoolEqBE e = e
 
 {- |
@@ -992,8 +1000,9 @@ expifyHeadRP = \case
         let valExp = inferTypeFromOtherExp exp varExp
         return $ noExtraMdata $ EVarSet varExp valExp
       Nothing -> do -- Var is not given, but we can try to infer it from the RHS
+        pos <- ToLC $ asks currSrcPos
         varNoType <- noExtraMdata . EVar <$> varFromMTEs [mte]
-        let valExp = inferTypeRHS exp
+        let valExp = inferTypeRHS pos exp
         let varExp = inferTypeFromOtherExp varNoType valExp
         return $ noExtraMdata $ EVarSet varExp valExp
   rp -> expifyBodyRP rp
@@ -1001,7 +1010,9 @@ expifyHeadRP = \case
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
 expifyBodyRP = \case
   -- OTHERWISE
-  RPMT (MTT "OTHERWISE" : _mtes) -> return $ typeMdata "Bool" (ELit EBoolTrue) -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
+  RPMT (MTT "OTHERWISE" : _mtes) -> do
+    pos <- ToLC $ asks currSrcPos
+    pure $ typeMdata pos "Bool" (ELit EBoolTrue) -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
   -- A single term could often be interpreted as 'var == True',
   -- but we choose to do that transformation later.
@@ -1014,8 +1025,9 @@ expifyBodyRP = \case
 
   RPConstraint lefts rel rights -> expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
   RPnary RPis [rp1, rp2] -> do
+    pos <- ToLC $ asks currSrcPos
     exp1maybeUntyped <- expifyBodyRP rp1
-    exp2 <- inferTypeRHS <$> expifyBodyRP rp2
+    exp2 <- inferTypeRHS pos <$> expifyBodyRP rp2
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
     return $ noExtraMdata $ EIs exp1 exp2
   RPnary rel [rp1, rp2] -> do
@@ -1029,10 +1041,14 @@ expifyBodyRP = \case
   rp -> throwNotSupportedWithMsgError rp "unknown rp"
   where
     numOrCompOp :: RPRel -> Exp -> Exp -> ToLC Exp
-    numOrCompOp (rprel2compop -> Just compOp) = \x y ->
-      return $ typeMdata "Boolean" $ ECompOp compOp (coerceType "Number" x) (coerceType "Number" y)
-    numOrCompOp (rprel2numop -> Just numOp) = \x y ->
-      return $ typeMdata "Number" $ ENumOp numOp (coerceType "Number" x) (coerceType "Number" y)
+    numOrCompOp (rprel2compop -> Just compOp) = \x y -> do
+      pos <- ToLC $ asks currSrcPos
+      let coerceNumber = coerceType pos "Number"
+      pure $ typeMdata pos "Boolean" $ ECompOp compOp (coerceNumber x) (coerceNumber y)
+    numOrCompOp (rprel2numop -> Just numOp) = \x y -> do
+      pos <- ToLC $ asks currSrcPos
+      let coerceNumber = coerceType pos "Number"
+      pure $ typeMdata pos "Number" $ ENumOp numOp (coerceNumber x) (coerceNumber y)
     numOrCompOp rprel = error $ "not implemented" <> show rprel
 
     rprel2numop :: RPRel -> Maybe NumOp
@@ -1053,8 +1069,8 @@ expifyBodyRP = \case
       _      -> Nothing
 
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
-    coerceType :: T.Text -> Exp -> Exp
-    coerceType typ exp@(MkExp bexp _) = inferTypeFromOtherExp exp (MkExp bexp (inferredType [] typ))
+    coerceType :: SrcPositn -> T.Text -> Exp -> Exp
+    coerceType pos typ exp@(MkExp bexp _) = inferTypeFromOtherExp exp (MkExp bexp (inferredType pos [] typ))
 
 inferTypeFromOtherExp :: Exp -> Exp -> Exp
 inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of
@@ -1063,18 +1079,18 @@ inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of
             Nothing -> copyTarget {md = copySource.md}
   [] -> copyTarget {md = copySource.md} -- copySource has potentially more reliable type info
 
-inferTypeRHS :: Exp -> Exp
-inferTypeRHS x@(MkExp bexp md) = case bexp of
+inferTypeRHS :: SrcPositn -> Exp -> Exp
+inferTypeRHS pos x@(MkExp bexp md) = case bexp of
   ELit (EString _)
-    -> MkExp bexp (inferredType md "String")
+    -> MkExp bexp (inferredType pos md "String")
   ELit (EInteger _)
-    -> MkExp bexp (inferredType md "Number")
+    -> MkExp bexp (inferredType pos md "Number")
   ELit (EFloat _)
-    -> MkExp bexp (inferredType md "Number")
+    -> MkExp bexp (inferredType pos md "Number")
   ENumOp{}
-    -> MkExp bexp (inferredType md "Number")
+    -> MkExp bexp (inferredType pos md "Number")
   ECompOp{}
-    -> MkExp bexp (inferredType md "Bool")
+    -> MkExp bexp (inferredType pos md "Bool")
   _ -> x
 --  EVar (MkVar t) -> ??? -- NB. a Var can be defined outside givens, like "incomeTaxRate,IS,0.01"
 -- so when incomeTaxRate appears in another expression, we could check elsewhere in the program what its type is.

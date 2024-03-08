@@ -198,13 +198,9 @@ data BaseExp =
       elseExp :: Exp
     }
   | EVar { var :: Var }
-
-  -----------------------
-  -- TODO: For v2
-  -----------------------
-  -- | ELam
-  --   { param :: Var
-  --   , body :: Exp }
+  | ELam
+    { param :: Var   -- ELam x
+    , body :: Exp }  ---     (ELam (y  (ENumOp Mul x (Enum)))
   | EApp
     { func :: Exp, -- ^ func
       appArg :: Var   -- ^ arg

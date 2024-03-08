@@ -377,9 +377,9 @@ findGlobalVars exp = (exp, placeholderTODO)
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
-  lcProg <- mapM expifyHL $ F.toList l4HLs
+  lcProg <- traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
-                   , lcProgram = lcProg
+                   , lcProgram = F.toList lcProg
                    , globalVars = globalVars
                    , givethVar = giveths}
   where
@@ -456,12 +456,12 @@ typeMdata :: SrcPositn -> T.Text -> BaseExp -> Exp
 typeMdata pos typ bexp = MkExp bexp (inferredType pos [] typ)
 
 inferredType :: SrcPositn -> MdGrp -> T.Text -> MdGrp
-inferredType pos (md:mds) typ = md {typeLabel = Just $ Inferred typ}:mds
 inferredType pos [] typ = [ MkExpMetadata
                               pos
                           (Just $ Inferred typ)
                           Nothing
                       ]
+inferredType pos mds typ = mds -- md {typeLabel = Just $ Inferred typ}:mds
 
 
 -- | Treat the seq of L4 rules as being a block of statements
@@ -507,6 +507,10 @@ expifyHL hl = do
 3. Block of statements / expressions (TODO)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
+baseExpify (isLambda -> Just (fname, (v:vs), bexp)) = do
+  -- TODO: connect fname too
+  ELam v <$> mkLambda vs bexp
+--  trace [i|found lambda #{fname} with #{vars}|] $ pure bexp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
 baseExpify hl@(MkSimpleHL _ _ (OneClause (HeadOnly hc)) _) = toHeadOnlyExp hl hc
 baseExpify (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
@@ -515,6 +519,14 @@ baseExpify hornlike = throwNotYetImplError hornlike
 -- baseExpify (isLamDef -> ...) = ...
 -- baseExpify (isBlockOfExps -> ...)) = ...
 
+mkLambda :: [Var] -> BaseExp -> ToLC Exp
+mkLambda [] bexp = do
+  pos <- ToLC $ asks currSrcPos
+  pure $ typeMdata pos "Function" bexp
+mkLambda (v:vs) bexp = do
+  pos <- ToLC $ asks currSrcPos
+  let funType = typeMdata pos "Function"
+  funType . ELam v <$> mkLambda vs bexp
 
 {- | TODO: Need to figure out (and decide) how to distinguish function definitions from IFs,
 since right now this would consider something like the following to be an IF:
@@ -532,6 +544,35 @@ isIf hl =
       case atomicHC of
         HeadOnly _ -> Nothing
         HeadAndBody hc -> Just (hl, hc)
+
+-- we try to parse the following forms:
+-- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
+-- (GIVEN x y) DECIDE,discounted by,IS,x * (1 - y)
+isLambda :: SimpleHL -> Maybe (MTExpr,[Var],BaseExp)
+isLambda hl = case HM.keys hl.shcGiven of
+  [] -> Nothing
+  ks -> case hl.baseHL of
+    OneClause (HeadOnly (hcHead -> rp))
+       -> case runToLC $ varsInBody ks rp of
+            Left error -> trace [i|varsInBody: #{error}|] Nothing
+            Right res -> Just res
+    _ -> Nothing
+  where
+    -- check if all the vars are present in function body
+    varsInBody :: [Var] -> RelationalPredicate -> ToLC (MTExpr,[Var],BaseExp)
+    varsInBody vars (RPConstraint fname RPis fbody) = do
+      expr <- parseExpr $ MTT $ textifyMTEs fbody
+      let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
+      if all (`elem` varsInExpr) vars
+        then pure (extractNameOnly fname, vars, expr)
+        else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
+      where
+        extractNameOnly [MTT x] = MTT x
+        extractNameOnly [MTT x, MTT y, MTT z]
+          | all (`elem` vars) [MkVar x, MkVar z] = MTT y -- infix
+          | all (`elem` vars) [MkVar y, MkVar z] = MTT x -- prefix
+        extractNameOnly mtes = MTT $ textifyMTEs mtes
+    varsInBody _ _ = throwNotSupportedWithMsgError "not RPConstraint" "blah"
 
 isMultiClause :: SimpleHL -> [SimpleHL]
 isMultiClause hl =
@@ -559,12 +600,13 @@ toIfExp hl hc = do
 
 toHeadOnlyExp :: SimpleHL -> HeadOnlyHC -> ToLC BaseExp
 toHeadOnlyExp hl hc =
-  withLocalVarsAndSrcPos $ LS.XPile.MathLang.GenericMathLang.GenericMathLangAST.exp <$> processHcHeadForIf hc.hcHead
+  withLocalVarsAndSrcPos $ exp <$> processHcHeadForIf hc.hcHead
   where
     withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
     setCurrSrcPos, setLocalVars :: Env -> Env
     setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
     setLocalVars = set #localVars hl.shcGiven
+
 
 --------------------- Head of HL and Var Set ------------------------------------------------------------
 
@@ -692,19 +734,6 @@ baseExpifyMTEs mtes = case mtes of
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
     consSeqExp = consSE . noExtraMdata
 
-    parseExpr :: MTExpr -> ToLC BaseExp
-    parseExpr x@(MTT str) = do
-      res <- runParserT pExpr "" str
-      case res of
-        Right exp@(EVar (MkVar str')) ->
-          if str /= str'
-            then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
-            else return $ exp
-          -- TODO: find the right megaparsec way to fail if single term contains whitespace
-        Right notStringLit -> return notStringLit
-        Left error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
-    parseExpr x = return $ mteToLitExp x
-
     parenExps :: [MTExpr] -> [MTExpr]
     parenExps mtes
       | any (\(MTT t) -> isOp t) mtes = parenNestedExprs <$> mtes
@@ -728,6 +757,19 @@ baseExpifyMTEs mtes = case mtes of
         parenNE str
           | ' ' `elem` str && any (`elem` ops) str = "(" <> t <> ")"
           | otherwise = t
+
+parseExpr :: MTExpr -> ToLC BaseExp
+parseExpr x@(MTT str) = do
+  res <- runParserT pExpr "" str
+  case res of
+    Right exp@(EVar (MkVar str')) ->
+      if str /= str'
+        then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
+        else return $ exp
+      -- TODO: find the right megaparsec way to fail if single term contains whitespace
+    Right notStringLit -> return notStringLit
+    Left error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
+parseExpr x = return $ mteToLitExp x
 
 splitGenitives :: [MTExpr] -> ([MTExpr], [MTExpr])
 splitGenitives = partitionMaybe isGenitive

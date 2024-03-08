@@ -124,6 +124,7 @@ spec = do
               ]
         getVarVals rl `shouldBe` expected
 
+    testBaseExpify "test lambda expression" "should become a binary function" [testLambda] [testLambda_gold]
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify name desc rule gold =
   describe name do
@@ -982,3 +983,66 @@ mkMetadata typelabel = [ MkExpMetadata
                     }
                 ]
 
+
+testLambda :: Rule
+testLambda = Hornlike
+    { name =
+        [ MTT "discounted by" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (( MTT "x" :| []
+            , Just ( SimpleType TOne "Number" )
+            ) :|
+            [( MTT "y" :| []
+             , Just ( SimpleType TOne "Number" )
+            )]
+        )
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "x", MTT "discounted by", MTT "y" ] RPis
+                [ MTT "x * (1 - y)" ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/PAUs.csv"
+            , short = "test/PAUs.csv"
+            , srcrow = 4
+            , srccol = 121
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+
+testLambda_gold = ELam
+    { param = MkVar "x", body = MkExp
+        { exp = ELam
+            { param = MkVar "y", body = MkExp
+                { exp = ENumOp
+                    { numOp = OpMul, nopLeft = MkExp
+                        { exp = EVar
+                            { var = MkVar "x" }, md = []
+                        }, nopRight = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMinus, nopLeft = MkExp
+                                { exp = ELit
+                                    { lit = EInteger 1 }, md = []
+                                }, nopRight = MkExp
+                                { exp = EVar { var = MkVar "y" }, md = [] }
+                            }, md = []
+                        }
+                    }, md = []
+                }
+            }, md = []
+        }
+    }

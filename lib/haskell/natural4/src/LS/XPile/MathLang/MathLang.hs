@@ -116,11 +116,13 @@ exp2pred exp = case exp.exp of
           PredSet _ _ -> valEx
           _ -> varStr @|= valEx
     pure $ PredSet varStr valExWithLabel
-  e -> trace ("exp2pred: not yet implemented\n    " <> show e) (do
+--  e -> trace ("exp2pred: not yet implemented\n    " <> show e) $ do
+  e -> do
     mlEx <- gml2ml exp
-    trace ("but it is implemented in gml2ml\n    " <> show mlEx) $ pure $ case mlEx of
+    --trace ("but it is implemented in gml2ml\n    " <> show mlEx) $
+    pure $ case mlEx of
       MathVar x -> PredVar x
-      x -> PredVar $ "Not implemented yet: " <> show x)
+      x -> PredVar $ "Not implemented yet: " <> show x
 
 foldPredOr :: GML.Exp -> MyStack (PredList Double)
 foldPredOr e = case e.exp of

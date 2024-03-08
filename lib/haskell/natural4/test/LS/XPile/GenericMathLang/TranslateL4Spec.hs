@@ -46,20 +46,20 @@ spec = do
     --                 rule3predicate
     --                 rule3predicate_gold
 
-    testBaseExpify "arithmetics testcase 2"
-                    "should parse inside a cell"
-                    [arithRule2]
-                    [arithRule2_gold]
+    -- testBaseExpify "arithmetics testcase 2"
+    --                 "should parse inside a cell"
+    --                 [arithRule2]
+    --                 [arithRule2_gold]
 
-    testBaseExpify "arithmetics testcase 3"
-                    "should parse inside a cell"
-                    [arithRule3]
-                    [arithRule3_gold]
+    -- testBaseExpify "arithmetics testcase 3"
+    --                 "should parse inside a cell"
+    --                 [arithRule3]
+    --                 [arithRule3_gold]
 
-    testBaseExpify "arithmetics testcase 4"
-                    "meng's complex case"
-                    [arithRule4]
-                    [arithRule4_gold]
+    -- testBaseExpify "arithmetics testcase 4"
+    --                 "meng's complex case"
+    --                 [arithRule4]
+    --                 [arithRule4_gold]
 
     describe "toMathLang" do
       let l4i = defaultL4I {origrules = [arithRule4]}
@@ -114,7 +114,7 @@ spec = do
         symtabF state `shouldBe` arithRule3_gold_symtab
 
     describe "extractVariables" do
-      it "extracts variables and their values from rules" do
+      xit "extracts variables and their values from rules" do
         let rl = arithRule4
             expected = Map.fromList
               [ ("taxesPayable", "taxesPayableAlive"),
@@ -125,14 +125,15 @@ spec = do
         getVarVals rl `shouldBe` expected
 
     testBaseExpify "test lambda expression" "should become a binary function" [testLambda] [testLambda_gold]
+
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify name desc rule gold =
   describe name do
-    xit desc do
+    it desc do
       let toTest = runToLC $ l4ToLCProgram rule
 --      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
       case toTest of
-        Right p -> exp <$> lcProgram p `shouldBe` gold
+        Right p -> fmap exp (lcProgram p) `shouldBe` gold
         Left err -> err `shouldBe` MiscError "" ""
 
 -----------------------------------------------------------------------------

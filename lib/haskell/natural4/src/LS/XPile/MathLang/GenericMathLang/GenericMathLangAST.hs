@@ -254,7 +254,7 @@ data BaseExp =
 data Exp = MkExp
   { exp :: BaseExp
   , md :: MdGrp }
-  deriving stock (Show, Eq)
+  deriving stock (Show, Eq, Generic)
 makeFieldLabelsNoPrefix ''Exp
 
 -- Consider doing something like the following in the future (http://blog.vmchale.com/article/ir-instances)

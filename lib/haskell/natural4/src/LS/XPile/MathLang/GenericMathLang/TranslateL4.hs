@@ -1056,14 +1056,7 @@ expifyBodyRP = \case
     pos <- ToLC $ asks currSrcPos
     pure $ typeMdata pos "Bool" (ELit EBoolTrue) -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
-  -- A single term could often be interpreted as 'var == True',
-  -- but we choose to do that transformation later.
-  -- rp@(RPMT [mte]) -> expifyMTEsNoMd [mte] -- we get its type later, if it's an argument of numerical or comp op
-
-  -- probably a good idea to merge with above, but keeping them separate just to remind myself to rethink
   rp@(RPMT mtes) -> expifyMTEsNoMd mtes
-
-  rp@(RPMT _) -> throwNotSupportedWithMsgError rp "Not sure if this is supported; not sure if spec is clear on this"
 
   RPConstraint lefts rel rights -> expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
   RPnary RPis [rp1, rp2] -> do

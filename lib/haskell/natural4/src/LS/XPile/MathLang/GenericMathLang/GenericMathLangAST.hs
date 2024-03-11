@@ -199,11 +199,11 @@ data BaseExp =
     }
   | EVar { var :: Var }
   | ELam
-    { param :: Var   -- ELam x
-    , body :: Exp }  ---     (ELam (y  (ENumOp Mul x (Enum)))
+    { param :: Var
+    , body :: Exp }
   | EApp
     { func :: Exp, -- ^ func
-      appArg :: Var   -- ^ arg
+      appArg :: Exp   -- ^ arg
     }
   {- |
   My impression from Meng's examples had been that he wanted variable mutation,

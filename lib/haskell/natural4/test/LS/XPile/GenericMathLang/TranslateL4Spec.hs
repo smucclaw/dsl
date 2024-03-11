@@ -406,7 +406,7 @@ rule3predicate_gold = EIfThen
                                                             { func = MkExp
                                                                 { exp = ELit
                                                                     { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
-                                                                }, appArg = MkVar "ind"
+                                                                }, appArg = (MkExp (EVar (MkVar "ind")) [])
                                                             }, md = []
                                                         }, compRight = MkExp
                                                         { exp = ELit { lit = EBoolTrue }, md = []

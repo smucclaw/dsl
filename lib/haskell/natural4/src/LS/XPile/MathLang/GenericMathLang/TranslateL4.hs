@@ -712,10 +712,10 @@ baseExpifyMTEs mtes = case mtes of
     case (mvar1, mvar2) of
       (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
-        return $ EApp litWeAssumeToBePred var1
+        return $ EApp litWeAssumeToBePred (noExtraMdata (EVar var1))
       (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
-        return $ EApp litWeAssumeToBePred var2
+        return $ EApp litWeAssumeToBePred (noExtraMdata (EVar var2))
       (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
       (Just _, Just _) -> throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
 

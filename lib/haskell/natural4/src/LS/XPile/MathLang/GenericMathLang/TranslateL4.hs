@@ -260,19 +260,21 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
 type RetVarInfo = [(Var, Maybe L4EntType)]
+type UserDefinedFun = Operator Parser BaseExp
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
         -- ^ vars declared in GIVENs and WHERE (but NOT including those declared in GIVETH)
         -- , retVarInfo :: RetVarInfo
           -- ^ not sure we need retVarInfo
+        , userDefinedFuns :: [UserDefinedFun]
         , currSrcPos :: SrcPositn
         , logConfig :: LogConfig }
-  deriving stock (Show, Generic)
+  deriving stock (Generic)
 
 initialEnv :: Env
 initialEnv = MkEnv { localVars = HM.empty
-                  --  , retVarInfo = []
+                   , userDefinedFuns = []
                    , currSrcPos = MkPositn 0 0
                    , logConfig = defaultLogConfig }
 
@@ -340,26 +342,36 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
 -}
 newtype ToLC a =
   ToLC (Eff '[Reader Env,
-        -- State GlobalVars,
+              State [UserDefinedFun],
         -- Might be better to just do a separate pass that finds the global vars --- not sure rn
         Error ToLCError] a )
   deriving newtype (Functor, Applicative, Monad)
 
-_ToLC :: Iso' (ToLC a) (Eff '[Reader Env, Error ToLCError] a)
+_ToLC :: Iso' (ToLC a) (Eff '[Reader Env, State [UserDefinedFun], Error ToLCError] a)
 _ToLC = coerced
 
-mkToLC :: Eff [Reader Env, Error ToLCError] a -> ToLC a
+mkToLC :: Eff [Reader Env, State [UserDefinedFun], Error ToLCError] a -> ToLC a
 mkToLC = view (re _ToLC)
 
-unToLC :: ToLC a -> Eff [Reader Env, Error ToLCError] a
+unToLC :: ToLC a -> Eff [Reader Env, State [UserDefinedFun], Error ToLCError] a
 unToLC = view _ToLC
 
--- runToLC :: ToLC a -> Either ToLCError (a, GlobalVars)
 runToLC :: ToLC a -> Either ToLCError a
-runToLC (unToLC -> m) =
+runToLC m = case runToLC' m of
+              Right (res,_state) -> Right res
+              Left err           -> Left err
+
+execToLC :: ToLC a -> [UserDefinedFun]
+execToLC m = case runToLC' m of
+              Right (_res,state) -> state
+              Left _             -> []
+
+
+runToLC' :: ToLC a -> Either ToLCError (a, [UserDefinedFun])
+runToLC' (unToLC -> m) =
   m
     |> runReader initialEnv
-    -- |> runState initialState
+    |> runStateLocal []
     |> runErrorNoCallStack
     |> runPureEff
   -- where
@@ -377,7 +389,10 @@ findGlobalVars exp = (exp, placeholderTODO)
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
-  lcProg <- traverse expifyHL l4HLs
+  let customOpers = execToLC $ traverse expifyHL l4HLs -- to fill env with user-defined functions
+      addCustomOpers env = env {userDefinedFuns = customOpers <> userDefinedFuns env}
+      withCustomOpers = over _ToLC (local addCustomOpers)
+  lcProg <- withCustomOpers $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = F.toList lcProg
                    , globalVars = globalVars
@@ -507,8 +522,9 @@ expifyHL hl = do
 3. Block of statements / expressions (TODO)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
-baseExpify (isLambda -> Just (fname, (v:vs), bexp)) = do
-  -- TODO: connect fname too
+baseExpify (isLambda -> Just (operator, v:vs, bexp)) = do
+  userFuns <- ToLC get
+  ToLC $ put $ operator : userFuns
   ELam v <$> mkLambda vs bexp
 --  trace [i|found lambda #{fname} with #{vars}|] $ pure bexp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
@@ -548,31 +564,39 @@ isIf hl =
 -- we try to parse the following forms:
 -- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
 -- (GIVEN x y) DECIDE,discounted by,IS,x * (1 - y)
-isLambda :: SimpleHL -> Maybe (MTExpr,[Var],BaseExp)
+isLambda :: SimpleHL -> Maybe (UserDefinedFun, [Var], BaseExp)
 isLambda hl = case HM.keys hl.shcGiven of
   [] -> Nothing
   ks -> case hl.baseHL of
     OneClause (HeadOnly (hcHead -> rp))
        -> case runToLC $ varsInBody ks rp of
-            Left error -> trace [i|varsInBody: #{error}|] Nothing
+            Left error -> trace [i|isLambda: #{error}|] Nothing
             Right res -> Just res
     _ -> Nothing
   where
     -- check if all the vars are present in function body
-    varsInBody :: [Var] -> RelationalPredicate -> ToLC (MTExpr,[Var],BaseExp)
+    varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, [Var], BaseExp)
     varsInBody vars (RPConstraint fname RPis fbody) = do
       expr <- parseExpr $ MTT $ textifyMTEs fbody
       let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
+      pos <- ToLC $ asks currSrcPos
+      operator <- mkOperator pos fname vars
       if all (`elem` varsInExpr) vars
-        then pure (extractNameOnly fname, vars, expr)
+        then pure (operator, vars, expr)
         else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
       where
-        extractNameOnly [MTT x] = MTT x
-        extractNameOnly [MTT x, MTT y, MTT z]
-          | all (`elem` vars) [MkVar x, MkVar z] = MTT y -- infix
-          | all (`elem` vars) [MkVar y, MkVar z] = MTT x -- prefix
-        extractNameOnly mtes = MTT $ textifyMTEs mtes
-    varsInBody _ _ = throwNotSupportedWithMsgError "not RPConstraint" "blah"
+        mkOperator pos [MTT f] [var]
+          | MkVar f /= var -- don't parse GIVEN x, x,IS,whatever as a lambda expression
+          = pure $ prefix f (customUnary (MkVar f) pos)
+        mkOperator pos [MTT f] [v1, v2]
+          | MkVar f `notElem` [v1, v2] -- don't parse GIVEN x,y, x,IS,whatever as a lambda expression
+          = pure $ binary f (customBinary (MkVar f) pos)
+        mkOperator pos [MTT x, MTT f, MTT y] [_v1, _v2]
+          | all (`elem` vars) [MkVar x, MkVar y]
+          = pure $ binary f (customBinary (MkVar f) pos) -- only infix allowed
+          ---- TODO: does the default expression parser support prefixed binary functions?
+        mkOperator _pos mtes vars = throwNotSupportedWithMsgError "mkOperator:" [i|mtes=#{mtes}\nvars=#{vars}|]
+    varsInBody _ _ = throwNotSupportedWithMsgError "varsInBody:" "not a RPConstraint"
 
 isMultiClause :: SimpleHL -> [SimpleHL]
 isMultiClause hl =
@@ -789,7 +813,9 @@ type Parser = ParsecT Void T.Text ToLC
 pExpr :: Parser BaseExp
 pExpr = do
   pos <- lift $ ToLC $ asks currSrcPos
-  makeExprParser pTerm (table pos) <?> "expression"
+  customOpers <- lift $ ToLC $ asks userDefinedFuns
+  --trace [i|pExpr: length customOpers = #{length customOpers}|]
+  (makeExprParser pTerm (customOpers : table pos) <?> "expression")
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp
@@ -816,6 +842,10 @@ table pos = [ [ binary  "*" (mul' pos)
 binary :: T.Text -> (BaseExp -> BaseExp -> BaseExp) -> Operator Parser BaseExp
 binary name f = InfixL (f <$ symbol name)
 
+prefix, postfix :: T.Text -> (BaseExp -> BaseExp) -> Operator Parser BaseExp
+prefix  name f = Prefix  (f <$ symbol name)
+postfix name f = Postfix (f <$ symbol name)
+
 mul', div', plus', minus', lt', lte', gt', gte', numeq' :: SrcPositn -> BaseExp -> BaseExp -> BaseExp
 mul' pos x y = ENumOp OpMul (typeMdata pos "Number" x) (typeMdata pos "Number" y)
 div' pos x y = ENumOp OpDiv (typeMdata pos "Number" x) (typeMdata pos "Number" y)
@@ -826,6 +856,16 @@ lte' pos x y =  ECompOp OpLte (typeMdata pos "Number" x) (typeMdata pos "Number"
 gt' pos x y =  ECompOp OpGt (typeMdata pos "Number" x) (typeMdata pos "Number" y)
 gte' pos x y =  ECompOp OpGte (typeMdata pos "Number" x) (typeMdata pos "Number" y)
 numeq' pos x y = ECompOp OpNumEq (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+
+customUnary :: Var -> SrcPositn -> BaseExp -> BaseExp
+customUnary fname pos x =
+  let f = typeMdata pos "Function" (EVar fname)
+   in EApp f (noExtraMdata x)
+
+customBinary :: Var -> SrcPositn -> BaseExp -> BaseExp -> BaseExp
+customBinary fname pos x y =
+  let f = typeMdata pos "Function" (EVar fname)
+   in EApp (noExtraMdata (EApp f (noExtraMdata x))) (noExtraMdata y)
 
 -- TODO: should we identify already here whether things are Vars or Lits?
 -- Or make everything by default Var, and later on correct if the Var is not set.

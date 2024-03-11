@@ -126,6 +126,8 @@ spec = do
 
     testBaseExpify "test lambda expression" "should become a binary function" [testLambda] [testLambda_gold]
 
+    testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
+
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify name desc rule gold =
   describe name do
@@ -1047,3 +1049,53 @@ testLambda_gold = ELam
             }, md = []
         }
     }
+
+testFunApp :: [Rule]
+testFunApp = testLambda :
+  [Hornlike
+    { name =
+        [ MTT "Step 1" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , giveth = Just
+        (
+            ( MTT "Answer" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "Answer" ] RPis
+                [ MTT "foo"
+                , MTT "discounted by"
+--                , MTT "accident's"
+                , MTT "bar"
+                ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 2
+        , "PAU4"
+        )
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/PAUs.csv"
+            , short = "test/PAUs.csv"
+            , srcrow = 4
+            , srccol = 89
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }]
+
+testFunApp_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}},EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "foo"}, md = []}}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "bar"}, md = []}}, md = []}}]

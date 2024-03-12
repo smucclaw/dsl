@@ -48,7 +48,6 @@ extra-deps:
 - diagnose-2.4.0
 - log-effectful-1.0.0.0
 - parser-combinators-1.3.0
-- utility-ht-0.0.17.1
 # - holmes-0.3.2.0
 # - unbound-generics-0.4.3@sha256:12209c0049000d0dd8c3eb6013d0278a8b269a2421d9758083aab9f58c4b6b4c,5446
 

@@ -62,7 +62,6 @@ import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
 import Data.Char (isAlphaNum)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
-import Data.List.HT (partitionMaybe)
 import Prelude hiding (exp)
 
 import Debug.Trace (trace)
@@ -716,9 +715,9 @@ TODO: Think about what kind of validation we might want to do here
 NOTE: If it seems like literals will appear here (e.g. number literals), see defn of `mteToLitExp` for how to translate to literals
 -}
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
-baseExpifyMTEs (splitGenitives -> (genitives@(g:_), rest)) = do
+baseExpifyMTEs (splitGenitives -> (Just g, rest)) = do
   -- ind's parent's sibling's … income
-  recname <- expifyMTEsNoMd [g] -- TODO fix later, just doing the first one now! Also check if it's a variable and if so, add metadata
+  recname <- expifyMTEsNoMd [g]
   fieldname <- expifyMTEsNoMd rest -- income
   return $ ERec fieldname recname
 baseExpifyMTEs mtes = case mtes of
@@ -796,8 +795,9 @@ parseExpr x@(MTT str) = do
     Left error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
 parseExpr x = return $ mteToLitExp x
 
-splitGenitives :: [MTExpr] -> ([MTExpr], [MTExpr])
-splitGenitives = partitionMaybe isGenitive
+splitGenitives :: [MTExpr] -> (Maybe MTExpr, [MTExpr])
+splitGenitives [] = (Nothing, [])
+splitGenitives (mte:mtes) = (isGenitive mte, mtes)
   where
     -- removes the genitive s if it is genitive
     isGenitive :: MTExpr -> Maybe MTExpr

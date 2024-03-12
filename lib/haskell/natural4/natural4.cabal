@@ -57,6 +57,7 @@ library
       LS.XPile.CoreL4.LogicProgram.Skolemize
       LS.XPile.DataFlow
       LS.XPile.DumpRule
+      LS.XPile.Edn.Ast
       LS.XPile.ExportTypes
       LS.XPile.GFTrees
       LS.XPile.IntroBase
@@ -135,6 +136,7 @@ library
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -157,6 +159,7 @@ library
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , split
     , string-conversions
@@ -204,6 +207,7 @@ executable natural4-exe
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -227,6 +231,7 @@ executable natural4-exe
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , split
     , string-conversions
@@ -276,6 +281,7 @@ test-suite doctests
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -299,6 +305,7 @@ test-suite doctests
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , split
     , string-conversions
@@ -368,6 +375,7 @@ test-suite natural4-test
     , gf
     , graphviz
     , hashable
+    , hedn
     , hspec
     , hspec-golden
     , hspec-megaparsec
@@ -394,6 +402,7 @@ test-suite natural4-test
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , split
     , string-conversions
@@ -445,6 +454,7 @@ benchmark natural4-bench
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -468,6 +478,7 @@ benchmark natural4-bench
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , split
     , string-conversions

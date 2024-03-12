@@ -10,13 +10,14 @@
 
 module LS.XPile.Edn.Ast where
 
+import Control.Arrow ((>>>))
+import Control.Monad.Cont qualified as Cont
+import Control.Monad.State qualified as State
 import Data.EDN qualified as EDN
 import Data.EDN.QQ (edn)
 import Data.Functor.Foldable (Recursive (..))
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.HashSet (HashSet)
-import Data.HashSet qualified as HashSet
-import Data.Hashable (Hashable)
 import Data.List (intersperse)
 import Data.String.Interpolate (i)
 import Data.String.Interpolate.Conversion (Interpolatable, IsCustomSink)
@@ -33,7 +34,6 @@ data AstNode metadata
         head :: AstNode metadata,
         body :: Maybe (AstNode metadata)
       }
-  -- | AnnotatedWithGivens { givens :: HashSet T.Text, node :: AstNode metadata}
   | AndOr
       { metadata :: Maybe metadata,
         andOr :: T.Text,
@@ -42,8 +42,6 @@ data AstNode metadata
   | Parens {metadata :: Maybe metadata, children :: [AstNode metadata]}
   | List {metadata :: Maybe metadata, elements :: [AstNode metadata]}
   | Text {metadata :: Maybe metadata, text :: T.Text}
-  -- | Variable {metadata :: Maybe metadata, variable :: T.Text}
-  deriving Show
 
 makeBaseFunctor ''AstNode
 
@@ -51,34 +49,62 @@ astToEdnText ::
   Interpolatable (IsCustomSink t) T.Text t => AstNode metadata -> t
 astToEdnText astNode = [i|#{astNode |> astToEdn |> EDN.renderText}|]
 
-astToEdn :: forall metadata. AstNode metadata -> EDN.TaggedValue
-astToEdn astNode = cata (flip go) astNode mempty
-  where
-    go :: HashSet T.Text -> AstNodeF metadata (HashSet T.Text -> EDN.TaggedValue) -> EDN.TaggedValue
-    go givens = \case
-      RuleFactF _ (HashSet.union givens -> givens') head body ->
-        EDN.toEDN $ [edn|DECIDE|] : head givens' : ifBody
-        where
-          ifBody = case body of
-            Just body -> [[edn|IF|], body givens']
-            Nothing -> []
-      AndOrF _ andOr children ->
-        children |> aux (intersperse $ toSymbol andOr)
-      ParensF _ nodes -> nodes |> aux id
-      ListF _ rules -> rules |> aux EDN.mkVec
-      TextF _ text -> text |> if text `elem` givens then toVar else toSymbol
-      where
-        toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
-        toSymbol = toPrefixedSymbol ""
-        toVar = toPrefixedSymbol "var"
+type Env = HashSet T.Text
 
-        aux ::
-          (EDN.ToEDN a) =>
-          ([EDN.TaggedValue] -> a) ->
-          [HashSet T.Text -> EDN.TaggedValue] ->
-          EDN.TaggedValue
-        aux f x =
-          x |$> ($ givens) |> f |> EDN.toEDN
+type TranspileM =
+  Cont.ContT EDN.TaggedValue (State.State Env) EDN.TaggedValue
+
+astToEdn :: AstNode metadata -> EDN.TaggedValue
+astToEdn =
+  -- Recursively transpile an AST node, threading an initial empty environment
+  -- through recursive calls.
+  -- This environment is:
+  -- 1. Used to lookup variables.
+  -- 2. Temporarily Extended when recursing into the head and body of a
+  --    HornLike rule.
+  -- Technically, we traverse the AST via a catamorphism, which at each step,
+  -- uses the CPS monad to transform the AST node there into a continuation that
+  -- suspends computation, until an environment is provided.
+  -- This allows us to extend an environment with variables in Givens _before_
+  -- we resume computation of the head and body, and then restore the old
+  -- environment _after_ we're done with that.
+  cata go >>> Cont.evalContT >>> flip State.evalState mempty
+  where
+    go :: AstNodeF metadata TranspileM -> TranspileM
+    go (RuleFactF _ givens head body) = do
+      -- Get and extend the current environment with the Givens.
+      -- TODO: Use De Bruijn indices with finger trees for alpha equivalence and
+      -- O(log n) environment extension.
+      env <- State.get
+      State.put $ env <> givens
+      -- Resume the suspended continuations representing the head and body
+      -- with the newly extended environment.
+      head :: EDN.TaggedValue <- head
+      ifBody :: [EDN.TaggedValue] <- case body of
+        Just body -> body |> fmap \body -> [edn|IF|] : [body]
+        Nothing -> pure []
+      -- Restore the old environment before continuing.
+      State.put env
+      [edn|DECIDE|] : head : ifBody |> EDN.toEDN |> pure
+
+    go (AndOrF _ andOr children) =
+      children |> recurseAndThen (intersperse $ toSymbol andOr)
+
+    go (ParensF _ children) = children |> recurseAndThen id
+
+    go (ListF _ elements) = elements |> recurseAndThen EDN.mkVec
+
+    go (TextF _ text) = do
+      env <- State.get
+      text |> (if text `elem` env then toVar else toSymbol) |> pure
+ 
+    toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
+    toSymbol = toPrefixedSymbol ""
+    toVar = toPrefixedSymbol "var"
+
+    recurseAndThen f xs = do
+      xs <- sequenceA xs
+      xs |> f |> EDN.toEDN |> pure
 
 pattern Number :: Maybe metadata -> Double -> AstNode metadata
 pattern Number metadata number <-

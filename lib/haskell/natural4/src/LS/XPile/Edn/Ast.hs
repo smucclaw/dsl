@@ -7,14 +7,13 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Edn.Ast
-where
+module LS.XPile.Edn.Ast where
 
 import Data.EDN qualified as EDN
 import Data.EDN.QQ (edn)
-import Data.Either (rights)
 import Data.Functor.Foldable (Recursive (..))
 import Data.Functor.Foldable.TH (makeBaseFunctor)
+import Data.HashSet (HashSet)
 import Data.List (intersperse)
 import Data.String.Interpolate (i)
 import Data.String.Interpolate.Conversion (Interpolatable, IsCustomSink)
@@ -25,9 +24,11 @@ import Flow ((|>))
 data AstNode metadata
   = RuleFact
       { metadata :: Maybe metadata,
+        givens :: HashSet T.Text,
         head :: AstNode metadata,
         body :: Maybe (AstNode metadata)
       }
+  -- | AnnotatedWithGivens { givens :: HashSet T.Text, node :: AstNode metadata}
   | AndOr
       { metadata :: Maybe metadata,
         andOr :: T.Text,
@@ -47,7 +48,7 @@ astToEdnText astNode = [i|#{astNode |> astToEdn |> EDN.renderText}|]
 
 astToEdn :: AstNode metadata -> EDN.TaggedValue
 astToEdn = cata \case
-  RuleFactF _ head body ->
+  RuleFactF _ _givens head body ->
     [edn|DECIDE|] : head : ifBody |> EDN.toEDN
     where
       ifBody = case body of
@@ -101,11 +102,9 @@ pattern Int int = Integer Nothing int
 pattern Dash :: AstNode metadata
 pattern Dash = Text Nothing "-"
 
-pattern Fact :: Maybe metadata -> AstNode metadata -> AstNode metadata
-pattern Fact metadata head = RuleFact metadata head Nothing
+pattern Fact metadata givens head = RuleFact metadata givens head Nothing
 
-pattern Rule :: Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Rule metadata head body = RuleFact metadata head (Just body)
+pattern Rule metadata givens head body = RuleFact metadata givens head (Just body)
 
 pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern Program metadata rules = List metadata rules
@@ -141,10 +140,12 @@ exampleProgram =
     Nothing
     [ Rule
         Nothing
+        mempty
         (Text Nothing "p")
         (And Nothing [Text Nothing "q", Text Nothing "r"]),
       Rule
         Nothing
+        mempty
         (Parens Nothing [Variable Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
         ( Or
             Nothing
@@ -156,7 +157,7 @@ exampleProgram =
               Is Nothing (Variable Nothing "x") (Number Nothing 100)
             ]
         ),
-        Fact Nothing $ Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
+        Fact Nothing mempty $ Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
     ]
 
 --- >>> (astToEdnText exampleProgram :: T.Text) 

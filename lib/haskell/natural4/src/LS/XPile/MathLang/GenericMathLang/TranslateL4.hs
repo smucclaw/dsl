@@ -260,7 +260,7 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
 type RetVarInfo = [(Var, Maybe L4EntType)]
-type UserDefinedFun = Operator Parser BaseExp
+type UserDefinedFun = (Var, Operator Parser BaseExp)
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
@@ -587,13 +587,13 @@ isLambda hl = case HM.keys hl.shcGiven of
       where
         mkOperator pos [MTT f] [var]
           | MkVar f /= var -- don't parse GIVEN x, x,IS,whatever as a lambda expression
-          = pure $ prefix f (customUnary (MkVar f) pos)
+          = pure (MkVar f, prefix f (customUnary (MkVar f) pos))
         mkOperator pos [MTT f] [v1, v2]
           | MkVar f `notElem` [v1, v2] -- don't parse GIVEN x,y, x,IS,whatever as a lambda expression
-          = pure $ binary f (customBinary (MkVar f) pos)
+          = pure (MkVar f, binary f (customBinary (MkVar f) pos))
         mkOperator pos [MTT x, MTT f, MTT y] [_v1, _v2]
-          | all (`elem` vars) [MkVar x, MkVar y]
-          = pure $ binary f (customBinary (MkVar f) pos) -- only infix allowed
+          | all (`elem` vars) [MkVar x, MkVar y] -- only infix allowed
+          = pure (MkVar f, binary f (customBinary (MkVar f) pos))
           ---- TODO: does the default expression parser support prefixed binary functions?
         mkOperator _pos mtes vars = throwNotSupportedWithMsgError "mkOperator:" [i|mtes=#{mtes}\nvars=#{vars}|]
     varsInBody _ _ = throwNotSupportedWithMsgError "varsInBody:" "not a RPConstraint"
@@ -736,12 +736,29 @@ baseExpifyMTEs mtes = case mtes of
     case (mvar1, mvar2) of
       (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
-        return $ EApp litWeAssumeToBePred (noExtraMdata (EVar var1))
+        pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var1))
       (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
         let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
-        return $ EApp litWeAssumeToBePred (noExtraMdata (EVar var2))
-      (Nothing, Nothing) -> throwNotSupportedWithMsgError (RPMT mtes) "Not sure if this is supported; not sure if spec is clear on this"
-      (Just _, Just _) -> throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
+        pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var2))
+      (Nothing, Nothing)
+        -> throwNotSupportedWithMsgError (RPMT mtes)
+              "baseExpifyMTEs: trying to apply non-function"
+      (Just var1, Just var2) -> do
+        funs <- ToLC $ asks (fmap fst . userDefinedFuns)
+        case fmap (`elem` funs) [var1, var2] of
+          [True, False] -> do
+            let f = noExtraMdata (EVar var1)
+                x = noExtraMdata (EVar var2)
+            pure $ EApp f x
+          [False, True] -> do
+            let f = noExtraMdata (EVar var2)
+                x = noExtraMdata (EVar var1)
+            pure $ EApp f x
+          [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
+          _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
+
+
+        --  throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
 
   _ -> do
       expParsedAsText <- parseExpr $ MTT $ textifyMTEs $ parenExps mtes
@@ -816,7 +833,7 @@ pExpr = do
   pos <- lift $ ToLC $ asks currSrcPos
   customOpers <- lift $ ToLC $ asks userDefinedFuns
   --trace [i|pExpr: length customOpers = #{length customOpers}|]
-  (makeExprParser pTerm (customOpers : table pos) <?> "expression")
+  (makeExprParser pTerm (fmap snd customOpers : table pos) <?> "expression")
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp

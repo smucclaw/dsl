@@ -1008,37 +1008,13 @@ mkMetadata typelabel = [ MkExpMetadata
 
 
 testLambda :: Rule
-testLambda = Hornlike
-    { name =
+testLambda = mkTestRule
         [ MTT "discounted by" ]
-    , super = Nothing
-    , keyword = Decide
-    , given = mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))]
-    , giveth = Nothing
-    , upon = Nothing
-    , clauses =
-        [ HC
-            { hHead = RPConstraint
+    (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
+    [ HC { hHead = RPConstraint
                 [ MTT "x", MTT "discounted by", MTT "y" ] RPis
                 [ MTT "x * (1 - y)" ]
-            , hBody = Nothing
-            }
-        ]
-    , rlabel = Nothing
-    , lsource = Nothing
-    , wwhere = []
-    , srcref = Just
-        ( SrcRef
-            { url = "test/PAUs.csv"
-            , short = "test/PAUs.csv"
-            , srcrow = 4
-            , srccol = 121
-            , version = Nothing
-            }
-        )
-    , defaults = []
-    , symtab = []
-    }
+        , hBody = Nothing}]
 
 testLambda_gold = ELam
     { param = MkVar "x", body = MkExp
@@ -1065,44 +1041,19 @@ testLambda_gold = ELam
 
 testFunApp :: [Rule]
 testFunApp = testLambda :
-  [Hornlike
-    { name =
-        [ MTT "Step 1" ]
-    , super = Nothing
-    , keyword = Decide
-    , given = Nothing
-    , giveth = mkGivens [("Answer", Just (SimpleType TOne "Number"))]
-    , upon = Nothing
-    , clauses =
-        [ HC
-            { hHead = RPConstraint
+  [ mkTestRule'
+      [ MTT "test function application" ]
+      Nothing
+      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
+      [ HC { hHead = RPConstraint
                 [ MTT "Answer" ] RPis
                 [ MTT "foo"
                 , MTT "discounted by"
 --                , MTT "accident's"
-                , MTT "bar"
-                ]
+            , MTT "bar" ]
             , hBody = Nothing
-            }
-        ]
-    , rlabel = Just
-        ( "§"
-        , 2
-        , "PAU4"
-        )
-    , lsource = Nothing
-    , wwhere = []
-    , srcref = Just
-        ( SrcRef
-            { url = "test/PAUs.csv"
-            , short = "test/PAUs.csv"
-            , srcrow = 4
-            , srccol = 89
-            , version = Nothing
-            }
-        )
-    , defaults = []
-    , symtab = []
-    }]
+        }]
+  ]
+
 
 testFunApp_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}},EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "foo"}, md = []}}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "bar"}, md = []}}, md = []}}]

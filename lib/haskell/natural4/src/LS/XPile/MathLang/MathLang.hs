@@ -9,7 +9,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.MathLang.MathLang
-  (toMathLangMw, toMathLang)
+  (toMathLangMw, toMathLang, gml2ml)
 where
 
 import Control.Monad.Except (MonadError, throwError)

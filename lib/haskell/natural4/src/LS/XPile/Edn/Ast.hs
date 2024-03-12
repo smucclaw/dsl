@@ -10,7 +10,6 @@
 module LS.XPile.Edn.Ast
 where
 
-import Control.Arrow ((>>>))
 import Data.EDN qualified as EDN
 import Data.EDN.QQ (edn)
 import Data.Either (rights)

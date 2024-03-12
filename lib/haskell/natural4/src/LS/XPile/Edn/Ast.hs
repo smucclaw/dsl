@@ -10,16 +10,18 @@
 module LS.XPile.Edn.Ast
 where
 
+import Control.Arrow ((>>>))
 import Data.EDN qualified as EDN
 import Data.EDN.QQ (edn)
+import Data.Either (rights)
+import Data.Functor.Foldable (Recursive (..))
 import Data.Functor.Foldable.TH (makeBaseFunctor)
+import Data.List (intersperse)
+import Data.String.Interpolate (i)
+import Data.String.Interpolate.Conversion (Interpolatable, IsCustomSink)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
-import Data.Functor.Foldable (Recursive(..))
 import Flow ((|>))
-import Data.List (intersperse)
-import Data.Either (rights)
-import Data.String.Interpolate (i)
 
 data AstNode metadata
   = RuleFact
@@ -40,8 +42,12 @@ data AstNode metadata
 
 makeBaseFunctor ''AstNode
 
-astToEdn :: AstNode metadata -> T.Text
-astToEdn = EDN.renderText . cata \case
+astToEdnText ::
+  Interpolatable (IsCustomSink t) T.Text t => AstNode metadata -> t
+astToEdnText astNode = [i|#{astNode |> astToEdn |> EDN.renderText}|]
+
+astToEdn :: AstNode metadata -> EDN.TaggedValue
+astToEdn = cata \case
   RuleFactF _ head body ->
     [edn|DECIDE|] : head : ifBody |> EDN.toEDN
     where
@@ -154,5 +160,5 @@ exampleProgram =
         Fact Nothing $ Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
     ]
 
---- >>> astToEdn exampleProgram 
+--- >>> (astToEdnText exampleProgram :: T.Text) 
 -- "[(DECIDE p IF (q AND r)) (DECIDE (var/x is between 0 and 10 or is 100) IF (((0.0 <= var/x) AND (var/x <= 10.0)) OR (var/x IS 100.0))) (DECIDE ((2023 - 1 - 10) is a date))]"

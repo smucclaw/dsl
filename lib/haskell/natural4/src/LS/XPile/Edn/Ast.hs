@@ -1,5 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -14,12 +15,16 @@ import Data.EDN.QQ (edn)
 import Data.Functor.Foldable (Recursive (..))
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.HashSet (HashSet)
+import Data.HashSet qualified as HashSet
+import Data.Hashable (Hashable)
 import Data.List (intersperse)
 import Data.String.Interpolate (i)
 import Data.String.Interpolate.Conversion (Interpolatable, IsCustomSink)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
 import Flow ((|>))
+import GHC.Generics (Generic)
+import LS.Utils ((|$>))
 
 data AstNode metadata
   = RuleFact
@@ -37,7 +42,7 @@ data AstNode metadata
   | Parens {metadata :: Maybe metadata, children :: [AstNode metadata]}
   | List {metadata :: Maybe metadata, elements :: [AstNode metadata]}
   | Text {metadata :: Maybe metadata, text :: T.Text}
-  | Variable {metadata :: Maybe metadata, variable :: T.Text}
+  -- | Variable {metadata :: Maybe metadata, variable :: T.Text}
   deriving Show
 
 makeBaseFunctor ''AstNode
@@ -46,28 +51,34 @@ astToEdnText ::
   Interpolatable (IsCustomSink t) T.Text t => AstNode metadata -> t
 astToEdnText astNode = [i|#{astNode |> astToEdn |> EDN.renderText}|]
 
-astToEdn :: AstNode metadata -> EDN.TaggedValue
-astToEdn = cata \case
-  RuleFactF _ _givens head body ->
-    [edn|DECIDE|] : head : ifBody |> EDN.toEDN
-    where
-      ifBody = case body of
-        Just body -> [[edn|IF|], body]
-        Nothing -> []
-
-  AndOrF _ andOr children ->
-    children |> intersperse (toSymbol andOr) |> EDN.toEDN
-
-  ParensF _ nodes -> EDN.toEDN nodes
-
-  ListF _ rules -> rules |> EDN.mkVec |> EDN.toEDN
-
-  TextF _ text -> toSymbol text
-
-  VariableF _ variable -> toPrefixedSymbol "var" variable
+astToEdn :: forall metadata. AstNode metadata -> EDN.TaggedValue
+astToEdn astNode = cata (flip go) astNode mempty
   where
-    toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
-    toSymbol = toPrefixedSymbol ""
+    go :: HashSet T.Text -> AstNodeF metadata (HashSet T.Text -> EDN.TaggedValue) -> EDN.TaggedValue
+    go givens = \case
+      RuleFactF _ (HashSet.union givens -> givens') head body ->
+        EDN.toEDN $ [edn|DECIDE|] : head givens' : ifBody
+        where
+          ifBody = case body of
+            Just body -> [[edn|IF|], body givens']
+            Nothing -> []
+      AndOrF _ andOr children ->
+        children |> aux (intersperse $ toSymbol andOr)
+      ParensF _ nodes -> nodes |> aux id
+      ListF _ rules -> rules |> aux EDN.mkVec
+      TextF _ text -> text |> if text `elem` givens then toVar else toSymbol
+      where
+        toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
+        toSymbol = toPrefixedSymbol ""
+        toVar = toPrefixedSymbol "var"
+
+        aux ::
+          (EDN.ToEDN a) =>
+          ([EDN.TaggedValue] -> a) ->
+          [HashSet T.Text -> EDN.TaggedValue] ->
+          EDN.TaggedValue
+        aux f x =
+          x |$> ($ givens) |> f |> EDN.toEDN
 
 pattern Number :: Maybe metadata -> Double -> AstNode metadata
 pattern Number metadata number <-
@@ -102,8 +113,10 @@ pattern Int int = Integer Nothing int
 pattern Dash :: AstNode metadata
 pattern Dash = Text Nothing "-"
 
+pattern Fact :: Maybe metadata -> HashSet T.Text -> AstNode metadata -> AstNode metadata
 pattern Fact metadata givens head = RuleFact metadata givens head Nothing
 
+pattern Rule :: Maybe metadata -> HashSet T.Text -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Rule metadata givens head body = RuleFact metadata givens head (Just body)
 
 pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
@@ -145,16 +158,16 @@ exampleProgram =
         (And Nothing [Text Nothing "q", Text Nothing "r"]),
       Rule
         Nothing
-        mempty
-        (Parens Nothing [Variable Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
+        ["x"]
+        (Parens Nothing [Text Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
         ( Or
             Nothing
             [ And
                   Nothing
-                  [ Leq Nothing (Number Nothing 0) (Variable Nothing "x"),
-                    Leq Nothing (Variable Nothing "x") (Number Nothing 10)
+                  [ Leq Nothing (Number Nothing 0) (Text Nothing "x"),
+                    Leq Nothing (Text Nothing "x") (Number Nothing 10)
                   ],
-              Is Nothing (Variable Nothing "x") (Number Nothing 100)
+              Is Nothing (Text Nothing "x") (Number Nothing 100)
             ]
         ),
         Fact Nothing mempty $ Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]

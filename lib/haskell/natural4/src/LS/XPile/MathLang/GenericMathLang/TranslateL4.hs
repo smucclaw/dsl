@@ -66,6 +66,7 @@ import Data.List.HT (partitionMaybe)
 import Prelude hiding (exp)
 
 import Debug.Trace (trace)
+import Effectful.State.Dynamic qualified as EffState
 
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
@@ -342,18 +343,18 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
 -}
 newtype ToLC a =
   ToLC (Eff '[Reader Env,
-              State [UserDefinedFun],
+              EffState.State [UserDefinedFun],
         -- Might be better to just do a separate pass that finds the global vars --- not sure rn
         Error ToLCError] a )
   deriving newtype (Functor, Applicative, Monad)
 
-_ToLC :: Iso' (ToLC a) (Eff '[Reader Env, State [UserDefinedFun], Error ToLCError] a)
+_ToLC :: Iso' (ToLC a) (Eff '[Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a)
 _ToLC = coerced
 
-mkToLC :: Eff [Reader Env, State [UserDefinedFun], Error ToLCError] a -> ToLC a
+mkToLC :: Eff [Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a -> ToLC a
 mkToLC = view (re _ToLC)
 
-unToLC :: ToLC a -> Eff [Reader Env, State [UserDefinedFun], Error ToLCError] a
+unToLC :: ToLC a -> Eff [Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a
 unToLC = view _ToLC
 
 runToLC :: ToLC a -> Either ToLCError a
@@ -371,7 +372,7 @@ runToLC' :: ToLC a -> Either ToLCError (a, [UserDefinedFun])
 runToLC' (unToLC -> m) =
   m
     |> runReader initialEnv
-    |> runStateLocal []
+    |> EffState.runStateLocal []
     |> runErrorNoCallStack
     |> runPureEff
   -- where
@@ -523,8 +524,8 @@ expifyHL hl = do
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
 baseExpify (isLambda -> Just (operator, v:vs, bexp)) = do
-  userFuns <- ToLC get
-  ToLC $ put $ operator : userFuns
+  userFuns <- ToLC EffState.get
+  mkToLC $ EffState.put $ operator : userFuns
   ELam v <$> mkLambda vs bexp
 --  trace [i|found lambda #{fname} with #{vars}|] $ pure bexp
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
@@ -537,10 +538,10 @@ baseExpify hornlike = throwNotYetImplError hornlike
 
 mkLambda :: [Var] -> BaseExp -> ToLC Exp
 mkLambda [] bexp = do
-  pos <- ToLC $ asks currSrcPos
+  pos <- mkToLC $ asks currSrcPos
   pure $ typeMdata pos "Function" bexp
 mkLambda (v:vs) bexp = do
-  pos <- ToLC $ asks currSrcPos
+  pos <- mkToLC $ asks currSrcPos
   let funType = typeMdata pos "Function"
   funType . ELam v <$> mkLambda vs bexp
 
@@ -579,7 +580,7 @@ isLambda hl = case HM.keys hl.shcGiven of
     varsInBody vars (RPConstraint fname RPis fbody) = do
       expr <- parseExpr $ MTT $ textifyMTEs fbody
       let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
-      pos <- ToLC $ asks currSrcPos
+      pos <- mkToLC $ asks currSrcPos
       operator <- mkOperator pos fname vars
       if all (`elem` varsInExpr) vars
         then pure (operator, vars, expr)
@@ -649,7 +650,7 @@ don't appear here -- they appear in hBody
 -}
 processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = do
-  pos <- ToLC $ asks currSrcPos
+  pos <- mkToLC $ asks currSrcPos
   pure $ noExtraMdata $
             EPredSet (mkVar . textifyMTEs $ putativeVar)
             (typeMdata pos "Boolean" $ ELit EBoolTrue)
@@ -748,7 +749,7 @@ baseExpifyMTEs mtes = case mtes of
       case expParsedAsText of
         ELit _ -> do
         -- TODO: this should definitely not be a sequence, what should it be instead???
-          parsedExs <- mapM parseExpr mtes
+          parsedExs <- traverse parseExpr mtes
           return $ ESeq $ foldr consSeqExp mempty parsedExs
 
         -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
@@ -973,7 +974,7 @@ mkSetVarTrueExpFromVarNoMd var =
 
 mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
 mkSetVarTrue putativeVar = do
-  pos <- ToLC $ asks currSrcPos
+  pos <- mkToLC $ asks currSrcPos
   mkSetVarFromMTEsHelper putativeVar $ typeMdata pos "Boolean" $ ELit EBoolTrue
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
@@ -1004,9 +1005,9 @@ mteToLitExp = \case
 
 processHcBody :: L4.BoolStructR -> ToLC Exp
 processHcBody bsr = do
-  pos <- ToLC $ asks currSrcPos
+  pos <- mkToLC $ asks currSrcPos
   case bsr of
-  AA.Leaf rp -> expifyBodyRP rp
+    AA.Leaf rp -> expifyBodyRP rp
   -- TODO: Consider using the `mlbl` to augment with metadata
     AA.All _mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp propns
     AA.Any _mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp propns
@@ -1016,16 +1017,19 @@ processHcBody bsr = do
 
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
-    makeOp pos op bsr exp = noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
+    makeOp pos op bsr exp =
+      noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
 
-    toBoolEq pos e = e {exp = toBoolEqBE e.exp, md = inferredType pos e.md "Boolean"}
+    toBoolEq pos e =
+      e {exp = toBoolEqBE e.exp, md = inferredType pos e.md "Boolean"}
       where
         inferredBool = typeMdata pos "Boolean"
-    toBoolEqBE e@(ELit (EString str)) =
-      let varExp = EVar (MkVar str)
+        toBoolEqBE e@(ELit (EString str)) =
+          let varExp = EVar (MkVar str)
           in ECompOp OpBoolEq (inferredBool varExp) (inferredBool (ELit EBoolTrue))
         toBoolEqBE e@(EApp _ _) = ECompOp OpBoolEq (inferredBool e) (inferredBool (ELit EBoolTrue))
-    toBoolEqBE e = e
+
+        toBoolEqBE e = e
 
 {- |
 Helps to remember:
@@ -1145,7 +1149,8 @@ expifyBodyRP = \case
 
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
     coerceType :: SrcPositn -> T.Text -> Exp -> Exp
-    coerceType pos typ exp@(MkExp bexp _) = inferTypeFromOtherExp exp (MkExp bexp (inferredType pos [] typ))
+    coerceType pos typ exp@(MkExp bexp _) =
+      inferTypeFromOtherExp exp (MkExp bexp (inferredType pos [] typ))
 
 inferTypeFromOtherExp :: Exp -> Exp -> Exp
 inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of

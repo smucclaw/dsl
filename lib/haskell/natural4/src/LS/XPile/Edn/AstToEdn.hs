@@ -58,7 +58,7 @@ astToEdnText astNode = [i|#{astNode |> astToEdn |> EDN.renderText}|]
 --   symbol otherwise.
 astToEdn :: AstNode metadata -> EDN.TaggedValue
 astToEdn = runCPSTranspileM . para \case
-  RuleFactF {givensF = givens, headF = (_, head), bodyF} -> do
+  RuleFactF {givensF = givens, headF = (_, head), bodyF} ->
     -- Temporarily extend the current context with the variables in givens,
     -- then resume the suspended continuations representing the head and body.
     withExtendedCtx givens do

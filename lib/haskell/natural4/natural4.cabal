@@ -58,6 +58,8 @@ library
       LS.XPile.DataFlow
       LS.XPile.DumpRule
       LS.XPile.Edn.Ast
+      LS.XPile.Edn.AstToEdn
+      LS.XPile.Edn.Context
       LS.XPile.ExportTypes
       LS.XPile.GFTrees
       LS.XPile.IntroBase

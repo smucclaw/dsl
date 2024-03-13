@@ -23,7 +23,7 @@ module LS.XPile.Edn.Ast
     pattern Lt,
     pattern Leq,
     pattern Gt,
-    pattern Geq
+    pattern Geq,
   )
 where
 

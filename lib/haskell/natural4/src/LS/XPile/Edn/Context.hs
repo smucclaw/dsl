@@ -1,11 +1,12 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Edn.Context
   ( Context,
     (!?),
+    emptyContext,
     withExtendedCtx,
   )
 where
@@ -22,7 +23,10 @@ import Flow ((|>))
 import GHC.IsList (IsList)
 
 newtype Context = Context { context :: HashSet T.Text }
-  deriving (Eq, Show, Semigroup, Monoid, IsList)
+  deriving (Eq, Show, IsList)
+
+emptyContext :: Context
+emptyContext = []
 
 (<++>) :: Foldable t => Context -> t T.Text -> Context
 (coerce -> ctx) <++> vars = vars |> foldr HashSet.insert ctx |> coerce
@@ -30,16 +34,17 @@ newtype Context = Context { context :: HashSet T.Text }
 (!?) :: Context -> T.Text -> Bool
 (coerce -> ctx) !? var = var `HashSet.member` ctx
 
+-- Perform a monad action with a context temporarily extended with some variables.
 withExtendedCtx ::
   (State.MonadState Context m, Foldable t) => t T.Text -> m b -> m b
-withExtendedCtx vars m = do
+withExtendedCtx vars action = do
   -- Get current context.
   oldCtx <- State.get
   -- Add vars to context.
   State.put $ oldCtx <++> vars
   -- Run computation.
-  m <- m
+  action <- action
   -- Restore old context.
   State.put oldCtx
   -- Return result of computation.
-  pure m
+  pure action

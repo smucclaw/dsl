@@ -29,7 +29,7 @@ import Data.Text.Read qualified as TRead
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Utils ((|$>))
-import LS.XPile.Edn.Context (Context, withExtendedCtx, (!?))
+import LS.XPile.Edn.Context (Context, withExtendedCtx, (!?), emptyContext)
 import LS.XPile.Edn.Ast -- (AstNode, AstNodeF (..))
 
 astToEdnText ::
@@ -41,28 +41,37 @@ type TranspileM =
 
 astToEdn :: AstNode metadata -> EDN.TaggedValue
 astToEdn =
-  -- Recursively transpile an AST node, threading an initial empty environment
+  -- Recursively transpile an AST node, threading an initial empty context
   -- through recursive calls.
-  -- This environment is:
+  -- This context is:
   -- 1. Used to lookup variables.
-  -- 2. Temporarily Extended when recursing into the head and body of a
+  -- 2. Temporarily extended when recursing into the head and body of a
   --    HornLike rule.
-  -- Technically, we traverse the AST via a catamorphism, which at each step,
-  -- uses the CPS monad to transform the AST node there into a continuation that
-  -- suspends computation, until an environment is provided.
-  -- This allows us to extend an environment with variables in Givens _before_
-  -- we resume computation of the head and body, and then restore the old
-  -- environment _after_ we're done with that.
-  cata go >>> Cont.evalContT >>> flip State.evalState mempty
+  -- Technically, we traverse the AST via a catamorphism, augmented with a
+  -- combination of a CPS + State monad on contexts to invert the flow of control,
+  -- so that we can thread the context through each primitive recursive step in
+  -- a top-down manner, extending it as we go.
+  -- The key ideas are:
+  -- - We use the CPS monad to suspend computation of the head and body of a
+  --   HornLike rule, and then via the state monad, extend the current context
+  --   with the declarations found in the Givens.
+  --   We then resume the computations of the head and body and afterwards
+  --   and then restore the old context in the state monad.
+  -- - For arbitrary symbols, ie Texts, we look it up in the context, marking it
+  --   as a variable if we find it there, and treat it as an arbitrary atomic
+  --   symbol otherwise.
+  cata go >>> Cont.evalContT >>> flip State.evalState emptyContext
   where
     go :: AstNodeF metadata TranspileM -> TranspileM
     go (RuleFactF _ givens head body) =
-      -- Temporarily extend the current env with the variables in givens, then
-      -- resume the suspended continuations representing the head and body.
+      -- Temporarily extend the current context with the variables in givens,
+      -- then resume the suspended continuations representing the head and body.
       withExtendedCtx givens do
         head :: EDN.TaggedValue <- head
         ifBody :: [EDN.TaggedValue] <- case body of
-          Just body -> body |> fmap \body -> [edn|IF|] : [body]
+          Just body -> do
+            body <- body
+            pure [[edn|IF|], body]
           Nothing -> pure []
         [edn|DECIDE|] : head : ifBody |> EDN.toEDN |> pure
 

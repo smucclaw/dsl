@@ -71,17 +71,17 @@ runCPSTranspileM = coerce' >>> Cont.evalContT >>> flip State.evalState mempty
       Cont.ContT EDN.TaggedValue (State.State TranspileState) EDN.TaggedValue
     coerce' = coerce
 
--- Perform a monadic action with the context temporarily extended with some
--- variables.
+-- Resume a suspended computation (captured in a continuation), with the
+-- context temporarily extended with some variables.
 withExtendedCtx :: Foldable t => t T.Text -> CPSTranspileM a -> CPSTranspileM a
-withExtendedCtx vars action = do
-  -- Get current context.
+withExtendedCtx vars cont = do
+  -- Save the current context.
   state@TranspileState {context} <- State.get
-  -- Add vars to context.
-  State.put $ state {context = vars <++> context}
-  -- Run computation.
-  result <- action
-  -- Restore old context.
-  State.put state
-  -- Return result of computation.
+  -- Extend context with vars.
+  state |> (vars <++>) |> State.put
+  -- Resume the suspended computation.
+  result <- cont
+  -- Restore the old context which we saved.
+  State.put state {context = context}
+  -- Return the result of the computation.
   pure result

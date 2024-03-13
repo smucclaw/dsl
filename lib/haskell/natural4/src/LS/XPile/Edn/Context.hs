@@ -7,7 +7,7 @@
 module LS.XPile.Edn.Context
   ( Context,
     (!?),
-    emptyContext,
+    emptyCtx,
     withExtendedCtx,
   )
 where
@@ -26,8 +26,8 @@ import GHC.IsList (IsList)
 newtype Context = Context { context :: HashSet T.Text }
   deriving (Eq, Show, IsList)
 
-emptyContext :: Context
-emptyContext = []
+emptyCtx :: Context
+emptyCtx = []
 
 (<++>) :: Foldable t => Context -> t T.Text -> Context
 (coerce -> ctx) <++> vars = vars |> foldr HashSet.insert ctx |> coerce

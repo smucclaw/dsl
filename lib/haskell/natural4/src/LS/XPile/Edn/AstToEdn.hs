@@ -30,7 +30,7 @@ import Data.Text.Read qualified as TRead
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Utils ((|$>))
-import LS.XPile.Edn.Context (Context, withExtendedCtx, (!?), emptyContext)
+import LS.XPile.Edn.Context (Context, withExtendedCtx, (!?), emptyCtx)
 import LS.XPile.Edn.Ast -- (AstNode, AstNodeF (..))
 
 astToEdnText ::
@@ -61,7 +61,7 @@ astToEdn =
   -- - For arbitrary symbols, ie Texts, we look it up in the context, marking it
   --   as a variable if we find it there, and treat it as an arbitrary atomic
   --   symbol otherwise.
-  cata go >>> Cont.evalContT >>> flip State.evalState emptyContext
+  cata go >>> Cont.evalContT >>> flip State.evalState emptyCtx
   where
     go :: AstNodeF metadata TranspileM -> TranspileM
     go (RuleFactF _ givens head body) =

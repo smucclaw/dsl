@@ -74,8 +74,7 @@ pattern Integer metadata int <-
 
 pattern Date :: Maybe metadata -> Integer -> Integer -> Integer -> AstNode metadata
 pattern Date metadata year month day =
-  Parens
-    metadata [Int year, Dash, Int month, Dash, Int day]
+  Parens metadata [Integer' year, Dash, Integer' month, Dash, Integer' day]
 
 pattern PrefixOp :: Maybe metadata -> T.Text -> [AstNode metadata] -> AstNode metadata
 pattern PrefixOp metadata op args =
@@ -87,8 +86,8 @@ pattern UnaryOp metadata op arg = PrefixOp metadata op [arg]
 pattern Not :: Maybe metadata -> AstNode metadata -> AstNode metadata
 pattern Not metadata negated = UnaryOp metadata "NOT" negated
 
-pattern Int :: Integer -> AstNode metadata
-pattern Int int = Integer Nothing int
+pattern Integer' :: Integer -> AstNode metadata
+pattern Integer' int = Integer Nothing int
 
 pattern Dash :: AstNode metadata
 pattern Dash = Text Nothing "-"

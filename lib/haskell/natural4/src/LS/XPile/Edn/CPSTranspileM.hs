@@ -70,7 +70,7 @@ instance HasMessageLog TranspileState metadata where
   logMsg severity messageData state@TranspileState {messageLog} =
     state {messageLog = logMsg severity messageData messageLog}
 
-  getMsgs = messageLog>>> getMsgs
+  getMsgs = messageLog >>> getMsgs
 
 logTranspileMsg ::
   State.MonadState (TranspileState metadata) m => Severity -> MessageData metadata -> m ()

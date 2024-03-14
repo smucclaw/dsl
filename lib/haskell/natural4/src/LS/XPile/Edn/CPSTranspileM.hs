@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -6,7 +7,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DataKinds #-}
 
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
@@ -28,23 +28,23 @@ import Data.Text qualified as T
 import Flow ((|>))
 import GHC.Generics (Generic)
 import Generics.Deriving.Monoid (mappenddefault, memptydefault)
-import LS.XPile.Edn.Context (Context, HasContext (..), (<++>))
+import LS.XPile.Edn.Context (Context, IsContext (..), (<++>))
 import LS.XPile.Edn.MessageLog
-  ( HasMessageLog (..),
+  ( IsMessageLog (..),
     MessageData,
     MessageLog,
     Severity (..),
   )
 import Optics qualified
-import Optics.TH (camelCaseFields, makeLensesWith, makeLenses)
+import Optics.TH (camelCaseFields, makeLensesWith)
 
 data TranspileState metadata = TranspileState
-  { _context :: Context,
-    _messageLog :: MessageLog metadata
+  { transpileStateContext :: Context,
+    transpileStateMessageLog :: MessageLog metadata
   }
   deriving (Eq, Show, Generic, Hashable)
 
-makeLenses ''TranspileState
+makeLensesWith camelCaseFields ''TranspileState
 
 instance Semigroup (TranspileState metadata) where
   (<>) = mappenddefault
@@ -52,13 +52,13 @@ instance Semigroup (TranspileState metadata) where
 instance Monoid (TranspileState metadata) where
   mempty = memptydefault
 
-instance HasContext (TranspileState metadata) where
+instance IsContext (TranspileState metadata) where
   (<++>) vars = Optics.over context (vars <++>)
 
   -- symbol !? TranspileState {context} = symbol !? context
   (!?) symbol = Optics.view context >>> (symbol !?)
 
-instance HasMessageLog TranspileState metadata where
+instance IsMessageLog TranspileState metadata where
   logMsg severity =
     Optics.over messageLog . logMsg severity
 

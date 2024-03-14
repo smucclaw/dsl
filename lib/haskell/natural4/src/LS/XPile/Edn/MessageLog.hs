@@ -11,7 +11,7 @@ module LS.XPile.Edn.MessageLog
     Message (..),
     MessageData (..),
     MessageLog,
-    HasMessageLog (..),
+    IsMessageLog (..),
   )
 where
 
@@ -54,11 +54,11 @@ newtype MessageLog metadata
   deriving newtype Hashable
   deriving (Semigroup, Monoid) via Deque.Deque (Message metadata)
 
-class HasMessageLog t metadata where
+class IsMessageLog t metadata where
   logMsg :: Severity -> MessageData metadata -> t metadata -> t metadata
   getMsgs :: t metadata -> Deque.Deque (Message metadata)
 
-instance HasMessageLog MessageLog metadata where
+instance IsMessageLog MessageLog metadata where
   logMsg severity data' =
     coerce
       >>> Deque.snoc Message {messageSeverity = severity, messageData' = data'}

@@ -1,5 +1,10 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Edn.MessageLog
   ( Severity (..),
@@ -19,6 +24,7 @@ import Data.Text qualified as T
 import Deque.Strict qualified as Deque
 import GHC.Generics (Generic)
 import LS.XPile.Edn.Ast (AstNode)
+import Optics.TH (camelCaseFields, makeLensesWith)
 
 data Severity
   = Info
@@ -26,15 +32,21 @@ data Severity
   | Error
   deriving (Eq, Ord, Show, Generic, Hashable)
 
-data MessageData metadata
-  = TranspiledTo {astNode :: AstNode metadata, result :: T.Text}
-  deriving (Eq, Ord, Show, Generic, Hashable)
-
-data Message metadata = Message
-  { severity :: Severity,
-    messageData :: MessageData metadata
+data MessageData metadata = TranspiledTo
+  { messageDataAstNode :: AstNode metadata,
+    messageDataResult :: T.Text
   }
   deriving (Eq, Ord, Show, Generic, Hashable)
+
+makeLensesWith camelCaseFields ''MessageData
+
+data Message metadata = Message
+  { messageSeverity :: Severity,
+    messageData' :: MessageData metadata
+  }
+  deriving (Eq, Ord, Show, Generic, Hashable)
+
+makeLensesWith camelCaseFields ''Message
 
 newtype MessageLog metadata
   = MessageLog {messageLog :: Deque.Deque (Message metadata)}
@@ -47,7 +59,9 @@ class HasMessageLog t metadata where
   getMsgs :: t metadata -> Deque.Deque (Message metadata)
 
 instance HasMessageLog MessageLog metadata where
-  logMsg severity messageData =
-    coerce >>> Deque.snoc Message {severity, messageData} >>> coerce
+  logMsg severity data' =
+    coerce
+      >>> Deque.snoc Message {messageSeverity = severity, messageData' = data'}
+      >>> coerce
 
   getMsgs = coerce

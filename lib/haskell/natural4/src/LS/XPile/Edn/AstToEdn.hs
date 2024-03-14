@@ -50,15 +50,6 @@ astToEdnText astNode = [i|#{astNode |> astToEdn |> edn |> EDN.renderText}|]
 -- augmented with a combination of a CPS + State monad on contexts to invert
 -- the flow of control, so that we can thread the context through each step in
 -- a top-down manner, extending it as we go.
--- The key ideas are:
--- - We use the CPS monad to suspend computation of the head and body of a
---   HornLike rule, and then via the state monad, extend the current context
---   with the declarations found in the Givens.
---   We then resume the computations of the head and body and afterwards
---   and then restore the old context in the state monad.
--- - For arbitrary symbols, ie Texts, we look it up in the context, marking it
---   as a variable if we find it there, and treat it as an arbitrary atomic
---   symbol otherwise.
 astToEdn :: AstNode metadata -> TranspileResult metadata
 astToEdn = runCPSTranspileM . para \case
   RuleFactF
@@ -77,10 +68,12 @@ astToEdn = runCPSTranspileM . para \case
         Nothing -> pure (Nothing, [])
 
       let result = [EDN.edn|DECIDE|] : head : ifBody |> EDN.toEDN
-          resultText = result |> EDN.renderText
-          astNode = RuleFact {metadata, givens, head = astHead, body = astBody}
 
-      logTranspileMsg Info TranspiledTo {astNode, result = resultText}
+          messageDataResult = result |> EDN.renderText
+          messageDataAstNode =
+            RuleFact {metadata, givens, head = astHead, body = astBody}
+
+      logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
       pure result
 
   CompoundTermF
@@ -91,26 +84,28 @@ astToEdn = runCPSTranspileM . para \case
       -- Recursively resume the children continuations.
       children <- sequenceA children
 
-      let result =
-            children |> case op of
-              ParensOp -> EDN.toEDN
-              ListOp -> EDN.mkVec >>> EDN.toEDN
-              AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
-              OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
-          resultText = result |> EDN.renderText
-          astNode = CompoundTerm {metadata, op, children = astChildren}
+      let result = children |> case op of
+            ParensOp -> EDN.toEDN
+            ListOp -> EDN.mkVec >>> EDN.toEDN
+            AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
+            OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
 
-      logTranspileMsg Info TranspiledTo {astNode, result = resultText}
+          messageDataResult = result |> EDN.renderText
+          messageDataAstNode =
+            CompoundTerm {metadata, op, children = astChildren}
+
+      logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
       pure result
 
   TextF {metadataF = metadata, textF = text} -> do
     state <- State.get
 
     let result = text |> if text !? state then toVar else toSymbol
-        resultText = EDN.renderText result
-        astNode = Text {metadata, text}
 
-    logTranspileMsg Info TranspiledTo {astNode, result = resultText}
+        messageDataResult = EDN.renderText result
+        messageDataAstNode = Text {metadata, text}
+
+    logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
     pure result
   where
     toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN

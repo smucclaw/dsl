@@ -1,9 +1,12 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
     TranspileState (..),
+    TranspileResult (..),
     logTranspileMsg,
     runCPSTranspileM,
     withExtendedCtx,
@@ -27,11 +30,12 @@ import LS.XPile.Edn.MessageLog
     Severity (..),
   )
 import Data.Bifunctor (Bifunctor(..))
+import Data.Hashable (Hashable)
 
 newtype CPSTranspileM metadata t
   = CPSTranspileM
   {cpsTranspileM :: Cont.ContT EDN.TaggedValue (State.State (TranspileState metadata)) t}
-  deriving
+  deriving newtype
     ( Functor,
       Applicative,
       Monad,
@@ -43,7 +47,13 @@ data TranspileState metadata = TranspileState
   { context :: Context,
     messageLog :: MessageLog metadata
   }
-  deriving Generic
+  deriving (Eq, Show, Generic, Hashable)
+
+data TranspileResult metadata = TranspileResult
+  { edn :: EDN.TaggedValue,
+    finalState :: TranspileState metadata
+  }
+  deriving (Eq, Show, Generic)
 
 instance Semigroup (TranspileState metadata) where
   (<>) = mappenddefault
@@ -61,25 +71,22 @@ instance HasMessageLog TranspileState metadata where
   logMsg severity messageData state@TranspileState {messageLog} =
     state {messageLog = logMsg severity messageData messageLog}
 
-  getMsgs = messageLog >>> getMsgs
+  getMsgs = messageLog>>> getMsgs
 
 logTranspileMsg ::
   State.MonadState (TranspileState metadata) m => Severity -> MessageData metadata -> m ()
-logTranspileMsg severity messageData =
-  State.modify $ logMsg severity messageData
+logTranspileMsg severity = logMsg severity >>> State.modify
 
 runCPSTranspileM ::
-  CPSTranspileM metadata EDN.TaggedValue -> (EDN.TaggedValue, MessageLog metadata)
+  CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata
 runCPSTranspileM =
-  coerce'
-    >>> Cont.evalContT
-    >>> flip State.runState mempty
-    >>> second messageLog
-  where
-    coerce' ::
+  ( coerce ::
       CPSTranspileM metadata EDN.TaggedValue ->
       Cont.ContT EDN.TaggedValue (State.State (TranspileState metadata)) EDN.TaggedValue
-    coerce' = coerce
+  )
+    >>> Cont.evalContT
+    >>> flip State.runState mempty
+    >>> \(edn, finalState) -> TranspileResult {edn, finalState}
 
 -- Resume a suspended computation (captured in a continuation), with the
 -- context temporarily extended with some variables.

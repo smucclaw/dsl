@@ -39,7 +39,7 @@ data Message metadata = Message
 newtype MessageLog metadata
   = MessageLog {messageLog :: Deque.Deque (Message metadata)}
   deriving (Eq, Show, Generic)
-  deriving anyclass (Hashable)
+  deriving newtype Hashable
   deriving (Semigroup, Monoid) via Deque.Deque (Message metadata)
 
 class HasMessageLog t metadata where

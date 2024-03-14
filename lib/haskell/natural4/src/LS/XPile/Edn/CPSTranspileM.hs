@@ -18,6 +18,7 @@ import Control.Monad.Cont qualified as Cont
 import Control.Monad.State.Strict qualified as State
 import Data.Coerce (coerce)
 import Data.EDN qualified as EDN
+import Data.Hashable (Hashable)
 import Data.Text qualified as T
 import Flow ((|>))
 import GHC.Generics (Generic)
@@ -29,8 +30,6 @@ import LS.XPile.Edn.MessageLog
     MessageLog,
     Severity (..),
   )
-import Data.Bifunctor (Bifunctor(..))
-import Data.Hashable (Hashable)
 
 newtype CPSTranspileM metadata t
   = CPSTranspileM
@@ -86,7 +85,7 @@ runCPSTranspileM =
   )
     >>> Cont.evalContT
     >>> flip State.runState mempty
-    >>> \(edn, finalState) -> TranspileResult {edn, finalState}
+    >>> uncurry TranspileResult
 
 -- Resume a suspended computation (captured in a continuation), with the
 -- context temporarily extended with some variables.

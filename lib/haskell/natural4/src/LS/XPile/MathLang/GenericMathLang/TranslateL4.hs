@@ -8,7 +8,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies, FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
-{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
 
@@ -517,8 +517,8 @@ expifyHL hl = do
             }
 
 {- | My current understanding is that the LC Exps that a SimpleHL can be are:
-1. If Then (maybe also If Then Else; not sure offhand)
-2. Lam Def (TODO)
+1. If Then (currently converted into If Then Else in MathLang—maybe already do the transformation here?)
+2. Lam Def
 3. Block of statements / expressions (TODO)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
@@ -544,14 +544,6 @@ mkLambda (v:vs) bexp = do
   let funType = typeMdata pos "Function"
   funType . ELam v <$> mkLambda vs bexp
 
-{- | TODO: Need to figure out (and decide) how to distinguish function definitions from IFs,
-since right now this would consider something like the following to be an IF:
-    GIVEN		ind		IS	A	Person
-        t		IS	A	Timepoint
-    DECIDE		ind	meets the property eligibility criteria for GSTV-Cash
-    IF	NOT	ind	owns more than one property
-    OR		ind	owns 2 or more HDB flats and no other property
--}
 isIf :: SimpleHL -> Maybe (SimpleHL, HnBodHC)
 isIf hl =
   case hl.baseHL of
@@ -757,9 +749,6 @@ baseExpifyMTEs mtes = case mtes of
           [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
           _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-
-        --  throwNotSupportedWithMsgError (RPMT mtes) "Two declared variables in what looks like an application, TODO how do we know which one is the argument and which one is the function?"
-
   _ -> do
       expParsedAsText <- parseExpr $ MTT $ textifyMTEs $ parenExps mtes
       case expParsedAsText of
@@ -927,7 +916,6 @@ sc = L.space
 expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
 expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
  where
-  -- TODO: here use the composOp style thing to do this transformation in all sub-BaseExps in the BaseExp!
   addMetadataToVar :: BaseExp -> ToLC Exp
   -- This is supposed to work as follows:
   -- baseExpifyMTEs for a single [mte] only returns a Var if it is declared

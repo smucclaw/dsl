@@ -35,18 +35,18 @@ spec = do
     -- Postpone
     -- testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
     --                "should become something that makes sense"
-    --                 rule2nogivens
-    --                 EEmpty
+    --                 [rule2nogivens]
+    --                 [EEmpty]
 
     -- testBaseExpify "rule 2 with givens into BaseExp"
     --                 "should become (eventually) something where the givens are... ??? at least not SetVar"
-    --                 rule2givens
-    --                 rule2givens_gold
+    --                 [rule2givens]
+    --                 [rule2givens_gold]
 
     -- testBaseExpify "rule 3 into BaseExp"
     --                 "should become something with records?"
-    --                 rule3predicate
-    --                 rule3predicate_gold
+    --                 [rule3predicate]
+    --                 [rule3predicate_gold]
 
     -- testBaseExpify "arithmetics testcase 2"
     --                 "should parse inside a cell"

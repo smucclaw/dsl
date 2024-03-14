@@ -55,23 +55,23 @@ astToEdn = runCPSTranspileM . para \case
   RuleFactF
     { metadataF = metadata,
       givensF = givens,
-      headF = (astHead, head),
+      headF = (head, headCont),
       bodyF
     } -> withExtendedCtx givens do
       -- Temporarily extend the current context with the variables in givens,
       -- then resume the suspended continuations representing the head and body.
-      head <- head
-      (astBody, ifBody) <- case bodyF of
-        Just (astBody, body) -> do
-          body <- body
-          pure (Just astBody, [[EDN.edn|IF|], body])
+      headEdn <- headCont
+      (body, ifBodyEdn) <- case bodyF of
+        Just (body, bodyCont) -> do
+          bodyEdn <- bodyCont
+          pure (Just body, [[EDN.edn|IF|], bodyEdn])
         Nothing -> pure (Nothing, [])
 
-      let result = [EDN.edn|DECIDE|] : head : ifBody |> EDN.toEDN
+      let result = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
 
           messageDataResult = result |> EDN.renderText
           messageDataAstNode =
-            RuleFact {metadata, givens, head = astHead, body = astBody}
+            RuleFact {metadata, givens, head, body}
 
       logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
       pure result
@@ -79,12 +79,12 @@ astToEdn = runCPSTranspileM . para \case
   CompoundTermF
     { metadataF = metadata,
       opF = op,
-      childrenF = unzip -> (astChildren, children)
+      childrenF = unzip -> (children, childrenConts)
     } -> do
       -- Recursively resume the children continuations.
-      children <- sequenceA children
+      childrenEdns <- sequenceA childrenConts
 
-      let result = children |> case op of
+      let result = childrenEdns |> case op of
             ParensOp -> EDN.toEDN
             ListOp -> EDN.mkVec >>> EDN.toEDN
             AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
@@ -92,7 +92,7 @@ astToEdn = runCPSTranspileM . para \case
 
           messageDataResult = result |> EDN.renderText
           messageDataAstNode =
-            CompoundTerm {metadata, op, children = astChildren}
+            CompoundTerm {metadata, op, children}
 
       logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
       pure result

@@ -129,6 +129,7 @@ spec = do
     testBaseExpify "test lambda expression" "should become a binary function" [testLambda] [testLambda_gold]
 
     testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
+    testBaseExpify "test function application" "fun app and nested genitives" nestedGenitives_in_fun_app nestedGenitives_in_fun_app_gold
 
     describe "genitive->record field" do
       let gml = runToLC $ baseExpifyMTEs nestedGenitives
@@ -948,6 +949,22 @@ nestedGenitives = [ MTT "ind's", MTT "friend's", MTT "age"]
 
 nestedGenitives_gold = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}
 
+nestedGenitives_in_fun_app =  testLambda :
+  [ mkTestRule'
+      [ MTT "test function application" ]
+      Nothing
+      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
+      [ HC { hHead = RPConstraint
+            [ MTT "Answer" ] RPis
+            [ MTT "ind's", MTT "friend's", MTT "age"
+            , MTT "discounted by"
+            , MTT "foo's", MTT "bar's", MTT "baz" ]
+        , hBody = Nothing
+        }]
+  ]
+
+nestedGenitives_in_fun_app_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}},EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens = fmap mkTypedMulti >>> nonEmpty
   where
@@ -1046,14 +1063,14 @@ testFunApp = testLambda :
       Nothing
       (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
       [ HC { hHead = RPConstraint
-                [ MTT "Answer" ] RPis
-                [ MTT "foo"
-                , MTT "discounted by"
---                , MTT "accident's"
-            , MTT "bar" ]
-            , hBody = Nothing
+            [ MTT "Answer" ] RPis
+            [ MTT "Step 3"
+            , MTT "discounted by"
+            , MTT "accident's"
+            , MTT "risk cap" ]
+        , hBody = Nothing
         }]
   ]
 
 
-testFunApp_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}},EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "foo"}, md = []}}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "bar"}, md = []}}, md = []}}]
+testFunApp_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}}, EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ELit {lit = EString "Step 3"}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ELit {lit = EString "risk cap"}, md = []}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]

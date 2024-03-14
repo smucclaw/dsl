@@ -47,6 +47,7 @@ import Flow ((|>))
 import Optics hiding ((|>))
 -- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
+import Data.List (break)
 import Data.List.NonEmpty qualified as NE
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
@@ -707,59 +708,94 @@ TODO: Think about what kind of validation we might want to do here
 
 NOTE: If it seems like literals will appear here (e.g. number literals), see defn of `mteToLitExp` for how to translate to literals
 -}
+
+isUserFun :: [Var] -> MTExpr -> Bool
+isUserFun funs mte =
+  case mte of
+    MTT t -> t `elem` [v | MkVar v <- funs ]
+    _ -> False
+
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest)) = do
-  -- ind's parent's sibling's … income
+  userFuns <- ToLC $ asks (fmap fst . userDefinedFuns) -- :: [Var]
   recname <- expifyMTEsNoMd [g]
-  fieldname <- expifyMTEsNoMd rest -- income
-  return $ ERec fieldname recname
-baseExpifyMTEs mtes = case mtes of
-  [mte] -> do
-    -- Inari: assuming that the Var will be used for comparison
-    -- because SetVar is handled elsewhere, by extracting it
-    -- from RPConstraint
-    mvar <- isDeclaredVar mte
-    case mvar of
-      Just var -> return $ EVar var
-      Nothing -> parseExpr mte
+  case break (isUserFun userFuns) rest of
+  -- ind's parent's sibling's … income
+    (x:xs,[]) -> do
+      fieldname <- expifyMTEsNoMd rest -- income
+      pure $ ERec fieldname recname
+  -- ind's parent's sibling's … income, discountedBy, foo
+    (x:xs,f:ys) -> do
+      fieldname <- expifyMTEsNoMd (x:xs) -- income
+      fExp <- expifyMTEsNoMd [f]
+      arg2 <- expifyMTEsNoMd ys
+      let arg1 = ERec fieldname recname
+          fArg1 = noExtraMdata (EApp fExp (noExtraMdata arg1))
+      pure $ EApp fArg1 arg2
+baseExpifyMTEs mtes = do
+  userFuns <- ToLC $ asks (fmap fst . userDefinedFuns) -- :: [Var]
+  case mtes of
+    [mte] -> do
+      -- Inari: assuming that the Var will be used for comparison
+      -- because SetVar is handled elsewhere, by extracting it
+      -- from RPConstraint
+      mvar <- isDeclaredVar mte
+      case mvar of
+        Just var -> return $ EVar var
+        Nothing -> parseExpr mte
 
-  [mte1@(MTT _), mte2@(MTT _)] -> do
-    mvar1 <- isDeclaredVar mte1
-    mvar2 <- isDeclaredVar mte2
-    case (mvar1, mvar2) of
-      (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
-        let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
-        pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var1))
-      (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
-        let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
-        pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var2))
-      (Nothing, Nothing)
-        -> throwNotSupportedWithMsgError (RPMT mtes)
-              "baseExpifyMTEs: trying to apply non-function"
-      (Just var1, Just var2) -> do
-        funs <- ToLC $ asks (fmap fst . userDefinedFuns)
-        case fmap (`elem` funs) [var1, var2] of
-          [True, False] -> do
-            let f = noExtraMdata (EVar var1)
-                x = noExtraMdata (EVar var2)
-            pure $ EApp f x
-          [False, True] -> do
-            let f = noExtraMdata (EVar var2)
-                x = noExtraMdata (EVar var1)
-            pure $ EApp f x
-          [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
-          _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
+    [mte1@(MTT _), mte2@(MTT _)] -> do
+      mvar1 <- isDeclaredVar mte1
+      mvar2 <- isDeclaredVar mte2
+      case (mvar1, mvar2) of
+        (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
+          let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
+          pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var1))
+        (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
+          let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
+          pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var2))
+        (Nothing, Nothing)
+          -> throwNotSupportedWithMsgError (RPMT mtes)
+                "baseExpifyMTEs: trying to apply non-function"
+        (Just var1, Just var2) -> do
+          case fmap (`elem` userFuns) [var1, var2] of
+            [True, False] -> do
+              let f = noExtraMdata (EVar var1)
+                  x = noExtraMdata (EVar var2)
+              pure $ EApp f x
+            [False, True] -> do
+              let f = noExtraMdata (EVar var2)
+                  x = noExtraMdata (EVar var1)
+              pure $ EApp f x
+            [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
+            _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-  _ -> do
-      expParsedAsText <- parseExpr $ MTT $ textifyMTEs $ parenExps mtes
-      case expParsedAsText of
-        ELit _ -> do
-        -- TODO: this should definitely not be a sequence, what should it be instead???
-          parsedExs <- traverse parseExpr mtes
-          return $ ESeq $ foldr consSeqExp mempty parsedExs
+    mtes -> do
+      case break (isUserFun userFuns) mtes of
+      -- function, rest
+        ([],f:ys) -> do
+          arg <- expifyMTEsNoMd ys
+          let fExp = noExtraMdata $ mteToLitExp f
+          pure $ EApp fExp arg
+      -- mte1 [, …, mteN], function, rest
+        (xs,f:ys) -> do
+          arg1 <- expifyMTEsNoMd xs
+          arg2 <- expifyMTEsNoMd ys
+          let fExp = noExtraMdata $ mteToLitExp f
+              fArg1 = noExtraMdata (EApp fExp arg1)
+          pure $ EApp fArg1 arg2
+      -- no userfuns here
+        (xs,[]) -> do
+          let parenExp = MTT $ textifyMTEs $ parenExps mtes
+          expParsedAsText <- trace [i|added parentheses #{parenExp}|] $ parseExpr parenExp
+          case expParsedAsText of
+            ELit _ -> trace ("parseExpr returned this as a string literal: " <> show expParsedAsText) do
+            -- TODO: this should definitely not be a sequence, what should it be instead???
+              parsedExs <- traverse parseExpr mtes
+              return $ ESeq $ foldr consSeqExp mempty parsedExs
 
-        -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
-        notStringLit -> return notStringLit
+            -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
+            notStringLit -> return notStringLit
 
   where
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
@@ -833,7 +869,6 @@ pTerm = choice $ map try
   , pFloat
   , pInteger
   ]
-
 
 table :: SrcPositn -> [[Operator Parser BaseExp]]
 table pos = [ [ binary  "*" (mul' pos)

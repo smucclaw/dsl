@@ -1,5 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DataKinds #-}
 
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
@@ -12,76 +12,87 @@ where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Cont qualified as Cont
-import Control.Monad.State qualified as State
-import Data.EDN qualified as EDN
-import Data.Sequence qualified as Seq
-import Data.Text qualified as T
-import GHC.Generics (Generic)
-import Generics.Deriving.Monoid ( mappenddefault, memptydefault )
-import LS.XPile.Edn.Context (Context (..), (<++>), HasContext (..))
+import Control.Monad.State.Strict qualified as State
 import Data.Coerce (coerce)
+import Data.EDN qualified as EDN
+import Data.Text qualified as T
 import Flow ((|>))
-import LS.XPile.Edn.MessageLog (MessageLog, HasMessageLog (..), Severity, MessageData)
+import GHC.Generics (Generic)
+import Generics.Deriving.Monoid (mappenddefault, memptydefault)
+import LS.XPile.Edn.Context (Context, HasContext (..), (<++>))
+import LS.XPile.Edn.MessageLog
+  ( HasMessageLog (..),
+    MessageData,
+    MessageLog,
+    Severity (..),
+  )
+import Data.Bifunctor (Bifunctor(..))
 
-newtype CPSTranspileM t
-  = CPSTranspileM (Cont.ContT EDN.TaggedValue (State.State TranspileState) t)
+newtype CPSTranspileM metadata t
+  = CPSTranspileM
+  {cpsTranspileM :: Cont.ContT EDN.TaggedValue (State.State (TranspileState metadata)) t}
   deriving
     ( Functor,
       Applicative,
       Monad,
-      State.MonadState TranspileState,
+      State.MonadState (TranspileState metadata),
       Cont.MonadCont
     )
 
-data TranspileState = TranspileState
+data TranspileState metadata = TranspileState
   { context :: Context,
-    messageLog :: MessageLog
+    messageLog :: MessageLog metadata
   }
   deriving Generic
 
-instance Semigroup TranspileState where
+instance Semigroup (TranspileState metadata) where
   (<>) = mappenddefault
 
-instance Monoid TranspileState where
+instance Monoid (TranspileState metadata) where
   mempty = memptydefault
 
-instance HasContext TranspileState where
+instance HasContext (TranspileState metadata) where
   vars <++> state@TranspileState {context} =
     state {context = vars <++> context}
-  
+
   symbol !? TranspileState {context} = symbol !? context
 
-instance HasMessageLog TranspileState where
+instance HasMessageLog TranspileState metadata where
   logMsg severity messageData state@TranspileState {messageLog} =
     state {messageLog = logMsg severity messageData messageLog}
 
-  getMsgs TranspileState {messageLog} = getMsgs messageLog
+  getMsgs = messageLog >>> getMsgs
 
 logTranspileMsg ::
-  (State.MonadState a m, HasMessageLog a) => Severity -> MessageData -> m ()
-logTranspileMsg severity messageData = do
-  state <- State.get
-  state |> logMsg severity messageData |> State.put
+  State.MonadState (TranspileState metadata) m => Severity -> MessageData metadata -> m ()
+logTranspileMsg severity messageData =
+  State.modify $ logMsg severity messageData
 
-runCPSTranspileM :: CPSTranspileM EDN.TaggedValue -> EDN.TaggedValue
-runCPSTranspileM = coerce' >>> Cont.evalContT >>> flip State.evalState mempty
+runCPSTranspileM ::
+  CPSTranspileM metadata EDN.TaggedValue -> (EDN.TaggedValue, MessageLog metadata)
+runCPSTranspileM =
+  coerce'
+    >>> Cont.evalContT
+    >>> flip State.runState mempty
+    >>> second messageLog
   where
     coerce' ::
-      CPSTranspileM EDN.TaggedValue ->
-      Cont.ContT EDN.TaggedValue (State.State TranspileState) EDN.TaggedValue
+      CPSTranspileM metadata EDN.TaggedValue ->
+      Cont.ContT EDN.TaggedValue (State.State (TranspileState metadata)) EDN.TaggedValue
     coerce' = coerce
 
 -- Resume a suspended computation (captured in a continuation), with the
 -- context temporarily extended with some variables.
-withExtendedCtx :: Foldable t => t T.Text -> CPSTranspileM a -> CPSTranspileM a
+withExtendedCtx ::
+  Foldable m => m T.Text -> CPSTranspileM metadata t -> CPSTranspileM metadata t
 withExtendedCtx vars cont = do
   -- Save the current context.
-  state@TranspileState {context} <- State.get
+  TranspileState {context} <- State.get
   -- Extend context with vars.
-  state |> (vars <++>) |> State.put
+  State.modify (vars <++>)
   -- Resume the suspended computation.
   result <- cont
   -- Restore the old context which we saved.
-  State.put state {context = context}
+  State.modify \state -> state {context}
   -- Return the result of the computation.
   pure result

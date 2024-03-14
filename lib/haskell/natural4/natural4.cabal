@@ -125,6 +125,7 @@ library
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , effectful
@@ -198,6 +199,7 @@ executable natural4-exe
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , effectful
@@ -272,6 +274,7 @@ test-suite doctests
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , doctest-parallel >=0.1
@@ -367,6 +370,7 @@ test-suite natural4-test
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , effectful
@@ -448,6 +452,7 @@ benchmark natural4-bench
     , containers
     , criterion
     , deepseq
+    , deque
     , diagnose
     , directory
     , effectful

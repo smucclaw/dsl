@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -8,6 +9,7 @@
 module LS.XPile.Edn.Ast
   ( AstNode (..),
     AstNodeF (..),
+    Op (..),
     pattern Number,
     pattern Integer,
     pattern Date,
@@ -24,6 +26,8 @@ module LS.XPile.Edn.Ast
     pattern Leq,
     pattern Gt,
     pattern Geq,
+    pattern Parens,
+    pattern List,
   )
 where
 
@@ -36,12 +40,6 @@ import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
 import GHC.Generics (Generic)
 
--- newtype Variable = Variable { variable :: T.Text }
---   deriving (Eq, Ord, Show, Semigroup, Monoid, IsString, Generic, Hashable)
-
--- textsToVars :: [T.Text] -> [Variable]
--- textsToVars = coerce
-
 data AstNode metadata
   = RuleFact
       { metadata :: Maybe metadata,
@@ -49,16 +47,28 @@ data AstNode metadata
         head :: AstNode metadata,
         body :: Maybe (AstNode metadata)
       }
-  | AndOr
+  | CompoundTerm
       { metadata :: Maybe metadata,
-        andOr :: T.Text,
+        op :: Op,
         children :: [AstNode metadata]
       }
-  | Parens {metadata :: Maybe metadata, children :: [AstNode metadata]}
-  | List {metadata :: Maybe metadata, elements :: [AstNode metadata]}
   | Text {metadata :: Maybe metadata, text :: T.Text}
+  deriving (Eq, Ord, Read, Show, Generic, Hashable)
+
+data Op
+  = ParensOp
+  | ListOp
+  | AndOp
+  | OrOp
+  deriving (Eq, Ord, Read, Show, Generic, Hashable)
 
 makeBaseFunctor ''AstNode
+
+pattern Parens :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
+pattern Parens metadata children = CompoundTerm metadata ParensOp children
+
+pattern List :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
+pattern List metadata children = CompoundTerm metadata ListOp children
 
 pattern Number :: Maybe metadata -> Double -> AstNode metadata
 pattern Number metadata number <-
@@ -102,10 +112,10 @@ pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern Program metadata rules = List metadata rules
 
 pattern And :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern And metadata conjuncts = AndOr metadata "AND" conjuncts
+pattern And metadata conjuncts = CompoundTerm metadata AndOp conjuncts
 
 pattern Or :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern Or metadata conjuncts = AndOr metadata "OR" conjuncts
+pattern Or metadata conjuncts = CompoundTerm metadata OrOp conjuncts
 
 pattern InfixBinOp :: Maybe metadata -> T.Text -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern InfixBinOp metadata binOp lhs rhs =

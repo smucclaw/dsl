@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Edn.MessageLog
   ( Severity (..),
@@ -13,10 +12,13 @@ where
 
 import Control.Arrow ((>>>))
 import Data.Coerce (coerce)
+import Data.EDN qualified as EDN
 import Data.Foldable qualified as Fold
 import Data.Hashable (Hashable)
-import Data.Sequence qualified as Seq
+import Data.Text qualified as T
+import Deque.Strict qualified as Deque
 import GHC.Generics (Generic)
+import LS.XPile.Edn.Ast (AstNode)
 
 data Severity
   = Info
@@ -24,27 +26,28 @@ data Severity
   | Error
   deriving (Eq, Ord, Show, Generic, Hashable)
 
-data MessageData
+data MessageData metadata
+  = TranspiledTo {astNode :: AstNode metadata, result :: T.Text}
   deriving (Eq, Ord, Show, Generic, Hashable)
 
-data Message  = Message
+data Message metadata = Message
   { severity :: Severity,
-    messageData :: MessageData
+    messageData :: MessageData metadata
   }
   deriving (Eq, Ord, Show, Generic, Hashable)
 
-newtype MessageLog = MessageLog (Seq.Seq Message)
-  deriving (Eq, Ord, Show, Generic)
-  deriving anyclass Hashable
-  deriving Semigroup via Seq.Seq Message
-  deriving Monoid via Seq.Seq Message
+newtype MessageLog metadata
+  = MessageLog {messageLog :: Deque.Deque (Message metadata)}
+  deriving (Eq, Show, Generic)
+  deriving anyclass (Hashable)
+  deriving (Semigroup, Monoid) via Deque.Deque (Message metadata)
 
-class HasMessageLog t where
-  logMsg :: Severity -> MessageData -> t -> t
-  getMsgs :: t -> [Message]
+class HasMessageLog t metadata where
+  logMsg :: Severity -> MessageData metadata -> t metadata -> t metadata
+  getMsgs :: t metadata -> Deque.Deque (Message metadata)
 
-instance HasMessageLog MessageLog where
+instance HasMessageLog MessageLog metadata where
   logMsg severity messageData =
-    coerce >>> (Seq.|> Message {severity, messageData}) >>> coerce
+    coerce >>> Deque.snoc Message {severity, messageData} >>> coerce
 
-  getMsgs (coerce -> log :: Seq.Seq Message) = Fold.toList log
+  getMsgs = coerce

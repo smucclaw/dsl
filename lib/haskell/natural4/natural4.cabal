@@ -61,6 +61,7 @@ library
       LS.XPile.Edn.AstToEdn
       LS.XPile.Edn.Context
       LS.XPile.Edn.CPSTranspileM
+      LS.XPile.Edn.L4RuleToAst
       LS.XPile.Edn.MessageLog
       LS.XPile.ExportTypes
       LS.XPile.GFTrees

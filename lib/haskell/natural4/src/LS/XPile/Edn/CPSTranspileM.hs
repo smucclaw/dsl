@@ -65,8 +65,6 @@ logTranspileMsg ::
   State.MonadState (TranspileState metadata) m => Severity -> MessageData metadata -> m ()
 logTranspileMsg severity = logMsg severity >>> State.modify
 
-type CPSTranspileM metadata = CPSTranspileM' metadata EDN.TaggedValue
-
 newtype CPSTranspileM' metadata t
   = CPSTranspileM
   {cpsTranspileM :: Cont.ContT EDN.TaggedValue (State.State (TranspileState metadata)) t}
@@ -77,6 +75,8 @@ newtype CPSTranspileM' metadata t
       State.MonadState (TranspileState metadata),
       Cont.MonadCont
     )
+
+type CPSTranspileM metadata = CPSTranspileM' metadata EDN.TaggedValue
 
 data TranspileResult metadata = TranspileResult
   { edn :: EDN.TaggedValue,

@@ -61,7 +61,8 @@ class IsMessageLog t metadata where
 instance IsMessageLog MessageLog metadata where
   logMsg severity data' =
     coerce
-      >>> Deque.snoc Message {messageSeverity = severity, messageData' = data'}
+      >>> Deque.snoc
+        Message {messageSeverity = severity, messageData' = data'}
       >>> coerce
 
   getMsgs = coerce

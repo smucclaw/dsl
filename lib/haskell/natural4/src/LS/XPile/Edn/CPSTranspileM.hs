@@ -6,7 +6,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
@@ -59,16 +58,16 @@ instance IsContext (TranspileState metadata) where
   (!?) symbol = Optics.view context >>> (symbol !?)
 
 instance IsMessageLog TranspileState metadata where
-  logMsg severity =
-    Optics.over messageLog . logMsg severity
-
+  logMsg severity = Optics.over messageLog . logMsg severity
   getMsgs = Optics.view messageLog >>> getMsgs
 
 logTranspileMsg ::
   State.MonadState (TranspileState metadata) m => Severity -> MessageData metadata -> m ()
 logTranspileMsg severity = logMsg severity >>> State.modify
 
-newtype CPSTranspileM metadata t
+type CPSTranspileM metadata = CPSTranspileM' metadata EDN.TaggedValue
+
+newtype CPSTranspileM' metadata t
   = CPSTranspileM
   {cpsTranspileM :: Cont.ContT EDN.TaggedValue (State.State (TranspileState metadata)) t}
   deriving newtype
@@ -85,8 +84,7 @@ data TranspileResult metadata = TranspileResult
   }
   deriving (Eq, Show, Generic)
 
-runCPSTranspileM ::
-  CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata
+runCPSTranspileM :: CPSTranspileM metadata -> TranspileResult metadata
 runCPSTranspileM =
   coerce
     >>> Cont.evalContT
@@ -96,10 +94,10 @@ runCPSTranspileM =
 -- Resume a suspended stateful computation (captured in a continuation), with the
 -- context temporarily extended with some variables.
 withExtendedCtx ::
-  Foldable m => m T.Text -> CPSTranspileM metadata t -> CPSTranspileM metadata t
+  Foldable m => m T.Text -> CPSTranspileM metadata -> CPSTranspileM metadata
 withExtendedCtx vars cont = do
   -- Save the current context.
-  (Optics.view context -> oldContext) <- State.get
+  oldContext <- State.gets $ Optics.view context
   -- Extend context with vars.
   State.modify (vars <++>)
   -- Resume the suspended computation.

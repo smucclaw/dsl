@@ -577,12 +577,13 @@ isLambda hl = case HM.keys hl.shcGiven of
         then pure (operator, vars, expr)
         else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
       where
-        mkOperator pos [MTT f] [var]
-          | MkVar f /= var -- don't parse GIVEN x, x,IS,whatever as a lambda expression
+        -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
+        mkOperator pos [MTT f, MTT x] [var]
+          | MkVar f /= var && MkVar x == var
           = pure (MkVar f, prefix f (customUnary (MkVar f) pos))
-        mkOperator pos [MTT f] [v1, v2]
-          | MkVar f `notElem` [v1, v2] -- don't parse GIVEN x,y, x,IS,whatever as a lambda expression
-          = pure (MkVar f, binary f (customBinary (MkVar f) pos))
+        mkOperator pos [MTT x, MTT f] [var]
+          | MkVar f /= var && MkVar x == var
+          = pure (MkVar f, postfix f (customUnary (MkVar f) pos))
         mkOperator pos [MTT x, MTT f, MTT y] [_v1, _v2]
           | all (`elem` vars) [MkVar x, MkVar y] -- only infix allowed
           = pure (MkVar f, binary f (customBinary (MkVar f) pos))

@@ -16,7 +16,7 @@ import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString.Builder (generic)
 import Data.Coerce (coerce)
 import Data.Either (rights)
-import Data.List (groupBy)
+import Data.List (groupBy, nub)
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
@@ -46,13 +46,16 @@ toMathLang l4i =
        l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
 
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
-    Left errors -> ([], emptyState) -- GML.makeErrorOut errors
+    Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
     Right lamCalcProgram ->
-      let st = gmls2ml lamCalcProgram.lcProgram
-          toplevels = case T.unpack  <$> lamCalcProgram.givethVar of
-            [] -> Map.elems st.symtabF
+      let exprs = gmls2ml lamCalcProgram.lcProgram
+          userfuns = getUserFuns lamCalcProgram.userFuns
+          st = exprs <> userfuns
+          giveth = T.unpack  <$> lamCalcProgram.givethVar
+          toplevels = case giveth of
+            [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
             ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
-                   [] -> Map.elems st.symtabF
+                   [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n|] $ Map.elems st.symtabF
                    exprs -> exprs
         in (toplevels, st)
 
@@ -165,14 +168,30 @@ chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
 placeholderITE :: Expr Double
 placeholderITE = Undefined (Just "placeholder for ITE")
 
+-- TODO: add Reader for userfuns
 type MyStack = MaybeT (Writer MyState)
 
 -- all of the results are in MyState, so we can ignore the actual res
 gmls2ml :: [GML.Exp] -> MyState
 gmls2ml [] = emptyState
-gmls2ml (e:es) = st <> gmls2ml es
+gmls2ml (e:es) = trace [i|\ngmls2ml: #{res}\n|] $ st <> gmls2ml es
+  where -- TODO: temporary hack, probably reconsider when exactly stuff is put into MyState
+    seqE = case e.exp of
+      ESeq _ -> e
+      _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
+    res@(_exp, st) = runWriter $ runMaybeT $ gml2ml seqE
+
+getUserFuns :: Map.HashMap String GML.Exp -> MyState
+getUserFuns hm = emptyState {symtabFun = Map.map f hm}
   where
-    (_res, st) = runWriter $ runMaybeT $ gml2ml e
+    f :: GML.Exp -> ([String], Expr Double)
+    f exp = case res of
+            Nothing -> ([], Undefined Nothing)
+            Just mlExp -> ([T.unpack v | GML.MkVar v <- nub vars], mlExp)
+      where
+        (res,_) = runWriter $ runMaybeT $ gml2ml exp
+        -- TODO: check that only bound variables are there, there may be free variables in body
+        vars = exp ^.. cosmosOf (gplate @GML.Exp) % gplate @GML.Var
 
 gml2ml :: GML.Exp -> MyStack (Expr Double)
 gml2ml exp = case exp.exp of
@@ -208,6 +227,8 @@ gml2ml exp = case exp.exp of
           MathVar _ -> valEx
           MathSet _ _ -> valEx
           _ -> varEx @|= valEx
+--    if we get rid of the assumption that everything is a SeqExp, should do this
+--    tell $ emptyState { symtabF = Map.singleton varEx valExWithLabel }
     pure $ MathSet varEx valExWithLabel
   EPredSet _ _ -> do
     PredSet name pr <- exp2pred exp
@@ -223,9 +244,28 @@ gml2ml exp = case exp.exp of
     case (fnEx, rnEx) of
       (MathVar fname, MathVar rname) -> pure $ MathVar (rname <> "." <> fname)
       x -> pure $ MathVar ("gml2ml: unsupported record " <> show exp.exp)
-  _ -> pure $ MathVar ("gml2ml: not implemented yet " <> show exp.exp) --Undefined Nothing
+  EApp f arg -> mkApp exp
+  -- TODO: store ELam with the function name in GML
+  -- then store the body and vars into MyState, and replace the Var "x" / Var "y" in the expr
+  ELam (GML.MkVar v)  body -> trace [i|\ngml2ml: found ELam #{exp}\n|] $ do
+    bodyEx <- gml2ml body
+    let varEx = T.unpack v
+    trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] $ pure $ MathSet varEx bodyEx
+  _ -> trace [i|\ngml2ml: not supported #{exp}\n|] $
+        pure $ MathVar ("gml2ml: not implemented yet " <> show exp.exp) --Undefined Nothing
+
+  where
+    mkApp :: GML.Exp -> MyStack (Expr Double)
+    mkApp (GML.exp -> EApp f arg) = do
+      -- This is just a placeholder, we need to replace the function application by its value.
+      -- TODO:
+      -- 1) change MyStack into Eff '[Reader UserFuns, Writer MyState, Maybe] so we get access to user-defined functions
+      -- 2) Get the ([String], Expr Double) pair and replace all the "MathVar x" from the [String] argument with actual arguments of the EApp.
+      argEx <- gml2ml arg
+      fEx <- trace [i|\ngml2ml: argEx = #{argEx}\n|] $ gml2ml f
+      pure $ MathVar [i|#{fEx}(#{argEx})|]
+    mkApp _ = mzero
 {-  ECompOp
-    EApp
     ELet
     EIs
     ERec

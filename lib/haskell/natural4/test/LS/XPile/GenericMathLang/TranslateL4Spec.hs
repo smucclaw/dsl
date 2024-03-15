@@ -126,7 +126,13 @@ spec = do
               ]
         getVarVals rl `shouldBe` expected
 
-    testBaseExpify "test lambda expression" "should become a binary function" [testLambda] [testLambda_gold]
+
+    describe "test lambda expression" do
+      it "should become a binary function in the environment" do
+        let toTest = runToLC $ l4ToLCProgram testFunApp
+        case toTest of
+          Right p -> fmap exp (userFuns p) `shouldBe` testLambda_gold
+          Left err -> err `shouldBe` MiscError "" ""
 
     testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
     testBaseExpify "test function application" "fun app and nested genitives" nestedGenitives_in_fun_app nestedGenitives_in_fun_app_gold
@@ -144,6 +150,12 @@ spec = do
             let exp = noExtraMdata res
                 (ml, _st) = runWriter $ runMaybeT $ ML.gml2ml exp
             ml `shouldBe` Just (MathVar "ind.friend.age")
+
+    it "nested genitives+custom fun should turn out right" do
+      let l4i = defaultL4I {origrules = nestedGenitives_in_fun_app}
+          res = ML.toMathLang l4i
+      res `shouldBe` ([], emptyState)
+
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify name desc rule gold =
@@ -303,7 +315,7 @@ mathLangGold4 = (
                 ( MathVar "income tax component" )
                 ( MathVar "asset tax component" )
             )
-        ], symtabP = Map.empty , symtabL = Map.empty , symtabS = Map.empty
+        ], symtabP = Map.empty , symtabL = Map.empty , symtabS = Map.empty, symtabFun = Map.empty
     }
   )
 
@@ -963,7 +975,7 @@ nestedGenitives_in_fun_app =  testLambda :
         }]
   ]
 
-nestedGenitives_in_fun_app_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}},EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+nestedGenitives_in_fun_app_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens = fmap mkTypedMulti >>> nonEmpty
@@ -1033,28 +1045,31 @@ testLambda = mkTestRule
                 [ MTT "x * (1 - y)" ]
         , hBody = Nothing}]
 
-testLambda_gold = ELam
-    { param = MkVar "x", body = MkExp
-        { exp = ELam
-            { param = MkVar "y", body = MkExp
-                { exp = ENumOp
-                    { numOp = OpMul, nopLeft = MkExp
+testLambda_gold = Map.fromList [
+    ( "discounted by"
+    , ENumOp
+        { numOp = OpMul
+        , nopLeft = MkExp
                         { exp = EVar
-                            { var = MkVar "x" }, md = []
-                        }, nopRight = MkExp
+                { var = MkVar "x" }
+            , md = []
+            }
+        , nopRight = MkExp
                         { exp = ENumOp
-                            { numOp = OpMinus, nopLeft = MkExp
+                { numOp = OpMinus
+                , nopLeft = MkExp
                                 { exp = ELit
-                                    { lit = EInteger 1 }, md = []
-                                }, nopRight = MkExp
-                                { exp = EVar { var = MkVar "y" }, md = [] }
-                            }, md = []
+                        { lit = EInteger 1 }
+                    , md = []
+                    }
+                , nopRight = MkExp
+                    { exp = EVar
+                        { var = MkVar "y" }
+                    , md = []
                         }
-                    }, md = []
                 }
-            }, md = []
-        }
-    }
+            , md = []
+            }})]
 
 testFunApp :: [Rule]
 testFunApp = testLambda :
@@ -1073,4 +1088,4 @@ testFunApp = testLambda :
   ]
 
 
-testFunApp_gold = [ELam {param = MkVar "x", body = MkExp {exp = ELam {param = MkVar "y", body = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}}, md = []}}, EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ELit {lit = EString "Step 3"}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ELit {lit = EString "risk cap"}, md = []}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+testFunApp_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ELit {lit = EString "Step 3"}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ELit {lit = EString "risk cap"}, md = []}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]

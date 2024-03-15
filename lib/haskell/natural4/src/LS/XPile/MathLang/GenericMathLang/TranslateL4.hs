@@ -261,7 +261,15 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
 type RetVarInfo = [(Var, Maybe L4EntType)]
-type UserDefinedFun = (Var, Operator Parser BaseExp)
+type UserDefinedFun = (Var, Exp, Operator Parser BaseExp)
+getFunName :: UserDefinedFun -> Var
+getFunName (a,_,_) = a
+
+getFunDef :: UserDefinedFun -> Exp
+getFunDef (_,b,_) = b
+
+getOperMP :: UserDefinedFun -> Operator Parser BaseExp
+getOperMP (_,_,c) = c
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
@@ -395,13 +403,25 @@ l4ToLCProgram rules = do
       withCustomOpers = over _ToLC (local addCustomOpers)
   lcProg <- withCustomOpers $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
-                   , lcProgram = F.toList lcProg
+                   , lcProgram = programWithoutUserFuns lcProg
                    , globalVars = globalVars
-                   , givethVar = giveths}
+                   , givethVar = giveths
+                   , userFuns = getUserFuns customOpers}
   where
     globalVars = mkGlobalVars HM.empty
+
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
+
+    getUserFuns :: [UserDefinedFun] -> HM.HashMap String Exp
+    getUserFuns opers = HM.fromList [(T.unpack var,exp) | (MkVar var,exp,_) <- opers]
+
+    -- Separate user functions from the body of the program (mostly because
+    -- I don't want to handle them in ToMathLang the same way as the rest /Inari)
+    programWithoutUserFuns prog = [exp | exp <- F.toList prog, notLambda exp]
+      where
+        notLambda (exp -> ELam _ _) = False
+        notLambda _ = True
 
 {-==============================================================================
   1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL
@@ -573,9 +593,9 @@ isLambda hl = case HM.keys hl.shcGiven of
       expr <- parseExpr $ MTT $ textifyMTEs fbody
       let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
       pos <- mkToLC $ asks currSrcPos
-      operator <- mkOperator pos fname vars
+      (var, operator) <- mkOperator pos fname vars
       if all (`elem` varsInExpr) vars
-        then pure (operator, vars, expr)
+        then pure ((var, noExtraMdata expr, operator), vars, expr)
         else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
       where
         -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
@@ -717,7 +737,7 @@ isUserFun funs mte =
 
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest)) = do
-  userFuns <- ToLC $ asks (fmap fst . userDefinedFuns) -- :: [Var]
+  userFuns <- ToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isUserFun userFuns) rest of
   -- ind's parent's sibling's … income
@@ -733,7 +753,7 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest)) = do
           fArg1 = noExtraMdata (EApp fExp (noExtraMdata arg1))
       pure $ EApp fArg1 arg2
 baseExpifyMTEs mtes = do
-  userFuns <- ToLC $ asks (fmap fst . userDefinedFuns) -- :: [Var]
+  userFuns <- ToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
   case mtes of
     [mte] -> do
       -- Inari: assuming that the Var will be used for comparison
@@ -859,7 +879,7 @@ pExpr = do
   pos <- lift $ ToLC $ asks currSrcPos
   customOpers <- lift $ ToLC $ asks userDefinedFuns
   --trace [i|pExpr: length customOpers = #{length customOpers}|]
-  (makeExprParser pTerm (fmap snd customOpers : table pos) <?> "expression")
+  (makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression")
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp

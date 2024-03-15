@@ -75,15 +75,16 @@ data MyState = MyState { symtabF :: SymTab (Expr     Double) -- numbers (numeric
                        , symtabP :: SymTab (Pred     Double) -- booleans (propositional expressions)
                        , symtabL :: SymTab (ExprList Double) -- lists of numeric expressions
                        , symtabS :: SymTab String
+                       , symtabFun :: SymTab ([String], Expr Double) --bound variables that need to be substituted inside the expression
                        }
   deriving (Show, Eq)
 
 emptyState :: MyState
-emptyState = MyState Map.empty Map.empty Map.empty Map.empty
+emptyState = MyState Map.empty Map.empty Map.empty Map.empty Map.empty
 
 instance Semigroup MyState where
-  (MyState f p l s) <> (MyState f' p' l' s') =
-    MyState (f <> f') (p <> p') (l <> l') (s <> s')
+  (MyState f p l s fun) <> (MyState f' p' l' s' fun') =
+    MyState (f <> f') (p <> p') (l <> l') (s <> s') (fun <> fun')
 
 instance Monoid MyState where
   mempty = emptyState

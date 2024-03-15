@@ -168,7 +168,6 @@ library
     , tuple
     , unordered-containers
     , utf8-string
-    , utility-ht
     , vector
     , witherable
   default-language: GHC2021
@@ -239,7 +238,6 @@ executable natural4-exe
     , tuple
     , unordered-containers
     , utf8-string
-    , utility-ht
     , vector
     , witherable
   default-language: GHC2021
@@ -312,7 +310,6 @@ test-suite doctests
     , tuple
     , unordered-containers
     , utf8-string
-    , utility-ht
     , vector
     , witherable
   default-language: GHC2021
@@ -409,7 +406,6 @@ test-suite natural4-test
     , tuple
     , unordered-containers
     , utf8-string
-    , utility-ht
     , vector
     , witherable
     , yaml
@@ -484,7 +480,6 @@ benchmark natural4-bench
     , tuple
     , unordered-containers
     , utf8-string
-    , utility-ht
     , vector
     , witherable
   default-language: GHC2021

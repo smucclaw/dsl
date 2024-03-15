@@ -13,7 +13,7 @@ module LS.XPile.Edn.CPSTranspileM
     logTranspileMsg,
     logTranspiledTo,
     runCPSTranspileM,
-    edn,
+    ednText,
     messageLog,
   )
 where
@@ -40,31 +40,14 @@ import Optics qualified
 import Optics.TH (camelCaseFields, makeLensesWith)
 import Data.Bifunctor (Bifunctor(..))
 
--- data TranspileState metadata = TranspileState
---   { transpileStateContext :: Context,
---     transpileStateMessageLog :: MessageLog metadata
---   }
---   deriving (Eq, Show, Generic, Hashable)
-
--- makeLensesWith camelCaseFields ''TranspileState
-
--- instance Semigroup (TranspileState metadata) where
---   (<>) = mappenddefault
-
--- instance Monoid (TranspileState metadata) where
---   mempty = memptydefault
-
--- instance IsContext (TranspileState metadata) where
---   (<++>) vars = Optics.over context (vars <++>)
---   (!?) symbol = Optics.view context >>> (symbol !?)
-
--- instance IsMessageLog TranspileState metadata where
---   logMsg severity = Optics.over messageLog . logMsg severity
---   getMsgs = Optics.view messageLog >>> getMsgs
-
 newtype CPSTranspileM metadata t
   = CPSTranspileM
-  {cpsTranspileM :: Cont.ContT EDN.TaggedValue (Reader.ReaderT Context (State.State (MessageLog metadata))) t}
+  { cpsTranspileM ::
+      Cont.ContT
+        EDN.TaggedValue
+        (Reader.ReaderT Context (State.State (MessageLog metadata)))
+        t
+  }
   deriving newtype
     ( Functor,
       Applicative,
@@ -73,6 +56,14 @@ newtype CPSTranspileM metadata t
       State.MonadState (MessageLog metadata)
     )
 
+data TranspileResult metadata = TranspileResult
+  { transpileResultEdnText :: T.Text,
+    transpileResultMessageLog :: MessageLog metadata
+  }
+  deriving (Eq, Show, Generic)
+
+makeLensesWith camelCaseFields ''TranspileResult
+
 logTranspileMsg ::
   Severity -> MessageData metadata -> CPSTranspileM metadata ()
 logTranspileMsg severity = logMsg severity >>> State.modify
@@ -80,19 +71,12 @@ logTranspileMsg severity = logMsg severity >>> State.modify
 logTranspiledTo ::
   AstNode metadata -> EDN.TaggedValue -> CPSTranspileM metadata ()
 logTranspiledTo astNode result =
-  TranspiledTo
-    { messageDataAstNode = astNode,
-      messageDataResult = EDN.renderText result
-    }
-    |> logTranspileMsg Info
-
-data TranspileResult metadata = TranspileResult
-  { transpileResultEdn :: T.Text,
-    transpileResultMessageLog :: MessageLog metadata
-  }
-  deriving (Eq, Show, Generic)
-
-makeLensesWith camelCaseFields ''TranspileResult
+  logTranspileMsg
+    Info
+    TranspiledTo
+      { messageDataAstNode = astNode,
+        messageDataResult = EDN.renderText result
+      }
 
 runCPSTranspileM ::
   CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata

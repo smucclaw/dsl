@@ -138,7 +138,6 @@ library
     , filepath
     , flow
     , generic-arbitrary
-    , generic-deriving
     , generic-optics
     , gf
     , graphviz
@@ -211,7 +210,6 @@ executable natural4-exe
     , filepath
     , flow
     , generic-arbitrary
-    , generic-deriving
     , generic-optics
     , gf
     , graphviz
@@ -287,7 +285,6 @@ test-suite doctests
     , filepath
     , flow
     , generic-arbitrary
-    , generic-deriving
     , generic-optics
     , gf
     , graphviz
@@ -383,7 +380,6 @@ test-suite natural4-test
     , filepath
     , flow
     , generic-arbitrary
-    , generic-deriving
     , generic-optics
     , gf
     , graphviz
@@ -464,7 +460,6 @@ benchmark natural4-bench
     , filepath
     , flow
     , generic-arbitrary
-    , generic-deriving
     , generic-optics
     , gf
     , graphviz

@@ -87,7 +87,6 @@ dependencies:
   - tuple
   - hedn
   - recursion-schemes
-  - generic-deriving
   - deque
   # - unbound-generics
   # - holmes

@@ -28,7 +28,6 @@ import Data.Hashable (Hashable)
 import Data.Text qualified as T
 import Flow ((|>))
 import GHC.Generics (Generic)
-import Generics.Deriving.Monoid (mappenddefault, memptydefault)
 import LS.XPile.Edn.Ast (AstNode)
 import LS.XPile.Edn.Context (Context, IsContext (..), (<++>))
 import LS.XPile.Edn.MessageLog

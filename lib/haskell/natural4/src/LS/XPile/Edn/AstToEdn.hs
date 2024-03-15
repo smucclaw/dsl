@@ -43,8 +43,9 @@ import Prelude hiding (head)
 --    HornLike rule.
 -- Technically, we traverse the AST via a paramorphism (ie primitive recursion),
 -- augmented with a combination of a CPS + State monad on contexts to invert
--- the flow of control, so that we can thread the context through each step in
--- a top-down manner, extending it as we go.
+-- the flow of control, so that we can suspend computations under binders when
+-- traversing the AST bottom-up via the paramorphism, and only resume them
+-- after extending them at a binder node higher up in the AST.
 astToEdn :: AstNode metadata -> TranspileResult metadata
 astToEdn = runCPSTranspileM . para \case
   RuleFactF

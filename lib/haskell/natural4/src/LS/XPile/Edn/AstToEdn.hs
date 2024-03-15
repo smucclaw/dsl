@@ -42,10 +42,11 @@ import Prelude hiding (head)
 -- 2. Temporarily extended when recursing into the head and body of a
 --    HornLike rule.
 -- Technically, we traverse the AST via a paramorphism (ie primitive recursion),
--- augmented with a combination of a CPS + State monad on contexts to invert
--- the flow of control, so that we can suspend computations under binders when
--- traversing the AST bottom-up via the paramorphism, and only resume them
--- after extending the context at a binder node higher up in the AST.
+-- augmented with a CPS'd state + reader monad (for logging and contexts
+-- respectively) to invert the flow of control, so that we can suspend
+-- computations under binders when traversing the AST bottom-up via the
+-- paramorphism, and only resume them after extending the context at a binder
+-- node higher up in the AST.
 astToEdn :: AstNode metadata -> TranspileResult metadata
 astToEdn = runCPSTranspileM . para \case
   RuleFactF

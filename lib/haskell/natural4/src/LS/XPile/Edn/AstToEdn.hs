@@ -32,7 +32,6 @@ import LS.XPile.Edn.CPSTranspileM
   )
 import LS.XPile.Edn.Context (Context, (!?), (<++>))
 import LS.XPile.Edn.MessageLog (MessageData (..), MessageLog, Severity (..))
-import Optics qualified
 import Prelude hiding (head)
 
 -- Recursively transpile an AST node, threading an initial empty context

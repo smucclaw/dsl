@@ -7,7 +7,6 @@
 
 module LS.XPile.Edn.AstToEdn
   ( astToEdnText,
-    astToEdn,
   )
 where
 
@@ -30,7 +29,7 @@ import LS.XPile.Edn.CPSTranspileM
     TranspileState (..),
     logTranspileMsg,
     runCPSTranspileM,
-    withExtendedCtx,
+    withExtendedCtx, logTranspiledTo,
   )
 import LS.XPile.Edn.Context (Context, (!?), (<++>))
 import LS.XPile.Edn.MessageLog (Severity (..), MessageData (..), MessageLog)
@@ -69,11 +68,7 @@ astToEdn = runCPSTranspileM . para \case
 
       let result = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
 
-          messageDataResult = result |> EDN.renderText
-          messageDataAstNode =
-            RuleFact {metadata, givens, head, body}
-
-      logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
+      logTranspiledTo RuleFact {metadata, givens, head, body} result
       pure result
 
   CompoundTermF
@@ -81,7 +76,6 @@ astToEdn = runCPSTranspileM . para \case
       opF = op,
       childrenF = unzip -> (children, childrenConts)
     } -> do
-      -- Recursively resume the children continuations.
       childrenEdns <- sequenceA childrenConts
 
       let result = childrenEdns |> case op of
@@ -90,11 +84,7 @@ astToEdn = runCPSTranspileM . para \case
             AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
             OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
 
-          messageDataResult = result |> EDN.renderText
-          messageDataAstNode =
-            CompoundTerm {metadata, op, children}
-
-      logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
+      logTranspiledTo CompoundTerm {metadata, op, children} result
       pure result
 
   TextF {metadataF = metadata, textF = text} -> do
@@ -102,10 +92,7 @@ astToEdn = runCPSTranspileM . para \case
 
     let result = text |> if text !? state then toVar else toSymbol
 
-        messageDataResult = EDN.renderText result
-        messageDataAstNode = Text {metadata, text}
-
-    logTranspileMsg Info TranspiledTo {messageDataAstNode, messageDataResult}
+    logTranspiledTo Text {metadata, text} result
     pure result
   where
     toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN

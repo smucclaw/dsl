@@ -26,6 +26,7 @@ import Deque.Strict qualified as Deque
 import GHC.Generics (Generic)
 import LS.XPile.Edn.Ast (AstNode)
 import Optics.TH (camelCaseFields, makeLensesWith)
+import GHC.IsList (IsList)
 
 data Severity
   = Info
@@ -53,7 +54,7 @@ newtype MessageLog metadata
   = MessageLog {messageLog :: Deque.Deque (Message metadata)}
   deriving (Eq, Show, Generic)
   deriving newtype Hashable
-  deriving (Semigroup, Monoid) via Deque.Deque (Message metadata)
+  deriving (IsList, Semigroup, Monoid) via Deque.Deque (Message metadata)
 
 -- class IsMessageLog t metadata where
 --   logMsg :: Severity -> MessageData metadata -> t metadata -> t metadata

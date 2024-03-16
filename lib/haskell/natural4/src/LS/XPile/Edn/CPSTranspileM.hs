@@ -29,12 +29,12 @@ import Data.Text qualified as T
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.XPile.Edn.Ast (AstNode)
-import LS.XPile.Edn.Context (Context, IsContext (..), (<++>))
+import LS.XPile.Edn.Context (Context, (<++>))
 import LS.XPile.Edn.MessageLog
-  ( IsMessageLog (..),
-    MessageData (..),
+  ( MessageData (..),
     MessageLog,
     Severity (..),
+    logMsg
   )
 import Optics qualified
 import Optics.TH (camelCaseFields, makeLensesWith)

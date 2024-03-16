@@ -5,7 +5,8 @@
 
 module LS.XPile.Edn.Context
   ( Context,
-    IsContext (..)
+    (<++>),
+    (!?)
   )
 where
 
@@ -25,10 +26,14 @@ import GHC.IsList (IsList)
 newtype Context = Context {context :: HashSet T.Text}
   deriving (Eq, Show, Generic, Hashable, IsList, Semigroup, Monoid)
 
-class IsContext t where
-  (<++>) :: Foldable m => m T.Text -> t -> t
-  (!?) :: T.Text -> t -> Bool
+-- class IsContext t where
+--   (<++>) :: Foldable m => m T.Text -> t -> t
+--   (!?) :: T.Text -> t -> Bool
 
-instance IsContext Context where
-  vars <++> (coerce -> ctx) = vars |> foldr HashSet.insert ctx |> coerce
-  symbol !? (coerce -> ctx) = symbol `HashSet.member` ctx
+-- instance IsContext Context where
+
+(<++>) :: Foldable m => m T.Text -> Context -> Context
+vars <++> (coerce -> context) = vars |> foldr HashSet.insert context |> coerce
+
+(!?) :: T.Text -> Context -> Bool
+symbol !? (coerce -> context) = symbol `HashSet.member` context

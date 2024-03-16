@@ -1,6 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -48,7 +47,7 @@ newtype CPSTranspileM metadata t
         (Reader.ReaderT Context (State.State (MessageLog metadata)))
         t
   }
-  deriving newtype
+  deriving
     ( Functor,
       Applicative,
       Monad,

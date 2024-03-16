@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -53,8 +53,7 @@ makeLensesWith camelCaseFields ''Message
 newtype MessageLog metadata
   = MessageLog {messageLog :: Deque.Deque (Message metadata)}
   deriving (Eq, Show, Generic)
-  deriving newtype Hashable
-  deriving (IsList, Semigroup, Monoid) via Deque.Deque (Message metadata)
+  deriving newtype (Hashable, IsList, Semigroup, Monoid)
 
 -- class IsMessageLog t metadata where
 --   logMsg :: Severity -> MessageData metadata -> t metadata -> t metadata

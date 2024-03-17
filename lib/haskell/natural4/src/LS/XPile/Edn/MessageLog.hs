@@ -52,8 +52,8 @@ makeLensesWith camelCaseFields ''Message
 
 newtype MessageLog metadata
   = MessageLog {messageLog :: Deque.Deque (Message metadata)}
-  deriving (Eq, Show, Generic)
-  deriving newtype (Hashable, IsList, Semigroup, Monoid)
+  deriving (Eq, Show)
+  deriving newtype (Semigroup, Monoid)
 
 -- class IsMessageLog t metadata where
 --   logMsg :: Severity -> MessageData metadata -> t metadata -> t metadata

@@ -59,7 +59,7 @@ data TranspileResult metadata = TranspileResult
   { transpileResultEdnText :: T.Text,
     transpileResultMessageLog :: MessageLog metadata
   }
-  deriving (Eq, Show, Generic)
+  deriving Show
 
 makeLensesWith camelCaseFields ''TranspileResult
 

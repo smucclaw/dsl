@@ -17,7 +17,6 @@ import Data.EDN.QQ qualified as EDN
 import Data.Functor.Foldable (Recursive (..))
 import Data.List (intersperse)
 import Data.String.Interpolate (i)
-import Data.String.Interpolate.Conversion (Interpolatable, IsCustomSink)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
 import Flow ((|>))

@@ -51,8 +51,7 @@ toMathLang l4i =
     Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
     Right lamCalcProgram ->
       let userfuns = getUserFuns lamCalcProgram.userFuns
-          exprs = gmls2ml lamCalcProgram.lcProgram
-          st = exprs <> userfuns
+          st = gmls2ml userfuns lamCalcProgram.lcProgram
           giveth = T.unpack  <$> lamCalcProgram.givethVar
           toplevels = case giveth of
             [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
@@ -174,52 +173,52 @@ type VarsAndBody = ([String], Expr Double)
 
 newtype ToMathLang a =
   ToMathLang (Eff '[ Writer MyState
-                   , Reader [VarsAndBody]
+                   , Reader (SymTab VarsAndBody)
                    , Fail ] a)
   deriving newtype (Functor, Applicative, Monad, MonadFail)
 
-_ToMathLang :: Iso' (ToMathLang a) (Eff '[Writer MyState, Reader [VarsAndBody], Fail] a)
+_ToMathLang :: Iso' (ToMathLang a) (Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a)
 _ToMathLang = coerced
 
-mkToMathLang :: Eff '[Writer MyState, Reader [VarsAndBody], Fail] a -> ToMathLang a
+mkToMathLang :: Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a -> ToMathLang a
 mkToMathLang = view (re _ToMathLang)
 
-unToMathLang :: ToMathLang a -> Eff '[Writer MyState, Reader [VarsAndBody], Fail] a
+unToMathLang :: ToMathLang a -> Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a
 unToMathLang = view _ToMathLang
 
-runToMathLang :: ToMathLang a -> Either String a
-runToMathLang m = case runToMathLang' m of
+runToMathLang :: SymTab VarsAndBody -> ToMathLang a -> Either String a
+runToMathLang r m = case runToMathLang' r m of
               Right (res,_state) -> Right res
               Left err           -> Left err
 
-execToMathLang :: ToMathLang a -> MyState
-execToMathLang m = case runToMathLang' m of
+execToMathLang :: SymTab VarsAndBody -> ToMathLang a -> MyState
+execToMathLang r m = case runToMathLang' r m of
                     Right (_res,state) -> state
                     Left _             -> emptyState
 
-runToMathLang' :: ToMathLang a -> Either ToMathLangError (a, MyState)
-runToMathLang' (unToMathLang -> m) =
+runToMathLang' :: SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
+runToMathLang' r (unToMathLang -> m) =
   m
     |> runWriterLocal
-    |> runReader []
+    |> runReader r
     |> runFail
     |> runPureEff
 
 -- all of the results are in MyState, so we can ignore the actual res
-gmls2ml :: [GML.Exp] -> MyState
-gmls2ml [] = emptyState
-gmls2ml (e:es) = trace [i|\ngmls2ml: #{st}\n|] $ st <> gmls2ml es
+gmls2ml :: SymTab VarsAndBody -> [GML.Exp] -> MyState
+gmls2ml _userfuns [] = emptyState
+gmls2ml userfuns (e:es) = trace [i|\ngmls2ml: #{st}\n|] $ st <> gmls2ml userfuns es
   where -- TODO: temporary hack, probably reconsider when exactly stuff is put into MyState
     seqE = case e.exp of
       ESeq _ -> e
       _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
-    st = execToMathLang $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
+    st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
-getUserFuns :: Map.HashMap String GML.Exp -> MyState
-getUserFuns hm = emptyState {symtabFun = Map.map f hm}
+getUserFuns :: SymTab GML.Exp -> SymTab VarsAndBody
+getUserFuns hm = Map.map f hm
   where
-    f :: GML.Exp -> ([String], Expr Double)
-    f exp = case runToMathLang $ gml2ml exp of
+    f :: GML.Exp -> VarsAndBody
+    f exp = case runToMathLang Map.empty $ gml2ml exp of
             Right mlExp -> ([T.unpack v | GML.MkVar v <- nub vars], mlExp)
             Left _ -> ([], Undefined Nothing)
       where

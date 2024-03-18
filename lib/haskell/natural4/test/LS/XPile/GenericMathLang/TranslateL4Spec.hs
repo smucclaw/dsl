@@ -25,12 +25,12 @@ import Prelude hiding (exp, seq)
 
 spec :: Spec
 spec = do
-    describe "rule 2 into SimpleHL" do
-      it "should become a SimpleHL" do
-        let toTest = runToLC $ simplifyL4Hlike rule2givens
-        case toTest of
-          Left err -> err `shouldBe` MiscError "" ""
-          Right res -> baseHL res `shouldBe` rule2givens_shl_gold
+  describe "rule 2 into SimpleHL" do
+    it "should become a SimpleHL" do
+      let toTest = runToLC $ simplifyL4Hlike rule2givens
+      case toTest of
+        Left err -> err `shouldBe` MiscError "" ""
+        Right res -> baseHL res `shouldBe` rule2givens_shl_gold
 
     -- Postpone
     -- testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
@@ -63,92 +63,92 @@ spec = do
     --                 [arithRule4]
     --                 [arithRule4_gold]
 
-    describe "toMathLang" do
-      let l4i = defaultL4I {origrules = [arithRule4]}
-          res@(exprs,st) = ML.toMathLang l4i
+  describe "toMathLang" do
+    let l4i = defaultL4I {origrules = [arithRule4]}
+        res@(exprs,st) = ML.toMathLang l4i
 
-      it "should turn Rules straight to MathLang (via GenericMathLang)" do
-        res `shouldBe` mathLangGold4
+    it "should turn Rules straight to MathLang (via GenericMathLang)" do
+      res `shouldBe` mathLangGold4
 
-      it "should evaluate taxesPayable correctly when info is lacking" do
-        case exprs of
-          [expr] -> do
-            (taxes, _xp, _st, _strs) <-
-              xplainE (mempty :: Map.HashMap () ()) st $ eval expr
-            taxes `shouldBe` 0.0 -- because we don't know what the phase of the moon is, defaults to 0.0
-          _ -> mempty
+    it "should evaluate taxesPayable correctly when info is lacking" do
+      case exprs of
+        [expr] -> do
+          (taxes, _xp, _st, _strs) <-
+            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+          taxes `shouldBe` 0.0 -- because we don't know what the phase of the moon is, defaults to 0.0
+        _ -> mempty
 
-      it "should evaluate taxesPayable correctly when more info is given" do
-        let st' = st {
-            symtabP = Map.singleton "vivacity" (PredVal (Just "vivacity") True),
-            symtabF = symtabF st <> Map.singleton "annualIncome" (Val (Just "annualIncome") 10000)}
-        case exprs of
-          [expr] -> do
-            (taxes, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
-            taxes `shouldBe` 50.0 -- now we should know vivacity and annual income
-          _ -> mempty
+    it "should evaluate taxesPayable correctly when more info is given" do
+      let st' = st {
+          symtabP = Map.singleton "vivacity" (PredVal (Just "vivacity") True),
+          symtabF = symtabF st <> Map.singleton "annualIncome" (Val (Just "annualIncome") 10000)}
+      case exprs of
+        [expr] -> do
+          (taxes, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+          taxes `shouldBe` 50.0 -- now we should know vivacity and annual income
+        _ -> mempty
 
-    describe "evalSimple" do
-      it "should evaluate 2+2" do
-        let l4i = defaultL4I {origrules = [arithRule1]}
-        case ML.toMathLang l4i of
-          ([],_) -> mempty
-          (expr:_,st) -> do
-            (e, _xp, _st, _strs) <-
-              xplainE (mempty :: Map.HashMap () ()) st $ eval expr
-            e `shouldBe` 4.0
+  describe "evalSimple" do
+    it "should evaluate 2+2" do
+      let l4i = defaultL4I {origrules = [arithRule1]}
+      case ML.toMathLang l4i of
+        ([],_) -> mempty
+        (expr:_,st) -> do
+          (e, _xp, _st, _strs) <-
+            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+          e `shouldBe` 4.0
 
     -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
 
-    describe "evalComplex" do
-      it "should evaluate arithRule2" do
-        let l4i = defaultL4I {origrules = [arithRule2withInitializedValues]}
-        case ML.toMathLang l4i of
-          ([], _) -> mempty
-          (expr:_, st) -> do
-            (res, _xp, _st, _strs) <-
-              xplainE (mempty :: Map.HashMap () ()) st $ eval expr
-            res `shouldBe` 45.14
+  describe "evalComplex" do
+    it "should evaluate arithRule2" do
+      let l4i = defaultL4I {origrules = [arithRule2withInitializedValues]}
+      case ML.toMathLang l4i of
+        ([], _) -> mempty
+        (expr:_, st) -> do
+          (res, _xp, _st, _strs) <-
+            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+          res `shouldBe` 45.14
 
-      let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
-          res_ar3@(exprs,state) = ML.toMathLang l4i_ar3
-      it "toMathLang for arithRule3 should take m3a as the toplevel" do
-        symtabF state `shouldBe` arithRule3_gold_symtab
+  let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
+      res_ar3@(exprs,state) = ML.toMathLang l4i_ar3
+  it "toMathLang for arithRule3 should take m3a as the toplevel" do
+    symtabF state `shouldBe` arithRule3_gold_symtab
 
-    describe "extractVariables" do
-      xit "extracts variables and their values from rules" do
-        let rl = arithRule4
-            expected = Map.fromList
-              [ ("taxesPayable", "taxesPayableAlive"),
-                ("taxesPayable", "taxesPayableAlive / 2"),
-                ("incomeTaxRate", "1.0e-2"),
-                ("assetTaxRate", "7.0e-2")
-              ]
-        getVarVals rl `shouldBe` expected
+  describe "extractVariables" do
+    xit "extracts variables and their values from rules" do
+      let rl = arithRule4
+          expected = Map.fromList
+            [ ("taxesPayable", "taxesPayableAlive"),
+              ("taxesPayable", "taxesPayableAlive / 2"),
+              ("incomeTaxRate", "1.0e-2"),
+              ("assetTaxRate", "7.0e-2")
+            ]
+      getVarVals rl `shouldBe` expected
 
 
-    describe "test lambda expression" do
-      it "should become a binary function in the environment" do
-        let toTest = runToLC $ l4ToLCProgram testFunApp
-        case toTest of
-          Right p -> fmap exp (userFuns p) `shouldBe` testLambda_gold
-          Left err -> err `shouldBe` MiscError "" ""
+  describe "test lambda expression" do
+    it "should become a binary function in the environment" do
+      let toTest = runToLC $ l4ToLCProgram testFunApp
+      case toTest of
+        Right p -> fmap exp (userFuns p) `shouldBe` testLambda_gold
+        Left err -> err `shouldBe` MiscError "" ""
 
-    testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
-    testBaseExpify "test function application" "fun app and nested genitives" nestedGenitives_in_fun_app nestedGenitives_in_fun_app_gold
+  testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
+  testBaseExpify "test function application" "fun app and nested genitives" nestedGenitives_in_fun_app nestedGenitives_in_fun_app_gold
 
-    describe "genitive->record field" do
-      let gml = runToLC $ baseExpifyMTEs nestedGenitives
-      case gml of
-        Left err -> do
-          it "unsuccesful, abort" do
-            err `shouldBe` MiscError "foo" "bar"
-        Right res -> do
-          it "should turn xs y into a record x.y" do
-            res `shouldBe` nestedGenitives_gold
-          it "should turn into correct MathLang" do
-            let exp = noExtraMdata res
-              res' = ML.runToMathLang $ ML.gml2ml exp
+  describe "genitive->record field" do
+    let gml = runToLC $ baseExpifyMTEs nestedGenitives
+    case gml of
+      Left err -> do
+        it "unsuccesful, abort" do
+          err `shouldBe` MiscError "foo" "bar"
+      Right res -> do
+        it "should turn xs y into a record x.y" do
+          res `shouldBe` nestedGenitives_gold
+        it "should turn into correct MathLang" do
+          let exp = noExtraMdata res
+              res' = ML.runToMathLang Map.empty $ ML.gml2ml exp
           case res' of
             Right ml -> ml `shouldBe` MathVar "ind.friend.age"
             Left err -> err `shouldBe` "something went wrong :("
@@ -159,6 +159,19 @@ spec = do
           res = ML.toMathLang l4i
       res `shouldBe` ([], emptyState)
 
+  describe "testPau" do
+    let l4i = defaultL4I {origrules = pau0}
+        res = ML.toMathLang l4i
+    it "actual insurance policy" do
+      res `shouldBe` ([], emptyState)
+
+    --   it "evaluate pau0" do
+    --     case res of
+    --       ([], _) -> mempty
+    --       (expr:_, st) -> do
+    --         (res, _xp, _st, _strs) <-
+    --           xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+    --         res `shouldBe` 100
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify name desc rule gold =
@@ -1041,11 +1054,11 @@ mkMetadata typelabel = [ MkExpMetadata
 
 testLambda :: Rule
 testLambda = mkTestRule
-        [ MTT "discounted by" ]
+    [ MTT "discounted by" ]
     (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
     [ HC { hHead = RPConstraint
-                [ MTT "x", MTT "discounted by", MTT "y" ] RPis
-                [ MTT "x * (1 - y)" ]
+            [ MTT "x", MTT "discounted by", MTT "y" ] RPis
+            [ MTT "x * (1 - y)" ]
         , hBody = Nothing}]
 
 testLambda_gold = Map.fromList [
@@ -1053,15 +1066,15 @@ testLambda_gold = Map.fromList [
     , ENumOp
         { numOp = OpMul
         , nopLeft = MkExp
-                        { exp = EVar
+            { exp = EVar
                 { var = MkVar "x" }
             , md = []
             }
         , nopRight = MkExp
-                        { exp = ENumOp
+            { exp = ENumOp
                 { numOp = OpMinus
                 , nopLeft = MkExp
-                                { exp = ELit
+                    { exp = ELit
                         { lit = EInteger 1 }
                     , md = []
                     }
@@ -1069,7 +1082,7 @@ testLambda_gold = Map.fromList [
                     { exp = EVar
                         { var = MkVar "y" }
                     , md = []
-                        }
+                    }
                 }
             , md = []
             }})]
@@ -1092,3 +1105,9 @@ testFunApp = testLambda :
 
 
 testFunApp_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ELit {lit = EString "Step 3"}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ELit {lit = EString "risk cap"}, md = []}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+
+pau0 :: [Rule]
+pau0 = [
+  Hornlike {name = [MTT "The Answer"], super = Nothing, keyword = Decide, given = Just ((MTT "addBenefit" :| [],Just (SimpleType TOne "Number")) :| [(MTT "otherBenefits" :| [],Just (SimpleType TList1 "Number")),(MTT "policy" :| [],Just (SimpleType TOne "Policy")),(MTT "policyHolder" :| [],Just (SimpleType TOne "PolicyHolder")),(MTT "accident" :| [],Just (SimpleType TOne "Accident")),(MTT "illness" :| [],Just (SimpleType TOne "Claim")),(MTT "user input" :| [],Just (SimpleType TOne "Dictionary"))]), giveth = Just ((MTT "The Answer" :| [],Just (SimpleType TOne "Number")) :| []), upon = Nothing, clauses = [HC {hHead = RPConstraint [MTT "The Answer"] RPis [MTT "accident branch"], hBody = Just (Leaf (RPConstraint [MTT "user input's",MTT "accident_claim"] RPis [MTT "selected"]))},HC {hHead = RPConstraint [MTT "The Answer"] RPis [MTT "illness branch"], hBody = Just (Leaf (RPMT [MTT "OTHERWISE"]))}], rlabel = Just ("\167",2,"PAU0"), lsource = Nothing, wwhere = [], srcref = Just (SrcRef {url = "/Users/inari/Downloads/LegalSS v0.9.4.6 for insurance - PAUs.csv", short = "/Users/inari/Downloads/LegalSS v0.9.4.6 for insurance - PAUs.csv", srcrow = 4, srccol = 52, version = Nothing}), defaults = [], symtab = []}
+ , Hornlike {name = [MTT "accident branch"], super = Nothing, keyword = Where, given = Nothing, giveth = Nothing, upon = Nothing, clauses = [HC {hHead = RPConstraint [MTT "accident branch"] RPis [MTT "excludedZero"], hBody = Just (Leaf (RPMT [MTT "ADD is disqualified entirely"]))},HC {hHead = RPConstraint [MTT "accident branch"] RPis [MTT "ADD benefit"], hBody = Just (Leaf (RPMT [MTT "OTHERWISE"]))},HC {hHead = RPConstraint [MTT "illness branch"] RPis [MTT "excludedZero"], hBody = Just (Leaf (RPConstraint [MTT "illness"] RPis [MTT "disqualified"]))},HC {hHead = RPConstraint [MTT "illness branch"] RPis [MTT "policy's",MTT "benMR"], hBody = Just (Leaf (RPMT [MTT "OTHERWISE"]))},HC {hHead = RPMT [MTT "ADD is disqualified entirely"], hBody = Just (Any Nothing [Leaf (RPConstraint [MTT "policyHolder's",MTT "age"] RPgte [MTI 75]),Leaf (RPMT [MTT "accident's",MTT "general_exclusions_apply"]),Leaf (RPMT [MTT "policy's",MTT "ended"])])},HC {hHead = RPConstraint [MTT "excludedZero"] RPis [MTI 0], hBody = Nothing},HC {hHead = RPnary RPis [RPMT [MTT "ADD benefit"],RPnary RPmin [RPnary RPsum [RPMT [MTT "addBenefit"],RPMT [MTT "otherBenefits"]],RPMT [MTT "risk cap"]]], hBody = Nothing},HC {hHead = RPConstraint [MTT "illness"] RPis [MTT "disqualified"], hBody = Just (Any Nothing [Leaf (RPMT [MTT "illness's",MTT "general_exclusions_apply"]),Leaf (RPMT [MTT "policy's",MTT "ended"])])}], rlabel = Nothing, lsource = Nothing, wwhere = [], srcref = Just (SrcRef {url = "test/Spec", short = "test/Spec", srcrow = 1, srccol = 1, version = Nothing}), defaults = [], symtab = []}
+ ]

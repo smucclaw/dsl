@@ -21,7 +21,6 @@ import Control.Arrow ((>>>))
 import Control.Monad.Cont qualified as Cont
 import Control.Monad.Reader qualified as Reader
 import Control.Monad.State.Strict qualified as State
-import Data.Coerce (coerce)
 import Data.EDN qualified as EDN
 import Data.Hashable (Hashable)
 import Data.Text qualified as T
@@ -39,21 +38,11 @@ import Optics qualified
 import Optics.TH (camelCaseFields, makeLensesWith)
 import Data.Bifunctor (Bifunctor(..))
 
-newtype CPSTranspileM metadata t
-  = CPSTranspileM
-  { cpsTranspileM ::
-      Cont.ContT
-        EDN.TaggedValue
-        (Reader.ReaderT Context (State.State (MessageLog metadata)))
-        t
-  }
-  deriving
-    ( Functor,
-      Applicative,
-      Monad,
-      Reader.MonadReader Context,
-      State.MonadState (MessageLog metadata)
-    )
+type CPSTranspileM metadata t =
+  Cont.ContT
+    EDN.TaggedValue
+    (Reader.ReaderT Context (State.State (MessageLog metadata)))
+    t
 
 data TranspileResult metadata = TranspileResult
   { transpileResultEdnText :: T.Text,
@@ -65,7 +54,7 @@ makeLensesWith camelCaseFields ''TranspileResult
 
 logTranspileMsg ::
   Severity -> MessageData metadata -> CPSTranspileM metadata ()
-logTranspileMsg severity = logMsg severity >>> State.modify
+logTranspileMsg severity = State.modify . logMsg severity
 
 logTranspiledTo ::
   AstNode metadata -> EDN.TaggedValue -> CPSTranspileM metadata ()
@@ -80,12 +69,10 @@ logTranspiledTo astNode result =
 runCPSTranspileM ::
   CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata
 runCPSTranspileM =
-  coerce
-    >>> Cont.evalContT
-    >>> runMempty @Context Reader.runReaderT
+  Cont.evalContT
+    >>> runMempty Reader.runReaderT
     >>> runMempty State.runState
     >>> first EDN.renderText
     >>> uncurry TranspileResult
-    where
-      runMempty :: forall b a c. Monoid b => (a -> b -> c) -> a -> c
-      runMempty f = flip f mempty
+  where
+    runMempty f = flip f mempty

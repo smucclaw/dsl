@@ -27,7 +27,7 @@ import LS.XPile.Edn.CPSTranspileM
   ( TranspileResult (..),
     logTranspileMsg,
     logTranspiledTo,
-    runCPSTranspileM,
+    runCPSTranspileM, CPSTranspileM,
   )
 import LS.XPile.Edn.Context (Context, (!?), (<++>))
 import LS.XPile.Edn.MessageLog (MessageData (..), MessageLog, Severity (..))
@@ -46,51 +46,58 @@ import Prelude hiding (head)
 -- paramorphism, and only resume them after extending the context at a binder
 -- node higher up in the AST.
 astToEdn :: AstNode metadata -> TranspileResult metadata
-astToEdn = runCPSTranspileM . para \case
-  RuleFactF
-    { metadataF = metadata,
-      givensF = givens,
-      headF = (head, headCont),
-      bodyF
-    } -> Reader.local (givens <++>) do
-      -- Temporarily extend the current context with the variables in givens,
-      -- then resume the suspended continuations representing the head and body.
-      headEdn <- headCont
-      (body, ifBodyEdn) <- case bodyF of
-        Just (body, bodyCont) -> do
-          bodyEdn <- bodyCont
-          pure (Just body, [[EDN.edn|IF|], bodyEdn])
-        Nothing -> pure (Nothing, [])
-
-      let result = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
-
-      logTranspiledTo RuleFact {metadata, givens, head, body} result
-      pure result
-
-  CompoundTermF
-    { metadataF = metadata,
-      opF = op,
-      childrenF = unzip -> (children, childrenConts)
-    } -> do
-      childrenEdns <- sequenceA childrenConts
-
-      let result = childrenEdns |> case op of
-            ParensOp -> EDN.toEDN
-            ListOp -> EDN.mkVec >>> EDN.toEDN
-            AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
-            OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
-
-      logTranspiledTo CompoundTerm {metadata, op, children} result
-      pure result
-
-  TextF {metadataF = metadata, textF = text} -> do
-    context <- Reader.ask
-
-    let result = text |> if text !? context then toVar else toSymbol
-
-    logTranspiledTo Text {metadata, text} result
-    pure result
+astToEdn = para go >>> runCPSTranspileM
   where
+    go ::
+      AstNodeF
+        metadata
+        (AstNode metadata, CPSTranspileM metadata EDN.TaggedValue) ->
+      CPSTranspileM metadata EDN.TaggedValue
+    go
+      RuleFactF
+        { metadataF = metadata,
+          givensF = givens,
+          headF = (head, headCont),
+          bodyF
+        } = Reader.local (givens <++>) do
+        -- Temporarily extend the current context with the variables in givens,
+        -- then resume the suspended continuations representing the head and body.
+        headEdn <- headCont
+        (body, ifBodyEdn) <- case bodyF of
+          Just (body, bodyCont) -> do
+            bodyEdn <- bodyCont
+            pure (Just body, [[EDN.edn|IF|], bodyEdn])
+          Nothing -> pure (Nothing, [])
+
+        let result = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
+
+        logTranspiledTo RuleFact {metadata, givens, head, body} result
+        pure result
+    go
+      CompoundTermF
+        { metadataF = metadata,
+          opF = op,
+          childrenF = unzip -> (children, childrenConts)
+        } = do
+        childrenEdns <- sequenceA childrenConts
+
+        let result =
+              childrenEdns |> case op of
+                ParensOp -> EDN.toEDN
+                ListOp -> EDN.mkVec >>> EDN.toEDN
+                AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
+                OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
+
+        logTranspiledTo CompoundTerm {metadata, op, children} result
+        pure result
+    go TextF {metadataF = metadata, textF = text} = do
+      context <- Reader.ask
+
+      let result = text |> if text !? context then toVar else toSymbol
+
+      logTranspiledTo Text {metadata, text} result
+      pure result
+
     toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
     toSymbol = toPrefixedSymbol ""
     toVar = toPrefixedSymbol "var"

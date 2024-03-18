@@ -53,14 +53,14 @@ data AstNode metadata
         children :: [AstNode metadata]
       }
   | Text {metadata :: Maybe metadata, text :: T.Text}
-  deriving (Eq, Ord, Read, Show, Generic, Hashable)
+  deriving (Eq, Ord, Show, Generic, Hashable)
 
 data Op
   = ParensOp
   | ListOp
   | AndOp
   | OrOp
-  deriving (Eq, Ord, Read, Show, Generic, Hashable)
+  deriving (Eq, Ord, Show, Generic, Hashable)
 
 makeBaseFunctor ''AstNode
 

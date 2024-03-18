@@ -32,7 +32,7 @@ data Severity
   = Info
   | Warning
   | Error
-  deriving (Eq, Ord, Show, Generic, Hashable)
+  deriving (Eq, Ord, Read, Show, Generic, Hashable)
 
 data MessageData metadata = TranspiledTo
   { messageDataAstNode :: AstNode metadata,

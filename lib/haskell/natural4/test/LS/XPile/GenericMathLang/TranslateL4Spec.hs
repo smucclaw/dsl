@@ -148,10 +148,13 @@ spec = do
             res `shouldBe` nestedGenitives_gold
           it "should turn into correct MathLang" do
             let exp = noExtraMdata res
-                (ml, _st) = runWriter $ runMaybeT $ ML.gml2ml exp
-            ml `shouldBe` Just (MathVar "ind.friend.age")
+              res' = ML.runToMathLang $ ML.gml2ml exp
+          case res' of
+            Right ml -> ml `shouldBe` MathVar "ind.friend.age"
+            Left err -> err `shouldBe` "something went wrong :("
 
-    it "nested genitives+custom fun should turn out right" do
+  describe "nested genitives+custom fun" do
+    it "should turn out right" do
       let l4i = defaultL4I {origrules = nestedGenitives_in_fun_app}
           res = ML.toMathLang l4i
       res `shouldBe` ([], emptyState)

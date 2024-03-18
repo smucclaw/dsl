@@ -33,7 +33,7 @@ import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
-import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, (%), (^..))
+import Optics (Fold,Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (%~), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
 import Data.Maybe (maybeToList, catMaybes)
@@ -56,7 +56,7 @@ toMathLang l4i =
           toplevels = case giveth of
             [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
             ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
-                   [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n|] $ Map.elems st.symtabF
+                   [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
                    exprs -> exprs
         in (toplevels, st)
 
@@ -277,27 +277,49 @@ gml2ml exp = case exp.exp of
     case (fnEx, rnEx) of
       (MathVar fname, MathVar rname) -> pure $ MathVar (rname <> "." <> fname)
       x -> pure $ MathVar ("gml2ml: unsupported record " <> show exp.exp)
-  EApp f arg -> mkApp exp
-  -- TODO: store ELam with the function name in GML
-  -- then store the body and vars into MyState, and replace the Var "x" / Var "y" in the expr
   ELam (GML.MkVar v)  body -> trace [i|\ngml2ml: found ELam #{exp}\n|] $ do
     bodyEx <- gml2ml body
     let varEx = T.unpack v
     trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] $ pure $ MathSet varEx bodyEx
+  -- exp.exp :: BaseExp
+  EApp f arg -> mkApp exp []
+  -- TODO: store ELam with the function name in GML
+  -- then store the body and vars into MyState, and replace the Var "x" / Var "y" in the expr
   _ -> trace [i|\ngml2ml: not supported #{exp}\n|] $
         pure $ MathVar ("gml2ml: not implemented yet " <> show exp.exp) --Undefined Nothing
 
   where
-    mkApp :: GML.Exp -> ToMathLang (Expr Double)
-    mkApp (GML.exp -> EApp f arg) = do
+    mkApp :: GML.Exp -> [Expr Double] -> ToMathLang (Expr Double)
+    mkApp (GML.exp -> EApp f arg) args = do
+      arg' <- gml2ml arg
+      mkApp f (arg' : args)
       -- This is just a placeholder, we need to replace the function application by its value.
       -- TODO:
       -- 1) change ToMathLang into Eff '[Reader UserFuns, Writer MyState, Maybe] so we get access to user-defined functions
       -- 2) Get the ([String], Expr Double) pair and replace all the "MathVar x" from the [String] argument with actual arguments of the EApp.
-      argEx <- gml2ml arg
-      fEx <- trace [i|\ngml2ml: argEx = #{argEx}\n|] $ gml2ml f
-      pure $ MathVar [i|#{fEx}(#{argEx})|]
-    mkApp _ = fail "mkApp: unexpected thing happened"
+    mkApp (GML.exp -> EVar (GML.MkVar f)) args = do
+      userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
+      case Map.lookup (T.unpack f) userFuns of
+        Nothing -> fail "mkApp: trying to apply undefined function"
+        Just (boundVars, expr) ->
+          pure $ replaceVars boundVars args expr
+
+    mkApp _ _ = fail "mkApp: unexpected thing happened"
+
+    -- TODO: This will do the wrong thing if two variables have the same name
+    -- Solution: Replace all vars in parallel instead of one at a time
+    replaceVars :: [String] -> [Expr Double] -> Expr Double -> Expr Double
+    replaceVars [] [] expr = expr
+    replaceVars (k:ks) (v:vs) expr = replaceVar k v $ replaceVars ks vs expr
+    replaceVars _ _ expr = error "replaceVars: Wrong number of arguments for function"
+
+    replaceVar :: String -> Expr Double -> Expr Double -> Expr Double
+    replaceVar k v = go
+        where
+          -- l  = cosmosOf (gplate @(Expr Double)) % filteredBy (_Ctor @"MathVar")
+          go = \case
+                (MathVar s) | k == s -> v
+                x -> over (gplate @(Expr Double)) go x
 {-  ECompOp
     ELet
     EIs

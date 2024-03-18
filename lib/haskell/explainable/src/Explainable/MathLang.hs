@@ -34,6 +34,7 @@ import Explainable
     pathSpec,
     retitle,
   )
+import GHC.Generics (Generic)
 import Numeric.Extras (fmod)
 import Prettyprinter
   ( Doc,
@@ -104,7 +105,7 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
-            deriving (Eq)
+            deriving (Eq, Generic)
 
 instance (Show a) => Show (Expr a) where
   show (Val Nothing a) = [i|Val #{parensIfNeg (show a)}|]

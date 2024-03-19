@@ -128,7 +128,7 @@ pattern UnaryOp ::
 pattern UnaryOp {metadata, op, arg} = PrefixOp {metadata, op, args = [arg]}
 
 pattern Not :: Maybe metadata -> AstNode metadata -> AstNode metadata
-pattern Not metadata negated = UnaryOp metadata "NOT" negated
+pattern Not {metadata, arg} = UnaryOp {metadata, op = "NOT", arg}
 
 pattern Integer' :: Integer -> AstNode metadata
 pattern Integer' {int} = Integer {metadata = Nothing, int}
@@ -167,33 +167,33 @@ pattern InfixBinOp ::
   AstNode metadata ->
   AstNode metadata ->
   AstNode metadata
-pattern InfixBinOp {metadata, binOp, lhs, rhs} =
+pattern InfixBinOp {metadata, op, lhs, rhs} =
   Parens
     { metadata,
-      children = [lhs, Text {metadata = Nothing, text = binOp}, rhs]
+      children = [lhs, Text {metadata = Nothing, text = op}, rhs]
     }
 
 pattern Is ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Is {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, binOp = "IS", rhs}
+  InfixBinOp {metadata, lhs, op = "IS", rhs}
 
 pattern Lt ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Lt {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, binOp = "<", rhs}
+  InfixBinOp {metadata, lhs, op = "<", rhs}
 
 pattern Leq ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Leq {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, binOp = "<=", rhs}
+  InfixBinOp {metadata, lhs, op = "<=", rhs}
 
 pattern Gt ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Gt {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, binOp = ">", rhs}
+  InfixBinOp {metadata, lhs, op = ">", rhs}
 
 pattern Geq ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Geq {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, binOp = ">=", rhs}
+  InfixBinOp {metadata, lhs, op = ">=", rhs}

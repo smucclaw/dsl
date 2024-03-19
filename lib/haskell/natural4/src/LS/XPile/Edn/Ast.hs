@@ -117,7 +117,11 @@ pattern Fact {metadata, givens, head} =
   HornClause {metadata, givens, head, body = Nothing}
 
 pattern Rule ::
-  Maybe metadata -> [T.Text] -> AstNode metadata -> AstNode metadata -> AstNode metadata
+  Maybe metadata ->
+  [T.Text] ->
+  AstNode metadata ->
+  AstNode metadata ->
+  AstNode metadata
 pattern Rule {metadata, givens, head, body} =
   HornClause {metadata, givens, head, body = Just body}
 
@@ -133,9 +137,16 @@ pattern Or {metadata, conjuncts} =
   CompoundTerm {metadata, op = OrOp, children = conjuncts}
 
 pattern InfixBinOp ::
-  Maybe metadata -> T.Text -> AstNode metadata -> AstNode metadata -> AstNode metadata
+  Maybe metadata ->
+  T.Text ->
+  AstNode metadata ->
+  AstNode metadata ->
+  AstNode metadata
 pattern InfixBinOp {metadata, binOp, lhs, rhs} =
-  Parens {metadata, children = [lhs, Text Nothing binOp, rhs]}
+  Parens
+    { metadata,
+      children = [lhs, Text {metadata = Nothing, text = binOp}, rhs]
+    }
 
 pattern Is ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata

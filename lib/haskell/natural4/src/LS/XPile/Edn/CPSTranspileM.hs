@@ -4,6 +4,8 @@
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
     TranspileResult (..),
+    ednText,
+    messageLog,
     logTranspileMsg,
     logTranspiledTo,
     runCPSTranspileM,
@@ -59,7 +61,7 @@ logTranspiledTo astNode result =
 
 data TranspileResult metadata = TranspileResult
   { transpileResultEdnText :: T.Text,
-    transpileResultmessageLog :: MessageLog metadata
+    transpileResultMessageLog :: MessageLog metadata
   }
   deriving Show
 

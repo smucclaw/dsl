@@ -21,6 +21,7 @@ import Control.Arrow ((>>>))
 import Control.Monad.Cont qualified as Cont
 import Control.Monad.Reader qualified as Reader
 import Control.Monad.State.Strict qualified as State
+import Data.Bifunctor (Bifunctor (..))
 import Data.EDN qualified as EDN
 import Data.Hashable (Hashable)
 import Data.Text qualified as T
@@ -32,11 +33,10 @@ import LS.XPile.Edn.MessageLog
   ( MessageData (..),
     MessageLog,
     Severity (..),
-    logMsg
+    logMsg,
   )
 import Optics qualified
 import Optics.TH (camelCaseFields, makeLensesWith)
-import Data.Bifunctor (Bifunctor(..))
 
 type CPSTranspileM metadata t =
   Cont.ContT

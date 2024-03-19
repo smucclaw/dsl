@@ -1,3 +1,6 @@
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
     TranspileResult (..),
@@ -25,8 +28,8 @@ import LS.XPile.Edn.MessageLog
     Severity (..),
     logMsg,
   )
--- import Optics qualified
--- import Optics.TH (camelCaseFields, makeLensesWith)
+import Optics qualified
+import Optics.TH (camelCaseFields, makeLensesWith)
 
 type CPSTranspileM metadata t =
   Cont.ContT
@@ -55,12 +58,12 @@ logTranspiledTo astNode result =
 -- pattern TranspileResult {text, messageLog} = (text, messageLog)
 
 data TranspileResult metadata = TranspileResult
-  { ednText :: T.Text,
-    messageLog :: MessageLog metadata
+  { transpileResultEdnText :: T.Text,
+    transpileResultmessageLog :: MessageLog metadata
   }
   deriving Show
 
--- makeLensesWith camelCaseFields ''TranspileResult
+makeLensesWith camelCaseFields ''TranspileResult
 
 runCPSTranspileM ::
   CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata

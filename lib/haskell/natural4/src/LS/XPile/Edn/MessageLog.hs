@@ -26,7 +26,6 @@ import Deque.Strict qualified as Deque
 import GHC.Generics (Generic)
 import LS.XPile.Edn.Ast (AstNode)
 import Optics.TH (camelCaseFields, makeLensesWith)
-import GHC.IsList (IsList)
 
 data Severity
   = Info

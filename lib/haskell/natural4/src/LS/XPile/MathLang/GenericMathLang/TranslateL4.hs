@@ -828,7 +828,7 @@ baseExpifyMTEs mtes = do
 
     parenExps :: [MTExpr] -> [MTExpr]
     parenExps mtes
-      | any (\(MTT t) -> isOp t) mtes = parenNestedExprs <$> mtes
+      | any (isOp . mtexpr2text) mtes = parenNestedExprs <$> mtes
       | otherwise = mtes
 
     ops :: [Char]

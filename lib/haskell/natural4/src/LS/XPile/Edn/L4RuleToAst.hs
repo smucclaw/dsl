@@ -48,6 +48,6 @@ l4RuleToAstNodes Hornlike {keyword = Decide, given, clauses} = do
 
       body = hBody |$> undefined
 
-  pure RuleFact {metadata, givens, head, body}
+  pure HornClause {metadata, givens, head, body}
 
 l4RuleToAstNodes _ = []

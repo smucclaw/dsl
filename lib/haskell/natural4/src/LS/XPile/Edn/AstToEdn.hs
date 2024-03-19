@@ -54,7 +54,7 @@ astToEdn = para go >>> runCPSTranspileM
         (AstNode metadata, CPSTranspileM metadata EDN.TaggedValue) ->
       CPSTranspileM metadata EDN.TaggedValue
     go
-      RuleFactF
+      HornClauseF
         { metadataF = metadata,
           givensF = givens,
           headF = (head, headCont),
@@ -71,7 +71,7 @@ astToEdn = para go >>> runCPSTranspileM
 
         let result = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
 
-        logTranspiledTo RuleFact {metadata, givens, head, body} result
+        logTranspiledTo HornClause {metadata, givens, head, body} result
         pure result
     go
       CompoundTermF
@@ -81,12 +81,11 @@ astToEdn = para go >>> runCPSTranspileM
         } = do
         childrenEdns <- sequenceA childrenConts
 
-        let result =
-              childrenEdns |> case op of
-                ParensOp -> EDN.toEDN
-                ListOp -> EDN.mkVec >>> EDN.toEDN
-                AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
-                OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
+        let result = childrenEdns |> case op of
+              ParensOp -> EDN.toEDN
+              ListOp -> EDN.mkVec >>> EDN.toEDN
+              AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
+              OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
 
         logTranspiledTo CompoundTerm {metadata, op, children} result
         pure result

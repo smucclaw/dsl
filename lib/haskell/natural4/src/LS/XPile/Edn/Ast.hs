@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -41,7 +42,7 @@ import Data.Text.Read qualified as TRead
 import GHC.Generics (Generic)
 
 data AstNode metadata
-  = RuleFact
+  = HornClause
       { metadata :: Maybe metadata,
         givens :: [T.Text],
         head :: AstNode metadata,
@@ -65,73 +66,98 @@ data Op
 makeBaseFunctor ''AstNode
 
 pattern Parens :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern Parens metadata children = CompoundTerm metadata ParensOp children
+pattern Parens {metadata, children} =
+  CompoundTerm {metadata, op = ParensOp, children}
 
 pattern List :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern List metadata children = CompoundTerm metadata ListOp children
+pattern List {metadata, children} =
+  CompoundTerm {metadata, op = ListOp, children}
 
 pattern Number :: Maybe metadata -> Double -> AstNode metadata
-pattern Number metadata number <-
-  Text metadata (TRead.double -> Right (number, ""))
+pattern Number {metadata, number} <-
+  Text {metadata, text = TRead.double -> Right (number, "")}
   where
-    Number metadata number = Text metadata [i|#{number}|]
+    Number metadata number = Text {metadata, text = [i|#{number}|]}
 
 pattern Integer :: Maybe metadata -> Integer -> AstNode metadata
-pattern Integer metadata int <-
-  Text metadata (TRead.decimal -> Right (int, ""))
+pattern Integer {metadata, int} <-
+  Text {metadata, text = TRead.decimal -> Right (int, "")}
   where
-    Integer metadata int = Text metadata [i|#{int}|]
+    Integer metadata int = Text {metadata, text = [i|#{int}|]}
 
-pattern Date :: Maybe metadata -> Integer -> Integer -> Integer -> AstNode metadata
-pattern Date metadata year month day =
-  Parens metadata [Integer' year, Dash, Integer' month, Dash, Integer' day]
+pattern Date ::
+  Maybe metadata -> Integer -> Integer -> Integer -> AstNode metadata
+pattern Date {metadata, year, month, day} =
+  Parens
+    { metadata,
+      children = [Integer' year, Dash, Integer' month, Dash, Integer' day]
+    }
 
-pattern PrefixOp :: Maybe metadata -> T.Text -> [AstNode metadata] -> AstNode metadata
-pattern PrefixOp metadata op args =
-  Parens metadata [Text Nothing op, Parens Nothing args]
+pattern PrefixOp ::
+  Maybe metadata -> T.Text -> [AstNode metadata] -> AstNode metadata
+pattern PrefixOp {metadata, op, args} =
+  Parens {metadata, children = [Text Nothing op, Parens Nothing args]}
 
-pattern UnaryOp :: Maybe metadata -> T.Text -> AstNode metadata -> AstNode metadata
-pattern UnaryOp metadata op arg = PrefixOp metadata op [arg]
+pattern UnaryOp ::
+  Maybe metadata -> T.Text -> AstNode metadata -> AstNode metadata
+pattern UnaryOp {metadata, op, arg} = PrefixOp {metadata, op, args = [arg]}
 
 pattern Not :: Maybe metadata -> AstNode metadata -> AstNode metadata
 pattern Not metadata negated = UnaryOp metadata "NOT" negated
 
 pattern Integer' :: Integer -> AstNode metadata
-pattern Integer' int = Integer Nothing int
+pattern Integer' {int} = Integer {metadata = Nothing, int}
 
 pattern Dash :: AstNode metadata
-pattern Dash = Text Nothing "-"
+pattern Dash = Text {metadata = Nothing, text = "-"}
 
-pattern Fact :: Maybe metadata -> [T.Text] -> AstNode metadata -> AstNode metadata
-pattern Fact metadata givens head = RuleFact metadata givens head Nothing
+pattern Fact ::
+  Maybe metadata -> [T.Text] -> AstNode metadata -> AstNode metadata
+pattern Fact {metadata, givens, head} =
+  HornClause {metadata, givens, head, body = Nothing}
 
-pattern Rule :: Maybe metadata -> [T.Text] -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Rule metadata givens head body = RuleFact metadata givens head (Just body)
+pattern Rule ::
+  Maybe metadata -> [T.Text] -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Rule {metadata, givens, head, body} =
+  HornClause {metadata, givens, head, body = Just body}
 
 pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern Program metadata rules = List metadata rules
+pattern Program {metadata, rules} = List {metadata, children = rules}
 
 pattern And :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern And metadata conjuncts = CompoundTerm metadata AndOp conjuncts
+pattern And {metadata, conjuncts} =
+  CompoundTerm {metadata, op = AndOp, children = conjuncts}
 
 pattern Or :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern Or metadata conjuncts = CompoundTerm metadata OrOp conjuncts
+pattern Or {metadata, conjuncts} =
+  CompoundTerm {metadata, op = OrOp, children = conjuncts}
 
-pattern InfixBinOp :: Maybe metadata -> T.Text -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern InfixBinOp metadata binOp lhs rhs =
-  Parens metadata [lhs, Text Nothing binOp, rhs]
+pattern InfixBinOp ::
+  Maybe metadata -> T.Text -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern InfixBinOp {metadata, binOp, lhs, rhs} =
+  Parens {metadata, children = [lhs, Text Nothing binOp, rhs]}
 
-pattern Is :: Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Is metadata lhs rhs = InfixBinOp metadata "IS" lhs rhs
+pattern Is ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Is {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, binOp = "IS", rhs}
 
-pattern Lt :: Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Lt metadata lhs rhs = InfixBinOp metadata "<" lhs rhs
+pattern Lt ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Lt {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, binOp = "<", rhs}
 
-pattern Leq :: Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Leq metadata lhs rhs = InfixBinOp metadata "<=" lhs rhs
+pattern Leq ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Leq {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, binOp = "<=", rhs}
 
-pattern Gt :: Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Gt metadata lhs rhs = InfixBinOp metadata ">" lhs rhs
+pattern Gt ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Gt {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, binOp = ">", rhs}
 
-pattern Geq :: Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern Geq metadata lhs rhs = InfixBinOp metadata ">=" lhs rhs
+pattern Geq ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Geq {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, binOp = ">=", rhs}

@@ -11,6 +11,8 @@ module LS.XPile.Edn.Ast
   ( AstNode (..),
     AstNodeF (..),
     Op (..),
+    pattern BoolTrue,
+    pattern BoolFalse,
     pattern Number,
     pattern Integer,
     pattern Date,
@@ -95,6 +97,12 @@ pattern Number {metadata, number} <-
   Text {metadata, text = TRead.double -> Right (number, "")}
   where
     Number metadata number = Text {metadata, text = [i|#{number}|]}
+
+pattern BoolTrue :: Maybe metadata -> AstNode metadata
+pattern BoolTrue {metadata} = Text {metadata, text = "true"}
+
+pattern BoolFalse :: Maybe metadata -> AstNode metadata
+pattern BoolFalse {metadata} = Text {metadata, text = "false"}
 
 pattern Integer :: Maybe metadata -> Integer -> AstNode metadata
 pattern Integer {metadata, int} <-

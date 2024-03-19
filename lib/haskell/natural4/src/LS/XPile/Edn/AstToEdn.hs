@@ -33,6 +33,7 @@ import LS.XPile.Edn.CPSTranspileM
   )
 import LS.XPile.Edn.Context (Context, (!?), (<++>))
 import LS.XPile.Edn.MessageLog (MessageData (..), MessageLog, Severity (..))
+import LS.XPile.Edn.Utils (listToPairs)
 import Prelude hiding (head)
 
 -- Recursively transpile an AST node, threading an initial empty context
@@ -86,7 +87,7 @@ astToEdn = para go >>> runCPSTranspileM
         let result = childrenEdns |> case op of
               ParensOp -> EDN.toEDN
               ListOp -> EDN.mkVec >>> EDN.toEDN
-              MapOp -> pairs >>> EDN.mkMap >>> EDN.toEDN
+              MapOp -> listToPairs >>> EDN.mkMap >>> EDN.toEDN
               SetOp -> EDN.mkSet >>> EDN.toEDN
               AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
               OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
@@ -104,8 +105,6 @@ astToEdn = para go >>> runCPSTranspileM
     toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
     toSymbol = toPrefixedSymbol ""
     toVar = toPrefixedSymbol "var"
-
-    pairs xs = [(x, y) | (x, y, index) <- zip3 xs (tail xs) [0..], even index]
 
 exampleProgram :: AstNode metadata
 exampleProgram =

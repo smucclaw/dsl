@@ -42,12 +42,6 @@ type CPSTranspileM metadata t =
     (Reader.ReaderT Context (State.State (MessageLog metadata)))
     t
 
-type TranspileResult metadata = (T.Text, MessageLog metadata)
-
-pattern TranspileResult ::
-  T.Text -> MessageLog metadata -> TranspileResult metadata
-pattern TranspileResult {text, messageLog} = (text, messageLog)
-
 -- data TranspileResult metadata = TranspileResult
 --   { transpileResultEdnText :: T.Text,
 --     transpileResultMessageLog :: MessageLog metadata
@@ -69,6 +63,12 @@ logTranspiledTo astNode result =
       { messageDataAstNode = astNode,
         messageDataResult = EDN.renderText result
       }
+
+type TranspileResult metadata = (T.Text, MessageLog metadata)
+
+pattern TranspileResult ::
+  T.Text -> MessageLog metadata -> TranspileResult metadata
+pattern TranspileResult {text, messageLog} = (text, messageLog)
 
 runCPSTranspileM ::
   CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata

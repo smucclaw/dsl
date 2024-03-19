@@ -1,14 +1,6 @@
-{-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
-
 module LS.XPile.Edn.CPSTranspileM
   ( CPSTranspileM,
-    TranspileResult,
-    pattern TranspileResult,
+    TranspileResult (..),
     logTranspileMsg,
     logTranspiledTo,
     runCPSTranspileM,
@@ -42,11 +34,11 @@ type CPSTranspileM metadata t =
     (Reader.ReaderT Context (State.State (MessageLog metadata)))
     t
 
--- data TranspileResult metadata = TranspileResult
---   { transpileResultEdnText :: T.Text,
---     transpileResultMessageLog :: MessageLog metadata
---   }
---   deriving Show
+data TranspileResult metadata = TranspileResult
+  { ednText :: T.Text,
+    messageLog :: MessageLog metadata
+  }
+  deriving Show
 
 -- makeLensesWith camelCaseFields ''TranspileResult
 
@@ -64,11 +56,11 @@ logTranspiledTo astNode result =
         messageDataResult = EDN.renderText result
       }
 
-type TranspileResult metadata = (T.Text, MessageLog metadata)
+-- type TranspileResult metadata = (T.Text, MessageLog metadata)
 
-pattern TranspileResult ::
-  T.Text -> MessageLog metadata -> TranspileResult metadata
-pattern TranspileResult {text, messageLog} = (text, messageLog)
+-- pattern TranspileResult ::
+--   T.Text -> MessageLog metadata -> TranspileResult metadata
+-- pattern TranspileResult {text, messageLog} = (text, messageLog)
 
 runCPSTranspileM ::
   CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata
@@ -77,5 +69,6 @@ runCPSTranspileM =
     >>> runMempty Reader.runReaderT
     >>> runMempty State.runState
     >>> first EDN.renderText
+    >>> uncurry TranspileResult
   where
     runMempty f = flip f mempty

@@ -153,11 +153,24 @@ spec = do
             Right ml -> ml `shouldBe` MathVar "ind.friend.age"
             Left err -> err `shouldBe` "something went wrong :("
 
-  describe "nested genitives+custom fun" do
+  describe "simple fun app" do
+    it "should replace simple variables in a function that uses its arguments once" do
+      let l4i = defaultL4I {origrules = simpleFunApp}
+          (res,_st) = ML.toMathLang l4i
+      res `shouldBe`[MathSet "Answer" (MathBin (Just "Answer") Times (MathVar "firstArg") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "secondArg")))]
+
+  describe "repeated arguments + fun app" do
+    it "should replace simple variables in a function that uses its arguments twice each" do
+      let l4i = defaultL4I {origrules = complexFunApp}
+          (res,_st) = ML.toMathLang l4i
+      res `shouldBe` [MathSet "Answer" (MathBin (Just "Answer") Times (MathBin Nothing Plus (MathVar "firstArg") (MathVar "secondArg")) (MathBin Nothing Plus (MathBin Nothing Minus (Val Nothing 42.0) (MathVar "secondArg")) (MathVar "firstArg")))]
+
+
+  describe "nested genitives + fun app" do
     it "should turn out right" do
       let l4i = defaultL4I {origrules = nestedGenitives_in_fun_app}
-          res = ML.toMathLang l4i
-      res `shouldBe` ([], emptyState)
+          (res,_st) = ML.toMathLang l4i
+      res `shouldBe` [MathSet "Answer" (MathBin (Just "Answer") Times (MathVar "ind.friend.age") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "foo.bar.baz")))]
 
   describe "testPau" do
     let l4i = defaultL4I {origrules = pau0}
@@ -991,7 +1004,36 @@ nestedGenitives_in_fun_app =  testLambda :
         }]
   ]
 
-nestedGenitives_in_fun_app_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+simpleFunApp = testLambda :
+  [ mkTestRule'
+      [ MTT "simple test function application" ]
+      Nothing
+      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
+      [ HC { hHead = RPConstraint
+            [ MTT "Answer" ] RPis
+            [ MTT "firstArg"
+            , MTT "discounted by"
+            , MTT "secondArg" ]
+        , hBody = Nothing
+        }]
+  ]
+
+
+complexFunApp = testLambda_complex :
+  [ mkTestRule'
+      [ MTT "complex test function application" ]
+      Nothing
+      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
+      [ HC { hHead = RPConstraint
+            [ MTT "Answer" ] RPis
+            [ MTT "firstArg"
+            , MTT "function that repeats arguments in body"
+            , MTT "secondArg" ]
+        , hBody = Nothing
+        }]
+  ]
+
+nestedGenitives_in_fun_app_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens = fmap mkTypedMulti >>> nonEmpty
@@ -1061,6 +1103,15 @@ testLambda = mkTestRule
             [ MTT "x * (1 - y)" ]
         , hBody = Nothing}]
 
+testLambda_complex :: Rule
+testLambda_complex = mkTestRule
+    [ MTT "function that repeats arguments in body" ]
+    (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
+    [ HC { hHead = RPConstraint
+            [ MTT "x", MTT "function that repeats arguments in body", MTT "y" ] RPis
+            [ MTT "(x + y) * ((42 - y) + x)" ]
+        , hBody = Nothing}]
+
 testLambda_gold = Map.fromList [
     ( "discounted by"
     , ENumOp
@@ -1104,7 +1155,7 @@ testFunApp = testLambda :
   ]
 
 
-testFunApp_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = ELit {lit = EString "discounted by"}, md = []}, appArg = MkExp {exp = ELit {lit = EString "Step 3"}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ELit {lit = EString "risk cap"}, md = []}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+testFunApp_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 pau0 :: [Rule]
 pau0 = [

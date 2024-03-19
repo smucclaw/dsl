@@ -261,7 +261,7 @@ gml2ml exp = case exp.exp of
           MathSet _ _ -> valEx
           _ -> varEx @|= valEx
 --    if we get rid of the assumption that everything is a SeqExp, should do this
---    tell $ emptyState { symtabF = Map.singleton varEx valExWithLabel }
+--    ToMathLang $ tell $ emptyState { symtabF = Map.singleton varEx valExWithLabel }
     pure $ MathSet varEx valExWithLabel
   EPredSet _ _ -> do
     PredSet name pr <- exp2pred exp
@@ -304,7 +304,7 @@ gml2ml exp = case exp.exp of
         Just (boundVars, expr) ->
           pure $ replaceVars boundVars args expr
 
-    mkApp _ _ = fail "mkApp: unexpected thing happened"
+    mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
 
     -- TODO: This will do the wrong thing if two variables have the same name
     -- Solution: Replace all vars in parallel instead of one at a time

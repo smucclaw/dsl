@@ -736,7 +736,7 @@ isUserFun funs mte =
     _ -> False
 
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
-baseExpifyMTEs (splitGenitives -> (Just g, rest)) = do
+baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
   userFuns <- ToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isUserFun userFuns) rest of
@@ -752,6 +752,7 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest)) = do
       let arg1 = ERec fieldname recname
           fArg1 = noExtraMdata (EApp fExp (noExtraMdata arg1))
       pure $ EApp fArg1 arg2
+    _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 baseExpifyMTEs mtes = do
   userFuns <- ToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
   case mtes of
@@ -769,11 +770,13 @@ baseExpifyMTEs mtes = do
       mvar2 <- isDeclaredVar mte2
       case (mvar1, mvar2) of
         (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
-          let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte2
-          pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var1))
+          varWeAssumeToBePred <- varFromMTEs [mte2]
+          fExp <- mkVarExp varWeAssumeToBePred
+          pure $ EApp fExp (noExtraMdata (EVar var1))
         (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
-          let litWeAssumeToBePred = noExtraMdata $ mteToLitExp mte1
-          pure $ EApp litWeAssumeToBePred (noExtraMdata (EVar var2))
+          varWeAssumeToBePred <- varFromMTEs [mte1]
+          fExp <- mkVarExp varWeAssumeToBePred
+          pure $ EApp fExp (noExtraMdata (EVar var2))
         (Nothing, Nothing)
           -> throwNotSupportedWithMsgError (RPMT mtes)
                 "baseExpifyMTEs: trying to apply non-function"
@@ -795,14 +798,16 @@ baseExpifyMTEs mtes = do
       -- function, rest
         ([],f:ys) -> do
           arg <- expifyMTEsNoMd ys
-          let fExp = noExtraMdata $ mteToLitExp f
+          assumedVar <- varFromMTEs [f]
+          fExp <- mkVarExp assumedVar
           pure $ EApp fExp arg
       -- mte1 [, …, mteN], function, rest
         (xs,f:ys) -> do
           arg1 <- expifyMTEsNoMd xs
           arg2 <- expifyMTEsNoMd ys
-          let fExp = noExtraMdata $ mteToLitExp f
-              fArg1 = noExtraMdata (EApp fExp arg1)
+          assumedVar <- varFromMTEs [f]
+          fExp <- mkVarExp assumedVar
+          let fArg1 = noExtraMdata (EApp fExp arg1)
           pure $ EApp fArg1 arg2
       -- no userfuns here
         (xs,[]) -> do
@@ -849,14 +854,11 @@ parseExpr :: MTExpr -> ToLC BaseExp
 parseExpr x@(MTT str) = do
   res <- runParserT pExpr "" str
   case res of
-    Right exp@(EVar (MkVar str')) ->
-      if str /= str'
-        then return $ mteToLitExp x -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
-        else return $ exp
-      -- TODO: find the right megaparsec way to fail if single term contains whitespace
-    Right notStringLit -> return notStringLit
+    -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
+    Right (EVar _) -> pure $ EVar (MkVar str)
+    Right notStringLit -> pure notStringLit
     Left error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
-parseExpr x = return $ mteToLitExp x
+parseExpr x = pure $ mteToLitExp x
 
 splitGenitives :: [MTExpr] -> (Maybe MTExpr, [MTExpr])
 splitGenitives [] = (Nothing, [])

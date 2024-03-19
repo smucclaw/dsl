@@ -117,14 +117,15 @@ exampleProgram =
         ( Or
             Nothing
             [ And
-                  Nothing
-                  [ Leq Nothing (Number Nothing 0) (Text Nothing "x"),
-                    Leq Nothing (Text Nothing "x") (Number Nothing 10)
-                  ],
+                Nothing
+                [ Leq Nothing (Number Nothing 0) (Text Nothing "x"),
+                  Leq Nothing (Text Nothing "x") (Number Nothing 10)
+                ],
               Is Nothing (Text Nothing "x") (Number Nothing 100)
             ]
         ),
-        Fact Nothing mempty $ Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
+      Fact Nothing [] $
+        Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
     ]
 
 --- >>> astToEdn exampleProgram

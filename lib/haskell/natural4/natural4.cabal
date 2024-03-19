@@ -63,6 +63,7 @@ library
       LS.XPile.Edn.CPSTranspileM
       LS.XPile.Edn.L4RuleToAst
       LS.XPile.Edn.MessageLog
+      LS.XPile.Edn.Utils
       LS.XPile.ExportTypes
       LS.XPile.GFTrees
       LS.XPile.IntroBase

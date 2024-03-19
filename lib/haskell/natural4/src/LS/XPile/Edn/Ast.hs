@@ -29,6 +29,8 @@ module LS.XPile.Edn.Ast
     pattern Geq,
     pattern Parens,
     pattern List,
+    pattern Map,
+    pattern Set,
   )
 where
 
@@ -40,6 +42,7 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
 import GHC.Generics (Generic)
+import LS.XPile.Edn.Utils (listToPairs, pairsToList)
 
 data AstNode metadata
   = HornClause
@@ -59,6 +62,8 @@ data AstNode metadata
 data Op
   = ParensOp
   | ListOp
+  | MapOp
+  | SetOp
   | AndOp
   | OrOp
   deriving (Eq, Ord, Show, Generic, Hashable)
@@ -70,8 +75,20 @@ pattern Parens {metadata, children} =
   CompoundTerm {metadata, op = ParensOp, children}
 
 pattern List :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern List {metadata, children} =
-  CompoundTerm {metadata, op = ListOp, children}
+pattern List {metadata, elements} =
+  CompoundTerm {metadata, op = ListOp, children = elements}
+
+pattern Map ::
+  Maybe metadata -> [(AstNode metadata, AstNode metadata)] -> AstNode metadata
+pattern Map {metadata, kvPairs} <-
+  CompoundTerm {metadata, op = MapOp, children = listToPairs -> kvPairs}
+  where
+    Map metadata kvPairs =
+      CompoundTerm {metadata, op = MapOp, children = pairsToList kvPairs}
+
+pattern Set :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
+pattern Set {metadata, elements} =
+  CompoundTerm {metadata, op = SetOp, children = elements}
 
 pattern Number :: Maybe metadata -> Double -> AstNode metadata
 pattern Number {metadata, number} <-
@@ -126,7 +143,7 @@ pattern Rule {metadata, givens, head, body} =
   HornClause {metadata, givens, head, body = Just body}
 
 pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern Program {metadata, rules} = List {metadata, children = rules}
+pattern Program {metadata, rules} = List {metadata, elements = rules}
 
 pattern And :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern And {metadata, conjuncts} =

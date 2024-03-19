@@ -34,14 +34,6 @@ type CPSTranspileM metadata t =
     (Reader.ReaderT Context (State.State (MessageLog metadata)))
     t
 
-data TranspileResult metadata = TranspileResult
-  { ednText :: T.Text,
-    messageLog :: MessageLog metadata
-  }
-  deriving Show
-
--- makeLensesWith camelCaseFields ''TranspileResult
-
 logTranspileMsg ::
   Severity -> MessageData metadata -> CPSTranspileM metadata ()
 logTranspileMsg severity = State.modify . logMsg severity
@@ -61,6 +53,14 @@ logTranspiledTo astNode result =
 -- pattern TranspileResult ::
 --   T.Text -> MessageLog metadata -> TranspileResult metadata
 -- pattern TranspileResult {text, messageLog} = (text, messageLog)
+
+data TranspileResult metadata = TranspileResult
+  { ednText :: T.Text,
+    messageLog :: MessageLog metadata
+  }
+  deriving Show
+
+-- makeLensesWith camelCaseFields ''TranspileResult
 
 runCPSTranspileM ::
   CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata

@@ -331,7 +331,7 @@ mathLangGold4 = (
                 ( MathVar "income tax component" )
                 ( MathVar "asset tax component" )
             )
-        ], symtabP = Map.empty , symtabL = Map.empty , symtabS = Map.empty, symtabFun = Map.empty
+        ], symtabP = Map.empty , symtabL = Map.empty , symtabS = Map.empty
     }
   )
 

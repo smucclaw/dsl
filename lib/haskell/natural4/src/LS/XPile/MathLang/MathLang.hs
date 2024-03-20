@@ -53,7 +53,10 @@ toMathLang l4i =
       let userfuns = getUserFuns lamCalcProgram.userFuns
           st = gmls2ml userfuns lamCalcProgram.lcProgram
           giveth = T.unpack  <$> lamCalcProgram.givethVar
-          toplevels = case giveth of
+          toplevels = case Map.lookup "Top-Level" st.symtabF of
+            Just exp -> [exp]
+            Nothing ->
+              case giveth of
             [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
             ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
                    [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF

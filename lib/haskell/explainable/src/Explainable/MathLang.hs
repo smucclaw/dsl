@@ -617,13 +617,13 @@ class Exprlbl expr a where
   (@|$>) :: String -> expr a -> expr a
   getvar = (@|$<)
 
-instance Exprlbl Expr a where
+instance (Show a) => Exprlbl Expr a where
   (@|=) lbl ( Undefined Nothing      ) = Undefined (Just lbl)
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z
-  (@|=) _   ( MathVar          _     ) = error "use @|$< to label a variable reference"
-  (@|=) _   ( MathSet          _ _   ) = error "use @|$> to label a variable assignment"
+  (@|=) _  e@( MathVar          _     ) = trace [i|\nuse @|$< to label a variable reference: #{e}\n\n|]  e
+  (@|=) _  e@( MathSet          _ _   ) = trace [i|\nuse @|$< to label a variable assignment: #{e}\n\n|] e
   (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y

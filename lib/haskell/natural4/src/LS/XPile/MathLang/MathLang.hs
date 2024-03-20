@@ -103,11 +103,13 @@ exp2pred exp = case exp.exp of
   EIs e1 e2 -> do
     ex1 <- gml2ml e1
     ex2 <- gml2ml e2
-    let ex2withLabel = case (ex1, ex2) of
-          (MathVar var, Val Nothing val) -> Val (Just var) val
---          (MathVar var, MathVar val) -> TODO: what if they are both strings? like phaseOfMoon IS gibbous
-          _ -> ex2
+    case (ex1, ex2) of
+      (MathVar var, MathVar val) -> -- phaseOfMoon IS gibbous, for now treat as a record. Should work nicely for enums, but do we want freeform text?
+        pure $ PredVar [i|#{var}.#{val}|]
+      (MathVar var, val) -> do
+        let ex2withLabel = var @|= val
     pure $ PredComp Nothing CEQ ex1 ex2withLabel
+      _ -> fail [i|\nexp2pred: expected Var, got #{ex1}\n|]
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   ELit (GML.EString lit) -> pure $ PredVar $ T.unpack lit

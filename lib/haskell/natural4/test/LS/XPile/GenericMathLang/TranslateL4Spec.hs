@@ -70,23 +70,23 @@ spec = do
     it "should turn Rules straight to MathLang (via GenericMathLang)" do
       res `shouldBe` mathLangGold4
 
-    it "should evaluate taxesPayable correctly when info is lacking" do
+    it "should evaluate taxesPayable correctly when info is given" do
+      let st' = st {
+              symtabF = symtabF st <> Map.fromList [
+                ("annualIncome", Val (Just "annualIncome") 10000) ]
+            , symtabP = Map.fromList [
+                ("vivacity", PredVal (Just "vivacity") True),
+                ("phaseOfMoon.waxing", PredVal (Just "phaseOfMoon.waxing") False),
+                ("phaseOfMoon.gibbous", PredVal (Just "phaseOfMoon.gibbous") True),
+                ("phaseOfMoon.full", PredVal (Just "phaseOfMoon.full") False) ]
+            }
       case exprs of
         [expr] -> do
           (taxes, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
-          taxes `shouldBe` 0.0 -- because we don't know what the phase of the moon is, defaults to 0.0
+            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+          taxes `shouldBe` 50.0
         _ -> mempty
 
-    it "should evaluate taxesPayable correctly when more info is given" do
-      let st' = st {
-          symtabP = Map.singleton "vivacity" (PredVal (Just "vivacity") True),
-          symtabF = symtabF st <> Map.singleton "annualIncome" (Val (Just "annualIncome") 10000)}
-      case exprs of
-        [expr] -> do
-          (taxes, _xp, _st, _strs) <- xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
-          taxes `shouldBe` 50.0 -- now we should know vivacity and annual income
-        _ -> mempty
 
   describe "evalSimple" do
     it "should evaluate 2+2" do
@@ -256,53 +256,50 @@ mathLangGold23 = [
 
 mathLangGold4 :: ([Expr Double], MyState)
 mathLangGold4 = (
-    [ MathSet "taxesPayable" ( MathITE Nothing
-        ( PredComp Nothing CEQ
-            ( MathVar "phaseOfMoon" )
-            ( MathVar "gibbous" )
-        )
-        ( MathBin
-            ( Just "taxesPayable" ) Divide
-            ( MathVar "taxesPayableAlive" )
-            ( Val Nothing 2.0 )
-        )
-        ( MathITE Nothing
-            ( PredVar "vivacity" )
-            ( MathVar "taxesPayableAlive" )
+  [ MathSet "taxesPayable"
+        ( MathITE
+            ( Just "taxesPayable" )
+            ( PredVar "phaseOfMoon.gibbous" )
+            ( MathBin
+                ( Just "taxesPayable" ) Divide
+                ( MathVar "taxesPayableAlive" )
+                ( Val Nothing 2.0 )
+            )
             ( MathITE Nothing
-                ( PredComp Nothing CEQ
-                    ( MathVar "phaseOfMoon" )
-                    ( MathVar "waxing" )
-                )
-                ( MathBin
-                    ( Just "taxesPayable" ) Divide
-                    ( MathVar "taxesPayableAlive" )
-                    ( Val Nothing 3.0 )
-                )
+                ( PredVar "vivacity" )
+                ( MathVar "taxesPayableAlive" )
                 ( MathITE Nothing
-                    ( PredComp Nothing CEQ
-                        ( MathVar "phaseOfMoon" )
-                        ( MathVar "full" )
+                    ( PredVar "phaseOfMoon.waxing" )
+                    ( MathBin
+                        ( Just "taxesPayable" ) Divide
+                        ( MathVar "taxesPayableAlive" )
+                        ( Val Nothing 3.0 )
                     )
-                    ( MathVar "waived" )
-                    ( Val ( Just "taxesPayable" ) 0.0 )
+                    ( MathITE Nothing
+                        ( PredVar "phaseOfMoon.full" )
+                        ( MathVar "waived" )
+                        ( Val
+                            ( Just "taxesPayable" ) 0.0
+                        )
+                    )
                 )
             )
         )
-    )
-    ], MyState
+    ]
+  , emptyState
     { symtabF = Map.fromList
         [
-            ( "income tax component", MathBin
+            ( "income tax component"
+            , MathBin
                 ( Just "income tax component" ) Times
                 ( MathVar "annualIncome" )
                 ( MathVar "incomeTaxRate" )
-            ),
-            ( "taxesPayable", MathITE Nothing
-                ( PredComp Nothing CEQ
-                    ( MathVar "phaseOfMoon" )
-                    ( MathVar "gibbous" )
-                )
+            )
+        ,
+            ( "taxesPayable"
+            , MathITE
+                ( Just "taxesPayable" )
+                ( PredVar "phaseOfMoon.gibbous" )
                 ( MathBin
                     ( Just "taxesPayable" ) Divide
                     ( MathVar "taxesPayableAlive" )
@@ -312,39 +309,47 @@ mathLangGold4 = (
                     ( PredVar "vivacity" )
                     ( MathVar "taxesPayableAlive" )
                     ( MathITE Nothing
-                        ( PredComp Nothing CEQ
-                            ( MathVar "phaseOfMoon" )
-                            ( MathVar "waxing" )
-                        )
+                        ( PredVar "phaseOfMoon.waxing" )
                         ( MathBin
                             ( Just "taxesPayable" ) Divide
                             ( MathVar "taxesPayableAlive" )
                             ( Val Nothing 3.0 )
                         )
                         ( MathITE Nothing
-                            ( PredComp Nothing CEQ
-                                ( MathVar "phaseOfMoon" )
-                                ( MathVar "full" )
-                            )
+                            ( PredVar "phaseOfMoon.full" )
                             ( MathVar "waived" )
-                            ( Val ( Just "taxesPayable" ) 0.0 )
+                            ( Val
+                                ( Just "taxesPayable" ) 0.0
+                            )
                         )
                     )
                 )
-            ),
-            ( "asset tax component", MathBin
+            )
+        ,
+            ( "asset tax component"
+            , MathBin
                 ( Just "asset tax component" ) Times
                 ( MathVar "netWorth" )
                 ( MathVar "assetTaxRate" )
-            ),
-            ( "assetTaxRate", Val ( Just "assetTaxRate" ) 7.0e-2 ),
-            ( "incomeTaxRate", Val ( Just "incomeTaxRate" ) 1.0e-2 ),
-            ( "taxesPayableAlive", MathBin
+            )
+        ,
+            ( "assetTaxRate"
+            , Val
+                ( Just "assetTaxRate" ) 7.0e-2
+            )
+        ,
+            ( "incomeTaxRate"
+            , Val
+                ( Just "incomeTaxRate" ) 1.0e-2
+            )
+        ,
+            ( "taxesPayableAlive"
+            , MathBin
                 ( Just "taxesPayableAlive" ) Plus
                 ( MathVar "income tax component" )
                 ( MathVar "asset tax component" )
             )
-        ], symtabP = Map.empty , symtabL = Map.empty , symtabS = Map.empty
+        ]
     }
   )
 

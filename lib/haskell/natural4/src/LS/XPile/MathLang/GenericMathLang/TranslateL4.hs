@@ -34,8 +34,8 @@ import LS.Types as L4
 
 import LS.Rule (
                 -- Interpreted(..),
-                extractMTExprs, getGivenWithSimpleType,
-                defaultHorn)
+                getGivenWithSimpleType,
+                RuleLabel)
 import LS.Rule qualified as L4 (Rule(..))
 
 import Effectful (Eff, (:>), runPureEff)
@@ -427,7 +427,7 @@ l4ToLCProgram rules = do
   1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL
 ===============================================================================-}
 
-type SimpleHL = SimpleHlike VarTypeDeclMap RetVarInfo
+type SimpleHL = SimpleHlike VarTypeDeclMap RetVarInfo (Maybe RuleLabel)
 
 simplifyL4Hlike :: L4.Rule -> ToLC SimpleHL
 simplifyL4Hlike rule =
@@ -438,6 +438,7 @@ simplifyL4Hlike rule =
                       , shcGiven = maybe HM.empty mkVarEntMap rule.given
                       , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
                       , baseHL = baseHL
+                      , shRLabel = rule.rlabel
                       }
     Nothing -> throwParserProblemWithMsg rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
@@ -547,9 +548,11 @@ baseExpify (isLambda -> Just (operator, v:vs, bexp)) = do
   userFuns <- ToLC EffState.get
   mkToLC $ EffState.put $ operator : userFuns
   ELam v <$> mkLambda vs bexp
---  trace [i|found lambda #{fname} with #{vars}|] $ pure bexp
+baseExpify hl@(shRLabel -> Just (_section, _number, rname)) = do
+  bexp <- baseExpify $ hl {shRLabel = Nothing}
+  mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
 baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
-baseExpify hl@(MkSimpleHL _ _ (OneClause (HeadOnly hc)) _) = toHeadOnlyExp hl hc
+baseExpify hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
 baseExpify (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
 baseExpify hornlike = throwNotYetImplError hornlike
 -- for the future, remove the catch all `baseExpify hornlike` and add stuff like

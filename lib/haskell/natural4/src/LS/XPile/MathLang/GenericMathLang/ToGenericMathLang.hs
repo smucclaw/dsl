@@ -88,4 +88,4 @@ makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
 
 -- | 'Print' LC program to some sort of interchange format for subsequent serialization
 renderLC :: LCProgram -> String
-renderLC program = TextLazy.unpack $ pShowNoColor $ program.lcProgram
+renderLC program = TextLazy.unpack $ TextLazy.unlines [pShowNoColor program.lcProgram, pShowNoColor program.userFuns]

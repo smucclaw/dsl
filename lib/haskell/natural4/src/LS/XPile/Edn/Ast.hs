@@ -25,6 +25,15 @@ module LS.XPile.Edn.Ast
     pattern And,
     pattern Or,
     pattern Is,
+    pattern IsNot,
+    pattern IsIn,
+    pattern IsNotIn,
+    pattern IsSum,
+    pattern IsProduct,
+    pattern Plus,
+    pattern Minus,
+    pattern Times,
+    pattern Divide,
     pattern Lt,
     pattern Leq,
     pattern Gt,
@@ -177,6 +186,51 @@ pattern Is ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
 pattern Is {metadata, lhs, rhs} =
   InfixBinOp {metadata, lhs, op = "IS", rhs}
+
+pattern IsNot ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern IsNot {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "IS NOT", rhs}
+
+pattern IsIn ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern IsIn {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "IS IN", rhs}
+
+pattern IsNotIn ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern IsNotIn {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "IS NOT IN", rhs}
+
+pattern IsSum ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern IsSum {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "IS THE SUM OF", rhs}
+
+pattern IsProduct ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern IsProduct {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "IS THE PRODUCT OF", rhs}
+
+pattern Plus ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Plus {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "+", rhs}
+
+pattern Minus ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Minus {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "-", rhs}
+
+pattern Times ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Times {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "*", rhs}
+
+pattern Divide ::
+  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
+pattern Divide {metadata, lhs, rhs} =
+  InfixBinOp {metadata, lhs, op = "/", rhs}
 
 pattern Lt ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata

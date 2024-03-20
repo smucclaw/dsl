@@ -72,10 +72,10 @@ astToEdn = para go >>> runCPSTranspileM
             pure (Just body, [[EDN.edn|IF|], bodyEdn])
           Nothing -> pure (Nothing, [])
 
-        let result = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
+        let resultEdn = [EDN.edn|DECIDE|] : headEdn : ifBodyEdn |> EDN.toEDN
 
-        logTranspiledTo HornClause {metadata, givens, head, body} result
-        pure result
+        logTranspiledTo HornClause {metadata, givens, head, body} resultEdn
+        pure resultEdn
     go
       CompoundTermF
         { metadataF = metadata,
@@ -84,27 +84,29 @@ astToEdn = para go >>> runCPSTranspileM
         } = do
         childrenEdns <- sequenceA childrenConts
 
-        let result = childrenEdns |> case op of
+        let resultEdn = childrenEdns |> case op of
               ParensOp -> EDN.toEDN
               ListOp -> EDN.mkVec >>> EDN.toEDN
               MapOp -> listToPairs >>> EDN.mkMap >>> EDN.toEDN
               SetOp -> EDN.mkSet >>> EDN.toEDN
-              AndOp -> intersperse (toSymbol "AND") >>> EDN.toEDN
-              OrOp -> intersperse (toSymbol "OR") >>> EDN.toEDN
+              AndOp -> intersperseToEdn "AND"
+              OrOp -> intersperseToEdn "OR"
 
-        logTranspiledTo CompoundTerm {metadata, op, children} result
-        pure result
+        logTranspiledTo CompoundTerm {metadata, op, children} resultEdn
+        pure resultEdn
     go TextF {metadataF = metadata, textF = text} = do
       context <- Reader.ask
 
-      let result = text |> if text !? context then toVar else toSymbol
+      let resultEdn = text |> if text !? context then toVar else toSymbol
 
-      logTranspiledTo Text {metadata, text} result
-      pure result
+      logTranspiledTo Text {metadata, text} resultEdn
+      pure resultEdn
 
     toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
     toSymbol = toPrefixedSymbol ""
     toVar = toPrefixedSymbol "var"
+
+    intersperseToEdn text = intersperse (toSymbol text) >>> EDN.toEDN
 
 exampleProgram :: AstNode metadata
 exampleProgram =

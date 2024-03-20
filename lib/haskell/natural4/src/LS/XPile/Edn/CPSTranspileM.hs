@@ -16,7 +16,7 @@ import Control.Arrow ((>>>))
 import Control.Monad.Cont qualified as Cont
 import Control.Monad.Reader qualified as Reader
 import Control.Monad.State.Strict qualified as State
-import Data.Bifunctor (Bifunctor (..))
+import Data.Bifunctor (Bifunctor (first))
 import Data.EDN qualified as EDN
 import Data.Hashable (Hashable)
 import Data.Text qualified as T

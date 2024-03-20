@@ -898,6 +898,7 @@ pTerm = choice $ map try
   , pVariable
   , pFloat
   , pInteger
+  , pMoney
   ]
 
 table :: SrcPositn -> [[Operator Parser BaseExp]]
@@ -954,6 +955,9 @@ pVariable = do
 
 pInteger :: Parser BaseExp
 pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
+
+pMoney :: Parser BaseExp
+pMoney = ELit . EInteger <$> (char '$' >> lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
 
 pFloat :: Parser BaseExp
 pFloat = ELit . EFloat <$> lexeme L.float <?> "float"

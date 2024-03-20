@@ -10,7 +10,6 @@ module LS.XPile.Edn.Context
   )
 where
 
-import Control.Monad.State qualified as State
 import Data.Coerce (coerce)
 import Data.HashSet qualified as HashSet
 import Data.Text qualified as T

@@ -732,17 +732,18 @@ TODO: Think about what kind of validation we might want to do here
 NOTE: If it seems like literals will appear here (e.g. number literals), see defn of `mteToLitExp` for how to translate to literals
 -}
 
-isUserFun :: [Var] -> MTExpr -> Bool
-isUserFun funs mte =
-  case mte of
-    MTT t -> t `elem` [v | MkVar v <- funs ]
+isFun :: [Var] -> MTExpr -> Bool
+isFun funs mte =
+  let allFuns = [v | MkVar v <- funs ] <> ["+", "*", "-", "/", "<", "<=", ">", ">=", "=="]
+  in case mte of
+    MTT t -> t `elem` allFuns
     _ -> False
 
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
   userFuns <- ToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
   recname <- expifyMTEsNoMd [g]
-  case break (isUserFun userFuns) rest of
+  case break (isFun userFuns) rest of
   -- ind's parent's sibling's … income
     (x:xs,[]) -> do
       fieldname <- expifyMTEsNoMd rest -- income
@@ -797,7 +798,7 @@ baseExpifyMTEs mtes = do
             _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
     mtes -> do
-      case break (isUserFun userFuns) mtes of
+      case break (isFun userFuns) mtes of
       -- function, rest
         ([],f:ys) -> do
           arg <- expifyMTEsNoMd ys
@@ -808,7 +809,11 @@ baseExpifyMTEs mtes = do
         (xs,f:ys) -> do
           arg1 <- expifyMTEsNoMd xs
           arg2 <- expifyMTEsNoMd ys
-          assumedVar <- varFromMTEs [f]
+          bexp <- parseExpr $ MTT $ T.unwords ["x", mtexpr2text f, "y"]
+          case bexp of
+            ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
+            ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
+            _ -> do assumedVar <- varFromMTEs [f]
           fExp <- mkVarExp assumedVar
           let fArg1 = noExtraMdata (EApp fExp arg1)
           pure $ EApp fArg1 arg2

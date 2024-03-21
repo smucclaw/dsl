@@ -67,8 +67,7 @@ logMsg ::
   MessageLog metadata
 logMsg severity data' =
   coerce
-    >>> Deque.snoc
-      Message {messageSeverity = severity, messageData' = data'}
+    >>> Deque.snoc Message {messageSeverity = severity, messageData' = data'}
     >>> coerce
 
 getMsgs :: MessageLog metadata -> Deque.Deque (Message metadata)

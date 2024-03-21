@@ -36,6 +36,7 @@ dependencies:
 - graphviz
 - effectful
 - string-interpolate
+- numeric-extras
 
 language: GHC2021
 

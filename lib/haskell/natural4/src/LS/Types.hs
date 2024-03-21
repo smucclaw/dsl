@@ -207,12 +207,13 @@ type HornClause2 = HornClause BoolStructR
 ----- More ergonomic representation for L4 rules --------------------
 
 -- | Though this is still quite 'syntactic'; would be even better if it were repns for a specific semantics
-data SimpleHlike a b =
+data SimpleHlike a b c =
   MkSimpleHL { shcGiven :: a
              , shcRet :: b
              , baseHL :: BaseHL
              , shcSrcRef :: SrcRef
              -- ^ may want to parametrize this
+             , shRLabel :: c
              }
   deriving stock (Eq, Show, Generic)
 

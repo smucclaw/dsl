@@ -9,7 +9,7 @@ If prototyping in GHCi / REPL, use these:
     :set -XTypeFamilies
     import GHC.Generics
 
-Yes, these are more high-powered than what I 'really' need in this file 
+Yes, these are more high-powered than what I 'really' need in this file
 (the only thing that requires them rn is ` (_Ctor @"Hornlike")`);
 I had used them b/c I was prototyping and wasn't sure from the outset
 how much would be needed to in effect parse the notoriously complicated L4 data structures.
@@ -29,8 +29,9 @@ module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen) where
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 -- TODO: Add import list
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
+    ( ToLCError, runToLC, l4ToLCProgram )
 -- import LS.Interpreter (qaHornsT)
-import LS.Rule (Interpreted(..),
+import LS.Rule (Rule, Interpreted(..),
                 -- defaultHorn
                 -- defaultHorn is useful for prototyping in the REPL
                 )
@@ -39,13 +40,13 @@ import LS.Rule (Interpreted(..),
 -- import Effectful
 -- experimenting with Effectful.Error rn
 -- see Mattermost slack for discussion of error handling and MonadValidate
-import Optics
-import Data.Generics.Sum.Constructors
+import Optics (cosmosOf, gplate, folded, (%), filteredBy, (^..) )
+import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 -- import Data.String.Interpolate (__i)
-import Data.String (IsString)
-import Data.Text qualified as T
+import Data.Text.Lazy qualified as TextLazy
+import Text.Pretty.Simple (pShowNoColor)
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 -- import Data.Foldable qualified as F (toList)
 
@@ -57,23 +58,17 @@ import Data.Text qualified as T
 -------------------------------------------------------------------------------}
 type Analyzed = Interpreted
 
--- | placeholder so natural L4 won't crash while I prototype 
-toMathLangGen :: Analyzed -> (String, [String])
-toMathLangGen _ = ("not yet implemented", [])
-
-{- | TODO: Remove the ' in the name once we have filled in `undefined`s along the way and are sure it won't crash
-
-    Entry point for transforming the original L4 rules into generic lamda calculus 
+{- | Entry point for transforming the original L4 rules into generic lamda calculus
      Outputs either the LC repn or errors if there're errors.
 Note:
-* Not using qaHornsT 
-    b/c it looks like it'll be a lot more work and result in convoluted code, 
-    for very little benefit. Can always refactor down the road to use it if nec 
+* Not using qaHornsT
+    b/c it looks like it'll be a lot more work and result in convoluted code,
+    for very little benefit. Can always refactor down the road to use it if nec
 * TODO re filtering for Hornlikes: Will want to work with type decls / record decls etc in the future
 -}
-toMathLangGen' :: Analyzed -> (String, [String])
-toMathLangGen' l4a =
-  let l4Hornlikes = l4a.origrules ^.. folded % filteredBy (_Ctor @"Hornlike")
+toMathLangGen :: Analyzed -> (String, [String])
+toMathLangGen l4a =
+  let l4Hornlikes = l4a.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (renderLC lamCalcProgram, [])
@@ -93,4 +88,4 @@ makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
 
 -- | 'Print' LC program to some sort of interchange format for subsequent serialization
 renderLC :: LCProgram -> String
-renderLC program = "Not Yet Implemented"
+renderLC program = TextLazy.unpack $ TextLazy.unlines [pShowNoColor program.lcProgram, pShowNoColor program.userFuns]

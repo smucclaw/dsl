@@ -340,6 +340,7 @@ test-suite natural4-test
       LS.RelationalPredicatesSpec
       LS.TypesSpec
       LS.XPile.CoreL4.LogicProgramSpec
+      LS.XPile.GenericMathLang.TranslateL4Spec
       LS.XPile.JSONSchemaSpec
       LS.XPile.LogicalEnglish.GoldenUtils
       LS.XPile.LogicalEnglish.LogicalEnglishSpec

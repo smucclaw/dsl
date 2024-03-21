@@ -16,7 +16,7 @@ import Data.Text qualified as T
 import Flow ((|>))
 
 newtype Context = Context {context :: HashSet.HashSet T.Text}
-  deriving (Eq, Ord, Show, Semigroup, Monoid)
+  deriving (Show, Semigroup, Monoid)
 
 -- class IsContext t where
 --   (<++>) :: Foldable m => m T.Text -> t -> t

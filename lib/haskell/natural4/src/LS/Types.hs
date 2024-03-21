@@ -34,6 +34,7 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Tree qualified as Tree
 import Data.Void (Void)
+import Debug.Trace (trace)
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
@@ -616,7 +617,10 @@ mkTComp After      = Just TAfter
 mkTComp By         = Just TBy
 mkTComp On         = Just TOn
 mkTComp Eventually = Nothing
-mkTComp x          = error [i|mkTC: can't create temporal constraint from #{x} -- this should be handled by a Vaguely|]
+mkTComp x          =
+  trace
+    [i|mkTC: can't create temporal constraint from #{x} -- this should be handled by a Vaguely|]
+    Nothing
 
 mkTC :: MyToken -> Maybe Integer -> Text.Text -> Maybe (TemporalConstraint Text.Text)
 mkTC tok   tt unit = TemporalConstraint <$> mkTComp tok <*> Just tt <*> pure unit

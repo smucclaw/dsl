@@ -17,6 +17,7 @@ import Explainable.MathLang -- hiding ((|>))
 import LS.Rule (Interpreted (..), Rule (..), defaultL4I)
 import LS.Types
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
+import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import LS.XPile.MathLang.MathLang qualified as ML
 --import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen)
@@ -131,7 +132,7 @@ spec = do
     it "should become a binary function in the environment" do
       let toTest = runToLC $ l4ToLCProgram testFunApp
       case toTest of
-        Right p -> fmap exp (userFuns p) `shouldBe` testLambda_gold
+        Right p -> userFuns p `shouldBe` testLambda_gold
         Left err -> err `shouldBe` MiscError "" ""
 
   testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
@@ -1137,31 +1138,8 @@ testLambda_complex = mkTestRule
             [ MTT "(x + y) * ((42 - y) + x)" ]
         , hBody = Nothing}]
 
-testLambda_gold = Map.fromList [
-    ( "discounted by"
-    , ENumOp
-        { numOp = OpMul
-        , nopLeft = MkExp
-            { exp = EVar
-                { var = MkVar "x" }
-            , md = []
-            }
-        , nopRight = MkExp
-            { exp = ENumOp
-                { numOp = OpMinus
-                , nopLeft = MkExp
-                    { exp = ELit
-                        { lit = EInteger 1 }
-                    , md = []
-                    }
-                , nopRight = MkExp
-                    { exp = EVar
-                        { var = MkVar "y" }
-                    , md = []
-                    }
-                }
-            , md = []
-            }})]
+testLambda_gold :: Map.HashMap String ([GML.Var], Exp)
+testLambda_gold = Map.fromList [("discounted by",([MkVar "x",MkVar "y"],MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}))]
 
 testFunApp :: [Rule]
 testFunApp = testLambda :

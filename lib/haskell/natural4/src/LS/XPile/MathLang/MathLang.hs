@@ -219,17 +219,15 @@ gmls2ml userfuns (e:es) = trace [i|\ngmls2ml: #{st}\n|] $ st <> gmls2ml userfuns
       _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
-getUserFuns :: SymTab GML.Exp -> SymTab VarsAndBody
+getUserFuns :: SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
 getUserFuns hm = Map.map f hm
   where
-    f :: GML.Exp -> VarsAndBody
-    f exp = case runToMathLang Map.empty $ gml2ml exp of
+    f :: ([GML.Var], GML.Exp) -> VarsAndBody
+    f (vars, exp) =
+      case runToMathLang Map.empty $ gml2ml exp of
             Right mlExp -> ([T.unpack v | GML.MkVar v <- nub vars], mlExp)
             Left _ -> ([], Undefined Nothing)
-      where
-        -- TODO: check that only bound variables are there, there may be free variables in body
-        -- actually put the bound variables in already in TranslateL4
-        vars = exp ^.. cosmosOf (gplate @GML.Exp) % gplate @GML.Var
+
 
 gml2ml :: GML.Exp -> ToMathLang (Expr Double)
 gml2ml exp = case exp.exp of

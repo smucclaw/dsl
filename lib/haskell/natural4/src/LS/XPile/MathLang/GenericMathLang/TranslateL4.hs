@@ -261,15 +261,18 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
 type RetVarInfo = [(Var, Maybe L4EntType)]
-type UserDefinedFun = (Var, Exp, Operator Parser BaseExp)
+type UserDefinedFun = (Var, Exp, [Var], Operator Parser BaseExp)
 getFunName :: UserDefinedFun -> Var
-getFunName (a,_,_) = a
+getFunName (a,_,_,_) = a
 
 getFunDef :: UserDefinedFun -> Exp
-getFunDef (_,b,_) = b
+getFunDef (_,b,_,_) = b
+
+getBoundVars :: UserDefinedFun -> [Var]
+getBoundVars (_,_,c,_) = c
 
 getOperMP :: UserDefinedFun -> Operator Parser BaseExp
-getOperMP (_,_,c) = c
+getOperMP (_,_,_,d) = d
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
@@ -413,8 +416,8 @@ l4ToLCProgram rules = do
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
-    getUserFuns :: [UserDefinedFun] -> HM.HashMap String Exp
-    getUserFuns opers = HM.fromList [(T.unpack var,exp) | (MkVar var,exp,_) <- opers]
+    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var],Exp)
+    getUserFuns opers = HM.fromList [(T.unpack var,(boundVars,exp)) | (MkVar var,exp,boundVars,_) <- opers]
 
     -- Separate user functions from the body of the program (mostly because
     -- I don't want to handle them in ToMathLang the same way as the rest /Inari)
@@ -587,18 +590,18 @@ isLambda hl = case HM.keys hl.shcGiven of
     OneClause (HeadOnly (hcHead -> rp))
        -> case runToLC $ varsInBody ks rp of
             Left error -> trace [i|isLambda: #{error}|] Nothing
-            Right res -> Just res
+            Right (operator, bexp) -> Just (operator, ks, bexp)
     _ -> Nothing
   where
     -- check if all the vars are present in function body
-    varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, [Var], BaseExp)
+    varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, BaseExp)
     varsInBody vars (RPConstraint fname RPis fbody) = do
       expr <- parseExpr $ MTT $ textifyMTEs fbody
       let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
       pos <- mkToLC $ asks currSrcPos
       (var, operator) <- mkOperator pos fname vars
       if all (`elem` varsInExpr) vars
-        then pure ((var, noExtraMdata expr, operator), vars, expr)
+        then pure ((var, noExtraMdata expr, vars, operator), expr)
         else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
       where
         -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment

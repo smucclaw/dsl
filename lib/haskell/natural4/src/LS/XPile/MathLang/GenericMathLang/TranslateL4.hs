@@ -817,9 +817,9 @@ baseExpifyMTEs mtes = do
             ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
             ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
             _ -> do assumedVar <- varFromMTEs [f]
-          fExp <- mkVarExp assumedVar
-          let fArg1 = noExtraMdata (EApp fExp arg1)
-          pure $ EApp fArg1 arg2
+                    fExp <- mkVarExp assumedVar
+                    let fArg1 = noExtraMdata (EApp fExp arg1)
+                    pure $ EApp fArg1 arg2
       -- no userfuns here
         (xs,[]) -> do
           let parenExp = MTT $ textifyMTEs $ parenExps mtes

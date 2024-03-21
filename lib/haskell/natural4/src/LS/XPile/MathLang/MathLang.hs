@@ -57,11 +57,11 @@ toMathLang l4i =
             Just exp -> [exp]
             Nothing ->
               case giveth of
-            [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
-            ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
-                   [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
-                   exprs -> exprs
-        in (toplevels, st)
+                [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
+                ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
+                      [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
+                      exprs -> exprs
+            in (toplevels, st)
 
 
 --numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
@@ -108,7 +108,7 @@ exp2pred exp = case exp.exp of
         pure $ PredVar [i|#{var}.#{val}|]
       (MathVar var, val) -> do
         let ex2withLabel = var @|= val
-    pure $ PredComp Nothing CEQ ex1 ex2withLabel
+        pure $ PredComp Nothing CEQ ex1 ex2withLabel
       _ -> fail [i|\nexp2pred: expected Var, got #{ex1}\n|]
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
@@ -259,10 +259,7 @@ gml2ml exp = case exp.exp of
   EVarSet var val -> do
     MathVar varEx <- gml2ml var
     valEx <- gml2ml val
-    let valExWithLabel = case valEx of
-          MathVar _ -> valEx
-          MathSet _ _ -> valEx
-          _ -> varEx @|= valEx
+    let valExWithLabel = varEx @|= valEx
 --    if we get rid of the assumption that everything is a SeqExp, should do this
 --    ToMathLang $ tell $ emptyState { symtabF = Map.singleton varEx valExWithLabel }
     pure $ MathSet varEx valExWithLabel

@@ -1139,7 +1139,7 @@ testLambda_complex = mkTestRule
         , hBody = Nothing}]
 
 testLambda_gold :: Map.HashMap String ([GML.Var], Exp)
-testLambda_gold = Map.fromList [("discounted by",([MkVar "x",MkVar "y"],MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = []}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = []}}, md = []}}, md = []}))]
+testLambda_gold = Map.fromList [("discounted by",([MkVar "x",MkVar "y"],MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}))]
 
 testFunApp :: [Rule]
 testFunApp = testLambda :

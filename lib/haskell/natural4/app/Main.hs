@@ -399,22 +399,20 @@ main = do
 now8601 :: IO String
 now8601 = formatISO8601Millis <$> getCurrentTime
 
-
 writeBSfile :: Bool -> FilePath -> FilePath -> String -> ByteString.ByteString -> IO ()
 writeBSfile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
-  let mypath = dirname </> filename     -<.> ext
-      mylink     = dirname </> "LATEST" -<.> ext
+  let mypath = dirname </> filename -<.> ext
+      mylink = dirname </> "LATEST" -<.> ext
   ByteString.writeFile mypath s
   when doLink $ myMkLink (filename -<.> ext) mylink
-
 
 -- | output only "stdout" to outfile
 mywritefile :: Bool -> FilePath -> FilePath -> String -> String -> IO ()
 mywritefile doLink dirname filename ext s = do
   createDirectoryIfMissing True dirname
-  let mypath = dirname </> filename     -<.> ext
-      mylink     = dirname </> "LATEST" -<.> ext
+  let mypath = dirname </> filename -<.> ext
+      mylink = dirname </> "LATEST" -<.> ext
   writeFile mypath s
   when doLink $ myMkLink (filename -<.> ext) mylink
 
@@ -435,7 +433,7 @@ mywritefile2 doLink dirname filename ext s e = do
 mywritefileDMN :: Bool -> FilePath -> FilePath -> String -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree -> IO ()
 mywritefileDMN doLink dirname filename ext xmltree = do
   createDirectoryIfMissing True dirname
-  let mypath = dirname </> filename     -<.> ext
+  let mypath = dirname </> filename -<.> ext
       mylink = dirname </> "LATEST" -<.> ext
   HXT.runX ( xmltree HXT.>>> HXT.writeDocument [ HXT.withIndent HXT.yes ] mypath )
   when doLink $ myMkLink (filename -<.> ext) mylink

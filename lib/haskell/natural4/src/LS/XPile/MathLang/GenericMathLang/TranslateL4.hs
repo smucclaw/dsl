@@ -744,9 +744,8 @@ NOTE: If it seems like literals will appear here (e.g. number literals), see def
 
 isFun :: [Var] -> MTExpr -> Bool
 isFun funs mte =
-  let insert (varAsTxt -> v) = Set.insert v
-      ops = $(TH.lift allArithOps)
-      allFuns = foldr insert ops funs
+  let ops = $(TH.lift allArithOps)
+      allFuns = foldr (Set.insert . varAsTxt) ops funs
   in case mte of
     MTT t -> t `elem` allFuns
     _ -> False

@@ -1115,6 +1115,7 @@ processHcBody bsr = do
         toBoolEqBE _e@(ELit (EString str)) =
           let varExp = EVar (MkVar str)
           in ECompOp OpBoolEq (inferredBool varExp) (inferredBool (ELit EBoolTrue))
+
         toBoolEqBE e@(EApp _ _) =
           ECompOp OpBoolEq (inferredBool e) (inferredBool (ELit EBoolTrue))
 

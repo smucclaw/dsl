@@ -55,8 +55,7 @@ import Prelude hiding (head)
 l4rulesToProgram :: [Rule] -> AstNode metadata
 l4rulesToProgram =
   foldMap l4ruleToAstNodes
-    >>> traverse eitherToList
-    >>> join
+    >>> foldMap eitherToList
     >>> Program Nothing
 
 l4ruleToAstNodes :: (MonadError T.Text m) => Rule -> [m (AstNode metadata)]

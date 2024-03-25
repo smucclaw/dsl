@@ -37,7 +37,7 @@ import LS.XPile.Edn.AstToEdn.MessageLog
     MessageLog,
     Severity (..),
   )
-import LS.XPile.Edn.Utils (listToPairs)
+import LS.XPile.Edn.Common.Utils (listToPairs)
 import Prelude hiding (head)
 
 -- Recursively transpile an AST node, threading an initial empty context

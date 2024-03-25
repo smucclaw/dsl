@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Edn.Utils
+module LS.XPile.Edn.Common.Utils
   ( listToPairs,
     pairsToList,
   )

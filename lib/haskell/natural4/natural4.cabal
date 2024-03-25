@@ -62,10 +62,10 @@ library
       LS.XPile.Edn.AstToEdn.CPSTranspileM
       LS.XPile.Edn.AstToEdn.MessageLog
       LS.XPile.Edn.Common.Ast
+      LS.XPile.Edn.Common.Utils
       LS.XPile.Edn.L4ToAst
       LS.XPile.Edn.L4ToAst.RelToTextTable
       LS.XPile.Edn.L4ToEdn
-      LS.XPile.Edn.Utils
       LS.XPile.ExportTypes
       LS.XPile.GFTrees
       LS.XPile.IntroBase

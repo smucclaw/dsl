@@ -53,7 +53,7 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
 import GHC.Generics (Generic)
-import LS.XPile.Edn.Utils (listToPairs, pairsToList)
+import LS.XPile.Edn.Common.Utils (listToPairs, pairsToList)
 import Text.Read (readMaybe)
 
 data AstNode metadata

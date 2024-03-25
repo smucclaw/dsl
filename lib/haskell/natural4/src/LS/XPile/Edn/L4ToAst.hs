@@ -86,7 +86,6 @@ givenToGivens =
     maybeNonEmptyListToList = maybeToList >>> foldMap NE.toList
 
 relPredToAstNode ::
-  forall metadata m.
   (MonadError T.Text m) =>
   Maybe metadata ->
   RelationalPredicate ->

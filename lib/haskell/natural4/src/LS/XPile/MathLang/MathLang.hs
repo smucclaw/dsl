@@ -270,6 +270,7 @@ gml2ml exp =
     ex2 <- gml2ml e2
     op <- numOptoMl op
     pure $ MathBin Nothing op ex1 ex2
+
   EVarSet var val -> do
     MathVar varEx <- gml2ml var
     valEx <- gml2ml val
@@ -331,7 +332,8 @@ gml2ml exp =
     replaceVars :: [String] -> [Expr Double] -> Expr Double -> Expr Double
     replaceVars [] [] expr = expr
     replaceVars (k:ks) (v:vs) expr = replaceVar k v $ replaceVars ks vs expr
-    replaceVars _ _ expr = error "replaceVars: Wrong number of arguments for function"
+    replaceVars _ _ expr =
+      trace "replaceVars: Wrong number of arguments for function" expr
 
     replaceVar :: String -> Expr Double -> Expr Double -> Expr Double
     replaceVar k v = go

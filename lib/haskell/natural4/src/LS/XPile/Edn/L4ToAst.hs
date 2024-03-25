@@ -13,6 +13,7 @@ module LS.XPile.Edn.L4ToAst (l4rulesToProgram) where
 import AnyAll (BoolStruct, BoolStructF (..))
 import Control.Arrow ((>>>))
 import Control.Monad (join)
+import Control.Monad.Error.Class (MonadError (..))
 import Data.Bifunctor (Bifunctor (..))
 import Data.Functor.Foldable (Recursive (..))
 import Data.HashMap.Strict qualified as Map
@@ -28,39 +29,47 @@ import LS.Types
     HornClause (..),
     MTExpr (..),
     MultiTerm,
+    ParamText,
     RPRel (..),
     RelationalPredicate (..),
-    TComparison (..), ParamText,
+    TComparison (..),
   )
-import LS.Utils ((|$>))
+import LS.Utils (eitherToList, (|$>))
 import LS.XPile.Edn.Common.Ast
   ( AstNode (..),
     Op (..),
+    pattern And,
     pattern Bool,
     pattern InfixBinOp,
     pattern Integer,
+    pattern Not,
     pattern Number,
+    pattern Or,
     pattern Parens,
     pattern Program,
-    pattern And,
-    pattern Or,
-    pattern Not,
   )
 import LS.XPile.Edn.L4ToAst.RelToTextTable (relToTextTable)
-import Language.Haskell.TH.Syntax (lift)
+import Language.Haskell.TH.Syntax qualified as TH
 import Prelude hiding (head)
 
 l4rulesToProgram :: [Rule] -> AstNode metadata
-l4rulesToProgram = foldMap l4ruleToAstNodes >>> Program Nothing
+l4rulesToProgram =
+  foldMap l4ruleToAstNodes
+    >>> traverse eitherToList
+    >>> join
+    >>> Program Nothing
 
-l4ruleToAstNodes :: Rule -> [AstNode metadata]
-l4ruleToAstNodes Hornlike {keyword = Decide, given, clauses} = do
-  HC {hHead, hBody} <- clauses
-  
-  head <- relPredToAstNode metadata hHead
-  body <- hBody |$> boolStructRToAstNode metadata |> maybeToList
+l4ruleToAstNodes :: (MonadError T.Text m) => Rule -> [m (AstNode metadata)]
+l4ruleToAstNodes Hornlike {keyword = Decide, given, clauses} =
+  clauses |$> \HC {hHead, hBody} -> do
+    head <- hHead |> relPredToAstNode metadata
 
-  pure HornClause {metadata, givens, head, body}
+    body <- case hBody |$> boolStructRToAstNode metadata of
+      Nothing -> pure Nothing
+      Just (Right body) -> pure $ Just body
+      Just (Left err) -> throwError err
+
+    pure HornClause {metadata, givens, head, body}
   where
     metadata = Nothing
     givens = given |> givenToGivens
@@ -79,7 +88,7 @@ givenToGivens =
 
 relPredToAstNode ::
   forall metadata m.
-  (MonadFail m) =>
+  (MonadError T.Text m) =>
   Maybe metadata ->
   RelationalPredicate ->
   m (AstNode metadata)
@@ -90,9 +99,9 @@ relPredToAstNode metadata = \case
     pure $ InfixBinOp metadata op lhs rhs
     where
       (lhs, rhs) = join bimap multiTermToAstNode (multiTerm, multiTerm')
-      op = $(lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel
+      op = $(TH.lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel
 
-  _ -> fail "Not supported"
+  _ -> throwError "Not supported"
   where
     multiTermToAstNode = Parens metadata . map \case
       MTT text -> Text Nothing text
@@ -101,7 +110,7 @@ relPredToAstNode metadata = \case
       MTB bool -> Bool Nothing bool
 
 boolStructRToAstNode ::
-  MonadFail m => Maybe metadata -> BoolStructR -> m (AstNode metadata)
+  MonadError T.Text m => Maybe metadata -> BoolStructR -> m (AstNode metadata)
 boolStructRToAstNode metadata = cata \case
   LeafF relPred -> relPredToAstNode metadata relPred
   NotF arg -> Not metadata <$> arg

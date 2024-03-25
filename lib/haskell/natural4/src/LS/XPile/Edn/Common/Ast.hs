@@ -21,6 +21,7 @@ module LS.XPile.Edn.Common.Ast
     pattern Fact,
     pattern Rule,
     pattern Program,
+    pattern Not,
     pattern And,
     pattern Or,
     pattern Is,

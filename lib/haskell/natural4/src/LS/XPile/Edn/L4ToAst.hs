@@ -86,20 +86,17 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = \case
-  RPMT multiTerm -> pure $ multiTermToAstNode multiTerm
+  RPMT multiTerm -> pure $ Parens Nothing $ multiTermToAstNodes multiTerm
 
-  RPConstraint multiTerm rel multiTerm' -> pure case (op, rhs) of
-    ("IS", Parens metadata (Text metadata' "THE LIST OF ALL" : var@(Text _ _) : suchThat@(Text _ "SUCH THAT") : rhs)) ->
-      Parens metadata [lhs, Text metadata' "IS THE LIST OF ALL", var, suchThat, Parens Nothing rhs]
-
-    _ -> InfixBinOp metadata op lhs rhs
+  RPConstraint multiTerm rel multiTerm' -> 
+    pure $ Parens Nothing $ lhs <> [Text Nothing op] <> rhs
     where
-      (lhs, rhs) = join bimap multiTermToAstNode (multiTerm, multiTerm')
+      (lhs, rhs) = join bimap multiTermToAstNodes (multiTerm, multiTerm')
       op = $(TH.lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel
 
   _ -> throwError "Not supported"
   where
-    multiTermToAstNode = Parens metadata . map \case
+    multiTermToAstNodes = map \case
       MTT text -> Text Nothing text
       MTI int -> Integer Nothing int
       MTF double -> Number Nothing double

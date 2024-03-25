@@ -45,8 +45,8 @@ import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 -- import Data.String.Interpolate (__i)
-import Data.Text.Lazy qualified as TextLazy
-import Text.Pretty.Simple (pShowNoColor)
+-- import Text.Pretty.Simple (pShowNoColor)
+import Data.String.Interpolate (__i)
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 -- import Data.Foldable qualified as F (toList)
 
@@ -75,7 +75,7 @@ toMathLangGen l4a =
 
 -- | Makes report for errors; can try using `diagnose` package / lib for this
 makeErrorOut :: ToLCError -> (String, [String])
-makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
+makeErrorOut _errors = ("not yet implemented", ["not yet implemented"])
   -- (makeErrorReport errors, map (T.unpack . stringifyToLCError) errors)
   --   where
   --     makeErrorReport errors =
@@ -88,4 +88,12 @@ makeErrorOut errors = ("not yet implemented", ["not yet implemented"])
 
 -- | 'Print' LC program to some sort of interchange format for subsequent serialization
 renderLC :: LCProgram -> String
-renderLC program = TextLazy.unpack $ TextLazy.unlines [pShowNoColor program.lcProgram, pShowNoColor program.userFuns]
+renderLC program =
+  [__i|
+    #{lcProgram}
+    #{userFuns}
+  |]
+  where
+    lcProgram = program.lcProgram
+    userFuns = program.userFuns
+  -- TextLazy.unpack $ TextLazy.unlines [pShowNoColor program.lcProgram, pShowNoColor program.userFuns]

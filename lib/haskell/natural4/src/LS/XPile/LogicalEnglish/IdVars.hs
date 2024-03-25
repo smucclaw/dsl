@@ -13,7 +13,7 @@ module LS.XPile.LogicalEnglish.IdVars (
 ) where
 
 import Data.Coerce (coerce)
-import Data.HashSet qualified as HS
+-- import Data.HashSet qualified as HS
 import Data.Text qualified as T
 
 import LS.XPile.LogicalEnglish.Types

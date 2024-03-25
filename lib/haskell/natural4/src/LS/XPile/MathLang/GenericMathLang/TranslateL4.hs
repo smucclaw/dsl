@@ -10,6 +10,7 @@
 {-# LANGUAGE PatternSynonyms, ViewPatterns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
@@ -18,6 +19,7 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 import Control.Arrow ((>>>))
 import Data.HashSet qualified as Set
 
+import LS.XPile.MathLang.GenericMathLang.ArithOps ( allArithOps, arithOps )
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
 import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 -- TODO: Haven't actually finished setting up logging infra, unfortunately.
@@ -72,6 +74,7 @@ import Prelude hiding (exp)
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as EffState
 
+import Language.Haskell.TH.Syntax qualified as TH
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -722,7 +725,6 @@ isOtherSetVar = \case
 --  RPnary RPis [MTT mtes, rp] -- this is handled in expifyHeadRP
   _ -> Nothing
 
-
 {- |
 We want to handle things like
   * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
@@ -742,13 +744,12 @@ NOTE: If it seems like literals will appear here (e.g. number literals), see def
 
 isFun :: [Var] -> MTExpr -> Bool
 isFun funs mte =
-  let allFuns = [v | MkVar v <- funs ]
+  let insert (varAsTxt -> v) = Set.insert v
+      ops = $(TH.lift allArithOps)
+      allFuns = foldr insert ops funs
   in case mte of
-    MTT t -> isOp t || t `elem` allFuns
+    MTT t -> t `elem` allFuns
     _ -> False
-
-isOp :: T.Text -> Bool
-isOp = (PCRE.≈ [PCRE.re|^\+|\*|\-|\/$|])
 
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
@@ -858,7 +859,7 @@ baseExpifyMTEs mtes = do
       | otherwise = mtes
 
     isOp :: T.Text -> Bool
-    isOp = (PCRE.≈ [PCRE.re|^\+|\*|\-|\/$|])
+    isOp = (`elem` $(TH.lift arithOps))
 
     -- don't parenthesize single variables or literals, like "taxesPayable" or "Singapore citizen"
     -- do parenthesize "(x + 6)"
@@ -898,8 +899,8 @@ type Parser = ParsecT Void T.Text ToLC
 
 pExpr :: Parser BaseExp
 pExpr = do
-  pos <- lift $ ToLC $ asks currSrcPos
-  customOpers <- lift $ ToLC $ asks userDefinedFuns
+  pos <- lift $ mkToLC $ asks currSrcPos
+  customOpers <- lift $ mkToLC $ asks userDefinedFuns
   --trace [i|pExpr: length customOpers = #{length customOpers}|]
   (makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression")
 

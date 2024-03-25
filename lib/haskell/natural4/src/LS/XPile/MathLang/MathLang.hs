@@ -37,7 +37,7 @@ import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
 import Optics (Fold,Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (%~), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
-import Data.Maybe (maybeToList, catMaybes)
+import Data.Maybe (maybeToList, mapMaybe)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
@@ -53,13 +53,13 @@ toMathLang l4i =
     Right lamCalcProgram ->
       let userfuns = getUserFuns lamCalcProgram.userFuns
           st = gmls2ml userfuns lamCalcProgram.lcProgram
-          giveth = T.unpack  <$> lamCalcProgram.givethVar
+          giveth = T.unpack <$> lamCalcProgram.givethVar
           toplevels = case Map.lookup "Top-Level" st.symtabF of
             Just exp -> [exp]
             Nothing ->
               case giveth of
                 [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
-                ks -> case catMaybes [ MathSet k <$> Map.lookup k st.symtabF | k <- ks ] of
+                ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
                       [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
                       exprs -> exprs
             in (toplevels, st)
@@ -112,7 +112,7 @@ exp2pred exp = case exp.exp of
       _ -> fail [i|\nexp2pred: expected Var, got #{ex1}\n|]
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
-  ELit (GML.EString lit) -> pure $ PredVar $ T.unpack lit
+  ELit (GML.EString lit) -> pure $ PredVar [i|#{lit}|]
   EOr {} -> PredFold Nothing PLOr <$> foldPredOr exp
     --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
   EAnd {} -> PredFold Nothing PLAnd <$> foldPredAnd exp

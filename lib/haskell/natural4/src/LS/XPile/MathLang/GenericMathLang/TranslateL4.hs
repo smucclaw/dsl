@@ -1176,6 +1176,7 @@ expifyHeadRP = \case
         varExp <- mkVarExp var
         let valExp = inferTypeFromOtherExp exp varExp
         return $ noExtraMdata $ EVarSet varExp valExp
+
       Nothing -> do -- Var is not given, but we can try to infer it from the RHS
         pos <- ToLC $ asks currSrcPos
         varNoType <- noExtraMdata . EVar <$> varFromMTEs [mte]

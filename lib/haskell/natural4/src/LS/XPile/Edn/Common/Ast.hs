@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Edn.Ast
+module LS.XPile.Edn.Common.Ast
   ( AstNode (..),
     AstNodeF (..),
     Op (..),

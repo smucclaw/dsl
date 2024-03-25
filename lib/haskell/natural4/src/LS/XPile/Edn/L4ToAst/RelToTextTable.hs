@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.XPile.Edn.RelToTextTable (relToTextTable) where
+module LS.XPile.Edn.L4ToAst.RelToTextTable (relToTextTable) where
 
 import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as T
-import LS.Types ( RPRel(..), TComparison(..) )
+import LS.Types (RPRel (..), TComparison (..))
 
 relToTextTable :: Map.HashMap RPRel T.Text
 relToTextTable =

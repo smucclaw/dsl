@@ -7,7 +7,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Edn.L4RuleToAst (l4RulesToProgram) where
+module LS.XPile.Edn.L4ToAst (l4rulesToProgram) where
 
 import Control.Arrow ((>>>))
 import Control.Monad (join)
@@ -29,7 +29,7 @@ import LS.Types
     TComparison (..),
   )
 import LS.Utils ((|$>))
-import LS.XPile.Edn.Ast
+import LS.XPile.Edn.Common.Ast
   ( AstNode (..),
     Op (..),
     pattern Bool,
@@ -39,12 +39,12 @@ import LS.XPile.Edn.Ast
     pattern Parens,
     pattern Program,
   )
-import LS.XPile.Edn.RelToTextTable (relToTextTable)
+import LS.XPile.Edn.L4ToAst.RelToTextTable (relToTextTable)
 import Language.Haskell.TH.Syntax (lift)
 import Prelude hiding (head)
 
-l4RulesToProgram :: [Rule] -> AstNode metadata
-l4RulesToProgram = foldMap l4RuleToAstNodes >>> Program Nothing
+l4rulesToProgram :: [Rule] -> AstNode metadata
+l4rulesToProgram = foldMap l4RuleToAstNodes >>> Program Nothing
 
 l4RuleToAstNodes :: Rule -> [AstNode metadata]
 l4RuleToAstNodes Hornlike {keyword = Decide, given, clauses} = do
@@ -81,8 +81,10 @@ rpToAstNode _metadata _rp = undefined
 
 multiTermToAst :: Maybe metadata -> MultiTerm -> AstNode metadata
 multiTermToAst metadata =
-  Parens metadata . map \case
-    MTT text -> Text Nothing text
-    MTI int -> Integer Nothing int
-    MTF double -> Number Nothing double
-    MTB bool -> Bool Nothing bool 
+  map multiExprToAstNode >>> Parens metadata
+  where
+    multiExprToAstNode = \case
+      MTT text -> Text Nothing text
+      MTI int -> Integer Nothing int
+      MTF double -> Number Nothing double
+      MTB bool -> Bool Nothing bool 

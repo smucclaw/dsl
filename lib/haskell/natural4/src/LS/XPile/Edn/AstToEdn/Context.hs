@@ -3,7 +3,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Edn.Context
+module LS.XPile.Edn.AstToEdn.Context
   ( Context,
     (<++>),
     (!?)

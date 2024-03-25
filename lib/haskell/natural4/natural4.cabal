@@ -57,13 +57,14 @@ library
       LS.XPile.CoreL4.LogicProgram.Skolemize
       LS.XPile.DataFlow
       LS.XPile.DumpRule
-      LS.XPile.Edn.Ast
       LS.XPile.Edn.AstToEdn
-      LS.XPile.Edn.Context
-      LS.XPile.Edn.CPSTranspileM
-      LS.XPile.Edn.L4RuleToAst
-      LS.XPile.Edn.MessageLog
-      LS.XPile.Edn.RelToTextTable
+      LS.XPile.Edn.AstToEdn.Context
+      LS.XPile.Edn.AstToEdn.CPSTranspileM
+      LS.XPile.Edn.AstToEdn.MessageLog
+      LS.XPile.Edn.Common.Ast
+      LS.XPile.Edn.L4ToAst
+      LS.XPile.Edn.L4ToAst.RelToTextTable
+      LS.XPile.Edn.L4ToEdn
       LS.XPile.Edn.Utils
       LS.XPile.ExportTypes
       LS.XPile.GFTrees

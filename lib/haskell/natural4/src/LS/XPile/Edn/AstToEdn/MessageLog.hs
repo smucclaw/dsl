@@ -6,7 +6,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module LS.XPile.Edn.MessageLog
+module LS.XPile.Edn.AstToEdn.MessageLog
   ( Severity (..),
     Message (..),
     MessageData (..),
@@ -24,7 +24,7 @@ import Data.Hashable (Hashable)
 import Data.Text qualified as T
 import Deque.Strict qualified as Deque
 import GHC.Generics (Generic)
-import LS.XPile.Edn.Ast (AstNode)
+import LS.XPile.Edn.Common.Ast (AstNode)
 import Optics.TH (camelCaseFields, makeLensesWith)
 
 data Severity

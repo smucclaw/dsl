@@ -1,7 +1,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module LS.XPile.Edn.CPSTranspileM
+module LS.XPile.Edn.AstToEdn.CPSTranspileM
   ( CPSTranspileM,
     TranspileResult (..),
     ednText,
@@ -22,9 +22,9 @@ import Data.Hashable (Hashable)
 import Data.Text qualified as T
 import Flow ((|>))
 import GHC.Generics (Generic)
-import LS.XPile.Edn.Ast (AstNode)
-import LS.XPile.Edn.Context (Context, (<++>))
-import LS.XPile.Edn.MessageLog
+import LS.XPile.Edn.Common.Ast (AstNode)
+import LS.XPile.Edn.AstToEdn.Context (Context, (<++>))
+import LS.XPile.Edn.AstToEdn.MessageLog
   ( MessageData (..),
     MessageLog,
     Severity (..),

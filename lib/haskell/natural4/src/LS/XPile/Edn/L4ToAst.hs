@@ -13,7 +13,7 @@ module LS.XPile.Edn.L4ToAst (l4rulesToProgram) where
 import AnyAll (BoolStruct, BoolStructF (..))
 import Control.Arrow ((>>>))
 import Control.Monad (join)
-import Control.Monad.Error.Class (MonadError (..))
+import Control.Monad.Except (MonadError (..))
 import Data.Bifunctor (Bifunctor (..))
 import Data.Functor.Foldable (Recursive (..))
 import Data.HashMap.Strict qualified as Map

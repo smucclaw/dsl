@@ -86,16 +86,17 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = \case
-  RPMT multiTerm -> pure $ Parens Nothing $ multiTermToAstNodes multiTerm
+  RPMT multiTerm -> go $ multiTermToAstNodes multiTerm
 
   RPConstraint multiTerm rel multiTerm' -> 
-    pure $ Parens Nothing $ lhs <> [Text Nothing op] <> rhs
+    go $ lhs <> [Text Nothing op] <> rhs
     where
       (lhs, rhs) = join bimap multiTermToAstNodes (multiTerm, multiTerm')
       op = $(TH.lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel
 
   _ -> throwError "Not supported"
   where
+    go = pure . Parens metadata
     multiTermToAstNodes = map \case
       MTT text -> Text Nothing text
       MTI int -> Integer Nothing int

@@ -88,8 +88,11 @@ relPredToAstNode ::
 relPredToAstNode metadata = \case
   RPMT multiTerm -> pure $ multiTermToAstNode multiTerm
 
-  RPConstraint multiTerm rel multiTerm' ->
-    pure $ InfixBinOp metadata op lhs rhs
+  RPConstraint multiTerm rel multiTerm' -> pure case (op, rhs) of
+    ("IS", Parens metadata (Text metadata' "THE LIST OF ALL" : var@(Text _ _) : suchThat@(Text _ "SUCH THAT") : rhs)) ->
+      Parens metadata [lhs, Text metadata' "IS THE LIST OF ALL", var, suchThat, Parens Nothing rhs]
+
+    _ -> InfixBinOp metadata op lhs rhs
     where
       (lhs, rhs) = join bimap multiTermToAstNode (multiTerm, multiTerm')
       op = $(TH.lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel

@@ -58,16 +58,11 @@ l4rulesToProgram =
     >>> foldMap eitherToList
     >>> Program Nothing
 
-l4ruleToAstNodes :: (MonadError T.Text m) => Rule -> [m (AstNode metadata)]
+l4ruleToAstNodes :: MonadError T.Text m => Rule -> [m (AstNode metadata)]
 l4ruleToAstNodes Hornlike {keyword = Decide, given, clauses} =
   clauses |$> \HC {hHead, hBody} -> do
     head <- hHead |> relPredToAstNode metadata
-
-    body <- case hBody |$> boolStructRToAstNode metadata of
-      Nothing -> pure Nothing
-      Just (Right body) -> pure $ Just body
-      Just (Left err) -> throwError err
-
+    body <- hBody |> traverse (boolStructRToAstNode metadata)
     pure HornClause {metadata, givens, head, body}
   where
     metadata = Nothing
@@ -86,7 +81,7 @@ givenToGivens =
     maybeNonEmptyListToList = maybeToList >>> foldMap NE.toList
 
 relPredToAstNode ::
-  (MonadError T.Text m) =>
+  MonadError T.Text m =>
   Maybe metadata ->
   RelationalPredicate ->
   m (AstNode metadata)

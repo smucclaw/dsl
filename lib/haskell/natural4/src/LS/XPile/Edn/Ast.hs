@@ -11,8 +11,7 @@ module LS.XPile.Edn.Ast
   ( AstNode (..),
     AstNodeF (..),
     Op (..),
-    pattern BoolTrue,
-    pattern BoolFalse,
+    pattern Bool,
     pattern Number,
     pattern Integer,
     pattern Date,
@@ -45,6 +44,7 @@ module LS.XPile.Edn.Ast
   )
 where
 
+import Control.Arrow ((>>>))
 import Data.Coerce (coerce)
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
@@ -54,6 +54,7 @@ import Data.Text qualified as T
 import Data.Text.Read qualified as TRead
 import GHC.Generics (Generic)
 import LS.XPile.Edn.Utils (listToPairs, pairsToList)
+import Text.Read (readMaybe)
 
 data AstNode metadata
   = HornClause
@@ -107,11 +108,15 @@ pattern Number {metadata, number} <-
   where
     Number metadata number = Text {metadata, text = [i|#{number}|]}
 
-pattern BoolTrue :: Maybe metadata -> AstNode metadata
-pattern BoolTrue {metadata} = Text {metadata, text = "true"}
-
-pattern BoolFalse :: Maybe metadata -> AstNode metadata
-pattern BoolFalse {metadata} = Text {metadata, text = "false"}
+pattern Bool :: Maybe metadata -> Bool -> AstNode metadata
+pattern Bool {metadata, bool} <-
+  Text {metadata, text = show >>> readMaybe -> Just bool}
+  where
+    Bool metadata bool =
+      Text
+        { metadata,
+          text = if bool then "true" else "false"
+        }
 
 pattern Integer :: Maybe metadata -> Integer -> AstNode metadata
 pattern Integer {metadata, int} <-

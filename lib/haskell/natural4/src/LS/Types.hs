@@ -42,6 +42,7 @@ import LS.Utils ((|$>))
 import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
+import Language.Haskell.TH.Syntax (Lift)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -63,7 +64,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
            | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
-  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
 
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
@@ -440,7 +441,7 @@ data ParamType = TOne | TOptional | TList0 | TList1 | TSet0 | TSet1
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                 deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+                 deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
                           deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)

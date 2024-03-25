@@ -84,22 +84,21 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = \case
-  RPMT multiTerm -> pure $ multiTermToAst multiTerm
+  RPMT multiTerm -> pure $ multiTermToAstNode multiTerm
 
   RPConstraint multiTerm rel multiTerm' ->
     pure $ InfixBinOp metadata op lhs rhs
     where
-      (lhs, rhs) = join bimap multiTermToAst (multiTerm, multiTerm')
+      (lhs, rhs) = join bimap multiTermToAstNode (multiTerm, multiTerm')
       op = $(lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel
 
   _ -> fail "Not supported"
   where
-    multiTermToAst :: MultiTerm -> AstNode metadata =
-      Parens metadata . map \case
-        MTT text -> Text Nothing text
-        MTI int -> Integer Nothing int
-        MTF double -> Number Nothing double
-        MTB bool -> Bool Nothing bool
+    multiTermToAstNode = Parens metadata . map \case
+      MTT text -> Text Nothing text
+      MTI int -> Integer Nothing int
+      MTF double -> Number Nothing double
+      MTB bool -> Bool Nothing bool
 
 boolStructRToAstNode ::
   MonadFail m => Maybe metadata -> BoolStructR -> m (AstNode metadata)

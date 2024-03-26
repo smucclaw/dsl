@@ -9,7 +9,8 @@ import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
 import LS.Interpreter (expandBSR')
 import LS.Rule
-  ( Interpreted (L4I, classtable, origrules, scopetable),
+  ( Interpreted (L4I, classtable, origrules, scopetable)
+  , defaultL4I
   )
 import LS.Types
   ( ClsTab (CT),
@@ -47,14 +48,7 @@ spec = do
     testExpandAnyAll "All" mkAll
     testExpandAnyAll "Any" mkAny
   where
-    emptyInt =
-      L4I
-        { classtable = mkCT Map.empty,
-          scopetable = Map.empty,
-          origrules = []
-        }
-
-    expandBSR'' = expandBSR' emptyInt 0
+    expandBSR'' = expandBSR' defaultL4I 0
 
     testExpandAnyAll (txt :: String) ctor =
       it [i|expand #{txt} RPBoolStructR is|] $

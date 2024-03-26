@@ -4,7 +4,10 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
+
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
@@ -23,6 +26,7 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
+import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
@@ -39,10 +43,10 @@ import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
 import LS.Utils ((|$>))
+import Language.Haskell.TH.Syntax (Lift)
 import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
-import Language.Haskell.TH.Syntax (Lift)
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -325,6 +329,7 @@ instance PrependHead RelationalPredicate where
 --
 -- In another universe we could recurse the RPConstraints and have an `RPConstraint (Not (RPConstraint (Is Sky Blue)))`
 -- [TODO] Let's think about refactoring to that in future.
+
 
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
@@ -728,3 +733,5 @@ enumLabels nelist =
 
 enumLabels_ :: ParamText -> [Text.Text]
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels
+
+makeBaseFunctor ''RelationalPredicate

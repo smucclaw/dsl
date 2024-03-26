@@ -32,6 +32,7 @@ import LS.Types
     ParamText,
     RPRel (..),
     RelationalPredicate (..),
+    RelationalPredicateF (..),
     TComparison (..),
   )
 import LS.Utils (eitherToList, (|$>))
@@ -48,8 +49,10 @@ import LS.XPile.Edn.Common.Ast
     pattern Parens,
     pattern Program,
   )
-import LS.XPile.Edn.L4ToAst.RelToTextTable (relToTextTable)
+import LS.XPile.Edn.Common.Utils (splitLast)
+import LS.XPile.Edn.L4ToAst.RPRelToTextTable (rpRelToTextTable)
 import Language.Haskell.TH.Syntax qualified as TH
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
 
 l4rulesToProgram :: [Rule] -> AstNode metadata
@@ -85,23 +88,60 @@ relPredToAstNode ::
   Maybe metadata ->
   RelationalPredicate ->
   m (AstNode metadata)
-relPredToAstNode metadata = \case
-  RPMT multiTerm -> parens $ multiTermToAstNodes multiTerm
+relPredToAstNode metadata = cata \case
+  RPMTF multiTerm -> parens $ multiTermToAstNodes multiTerm
 
-  RPConstraint multiTerm rel multiTerm' -> 
-    parens $ lhs <> [Text Nothing op] <> rhs
-    where
-      (lhs, rhs) = join bimap multiTermToAstNodes (multiTerm, multiTerm')
-      op = $(TH.lift relToTextTable) |> Map.findWithDefault [i|#{rel}|] rel
+  RPConstraintF
+    multiTerm
+    rel@(rpRelToTextNode metadata -> Just relText)
+    multiTerm' ->
+      parens $ lhs <> [relText] <> rhs
+      where
+        lhs = multiTermToAstNodes multiTerm
+        rhs =
+          multiTerm'
+            |> case rel of
+              RPis -> map capitaliseKeywordMTT
+              _ -> id
+            |> multiTermToAstNodes
+
+        capitaliseKeywordMTT (MTT text) =
+          text
+            |> T.strip
+            |> PCRE.sub
+              [PCRE.re|^((day|week|month|year)s?)$|]
+              (\(text : _) -> T.toUpper text)
+            |> MTT
+        capitaliseKeywordMTT multiExpr = multiExpr
+
+  -- Handle (... IS SUM ...) and (... IS PRODUCT ...)
+  RPnaryF RPis (splitLast -> Just (relPreds, opWithArgs)) -> do
+    relPreds <- sequenceA relPreds
+    opWithArgs <- opWithArgs
+
+    case opWithArgs of
+      Parens _ (Text metadata' op : args) ->
+        parens $ relPreds <> [Text metadata' [i|IS THE #{op} OF|]] <> args
+
+  RPnaryF (rpRelToTextNode metadata -> Just relText) args -> do
+    args <- sequenceA args
+    parens $ relText : args
 
   _ -> throwError "Not supported"
   where
     parens = pure . Parens metadata
+
     multiTermToAstNodes = map \case
       MTT text -> Text Nothing text
       MTI int -> Integer Nothing int
       MTF double -> Number Nothing double
       MTB bool -> Bool Nothing bool
+
+rpRelToTextNode :: Maybe metadata -> RPRel -> Maybe (AstNode metadata)
+rpRelToTextNode metadata =
+  (`Map.lookup` rpRelToTextTable') >>> fmap (Text metadata)
+  where
+    rpRelToTextTable' = $(TH.lift rpRelToTextTable)
 
 boolStructRToAstNode ::
   MonadError T.Text m => Maybe metadata -> BoolStructR -> m (AstNode metadata)

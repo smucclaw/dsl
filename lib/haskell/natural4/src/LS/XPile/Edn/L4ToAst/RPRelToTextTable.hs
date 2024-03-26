@@ -1,25 +1,30 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module LS.XPile.Edn.L4ToAst.RelToTextTable (relToTextTable) where
+module LS.XPile.Edn.L4ToAst.RPRelToTextTable
+  ( rpRelToTextTable,
+  )
+where
 
 import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as T
 import LS.Types (RPRel (..), TComparison (..))
 
-relToTextTable :: Map.HashMap RPRel T.Text
-relToTextTable =
+rpRelToTextTable :: Map.HashMap RPRel T.Text
+rpRelToTextTable =
   [ (RPis, "IS"),
     (RPeq, "IS"),
     (RPlt, "<"),
     (RPlte, "<="),
     (RPgt, ">"),
     (RPgte, ">="),
-    (RPelem, "IS IN"),
-    (RPnotElem, "IS NOT IN"),
-    (RPnot, "IS NOT"),
+    (RPelem, "IN"),
+    (RPnotElem, "NOT IN"),
+    (RPnot, "NOT"),
     (RPand, "AND"),
     (RPor, "OR"),
-    (RPTC TBefore, "IS BEFORE"),
-    (RPTC TAfter, "IS AFTER")
+    (RPTC TBefore, "BEFORE"),
+    (RPTC TAfter, "AFTER"),
+    (RPsum, "THE SUM OF"),
+    (RPproduct, "THE PRODUCT OF")
   ]

@@ -50,7 +50,7 @@ data MyToken = Every | Party | TokAll
             | RuleMarker Int Text.Text
             | Expect | ScenarioTok
             | TokLT | TokLTE | TokGT | TokGTE | TokIn | TokNotIn | TokEQ | TokAnd | TokOr
-            | TokSum | TokProduct | TokMinus | TokDivide
+            | TokSum | TokProduct | TokMinus | TokDivide | TokModulo
             | TokMin | TokMax
             | Notwithstanding | Despite | SubjectTo
             | Otherwise
@@ -197,6 +197,7 @@ tokenTable =
     (["PRODUCT", "PRODUCT OF"], [TokProduct]),
     (["MINUS"], [TokMinus]),
     (["DIVIDE"], [TokDivide]),
+    (["MODULO"], [TokModulo]),
     (["==", "==="], [TokEQ]),
 
     (["IN"], [TokIn]),
@@ -211,4 +212,4 @@ tokenTable =
     (["WHERE"], [Where]),
     ([";;"], [Semicolon])
   ]
-    |> pairs2map 
+    |> pairs2map

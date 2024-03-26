@@ -73,6 +73,7 @@ numOptoMl = \case
   GML.OpMul -> pure Times
   GML.OpProduct -> pure Times
   GML.OpDiv -> pure Divide
+  GML.OpModulo -> pure Modulo
   op -> fail [i|numOptoMl: encountered #{op}|]
 
 compOptoMl :: GML.CompOp -> Comp

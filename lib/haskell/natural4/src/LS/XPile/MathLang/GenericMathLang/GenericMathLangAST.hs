@@ -162,6 +162,7 @@ data NumOp
   | OpMinus
   | OpMul
   | OpDiv
+  | OpModulo
   | OpMaxOf
   | OpMinOf
   | OpSum

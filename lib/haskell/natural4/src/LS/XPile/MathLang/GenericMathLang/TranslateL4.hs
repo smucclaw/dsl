@@ -1230,6 +1230,9 @@ expifyBodyRP = \case
     rprel2numop = \case
       RPsum     -> Just OpPlus
       RPproduct -> Just OpMul
+      RPminus   -> Just OpMinus
+      RPdivide  -> Just OpDiv
+      RPmodulo  -> Just OpModulo
       RPmax     -> Just OpMaxOf
       RPmin     -> Just OpMinOf
       _         -> Nothing

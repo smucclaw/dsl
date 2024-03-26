@@ -61,7 +61,7 @@ type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 -- | the relations in a RelationalPredicate
 data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
            | RPnot | RPand | RPor
-           | RPsum | RPproduct | RPminus | RPdivide
+           | RPsum | RPproduct | RPminus | RPdivide | RPmodulo
            | RPsubjectTo
            | RPmin | RPmax
            | RPmap
@@ -369,6 +369,7 @@ rel2txt RPsum     = "SUM"
 rel2txt RPproduct = "PRODUCT"
 rel2txt RPminus   = "MINUS"
 rel2txt RPdivide  = "DIVIDE"
+rel2txt RPmodulo  = "MODULO"
 rel2txt (RPTC TBefore) = "BEFORE"
 rel2txt (RPTC TAfter ) = "AFTER"
 rel2txt (RPTC TBy    ) = "BY"

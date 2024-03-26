@@ -91,8 +91,8 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = cata \case
-  RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
 
+  RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
   RPConstraintF
     lhsMultiTerm
     (rpRelToTextNode metadata -> Just rpRel)
@@ -122,10 +122,11 @@ relPredToAstNode metadata = cata \case
       (Text _ "IS", Just (lhs, Parens _ (Text _ op : args))) ->
         [parens lhs, Text metadata [i|IS #{op}|], args']
         where
-          args'
-            | op PCRE.≈ [PCRE.re|^THE (SUM|PRODUCT|MIN|MAX) OF$|] =
-              List metadata args
-            | otherwise = parens args
+          args' =
+            args
+              |> if op PCRE.≈ [PCRE.re|^THE (SUM|PRODUCT|MIN|MAX) OF$|]
+                then List metadata
+                else parens
 
       _ -> rpRel : args
 

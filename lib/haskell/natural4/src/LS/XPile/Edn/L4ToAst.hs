@@ -94,39 +94,32 @@ relPredToAstNode metadata = cata \case
 
   RPConstraintF
     lhsMultiTerm
-    (rpRelToTextNode metadata -> Just relTextNode)
+    (rpRelToTextNode metadata -> Just rpRel)
     rhsMultiTerm ->
-      parens $ lhs <> [relTextNode] <> rhs
+      parens $ lhs <> [rpRel] <> rhs
       where
         lhs = multiTermToAstNodes lhsMultiTerm
         rhs =
           rhsMultiTerm
-            |> case relTextNode of
+            |> case rpRel of
               Text _ "IS" -> map capitaliseKeywordMTT
               _ -> id
             |> multiTermToAstNodes
 
-        capitaliseKeywordMTT
-          (MTT text@(T.strip >>> (`elem` multiExprKeywords') -> True)) =
+        capitaliseKeywordMTT = \case
+          (MTT text@(T.strip >>> (`elem` multiExprKeywords') -> True)) ->
             MTT $ T.toUpper text
-        capitaliseKeywordMTT multiExpr = multiExpr
+          multiExpr -> multiExpr
 
         multiExprKeywords' = $(TH.lift multiExprKeywords)
 
-  RPnaryF
-    (rpRelToTextNode metadata -> Just relTextNode)
-    args -> case (relTextNode, splitLast args) of
-      -- Handle (... IS SUM ...) and (... IS PRODUCT ...)
-      (Text _ "IS", Just (lhs, rhs)) -> do
-        lhs <- sequenceA lhs
-        rhs <- rhs
-        case rhs of
-          Parens _ (opTextNode : args) ->
-            parens $ lhs <> [relTextNode, opTextNode, List metadata args]
-
-      _ -> do
-        args <- sequenceA args
-        parens $ relTextNode : args
+  RPnaryF (rpRelToTextNode metadata -> Just rpRel) args -> do
+    args <- sequenceA args
+    parens case (rpRel, splitLast args) of
+      -- Handle stuff like (... IS SUM ...) and (... IS PRODUCT ...)
+      (Text _ "IS", Just (lhs, Parens _ (Text _ op : args))) ->
+        lhs <> [Text metadata [i|IS #{op}|], List metadata args]
+      _ -> rpRel : args
 
   _ -> throwError "Not supported"
   where

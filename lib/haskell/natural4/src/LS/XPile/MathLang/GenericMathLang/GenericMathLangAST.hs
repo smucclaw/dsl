@@ -149,12 +149,23 @@ mkVar = view $ re _MkVar
 varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar
 
-
-data Lit = EBoolTrue | EBoolFalse | EInteger Integer | EFloat Double | EString T.Text
+data Lit
+  = EBoolTrue
+  | EBoolFalse
+  | EInteger Integer
+  | EFloat Double
+  | EString T.Text
   deriving stock (Eq, Ord, Show)
 
-
-data NumOp = OpPlus | OpMinus | OpMul | OpDiv | OpMaxOf | OpMinOf | OpSum | OpProduct
+data NumOp
+  = OpPlus
+  | OpMinus
+  | OpMul
+  | OpDiv
+  | OpMaxOf
+  | OpMinOf
+  | OpSum
+  | OpProduct
   deriving stock (Eq, Show)
 
 data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte

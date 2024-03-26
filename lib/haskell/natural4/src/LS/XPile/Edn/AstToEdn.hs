@@ -80,6 +80,7 @@ astNodeToEdn = para go >>> runCPSTranspileM
 
         logTranspiledTo HornClause {metadata, givens, head, body} resultEdn
         pure resultEdn
+
     go
       CompoundTermF
         { metadataF = metadata,
@@ -98,6 +99,7 @@ astNodeToEdn = para go >>> runCPSTranspileM
 
         logTranspiledTo CompoundTerm {metadata, op, children} resultEdn
         pure resultEdn
+
     go TextF {metadataF = metadata, textF = text} = do
       context <- Reader.ask
 

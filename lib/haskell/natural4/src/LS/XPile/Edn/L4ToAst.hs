@@ -119,11 +119,8 @@ relPredToAstNode metadata = cata \case
     rhs <- rhs
 
     case rhs of
-      Parens _ (Text opMetadata op : args) ->
-        parens $ lhs <> [opTextNode, argsListNode]
-        where
-          opTextNode = Text opMetadata [i|IS THE #{op} OF|]
-          argsListNode = List metadata args
+      Parens _ (opTextNode : args) ->
+        parens $ lhs <> [opTextNode, List metadata args]
 
   RPnaryF (rpRelToTextNode metadata -> Just relText) args -> do
     args <- sequenceA args

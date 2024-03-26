@@ -43,6 +43,7 @@ import LS.XPile.Edn.Common.Ast
     pattern Bool,
     pattern InfixBinOp,
     pattern Integer,
+    pattern List,
     pattern Not,
     pattern Number,
     pattern Or,
@@ -50,9 +51,9 @@ import LS.XPile.Edn.Common.Ast
     pattern Program,
   )
 import LS.XPile.Edn.Common.Utils (splitLast)
+import LS.XPile.Edn.L4ToAst.MultiExprKeywords (multiExprKeywords)
 import LS.XPile.Edn.L4ToAst.RPRelToTextTable (rpRelToTextTable)
 import Language.Haskell.TH.Syntax qualified as TH
-import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
 
 l4rulesToProgram :: [Rule] -> AstNode metadata
@@ -92,36 +93,37 @@ relPredToAstNode metadata = cata \case
   RPMTF multiTerm -> parens $ multiTermToAstNodes multiTerm
 
   RPConstraintF
-    multiTerm
+    lhsMultiTerm
     rel@(rpRelToTextNode metadata -> Just relText)
-    multiTerm' ->
+    rhsMultiTerm ->
       parens $ lhs <> [relText] <> rhs
       where
-        lhs = multiTermToAstNodes multiTerm
+        lhs = multiTermToAstNodes lhsMultiTerm
         rhs =
-          multiTerm'
+          rhsMultiTerm
             |> case rel of
               RPis -> map capitaliseKeywordMTT
               _ -> id
             |> multiTermToAstNodes
 
-        capitaliseKeywordMTT (MTT text) =
-          text
-            |> T.strip
-            |> PCRE.sub
-              [PCRE.re|^((day|week|month|year)s?)$|]
-              (\(text : _) -> T.toUpper text)
-            |> MTT
+        capitaliseKeywordMTT
+          (MTT text@(T.strip >>> (`elem` multiExprKeywords') -> True)) =
+            MTT $ T.toUpper text
         capitaliseKeywordMTT multiExpr = multiExpr
 
-  -- Handle (... IS SUM ...) and (... IS PRODUCT ...)
-  RPnaryF RPis (splitLast -> Just (relPreds, opWithArgs)) -> do
-    relPreds <- sequenceA relPreds
-    opWithArgs <- opWithArgs
+        multiExprKeywords' = $(TH.lift multiExprKeywords)
 
-    case opWithArgs of
-      Parens _ (Text metadata' op : args) ->
-        parens $ relPreds <> [Text metadata' [i|IS THE #{op} OF|]] <> args
+  -- Handle (... IS SUM ...) and (... IS PRODUCT ...)
+  RPnaryF RPis (splitLast -> Just (lhs, rhs)) -> do
+    lhs <- sequenceA lhs
+    rhs <- rhs
+
+    case rhs of
+      Parens _ (Text opMetadata op : args) ->
+        parens $ lhs <> [opTextNode, argsListNode]
+        where
+          opTextNode = Text opMetadata [i|IS THE #{op} OF|]
+          argsListNode = List metadata args
 
   RPnaryF (rpRelToTextNode metadata -> Just relText) args -> do
     args <- sequenceA args

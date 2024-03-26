@@ -64,6 +64,7 @@ library
       LS.XPile.Edn.Common.Ast
       LS.XPile.Edn.Common.Utils
       LS.XPile.Edn.L4ToAst
+      LS.XPile.Edn.L4ToAst.MultiExprKeywords
       LS.XPile.Edn.L4ToAst.RPRelToTextTable
       LS.XPile.Edn.L4ToEdn
       LS.XPile.ExportTypes

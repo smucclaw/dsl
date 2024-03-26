@@ -25,7 +25,7 @@ rpRelToTextTable =
     (RPor, "OR"),
     (RPTC TBefore, "BEFORE"),
     (RPTC TAfter, "AFTER"),
-    (RPsum, "IS THE SUM OF"),
+    (RPsum, "THE SUM OF"),
     (RPproduct, "PRODUCT OF"),
     (RPmin, "THE MIN OF"),
     (RPmax, "THE MAX OF")

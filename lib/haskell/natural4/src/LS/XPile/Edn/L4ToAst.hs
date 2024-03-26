@@ -97,7 +97,7 @@ relPredToAstNode metadata = cata \case
     lhsMultiTerm
     (rpRelToTextNode metadata -> Just rpRel)
     rhsMultiTerm ->
-      pure $ parens [parens lhs, rpRel, parens rhs]
+      pure $ parens $ lhs <> [rpRel] <> rhs
       where
         lhs = multiTermToAstNodes lhsMultiTerm
         rhs =

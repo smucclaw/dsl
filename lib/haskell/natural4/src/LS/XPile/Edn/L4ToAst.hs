@@ -108,7 +108,7 @@ relPredToAstNode metadata = cata \case
             |> multiTermToAstNodes
 
         capitaliseKeywordMTT = \case
-          (MTT text@(T.strip >>> (`elem` multiExprKeywords') -> True)) ->
+          MTT text@(T.strip >>> (`elem` multiExprKeywords') -> True) ->
             MTT $ T.toUpper text
           multiExpr -> multiExpr
 

@@ -91,8 +91,8 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = cata \case
-
   RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
+
   RPConstraintF
     lhsMultiTerm
     (rpRelToTextNode metadata -> Just rpRel)

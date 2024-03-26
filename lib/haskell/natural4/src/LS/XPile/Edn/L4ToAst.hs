@@ -54,6 +54,7 @@ import LS.XPile.Edn.Common.Utils (splitLast)
 import LS.XPile.Edn.L4ToAst.MultiExprKeywords (multiExprKeywords)
 import LS.XPile.Edn.L4ToAst.RPRelToTextTable (rpRelToTextTable)
 import Language.Haskell.TH.Syntax qualified as TH
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
 
 l4rulesToProgram :: [Rule] -> AstNode metadata
@@ -90,13 +91,13 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = cata \case
-  RPMTF multiTerm -> parens $ multiTermToAstNodes multiTerm
+  RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
 
   RPConstraintF
     lhsMultiTerm
     (rpRelToTextNode metadata -> Just rpRel)
     rhsMultiTerm ->
-      parens $ lhs <> [rpRel] <> rhs
+      pure $ parens [parens lhs, rpRel, parens rhs]
       where
         lhs = multiTermToAstNodes lhsMultiTerm
         rhs =
@@ -115,15 +116,22 @@ relPredToAstNode metadata = cata \case
 
   RPnaryF (rpRelToTextNode metadata -> Just rpRel) args -> do
     args <- sequenceA args
-    parens case (rpRel, splitLast args) of
-      -- Handle stuff like (... IS SUM ...) and (... IS PRODUCT ...)
+    pure $ parens case (rpRel, splitLast args) of
+      -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
+      -- (... IS NOT IN ... ) etc.
       (Text _ "IS", Just (lhs, Parens _ (Text _ op : args))) ->
-        lhs <> [Text metadata [i|IS #{op}|], List metadata args]
+        [parens lhs, Text metadata [i|IS #{op}|], args']
+        where
+          args'
+            | op PCRE.≈ [PCRE.re|^THE (SUM|PRODUCT|MIN|MAX) OF$|] =
+              List metadata args
+            | otherwise = parens args
+
       _ -> rpRel : args
 
   _ -> throwError "Not supported"
   where
-    parens = pure . Parens metadata
+    parens = Parens metadata
 
     multiTermToAstNodes = map \case
       MTT text -> Text Nothing text

@@ -13,7 +13,7 @@ import LS.Types (RPRel (..), TComparison (..))
 rpRelToTextTable :: Map.HashMap RPRel T.Text
 rpRelToTextTable =
   [ (RPis, "IS"),
-    (RPeq, "IS"),
+    (RPeq, "EQUALS"),
     (RPlt, "<"),
     (RPlte, "<="),
     (RPgt, ">"),

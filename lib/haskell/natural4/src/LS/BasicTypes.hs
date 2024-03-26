@@ -223,6 +223,8 @@ renderToken TokMin = "MIN"
 renderToken TokMax = "MAX"
 renderToken TokSum = "SUM"
 renderToken TokProduct = "PRODUCT"
+renderToken TokMinus = "MINUS"
+renderToken TokDivide = "DIVIDE"
 renderToken FMap = "MAP"
 
 renderToken tok = toUpper <$> show tok

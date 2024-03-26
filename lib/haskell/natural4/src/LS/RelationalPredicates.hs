@@ -376,6 +376,7 @@ import LS.Types
         TokOr,
         TokProduct,
         TokSum,
+        TokMinus, TokDivide,
         TypeSeparator,
         Typically,
         Unless,
@@ -408,6 +409,8 @@ import LS.Types
         RPproduct,
         RPsubjectTo,
         RPsum
+      , RPminus
+      , RPdivide
       ),
     RelationalPredicate (..),
     RuleName,
@@ -452,6 +455,8 @@ tok2rel = choice
     , RPor      <$ pToken TokOr
     , RPsum     <$ pToken TokSum
     , RPproduct <$ pToken TokProduct
+    , RPminus   <$ pToken TokMinus
+    , RPdivide  <$ pToken TokDivide
     , RPmin     <$ pToken TokMin
     , RPmax     <$ pToken TokMax
     , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
@@ -834,6 +839,11 @@ rpMT          = RPMT          $*| slAKA slMultiTerm id
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = nestedHorn rpHead id meansIs pBSR
                 (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
+
+-- [TODO] allow a RPParamText parsing so the final slMultiTerm above
+-- could span multiple lines. this is useful if we have foo IF bar IN
+-- baz quux quuux, we want the baz quux quuux to be able to each be on
+-- its own line.
 
 -- | parse a RelationalPredicate BoolStructR
 rpBoolStructR :: SLParser RelationalPredicate

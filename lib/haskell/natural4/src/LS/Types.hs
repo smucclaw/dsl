@@ -59,7 +59,10 @@ type BoolStructP = AA.OptionallyLabeledBoolStruct ParamText
 type BoolStructR = AA.OptionallyLabeledBoolStruct RelationalPredicate
 
 -- | the relations in a RelationalPredicate
-data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem | RPnot | RPand | RPor | RPsum | RPproduct | RPsubjectTo
+data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotElem
+           | RPnot | RPand | RPor
+           | RPsum | RPproduct | RPminus | RPdivide
+           | RPsubjectTo
            | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
@@ -364,6 +367,8 @@ rel2txt RPmin     = "MIN"
 rel2txt RPmax     = "MAX"
 rel2txt RPsum     = "SUM"
 rel2txt RPproduct = "PRODUCT"
+rel2txt RPminus   = "MINUS"
+rel2txt RPdivide  = "DIVIDE"
 rel2txt (RPTC TBefore) = "BEFORE"
 rel2txt (RPTC TAfter ) = "AFTER"
 rel2txt (RPTC TBy    ) = "BY"

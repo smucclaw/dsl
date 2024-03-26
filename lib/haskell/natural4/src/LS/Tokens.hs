@@ -81,6 +81,8 @@ import LS.Types
         TokOr,
         TokProduct,
         TokSum,
+        TokMinus,
+        TokDivide,
         TokTrue,
         UnDeeper
       ),
@@ -1014,6 +1016,8 @@ tok2text = choice
     , "||"     <$ pToken TokOr
     , "SUM"    <$ pToken TokSum
     , "PRODUCT"<$ pToken TokProduct
+    , "MINUS"  <$ pToken TokMinus
+    , "DIVIDE" <$ pToken TokDivide
     , "=="     <$ pToken TokEQ
     , "<"      <$ pToken TokLT
     , "<="     <$ pToken TokLTE

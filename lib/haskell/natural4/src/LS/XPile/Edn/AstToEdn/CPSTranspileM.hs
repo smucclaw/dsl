@@ -76,4 +76,4 @@ runCPSTranspileM =
     >>> first EDN.renderText
     >>> uncurry TranspileResult
   where
-    runMempty f = flip f mempty
+    runMempty f = (`f` mempty)

@@ -21,7 +21,7 @@ import Data.Either (rights)
 import Data.List (groupBy, nub)
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
-import Data.String.Interpolate (i)
+import Data.String.Interpolate (i,__i)
 import Data.Text qualified as T
 import Effectful (Eff, (:>), runPureEff)
 import Effectful.Fail (Fail, runFail)
@@ -357,7 +357,13 @@ gml2ml exp =
 -- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
 -- to contain an @Expr Double@ called "must sing"
 toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
-toMathLangMw l4i myenv = ("NotYetImplemented", [])
+toMathLangMw l4i myenv = (rendered, [])
+ where
+  (exprs, state) = toMathLang l4i
+  rendered = [__i|
+                #{exprs}
+                #{state}
+              |]
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

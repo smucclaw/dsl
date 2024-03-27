@@ -4,12 +4,14 @@
 module LS.XPile.Edn.Common.Utils
   ( listToPairs,
     pairsToList,
-    splitLast
+    splitLast,
+    stripAndTrimWhitesps
   )
 where
 
 import Control.Arrow ((>>>))
 import Data.Foldable qualified as Fold
+import Data.Text qualified as T
 import Deque.Strict qualified as Deque
 import GHC.IsList qualified as IsList
 import Safe (tailSafe)
@@ -26,3 +28,6 @@ splitLast =
   IsList.fromList
     >>> Deque.uncons
     >>> fmap \(lastElem, xs) -> (Fold.toList xs, lastElem)
+
+stripAndTrimWhitesps :: T.Text -> T.Text
+stripAndTrimWhitesps = T.strip >>> T.words >>> T.unwords

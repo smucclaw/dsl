@@ -50,7 +50,7 @@ import LS.XPile.Edn.Common.Ast
     pattern Parens,
     pattern Program,
   )
-import LS.XPile.Edn.Common.Utils (splitLast)
+import LS.XPile.Edn.Common.Utils (splitLast, stripAndTrimWhitesps)
 import LS.XPile.Edn.L4ToAst.MultiExprKeywords (multiExprKeywords)
 import LS.XPile.Edn.L4ToAst.RPRelToTextTable (rpRelToTextTable)
 import Language.Haskell.TH.Syntax qualified as TH
@@ -79,7 +79,7 @@ givenToGivens :: Maybe ParamText -> [T.Text]
 givenToGivens =
   maybeNonEmptyListToList
     >>> mapMaybe \case
-      (MTT varName NE.:| _, _) -> Just varName
+      (MTT varName NE.:| _, _) -> Just $ stripAndTrimWhitesps varName
       _ -> Nothing
   where
     maybeNonEmptyListToList :: Maybe (NE.NonEmpty a) -> [a]
@@ -94,25 +94,10 @@ relPredToAstNode metadata = cata \case
   RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
 
   RPConstraintF
-    lhsMultiTerm
+    (multiTermToAstNodes -> lhs)
     (rpRelToTextNode metadata -> Just rpRel)
-    rhsMultiTerm ->
+    (multiTermToAstNodes -> rhs) ->
       pure $ parens $ lhs <> [rpRel] <> rhs
-      where
-        lhs = multiTermToAstNodes lhsMultiTerm
-        rhs =
-          rhsMultiTerm
-            |> case rpRel of
-              Text _ "IS" -> map capitaliseKeywordMTT
-              _ -> id
-            |> multiTermToAstNodes
-
-        capitaliseKeywordMTT = \case
-          MTT text@(T.strip >>> (`elem` multiExprKeywords') -> True) ->
-            MTT $ T.toUpper text
-          multiExpr -> multiExpr
-
-        multiExprKeywords' = $(TH.lift multiExprKeywords)
 
   RPnaryF (rpRelToTextNode metadata -> Just rpRel) args -> do
     args <- sequenceA args
@@ -135,16 +120,20 @@ relPredToAstNode metadata = cata \case
     parens = Parens metadata
 
     multiTermToAstNodes = map \case
-      MTT text -> Text Nothing text
-      MTI int -> Integer Nothing int
-      MTF double -> Number Nothing double
-      MTB bool -> Bool Nothing bool
+      MTT text ->
+        text |> stripAndTrimWhitesps |> keywordToUpper |> Text metadata
+      MTI int -> Integer metadata int
+      MTF double -> Number metadata double
+      MTB bool -> Bool metadata bool
+
+    keywordToUpper text
+      | text `elem` $(TH.lift multiExprKeywords) = T.toUpper text
+      | otherwise = text
 
 rpRelToTextNode :: Maybe metadata -> RPRel -> Maybe (AstNode metadata)
-rpRelToTextNode metadata =
-  (`Map.lookup` rpRelToTextTable') >>> fmap (Text metadata)
+rpRelToTextNode metadata = rpRelToText >>> fmap (Text metadata)
   where
-    rpRelToTextTable' = $(TH.lift rpRelToTextTable)
+    rpRelToText = (`Map.lookup` $(TH.lift rpRelToTextTable))
 
 boolStructRToAstNode ::
   MonadError T.Text m => Maybe metadata -> BoolStructR -> m (AstNode metadata)

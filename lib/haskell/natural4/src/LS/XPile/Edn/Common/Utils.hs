@@ -1,6 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Edn.Common.Utils
@@ -17,11 +15,11 @@ import Deque.Strict qualified as Deque
 import GHC.IsList qualified as IsList
 import Safe (tailSafe)
 
-listToPairs :: (Foldable t) => t a -> [(a, a)]
+listToPairs :: Foldable t => t a -> [(a, a)]
 listToPairs (Fold.toList -> xs) =
   [(x, y) | (x, y, index) <- zip3 xs (tailSafe xs) [0..], even index]
 
-pairsToList :: (Foldable t) => t (a, a) -> [a]
+pairsToList :: Foldable t => t (a, a) -> [a]
 pairsToList = foldMap \(x, y) -> [x, y]
 
 splitLast :: [a] -> Maybe ([a], a)

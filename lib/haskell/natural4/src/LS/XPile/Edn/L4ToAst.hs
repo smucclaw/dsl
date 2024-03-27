@@ -101,9 +101,11 @@ relPredToAstNode metadata = cata \case
     pure $ parens case (rpRel, splitLast args) of
       -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
       -- (... IS NOT IN ... ) etc.
-      (Text _ "IS", Just (lhs, Parens _ (Text _ op : rhs))) ->
-        [parens lhs, Text metadata [i|IS #{op}|], rhs']
+      (Text {text = "IS"}, Just (lhs, Parens _ (Text {text = op} : rhs))) ->
+        [lhs', op', rhs']
         where
+          lhs' = parens lhs
+          op' = Text {metadata, text = [i|IS #{op}|]}
           rhs' =
             rhs
               |> if op PCRE.≈ [PCRE.re|^THE (SUM|PRODUCT|MIN|MAX) OF$|]
@@ -117,7 +119,8 @@ relPredToAstNode metadata = cata \case
     parens = Parens metadata
 
     multiTermToAstNodes = map \case
-      MTT text -> text |> trimWhitespaces |> keywordToUpper |> Text metadata
+      MTT text ->
+        Text {metadata, text = text |> trimWhitespaces |> keywordToUpper}
       MTI int -> Integer metadata int
       MTF double -> Number metadata double
       MTB bool -> Bool metadata bool

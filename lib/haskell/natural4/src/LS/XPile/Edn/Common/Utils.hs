@@ -1,11 +1,12 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.Edn.Common.Utils
   ( listToPairs,
     pairsToList,
     splitLast,
-    stripAndTrimWhitesps
   )
 where
 
@@ -28,6 +29,3 @@ splitLast =
   IsList.fromList
     >>> Deque.uncons
     >>> fmap \(lastElem, xs) -> (Fold.toList xs, lastElem)
-
-stripAndTrimWhitesps :: T.Text -> T.Text
-stripAndTrimWhitesps = T.strip >>> T.words >>> T.unwords

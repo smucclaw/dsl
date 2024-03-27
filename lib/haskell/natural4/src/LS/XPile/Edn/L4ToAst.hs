@@ -35,7 +35,7 @@ import LS.Types
     RelationalPredicateF (..),
     TComparison (..),
   )
-import LS.Utils (eitherToList, (|$>))
+import LS.Utils (eitherToList, trimWhitespaces, (|$>))
 import LS.XPile.Edn.Common.Ast
   ( AstNode (..),
     Op (..),
@@ -50,7 +50,7 @@ import LS.XPile.Edn.Common.Ast
     pattern Parens,
     pattern Program,
   )
-import LS.XPile.Edn.Common.Utils (splitLast, stripAndTrimWhitesps)
+import LS.XPile.Edn.Common.Utils (splitLast)
 import LS.XPile.Edn.L4ToAst.MultiExprKeywords (multiExprKeywords)
 import LS.XPile.Edn.L4ToAst.RPRelToTextTable (rpRelToTextTable)
 import Language.Haskell.TH.Syntax qualified as TH
@@ -79,7 +79,7 @@ givenToGivens :: Maybe ParamText -> [T.Text]
 givenToGivens =
   maybeNonEmptyListToList
     >>> mapMaybe \case
-      (MTT varName NE.:| _, _) -> Just $ stripAndTrimWhitesps varName
+      (MTT varName NE.:| _, _) -> Just $ trimWhitespaces varName
       _ -> Nothing
   where
     maybeNonEmptyListToList :: Maybe (NE.NonEmpty a) -> [a]
@@ -120,8 +120,7 @@ relPredToAstNode metadata = cata \case
     parens = Parens metadata
 
     multiTermToAstNodes = map \case
-      MTT text ->
-        text |> stripAndTrimWhitesps |> keywordToUpper |> Text metadata
+      MTT text -> text |> trimWhitespaces |> keywordToUpper |> Text metadata
       MTI int -> Integer metadata int
       MTF double -> Number metadata double
       MTB bool -> Bool metadata bool

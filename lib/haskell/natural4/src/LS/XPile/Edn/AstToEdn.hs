@@ -22,7 +22,6 @@ import Data.Text.Read qualified as TRead
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Utils ((|$>))
-import LS.XPile.Edn.Common.Ast
 import LS.XPile.Edn.AstToEdn.CPSTranspileM
   ( CPSTranspileM,
     TranspileResult (..),
@@ -37,7 +36,9 @@ import LS.XPile.Edn.AstToEdn.MessageLog
     MessageLog,
     Severity (..),
   )
+import LS.XPile.Edn.Common.Ast
 import LS.XPile.Edn.Common.Utils (listToPairs)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
 
 -- Recursively transpile an AST node, threading an initial empty context
@@ -108,9 +109,14 @@ astNodeToEdn = para go >>> runCPSTranspileM
       logTranspiledTo Text {metadata, text} resultEdn
       pure resultEdn
 
-    toPrefixedSymbol prefix x = EDN.Symbol prefix [i|#{x}|] |> EDN.toEDN
     toSymbol = toPrefixedSymbol ""
     toVar = toPrefixedSymbol "var"
+
+    toPrefixedSymbol prefix = replaceText >>> EDN.Symbol prefix >>> EDN.toEDN
+
+    replaceText =
+      PCRE.gsub [PCRE.re|;|] ("*semicolon*" :: T.Text)
+        >>> PCRE.gsub [PCRE.re|#_|] ("*hash_underscore*" :: T.Text)
 
     intersperseToEdn text = intersperse (toSymbol text) >>> EDN.toEDN
 

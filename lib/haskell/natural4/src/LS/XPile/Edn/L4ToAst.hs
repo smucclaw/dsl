@@ -102,10 +102,10 @@ relPredToAstNode metadata = cata \case
       -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
       -- (... IS NOT IN ... ) etc.
       (Text {text = "IS"}, Just (lhs, Parens _ (Text {text = op} : rhs))) ->
-        [lhs', op', rhs']
+        [lhs', isOp, rhs']
         where
           lhs' = parens lhs
-          op' = Text {metadata, text = [i|IS #{op}|]}
+          isOp = Text {metadata, text = [i|IS #{op}|]}
           rhs' =
             rhs
               |> if op PCRE.≈ [PCRE.re|^THE (SUM|PRODUCT|MIN|MAX) OF$|]

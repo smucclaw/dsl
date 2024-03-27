@@ -104,11 +104,11 @@ relPredToAstNode metadata = cata \case
     pure $ parens case (rpRel, splitLast args) of
       -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
       -- (... IS NOT IN ... ) etc.
-      (Text _ "IS", Just (lhs, Parens _ (Text _ op : args))) ->
-        [parens lhs, Text metadata [i|IS #{op}|], args']
+      (Text _ "IS", Just (lhs, Parens _ (Text _ op : rhs))) ->
+        [parens lhs, Text metadata [i|IS #{op}|], rhs']
         where
-          args' =
-            args
+          rhs' =
+            rhs
               |> if op PCRE.≈ [PCRE.re|^THE (SUM|PRODUCT|MIN|MAX) OF$|]
                 then List metadata
                 else parens

@@ -139,9 +139,9 @@ boolStructRToAstNode ::
 boolStructRToAstNode metadata = cata \case
   LeafF relPred -> relPredToAstNode metadata relPred
   NotF arg -> Not metadata <$> arg
-  AllF _ children -> go And children
-  AnyF _ children -> go Or children
+  AllF _ args -> go And args
+  AnyF _ args -> go Or args
   where
-    go ctor children = do
-      children <- sequenceA children
-      pure $ ctor metadata children
+    go ctor args = do
+      args <- sequenceA args
+      pure $ ctor metadata args

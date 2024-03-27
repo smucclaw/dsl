@@ -117,6 +117,9 @@ astNodeToEdn = para go >>> runCPSTranspileM
     replaceText =
       PCRE.gsub [PCRE.re|;|] ("*semicolon*" :: T.Text)
         >>> PCRE.gsub [PCRE.re|#_|] ("*hash_underscore*" :: T.Text)
+        >>> PCRE.gsub
+          [PCRE.re|([^\s])/([^\s])|]
+          \(x:y:_ :: [T.Text]) -> [i|#{x}*slash*#{y}|] :: T.Text
 
     intersperseToEdn text = intersperse (toSymbol text) >>> EDN.toEDN
 

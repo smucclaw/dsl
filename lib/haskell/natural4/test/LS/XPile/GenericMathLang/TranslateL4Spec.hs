@@ -109,7 +109,7 @@ spec = do
         (expr:_, st) -> do
           (res, _xp, _st, _strs) <-
             xplainE (mempty :: Map.HashMap () ()) st $ eval expr
-          res `shouldBe` 45.14
+          res `shouldBe` 1.0
 
   let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
       res_ar3@(exprs,state) = ML.toMathLang l4i_ar3
@@ -694,20 +694,24 @@ arithRule2withInitializedValues = mkTestRule'
                 (mkGivens [("result", Just ( SimpleType TOne "Number"))])
                 [ HC { hHead = RPConstraint
                         [ MTT "m1" ] RPis
-                        [ MTT "42.0" ]
+                        [ MTT "10" ]
                     , hBody = Nothing }
                 , HC { hHead = RPConstraint
                         [ MTT "m2" ] RPis
-                        [ MTT "3.14" ]
+                        [ MTT "5" ]
                     , hBody = Nothing }
                 , HC { hHead = RPnary RPis
                         [ RPMT
                             [ MTT "result" ]
-                        , RPnary RPsum
+                        , RPnary RPminus
                             [ RPMT
                                 [ MTT "m1" ]
                             , RPMT
                                 [ MTT "m2" ]
+                            , RPMT
+                                [ MTI 3 ]
+                            , RPMT
+                                [ MTI 1 ]
                             ]
                         ]
                     , hBody = Nothing }
@@ -749,9 +753,6 @@ arithRule2 = mkTestRule
                                 [ MTT "m1" ]
                             , RPMT
                                 [ MTT "m2" ]
-                            -- TODO: generalise to multiple arguments, as per Meng's spec
-                            -- , RPMT
-                            --     [ MTI 5 ]
                             ]
                         ]
                     , hBody = Nothing }

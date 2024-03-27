@@ -1203,28 +1203,30 @@ expifyBodyRP = \case
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
     return $ noExtraMdata $ EIs exp1 exp2
 
-  RPnary rel [rp1, rp2] -> do
-    expLeft <- expifyBodyRP rp1
-    expRight <- expifyBodyRP rp2
-    numOrCompOp rel expLeft expRight
+  -- Numeric operations can have multiple arguments
+  RPnary (rprel2numop -> Just op) rps -> do
+   pos <- mkToLC $ asks currSrcPos
+   exps <- mapM expifyBodyRP rps
+   pure $ foldl1 (numOrCompOp pos "Number" ENumOp op) exps
+
+  -- Comparison operations can only have two
+  RPnary (rprel2compop -> Just op) rps@(_:_) -> do
+   pos <- mkToLC $ asks currSrcPos
+   exps <- mapM expifyBodyRP rps
+   pure $ foldl1 (numOrCompOp pos "Boolean" ECompOp op) exps
+
+
+  RPnary rprel _ -> throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
   rp -> throwNotSupportedWithMsgError rp "unknown rp"
   where
-    numOrCompOp :: RPRel -> Exp -> Exp -> ToLC Exp
-    numOrCompOp (rprel2compop -> Just compOp) = go "Boolean" ECompOp compOp
-
-    numOrCompOp (rprel2numop -> Just numOp) = go "Number" ENumOp numOp
-
-    numOrCompOp rprel = \_ _ -> do
-      throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
-
-    go str ctor op x y = do
-      pos <- mkToLC $ asks currSrcPos
+    numOrCompOp :: SrcPositn -> T.Text -> (t -> Exp -> Exp -> BaseExp) -> t -> Exp -> Exp -> Exp
+    numOrCompOp pos str ctor op x y =
       let coerceNumber = coerceType pos "Number"
-      pure $ typeMdata pos str $ ctor op (coerceNumber x) (coerceNumber y)
+      in typeMdata pos str $ ctor op (coerceNumber x) (coerceNumber y)
 
     rprel2numop :: RPRel -> Maybe NumOp
     rprel2numop = \case

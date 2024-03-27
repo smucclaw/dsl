@@ -41,7 +41,6 @@ import LS.XPile.Edn.Common.Ast
     Op (..),
     pattern And,
     pattern Bool,
-    pattern InfixBinOp,
     pattern Integer,
     pattern List,
     pattern Not,

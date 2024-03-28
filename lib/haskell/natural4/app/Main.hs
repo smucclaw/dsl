@@ -220,7 +220,7 @@ main = do
       (toLEFN, asLE)                          = (workuuid </> "logical_english",         toLE rules)
       (toNL_FN,     asNatLang)                = (workuuid </> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid </> "maude", Maude.rules2maudeStr rules)
-      (toEdnFN, asEdn)                        = (workuuid </> "edn", show $ Edn.l4rulesToEdnText rules)
+      (toEdnFN, asEdn)                        = (workuuid </> "edn", Edn.l4rulesToEdnStr rules)
       (tonativeFN,  asNative)  = (workuuid </> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)

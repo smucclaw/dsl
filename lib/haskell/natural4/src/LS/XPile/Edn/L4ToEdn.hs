@@ -1,6 +1,7 @@
 module LS.XPile.Edn.L4ToEdn
   ( l4rulesToEdn,
     l4rulesToEdnText,
+    l4rulesToEdnStr,
   )
 where
 
@@ -17,3 +18,6 @@ l4rulesToEdn = l4rulesToProgram >>> astNodeToEdn
 
 l4rulesToEdnText :: [Rule] -> T.Text
 l4rulesToEdnText = l4rulesToEdn >>> Optics.view ednText
+
+l4rulesToEdnStr :: [Rule] -> String
+l4rulesToEdnStr = l4rulesToEdnText >>> T.unpack

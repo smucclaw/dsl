@@ -25,5 +25,5 @@ pairsToList = foldMap \(x, y) -> [x, y]
 splitLast :: [a] -> Maybe ([a], a)
 splitLast =
   IsList.fromList
-    >>> Deque.uncons
+    >>> Deque.unsnoc
     >>> fmap \(lastElem, xs) -> (Fold.toList xs, lastElem)

@@ -102,7 +102,7 @@ relPredToAstNode metadata = cata \case
       -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
       -- (... IS NOT IN ... ) etc.
       ( Text {text = "IS"},
-        Just (lhs, Parens _ (Text {text = op} : [Parens metadata' rhs]))
+        Just (lhs, Parens _ [Text {text = op}, Parens metadata' rhs])
         ) ->
           [lhs', isOp, rhs']
           where

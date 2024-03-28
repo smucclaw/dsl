@@ -104,9 +104,14 @@ relPredToAstNode metadata = cata \case
       ( Text {text = "IS"},
         Just (lhs, Parens _ (Text {text = op} : [Parens metadata' rhs]))
         ) ->
-          [parens lhs, isOp, List metadata' rhs]
+          [lhs', isOp, rhs']
           where
+            lhs' = parens lhs
             isOp = Text {metadata, text = [i|IS #{op}|]}
+            rhs' =
+              rhs
+                |$> (\arg -> Parens metadata' [arg])
+                |> List metadata'
 
       _ -> rpRel : args
 

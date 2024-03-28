@@ -146,7 +146,7 @@ textToFieldType = \case
   "Number" -> FTNumber
   "String" -> FTString
   "Date" -> FTDate
-  n -> FTRef $ processTopLvlNameTextForJsonSchema n
+  n -> FTRef n
 
 typeDeclSuperToFieldType :: Maybe TypeSig -> FieldType
 typeDeclSuperToFieldType (Just (SimpleType TOne tn)) = textToFieldType tn
@@ -446,8 +446,6 @@ instance ShowTypesJson FieldType where
         jsonType "array" <> "," <>
         dquotes "items" <> ": " <>
         braces (showTypesJson n)
-    -- showTypesJson _ =
-    --     jsonType "string"
 
 instance ShowTypesJson Field where
     showTypesJson :: Field -> Doc ann

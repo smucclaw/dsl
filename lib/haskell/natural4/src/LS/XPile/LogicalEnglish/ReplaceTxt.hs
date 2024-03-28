@@ -11,6 +11,7 @@ where
 import Control.Category ((>>>))
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
+import LS.Utils (trimWhitespaces)
 import LS.XPile.LogicalEnglish.Types
   ( TemplateVar (..),
     VCell (..),
@@ -30,9 +31,6 @@ replaceTxt =
     >>> replaceComma
     >>> replacePercent
     >>> trimWhitespaces
-
-trimWhitespaces :: T.Text -> T.Text
-trimWhitespaces = T.strip >>> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)
 
 replaceComma :: T.Text -> T.Text
 replaceComma = PCRE.gsub [PCRE.re|,|] (" COMMA " :: T.Text)

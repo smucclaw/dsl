@@ -130,7 +130,8 @@ relPredToAstNode metadata = cata \case
       | otherwise = text
 
 rpRelToTextNode :: Maybe metadata -> RPRel -> Maybe (AstNode metadata)
-rpRelToTextNode metadata = rpRelToText >>> fmap (Text metadata)
+rpRelToTextNode metadata =
+  rpRelToText >>> fmap \text -> Text {metadata, text}
   where
     rpRelToText = (`Map.lookup` $(TH.lift rpRelToTextTable))
 

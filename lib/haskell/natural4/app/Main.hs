@@ -44,6 +44,7 @@ import LS.XPile.CoreL4
     sfl4ToDMN,
     sfl4ToEpilog,
   )
+import LS.XPile.Edn.L4ToEdn qualified as Edn
 import LS.XPile.ExportTypes
   ( rulesToHaskellTp,
     rulesToJsonSchema,
@@ -67,6 +68,7 @@ import LS.XPile.Logging
   )
 import LS.XPile.LogicalEnglish (toLE)
 import LS.XPile.Markdown (bsMarkdown)
+import LS.XPile.MathLang (toMathLangGen, toMathLangMw)
 import LS.XPile.Maude qualified as Maude
 import LS.XPile.NaturalLanguage (toNatLang)
 import LS.XPile.Org (toOrg)
@@ -76,7 +78,6 @@ import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
-import LS.XPile.MathLang (toMathLangMw, toMathLangGen)
 import LS.XPile.VueJSON
   ( checklist,
     groundrules,
@@ -219,6 +220,7 @@ main = do
       (toLEFN, asLE)                          = (workuuid </> "logical_english",         toLE rules)
       (toNL_FN,     asNatLang)                = (workuuid </> "natlang",  toNatLang l4i)
       (toMaudeFN,   asMaude)                  = (workuuid </> "maude", Maude.rules2maudeStr rules)
+      (toEdnFN, asEdn)                        = (workuuid </> "edn", show $ Edn.l4rulesToEdnText rules)
       (tonativeFN,  asNative)  = (workuuid </> "native",   unlines
                                    [ "-- original rules:\n"
                                    , TL.unpack (pShowNoColor rules)
@@ -335,6 +337,7 @@ main = do
     when (SFL4.tonl      opts) $ mywritefile  True toNL_FN      iso8601 "txt"  asNatLang
     when (SFL4.togrounds opts) $ mywritefile  True togroundsFN  iso8601 "txt"  asGrounds
     when (SFL4.tomaude   opts) $ mywritefile  True toMaudeFN iso8601 "natural4" asMaude
+    when (SFL4.toedn     opts) $ mywritefile  True toEdnFN iso8601 "edn" asEdn
     when (SFL4.toaasvg   opts) do
       let dname = toaasvgFN </> iso8601
       if null asaasvg

@@ -7,25 +7,25 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: d87d8085e683339876c5272b8225afd4b7060d0ba5e6f2d61f9e1c7244d78adb
+      sha256: 53b45f062d5a7c071327e8d0bfedf5496d71a8536f3e045eacdb97a668092704
       size: 12537
-    sha256: b3adc16c619829bd7afbf74d0a317f2b1b4e943f140ca4ecd84233b44f6ae51f
-    size: 3188624
-    url: https://github.com/smucclaw/baby-l4/archive/ce3247d0610e6e29e1732fc3798144a38e003e3e.tar.gz
+    sha256: 76de041e47784ec530c62bf70da3531ec49da2896fa27b1149d9bc3e0d43d361
+    size: 3188631
+    url: https://github.com/smucclaw/baby-l4/archive/2d7bf4a3e0ee4d9e06f24a30013ac0af941350c6.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/ce3247d0610e6e29e1732fc3798144a38e003e3e.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/2d7bf4a3e0ee4d9e06f24a30013ac0af941350c6.tar.gz
 - completed:
     name: gf
     pantry-tree:
-      sha256: 403ab5b8eab295f2c5304ca7aa3ab4b811de6f1d8053644502dc3890239787bc
+      sha256: b98b7ffc0d56f3ad90342d559a5645e8a6b7c34dfffc2944c5147f4ac265bd74
       size: 68240
-    sha256: dea2343938b6d233abce016c2c6dc6db6fba9fc58aeeae6fe766f08768e48fbb
-    size: 3499779
-    url: https://github.com/smucclaw/gf-core/archive/f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac.tar.gz
+    sha256: ce38f650b2ed17f35c6113ced7e9d1370f619d646e12b0674bfa77f82826ce79
+    size: 3499956
+    url: https://github.com/smucclaw/gf-core/archive/f4b71cf8ba56a949c627d08535c251fbd6654033.tar.gz
     version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/f4b71cf8ba56a949c627d08535c251fbd6654033.tar.gz
 - completed:
     name: prolog
     pantry-tree:

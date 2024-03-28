@@ -32,10 +32,10 @@ extra-deps:
 # ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: ce3247d0610e6e29e1732fc3798144a38e003e3e
+  commit: 2d7bf4a3e0ee4d9e06f24a30013ac0af941350c6
 
 - github: smucclaw/gf-core
-  commit: f9dedf46e04c5e6cd0ab2a3af6d36c15f3d062ac
+  commit: f4b71cf8ba56a949c627d08535c251fbd6654033
 
 - github: smucclaw/prolog
   commit: 2e23022799e5019bbb8cadeba3dab788073b582d

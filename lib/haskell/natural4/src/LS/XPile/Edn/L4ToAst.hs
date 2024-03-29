@@ -99,11 +99,8 @@ relPredToAstNode metadata = cataM \case
 
   RPnaryF (rpRelToTextNode metadata -> Just rpRel) args ->
     parens case (rpRel, splitLast args, args) of
-      (Text {text = "IS"}, Just (lhs, rhs), _) ->
-        [Parens metadata lhs, rpRel, rhs]
-
-      (_, _, [Parens _ args@(null -> False)]) ->
-        [rpRel, args']
+      (Text {text = "IS"}, Just (lhs, rhs), _) -> lhs <> [rpRel, rhs]
+      (_, _, [Parens _ args@(null -> False)]) -> [rpRel, args']
         where
           args' = case args of
             [arg] -> arg
@@ -111,7 +108,6 @@ relPredToAstNode metadata = cataM \case
               args
                 |$> (\arg -> Parens metadata [arg])
                 |> List metadata
-
       _ -> rpRel : args
 
   _ -> throwError "Not supported"

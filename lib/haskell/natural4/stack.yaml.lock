@@ -83,6 +83,13 @@ packages:
       size: 795
   original:
     hackage: parser-combinators-1.3.0
+- completed:
+    hackage: monadic-recursion-schemes-0.1.13.2@sha256:9c5c733df1ab1e687f68091c8a30cdd6fea89f8871e583a095db708c58e66099,1760
+    pantry-tree:
+      sha256: d22d9d790b15da1c836522c8d1bb72790b360e902707eae477c9180deb2fe736
+      size: 356
+  original:
+    hackage: monadic-recursion-schemes-0.1.13.2
 snapshots:
 - completed:
     sha256: 48ac4445a1906866c846cd2a3a9c28fcdf3b2066237e49405dbe56ce1974a043

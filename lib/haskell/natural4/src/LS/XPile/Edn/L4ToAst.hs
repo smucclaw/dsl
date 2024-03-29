@@ -13,7 +13,7 @@ module LS.XPile.Edn.L4ToAst (l4rulesToProgram) where
 import AnyAll (BoolStruct, BoolStructF (..))
 import Control.Arrow ((>>>))
 import Control.Monad.Except (MonadError (..))
-import Data.Functor.Foldable (Recursive (..))
+import Data.Functor.Foldable.Monadic (cataM)
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (mapMaybe, maybeToList)
@@ -87,7 +87,7 @@ relPredToAstNode ::
   Maybe metadata ->
   RelationalPredicate ->
   m (AstNode metadata)
-relPredToAstNode metadata = cata \case
+relPredToAstNode metadata = cataM \case
   RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
 
   RPConstraintF
@@ -96,8 +96,7 @@ relPredToAstNode metadata = cata \case
     (multiTermToAstNodes -> rhs) ->
       pure $ parens $ lhs <> [rpRel] <> rhs
 
-  RPnaryF (rpRelToTextNode metadata -> Just rpRel) args -> do
-    args <- sequenceA args
+  RPnaryF (rpRelToTextNode metadata -> Just rpRel) args ->
     pure $ parens case (rpRel, splitLast args) of
       -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
       -- (... IS NOT IN ... ) etc.
@@ -145,12 +144,10 @@ rpRelToTextNode metadata =
 
 boolStructRToAstNode ::
   MonadError T.Text m => Maybe metadata -> BoolStructR -> m (AstNode metadata)
-boolStructRToAstNode metadata = cata \case
+boolStructRToAstNode metadata = cataM \case
   LeafF relPred -> relPredToAstNode metadata relPred
-  NotF arg -> Not metadata <$> arg
+  NotF arg -> go Not arg
   AllF _ args -> go And args
   AnyF _ args -> go Or args
   where
-    go ctor args = do
-      args <- sequenceA args
-      pure $ ctor metadata args
+    go ctor = pure . ctor metadata

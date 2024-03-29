@@ -156,6 +156,7 @@ library
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , nonempty-containers
@@ -228,6 +229,7 @@ executable natural4-exe
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -303,6 +305,7 @@ test-suite doctests
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -402,6 +405,7 @@ test-suite natural4-test
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -479,6 +483,7 @@ benchmark natural4-bench
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4

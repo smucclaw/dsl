@@ -89,42 +89,34 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = cataM \case
-  RPMTF multiTerm -> pure $ parens $ multiTermToAstNodes multiTerm
+  RPMTF multiTerm -> parens $ multiTermToAstNodes multiTerm
 
   RPConstraintF
     (multiTermToAstNodes -> lhs)
     (rpRelToTextNode metadata -> Just rpRel)
     (multiTermToAstNodes -> rhs) ->
-      pure $ parens $ lhs <> [rpRel] <> rhs
+      parens $ lhs <> [rpRel] <> rhs
 
   RPnaryF (rpRelToTextNode metadata -> Just rpRel) args ->
-    pure $ parens case (rpRel, splitLast args) of
-      -- Unparse stuff like (... IS SUM ...), (... IS PRODUCT ...),
-      -- (... IS NOT IN ... ) etc.
-      ( Text {text = "IS"},
-        Just
-          ( lhs,
-            Parens
-              _
-              [ Text {text = op},
-                rhs@(Parens metadata' args@(null -> False))
-                ]
-            )
-        ) -> [lhs', isOp, rhs']
-          where
-            lhs' = parens lhs
-            isOp = Text {metadata, text = [i|IS #{op}|]}
-            rhs' = case args of
-              [_] -> rhs
-              _ ->
-                args
-                  |$> (\arg -> Parens metadata' [arg])
-                  |> List metadata'
+    parens case (rpRel, splitLast args, args) of
+      (Text {text = "IS"}, Just (lhs, rhs), _) ->
+        [Parens metadata lhs, rpRel, rhs]
+
+      (_, _, [Parens _ args@(null -> False)]) ->
+        [rpRel, args']
+        where
+          args' = case args of
+            [arg] -> arg
+            _ ->
+              args
+                |$> (\arg -> Parens metadata [arg])
+                |> List metadata
+
       _ -> rpRel : args
 
   _ -> throwError "Not supported"
   where
-    parens = Parens metadata
+    parens = pure . Parens metadata
 
     multiTermToAstNodes = map \case
       MTT text ->

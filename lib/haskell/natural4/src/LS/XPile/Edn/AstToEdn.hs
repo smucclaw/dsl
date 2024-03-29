@@ -45,6 +45,7 @@ astNodeToEdn = cata \case
         | null givensF = []
         | otherwise = [EDN.edn|GIVEN|] : (uncurry givenToEdn <$> givensF)
 
+      givenToEdn :: T.Text -> Maybe T.Text -> EDN.TaggedValue
       givenToEdn (toSymbol -> var) = maybe var \typ ->
         [var, [EDN.edn|IS|], [EDN.edn|A|], toSymbol typ]
           |$> EDN.toEDN
@@ -66,10 +67,7 @@ astNodeToEdn = cata \case
   TextF {metadataF = metadata, textF = text} -> toSymbol text
     -- logTranspiledTo Text {metadata, text} resultEdn
   where
-    toSymbol = toPrefixedSymbol ""
-    toVar = toPrefixedSymbol "var"
-
-    toPrefixedSymbol prefix = replaceText >>> EDN.Symbol prefix >>> EDN.toEDN
+    toSymbol = replaceText >>> EDN.Symbol "" >>> EDN.toEDN
 
     replaceText =
       PCRE.gsub [PCRE.re|;|] ("*semicolon*" :: T.Text)

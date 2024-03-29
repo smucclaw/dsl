@@ -60,7 +60,7 @@ import Text.Read (readMaybe)
 data AstNode metadata
   = HornClause
       { metadata :: Maybe metadata,
-        givens :: [T.Text],
+        givens :: [(T.Text, Maybe T.Text)],
         head :: AstNode metadata,
         body :: Maybe (AstNode metadata)
       }
@@ -152,13 +152,13 @@ pattern Dash :: AstNode metadata
 pattern Dash = Text {metadata = Nothing, text = "-"}
 
 pattern Fact ::
-  Maybe metadata -> [T.Text] -> AstNode metadata -> AstNode metadata
+  Maybe metadata -> [(T.Text, Maybe T.Text)] -> AstNode metadata -> AstNode metadata
 pattern Fact {metadata, givens, head} =
   HornClause {metadata, givens, head, body = Nothing}
 
 pattern Rule ::
   Maybe metadata ->
-  [T.Text] ->
+  [(T.Text, Maybe T.Text)] ->
   AstNode metadata ->
   AstNode metadata ->
   AstNode metadata

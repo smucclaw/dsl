@@ -1,14 +1,14 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module LS.XPile.Edn.AstToEdn.CPSTranspileM
-  ( CPSTranspileM,
+module LS.XPile.Edn.AstToEdn.TranspileM
+  ( TranspileM,
     TranspileResult (..),
     ednText,
     messageLog,
     logTranspileMsg,
     logTranspiledTo,
-    runCPSTranspileM,
+    runTranspileM,
   )
 where
 
@@ -23,7 +23,6 @@ import Data.Text qualified as T
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.XPile.Edn.Common.Ast (AstNode)
-import LS.XPile.Edn.AstToEdn.Context (Context, (<++>))
 import LS.XPile.Edn.AstToEdn.MessageLog
   ( MessageData (..),
     MessageLog,
@@ -33,18 +32,14 @@ import LS.XPile.Edn.AstToEdn.MessageLog
 import Optics qualified
 import Optics.TH (camelCaseFields, makeLensesWith)
 
-type CPSTranspileM metadata t =
-  Cont.ContT
-    EDN.TaggedValue
-    (Reader.ReaderT Context (State.State (MessageLog metadata)))
-    t
+type TranspileM metadata t = State.State (MessageLog metadata) t
 
 logTranspileMsg ::
-  Severity -> MessageData metadata -> CPSTranspileM metadata ()
+  Severity -> MessageData metadata -> TranspileM metadata ()
 logTranspileMsg severity = State.modify . logMsg severity
 
 logTranspiledTo ::
-  AstNode metadata -> EDN.TaggedValue -> CPSTranspileM metadata ()
+  AstNode metadata -> EDN.TaggedValue -> TranspileM metadata ()
 logTranspiledTo astNode result =
   logTranspileMsg
     Info
@@ -67,13 +62,9 @@ data TranspileResult metadata = TranspileResult
 
 makeLensesWith camelCaseFields ''TranspileResult
 
-runCPSTranspileM ::
-  CPSTranspileM metadata EDN.TaggedValue -> TranspileResult metadata
-runCPSTranspileM =
-  Cont.evalContT
-    >>> runMempty Reader.runReaderT
-    >>> runMempty State.runState
+runTranspileM ::
+  TranspileM metadata EDN.TaggedValue -> TranspileResult metadata
+runTranspileM =
+  flip State.runState mempty
     >>> first EDN.renderText
     >>> uncurry TranspileResult
-  where
-    runMempty f = (`f` mempty)

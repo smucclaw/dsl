@@ -72,11 +72,12 @@ l4ruleToAstNodes Hornlike {keyword = Decide, given, clauses} =
 
 l4ruleToAstNodes _ = []
 
-givenToGivens :: Maybe ParamText -> [T.Text]
+givenToGivens :: Maybe ParamText -> [(T.Text, Maybe T.Text)]
 givenToGivens =
   maybeNonEmptyListToList
     >>> mapMaybe \case
-      (MTT varName NE.:| _, _) -> Just $ trimWhitespaces varName
+      (MTT varName NE.:| _, typeSig) ->
+        Just (trimWhitespaces varName, typeSig |$> const "Thing")
       _ -> Nothing
   where
     maybeNonEmptyListToList :: Maybe (NE.NonEmpty a) -> [a]

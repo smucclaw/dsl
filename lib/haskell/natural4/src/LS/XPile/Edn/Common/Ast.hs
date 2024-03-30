@@ -30,8 +30,8 @@ module LS.XPile.Edn.Common.Ast
     pattern IsNot,
     pattern IsIn,
     pattern IsNotIn,
-    pattern IsSum,
-    pattern IsProduct,
+    pattern Sum,
+    pattern Product,
     pattern Plus,
     pattern Minus,
     pattern Times,
@@ -226,15 +226,19 @@ pattern IsNotIn ::
 pattern IsNotIn {metadata, lhs, rhs} =
   InfixBinOp {metadata, lhs, op = "IS NOT IN", rhs}
 
-pattern IsSum ::
-  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern IsSum {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, op = "IS THE SUM OF", rhs}
+pattern Sum :: Maybe metadata -> AstNode metadata -> AstNode metadata
+pattern Sum {metadata, args} =
+  Parens
+    { metadata,
+      children = [Text {metadata = Nothing, text = "SUM"}, args]
+    }
 
-pattern IsProduct ::
-  Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata
-pattern IsProduct {metadata, lhs, rhs} =
-  InfixBinOp {metadata, lhs, op = "IS THE PRODUCT OF", rhs}
+pattern Product :: Maybe metadata -> AstNode metadata -> AstNode metadata
+pattern Product {metadata, args} =
+  Parens
+    { metadata,
+      children = [Text {metadata = Nothing, text = "PRODUCT"}, args]
+    }
 
 pattern Plus ::
   Maybe metadata -> AstNode metadata -> AstNode metadata -> AstNode metadata

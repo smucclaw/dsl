@@ -37,7 +37,7 @@ astNodeToEdn :: AstNode metadata -> EDN.TaggedValue
 astNodeToEdn = cata \case
   HornClauseF {metadataF, givensF, headF, bodyF} ->
     -- logTranspiledTo HornClause {metadata, givens, head, body} resultEdn
-    EDN.toEDN $ given <> givensF <> ([EDN.edn|DECIDE|] : headF : ifBody)
+    EDN.toEDN $ given <> givensF <> [[EDN.edn|DECIDE|], headF] <> ifBody
     where
       ifBody = bodyF |> foldMap \bodyEdn -> [[EDN.edn|IF|], bodyEdn]
 

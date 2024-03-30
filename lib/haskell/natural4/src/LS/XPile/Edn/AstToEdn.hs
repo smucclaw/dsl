@@ -39,17 +39,17 @@ astNodeToEdn = cata \case
     -- logTranspiledTo HornClause {metadata, givens, head, body} resultEdn
     EDN.toEDN $ given <> givensF <> [[EDN.edn|DECIDE|], headF] <> ifBody
     where
-      ifBody = bodyF |> foldMap \bodyEdn -> [[EDN.edn|IF|], bodyEdn]
-
       given
         | null givensF = []
         | otherwise = [[EDN.edn|GIVEN|]]
+
+      ifBody = bodyF |> foldMap \bodyEdn -> [[EDN.edn|IF|], bodyEdn]
 
   CompoundTermF {metadataF, opF, childrenF} ->
   -- logTranspiledTo CompoundTerm {metadata, op, children} resultEdn
     childrenF |> case opF of
       ParensOp -> EDN.toEDN
-      ListOp -> EDN.mkVec >>> EDN.toEDN
+      SeqOp -> EDN.mkVec >>> EDN.toEDN
       MapOp -> listToPairs >>> EDN.mkMap >>> EDN.toEDN
       SetOp -> EDN.mkSet >>> EDN.toEDN
       AndOp -> intersperseToEdn "AND"

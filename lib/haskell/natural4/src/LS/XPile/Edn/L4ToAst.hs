@@ -42,7 +42,7 @@ import LS.XPile.Edn.Common.Ast
     pattern And,
     pattern Bool,
     pattern Integer,
-    pattern List,
+    pattern Seq,
     pattern Not,
     pattern Number,
     pattern Or,
@@ -66,47 +66,50 @@ l4rulesToProgram =
     >>> Program Nothing
 
 l4ruleToAstNodes :: MonadError T.Text m => Rule -> [m (AstNode metadata)]
-l4ruleToAstNodes Hornlike {keyword = Decide, given, clauses} =
-  clauses |$> \HC {hHead, hBody} -> do
-    head <- hHead |> relPredToAstNode metadata
-    body <- hBody |> traverse (boolStructRToAstNode metadata)
-    pure HornClause {metadata, givens, head, body}
-  where
-    metadata = Nothing
-    givens = given |> givenToGivens metadata
+l4ruleToAstNodes = \case
+  Hornlike {keyword = Decide, given, clauses} ->
+    let metadata = Nothing
+        givens = given |> givenToAstNodes metadata
+    in clauses |$> \HC {hHead, hBody} -> do
+      givens <- givens
+      head <- hHead |> relPredToAstNode metadata
+      body <- hBody |> traverse (boolStructRToAstNode metadata)
+      pure HornClause {metadata, givens, head, body}
+  _ -> []
 
-l4ruleToAstNodes _ = []
-
-givenToGivens ::
-  forall metadata. Maybe metadata -> Maybe ParamText -> [AstNode metadata]
-givenToGivens metadata =
-  maybeNonEmptyListToList >>> mapMaybe (uncurry varDeclToAstNode)
+givenToAstNodes ::
+  forall metadata m.
+  MonadError T.Text m =>
+  Maybe metadata ->
+  Maybe ParamText ->
+  m [AstNode metadata]
+givenToAstNodes metadata =
+  maybeNonEmptyListToList >>> traverse (uncurry varDeclToAstNode)
   where
     maybeNonEmptyListToList :: Maybe (NE.NonEmpty a) -> [a]
     maybeNonEmptyListToList = maybeToList >>> foldMap NE.toList
 
     varDeclToAstNode ::
-      NE.NonEmpty MTExpr -> Maybe TypeSig -> Maybe (AstNode metadata)
+      NE.NonEmpty MTExpr -> Maybe TypeSig -> m (AstNode metadata)
     varDeclToAstNode (MTT varName NE.:| _) = \case
-      Nothing -> Just var
+      Nothing -> pure var
 
-      typeSig -> typeSig >>= \case
-        SimpleType (paramTypeToText -> Just paramType) entityType ->
-          Just $ IsA metadata var typ
-          where
-            typ = [paramType, entityType] |$> \text -> Text {metadata, text}
+      Just (SimpleType (paramTypeToText -> Just paramType) entityType) ->
+        pure $ IsA metadata var typ
+        where
+          typ = [paramType, entityType] |$> \text -> Text {metadata, text}
 
-        InlineEnum TOne ((NE.toList -> multiTerm, Nothing) NE.:| []) ->
-          Just $ IsOneOf metadata var elements
-          where
-            elements = multiTerm |> multiTermToAstNodes metadata
+      Just (InlineEnum TOne ((NE.toList -> multiTerm, Nothing) NE.:| [])) ->
+        pure $ IsOneOf metadata var elements
+        where
+          elements = multiTerm |> multiTermToAstNodes metadata
 
-        _ -> Nothing
+      _ -> throwError "Not supported"
       where
         var = Text {metadata, text = trimWhitespaces varName}
         paramTypeToText = (`Map.lookup` $(TH.lift paramTypeToTextTable))
 
-    varDeclToAstNode _ = const Nothing
+    varDeclToAstNode _ = const $ throwError "Not supported"
 
 multiTermToAstNodes :: Maybe metadata -> [MTExpr] -> [AstNode metadata]
 multiTermToAstNodes metadata = map \case
@@ -144,7 +147,7 @@ relPredToAstNode metadata = cataM \case
             _ ->
               args
                 |$> (\arg -> Parens metadata [arg])
-                |> List metadata
+                |> Seq metadata
       _ -> rpRel : args
 
   _ -> throwError "Not supported"

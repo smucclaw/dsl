@@ -41,7 +41,7 @@ module LS.XPile.Edn.Common.Ast
     pattern Gt,
     pattern Geq,
     pattern Parens,
-    pattern List,
+    pattern Seq,
     pattern Map,
     pattern Set,
   )
@@ -76,7 +76,7 @@ data AstNode metadata
 
 data Op
   = ParensOp
-  | ListOp
+  | SeqOp
   | MapOp
   | SetOp
   | AndOp
@@ -88,7 +88,7 @@ makeBaseFunctor ''AstNode
 pattern IsA ::
   Maybe metadata -> AstNode metadata -> [AstNode metadata] -> AstNode metadata
 pattern IsA {metadata, var, typ} =
-  List
+  Seq
     { metadata,
       elements = var : Text {metadata = Nothing, text = "IS A"} : typ
     }
@@ -96,7 +96,7 @@ pattern IsA {metadata, var, typ} =
 pattern IsOneOf ::
   Maybe metadata -> AstNode metadata -> [AstNode metadata] -> AstNode metadata
 pattern IsOneOf {metadata, var, elements} =
-  List
+  Seq
     { metadata,
       elements = var : Text {metadata = Nothing, text = "IS ONE OF"} : elements
     }
@@ -105,9 +105,9 @@ pattern Parens :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern Parens {metadata, children} =
   CompoundTerm {metadata, op = ParensOp, children}
 
-pattern List :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern List {metadata, elements} =
-  CompoundTerm {metadata, op = ListOp, children = elements}
+pattern Seq :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
+pattern Seq {metadata, elements} =
+  CompoundTerm {metadata, op = SeqOp, children = elements}
 
 pattern Map ::
   Maybe metadata -> [(AstNode metadata, AstNode metadata)] -> AstNode metadata
@@ -184,7 +184,7 @@ pattern Rule {metadata, givens, head, body} =
   HornClause {metadata, givens, head, body = Just body}
 
 pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
-pattern Program {metadata, rules} = List {metadata, elements = rules}
+pattern Program {metadata, rules} = Seq {metadata, elements = rules}
 
 pattern And :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern And {metadata, conjuncts} =

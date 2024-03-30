@@ -11,6 +11,8 @@ module LS.XPile.Edn.Common.Ast
   ( AstNode (..),
     AstNodeF (..),
     Op (..),
+    pattern IsA,
+    pattern IsOneOf,
     pattern Bool,
     pattern Number,
     pattern Integer,
@@ -60,7 +62,7 @@ import Text.Read (readMaybe)
 data AstNode metadata
   = HornClause
       { metadata :: Maybe metadata,
-        givens :: [(T.Text, Maybe T.Text)],
+        givens :: [AstNode metadata],
         head :: AstNode metadata,
         body :: Maybe (AstNode metadata)
       }
@@ -82,6 +84,22 @@ data Op
   deriving (Eq, Ord, Show, Generic, Hashable)
 
 makeBaseFunctor ''AstNode
+
+pattern IsA ::
+  Maybe metadata -> AstNode metadata -> [AstNode metadata] -> AstNode metadata
+pattern IsA {metadata, var, typ} =
+  List
+    { metadata,
+      elements = var : Text {metadata = Nothing, text = "IS A"} : typ
+    }
+
+pattern IsOneOf ::
+  Maybe metadata -> AstNode metadata -> [AstNode metadata] -> AstNode metadata
+pattern IsOneOf {metadata, var, elements} =
+  List
+    { metadata,
+      elements = var : Text {metadata = Nothing, text = "IS ONE OF"} : elements
+    }
 
 pattern Parens :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern Parens {metadata, children} =
@@ -152,13 +170,13 @@ pattern Dash :: AstNode metadata
 pattern Dash = Text {metadata = Nothing, text = "-"}
 
 pattern Fact ::
-  Maybe metadata -> [(T.Text, Maybe T.Text)] -> AstNode metadata -> AstNode metadata
+  Maybe metadata -> [AstNode metadata] -> AstNode metadata -> AstNode metadata
 pattern Fact {metadata, givens, head} =
   HornClause {metadata, givens, head, body = Nothing}
 
 pattern Rule ::
   Maybe metadata ->
-  [(T.Text, Maybe T.Text)] ->
+  [AstNode metadata] ->
   AstNode metadata ->
   AstNode metadata ->
   AstNode metadata

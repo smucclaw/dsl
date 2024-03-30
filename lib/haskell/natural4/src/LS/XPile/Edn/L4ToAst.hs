@@ -31,12 +31,14 @@ import LS.Types
     RPRel (..),
     RelationalPredicate (..),
     RelationalPredicateF (..),
-    TComparison (..),
+    TComparison (..), TypeSig (..), ParamType (..),
   )
 import LS.Utils (eitherToList, trimWhitespaces, (|$>))
 import LS.XPile.Edn.Common.Ast
   ( AstNode (..),
     Op (..),
+    pattern IsA,
+    pattern IsOneOf,
     pattern And,
     pattern Bool,
     pattern Integer,
@@ -49,7 +51,10 @@ import LS.XPile.Edn.Common.Ast
   )
 import LS.XPile.Edn.Common.Utils (splitLast)
 import LS.XPile.Edn.L4ToAst.MultiExprKeywords (multiExprKeywords)
-import LS.XPile.Edn.L4ToAst.RPRelToTextTable (rpRelToTextTable)
+import LS.XPile.Edn.L4ToAst.ToTextTables
+  ( paramTypeToTextTable,
+    rpRelToTextTable,
+  )
 import Language.Haskell.TH.Syntax qualified as TH
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
@@ -68,20 +73,52 @@ l4ruleToAstNodes Hornlike {keyword = Decide, given, clauses} =
     pure HornClause {metadata, givens, head, body}
   where
     metadata = Nothing
-    givens = given |> givenToGivens
+    givens = given |> givenToGivens metadata
 
 l4ruleToAstNodes _ = []
 
-givenToGivens :: Maybe ParamText -> [(T.Text, Maybe T.Text)]
-givenToGivens =
-  maybeNonEmptyListToList
-    >>> mapMaybe \case
-      (MTT varName NE.:| _, typeSig) ->
-        Just (trimWhitespaces varName, typeSig |$> const "Thing")
-      _ -> Nothing
+givenToGivens ::
+  forall metadata. Maybe metadata -> Maybe ParamText -> [AstNode metadata]
+givenToGivens metadata =
+  maybeNonEmptyListToList >>> mapMaybe (uncurry varDeclToAstNode)
   where
     maybeNonEmptyListToList :: Maybe (NE.NonEmpty a) -> [a]
     maybeNonEmptyListToList = maybeToList >>> foldMap NE.toList
+
+    varDeclToAstNode ::
+      NE.NonEmpty MTExpr -> Maybe TypeSig -> Maybe (AstNode metadata)
+    varDeclToAstNode (MTT varName NE.:| _) = \case
+      Nothing -> Just var
+
+      typeSig -> typeSig >>= \case
+        SimpleType (paramTypeToText -> Just paramType) entityType ->
+          Just $ IsA metadata var typ
+          where
+            typ = [paramType, entityType] |$> \text -> Text {metadata, text}
+
+        InlineEnum TOne ((NE.toList -> multiTerm, Nothing) NE.:| []) ->
+          Just $ IsOneOf metadata var elements
+          where
+            elements = multiTerm |> multiTermToAstNodes metadata
+
+        _ -> Nothing
+      where
+        var = Text {metadata, text = trimWhitespaces varName}
+        paramTypeToText = (`Map.lookup` $(TH.lift paramTypeToTextTable))
+
+    varDeclToAstNode _ = const Nothing
+
+multiTermToAstNodes :: Maybe metadata -> [MTExpr] -> [AstNode metadata]
+multiTermToAstNodes metadata = map \case
+  MTT text ->
+    Text {metadata, text = text |> trimWhitespaces |> keywordToUpper}
+  MTI int -> Integer metadata int
+  MTF double -> Number metadata double
+  MTB bool -> Bool metadata bool
+  where
+    keywordToUpper text
+      | text `elem` $(TH.lift multiExprKeywords) = T.toUpper text
+      | otherwise = text
 
 relPredToAstNode ::
   MonadError T.Text m =>
@@ -89,12 +126,12 @@ relPredToAstNode ::
   RelationalPredicate ->
   m (AstNode metadata)
 relPredToAstNode metadata = cataM \case
-  RPMTF multiTerm -> parens $ multiTermToAstNodes multiTerm
+  RPMTF multiTerm -> parens $ multiTermToAstNodes metadata multiTerm
 
   RPConstraintF
-    (multiTermToAstNodes -> lhs)
+    (multiTermToAstNodes metadata -> lhs)
     (rpRelToTextNode metadata -> Just rpRel)
-    (multiTermToAstNodes -> rhs) ->
+    (multiTermToAstNodes metadata -> rhs) ->
       parens $ lhs <> [rpRel] <> rhs
 
   RPnaryF (rpRelToTextNode metadata -> Just rpRel) args ->
@@ -113,17 +150,6 @@ relPredToAstNode metadata = cataM \case
   _ -> throwError "Not supported"
   where
     parens = pure . Parens metadata
-
-    multiTermToAstNodes = map \case
-      MTT text ->
-        Text {metadata, text = text |> trimWhitespaces |> keywordToUpper}
-      MTI int -> Integer metadata int
-      MTF double -> Number metadata double
-      MTB bool -> Bool metadata bool
-
-    keywordToUpper text
-      | text `elem` $(TH.lift multiExprKeywords) = T.toUpper text
-      | otherwise = text
 
 rpRelToTextNode :: Maybe metadata -> RPRel -> Maybe (AstNode metadata)
 rpRelToTextNode metadata =

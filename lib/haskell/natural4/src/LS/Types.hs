@@ -442,7 +442,7 @@ noDeem   :: Maybe ParamText
 noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1 | TSet0 | TSet1
-  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague

@@ -37,20 +37,13 @@ astNodeToEdn :: AstNode metadata -> EDN.TaggedValue
 astNodeToEdn = cata \case
   HornClauseF {metadataF, givensF, headF, bodyF} ->
     -- logTranspiledTo HornClause {metadata, givens, head, body} resultEdn
-    EDN.toEDN $ givens <> ([EDN.edn|DECIDE|] : headF : ifBody)
+    EDN.toEDN $ given <> givensF <> ([EDN.edn|DECIDE|] : headF : ifBody)
     where
       ifBody = bodyF |> foldMap \bodyEdn -> [[EDN.edn|IF|], bodyEdn]
 
-      givens
+      given
         | null givensF = []
-        | otherwise = [EDN.edn|GIVEN|] : (uncurry givenToEdn <$> givensF)
-
-      givenToEdn :: T.Text -> Maybe T.Text -> EDN.TaggedValue
-      givenToEdn (toSymbol -> var) = maybe var \typ ->
-        [var, [EDN.edn|IS|], [EDN.edn|A|], toSymbol typ]
-          |$> EDN.toEDN
-          |> EDN.mkVec
-          |> EDN.toEDN
+        | otherwise = [[EDN.edn|GIVEN|]]
 
   CompoundTermF {metadataF, opF, childrenF} ->
   -- logTranspiledTo CompoundTerm {metadata, op, children} resultEdn
@@ -87,7 +80,10 @@ exampleProgram =
         (And Nothing [Text Nothing "q", Text Nothing "r"]),
       Rule
         Nothing
-        [("x", Just "Integer"), ("y", Nothing), ("xs", Just "LIST OF Integer")]
+        [ IsA Nothing (Text Nothing "x") [Text Nothing "Integer"],
+          Text Nothing "y",
+          IsA Nothing (Text Nothing "z") [Text Nothing "LIST OF", Text Nothing "Integer"]
+        ]
         (Parens Nothing [Text Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
         ( Or
             Nothing
@@ -104,4 +100,4 @@ exampleProgram =
     ]
 
 --- >>> exampleProgram |> astNodeToEdn |> EDN.renderText
--- "[(DECIDE p IF (q AND r)) (GIVEN [x IS A Integer] y [xs IS A LIST OF Integer] DECIDE (x is between 0 and 10 or is 100) IF (((0.0 <= x) AND (x <= 10.0)) OR (x IS 100.0))) (DECIDE ((2023 - 1 - 10) is a date))]"
+-- "[(DECIDE p IF (q AND r)) (GIVEN [x IS A Integer] y [z IS A LIST OF Integer] DECIDE (x is between 0 and 10 or is 100) IF (((0.0 <= x) AND (x <= 10.0)) OR (x IS 100.0))) (DECIDE ((2023 - 1 - 10) is a date))]"

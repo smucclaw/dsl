@@ -39,10 +39,10 @@ astNodeToEdn = cata \case
     EDN.toEDN $
       given <> giveth <> [[EDN.edn|DECIDE|], headF] <> ifBody
     where
-      given = toGivenGiveth givensF [EDN.edn|GIVEN|]
-      giveth = toGivenGiveth givethsF [EDN.edn|GIVETH|] 
+      given = toGivenGiveth [EDN.edn|GIVEN|] givensF
+      giveth = toGivenGiveth [EDN.edn|GIVETH|] givethsF
 
-      toGivenGiveth givensGiveths givenGiveth
+      toGivenGiveth givenGiveth givensGiveths
         | null givensGiveths = []
         | otherwise = givenGiveth : givensGiveths
 

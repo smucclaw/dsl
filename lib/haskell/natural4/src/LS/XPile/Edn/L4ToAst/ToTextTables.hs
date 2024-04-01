@@ -34,7 +34,7 @@ rpRelToTextTable =
 
 paramTypeToTextTable :: Map.HashMap ParamType T.Text
 paramTypeToTextTable =
-  [ -- (TOne, "ONE"),
+  [ (TOne, "ONE"),
     (TOptional, "OPTIONAL"),
     (TList0, "LIST"),
     (TList1, "LIST"),

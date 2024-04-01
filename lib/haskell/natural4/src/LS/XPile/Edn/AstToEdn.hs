@@ -35,18 +35,20 @@ import Prelude hiding (head)
 
 astNodeToEdn :: AstNode metadata -> EDN.TaggedValue
 astNodeToEdn = cata \case
-  HornClauseF {metadataF, givensF, headF, bodyF} ->
-    -- logTranspiledTo HornClause {metadata, givens, head, body} resultEdn
-    EDN.toEDN $ given <> givensF <> [[EDN.edn|DECIDE|], headF] <> ifBody
+  HornClauseF {metadataF, givensF, givethsF, headF, bodyF} ->
+    EDN.toEDN $
+      given <> giveth <> [[EDN.edn|DECIDE|], headF] <> ifBody
     where
-      given
-        | null givensF = []
-        | otherwise = [[EDN.edn|GIVEN|]]
+      given = toGivenGiveth givensF [EDN.edn|GIVEN|]
+      giveth = toGivenGiveth givethsF [EDN.edn|GIVETH|] 
+
+      toGivenGiveth givensGiveths givenGiveth
+        | null givensGiveths = []
+        | otherwise = givenGiveth : givensGiveths
 
       ifBody = bodyF |> foldMap \bodyEdn -> [[EDN.edn|IF|], bodyEdn]
 
   CompoundTermF {metadataF, opF, childrenF} ->
-  -- logTranspiledTo CompoundTerm {metadata, op, children} resultEdn
     childrenF |> case opF of
       ParensOp -> EDN.toEDN
       SeqOp -> EDN.mkVec >>> EDN.toEDN
@@ -58,7 +60,6 @@ astNodeToEdn = cata \case
       intersperseToEdn text = intersperse (toSymbol text) >>> EDN.toEDN
 
   TextF {metadataF = metadata, textF = text} -> toSymbol text
-    -- logTranspiledTo Text {metadata, text} resultEdn
   where
     toSymbol = replaceText >>> EDN.Symbol "" >>> EDN.toEDN
 
@@ -76,6 +77,7 @@ exampleProgram =
     [ Rule
         Nothing
         []
+        []
         (Text Nothing "p")
         (And Nothing [Text Nothing "q", Text Nothing "r"]),
       Rule
@@ -84,6 +86,7 @@ exampleProgram =
           Text Nothing "y",
           IsA Nothing (Text Nothing "z") [Text Nothing "LIST OF", Text Nothing "Integer"]
         ]
+        []
         (Parens Nothing [Text Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
         ( Or
             Nothing
@@ -95,7 +98,7 @@ exampleProgram =
               Is Nothing (Text Nothing "x") (Number Nothing 100)
             ]
         ),
-      Fact Nothing [] $
+      Fact Nothing [] [] $
         Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
     ]
 

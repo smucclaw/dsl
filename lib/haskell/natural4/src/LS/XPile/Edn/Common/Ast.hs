@@ -63,6 +63,7 @@ data AstNode metadata
   = HornClause
       { metadata :: Maybe metadata,
         givens :: [AstNode metadata],
+        giveths :: [AstNode metadata],
         head :: AstNode metadata,
         body :: Maybe (AstNode metadata)
       }
@@ -170,18 +171,23 @@ pattern Dash :: AstNode metadata
 pattern Dash = Text {metadata = Nothing, text = "-"}
 
 pattern Fact ::
-  Maybe metadata -> [AstNode metadata] -> AstNode metadata -> AstNode metadata
-pattern Fact {metadata, givens, head} =
-  HornClause {metadata, givens, head, body = Nothing}
+  Maybe metadata ->
+  [AstNode metadata] ->
+  [AstNode metadata] ->
+  AstNode metadata ->
+  AstNode metadata
+pattern Fact {metadata, givens, giveths, head} =
+  HornClause {metadata, givens, giveths, head, body = Nothing}
 
 pattern Rule ::
   Maybe metadata ->
   [AstNode metadata] ->
+  [AstNode metadata] ->
   AstNode metadata ->
   AstNode metadata ->
   AstNode metadata
-pattern Rule {metadata, givens, head, body} =
-  HornClause {metadata, givens, head, body = Just body}
+pattern Rule {metadata, givens, giveths, head, body} =
+  HornClause {metadata, givens, giveths, head, body = Just body}
 
 pattern Program :: Maybe metadata -> [AstNode metadata] -> AstNode metadata
 pattern Program {metadata, rules} = Seq {metadata, elements = rules}

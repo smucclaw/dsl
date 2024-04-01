@@ -59,7 +59,7 @@ astNodeToEdn = cata \case
     where
       intersperseToEdn text = intersperse (toSymbol text) >>> EDN.toEDN
 
-  TextF {metadataF = metadata, textF = text} -> toSymbol text
+  TextF {metadataF, textF} -> toSymbol textF
   where
     toSymbol = replaceText >>> EDN.Symbol "" >>> EDN.toEDN
 

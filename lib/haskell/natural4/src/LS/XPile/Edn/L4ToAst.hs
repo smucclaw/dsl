@@ -151,7 +151,7 @@ relPredToAstNode metadata = cataM \case
   RPnaryF rpRel'@(rpRelToTextNode metadata -> Just rpRel) args ->
     parens case (rpRel', splitLast args, args) of
       (RPis, Just (lhs, rhs), _) -> lhs <> [rpRel, rhs]
-      (_, _, [Parens _ args@(null -> False)]) -> rpRel : args
+      (_, _, [Parens _ args]) -> rpRel : args
       _ -> rpRel : args
 
   _ -> throwError "Not supported"

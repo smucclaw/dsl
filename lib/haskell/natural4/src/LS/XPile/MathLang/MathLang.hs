@@ -304,27 +304,36 @@ gml2ml exp =
   -- exp.exp :: BaseExp
 
   EApp f arg -> mkApp exp []
-  -- TODO: store ELam with the function name in GML
-  -- then store the body and vars into MyState, and replace the Var "x" / Var "y" in the expr
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|] $
       pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
 
   where
+    {- In order to keep the information of application but also expand it, we do two things:
+        i) put the expanded function application into the state, as follows
+            ( "Step 3 discounted by accident.risk percentage"
+            , … Step 3 * (1 - accident.risk percentage … ) -- the actual definition as Expr Double
+
+        ii) return name of the fun applied to args as a MathVar (whose value is found in state)
+             MathVar "Step 3 discounted by accident.risk percentage"
+    -}
     mkApp :: GML.Exp -> [Expr Double] -> ToMathLang (Expr Double)
     mkApp (GML.exp -> EApp f arg) args = do
       arg' <- gml2ml arg
       mkApp f (arg' : args)
-      -- This is just a placeholder, we need to replace the function application by its value.
-      -- TODO:
-      -- 1) change ToMathLang into Eff '[Reader UserFuns, Writer MyState, Maybe] so we get access to user-defined functions
-      -- 2) Get the ([String], Expr Double) pair and replace all the "MathVar x" from the [String] argument with actual arguments of the EApp.
     mkApp (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
       case Map.lookup (T.unpack f) userFuns of
         Nothing -> fail "mkApp: trying to apply undefined function"
-        Just (boundVars, expr) ->
-          pure $ replaceVars boundVars args expr
+        Just (boundVars, expr) -> do
+          let funAppliedToArgsName = case getExprLabel <$> args of
+                [Just arg] -> [i|#{f} #{arg}|]
+                [Just arg1, Just arg2] -> [i|#{arg1} #{f} #{arg2}|]
+                _ -> [i|TODO: #{f} applied to 3 or more arguments, or the arguments don't have labels|]
+              expandedExpr = replaceVars boundVars args expr
+              namedExpr = funAppliedToArgsName @|= expandedExpr
+          ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
+          pure $ MathVar funAppliedToArgsName
 
     mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
 

@@ -155,23 +155,33 @@ spec = do
             Left err -> err `shouldBe` "something went wrong :("
 
   describe "simple fun app" do
+    let l4i = defaultL4I {origrules = simpleFunApp}
+        res = ML.toMathLang l4i
     it "should replace simple variables in a function that uses its arguments once" do
-      let l4i = defaultL4I {origrules = simpleFunApp}
-          (res,_st) = ML.toMathLang l4i
-      res `shouldBe`[MathSet "Answer" (MathBin (Just "Answer") Times (MathVar "firstArg") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "secondArg")))]
+      res `shouldBe` simpleFunApp_gold
+    it "should evaluate simple fun app" do
+      case res of
+        ([],_) -> mempty
+        (expr:_,st) -> do
+          let st' = st { symtabF = symtabF st <> Map.fromList
+                          [ ("firstArg", Val Nothing 1.0)
+                          , ("secondArg", Val Nothing 0.6) ]}
+          (e, _xp, _st, _strs) <-
+            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+          e `shouldBe` 0.4
 
   describe "repeated arguments + fun app" do
     it "should replace simple variables in a function that uses its arguments twice each" do
       let l4i = defaultL4I {origrules = complexFunApp}
-          (res,_st) = ML.toMathLang l4i
-      res `shouldBe` [MathSet "Answer" (MathBin (Just "Answer") Times (MathBin Nothing Plus (MathVar "firstArg") (MathVar "secondArg")) (MathBin Nothing Plus (MathBin Nothing Minus (Val Nothing 42.0) (MathVar "secondArg")) (MathVar "firstArg")))]
+          res = ML.toMathLang l4i
+      res `shouldBe` complexFunApp_gold
 
 
   describe "nested genitives + fun app" do
     it "should turn out right" do
       let l4i = defaultL4I {origrules = nestedGenitives_in_fun_app}
-          (res,_st) = ML.toMathLang l4i
-      res `shouldBe` [MathSet "Answer" (MathBin (Just "Answer") Times (MathVar "ind.friend.age") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "foo.bar.baz")))]
+          res = ML.toMathLang l4i
+      res `shouldBe` ([MathSet "Answer" (MathVar "ind.friend.age discounted by foo.bar.baz")], emptyState {symtabF = Map.fromList [("ind.friend.age discounted by foo.bar.baz",MathBin (Just "ind.friend.age discounted by foo.bar.baz") Times (MathVar "ind.friend.age") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "foo.bar.baz"))),("Answer",MathVar "ind.friend.age discounted by foo.bar.baz")]})
 
   describe "testPau" do
     let l4i = defaultL4I {origrules = paus}
@@ -927,6 +937,7 @@ nestedGenitives = [ MTT "ind's", MTT "friend's", MTT "age"]
 
 nestedGenitives_gold = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}
 
+nestedGenitives_in_fun_app :: [Rule]
 nestedGenitives_in_fun_app =  testLambda :
   [ mkTestRule'
       [ MTT "test function application" ]
@@ -941,6 +952,7 @@ nestedGenitives_in_fun_app =  testLambda :
         }]
   ]
 
+simpleFunApp :: [Rule]
 simpleFunApp = testLambda :
   [ mkTestRule'
       [ MTT "simple test function application" ]
@@ -955,7 +967,30 @@ simpleFunApp = testLambda :
         }]
   ]
 
-
+simpleFunApp_gold :: ([Expr Double], MyState)
+simpleFunApp_gold =  (
+        [ MathSet "Answer"
+            ( MathVar "firstArg discounted by secondArg" )
+        ]
+    , emptyState
+        { symtabF = Map.fromList
+            [
+                ( "firstArg discounted by secondArg"
+                , MathBin
+                    ( Just "firstArg discounted by secondArg" ) Times
+                    ( MathVar "firstArg" )
+                    ( MathBin Nothing Minus
+                        ( Val Nothing 1.0 )
+                        ( MathVar "secondArg" )
+                    )
+                )
+            ,
+                ( "Answer"
+                , MathVar "firstArg discounted by secondArg"
+                )
+            ]
+        }
+    )
 complexFunApp = testLambda_complex :
   [ mkTestRule'
       [ MTT "complex test function application" ]
@@ -964,12 +999,43 @@ complexFunApp = testLambda_complex :
       [ HC { hHead = RPConstraint
             [ MTT "Answer" ] RPis
             [ MTT "firstArg"
-            , MTT "function that repeats arguments in body"
+            , MTT "`funThatRepeatsArgs`"
             , MTT "secondArg" ]
         , hBody = Nothing
         }]
   ]
 
+complexFunApp_gold :: ([Expr a], MyState)
+complexFunApp_gold = (
+    [ MathSet "Answer"
+        ( MathVar "firstArg `funThatRepeatsArgs` secondArg" )
+    ]
+    , emptyState
+    { symtabF = Map.fromList
+        [
+            ( "firstArg `funThatRepeatsArgs` secondArg"
+            , MathBin
+                ( Just "firstArg `funThatRepeatsArgs` secondArg" ) Times
+                ( MathBin Nothing Plus
+                    ( MathVar "firstArg" )
+                    ( MathVar "secondArg" )
+                )
+                ( MathBin Nothing Plus
+                    ( MathBin Nothing Minus
+                        ( Val Nothing 42.0 )
+                        ( MathVar "secondArg" )
+                    )
+                    ( MathVar "firstArg" )
+                )
+            )
+        ,
+            ( "Answer"
+            , MathVar "firstArg `funThatRepeatsArgs` secondArg"
+            )
+        ]
+    })
+
+nestedGenitives_in_fun_app_gold :: [BaseExp]
 nestedGenitives_in_fun_app_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
@@ -1042,10 +1108,10 @@ testLambda = mkTestRule
 
 testLambda_complex :: Rule
 testLambda_complex = mkTestRule
-    [ MTT "function that repeats arguments in body" ]
+    [ MTT "`funThatRepeatsArgs`" ]
     (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
     [ HC { hHead = RPConstraint
-            [ MTT "x", MTT "function that repeats arguments in body", MTT "y" ] RPis
+            [ MTT "x", MTT "`funThatRepeatsArgs`", MTT "y" ] RPis
             [ MTT "(x + y) * ((42 - y) + x)" ]
         , hBody = Nothing}]
 
@@ -1801,4 +1867,5 @@ paus = [
     }
   ]
 
-testPau_gold = ([MathSet "How Much Money Do You Get" (MathVar "PAU0")], emptyState {symtabF = Map.fromList [("Step 1",MathITE (Just "Step 1") (PredVar "there were past ADD payouts") (MathVar "claimable limited base ADD benefit") (MathVar "base ADD benefit")),("claimable limited base ADD benefit",MathBin (Just "claimable limited base ADD benefit") Minus (MathVar "claimable limit") (MathVar "policyHolder's past ADD payouts")),("Step 3",MathVar "multiplied by double triple benefit"),("juvenile limited",MathMin (Just "juvenile limited") (MathVar "Part 1") (MathVar "juvenile limit")),("ADD benefit",MathMin (Just "ADD benefit") (MathBin Nothing Plus (MathVar "addBenefit") (MathVar "otherBenefits")) (MathVar "risk cap")),("addBenefit",MathVar "PAU4"),("The Answer",MathITE (Just "The Answer") (PredVar "user input.accident_claim.selected") (MathVar "accident branch") (MathVar "illness branch")),("accident branch",MathITE (Just "accident branch") (PredVar "ADD is disqualified entirely") (MathVar "excludedZero") (MathVar "ADD benefit")),("illness",MathITE (Just "illness") (PredFold Nothing PLOr [PredVar "illness.general exclusions apply",PredVar "policy.ended"]) (MathVar "disqualified") (Undefined (Just "No otherwise case"))),("PAU4",MathVar "Step 1"),("Step 2",MathITE (Just "Step 2") (PredVar "accident.juvenile limit applies") (MathVar "juvenile limited") (MathVar "Step 1")),("multiplied by double triple benefit",MathITE (Just "multiplied by double triple benefit") (PredVar "accident.triple benefits apply") (MathBin (Just "multiplied by double triple benefit") Times (MathVar "Step 2") (Val Nothing 3.0)) (MathITE Nothing (PredVar "accident.double benefits apply") (MathBin (Just "multiplied by double triple benefit") Times (MathVar "Step 2") (Val Nothing 2.0)) (MathVar "Step 2"))),("PAU0",MathVar "The Answer"),("Step 4",MathBin (Just "Step 4") Times (MathVar "Step 3") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "accident.risk percentage"))),("subsidiary computations",MathSet "claimable limit" (MathMin (Just "claimable limit") (MathBin Nothing Times (Val Nothing 1.5) (MathVar "total sum assured")) (MathVar "lifetime claimable limit"))),("base ADD benefit",MathVar "policy.benADD"),("otherBenefits",Val (Just "otherBenefits") 50.0),("excludedZero",Val (Just "excludedZero") 0.0),("lifetime claimable limit",Val (Just "lifetime claimable limit") 4.0),("juvenile limit",Val (Just "juvenile limit") 500.0),("Top-Level",MathSet "How Much Money Do You Get" (MathVar "PAU0")),("illness branch",MathITE (Just "illness branch") (PredVar "illness.disqualified") (MathVar "excludedZero") (MathVar "policy.benMR"))], symtabP = Map.fromList [("ADD is disqualified entirely",PredFold (Just "ADD is disqualified entirely") PLOr [PredComp Nothing CGTE (MathVar "policyHolder.age") (Val Nothing 75.0),PredVar "accident.general exclusions apply",PredVar "policy.ended"]),("there were past ADD payouts",PredComp (Just "there were past ADD payouts") CGT (MathVar "policyHolder.past ADD payouts") (Val Nothing 0.0))]})
+testPau_gold :: ([Expr a], MyState)
+testPau_gold = ([MathSet "How Much Money Do You Get" (MathVar "PAU0")],emptyState {symtabF = Map.fromList [("Step 1",MathITE (Just "Step 1") (PredVar "there were past ADD payouts") (MathVar "claimable limited base ADD benefit") (MathVar "base ADD benefit")),("claimable limited base ADD benefit",MathBin (Just "claimable limited base ADD benefit") Minus (MathVar "claimable limit") (MathVar "policyHolder's past ADD payouts")),("Step 3",MathVar "multiplied by double triple benefit"),("juvenile limited",MathMin (Just "juvenile limited") (MathVar "Part 1") (MathVar "juvenile limit")),("ADD benefit",MathMin (Just "ADD benefit") (MathBin Nothing Plus (MathVar "addBenefit") (MathVar "otherBenefits")) (MathVar "risk cap")),("addBenefit",MathVar "PAU4"),("The Answer",MathITE (Just "The Answer") (PredVar "user input.accident_claim.selected") (MathVar "accident branch") (MathVar "illness branch")),("accident branch",MathITE (Just "accident branch") (PredVar "ADD is disqualified entirely") (MathVar "excludedZero") (MathVar "ADD benefit")),("illness",MathITE (Just "illness") (PredFold Nothing PLOr [PredVar "illness.general exclusions apply",PredVar "policy.ended"]) (MathVar "disqualified") (Undefined (Just "No otherwise case"))),("PAU4",MathVar "Step 1"),("Step 2",MathITE (Just "Step 2") (PredVar "accident.juvenile limit applies") (MathVar "juvenile limited") (MathVar "Step 1")),("multiplied by double triple benefit",MathITE (Just "multiplied by double triple benefit") (PredVar "accident.triple benefits apply") (MathBin (Just "multiplied by double triple benefit") Times (MathVar "Step 2") (Val Nothing 3.0)) (MathITE Nothing (PredVar "accident.double benefits apply") (MathBin (Just "multiplied by double triple benefit") Times (MathVar "Step 2") (Val Nothing 2.0)) (MathVar "Step 2"))),("PAU0",MathVar "The Answer"),("Step 4",MathVar "Step 3 discounted by accident.risk percentage"),("subsidiary computations",MathSet "claimable limit" (MathMin (Just "claimable limit") (MathBin Nothing Times (Val Nothing 1.5) (MathVar "total sum assured")) (MathVar "lifetime claimable limit"))),("base ADD benefit",MathVar "policy.benADD"),("Step 3 discounted by accident.risk percentage",MathBin (Just "Step 3 discounted by accident.risk percentage") Times (MathVar "Step 3") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "accident.risk percentage"))),("otherBenefits",Val (Just "otherBenefits") 50.0),("excludedZero",Val (Just "excludedZero") 0.0),("lifetime claimable limit",Val (Just "lifetime claimable limit") 4.0),("juvenile limit",Val (Just "juvenile limit") 500.0),("Top-Level",MathSet "How Much Money Do You Get" (MathVar "PAU0")),("illness branch",MathITE (Just "illness branch") (PredVar "illness.disqualified") (MathVar "excludedZero") (MathVar "policy.benMR"))], symtabP = Map.fromList [("ADD is disqualified entirely",PredFold (Just "ADD is disqualified entirely") PLOr [PredComp Nothing CGTE (MathVar "policyHolder.age") (Val Nothing 75.0),PredVar "accident.general exclusions apply",PredVar "policy.ended"]),("there were past ADD payouts",PredComp (Just "there were past ADD payouts") CGT (MathVar "policyHolder.past ADD payouts") (Val Nothing 0.0))]})

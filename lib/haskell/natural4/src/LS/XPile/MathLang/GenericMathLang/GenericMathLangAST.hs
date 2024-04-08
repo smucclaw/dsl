@@ -22,6 +22,8 @@ module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 -- TODO: Add export list
 
 import Data.Text qualified as T
+import Data.Time (Day(..))
+import Money (Dense)
 import Optics (re, view)
 import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
@@ -152,6 +154,8 @@ varAsTxt = view _MkVar
 data Lit
   = EBoolTrue
   | EBoolFalse
+  | ECurrency (Dense "USD") -- TODO: any currency
+  | EDate Day -- 4 Jan 2023
   | EInteger Integer
   | EFloat Double
   | EString T.Text

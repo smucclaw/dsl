@@ -159,6 +159,7 @@ library
     , quickcheck-text
     , raw-strings-qq
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -229,6 +230,7 @@ executable natural4-exe
     , quickcheck-text
     , raw-strings-qq
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -301,6 +303,7 @@ test-suite doctests
     , quickcheck-text
     , raw-strings-qq
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -397,6 +400,7 @@ test-suite natural4-test
     , quickcheck-text
     , raw-strings-qq
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -471,6 +475,7 @@ benchmark natural4-bench
     , quickcheck-text
     , raw-strings-qq
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate

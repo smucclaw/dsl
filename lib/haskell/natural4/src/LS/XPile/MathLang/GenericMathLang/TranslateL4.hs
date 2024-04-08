@@ -54,6 +54,7 @@ import Optics hiding ((|>))
 import GHC.Generics (Generic)
 -- import Data.List (break)
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
@@ -70,7 +71,7 @@ import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (exp)
-
+import Money (Dense, DecimalConf(..), mkSeparators, denseFromDecimal, defaultDecimalConf)
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as EffState
 
@@ -969,7 +970,25 @@ pInteger :: Parser BaseExp
 pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
 
 pMoney :: Parser BaseExp
-pMoney = ELit . EInteger <$> (char '$' >> lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
+pMoney = do
+  curr <- pCurrency -- TODO: make it parse more than just USD
+  rest <- many $ satisfy $ const True
+  _ <- eof
+  let amount = denseFromDecimal myDecimalConf (T.pack rest) :: Maybe (Dense curr)
+  case amount of
+    Just m -> pure $ ELit $ ECurrency m
+    Nothing -> fail "unable to parse as currency"
+  where
+    separators = decimalConf_separators defaultDecimalConf `fromMaybe`
+                    mkSeparators '.' (Just ',')
+    myDecimalConf = defaultDecimalConf {decimalConf_separators = separators}
+
+-- TODO: use some existing library that parses currencies?
+pCurrency :: Parser String
+pCurrency = do
+  _ <- char '$'
+  pure "USD"
+
 
 pFloat :: Parser BaseExp
 pFloat = ELit . EFloat <$> lexeme L.float <?> "float"

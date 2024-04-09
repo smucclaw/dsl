@@ -53,7 +53,7 @@ toMathLang l4i =
     Right lamCalcProgram ->
       let userfuns = getUserFuns lamCalcProgram.userFuns
           st = gmls2ml userfuns lamCalcProgram.lcProgram
-          giveth = T.unpack <$> lamCalcProgram.givethVar
+          giveth = T.unpack <$> lamCalcProgram.giveths
           toplevels = case Map.lookup "Top-Level" st.symtabF of
             Just exp -> [exp]
             Nothing ->

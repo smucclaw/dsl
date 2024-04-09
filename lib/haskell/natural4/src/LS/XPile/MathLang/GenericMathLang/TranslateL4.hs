@@ -39,7 +39,7 @@ import LS.Types as L4
 
 import LS.Rule (
                 -- Interpreted(..),
-                getGivenWithSimpleType,
+                getGiven,
                 RuleLabel)
 import LS.Rule qualified as L4 (Rule(..))
 
@@ -399,11 +399,6 @@ runToLC' (unToLC -> m) =
 
 --------------------------------------------------------------------------------------------------
 
-{- | Look for the global vars in a separate pass for now.
-May need Reader, but only going to think abt that when we get there -}
-findGlobalVars :: Exp -> (Exp, GlobalVars)
-findGlobalVars exp = (exp, placeholderTODO)
-  where placeholderTODO = mkGlobalVars HM.empty
 
 {- | Translate L4 program consisting of Hornlike rules to a LC Program -}
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
@@ -415,23 +410,21 @@ l4ToLCProgram rules = do
   lcProg <- withCustomOpers $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
-                   , globalVars = globalVars
-                   , givethVar = giveths
+                   , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
+                   , giveths = giveths
                    , userFuns = getUserFuns customOpers}
   where
-    globalVars = mkGlobalVars HM.empty
-
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
-    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var],Exp)
-    getUserFuns opers = HM.fromList [(T.unpack var,(boundVars,exp)) | (MkVar var,exp,boundVars,_) <- opers]
+    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
+    getUserFuns opers = HM.fromList [(T.unpack var, (boundVars, e)) | (MkVar var, e, boundVars, _) <- opers]
 
     -- Separate user functions from the body of the program (mostly because
     -- I don't want to handle them in ToMathLang the same way as the rest /Inari)
-    programWithoutUserFuns prog = [exp | exp <- F.toList prog, notLambda exp]
+    programWithoutUserFuns prog = [e | e <- F.toList prog, notLambda e]
       where
-        notLambda (exp -> ELam _ _) = False
+        notLambda (exp -> ELam {}) = False
         notLambda _ = True
 
 {-==============================================================================
@@ -477,10 +470,10 @@ extractBaseHL rule =
 mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
 mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
   where
-    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe L4.EntityType)]
-    declaredVarsToAssocList dvars = dvars ^.. folded % to getGivenWithSimpleType % folded
+    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe (NE.NonEmpty L4.EntityType))]
+    declaredVarsToAssocList dvars = dvars ^.. folded % to getGiven % folded
 
-    convertL4Types :: [(T.Text, Maybe L4.EntityType)] -> [(Var, Maybe L4EntType)]
+    convertL4Types :: [(T.Text, Maybe (NE.NonEmpty L4.EntityType))] -> [(Var, Maybe L4EntType)]
     convertL4Types = each % _1 %~ mkVar >>> each % _2 %~ fmap mkEntType
 
 mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
@@ -590,14 +583,15 @@ isIf hl =
 
 -- we try to parse the following forms:
 -- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
--- (GIVEN x y) DECIDE,discounted by,IS,x * (1 - y)
+-- (GIVEN x) DECIDE,prefixF,x,IS,x * (1 - y) -- y may be a global variable or whatever, we don't care
+-- (GIVEN x) DECIDE,x,postfixF,IS,x * (1 - y) -- as above
 isLambda :: SimpleHL -> Maybe (UserDefinedFun, [Var], BaseExp)
 isLambda hl = case HM.keys hl.shcGiven of
   [] -> Nothing
   ks -> case hl.baseHL of
     OneClause (HeadOnly (hcHead -> rp))
        -> case runToLC $ varsInBody ks rp of
-            Left error -> trace [i|isLambda: #{error}|] Nothing
+            Left error -> {- trace [i|isLambda: #{error}|] -} Nothing
             Right (operator, bexp) -> Just (operator, ks, bexp)
     _ -> Nothing
   where

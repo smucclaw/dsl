@@ -44,9 +44,10 @@ import LS.XPile.CoreL4
     sfl4ToDMN,
     sfl4ToEpilog,
   )
+import LS.XPile.ASTToJSON
+  ( rulesToJsonSchema )
 import LS.XPile.ExportTypes
   ( rulesToHaskellTp,
-    rulesToJsonSchema,
     rulesToPrologTp,
     rulesToUISchema,
   )
@@ -184,7 +185,7 @@ main = do
   let (toprologFN,  asProlog)                 = (workuuid </> "prolog",   rulesToProlog rules)
       (toprologTpFN,asPrologTp)               = (workuuid </> "prologTp", rulesToPrologTp rules)
       (tohaskellTpFN,asHaskellTp)             = (workuuid </> "haskellTp", rulesToHaskellTp rules)
-      (tojsonTpFN,  asJsonTp)                 = (workuuid </> "jsonTp",   rulesToJsonSchema rules)
+      (tojsonTpFN,  asJsonTp)                 = (workuuid </> "jsonTp",   rulesToJsonSchema l4i)
       (tojsonUIFN,  asJsonUI)                 = (workuuid </> "jsonUI",   rulesToUISchema rules)
       (toscaspFN,   asSCasp)                  = (workuuid </> "scasp",    rulesToSCasp rules)
       (topetriFN,   (asPetri, asPetriErr))    = (workuuid </> "petri",    xpLog $ toPetri rules)

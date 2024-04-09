@@ -49,6 +49,7 @@ library
       LS.Utils.TextUtils
       LS.Utils.UtilsREPLDev
       LS.Verdict
+      LS.XPile.ASTToJSON
       LS.XPile.CoreL4
       LS.XPile.CoreL4.LogicProgram
       LS.XPile.CoreL4.LogicProgram.Common

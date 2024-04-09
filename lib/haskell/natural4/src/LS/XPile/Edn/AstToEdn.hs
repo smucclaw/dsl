@@ -23,11 +23,6 @@ import Data.Text.Read qualified as TRead
 import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Utils ((|$>))
-import LS.XPile.Edn.AstToEdn.MessageLog
-  ( MessageData (..),
-    MessageLog,
-    Severity (..),
-  )
 import LS.XPile.Edn.Common.Ast
 import LS.XPile.Edn.Common.Utils (listToPairs)
 import Text.Regex.PCRE.Heavy qualified as PCRE

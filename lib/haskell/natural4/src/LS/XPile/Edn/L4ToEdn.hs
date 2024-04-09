@@ -11,7 +11,6 @@ import Data.Text qualified as T
 import LS.Rule (Rule)
 import LS.XPile.Edn.AstToEdn (astNodeToEdn)
 import LS.XPile.Edn.L4ToAst (l4rulesToProgram)
-import Optics.Getter qualified as Optics
 
 l4rulesToEdn :: [Rule] -> EDN.TaggedValue
 l4rulesToEdn = l4rulesToProgram >>> astNodeToEdn

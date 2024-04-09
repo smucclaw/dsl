@@ -144,11 +144,11 @@ relPredToAstNode metadata = cataM \case
 
   RPConstraintF
     (multiTermToAstNodes metadata -> lhs)
-    (rpRelToTextNode metadata -> Just rpRel)
+    (rpRelToTextNode -> Just rpRel)
     (multiTermToAstNodes metadata -> rhs) ->
       parens $ lhs <> [rpRel] <> rhs
 
-  RPnaryF rpRel'@(rpRelToTextNode metadata -> Just rpRel) args ->
+  RPnaryF rpRel'@(rpRelToTextNode -> Just rpRel) args ->
     parens case (rpRel', splitLast args, args) of
       (RPis, Just (lhs, rhs), _) -> lhs <> [rpRel, rhs]
       (_, _, [Parens _ args]) -> rpRel : args
@@ -158,11 +158,9 @@ relPredToAstNode metadata = cataM \case
   where
     parens = pure . Parens metadata
 
-rpRelToTextNode :: Maybe metadata -> RPRel -> Maybe (AstNode metadata)
-rpRelToTextNode metadata =
-  rpRelToText >>> fmap \text -> Text {metadata, text}
-  where
-    rpRelToText = (`Map.lookup` $(TH.lift rpRelToTextTable))
+    rpRelToTextNode =
+      (`Map.lookup` $(TH.lift rpRelToTextTable))
+        >>> fmap \text -> Text {metadata, text}
 
 boolStructRToAstNode ::
   MonadError T.Text m => Maybe metadata -> BoolStructR -> m (AstNode metadata)

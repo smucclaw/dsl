@@ -7,14 +7,14 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 25fb8205f1ec1af8f31c206c9c1450a05036d6459fb08fc50217ae9c81d27464
+      sha256: fecc2e1d46e747dd0f21a11d3c9378312b62efdc2b90a31b96ef01e9c4504edb
       size: 12537
-    sha256: cec38138dbe8113d88eab97f1557832d6e540cf7fa86796063b2fbb66b3c592f
-    size: 3188636
-    url: https://github.com/smucclaw/baby-l4/archive/003f8f30a45eaaad8ccf0fae3014d7f8d265a2a0.tar.gz
+    sha256: 1bc44c6677878fa69e8c7b66e8114a3037efb1cafb2c9075dfae4f98cb7bfc75
+    size: 3188624
+    url: https://github.com/smucclaw/baby-l4/archive/4783bb9e5fbd2f5ddf783277a430377cf410771f.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/003f8f30a45eaaad8ccf0fae3014d7f8d265a2a0.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/4783bb9e5fbd2f5ddf783277a430377cf410771f.tar.gz
 - completed:
     name: gf
     pantry-tree:
@@ -83,9 +83,16 @@ packages:
       size: 795
   original:
     hackage: parser-combinators-1.3.0
+- completed:
+    hackage: monadic-recursion-schemes-0.1.13.2@sha256:9c5c733df1ab1e687f68091c8a30cdd6fea89f8871e583a095db708c58e66099,1760
+    pantry-tree:
+      sha256: d22d9d790b15da1c836522c8d1bb72790b360e902707eae477c9180deb2fe736
+      size: 356
+  original:
+    hackage: monadic-recursion-schemes-0.1.13.2
 snapshots:
 - completed:
-    sha256: 5b002d57c51092aa58a8696ccf0993e74fa6ed2efd48e2bbca349e9c2f67c5ef
+    sha256: 0cd905bf3f615a7f52d52fb6aadda182f695bd1cab10ef892095d974676f0911
     size: 713334
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/15.yaml
-  original: lts-22.15
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/16.yaml
+  original: lts-22.16

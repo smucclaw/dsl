@@ -4,7 +4,10 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
+
 {-|
 Types used by the Legal Spreadsheets parser, interpreter, and transpilers.
 -}
@@ -23,6 +26,7 @@ import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Data.Aeson (ToJSON)
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
+import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
@@ -39,6 +43,7 @@ import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.BasicTypes
 import LS.Utils ((|$>))
+import Language.Haskell.TH.Syntax (Lift)
 import Optics (Iso', coerced, re, view)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
@@ -66,7 +71,7 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
            | RPmin | RPmax
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
-  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
 
 -- | Previously `MultiTerm`s were just @[Text]@.
 -- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
@@ -328,6 +333,7 @@ instance PrependHead RelationalPredicate where
 -- In another universe we could recurse the RPConstraints and have an `RPConstraint (Not (RPConstraint (Is Sky Blue)))`
 -- [TODO] Let's think about refactoring to that in future.
 
+
 data RelationalPredicate = RPParamText   ParamText                     -- cloudless blue sky
                          | RPMT MultiTerm  -- intended to replace RPParamText. consider TypedMulti?
                          | RPConstraint  MultiTerm RPRel MultiTerm     -- eyes IS blue
@@ -442,11 +448,11 @@ noDeem   :: Maybe ParamText
 noDeem = Nothing
 
 data ParamType = TOne | TOptional | TList0 | TList1 | TSet0 | TSet1
-  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+  deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
 
 -- everything is stringly typed at the moment but as this code matures these will become more specialized.
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
-                 deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+                 deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
 
 data TemporalConstraint a = TemporalConstraint TComparison (Maybe Integer) a
                           deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
@@ -733,3 +739,5 @@ enumLabels nelist =
 
 enumLabels_ :: ParamText -> [Text.Text]
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels
+
+makeBaseFunctor ''RelationalPredicate

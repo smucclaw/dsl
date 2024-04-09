@@ -1,0 +1,7 @@
+§,test case,,,,,,,,
+GIVEN,,m1,,IS,A,Number,,,
+,,m2,,IS,A,Number,,,
+,,d1,,IS,A,Date,,,
+,,d2,,IS,A,Date,,,
+DECIDE,,m3a,IS,SUM,m1,m2,1,2,
+,,d1,IS,3,days,before,d2,,

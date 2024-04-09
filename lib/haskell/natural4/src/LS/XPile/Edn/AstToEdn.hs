@@ -36,8 +36,7 @@ import Prelude hiding (head)
 astNodeToEdn :: AstNode metadata -> EDN.TaggedValue
 astNodeToEdn = cata \case
   HornClauseF {metadataF, givensF, givethsF, headF, bodyF} ->
-    EDN.toEDN $
-      given <> giveth <> [[EDN.edn|DECIDE|], headF] <> ifBody
+    EDN.toEDN $ given <> giveth <> [[EDN.edn|DECIDE|], headF] <> ifBody
     where
       given = toGivenGiveth [EDN.edn|GIVEN|] givensF
       giveth = toGivenGiveth [EDN.edn|GIVETH|] givethsF

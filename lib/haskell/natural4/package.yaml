@@ -85,6 +85,10 @@ dependencies:
   - log-effectful
   - diagnose
   - tuple
+  - hedn
+  - recursion-schemes
+  - monadic-recursion-schemes
+  - deque
   - safe-money
   # - unbound-generics
   # - holmes

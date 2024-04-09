@@ -57,6 +57,15 @@ library
       LS.XPile.CoreL4.LogicProgram.Skolemize
       LS.XPile.DataFlow
       LS.XPile.DumpRule
+      LS.XPile.Edn.AstToEdn
+      LS.XPile.Edn.AstToEdn.MessageLog
+      LS.XPile.Edn.AstToEdn.TranspileM
+      LS.XPile.Edn.Common.Ast
+      LS.XPile.Edn.Common.Utils
+      LS.XPile.Edn.L4ToAst
+      LS.XPile.Edn.L4ToAst.MultiExprKeywords
+      LS.XPile.Edn.L4ToAst.ToTextTables
+      LS.XPile.Edn.L4ToEdn
       LS.XPile.ExportTypes
       LS.XPile.GFTrees
       LS.XPile.IntroBase
@@ -121,6 +130,7 @@ library
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , effectful
@@ -136,6 +146,7 @@ library
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -144,6 +155,7 @@ library
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , nonempty-containers
@@ -158,6 +170,7 @@ library
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , safe-money
     , split
@@ -192,6 +205,7 @@ executable natural4-exe
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , effectful
@@ -206,6 +220,7 @@ executable natural4-exe
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -214,6 +229,7 @@ executable natural4-exe
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -229,6 +245,7 @@ executable natural4-exe
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , safe-money
     , split
@@ -264,6 +281,7 @@ test-suite doctests
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , doctest-parallel >=0.1
@@ -279,6 +297,7 @@ test-suite doctests
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -287,6 +306,7 @@ test-suite doctests
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -302,6 +322,7 @@ test-suite doctests
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , safe-money
     , split
@@ -358,6 +379,7 @@ test-suite natural4-test
     , bytestring
     , cassava
     , containers
+    , deque
     , diagnose
     , directory
     , effectful
@@ -373,6 +395,7 @@ test-suite natural4-test
     , gf
     , graphviz
     , hashable
+    , hedn
     , hspec
     , hspec-golden
     , hspec-megaparsec
@@ -384,6 +407,7 @@ test-suite natural4-test
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -399,6 +423,7 @@ test-suite natural4-test
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , safe-money
     , split
@@ -437,6 +462,7 @@ benchmark natural4-bench
     , containers
     , criterion
     , deepseq
+    , deque
     , diagnose
     , directory
     , effectful
@@ -451,6 +477,7 @@ benchmark natural4-bench
     , gf
     , graphviz
     , hashable
+    , hedn
     , hxt
     , iso8601-time
     , json
@@ -459,6 +486,7 @@ benchmark natural4-bench
     , log-effectful
     , megaparsec
     , monad-validate
+    , monadic-recursion-schemes
     , mono-traversable
     , mtl
     , natural4
@@ -474,6 +502,7 @@ benchmark natural4-bench
     , prolog
     , quickcheck-text
     , raw-strings-qq
+    , recursion-schemes
     , safe
     , safe-money
     , split

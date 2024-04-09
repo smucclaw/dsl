@@ -1,5 +1,7 @@
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.Utils
   ( (|$>),
@@ -15,10 +17,12 @@ module LS.Utils
     pairs2map,
     (<||>),
     (<&&>),
+    trimWhitespaces,
   )
 where
 
 import Control.Applicative (liftA2)
+import Control.Arrow ((>>>))
 import Control.Monad.Validate
   ( MonadValidate (refute),
     Validate,
@@ -33,7 +37,9 @@ import Data.List (tails)
 import Data.Maybe (mapMaybe, maybeToList)
 import Data.Monoid (Ap (Ap), Endo (Endo))
 import Data.Sequences (uncons)
+import Data.Text qualified as T
 import Flow ((.>), (|>))
+import Text.Regex.PCRE.Heavy qualified as PCRE
 
 infixl 0 |$>
 
@@ -101,20 +107,21 @@ compose = (coerce :: [a -> a] -> [Endo a]) .> mconcat .> coerce
 {-# INLINE (<&&>) #-}
 
 pairs :: [a] -> [(a, a)]
-pairs xs =
-  xs                   -- [x0, x1 ...]
-    |> tails           -- [[x0, x1 ...], [x1 ...], ...]
-    |> mapMaybe uncons -- [(x0, [x1 ... xn]) ...]
+pairs =
+  tails           -- [[x0, x1 ...], [x1 ...], ...]
+    >>> mapMaybe uncons -- [(x0, [x1 ... xn]) ...]
     -- This does NOT play nice with infinite lists in that if xs is infinite,
     -- then tail is also always infinite, so that the order type is > ω.
     -- Consequently, some pairs may never get enumerated over (unless once has an ordinal turing machine).
-    |> foldMap \(x, tail) -> [(x, y) | y <- tail]
+    >>> foldMap \(x, tail) -> [(x, y) | y <- tail]
 
 pairs2map :: (Foldable t, Hashable a) => t ([a], b) -> Map.HashMap a b
-pairs2map pairs =
-  pairs
-    |> foldMap \(keys, tokens) -> [(key, tokens) | key <- keys]
-    |> Map.fromList
+pairs2map =
+  foldMap (\(keys, tokens) -> [(key, tokens) | key <- keys])
+    >>> Map.fromList
 
 eitherToList :: Either a b -> [b]
-eitherToList x = x |> eitherToMaybe |> maybeToList
+eitherToList = eitherToMaybe >>> maybeToList
+
+trimWhitespaces :: T.Text -> T.Text
+trimWhitespaces = T.strip >>> PCRE.gsub [PCRE.re|\s+|] (" " :: T.Text)

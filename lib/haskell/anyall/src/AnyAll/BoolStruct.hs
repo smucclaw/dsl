@@ -3,10 +3,13 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module AnyAll.BoolStruct
   ( BoolStruct (..),
+    BoolStructF (..),
     BoolStructLT,
     OptionallyLabeledBoolStruct,
     StdinSchema (..),
@@ -35,6 +38,7 @@ import Data.Aeson
     (.:),
   )
 import Data.Aeson.Types (parseEither)
+import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
 import Data.List (sort, unfoldr)
 import Data.Maybe (catMaybes, fromMaybe)
@@ -58,6 +62,8 @@ data BoolStruct lbl a
   | Any lbl [BoolStruct lbl a] --  or
   | Not (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Hashable, FromJSON, ToJSON, Functor, Foldable, Traversable)
+
+makeBaseFunctor ''BoolStruct
 
 mkLeaf :: a -> BoolStruct lbl a
 mkLeaf = Leaf

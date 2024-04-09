@@ -24,6 +24,22 @@ import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Utils ((|$>))
 import LS.XPile.Edn.Common.Ast
+  ( AstNode,
+    AstNodeF
+      ( CompoundTermF,
+        HornClauseF,
+        TextF,
+        bodyF,
+        childrenF,
+        givensF,
+        givethsF,
+        headF,
+        metadataF,
+        opF,
+        textF
+      ),
+    Op (AndOp, MapOp, OrOp, ParensOp, SeqOp, SetOp),
+  )
 import LS.XPile.Edn.Common.Utils (listToPairs)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
@@ -64,37 +80,37 @@ astNodeToEdn = cata \case
           [PCRE.re|([a-zA-Z].*(?<!\s))/([a-zA-Z].*(?<!\s))|]
           \(x : y : _ :: [T.Text]) -> [i|#{x}*slash*#{y}|] :: T.Text
 
-exampleProgram :: AstNode metadata
-exampleProgram =
-  Program
-    Nothing
-    [ Rule
-        Nothing
-        []
-        []
-        (Text Nothing "p")
-        (And Nothing [Text Nothing "q", Text Nothing "r"]),
-      Rule
-        Nothing
-        [ IsA Nothing (Text Nothing "x") [Text Nothing "Integer"],
-          Text Nothing "y",
-          IsA Nothing (Text Nothing "z") [Text Nothing "LIST OF", Text Nothing "Integer"]
-        ]
-        []
-        (Parens Nothing [Text Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
-        ( Or
-            Nothing
-            [ And
-                Nothing
-                [ Leq Nothing (Number Nothing 0) (Text Nothing "x"),
-                  Leq Nothing (Text Nothing "x") (Number Nothing 10)
-                ],
-              Is Nothing (Text Nothing "x") (Number Nothing 100)
-            ]
-        ),
-      Fact Nothing [] [] $
-        Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
-    ]
+-- exampleProgram :: AstNode metadata
+-- exampleProgram =
+--   Program
+--     Nothing
+--     [ Rule
+--         Nothing
+--         []
+--         []
+--         (Text Nothing "p")
+--         (And Nothing [Text Nothing "q", Text Nothing "r"]),
+--       Rule
+--         Nothing
+--         [ IsA Nothing (Text Nothing "x") [Text Nothing "Integer"],
+--           Text Nothing "y",
+--           IsA Nothing (Text Nothing "z") [Text Nothing "LIST OF", Text Nothing "Integer"]
+--         ]
+--         []
+--         (Parens Nothing [Text Nothing "x", Text Nothing "is between 0 and 10 or is 100"])
+--         ( Or
+--             Nothing
+--             [ And
+--                 Nothing
+--                 [ Leq Nothing (Number Nothing 0) (Text Nothing "x"),
+--                   Leq Nothing (Text Nothing "x") (Number Nothing 10)
+--                 ],
+--               Is Nothing (Text Nothing "x") (Number Nothing 100)
+--             ]
+--         ),
+--       Fact Nothing [] [] $
+--         Parens Nothing [Date Nothing 2023 1 10, Text Nothing "is a date"]
+--     ]
 
 --- >>> exampleProgram |> astNodeToEdn |> EDN.renderText
 -- "[(DECIDE p IF (q AND r)) (GIVEN [x IS A Integer] y [z IS A LIST OF Integer] DECIDE (x is between 0 and 10 or is 100) IF (((0.0 <= x) AND (x <= 10.0)) OR (x IS 100.0))) (DECIDE ((2023 - 1 - 10) is a date))]"

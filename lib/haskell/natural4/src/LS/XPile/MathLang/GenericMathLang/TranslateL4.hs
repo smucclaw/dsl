@@ -65,8 +65,8 @@ import LS.Utils ((|$>))
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Control.Monad.Trans (lift)
 import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy)
-import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
-import Data.Char (isAlphaNum)
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char, string)
+import Data.Char (isAlphaNum, isDigit)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Text.Regex.PCRE.Heavy qualified as PCRE
@@ -901,10 +901,10 @@ pExpr = do
 pTerm :: Parser BaseExp
 pTerm = choice $ map try
   [ parens pExpr
+  , pMoney
   , pVariable
   , pFloat
   , pInteger
-  , pMoney
   ]
 
 table :: SrcPositn -> [[Operator Parser BaseExp]]
@@ -964,20 +964,29 @@ pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?
 
 pMoney :: Parser BaseExp
 pMoney = do
-  curr <- T.pack <$> pCurrency -- TODO: make it parse more than just USD
-  rest <- many $ satisfy $ const True
+  curr <- T.pack <$> lexeme pCurrency
+  rest <- some $ satisfy (\x -> isDigit x || x `elem` ['.',','])
   _ <- eof
   let amount = readMaybe (filter (/= ',') rest) :: Maybe Double
   case amount of
     Just dbl -> pure $ ELit $ ECurrency curr dbl
     Nothing -> fail "unable to parse as currency"
 
--- TODO: more currencies
 pCurrency :: Parser String
-pCurrency = do
-  _ <- char '$'
-  pure "USD"
-
+pCurrency = choice $
+  [ "USD"   <$ string "$"
+  , "EUR"   <$ string "€"
+  , "GBP"   <$ string "£"
+  , "JPY"  <$ string "¥"
+  ] <>
+  [ cur <$ string (T.pack cur) | cur <- currencies]
+  where
+    currencies :: [String]
+    currencies = [ "AUD", "BGN", "BRL", "CAD", "CHF", "CNY"
+      , "CZK", "DKK", "EUR", "GBP", "HKD", "HRK", "HUF"
+      , "IDR", "ILS", "INR", "JPY", "KRW", "MXN", "MYR"
+      , "NOK", "NZD", "PHP", "PLN", "RON", "RUB", "SEK"
+      , "SGD", "THB", "TRY", "USD", "ZAR" ]
 
 pFloat :: Parser BaseExp
 pFloat = ELit . EFloat <$> lexeme L.float <?> "float"

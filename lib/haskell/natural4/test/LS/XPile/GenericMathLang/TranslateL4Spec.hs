@@ -138,6 +138,8 @@ spec = do
   testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
   testBaseExpify "test function application" "fun app and nested genitives" nestedGenitives_in_fun_app nestedGenitives_in_fun_app_gold
 
+  testBaseExpify "parsing currencies" "should be parsed into various currencies" testCurrency testCurrency_gold
+
   describe "genitive->record field" do
     let gml = runToLC $ baseExpifyMTEs nestedGenitives
     case gml of
@@ -1118,6 +1120,36 @@ testLambda_complex = mkTestRule
 
 testLambda_gold :: Map.HashMap String ([GML.Var], Exp)
 testLambda_gold = Map.fromList [("discounted by",([MkVar "x",MkVar "y"],MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}))]
+
+testCurrency :: [Rule]
+testCurrency = [
+  mkTestRule
+    [ MTT "test currencies" ]
+    Nothing
+    [ HC { hHead = RPConstraint
+            [ MTT "sgdTestSpaceNoComma" ] RPis
+            [ MTT "SGD 42" ]
+        , hBody = Nothing }
+    , HC { hHead = RPConstraint
+            [ MTT "sgdTestNoSpaceNoComma" ] RPis
+            [ MTT "SGD42" ]
+          , hBody = Nothing }
+    , HC { hHead = RPConstraint
+            [ MTT "eurTestSpaceComma" ] RPis
+            [ MTT "€ 500,000" ]
+          , hBody = Nothing }
+    , HC { hHead = RPConstraint
+            [ MTT "eurTestNoSpaceComma" ] RPis
+            [ MTT "€500,000" ]
+          , hBody = Nothing }
+    , HC { hHead = RPConstraint
+          [ MTT "notACurrency" ] RPis
+          [ MTT "PAU4" ]
+        , hBody = Nothing }
+    ]
+  ]
+
+testCurrency_gold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestNoSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestNoSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "notACurrency"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "PAU4"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}]}]
 
 testFunApp :: [Rule]
 testFunApp = testLambda :

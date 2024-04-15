@@ -91,9 +91,7 @@ mkVal = \case
   GML.EInteger int -> Val Nothing $ fromInteger int
   GML.EFloat float -> Val Nothing float
   GML.EString lit -> MathVar $ T.unpack lit
-  GML.ECurrency curr -> -- NB. we lose all the safety from the money library. Maybe use it here too?
-    let double = fromRational $ toRational curr :: Double
-     in Val (Just $ show curr) double
+  GML.ECurrency curr double -> Val (Just [i|#{curr} #{double}|]) double
   -- These should probably be handled in a different way? Booleans are handled in Pred, not Expr. There is currently nowhere that Dates are handled in MathLang.
   GML.EBoolTrue -> MathVar "True"
   GML.EBoolFalse -> MathVar "False"

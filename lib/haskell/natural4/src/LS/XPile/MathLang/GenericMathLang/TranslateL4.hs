@@ -70,13 +70,12 @@ import Data.Char (isAlphaNum)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import Text.Read (readMaybe)
 import Prelude hiding (exp)
-import Money (Dense, DecimalConf(..), mkSeparators, denseFromDecimal, defaultDecimalConf)
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as EffState
 
 import Language.Haskell.TH.Syntax qualified as TH
-
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
 {-----------------------------------------------------
@@ -965,19 +964,15 @@ pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?
 
 pMoney :: Parser BaseExp
 pMoney = do
-  curr <- pCurrency -- TODO: make it parse more than just USD
+  curr <- T.pack <$> pCurrency -- TODO: make it parse more than just USD
   rest <- many $ satisfy $ const True
   _ <- eof
-  let amount = denseFromDecimal myDecimalConf (T.pack rest) :: Maybe (Dense curr)
+  let amount = readMaybe (filter (/= ',') rest) :: Maybe Double
   case amount of
-    Just m -> pure $ ELit $ ECurrency m
+    Just dbl -> pure $ ELit $ ECurrency curr dbl
     Nothing -> fail "unable to parse as currency"
-  where
-    separators = decimalConf_separators defaultDecimalConf `fromMaybe`
-                    mkSeparators '.' (Just ',')
-    myDecimalConf = defaultDecimalConf {decimalConf_separators = separators}
 
--- TODO: use some existing library that parses currencies?
+-- TODO: more currencies
 pCurrency :: Parser String
 pCurrency = do
   _ <- char '$'

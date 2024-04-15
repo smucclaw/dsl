@@ -144,10 +144,12 @@ mkVar = view $ re _MkVar
 varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar
 
+type Currency = T.Text
+
 data Lit
   = EBoolTrue
   | EBoolFalse
-  | ECurrency (Dense "USD") -- TODO: any currency
+  | ECurrency Currency Double
   | EDate Day -- 4 Jan 2023
   | EInteger Integer
   | EFloat Double

@@ -53,7 +53,7 @@ toMathLang l4i =
     Right lamCalcProgram ->
       let userfuns = getUserFuns lamCalcProgram.userFuns
           st = gmls2ml userfuns lamCalcProgram.lcProgram
-          giveth = T.unpack <$> lamCalcProgram.givethVar
+          giveth = T.unpack <$> lamCalcProgram.giveths
           toplevels = case Map.lookup "Top-Level" st.symtabF of
             Just exp -> [exp]
             Nothing ->
@@ -91,8 +91,11 @@ mkVal = \case
   GML.EInteger int -> Val Nothing $ fromInteger int
   GML.EFloat float -> Val Nothing float
   GML.EString lit -> MathVar $ T.unpack lit
-  GML.EBoolTrue -> MathVar "True" -- TODO: this is from GenericMathLang `SetVar var True`. Should do deeper tree transformations so we don't end up here at all.
-  GML.EBoolFalse -> MathVar "False" -- Just a placeholder, see comment above. Should represent "if COND then foo=True" in another way in GML AST.
+  GML.ECurrency curr double -> Val (Just [i|#{curr} #{double}|]) double
+  -- These should probably be handled in a different way? Booleans are handled in Pred, not Expr. There is currently nowhere that Dates are handled in MathLang.
+  GML.EBoolTrue -> MathVar "True"
+  GML.EBoolFalse -> MathVar "False"
+  GML.EDate day -> MathVar $ show day
 --  lit -> throwError [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> ToMathLang (Pred Double)
@@ -216,7 +219,7 @@ runToMathLang' r (unToMathLang -> m) =
 -- all of the results are in MyState, so we can ignore the actual res
 gmls2ml :: SymTab VarsAndBody -> [GML.Exp] -> MyState
 gmls2ml _userfuns [] = emptyState
-gmls2ml userfuns (e:es) = trace [i|\ngmls2ml: #{st}\n|] $ st <> gmls2ml userfuns es
+gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
   where -- TODO: temporary hack, probably reconsider when exactly stuff is put into MyState
     seqE = case e.exp of
       ESeq _ -> e

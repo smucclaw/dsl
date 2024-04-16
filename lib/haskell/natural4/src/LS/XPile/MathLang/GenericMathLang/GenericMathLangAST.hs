@@ -22,12 +22,16 @@ module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 -- TODO: Add export list
 
 import Data.Text qualified as T
+import Data.Time (Day(..))
+-- import Money (Dense)
 import Optics (re, view)
 import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty qualified as NE
 
 -- import Data.Generics.Product.Types (types)
-import Data.String ( IsString )
+-- import Data.String ( IsString )
 -- import Data.String.Interpolate (i)
 
 -- import AnyAll qualified as AA
@@ -44,16 +48,13 @@ import Data.Coerce (coerce)
 ------------ L4 declared entity types ----------------------
 
 -- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
-newtype L4EntType = MkL4EntType T.Text
+data L4EntType = L4EntType T.Text | L4Enum [T.Text]
   deriving stock (Show)
-  deriving newtype (Eq, IsString, Hashable)
-makePrisms ''L4EntType
+  deriving (Eq, Generic, Hashable)
 
-mkEntType :: T.Text -> L4EntType
-mkEntType = view $ re _MkL4EntType
-
-entTypeAsTxt :: L4EntType -> T.Text
-entTypeAsTxt = view _MkL4EntType
+mkEntType :: NonEmpty T.Text -> L4EntType
+mkEntType (x :| []) = L4EntType x
+mkEntType xs = L4Enum $ NE.toList xs
 
 {-------------------------------------------------------
     AST
@@ -72,12 +73,6 @@ data TLabel = FromUser L4EntType
   deriving stock (Eq, Show)
 makePrisms ''TLabel
 
--- only used for debugging purposes, TODO remove later
-instance Semigroup TLabel where
-  FromUser (MkL4EntType x) <> FromUser (MkL4EntType y) = FromUser (MkL4EntType $ x <> y)
-  FromUser (MkL4EntType x) <> Inferred y = FromUser (MkL4EntType $ x <> y)
-  Inferred x <> FromUser (MkL4EntType y) = FromUser (MkL4EntType $ x <> y)
-  Inferred x <> Inferred y = Inferred $ x <> y
 
 {-----------
 TO THINK ABT
@@ -149,9 +144,13 @@ mkVar = view $ re _MkVar
 varAsTxt :: Var -> T.Text
 varAsTxt = view _MkVar
 
+type Currency = T.Text
+
 data Lit
   = EBoolTrue
   | EBoolFalse
+  | ECurrency Currency Double
+  | EDate Day -- 4 Jan 2023
   | EInteger Integer
   | EFloat Double
   | EString T.Text
@@ -284,6 +283,8 @@ makeFieldLabelsNoPrefix ''Exp
 {- | Keeps track of *global* var bindings, e.g. 'globally' declared GIVENs
 This should be useful b/c most langs require more upfront declaration of global vars than Meng seems to want in L4
 -}
+
+--newtype GlobalVars = MkGlobalVars {mkGlobalVars :: HashMap Var (Maybe L4EntType)}
 newtype GlobalVars = MkGlobalVars (HashMap Var (Maybe L4EntType))
   deriving stock (Show)
   deriving (Semigroup, Monoid) via (HashMap Var (Maybe L4EntType))
@@ -307,7 +308,7 @@ data LCProgram =
   MkLCProgram { progMetadata :: LCProgMetadata
               , lcProgram :: [Exp]
               , globalVars :: GlobalVars
-              , givethVar :: [T.Text] -- if the L4 program specifies what it giveth, record it here
+              , giveths :: [T.Text] -- if the L4 program specifies what it giveth, record it here
               , userFuns :: HashMap String ([Var], Exp)
               }
   deriving stock (Show)

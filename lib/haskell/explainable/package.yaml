@@ -37,6 +37,7 @@ dependencies:
 - effectful
 - string-interpolate
 - numeric-extras
+- pcre-heavy
 
 language: GHC2021
 

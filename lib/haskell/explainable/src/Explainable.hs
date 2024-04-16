@@ -87,7 +87,7 @@ origReader  :: (hp,r) ->    r
 -- | Prepend some string to the path part of the @Reader ((history,path),r)@.
 -- So that any code that wants to know what its call stack looks like can consult "path"
 retitle :: String -> ExplainableIO r st a -> ExplainableIO r st a
-retitle str = local (first (fmap (str:)))
+retitle str = local $ first $ fmap (str:)
 
 
 -- | The Writer supports logging, basically. We set it as @[String]@ in case you actually do want to use it.

@@ -39,7 +39,7 @@ import LS.Types as L4
 
 import LS.Rule (
                 -- Interpreted(..),
-                getGivenWithSimpleType,
+                getGiven,
                 RuleLabel)
 import LS.Rule qualified as L4 (Rule(..))
 
@@ -54,6 +54,7 @@ import Optics hiding ((|>))
 import GHC.Generics (Generic)
 -- import Data.List (break)
 import Data.List.NonEmpty qualified as NE
+-- import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
@@ -64,18 +65,17 @@ import LS.Utils ((|$>))
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Control.Monad.Trans (lift)
 import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy)
-import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char)
-import Data.Char (isAlphaNum)
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char, string)
+import Data.Char (isAlphaNum, isDigit)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import Text.Read (readMaybe)
 import Prelude hiding (exp)
-
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as EffState
 
 import Language.Haskell.TH.Syntax qualified as TH
-
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
 {-----------------------------------------------------
@@ -398,11 +398,6 @@ runToLC' (unToLC -> m) =
 
 --------------------------------------------------------------------------------------------------
 
-{- | Look for the global vars in a separate pass for now.
-May need Reader, but only going to think abt that when we get there -}
-findGlobalVars :: Exp -> (Exp, GlobalVars)
-findGlobalVars exp = (exp, placeholderTODO)
-  where placeholderTODO = mkGlobalVars HM.empty
 
 {- | Translate L4 program consisting of Hornlike rules to a LC Program -}
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
@@ -414,23 +409,21 @@ l4ToLCProgram rules = do
   lcProg <- withCustomOpers $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
-                   , globalVars = globalVars
-                   , givethVar = giveths
+                   , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
+                   , giveths = giveths
                    , userFuns = getUserFuns customOpers}
   where
-    globalVars = mkGlobalVars HM.empty
-
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
-    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var],Exp)
-    getUserFuns opers = HM.fromList [(T.unpack var,(boundVars,exp)) | (MkVar var,exp,boundVars,_) <- opers]
+    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
+    getUserFuns opers = HM.fromList [(T.unpack var, (boundVars, e)) | (MkVar var, e, boundVars, _) <- opers]
 
     -- Separate user functions from the body of the program (mostly because
     -- I don't want to handle them in ToMathLang the same way as the rest /Inari)
-    programWithoutUserFuns prog = [exp | exp <- F.toList prog, notLambda exp]
+    programWithoutUserFuns prog = [e | e <- F.toList prog, notLambda e]
       where
-        notLambda (exp -> ELam _ _) = False
+        notLambda (exp -> ELam {}) = False
         notLambda _ = True
 
 {-==============================================================================
@@ -476,10 +469,10 @@ extractBaseHL rule =
 mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
 mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
   where
-    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe L4.EntityType)]
-    declaredVarsToAssocList dvars = dvars ^.. folded % to getGivenWithSimpleType % folded
+    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe (NE.NonEmpty L4.EntityType))]
+    declaredVarsToAssocList dvars = dvars ^.. folded % to getGiven % folded
 
-    convertL4Types :: [(T.Text, Maybe L4.EntityType)] -> [(Var, Maybe L4EntType)]
+    convertL4Types :: [(T.Text, Maybe (NE.NonEmpty L4.EntityType))] -> [(Var, Maybe L4EntType)]
     convertL4Types = each % _1 %~ mkVar >>> each % _2 %~ fmap mkEntType
 
 mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
@@ -589,14 +582,15 @@ isIf hl =
 
 -- we try to parse the following forms:
 -- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
--- (GIVEN x y) DECIDE,discounted by,IS,x * (1 - y)
+-- (GIVEN x) DECIDE,prefixF,x,IS,x * (1 - y) -- y may be a global variable or whatever, we don't care
+-- (GIVEN x) DECIDE,x,postfixF,IS,x * (1 - y) -- as above
 isLambda :: SimpleHL -> Maybe (UserDefinedFun, [Var], BaseExp)
 isLambda hl = case HM.keys hl.shcGiven of
   [] -> Nothing
   ks -> case hl.baseHL of
     OneClause (HeadOnly (hcHead -> rp))
        -> case runToLC $ varsInBody ks rp of
-            Left error -> trace [i|isLambda: #{error}|] Nothing
+            Left _error -> {- trace [i|isLambda: #{error}|] -} Nothing
             Right (operator, bexp) -> Just (operator, ks, bexp)
     _ -> Nothing
   where
@@ -752,7 +746,7 @@ isFun funs mte =
 
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
-  userFuns <- mkToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
+  userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isFun userFuns) rest of
   -- ind's parent's sibling's … income
@@ -766,12 +760,12 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
       fExp <- expifyMTEsNoMd [f]
       arg2 <- expifyMTEsNoMd ys
       let arg1 = ERec fieldname recname
-          fArg1 = noExtraMdata (EApp fExp (noExtraMdata arg1))
+          fArg1 = noExtraMdata $ EApp fExp $ noExtraMdata arg1
       pure $ EApp fArg1 arg2
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
 baseExpifyMTEs mtes = do
-  userFuns <- mkToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
+  userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   case mtes of
     [mte] -> do
       -- Inari: assuming that the Var will be used for comparison
@@ -789,12 +783,12 @@ baseExpifyMTEs mtes = do
         (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
           varWeAssumeToBePred <- varFromMTEs [mte2]
           fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp (noExtraMdata (EVar var1))
+          pure $ EApp fExp $ noExtraMdata $ EVar var1
 
         (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
           varWeAssumeToBePred <- varFromMTEs [mte1]
           fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp (noExtraMdata (EVar var2))
+          pure $ EApp fExp $ noExtraMdata $ EVar var2
 
         (Nothing, Nothing)
           -> throwNotSupportedWithMsgError (RPMT mtes)
@@ -803,8 +797,8 @@ baseExpifyMTEs mtes = do
         (Just var1, Just var2) -> do
           case fmap (`elem` userFuns) [var1, var2] of
             [True, False] -> do
-              let f = noExtraMdata (EVar var1)
-                  x = noExtraMdata (EVar var2)
+              let f = noExtraMdata $ EVar var1
+                  x = noExtraMdata $ EVar var2
               pure $ EApp f x
             [False, True] -> do
               let f = noExtraMdata (EVar var2)
@@ -901,16 +895,16 @@ pExpr = do
   pos <- lift $ mkToLC $ asks currSrcPos
   customOpers <- lift $ mkToLC $ asks userDefinedFuns
   --trace [i|pExpr: length customOpers = #{length customOpers}|]
-  (makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression")
+  makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp
 pTerm = choice $ map try
   [ parens pExpr
+  , pMoney
   , pVariable
   , pFloat
   , pInteger
-  , pMoney
   ]
 
 table :: SrcPositn -> [[Operator Parser BaseExp]]
@@ -969,7 +963,30 @@ pInteger :: Parser BaseExp
 pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
 
 pMoney :: Parser BaseExp
-pMoney = ELit . EInteger <$> (char '$' >> lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
+pMoney = do
+  curr <- T.pack <$> lexeme pCurrency
+  rest <- some $ satisfy (\x -> isDigit x || x `elem` ['.',','])
+  _ <- eof
+  let amount = readMaybe (filter (/= ',') rest) :: Maybe Double
+  case amount of
+    Just dbl -> pure $ ELit $ ECurrency curr dbl
+    Nothing -> fail "unable to parse as currency"
+
+pCurrency :: Parser String
+pCurrency = choice $
+  [ "USD"   <$ string "$"
+  , "EUR"   <$ string "€"
+  , "GBP"   <$ string "£"
+  , "JPY"  <$ string "¥"
+  ] <>
+  [ cur <$ string (T.pack cur) | cur <- currencies]
+  where
+    currencies :: [String]
+    currencies = [ "AUD", "BGN", "BRL", "CAD", "CHF", "CNY"
+      , "CZK", "DKK", "EUR", "GBP", "HKD", "HRK", "HUF"
+      , "IDR", "ILS", "INR", "JPY", "KRW", "MXN", "MYR"
+      , "NOK", "NZD", "PHP", "PLN", "RON", "RUB", "SEK"
+      , "SGD", "THB", "TRY", "USD", "ZAR" ]
 
 pFloat :: Parser BaseExp
 pFloat = ELit . EFloat <$> lexeme L.float <?> "float"
@@ -1113,10 +1130,10 @@ processHcBody bsr = do
         inferredBool = typeMdata pos "Boolean"
         toBoolEqBE _e@(ELit (EString str)) =
           let varExp = EVar (MkVar str)
-          in ECompOp OpBoolEq (inferredBool varExp) (inferredBool (ELit EBoolTrue))
+          in ECompOp OpBoolEq (inferredBool varExp) $ inferredBool $ ELit EBoolTrue
 
         toBoolEqBE e@(EApp _ _) =
-          ECompOp OpBoolEq (inferredBool e) (inferredBool (ELit EBoolTrue))
+          ECompOp OpBoolEq (inferredBool e) $ inferredBool $ ELit EBoolTrue
 
         toBoolEqBE e = e
 
@@ -1189,7 +1206,7 @@ expifyBodyRP = \case
   -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> do
     pos <- mkToLC $ asks currSrcPos
-    pure $ typeMdata pos "Bool" (ELit EBoolTrue) -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
+    pure $ typeMdata pos "Bool" $ ELit EBoolTrue -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
   _rp@(RPMT mtes) -> expifyMTEsNoMd mtes
 
@@ -1203,33 +1220,38 @@ expifyBodyRP = \case
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
     return $ noExtraMdata $ EIs exp1 exp2
 
-  RPnary rel [rp1, rp2] -> do
-    expLeft <- expifyBodyRP rp1
-    expRight <- expifyBodyRP rp2
-    numOrCompOp rel expLeft expRight
+  -- Numeric operations can have multiple arguments
+  RPnary (rprel2numop -> Just op) rps -> do
+   pos <- mkToLC $ asks currSrcPos
+   exps <- mapM expifyBodyRP rps
+   pure $ foldl1 (numOrCompOp pos "Number" ENumOp op) exps
+
+  -- Comparison operations can only have two
+  RPnary (rprel2compop -> Just op) rps@(_:_) -> do
+   pos <- mkToLC $ asks currSrcPos
+   exps <- mapM expifyBodyRP rps
+   pure $ foldl1 (numOrCompOp pos "Boolean" ECompOp op) exps
+
+
+  RPnary rprel _ -> throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
-  rp -> throwNotSupportedWithMsgError rp "unknown rp"
+  -- rp -> throwNotSupportedWithMsgError rp "unknown rp"
   where
-    numOrCompOp :: RPRel -> Exp -> Exp -> ToLC Exp
-    numOrCompOp (rprel2compop -> Just compOp) = go "Boolean" ECompOp compOp
-
-    numOrCompOp (rprel2numop -> Just numOp) = go "Number" ENumOp numOp
-
-    numOrCompOp rprel = \_ _ -> do
-      throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
-
-    go str ctor op x y = do
-      pos <- mkToLC $ asks currSrcPos
+    numOrCompOp :: SrcPositn -> T.Text -> (t -> Exp -> Exp -> BaseExp) -> t -> Exp -> Exp -> Exp
+    numOrCompOp pos str ctor op x y =
       let coerceNumber = coerceType pos "Number"
-      pure $ typeMdata pos str $ ctor op (coerceNumber x) (coerceNumber y)
+      in typeMdata pos str $ ctor op (coerceNumber x) $ coerceNumber y
 
     rprel2numop :: RPRel -> Maybe NumOp
     rprel2numop = \case
       RPsum     -> Just OpPlus
       RPproduct -> Just OpMul
+      RPminus   -> Just OpMinus
+      RPdivide  -> Just OpDiv
+      RPmodulo  -> Just OpModulo
       RPmax     -> Just OpMaxOf
       RPmin     -> Just OpMinOf
       _         -> Nothing
@@ -1246,7 +1268,7 @@ expifyBodyRP = \case
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
     coerceType :: SrcPositn -> T.Text -> Exp -> Exp
     coerceType pos typ exp@(MkExp bexp _) =
-      inferTypeFromOtherExp exp (MkExp bexp (inferredType pos [] typ))
+      inferTypeFromOtherExp exp $ MkExp bexp $ inferredType pos [] typ
 
 inferTypeFromOtherExp :: Exp -> Exp -> Exp
 inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of

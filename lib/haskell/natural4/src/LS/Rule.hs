@@ -22,7 +22,7 @@ module LS.Rule
     dummyRef,
     extractMTExprs,
     getRlabel,
-    getGivenWithSimpleType,
+    getGiven,
     getDecisionHeads,
     hasClauses,
     hasGiven,
@@ -56,8 +56,8 @@ import Data.Generics.Product.Types (HasTypes, types)
 import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
-import Data.List.NonEmpty (NonEmpty)
-import Data.List.NonEmpty qualified as NE (head)
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty qualified as NE (head, fromList)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
@@ -103,6 +103,7 @@ import LS.Types
     mt2text,
     multiterm2pt,
     rpHead,
+    enumLabels
   )
 import LS.XPile.Logging (XPileLogW)
 import Optics
@@ -428,18 +429,19 @@ extractMTExprs :: HasTypes s MTExpr => s -> [MTExpr]
 extractMTExprs = toListOf $ types @MTExpr
 
 -- type EntityType = Text.Text
-getSimpleTypeTOne :: TypeSig -> Maybe EntityType 
-getSimpleTypeTOne = \case
-  SimpleType TOne tn -> Just tn
+getSimpleTypeOrEnum :: TypeSig -> Maybe (NonEmpty EntityType)
+getSimpleTypeOrEnum = \case
+  SimpleType TOne tn -> Just $ tn :| []
+  InlineEnum _ pt -> Just $ NE.fromList $ enumLabels pt
   _ -> Nothing
 
 -- | Simplify a TypedMulti -- i.e. a (NonEmpty MTExpr, Maybe TypeSig) --- with a SimpleType TOne typesig
-getGivenWithSimpleType :: TypedMulti -> Maybe (Text.Text, Maybe EntityType)
-getGivenWithSimpleType tm = do
-  let mvar = (tm ^.. _1 % types @Text.Text) ^? ix 0 
+getGiven :: TypedMulti -> Maybe (Text.Text, Maybe (NonEmpty EntityType))
+getGiven tm = do
+  let mvar = (tm ^.. _1 % types @Text.Text) ^? ix 0
   -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
-  let varType = (tm ^. _2) >>= getSimpleTypeTOne 
-  var <- mvar 
+  let varType = (tm ^. _2) >>= getSimpleTypeOrEnum
+  var <- mvar
   pure (var, varType)
 
 -- | does a rule have a Given attribute?

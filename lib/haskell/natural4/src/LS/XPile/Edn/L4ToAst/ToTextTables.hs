@@ -28,6 +28,8 @@ rpRelToTextTable =
     (RPTC TAfter, "AFTER"),
     (RPsum, "SUM"),
     (RPproduct, "PRODUCT"),
+    (RPminus, "MINUS"),
+    (RPdivide, "DIVIDE"),
     (RPmin, "MIN"),
     (RPmax, "MAX")
   ]

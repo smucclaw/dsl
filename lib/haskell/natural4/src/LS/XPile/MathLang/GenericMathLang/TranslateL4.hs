@@ -54,7 +54,7 @@ import Optics hiding ((|>))
 import GHC.Generics (Generic)
 -- import Data.List (break)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromMaybe)
+-- import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
@@ -590,7 +590,7 @@ isLambda hl = case HM.keys hl.shcGiven of
   ks -> case hl.baseHL of
     OneClause (HeadOnly (hcHead -> rp))
        -> case runToLC $ varsInBody ks rp of
-            Left error -> {- trace [i|isLambda: #{error}|] -} Nothing
+            Left _error -> {- trace [i|isLambda: #{error}|] -} Nothing
             Right (operator, bexp) -> Just (operator, ks, bexp)
     _ -> Nothing
   where

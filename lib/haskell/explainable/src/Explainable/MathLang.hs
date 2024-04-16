@@ -178,6 +178,7 @@ x |% y = MathBin Nothing Modulo x y
 
 infixl 5 |*, |/
 infixl 4 |+, |-
+infixl 7 |%
 
 less :: Expr Double -> Expr Double -> Expr Double
 less = (|-)
@@ -345,7 +346,7 @@ eval,eval' :: Expr Double -> ExplainableIO r MyState Double
 eval exprfloat = do
   (x, result) <- eval' exprfloat
   let lbl = getExprLabel exprfloat
-  -- liftIO $ putStrLn $ "lbl = " ++ show lbl
+  -- liftIO $ putStrLn [i|exprfloat = #{exprfloat}\n      lbl = #{lbl}|]
   -- i really need to learn Lens / Optics
   unless (null lbl) $ modify \mystate -> mystate { symtabF = Map.insert (fromMaybe "" lbl) (Val lbl x) (symtabF mystate) }
   -- liftIO . print =<< get

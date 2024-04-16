@@ -58,6 +58,7 @@ import Prettyprinter
   )
 import Prettyprinter.Interpolate (__di)
 import Prelude hiding (pred)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 import Debug.Trace (trace)
 
 -- * Now we do a deepish embedding of an eDSL.
@@ -111,15 +112,15 @@ instance (Show a) => Show (Expr a) where
   show = showExpr
 
 showExpr :: Show a => Expr a -> String
-showExpr (Val lbl a) = [i|#{parensIfNeeded (show a)}|]
-showExpr (Parens lbl e) = [i|(#{e})|]
-showExpr (MathBin lbl binop e1 e2) = [i|#{parensIfNeeded $ showExpr e1} #{showbop binop} #{parensIfNeeded $ showExpr e2}|]
+showExpr (Val _lbl a) = [i|#{parensIfNeeded (show a)}|]
+showExpr (Parens _lbl e) = [i|(#{e})|]
+showExpr (MathBin _lbl binop e1 e2) = [i|#{parensIfNeeded $ showExpr e1} #{showbop binop} #{parensIfNeeded $ showExpr e2}|]
 showExpr (MathVar str) = str
 showExpr (MathSet str e) = [i|#{str} := #{e}|]
-showExpr (MathITE lbl pred e1 e2) = [i|if #{pred} then #{e1} else #{e2}|]
-showExpr (MathMax lbl e1 e2) = [i|max(#{e1}, #{e2})|]
-showExpr (MathMin lbl e1 e2) = [i|min(#{e1}, #{e2})|]
-showExpr (ListFold lbl f el) = [i|#{f}(#{el})|]
+showExpr (MathITE _lbl pred e1 e2) = [i|if #{pred} then #{e1} else #{e2}|]
+showExpr (MathMax _lbl e1 e2) = [i|max(#{e1}, #{e2})|]
+showExpr (MathMin _lbl e1 e2) = [i|min(#{e1}, #{e2})|]
+showExpr (ListFold _lbl f el) = [i|#{f}(#{el})|]
 showExpr (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
 
 type ExprLabel = Maybe String
@@ -136,11 +137,14 @@ showbop Divide = "/"
 showbop Modulo = "%"
 
 parensIfNeeded :: String -> String
-parensIfNeeded str@('-':_) = [i|(#{str})|]
-parensIfNeeded str@('(':_) = str
-parensIfNeeded str
-  | ' ' `elem` str = [i|(#{str})|]
-  | otherwise      = str
+parensIfNeeded str@((PCRE.≈ [PCRE.re|^-.*|\(.*|.* .*$|]) -> True) = [i|(#{str})|]
+parensIfNeeded str = str
+
+-- parensIfNeeded str@('-':_) = [i|(#{str})|]
+-- parensIfNeeded str@('(':_) = str
+-- parensIfNeeded str
+--   | ' ' `elem` str = [i|(#{str})|]
+--   | otherwise      = str
 
 cappedBy :: Expr a -> Expr a -> Expr a
 cappedBy = MathMin $ Just "capped by"
@@ -309,12 +313,13 @@ data Pred a
 instance (Show a) => Show (Pred a) where
   show = showPred
 
+showPred :: Show a => Pred a -> String
 showPred (PredVal lbl v) = [i|#{lbl} = #{v}|]
 showPred (PredNot _lbl p) = [i|¬#{p}|]
 showPred (PredComp _lbl comp e1 e2) = [i|#{e1} #{shw comp} #{e2}|]
 showPred (PredBin _lbl op p1 p2) = [i|#{p1} #{op} #{p2}|]
 showPred (PredVar str) = str
-showPred (PredSet str p) = [i|str := #{p}|]
+showPred (PredSet str p) = [i|#{str} := #{p}|]
 showPred (PredITE  _lbl p1 p2 p3) = [i|if #{p1} then #{p2} else #{p3}|]
 showPred (PredFold _lbl andor plist) = [i|#{andor}(#{plist})|]
 
@@ -714,8 +719,10 @@ instance Exprlbl Pred a where
   (@|=) lbl ( PredComp Nothing    x y z ) = PredComp (Just lbl) x y z
   (@|=) lbl ( PredFold Nothing    x y   ) = PredFold (Just lbl) x y
   (@|=) lbl ( PredITE  Nothing    x y z ) = PredITE  (Just lbl) x y z
-  (@|=) _   ( PredVar             _ )     = error "use @|$< to label a variable reference"
-  (@|=) _   ( PredSet             _ _ )   = error "use @|$> to label a variable assignment"
+  (@|=) _   ( PredVar             _ )     =
+    trace "use @|$< to label a variable reference" $ PredVar ""
+  (@|=) _   ( PredSet             _ _ )   =
+    trace "use @|$> to label a variable assignment" $ PredVar ""
   (@|=) lbl ( PredVal  (Just old) x )     = PredVal  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredNot  (Just old) x )     = PredNot  (Just lbl <++> Just ("previously " ++ old)) x
   (@|=) lbl ( PredBin  (Just old) x y z ) = PredBin  (Just lbl <++> Just ("previously " ++ old)) x y z
@@ -765,7 +772,7 @@ infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 (@|/=) s = PredBin (Just s) PredNeq
 
 (@|!) :: String -> Pred a -> Pred a
-(@|!) s = PredNot (Just s)
+(@|!) = PredNot . Just
 
 data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
   deriving (Eq, Show)
@@ -884,7 +891,7 @@ class ToTS expr a where
 
 -- in future consider a new class tsm.Undefined -- would that more faithfully follow this representation?
 instance ToTS Expr a where
-  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe ("undefined") pretty lbl, "undefined"]
+  pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe "undefined" pretty lbl, "undefined"]
   pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x]
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.

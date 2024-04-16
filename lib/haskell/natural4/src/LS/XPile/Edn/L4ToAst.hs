@@ -72,15 +72,16 @@ l4rulesToProgram =
 l4ruleToAstNodes :: MonadError T.Text m => Rule -> [m (AstNode String)]
 l4ruleToAstNodes = \case
   Hornlike {keyword = Decide, given, giveth, clauses} ->
-    let metadata = Nothing
-        (givens, giveths) =
-          (given, giveth) |> join bimap (givenToAstNodes metadata)
-    in clauses |$> \HC {hHead, hBody} -> do
+    clauses |$> \HC {hHead, hBody} -> do
       givens <- givens
       giveths <- giveths
       head <- hHead |> relPredToAstNode metadata
       body <- hBody |> traverse (boolStructRToAstNode metadata)
       pure HornClause {metadata, givens, giveths, head, body}
+      where
+        metadata = Nothing
+        (givens, giveths) =
+          (given, giveth) |> join bimap (givenToAstNodes metadata)
   _ -> []
 
 givenToAstNodes ::

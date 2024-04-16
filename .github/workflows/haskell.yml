@@ -13,14 +13,16 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-11, macos-12]
+        os: [ubuntu-22.04, macos-11, macos-12]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - uses: haskell-actions/setup@v2
         with:
           enable-stack: true
-          # cabal-version: '3.10.1.0'
+          ghc-version: '9.8.2'
+          cabal-version: '3.10.3.0'
+          stack-version: '2.15.5'
 
       - name: Cache
         uses: actions/cache@v3

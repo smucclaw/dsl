@@ -376,6 +376,7 @@ import LS.Types
         TokOr,
         TokProduct,
         TokSum,
+        TokMinus, TokDivide, TokModulo,
         TypeSeparator,
         Typically,
         Unless,
@@ -408,6 +409,9 @@ import LS.Types
         RPproduct,
         RPsubjectTo,
         RPsum
+      , RPminus
+      , RPdivide
+      , RPmodulo
       ),
     RelationalPredicate (..),
     RuleName,
@@ -452,6 +456,9 @@ tok2rel = choice
     , RPor      <$ pToken TokOr
     , RPsum     <$ pToken TokSum
     , RPproduct <$ pToken TokProduct
+    , RPminus   <$ pToken TokMinus
+    , RPdivide  <$ pToken TokDivide
+    , RPmodulo  <$ pToken TokModulo
     , RPmin     <$ pToken TokMin
     , RPmax     <$ pToken TokMax
     , RPlt      <$ pToken TokLT    -- serves double duty as MinOflist when in RPnary position
@@ -508,7 +515,7 @@ bsr2pt bsr =
     |> nonEmpty
     |$> sconcat
 
--- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway    
+-- we convert multiple ParamText to a single ParamText because a ParamText is just an NE of TypedMulti anyway
 
 -- At this time, none of the preconditions should be found in the head, so we ignore that.
 hc2preds :: HornClause BoolStructR -> BoolStructR
@@ -797,7 +804,7 @@ slRelPred = debugName "slRelPred" do
 
          , try ( debugName "slRelPred/RPParamText (with typesig)" rpParamTextWithTypesig )
     -- this doesn't work. [TODO]. Or maybe we wait to replace all this with the PTree alternative.
-    -- , try ( debugName "RPParamText (sans typesig, requiring multiline)" rpMultiParamText )  
+    -- , try ( debugName "RPParamText (sans typesig, requiring multiline)" rpMultiParamText )
     -- <|> try ( debugName "slRelPred/RPParamText (to MT) (without typesig)" do
     --             pt <- slParamText
     --             if NE.length pt == 1
@@ -830,10 +837,15 @@ rpMT :: SLParser RelationalPredicate
 rpMT          = RPMT          $*| slAKA slMultiTerm id
 
 -- | parse an RPConstraint, optionally with an inline MEANS.
--- we pass to nestedHorn the base parser for RPConstraint, which 
+-- we pass to nestedHorn the base parser for RPConstraint, which
 rpConstraint :: SLParser RelationalPredicate
 rpConstraint  = nestedHorn rpHead id meansIs pBSR
                 (RPConstraint $*| slMultiTerm |>| tok2rel |*| slMultiTerm)
+
+-- [TODO] allow a RPParamText parsing so the final slMultiTerm above
+-- could span multiple lines. this is useful if we have foo IF bar IN
+-- baz quux quuux, we want the baz quux quuux to be able to each be on
+-- its own line.
 
 -- | parse a RelationalPredicate BoolStructR
 rpBoolStructR :: SLParser RelationalPredicate

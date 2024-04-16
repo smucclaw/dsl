@@ -170,6 +170,7 @@ library
     , raw-strings-qq
     , recursion-schemes
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -244,6 +245,7 @@ executable natural4-exe
     , raw-strings-qq
     , recursion-schemes
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -320,6 +322,7 @@ test-suite doctests
     , raw-strings-qq
     , recursion-schemes
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -420,6 +423,7 @@ test-suite natural4-test
     , raw-strings-qq
     , recursion-schemes
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate
@@ -498,6 +502,7 @@ benchmark natural4-bench
     , raw-strings-qq
     , recursion-schemes
     , safe
+    , safe-money
     , split
     , string-conversions
     , string-interpolate

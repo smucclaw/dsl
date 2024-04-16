@@ -9,6 +9,7 @@ import Data.HashMap.Strict qualified as Map
 import Data.Tree (Tree (..))
 import Explainable.MathLang
   ( MyState (MyState),
+    Expr(Val),
     eval,
     negativeElementsOf,
     positiveElementsOf,
@@ -17,7 +18,7 @@ import Explainable.MathLang
     (*||),
     (+||),
   )
-import Test.Hspec (Spec, describe, it, shouldBe, xit)
+import Test.Hspec (Spec, describe, it, shouldBe)
 
 scenarios :: Map.HashMap String Scenario
 scenarios =
@@ -77,14 +78,16 @@ spec = do
         wlog `shouldBe` []
 
     -- TODO: this test actualy fails, stab should be empty but test gives Val 6.0
-    xit "the sum of the doubles of all positive elements and the unchanged original values of all negative elements" do
+    it "the sum of the doubles of all positive elements and the unchanged original values of all negative elements" do
         ((val, xpl), stab, wlog) <- runRWST
                                         (eval $ (+||) $ timesPositives 2 [-2, -1, 0, 1, 2, 3])
                                         (([],["toplevel"]), someScenario)
                                         (MyState Map.empty Map.empty Map.empty Map.empty)
         val `shouldBe` 9.0
         xpl `shouldBe` sumOfDoublesOfPositivesAndNegativesExplanation
-        stab  `shouldBe` MyState Map.empty Map.empty Map.empty Map.empty
+        -- the symtab has constantly updated the value of the comparison from timesPositives
+        -- latest value was 2*3 = 6, and it's listed there under "boolean true", because 6 > 0 == true
+        stab  `shouldBe` MyState (Map.fromList [("boolean true",Val (Just "boolean true") 6.0)]) Map.empty Map.empty Map.empty
         wlog `shouldBe` []
 
 
@@ -96,7 +99,7 @@ sumOfNegativeExplanation = Node
           { rootLabel = ([], ["2 elements were reduced from an original 6", "- -2.0", "- -1.0", "- 0.0", "- 1.0", "- 2.0", "- 3.0"]),
             subForest =
               [ Node
-                  { rootLabel = (["Val (-2.0)"], ["included Val (-2.0) due to passing comparison test"]),
+                  { rootLabel = (["(-2.0)"], ["included (-2.0) due to passing comparison test"]),
                     subForest =
                       [ Node
                           { rootLabel = ([], ["True is the result of comparing (>)"]),
@@ -118,7 +121,7 @@ sumOfNegativeExplanation = Node
                       ]
                   },
                 Node
-                  { rootLabel = (["Val (-1.0)"], ["included Val (-1.0) due to passing comparison test"]),
+                  { rootLabel = (["(-1.0)"], ["included (-1.0) due to passing comparison test"]),
                     subForest =
                       [ Node
                           { rootLabel = ([], ["True is the result of comparing (>)"]),
@@ -140,7 +143,7 @@ sumOfNegativeExplanation = Node
                       ]
                   },
                 Node
-                  { rootLabel = (["Val 0.0"], ["excluded Val 0.0 due to failing comparison test"]),
+                  { rootLabel = (["0.0"], ["excluded 0.0 due to failing comparison test"]),
                     subForest =
                       [ Node
                           { rootLabel = ([], ["False is the result of comparing (>)"]),
@@ -162,7 +165,7 @@ sumOfNegativeExplanation = Node
                       ]
                   },
                 Node
-                  { rootLabel = (["Val 1.0"], ["excluded Val 1.0 due to failing comparison test"]),
+                  { rootLabel = (["1.0"], ["excluded 1.0 due to failing comparison test"]),
                     subForest =
                       [ Node
                           { rootLabel = ([], ["False is the result of comparing (>)"]),
@@ -184,7 +187,7 @@ sumOfNegativeExplanation = Node
                       ]
                   },
                 Node
-                  { rootLabel = (["Val 2.0"], ["excluded Val 2.0 due to failing comparison test"]),
+                  { rootLabel = (["2.0"], ["excluded 2.0 due to failing comparison test"]),
                     subForest =
                       [ Node
                           { rootLabel = ([], ["False is the result of comparing (>)"]),
@@ -206,7 +209,7 @@ sumOfNegativeExplanation = Node
                       ]
                   },
                 Node
-                  { rootLabel = (["Val 3.0"], ["excluded Val 3.0 due to failing comparison test"]),
+                  { rootLabel = (["3.0"], ["excluded 3.0 due to failing comparison test"]),
                     subForest =
                       [ Node
                           { rootLabel = ([], ["False is the result of comparing (>)"]),
@@ -245,13 +248,13 @@ productOfDoublesOfPositivesExplanation = Node
   { rootLabel = ([], ["48.0 = product of 3 elements", "- 2.0", "- 4.0", "- 6.0"]),
     subForest =
       [ Node
-          { rootLabel = ([], ["fmap mathsection TimesVal 2.0 over 3 elements"]),
+          { rootLabel = ([], ["fmap mathsection (* 2.0) over 3 elements"]),
             subForest =
               [ Node
                   { rootLabel = ([], ["3 elements were reduced from an original 6", "- -2.0", "- -1.0", "- 0.0", "- 1.0", "- 2.0", "- 3.0"]),
                     subForest =
                       [ Node
-                          { rootLabel = (["Val (-2.0)"], ["excluded Val (-2.0) due to failing comparison test"]),
+                          { rootLabel = (["(-2.0)"], ["excluded (-2.0) due to failing comparison test"]),
                             subForest =
                               [ Node
                                   { rootLabel = ([], ["False is the result of comparing (<)"]),
@@ -273,7 +276,7 @@ productOfDoublesOfPositivesExplanation = Node
                               ]
                           },
                         Node
-                          { rootLabel = (["Val (-1.0)"], ["excluded Val (-1.0) due to failing comparison test"]),
+                          { rootLabel = (["(-1.0)"], ["excluded (-1.0) due to failing comparison test"]),
                             subForest =
                               [ Node
                                   { rootLabel = ([], ["False is the result of comparing (<)"]),
@@ -295,7 +298,7 @@ productOfDoublesOfPositivesExplanation = Node
                               ]
                           },
                         Node
-                          { rootLabel = (["Val 0.0"], ["excluded Val 0.0 due to failing comparison test"]),
+                          { rootLabel = (["0.0"], ["excluded 0.0 due to failing comparison test"]),
                             subForest =
                               [ Node
                                   { rootLabel = ([], ["False is the result of comparing (<)"]),
@@ -317,7 +320,7 @@ productOfDoublesOfPositivesExplanation = Node
                               ]
                           },
                         Node
-                          { rootLabel = (["Val 1.0"], ["included Val 1.0 due to passing comparison test"]),
+                          { rootLabel = (["1.0"], ["included 1.0 due to passing comparison test"]),
                             subForest =
                               [ Node
                                   { rootLabel = ([], ["True is the result of comparing (<)"]),
@@ -339,7 +342,7 @@ productOfDoublesOfPositivesExplanation = Node
                               ]
                           },
                         Node
-                          { rootLabel = (["Val 2.0"], ["included Val 2.0 due to passing comparison test"]),
+                          { rootLabel = (["2.0"], ["included 2.0 due to passing comparison test"]),
                             subForest =
                               [ Node
                                   { rootLabel = ([], ["True is the result of comparing (<)"]),
@@ -361,7 +364,7 @@ productOfDoublesOfPositivesExplanation = Node
                               ]
                           },
                         Node
-                          { rootLabel = (["Val 3.0"], ["included Val 3.0 due to passing comparison test"]),
+                          { rootLabel = (["3.0"], ["included 3.0 due to passing comparison test"]),
                             subForest =
                               [ Node
                                   { rootLabel = ([], ["True is the result of comparing (<)"]),
@@ -444,9 +447,9 @@ sumOfDoublesOfPositivesAndNegativesExplanation :: Tree ([String], [String])
 sumOfDoublesOfPositivesAndNegativesExplanation = Node {
                    rootLabel = ([], ["9.0 = sum of 6 elements", "- -2.0", "- -1.0", "- 0.0", "- 2.0", "- 4.0", "- 6.0"]),
                    subForest = [Node {
-                   rootLabel = ([], ["fmap mathsection TimesVal 2.0 over 3 relevant elements (who pass Val 0.0 CLT)"]),
+                   rootLabel = ([], ["fmap mathsection (* 2.0) over 3 relevant elements (who pass 0.0 CLT)"]),
                    subForest = [Node {
-                   rootLabel = (["Val (-2.0)", "Val (-1.0)", "Val 0.0", "Val 1.0", "Val 2.0", "Val 3.0"], ["base MathList with 6 elements"]),
+                   rootLabel = (["(-2.0)", "(-1.0)", "0.0", "1.0", "2.0", "3.0"], ["base MathList with 6 elements"]),
                    subForest = []
                  }, Node {
                    rootLabel = ([], ["selection of relevant elements"]),

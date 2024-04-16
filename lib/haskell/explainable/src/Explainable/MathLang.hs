@@ -105,19 +105,22 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
             deriving (Eq, Generic)
+--            deriving (Eq, Generic, Show) if you prefer to output the original AST
 
 instance (Show a) => Show (Expr a) where
-  show (Val Nothing a) = [i|Val #{parensIfNeg (show a)}|]
-  show (Val lbl a) = [i|Val #{showlbl lbl} #{parensIfNeg (show a)}|]
-  show (Parens lbl e) = [i|Parens #{showlbl lbl} #{e}|]
-  show (MathBin lbl binop e1 e2) = [i|MathBinOp #{showlbl lbl} #{binop} #{e1} #{e2}|]
-  show (MathVar str) = [i|MathVar #{str}|]
-  show (MathSet str e) = [i|MathSet #{str} #{e}|]
-  show (MathITE lbl pred e1 e2) = [i|MathITE #{showlbl lbl} #{pred} #{e1} #{e2}|]
-  show (MathMax lbl e1 e2) = [i|MathMax #{showlbl lbl} #{e1} #{e2}|]
-  show (MathMin lbl e1 e2) = [i|MathMin #{showlbl lbl} #{e1} #{e2}|]
-  show (ListFold lbl f el) = [i|ListFold #{showlbl lbl} #{f} #{el}|]
-  show (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
+  show = showExpr
+
+showExpr :: Show a => Expr a -> String
+showExpr (Val lbl a) = [i|#{parensIfNeeded (show a)}|]
+showExpr (Parens lbl e) = [i|(#{e})|]
+showExpr (MathBin lbl binop e1 e2) = [i|#{parensIfNeeded $ showExpr e1} #{showbop binop} #{parensIfNeeded $ showExpr e2}|]
+showExpr (MathVar str) = str
+showExpr (MathSet str e) = [i|#{str} := #{e}|]
+showExpr (MathITE lbl pred e1 e2) = [i|if #{pred} then #{e1} else #{e2}|]
+showExpr (MathMax lbl e1 e2) = [i|max(#{e1}, #{e2})|]
+showExpr (MathMin lbl e1 e2) = [i|min(#{e1}, #{e2})|]
+showExpr (ListFold lbl f el) = [i|#{f}(#{el})|]
+showExpr (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
 
 type ExprLabel = Maybe String
 
@@ -125,9 +128,19 @@ showlbl :: ExprLabel -> String
 showlbl Nothing  = mempty
 showlbl (Just l) = [i|(#{l})|]
 
-parensIfNeg :: String -> String
-parensIfNeg str@('-':_) = [i|(#{str})|]
-parensIfNeg str = str
+showbop :: MathBinOp -> String
+showbop Plus   = "+"
+showbop Minus  = "-"
+showbop Times  = "*"
+showbop Divide = "/"
+showbop Modulo = "%"
+
+parensIfNeeded :: String -> String
+parensIfNeeded str@('-':_) = [i|(#{str})|]
+parensIfNeeded str@('(':_) = str
+parensIfNeeded str
+  | ' ' `elem` str = [i|(#{str})|]
+  | otherwise      = str
 
 cappedBy :: Expr a -> Expr a -> Expr a
 cappedBy = MathMin $ Just "capped by"
@@ -165,6 +178,7 @@ x |% y = MathBin Nothing Modulo x y
 
 infixl 5 |*, |/
 infixl 4 |+, |-
+infixl 7 |%
 
 less :: Expr Double -> Expr Double -> Expr Double
 less = (|-)
@@ -290,7 +304,19 @@ data Pred a
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   | PredFold ExprLabel AndOr (PredList a)             -- ^ and / or a list
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance (Show a) => Show (Pred a) where
+  show = showPred
+
+showPred (PredVal lbl v) = [i|#{lbl} = #{v}|]
+showPred (PredNot _lbl p) = [i|¬#{p}|]
+showPred (PredComp _lbl comp e1 e2) = [i|#{e1} #{shw comp} #{e2}|]
+showPred (PredBin _lbl op p1 p2) = [i|#{p1} #{op} #{p2}|]
+showPred (PredVar str) = str
+showPred (PredSet str p) = [i|str := #{p}|]
+showPred (PredITE  _lbl p1 p2 p3) = [i|if #{p1} then #{p2} else #{p3}|]
+showPred (PredFold _lbl andor plist) = [i|#{andor}(#{plist})|]
 
 data AndOr = PLAnd | PLOr
   deriving (Eq, Show)
@@ -320,7 +346,7 @@ eval,eval' :: Expr Double -> ExplainableIO r MyState Double
 eval exprfloat = do
   (x, result) <- eval' exprfloat
   let lbl = getExprLabel exprfloat
-  -- liftIO $ putStrLn $ "lbl = " ++ show lbl
+  -- liftIO $ putStrLn [i|exprfloat = #{exprfloat}\n      lbl = #{lbl}|]
   -- i really need to learn Lens / Optics
   unless (null lbl) $ modify \mystate -> mystate { symtabF = Map.insert (fromMaybe "" lbl) (Val lbl x) (symtabF mystate) }
   -- liftIO . print =<< get
@@ -530,7 +556,7 @@ evalList (ListMap lbl Id ylist) = pure (ylist, mkNod ("id on ExprList" ++ showlb
 evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   pure ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
-         , Node ([],[[i|fmap mathsection #{binop}#{x} over #{length ylist'} elements|]]) [yxpl] )
+         , Node ([],[[i|fmap mathsection (#{showbop binop} #{x}) over #{length ylist'} elements|]]) [yxpl] )
 
 evalList (ListMapIf lbl Id _c _comp ylist) =
   retitle [i|fmap mathsection id#{showlbl lbl}|] $ evalList ylist
@@ -542,7 +568,7 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) =
 
     pure ( MathList (Just "evaled list") [ if b then MathBin (Just "boolean true") binop x y else y
                                           | (y,b) <- zip ylist' (fst <$> liveElements) ]
-          , Node ([],[[i|fmap mathsection #{binop}#{x} over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{c} #{comp})|]])
+          , Node ([],[[i|fmap mathsection (#{showbop binop} #{x}) over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{c} #{comp})|]])
             [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
 
 evalList (ListConcat lbl xxs) = do
@@ -622,8 +648,8 @@ instance (Show a) => Exprlbl Expr a where
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x
   (@|=) lbl ( MathBin  Nothing x y z ) = MathBin  (Just lbl) x y z
-  (@|=) _  e@( MathVar          _     ) = trace [i|\nuse @|$< to label a variable reference: #{e}\n\n|]  e
-  (@|=) _  e@( MathSet          _ _   ) = trace [i|\nuse @|$< to label a variable assignment: #{e}\n\n|] e
+  (@|=) _ e@( MathVar          _     ) = e -- if the answer is a chain of decisions, we don't want to erase all steps. but if for some reason you want that, use @|$< to relabel a variable reference (=overwrite the variable name).
+  (@|=) _ e@( MathSet          _ _   ) = e -- see above; if really needed, use @|$< to label a variable assignment
   (@|=) lbl ( MathITE  Nothing x y z ) = MathITE  (Just lbl) x y z
   (@|=) lbl ( MathMax  Nothing x y   ) = MathMax  (Just lbl) x y
   (@|=) lbl ( MathMin  Nothing x y   ) = MathMin  (Just lbl) x y

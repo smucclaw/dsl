@@ -45,7 +45,7 @@ import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 -- import Data.String.Interpolate (__i)
--- import Text.Pretty.Simple (pShowNoColor)
+import Text.Pretty.Simple (pShowNoColor)
 import Data.String.Interpolate (__i)
 -- import LS.Utils.TextUtils (int2Text, float2Text)
 -- import Data.Foldable qualified as F (toList)
@@ -90,10 +90,14 @@ makeErrorOut _errors = ("not yet implemented", ["not yet implemented"])
 renderLC :: LCProgram -> String
 renderLC program =
   [__i|
-    #{lcProgram}
-    #{userFuns}
+    progMetadata = #{progMetadata program}
+    lcProgram = #{lcProgram}
+    globalVars = #{globalVars}
+    giveths = #{giveths}
+    userFuns = #{userFuns}
   |]
   where
-    lcProgram = program.lcProgram
-    userFuns = program.userFuns
-  -- TextLazy.unpack $ TextLazy.unlines [pShowNoColor program.lcProgram, pShowNoColor program.userFuns]
+    lcProgram = pShowNoColor program.lcProgram
+    userFuns = pShowNoColor program.userFuns
+    giveths = pShowNoColor program.giveths
+    globalVars = pShowNoColor program.globalVars

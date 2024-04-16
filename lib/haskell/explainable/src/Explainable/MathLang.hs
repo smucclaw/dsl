@@ -555,7 +555,7 @@ evalList (ListMap lbl Id ylist) = pure (ylist, mkNod ("id on ExprList" ++ showlb
 evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   pure ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
-         , Node ([],[[i|fmap mathsection #{binop}#{x} over #{length ylist'} elements|]]) [yxpl] )
+         , Node ([],[[i|fmap mathsection (#{showbop binop} #{x}) over #{length ylist'} elements|]]) [yxpl] )
 
 evalList (ListMapIf lbl Id _c _comp ylist) =
   retitle [i|fmap mathsection id#{showlbl lbl}|] $ evalList ylist
@@ -567,7 +567,7 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) =
 
     pure ( MathList (Just "evaled list") [ if b then MathBin (Just "boolean true") binop x y else y
                                           | (y,b) <- zip ylist' (fst <$> liveElements) ]
-          , Node ([],[[i|fmap mathsection #{binop}#{x} over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{c} #{comp})|]])
+          , Node ([],[[i|fmap mathsection (#{showbop binop} #{x}) over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{c} #{comp})|]])
             [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
 
 evalList (ListConcat lbl xxs) = do

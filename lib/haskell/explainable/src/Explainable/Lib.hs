@@ -74,7 +74,7 @@ runTests_Mathlang = do
   print "* mathlang tests"
 
   print "** two plus (two on sundays, and one every other day) equals three or four"
-  let iceCreams =
+  let _iceCreams =
         "iceCreams" @|=
         "two usually" @|. 2
         |+

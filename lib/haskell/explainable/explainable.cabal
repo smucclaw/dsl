@@ -46,6 +46,7 @@ library
     , numeric-extras
     , parsec
     , parser-combinators
+    , pcre-heavy
     , prettyprinter
     , prettyprinter-interp
     , string-interpolate
@@ -74,6 +75,7 @@ executable explainable-exe
     , numeric-extras
     , parsec
     , parser-combinators
+    , pcre-heavy
     , prettyprinter
     , prettyprinter-interp
     , string-interpolate
@@ -105,6 +107,7 @@ test-suite explainable-test
     , numeric-extras
     , parsec
     , parser-combinators
+    , pcre-heavy
     , prettyprinter
     , prettyprinter-interp
     , string-interpolate

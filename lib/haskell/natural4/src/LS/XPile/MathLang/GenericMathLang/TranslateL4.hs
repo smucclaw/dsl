@@ -54,7 +54,7 @@ import Optics hiding ((|>))
 import GHC.Generics (Generic)
 -- import Data.List (break)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromMaybe)
+-- import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 -- import LS.Utils.TextUtils (int2Text, float2Text)
@@ -590,7 +590,7 @@ isLambda hl = case HM.keys hl.shcGiven of
   ks -> case hl.baseHL of
     OneClause (HeadOnly (hcHead -> rp))
        -> case runToLC $ varsInBody ks rp of
-            Left error -> {- trace [i|isLambda: #{error}|] -} Nothing
+            Left _error -> {- trace [i|isLambda: #{error}|] -} Nothing
             Right (operator, bexp) -> Just (operator, ks, bexp)
     _ -> Nothing
   where
@@ -746,7 +746,7 @@ isFun funs mte =
 
 baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
-  userFuns <- mkToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
+  userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isFun userFuns) rest of
   -- ind's parent's sibling's … income
@@ -760,12 +760,12 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
       fExp <- expifyMTEsNoMd [f]
       arg2 <- expifyMTEsNoMd ys
       let arg1 = ERec fieldname recname
-          fArg1 = noExtraMdata (EApp fExp (noExtraMdata arg1))
+          fArg1 = noExtraMdata $ EApp fExp $ noExtraMdata arg1
       pure $ EApp fArg1 arg2
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
 baseExpifyMTEs mtes = do
-  userFuns <- mkToLC $ asks (fmap getFunName . userDefinedFuns) -- :: [Var]
+  userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   case mtes of
     [mte] -> do
       -- Inari: assuming that the Var will be used for comparison
@@ -783,12 +783,12 @@ baseExpifyMTEs mtes = do
         (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
           varWeAssumeToBePred <- varFromMTEs [mte2]
           fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp (noExtraMdata (EVar var1))
+          pure $ EApp fExp $ noExtraMdata $ EVar var1
 
         (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
           varWeAssumeToBePred <- varFromMTEs [mte1]
           fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp (noExtraMdata (EVar var2))
+          pure $ EApp fExp $ noExtraMdata $ EVar var2
 
         (Nothing, Nothing)
           -> throwNotSupportedWithMsgError (RPMT mtes)
@@ -797,8 +797,8 @@ baseExpifyMTEs mtes = do
         (Just var1, Just var2) -> do
           case fmap (`elem` userFuns) [var1, var2] of
             [True, False] -> do
-              let f = noExtraMdata (EVar var1)
-                  x = noExtraMdata (EVar var2)
+              let f = noExtraMdata $ EVar var1
+                  x = noExtraMdata $ EVar var2
               pure $ EApp f x
             [False, True] -> do
               let f = noExtraMdata (EVar var2)
@@ -895,7 +895,7 @@ pExpr = do
   pos <- lift $ mkToLC $ asks currSrcPos
   customOpers <- lift $ mkToLC $ asks userDefinedFuns
   --trace [i|pExpr: length customOpers = #{length customOpers}|]
-  (makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression")
+  makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp
@@ -1130,10 +1130,10 @@ processHcBody bsr = do
         inferredBool = typeMdata pos "Boolean"
         toBoolEqBE _e@(ELit (EString str)) =
           let varExp = EVar (MkVar str)
-          in ECompOp OpBoolEq (inferredBool varExp) (inferredBool (ELit EBoolTrue))
+          in ECompOp OpBoolEq (inferredBool varExp) $ inferredBool $ ELit EBoolTrue
 
         toBoolEqBE e@(EApp _ _) =
-          ECompOp OpBoolEq (inferredBool e) (inferredBool (ELit EBoolTrue))
+          ECompOp OpBoolEq (inferredBool e) $ inferredBool $ ELit EBoolTrue
 
         toBoolEqBE e = e
 
@@ -1206,7 +1206,7 @@ expifyBodyRP = \case
   -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> do
     pos <- mkToLC $ asks currSrcPos
-    pure $ typeMdata pos "Bool" (ELit EBoolTrue) -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
+    pure $ typeMdata pos "Bool" $ ELit EBoolTrue -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
   _rp@(RPMT mtes) -> expifyMTEsNoMd mtes
 
@@ -1238,12 +1238,12 @@ expifyBodyRP = \case
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
-  rp -> throwNotSupportedWithMsgError rp "unknown rp"
+  -- rp -> throwNotSupportedWithMsgError rp "unknown rp"
   where
     numOrCompOp :: SrcPositn -> T.Text -> (t -> Exp -> Exp -> BaseExp) -> t -> Exp -> Exp -> Exp
     numOrCompOp pos str ctor op x y =
       let coerceNumber = coerceType pos "Number"
-      in typeMdata pos str $ ctor op (coerceNumber x) (coerceNumber y)
+      in typeMdata pos str $ ctor op (coerceNumber x) $ coerceNumber y
 
     rprel2numop :: RPRel -> Maybe NumOp
     rprel2numop = \case
@@ -1268,7 +1268,7 @@ expifyBodyRP = \case
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
     coerceType :: SrcPositn -> T.Text -> Exp -> Exp
     coerceType pos typ exp@(MkExp bexp _) =
-      inferTypeFromOtherExp exp (MkExp bexp (inferredType pos [] typ))
+      inferTypeFromOtherExp exp $ MkExp bexp $ inferredType pos [] typ
 
 inferTypeFromOtherExp :: Exp -> Exp -> Exp
 inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of

@@ -23,7 +23,7 @@ module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
 
 import Data.Text qualified as T
 import Data.Time (Day(..))
-import Money (Dense)
+-- import Money (Dense)
 import Optics (re, view)
 import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
@@ -31,7 +31,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.List.NonEmpty qualified as NE
 
 -- import Data.Generics.Product.Types (types)
-import Data.String ( IsString )
+-- import Data.String ( IsString )
 -- import Data.String.Interpolate (i)
 
 -- import AnyAll qualified as AA
@@ -50,7 +50,7 @@ import Data.Coerce (coerce)
 -- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
 data L4EntType = L4EntType T.Text | L4Enum [T.Text]
   deriving stock (Show)
-  deriving (Eq, IsString, Generic, Hashable)
+  deriving (Eq, Generic, Hashable)
 
 mkEntType :: NonEmpty T.Text -> L4EntType
 mkEntType (x :| []) = L4EntType x

@@ -17,6 +17,7 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 -- TODO: Add export list
 
 import Control.Arrow ((>>>))
+import Control.Applicative (asum)
 import Data.HashSet qualified as Set
 
 import LS.XPile.MathLang.GenericMathLang.ArithOps ( allArithOps, arithOps )
@@ -901,6 +902,7 @@ pExpr = do
 pTerm :: Parser BaseExp
 pTerm = choice $ map try
   [ parens pExpr
+  , pEnum
   , pMoney
   , pVariable
   , pFloat
@@ -952,12 +954,16 @@ customBinary fname pos x y =
 
 pVariable :: Parser BaseExp
 pVariable = do
-  _localVars :: VarTypeDeclMap <- lift $ mkToLC $ asks localVars
   putativeVar <- T.pack <$> lexeme ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
   return $ EVar $ MkVar putativeVar
-  -- case isDeclaredVarTxt putativeVar localVars of
-  --   Just var -> return $ EVar var
-  --   Nothing -> fail "not a declared variable"
+
+pEnum :: Parser BaseExp
+pEnum = do
+  localVars :: VarTypeDeclMap <- lift $ mkToLC $ asks localVars
+  putativeEnumVal <- T.pack <$> lexeme (some alphaNumChar <?> "enum")
+  case isDeclaredEnumTxt putativeEnumVal localVars of
+    Just lit -> return $ ELit lit
+    Nothing -> fail "not a declared enum"
 
 pInteger :: Parser BaseExp
 pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
@@ -1036,6 +1042,20 @@ isDeclaredVarTxt :: T.Text -> VarTypeDeclMap -> Maybe Var
 isDeclaredVarTxt vartxt varTypeMap =
   let putativeVar = mkVar vartxt
   in if HM.member putativeVar varTypeMap then Just putativeVar else Nothing
+
+isDeclaredEnumTxt :: T.Text -> VarTypeDeclMap -> Maybe Lit
+isDeclaredEnumTxt valtxt varTypeMap = case enums of
+  [] -> Nothing
+  xs -> asum $ mkLitIfMatches valtxt <$> xs
+  where
+    getEnumVals (Just (L4Enum vals)) = Just vals
+    getEnumVals _ = Nothing
+
+    enums = HM.elems $ HM.mapMaybe getEnumVals varTypeMap
+
+    mkLitIfMatches v vs
+      | v `elem` vs = Just $ EENum v
+      | otherwise   = Nothing
 
 -- TODO: Look into trying to add Maybe to our ToLC transformer stack
 -- | Use this to check if some MTE is a Var

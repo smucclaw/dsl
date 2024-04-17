@@ -96,6 +96,7 @@ mkVal = \case
   GML.EBoolTrue -> MathVar "True"
   GML.EBoolFalse -> MathVar "False"
   GML.EDate day -> MathVar $ show day
+  GML.EENum val -> MathVar $ T.unpack val
 --  lit -> throwError [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> ToMathLang (Pred Double)

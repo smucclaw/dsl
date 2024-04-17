@@ -153,6 +153,8 @@ data Lit
   | EDate Day -- 4 Jan 2023
   | EInteger Integer
   | EFloat Double
+  | EENum T.Text  -- ^ actual value of enum
+--         [T.Text] -- ^ possible values of enum (no use for now, but potential ease of printing error msgs?)
   | EString T.Text
   deriving stock (Eq, Ord, Show)
 

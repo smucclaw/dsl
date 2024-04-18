@@ -173,6 +173,18 @@ spec = do
           res = ML.toMathLang l4i
       res `shouldBe` ([MathSet "Answer" (MathVar "ind.friend.age discounted by foo.bar.baz")], emptyState {symtabF = Map.fromList [("ind.friend.age discounted by foo.bar.baz",MathBin (Just "ind.friend.age discounted by foo.bar.baz") Times (MathVar "ind.friend.age") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "foo.bar.baz"))),("Answer",MathVar "ind.friend.age discounted by foo.bar.baz")]})
 
+  testLCProgram globalVars
+                "extract GIVENs from PAU rules"
+                "should include lists and basic types"
+                paus
+                paus_globalVars_gold
+
+  testLCProgram globalVars
+                "extract GIVENs from taxesPayable rules"
+                "should include enums and basic types"
+                [arithRule4]
+                arithRule4_globalVars_gold
+
   describe "testPau" do
     let l4i = defaultL4I {origrules = paus}
         res = ML.toMathLang l4i
@@ -209,13 +221,15 @@ spec = do
           res `shouldBe` 1050.0
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
-testBaseExpify name desc rule gold =
+testBaseExpify = testLCProgram (fmap exp . lcProgram)
+
+testLCProgram :: (Show a, Eq a) => (LCProgram -> a) -> String -> String -> [Rule] -> a -> Spec
+testLCProgram f name desc rules gold =
   describe name do
     it desc do
-      let toTest = runToLC $ l4ToLCProgram rule
---      let toTest = runToLC $ l4sHLsToLCExp  =<< simplifyL4Hlike rule
+      let toTest = runToLC $ l4ToLCProgram rules
       case toTest of
-        Right p -> fmap exp (lcProgram p) `shouldBe` gold
+        Right p -> f p `shouldBe` gold
         Left err -> err `shouldBe` MiscError "" ""
 
 -----------------------------------------------------------------------------
@@ -923,6 +937,17 @@ arithRule4 = mkTestRule'
 
 arithRule4_gold :: BaseExp
 arithRule4_gold = ESeq {seq = SeqExp [MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "gibbous"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EVar {var = MkVar "vivacity"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Boolean")), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "waxing"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 3}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "full"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "waived"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = ELit {lit = EBoolTrue}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Bool"), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 0}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "annualIncome"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "netWorth"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
+
+arithRule4_globalVars_gold :: GlobalVars
+arithRule4_globalVars_gold = MkGlobalVars $ Map.fromList [
+  ( MkVar "netWorth", Just ( L4EntType "Number" ) ),
+  ( MkVar "annualIncome", Just ( L4EntType "Number" ) ),
+  ( MkVar "phaseOfMoon", Just
+      ( L4Enum [ "new", "waxing", "full", "gibbous" ] )
+  ),
+  ( MkVar "vivacity", Just ( L4EntType "Boolean" ) )
+  ]
+
 
 nestedGenitives = [ MTT "ind's", MTT "friend's", MTT "age"]
 
@@ -1891,3 +1916,17 @@ paus = [
 
 testPau_gold :: ([Expr a], MyState)
 testPau_gold = ([MathSet "How Much Money Do You Get" (MathVar "PAU0")],emptyState {symtabF = Map.fromList [("Step 1",MathITE (Just "Step 1") (PredVar "there were past ADD payouts") (MathVar "claimable limited base ADD benefit") (MathVar "base ADD benefit")),("claimable limited base ADD benefit",MathBin (Just "claimable limited base ADD benefit") Minus (MathVar "claimable limit") (MathVar "policyHolder.past ADD payouts")),("Step 3",MathVar "multiplied by double triple benefit"),("juvenile limited",MathMin (Just "juvenile limited") (MathVar "Part 1") (MathVar "juvenile limit")),("ADD benefit",MathMin (Just "ADD benefit") (MathBin Nothing Plus (MathVar "addBenefit") (MathVar "otherBenefits")) (MathVar "risk cap")),("addBenefit",MathVar "PAU4"),("The Answer",MathITE (Just "The Answer") (PredVar "user input.accident_claim.selected") (MathVar "accident branch") (MathVar "illness branch")),("accident branch",MathITE (Just "accident branch") (PredVar "ADD is disqualified entirely") (MathVar "excludedZero") (MathVar "ADD benefit")),("illness",MathITE (Just "illness") (PredFold Nothing PLOr [PredVar "illness.general exclusions apply",PredVar "policy.ended"]) (MathVar "disqualified") (Undefined (Just "No otherwise case"))),("PAU4",MathVar "Step 1"),("Step 2",MathITE (Just "Step 2") (PredVar "accident.juvenile limit applies") (MathVar "juvenile limited") (MathVar "Step 1")),("multiplied by double triple benefit",MathITE (Just "multiplied by double triple benefit") (PredVar "accident.triple benefits apply") (MathBin (Just "multiplied by double triple benefit") Times (MathVar "Step 2") (Val Nothing 3.0)) (MathITE Nothing (PredVar "accident.double benefits apply") (MathBin (Just "multiplied by double triple benefit") Times (MathVar "Step 2") (Val Nothing 2.0)) (MathVar "Step 2"))),("PAU0",MathVar "The Answer"),("Step 4",MathVar "Step 3 discounted by accident.risk percentage"),("subsidiary computations",MathSet "claimable limit" (MathMin (Just "claimable limit") (MathBin Nothing Times (Val Nothing 1.5) (MathVar "total sum assured")) (MathVar "lifetime claimable limit"))),("base ADD benefit",MathVar "policy.benADD"),("Step 3 discounted by accident.risk percentage",MathBin (Just "Step 3 discounted by accident.risk percentage") Times (MathVar "Step 3") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "accident.risk percentage"))),("otherBenefits",Val (Just "otherBenefits") 50.0),("excludedZero",Val (Just "excludedZero") 0.0),("lifetime claimable limit",Val (Just "lifetime claimable limit") 4500000.0),("juvenile limit",Val (Just "juvenile limit") 500000.0),("Top-Level",MathSet "How Much Money Do You Get" (MathVar "PAU0")),("illness branch",MathITE (Just "illness branch") (PredVar "illness.disqualified") (MathVar "excludedZero") (MathVar "policy.benMR"))], symtabP = Map.fromList [("ADD is disqualified entirely",PredFold (Just "ADD is disqualified entirely") PLOr [PredComp Nothing CGTE (MathVar "policyHolder.age") (Val Nothing 75.0),PredVar "accident.general exclusions apply",PredVar "policy.ended"]),("there were past ADD payouts",PredComp (Just "there were past ADD payouts") CGT (MathVar "policyHolder.past ADD payouts") (Val Nothing 0.0))]})
+
+paus_globalVars_gold :: GlobalVars
+paus_globalVars_gold = MkGlobalVars $ Map.fromList [
+  ( MkVar "x", Just ( L4EntType "Number" ) ),
+  ( MkVar "y", Just ( L4EntType "Number" ) ),
+  ( MkVar "user input", Just ( L4EntType "Dictionary" ) ),
+  ( MkVar "accident", Just ( L4EntType "Accident" ) ),
+  ( MkVar "addBenefit", Just ( L4EntType "Number" ) ),
+  ( MkVar "otherBenefits", Just ( L4List ( L4EntType "Number" ) ) ),
+  ( MkVar "total sum assured", Just ( L4EntType "Number" ) ),
+  ( MkVar "policyHolder", Just ( L4EntType "PolicyHolder" ) ),
+  ( MkVar "policy", Just ( L4EntType "Policy" ) ),
+  ( MkVar "illness", Just ( L4EntType "Claim" ) )
+  ]

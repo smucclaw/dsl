@@ -28,7 +28,7 @@ import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 
 import AnyAll qualified as AA
 import LS.Types as L4
-  (SrcRef(..), RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType,
+  (SrcRef(..), RelationalPredicate(..), RPRel(..), MTExpr(..),
   HornClause (..), HornClause2, BoolStructR,
   TypeSig(..), TypedMulti,
   SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
@@ -53,7 +53,6 @@ import Flow ((|>))
 import Optics hiding ((|>))
 -- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
--- import Data.List (break)
 import Data.List.NonEmpty qualified as NE
 -- import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
@@ -470,10 +469,10 @@ extractBaseHL rule =
 mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
 mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
   where
-    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe (NE.NonEmpty L4.EntityType))]
+    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe TypeSig)]
     declaredVarsToAssocList dvars = dvars ^.. folded % to getGiven % folded
 
-    convertL4Types :: [(T.Text, Maybe (NE.NonEmpty L4.EntityType))] -> [(Var, Maybe L4EntType)]
+    convertL4Types :: [(T.Text, Maybe TypeSig)] -> [(Var, Maybe L4EntType)]
     convertL4Types = each % _1 %~ mkVar >>> each % _2 %~ fmap mkEntType
 
 mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap

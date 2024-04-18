@@ -34,12 +34,8 @@ import Data.List.NonEmpty qualified as NE
 -- import Data.String ( IsString )
 -- import Data.String.Interpolate (i)
 
--- import AnyAll qualified as AA
--- import LS.Types qualified as L4
--- import LS.Types (RelationalPredicate(..), RPRel(..), MTExpr(..))
--- import LS.Rule as L4 (Rule(..), extractMTExprs)
+import LS.Types (TypeSig(..), ParamType(..), enumLabels)
 
--- import Data.HashSet qualified as HS
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable)
 import Data.Coerce (coerce)
@@ -48,13 +44,16 @@ import Data.Coerce (coerce)
 ------------ L4 declared entity types ----------------------
 
 -- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
-data L4EntType = L4EntType T.Text | L4Enum [T.Text]
+data L4EntType = L4EntType T.Text | L4Enum [T.Text] | L4List L4EntType
   deriving stock (Show)
   deriving (Eq, Generic, Hashable)
 
-mkEntType :: NonEmpty T.Text -> L4EntType
-mkEntType (x :| []) = L4EntType x
-mkEntType xs = L4Enum $ NE.toList xs
+mkEntType :: TypeSig -> L4EntType
+mkEntType ts = case ts of
+  SimpleType TOne      tn -> L4EntType tn
+  SimpleType TOptional tn -> L4EntType tn -- no optional
+  SimpleType _         tn -> L4List $ mkEntType $ SimpleType TOne tn -- lists, sets, no difference
+  InlineEnum _         pt -> L4Enum $ enumLabels pt -- assuming no lists here (is there an example of a list of enum values?)
 
 {-------------------------------------------------------
     AST
@@ -289,7 +288,7 @@ This should be useful b/c most langs require more upfront declaration of global 
 --newtype GlobalVars = MkGlobalVars {mkGlobalVars :: HashMap Var (Maybe L4EntType)}
 newtype GlobalVars = MkGlobalVars (HashMap Var (Maybe L4EntType))
   deriving stock (Show)
-  deriving (Semigroup, Monoid) via (HashMap Var (Maybe L4EntType))
+  deriving (Semigroup, Monoid, Eq) via (HashMap Var (Maybe L4EntType))
 makePrisms ''GlobalVars
 
 mkGlobalVars :: HashMap Var (Maybe L4EntType) -> GlobalVars

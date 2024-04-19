@@ -544,7 +544,7 @@ expifyHL hl = do
 3. Block of statements / expressions (TODO)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
-baseExpify (isLambda -> Just (operator, v:vs, bexp)) = do
+baseExpify (runToLC . isLambda -> Right (operator, v:vs, bexp)) = do
   userFuns <- ToLC EffState.get
   mkToLC $ EffState.put $ operator : userFuns
   ELam v <$> mkLambda vs bexp
@@ -584,28 +584,28 @@ isIf hl =
 -- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
 -- (GIVEN x) DECIDE,prefixF,x,IS,x * (1 - y) -- y may be a global variable or whatever, we don't care
 -- (GIVEN x) DECIDE,x,postfixF,IS,x * (1 - y) -- as above
-isLambda :: SimpleHL -> Maybe (UserDefinedFun, [Var], BaseExp)
+isLambda :: SimpleHL -> ToLC (UserDefinedFun, [Var], BaseExp)
 isLambda hl = case HM.keys hl.shcGiven of
-  [] -> Nothing
+  [] -> throwNotSupportedWithMsgError hl "not a function, because no given arguments"
   ks -> case hl.baseHL of
-    OneClause (HeadOnly (hcHead -> rp))
-       -> case runToLC $ varsInBody ks rp of
-            Left _error -> {- trace [i|isLambda: #{error}|] -} Nothing
-            Right (operator, bexp) -> Just (operator, ks, bexp)
-    _ -> Nothing
+    OneClause (HeadOnly (hcHead -> rp)) -> do
+      (operator, bexp) <- varsInBody ks rp
+      pure (operator, ks, bexp)
+    _ -> throwNotSupportedWithMsgError hl "only checking for lambdas in single clauses"
   where
     -- check if all the vars are present in function body
     varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, BaseExp)
     varsInBody vars (RPConstraint fname RPis fbody) = do
-      expr <- parseExpr $ MTT $ textifyMTEs fbody
+      expr <- baseExpifyMTEs fbody
       let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
       pos <- mkToLC $ asks currSrcPos
       (var, operator) <- mkOperator pos fname vars
       if all (`elem` varsInExpr) vars
         then pure ((var, noExtraMdata expr, vars, operator), expr)
-        else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
+        else throwNotSupportedWithMsgError ([i|#{varsInExpr} != #{vars}|] :: T.Text) "not all varsInExprs defined"
       where
         -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
+        mkOperator :: SrcPositn -> [MTExpr] -> [Var] -> ToLC (Var, Operator Parser BaseExp)
         mkOperator pos [MTT f, MTT x] [var]
           | MkVar f /= var && MkVar x == var
           = pure (MkVar f, prefix f (customUnary (MkVar f) pos))

@@ -106,7 +106,7 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
             deriving (Eq, Generic)
---            deriving (Eq, Generic, Show) if you prefer to output the original AST
+--            deriving (Eq, Generic, Show) -- if you prefer to output the original AST
 
 instance (Show a) => Show (Expr a) where
   show = showExpr
@@ -209,17 +209,17 @@ x %| ys = second (Node ([],[[i|mapping / #{x} over a list|]])) <$> mapAndUnzipM 
 data MathSection a
   = Id
   | MathSection MathBinOp (Expr a)
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data MathBinOp = Plus | Minus | Times | Divide | Modulo
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- | we can reduce a list of expressions to a single value...
 data SomeFold = FoldSum      -- ^ by taking the sum
               | FoldProduct  -- ^ by taking the product
               | FoldMax      -- ^ by taking the maximum
               | FoldMin      -- ^ by taking the minimum
-              deriving (Eq, Show)
+              deriving (Eq, Show, Generic)
 
 -- ** Lists
 
@@ -231,7 +231,7 @@ data ExprList a
   | ListMapIf ExprLabel (MathSection a) (Expr a) Comp (ExprList a) -- ^ leaving the unwanted elements unchanged
   | ListConcat ExprLabel [ExprList a] -- ^ [[a]] -> [a]
   | ListITE    ExprLabel (Pred a) (ExprList a) (ExprList a)        -- ^ if-then-else for expr lists
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- * Some sugary constructors for expressions in our math language.
 
@@ -247,7 +247,7 @@ x |> ys = ListFilt Nothing x CGT ys
 
 -- | To support our notion of Data.Ord and Eq
 data Comp = CEQ | CGT | CLT | CGTE | CLTE | CNEQ
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- | @show@ for comparisons
 shw :: Comp -> String
@@ -308,7 +308,7 @@ data Pred a
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   | PredFold ExprLabel AndOr (PredList a)             -- ^ and / or a list
-  deriving (Eq)
+  deriving (Eq, Generic)
 
 instance (Show a) => Show (Pred a) where
   show = showPred
@@ -324,7 +324,7 @@ showPred (PredITE  _lbl p1 p2 p3) = [i|if #{p1} then #{p2} else #{p3}|]
 showPred (PredFold _lbl andor plist) = [i|#{andor}(#{plist})|]
 
 data AndOr = PLAnd | PLOr
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 getPredLabel :: Pred a -> ExprLabel
 getPredLabel ( PredVal      lbl  _     ) = lbl
@@ -775,7 +775,7 @@ infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 (@|!) = PredNot . Just
 
 data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- | some example runs
 toplevel :: IO ()

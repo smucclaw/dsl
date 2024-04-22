@@ -336,28 +336,24 @@ gml2ml exp =
                 [Just arg] -> [i|#{f} #{arg}|]
                 [Just arg1, Just arg2] -> [i|#{arg1} #{f} #{arg2}|]
                 _ -> [i|TODO: #{f} applied to 3 or more arguments, or the arguments don't have labels|]
-              expandedExpr = replaceVars boundVars args expr
+              expandedExpr = replaceVars (zip boundVars args) expr
               namedExpr = funAppliedToArgsName @|= expandedExpr
           ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
           pure $ MathVar funAppliedToArgsName
-
     mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
 
-    -- TODO: This will do the wrong thing if two variables have the same name
-    -- Solution: Replace all vars in parallel instead of one at a time
-    replaceVars :: [String] -> [Expr Double] -> Expr Double -> Expr Double
-    replaceVars [] [] expr = expr
-    replaceVars (k:ks) (v:vs) expr = replaceVar k v $ replaceVars ks vs expr
-    replaceVars _ _ expr =
-      trace "replaceVars: Wrong number of arguments for function" expr
-
-    replaceVar :: String -> Expr Double -> Expr Double -> Expr Double
-    replaceVar k v = go
-        where
-          -- l  = cosmosOf (gplate @(Expr Double)) % filteredBy (_Ctor @"MathVar")
-          go = \case
-                (MathVar s) | k == s -> v
-                x -> over (gplate @(Expr Double)) go x
+--             [(x, a),  (y, b)]          x + y          a + b
+replaceVars :: [(String, Expr Double)] -> Expr Double -> Expr Double
+replaceVars table = returnBody . replace
+  where
+    replace = \case
+      MathVar k@(_:_) -> case lookup k table of
+                      Just v -> v
+                      Nothing -> MathVar k
+      x -> over (gplate @(Expr Double)) replace x
+    returnBody = \case
+      MathApp lbl _name _vars body -> body
+      expr -> expr
 {-  ECompOp
     ELet
     EIs

@@ -9,7 +9,7 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-22.17
+resolver: lts-22.18
 
 packages:
 - .
@@ -32,7 +32,7 @@ extra-deps:
 # ../../../../baby-l4
 # and then you would comment out this thing which can be updated less frequently as main receives pull requests.
 - github: smucclaw/baby-l4
-  commit: 074632d4821a2e85dc2d1573c7f085127f6f3250
+  commit: a8c47fbc2763d3a7ae5de4f0d65d97017988659d
 
 - github: smucclaw/gf-core
   commit: f4b71cf8ba56a949c627d08535c251fbd6654033

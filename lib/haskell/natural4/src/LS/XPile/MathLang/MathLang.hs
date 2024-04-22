@@ -54,7 +54,7 @@ toMathLang l4i =
 lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
 lcProgToMathLang lamCalcProgram = (toplevels, st)
   where
-    userfuns = getUserFuns lamCalcProgram.userFuns
+    userfuns = getUserFuns 0 Map.empty lamCalcProgram.userFuns
     st = gmls2ml userfuns lamCalcProgram.lcProgram
     giveth = T.unpack <$> lamCalcProgram.giveths
     toplevels = case Map.lookup "Top-Level" st.symtabF of
@@ -229,14 +229,34 @@ gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
       _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
-getUserFuns :: SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
-getUserFuns = Map.map f
+getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
+getUserFuns ix firstPass funs = trace [i|#{ix}: firstPass = #{firstPass}|] $
+  case firstPass == newFuns of
+    True -> newFuns
+    False -> getUserFuns (ix+1) newFuns funs
   where
+    newFuns = Map.map f funs
     f :: ([GML.Var], GML.Exp) -> VarsAndBody
-    f (vars, exp) =
-      case runToMathLang Map.empty $ gml2ml exp of
-            Right mlExp -> ([T.unpack v | GML.MkVar v <- nub vars], mlExp)
-            Left _ -> ([], Undefined Nothing)
+    f (boundVars, exp) =
+      case runToMathLang firstPass $ mkAppForUF exp [] of
+        Right mlExp -> ([T.unpack v | GML.MkVar v <- nub boundVars], mlExp)
+        Left error -> trace (if firstPass /= Map.empty then [i|getUserFuns: #{error}|] else "") ([], Undefined Nothing)
+
+    mkAppForUF :: GML.Exp -> [String] -> ToMathLang (Expr Double)
+    mkAppForUF (isApp -> Just (f, arg)) args = mkAppForUF f (arg : args)
+    mkAppForUF (GML.exp -> EVar (GML.MkVar f)) args = do
+      userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
+      case Map.lookup (T.unpack f) userFuns of
+        Nothing -> fail [i|mkAppForUF: this really shouldn't happen, but #{f} is not found in userFuns|]
+        Just (boundVars, expr) -> do
+          let newVars = map MathVar args
+              replacedDef = replaceVars (zip boundVars newVars) expr
+          pure $ MathApp Nothing (T.unpack f) args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
+    mkAppForUF exp _ = gml2ml exp
+
+    isApp :: GML.Exp -> Maybe (GML.Exp, String)
+    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) = Just (f, T.unpack arg)
+    isApp _ = Nothing
 
 gml2ml :: GML.Exp -> ToMathLang (Expr Double)
 gml2ml exp =

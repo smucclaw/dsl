@@ -47,22 +47,24 @@ toMathLang :: Interpreted -> ([Expr Double], MyState)
 toMathLang l4i =
   let l4Hornlikes =
        l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
-    Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
-    Right lamCalcProgram ->
-      let userfuns = getUserFuns lamCalcProgram.userFuns
-          st = gmls2ml userfuns lamCalcProgram.lcProgram
-          giveth = T.unpack <$> lamCalcProgram.giveths
-          toplevels = case Map.lookup "Top-Level" st.symtabF of
-            Just exp -> [exp]
-            Nothing ->
-              case giveth of
-                [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
-                ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
-                      [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
-                      exprs -> exprs
-            in (toplevels, st)
+        Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
+        Right prog -> lcProgToMathLang prog
+
+lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
+lcProgToMathLang lamCalcProgram = (toplevels, st)
+  where
+    userfuns = getUserFuns lamCalcProgram.userFuns
+    st = gmls2ml userfuns lamCalcProgram.lcProgram
+    giveth = T.unpack <$> lamCalcProgram.giveths
+    toplevels = case Map.lookup "Top-Level" st.symtabF of
+      Just exp -> [exp]
+      Nothing ->
+        case giveth of
+          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
+          ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
+                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
+                exprs -> exprs
 
 --numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl :: GML.NumOp -> ToMathLang MathBinOp

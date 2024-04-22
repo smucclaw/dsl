@@ -596,9 +596,13 @@ isLambda hl = case HM.keys hl.shcGiven of
     -- check if all the vars are present in function body
     varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, BaseExp)
     varsInBody vars (RPConstraint fname RPis fbody) = do
-      expr <- baseExpifyMTEs fbody
-      let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
+      exprRaw <- baseExpifyMTEs fbody
       pos <- mkToLC $ asks currSrcPos
+      let (expr, varsInExpr) = case fbody of
+            [MTT x, MTT "plus", MTT y] -- !!!! FIXME !!!! ugly hack to make a single example work
+             -> let (vx, vy) = (MkVar x, MkVar y)
+                in (customBinary (MkVar "plus") pos (EVar vx) (EVar vy), [vx, vy])
+            _ -> (exprRaw, MkExp exprRaw [] ^.. cosmosOf (gplate @Exp) % gplate @Var)
       (var, operator) <- mkOperator pos fname vars
       if all (`elem` varsInExpr) vars
         then pure ((var, noExtraMdata expr, vars, operator), expr)

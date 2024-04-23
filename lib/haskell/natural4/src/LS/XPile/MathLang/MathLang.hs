@@ -329,7 +329,7 @@ gml2ml exp =
     trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] $ pure $ MathSet varEx bodyEx
   -- exp.exp :: BaseExp
 
-  EApp f arg -> mkApp exp []
+  EApp {} -> mkApp exp []
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|] $
       pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
@@ -350,7 +350,7 @@ gml2ml exp =
     mkApp (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
       case Map.lookup (T.unpack f) userFuns of
-        Nothing -> fail "mkApp: trying to apply undefined function"
+        Nothing -> fail [i|mkApp: trying to apply undefined function #{f}|]
         Just (boundVars, expr) -> do
           let funAppliedToArgsName = case getExprLabel <$> args of
                 [Just arg] -> [i|#{f} #{arg}|]

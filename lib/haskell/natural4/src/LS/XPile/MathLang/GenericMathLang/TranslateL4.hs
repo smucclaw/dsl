@@ -362,8 +362,8 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
 newtype ToLC a =
   ToLC (Eff '[Reader Env,
               EffState.State [UserDefinedFun],
-        -- Might be better to just do a separate pass that finds the global vars --- not sure rn
-        Error ToLCError] a )
+              Error ToLCError] a
+        )
   deriving newtype (Functor, Applicative, Monad)
 
 _ToLC :: Iso' (ToLC a) (Eff '[Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a)
@@ -406,7 +406,7 @@ l4ToLCProgram rules = do
   let customOpers = execToLC $ traverse expifyHL l4HLs -- to fill env with user-defined functions
       addCustomOpers env = env {userDefinedFuns = customOpers <> userDefinedFuns env}
       withCustomOpers = over _ToLC (local addCustomOpers)
-  lcProg <- withCustomOpers $ traverse expifyHL l4HLs
+  lcProg <- withCustomOpers $ traverse (expifyHL' True) l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
                    , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
@@ -519,10 +519,12 @@ l4sHLsToLCSeqExp = F.foldrM go mempty
     go hornlike seqExp = consSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
+expifyHL = expifyHL' False
 
-expifyHL :: SimpleHL -> ToLC Exp
-expifyHL hl = do
-  bexp <- baseExpify hl
+expifyHL' :: Bool -> SimpleHL -> ToLC Exp
+expifyHL' verbose hl = do
+  userFuns <- ToLC $ asks userDefinedFuns
+  bexp <- trace (if verbose then [i|\nexpifyHL: userFuns = #{getFunName <$> userFuns}\n          hl = #{hl}\n|] else "") $ baseExpify hl
   return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
    where
@@ -836,8 +838,7 @@ baseExpifyMTEs mtes = do
       -- no userfuns here
         (_xs,[]) -> do
           let parenExp = MTT $ textifyMTEs $ parenExps mtes
-          expParsedAsText <-
-            trace [i|added parentheses #{parenExp}|] $ parseExpr parenExp
+          expParsedAsText <- parseExpr parenExp
           case expParsedAsText of
             ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
             -- TODO: this should definitely not be a sequence, what should it be instead???
@@ -865,7 +866,7 @@ baseExpifyMTEs mtes = do
       where
         parenNE :: T.Text -> T.Text
         parenNE text
-          | text PCRE.≈ [PCRE.re| |\+|\*|\-|\/|] = [i|(#{text})|]
+          | text PCRE.≈ [PCRE.re| |\+|\*|\-|\/|] = trace [i|added parentheses (#{text})|] [i|(#{text})|]
           | otherwise = text
 
 parseExpr :: MTExpr -> ToLC BaseExp

@@ -36,7 +36,7 @@ import Data.List.NonEmpty qualified as NE
 
 import LS.Types (TypeSig(..), ParamType(..), enumLabels)
 
-import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict (HashMap, empty)
 import Data.Hashable (Hashable)
 import Data.Coerce (coerce)
 -- import GHC.Generics (Generic)
@@ -312,7 +312,16 @@ data LCProgram =
               , giveths :: [T.Text] -- if the L4 program specifies what it giveth, record it here
               , userFuns :: HashMap String ([Var], Exp)
               }
-  deriving stock (Show)
+  deriving stock (Show, Eq)
+
+emptyProgram :: LCProgram
+emptyProgram = MkLCProgram {
+    progMetadata = MkLCProgMdata ""
+  , lcProgram = []
+  , globalVars = MkGlobalVars empty
+  , giveths = []
+  , userFuns = empty
+  }
 
 
 {----------------------------------------------------------

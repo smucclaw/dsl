@@ -297,6 +297,12 @@ initialEnv = MkEnv { localVars = HM.empty
                    , currSrcPos = MkPositn 0 0
                    , logConfig = defaultLogConfig }
 
+addCustomFuns :: [UserDefinedFun] -> Env -> Env
+addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
+
+--withCustomFuns :: [UserDefinedFun] -> a
+withCustomFuns funs = over _ToLC (local $ addCustomFuns funs)
+
 -- vars and vals
 getTypeString :: MTExpr -> String
 getTypeString = \case
@@ -404,14 +410,14 @@ l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   let customOpers = execToLC $ traverse expifyHL l4HLs -- to fill env with user-defined functions
-      addCustomOpers env = env {userDefinedFuns = customOpers <> userDefinedFuns env}
-      withCustomOpers = over _ToLC (local addCustomOpers)
-  lcProg <- withCustomOpers $ traverse (expifyHL' True) l4HLs
+      customOpers' = execToLC $ withCustomFuns customOpers $ traverse (expifyHL) l4HLs
+
+  lcProg <- withCustomFuns customOpers' $ traverse (expifyHL' True) l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
                    , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
                    , giveths = giveths
-                   , userFuns = getUserFuns customOpers}
+                   , userFuns = getUserFuns customOpers'}
   where
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
@@ -524,7 +530,7 @@ expifyHL = expifyHL' False
 expifyHL' :: Bool -> SimpleHL -> ToLC Exp
 expifyHL' verbose hl = do
   userFuns <- ToLC $ asks userDefinedFuns
-  bexp <- trace (if verbose then [i|\nexpifyHL: userFuns = #{getFunName <$> userFuns}\n          hl = #{hl}\n|] else "") $ baseExpify hl
+  bexp <- trace (if verbose then [i|\nexpifyHL: userFuns = #{getFunName <$> userFuns}\n          hl = #{hl}\n|] else "") $ baseExpify userFuns hl
   return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
    where
@@ -545,20 +551,20 @@ expifyHL' verbose hl = do
 2. Lam Def
 3. Block of statements / expressions (TODO)
 -}
-baseExpify :: SimpleHL -> ToLC BaseExp
-baseExpify (runToLC . isLambda -> Right (operator, v:vs, bexp)) = do
-  userFuns <- ToLC EffState.get
-  mkToLC $ EffState.put $ operator : userFuns
+baseExpify :: [UserDefinedFun] -> SimpleHL -> ToLC BaseExp
+baseExpify funs (runToLC . isLambda funs -> Right (operator, v:vs, bexp)) = do
+  trace [i|baseExpify: got a fun #{getFunName operator} #{v:vs} = #{bexp}|] $
+    mkToLC $ EffState.modify $ (operator :)
   ELam v <$> mkLambda vs bexp
 
-baseExpify hl@(shRLabel -> Just (_section, _number, rname)) = do
-  bexp <- baseExpify $ hl {shRLabel = Nothing}
+baseExpify _funs hl@(shRLabel -> Just (_section, _number, rname)) = do
+  bexp <- baseExpify _funs $ hl {shRLabel = Nothing}
   mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
 
-baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
-baseExpify hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
-baseExpify (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
-baseExpify hornlike = throwNotYetImplError hornlike
+baseExpify _ (isIf -> Just (hl, hc)) = toIfExp hl hc
+baseExpify _ hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
+baseExpify _ (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
+baseExpify _ hornlike = throwNotYetImplError hornlike
 -- for the future, remove the catch all `baseExpify hornlike` and add stuff like
 -- baseExpify (isLamDef -> ...) = ...
 -- baseExpify (isBlockOfExps -> ...)) = ...
@@ -586,45 +592,65 @@ isIf hl =
 -- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
 -- (GIVEN x) DECIDE,prefixF,x,IS,x * (1 - y) -- y may be a global variable or whatever, we don't care
 -- (GIVEN x) DECIDE,x,postfixF,IS,x * (1 - y) -- as above
-isLambda :: SimpleHL -> ToLC (UserDefinedFun, [Var], BaseExp)
-isLambda hl = case HM.keys hl.shcGiven of
-  [] -> throwNotSupportedWithMsgError hl "not a function, because no given arguments"
-  ks -> case hl.baseHL of
-    OneClause (HeadOnly (hcHead -> rp)) -> do
-      (operator, bexp) <- varsInBody ks rp
-      pure (operator, ks, bexp)
-    _ -> throwNotSupportedWithMsgError hl "only checking for lambdas in single clauses"
+isLambda :: [UserDefinedFun] -> SimpleHL -> ToLC (UserDefinedFun, [Var], BaseExp)
+isLambda funs hl = case HM.keys hl.shcGiven of
+  []   -> throwNotSupportedWithMsgError hl "not a function, because no given arguments"
+  givens -> case hl.baseHL of
+    OneClause (isConstraint -> Just (lhs, rhs)) -> do
+      -- Step 1: is the LHS of the form `f x`, `x f y` or `x f`?
+      -- This step throws error if not.
+      (fname, boundVars, operMP) <- mkOperator lhs givens
+
+      -- Step 2: parse RHS and see if all bound variables are in the body
+      let funNames = fmap getFunName funs
+      exprRHS <- trace [i|\nisLambda.funs = #{funNames}\n|] $
+        withCustomFuns funs $ baseExpifyMTEs' "called from isLambda " rhs
+      let varsRHS = MkExp exprRHS [] ^.. cosmosOf (gplate @Exp) % gplate @Var
+          nonFunVarsRHS = [v | v <- varsRHS, v `notElem` funNames]
+      if all (`elem` nonFunVarsRHS) givens
+          then pure ((fname, noExtraMdata exprRHS, boundVars, operMP), boundVars, exprRHS)
+          else trace [i|\n!!! #{nonFunVarsRHS} != #{givens} !!!\n\n\n|] $ throwNotSupportedWithMsgError ([i|#{nonFunVarsRHS} != #{givens}|] :: T.Text) "not all varsInExprs defined"
+
+    _ -> throwNotSupportedWithMsgError hl "only checking for lambdas in RPConstraints in single clauses"
   where
-    -- check if all the vars are present in function body
-    varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, BaseExp)
-    varsInBody vars (RPConstraint fname RPis fbody) = do
-      exprRaw <- baseExpifyMTEs fbody
+    isConstraint (HeadOnly (hcHead -> RPConstraint lhs RPis rhs)) = Just (lhs, rhs)
+    isConstraint _ = Nothing
+
+    -- Split into version with Maybe, so I can call it and check if it succeeds without the whole calling function erroring
+    mkOperator :: [MTExpr] -> [Var] -> ToLC (Var, [Var], Operator Parser BaseExp)
+    mkOperator mtes vars = do
       pos <- mkToLC $ asks currSrcPos
-      let (expr, varsInExpr) = case fbody of
-            [MTT x, MTT "plus", MTT y] -- !!!! FIXME !!!! ugly hack to make a single example work
-             -> let (vx, vy) = (MkVar x, MkVar y)
-                in (customBinary (MkVar "plus") pos (EVar vx) (EVar vy), [vx, vy])
-            _ -> (exprRaw, MkExp exprRaw [] ^.. cosmosOf (gplate @Exp) % gplate @Var)
-      (var, operator) <- mkOperator pos fname vars
-      if all (`elem` varsInExpr) vars
-        then pure ((var, noExtraMdata expr, vars, operator), expr)
-        else throwNotSupportedWithMsgError ([i|#{varsInExpr} != #{vars}|] :: T.Text) "not all varsInExprs defined"
+      case maybeOperator pos mtes vars of
+        Just op -> pure op
+        Nothing -> throwNotSupportedWithMsgError "isLambda:" [i|not a lambda expression: #{mtes}|]
+
+    -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
+    maybeOperator :: SrcPositn -> [MTExpr] -> [Var] -> Maybe (Var, [Var], Operator Parser BaseExp)
+    maybeOperator pos [MTT f, MTT x] [var]
+      | MkVar f /= var && MkVar x == var =
+      let mkBexp = customUnary (MkVar f) pos
+      in Just (
+        MkVar f,                   -- fun name
+        [var],                     -- bound vars
+        prefix f mkBexp)           -- megaparsec operator
+    maybeOperator pos [MTT x, MTT f] [var]
+      | MkVar f /= var && MkVar x == var =
+      let mkBexp = customUnary (MkVar f) pos
+      in Just (
+        MkVar f,                   -- fun name
+        [var],                     -- bound vars
+        postfix f mkBexp)           -- megaparsec operator
+    maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
+      | all (`elem` vs) [vx, vy]
+        && f `notElem` $(TH.lift allArithOps)
+        = Just (
+            MkVar f,                     -- fun name
+            [vx, vy],                    -- bound vars
+            binary f mkBexp)             -- megaparsec operator
       where
-        -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
-        mkOperator :: SrcPositn -> [MTExpr] -> [Var] -> ToLC (Var, Operator Parser BaseExp)
-        mkOperator pos [MTT f, MTT x] [var]
-          | MkVar f /= var && MkVar x == var
-          = pure (MkVar f, prefix f (customUnary (MkVar f) pos))
-        mkOperator pos [MTT x, MTT f] [var]
-          | MkVar f /= var && MkVar x == var
-          = pure (MkVar f, postfix f (customUnary (MkVar f) pos))
-        mkOperator pos [MTT x, MTT f, MTT y] [_v1, _v2]
-          | all (`elem` vars) [MkVar x, MkVar y] -- only infix allowed
-          = pure (MkVar f, binary f (customBinary (MkVar f) pos))
-          ---- TODO: does the default expression parser support prefixed binary functions?
-        mkOperator _pos mtes vars =
-          throwNotSupportedWithMsgError "mkOperator:" [i|mtes=#{mtes}\nvars=#{vars}|]
-    varsInBody _ _ = throwNotSupportedWithMsgError "varsInBody:" "not a RPConstraint"
+        mkBexp = customBinary (MkVar f) pos
+        (vx, vy) = (MkVar x, MkVar y)
+    maybeOperator _pos _mtes _vars = Nothing
 
 isMultiClause :: SimpleHL -> [SimpleHL]
 isMultiClause hl =
@@ -750,8 +776,10 @@ isFun funs mte =
     MTT t -> t `elem` allFuns
     _ -> False
 
-baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
-baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
+baseExpifyMTEs = baseExpifyMTEs' ""
+
+baseExpifyMTEs' :: String -> [MTExpr] -> ToLC BaseExp
+baseExpifyMTEs' _ (splitGenitives -> (Just g, rest@(_:_))) = do
   userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isFun userFuns) rest of
@@ -770,7 +798,7 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
       pure $ EApp fArg1 arg2
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
-baseExpifyMTEs mtes = do
+baseExpifyMTEs' msg mtes = do
   userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   case mtes of
     [mte] -> do
@@ -813,7 +841,9 @@ baseExpifyMTEs mtes = do
             [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
             _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-    mtes -> do
+--    mtes -> do
+    mtes -> trace (msg <> [i|userFuns = #{userFuns}|] ) $ do
+
       case break (isFun userFuns) mtes of
       -- function, rest
         ([],f:ys) -> do
@@ -824,8 +854,9 @@ baseExpifyMTEs mtes = do
 
       -- mte1 [, …, mteN], function, rest
         (xs,f:ys) -> do
-          arg1 <- expifyMTEsNoMd xs
+          arg1 <- trace [i|baseExpifyMTEs: found userfun #{f}|] $ expifyMTEsNoMd xs
           arg2 <- expifyMTEsNoMd ys
+          -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
           bexp <- parseExpr $ MTT $ T.unwords ["x", mtexpr2text f, "y"]
           case bexp of
             ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
@@ -1022,8 +1053,10 @@ sc = L.space
   (L.skipLineComment "//")       -- just copied and pasted this from the internet
   (L.skipBlockComment "/*" "*/") -- don't think L4 has this kind of comments but ¯\_(ツ)_/¯
 
-expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
-expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
+expifyMTEsNoMd = expifyMTEsNoMd' "expifyMTEsNoMd "
+
+expifyMTEsNoMd' :: String -> [MTExpr] -> ToLC Exp
+expifyMTEsNoMd' msg mtes = addMetadataToVar =<< baseExpifyMTEs' (msg <> " via expifyMTEsNoMd ") mtes
  where
   addMetadataToVar :: BaseExp -> ToLC Exp
   -- This is supposed to work as follows:
@@ -1107,7 +1140,7 @@ mkSetVarTrue putativeVar = do
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
-  arg <- noExtraMdata <$> baseExpifyMTEs argMTEs
+  arg <- noExtraMdata <$> baseExpifyMTEs' "coming from mkOtherSetVar " argMTEs
   mkSetVarFromMTEsHelper putativeVar arg
 
 {- | TODO: Check that it meets the formatting etc requirements for a variable,
@@ -1232,7 +1265,7 @@ expifyBodyRP = \case
     pos <- mkToLC $ asks currSrcPos
     pure $ typeMdata pos "Bool" $ ELit EBoolTrue -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
-  _rp@(RPMT mtes) -> expifyMTEsNoMd mtes
+  _rp@(RPMT mtes) -> expifyMTEsNoMd' "coming from expifyBodyRP " mtes
 
   RPConstraint lefts rel rights ->
     expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]

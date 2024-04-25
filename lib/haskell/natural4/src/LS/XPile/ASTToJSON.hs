@@ -1,10 +1,12 @@
 {-# OPTIONS_GHC -W #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields #-}
 {-# LANGUAGE DerivingVia, DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels #-}
+{-# LANGUAGE OverloadedLists, OverloadedStrings #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies #-}
 
 -- {-# LANGUAGE OverloadedStrings #-}
 {-
@@ -62,44 +64,134 @@ import LS.Types as SFL4
   )
 import Debug.Trace (trace)
 -- import Data.List (isSuffixOf, intercalate)
-import Data.Char (isAlphaNum)
+import Data.Char (isAlphaNum, isSpace)
 import Data.Generics.Product.Types (HasTypes)
 import Data.HashMap.Strict qualified as M
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 import qualified Data.Map.Strict as Map
 import Data.List (nub, intercalate)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
 import Control.Monad (void)
 import Explainable.MathLang
 import LS.Rule (Rule, Interpreted (..))
 import LS.XPile.MathLang.MathLang (toMathLang)
+import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
+import LS.XPile.MathLang.GenericMathLang.TranslateL4 hiding (Parser, symbol, lexeme)
+import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen) 
+-- import Data.Aeson
+import Optics
+  ( Field1 (_1),
+    Field2 (_2),
+    Ixed (ix),
+    toListOf,
+    (%),
+    (^.),
+    (^..),
+    (^?),
+  ) -- the Rule record has a `has` field
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Void (Void)
+
 
 ---mathlang ast---
 
+-- get global vars
 
-extractVars :: MyState -> (M.HashMap String (Expr Double), M.HashMap String (Pred Double)) -> (M.HashMap String (Expr Double), M.HashMap String (Pred Double))
-extractVars MyState { symtabF = symtabF', symtabP = symtabP' } (mathVars, predVars) =
-  (M.union symtabF' mathVars, M.union symtabP' predVars)
+-- parsing from mathlanggen
+data GlobalVar = MkVar T.Text L4EntType deriving (Show)
 
-toJSON :: (M.HashMap String (Expr Double), M.HashMap String (Pred Double)) -> String
-toJSON (mathVars, predVars) = "{\n" ++ properties ++ "}\n"
-  where
-    properties = intercalate ",\n" $ map formatProperty [("properties", mathVars)]
-    formatProperty (name, vars) = "\"" ++ name ++ "\": {\n" ++ varsList ++ "\n}"
-      where
-        varsList = intercalate ",\n" $ map formatVar (M.keys vars)
-        formatVar var = "\"" ++ var ++ "\": { \"$ref\": \"#/$defs/" ++ var ++ "\" }"
+type Parser = Parsec Void String
 
-getState :: Interpreted -> MyState
-getState l4i = snd $ toMathLang l4i
+parseGlobalVar :: Parser GlobalVar
+parseGlobalVar = do
+    _ <- space
+    _ <- string "( MkVar"
+    _ <- space
+    _ <- char '"'
+    varName <- some (alphaNumChar <|> char '_')
+    _ <- char '"'
+    _ <- space
+    _ <- char ','
+    _ <- space
+    _ <- string "Just"
+    _ <- space
+    varType <- parseVarType
+    _ <- space
+    _ <- char ')'
+    _ <- space
+    return $ LS.XPile.ASTToJSON.MkVar (T.pack varName) varType
+
+parseVarType :: Parser L4EntType
+parseVarType =
+    (try parseL4EntType) <|> parseL4Enum
+
+parseL4EntType :: Parser L4EntType
+parseL4EntType = do
+    _ <- space
+    _ <- string "( L4EntType"
+    _ <- space
+    _ <- char '"'
+    typeName <- some (alphaNumChar <|> char '_')
+    _ <- char '"'
+    _ <- space
+    _ <- char ')'
+    return $ L4EntType (T.pack typeName)
+
+cleanEnums :: String -> String
+cleanEnums = T.unpack . T.strip . T.pack . filter (/= '"')    
+
+parseL4Enum :: Parser L4EntType
+parseL4Enum = do
+    _ <- space
+    _ <- string "( L4Enum"
+    _ <- space
+    _ <- string "[ "
+    enumValues <- sepBy1 (L.lexeme space (cleanEnums <$> many (noneOf (',':"]")))) (char ',')
+    _ <- space
+    _ <- char ']'
+    _ <- space
+    _ <- char ')'
+    return $ L4Enum (map T.pack enumValues)
+
+parseGlobalVars :: Parser (Map.Map T.Text L4EntType)
+parseGlobalVars = do
+    _ <- string "= MkGlobalVars"
+    _ <- space
+    _ <- string "( fromList"
+    _ <- space
+    _ <- char '['
+    _ <- space
+    vars <- sepBy1 parseGlobalVar (char ',')
+    _ <- space
+    _ <- char ']'
+    _ <- space
+    _ <- char ')'
+    return $ Map.fromList [(getVarName var, getVarType var) | var <- vars]
+    where
+        getVarName (LS.XPile.ASTToJSON.MkVar name _) = name
+        getVarType (LS.XPile.ASTToJSON.MkVar _ varType) = varType
+
+parseAndConvert :: (String, [String]) -> [(T.Text, L4EntType)]
+parseAndConvert (metadata, _) =
+  case parse (skipManyTill anySingle (string "globalVars ") *> parseGlobalVars) "" (reverse $ dropWhile isSpace $ reverse metadata) of
+    Left err -> error $ "error: " ++ errorBundlePretty err
+    Right vars -> Map.toList vars
+
+l4EntTypeToString :: L4EntType -> String
+l4EntTypeToString (L4EntType t) = "{\"type\": \"" ++ T.unpack t ++ "\"},"
+l4EntTypeToString (L4Enum enums) = "{\"type\": \"string\", \"enum\": [\"" ++ intercalate "\" , \"" (map T.unpack enums) ++ "\"]},"
+
+extractText :: [(T.Text, L4EntType)] -> String
+extractText = concatMap (\(name, varType) -> show name ++ " : " ++ l4EntTypeToString varType)
+
+addBookends :: String -> String
+addBookends str = "{\"type\": \"object\", \"properties\": {" ++ (init str) ++ "}}"
 
 rulesToJsonSchema :: Interpreted -> String
-rulesToJsonSchema state = toJSON vars
-  where
-    vars = extractVars (getState state) (M.empty, M.empty)
-
-
+rulesToJsonSchema l4i = addBookends $ extractText $ parseAndConvert $ toMathLangGen l4i
 
 
 -- -- for json types -----------------------------------

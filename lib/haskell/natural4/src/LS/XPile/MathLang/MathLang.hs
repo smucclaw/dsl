@@ -47,22 +47,24 @@ toMathLang :: Interpreted -> ([Expr Double], MyState)
 toMathLang l4i =
   let l4Hornlikes =
        l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-
   in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
-    Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
-    Right lamCalcProgram ->
-      let userfuns = getUserFuns lamCalcProgram.userFuns
-          st = gmls2ml userfuns lamCalcProgram.lcProgram
-          giveth = T.unpack <$> lamCalcProgram.giveths
-          toplevels = case Map.lookup "Top-Level" st.symtabF of
-            Just exp -> [exp]
-            Nothing ->
-              case giveth of
-                [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
-                ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
-                      [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
-                      exprs -> exprs
-            in (toplevels, st)
+        Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
+        Right prog -> lcProgToMathLang prog
+
+lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
+lcProgToMathLang lamCalcProgram = (toplevels, st)
+  where
+    userfuns = getUserFuns 0 Map.empty lamCalcProgram.userFuns
+    st = gmls2ml userfuns lamCalcProgram.lcProgram
+    giveth = T.unpack <$> lamCalcProgram.giveths
+    toplevels = case Map.lookup "Top-Level" st.symtabF of
+      Just exp -> [exp]
+      Nothing ->
+        case giveth of
+          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
+          ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
+                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
+                exprs -> exprs
 
 --numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl :: GML.NumOp -> ToMathLang MathBinOp
@@ -96,6 +98,7 @@ mkVal = \case
   GML.EBoolTrue -> MathVar "True"
   GML.EBoolFalse -> MathVar "False"
   GML.EDate day -> MathVar $ show day
+  GML.EENum val -> MathVar $ T.unpack val
 --  lit -> throwError [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> ToMathLang (Pred Double)
@@ -226,14 +229,34 @@ gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
       _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
-getUserFuns :: SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
-getUserFuns = Map.map f
+getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
+getUserFuns ix firstPass funs = trace [i|#{ix}: firstPass = #{firstPass}|] $
+  case firstPass == newFuns of
+    True -> newFuns
+    False -> getUserFuns (ix+1) newFuns funs
   where
+    newFuns = Map.map f funs
     f :: ([GML.Var], GML.Exp) -> VarsAndBody
-    f (vars, exp) =
-      case runToMathLang Map.empty $ gml2ml exp of
-            Right mlExp -> ([T.unpack v | GML.MkVar v <- nub vars], mlExp)
-            Left _ -> ([], Undefined Nothing)
+    f (boundVars, exp) =
+      case runToMathLang firstPass $ mkAppForUF exp [] of
+        Right mlExp -> ([T.unpack v | GML.MkVar v <- nub boundVars], mlExp)
+        Left error -> trace (if firstPass /= Map.empty then [i|getUserFuns: #{error}|] else "") ([], Undefined Nothing)
+
+    mkAppForUF :: GML.Exp -> [String] -> ToMathLang (Expr Double)
+    mkAppForUF (isApp -> Just (f, arg)) args = mkAppForUF f (arg : args)
+    mkAppForUF (GML.exp -> EVar (GML.MkVar f)) args = do
+      userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
+      case Map.lookup (T.unpack f) userFuns of
+        Nothing -> fail [i|mkAppForUF: this really shouldn't happen, but #{f} is not found in userFuns|]
+        Just (boundVars, expr) -> do
+          let newVars = map MathVar args
+              replacedDef = replaceVars (zip boundVars newVars) expr
+          pure $ MathApp Nothing (T.unpack f) args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
+    mkAppForUF exp _ = gml2ml exp
+
+    isApp :: GML.Exp -> Maybe (GML.Exp, String)
+    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) = Just (f, T.unpack arg)
+    isApp _ = Nothing
 
 gml2ml :: GML.Exp -> ToMathLang (Expr Double)
 gml2ml exp =
@@ -306,7 +329,7 @@ gml2ml exp =
     trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] $ pure $ MathSet varEx bodyEx
   -- exp.exp :: BaseExp
 
-  EApp f arg -> mkApp exp []
+  EApp {} -> mkApp exp []
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|] $
       pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
@@ -327,34 +350,30 @@ gml2ml exp =
     mkApp (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
       case Map.lookup (T.unpack f) userFuns of
-        Nothing -> fail "mkApp: trying to apply undefined function"
+        Nothing -> fail [i|mkApp: trying to apply undefined function #{f}|]
         Just (boundVars, expr) -> do
           let funAppliedToArgsName = case getExprLabel <$> args of
                 [Just arg] -> [i|#{f} #{arg}|]
                 [Just arg1, Just arg2] -> [i|#{arg1} #{f} #{arg2}|]
                 _ -> [i|TODO: #{f} applied to 3 or more arguments, or the arguments don't have labels|]
-              expandedExpr = replaceVars boundVars args expr
+              expandedExpr = replaceVars (zip boundVars args) expr
               namedExpr = funAppliedToArgsName @|= expandedExpr
           ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
           pure $ MathVar funAppliedToArgsName
-
     mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
 
-    -- TODO: This will do the wrong thing if two variables have the same name
-    -- Solution: Replace all vars in parallel instead of one at a time
-    replaceVars :: [String] -> [Expr Double] -> Expr Double -> Expr Double
-    replaceVars [] [] expr = expr
-    replaceVars (k:ks) (v:vs) expr = replaceVar k v $ replaceVars ks vs expr
-    replaceVars _ _ expr =
-      trace "replaceVars: Wrong number of arguments for function" expr
-
-    replaceVar :: String -> Expr Double -> Expr Double -> Expr Double
-    replaceVar k v = go
-        where
-          -- l  = cosmosOf (gplate @(Expr Double)) % filteredBy (_Ctor @"MathVar")
-          go = \case
-                (MathVar s) | k == s -> v
-                x -> over (gplate @(Expr Double)) go x
+--             [(x, a),  (y, b)]          x + y          a + b
+replaceVars :: [(String, Expr Double)] -> Expr Double -> Expr Double
+replaceVars table = returnBody . replace
+  where
+    replace = \case
+      MathVar k@(_:_) -> case lookup k table of
+                      Just v -> v
+                      Nothing -> MathVar k
+      x -> over (gplate @(Expr Double)) replace x
+    returnBody = \case
+      MathApp lbl _name _vars body -> body
+      expr -> expr
 {-  ECompOp
     ELet
     EIs

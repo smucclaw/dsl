@@ -21,6 +21,7 @@ import Data.Bifunctor (Bifunctor (second))
 import Data.Coerce (coerce)
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
+import Data.List (intercalate)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String.Interpolate (i, __i)
 import Data.Tree (Tree (..))
@@ -104,9 +105,10 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMax  ExprLabel           (Expr a) (Expr a)  -- ^ max of two expressions
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
+            | MathApp  ExprLabel String [String] (Expr a)     -- ^ TEMPORARY thing, to be removed in final result. (TODO: is there a neater way to do things?)
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
             deriving (Eq, Generic)
---            deriving (Eq, Generic, Show) if you prefer to output the original AST
+--            deriving (Eq, Generic, Show) -- if you prefer to output the original AST
 
 instance (Show a) => Show (Expr a) where
   show = showExpr
@@ -122,6 +124,7 @@ showExpr (MathMax _lbl e1 e2) = [i|max(#{e1}, #{e2})|]
 showExpr (MathMin _lbl e1 e2) = [i|min(#{e1}, #{e2})|]
 showExpr (ListFold _lbl f el) = [i|#{f}(#{el})|]
 showExpr (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
+showExpr (MathApp _lbl f vars body) = [i|#{f}(#{intercalate "," vars}) = #{body}|]
 
 type ExprLabel = Maybe String
 
@@ -164,7 +167,7 @@ getExprLabel ( MathMin  lbl  _ _   ) = lbl
 getExprLabel ( ListFold lbl  _ _   ) = lbl
 getExprLabel ( MathBin  lbl  _ _ _ ) = lbl
 getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
-
+getExprLabel ( MathApp  lbl  _ _ _ ) = lbl
 
 (<++>) :: Maybe String -> Maybe String -> Maybe String
 (<++>) Nothing Nothing  = Nothing
@@ -209,17 +212,17 @@ x %| ys = second (Node ([],[[i|mapping / #{x} over a list|]])) <$> mapAndUnzipM 
 data MathSection a
   = Id
   | MathSection MathBinOp (Expr a)
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data MathBinOp = Plus | Minus | Times | Divide | Modulo
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- | we can reduce a list of expressions to a single value...
 data SomeFold = FoldSum      -- ^ by taking the sum
               | FoldProduct  -- ^ by taking the product
               | FoldMax      -- ^ by taking the maximum
               | FoldMin      -- ^ by taking the minimum
-              deriving (Eq, Show)
+              deriving (Eq, Show, Generic)
 
 -- ** Lists
 
@@ -231,7 +234,7 @@ data ExprList a
   | ListMapIf ExprLabel (MathSection a) (Expr a) Comp (ExprList a) -- ^ leaving the unwanted elements unchanged
   | ListConcat ExprLabel [ExprList a] -- ^ [[a]] -> [a]
   | ListITE    ExprLabel (Pred a) (ExprList a) (ExprList a)        -- ^ if-then-else for expr lists
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- * Some sugary constructors for expressions in our math language.
 
@@ -247,7 +250,7 @@ x |> ys = ListFilt Nothing x CGT ys
 
 -- | To support our notion of Data.Ord and Eq
 data Comp = CEQ | CGT | CLT | CGTE | CLTE | CNEQ
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- | @show@ for comparisons
 shw :: Comp -> String
@@ -308,7 +311,7 @@ data Pred a
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   | PredFold ExprLabel AndOr (PredList a)             -- ^ and / or a list
-  deriving (Eq)
+  deriving (Eq, Generic)
 
 instance (Show a) => Show (Pred a) where
   show = showPred
@@ -324,7 +327,7 @@ showPred (PredITE  _lbl p1 p2 p3) = [i|if #{p1} then #{p2} else #{p3}|]
 showPred (PredFold _lbl andor plist) = [i|#{andor}(#{plist})|]
 
 data AndOr = PLAnd | PLOr
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 getPredLabel :: Pred a -> ExprLabel
 getPredLabel ( PredVal      lbl  _     ) = lbl
@@ -391,7 +394,7 @@ eval' (MathSet     str x) =
     modify \ms -> ms { symtabF = newmap }
     (xval,xpl) <- eval x
     return (xval, Node ([], [[i|#{xval}: saved to #{str}|]]) [xpl])
-
+eval' (MathApp _lbl _f _vars body) = eval' body
 eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
 eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
@@ -649,6 +652,7 @@ class Exprlbl expr a where
   getvar = (@|$<)
 
 instance (Show a) => Exprlbl Expr a where
+  (@|=) lbl ( MathApp _  f vars body ) = MathApp (Just lbl) f vars body
   (@|=) lbl ( Undefined Nothing      ) = Undefined (Just lbl)
   (@|=) lbl ( Val      Nothing x     ) = Val      (Just lbl) x
   (@|=) lbl ( Parens   Nothing x     ) = Parens   (Just lbl) x
@@ -775,7 +779,7 @@ infix 4 |==, |/=, |!=, @|==, @|!=, @|/=
 (@|!) = PredNot . Just
 
 data PredBinOp = PredAnd | PredOr | PredEq | PredNeq
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 -- | some example runs
 toplevel :: IO ()

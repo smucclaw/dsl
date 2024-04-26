@@ -535,7 +535,7 @@ expifyHL = expifyHL' False
 expifyHL' :: Bool -> SimpleHL -> ToLC Exp
 expifyHL' verbose hl = do
   userFuns <- ToLC $ asks userDefinedFuns
-  bexp <- trace (if verbose then [i|\nexpifyHL: userFuns = #{getFunName <$> userFuns}\n          hl = #{hl}\n|] else "") $ baseExpify userFuns hl
+  bexp <- trace (if verbose then [i|\nexpifyHL: userFuns = #{getFunName <$> userFuns}\n          hl = #{hl}\n|] else "") $ baseExpify hl
   return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
    where
@@ -556,29 +556,39 @@ expifyHL' verbose hl = do
 2. Lam Def
 3. Block of statements / expressions (TODO)
 -}
-baseExpify :: [UserDefinedFun] -> SimpleHL -> ToLC BaseExp
-baseExpify funs (runToLC . isLambda funs -> Right (operator, v:vs, bexp)) = do
-  trace [i|baseExpify: got a fun #{operator}|] $
-    mkToLC $ EffState.modify $ (operator :)
-  ELam v <$> mkLambda vs bexp
+baseExpify :: SimpleHL -> ToLC BaseExp
+baseExpify hl = case lhsLooksLikeLambda hl of
+  -- We have verified the LHS looks like a lambda abstraction! Now we must get
+  -- monadic in order to parse the RHS and check if the bound variables appear there
+  Just (varsLHS@(v:vs), lhs, rhs) -> do
+    (fname, operMP) <- mkOperator lhs varsLHS
+    bexpRHS <- baseExpifyMTEs rhs
+    varsRHS <- argVarsOnly bexpRHS
+    if all (`elem` varsRHS) varsLHS -- FIXME: should also accept global variables
+      then do
+        let userFun = MkUserFun fname (noExtraMdata bexpRHS) varsLHS operMP
+        mkToLC $ EffState.modify $ (userFun :)
+        ELam v <$> mkLambda vs bexpRHS
+      else baseExpify' hl
+  _ -> baseExpify' hl
+  where
+    baseExpify' hl@(shRLabel -> Just (_section, _number, rname)) = do
+      bexp <- baseExpify $ hl {shRLabel = Nothing}
+      mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
+    baseExpify' (isIf -> Just (hl, hc)) = toIfExp hl hc
+    baseExpify' hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
+    baseExpify' (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
+    baseExpify' hornlike = throwNotYetImplError hornlike
 
-baseExpify _funs hl@(shRLabel -> Just (_section, _number, rname)) = do
-  bexp <- baseExpify _funs $ hl {shRLabel = Nothing}
-  mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
-
-baseExpify _ (isIf -> Just (hl, hc)) = toIfExp hl hc
-baseExpify _ hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
-baseExpify _ (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
-baseExpify _ hornlike = throwNotYetImplError hornlike
--- for the future, remove the catch all `baseExpify hornlike` and add stuff like
--- baseExpify (isLamDef -> ...) = ...
--- baseExpify (isBlockOfExps -> ...)) = ...
+    argVarsOnly bexp = do
+      funNames <- ToLC $ asks $ fmap getFunName . userDefinedFuns
+      pure $ filter (`notElem` funNames) $
+        MkExp bexp [] ^.. cosmosOf (gplate @Exp) % gplate @Var
 
 mkLambda :: [Var] -> BaseExp -> ToLC Exp
 mkLambda [] bexp = do
   pos <- mkToLC $ asks currSrcPos
   pure $ typeMdata pos "Function" bexp
-
 mkLambda (v:vs) bexp = do
   pos <- mkToLC $ asks currSrcPos
   let funType = typeMdata pos "Function"
@@ -593,71 +603,61 @@ isIf hl =
         HeadOnly _ -> Nothing
         HeadAndBody hc -> Just (hl, hc)
 
--- we try to parse the following forms:
--- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
--- (GIVEN x) DECIDE,prefixF,x,IS,x * (1 - y) -- y may be a global variable or whatever, we don't care
--- (GIVEN x) DECIDE,x,postfixF,IS,x * (1 - y) -- as above
-isLambda :: [UserDefinedFun] -> SimpleHL -> ToLC (UserDefinedFun, [Var], BaseExp)
-isLambda funs hl = case HM.keys hl.shcGiven of
-  []   -> throwNotSupportedWithMsgError hl "not a function, because no given arguments"
-  givens -> case hl.baseHL of
-    OneClause (isConstraint -> Just (lhs, rhs)) -> do
-      -- Step 1: is the LHS of the form `f x`, `x f y` or `x f`?
-      -- This step throws error if not.
-      (fname, boundVars, operMP) <- mkOperator lhs givens
+lhsLooksLikeLambda :: SimpleHL -> Maybe ([Var], [MTExpr], [MTExpr])
+lhsLooksLikeLambda hl = case (hasGivens hl, isConstraint hl) of
+  (Just givens, Just (lhs, rhs)) -> (,lhs,rhs) <$> maybeBoundVars lhs givens
+  _ -> Nothing -- not a function: LHS is none of `f x`, `x f y` or `x f`
 
-      -- Step 2: parse RHS and see if all bound variables are in the body
-      let funNames = fmap getFunName funs
-      exprRHS <- trace [i|\nisLambda.funs = #{funNames}\n|] $
-        withCustomFuns funs $ baseExpifyMTEs' "called from isLambda " rhs
-      let varsRHS = MkExp exprRHS [] ^.. cosmosOf (gplate @Exp) % gplate @Var
-          nonFunVarsRHS = [v | v <- varsRHS, v `notElem` funNames]
-      if all (`elem` nonFunVarsRHS) givens
-          then pure $ ( MkUserFun fname (noExtraMdata exprRHS) boundVars operMP
-                      , boundVars
-                      , exprRHS )
-          else trace [i|\n!!! #{nonFunVarsRHS} != #{givens} !!!\n\n\n|] $ throwNotSupportedWithMsgError ([i|#{nonFunVarsRHS} != #{givens}|] :: T.Text) "not all varsInExprs defined"
+isConstraint :: SimpleHL -> Maybe ([MTExpr], [MTExpr])
+isConstraint (baseHL -> OneClause (HeadOnly (
+                hcHead -> RPConstraint lhs RPis rhs))) = Just (lhs, rhs)
+isConstraint _                                         = Nothing
 
-    _ -> throwNotSupportedWithMsgError hl "only checking for lambdas in RPConstraints in single clauses"
+hasGivens :: SimpleHL -> Maybe [Var]
+hasGivens hl = case HM.keys hl.shcGiven of
+                [] -> Nothing
+                ks -> Just ks
+
+mkOperator :: [MTExpr] -> [Var] -> ToLC (Var, Operator Parser BaseExp)
+mkOperator mtes vars = do
+  pos <- mkToLC $ asks currSrcPos
+  case maybeOperator pos mtes vars of
+    Just (fname, _vars, op) -> pure (fname, op)
+    Nothing -> throwNotSupportedWithMsgError "isLambda:" [i|not a lambda expression: #{mtes}|]
+
+maybeBoundVars :: [MTExpr] -> [Var] -> Maybe [Var]
+maybeBoundVars mtes givens = getBoundVars <$> maybeOperator dummyPos mtes givens
   where
-    isConstraint (HeadOnly (hcHead -> RPConstraint lhs RPis rhs)) = Just (lhs, rhs)
-    isConstraint _ = Nothing
+    getBoundVars (_fname, vars, _op) = vars
+    dummyPos = MkPositn undefined undefined
 
-    -- Split into version with Maybe, so I can call it and check if it succeeds without the whole calling function erroring
-    mkOperator :: [MTExpr] -> [Var] -> ToLC (Var, [Var], Operator Parser BaseExp)
-    mkOperator mtes vars = do
-      pos <- mkToLC $ asks currSrcPos
-      case maybeOperator pos mtes vars of
-        Just op -> pure op
-        Nothing -> throwNotSupportedWithMsgError "isLambda:" [i|not a lambda expression: #{mtes}|]
-
-    -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
-    maybeOperator :: SrcPositn -> [MTExpr] -> [Var] -> Maybe (Var, [Var], Operator Parser BaseExp)
-    maybeOperator pos [MTT f, MTT x] [var]
-      | MkVar f /= var && MkVar x == var =
-      let mkBexp = customUnary (MkVar f) pos
-      in Just (
-        MkVar f,                   -- fun name
-        [var],                     -- bound vars
-        prefix f mkBexp)           -- megaparsec operator
-    maybeOperator pos [MTT x, MTT f] [var]
-      | MkVar f /= var && MkVar x == var =
-      let mkBexp = customUnary (MkVar f) pos
-      in Just (
-        MkVar f,                   -- fun name
-        [var],                     -- bound vars
-        postfix f mkBexp)           -- megaparsec operator
-    maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
-      | all (`elem` vs) [vx, vy]
-        && f `notElem` $(TH.lift allArithOps)
-        = Just (
-            MkVar f,                     -- fun name
-            [vx, vy],                    -- bound vars
-            binary f mkBexp)             -- megaparsec operator
-      where
-        mkBexp = customBinary (MkVar f) pos
-        (vx, vy) = (MkVar x, MkVar y)
-    maybeOperator _pos _mtes _vars = Nothing
+-- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
+maybeOperator :: SrcPositn -> [MTExpr] -> [Var] -> Maybe (Var, [Var], Operator Parser BaseExp)
+maybeOperator pos [MTT f, MTT x] [var]
+  | MkVar f /= var && MkVar x == var =
+  let mkBexp = customUnary (MkVar f) pos
+  in Just (
+    MkVar f,                   -- fun name
+    [var],                     -- bound vars
+    prefix f mkBexp)           -- megaparsec operator
+maybeOperator pos [MTT x, MTT f] [var]
+  | MkVar f /= var && MkVar x == var =
+  let mkBexp = customUnary (MkVar f) pos
+  in Just (
+    MkVar f,                   -- fun name
+    [var],                     -- bound vars
+    postfix f mkBexp)          -- megaparsec operator
+maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
+  | all (`elem` vs) [vx, vy]
+    && f `notElem` $(TH.lift allArithOps)
+    = Just (
+      MkVar f,                     -- fun name
+      [vx, vy],                    -- bound vars
+      binary f mkBexp)             -- megaparsec operator
+  where
+    mkBexp = customBinary (MkVar f) pos
+    (vx, vy) = (MkVar x, MkVar y)
+maybeOperator _pos _mtes _vars = Nothing
 
 isMultiClause :: SimpleHL -> [SimpleHL]
 isMultiClause hl =

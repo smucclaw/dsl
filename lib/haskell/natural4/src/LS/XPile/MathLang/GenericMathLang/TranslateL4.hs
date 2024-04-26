@@ -268,18 +268,20 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
 type RetVarInfo = [(Var, Maybe L4EntType)]
-type UserDefinedFun = (Var, Exp, [Var], Operator Parser BaseExp)
-getFunName :: UserDefinedFun -> Var
-getFunName (a,_,_,_) = a
+data UserDefinedFun = MkUserFun {
+    getFunName :: Var
+  , getFunDef :: Exp
+  , getBoundVars :: [Var]
+  , getOperMP :: Operator Parser BaseExp
+  }
 
-getFunDef :: UserDefinedFun -> Exp
-getFunDef (_,b,_,_) = b
+instance Show UserDefinedFun where
+  show = showUserDefinedFun
 
-getBoundVars :: UserDefinedFun -> [Var]
-getBoundVars (_,_,c,_) = c
-
-getOperMP :: UserDefinedFun -> Operator Parser BaseExp
-getOperMP (_,_,_,d) = d
+showUserDefinedFun f = [i|#{fname f} #{args} = #{getFunDef f}|]
+  where
+    fname (getFunName -> MkVar v) = v
+    args = T.unwords [v | MkVar v <- getBoundVars f]
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
@@ -423,7 +425,10 @@ l4ToLCProgram rules = do
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
     getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
-    getUserFuns opers = HM.fromList [(T.unpack var, (boundVars, e)) | (MkVar var, e, boundVars, _) <- opers]
+    getUserFuns opers = HM.fromList [
+      (T.unpack var, (getBoundVars fun, getFunDef fun))
+      | fun@(getFunName -> MkVar var) <- opers]
+--      | fun@(getFunName -> MkVar var) e boundVars _ <- opers]
 
     -- Separate user functions from the body of the program (mostly because
     -- I don't want to handle them in ToMathLang the same way as the rest /Inari)
@@ -553,7 +558,7 @@ expifyHL' verbose hl = do
 -}
 baseExpify :: [UserDefinedFun] -> SimpleHL -> ToLC BaseExp
 baseExpify funs (runToLC . isLambda funs -> Right (operator, v:vs, bexp)) = do
-  trace [i|baseExpify: got a fun #{getFunName operator} #{v:vs} = #{bexp}|] $
+  trace [i|baseExpify: got a fun #{operator}|] $
     mkToLC $ EffState.modify $ (operator :)
   ELam v <$> mkLambda vs bexp
 
@@ -608,7 +613,9 @@ isLambda funs hl = case HM.keys hl.shcGiven of
       let varsRHS = MkExp exprRHS [] ^.. cosmosOf (gplate @Exp) % gplate @Var
           nonFunVarsRHS = [v | v <- varsRHS, v `notElem` funNames]
       if all (`elem` nonFunVarsRHS) givens
-          then pure ((fname, noExtraMdata exprRHS, boundVars, operMP), boundVars, exprRHS)
+          then pure $ ( MkUserFun fname (noExtraMdata exprRHS) boundVars operMP
+                      , boundVars
+                      , exprRHS )
           else trace [i|\n!!! #{nonFunVarsRHS} != #{givens} !!!\n\n\n|] $ throwNotSupportedWithMsgError ([i|#{nonFunVarsRHS} != #{givens}|] :: T.Text) "not all varsInExprs defined"
 
     _ -> throwNotSupportedWithMsgError hl "only checking for lambdas in RPConstraints in single clauses"

@@ -275,6 +275,11 @@ data UserDefinedFun = MkUserFun {
   , getOperMP :: Operator Parser BaseExp
   }
 
+instance Eq UserDefinedFun where
+  f == g = getFunName f == getFunName g &&
+           getFunDef f == getFunDef g &&
+           getBoundVars f == getBoundVars g
+
 instance Show UserDefinedFun where
   show = showUserDefinedFun
 
@@ -411,24 +416,29 @@ runToLC' (unToLC -> m) =
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
-  let customOpers = execToLC $ traverse expifyHL l4HLs -- to fill env with user-defined functions
-      customOpers' = execToLC $ withCustomFuns customOpers $ traverse expifyHL l4HLs
-
-  lcProg <- withCustomFuns customOpers' $ traverse expifyHL l4HLs
+  let customUserFuns = iterateFuns [] $ F.toList l4HLs
+  lcProg <- withCustomFuns customUserFuns $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
                    , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
                    , giveths = giveths
-                   , userFuns = getUserFuns customOpers'}
+                   , userFuns = mkUserFuns customUserFuns}
   where
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
-    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
-    getUserFuns opers = HM.fromList [
+    iterateFuns :: [UserDefinedFun] -> [SimpleHL] -> [UserDefinedFun]
+    iterateFuns firstPass l4HLs =
+      if newFuns == firstPass
+        then newFuns
+        else iterateFuns newFuns l4HLs
+      where
+        newFuns = execToLC $ withCustomFuns firstPass $ traverse expifyHL l4HLs
+
+    mkUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
+    mkUserFuns opers = HM.fromList [
       (T.unpack var, (getBoundVars fun, getFunDef fun))
       | fun@(getFunName -> MkVar var) <- opers]
---      | fun@(getFunName -> MkVar var) e boundVars _ <- opers]
 
     -- Separate user functions from the body of the program (mostly because
     -- I don't want to handle them in ToMathLang the same way as the rest /Inari)

@@ -412,9 +412,9 @@ l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   let customOpers = execToLC $ traverse expifyHL l4HLs -- to fill env with user-defined functions
-      customOpers' = execToLC $ withCustomFuns customOpers $ traverse (expifyHL) l4HLs
+      customOpers' = execToLC $ withCustomFuns customOpers $ traverse expifyHL l4HLs
 
-  lcProg <- withCustomFuns customOpers' $ traverse (expifyHL' True) l4HLs
+  lcProg <- withCustomFuns customOpers' $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
                    , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
@@ -530,12 +530,10 @@ l4sHLsToLCSeqExp = F.foldrM go mempty
     go hornlike seqExp = consSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
-expifyHL = expifyHL' False
-
-expifyHL' :: Bool -> SimpleHL -> ToLC Exp
-expifyHL' verbose hl = do
+expifyHL :: SimpleHL -> ToLC Exp
+expifyHL hl = do
   userFuns <- ToLC $ asks userDefinedFuns
-  bexp <- trace (if verbose then [i|\nexpifyHL: userFuns = #{getFunName <$> userFuns}\n          hl = #{hl}\n|] else "") $ baseExpify hl
+  bexp <- baseExpify hl
   return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
    where
@@ -783,10 +781,8 @@ isFun funs mte =
     MTT t -> t `elem` allFuns
     _ -> False
 
-baseExpifyMTEs = baseExpifyMTEs' ""
-
-baseExpifyMTEs' :: String -> [MTExpr] -> ToLC BaseExp
-baseExpifyMTEs' _ (splitGenitives -> (Just g, rest@(_:_))) = do
+baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
+baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
   userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isFun userFuns) rest of
@@ -805,7 +801,7 @@ baseExpifyMTEs' _ (splitGenitives -> (Just g, rest@(_:_))) = do
       pure $ EApp fArg1 arg2
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
-baseExpifyMTEs' msg mtes = do
+baseExpifyMTEs mtes = do
   userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   case mtes of
     [mte] -> do
@@ -848,9 +844,7 @@ baseExpifyMTEs' msg mtes = do
             [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
             _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
---    mtes -> do
-    mtes -> trace (msg <> [i|userFuns = #{userFuns}|] ) $ do
-
+    mtes -> do
       case break (isFun userFuns) mtes of
       -- function, rest
         ([],f:ys) -> do
@@ -861,7 +855,7 @@ baseExpifyMTEs' msg mtes = do
 
       -- mte1 [, …, mteN], function, rest
         (xs,f:ys) -> do
-          arg1 <- trace [i|baseExpifyMTEs: found userfun #{f}|] $ expifyMTEsNoMd xs
+          arg1 <- expifyMTEsNoMd xs
           arg2 <- expifyMTEsNoMd ys
           -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
           bexp <- parseExpr $ MTT $ T.unwords ["x", mtexpr2text f, "y"]
@@ -937,7 +931,6 @@ pExpr :: Parser BaseExp
 pExpr = do
   pos <- lift $ mkToLC $ asks currSrcPos
   customOpers <- lift $ mkToLC $ asks userDefinedFuns
-  --trace [i|pExpr: length customOpers = #{length customOpers}|]
   makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
@@ -1060,10 +1053,8 @@ sc = L.space
   (L.skipLineComment "//")       -- just copied and pasted this from the internet
   (L.skipBlockComment "/*" "*/") -- don't think L4 has this kind of comments but ¯\_(ツ)_/¯
 
-expifyMTEsNoMd = expifyMTEsNoMd' "expifyMTEsNoMd "
-
-expifyMTEsNoMd' :: String -> [MTExpr] -> ToLC Exp
-expifyMTEsNoMd' msg mtes = addMetadataToVar =<< baseExpifyMTEs' (msg <> " via expifyMTEsNoMd ") mtes
+expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
+expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
  where
   addMetadataToVar :: BaseExp -> ToLC Exp
   -- This is supposed to work as follows:
@@ -1147,7 +1138,7 @@ mkSetVarTrue putativeVar = do
 
 mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
 mkOtherSetVar putativeVar argMTEs = do
-  arg <- noExtraMdata <$> baseExpifyMTEs' "coming from mkOtherSetVar " argMTEs
+  arg <- noExtraMdata <$> baseExpifyMTEs argMTEs
   mkSetVarFromMTEsHelper putativeVar arg
 
 {- | TODO: Check that it meets the formatting etc requirements for a variable,
@@ -1272,7 +1263,7 @@ expifyBodyRP = \case
     pos <- mkToLC $ asks currSrcPos
     pure $ typeMdata pos "Bool" $ ELit EBoolTrue -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
 
-  _rp@(RPMT mtes) -> expifyMTEsNoMd' "coming from expifyBodyRP " mtes
+  _rp@(RPMT mtes) -> expifyMTEsNoMd mtes
 
   RPConstraint lefts rel rights ->
     expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]

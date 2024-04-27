@@ -17,6 +17,7 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 -- TODO: Add export list
 
 import Control.Arrow ((>>>))
+import Control.Applicative (asum)
 import Data.HashSet qualified as Set
 
 import LS.XPile.MathLang.GenericMathLang.ArithOps ( allArithOps, arithOps )
@@ -27,7 +28,7 @@ import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 
 import AnyAll qualified as AA
 import LS.Types as L4
-  (SrcRef(..), RelationalPredicate(..), RPRel(..), MTExpr(..), EntityType,
+  (SrcRef(..), RelationalPredicate(..), RPRel(..), MTExpr(..),
   HornClause (..), HornClause2, BoolStructR,
   TypeSig(..), TypedMulti,
   SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
@@ -52,7 +53,6 @@ import Flow ((|>))
 import Optics hiding ((|>))
 -- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
--- import Data.List (break)
 import Data.List.NonEmpty qualified as NE
 -- import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
@@ -268,18 +268,25 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
 type RetVarInfo = [(Var, Maybe L4EntType)]
-type UserDefinedFun = (Var, Exp, [Var], Operator Parser BaseExp)
-getFunName :: UserDefinedFun -> Var
-getFunName (a,_,_,_) = a
+data UserDefinedFun = MkUserFun {
+    getFunName :: Var
+  , getFunDef :: Exp
+  , getBoundVars :: [Var]
+  , getOperMP :: Operator Parser BaseExp
+  }
 
-getFunDef :: UserDefinedFun -> Exp
-getFunDef (_,b,_,_) = b
+instance Eq UserDefinedFun where
+  f == g = getFunName f == getFunName g &&
+           getFunDef f == getFunDef g &&
+           getBoundVars f == getBoundVars g
 
-getBoundVars :: UserDefinedFun -> [Var]
-getBoundVars (_,_,c,_) = c
+instance Show UserDefinedFun where
+  show = showUserDefinedFun
 
-getOperMP :: UserDefinedFun -> Operator Parser BaseExp
-getOperMP (_,_,_,d) = d
+showUserDefinedFun f = [i|#{fname f} #{args} = #{getFunDef f}|]
+  where
+    fname (getFunName -> MkVar v) = v
+    args = T.unwords [v | MkVar v <- getBoundVars f]
 
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
@@ -296,6 +303,12 @@ initialEnv = MkEnv { localVars = HM.empty
                    , userDefinedFuns = []
                    , currSrcPos = MkPositn 0 0
                    , logConfig = defaultLogConfig }
+
+addCustomFuns :: [UserDefinedFun] -> Env -> Env
+addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
+
+--withCustomFuns :: [UserDefinedFun] -> a
+withCustomFuns funs = over _ToLC (local $ addCustomFuns funs)
 
 -- vars and vals
 getTypeString :: MTExpr -> String
@@ -362,8 +375,8 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
 newtype ToLC a =
   ToLC (Eff '[Reader Env,
               EffState.State [UserDefinedFun],
-        -- Might be better to just do a separate pass that finds the global vars --- not sure rn
-        Error ToLCError] a )
+              Error ToLCError] a
+        )
   deriving newtype (Functor, Applicative, Monad)
 
 _ToLC :: Iso' (ToLC a) (Eff '[Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a)
@@ -403,21 +416,29 @@ runToLC' (unToLC -> m) =
 l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
-  let customOpers = execToLC $ traverse expifyHL l4HLs -- to fill env with user-defined functions
-      addCustomOpers env = env {userDefinedFuns = customOpers <> userDefinedFuns env}
-      withCustomOpers = over _ToLC (local addCustomOpers)
-  lcProg <- withCustomOpers $ traverse expifyHL l4HLs
+  let customUserFuns = iterateFuns [] $ F.toList l4HLs
+  lcProg <- withCustomFuns customUserFuns $ traverse expifyHL l4HLs
   pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
                    , lcProgram = programWithoutUserFuns lcProg
                    , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
                    , giveths = giveths
-                   , userFuns = getUserFuns customOpers}
+                   , userFuns = mkUserFuns customUserFuns}
   where
     giveths :: [T.Text]
     giveths = [pt2text pt | Just pt <- L4.giveth <$> F.toList rules]
 
-    getUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
-    getUserFuns opers = HM.fromList [(T.unpack var, (boundVars, e)) | (MkVar var, e, boundVars, _) <- opers]
+    iterateFuns :: [UserDefinedFun] -> [SimpleHL] -> [UserDefinedFun]
+    iterateFuns firstPass l4HLs =
+      if newFuns == firstPass
+        then newFuns
+        else iterateFuns newFuns l4HLs
+      where
+        newFuns = execToLC $ withCustomFuns firstPass $ traverse expifyHL l4HLs
+
+    mkUserFuns :: [UserDefinedFun] -> HM.HashMap String ([Var], Exp)
+    mkUserFuns opers = HM.fromList [
+      (T.unpack var, (getBoundVars fun, getFunDef fun))
+      | fun@(getFunName -> MkVar var) <- opers]
 
     -- Separate user functions from the body of the program (mostly because
     -- I don't want to handle them in ToMathLang the same way as the rest /Inari)
@@ -469,10 +490,10 @@ extractBaseHL rule =
 mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
 mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
   where
-    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe (NE.NonEmpty L4.EntityType))]
+    declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe TypeSig)]
     declaredVarsToAssocList dvars = dvars ^.. folded % to getGiven % folded
 
-    convertL4Types :: [(T.Text, Maybe (NE.NonEmpty L4.EntityType))] -> [(Var, Maybe L4EntType)]
+    convertL4Types :: [(T.Text, Maybe TypeSig)] -> [(Var, Maybe L4EntType)]
     convertL4Types = each % _1 %~ mkVar >>> each % _2 %~ fmap mkEntType
 
 mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
@@ -519,9 +540,9 @@ l4sHLsToLCSeqExp = F.foldrM go mempty
     go hornlike seqExp = consSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
-
 expifyHL :: SimpleHL -> ToLC Exp
 expifyHL hl = do
+  userFuns <- ToLC $ asks userDefinedFuns
   bexp <- baseExpify hl
   return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
@@ -544,28 +565,38 @@ expifyHL hl = do
 3. Block of statements / expressions (TODO)
 -}
 baseExpify :: SimpleHL -> ToLC BaseExp
-baseExpify (isLambda -> Just (operator, v:vs, bexp)) = do
-  userFuns <- ToLC EffState.get
-  mkToLC $ EffState.put $ operator : userFuns
-  ELam v <$> mkLambda vs bexp
+baseExpify hl = case lhsLooksLikeLambda hl of
+  -- We have verified the LHS looks like a lambda abstraction! Now we must get
+  -- monadic in order to parse the RHS and check if the bound variables appear there
+  Just (varsLHS@(v:vs), lhs, rhs) -> do
+    (fname, operMP) <- mkOperator lhs varsLHS
+    bexpRHS <- baseExpifyMTEs rhs
+    varsRHS <- argVarsOnly bexpRHS
+    if all (`elem` varsRHS) varsLHS -- FIXME: should also accept global variables
+      then do
+        let userFun = MkUserFun fname (noExtraMdata bexpRHS) varsLHS operMP
+        mkToLC $ EffState.modify $ (userFun :)
+        ELam v <$> mkLambda vs bexpRHS
+      else baseExpify' hl
+  _ -> baseExpify' hl
+  where
+    baseExpify' hl@(shRLabel -> Just (_section, _number, rname)) = do
+      bexp <- baseExpify $ hl {shRLabel = Nothing}
+      mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
+    baseExpify' (isIf -> Just (hl, hc)) = toIfExp hl hc
+    baseExpify' hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
+    baseExpify' (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
+    baseExpify' hornlike = throwNotYetImplError hornlike
 
-baseExpify hl@(shRLabel -> Just (_section, _number, rname)) = do
-  bexp <- baseExpify $ hl {shRLabel = Nothing}
-  mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
-
-baseExpify (isIf -> Just (hl, hc)) = toIfExp hl hc
-baseExpify hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
-baseExpify (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
-baseExpify hornlike = throwNotYetImplError hornlike
--- for the future, remove the catch all `baseExpify hornlike` and add stuff like
--- baseExpify (isLamDef -> ...) = ...
--- baseExpify (isBlockOfExps -> ...)) = ...
+    argVarsOnly bexp = do
+      funNames <- ToLC $ asks $ fmap getFunName . userDefinedFuns
+      pure $ filter (`notElem` funNames) $
+        MkExp bexp [] ^.. cosmosOf (gplate @Exp) % gplate @Var
 
 mkLambda :: [Var] -> BaseExp -> ToLC Exp
 mkLambda [] bexp = do
   pos <- mkToLC $ asks currSrcPos
   pure $ typeMdata pos "Function" bexp
-
 mkLambda (v:vs) bexp = do
   pos <- mkToLC $ asks currSrcPos
   let funType = typeMdata pos "Function"
@@ -580,45 +611,61 @@ isIf hl =
         HeadOnly _ -> Nothing
         HeadAndBody hc -> Just (hl, hc)
 
--- we try to parse the following forms:
--- (GIVEN x y) DECIDE,x,discounted by,y,IS,x * (1 - y)
--- (GIVEN x) DECIDE,prefixF,x,IS,x * (1 - y) -- y may be a global variable or whatever, we don't care
--- (GIVEN x) DECIDE,x,postfixF,IS,x * (1 - y) -- as above
-isLambda :: SimpleHL -> Maybe (UserDefinedFun, [Var], BaseExp)
-isLambda hl = case HM.keys hl.shcGiven of
-  [] -> Nothing
-  ks -> case hl.baseHL of
-    OneClause (HeadOnly (hcHead -> rp))
-       -> case runToLC $ varsInBody ks rp of
-            Left _error -> {- trace [i|isLambda: #{error}|] -} Nothing
-            Right (operator, bexp) -> Just (operator, ks, bexp)
-    _ -> Nothing
+lhsLooksLikeLambda :: SimpleHL -> Maybe ([Var], [MTExpr], [MTExpr])
+lhsLooksLikeLambda hl = case (hasGivens hl, isConstraint hl) of
+  (Just givens, Just (lhs, rhs)) -> (,lhs,rhs) <$> maybeBoundVars lhs givens
+  _ -> Nothing -- not a function: LHS is none of `f x`, `x f y` or `x f`
+
+isConstraint :: SimpleHL -> Maybe ([MTExpr], [MTExpr])
+isConstraint (baseHL -> OneClause (HeadOnly (
+                hcHead -> RPConstraint lhs RPis rhs))) = Just (lhs, rhs)
+isConstraint _                                         = Nothing
+
+hasGivens :: SimpleHL -> Maybe [Var]
+hasGivens hl = case HM.keys hl.shcGiven of
+                [] -> Nothing
+                ks -> Just ks
+
+mkOperator :: [MTExpr] -> [Var] -> ToLC (Var, Operator Parser BaseExp)
+mkOperator mtes vars = do
+  pos <- mkToLC $ asks currSrcPos
+  case maybeOperator pos mtes vars of
+    Just (fname, _vars, op) -> pure (fname, op)
+    Nothing -> throwNotSupportedWithMsgError "isLambda:" [i|not a lambda expression: #{mtes}|]
+
+maybeBoundVars :: [MTExpr] -> [Var] -> Maybe [Var]
+maybeBoundVars mtes givens = getBoundVars <$> maybeOperator dummyPos mtes givens
   where
-    -- check if all the vars are present in function body
-    varsInBody :: [Var] -> RelationalPredicate -> ToLC (UserDefinedFun, BaseExp)
-    varsInBody vars (RPConstraint fname RPis fbody) = do
-      expr <- parseExpr $ MTT $ textifyMTEs fbody
-      let varsInExpr = MkExp expr [] ^.. cosmosOf (gplate @Exp) % gplate @Var
-      pos <- mkToLC $ asks currSrcPos
-      (var, operator) <- mkOperator pos fname vars
-      if all (`elem` varsInExpr) vars
-        then pure ((var, noExtraMdata expr, vars, operator), expr)
-        else throwNotSupportedWithMsgError "not all varsInExprs defined" (T.pack (show varsInExpr <> show vars))
-      where
-        -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
-        mkOperator pos [MTT f, MTT x] [var]
-          | MkVar f /= var && MkVar x == var
-          = pure (MkVar f, prefix f (customUnary (MkVar f) pos))
-        mkOperator pos [MTT x, MTT f] [var]
-          | MkVar f /= var && MkVar x == var
-          = pure (MkVar f, postfix f (customUnary (MkVar f) pos))
-        mkOperator pos [MTT x, MTT f, MTT y] [_v1, _v2]
-          | all (`elem` vars) [MkVar x, MkVar y] -- only infix allowed
-          = pure (MkVar f, binary f (customBinary (MkVar f) pos))
-          ---- TODO: does the default expression parser support prefixed binary functions?
-        mkOperator _pos mtes vars =
-          throwNotSupportedWithMsgError "mkOperator:" [i|mtes=#{mtes}\nvars=#{vars}|]
-    varsInBody _ _ = throwNotSupportedWithMsgError "varsInBody:" "not a RPConstraint"
+    getBoundVars (_fname, vars, _op) = vars
+    dummyPos = MkPositn undefined undefined
+
+-- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
+maybeOperator :: SrcPositn -> [MTExpr] -> [Var] -> Maybe (Var, [Var], Operator Parser BaseExp)
+maybeOperator pos [MTT f, MTT x] [var]
+  | MkVar f /= var && MkVar x == var =
+  let mkBexp = customUnary (MkVar f) pos
+  in Just (
+    MkVar f,                   -- fun name
+    [var],                     -- bound vars
+    prefix f mkBexp)           -- megaparsec operator
+maybeOperator pos [MTT x, MTT f] [var]
+  | MkVar f /= var && MkVar x == var =
+  let mkBexp = customUnary (MkVar f) pos
+  in Just (
+    MkVar f,                   -- fun name
+    [var],                     -- bound vars
+    postfix f mkBexp)          -- megaparsec operator
+maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
+  | all (`elem` vs) [vx, vy]
+    && f `notElem` $(TH.lift allArithOps)
+    = Just (
+      MkVar f,                     -- fun name
+      [vx, vy],                    -- bound vars
+      binary f mkBexp)             -- megaparsec operator
+  where
+    mkBexp = customBinary (MkVar f) pos
+    (vx, vy) = (MkVar x, MkVar y)
+maybeOperator _pos _mtes _vars = Nothing
 
 isMultiClause :: SimpleHL -> [SimpleHL]
 isMultiClause hl =
@@ -820,6 +867,7 @@ baseExpifyMTEs mtes = do
         (xs,f:ys) -> do
           arg1 <- expifyMTEsNoMd xs
           arg2 <- expifyMTEsNoMd ys
+          -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
           bexp <- parseExpr $ MTT $ T.unwords ["x", mtexpr2text f, "y"]
           case bexp of
             ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
@@ -832,8 +880,7 @@ baseExpifyMTEs mtes = do
       -- no userfuns here
         (_xs,[]) -> do
           let parenExp = MTT $ textifyMTEs $ parenExps mtes
-          expParsedAsText <-
-            trace [i|added parentheses #{parenExp}|] $ parseExpr parenExp
+          expParsedAsText <- parseExpr parenExp
           case expParsedAsText of
             ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
             -- TODO: this should definitely not be a sequence, what should it be instead???
@@ -861,7 +908,7 @@ baseExpifyMTEs mtes = do
       where
         parenNE :: T.Text -> T.Text
         parenNE text
-          | text PCRE.≈ [PCRE.re| |\+|\*|\-|\/|] = [i|(#{text})|]
+          | text PCRE.≈ [PCRE.re| |\+|\*|\-|\/|] = trace [i|added parentheses (#{text})|] [i|(#{text})|]
           | otherwise = text
 
 parseExpr :: MTExpr -> ToLC BaseExp
@@ -894,13 +941,13 @@ pExpr :: Parser BaseExp
 pExpr = do
   pos <- lift $ mkToLC $ asks currSrcPos
   customOpers <- lift $ mkToLC $ asks userDefinedFuns
-  --trace [i|pExpr: length customOpers = #{length customOpers}|]
   makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
 pTerm :: Parser BaseExp
 pTerm = choice $ map try
   [ parens pExpr
+  , pEnum
   , pMoney
   , pVariable
   , pFloat
@@ -952,12 +999,16 @@ customBinary fname pos x y =
 
 pVariable :: Parser BaseExp
 pVariable = do
-  _localVars :: VarTypeDeclMap <- lift $ mkToLC $ asks localVars
   putativeVar <- T.pack <$> lexeme ((:) <$> letterChar <*> many alphaNumChar <?> "variable")
   return $ EVar $ MkVar putativeVar
-  -- case isDeclaredVarTxt putativeVar localVars of
-  --   Just var -> return $ EVar var
-  --   Nothing -> fail "not a declared variable"
+
+pEnum :: Parser BaseExp
+pEnum = do
+  localVars :: VarTypeDeclMap <- lift $ mkToLC $ asks localVars
+  putativeEnumVal <- T.pack <$> lexeme (some alphaNumChar <?> "enum")
+  case isDeclaredEnumTxt putativeEnumVal localVars of
+    Just lit -> return $ ELit lit
+    Nothing -> fail "not a declared enum"
 
 pInteger :: Parser BaseExp
 pInteger = ELit . EInteger <$> (lexeme L.decimal <* notFollowedBy (char '.')) <?> "integer"
@@ -1036,6 +1087,20 @@ isDeclaredVarTxt :: T.Text -> VarTypeDeclMap -> Maybe Var
 isDeclaredVarTxt vartxt varTypeMap =
   let putativeVar = mkVar vartxt
   in if HM.member putativeVar varTypeMap then Just putativeVar else Nothing
+
+isDeclaredEnumTxt :: T.Text -> VarTypeDeclMap -> Maybe Lit
+isDeclaredEnumTxt valtxt varTypeMap = case enums of
+  [] -> Nothing
+  xs -> asum $ mkLitIfMatches valtxt <$> xs
+  where
+    getEnumVals (Just (L4Enum vals)) = Just vals
+    getEnumVals _ = Nothing
+
+    enums = HM.elems $ HM.mapMaybe getEnumVals varTypeMap
+
+    mkLitIfMatches v vs
+      | v `elem` vs = Just $ EENum v
+      | otherwise   = Nothing
 
 -- TODO: Look into trying to add Maybe to our ToLC transformer stack
 -- | Use this to check if some MTE is a Var

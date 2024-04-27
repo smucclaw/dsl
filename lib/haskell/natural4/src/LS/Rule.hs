@@ -428,19 +428,13 @@ defaultTypeDecl =
 extractMTExprs :: HasTypes s MTExpr => s -> [MTExpr]
 extractMTExprs = toListOf $ types @MTExpr
 
--- type EntityType = Text.Text
-getSimpleTypeOrEnum :: TypeSig -> Maybe (NonEmpty EntityType)
-getSimpleTypeOrEnum = \case
-  SimpleType TOne tn -> Just $ tn :| []
-  InlineEnum _ pt -> Just $ NE.fromList $ enumLabels pt
-  _ -> Nothing
 
--- | Simplify a TypedMulti -- i.e. a (NonEmpty MTExpr, Maybe TypeSig) --- with a SimpleType TOne typesig
-getGiven :: TypedMulti -> Maybe (Text.Text, Maybe (NonEmpty EntityType))
+-- | Simplify a TypedMulti -- i.e. a (NonEmpty MTExpr, Maybe TypeSig)
+getGiven :: TypedMulti -> Maybe (Text.Text, Maybe TypeSig)
 getGiven tm = do
   let mvar = (tm ^.. _1 % types @Text.Text) ^? ix 0
   -- Could also use Text.intercalate ' ', but arguably a var should take up only one cell anw
-  let varType = (tm ^. _2) >>= getSimpleTypeOrEnum
+  let varType = tm ^. _2 -- just a fancier way to say `snd tm`
   var <- mvar
   pure (var, varType)
 

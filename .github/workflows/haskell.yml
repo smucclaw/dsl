@@ -46,7 +46,12 @@ jobs:
       - name: Install MacOS Prerequisites (libpcre)
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install pcre pkg-config
+          wget https://ftp.exim.org/pub/pcre/pcre-8.45.tar.gz
+          tar -xvf pcre-8.45.tar.gz
+          cd pcre-8.45
+          ./configure
+          make
+          sudo make install
 
       - name: Build explainable
         run: stack build

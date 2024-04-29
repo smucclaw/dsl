@@ -27,8 +27,8 @@ import Data.Time (Day(..))
 import Optics (re, view)
 import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.List.NonEmpty qualified as NE
+-- import Data.List.NonEmpty (NonEmpty(..))
+-- import Data.List.NonEmpty qualified as NE
 
 -- import Data.Generics.Product.Types (types)
 -- import Data.String ( IsString )
@@ -39,6 +39,7 @@ import LS.Types (TypeSig(..), ParamType(..), enumLabels)
 import Data.HashMap.Strict (HashMap, empty)
 import Data.Hashable (Hashable)
 import Data.Coerce (coerce)
+import Language.Haskell.TH.Syntax (Lift)
 -- import GHC.Generics (Generic)
 
 ------------ L4 declared entity types ----------------------
@@ -49,7 +50,7 @@ data L4EntType = L4EntType T.Text | L4Enum [T.Text] | L4List L4EntType
   deriving (Eq, Generic, Hashable)
 
 mkEntType :: TypeSig -> L4EntType
-mkEntType ts = case ts of
+mkEntType = \case
   SimpleType TOne      tn -> L4EntType tn
   SimpleType TOptional tn -> L4EntType tn -- no optional
   SimpleType _         tn -> L4List $ mkEntType $ SimpleType TOne tn -- lists, sets, no difference
@@ -167,10 +168,10 @@ data NumOp
   | OpMinOf
   | OpSum
   | OpProduct
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Lift)
 
 data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Lift)
 
 newtype SeqExp = SeqExp [Exp]
   deriving stock (Show, Generic, Eq)

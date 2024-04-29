@@ -22,8 +22,8 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-22.04
+
     permissions:
       contents: read
       packages: write
@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Set up BuildKit Docker container builder to be able to build
       # multi-platform images and export cache

@@ -70,7 +70,9 @@ Note:
 -}
 toMathLangGen :: Analyzed -> (String, [String])
 toMathLangGen l4a =
-  let l4Hornlikes = l4a.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
+  let l4Hornlikes =
+        l4a.origrules ^.. folded % cosmosOf (gplate @Rule) %
+        filteredBy (_Ctor @"Hornlike")
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (renderLC lamCalcProgram, [])

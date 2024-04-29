@@ -570,7 +570,7 @@ evalList (ListMapIf lbl Id _c _comp ylist) =
   retitle [i|fmap mathsection id#{showlbl lbl}|] $ evalList ylist
 
 evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) =
-  retitle ("fmap mathsection if" ++ showlbl lbl1) do
+  retitle [i|fmap mathsection if #{showlbl lbl1}|] do
     (MathList lbl2 ylist', yxpl) <- evalList ylist
     liveElements <- (evalP . PredComp (lbl1 <++> lbl2) comp c) `traverse` ylist'
 

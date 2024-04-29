@@ -230,10 +230,8 @@ gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
 getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
-getUserFuns ix firstPass funs = trace [i|#{ix}: firstPass = #{firstPass}|] $
-  case firstPass == newFuns of
-    True -> newFuns
-    False -> getUserFuns (ix+1) newFuns funs
+getUserFuns ix firstPass funs = trace [i|#{ix}: firstPass = #{firstPass}|]
+  if firstPass == newFuns then newFuns else getUserFuns (ix+1) newFuns funs
   where
     newFuns = Map.map f funs
     f :: ([GML.Var], GML.Exp) -> VarsAndBody

@@ -42,10 +42,13 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get install libpcre3-dev
+
       - name: Install MacOS Prerequisites (libpcre)
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install pcre pkg-config
+          brew install pcre pkg-config && \
+          echo "CPPFLAGS=\"-I/opt/homebrew/include\"" >> "$GITHUB_ENV" && \
+          echo "LDFLAGS=\"-L/opt/homebrew/lib\"" >> "$GITHUB_ENV"
 
       - name: Build explainable
         run: stack build

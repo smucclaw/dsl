@@ -18,6 +18,7 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
 
 import Control.Arrow ((>>>))
 import Control.Applicative (asum)
+import Data.HashMap.Strict qualified as Map
 import Data.HashSet qualified as Set
 
 import LS.XPile.MathLang.GenericMathLang.ArithOps ( allArithOps, arithOps )
@@ -25,6 +26,8 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import 
 import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 -- TODO: Haven't actually finished setting up logging infra, unfortunately.
 -- But it's also not really necessary for working on the transpiler
+import LS.XPile.MathLang.GenericMathLang.RPrel2opTable
+    ( NumCompOp(..), rpRel2opTable )
 
 import AnyAll qualified as AA
 import LS.Types as L4
@@ -542,9 +545,9 @@ l4sHLsToLCSeqExp = F.foldrM go mempty
 --------------------------------------------------------------------
 expifyHL :: SimpleHL -> ToLC Exp
 expifyHL hl = do
-  userFuns <- ToLC $ asks userDefinedFuns
+  _userFuns <- mkToLC $ asks userDefinedFuns
   bexp <- baseExpify hl
-  return $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
+  pure $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
    where
     returnType = case hl.shcRet of
@@ -854,7 +857,7 @@ baseExpifyMTEs mtes = do
             [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
             _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-    mtes -> do
+    mtes ->
       case break (isFun userFuns) mtes of
       -- function, rest
         ([],f:ys) -> do
@@ -868,14 +871,15 @@ baseExpifyMTEs mtes = do
           arg1 <- expifyMTEsNoMd xs
           arg2 <- expifyMTEsNoMd ys
           -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
-          bexp <- parseExpr $ MTT $ T.unwords ["x", mtexpr2text f, "y"]
+          bexp <- parseExpr $ MTT [i|x #{mtexpr2text f} y|]
           case bexp of
             ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
             ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
-            _ -> do assumedVar <- varFromMTEs [f]
-                    fExp <- mkVarExp assumedVar
-                    let fArg1 = noExtraMdata (EApp fExp arg1)
-                    pure $ EApp fArg1 arg2
+            _ -> do
+              assumedVar <- varFromMTEs [f]
+              fExp <- mkVarExp assumedVar
+              let fArg1 = noExtraMdata $ EApp fExp arg1
+              pure $ EApp fArg1 arg2
 
       -- no userfuns here
         (_xs,[]) -> do
@@ -885,10 +889,10 @@ baseExpifyMTEs mtes = do
             ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
             -- TODO: this should definitely not be a sequence, what should it be instead???
               parsedExs <- traverse parseExpr mtes
-              return $ ESeq $ foldr consSeqExp mempty parsedExs
+              pure $ ESeq $ foldr consSeqExp mempty parsedExs
 
             -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
-            notStringLit -> return notStringLit
+            notStringLit -> pure notStringLit
   where
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
     consSeqExp = consSE . noExtraMdata
@@ -908,7 +912,8 @@ baseExpifyMTEs mtes = do
       where
         parenNE :: T.Text -> T.Text
         parenNE text
-          | text PCRE.≈ [PCRE.re| |\+|\*|\-|\/|] = trace [i|added parentheses (#{text})|] [i|(#{text})|]
+          | text PCRE.≈ [PCRE.re| |\+|\*|\-|\/|] =
+            trace [i|added parentheses (#{text})|] [i|(#{text})|]
           | otherwise = text
 
 parseExpr :: MTExpr -> ToLC BaseExp
@@ -918,7 +923,7 @@ parseExpr x@(MTT str) = do
     -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
     Right (EVar _) -> pure $ EVar $ MkVar str
     Right notStringLit -> pure notStringLit
-    Left _error -> trace [i|can't parse with pExpr: #{x}|] return $ mteToLitExp x
+    Left _error -> trace [i|can't parse with pExpr: #{x}|] pure $ mteToLitExp x
 parseExpr x = pure $ mteToLitExp x
 
 splitGenitives :: [MTExpr] -> (Maybe MTExpr, [MTExpr])
@@ -1114,7 +1119,7 @@ isDeclaredVar = \case
 -- | Annotate with TLabel metadata if available
 mkVarExp :: Var -> ToLC Exp
 mkVarExp var = do
-  env :: Env <- ToLC ask
+  env :: Env <- mkToLC ask
   let varExpMetadata = MkExpMetadata { srcPos = env.currSrcPos
                                      , typeLabel = FromUser <$> lookupVar var env.localVars
                                      , explnAnnot = Nothing --Temp plceholder; TODO
@@ -1249,21 +1254,25 @@ expifyHeadRP = \case
   -- This is
   RPConstraint lefts RPis rights ->
     expifyHeadRP $ RPnary RPis [RPMT lefts, RPMT rights]
+
   RPnary RPis [RPMT [mte], rp]   -> do
     mvar <- isDeclaredVar mte
     exp <- expifyBodyRP rp
-    case mvar of
+    (varExp, valExp) <- case mvar of
       Just var -> do -- The var is given and has a type
         varExp <- mkVarExp var
         let valExp = inferTypeFromOtherExp exp varExp
-        return $ noExtraMdata $ EVarSet varExp valExp
+        pure (varExp, valExp)
 
       Nothing -> do -- Var is not given, but we can try to infer it from the RHS
-        pos <- ToLC $ asks currSrcPos
+        pos <- mkToLC $ asks currSrcPos
         varNoType <- noExtraMdata . EVar <$> varFromMTEs [mte]
         let valExp = inferTypeRHS pos exp
         let varExp = inferTypeFromOtherExp varNoType valExp
-        return $ noExtraMdata $ EVarSet varExp valExp
+        pure (varExp, valExp)
+
+    pure $ noExtraMdata $ EVarSet varExp valExp
+
   rp -> expifyBodyRP rp
 
 expifyBodyRP :: RelationalPredicate -> ToLC Exp
@@ -1279,26 +1288,24 @@ expifyBodyRP = \case
     expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
 
   RPnary RPis [rp1, rp2] -> do
-    pos <- ToLC $ asks currSrcPos
+    pos <- mkToLC $ asks currSrcPos
     exp1maybeUntyped <- expifyBodyRP rp1
     exp2 <- inferTypeRHS pos <$> expifyBodyRP rp2
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
-    return $ noExtraMdata $ EIs exp1 exp2
+    pure $ noExtraMdata $ EIs exp1 exp2
 
-  -- Numeric operations can have multiple arguments
-  RPnary (rprel2numop -> Just op) rps -> do
-   pos <- mkToLC $ asks currSrcPos
-   exps <- mapM expifyBodyRP rps
-   pure $ foldl1 (numOrCompOp pos "Number" ENumOp op) exps
-
-  -- Comparison operations can only have two
-  RPnary (rprel2compop -> Just op) rps@(_:_) -> do
-   pos <- mkToLC $ asks currSrcPos
-   exps <- mapM expifyBodyRP rps
-   pure $ foldl1 (numOrCompOp pos "Boolean" ECompOp op) exps
-
-
-  RPnary rprel _ -> throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
+  RPnary rprel rps -> case (rprel2op rprel, rps) of
+    -- Numeric operations can have multiple arguments
+    (Just (Num op), _) -> go op "Number" ENumOp
+   -- Comparison operations can only have two
+    (Just (Comp op), _:_) -> go op "Boolean" ECompOp
+    _ -> throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
+    where
+      go :: a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> ToLC Exp
+      go op str ctor = do
+        pos <- mkToLC $ asks currSrcPos
+        exps <- traverse expifyBodyRP rps
+        pure $ foldl1 (numOrCompOp pos str ctor op) exps
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
   rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
@@ -1310,25 +1317,8 @@ expifyBodyRP = \case
       let coerceNumber = coerceType pos "Number"
       in typeMdata pos str $ ctor op (coerceNumber x) $ coerceNumber y
 
-    rprel2numop :: RPRel -> Maybe NumOp
-    rprel2numop = \case
-      RPsum     -> Just OpPlus
-      RPproduct -> Just OpMul
-      RPminus   -> Just OpMinus
-      RPdivide  -> Just OpDiv
-      RPmodulo  -> Just OpModulo
-      RPmax     -> Just OpMaxOf
-      RPmin     -> Just OpMinOf
-      _         -> Nothing
-
-    rprel2compop :: RPRel -> Maybe CompOp
-    rprel2compop = \case
-      RPlt   -> Just OpLt
-      RPlte  -> Just OpLte
-      RPgt   -> Just OpGt
-      RPgte  -> Just OpGte
-      RPeq   -> Just OpNumEq
-      _      -> Nothing
+    rprel2op :: RPRel -> Maybe NumCompOp
+    rprel2op =  (`Map.lookup` $(TH.lift rpRel2opTable))
 
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
     coerceType :: SrcPositn -> T.Text -> Exp -> Exp

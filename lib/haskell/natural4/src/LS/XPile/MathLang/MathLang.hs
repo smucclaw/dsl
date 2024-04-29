@@ -18,7 +18,8 @@ import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString.Builder (generic)
 import Data.Coerce (coerce)
 import Data.Either (rights)
-import Data.List (groupBy, nub)
+import Data.List ( groupBy, nub, unfoldr )
+import Data.List.NonEmpty qualified as NE
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i,__i)
@@ -230,14 +231,17 @@ gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
 getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
-getUserFuns ix firstPass funs = trace [i|#{ix}: firstPass = #{firstPass}|] $
-  case firstPass == newFuns of
-    True -> newFuns
-    False -> getUserFuns (ix+1) newFuns funs
+getUserFuns ix firstPass funs =
+  NE.last $ firstPass NE.:| unfoldr go (ix, firstPass, funs)
   where
-    newFuns = Map.map f funs
-    f :: ([GML.Var], GML.Exp) -> VarsAndBody
-    f (boundVars, exp) =
+    go (ix, firstPass, funs@((f firstPass <$>) -> newFuns)) =
+      trace [i|#{ix}: firstPass = #{firstPass}|]
+        if firstPass == newFuns
+          then Nothing
+          else Just (newFuns, (ix + 1, newFuns, funs))
+
+    f :: SymTab VarsAndBody -> ([GML.Var], GML.Exp) -> VarsAndBody
+    f firstPass (boundVars, exp) =
       case runToMathLang firstPass $ mkAppForUF exp [] of
         Right mlExp -> ([T.unpack v | GML.MkVar v <- nub boundVars], mlExp)
         Left error -> trace (if firstPass /= Map.empty then [i|getUserFuns: #{error}|] else "") ([], Undefined Nothing)

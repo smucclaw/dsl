@@ -92,6 +92,7 @@ library
       LS.XPile.MathLang.ForMengEval.TypeInferForMengEval
       LS.XPile.MathLang.GenericMathLang.ArithOps
       LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
+      LS.XPile.MathLang.GenericMathLang.RPrel2opTable
       LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
       LS.XPile.MathLang.GenericMathLang.TranslateL4
       LS.XPile.MathLang.Logging

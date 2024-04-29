@@ -45,7 +45,7 @@ jobs:
       - name: Install MacOS Prerequisites (libpcre)
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install pcre
+          brew install pcre pkg-config
 
       - name: Build explainable
         run: stack build

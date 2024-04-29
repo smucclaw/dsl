@@ -53,21 +53,26 @@ jobs:
           make
           sudo make install
 
-      - name: Build explainable
-        run: stack build
+      # - name: Build explainable
+      #   run: stack build
+
         working-directory: lib/haskell/explainable
-      - name: Test explainable
+      - name: Build and test explainable
         run: stack test
         working-directory: lib/haskell/explainable
-      - name: Build anyall
-        run: stack build
-        working-directory: lib/haskell/anyall
-      - name: Test anyall
+
+      # - name: Build anyall
+      #   run: stack build
+      #   working-directory: lib/haskell/anyall
+
+      - name: Build and test anyall
         run: stack test
         working-directory: lib/haskell/anyall
-      - name: Build natural4
-        run: stack build
-        working-directory: lib/haskell/natural4
-      - name: Test natural4
+
+      # - name: Build natural4
+      #   run: stack build
+      #   working-directory: lib/haskell/natural4
+
+      - name: Build and test natural4
         run: stack test
         working-directory: lib/haskell/natural4

@@ -46,9 +46,9 @@ jobs:
       - name: Install MacOS Prerequisites (libpcre)
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install pcre pkg-config && \
-          echo "CPPFLAGS=\"-I/opt/homebrew/include\"" >> "$GITHUB_ENV" && \
-          echo "LDFLAGS=\"-L/opt/homebrew/lib\"" >> "$GITHUB_ENV"
+          brew install pcre pkg-config
+          sudo ln -s /opt/homebrew/include/pcre.h /usr/local/include/
+          sudo ln -s /opt/homebrew/include/pcre2.h /usr/local/include/
 
       - name: Build explainable
         run: stack build

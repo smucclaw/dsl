@@ -7,25 +7,25 @@ packages:
 - completed:
     name: baby-l4
     pantry-tree:
-      sha256: 9936fc9fc78364606fd730ed40fb767f2e67ec2aeea9bca94c3ce3cad63873fc
+      sha256: ffa7fcdd0ef234d611634d8f10c8aa7c56781eb418bcde8d2c99301c92f73dee
       size: 12538
-    sha256: 1428d9592869215681b3f63c30a087a0e195f744b93e3c3e3af1561476d1c4a8
-    size: 3188837
-    url: https://github.com/smucclaw/baby-l4/archive/0a6d0ca6b4183fca73a57669a431dfe582c0029c.tar.gz
+    sha256: 4ebfaef07d5d8d70e404b28f8ed5701c6e895e3bdc7cf085ca7b112de4a8ae8b
+    size: 3188831
+    url: https://github.com/smucclaw/baby-l4/archive/ee7a71953070960e9f104e8900a48b5233d8b9a0.tar.gz
     version: 0.1.2.1
   original:
-    url: https://github.com/smucclaw/baby-l4/archive/0a6d0ca6b4183fca73a57669a431dfe582c0029c.tar.gz
+    url: https://github.com/smucclaw/baby-l4/archive/ee7a71953070960e9f104e8900a48b5233d8b9a0.tar.gz
 - completed:
     name: gf
     pantry-tree:
-      sha256: b98b7ffc0d56f3ad90342d559a5645e8a6b7c34dfffc2944c5147f4ac265bd74
+      sha256: dd070cb66f74ee464747062b329d8f9c3ce37dec46204360c154ca6cf7c68f63
       size: 68240
-    sha256: ce38f650b2ed17f35c6113ced7e9d1370f619d646e12b0674bfa77f82826ce79
-    size: 3499956
-    url: https://github.com/smucclaw/gf-core/archive/f4b71cf8ba56a949c627d08535c251fbd6654033.tar.gz
+    sha256: a96c60aa375b09284fbe1de3758616b369f7e14674a07c7aabfb89b684d8ca15
+    size: 3499814
+    url: https://github.com/smucclaw/gf-core/archive/f85fbbaf41e804f1566cd914ef3986dda29978b3.tar.gz
     version: 3.11.0
   original:
-    url: https://github.com/smucclaw/gf-core/archive/f4b71cf8ba56a949c627d08535c251fbd6654033.tar.gz
+    url: https://github.com/smucclaw/gf-core/archive/f85fbbaf41e804f1566cd914ef3986dda29978b3.tar.gz
 - completed:
     name: prolog
     pantry-tree:
@@ -63,12 +63,12 @@ packages:
   original:
     hackage: simple-smt-0.9.7
 - completed:
-    hackage: diagnose-2.4.0@sha256:c594a0b512a8d3aa58b240070467d6f337ef0769e367a0e74f2081307b1b13d7,5941
+    hackage: diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
     pantry-tree:
-      sha256: 60de1c15ada5dd82f9ac70065ed52eb36da733111962a692f0a66db2c7313d78
-      size: 1402
+      sha256: 99b2b3c2b2d3769ef45b030b0578ac7b3ce8b1b68ae7dd511857e7690ad19f52
+      size: 1401
   original:
-    hackage: diagnose-2.4.0
+    hackage: diagnose-2.5.1
 - completed:
     hackage: log-effectful-1.0.0.0@sha256:126f328c9325c10998289378191dc69e55b5ffdc37a7845f2d0ee57f6f13392e,2433
     pantry-tree:
@@ -92,7 +92,7 @@ packages:
     hackage: monadic-recursion-schemes-0.1.13.2
 snapshots:
 - completed:
-    sha256: 9bebedd3de0195aa01fd55de7f6d4446667440297a7315e69cd72c2610af265f
-    size: 713338
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/18.yaml
-  original: lts-22.18
+    sha256: e5cac927cf7ccbd52aa41476baa68b88c564ee6ddc3bc573dbf4210069287fe7
+    size: 713340
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/19.yaml
+  original: lts-22.19

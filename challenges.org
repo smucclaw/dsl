@@ -1,0 +1,176 @@
+#+TITLE: Challenge Problems, May 2024
+
+* Background
+
+  As part of the next-gen L4 language definition effort, we present a handful of challenge problems that exercise the proposed semantics at various levels of difficulty and composition.
+
+* Checklist of Semantics
+  
+** boolean
+
+** arithmetics
+
+** state transition systems, with a bit of modal "deontics"
+
+** multi-temporal
+
+** looking at the history of the contract and past state
+
+** constraint and property assertions
+
+* Example Challenge 1: Booleans, Arithmetics, and simple State-Transition Deontics
+
+1. A person may frobulate
+2. if and only if
+3. the person's colour attribute is red
+4. and
+5. the person's size attribute is greater than
+   1. if the person is a rectangle, then 10 * 10
+   2. if the person is a circle, then pi * 5
+   3. if the person is neither, then 42
+6. or
+7. the person's electrical charge, if they have one, is positive
+  
+** Semantics
+
+- if the person has no electrical charge, then line 7 evaluates to false
+  - "the identity for OR is false"
+- lines 4 and 6 are at the same level. What is the grouping precedence infixl/infixr for an unindented and/or? Jo Hsi has previously pointed out natural4 does opposite to Python. Let's fix that in this next iteration?
+- the IFF on line 2 implies that we can test the contract for other "may frobulate" and detect a conflict if something else also allows frobulation, either directly or in some synthetic way.
+
+** Example Challenge One B: Synthetic Frobulation
+
+1. If a person crantulates, then that person frobulates.
+2. A person may crantulate at any time.
+
+This is a conflict with the previous (1).
+
+** Temporal Bounds
+
+The example so far is not temporally bounded. Do we infer that the permission is coextensive with the conditions? I.e. the conditions need to be tested at every time t, and then the resulting permission holds at that time t.
+
+Or do we add a notion of deadlines:
+
+*** (Non-Temporal) Qualification
+
+1. A person qualifies
+2. if and only if
+3. the person's colour attribute is red
+4. and
+5. the person's size attribute is greater than
+   1. if the person is a rectangle, then 10 * 10
+   2. if the person is a circle, then pi * 5
+   3. if the person is neither, then 42
+6. or
+7. the person's electrical charge, if they have one, is positive
+
+*** (Temporal) Permission
+
+1. Upon qualification, a person may frobulate for 24 hours, but not thereafter.
+
+** 
+
+* Example Challenge 2: Composition of Sub-contracts Considered As State Transition Systems
+
+1. The trivial "identity" contract is FULFILLED.
+2. The trivial dual to the identity contract is BREACHED.
+3. Nontrivial contract: PARTY P (MUST|MAY|SHANT) DO X {..} BEFORE DEADLINE.
+4. Contracts can be composed using AND, OR, THEN relations.
+5. Contract 1 THEN contract 2 THEN contract 3.
+6. Contract 1 AND contract 2 OR contract 3.
+
+
+* Example Challenge 3: Multi-Temporal Logic
+
+* Temporal properties of a contract stated using deontic language, aka "bounded deontics"
+
+Suppose we have a simple contract:
+
+- EVERY P:person MAY borrow a book from the library
+- THEN:
+  - P MAY return the book BEFORE 1 week
+- OR
+  - P MUST return the book BEFORE 2 week
+  - AND
+  - P MUST pay $100 fine
+- OR
+  - P MUST return the book BEFORE 4 week
+  - AND
+  - P MUST pay $200 fine
+- OR
+  - P MAY keep book
+  - AND
+  - P MUST pay $500 replacement cost fine
+
+Laypeople will analyze this contract as follows:
+
+** Analysis 1: "P must return the book within 1 week"
+Bound: ... if the goal is that P doesn't pay a fine and doesn't end up in BREACHED.
+
+** Analysis 2: "If P doesn't return the book within 1 week, P must pay some kind of fine"
+Bound: ... if the goal is that P doesn't end up in BREACHED state and doesn't end up in BREACHED.
+
+** Discussion
+The "must" in the analyses is an alethic modal bounded by specific goals, not a deontic or constitutive modal!
+
+* Example of Constitutive MUST BE vs Deontic MUST DO vs Alethic external property of the contract
+
+Constitutive rules follow the template:
+- for X to be considered Y in context Z, X MUST BE ...
+
+Regulative rules follow the template:
+- UPON some event, or ALWAYS
+- Party P
+- if they meet criteria ("WHO")
+- if the world meets certain criteria
+- deontic MAY/SHANT/MUST DO some action
+- BEFORE/AFTER some deadline
+- THEN C1 ELSE C2
+
+** Rules that are both!
+
+Framing: is ~(2+4) * (5+3)~ a "fundamentally" multiplicative or a "fundamentally" additive formula? Hmmmm.
+
+Deontic:
+1. Party P
+2. MAY do X
+3. IF and only IF
+4. P qualifies
+
+Constitutive:
+1. P qualifies
+2. IF and only IF
+3. P previously did Y
+
+From this we infer:
+1. P MAY Y
+2. THEN
+3. P MAY X
+
+Or:
+1. To (be able to) do X, P MUST (have done) Y
+
+And then the "to be able to" gets dropped out of the explicit stateement, because it moves into the implicit goal bound!
+1. P MUST Y
+Bound: goal = P MAY X
+
+which looks like two purely regulative rules chained together; the constitutive has been compiled out.
+
+But it could be analyzed slightly differently:
+
+1. do Y, P MUST BE qualified
+2. to be qualified, P MUST HAVE done X
+
+All of these readings are semantically equivalent!
+
+* Example Challenge 4: Rule Against Perpetuities
+
+We have dealt with this in the past, let's dig up the old write-up.
+
+But basically it can be in a state of indeterminacy until some event happens which resolves the conditions one way or another and then the rule operates.
+
+See also: conveyanc.es
+
+If anyone is 21 or older at any time in the previous tax year, etc
+
+moving point of reference around

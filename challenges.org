@@ -18,6 +18,8 @@
 
 ** constraint and property assertions
 
+external to the contract
+
 * Example Challenge 1: Booleans, Arithmetics, and simple State-Transition Deontics
 
 1. A person may frobulate
@@ -31,19 +33,57 @@
 6. or
 7. the person's electrical charge, if they have one, is positive
   
-** Semantics
+** Semantics -- Commentary
 
 - if the person has no electrical charge, then line 7 evaluates to false
   - "the identity for OR is false"
+  - person.electricalCharge 
 - lines 4 and 6 are at the same level. What is the grouping precedence infixl/infixr for an unindented and/or? Jo Hsi has previously pointed out natural4 does opposite to Python. Let's fix that in this next iteration?
 - the IFF on line 2 implies that we can test the contract for other "may frobulate" and detect a conflict if something else also allows frobulation, either directly or in some synthetic way.
 
-** Example Challenge One B: Synthetic Frobulation
+** Example Challenge 1.B: Synthetic Frobulation
 
 1. If a person crantulates, then that person frobulates.
 2. A person may crantulate at any time.
 
 This is a conflict with the previous (1).
+
+The reasoning engine should infer the existence of this conflict, and warn about it.
+
+** Example Challenge 1.C: a semantics for electrical charge
+
+Line 7 says, "a person's X, if they have one, is Y"
+
+What are the semantics of "if they have one"?
+
+In Typescript we have optional types; and we might, naively, adopt the notion of "if they have one"
+
+#+begin_src typescript
+enum PosNeg { Positive, Negative }
+
+interface Person {
+  electricalCharge ?: PosNeg
+}
+#+end_src
+
+That corresponds to the Haskell
+
+#+begin_src haskell
+  data ElectricalCharge2 = Positive | Negative
+  data Person = Person {
+    electricalCharge :: Maybe ElectricalCharge2
+  }
+#+end_src
+
+Another to model electrical charge:
+
+#+begin_example
+data ElectricalCharge3 = Positive | Neutral | Negative
+#+end_example
+
+In the second case, "if they have one" is given by ~person.electricalCharge /= Nothing~
+
+In the first case, "if they have one" is given by ~person.electricalCharge /= Neutral~
 
 ** Temporal Bounds
 
@@ -67,8 +107,6 @@ Or do we add a notion of deadlines:
 *** (Temporal) Permission
 
 1. Upon qualification, a person may frobulate for 24 hours, but not thereafter.
-
-** 
 
 * Example Challenge 2: Composition of Sub-contracts Considered As State Transition Systems
 

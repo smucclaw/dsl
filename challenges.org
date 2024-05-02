@@ -388,7 +388,24 @@ The "event sourcing" paradigm:
 
 what if we don't have explicit type annotations, the system has to figure it out.
 
-Oh, and
+From challenge (1) above, we can infer the following data and world model:
+- *frobulate* is an action that a person can take -- in an OOP rendering, the Person class has a ~frobulate()~ method
+- Person has a *colour* attribute
+- Person's *colour* attribute can take *red* as a value, and presumably others
+- Person has a *size* attribute
+- Person's *size* attribute is numeric
+- Person can be the subject of a shape predicate
+- the shape predicate takes an input of ~rectangle | circle | _~ -- in Prolog it would be something like
+  - ~isRectangle(Person)~
+  - ~isCircle(Person)~
+  - ~isOtherShape(Person)~
+- alternatively, we could restyle to
+  - ~isShape(Person, rectangle) :- ...~
+  - ~isShape(Person, circle) :- ...~
+  - ~isShape(Person, _).~
+- Person has an *electrical charge* attribute which could be *positive*; alternatively, they could /not/ have *electrical charge* attribute, see discussion above.
+
+Oh, and:
 
 * Challenge 9: type checking
 

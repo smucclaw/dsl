@@ -5,7 +5,7 @@
   As part of the next-gen L4 language definition effort, we present a handful of challenge problems that exercise the proposed semantics at various levels of difficulty and composition.
 
 * Checklist of Semantics
-  
+
 ** boolean
 
 ** arithmetics
@@ -424,6 +424,24 @@ When is the earliest possible time that ... event X could occur?
 * Challenge 11: abduction problems
 
 What sets of conditions/circumstances would be necessary for X to arise in future?
+
+* Challenge 12: idioms for message-passing
+
+in the actor model, message-passing is the key operation.
+
+we borrow Epistemic Modals:
+
+"Party X may obtain from Party Y certain information I"
+
+unpacks to
+
+PARTY  X
+  MAY  notify  PARTY  Y
+         with  demand for  information I
+ THEN  PARTY  Y
+        MUST  notify  PARTY  X
+                with  information I
+ ELSE  fulfilled
 
 * ACTION ITEMS
 

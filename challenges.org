@@ -28,11 +28,21 @@ external to the contract
 4. and
 5. the person's size attribute is greater than
    1. if the person is a rectangle, then 10 * 10
-   2. if the person is a circle, then pi * 5
-   3. if the person is neither, then 42
+   2. if the person is a circle, then pi * 5 * 5
+   3. if the person is some other shape, then 42
 6. or
 7. the person's electrical charge, if they have one, is positive
   
+** Initial State: the person has not yet frobulated.
+
+** After the transition: the person frobulates.
+
+** The precondition for the transition is given in lines 3--7.
+
+** There is an element of choice: the person MAY frobulate, and the contract can be fulfilled in two ways: they do, or don't.
+
+The only way the contract can be BREACHED is if they fail to meet the preconditions, but frobulate anyway.
+
 ** Semantics -- Commentary
 
 - if the person has no electrical charge, then line 7 evaluates to false
@@ -93,62 +103,87 @@ Or do we add a notion of deadlines:
 
 *** (Non-Temporal) Qualification
 
+This is a purely constitutive decision rule, without any deontics / state transitions.
+
 1. A person qualifies
 2. if and only if
 3. the person's colour attribute is red
 4. and
 5. the person's size attribute is greater than
    1. if the person is a rectangle, then 10 * 10
-   2. if the person is a circle, then pi * 5
+   2. if the person is a circle, then pi * 5 * 5
    3. if the person is neither, then 42
 6. or
 7. the person's electrical charge, if they have one, is positive
 
-*** (Temporal) Permission
+*** (Temporal) Permission deontic state transitions
 
 1. Upon qualification, a person may frobulate for 24 hours, but not thereafter.
 
+* trivially, a pure regulative rule
+
+EVERY person
+MUST obey the law
+-- IF (always!)
+
 * Example Challenge 2: Composition of Sub-contracts Considered As State Transition Systems
+Showing some of the essentials from DeonDigital's CSL:
 
 1. The trivial "identity" contract is FULFILLED.
 2. The trivial dual to the identity contract is BREACHED.
-3. Nontrivial contract: PARTY P (MUST|MAY|SHANT) DO X {..} BEFORE DEADLINE.
-4. Contracts can be composed using AND, OR, THEN relations.
-5. Contract 1 THEN contract 2 THEN contract 3.
+3. Nontrivial contract: C1 @( PARTY P (MUST|MAY|SHANT) DO X {..} BEFORE DEADLINE ) THEN C2 ELSE C3.
+4. Contracts can be composed using AND, OR, THEN, ELSE relations.
+5. Contract 1 THEN contract 2 THEN contract 3 ELSE contract 4.
 6. Contract 1 AND contract 2 OR contract 3.
 
+And that's the basic underlying semantics for regulative rules!
 
 * Example Challenge 3: Multi-Temporal Logic
 
-* Temporal properties of a contract stated using deontic language, aka "bounded deontics"
+** Temporal properties of a contract stated using deontic language, aka "bounded deontics"
 
 Suppose we have a simple contract:
 
 - EVERY P:person MAY borrow a book from the library
 - THEN:
-  - P MAY return the book BEFORE 1 week
+  - P MAY
+    - return the book BEFORE 1 week
+    - THEN fulfilled (true)
+    - ELSE breached (false)
+     
+- OR (if the above is true, we short circuit to fulfilled; if it is false, then we continue evaluation)
+  - P MAY
+    - return the book BEFORE 2 week
+    - AND
+    - pay $100 fine
+    - THEN fulfilled
+    - ELSE breached
 - OR
-  - P MUST return the book BEFORE 2 week
-  - AND
-  - P MUST pay $100 fine
+  - P MAY
+    - return the book BEFORE 4 week
+    - AND
+    - pay $200 fine
+    - THEN fulfilled
+    - ELSE breached
 - OR
-  - P MUST return the book BEFORE 4 week
-  - AND
-  - P MUST pay $200 fine
-- OR
-  - P MAY keep book
-  - AND
-  - P MUST pay $500 replacement cost fine
+  - P MAY
+    - keep book
+    - AND
+    - Library MAY charge $500 replacement cost to the credit card on file
+    - THEN fulfilled
+    - ELSE breached (the charge didn't go through, and so we send the lawyers to your door to recover the book)
 
 Laypeople will analyze this contract as follows:
 
-** Analysis 1: "P must return the book within 1 week"
+*** Analysis 1: "P must return the book within 1 week"
 Bound: ... if the goal is that P doesn't pay a fine and doesn't end up in BREACHED.
 
-** Analysis 2: "If P doesn't return the book within 1 week, P must pay some kind of fine"
-Bound: ... if the goal is that P doesn't end up in BREACHED state and doesn't end up in BREACHED.
+*** Analysis 2: "If P doesn't return the book within 1 week, P must pay some kind of fine"
+Bound: ... if the goal is that P doesn't end up in BREACHED state.
 
-** Discussion
+this is a property assertion -- the MUST is an alethic modal, not a specifically deontic modal.
+
+*** Discussion
 The "must" in the analyses is an alethic modal bounded by specific goals, not a deontic or constitutive modal!
 
 * Example of Constitutive MUST BE vs Deontic MUST DO vs Alethic external property of the contract
@@ -215,14 +250,136 @@ moving point of reference around
 
 * Example Challenge 5: Charlotte's Trust Fund
 
+Netflix: "The Gentlemen" S01E01
+
 - “To my daughter, Charlotte,
-- I leave the Endurance,
+- I leave the Endurance [some kind of boat],
 - with the condition that she sail around the world on her
 - in the next six months.”
-- Well done, Chuckles.
+- ("Well done, Chuckles.")
 - “As well, a trust fund of £1,000 a week
 - until she marries
 - a man.”
 
+* The Insurance Challenge 6: Calculating Claim Coverage
+
+Even the non-regulative decision logic deals with Boolean and Numeric-valued expressions
+
+DECIDE the Payout  :: Number
+IS     SUM    NumA :: Number
+              NumB :: Number
+              NumC :: Number
+IF     PayoutRuleApplies
+              
+WHERE  DECIDE  NumA :: Number
+           IS  IF    ConditionA
+               THEN  ...
+               ELSE  0
+
+       DECIDE  ConditionA :: Boolean
+           IS  True   WHEN  X < Y
+               False  WHEN  X > Y
+               False  OTHERWISE
+
+       DECIDE  ConditionB :: Boolean
+           IS  ANY/OR  [ Bob is over 21 years old
+                       , Bob is under 7 years old
+                       ]
+
+       DECIDE  PayoutRuleApplies  IF  TheRegulatorSaysPayoutRuleApplies
+       
+  What if the PayoutRuleApplies == False? There is some kind of Default/Maybe monad so that numbers default to identity 0.
+  
+* Sarah Lawsky's Default Rules
+
+#+begin_example
+Section 1337(a): You can cite as a schmdudction (this is a term of art) whatever interest you paid within the tax year on your debts.
+[nothing else in Section 1337(a).]
+[...other sections…]
+Section 1337(f): 
+i)  If you are not a corporation, you cannot invoke as a schmdudction any personal interest paid or accrued during the tax year.
+(ii) For purposes of this subsection, the term “personal interest” means any interest allowable as a schmdeduction under this chapter other than [...] any raxified moodrigible interest [nonsensical term of art to make cheating harder]
+#+end_example
+
+#+begin_src haskell
+  data Interest = Personal | NonPersonal
+  data Person   = Natural | Corporation
+  data TaxYear
+
+  canCite :: Person -> Interest -> TaxYear -> Boolean
+  canCite p i _
+    | p /= Corporation && i /= Personal  = False
+    | otherwise                          = True
+  canCite _ _ _ = True
+
+#+end_src
+
+Language rule: subsequent things override earlier things
+
+(a)   DECIDE  canCite  IS  True IF | always | == 0
+
+...
+
+(f)   DESPITE (a)  DECIDE  canCite IS False IF | Corporation ... Personal ...  | == 2
+
+The Dev-facing IDE could search for un-ordered pairs of rules that define the same terms ("canCite") and ask the developer for explicit ordering.
+
+We can apply Lex Specialis and Posterior Derogat to assume ordering, and then we have to figure out how the two doctrines fight.
+
+
+* Support for TYPICALLY
+
+Boolean terms can be annotated with a TYPICALLY default value.
+
+A program can be evaluated with those values set to defaults, or explicitly overridden by the user.
+
+That's enough to support default and defeasible logic.
+
+X is a Penguin (TYPICALLY false).
+X is a bird (TYPICALLY true.)
+
+Birds can fly unless they are penguins.
+
+Can X fly?
+
+given: { X is a bird } ==> X flies. Because we are using the assumption X is not a penguin.
+
+given: { X is a bird, X is a penguin } ==> X does not fly.
+
+
+
+
+
+* Challenge 7: insurance renewals
+
+** the regulative style:
+
+ PARTY  Customer
+   MAY  make claim
+WITHIN  1 YEAR OF last renewal
+
+  THEN  PARTY   Customer
+          MAY   renew insurance
+        WITHIN  1 YEAR of last renewal
+         THEN   residuum
+
+   ELSE  PARTY  Customer
+           MAY  renew insurance
+        WITHIN  1 YEAR of last renewal
+          THEN  bonus := bonus + 5% -- THIS IS THE DIFFERENT BIT
+           AND  residuum
+
+** the constitutive style:
+      
+DECIDE bonus = 5% * numberOfRenewalsWithoutClaim
+
+** Trace-based evaluation:
+
+The "event sourcing" paradigm:
+
+- EVENT yyyy-mm-dd RENEWAL occurred
+- EVENT yyyy-mm-dd CLAIM   occurred
+- EVENT yyyy-mm-dd RENEWAL occurred
+- EVENT yyyy-mm-dd RENEWAL occurred
 
 

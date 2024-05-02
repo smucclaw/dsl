@@ -85,11 +85,11 @@ That corresponds to the Haskell
   }
 #+end_src
 
-Another to model electrical charge:
+Another way to model electrical charge:
 
-#+begin_example
-data ElectricalCharge3 = Positive | Neutral | Negative
-#+end_example
+#+begin_src haskell
+  data ElectricalCharge3 = Positive | Neutral | Negative
+#+end_src
 
 In the second case, "if they have one" is given by ~person.electricalCharge /= Nothing~
 
@@ -290,7 +290,7 @@ WHERE  DECIDE  NumA :: Number
        
   What if the PayoutRuleApplies == False? There is some kind of Default/Maybe monad so that numbers default to identity 0.
   
-* Sarah Lawsky's Default Rules
+** Sarah Lawsky's Default Rules
 
 #+begin_example
 Section 1337(a): You can cite as a schmdudction (this is a term of art) whatever interest you paid within the tax year on your debts.
@@ -327,7 +327,7 @@ The Dev-facing IDE could search for un-ordered pairs of rules that define the sa
 We can apply Lex Specialis and Posterior Derogat to assume ordering, and then we have to figure out how the two doctrines fight.
 
 
-* Support for TYPICALLY
+** Support for TYPICALLY
 
 Boolean terms can be annotated with a TYPICALLY default value.
 

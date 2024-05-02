@@ -1308,7 +1308,12 @@ expifyBodyRP = \case
         pure $ foldl1 (numOrCompOp pos str ctor op) exps
 
   -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
-  rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
+  rp@(RPBoolStructR lhs RPis bsr) -> do
+    lhsExp <- expifyMTEsNoMd lhs
+    rhsExp <- processHcBody bsr
+    pure $ noExtraMdata $ EIs lhsExp rhsExp
+  rp@(RPBoolStructR _lhs rprel _bsr) -> throwNotSupportedWithMsgError rp [i|#{rprel} not supported yet|]
+
   rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
   -- rp -> throwNotSupportedWithMsgError rp "unknown rp"
   where

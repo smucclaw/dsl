@@ -443,6 +443,18 @@ PARTY  X
                 with  information I
  ELSE  fulfilled
 
+The *notify* keyword is a special action
+
+if it is parameterized with *that*, we infer that the notified party /knows/ something:
+
+PARTY  X
+  MAY  notify  PARTY  Y
+         that  something
+
+and we can subsequently use that in reasoning, e.g. to evaluate "if party x can reasonably expect party y to be aware that such-and-such"
+
+or, shorthand, "if party Y knows something"
+ 
 * ACTION ITEMS
 
 ** TODO Turn these examples into actual tab in spreadsheet that compiles

@@ -28,6 +28,7 @@ import Effectful (Eff, (:>), runPureEff)
 import Effectful.Fail (Fail, runFail)
 import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
+import Effectful.State.Dynamic (State, runStateLocal, modify, gets)
 import Explainable.MathLang hiding ((|>))
 import LS.Interpreter
 import LS.Rule (Rule, Interpreted (..))
@@ -188,18 +189,18 @@ type ToMathLangError = String
 type VarsAndBody = ([String], Expr Double)
 
 newtype ToMathLang a =
-  ToMathLang (Eff '[ Writer MyState
+  ToMathLang (Eff '[ State MyState
                    , Reader (SymTab VarsAndBody)
                    , Fail ] a)
   deriving newtype (Functor, Applicative, Monad, MonadFail)
 
-_ToMathLang :: Iso' (ToMathLang a) (Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a)
+_ToMathLang :: Iso' (ToMathLang a) (Eff '[State MyState, Reader (SymTab VarsAndBody), Fail] a)
 _ToMathLang = coerced
 
-mkToMathLang :: Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a -> ToMathLang a
+mkToMathLang :: Eff '[State MyState, Reader (SymTab VarsAndBody), Fail] a -> ToMathLang a
 mkToMathLang = view (re _ToMathLang)
 
-unToMathLang :: ToMathLang a -> Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a
+unToMathLang :: ToMathLang a -> Eff '[State MyState, Reader (SymTab VarsAndBody), Fail] a
 unToMathLang = view _ToMathLang
 
 runToMathLang :: SymTab VarsAndBody -> ToMathLang a -> Either String a
@@ -215,7 +216,8 @@ execToMathLang r m = case runToMathLang' r m of
 runToMathLang' :: SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
 runToMathLang' r (unToMathLang -> m) =
   m
-    |> runWriterLocal
+--    |> runWriterLocal
+    |> runStateLocal emptyState
     |> runReader r
     |> runFail
     |> runPureEff
@@ -267,23 +269,11 @@ gml2ml exp =
   let expExp = exp.exp
   in case expExp of
   EEmpty -> fail "gml2ml: unexpected EEmpty"
-  ESeq seq -> do
-    seqs <- traverse gml2ml $ GML.seqExpToExprs seq
-    let newSeqs =
-          -- trace [i|\ngml2ml: seqs #{seqs}\n|] $
-          chainITEs seqs
-        newF =
-          -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
-          Map.fromList [(var, var @|= val) | MathSet var val <- newSeqs]
-
-    ToMathLang $ tell $ emptyState {symtabF = newF}
-
-    let !headName = case newSeqs of
-          MathSet headName _ : _ -> headName
-          MathVar headName : _ -> headName
-          _ -> fail [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{seq}|]
-
-    pure $ MathVar headName
+  ESeq seq -> case getList exp of
+    Just (varname, exps) -> do
+      mkList varname exps
+      pure $ MathVar varname
+    Nothing -> mkVarSet $ GML.seqExpToExprs seq
 
   ELit lit -> pure $ mkVal lit
 
@@ -297,9 +287,9 @@ gml2ml exp =
     MathMax Nothing <$> gml2ml e1 <*> gml2ml e2
 
   ENumOp op e1 e2 -> do
-    ex1 <- gml2ml e1
-    ex2 <- gml2ml e2
     op <- numOptoMl op
+    ex1 <- gml2mlWithListCoercion op e1
+    ex2 <- gml2mlWithListCoercion op e2
     pure $ MathBin Nothing op ex1 ex2
 
   EVarSet var val -> do
@@ -312,7 +302,8 @@ gml2ml exp =
 
   EPredSet _ _ -> do
     PredSet name pr <- exp2pred exp
-    ToMathLang $ tell $ emptyState {symtabP = Map.singleton name pr}
+--    ToMathLang $ tell $ emptyState {symtabP = Map.singleton name pr}
+    ToMathLang $ modify (\m -> m.symtabP <> Map.singleton name pr)
     pure $ Undefined Nothing -- this is just dummy to not have it crash, this value won't be present in the final result
 
   EIfThen condE thenE -> do
@@ -362,9 +353,64 @@ gml2ml exp =
                 _ -> [i|TODO: #{f} applied to 3 or more arguments, or the arguments don't have labels|]
               expandedExpr = replaceVars (zip boundVars args) expr
               namedExpr = funAppliedToArgsName @|= expandedExpr
-          ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
+--          ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
+          ToMathLang $ modify $ (\x -> x.symtabF <> Map.singleton funAppliedToArgsName namedExpr)
           pure $ MathVar funAppliedToArgsName
     mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
+
+    gml2mlWithListCoercion :: MathBinOp -> GML.Exp -> ToMathLang (Expr Double)
+    gml2mlWithListCoercion op (getList -> Just (varname, exps)) = trace [i|gml2mlWithListCoercion: is a list #{varname}|] $ do
+      list <- mkList varname exps
+      fold <- op2somefold op
+      pure $ ListFold Nothing fold list
+    gml2mlWithListCoercion op exp@(MathVar var) = do
+      lists <- ToMathLang $ gets symtabL
+      case Map.lookup var lists of
+        Just list -> do
+          fold <- op2somefold op
+          pure $ ListFold Nothing fold list
+        Nothing -> pure exp
+    gml2mlWithListCoercion _ exp = trace [i|gml2mlWithListCoercion: not a list #{exp}|] $ gml2ml exp -- not a list
+
+    getList :: GML.Exp -> Maybe (String, [GML.Exp])
+    getList exp = case (exp.exp, GML.typeLabel <$> exp.md) of
+      (ESeq seq, Just (GML.FromUser (GML.L4List _)):_)
+        -> Just ("SomeListName", GML.seqExpToExprs seq)
+      _ -> Nothing
+
+    mkList :: String -> [GML.Exp] -> ToMathLang (ExprList Double)
+    mkList varname exps = do
+      seqs <- traverse gml2ml exps
+      let list = MathList Nothing seqs
+--      ToMathLang $ tell $ emptyState {symtabL = Map.singleton varname list}
+      ToMathLang $ modify (\m -> m.symtabL <> Map.singleton varname list)
+      -- pure $ MathVar varname
+      pure list
+
+    op2somefold :: MathBinOp -> ToMathLang SomeFold
+    op2somefold Plus = pure FoldSum
+    op2somefold Times = pure FoldProduct
+    op2somefold op = fail [i|gml2ml: not allowed to apply #{op} to a list|]
+
+    mkVarSet :: [GML.Exp] -> ToMathLang (Expr Double)
+    mkVarSet exps = do
+      seqs <- traverse gml2ml exps
+      let newSeqs =
+            -- trace [i|\ngml2ml: seqs #{seqs}\n|] $
+            chainITEs seqs
+          newF =
+            -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
+            Map.fromList [(var, var @|= val) | MathSet var val <- newSeqs]
+
+--      ToMathLang $ tell $ emptyState {symtabF = newF}
+      ToMathLang $ modify (\m -> m.symtabF <> newF)
+
+      let !headName = case newSeqs of
+            MathSet headName _ : _ -> headName
+            MathVar headName : _ -> headName
+            _ -> fail [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{exps}|]
+
+      pure $ MathVar headName
 
 --             [(x, a),  (y, b)]          x + y          a + b
 replaceVars :: [(String, Expr Double)] -> Expr Double -> Expr Double

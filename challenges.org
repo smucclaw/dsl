@@ -326,6 +326,8 @@ The Dev-facing IDE could search for un-ordered pairs of rules that define the sa
 
 We can apply Lex Specialis and Posterior Derogat to assume ordering, and then we have to figure out how the two doctrines fight.
 
+We can do this in an "adversarial" elicitation dialogue, where we use a backend to come up with concrete examples that have ambiguous evaluations, and we ask the user to choose which is "correct" / "desirable" / "prioritized".
+
 
 ** Support for TYPICALLY
 
@@ -381,5 +383,34 @@ The "event sourcing" paradigm:
 - EVENT yyyy-mm-dd CLAIM   occurred
 - EVENT yyyy-mm-dd RENEWAL occurred
 - EVENT yyyy-mm-dd RENEWAL occurred
+
+* Challenge 8: type inference!
+
+what if we don't have explicit type annotations, the system has to figure it out.
+
+Oh, and
+
+* Challenge 9: type checking
+
+give actual type errors lolol
+
+* A model of causation
+
+we need to figure out what PURSUANT TO means, or DUE TO, or BY WAY OF
+
+wonder what GPT thinks about those idioms
+
+* Challenge 10: planning problems
+
+When is the earliest possible time that ... event X could occur?
+
+* Challenge 11: abduction problems
+
+What sets of conditions/circumstances would be necessary for X to arise in future?
+
+* ACTION ITEMS
+
+** TODO Turn these examples into actual tab in spreadsheet that compiles
+
 
 

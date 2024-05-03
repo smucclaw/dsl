@@ -400,6 +400,28 @@ eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
 eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
+evalAndCoerceList binop (MathVar str) =
+  let title = [i|variable expansion: #{str}|]
+      (lhs,_rhs) = verbose title
+  in retitle [i|#{title} #{str}|] do
+    (xlist, xpl1) <- getvarL str
+    case xlist of
+      MathList Nothing [] -> eval (MathVar str)
+      nonemptyList -> do
+        fold <- case binop of
+                  "addition" -> pure FoldSum
+                  "multiplication" -> pure FoldProduct
+                  x -> liftIO do
+                    putStrLn [__i|
+                      Illegal operation #{binop} applied to #{nonemptyList}, recovered by returning the minimum of the list
+                      MathLang fatal error in evalAndCoerceList
+                    |]
+                    pure FoldMin
+        let foldedList = ListFold (Just [i|coerced #{binop} on a list due to its context|]) fold nonemptyList
+        (xval, xpl2) <- eval foldedList
+        pure (xval, Node ([], [[i|#{xval}: #{lhs} #{str}|]]) [xpl1, xpl2])
+evalAndCoerceList _ expr = eval expr
+
 -- | do a fold over an `ExprList`
 doFold :: String -> ([Double] -> Double) -> ExprList Double -> ExplainableIO r MyState Double
 doFold str f xs = retitle [i|listfold #{str}|] do
@@ -427,8 +449,8 @@ binEval title f x y = retitle title do
   -- "normal" output gets returned in the fst part of the Node.
   -- normal output then gets output inside a #+begin_example/#+end_example block.
   -- liftIO $ putStrLn $ "eval " ++ title ++ ": path is " ++ intercalate " / " (reverse path)
-  (xval, xpl) <- eval x
-  (yval, ypl) <- local (\((h,p),r) -> ((h ++ [show xval],p),r)) (eval y)
+  (xval, xpl) <- evalAndCoerceList title x
+  (yval, ypl) <- local (\((h,p),r) -> ((h ++ [show xval],p),r)) (evalAndCoerceList title y)
    -- we sneak in monadic history of the upper evaluations
   let toreturn = f xval yval
       (lhs,rhs) = verbose title
@@ -614,6 +636,15 @@ getvarF x = do
         MathLang fatal error in getvarF
       |]
       pure (Val Nothing 0, emptyXP)
+
+getvarL :: String -> ExplainableIO r MyState (ExprList Double)
+getvarL x = do
+  symtab <- gets symtabL
+  case symtab Map.!? x of
+    Just l ->
+      pure (l, Node ([show l], [[i|variable `#{x}` has value #{l}|]]) [])
+    _ -> -- we check the result from calling function and call getvarF it wasn't a list
+      pure (MathList Nothing [], emptyXP)
 
 -- | Get a @Pred Double@ variable
 

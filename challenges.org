@@ -12,13 +12,182 @@
 
 ** state transition systems, with a bit of modal "deontics"
 
-** multi-temporal
+** temporal logic (external to contract)
 
-** looking at the history of the contract and past state
+LTL/CTL style assertions /about/ a contract
 
-** constraint and property assertions
+These exist at a level outside of the contract itself, just as an LTL assertion exists outside a particular state machine.
 
-external to the contract
+At this level, the "MUST DO" keyword is a *bounded* *alethic* modal.
+
+Every such alethic "must" is associated with one or more *bounds*, or desired goals.
+
+The full expression is: it is not possible to satisfy ~[bounds]~ without party P performing action A.
+
+The trivial ~[bounds]~ is /achievement of a final fulfilled state/.
+
+Strong and weak forms can be distinguished: the strong form no breach of any subcontract. The weak form allows breaches of subcontract so long as some reparation pathway reaches fulfilled.
+
+** multi-temporal logic (internal to contract)
+
+These exist within a contract, allowing a contract to say: party P1 may perform some action so long as they are not aware that party P2 has done some thing
+
+Which expands to something like:
+
+#+begin_src l4
+  THREAD 1
+  PARTY  P1
+   WHEN  P1 NOT knows Fact 1
+    MAY  Action 1
+
+  THREAD 2
+  PARTY  P2
+    MAY  notify P1
+         that  Fact 1
+#+end_src
+
+*** contract history
+
+multi-temporal logic provides the mechanism for looking at the history of the contract and past state.
+
+For instance, suppose we want to say that P1 may only perform Action 2 if they have not yet performed Action 1, and vice versa
+
+In state transition semantics, this is internal choice: <p1>(action1 || action2) -> ...
+
+A contract may phrase it as
+
+#+begin_src l4
+  THREAD  1
+  PARTY          P1
+  HAVING  NEVER  Action 2
+     MAY         Action 1
+
+  THREAD  2
+  PARTY          P1
+  HAVING  NEVER  Action 1
+     MAY         Action 2
+#+end_src
+
+This is a verbose but equivalent way of saying
+
+#+begin_src l4
+    PARTY  P1
+      MAY  Action 1
+      XOR  Action 2
+#+end_src
+
+** Mixing Temporal/Multi-Temporal Logic Levels
+
+Sometimes a contract will explicitly want to use language from the "external" level.
+
+This poses a problem.
+
+#+begin_quote
+Party P1 may at any time perform some action \alpha, so long as Party P1 is not at that time required to pay a fine.
+#+end_quote
+
+OK, so the next question is whether they are required to pay a fine. Let's suppose the fine could arise in some other thread. So the first thread (where you can do \alpha) gets conditioned on whether the second thread is active.
+
+To make things more interesting, let's complicate the second thread.
+
+Let's suppose we live in a world where you /should/ pay a fine; but if you fail to do so, you might yet get lucky! If the King is in a good mood on his birthday, he waives the fine.
+
+#+begin_src l4
+  THREAD  penalty
+  PARTY   P1
+  COULD   pay a fine (MUST)
+  BEFORE  July 1
+    LEST  PARTY  P1
+          COULD  appeal to the King for clemency (MAY)
+         BEFORE  August 1
+          HENCE  PARTY  King
+                 COULD  waive fine (MAY)
+                BEFORE  September 1
+                  LEST   PARTY  P1
+                          MUST  pay triple the fine
+                        BEFORE  October 1
+#+end_src
+
+This reflects, to some degree, the thinking from the classic paper "A fine is a price". From an opinionated, moralistic perspective, a fine is a fine. From an unopinionated, amoral perspective, a fine is a price, which rational entities choose to pay, or not.
+
+From LegalRuleML's perspective, this is a "suborder" list. In a conventional, "opinionated", formulation, it makes sense to use "MUST" and "MAY" to distinguish the degrees of freedom within each clause, or subcontract. The conventional deontic modals are given in parentheses above.
+
+In an "unopinionated" formulation, we simply state the possibilities, and let the chips fall where they may.
+
+So, /is/ the party required to pay a fine?
+
+We could debate that question along /opinionated/ vs /unopinionated/ lines, where the argument turns on whether they ~COULD~ at any given time pay a fine. During those periods when the ball is not in their court, we could argue that they are not required to pay the fine, since there's more game to play.
+
+So we could debate that question along /stern/ vs /lax/ lines, where the answer turns on external /luck/: whether they enjoy the King's mercy.
+
+From a stern perspective, the answer is yes, they are required: because the alternative to paying the initial fine, if the King frowns, could lead to paying triple the fine, and the alternative to paying double the fine is breach.
+
+From a lax perspective, no: if the King smiles, then the fine is waived, and the party could get off. So long as there is a possibility of getting off, the party is not 100% inevitably due to pay a fine.
+
+So, the temporal properties can be evaluated under "best case" or "worst case" scenarios, where terms that are out of the party's control are dispositive!
+
+Keeping the sequence of events in mind, if the King is not generous:
+
+| Month     | Required to pay fine? |
+|-----------+-----------------------|
+| June      | yes                   |
+| July      | no                    |
+| August    | no                    |
+| September | yes                   |
+| October   | no, breach state      |
+
+So, in this passage, is it true, externally, that P1 "must" pay a fine? Well, they /should/, because that keeps them on the straight-and-narrow happy path.
+
+But they could get away with not paying it.
+
+Indeed, there is a loophole here; the party could take the original action \alpha simply by waiting until July, because at that time they are not, technically, required to pay a fine; instead they are waiting for the King's answer.
+
+But surely that is not the intent of the rule!
+
+Perhaps the best way to proceed is to simply decide that the initial specification, in natural language, was badly drafted.
+
+#+begin_quote
+Party P1 may at any time perform some action, so long as Party P1 is not at that time required to pay a fine.
+#+end_quote
+
+There are two fixes. First, we introduce the idea that being anywhere in the penalty subcontract is disqualifying.
+
+#+begin_quote
+Party P1 may at any time perform some action, unless Party P1 is not then engaged in an unresolved proceeding in relation to a fine.
+#+end_quote
+
+We should also give the party the initiative to get themselves out of trouble at any time by paying double the fine.
+
+#+begin_quote
+After having incurred a fine, and having failed to pay it, then prior to receiving the King's answer, the party may resolve the matter by paying double the fine.
+#+end_quote
+
+So we compose the subcontracts:
+
+#+begin_src l4
+  THREAD  penalty
+  PARTY   P1
+  COULD   pay a fine (MUST)
+  BEFORE  July 1
+    LEST
+
+      {   PARTY  P1
+          COULD  appeal to the King for clemency (MAY)
+         BEFORE  August 1
+          HENCE  PARTY  King
+                 COULD  waive fine (MAY)
+                BEFORE  September 1
+      OR  PARTY  P1
+          COULD  pay double the fine (MAY)
+         BEFORE  September 1
+      }
+
+    LEST  PARTY  P1
+           MUST  pay triple the fine
+         BEFORE  October 1
+#+end_src
+
+Expressing the above composition with only indentation is a bit challenging, you kind of need the curly braces.
 
 * Example Challenge 1: Booleans, Arithmetics, and simple State-Transition Deontics
 

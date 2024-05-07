@@ -1,7 +1,8 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Explainable.MathLang where
@@ -23,8 +24,11 @@ import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe, mapMaybe)
+import Data.String (IsString)
 import Data.String.Interpolate (i, __i)
+import Data.String.Interpolate.Conversion (Interpolatable)
 import Data.Tree (Tree (..))
+import Debug.Trace (trace)
 import Explainable
   ( ExplainableIO,
     XP,
@@ -58,9 +62,8 @@ import Prettyprinter
     (<+>),
   )
 import Prettyprinter.Interpolate (__di)
-import Prelude hiding (pred)
 import Text.Regex.PCRE.Heavy qualified as PCRE
-import Debug.Trace (trace)
+import Prelude hiding (pred)
 
 -- * Now we do a deepish embedding of an eDSL.
 -- See:
@@ -400,6 +403,9 @@ eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
 eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
+evalAndCoerceList ::
+  (Eq src, IsString src, Interpolatable False src String) =>
+  src -> Expr Double -> ExplainableIO r MyState Double
 evalAndCoerceList binop (MathVar str) =
   let title = [i|variable expansion: #{str}|]
       (lhs,_rhs) = verbose title
@@ -409,17 +415,21 @@ evalAndCoerceList binop (MathVar str) =
       MathList Nothing [] -> eval (MathVar str)
       nonemptyList -> do
         fold <- case binop of
-                  "addition" -> pure FoldSum
-                  "multiplication" -> pure FoldProduct
-                  x -> liftIO do
-                    putStrLn [__i|
-                      Illegal operation #{binop} applied to #{nonemptyList}, recovered by returning the minimum of the list
-                      MathLang fatal error in evalAndCoerceList
-                    |]
-                    pure FoldMin
-        let foldedList = ListFold (Just [i|coerced #{binop} on a list due to its context|]) fold nonemptyList
+          "addition" -> pure FoldSum
+          "multiplication" -> pure FoldProduct
+          _x -> liftIO do
+            putStrLn [__i|
+              Illegal operation #{binop} applied to #{nonemptyList}, recovered by returning the minimum of the list
+              MathLang fatal error in evalAndCoerceList
+            |]
+            pure FoldMin
+        let foldedList =
+              ListFold
+                (Just [i|coerced #{binop} on a list due to its context|])
+                fold nonemptyList
         (xval, xpl2) <- eval foldedList
         pure (xval, Node ([], [[i|#{xval}: #{lhs} #{str}|]]) [xpl1, xpl2])
+
 evalAndCoerceList _ expr = eval expr
 
 -- | do a fold over an `ExprList`
@@ -480,10 +490,10 @@ evalP' (PredBin _lbl binop x y) = do
   (xval, xpl) <- evalP x
   (yval, ypl) <- evalP y
   let toreturn = case binop of
-                   PredAnd -> xval && yval
-                   PredOr  -> xval || yval
-                   PredEq  -> xval == yval
-                   PredNeq -> xval /= yval
+        PredAnd -> xval && yval
+        PredOr  -> xval || yval
+        PredEq  -> xval == yval
+        PredNeq -> xval /= yval
   pure (toreturn, Node ([] , [[i|#{toreturn}: logical #{binop}|]]) [xpl, ypl])
 
 evalP' (PredComp lbl c x y) =

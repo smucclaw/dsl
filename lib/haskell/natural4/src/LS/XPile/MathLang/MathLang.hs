@@ -306,7 +306,7 @@ gml2ml exp =
 
   EPredSet _ _ -> do
     PredSet name pr <- exp2pred exp
-    ToMathLang $ tell $ emptyState {symtabP = Map.singleton name pr}
+    ToMathLang $ tell emptyState {symtabP = Map.singleton name pr}
     pure $ Undefined Nothing -- this is just dummy to not have it crash, this value won't be present in the final result
 
   EIfThen condE thenE -> do
@@ -321,15 +321,15 @@ gml2ml exp =
       (MathVar fname, MathVar rname) -> pure $ MathVar [i|#{rname}.#{fname}|]
       x -> pure $ MathVar [i|gml2ml: unsupported record #{expExp}|]
 
-  ELam (GML.MkVar v) body -> trace [i|\ngml2ml: found ELam #{exp}\n|] $ do
+  ELam (GML.MkVar v) body -> trace [i|\ngml2ml: found ELam #{exp}\n|] do
     bodyEx <- gml2ml body
     let varEx = T.unpack v
-    trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] $ pure $ MathSet varEx bodyEx
+    trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] pure $ MathSet varEx bodyEx
   -- exp.exp :: BaseExp
 
   EApp {} -> mkApp exp []
   _ ->
-    trace [i|\ngml2ml: not supported #{exp}\n|] $
+    trace [i|\ngml2ml: not supported #{exp}\n|]
       pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
 
   where
@@ -356,9 +356,9 @@ gml2ml exp =
                 _ -> [i|TODO: #{f} applied to 3 or more arguments, or the arguments don't have labels|]
               expandedExpr = replaceVars (zip boundVars args) expr
               namedExpr = funAppliedToArgsName @|= expandedExpr
-          ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
+          ToMathLang $ tell emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
           pure $ MathVar funAppliedToArgsName
-    mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
+    mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] fail "mkApp: unexpected thing happened"
 
     gml2mlWithListCoercion :: MathBinOp -> GML.Exp -> ToMathLang (Expr Double)
     gml2mlWithListCoercion op (getList -> Just exps) = trace [i|gml2mlWithListCoercion: is a list #{exps}|] $ do
@@ -377,7 +377,7 @@ gml2ml exp =
     mkList varname exps = do
       seqs <- traverse gml2ml exps
       let list = MathList Nothing seqs
-      ToMathLang $ tell $ emptyState {symtabL = Map.singleton varname list}
+      ToMathLang $ tell emptyState {symtabL = Map.singleton varname list}
       -- pure $ MathVar varname
       pure list
 
@@ -396,7 +396,7 @@ gml2ml exp =
             -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
             Map.fromList [(var, var @|= val) | MathSet var val <- newSeqs]
 
-      ToMathLang $ tell $ emptyState {symtabF = newF}
+      ToMathLang $ tell emptyState {symtabF = newF}
 
       let !headName = case newSeqs of
             MathSet headName _ : _ -> headName

@@ -645,7 +645,7 @@ tc2nl _ Nothing = "eventually"
 tc2nl NLen (Just (TemporalConstraint tComparison n t)) =
   [i|#{tComparisonTxt} #{maybe "" show n} #{t}|]
   where
-    tComparisonTxt :: Text.Text = case tComparison of
+    tComparisonTxt = case tComparison of
       TVague -> "around"
       _ -> tComparison |> show |> Text.pack |> Text.tail |> Text.toLower
 

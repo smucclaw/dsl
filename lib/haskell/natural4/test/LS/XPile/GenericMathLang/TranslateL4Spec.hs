@@ -147,8 +147,7 @@ spec = do
             }
       case exprs of
         [expr] -> do
-          (taxes, _xp, _st, _strs) <-
-            xplainE emptyE st' $ eval expr
+          (taxes, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
           taxes `shouldBe` 50.0
         _ -> mempty
 
@@ -159,8 +158,7 @@ spec = do
       case ML.toMathLang l4i of
         ([],_) -> mempty
         (expr:_,st) -> do
-          (e, _xp, _st, _strs) <-
-            xplainE emptyE st $ eval expr
+          (e, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
           e `shouldBe` 4.0
 
     -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
@@ -171,8 +169,7 @@ spec = do
       case ML.toMathLang l4i of
         ([], _) -> mempty
         (expr:_, st) -> do
-          (res, _xp, _st, _strs) <-
-            xplainE emptyE st $ eval expr
+          (res, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
           res `shouldBe` 1.0
 
     let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
@@ -220,8 +217,7 @@ spec = do
           let st' = st { symtabF = symtabF st <>
                           [ ("firstArg", Val Nothing 1.0)
                           , ("secondArg", Val Nothing 0.6) ]}
-          (e, _xp, _st, _strs) <-
-            xplainE emptyE st' $ eval expr
+          (e, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
           e `shouldBe` 0.4
 
   describe "repeated arguments + fun app" do
@@ -269,9 +265,8 @@ spec = do
     it "can evaluate summing a list with a single number" do
       case res of
         ([], _) -> mempty
-        (expr:_, st) ->  do
-          (res, _xp, _st, _strs) <-
-            xplainE emptyE st $ eval expr
+        (expr:_, st) -> do
+          (res, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
 
           res `shouldBe` 16.0
 
@@ -305,8 +300,7 @@ spec = do
               , ("illness.disqualified" , PredVal Nothing False)
               ]
           }
-          (res, _xp, _st, _strs) <-
-            xplainE emptyE st' $ eval expr
+          (res, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
 
           res `shouldBe` 1050.0
 
@@ -520,8 +514,8 @@ rule3predicate =
                     ])}]
 
 -- TODO: Which ones of the following should be replaced by records?
-rule3predicate_gold :: BaseExp
-rule3predicate_gold = EIfThen
+rule3predicatesGold :: BaseExp
+rule3predicatesGold = EIfThen
     { condExp = MkExp
         { exp = EAnd
             { left = MkExp

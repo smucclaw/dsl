@@ -38,7 +38,7 @@ import LS.Types as L4
   MultiClauseHL(..), mkMultiClauseHL,
   HeadOnlyHC, mkHeadOnlyAtomicHC,
   HnBodHC(..),
-  mtexpr2text, ParamText, pt2text
+  mtexpr2text, ParamText, pt2text, pt2multiterm
   )
 
 import LS.Rule (
@@ -1294,6 +1294,13 @@ expifyBodyRP = \case
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
     pure $ noExtraMdata $ EIs exp1 exp2
 
+  -- RPnary with logical relations: convert into BoolStruct and reuse processHcBody
+  RPnary RPand rps -> processHcBody $ AA.All Nothing $ AA.Leaf <$> rps
+  RPnary RPor rps -> processHcBody $ AA.Any Nothing $ AA.Leaf <$> rps
+  RPnary RPnot [rp] -> processHcBody $ AA.Not $ AA.Leaf rp
+  RPnary RPnot rps -> processHcBody $ AA.All Nothing $ AA.Not . AA.Leaf <$> rps
+
+  -- RPnary with numeric or comparison op
   RPnary rprel rps -> case (rprel2op rprel, rps) of
     -- Numeric operations can have multiple arguments
     (Just (Num op), _) -> go op "Number" ENumOp
@@ -1307,10 +1314,16 @@ expifyBodyRP = \case
         exps <- traverse expifyBodyRP rps
         pure $ foldl1 (numOrCompOp pos str ctor op) exps
 
-  -- The other cases: Either not yet implemented or not supported, with hacky erorr msges
-  rp@(RPBoolStructR {}) -> throwNotSupportedWithMsgError rp "RPBoolStructR {} case of expifyBodyRP"
-  rp@(RPParamText _) -> throwNotSupportedWithMsgError rp "RPParamText _ case of expifyBodyRP"
-  -- rp -> throwNotSupportedWithMsgError rp "unknown rp"
+  -- ParamText is just a simpler MultiTerm
+  RPParamText pt -> expifyBodyRP $ RPMT $ pt2multiterm pt
+
+  -- RPBoolStructR only should work with IS
+  RPBoolStructR lhs RPis bsr -> do
+    lhsExp <- expifyMTEsNoMd lhs
+    rhsExp <- processHcBody bsr
+    pure $ noExtraMdata $ EIs lhsExp rhsExp
+  rp@(RPBoolStructR _lhs rprel _bsr) -> throwNotSupportedWithMsgError rp [i|#{rprel} not supported with RPBoolStructR|]
+
   where
     numOrCompOp :: SrcPositn -> T.Text -> (t -> Exp -> Exp -> BaseExp) -> t -> Exp -> Exp -> Exp
     numOrCompOp pos str ctor op x y =

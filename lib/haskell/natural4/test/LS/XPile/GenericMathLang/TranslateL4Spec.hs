@@ -148,7 +148,7 @@ spec = do
       case exprs of
         [expr] -> do
           (taxes, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+            xplainE emptyE st' $ eval expr
           taxes `shouldBe` 50.0
         _ -> mempty
 
@@ -160,7 +160,7 @@ spec = do
         ([],_) -> mempty
         (expr:_,st) -> do
           (e, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+            xplainE emptyE st $ eval expr
           e `shouldBe` 4.0
 
     -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
@@ -172,7 +172,7 @@ spec = do
         ([], _) -> mempty
         (expr:_, st) -> do
           (res, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+            xplainE emptyE st $ eval expr
           res `shouldBe` 1.0
 
     let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
@@ -221,7 +221,7 @@ spec = do
                           [ ("firstArg", Val Nothing 1.0)
                           , ("secondArg", Val Nothing 0.6) ]}
           (e, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+            xplainE emptyE st' $ eval expr
           e `shouldBe` 0.4
 
   describe "repeated arguments + fun app" do
@@ -271,7 +271,7 @@ spec = do
         ([], _) -> mempty
         (expr:_, st) ->  do
           (res, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+            xplainE emptyE st $ eval expr
 
           res `shouldBe` 16.0
 
@@ -306,14 +306,16 @@ spec = do
               ]
           }
           (res, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+            xplainE emptyE st' $ eval expr
 
           res `shouldBe` 1050.0
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify = testLCProgram (fmap exp . lcProgram)
 
-testLCProgram :: (Show a, Eq a) => (LCProgram -> a) -> String -> String -> [Rule] -> a -> Spec
+testLCProgram ::
+  (Show a, Eq a) =>
+  (LCProgram -> a) -> String -> String -> [Rule] -> a -> Spec
 testLCProgram f name desc rules gold =
   describe name do
     it desc do
@@ -326,7 +328,7 @@ testLCProgram f name desc rules gold =
 -- gold for mathlang transformation
 mathLangGold23 :: [Expr Double]
 mathLangGold23 = [
-   MathSet "m3a"
+    MathSet "m3a"
     ( MathBin (Just "m3a") Times
         ( MathVar "m1" )
         ( MathVar "m2" )
@@ -598,7 +600,7 @@ rule3predicate_gold = EIfThen
                                                             { func = MkExp
                                                                 { exp = ELit
                                                                     { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
-                                                                }, appArg = (MkExp (EVar (MkVar "ind")) [])
+                                                                }, appArg = MkExp (EVar (MkVar "ind")) []
                                                             }, md = []
                                                         }, compRight = MkExp
                                                         { exp = ELit { lit = EBoolTrue }, md = []
@@ -2300,3 +2302,6 @@ pausGlobalVarsGold = MkGlobalVars [
   ( MkVar "policy", Just ( L4EntType "Policy" ) ),
   ( MkVar "illness", Just ( L4EntType "Claim" ) )
   ]
+
+emptyE :: Map.HashMap () ()
+emptyE = mempty

@@ -267,23 +267,12 @@ gml2ml exp =
   let expExp = exp.exp
   in case expExp of
   EEmpty -> fail "gml2ml: unexpected EEmpty"
-  ESeq seq -> do
-    seqs <- traverse gml2ml $ GML.seqExpToExprs seq
-    let newSeqs =
-          -- trace [i|\ngml2ml: seqs #{seqs}\n|] $
-          chainITEs seqs
-        newF =
-          -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
-          Map.fromList [(var, var @|= val) | MathSet var val <- newSeqs]
-
-    ToMathLang $ tell $ emptyState {symtabF = newF}
-
-    let !headName = case newSeqs of
-          MathSet headName _ : _ -> headName
-          MathVar headName : _ -> headName
-          _ -> fail [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{seq}|]
-
-    pure $ MathVar headName
+  ESeq seq -> case getList exp of
+    Just exps -> do
+      let varname = "FIXME: unlabeled list found outside a context, probably an error"
+      mkList varname exps
+      pure $ MathVar varname
+    Nothing -> mkVarSet $ GML.seqExpToExprs seq
 
   ELit lit -> pure $ mkVal lit
 
@@ -297,10 +286,15 @@ gml2ml exp =
     MathMax Nothing <$> gml2ml e1 <*> gml2ml e2
 
   ENumOp op e1 e2 -> do
-    ex1 <- gml2ml e1
-    ex2 <- gml2ml e2
     op <- numOptoMl op
+    ex1 <- gml2mlWithListCoercion op e1
+    ex2 <- gml2mlWithListCoercion op e2
     pure $ MathBin Nothing op ex1 ex2
+
+  EVarSet var (getList -> Just exps) -> trace [i|!!! found list #{var} = #{exps}|] do
+    MathVar varName <- gml2ml var
+    mkList varName exps -- puts list in MyState
+    pure $ MathVar varName -- this function needs to return an Expr, not an ExprList so just return the MathVar
 
   EVarSet var val -> do
     MathVar varEx <- gml2ml var
@@ -365,6 +359,51 @@ gml2ml exp =
           ToMathLang $ tell $ emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
           pure $ MathVar funAppliedToArgsName
     mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] $ fail "mkApp: unexpected thing happened"
+
+    gml2mlWithListCoercion :: MathBinOp -> GML.Exp -> ToMathLang (Expr Double)
+    gml2mlWithListCoercion op (getList -> Just exps) = trace [i|gml2mlWithListCoercion: is a list #{exps}|] $ do
+      list <- mkList "inline" exps -- this is only called from ENumOp to its arguments: if it's a list, then it's inline. (I think as of 20240503, this is impossible, but maybe it should be possible: get a better type inference and in the future this works.)
+      fold <- op2somefold op
+      pure $ ListFold Nothing fold list
+    gml2mlWithListCoercion _ exp = gml2ml exp -- not a list
+
+    getList :: GML.Exp -> Maybe [GML.Exp]
+    getList exp = case (exp.exp, GML.typeLabel <$> exp.md) of
+      (ESeq seq, Just (GML.FromUser (GML.L4List _)):_)
+        -> Just (GML.seqExpToExprs seq)
+      _ -> Nothing
+
+    mkList :: String -> [GML.Exp] -> ToMathLang (ExprList Double)
+    mkList varname exps = do
+      seqs <- traverse gml2ml exps
+      let list = MathList Nothing seqs
+      ToMathLang $ tell $ emptyState {symtabL = Map.singleton varname list}
+      -- pure $ MathVar varname
+      pure list
+
+    op2somefold :: MathBinOp -> ToMathLang SomeFold
+    op2somefold Plus = pure FoldSum
+    op2somefold Times = pure FoldProduct
+    op2somefold op = fail [i|gml2ml: not allowed to apply #{op} to a list|]
+
+    mkVarSet :: [GML.Exp] -> ToMathLang (Expr Double)
+    mkVarSet exps = do
+      seqs <- traverse gml2ml exps
+      let newSeqs =
+            -- trace [i|\ngml2ml: seqs #{seqs}\n|] $
+            chainITEs seqs
+          newF =
+            -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
+            Map.fromList [(var, var @|= val) | MathSet var val <- newSeqs]
+
+      ToMathLang $ tell $ emptyState {symtabF = newF}
+
+      let !headName = case newSeqs of
+            MathSet headName _ : _ -> headName
+            MathVar headName : _ -> headName
+            _ -> fail [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{exps}|]
+
+      pure $ MathVar headName
 
 --             [(x, a),  (y, b)]          x + y          a + b
 replaceVars :: [(String, Expr Double)] -> Expr Double -> Expr Double

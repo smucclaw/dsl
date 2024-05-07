@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
@@ -136,9 +137,9 @@ spec = do
 
     it "should evaluate taxesPayable correctly when info is given" do
       let st' = st {
-              symtabF = symtabF st <> Map.fromList [
+              symtabF = symtabF st <> [
                 ("annualIncome", Val (Just "annualIncome") 10000) ]
-            , symtabP = Map.fromList [
+            , symtabP = [
                 ("vivacity", PredVal (Just "vivacity") True),
                 ("phaseOfMoon.waxing", PredVal (Just "phaseOfMoon.waxing") False),
                 ("phaseOfMoon.gibbous", PredVal (Just "phaseOfMoon.gibbous") True),
@@ -146,8 +147,7 @@ spec = do
             }
       case exprs of
         [expr] -> do
-          (taxes, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+          (taxes, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
           taxes `shouldBe` 50.0
         _ -> mempty
 
@@ -158,8 +158,7 @@ spec = do
       case ML.toMathLang l4i of
         ([],_) -> mempty
         (expr:_,st) -> do
-          (e, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+          (e, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
           e `shouldBe` 4.0
 
     -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
@@ -170,8 +169,7 @@ spec = do
       case ML.toMathLang l4i of
         ([], _) -> mempty
         (expr:_, st) -> do
-          (res, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+          (res, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
           res `shouldBe` 1.0
 
     let l4i_ar3 = defaultL4I {origrules = [arithRule3]}
@@ -183,13 +181,13 @@ spec = do
     it "should become a binary function in the environment" do
       let toTest = runToLC $ l4ToLCProgram testFunApp
       case toTest of
-        Right p -> userFuns p `shouldBe` testLambda_gold
+        Right p -> userFuns p `shouldBe` testLambdaGold
         Left err -> err `shouldBe` MiscError "" ""
 
-  testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunApp_gold
-  testBaseExpify "test function application" "fun app and nested genitives" nestedGenitives_in_fun_app nestedGenitives_in_fun_app_gold
+  testBaseExpify "test function application" "should be recognised as a function" testFunApp testFunAppGold
+  testBaseExpify "test function application" "fun app and nested genitives" nestedGenitivesInFunApp nestedGenitivesInFunAppGold
 
-  testBaseExpify "parsing currencies" "should be parsed into various currencies" testCurrency testCurrency_gold
+  testBaseExpify "parsing currencies" "should be parsed into various currencies" testCurrency testCurrencyGold
 
   describe "genitive->record field" do
     let gml = runToLC $ baseExpifyMTEs nestedGenitives
@@ -199,7 +197,7 @@ spec = do
           err `shouldBe` MiscError "foo" "bar"
       Right res -> do
         it "should turn xs y into a record x.y" do
-          res `shouldBe` nestedGenitives_gold
+          res `shouldBe` nestedGenitivesGold
         it "should turn into correct MathLang" do
           let exp = noExtraMdata res
               res' = ML.runToMathLang Map.empty $ ML.gml2ml exp
@@ -211,46 +209,45 @@ spec = do
     let l4i = defaultL4I {origrules = simpleFunApp}
         res = ML.toMathLang l4i
     it "should replace simple variables in a function that uses its arguments once" do
-      res `shouldBe` simpleFunApp_gold
+      res `shouldBe` simpleFunAppGold
     it "should evaluate simple fun app" do
       case res of
         ([],_) -> mempty
         (expr:_,st) -> do
-          let st' = st { symtabF = symtabF st <> Map.fromList
+          let st' = st { symtabF = symtabF st <>
                           [ ("firstArg", Val Nothing 1.0)
                           , ("secondArg", Val Nothing 0.6) ]}
-          (e, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+          (e, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
           e `shouldBe` 0.4
 
   describe "repeated arguments + fun app" do
     it "should replace simple variables in a function that uses its arguments twice each" do
       let l4i = defaultL4I {origrules = complexFunApp}
           res = ML.toMathLang l4i
-      res `shouldBe` complexFunApp_gold
+      res `shouldBe` complexFunAppGold
 
   describe "nested function calls, e.g. `f x y = g x y where g x y = x + y`" do
     it "in GenMathLang, should parse two user functions" do
       let resGML = runToLC $ l4ToLCProgram funCallsAnotherFun
       case resGML of
-        Right p -> userFuns p `shouldBe` testNestedFunApp_gold
+        Right p -> userFuns p `shouldBe` testNestedFunAppGold
         Left err -> err `shouldBe` MiscError "" ""
     it "in MathLang, should evaluate x + y but keep track of the call of g in state" do
       let l4i = defaultL4I {origrules = funCallsAnotherFun}
           resML = ML.toMathLang l4i
-      resML `shouldBe` funCallsAnotherFun_gold
+      resML `shouldBe` funCallsAnotherFunGold
 
   describe "nested genitives + fun app" do
     it "should turn out right" do
-      let l4i = defaultL4I {origrules = nestedGenitives_in_fun_app}
+      let l4i = defaultL4I {origrules = nestedGenitivesInFunApp}
           res = ML.toMathLang l4i
-      res `shouldBe` ([MathSet "Answer" (MathVar "ind.friend.age discounted by foo.bar.baz")], emptyState {symtabF = Map.fromList [("ind.friend.age discounted by foo.bar.baz",MathBin (Just "ind.friend.age discounted by foo.bar.baz") Times (MathVar "ind.friend.age") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "foo.bar.baz"))),("Answer",MathVar "ind.friend.age discounted by foo.bar.baz")]})
+      res `shouldBe` ([MathSet "Answer" (MathVar "ind.friend.age discounted by foo.bar.baz")], emptyState {symtabF = [("ind.friend.age discounted by foo.bar.baz",MathBin (Just "ind.friend.age discounted by foo.bar.baz") Times (MathVar "ind.friend.age") (MathBin Nothing Minus (Val Nothing 1.0) (MathVar "foo.bar.baz"))),("Answer",MathVar "ind.friend.age discounted by foo.bar.baz")]})
 
   testLCProgram globalVars
                 "extract GIVENs from PAU rules"
                 "should include lists and basic types"
                 paus
-                paus_globalVars_gold
+                pausGlobalVarsGold
 
   testLCProgram globalVars
                 "extract GIVENs from taxesPayable rules"
@@ -258,19 +255,18 @@ spec = do
                 [arithRule4]
                 arithRule4_globalVars_gold
 
-  testBaseExpify "list types" "list has correct type in GML" listsum listsumGML_gold
+  testBaseExpify "list types" "list has correct type in GML" listsum listsumGMLGold
 
   describe "list types" do
     let l4i = defaultL4I {origrules = listsum}
         res = ML.toMathLang l4i
     it "can sum a list with a single number" do
-      res `shouldBe` listsumML_gold
+      res `shouldBe` listsumMLGold
     it "can evaluate summing a list with a single number" do
       case res of
         ([], _) -> mempty
-        (expr:_, st) ->  do
-          (res, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+        (expr:_, st) -> do
+          (res, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
 
           res `shouldBe` 16.0
 
@@ -278,21 +274,21 @@ spec = do
     let l4i = defaultL4I {origrules = paus}
         res = ML.toMathLang l4i
     it "actual insurance policy" do
-      res `shouldBe` testPau_gold
+      res `shouldBe` testPauGold
 
     it "evaluate pau" do
       case res of
         ([], _) -> mempty
         (expr:_, st) -> do
           let st' = st {
-            symtabF = symtabF st <> Map.fromList
+            symtabF = symtabF st <>
               [ ("policyHolder.age", Val (Just "policyHolder.age") 50)
               , ("policy.benADD",  Val (Just "policy.benADD") 50)
               , ("policyHolder.past ADD payouts", Val Nothing 1000)
               , ("risk cap",  Val (Just "risk cap") 10000000)
               , ("claimable limit", Val (Just "claimable limit") 2000)
               ]
-          , symtabP = symtabP st <> Map.fromList
+          , symtabP = symtabP st <>
               [ ("user input.accident_claim.selected", PredVal Nothing True)
               , ("ADD is disqualified entirely" , PredVal Nothing False)
               , ("illness.general exclusions apply", PredVal Nothing False)
@@ -304,15 +300,16 @@ spec = do
               , ("illness.disqualified" , PredVal Nothing False)
               ]
           }
-          (res, _xp, _st, _strs) <-
-            xplainE (mempty :: Map.HashMap () ()) st' $ eval expr
+          (res, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
 
           res `shouldBe` 1050.0
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify = testLCProgram (fmap exp . lcProgram)
 
-testLCProgram :: (Show a, Eq a) => (LCProgram -> a) -> String -> String -> [Rule] -> a -> Spec
+testLCProgram ::
+  (Show a, Eq a) =>
+  (LCProgram -> a) -> String -> String -> [Rule] -> a -> Spec
 testLCProgram f name desc rules gold =
   describe name do
     it desc do
@@ -323,8 +320,9 @@ testLCProgram f name desc rules gold =
 
 -----------------------------------------------------------------------------
 -- gold for mathlang transformation
+mathLangGold23 :: [Expr Double]
 mathLangGold23 = [
-   MathSet "m3a"
+    MathSet "m3a"
     ( MathBin (Just "m3a") Times
         ( MathVar "m1" )
         ( MathVar "m2" )
@@ -412,7 +410,7 @@ mathLangGold4 = (
         )
     ]
   , emptyState
-    { symtabF = Map.fromList
+    { symtabF =
         [
             ( "income tax component"
             , MathBin
@@ -516,8 +514,8 @@ rule3predicate =
                     ])}]
 
 -- TODO: Which ones of the following should be replaced by records?
-rule3predicate_gold :: BaseExp
-rule3predicate_gold = EIfThen
+rule3predicatesGold :: BaseExp
+rule3predicatesGold = EIfThen
     { condExp = MkExp
         { exp = EAnd
             { left = MkExp
@@ -596,7 +594,7 @@ rule3predicate_gold = EIfThen
                                                             { func = MkExp
                                                                 { exp = ELit
                                                                     { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
-                                                                }, appArg = (MkExp (EVar (MkVar "ind")) [])
+                                                                }, appArg = MkExp (EVar (MkVar "ind")) []
                                                             }, md = []
                                                         }, compRight = MkExp
                                                         { exp = ELit { lit = EBoolTrue }, md = []
@@ -934,7 +932,7 @@ arithExpr3_gold =
   }
 
 arithRule3_gold_symtab :: Explainable.MathLang.SymTab (Expr Double)
-arithRule3_gold_symtab = Map.fromList
+arithRule3_gold_symtab =
   [ ( "o3b", MathBin
         ( Just "o3b" ) Plus
         ( MathBin Nothing Times ( MathVar "o1" ) ( Val Nothing 1.0e-2 ) )
@@ -1028,7 +1026,7 @@ arithRule4_gold :: BaseExp
 arithRule4_gold = ESeq {seq = SeqExp [MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "gibbous"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EVar {var = MkVar "vivacity"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Boolean")), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "waxing"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 3}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "full"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "waived"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = ELit {lit = EBoolTrue}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Bool"), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 0}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "annualIncome"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "netWorth"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
 
 arithRule4_globalVars_gold :: GlobalVars
-arithRule4_globalVars_gold = MkGlobalVars $ Map.fromList [
+arithRule4_globalVars_gold = MkGlobalVars [ 
   ( MkVar "netWorth", Just ( L4EntType "Number" ) ),
   ( MkVar "annualIncome", Just ( L4EntType "Number" ) ),
   ( MkVar "phaseOfMoon", Just
@@ -1038,12 +1036,14 @@ arithRule4_globalVars_gold = MkGlobalVars $ Map.fromList [
   ]
 
 
+nestedGenitives :: [MTExpr]
 nestedGenitives = [ MTT "ind's", MTT "friend's", MTT "age"]
 
-nestedGenitives_gold = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}
+nestedGenitivesGold :: BaseExp
+nestedGenitivesGold = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}
 
-nestedGenitives_in_fun_app :: [Rule]
-nestedGenitives_in_fun_app =  testLambda :
+nestedGenitivesInFunApp :: [Rule]
+nestedGenitivesInFunApp =  testLambda :
   [ mkTestRule'
       [ MTT "test function application" ]
       Nothing
@@ -1072,13 +1072,13 @@ simpleFunApp = testLambda :
         }]
   ]
 
-simpleFunApp_gold :: ([Expr Double], MyState)
-simpleFunApp_gold =  (
+simpleFunAppGold :: ([Expr Double], MyState)
+simpleFunAppGold =  (
         [ MathSet "Answer"
             ( MathVar "firstArg discounted by secondArg" )
         ]
     , emptyState
-        { symtabF = Map.fromList
+        { symtabF =
             [
                 ( "firstArg discounted by secondArg"
                 , MathBin
@@ -1096,7 +1096,8 @@ simpleFunApp_gold =  (
             ]
         }
     )
-complexFunApp = testLambda_complex :
+complexFunApp :: [Rule]
+complexFunApp = testLambdaComplex :
   [ mkTestRule'
       [ MTT "complex test function application" ]
       Nothing
@@ -1110,13 +1111,13 @@ complexFunApp = testLambda_complex :
         }]
   ]
 
-complexFunApp_gold :: ([Expr a], MyState)
-complexFunApp_gold = (
+complexFunAppGold :: ([Expr a], MyState)
+complexFunAppGold = (
     [ MathSet "Answer"
         ( MathVar "firstArg `funThatRepeatsArgs` secondArg" )
     ]
     , emptyState
-    { symtabF = Map.fromList
+    { symtabF =
         [
             ( "firstArg `funThatRepeatsArgs` secondArg"
             , MathBin
@@ -1246,10 +1247,12 @@ funCallsAnotherFun = [
     , defaults = []
     , symtab = []
     }]
-funCallsAnotherFun_gold = ([MathSet "The Answer" (MathVar "firstArgument f secondArgument")], emptyState {symtabF = Map.fromList [("firstArgument f secondArgument",MathBin (Just "firstArgument f secondArgument") Plus (MathVar "firstArgument") (MathVar "secondArgument")),("Top-Level",MathSet "The Answer" (MathVar "firstArgument f secondArgument"))]})
 
-nestedGenitives_in_fun_app_gold :: [BaseExp]
-nestedGenitives_in_fun_app_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+funCallsAnotherFunGold :: ([Expr Double], MyState)
+funCallsAnotherFunGold = ([MathSet "The Answer" (MathVar "firstArgument f secondArgument")], emptyState {symtabF = [("firstArgument f secondArgument",MathBin (Just "firstArgument f secondArgument") Plus (MathVar "firstArgument") (MathVar "secondArgument")),("Top-Level",MathSet "The Answer" (MathVar "firstArgument f secondArgument"))]})
+
+nestedGenitivesInFunAppGold :: [BaseExp]
+nestedGenitivesInFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens = fmap mkTypedMulti >>> nonEmpty
@@ -1319,8 +1322,8 @@ testLambda = mkTestRule
             [ MTT "x * (1 - y)" ]
         , hBody = Nothing}]
 
-testLambda_complex :: Rule
-testLambda_complex = mkTestRule
+testLambdaComplex :: Rule
+testLambdaComplex = mkTestRule
     [ MTT "`funThatRepeatsArgs`" ]
     (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
     [ HC { hHead = RPConstraint
@@ -1328,11 +1331,11 @@ testLambda_complex = mkTestRule
             [ MTT "(x + y) * ((42 - y) + x)" ]
         , hBody = Nothing}]
 
-testLambda_gold :: Map.HashMap String ([GML.Var], Exp)
-testLambda_gold = Map.fromList [("discounted by",([MkVar "x",MkVar "y"],MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}))]
+testLambdaGold :: Map.HashMap String ([GML.Var], Exp)
+testLambdaGold = [("discounted by",([MkVar "x",MkVar "y"],MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "x"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = ELit {lit = EInteger 1}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "y"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}))]
 
-testNestedFunApp_gold :: Map.HashMap String ([GML.Var], Exp)
-testNestedFunApp_gold = Map.fromList [("f",([MkVar "c",MkVar "d"],MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "plus"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "d"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []})),("plus",([MkVar "a",MkVar "b"],MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "a"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}))]
+testNestedFunAppGold :: Map.HashMap String ([GML.Var], Exp)
+testNestedFunAppGold = [("f",([MkVar "c",MkVar "d"],MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "plus"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = EVar {var = MkVar "d"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []})),("plus",([MkVar "a",MkVar "b"],MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "a"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}))]
 
 testCurrency :: [Rule]
 testCurrency = [
@@ -1362,7 +1365,9 @@ testCurrency = [
     ]
   ]
 
-testCurrency_gold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestNoSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestNoSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "notACurrency"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "PAU4"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}]}]
+testCurrencyGold :: [BaseExp]
+testCurrencyGold =
+  [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestNoSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestNoSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "notACurrency"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "PAU4"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}]}]
 
 testFunApp :: [Rule]
 testFunApp = testLambda :
@@ -1381,7 +1386,8 @@ testFunApp = testLambda :
   ]
 
 
-testFunApp_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+testFunAppGold :: [BaseExp]
+testFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 listsum :: [Rule]
 listsum = [mkTestRule'
@@ -1404,30 +1410,39 @@ listsum = [mkTestRule'
          , hBody = Nothing }
     ]]
 
-listsumGML_gold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listSum"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}, arg = MkExp {exp = ESeq {seq = SeqExp [MkExp {exp = ELit {lit = EInteger 1}, md = []},MkExp {exp = ELit {lit = EInteger 2}, md = []},MkExp {exp = ELit {lit = EInteger 3}, md = []}]}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 10}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = []}]}]
+listsumGMLGold :: [BaseExp]
+listsumGMLGold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listSum"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}, arg = MkExp {exp = ESeq {seq = SeqExp [MkExp {exp = ELit {lit = EInteger 1}, md = []},MkExp {exp = ELit {lit = EInteger 2}, md = []},MkExp {exp = ELit {lit = EInteger 3}, md = []}]}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 10}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = []}]}]
 
-listsumML_gold = (
-    [ MathSet "listSum"
+listsumMLGold :: ([Expr Double], MyState)
+listsumMLGold =
+  ( [ MathSet
+        "listSum"
         ( MathBin
-            ( Just "listSum" ) Plus
-            ( MathVar "singleThing" )
-            ( MathVar "listThing" )
+            (Just "listSum")
+            Plus
+            (MathVar "singleThing")
+            (MathVar "listThing")
         )
-    ], emptyState { symtabF = Map.fromList
-        [
-            ( "singleThing", Val ( Just "singleThing" ) 10.0 ),
-            ( "listSum", MathBin
-                ( Just "listSum" ) Plus
-                ( MathVar "singleThing" )
-                ( MathVar "listThing" )
+    ],
+    emptyState
+      { symtabF =
+          [ ("singleThing", Val (Just "singleThing") 10.0),
+            ( "listSum",
+              MathBin
+                (Just "listSum")
+                Plus
+                (MathVar "singleThing")
+                (MathVar "listThing")
             )
-        ], symtabL = Map.fromList
-        [
-            ( "listThing", MathList Nothing
-                [ Val Nothing 1.0, Val Nothing 2.0, Val Nothing 3.0 ]
+          ],
+        symtabL =
+          [ ( "listThing",
+              MathList
+                Nothing
+                [Val Nothing 1.0, Val Nothing 2.0, Val Nothing 3.0]
             )
-        ]
-    }
+          ]
+      }
   )
 
 paus :: [Rule]
@@ -2136,10 +2151,10 @@ paus = [
     }
   ]
 
-testPau_gold :: ([Expr a], MyState)
-testPau_gold = (
+testPauGold :: ([Expr a], MyState)
+testPauGold = (
   [ MathSet "How Much Money Do You Get" ( MathVar "PAU0" ) ], emptyState
-  { symtabF = Map.fromList
+  { symtabF =
       [
           ( "Step 1", MathITE
               ( Just "Step 1" )
@@ -2250,7 +2265,7 @@ testPau_gold = (
               ( MathVar "excludedZero" )
               ( MathVar "policy.benMR" )
           )
-      ], symtabP = Map.fromList
+      ], symtabP =
       [
           ( "ADD is disqualified entirely", PredFold
               ( Just "ADD is disqualified entirely" ) PLOr
@@ -2268,9 +2283,8 @@ testPau_gold = (
     }
   )
 
-
-paus_globalVars_gold :: GlobalVars
-paus_globalVars_gold = MkGlobalVars $ Map.fromList [
+pausGlobalVarsGold :: GlobalVars
+pausGlobalVarsGold = MkGlobalVars [
   ( MkVar "x", Just ( L4EntType "Number" ) ),
   ( MkVar "y", Just ( L4EntType "Number" ) ),
   ( MkVar "user input", Just ( L4EntType "Dictionary" ) ),
@@ -2282,3 +2296,6 @@ paus_globalVars_gold = MkGlobalVars $ Map.fromList [
   ( MkVar "policy", Just ( L4EntType "Policy" ) ),
   ( MkVar "illness", Just ( L4EntType "Claim" ) )
   ]
+
+emptyE :: Map.HashMap () ()
+emptyE = mempty

@@ -258,6 +258,22 @@ spec = do
                 [arithRule4]
                 arithRule4_globalVars_gold
 
+  testBaseExpify "list types" "list has correct type in GML" listsum listsumGML_gold
+
+  describe "list types" do
+    let l4i = defaultL4I {origrules = listsum}
+        res = ML.toMathLang l4i
+    it "can sum a list with a single number" do
+      res `shouldBe` listsumML_gold
+    it "can evaluate summing a list with a single number" do
+      case res of
+        ([], _) -> mempty
+        (expr:_, st) ->  do
+          (res, _xp, _st, _strs) <-
+            xplainE (mempty :: Map.HashMap () ()) st $ eval expr
+
+          res `shouldBe` 16.0
+
   describe "testPau" do
     let l4i = defaultL4I {origrules = paus}
         res = ML.toMathLang l4i
@@ -1366,6 +1382,53 @@ testFunApp = testLambda :
 
 
 testFunApp_gold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+
+listsum :: [Rule]
+listsum = [mkTestRule'
+    [ MTT "test for lists" ]
+    (mkGivens [
+        ( "listThing", Just (SimpleType TList1 "Number") )
+      , ( "singleThing", Just (SimpleType TOne "Number") ) ])
+    (mkGivens [("listSum", Just (SimpleType TOne "Number") )])
+    [ HC { hHead = RPConstraint
+            [ MTT "listSum" ] RPis
+            [ MTT "singleThing", MTT "+", MTT "listThing" ]
+         , hBody = Nothing }
+    , HC { hHead = RPConstraint
+            [ MTT "listThing" ] RPis
+            [ MTI 1, MTI 2, MTI 3 ]
+         , hBody = Nothing }
+    , HC { hHead = RPConstraint
+            [ MTT "singleThing" ] RPis
+            [ MTI 10 ]
+         , hBody = Nothing }
+    ]]
+
+listsumGML_gold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listSum"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}, arg = MkExp {exp = ESeq {seq = SeqExp [MkExp {exp = ELit {lit = EInteger 1}, md = []},MkExp {exp = ELit {lit = EInteger 2}, md = []},MkExp {exp = ELit {lit = EInteger 3}, md = []}]}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 10}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = []}]}]
+
+listsumML_gold = (
+    [ MathSet "listSum"
+        ( MathBin
+            ( Just "listSum" ) Plus
+            ( MathVar "singleThing" )
+            ( MathVar "listThing" )
+        )
+    ], emptyState { symtabF = Map.fromList
+        [
+            ( "singleThing", Val ( Just "singleThing" ) 10.0 ),
+            ( "listSum", MathBin
+                ( Just "listSum" ) Plus
+                ( MathVar "singleThing" )
+                ( MathVar "listThing" )
+            )
+        ], symtabL = Map.fromList
+        [
+            ( "listThing", MathList Nothing
+                [ Val Nothing 1.0, Val Nothing 2.0, Val Nothing 3.0 ]
+            )
+        ]
+    }
+  )
 
 paus :: [Rule]
 paus = [

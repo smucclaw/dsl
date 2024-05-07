@@ -73,7 +73,6 @@ library
       LS.XPile.IntroShoehorn
       LS.XPile.IntroTrivial
       LS.XPile.JSONRanges
-      LS.XPile.JSONUsers
       LS.XPile.Logging
       LS.XPile.LogicalEnglish
       LS.XPile.LogicalEnglish.GenLEHCs

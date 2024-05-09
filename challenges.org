@@ -307,6 +307,168 @@ Showing some of the essentials from DeonDigital's CSL:
 
 And that's the basic underlying semantics for regulative rules!
 
+** Composition modulo deadlines
+
+Suppose we have two subcontracts C1 and C2. Suppose we want to say that either has to be performed.
+
+In CSL syntax, we have
+
+#+begin_example
+C1 or C2
+#+end_example
+
+If we wanted to say that both have to be performed, we could have
+
+#+begin_example
+C1 and C2
+#+end_example
+
+Now, because C1 and C2 are contracts, they can bear their own
+deadlines D1 and D2 respectively. But what if we want to say that both
+contracts are to be subject to the same deadline?
+
+#+begin_example
+(C1 or  C2) BEFORE D3
+(C1 and C2) BEFORE D3
+#+end_example
+
+Then C1 and C2 could be syntactically written as partial contracts, absent a ~BEFORE~ deadline keyword
+
+And the deadline ~D3~ would apply to the composition of C1 with C2.
+
+*** Deadline composition
+
+What if C1 and C2 do have their own deadlines?
+
+Like, consider
+
+#+begin_example
+(C1 then C2) BEFORE D3
+C1: ... BEFORE 4 days
+C2: ... BEFORE 8 days
+D3 = BEFORE 10 days
+#+end_example
+
+It might be possible for C1 to take 4 days, and then C2 to take another 8 days, and though both subcontracts are OK, the main D3 is violated.
+
+And that would be valid.
+
+And we would let one of our reasoning backends detect the possibility that 10 days might not be enough.
+
+** These are factorization problems: ellipses expand out to multiple permutations
+
+Suppose P1 has two obligations, expressed in fully-qualified form:
+
+#+begin_example
+  UPON    Event 1
+  PARTY   P1
+   MUST   file paperwork
+  BEFORE  1 week
+#+end_example
+
+#+begin_example
+  UPON    Event 1
+  PARTY   P1
+   MUST   pay $100
+          to  P2
+  BEFORE  1 week
+#+end_example
+
+It is natural to want to simplify the phrasing by factoring out the common parts.
+
+If we went to one extreme we would end up with the delta arising only at the action level:
+
+#+begin_example
+  UPON    Event 1
+  PARTY   P1
+     MUST   file paperwork
+      AND   pay $100
+            to  P2
+  BEFORE  1 week
+#+end_example
+
+In linguistics, this factoring is called ellipsis.
+
+However, what if each action had a different deadline?
+
+#+begin_example
+  UPON    Event 1
+  PARTY   P1
+    MUST    file paperwork
+    BEFORE  1 week
+  AND
+    MUST    pay $100
+            to  P2
+    BEFORE  2 weeks
+#+end_example
+
+Now we see that the UPON and PARTY now multiply across the elements of the AND conjunction:
+
+#+begin_example
+    UPON    Event 1
+    PARTY   P1
+    MUST    file paperwork
+    BEFORE  1 week
+  AND
+    UPON    Event 1
+    PARTY   P1
+    MUST    pay $100
+            to  P2
+    BEFORE  2 weeks
+#+end_example
+
+This sort of transformation should happen somewhere inside our intermediate repesentation.
+
+Formally: given a record type
+
+#+begin_src haskell
+  R :: [(String, Value)]
+#+end_src
+
+We derive a syntactic sugar type that allows each attribute to hold multiple values:
+
+#+begin_src haskell
+  R' :: [(Maybe Conjunction, [(String, Value)])]
+#+end_src
+
+From which we can permute to multiple records of original type ~R~ simply by combining every permutation of field values using the given conjunction.
+
+Example:
+
+#+begin_src haskell
+  compound = Clause' { Partial { upon = "Event 1" }
+                     , Partial { party = "P1" }
+                     , And [ Partial { deontic = "must"
+                                     , action = "file paperwork"
+                                     , deadline = "1 week" }
+                           , Partial { deontic = "must"
+                                     , action = "pay $100"
+                                     , deadline = "2 weeks" }
+                           ]
+                     }
+#+end_src
+
+This would multiply out to the original form
+
+#+begin_src haskell
+  compounds = And [ Clause { upon = "Event 1"
+                           , party = "P1"
+                           , deontic = "must"
+                           , action = "file paperwork"
+                           , deadline = "1 week"
+                           }
+                  , Clause { upon = "Event 1"
+                           , party = "P1"
+                           , deontic = "must"
+                           , action = "pay $100"
+                           , deadline = "2 weeks"
+                           }
+                  ]
+  }
+#+end_src
+
+For a linguistic treatment of these transformations, see https://en.wikipedia.org/wiki/Ellipsis_(linguistics)
+
 * Example Challenge 3: Multi-Temporal Logic
 
 ** Temporal properties of a contract stated using deontic language, aka "bounded deontics"
@@ -624,6 +786,277 @@ and we can subsequently use that in reasoning, e.g. to evaluate "if party x can 
 
 or, shorthand, "if party Y knows something"
  
+
+* Challenge 13: Scope
+
+** Scope of variable bindings inherited by called functions and deontic sequents
+
+The rule: downstream clauses inherit bindings defined by upstream clauses.
+
+A clause could be a shared downstream of multiple upstreams.
+
+The type inference checks to see if any upstream fails to define the bindings that are used by the downstream and defined by other upstreams.
+
+#+begin_example
+  §      There's Something About Money
+
+  DECLARE  Person
+      HAS  Name      IS A String
+
+  DECLARE  Money
+      HAS  Currency  IS A String
+           Amount    IS A Integer
+  
+  §§      It Begins
+
+  GIVEN   m  IS A Money
+          p  IS A Person
+          q  "  " "
+  UPON    event 1
+          describing  m
+  PARTY   p
+   MUST   pay
+          ()      m
+          to      q
+  BEFORE  deadline 1
+  HENCE   Contract2
+   LEST   Contract3
+
+  §§      Contract2
+  PARTY   q
+   MUST   do another thing
+          also involving  m
+          
+  §§      Contract3
+  PARTY   p
+   MUST   pay
+          id     m * 2
+          to     q
+         
+#+end_example
+
+Validating all of this is actually quite complicated because we need to trace the sub-contract graph.
+
+Here we have
+
+#+begin_example
+"It Begins" -> "Contract2" -> "Contract3"
+#+end_example
+
+And then we have a problem when a clause doesn't actually have a § title. Do we want to force all clauses to be titled? Cause right now those §§ lines are optional.
+
+*** Where do we get the semantics for the action parameters?
+
+#+begin_src l4
+  DECLARE  pay  IS AN ACTION
+      HAS  to      :: Person
+           amount  :: Money
+#+end_src
+
+If we get tired of making up that "world-model" by hand, we could steal them from Framenet:
+- https://remu.grammaticalframework.org/framenet/#/Eng/pay
+- https://remu.grammaticalframework.org/framenet/#/Commerce_pay
+- https://framenet2.icsi.berkeley.edu/fnReports/data/frameIndex.xml?frame=Commerce_pay
+
+
+** Scope of defined terms inherited under document hierarchy
+
+The document hierarchy is structured by the § prefixes of clauses, or sections, or articles:
+
+| §   | H1 | Heading level one   |
+| §§  | H2 | Heading level two   |
+| §§§ | H3 | Heading level three |
+
+Sometimes a source text will say something like
+
+#+begin_example
+For the purposes of this section, ...
+
+For the purposes of this Act, ...
+#+end_example
+(https://sso.agc.gov.sg/Act/SGA1982)
+
+So, we need a way to delimit the scope of a definition.
+
+Indeed, sometimes the source text will say
+
+#+begin_example
+For the purposes of this section, the next section, and subsection A.52.II.a.i
+#+end_example
+
+We need to borrow the notion of text anchors that are used by cross-referencing software like Word and InDesign: instead of the extensional "A.52.II.a.i" we need to tag that section with an intensional name and then have the name resolve to paragraph number at serialization time. Let's pretend that section is named something like <<More Exceptions>>.
+
+Proposed syntax:
+
+#+begin_example
+  WITHIN  this, next, <<More Exceptions>>
+  GIVEN   c IS A Contract
+  DECIDE  c ...
+#+end_example
+
+This should compile to
+
+"For the purposes of this section, the next section, and the section titled /More Exceptions/..."
+
+and within those sections, the decision rule provided is *active*.
+
+However, outside of those sections, the decision rule provided is *not active*.
+
+How do we deal with activation for other kinds of rules -- regulative and DECLARE / DEFINE rules?
+
+"A natural person has a name, a gender assigned at birth, a birthdate, and a country of birth."
+
+"For the purposes of subsection 25.5, a natural person also has a race attribute."
+
+By default, every clause has ~WITHIN this~
+
+which includes descendants.
+
+*** Examples. Contracts for the transfer of goods
+
+#+begin_quote
+1.—(1)  In this Act, “contract for the transfer of goods” means a contract under which one person transfers or agrees to transfer to another the property in goods, other than an excepted contract.
+#+end_quote
+
+#+begin_example
+  WITHIN   Act
+  GIVEN    c  IS A Contract
+  DECIDE   c IS a contract for the transfer of goods
+      IF   a person    transfers
+                 OR    agrees to transfer to another
+           the property in goods
+   UNLESS  c IS excepted contract
+#+end_example
+
+The above turns "a person" ... "the property in goods" into a ~PrePost~ label around ["transfers" || "agrees to transfer to another"]
+
+#+begin_quote
+(2)  For the purposes of this section, an excepted contract means any of the following:
+     (a) a contract of sale of goods;
+     (b) a hire-purchase agreement;
+     (c) a transfer or agreement to transfer which is made by deed and for which there is no consideration other than the presumed consideration imported by the deed;
+     (d) a contract intended to operate by way of mortgage, pledge, charge or other security.
+#+end_quote
+
+#+begin_example
+  WITHIN  this
+  GIVEN   c  IS A Contract
+  DECIDE  c  IS excepted contract
+      IF  c  IS a contract of sale of goods
+      OR  c  IS a hire-purchase agreement
+      OR  c  IS     a    transfer
+                    OR   agreement to transfer
+                AND made by deed  [... AND C IS made by deed ...]
+          AND there is no consideration for c other than the presumed consideration imported by the deed
+      OR  c  IS intended to operate by way of   mortgage
+                                           OR   pledge
+                                           OR   charge
+                                           OR   other security
+#+end_example
+
+And then we encounter these tautologies:
+
+#+begin_quote
+(3)  For the purposes of this Act, a contract is a contract for the transfer of goods whether or not services are also provided or to be provided under the contract, and, subject to subsection (2), whatever is the nature of the consideration for the transfer or agreement to transfer.
+#+end_quote
+
+Did you notice the ellipsis/elision?
+
+#+begin_example
+  WITHIN  Act
+  GIVEN  c  IS A Contract
+         n  IS the nature of the consideration for the transfer or agreement to transfer
+  DECIDE  c IS a contract for the transfer of goods
+      IF  c IS a contract for the transfer of goods
+     AND  services are also provided
+                OR to be provided
+          under the contract
+      OR  not
+      OR  n
+      OR  NOT n
+#+end_example
+
+Uh, isn't that a function with ~f a b _~ so let's not talk about ~c~
+
+Prolog would struggle with this, because it would loop.
+
+#+begin_src prolog
+  transferOfGoods(C) :- actualRule(C).
+  transferOfGoods(C) :- transferOfGoods(C), True.
+#+end_src
+
+** More contrived Examples
+
+#+begin_quote
+1. A pet owner who has a cat must pay $500 in pet licensing fees.
+
+2. A pet owner who has a dog must pay $1000 in pet licensing fees.
+#+end_quote
+
+I own two cats. I pay $500.
+
+I own both a cat and a dog. I pay $1000 in pet licensing fees. The authority says, "we were expecting $1500." But I say, look, I did what the rule required. The cat $500 is part of the total $1000 which I have to pay.
+
+** Remarks on phrasing
+
+#+begin_quote
+a prime number is
+a whole number greater than 1 that cannot be exactly divided by any whole number other than itself and 1 (e.g. 2, 3, 5, 7, 11).
+#+end_quote
+
+Let's pretend some dead English lord wanted to describe prime numbers in the 17th century:
+
+#+begin_quote
+A prime number is a whole number.
+A prime number is greater than one.
+A prime number has no other divisors.
+#+end_quote
+
+This is to be read as a system of constraints implicitly conjoined with AND.
+
+#+begin_example
+  // n is a whole number
+  GIVEN   n IS AN Integer
+  DECIDE  n IS prime
+      IF  n > 0
+#+end_example
+
+
+#+begin_example
+  // greater than 1
+  GIVEN   n IS AN Integer
+  DECIDE  n IS prime
+      IF  n > 1
+#+end_example
+
+
+#+begin_example
+  // that has no other divisors
+  GIVEN   n IS AN Integer
+  DECIDE  n IS prime
+      IF  divisors of n == [1, n]
+#+end_example
+
+We have to be careful because typical Prolog semantics would allow 10 to be prime, because it satisfies the second criterion.
+
+So we have an interpretive challenge: given a list of subsidiary predicates, all the subsidiary predicates must be true, for the higher-level predicate to be true:
+
+#+begin_src prolog
+  isPrime(N) :- whole(N), greaterThanOne(N), noOtherDivisors(N).
+#+end_src
+
+So we have to be sensitive to the implicit conjunctions.
+
+* Challenge 14: Defeasibility, notwithstanding, subject to, application
+
+https://sso.agc.gov.sg/Act/SGA1982#pr2-
+
+#+begin_quote
+2.—(1)  In a contract for the transfer of goods, other than one to which subsection (3) applies, there is an implied condition on the part of the transferor that in the case of a transfer of the property in the goods he has a right to transfer the property and in the case of an agreement to transfer the property in the goods he will have such a right at the time when the property is to be transferred.
+#+end_quote
+
+
+
 * ACTION ITEMS
 
 ** TODO Turn these examples into actual tab in spreadsheet that compiles

@@ -1047,6 +1047,8 @@ So we have an interpretive challenge: given a list of subsidiary predicates, all
 
 So we have to be sensitive to the implicit conjunctions.
 
+In the Contract for Transfer of Goods case, the ellipsis is ... monadic!
+
 * Challenge 14: Defeasibility, notwithstanding, subject to, application
 
 https://sso.agc.gov.sg/Act/SGA1982#pr2-

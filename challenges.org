@@ -345,7 +345,7 @@ Like, consider
 #+begin_example
 (C1 then C2) BEFORE D3
 C1: ... BEFORE 4 days
-C2: ... BEFORE 8 days
+C2: ... BEFORE 8 days (relative to what timepoint??? start of C1 or end of C2?)
 D3 = BEFORE 10 days
 #+end_example
 

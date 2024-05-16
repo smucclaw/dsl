@@ -104,10 +104,9 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not))
 -- import L4.Annotation
 -- import Data.Functor ( (<&>) )
 
-import Control.Monad (join)
 import Data.Graph.Inductive (Graph (labNodes), outdeg)
 import Data.HashMap.Strict qualified as Map
-import Data.List (intercalate, nub, partition)
+import Data.List (nub, partition)
 import Data.List.Extra (groupSort)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (isJust, isNothing, maybeToList)
@@ -120,14 +119,12 @@ import Data.Tree qualified as DT
 import Debug.Trace (trace)
 import LS.Interpreter
   ( attrType,
-    attrsAsMethods,
     classRoots,
     exposedRoots,
     extractEnums,
     getCTkeys,
     globalFacts,
     isAnEnum,
-    l4interpret,
     toObjectStr,
     topsortedClasses,
   )
@@ -143,7 +140,7 @@ import LS.PrettyPrinter
     (</>),
   )
 import LS.Rule as SFL4R
-  ( Interpreted (classtable, origrules, ruleGraph, scopetable, valuePreds),
+  ( Interpreted (classtable, ruleGraph, scopetable, valuePreds),
     Rule (..),
     ValuePredicate (..),
     isFact,
@@ -170,11 +167,9 @@ import LS.Types as SFL4
       ),
     TypeSig (InlineEnum, SimpleType),
     clsParent,
-    defaultInterpreterOptions,
     getSymType,
     mt2text,
     rp2text,
-    unCT,
   )
 import LS.XPile.Logging
   ( XPileLog,
@@ -195,7 +190,6 @@ import Prettyprinter
     emptyDoc,
     encloseSep,
     equals,
-    hang,
     indent,
     lbrace,
     line,

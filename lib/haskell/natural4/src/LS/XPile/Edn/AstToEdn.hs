@@ -11,18 +11,13 @@ module LS.XPile.Edn.AstToEdn
 where
 
 import Control.Arrow ((>>>))
-import Control.Monad.Reader qualified as Reader
 import Data.EDN qualified as EDN
 import Data.EDN.QQ qualified as EDN
 import Data.Functor.Foldable (Recursive (..))
-import Data.Functor.Foldable.Monadic (paraM)
 import Data.List (intersperse)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
-import Data.Text.Read qualified as TRead
 import Flow ((|>))
-import GHC.Generics (Generic)
-import LS.Utils ((|$>))
 import LS.XPile.Edn.Common.Ast
   ( AstNode,
     AstNodeF

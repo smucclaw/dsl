@@ -16,43 +16,9 @@ where
 
 import Data.Hashable (Hashable)
 import GHC.Generics (Generic)
-import L4.PrintProg
-  ( PrintConfig (..),
-    PrintCurried (..),
-    PrintVarCase (..),
-  )
 import L4.Syntax
-  ( BArithOp (..),
-    BBoolOp (..),
-    BComparOp (..),
-    BinOp (..),
-    ClassName (ClsNm),
-    Expr
-      ( AppE,
-        BinOpE,
-        CastE,
-        FldAccE,
-        FunE,
-        IfThenElseE,
-        ListE,
-        QuantifE,
-        TupleE,
-        UnaOpE,
-        ValE,
-        VarE
-      ),
-    FieldName (FldNm),
-    ListOp (..),
-    QVarName (QVarName),
-    Quantif (..),
-    Tp (ClassT, ErrT, FunT, KindT, OkT, TupleT),
-    UArithOp (..),
-    UBoolOp (..),
-    UTemporalOp (..),
-    UnaOp (..),
-    Val (..),
-    Var (GlobalVar, LocalVar),
-    VarDecl (VarDecl),
+  ( Expr,
+    VarDecl
   )
 
 data LPLang

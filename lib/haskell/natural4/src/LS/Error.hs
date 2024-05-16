@@ -17,13 +17,10 @@ module LS.Error
 where
 
 import Control.Arrow ((>>>))
-import Data.Function ((&))
-import Data.List.NonEmpty qualified as NE
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
 import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
-import Data.Text.Lazy qualified as LT
 import Data.Vector (foldl1', imap)
 import Data.Vector qualified as V
 import Data.Void (Void)

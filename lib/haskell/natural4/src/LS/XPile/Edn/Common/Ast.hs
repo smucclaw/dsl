@@ -48,10 +48,8 @@ module LS.XPile.Edn.Common.Ast
 where
 
 import Control.Arrow ((>>>))
-import Data.Coerce (coerce)
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
-import Data.String (IsString)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Text.Read qualified as TRead

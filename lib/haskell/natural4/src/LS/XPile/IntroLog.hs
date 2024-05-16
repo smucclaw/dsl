@@ -5,14 +5,11 @@
 
 module LS.XPile.IntroLog (toLog) where
 
-import Control.Monad.Reader (Reader, asks, runReader)
-import Data.HashMap.Strict (HashMap)
-import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
 import LS.Interpreter (qaHornsT)
 import LS.PrettyPrinter (myrender, (<//>), (</>))
 import LS.Rule (Interpreted (..))
-import LS.XPile.IntroReader (MyEnv (..), defaultReaderEnv)
+import LS.XPile.IntroReader (MyEnv (..))
 import LS.XPile.Logging (XPileLog, mutter)
 import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)

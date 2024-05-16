@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-missing-fields #-}
 
 {-|
 Simple utils / convenience functions for prototyping / dev-ing at the REPL.
@@ -18,12 +19,11 @@ module LS.Utils.UtilsREPLDev
 where
 
 import Data.Coerce (coerce)
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (listToMaybe)
 import Flow ((|>))
 import LS qualified
 import LS.Lib (NoLabel (..), Opts (..))
 import LS.Utils ((|$>))
-import System.FilePath (takeFileName, (</>))
 import System.FilePath.Find
   ( always,
     extension,
@@ -31,7 +31,7 @@ import System.FilePath.Find
     find,
     (==?),
   )
-import Text.Pretty.Simple (pPrint, pShowNoColor)
+import Text.Pretty.Simple (pPrint)
 
 -- $setup
 -- >>> import System.FilePath ((</>))

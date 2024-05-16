@@ -8,20 +8,18 @@ here we make the environment Reader the base monad of the XPileLog's RWST, repla
 module LS.XPile.IntroBase (toBase) where
 
 import Data.Bifunctor (first)
-import Data.HashMap.Strict (HashMap)
-import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
 import LS.Interpreter (qaHornsT)
 import LS.PrettyPrinter (myrender, (<//>), (</>))
 import LS.Rule (Interpreted (..))
-import LS.XPile.IntroReader (MyEnv (..), defaultReaderEnv)
-import LS.XPile.Logging (XPileLogR, XPileLogS, XPileLogW)
+import LS.XPile.IntroReader (MyEnv (..))
+import LS.XPile.Logging (XPileLogS, XPileLogW)
 import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- import Control.Monad.Identity ( Identity )
 import Control.Monad.Reader ( MonadReader(ask), runReader, Reader )
-import Control.Monad.RWS ( tell, RWST, evalRWS, evalRWST )
+import Control.Monad.RWS ( tell, RWST, evalRWST )
 
 toBase :: Interpreted -> MyEnv -> (String, [String])
 toBase l4i myenv = first (Text.unpack . myrender) $ runReader (xpLog' (inner l4i)) myenv

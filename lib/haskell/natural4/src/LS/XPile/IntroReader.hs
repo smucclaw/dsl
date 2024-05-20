@@ -8,7 +8,6 @@ module LS.XPile.IntroReader (toReader, defaultReaderEnv, MyEnv(..)) where
 
 import Control.Monad.Reader (Reader, asks, runReader)
 import Data.HashMap.Strict (HashMap)
-import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as Text
 import LS.Interpreter (qaHornsT)
 import LS.PrettyPrinter (myrender, (<//>), (</>))

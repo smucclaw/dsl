@@ -16,8 +16,6 @@ import LS.Interpreter
   ( attrsAsMethods,
     classGraph,
     classRoots,
-    defaultToSuperClass,
-    defaultToSuperType,
     expandBSR,
     expandRule,
     exposedRoots,
@@ -29,7 +27,6 @@ import LS.Interpreter
     isRuleAlias,
     qaHornsR,
     qaHornsT,
-    ruleDecisionGraph,
     ruleLocals,
   )
 import LS.PrettyPrinter
@@ -52,8 +49,8 @@ import LS.Rule
   )
 import LS.Types
   ( ClassHierarchyMap,
-    ParamType (TOne, TOptional),
-    TypeSig (InlineEnum, SimpleType),
+    ParamType (TOne),
+    TypeSig (InlineEnum),
     unCT,
   )
 import LS.XPile.Logging

@@ -7,15 +7,14 @@ module Main (main) where
 import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import Control.Arrow ((>>>))
-import Control.Monad (liftM, unless, when)
+import Control.Monad (unless, when)
 import Data.Aeson.Encode.Pretty (encodePretty)
-import Data.Bifunctor (first)
 import Data.ByteString.Lazy qualified as ByteString (ByteString, writeFile)
 import Data.ByteString.Lazy.UTF8 (toString)
 import Data.Either (lefts, rights)
 import Data.Foldable qualified as DF
 import Data.HashMap.Strict qualified as Map
-import Data.List (intercalate, isPrefixOf, partition, sortOn)
+import Data.List (intercalate, isPrefixOf, sortOn)
 import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
 import Data.Text.Lazy qualified as TL

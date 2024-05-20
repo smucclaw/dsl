@@ -12,7 +12,6 @@ where
 
 -- fgl
 import Data.Graph.Inductive.Graph (Node)
-import Data.Graph.Inductive.PatriciaTree (Gr)
 -- graphviz
 import Data.GraphViz
   ( DotGraph,
@@ -28,14 +27,12 @@ import Data.GraphViz
   )
 import Data.GraphViz.Attributes.Complete
   ( Attribute (Compound),
-    Shape (Circle),
   )
 import Data.GraphViz.Printing (renderDot)
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
-import Data.Text.Lazy qualified as LT
-import Flow ((.>), (|>))
+import Flow ((|>))
 import LS.Rule
   ( Interpreted (ruleGraph, ruleGraphErr),
     Rule,

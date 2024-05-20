@@ -10,7 +10,6 @@ where
 
 import Control.Arrow ((>>>))
 import Data.Foldable qualified as Fold
-import Data.Text qualified as T
 import Deque.Strict qualified as Deque
 import GHC.IsList qualified as IsList
 import Safe (tailSafe)

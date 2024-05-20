@@ -63,8 +63,7 @@ where
 import AnyAll qualified as AA
 import Control.Applicative ((<|>))
 import Control.Arrow ((>>>))
-import Control.Monad (guard, join)
-import Data.Bifunctor (first)
+import Control.Monad (guard)
 import Data.Coerce (coerce)
 import Data.Either (fromRight, partitionEithers)
 import Data.Foldable (traverse_)
@@ -84,8 +83,7 @@ import Data.List (find, (\\))
 import Data.List qualified as DL
 import Data.List.NonEmpty as NE (toList, NonEmpty (..))
 import Data.Maybe
-  ( catMaybes,
-    fromMaybe,
+  ( fromMaybe,
     isJust,
     listToMaybe,
     mapMaybe,

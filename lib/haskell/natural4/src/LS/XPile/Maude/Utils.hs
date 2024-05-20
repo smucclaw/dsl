@@ -12,20 +12,14 @@ module LS.XPile.Maude.Utils
   )
 where
 
-import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
-import Data.Coerce (coerce)
-import Data.Kind (Constraint, Type)
-import Data.List.NonEmpty (NonEmpty)
+import Control.Monad.Validate (MonadValidate (refute))
 import Data.MonoTraversable (Element, MonoFoldable (otoList))
-import Data.Monoid (Ap (Ap))
 import Data.Sequences (SemiSequence)
 import Data.Text (Text)
-import Data.Type.Bool (type (||))
-import Data.Type.Equality (type (==))
 import Flow ((|>))
 import LS.Types (MTExpr, mt2text)
 import LS.Utils (MonoidValidate)
-import Prettyprinter (Doc, Pretty (pretty))
+import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (di)
 
 throwDefaultErr :: MonoidValidate (Doc ann) a

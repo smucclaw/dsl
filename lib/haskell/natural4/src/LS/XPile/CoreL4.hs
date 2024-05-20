@@ -34,28 +34,25 @@ import AnyAll (BoolStruct (All, Any, Leaf, Not), haskellStyle)
 -- TODO: the following is only for testing purposes, can be removed later
 
 import AnyAll qualified as AA
-import Control.Applicative (Applicative (liftA2))
 import Control.Arrow ((>>>))
-import Control.Monad (guard, join)
-import Control.Monad.Validate (MonadValidate (refute), runValidate)
+import Control.Monad (guard)
+import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (..))
 import Data.Coerce (coerce)
-import Data.Either (fromRight, isRight, rights)
+import Data.Either (rights)
 import Data.Foldable qualified as Fold
 import Data.Functor ((<&>))
 import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
-import Data.List (elemIndex, intercalate, isPrefixOf, nub, tails, uncons, (\\))
+import Data.List (elemIndex, isPrefixOf, nub, uncons, (\\))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
+import Data.Maybe (fromMaybe, isJust, isNothing, mapMaybe, maybeToList)
 import Data.MonoTraversable (Element, otoList)
-import Data.Monoid (Endo (..))
 import Data.Sequence qualified as Seq
 import Data.Sequences (IsSequence)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable (for)
-import Debug.Trace (trace)
 import Flow ((|>))
 import L4.Annotation (SRng (DummySRng))
 import L4.PrintProg (PrintConfig (PrintSystem), PrintSystem (L4Style), showL4)
@@ -109,17 +106,6 @@ import LS.PrettyPrinter
     snake_inner,
     untaint,
   )
-import LS.PrettyPrinter as SFL4
-  ( ParamText3 (PT3),
-    RP1 (RP1),
-    commentWith,
-    inPredicateForm,
-    myrender,
-    prettySimpleType,
-    snake_case,
-    snake_inner,
-    untaint,
-  )
 import LS.RelationalPredicates as SFL4
   ( bsr2pt,
     partitionExistentials,
@@ -141,10 +127,7 @@ import LS.Rule as SFL4
         TypeDecl,
         clauses,
         defaults,
-        enums,
         given,
-        giveth,
-        has,
         keyword,
         lsource,
         name,
@@ -159,7 +142,6 @@ import LS.Rule as SFL4
     rl2text,
     ruleLabelName,
   )
-import LS.Tokens (undeepers)
 import LS.Types as SFL4
   ( BoolStructR,
     ClsTab (..),
@@ -177,7 +159,6 @@ import LS.Types as SFL4
     ScopeTabs,
     SrcRef (SrcRef, short, srccol, srcrow, url, version),
     TypeSig (..),
-    TypedMulti,
     clsParent,
     defaultInterpreterOptions,
     enumLabels_,

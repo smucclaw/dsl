@@ -21,7 +21,6 @@ module LS.Utils
   )
 where
 
-import Control.Applicative (liftA2)
 import Control.Arrow ((>>>))
 import Control.Monad.Validate
   ( MonadValidate (refute),
@@ -29,7 +28,7 @@ import Control.Monad.Validate
     runValidate,
   )
 import Data.Coerce (coerce)
-import Data.Either (partitionEithers, rights)
+import Data.Either (rights)
 import Data.Either.Extra (eitherToMaybe)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)

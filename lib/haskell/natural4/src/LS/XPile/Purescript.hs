@@ -19,9 +19,8 @@ where
 
 import AnyAll qualified as AA
 import AnyAll.BoolStruct (alwaysLabeled)
-import Control.Applicative (liftA2)
-import Control.Monad (guard, join, liftM, unless, when)
-import Data.Bifunctor (Bifunctor (..), first, second)
+import Control.Monad (join)
+import Data.Bifunctor (Bifunctor (..), second)
 import Data.Char qualified as Char
 import Data.Either (lefts, rights)
 import Data.Foldable (for_, sequenceA_, traverse_)
@@ -29,7 +28,6 @@ import Data.HashMap.Strict ((!))
 import Data.HashMap.Strict qualified as Map
 import Data.List (sortOn)
 import Data.List qualified as DL
-import Data.List.Split (chunk)
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Ord qualified
 import Data.String.Interpolate (i, __i)
@@ -51,7 +49,6 @@ import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)
 import LS.Types
   ( BoolStructT,
     RuleName,
-    defaultInterpreterOptions,
     mt2text,
   )
 import LS.Utils ((|$>))
@@ -62,8 +59,6 @@ import LS.XPile.Logging
     mutter,
     mutterd,
     mutterd1,
-    mutterd2,
-    mutterdhs,
     mutterdhsf,
     mutters,
     pShowNoColorS,

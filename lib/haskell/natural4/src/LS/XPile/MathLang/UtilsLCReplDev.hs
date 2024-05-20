@@ -12,16 +12,10 @@ module LS.XPile.MathLang.UtilsLCReplDev
     )
 where
 
-import System.FilePath ((</>), takeFileName)
-import Data.Coerce (coerce)
-import Data.Kind (Constraint, Type)
-import Data.List.NonEmpty (NonEmpty)
+import System.FilePath ((</>))
 
 import LS.Rule (Rule(..))
-import LS.Types (MTExpr, mt2text)
 import LS.Utils.UtilsREPLDev (BaseFileName, pRules, csvsInDir, l4csv2rules)
-
-import LS (pRelPred)
 
 testcasesDir :: FilePath
 testcasesDir = "test" </> "Testcases" </> "MathLangGeneric"

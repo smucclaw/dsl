@@ -6,7 +6,6 @@ module LS.XPile.Markdown
 where
 
 import AnyAll qualified as AA
-import Data.ByteString.Lazy.Char8 qualified as ByteString
 import Data.Text qualified as Text
 import LS.NLP.NLG (NLGEnv, nlg)
 import LS.RelationalPredicates (getBSR)

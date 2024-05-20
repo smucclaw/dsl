@@ -36,7 +36,6 @@ import Data.Coerce (coerce)
 import Data.Foldable qualified as DF
 import Data.List (intersperse)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), head, tail, toList)
-import Data.String (IsString)
 import Data.String.Interpolate (i)
 import Data.String.Interpolate.Conversion (Interpolatable)
 import Data.Text qualified as T
@@ -80,7 +79,6 @@ import Prettyprinter
   )
 import Prettyprinter.Interpolate (di, __di)
 import Prettyprinter.Render.Text (renderStrict)
-import Text.Pretty.Simple (pShowNoColor)
 import Text.Pretty.Simple qualified as TPS
 import Text.Regex.PCRE.Heavy qualified as PCRE
 

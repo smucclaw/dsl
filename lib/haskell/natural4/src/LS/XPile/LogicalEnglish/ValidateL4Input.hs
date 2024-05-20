@@ -12,17 +12,10 @@ module LS.XPile.LogicalEnglish.ValidateL4Input
   )
 where
 
-import Control.Monad.Validate (MonadValidate (refute), Validate, runValidate)
-
-import Data.Text qualified as T
-
-import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Coerce (coerce)
 -- import Optics
 
 import LS.Rule qualified as L4 (Rule(..))
-
-import Debug.Trace (trace)
 
 {-------------------------------------------------------------------------------
    Validation related

@@ -13,13 +13,12 @@ where
 import AnyAll (BoolStruct (All, Leaf))
 import Data.List (intersperse)
 import Data.Maybe (maybeToList)
-import Data.MonoTraversable (Element, MonoFoldable (otoList, ocompareLength))
+import Data.MonoTraversable (Element, MonoFoldable (otoList))
 import Data.Sequences as Seq (IsSequence)
-import Flow ((|>), (.>))
+import Flow ((|>))
 import LS.Rule (Rule (..), rkeyword)
 import LS.Types
   ( HornClause (..),
-    MTExpr,
     MultiTerm,
     MyToken (Means),
     RPRel (RPis),

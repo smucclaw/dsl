@@ -14,31 +14,26 @@ module LS.XPile.MathLang.MathLang
   (toMathLangMw, toMathLang, gml2ml, runToMathLang)
 where
 
-import Control.Monad.Except (MonadError, throwError)
-import Data.ByteString.Builder (generic)
-import Data.Coerce (coerce)
-import Data.Either (rights)
 import Data.List ( groupBy, nub, unfoldr )
 import Data.List.NonEmpty qualified as NE
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i,__i)
 import Data.Text qualified as T
-import Effectful (Eff, (:>), runPureEff)
+import Effectful (Eff, runPureEff)
 import Effectful.Fail (Fail, runFail)
-import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
+import Effectful.Reader.Static (Reader, runReader, ask)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
-import LS.Interpreter
 import LS.Rule (Rule, Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
-import Optics (Fold,Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (%~), (^..))
+import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
-import Data.Maybe (maybeToList, mapMaybe)
+import Data.Maybe (mapMaybe)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.

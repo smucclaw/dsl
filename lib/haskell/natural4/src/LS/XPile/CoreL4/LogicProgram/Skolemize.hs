@@ -14,7 +14,6 @@ import Control.Monad (join)
 import Control.Monad.Validate (MonadValidate (refute))
 import Data.Bifunctor (Bifunctor (bimap))
 import Data.Foldable qualified as Fold
-import Data.Maybe (fromMaybe)
 import Flow ((.>), (|>))
 import L4.PrintProg (capitalise)
 import L4.Syntax
@@ -22,18 +21,16 @@ import L4.Syntax
     QVarName (QVarName, annotOfQVarName, nameOfQVarName),
     Var (..),
     VarDecl (..),
-    VarName,
   )
 import L4.SyntaxManipulation (appToFunArgs, funArgsToAppNoType)
 import LS.Utils
   ( MonoidValidate,
     mapThenSwallowErrs,
     maybe2validate,
-    swallowErrs,
     (|$>),
   )
 import LS.XPile.CoreL4.LogicProgram.Common (LPRule (..))
-import Prettyprinter (Doc, viaShow)
+import Prettyprinter (Doc)
 import Prettyprinter.Interpolate (__di)
 
 -- Skolemized LP rules code

@@ -29,9 +29,8 @@ where
 import AnyAll qualified as AA
 import Control.Arrow ((>>>))
 import Control.Monad (when, guard)
-import Data.Char qualified as Char (isDigit, toLower)
+import Data.Char qualified as Char (toLower)
 import Data.Foldable qualified as F
-import Data.HashMap.Strict (elems, keys, lookup, toList)
 import Data.HashMap.Strict qualified as Map
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -205,7 +204,6 @@ import PGF
     showLanguage,
   )
 import Paths_natural4 (getDataFileName)
-import Prettyprinter.Interpolate (__di)
 import System.Environment (lookupEnv)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 

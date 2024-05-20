@@ -94,10 +94,8 @@ where
 import Control.Monad.Identity (Identity)
 import Control.Monad.RWS
   ( MonadWriter (tell),
-    RWS,
     RWST,
-    evalRWS,
-    evalRWST,
+    evalRWS
   )
 import Data.Bifunctor (Bifunctor, second)
 import Data.Either (fromRight)

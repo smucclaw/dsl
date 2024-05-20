@@ -10,7 +10,7 @@
 
 module LS.XPile.Edn.L4ToAst (l4rulesToProgram) where
 
-import AnyAll (BoolStruct, BoolStructF (..))
+import AnyAll (BoolStructF (..))
 import Control.Arrow ((>>>))
 import Control.Monad (join)
 import Control.Monad.Except (MonadError (..))
@@ -18,8 +18,7 @@ import Data.Bifunctor (Bifunctor (..))
 import Data.Functor.Foldable.Monadic (cataM)
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (mapMaybe, maybeToList)
-import Data.String.Interpolate (i)
+import Data.Maybe (maybeToList)
 import Data.Text qualified as T
 import Flow ((|>))
 import LS.Rule (Rule (..))
@@ -28,19 +27,16 @@ import LS.Types
   ( BoolStructR,
     HornClause (..),
     MTExpr (..),
-    MultiTerm,
     ParamText,
     ParamType (..),
     RPRel (..),
     RelationalPredicate (..),
     RelationalPredicateF (..),
-    TComparison (..),
     TypeSig (..),
   )
 import LS.Utils (eitherToList, trimWhitespaces, (|$>))
 import LS.XPile.Edn.Common.Ast
   ( AstNode (..),
-    Op (..),
     pattern And,
     pattern Bool,
     pattern Integer,
@@ -51,7 +47,6 @@ import LS.XPile.Edn.Common.Ast
     pattern Or,
     pattern Parens,
     pattern Program,
-    pattern Seq,
   )
 import LS.XPile.Edn.Common.Utils (splitLast)
 import LS.XPile.Edn.L4ToAst.MultiExprKeywords (multiExprKeywords)
@@ -60,7 +55,6 @@ import LS.XPile.Edn.L4ToAst.ToTextTables
     rpRelToTextTable,
   )
 import Language.Haskell.TH.Syntax qualified as TH
-import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (head)
 
 l4rulesToProgram :: [Rule] -> AstNode String

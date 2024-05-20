@@ -10,9 +10,7 @@ module LS.XPile.Maude.Regulative.TempConstr
   )
 where
 
-import Data.String.Interpolate (i)
 import Data.Text qualified as T
-import Flow ((.>))
 import LS.Types
   ( TComparison (TBefore, TOn),
     TemporalConstraint (TemporalConstraint),

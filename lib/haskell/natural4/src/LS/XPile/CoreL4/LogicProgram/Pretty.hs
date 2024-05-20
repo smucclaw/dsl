@@ -43,12 +43,8 @@ import Prettyprinter
     Pretty (pretty),
     comma,
     hsep,
-    line,
-    parens,
     punctuate,
-    viaShow,
     vsep,
-    (<+>),
   )
 import Prettyprinter.Interpolate (__di)
 

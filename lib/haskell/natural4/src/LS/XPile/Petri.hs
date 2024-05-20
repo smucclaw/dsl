@@ -14,8 +14,6 @@ import AnyAll as AA (BoolStruct (All, Leaf))
 import Control.Applicative (Alternative ((<|>)))
 import Control.Arrow ((>>>))
 import Control.Monad (when)
-import Control.Monad.Identity (runIdentity)
-import Control.Monad.RWS (lift)
 import Control.Monad.State.Strict
   ( MonadState (get, put),
     State (..),
@@ -71,7 +69,7 @@ import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Printing (renderDot)
 import Data.List (nub)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromMaybe, isJust, listToMaybe, maybeToList)
+import Data.Maybe (fromMaybe, listToMaybe, maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -125,7 +123,6 @@ import LS.XPile.Logging
   ( XPileLog,
     XPileLogE,
     mutterd,
-    runLog,
     xpLog,
     xpReturn,
   )

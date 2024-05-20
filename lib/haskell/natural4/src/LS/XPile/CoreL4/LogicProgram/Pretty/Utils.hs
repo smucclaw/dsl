@@ -13,7 +13,6 @@ module LS.XPile.CoreL4.LogicProgram.Pretty.Utils
   )
 where
 
-import Data.List (intersperse)
 import Data.String.Interpolate (i)
 import Flow ((|>))
 import L4.PrintProg (capitalise)

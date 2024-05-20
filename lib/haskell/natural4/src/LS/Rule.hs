@@ -57,7 +57,6 @@ import Data.Graph.Inductive (Gr, empty)
 import Data.HashMap.Strict qualified as Map
 import Data.Hashable (Hashable)
 import Data.List.NonEmpty (NonEmpty(..))
-import Data.List.NonEmpty qualified as NE (head, fromList)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Void (Void)
@@ -91,8 +90,6 @@ import LS.Types
     SrcRef (..),
     TemporalConstraint,
     TypeSig(..),
-    ParamType(..),
-    EntityType,
     WithPos (WithPos, pos, tokenVal),
     bsp2text,
     defaultInferrableTypeSig,
@@ -103,7 +100,6 @@ import LS.Types
     mt2text,
     multiterm2pt,
     rpHead,
-    enumLabels
   )
 import LS.XPile.Logging (XPileLogW)
 import Optics

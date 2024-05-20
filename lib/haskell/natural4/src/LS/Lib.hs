@@ -107,13 +107,11 @@ import LS.Rule
         enums,
         expect,
         given,
-        giveth,
         has,
         having,
         hence,
         keyword,
         lest,
-        letbind,
         lsource,
         name,
         rkeyword,
@@ -168,7 +166,6 @@ import LS.Types
     HornClause (HC, hBody, hHead),
     HornClause2,
     MTExpr,
-    MultiTerm,
     MyStream (MyStream, unMyStream),
     MyToken
       ( After,
@@ -230,7 +227,7 @@ import LS.Types
     renderToken,
     toTokens,
   )
-import LS.Utils (pairs, (|$>))
+import LS.Utils ((|$>))
 import Options.Generic
   ( Generic,
     ParseFields (..),

@@ -11,10 +11,7 @@ module LS.XPile.JSONRanges (asJSONRanges) where
 
 import Data.Foldable (for_)
 import Data.HashMap.Strict qualified as Map
-import Data.List (groupBy, nub)
-import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromMaybe, maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable (for)
@@ -32,24 +29,18 @@ import LS.Types
   )
 import LS.XPile.Logging
   ( XPileLog,
-    XPileLogE,
-    mutter,
     mutterd,
     mutterdhsf,
     pShowNoColorS,
-    xpError,
-    xpReturn,
   )
 import Prettyprinter
   ( Doc,
-    colon,
     comma,
     encloseSep,
     viaShow,
     (<+>),
   )
 import Prettyprinter.Interpolate (di)
-import Text.Pretty.Simple (pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 data Dimension lbl vals = Dimension lbl [vals]

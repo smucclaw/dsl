@@ -101,6 +101,8 @@ ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iteratio
 
 library:
   source-dirs: src
+  ghc-options:
+    - -Wunused-imports
   dependencies:
       - filepath
       - filemanip
@@ -112,6 +114,7 @@ executables:
     main: Main.hs
     source-dirs: app
     ghc-options:
+      - -Wunused-imports
       - -threaded
       - -rtsopts
       - '"-with-rtsopts=-N -H500M -qg"'

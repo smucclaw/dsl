@@ -39,14 +39,13 @@ module LS.XPile.Prolog
   )
 where
 
-import AnyAll (BoolStruct (All, Any, Leaf, Not), Dot (xPos))
-import Data.Functor.Classes (showsBinary1)
+import AnyAll (BoolStruct (All, Any, Leaf, Not))
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty as NE (NonEmpty (..), toList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import LS.Rule as SFL4
-  ( Rule (Hornlike, TypeDecl, clauses, enums, has, name, super),
+  ( Rule (Hornlike, TypeDecl, clauses, name, super),
   )
 import LS.Types as SFL4
   ( BoolStructP,
@@ -69,7 +68,7 @@ import LS.Types as SFL4
 import Language.Prolog
   ( Atom,
     Clause (Clause),
-    Term (Cut, Struct, Var, Wildcard),
+    Term (Struct),
     var,
   )
 import Prettyprinter

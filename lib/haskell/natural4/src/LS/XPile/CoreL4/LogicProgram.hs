@@ -21,7 +21,6 @@ import Data.List (nub, partition, sort)
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i)
 import Flow ((|>))
-import L4.KeyValueMap (ValueKVM)
 import L4.Syntax
   ( BBoolOp (BBand),
     BinOp (BBool),
@@ -46,10 +45,8 @@ import L4.Syntax
   )
 import L4.SyntaxManipulation
   ( appToFunArgs,
-    applyVars,
     applyVarsNoType,
     decomposeBinop,
-    funArgsToApp,
     funArgsToAppNoType,
     fv,
     isLocalVar,
@@ -62,8 +59,7 @@ import LS.XPile.CoreL4.LogicProgram.Common
     OpposesClause (..),
   )
 import LS.XPile.CoreL4.LogicProgram.Pretty ()
-import LS.XPile.CoreL4.LogicProgram.Skolemize (skolemizeLPRule)
-import Prettyprinter (Doc, Pretty (pretty), viaShow)
+import Prettyprinter (Doc, viaShow)
 import Prettyprinter.Interpolate (__di)
 
 -- TODO: type of function has been abstracted, is not Program t and not Program (Tp())

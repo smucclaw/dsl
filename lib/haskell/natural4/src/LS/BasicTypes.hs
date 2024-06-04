@@ -26,7 +26,6 @@ where
 import Control.Arrow ((>>>))
 import Data.Char (toUpper)
 import Data.HashMap.Strict qualified as Map
-import Data.Hashable (Hashable)
 import Data.List qualified as DL
 import Data.List.NonEmpty qualified as NE
 import Data.MonoTraversable (headMay)
@@ -35,7 +34,6 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Data.Vector qualified as V
 import Flow ((|>))
-import GHC.Generics (Generic)
 import LS.TokenTable (MyToken (..), tokenTable)
 import Language.Haskell.TH.Syntax (lift)
 import Text.Megaparsec

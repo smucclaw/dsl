@@ -17,12 +17,11 @@ module LS.XPile.VueJSON
 where
 
 import AnyAll.BoolStruct qualified as AABS
-import AnyAll.Types (Label (Pre, PrePost))
 -- import Data.Graph.Inductive.Internal.Thread (threadList)
 
 import Control.Arrow ((>>>))
 import Data.HashMap.Strict qualified as Map
-import Data.List (groupBy, nub)
+import Data.List (groupBy)
 import Data.Maybe (maybeToList)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T

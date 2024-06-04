@@ -12,10 +12,6 @@ import Control.Category ((>>>))
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS.Utils (trimWhitespaces)
-import LS.XPile.LogicalEnglish.Types
-  ( TemplateVar (..),
-    VCell (..),
-  )
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 {- | 

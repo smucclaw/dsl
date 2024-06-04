@@ -22,13 +22,11 @@ import AnyAll (mkLeaf)
 import AnyAll qualified as AA
 -- import Control.Monad.Writer.Lazy (WriterT (runWriterT))
 import Control.Arrow ((>>>))
-import Control.Monad.Reader (ReaderT (runReaderT), asks)
+import Control.Monad.Reader (ReaderT)
 import Data.Aeson (ToJSON)
-import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.HashMap.Strict qualified as Map
-import Data.HashSet qualified as Set
 import Data.Hashable (Hashable)
 import Data.List.NonEmpty as NE (NonEmpty ((:|)), toList)
 import Data.List.NonEmpty qualified as NE

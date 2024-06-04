@@ -20,15 +20,9 @@ module LS.XPile.LogicalEnglish.UtilsLEReplDev
 where
 
 import System.FilePath ((</>), takeFileName)
-import Data.Coerce (coerce)
-import Data.Kind (Constraint, Type)
-import Data.List.NonEmpty (NonEmpty)
 
 import LS.Rule (Rule(..))
-import LS.Types (MTExpr, mt2text)
 import LS.Utils.UtilsREPLDev (BaseFileName, pRules, csvsInDir, l4csv2rules)
-
-import LS (pRelPred)
 
 
 ------------- temp utils / constants for prototyping -----

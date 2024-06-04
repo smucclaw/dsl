@@ -21,7 +21,6 @@ import Data.GraphViz
     shape,
   )
 import Data.GraphViz.Attributes.Complete (Attribute (Compound))
-import Data.GraphViz.Printing (renderDot)
 import Data.HashMap.Strict qualified as Map
 import LS
 import LS.XPile.Logging (XPileLog)

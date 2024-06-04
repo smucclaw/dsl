@@ -9,14 +9,8 @@ module LS.XPile.Maude.Rules
   )
 where
 
-import Control.Monad.Validate (runValidate)
-import Data.Bifunctor (Bifunctor (..))
-import Data.Coerce (coerce)
-import Data.Either (rights)
-import Data.Foldable qualified as Fold
 import Data.Maybe (mapMaybe)
 import Data.MonoTraversable (Element, otoList)
-import Data.Monoid (Ap (..))
 import Data.Sequences as Seq (IsSequence)
 import Data.Text qualified as T
 import Flow ((|>))

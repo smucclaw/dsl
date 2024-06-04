@@ -34,6 +34,7 @@ import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, ov
 import Flow ((|>))
 import Debug.Trace (trace)
 import Data.Maybe (mapMaybe)
+import Prettyprinter (vcat)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
@@ -433,8 +434,7 @@ toMathLangMw l4i myenv = (rendered, [])
  where
   (exprs, state) = toMathLang l4i
   rendered = [__i|
-                #{exprs}
-                #{state}
+                #{vcat $ fmap pp exprs}
               |]
 
 --   intermediate l4i myenv

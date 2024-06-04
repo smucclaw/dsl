@@ -323,6 +323,9 @@ gml2ml exp =
   -- exp.exp :: BaseExp
 
   EApp {} -> mkApp exp []
+
+  EIs left right -> gml2ml (exp {exp = EVarSet left right})
+
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|]
       pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]

@@ -2,7 +2,7 @@ To run:
 
 ```
 (base) ┌─[20240604-16:30:36]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/natural4]
-└─[0] <git:(main a0ecd7ff) > natural4-exe --workdir workdir /Users/mengwong/Downloads/LegalSS\ v0.9.7.0\ development\ -\ Must\ Sing\ 5.csv
+└─[0] <git:(main a0ecd7ff) > natural4-exe --workdir workdir tmp/LegalSS\ v0.9.7.0\ development\ -\ Must\ Sing\ 5.csv
 natural4: will output asASP
 0: firstPass = fromList []
 

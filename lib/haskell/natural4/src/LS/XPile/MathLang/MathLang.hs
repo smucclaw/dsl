@@ -324,7 +324,7 @@ gml2ml exp =
 
   EApp {} -> mkApp exp []
 
-  EIs left right -> gml2ml (exp {exp = EVarSet left right})
+  EIs left right -> gml2ml (exp {GML.exp = EVarSet left right})
 
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|]

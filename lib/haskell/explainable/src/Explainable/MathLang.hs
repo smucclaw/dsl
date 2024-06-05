@@ -109,6 +109,7 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathMin  ExprLabel           (Expr a) (Expr a)  -- ^ min of two expressions
             | ListFold ExprLabel SomeFold (ExprList a)        -- ^ fold a list of expressions into a single expr value
             | MathApp  ExprLabel String [String] (Expr a)     -- ^ TEMPORARY thing, to be removed in final result. (TODO: is there a neater way to do things?)
+            | MathPred (Pred a) -- a wrapper for Pred, when the Hornlike has no numeric computations
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
             deriving (Eq, Generic)
 --            deriving (Eq, Generic, Show) -- if you prefer to output the original AST
@@ -127,6 +128,7 @@ showExpr (MathMax _lbl e1 e2) = [i|max(#{e1}, #{e2})|]
 showExpr (MathMin _lbl e1 e2) = [i|min(#{e1}, #{e2})|]
 showExpr (ListFold _lbl f el) = [i|#{f}(#{el})|]
 showExpr (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
+showExpr (MathPred pred) = showPred pred
 showExpr (MathApp _lbl f vars body) = [i|#{f}(#{intercalate "," vars}) = #{body}|]
 
 type ExprLabel = Maybe String
@@ -171,6 +173,7 @@ getExprLabel ( ListFold lbl  _ _   ) = lbl
 getExprLabel ( MathBin  lbl  _ _ _ ) = lbl
 getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
 getExprLabel ( MathApp  lbl  _ _ _ ) = lbl
+getExprLabel ( MathPred _)           = Nothing
 
 (<++>) :: Maybe String -> Maybe String -> Maybe String
 (<++>) Nothing Nothing  = Nothing
@@ -398,6 +401,7 @@ eval' (MathSet     str x) =
     (xval,xpl) <- eval x
     return (xval, Node ([], [[i|#{xval}: saved to #{str}|]]) [xpl])
 eval' (MathApp _lbl _f _vars body) = eval' body
+eval' (MathPred _pred) = eval' $ Val (Just "FIXME: top-level predicate") 0 ---- What is the expected behaviour for a top-level predicate?
 eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
 eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
@@ -712,6 +716,7 @@ instance (Show a) => Exprlbl Expr a where
   (@|=) lbl ( MathMax   (Just _old) x y   ) = MathMax   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
   (@|=) lbl ( MathMin   (Just _old) x y   ) = MathMin   (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
   (@|=) lbl ( ListFold  (Just _old) x y   ) = ListFold  (Just lbl {- <++> Just ("previously " ++ old) -} ) x y
+  (@|=) _ x = x
 
   (@|$<) :: String -> Expr a
   (@|$<) = MathVar
@@ -937,6 +942,8 @@ class ToTS expr a where
 -- in future consider a new class tsm.Undefined -- would that more faithfully follow this representation?
 instance ToTS Expr a where
   pp (Undefined lbl  )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe "undefined" pretty lbl, "undefined"]
+  pp (MathPred     x )        = pp x
+  pp (MathApp _l _f _vs body) = pp body ---- TODO: should history of application be kept?
   pp (Val      lbl x )        = "new tsm.Num0"    <+> h0tupled [dquotes $ maybe (viaShow x) pretty lbl, viaShow x]
 
   pp (Parens   _lbl x       ) = parens (pp x) -- discard the label, but [TODO] call SetVar to save it. TBH i don't think this ever actually gets used.

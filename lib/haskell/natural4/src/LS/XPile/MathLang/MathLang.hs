@@ -58,10 +58,20 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
       Just exp -> [exp]
       Nothing ->
         case giveth of
-          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
+          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] relevantValues
           ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
-                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
+                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] relevantValues
                 exprs -> exprs
+
+    -- Just in case all values in symtabF are
+    relevantValues =
+      case [e | e <- Map.elems st.symtabF, not $ predOrUndefined e] of
+        [] -> MathPred <$> Map.elems st.symtabP
+        xs -> Map.elems st.symtabF
+      where
+        predOrUndefined (Undefined _) = True
+        predOrUndefined (MathPred _) = True
+        predOrUndefined _ = False
 
 --numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl :: GML.NumOp -> ToMathLang MathBinOp

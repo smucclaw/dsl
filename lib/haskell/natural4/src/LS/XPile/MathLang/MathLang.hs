@@ -301,9 +301,9 @@ gml2ml exp =
     pure $ MathSet varEx valExWithLabel
 
   EPredSet _ _ -> do
-    PredSet name pr <- exp2pred exp
+    pred@(PredSet name pr) <- exp2pred exp
     ToMathLang $ tell emptyState {symtabP = Map.singleton name pr}
-    pure $ Undefined Nothing -- this is just dummy to not have it crash, this value won't be present in the final result
+    pure $ MathPred pred -- this is just dummy to not have it crash, this value won't be present in the final result
 
   EIfThen condE thenE -> do
     condP <- exp2pred condE
@@ -324,6 +324,10 @@ gml2ml exp =
   -- exp.exp :: BaseExp
 
   EApp {} -> mkApp exp []
+
+  EIs left (getPred -> Just right) -> do
+    MathVar var <- gml2ml left
+    gml2ml (exp {GML.exp = EPredSet (GML.MkVar $ T.pack var) right})
 
   EIs left right -> gml2ml (exp {GML.exp = EVarSet left right})
 
@@ -370,6 +374,13 @@ gml2ml exp =
     getList exp = case (exp.exp, GML.typeLabel <$> exp.md) of
       (ESeq seq, Just (GML.FromUser (GML.L4List _)):_)
         -> Just (GML.seqExpToExprs seq)
+      _ -> Nothing
+
+    getPred :: GML.Exp -> Maybe GML.Exp
+    getPred exp = case exp.exp of
+      EAnd {} -> Just exp
+      EOr {} -> Just exp
+      ENot {} -> Just exp
       _ -> Nothing
 
     mkList :: String -> [GML.Exp] -> ToMathLang (ExprList Double)
@@ -419,10 +430,7 @@ replaceVars table = returnBody . replace
 {-  ECompOp
     ELet
     EIs
-    ERec
-    ENot
-    EAnd
-    EOr -}
+ -}
 -- | calling the output "MyState" is misleading, but this is the most general way to cover the idea that
 -- a ruleset consists of more than one rule, similar to how the Vue interface gives more than one
 -- element in the left nav; each of the different rules will have its own entry in the SymTab dictionary.

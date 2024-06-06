@@ -33,8 +33,8 @@ import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
 import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
-import Data.Maybe (mapMaybe)
-import Prettyprinter (vcat)
+import Data.Maybe (mapMaybe, fromMaybe)
+import Prettyprinter (Doc, vcat, braces)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
@@ -452,8 +452,13 @@ toMathLangMw l4i myenv = (rendered, [])
  where
   (exprs, state) = toMathLang l4i
   rendered = [__i|
-                #{vcat $ fmap pp exprs}
+                #{vcat $ fmap renderExp exprs}
               |]
+
+  renderExp :: (Show a) => Expr a -> Doc ann
+  renderExp expr = [i|export const #{name} = () => #{braces $ pp expr}|]
+    where
+      name = fromMaybe "unnamedExpr" $ getExprLabel expr
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

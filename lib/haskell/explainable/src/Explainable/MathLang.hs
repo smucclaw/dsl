@@ -401,7 +401,9 @@ eval' (MathSet     str x) =
     (xval,xpl) <- eval x
     return (xval, Node ([], [[i|#{xval}: saved to #{str}|]]) [xpl])
 eval' (MathApp _lbl _f _vars body) = eval' body
-eval' (MathPred _pred) = eval' $ Val (Just "FIXME: top-level predicate") 0 ---- What is the expected behaviour for a top-level predicate?
+eval' (MathPred pred) = do
+  (xval, xpl) <- evalP pred
+  return (if xval then 1 else 0, Node ([], [[i|evaluated pred: #{xval}|]]) [xpl])
 eval' (ListFold _lbl FoldMin     xs) = doFold "min" minimum xs
 eval' (ListFold _lbl FoldMax     xs) = doFold "max" maximum xs
 eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs

@@ -456,9 +456,10 @@ toMathLangMw l4i myenv = (rendered, [])
               |]
 
   renderExp :: (Show a) => Expr a -> Doc ann
-  renderExp expr = [i|export const #{name} = () => #{braces $ pp expr}|]
+  renderExp expr = [i|export const #{name} = () => #{ret expr}|]
     where
       name = fromMaybe "unnamedExpr" $ getExprLabel expr
+      ret doc = braces [i|return #{pp doc}|]
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

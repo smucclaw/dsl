@@ -34,6 +34,7 @@ import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, ov
 import Flow ((|>))
 import Debug.Trace (trace)
 import Data.Maybe (mapMaybe)
+import Prettyprinter (vcat)
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
@@ -57,10 +58,20 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
       Just exp -> [exp]
       Nothing ->
         case giveth of
-          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ Map.elems st.symtabF
+          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] relevantValues
           ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
-                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ Map.elems st.symtabF
+                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] relevantValues
                 exprs -> exprs
+
+    -- Just in case all values in symtabF are
+    relevantValues =
+      case [e | e <- Map.elems st.symtabF, not $ predOrUndefined e] of
+        [] -> MathPred <$> Map.elems st.symtabP
+        xs -> Map.elems st.symtabF
+      where
+        predOrUndefined (Undefined _) = True
+        predOrUndefined (MathPred _) = True
+        predOrUndefined _ = False
 
 --numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl :: GML.NumOp -> ToMathLang MathBinOp
@@ -300,9 +311,9 @@ gml2ml exp =
     pure $ MathSet varEx valExWithLabel
 
   EPredSet _ _ -> do
-    PredSet name pr <- exp2pred exp
+    pred@(PredSet name pr) <- exp2pred exp
     ToMathLang $ tell emptyState {symtabP = Map.singleton name pr}
-    pure $ Undefined Nothing -- this is just dummy to not have it crash, this value won't be present in the final result
+    pure $ MathPred pred -- this is just dummy to not have it crash, this value won't be present in the final result
 
   EIfThen condE thenE -> do
     condP <- exp2pred condE
@@ -323,6 +334,13 @@ gml2ml exp =
   -- exp.exp :: BaseExp
 
   EApp {} -> mkApp exp []
+
+  EIs left (getPred -> Just right) -> do
+    MathVar var <- gml2ml left
+    gml2ml (exp {GML.exp = EPredSet (GML.MkVar $ T.pack var) right})
+
+  EIs left right -> gml2ml (exp {GML.exp = EVarSet left right})
+
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|]
       pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
@@ -366,6 +384,13 @@ gml2ml exp =
     getList exp = case (exp.exp, GML.typeLabel <$> exp.md) of
       (ESeq seq, Just (GML.FromUser (GML.L4List _)):_)
         -> Just (GML.seqExpToExprs seq)
+      _ -> Nothing
+
+    getPred :: GML.Exp -> Maybe GML.Exp
+    getPred exp = case exp.exp of
+      EAnd {} -> Just exp
+      EOr {} -> Just exp
+      ENot {} -> Just exp
       _ -> Nothing
 
     mkList :: String -> [GML.Exp] -> ToMathLang (ExprList Double)
@@ -415,10 +440,7 @@ replaceVars table = returnBody . replace
 {-  ECompOp
     ELet
     EIs
-    ERec
-    ENot
-    EAnd
-    EOr -}
+ -}
 -- | calling the output "MyState" is misleading, but this is the most general way to cover the idea that
 -- a ruleset consists of more than one rule, similar to how the Vue interface gives more than one
 -- element in the left nav; each of the different rules will have its own entry in the SymTab dictionary.
@@ -430,8 +452,7 @@ toMathLangMw l4i myenv = (rendered, [])
  where
   (exprs, state) = toMathLang l4i
   rendered = [__i|
-                #{exprs}
-                #{state}
+                #{vcat $ fmap pp exprs}
               |]
 
 --   intermediate l4i myenv

@@ -38,7 +38,7 @@ import LS.Types as L4
   MultiClauseHL(..), mkMultiClauseHL,
   HeadOnlyHC, mkHeadOnlyAtomicHC,
   HnBodHC(..),
-  mtexpr2text, ParamText, pt2text, pt2multiterm
+  mtexpr2text, ParamText, pt2text, pt2multiterm, rp2text
   )
 
 import LS.Rule (
@@ -1183,11 +1183,21 @@ processHcBody bsr = do
   case bsr of
     AA.Leaf rp -> expifyBodyRP rp
   -- TODO: Consider using the `mlbl` to augment with metadata
-    AA.All _mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp propns
-    AA.Any _mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp propns
+     -- Inari: right now mlbl is used like in Must Sing 5:
+     -- label is "consumes" and propns are ["alcoholic beverage", non-alc. beverage"]
+    AA.All mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp (fmap (addLabel mlbl) <$> propns)
+    AA.Any mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp (fmap (addLabel mlbl) <$> propns)
     AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
   where
     emptyExp :: Exp = noExtraMdata EEmpty
+
+    addLabel :: Maybe (AA.Label T.Text) -> RelationalPredicate -> RelationalPredicate
+    addLabel lbl rp = case lbl of
+      Nothing -> rp
+      Just (AA.Pre pre) ->
+        RPMT [MTT $ T.unwords [pre, rp2text rp]]
+      Just (AA.PrePost pre post) ->
+        RPMT [MTT $ T.unwords [pre, rp2text rp, post]]
 
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp

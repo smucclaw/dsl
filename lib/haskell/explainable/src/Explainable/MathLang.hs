@@ -173,7 +173,7 @@ getExprLabel ( ListFold lbl  _ _   ) = lbl
 getExprLabel ( MathBin  lbl  _ _ _ ) = lbl
 getExprLabel ( MathITE  lbl  _ _ _ ) = lbl
 getExprLabel ( MathApp  lbl  _ _ _ ) = lbl
-getExprLabel ( MathPred _)           = Nothing
+getExprLabel ( MathPred pred       ) = getPredLabel pred
 
 (<++>) :: Maybe String -> Maybe String -> Maybe String
 (<++>) Nothing Nothing  = Nothing

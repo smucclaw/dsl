@@ -1183,10 +1183,10 @@ processHcBody bsr = do
   case bsr of
     AA.Leaf rp -> expifyBodyRP rp
   -- TODO: Consider using the `mlbl` to augment with metadata
-     -- Inari: right now mlbl is used like in Must Sing 5:
-     -- label is "consumes" and propns are ["alcoholic beverage", non-alc. beverage"]
-    AA.All mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp (fmap (addLabel mlbl) <$> propns)
-    AA.Any mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp (fmap (addLabel mlbl) <$> propns)
+    -- Inari: if you uncomment fmap addLabel below, then the text in mlbl will be added to the leaves.
+    -- This is assuming that
+    AA.All mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp ({-fmap (addLabel mlbl) <$> -} propns)
+    AA.Any mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp ({-fmap (addLabel mlbl) <$>-} propns)
     AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
   where
     emptyExp :: Exp = noExtraMdata EEmpty

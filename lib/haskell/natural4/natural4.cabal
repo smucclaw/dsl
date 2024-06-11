@@ -351,10 +351,7 @@ test-suite natural4-test
       LS.XPile.CoreL4.LogicProgramSpec
       LS.XPile.GenericMathLang.TranslateL4Spec
       LS.XPile.JSONSchemaSpec
-      LS.XPile.LogicalEnglish.GoldenUtils
-      LS.XPile.LogicalEnglish.LogicalEnglishSpec
-      LS.XPile.LogicalEnglish.SpecUtils
-      LS.XPile.LogicalEnglish.Testcase
+      LS.XPile.LogicalEnglishSpec
       LS.XPile.PrologSpec
       Parsing.BoolStructParserSpec
       Parsing.CoreL4ParserSpec
@@ -364,6 +361,10 @@ test-suite natural4-test
       Parsing.NewParserSpec
       Parsing.PDPASpec
       Parsing.SLParserSpec
+      TestLib
+      TestLib.GoldenUtils
+      TestLib.SpecUtils
+      TestLib.Testcase
       Paths_natural4
   hs-source-dirs:
       test

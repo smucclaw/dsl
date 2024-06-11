@@ -1,4 +1,4 @@
-module LS.XPile.LogicalEnglish.SpecUtils
+module TestLib.SpecUtils
   ( findWithDepth0
   )
 where

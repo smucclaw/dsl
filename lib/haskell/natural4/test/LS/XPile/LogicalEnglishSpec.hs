@@ -43,30 +43,19 @@
 --  'actual.le' will appear in the respective directories of each test case
 --  that was run.
 --  This file represents the actual output of the Logical English transpiler.
-module LS.XPile.LogicalEnglish.LogicalEnglishSpec (spec) where
+module LS.XPile.LogicalEnglishSpec (spec) where
 
-import Control.Monad (join)
-import Data.Foldable (for_)
-import Flow ((|>))
-import LS.Utils ((|$>))
-import LS.XPile.LogicalEnglish.Testcase (configFile2spec)
-import LS.XPile.LogicalEnglish.SpecUtils (findWithDepth0)
-import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir)
-import Safe (tailSafe)
-import System.FilePath ((</>))
-import System.FilePath.Find (FileType (Directory), fileType, (==?))
-import Test.Hspec (Spec, describe, runIO)
+import LS.XPile.LogicalEnglish (toLE)
+import Test.Hspec (Spec)
+import TestLib (mkSpec, TestConfig (..))
 
 -- | The 'Spec' used to test the Logical English transpiler.
 spec :: Spec
-spec = describe "Logical English" do
-  directories :: [FilePath] <-
-    leTestcasesDir
-      |> findWithDepth0 (fileType ==? Directory)
-        -- The first directory will always be leTestcasesDir itself, which is why
-        -- we need to take the tail to get rid of it.
-      |$> tailSafe
-      |> runIO
-  for_ directories \directory ->
-    directory </> "config.yml"
-      |> configFile2spec |> runIO |> join
+spec =
+  mkSpec
+    TestConfig
+      { description = "Logical English",
+        directory = "LogicalEnglish",
+        fileExt = "le",
+        xpileFn = toLE
+      }

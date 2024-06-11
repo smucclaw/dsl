@@ -1,19 +1,20 @@
-module LS.XPile.LogicalEnglish.GoldenUtils (goldenLE) where
+module TestLib.GoldenUtils (mkGolden) where
 
 import LS.XPile.LogicalEnglish.UtilsLEReplDev (leTestcasesDir)
 import System.FilePath ((</>), (-<.>), takeBaseName)
 import Test.Hspec.Golden (Golden (..))
 
-goldenLE :: FilePath -> String -> Golden String
-goldenLE testcase actualOutput =
+mkGolden :: String -> FilePath -> FilePath -> String -> Golden String
+mkGolden fileExt dir testcase actualOutput =
   Golden
     { output = actualOutput,
       encodePretty = show,
       writeToFile = writeFile,
       readFromFile = readFile,
-      goldenFile = leTestcasesDir </> testcaseName </> "expected" -<.> "le",
-      actualFile = Just $ leTestcasesDir </> testcaseName </> "actual" -<.> "le",
+      goldenFile = go "expected",
+      actualFile = Just $ go "actual",
       failFirstTime = False
     }
   where
     testcaseName = takeBaseName testcase
+    go fileName = dir </> testcaseName </> fileName -<.> fileExt

@@ -1,0 +1,44 @@
+packages:
+  ./natural4
+  ./anyall
+  ./explainable
+
+-- Environment files are required to run the doctests via `cabal test doctests`
+write-ghc-environment-files: always
+
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/baby-l4
+  -- tag: 6bab8b48ada14383a28b862ccb63f608764737e1
+  tag: e9c3bbcf701db8a4a69fae2671dcecc762395613
+
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/gf-core
+  tag: f85fbbaf41e804f1566cd914ef3986dda29978b3
+
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/prolog
+  tag: 2e23022799e5019bbb8cadeba3dab788073b582d
+
+source-repository-package
+  type: git
+  location: https://github.com/anka-213/haskell-wordnet
+  tag: a6d675bcbe1585fc652f95f60e0dec826a660646
+
+allow-newer:
+  compact:*,
+  udpipe-hs:base,
+  gf:*,
+  Cabal,
+  Cabal-syntax
+
+constraints:
+    graphviz ==2999.20.2.0
+
+package *
+    ghc-options: -haddock -fwrite-ide-info
+
+tests: True
+benchmarks: True

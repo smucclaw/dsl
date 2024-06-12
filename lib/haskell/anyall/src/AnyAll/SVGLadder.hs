@@ -5,7 +5,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 -- usage:
--- cat out/example-or.json | stack run -- --only svg > out/example4.svg
+-- cat out/example-or.json | stack run anyall-exe -- --only svg > out/example4.svg
 -- A visualization inspired by Ladder Logic and by Layman Allen (1978).
 
 module AnyAll.SVGLadder (module AnyAll.SVGLadder) where

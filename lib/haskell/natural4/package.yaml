@@ -6,7 +6,7 @@ author: "Wong Meng Weng"
 maintainer: "mwwong@smu.edu.sg"
 copyright: "2022"
 
-extra-source-files:
+extra-doc-files:
   - README.org
   - ChangeLog.md
 
@@ -136,6 +136,7 @@ tests:
       - filemanip
       - hspec-golden
       - yaml
+    build-tools: hspec-discover:hspec-discover
   doctests:
     source-dirs:      test/doctests
     main:             Doctests.hs

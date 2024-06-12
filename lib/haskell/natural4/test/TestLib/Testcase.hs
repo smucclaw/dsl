@@ -54,29 +54,29 @@ configFile2testcase fileExt configFile = runExceptT do
     yamlParseExc2error parseExc =
       Error {dir, info = YamlParseExc parseExc}
 
-instance ToSpec (Either Error Testcase) where
-  toSpec
-    xpileFn
-    ( Right
-        Testcase
-          { dir,
-            fileExt,
-            config = Config {description, enabled}
-          }
-      ) =
-      describe dir
-        if enabled
-          then it description do
-            testcaseName <.> "csv"
-              |> letestfnm2rules
-              |$> xpileFn
-              |$> mkGolden fileExt dir testcaseName
-          else it description $ pendingWith "Test case is disabled."
-      where
-        testcaseName = takeBaseName dir
+toSpec :: ([LS.Rule] -> String) -> Either Error Testcase -> Spec
+toSpec
+  xpileFn
+  ( Right
+      Testcase
+        { dir,
+          fileExt,
+          config = Config {description, enabled}
+        }
+    ) =
+    describe dir
+      if enabled
+        then it description do
+          testcaseName <.> "csv"
+            |> letestfnm2rules
+            |$> xpileFn
+            |$> mkGolden fileExt dir testcaseName
+        else it description $ pendingWith "Test case is disabled."
+    where
+      testcaseName = takeBaseName dir
 
-  toSpec _ (Left Error {dir, info}) =
-    it dir $ pendingWith $ show info
+toSpec _ (Left Error {dir, info}) =
+  it dir $ pendingWith $ show info
 
 data Testcase = Testcase
   { dir :: FilePath,
@@ -104,6 +104,3 @@ data ErrorInfo where
 instance Show ErrorInfo where
   show MissingConfigFile = "Missing config.yml file."
   show (YamlParseExc parseExc) = [i|Error parsing YAML file: #{parseExc}|]
-
-class ToSpec a where
-  toSpec :: ([LS.Rule] -> String) -> a -> Spec

@@ -20,25 +20,25 @@ import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Rule qualified as LS
 import LS.Utils ((|$>))
-import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
+import LS.Utils.UtilsREPLDev (l4csv2rules)
 import System.Directory (doesFileExist)
-import System.FilePath (takeBaseName, takeDirectory, (<.>))
+import System.FilePath (takeBaseName, takeDirectory, (<.>), (</>))
 import System.FilePath.Find (depth, fileName, (==?))
 import System.FilePath.Find qualified as FileFind
 import Test.Hspec (Spec, describe, it, pendingWith, runIO)
 import TestLib.GoldenUtils (mkGolden)
 
-configFile2spec :: FilePath -> ([LS.Rule] -> String) -> FilePath -> IO Spec
+configFile2spec :: String -> ([LS.Rule] -> String) -> FilePath -> IO Spec
 configFile2spec fileExt xpileFn configFile =
   configFile
     |> configFile2testcase fileExt
-    |$> either (toSpec xpileFn) (toSpec xpileFn)
+    |$> toSpec xpileFn
 
 configFile2testcase :: String -> FilePath -> IO (Either Error Testcase)
 configFile2testcase fileExt configFile = runExceptT do
   exists <- lift $ doesFileExist configFile
   if not exists
-    then throwError Error {directory, info = MissingConfigFile}
+    then throwError Error {dir, info = MissingConfigFile}
     else
       configFile
         |> Y.decodeFileThrow
@@ -48,33 +48,40 @@ configFile2testcase fileExt configFile = runExceptT do
         -- Hence we need to use modifyError to catch the exception, modify it
         -- into our internal exception type, and then re-throw it.
         |> modifyError yamlParseExc2error
-        |$> Testcase directory fileExt
+        |$> \config -> Testcase {dir, fileExt, config}
   where
-    directory = takeDirectory configFile
+    dir = takeDirectory configFile
     yamlParseExc2error parseExc =
-      Error {directory, info = YamlParseExc parseExc}
+      Error {dir, info = YamlParseExc parseExc}
 
-instance ToSpec Testcase where
-  toSpec
-    xpileFn
-    Testcase {directory, fileExt, config = Config {description, enabled}} =
-      describe
-        directory
-        if enabled
-          then it description do
-            testcaseName <.> "csv"
-              |> letestfnm2rules
-              |$> xpileFn
-              |$> mkGolden fileExt directory testcaseName
-          else it description $ pendingWith "Test case is disabled."
-      where
-        testcaseName = takeBaseName directory
+toSpec :: ([LS.Rule] -> String) -> Either Error Testcase -> Spec
+toSpec
+  xpileFn
+  ( Right
+      Testcase
+        { dir,
+          fileExt,
+          config = Config {description, enabled}
+        }
+    ) =
+    describe testcaseName
+      if enabled
+        then it description do
+          testcaseName <.> "csv"
+            |> l4csv2rules dir
+            |$> xpileFn
+            |$> mkGolden fileExt dir testcaseName
+        else it description $ pendingWith "Test case is disabled."
+    where
+      testcaseName = takeBaseName dir
 
-instance ToSpec Error where
-  toSpec _ Error {directory, info} = it directory $ pendingWith $ show info
+toSpec _ (Left Error {dir, info}) =
+  it testcaseName $ pendingWith $ show info
+  where
+    testcaseName = takeBaseName dir
 
 data Testcase = Testcase
-  { directory :: FilePath,
+  { dir :: FilePath,
     fileExt :: String,
     config :: Config
   }
@@ -87,7 +94,7 @@ data Config = Config
   deriving (Generic, Y.FromJSON, Show)
 
 data Error = Error
-  { directory :: FilePath,
+  { dir :: FilePath,
     info :: ErrorInfo
   }
   deriving Show
@@ -99,6 +106,3 @@ data ErrorInfo where
 instance Show ErrorInfo where
   show MissingConfigFile = "Missing config.yml file."
   show (YamlParseExc parseExc) = [i|Error parsing YAML file: #{parseExc}|]
-
-class ToSpec a where
-  toSpec :: ([LS.Rule] -> String) -> a -> Spec

@@ -20,9 +20,9 @@ import Flow ((|>))
 import GHC.Generics (Generic)
 import LS.Rule qualified as LS
 import LS.Utils ((|$>))
-import LS.XPile.LogicalEnglish.UtilsLEReplDev (letestfnm2rules)
+import LS.Utils.UtilsREPLDev (l4csv2rules)
 import System.Directory (doesFileExist)
-import System.FilePath (takeBaseName, takeDirectory, (<.>))
+import System.FilePath (takeBaseName, takeDirectory, (<.>), (</>))
 import System.FilePath.Find (depth, fileName, (==?))
 import System.FilePath.Find qualified as FileFind
 import Test.Hspec (Spec, describe, it, pendingWith, runIO)
@@ -68,7 +68,7 @@ toSpec
       if enabled
         then it description do
           testcaseName <.> "csv"
-            |> letestfnm2rules
+            |> l4csv2rules ("test" </> "Testcases" </> dir)
             |$> xpileFn
             |$> mkGolden fileExt dir testcaseName
         else it description $ pendingWith "Test case is disabled."

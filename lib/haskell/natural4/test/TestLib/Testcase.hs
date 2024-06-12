@@ -48,7 +48,7 @@ configFile2testcase fileExt configFile = runExceptT do
         -- Hence we need to use modifyError to catch the exception, modify it
         -- into our internal exception type, and then re-throw it.
         |> modifyError yamlParseExc2error
-        |$> Testcase dir fileExt
+        |$> \config -> Testcase {dir, fileExt, config}
   where
     dir = takeDirectory configFile
     yamlParseExc2error parseExc =

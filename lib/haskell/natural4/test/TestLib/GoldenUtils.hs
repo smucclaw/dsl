@@ -16,5 +16,4 @@ mkGolden fileExt dir testcase actualOutput =
       failFirstTime = False
     }
   where
-    testcaseName = takeBaseName testcase
-    go fileName = dir </> testcaseName </> fileName -<.> fileExt
+    go fileName = dir </> fileName -<.> fileExt

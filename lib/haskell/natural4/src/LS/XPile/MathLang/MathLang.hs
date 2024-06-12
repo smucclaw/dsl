@@ -14,7 +14,7 @@ module LS.XPile.MathLang.MathLang
   (toMathLangMw, toMathLang, gml2ml, runToMathLang)
 where
 
-import Data.List ( groupBy, nub, unfoldr )
+import Data.List ( groupBy, nub, unfoldr, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
@@ -33,7 +33,7 @@ import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
 import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
-import Data.Maybe (mapMaybe, fromMaybe)
+import Data.Maybe (mapMaybe)
 import Prettyprinter (Doc, vcat, braces)
 {-
 YM: This is currently more like a NOTES file,
@@ -58,20 +58,21 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
       Just exp -> [exp]
       Nothing ->
         case giveth of
-          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] relevantValues
+          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ relevantSymtab st
           ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
-                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] relevantValues
+                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ relevantSymtab st
                 exprs -> exprs
 
-    -- Just in case all values in symtabF are
-    relevantValues =
-      case [e | e <- Map.elems st.symtabF, not $ predOrUndefined e] of
-        [] -> MathPred <$> Map.elems st.symtabP
-        xs -> Map.elems st.symtabF
-      where
-        predOrUndefined (Undefined _) = True
-        predOrUndefined (MathPred _) = True
-        predOrUndefined _ = False
+-- If all values in symtabF are Pred or Undefined, use symtabP
+relevantSymtab :: MyState -> [Expr Double]
+relevantSymtab st =
+  case [e | e <- Map.elems st.symtabF, not $ predOrUndefined e] of
+    [] -> MathPred <$> Map.elems st.symtabP
+    xs -> Map.elems st.symtabF
+  where
+    predOrUndefined (Undefined _) = True
+    predOrUndefined (MathPred _) = True
+    predOrUndefined _ = False
 
 --numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
 numOptoMl :: GML.NumOp -> ToMathLang MathBinOp
@@ -450,16 +451,32 @@ replaceVars table = returnBody . replace
 toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
 toMathLangMw l4i myenv = (rendered, [])
  where
-  (exprs, state) = toMathLang l4i
+  (exprs, stRaw) = toMathLang l4i
+  state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
   rendered = [__i|
                 #{vcat $ fmap renderExp exprs}
-              |]
+                #{vcat $ fmap renderExp $ stateNotInExprs exprs state}
+             |]
+
+  stateNotInExprs es st = relevantSymtab st \\ exprs
+
+  -- MathSet "varName" expr --> expr
+  reintroduceSetVar :: String -> Expr Double -> Expr Double
+  reintroduceSetVar _var expr@(MathSet _ _) = expr
+  reintroduceSetVar _var expr@(MathPred _)  = expr
+  reintroduceSetVar var  expr               = MathSet var expr
 
   renderExp :: (Show a) => Expr a -> Doc ann
   renderExp expr = [i|export const #{name} = () => #{ret expr}|]
     where
-      name = fromMaybe "unnamedExpr" $ getExprLabel expr
+      name = maybe "unnamedExpr" replaceSpaces $ getExprLabel expr
       ret doc = braces [i|return #{pp doc}|]
+
+      replaceSpaces :: String -> String
+      replaceSpaces = map replace
+        where
+          replace ' ' = '_'
+          replace x   = x
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

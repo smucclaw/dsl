@@ -64,11 +64,11 @@ toSpec
           config = Config {description, enabled}
         }
     ) =
-    describe dir
+    describe testcaseName
       if enabled
         then it description do
           testcaseName <.> "csv"
-            |> l4csv2rules ("test" </> "Testcases" </> dir)
+            |> l4csv2rules dir
             |$> xpileFn
             |$> mkGolden fileExt dir testcaseName
         else it description $ pendingWith "Test case is disabled."
@@ -76,7 +76,9 @@ toSpec
       testcaseName = takeBaseName dir
 
 toSpec _ (Left Error {dir, info}) =
-  it dir $ pendingWith $ show info
+  it testcaseName $ pendingWith $ show info
+  where
+    testcaseName = takeBaseName dir
 
 data Testcase = Testcase
   { dir :: FilePath,

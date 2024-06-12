@@ -14,6 +14,8 @@ import Test.Hspec (Spec, describe, runIO)
 import TestLib.SpecUtils (findWithDepth0)
 import TestLib.Testcase (configFile2spec)
 
+import Debug.Trace
+
 data TestConfig = TestConfig
   { description :: String,
     dir :: FilePath,
@@ -25,7 +27,7 @@ mkSpec :: TestConfig -> Spec
 mkSpec TestConfig {description, dir, fileExt, xpileFn} =
   describe description do
     dirs :: [FilePath] <-
-      dir
+      "test" </> "Testcases" </> dir
         |> findWithDepth0 (fileType ==? Directory)
         -- The first directory will always be leTestcasesDir itself, which is why
         -- we need to take the tail to get rid of it.

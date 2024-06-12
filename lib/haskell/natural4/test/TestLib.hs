@@ -14,8 +14,6 @@ import Test.Hspec (Spec, describe, runIO)
 import TestLib.SpecUtils (findWithDepth0)
 import TestLib.Testcase (configFile2spec)
 
-import Debug.Trace
-
 data TestConfig = TestConfig
   { description :: String,
     dir :: FilePath,

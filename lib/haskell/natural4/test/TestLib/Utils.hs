@@ -2,11 +2,13 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module TestLib.Utils
-  ( findWithDepth0,
+  ( ToText,
+    findWithDepth0,
     mkGolden,
   )
 where
 
+import Data.Kind (Constraint, Type)
 import Data.String.Interpolate (i)
 import Data.String.Interpolate.Conversion (Interpolatable)
 import Data.Text qualified as T
@@ -18,13 +20,10 @@ import Test.Hspec.Golden (Golden (..))
 findWithDepth0 :: FilterPredicate -> FilePath -> IO [FilePath]
 findWithDepth0 = find (depth ==? 0)
 
-mkGolden ::
-  (Interpolatable True t T.Text) =>
-  String ->
-  FilePath ->
-  FilePath ->
-  t ->
-  Golden T.Text
+type ToText :: Type -> Constraint
+type ToText t = Interpolatable True t T.Text
+
+mkGolden :: ToText t => String -> FilePath -> FilePath -> t -> Golden T.Text
 mkGolden fileExt dir testcase actualOutput =
   Golden
     { output = actualOutput',

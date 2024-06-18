@@ -11,24 +11,24 @@ import Safe (tailSafe)
 import System.FilePath ((</>))
 import System.FilePath.Find (FileType (Directory), fileType, (==?))
 import Test.Hspec (Spec, describe, runIO)
-import TestLib.Utils (findWithDepth0)
 import TestLib.Testcase (configFile2spec)
+import TestLib.Utils (ToText, findWithDepth0)
 
-data TestConfig = TestConfig
+data TestConfig t = TestConfig
   { description :: String,
     dir :: FilePath,
     fileExt :: String,
-    xpileFn :: [LS.Rule] -> String
+    xpileFn :: [LS.Rule] -> t
   }
 
-mkSpec :: TestConfig -> Spec
+mkSpec :: ToText t => TestConfig t -> Spec
 mkSpec TestConfig {description, dir, fileExt, xpileFn} =
   describe description do
     dirs :: [FilePath] <-
       "test" </> "Testcases" </> dir
         |> findWithDepth0 (fileType ==? Directory)
-        -- The first directory will always be the dir containing the testcases
-        -- itself, which is why we need to take the tail to get rid of it.
+          -- The first directory will always be the dir containing the testcases
+          -- itself, which is why we need to take the tail to get rid of it.
         |$> tailSafe
         |> runIO
     for_ dirs \dir ->

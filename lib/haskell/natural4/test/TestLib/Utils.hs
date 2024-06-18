@@ -36,5 +36,5 @@ mkGolden fileExt dir testcase actualOutput =
       failFirstTime = False
     }
   where
-    go fileName = dir </> fileName -<.> fileExt
     actualOutput' = [i|#{actualOutput}|]
+    go fileName = dir </> fileName -<.> fileExt

@@ -23,12 +23,10 @@ import LS.Utils ((|$>))
 import LS.Utils.UtilsREPLDev (l4csv2rules)
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeDirectory, (<.>), (</>))
-import System.FilePath.Find (depth, fileName, (==?))
-import System.FilePath.Find qualified as FileFind
-import Test.Hspec (Spec, describe, it, pendingWith, runIO)
-import TestLib.GoldenUtils (mkGolden)
+import Test.Hspec (Spec, describe, it, pendingWith)
+import TestLib.Utils (ToText, mkGolden)
 
-configFile2spec :: String -> ([LS.Rule] -> String) -> FilePath -> IO Spec
+configFile2spec :: ToText t => String -> ([LS.Rule] -> t) -> FilePath -> IO Spec
 configFile2spec fileExt xpileFn configFile =
   configFile
     |> configFile2testcase fileExt
@@ -54,7 +52,7 @@ configFile2testcase fileExt configFile = runExceptT do
     yamlParseExc2error parseExc =
       Error {dir, info = YamlParseExc parseExc}
 
-toSpec :: ([LS.Rule] -> String) -> Either Error Testcase -> Spec
+toSpec :: ToText t => ([LS.Rule] -> t) -> Either Error Testcase -> Spec
 toSpec
   xpileFn
   ( Right

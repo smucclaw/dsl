@@ -5,3 +5,5 @@ Fibs100.hs
 *.hi
 *.gfo
 .DS_Store
+
+**/actual.*

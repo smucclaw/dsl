@@ -3,9 +3,13 @@
 
 module LS.XPile.JSONSchemaSpec (spec) where
 
-import Test.Hspec ( describe, it, xit, shouldBe, Spec )
-import LS.Types (TypeSig(..), ParamType(..))
+import LS.Types (ParamType (..), TypeSig (..))
 import LS.XPile.ExportTypes
+  ( FieldType (FTList, FTRef, FTString),
+    showTypesJson,
+    typeDeclSuperToFieldType,
+  )
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 
 spec :: Spec
 spec = do

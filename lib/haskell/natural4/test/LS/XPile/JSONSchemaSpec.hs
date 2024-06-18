@@ -21,6 +21,7 @@ import LS.XPile.ExportTypes
   )
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.QuickCheck
+    ( Arbitrary(arbitrary), oneof, Testable(property) )
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 instance Arbitrary ParamType where

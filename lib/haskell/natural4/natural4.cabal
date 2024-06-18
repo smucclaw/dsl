@@ -362,9 +362,8 @@ test-suite natural4-test
       Parsing.PDPASpec
       Parsing.SLParserSpec
       TestLib
-      TestLib.GoldenUtils
-      TestLib.SpecUtils
       TestLib.Testcase
+      TestLib.Utils
       Paths_natural4
   hs-source-dirs:
       test

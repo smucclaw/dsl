@@ -3,11 +3,15 @@
 
 module LS.XPile.PrologSpec (spec) where
 
-import Test.Hspec
+import AnyAll (mkAll, mkAny, mkLeaf, mkNot)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import LS.Types
-import AnyAll
-import LS.XPile.Prolog
-import Data.List.NonEmpty
+  ( MTExpr (MTT),
+    ParamType (TOne),
+    TypeSig (SimpleType),
+  )
+import LS.XPile.Prolog (bsp2struct, vart)
+import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec = do

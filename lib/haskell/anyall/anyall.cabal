@@ -1,0 +1,149 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           anyall
+version:        0.1.1.2
+description:    Please see the README on GitHub at <https://github.com/githubuser/anyall#readme>
+homepage:       https://github.com/smucclaw/anyall#readme
+bug-reports:    https://github.com/smucclaw/anyall/issues
+author:         Wong Meng Weng
+maintainer:     mwwong@smu.edu.sg
+copyright:      2022 Singapore Management University
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.org
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/smucclaw/anyall
+
+library
+  exposed-modules:
+      AnyAll
+      AnyAll.BoolStruct
+      AnyAll.PP
+      AnyAll.Relevance
+      AnyAll.SVGLadder
+      AnyAll.Types
+  other-modules:
+      Paths_anyall
+  hs-source-dirs:
+      src
+  ghc-options: -Wincomplete-patterns
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , base >=4.7 && <5
+    , bytestring
+    , checkers
+    , containers
+    , explainable
+    , filepath
+    , flow
+    , hashable
+    , hspec
+    , microlens-platform
+    , mtl
+    , optparse-generic
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , recursion-schemes
+    , string-interpolate
+    , svg-builder
+    , text
+    , unordered-containers
+    , utf8-string
+    , vector
+  default-language: GHC2021
+
+executable anyall-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_anyall
+  hs-source-dirs:
+      app
+  ghc-options: -Wincomplete-patterns -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , base >=4.7 && <5
+    , bytestring
+    , checkers
+    , containers
+    , explainable
+    , filepath
+    , flow
+    , hashable
+    , hspec
+    , microlens-platform
+    , mtl
+    , optparse-generic
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , recursion-schemes
+    , string-interpolate
+    , svg-builder
+    , text
+    , unordered-containers
+    , utf8-string
+    , vector
+  default-language: GHC2021
+
+test-suite anyall-test
+  type: exitcode-stdio-1.0
+  main-is: AutoSpec.hs
+  other-modules:
+      AnyAll.BoolStructSpec
+      AnyAll.RelevanceSpec
+      AnyAll.SVGLadderSpec
+      AnyAll.TypesSpec
+      CompoundSpec
+      Paths_anyall
+  hs-source-dirs:
+      test
+  ghc-options: -Wincomplete-patterns -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , base >=4.7 && <5
+    , bytestring
+    , checkers
+    , containers
+    , explainable
+    , filepath
+    , flow
+    , hashable
+    , hspec
+    , hspec-checkers
+    , hspec-golden
+    , microlens-platform
+    , mtl
+    , optparse-generic
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , quickcheck-instances
+    , recursion-schemes
+    , string-interpolate
+    , svg-builder
+    , text
+    , unordered-containers
+    , utf8-string
+    , vector
+    , xml
+  default-language: GHC2021

@@ -241,9 +241,9 @@ paramtext OR ( paramtext AND paramtext )
 |       | OR             | has | health insurance |           |       |   |
 | MAY   | sharpen knives |     |                  |           |       |   |
 
-when we run `stack run -- --only grounds test/boolstructp-3.csv` we should see one ground
+when we run `stack run natural4-exe -- --only grounds test/boolstructp-3.csv` we should see one ground
 
-when we run `stack run -- --only grounds --extd test/boolstructp-3.csv` we should see two grounds
+when we run `stack run natural4-exe -- --only grounds --extd test/boolstructp-3.csv` we should see two grounds
 
 **** inline-1: inline conjunctive lists
 

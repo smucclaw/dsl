@@ -40,7 +40,7 @@ Let's output to the ~out/~ directory:
 Feed the JSON into the Haskell executable:
 
 #+begin_src bash
-  node ts/example.js | stack run -- --only svg | tee out/example.svg
+  node ts/example.js | stack run anyall-exe -- --only svg | tee out/example.svg
 #+end_src
 
 Now you can view the SVG:
@@ -464,7 +464,7 @@ In an "or" tree, a proposition is true if ~any~ of its sub-propositions is true.
 
 LR:
 #+begin_example
-     any of the following 
+     any of the following
   ----- proposition 3 -------
     |                   |
     +-- proposition 4 --+
@@ -497,7 +497,7 @@ LR:
         proposition 7
              |
         proposition 8 -----
-      
+
 #+end_example
 
 TB:
@@ -577,9 +577,9 @@ We indicate that something is false by drawing a line at the start of the box:
 
 LR:
 #+begin_example
-      |               
+      |
   ----| proposition 1 ----
-      |               
+      |
 #+end_example
 
 Intuitively, this represents that the circuit "stops here".

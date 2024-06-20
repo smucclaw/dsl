@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 1.18
 
 -- This file has been generated from package.yaml by hpack version 0.36.0.
 --
@@ -15,7 +15,7 @@ copyright:      2022
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-extra-source-files:
+extra-doc-files:
     README.org
     ChangeLog.md
 data-files:
@@ -365,6 +365,8 @@ test-suite natural4-test
       TestLib.Testcase
       TestLib.Utils
       Paths_natural4
+  build-tool-depends:
+      hspec-discover:hspec-discover
   hs-source-dirs:
       test
   ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"

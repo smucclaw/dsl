@@ -146,7 +146,7 @@ L4 should also, for visualization purposes, return a tree of some sort, which ca
   necessary values out of that symbol table, and voila.
 
 The symbol table is segregated by type of value.
-  
+
 #+begin_src haskell
   defaultState :: MyState
   defaultState = emptyState { symtabF = Map.fromList [ ("annualIncome", "annual income" @|.  100000)
@@ -226,7 +226,7 @@ constructors.
 
 Those objects can then be instantiated and evaluated by a
 Typescript MathLang runtime.
-  
+
 The generated code sets up the input as a JS object:
 
 #+begin_src typescript
@@ -285,10 +285,10 @@ expression, and under it, you see how that expression was arrived at.
 #+end_example
 
 * How to run by hand
-   
+
 #+begin_example
   ┌─[20231220-16:58:09]   [mengwong@rosegold:~/src/smucclaw/dsl/lib/haskell/explainable]
-  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > stack run > out.org
+  └─[0] <git:(20231218-xpile-mathlang-examples 85a92755✱✈) > stack run explainable-exe > out.org
   explainable-0.1.0.0: unregistering (local file changes: README.org)
   explainable> build (lib + exe)
   Preprocessing library for explainable-0.1.0.0..

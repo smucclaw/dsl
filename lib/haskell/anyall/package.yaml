@@ -70,6 +70,7 @@ tests:
   anyall-test:
     main:                AutoSpec.hs
     source-dirs:         test
+    build-tools:         hspec-discover:hspec-discover
     ghc-options:
     - -threaded
     - -rtsopts

@@ -1,0 +1,31 @@
+## Files we never want to commit, such as vim backup files.
+*~
+.#*
+
+## Test artifacts
+.hspec-failures
+
+## cabal specific directories
+dist-newstyle/
+# Don't commit local configuration
+cabal.project.local
+# Environment files are required to run the doctests. However, don't commit them by accident.
+.ghc.environment.*
+
+## stack specific directories
+.stack-work/
+# We do want to commit generated .cabal files, see https://www.fpcomplete.com/blog/storing-generated-cabal-files/
+# *.cabal
+
+## Directories often used for debugging and experiments.
+## We don't want to commit them!
+out/
+workdir/
+
+## Configurations
+.vscode/
+
+## Artifacts
+**.hie
+**.clj-kondo
+**.lsp

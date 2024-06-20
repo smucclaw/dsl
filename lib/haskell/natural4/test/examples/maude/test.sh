@@ -1,1 +1,1 @@
-stack run -- --workdir=workdir --toasp test0.csv
+stack run natural4-exe -- --workdir=workdir --toasp test0.csv

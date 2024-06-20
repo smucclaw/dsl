@@ -21,28 +21,36 @@ You do not need to install Haskell separately.
 
 Just install Stack from http://haskellstack.org/. It will install an appropriate version of Haskell locally.
 
-* Install the ~AnyAll~ library
+* Install all binaries
 
-In the ~dsl/lib/haskell/anyall/~ directory, run
+In the ~dsl/lib/haskell/~ directory, run
 
 #+begin_src bash
   stack install
+#+end_src
+
+* Install the ~AnyAll~ library
+
+In the ~dsl/lib/haskell/~ directory, run
+
+#+begin_src bash
+  stack install anyall
 #+end_src
 
 * Install the ~Natural4~ Library
 
-In the ~dsl/lib/haskell/natural4/~ directory, run
+In the ~dsl/lib/haskell/~ directory, run
 
 #+begin_src bash
-  stack install
+  stack install natural4
 #+end_src
 
 * Running Tests
 
-In the ~dsl/lib/haskell/natural4/~ directory, when you run
+In the ~dsl/lib/haskell/~ directory, when you run
 
 #+begin_src bash
-  stack test
+  stack test natural4
 #+end_src
 
 You should get a screenful of green.
@@ -52,7 +60,7 @@ You should get a screenful of green.
 In the ~dsl/lib/haskell/natural4/~ directory, if you run
 
 #+begin_src bash
-  stack run -- --workdir=workdir test/examples/casestudypdpadbno-latest.csv
+  stack run natural4-exe -- --workdir=workdir test/examples/casestudypdpadbno-latest.csv
 #+end_src
 
 You should get a bunch of output onscreen, and you should get even more output inside the newly created directory ~workdir/~.
@@ -71,5 +79,5 @@ L4 legal engineers working in the spreadsheet IDE can access those output files 
 this one-liner will automatically rerun natural4 when it sees you have re-downloaded the CSV from google sheets.
 
 #+begin_src bash
-  fswatch -x /Volumes/1tb/mengwong/Downloads/ | perl -MFile::Copy  -nle 'if (my ($fn, $target) = /(Legal(?:SS | Spreadsheets - )(.*).csv) Created.*Renamed/) { for ($target) { print $target; $_ = lc $_; s/[^a-z]//g }; print $fn; print $target; move (qq(/Volumes/1tb/mengwong/Downloads/$fn), qq(/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/$target-latest.csv)) && print(qq($fn -> $target)) && system(qq(cd src/smucclaw/dsl/lib/haskell/natural4; teedate=`date +%Y%m%d-%H%M%S`.txt; stack run -- --workdir=workdir test/$target-latest.csv > workdir/no-uuid/\$teedate; ln -sf \$teedate workdir/no-uuid/LATEST.txt; head workdir/no-uuid/LATEST.txt; echo done ))} BEGIN { $|++ }'
+  fswatch -x /Volumes/1tb/mengwong/Downloads/ | perl -MFile::Copy  -nle 'if (my ($fn, $target) = /(Legal(?:SS | Spreadsheets - )(.*).csv) Created.*Renamed/) { for ($target) { print $target; $_ = lc $_; s/[^a-z]//g }; print $fn; print $target; move (qq(/Volumes/1tb/mengwong/Downloads/$fn), qq(/Users/mengwong/src/smucclaw/dsl/lib/haskell/natural4/test/$target-latest.csv)) && print(qq($fn -> $target)) && system(qq(cd src/smucclaw/dsl/lib/haskell/natural4; teedate=`date +%Y%m%d-%H%M%S`.txt; stack run natural4-exe -- --workdir=workdir test/$target-latest.csv > workdir/no-uuid/\$teedate; ln -sf \$teedate workdir/no-uuid/LATEST.txt; head workdir/no-uuid/LATEST.txt; echo done ))} BEGIN { $|++ }'
 #+end_src

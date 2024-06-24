@@ -26,7 +26,7 @@ import Effectful.Reader.Static (Reader, runReader, ask)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
 import AnyAll qualified as AA
-import LS qualified as SFL4
+import LS qualified as L4
 import LS.Interpreter ( expandClauses )
 import LS.Rule (Rule, Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
@@ -58,31 +58,31 @@ toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
     -- TODO: restructure there so that DECLAREd variables are also taken into account
     -- for now just quick and dirty insert DECLAREd variables into GIVENs (🙈)
     tdRules = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"TypeDecl")
-    getTypeDecl :: Rule -> [SFL4.TypedMulti]
+    getTypeDecl :: Rule -> [L4.TypedMulti]
     getTypeDecl td = case (td.has, td.name) of
       ([], x:xs) -> [(x NE.:| xs                    , td.super)]
-      ([],   []) -> [(SFL4.MTT "UnnamedTypeDecl" NE.:| [], td.super)]
+      ([],   []) -> [(L4.MTT "UnnamedTypeDecl" NE.:| [], td.super)]
       (ts,    _) -> concatMap getTypeDecl ts
 
-    allTypeDecls :: Maybe SFL4.ParamText
+    allTypeDecls :: Maybe L4.ParamText
     allTypeDecls = case concatMap getTypeDecl tdRules of
       x:xs -> Just $ x NE.:| xs
       [] -> Nothing
 
-    insertTypeDecls :: Maybe SFL4.ParamText -> Rule -> Rule
+    insertTypeDecls :: Maybe L4.ParamText -> Rule -> Rule
     insertTypeDecls tds rl = rl {
-      SFL4.given = tds <> rl.given
+      L4.given = tds <> rl.given
     }
 
     -- Extract Hornlikes, expand if desired
     hlsRaw = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
     expandedHLs = [
-        r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
-      | r <- hlsRaw, SFL4.name r `notElem` leaves ]
-    allBS = toListOf (gplate @SFL4.BoolStructR) hlsRaw
-    getMTs :: SFL4.BoolStructR -> [SFL4.MultiTerm]
+        r { L4.clauses = expandClauses l4i 1 (L4.clauses r) }
+      | r <- hlsRaw, L4.name r `notElem` leaves ]
+    allBS = toListOf (gplate @L4.BoolStructR) hlsRaw
+    getMTs :: L4.BoolStructR -> [L4.MultiTerm]
     getMTs bs = case bs of
-      AA.Leaf ( SFL4.RPMT x@[ SFL4.MTT _ ]) -> [x]
+      AA.Leaf ( L4.RPMT x@[ L4.MTT _ ]) -> [x]
       AA.Not x -> getMTs x
       AA.Any _ xs -> concatMap getMTs xs
       AA.All _ xs -> concatMap getMTs xs

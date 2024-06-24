@@ -25,12 +25,15 @@ import Effectful.Fail (Fail, runFail)
 import Effectful.Reader.Static (Reader, runReader, ask)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
+import AnyAll qualified as AA
+import LS qualified as L4
+import LS.Interpreter ( expandClauses )
 import LS.Rule (Rule, Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
-import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (^..))
+import Optics (Iso', view, re, coerced, cosmosOf, toListOf, filteredBy, folded, gplate, over, (%), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
 import Data.Maybe (mapMaybe)
@@ -40,13 +43,51 @@ YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
 -}
 
-toMathLang :: Interpreted -> ([Expr Double], MyState)
-toMathLang l4i =
-  let l4Hornlikes =
-       l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-  in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
-        Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
-        Right prog -> lcProgToMathLang prog
+toMathLang, toMathLangExpand :: Interpreted -> ([Expr Double], MyState)
+toMathLang       = toMathLang' False
+toMathLangExpand = toMathLang' True
+
+toMathLang' :: Bool -> Interpreted -> ([Expr Double], MyState)
+toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
+  Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
+  Right prog -> lcProgToMathLang prog
+  where
+    l4Hornlikes = insertTypeDecls allTypeDecls <$> if expand then expandedHLs else hlsRaw
+
+    -- TranslateL4 only checks for variables that are in the GIVEN part of each rule
+    -- TODO: restructure there so that DECLAREd variables are also taken into account
+    -- for now just quick and dirty insert DECLAREd variables into GIVENs (🙈)
+    tdRules = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"TypeDecl")
+    getTypeDecl :: Rule -> [L4.TypedMulti]
+    getTypeDecl td = case (td.has, td.name) of
+      ([], x:xs) -> [(x NE.:| xs                    , td.super)]
+      ([],   []) -> [(L4.MTT "UnnamedTypeDecl" NE.:| [], td.super)]
+      (ts,    _) -> concatMap getTypeDecl ts
+
+    allTypeDecls :: Maybe L4.ParamText
+    allTypeDecls = case concatMap getTypeDecl tdRules of
+      x:xs -> Just $ x NE.:| xs
+      [] -> Nothing
+
+    insertTypeDecls :: Maybe L4.ParamText -> Rule -> Rule
+    insertTypeDecls tds rl = rl {
+      L4.given = tds <> rl.given
+    }
+
+    -- Extract Hornlikes, expand if desired
+    hlsRaw = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
+    expandedHLs = [
+        r { L4.clauses = expandClauses l4i 1 (L4.clauses r) }
+      | r <- hlsRaw, L4.name r `notElem` leaves ]
+    allBS = toListOf (gplate @L4.BoolStructR) hlsRaw
+    getMTs :: L4.BoolStructR -> [L4.MultiTerm]
+    getMTs bs = case bs of
+      AA.Leaf ( L4.RPMT x@[ L4.MTT _ ]) -> [x]
+      AA.Not x -> getMTs x
+      AA.Any _ xs -> concatMap getMTs xs
+      AA.All _ xs -> concatMap getMTs xs
+      _ -> []
+    leaves = concatMap getMTs allBS
 
 lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
 lcProgToMathLang lamCalcProgram = (toplevels, st)
@@ -154,7 +195,7 @@ foldPredOr e = case e.exp of
     predR <- foldPredOr r
     pure $ predL : predR
   EEmpty -> pure []
-  x -> trace [i|foldPredOr: encountered #{x}|] $ (:[]) <$> exp2pred e
+  x -> (:[]) <$> exp2pred e
 
 foldPredAnd :: GML.Exp -> ToMathLang (PredList Double)
 foldPredAnd e = case e.exp of
@@ -163,7 +204,7 @@ foldPredAnd e = case e.exp of
     predR <- foldPredOr r
     pure $ predL : predR
   EEmpty -> pure []
-  x -> trace [i|foldPredAnd: encountered #{x}|] $ (:[]) <$> exp2pred e
+  x -> (:[]) <$> exp2pred e
 
 chainITEs :: [Expr Double] -> [Expr Double]
 chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
@@ -451,7 +492,7 @@ replaceVars table = returnBody . replace
 toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
 toMathLangMw l4i myenv = (rendered, [])
  where
-  (exprs, stRaw) = toMathLang l4i
+  (exprs, stRaw) = toMathLangExpand l4i
   state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
   rendered = [__i|
                 #{vcat $ fmap renderExp exprs}

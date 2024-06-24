@@ -54,8 +54,8 @@ toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
   where
     hlsRaw = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
     l4Hornlikes = if expand then expandedHLs_uniq else hlsRaw
-    expandedHLs_uniq = trace [i|toMathLang: #{expandedHLs}|] [r | r <- expandedHLs, SFL4.name r `notElem` leaves ]
-    expandedHLs = trace [i|toMathLang: #{leaves}, #{allBS}|] [
+    expandedHLs_uniq = [r | r <- expandedHLs, SFL4.name r `notElem` leaves ]
+    expandedHLs = [
         r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
       | r <- hlsRaw ]
     allBS = toListOf (gplate @SFL4.BoolStructR) hlsRaw
@@ -174,7 +174,7 @@ foldPredOr e = case e.exp of
     predR <- foldPredOr r
     pure $ predL : predR
   EEmpty -> pure []
-  x -> trace [i|foldPredOr: encountered #{x}|] $ (:[]) <$> exp2pred e
+  x -> (:[]) <$> exp2pred e
 
 foldPredAnd :: GML.Exp -> ToMathLang (PredList Double)
 foldPredAnd e = case e.exp of
@@ -183,7 +183,7 @@ foldPredAnd e = case e.exp of
     predR <- foldPredOr r
     pure $ predL : predR
   EEmpty -> pure []
-  x -> trace [i|foldPredAnd: encountered #{x}|] $ (:[]) <$> exp2pred e
+  x -> (:[]) <$> exp2pred e
 
 chainITEs :: [Expr Double] -> [Expr Double]
 chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]

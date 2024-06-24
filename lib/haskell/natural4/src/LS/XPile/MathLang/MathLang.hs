@@ -25,12 +25,15 @@ import Effectful.Fail (Fail, runFail)
 import Effectful.Reader.Static (Reader, runReader, ask)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
+import AnyAll qualified as AA
+import LS qualified as SFL4
+import LS.Interpreter ( expandClauses )
 import LS.Rule (Rule, Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
-import Optics (Iso', view, re, coerced, cosmosOf, filteredBy, folded, gplate, over, (%), (^..))
+import Optics (Iso', view, re, coerced, cosmosOf, toListOf, filteredBy, folded, gplate, over, (%), (^..))
 import Flow ((|>))
 import Debug.Trace (trace)
 import Data.Maybe (mapMaybe)
@@ -40,13 +43,30 @@ YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
 -}
 
-toMathLang :: Interpreted -> ([Expr Double], MyState)
-toMathLang l4i =
-  let l4Hornlikes =
-       l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-  in case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
-        Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
-        Right prog -> lcProgToMathLang prog
+toMathLang, toMathLangExpand :: Interpreted -> ([Expr Double], MyState)
+toMathLang       = toMathLang' False
+toMathLangExpand = toMathLang' True
+
+toMathLang' :: Bool -> Interpreted -> ([Expr Double], MyState)
+toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
+  Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
+  Right prog -> lcProgToMathLang prog
+  where
+    hlsRaw = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
+    l4Hornlikes = if expand then expandedHLs_uniq else hlsRaw
+    expandedHLs_uniq = trace [i|toMathLang: #{expandedHLs}|] [r | r <- expandedHLs, SFL4.name r `notElem` leaves ]
+    expandedHLs = trace [i|toMathLang: #{leaves}, #{allBS}|] [
+        r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
+      | r <- hlsRaw ]
+    allBS = toListOf (gplate @SFL4.BoolStructR) hlsRaw
+    getMTs :: SFL4.BoolStructR -> [SFL4.MultiTerm]
+    getMTs bs = case bs of
+      AA.Leaf ( SFL4.RPMT x@[ SFL4.MTT _ ]) -> [x]
+      AA.Not x -> getMTs x
+      AA.Any _ xs -> concatMap getMTs xs
+      AA.All _ xs -> concatMap getMTs xs
+      _ -> []
+    leaves = concatMap getMTs allBS
 
 lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
 lcProgToMathLang lamCalcProgram = (toplevels, st)
@@ -451,7 +471,7 @@ replaceVars table = returnBody . replace
 toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
 toMathLangMw l4i myenv = (rendered, [])
  where
-  (exprs, stRaw) = toMathLang l4i
+  (exprs, stRaw) = toMathLangExpand l4i
   state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
   rendered = [__i|
                 #{vcat $ fmap renderExp exprs}

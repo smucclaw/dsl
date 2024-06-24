@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- aeson
 - containers
 - unordered-containers
 - transformers
@@ -58,13 +59,25 @@ library:
 executables:
   explainable-exe:
     main:                Main.hs
+    other-modules:
+    - Options
+    - Paths_explainable
     source-dirs:         app
     ghc-options:
+    - -Wall
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - explainable
+    - servant
+    - servant-server
+    - warp
+    - wai
+    - directory
+    - filepath
+    - optparse-applicative
+    - scientific
 
 tests:
   explainable-test:

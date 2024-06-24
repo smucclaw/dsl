@@ -52,12 +52,33 @@ toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
   Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
   Right prog -> lcProgToMathLang prog
   where
+    l4Hornlikes = insertTypeDecls allTypeDecls <$> if expand then expandedHLs else hlsRaw
+
+    -- TranslateL4 only checks for variables that are in the GIVEN part of each rule
+    -- TODO: restructure there so that DECLAREd variables are also taken into account
+    -- for now just quick and dirty insert DECLAREd variables into GIVENs (🙈)
+    tdRules = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"TypeDecl")
+    getTypeDecl :: Rule -> [SFL4.TypedMulti]
+    getTypeDecl td = case (td.has, td.name) of
+      ([], x:xs) -> [(x NE.:| xs                    , td.super)]
+      ([],   []) -> [(SFL4.MTT "UnnamedTypeDecl" NE.:| [], td.super)]
+      (ts,    _) -> concatMap getTypeDecl ts
+
+    allTypeDecls :: Maybe SFL4.ParamText
+    allTypeDecls = case concatMap getTypeDecl tdRules of
+      x:xs -> Just $ x NE.:| xs
+      [] -> Nothing
+
+    insertTypeDecls :: Maybe SFL4.ParamText -> Rule -> Rule
+    insertTypeDecls tds rl = rl {
+      SFL4.given = tds <> rl.given
+    }
+
+    -- Extract Hornlikes, expand if desired
     hlsRaw = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-    l4Hornlikes = if expand then expandedHLs_uniq else hlsRaw
-    expandedHLs_uniq = [r | r <- expandedHLs, SFL4.name r `notElem` leaves ]
     expandedHLs = [
         r { SFL4.clauses = expandClauses l4i 1 (SFL4.clauses r) }
-      | r <- hlsRaw ]
+      | r <- hlsRaw, SFL4.name r `notElem` leaves ]
     allBS = toListOf (gplate @SFL4.BoolStructR) hlsRaw
     getMTs :: SFL4.BoolStructR -> [SFL4.MultiTerm]
     getMTs bs = case bs of

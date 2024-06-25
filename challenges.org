@@ -1069,6 +1069,33 @@ We can implement DMN itself relatively simply.
 
 It has already been done once: see [[https://github.com/smucclaw/dmnmd][DMNMD]].
 
+* Challenge 16: Simple Explanations
+
+| Thing to explain             | Simple explanation                                                                 | Haskell evidence                   |
+| (operator, inputs, result)   |                                                                                    |                                    |
+|------------------------------+------------------------------------------------------------------------------------+------------------------------------|
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:or][or]], [(a,Bool)], True)   | The result is true because at least one of the sufficient conditions held.         | [ x \vert (x,y) <- inputs, y ]     |
+|------------------------------+------------------------------------------------------------------------------------+------------------------------------|
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:or][or]], [(a,Bool)], False)  | The result is false because none of the sufficient conditions held.                | All of these were false: inputs    |
+|------------------------------+------------------------------------------------------------------------------------+------------------------------------|
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:and][and]], [(a,Bool)], True)  | The result is true because all of the necessary conditions held.                   | All of these were true: inputs     |
+|------------------------------+------------------------------------------------------------------------------------+------------------------------------|
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:and][and]], [(a,Bool)], False) | The result is false because at least one of the necessary conditions did not hold. | [ x \vert (x,y) <- inputs, not y ] |
+|------------------------------+------------------------------------------------------------------------------------+------------------------------------|
+
+"Necessary" and "sufficient" are, of course, word-problem versions of "conjunctive" and "disjunctive" elements.
+
+The above needs adaptation to work for ternary logic. We sometimes want negation as failure, sometimes we don't, the context monad has to specify that.
+
+We can compose these simple boolean-oriented explanations with arithmetic equalities, e.g.
+
+| Thing to explain                | Simple explanation                                                      | Haskell evidence                   |
+| (operator, inputs, result)      |                                                                         |                                    |
+|---------------------------------+-------------------------------------------------------------------------+------------------------------------|
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:any][any]] (> 0), [Ord a], True)  | The result is true because at least one of the inputs was non-negative. | [ x \vert x <- inputs, f x ]       |
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:any][any]] (> 0), [Ord a], False) | The result is false because all the inputs were negative.               | inputs                             |
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:all][all]] (> 0), [Ord a], True)  | The result is true because all the inputs were non-negative.            | inputs                             |
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:all][all]] (> 0), [Ord a], False) | The result is true at least one inputs was negative.                    | [ x \vert x <- inputs, not $ f x ] |
 
 * ACTION ITEMS
 

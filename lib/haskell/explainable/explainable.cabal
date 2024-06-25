@@ -60,14 +60,18 @@ executable explainable-exe
   main-is: Main.hs
   other-modules:
       Options
+      Schema
+      Server
       Paths_explainable
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , base >=4.7 && <5
     , boxes
+    , bytestring
     , containers
     , directory
     , effectful
@@ -75,18 +79,24 @@ executable explainable-exe
     , fgl
     , filepath
     , graphviz
+    , hspec
+    , lens
     , megaparsec
     , mtl
     , numeric-extras
+    , openapi3
     , optparse-applicative
     , parsec
     , parser-combinators
     , pcre-heavy
     , prettyprinter
     , prettyprinter-interp
+    , quickcheck-instances
     , scientific
     , servant
+    , servant-openapi3
     , servant-server
+    , servant-swagger-ui
     , string-interpolate
     , text
     , transformers

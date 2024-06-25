@@ -1095,7 +1095,7 @@ We can compose these simple boolean-oriented explanations with arithmetic equali
 | ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:any][any]] (> 0), [Ord a], True)  | The result is true because at least one of the inputs was non-negative. | [ x \vert x <- inputs, f x ]       |
 | ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:any][any]] (> 0), [Ord a], False) | The result is false because all the inputs were negative.               | inputs                             |
 | ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:all][all]] (> 0), [Ord a], True)  | The result is true because all the inputs were non-negative.            | inputs                             |
-| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:all][all]] (> 0), [Ord a], False) | The result is true because at least one input was negative.             | [ x \vert x <- inputs, not $ f x ] |
+| ([[https://hackage.haskell.org/package/base-4.20.0.1/docs/Prelude.html#v:all][all]] (> 0), [Ord a], False) | The result is false because at least one input was negative.            | [ x \vert x <- inputs, not $ f x ] |
 
 * ACTION ITEMS
 

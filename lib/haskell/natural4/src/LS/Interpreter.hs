@@ -66,7 +66,7 @@ import Control.Arrow ((>>>))
 import Control.Monad (guard)
 import Data.Coerce (coerce)
 import Data.Either (fromRight, partitionEithers)
-import Data.Foldable (traverse_)
+import Data.Foldable (traverse_, asum)
 import Data.Graph.Inductive
   ( Gr,
     Graph (labNodes, mkGraph),
@@ -774,25 +774,29 @@ unleaf :: BoolStructR -> BoolStructR
 unleaf = unleaf' Nothing
 
 unleaf' :: MaybeLabel -> BoolStructR -> BoolStructR
-unleaf' _   (AA.Leaf (RPBoolStructR lhs RPis bsr)) =unleaf' (Just $ AA.Pre $ mt2text lhs) bsr
-unleaf' lbl (AA.All  lbl' xs) = AA.mkAll (unionMaybeWith concatLabels lbl lbl') $ unleaf <$> xs
-unleaf' lbl (AA.Any  lbl' xs) = AA.mkAny (unionMaybeWith concatLabels lbl lbl') $ unleaf <$> xs
-unleaf' lbl (AA.Not      x ) = AA.mkNot     $ unleaf     x
-unleaf' _   (AA.Leaf x     ) = AA.mkLeaf    x
+-- 1) We encounter a foo IS bar -> tag bar with AA.Metadata "foo"
+unleaf' _ (AA.Leaf (RPBoolStructR lhs RPis bsr)) = unleaf' (Just $ AA.Metadata $ mt2text lhs) bsr
+
+-- 2) We tagged a thing with Metadata, and its child already has a label.
+-- Instead of throwing away the old label, wrap it in an additional layer of All or Any.
+-- Later applications may decide what to do with the extra layer.
+unleaf' (isMd -> Just md) (AA.All lbl@(Just _) xs) = AA.mkAll (Just md) [AA.mkAll lbl $ unleaf <$> xs]
+unleaf' (isMd -> Just md) (AA.Any lbl@(Just _) xs) = AA.mkAny (Just md) [AA.mkAny lbl $ unleaf <$> xs]
+
+-- 3) Either our thing is not metadata, or child has no label.
+-- In either case, pick the first non-Nothing value with asum.
+unleaf' lbl (AA.All lbl' xs) = AA.mkAll (asum [lbl, lbl']) $ unleaf <$> xs
+unleaf' lbl (AA.Any lbl' xs) = AA.mkAny (asum [lbl, lbl']) $ unleaf <$> xs
+
+-- 4) There is not even space to put a label, so totally ignore our maybelabel.
+unleaf' _   (AA.Not      x ) = AA.mkNot                    $ unleaf     x
+unleaf' _   (AA.Leaf x     ) = AA.mkLeaf                                 x
 
 type MaybeLabel = Maybe (AA.Label T.Text)
 
-concatLabels :: AA.Label T.Text -> AA.Label T.Text -> AA.Label T.Text
-concatLabels x y = case (x,y) of
-  (AA.Pre a, AA.Pre b) -> AA.Pre $ [i|#{a} (#{b})|]
-  (AA.Pre a, AA.PrePost b c) -> AA.PrePost [i|#{a} (#{b})|] c
-  (AA.PrePost a b, AA.Pre c) -> AA.PrePost [i|#{a} (#{c})|] b
-  (AA.PrePost a b, AA.PrePost c d) -> AA.PrePost [i|#{a} (#{c})|] [i|#{b} (#{d})|]
-
-unionMaybeWith :: (a -> a -> a) -> Maybe a -> Maybe a -> Maybe a
-unionMaybeWith f Nothing mb      = mb
-unionMaybeWith f ma      Nothing = ma
-unionMaybeWith f (Just a) (Just b) = Just $ f a b
+isMd :: MaybeLabel -> MaybeLabel
+isMd x@(Just (AA.Metadata _)) = x
+isMd _ = Nothing
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
 -- from the below:
@@ -887,7 +891,7 @@ expandBSRM l4i depth x = do
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth = \case
   AA.Leaf rp -> case expandRP l4i depth1 rp of
-    RPBoolStructR lhs RPis bsr -> unleaf' (Just $ AA.Pre $ mt2text lhs) bsr
+    RPBoolStructR lhs RPis bsr -> unleaf' (Just $ AA.Metadata $ mt2text lhs) bsr
     o                          -> AA.mkLeaf o
   AA.Not item   -> {- AA.nnf $ -} AA.mkNot $ go item
   AA.All lbl xs -> goAnyAll AA.mkAll lbl xs

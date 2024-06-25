@@ -220,15 +220,18 @@ mapBSLabel ::
   AA.BoolStruct (Maybe (AA.Label b)) d
 mapBSLabel f g = \case
   AA.Leaf x -> AA.Leaf $ g x
+  AA.Any (Just (AA.Metadata _)) xs -> go AA.Any Nothing xs
+  AA.All (Just (AA.Metadata _)) xs -> go AA.All Nothing xs
   AA.Any pre xs -> go AA.Any pre xs
   AA.All pre xs -> go AA.All pre xs
   AA.Not x -> AA.Not $ mapBSLabel f g x
   where
-    go ctor pre xs = ctor (applyLabel f <$> pre) (mapBSLabel f g <$> xs) 
+    go ctor pre xs = ctor (applyLabel f <$> pre) (mapBSLabel f g <$> xs)
 
 applyLabel :: (a -> b) -> AA.Label a -> AA.Label b
 applyLabel f (AA.Pre a) = AA.Pre $ f a
 applyLabel f (AA.PrePost a a') = AA.PrePost (f a) (f a')
+applyLabel f (AA.Metadata a) = AA.Metadata (f a)
 
 mapBS :: (a -> b) -> AA.BoolStruct c a -> AA.BoolStruct c b
 mapBS f = \case

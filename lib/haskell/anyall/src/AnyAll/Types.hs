@@ -58,11 +58,13 @@ import Text.Pretty.Simple (pShowNoColor)
 data Label a =
     Pre a
   | PrePost a a
+  | Metadata a -- Added in 2024-06, meant to record metadata, not to parse text into.
   deriving (Eq, Show, Generic, Hashable, FromJSON, ToJSON, Ord)
 
 labelFirst :: Label p -> p
 labelFirst (Pre x      ) = x
 labelFirst (PrePost x _) = x
+labelFirst (Metadata x ) = x
 
 maybeFirst :: Label p -> Maybe p
 maybeFirst = Just . labelFirst
@@ -95,6 +97,10 @@ instance Semigroup t => Semigroup (Label t) where
   Pre pr1 <> PrePost pr2 po2 = PrePost (pr1 <> pr2) po2
   PrePost pr1 po1 <> Pre pr2 = PrePost (pr1 <> pr2) po1
   PrePost pr1 po1 <> PrePost pr2 po2 = PrePost (pr1 <> pr2) (po1 <> po2)
+  -- doesn't really matter, nothing is parsed into Metadata /IL
+  Metadata x <> Metadata y = Metadata (x <> y)
+  Metadata _ <> x = x
+  x <> Metadata _ = x
 
 strPrefix :: TL.Text -> TL.Text -> TL.Text
 strPrefix p txt = TL.unlines $ (p <>) <$> TL.lines txt

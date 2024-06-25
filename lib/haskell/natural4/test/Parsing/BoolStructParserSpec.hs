@@ -4,7 +4,7 @@
 
 module Parsing.BoolStructParserSpec (spec) where
 
-import AnyAll (BoolStruct (All, Any, Not), Label(Pre), mkLeaf)
+import AnyAll (BoolStruct (All, Any, Not), Label(Pre, Metadata), mkLeaf)
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import LS.BasicTypes (MyStream, MyToken (Given))
@@ -45,6 +45,7 @@ import LS.Types
     MTExpr (MTI, MTT),
     ParamType (TOne),
     RPRel (RPis),
+    BoolStructT,
     RelationalPredicate
       ( RPBoolStructR,
         RPConstraint,
@@ -370,7 +371,7 @@ spec = do
             ( Any Nothing
               [ mkLeaf "a"
               , All
-                (Just (Pre "b")) -- new label, in order to remember `b MEANS b1 && b2`
+                (Just (Metadata "b")) -- new label, in order to remember `b MEANS b1 && b2`
                 [ mkLeaf "b1"
                 , mkLeaf "b2"
                 ]
@@ -389,6 +390,7 @@ spec = do
                        (head rulesForSubstitutingLabels)
         result `shouldBe` substitutedLabelGold
 
+rulesForSubstitutingLabels :: [Rule]
 rulesForSubstitutingLabels =
   [ defaultHorn {
       name = [ MTT "c" ]
@@ -420,15 +422,18 @@ rulesForSubstitutingLabels =
       }
   ]
 
+substitutedLabelGold :: Maybe BoolStructT
 substitutedLabelGold = Just
   ( Any Nothing
       [ mkLeaf "a"
       , All
           ( Just
-              ( Pre "b (old label)" )
+              ( Metadata "b" )
           )
-          [ mkLeaf "b1"
-          , mkLeaf "b2"
+          [
+            All (Just (Pre "old label"))
+                    [ mkLeaf "b1"
+                    , mkLeaf "b2" ]
           ]
       ]
   )

@@ -1193,12 +1193,11 @@ processHcBody bsr = do
 
     addLabel :: Maybe (AA.Label T.Text) -> RelationalPredicate -> RelationalPredicate
     addLabel lbl rp = case lbl of
-      Nothing -> rp
       Just (AA.Pre pre) ->
         RPMT [MTT $ T.unwords [pre, rp2text rp]]
       Just (AA.PrePost pre post) ->
         RPMT [MTT $ T.unwords [pre, rp2text rp, post]]
-
+      _ -> rp
     -- TODO: Can try augmenting with `mlbl` here
     makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
     makeOp pos op bsr exp =

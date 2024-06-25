@@ -508,7 +508,7 @@ gml2ml exp =
 
 --             [(x, a),  (y, b)]                      x + y          a + b
 replaceVars :: Map.HashMap String (Expr Double) -> Expr Double -> Expr Double
-replaceVars table = returnBody . replace
+replaceVars table = replace >>> returnBody
   where
     replace = \case
       MathVar k@(_:_) -> case Map.lookup k table of

@@ -35,7 +35,8 @@ import Effectful.Reader.Static (Reader, ask, runReader)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
 import Flow ((|>))
-import LS qualified as L4
+import LS.Rule qualified as L4
+import LS.Types qualified as L4
 import LS.Interpreter (expandClauses)
 import LS.Rule (Interpreted (..), Rule)
 import LS.XPile.IntroReader (MyEnv)

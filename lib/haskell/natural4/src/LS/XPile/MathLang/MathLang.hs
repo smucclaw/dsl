@@ -241,11 +241,12 @@ chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
     moveVarsetToTop :: Expr Double -> [Expr Double] -> Expr Double
     moveVarsetToTop
       (MathITE lbl condP (MathSet var1 val1) (Undefined _)) xs =
-        MathSet var1 (MathITE lbl condP val1 (go xs))
+        MathSet var1 $ MathITE lbl condP val1 $ go xs
       where
         go [MathITE _ (PredVal _ True) (MathSet var2 val2) (Undefined _)] = val2
         go ((MathITE lbl2 condP2 (MathSet var2 val2) (Undefined _)):xs)
           | var1 == var2 = MathITE lbl2 condP2 val2 (go xs)
+          | otherwise = Undefined Nothing
         go [] = Undefined (Just "No otherwise case")
 
     moveVarsetToTop x [] = x
@@ -265,18 +266,21 @@ type ToMathLangError = String
 type VarsAndBody = ([String], Expr Double)
 
 newtype ToMathLang a =
-  ToMathLang (Eff '[ Writer MyState
-                   , Reader (SymTab VarsAndBody)
-                   , Fail ] a)
+  ToMathLang (Eff [ Writer MyState
+                  , Reader (SymTab VarsAndBody)
+                  , Fail ] a)
   deriving newtype (Functor, Applicative, Monad, MonadFail)
 
-_ToMathLang :: Iso' (ToMathLang a) (Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a)
+_ToMathLang ::
+  Iso' (ToMathLang a) (Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a)
 _ToMathLang = coerced
 
-mkToMathLang :: Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a -> ToMathLang a
+mkToMathLang ::
+  Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a -> ToMathLang a
 mkToMathLang = view (re _ToMathLang)
 
-unToMathLang :: ToMathLang a -> Eff '[Writer MyState, Reader (SymTab VarsAndBody), Fail] a
+unToMathLang ::
+  ToMathLang a -> Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a
 unToMathLang = view _ToMathLang
 
 runToMathLang :: SymTab VarsAndBody -> ToMathLang a -> Either String a
@@ -289,7 +293,8 @@ execToMathLang r m = case runToMathLang' r m of
                     Right (_res,state) -> state
                     Left _             -> emptyState
 
-runToMathLang' :: SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
+runToMathLang' ::
+  SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
 runToMathLang' r =
   unToMathLang
     >>> runWriterLocal
@@ -307,7 +312,8 @@ gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
       _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
-getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
+getUserFuns ::
+  Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
 getUserFuns ix firstPass funs =
   NE.last $ firstPass NE.:| unfoldr go (ix, firstPass, funs)
   where
@@ -343,7 +349,8 @@ getUserFuns ix firstPass funs =
     mkAppForUF exp _ = gml2ml exp
 
     isApp :: GML.Exp -> Maybe (GML.Exp, String)
-    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) = Just (f, [i|#{arg}|])
+    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) =
+      Just (f, [i|#{arg}|])
     isApp _ = Nothing
 
 gml2ml :: GML.Exp -> ToMathLang (Expr Double)
@@ -375,10 +382,11 @@ gml2ml exp =
     ex2 <- gml2mlWithListCoercion op e2
     pure $ MathBin Nothing op ex1 ex2
 
-  EVarSet var (getList -> Just exps) -> trace [i|!!! found list #{var} = #{exps}|] do
-    MathVar varName <- gml2ml var
-    mkList varName exps -- puts list in MyState
-    pure $ MathVar varName -- this function needs to return an Expr, not an ExprList so just return the MathVar
+  EVarSet var (getList -> Just exps) ->
+    trace [i|!!! found list #{var} = #{exps}|] do
+      MathVar varName <- gml2ml var
+      mkList varName exps -- puts list in MyState
+      pure $ MathVar varName -- this function needs to return an Expr, not an ExprList so just return the MathVar
 
   EVarSet var val -> do
     MathVar varEx <- gml2ml var
@@ -408,14 +416,15 @@ gml2ml exp =
   ELam (GML.MkVar v) body -> trace [i|\ngml2ml: found ELam #{exp}\n|] do
     bodyEx <- gml2ml body
     let varEx = [i|#{v}|]
-    trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] pure $ MathSet varEx bodyEx
+    trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] pure $
+      MathSet varEx bodyEx
   -- exp.exp :: BaseExp
 
   EApp {} -> mkApp exp []
 
   EIs left (getPred -> Just right) -> do
     MathVar var <- gml2ml left
-    gml2ml (exp {GML.exp = EPredSet (GML.MkVar [i|#{var}|]) right})
+    gml2ml exp {GML.exp = EPredSet (GML.MkVar [i|#{var}|]) right}
 
   EIs left right -> gml2ml exp {GML.exp = EVarSet left right}
 

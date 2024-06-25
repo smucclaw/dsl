@@ -27,7 +27,6 @@ import Data.List (groupBy, nub, unfoldr, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i, __i)
-import Data.Text qualified as T
 import Debug.Trace (trace)
 import Effectful (Eff, runPureEff)
 import Effectful.Fail (Fail, runFail)
@@ -124,7 +123,7 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
   where
     userfuns = getUserFuns 0 Map.empty lamCalcProgram.userFuns
     st = gmls2ml userfuns lamCalcProgram.lcProgram
-    giveth = T.unpack <$> lamCalcProgram.giveths
+    giveth = (\x -> [i|#{x}|]) <$> lamCalcProgram.giveths
 
     toplevels = case Map.lookup "Top-Level" st.symtabF of
       Just exp -> [exp]
@@ -183,7 +182,7 @@ mkVal = \case
 exp2pred :: GML.Exp -> ToMathLang (Pred Double)
 exp2pred exp = case exp.exp of
   EEmpty -> fail "exp2pred: Unexpected EEmpty"
-  EVar (GML.MkVar var) -> pure $ PredVar $ T.unpack var
+  EVar (GML.MkVar var) -> pure $ PredVar [i|#{var}|]
   ECompOp op e1 e2 ->
     PredComp Nothing (compOptoMl op) <$> gml2ml e1 <*> gml2ml e2
   EIs e1 e2 -> do
@@ -321,7 +320,7 @@ getUserFuns ix firstPass funs =
     f :: SymTab VarsAndBody -> ([GML.Var], GML.Exp) -> VarsAndBody
     f firstPass (boundVars, exp) =
       case runToMathLang firstPass $ mkAppForUF exp [] of
-        Right mlExp -> ([T.unpack v | GML.MkVar v <- nub boundVars], mlExp)
+        Right mlExp -> ([[i|#{v}|] | GML.MkVar v <- nub boundVars], mlExp)
         Left error ->
           trace
             (if null firstPass then "" else [i|getUserFuns: #{error}|])
@@ -332,17 +331,19 @@ getUserFuns ix firstPass funs =
 
     mkAppForUF (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
-      case Map.lookup (T.unpack f) userFuns of
+      case Map.lookup f' userFuns of
         Nothing -> fail [i|mkAppForUF: this really shouldn't happen, but #{f} is not found in userFuns|]
         Just (boundVars, expr) -> do
           let newVars = map MathVar args
               replacedDef = replaceVars (Map.fromList $ zip boundVars newVars) expr
-          pure $ MathApp Nothing (T.unpack f) args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
+          pure $ MathApp Nothing f' args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
+      where
+        f' = [i|#{f}|]
 
     mkAppForUF exp _ = gml2ml exp
 
     isApp :: GML.Exp -> Maybe (GML.Exp, String)
-    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) = Just (f, T.unpack arg)
+    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) = Just (f, [i|#{arg}|])
     isApp _ = Nothing
 
 gml2ml :: GML.Exp -> ToMathLang (Expr Double)
@@ -557,7 +558,7 @@ toMathLangMw l4i myenv = (rendered, [])
       ret doc = braces [i|return #{pp doc}|]
 
       replaceSpaces :: String -> String
-      replaceSpaces = PCRE.gsub [PCRE.re| |] ("_" :: T.Text)
+      replaceSpaces = PCRE.gsub [PCRE.re| |] ("_" :: String)
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

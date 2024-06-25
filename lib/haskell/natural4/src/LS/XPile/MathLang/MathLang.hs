@@ -11,33 +11,53 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module LS.XPile.MathLang.MathLang
-  (toMathLangMw, toMathLang, gml2ml, runToMathLang)
+  ( toMathLangMw,
+    toMathLang,
+    gml2ml,
+    runToMathLang,
+  )
 where
 
-import Data.List ( groupBy, nub, unfoldr, (\\))
-import Data.List.NonEmpty qualified as NE
+import AnyAll (BoolStructF (..))
+import Control.Arrow ((>>>))
+import Data.Functor.Foldable (Recursive (..))
 import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
-import Data.String.Interpolate (i,__i)
+import Data.List (groupBy, nub, unfoldr, (\\))
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe (mapMaybe)
+import Data.String.Interpolate (i, __i)
 import Data.Text qualified as T
+import Debug.Trace (trace)
 import Effectful (Eff, runPureEff)
 import Effectful.Fail (Fail, runFail)
-import Effectful.Reader.Static (Reader, runReader, ask)
+import Effectful.Reader.Static (Reader, ask, runReader)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
-import AnyAll qualified as AA
+import Flow ((|>))
 import LS qualified as L4
-import LS.Interpreter ( expandClauses )
-import LS.Rule (Rule, Interpreted (..))
+import LS.Interpreter (expandClauses)
+import LS.Rule (Interpreted (..), Rule)
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
-import Optics (Iso', view, re, coerced, cosmosOf, toListOf, filteredBy, folded, gplate, over, (%), (^..))
-import Flow ((|>))
-import Debug.Trace (trace)
-import Data.Maybe (mapMaybe)
-import Prettyprinter (Doc, vcat, braces)
+import Optics
+  ( Iso',
+    coerced,
+    cosmosOf,
+    filteredBy,
+    folded,
+    gplate,
+    over,
+    re,
+    toListOf,
+    view,
+    (%),
+    (^..),
+  )
+import Prettyprinter (Doc, braces, vcat)
+import Text.Regex.PCRE.Heavy qualified as PCRE
 {-
 YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
@@ -65,29 +85,38 @@ toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
       (ts,    _) -> concatMap getTypeDecl ts
 
     allTypeDecls :: Maybe L4.ParamText
-    allTypeDecls = case concatMap getTypeDecl tdRules of
-      x:xs -> Just $ x NE.:| xs
-      [] -> Nothing
+    allTypeDecls = tdRules |> foldMap getTypeDecl |> NE.nonEmpty
 
     insertTypeDecls :: Maybe L4.ParamText -> Rule -> Rule
-    insertTypeDecls tds rl = rl {
-      L4.given = tds <> rl.given
-    }
+    insertTypeDecls tds rl =
+      rl
+        { L4.given = tds <> rl.given
+        }
 
     -- Extract Hornlikes, expand if desired
-    hlsRaw = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-    expandedHLs = [
-        r { L4.clauses = expandClauses l4i 1 (L4.clauses r) }
-      | r <- hlsRaw, L4.name r `notElem` leaves ]
+    hlsRaw =
+      l4i.origrules
+        ^.. folded
+        % cosmosOf (gplate @Rule)
+        % filteredBy (_Ctor @"Hornlike")
+    
+    expandedHLs =
+      [ r {L4.clauses = expandClauses l4i 1 (L4.clauses r)}
+        | r <- hlsRaw,
+          L4.name r `notElem` leaves
+      ]
+
     allBS = toListOf (gplate @L4.BoolStructR) hlsRaw
+
     getMTs :: L4.BoolStructR -> [L4.MultiTerm]
-    getMTs bs = case bs of
-      AA.Leaf ( L4.RPMT x@[ L4.MTT _ ]) -> [x]
-      AA.Not x -> getMTs x
-      AA.Any _ xs -> concatMap getMTs xs
-      AA.All _ xs -> concatMap getMTs xs
+    getMTs = cata \case
+      LeafF (L4.RPMT x@[L4.MTT _]) -> [x]
+      NotF x -> x
+      AnyF _ xs -> mconcat xs
+      AllF _ xs -> mconcat xs
       _ -> []
-    leaves = concatMap getMTs allBS
+
+    leaves = foldMap getMTs allBS
 
 lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
 lcProgToMathLang lamCalcProgram = (toplevels, st)
@@ -99,7 +128,7 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
       Just exp -> [exp]
       Nothing ->
         case giveth of
-          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] $ relevantSymtab st
+          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] relevantSymtab st
           ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
                 [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ relevantSymtab st
                 exprs -> exprs
@@ -186,7 +215,7 @@ exp2pred exp = case exp.exp of
     --trace ("but it is implemented in gml2ml\n    " <> show mlEx) $
     pure case mlEx of
       MathVar x -> PredVar x
-      x -> PredVar $ "Not implemented yet: " <> show x
+      x -> PredVar [i|Not implemented yet: #{x}|]
 
 foldPredOr :: GML.Exp -> ToMathLang (PredList Double)
 foldPredOr e = case e.exp of
@@ -261,12 +290,12 @@ execToMathLang r m = case runToMathLang' r m of
                     Left _             -> emptyState
 
 runToMathLang' :: SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
-runToMathLang' r (unToMathLang -> m) =
-  m
-    |> runWriterLocal
-    |> runReader r
-    |> runFail
-    |> runPureEff
+runToMathLang' r =
+  unToMathLang
+    >>> runWriterLocal
+    >>> runReader r
+    >>> runFail
+    >>> runPureEff
 
 -- all of the results are in MyState, so we can ignore the actual res
 gmls2ml :: SymTab VarsAndBody -> [GML.Exp] -> MyState
@@ -296,6 +325,7 @@ getUserFuns ix firstPass funs =
 
     mkAppForUF :: GML.Exp -> [String] -> ToMathLang (Expr Double)
     mkAppForUF (isApp -> Just (f, arg)) args = mkAppForUF f (arg : args)
+
     mkAppForUF (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
       case Map.lookup (T.unpack f) userFuns of
@@ -304,6 +334,7 @@ getUserFuns ix firstPass funs =
           let newVars = map MathVar args
               replacedDef = replaceVars (zip boundVars newVars) expr
           pure $ MathApp Nothing (T.unpack f) args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
+
     mkAppForUF exp _ = gml2ml exp
 
     isApp :: GML.Exp -> Maybe (GML.Exp, String)
@@ -400,6 +431,7 @@ gml2ml exp =
     mkApp (GML.exp -> EApp f arg) args = do
       arg' <- gml2ml arg
       mkApp f (arg' : args)
+
     mkApp (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
       case Map.lookup (T.unpack f) userFuns of
@@ -413,13 +445,16 @@ gml2ml exp =
               namedExpr = funAppliedToArgsName @|= expandedExpr
           ToMathLang $ tell emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
           pure $ MathVar funAppliedToArgsName
+
     mkApp e _ = trace [i|\ngml2ml.mkApp, exp=#{e}\n|] fail "mkApp: unexpected thing happened"
 
     gml2mlWithListCoercion :: MathBinOp -> GML.Exp -> ToMathLang (Expr Double)
-    gml2mlWithListCoercion op (getList -> Just exps) = trace [i|gml2mlWithListCoercion: is a list #{exps}|] $ do
-      list <- mkList "inline" exps -- this is only called from ENumOp to its arguments: if it's a list, then it's inline. (I think as of 20240503, this is impossible, but maybe it should be possible: get a better type inference and in the future this works.)
-      fold <- op2somefold op
-      pure $ ListFold Nothing fold list
+    gml2mlWithListCoercion op (getList -> Just exps) =
+      trace [i|gml2mlWithListCoercion: is a list #{exps}|] do
+        list <- mkList "inline" exps -- this is only called from ENumOp to its arguments: if it's a list, then it's inline. (I think as of 20240503, this is impossible, but maybe it should be possible: get a better type inference and in the future this works.)
+        fold <- op2somefold op
+        pure $ ListFold Nothing fold list
+
     gml2mlWithListCoercion _ exp = gml2ml exp -- not a list
 
     getList :: GML.Exp -> Maybe [GML.Exp]
@@ -460,7 +495,7 @@ gml2ml exp =
 
       ToMathLang $ tell emptyState {symtabF = newF}
 
-      let !headName = case newSeqs of
+      let headName = case newSeqs of
             MathSet headName _ : _ -> headName
             MathVar headName : _ -> headName
             _ -> fail [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{exps}|]
@@ -503,9 +538,12 @@ toMathLangMw l4i myenv = (rendered, [])
 
   -- MathSet "varName" expr --> expr
   reintroduceSetVar :: String -> Expr Double -> Expr Double
-  reintroduceSetVar _var expr@(MathSet _ _) = expr
-  reintroduceSetVar _var expr@(MathPred _)  = expr
-  reintroduceSetVar var  expr               = MathSet var expr
+  reintroduceSetVar _var expr@(isSetOrPred -> True) = expr
+  reintroduceSetVar var  expr                       = MathSet var expr
+
+  isSetOrPred (MathSet _ _) = True
+  isSetOrPred (MathPred _) = True
+  isSetOrPred _ = False
 
   renderExp :: (Show a) => Expr a -> Doc ann
   renderExp expr = [i|export const #{name} = () => #{ret expr}|]
@@ -514,10 +552,7 @@ toMathLangMw l4i myenv = (rendered, [])
       ret doc = braces [i|return #{pp doc}|]
 
       replaceSpaces :: String -> String
-      replaceSpaces = map replace
-        where
-          replace ' ' = '_'
-          replace x   = x
+      replaceSpaces = PCRE.gsub [PCRE.re| |] ("_" :: T.Text)
 
 --   intermediate l4i myenv
     -- the desired output of this function should be something consistent with what app/Main.hs is expecting.

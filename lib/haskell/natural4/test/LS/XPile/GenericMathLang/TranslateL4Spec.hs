@@ -4,32 +4,32 @@
 
 module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 
+import AnyAll (BoolStruct (..), Label (..))
 import AnyAll qualified as AA
-import AnyAll (BoolStruct(..), Label(..))
 import Control.Arrow ((>>>))
 import Control.Monad (forM_)
-import Control.Monad.Trans.Maybe (runMaybeT )
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Control.Monad.Trans.Writer.Lazy (runWriter)
 import Data.HashMap.Strict qualified as Map
-import Data.List.NonEmpty (NonEmpty (..), fromList, toList, nonEmpty)
+import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
 import Data.Text qualified as T
 import Explainable
 import Explainable.MathLang -- hiding ((|>))
 import LS.Rule (Interpreted (..), Rule (..), defaultL4I)
 import LS.Types
+import LS.XPile.IntroReader (defaultReaderEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import LS.XPile.MathLang.MathLang qualified as ML
-import LS.XPile.IntroReader (defaultReaderEnv)
---import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen)
-import Test.Hspec (Spec, describe, it, xit, shouldBe)
+-- import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen)
+import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.QuickCheck
   ( Arbitrary (..),
     Property,
     Testable (property),
-    verbose,
     genericShrink,
+    verbose,
     (===),
     (==>),
   )

@@ -514,16 +514,23 @@ noExtraMdata :: BaseExp -> Exp
 noExtraMdata baseexp = MkExp baseexp []
 
 typeMdata :: SrcPositn -> T.Text -> BaseExp -> Exp
-typeMdata pos typ bexp = MkExp bexp (inferredType pos [] typ)
+typeMdata pos typ bexp = MkExp bexp (inferredType pos typ [])
 
-inferredType :: SrcPositn -> MdGrp -> T.Text -> MdGrp
-inferredType pos [] typ = [ MkExpMetadata
-                              pos
-                          (Just $ Inferred typ)
-                          Nothing
-                      ]
-inferredType _pos mds _typ = mds -- md {typeLabel = Just $ Inferred typ}:mds
+inferredType :: SrcPositn -> T.Text -> MdGrp -> MdGrp
+inferredType pos typ = \case
+  [] -> [ MkExpMetadata
+            pos
+            (Just $ Inferred typ)
+            Nothing
+        ]
+  mds -> mds -- md {typeLabel = Just $ Inferred typ}:mds
 
+addRuleName :: SrcPositn -> T.Text -> MdGrp -> MdGrp
+addRuleName pos rname = \case
+  []     -> [MkExpMetadata pos Nothing annot]
+  md:mds -> md {explnAnnot = annot}:mds
+  where
+    annot = Just $ MkExplnAnnot rname Nothing Nothing
 
 -- | Treat the seq of L4 rules as being a block of statements
 l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
@@ -1182,9 +1189,12 @@ processHcBody bsr = do
   pos <- mkToLC $ asks currSrcPos
   case bsr of
     AA.Leaf rp -> expifyBodyRP rp
-  -- TODO: Consider using the `mlbl` to augment with metadata
-    -- Inari: if you uncomment fmap addLabel below, then the text in mlbl will be added to the leaves.
-    -- This is assuming that
+  -- If the label is Metadata, then we add it to MdGrp
+    AA.All (Just (AA.Metadata lbl)) propns -> F.foldrM (makeOpMd lbl pos EAnd) emptyExp propns
+    AA.Any (Just (AA.Metadata lbl)) propns -> F.foldrM (makeOpMd lbl pos EOr) emptyExp propns
+
+  -- If there is a label and it's not Metadata, it might be part of the text.
+  -- If you uncomment fmap addLabel below, then the possible text in mlbl will be added to the leaves.
     AA.All mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp ({-fmap (addLabel mlbl) <$> -} propns)
     AA.Any mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp ({-fmap (addLabel mlbl) <$>-} propns)
     AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
@@ -1198,13 +1208,19 @@ processHcBody bsr = do
       Just (AA.PrePost pre post) ->
         RPMT [MTT $ T.unwords [pre, rp2text rp, post]]
       _ -> rp
-    -- TODO: Can try augmenting with `mlbl` here
-    makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
-    makeOp pos op bsr exp =
-      noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
+
+    makeOp = makeOp' noExtraMdata
+
+    makeOpMd rname pos = makeOp' f pos
+      where
+        f bexp = MkExp bexp (addRuleName pos rname [])
+
+    makeOp' :: (BaseExp -> Exp) -> SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
+    makeOp' f pos op bsr exp = f <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
+
 
     toBoolEq pos e =
-      e {exp = toBoolEqBE e.exp, md = inferredType pos e.md "Boolean"}
+      e {exp = toBoolEqBE e.exp, md = inferredType pos "Boolean" e.md}
       where
         inferredBool = typeMdata pos "Boolean"
         toBoolEqBE _e@(ELit (EString str)) =
@@ -1345,7 +1361,7 @@ expifyBodyRP = \case
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
     coerceType :: SrcPositn -> T.Text -> Exp -> Exp
     coerceType pos typ exp@(MkExp bexp _) =
-      inferTypeFromOtherExp exp $ MkExp bexp $ inferredType pos [] typ
+      inferTypeFromOtherExp exp $ MkExp bexp $ inferredType pos typ []
 
 inferTypeFromOtherExp :: Exp -> Exp -> Exp
 inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of
@@ -1363,6 +1379,6 @@ inferTypeRHS pos x@(MkExp bexp md) = case bexp of
   ECompOp{} -> go "Bool"
   _ -> x
   where
-    go = MkExp bexp . inferredType pos md
+    go = MkExp bexp . flip (inferredType pos) md
 --  EVar (MkVar t) -> ??? -- NB. a Var can be defined outside givens, like "incomeTaxRate,IS,0.01"
 -- so when incomeTaxRate appears in another expression, we could check elsewhere in the program what its type is.

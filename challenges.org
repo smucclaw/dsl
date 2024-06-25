@@ -1058,6 +1058,17 @@ https://sso.agc.gov.sg/Act/SGA1982#pr2-
 #+end_quote
 
 
+* Challenge 15: DMN compatibility
+
+DMN decision tables are tabular. Our dmnmd reuses editors' markdown and org table modes for this, but the inspiration really is Jetbrains MPS's support for inline decision tables:
+https://youtu.be/RpQ5JVQaJx4?si=qc_ezzndoaxkJpoN&t=499
+
+Our choice of web editor should be informed by support for tabular editing.
+
+We can implement DMN itself relatively simply.
+
+It has already been done once: see [[https://github.com/smucclaw/dmnmd][DMNMD]].
+
 
 * ACTION ITEMS
 

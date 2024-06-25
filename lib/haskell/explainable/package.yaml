@@ -59,9 +59,9 @@ library:
 executables:
   explainable-exe:
     main:                Main.hs
-    other-modules:
-    - Options
-    - Paths_explainable
+    # other-modules:
+    # - Options
+    # - Paths_explainable
     source-dirs:         app
     ghc-options:
     - -Wall
@@ -69,16 +69,25 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - bytestring
     - explainable
     - servant
     - servant-server
+    - servant-openapi3
+    - servant-swagger-ui
+    - openapi3
     - warp
     - wai
     - wai-logger
     - directory
     - filepath
+    - lens
     - optparse-applicative
     - scientific
+    - QuickCheck
+    - quickcheck-instances
+    # TODO: if this project advances, the server should be its own library
+    - hspec
 
 tests:
   explainable-test:

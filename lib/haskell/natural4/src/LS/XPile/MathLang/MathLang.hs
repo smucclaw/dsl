@@ -414,9 +414,9 @@ gml2ml exp =
 
   EIs left (getPred -> Just right) -> do
     MathVar var <- gml2ml left
-    gml2ml (exp {GML.exp = EPredSet (GML.MkVar $ T.pack var) right})
+    gml2ml (exp {GML.exp = EPredSet (GML.MkVar [i|#{var}|]) right})
 
-  EIs left right -> gml2ml (exp {GML.exp = EVarSet left right})
+  EIs left right -> gml2ml exp {GML.exp = EVarSet left right}
 
   _ ->
     trace [i|\ngml2ml: not supported #{exp}\n|]
@@ -506,7 +506,7 @@ gml2ml exp =
 
       pure $ MathVar headName
 
---             [(x, a),  (y, b)]          x + y          a + b
+--             [(x, a),  (y, b)]                      x + y          a + b
 replaceVars :: Map.HashMap String (Expr Double) -> Expr Double -> Expr Double
 replaceVars table = returnBody . replace
   where

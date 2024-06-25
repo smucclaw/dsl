@@ -124,21 +124,21 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
     userfuns = getUserFuns 0 Map.empty lamCalcProgram.userFuns
     st = gmls2ml userfuns lamCalcProgram.lcProgram
     giveth = T.unpack <$> lamCalcProgram.giveths
+
     toplevels = case Map.lookup "Top-Level" st.symtabF of
       Just exp -> [exp]
-      Nothing ->
-        case giveth of
-          [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] relevantSymtab st
-          ks -> case ks |> mapMaybe \k -> MathSet k <$> Map.lookup k st.symtabF of
-                [] -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ relevantSymtab st
-                exprs -> exprs
+      Nothing -> case giveth of
+        [] -> trace [i|\ntoMathLang: no giveth, returning all in symTab\n|] relevantSymtab st
+        (mapMaybe go -> exprs@(_:_)) -> exprs
+        ks -> trace [i|\ntoMathLang: no set variable given in #{ks}\n     st = #{st}\n     userfuns = #{userfuns}|] $ relevantSymtab st
+
+    go k = MathSet k <$> Map.lookup k st.symtabF
 
 -- If all values in symtabF are Pred or Undefined, use symtabP
 relevantSymtab :: MyState -> [Expr Double]
-relevantSymtab st =
-  case [e | e <- Map.elems st.symtabF, not $ predOrUndefined e] of
-    [] -> MathPred <$> Map.elems st.symtabP
-    xs -> Map.elems st.symtabF
+relevantSymtab st
+  | all predOrUndefined st.symtabF = MathPred <$> Map.elems st.symtabP  
+  | otherwise                      = Map.elems st.symtabF
   where
     predOrUndefined (Undefined _) = True
     predOrUndefined (MathPred _) = True
@@ -170,13 +170,13 @@ mkVal :: GML.Lit -> Expr Double
 mkVal = \case
   GML.EInteger int -> Val Nothing $ fromInteger int
   GML.EFloat float -> Val Nothing float
-  GML.EString lit -> MathVar $ T.unpack lit
+  GML.EString lit -> MathVar [i|#{lit}|]
   GML.ECurrency curr double -> Val (Just [i|#{curr} #{double}|]) double
   -- These should probably be handled in a different way? Booleans are handled in Pred, not Expr. There is currently nowhere that Dates are handled in MathLang.
   GML.EBoolTrue -> MathVar "True"
   GML.EBoolFalse -> MathVar "False"
-  GML.EDate day -> MathVar $ show day
-  GML.EENum val -> MathVar $ T.unpack val
+  GML.EDate day -> MathVar [i|#{day}|]
+  GML.EENum val -> MathVar [i|#{val}|]
 --  lit -> throwError [i|mkVal: encountered #{lit}|]
 
 exp2pred :: GML.Exp -> ToMathLang (Pred Double)
@@ -202,7 +202,7 @@ exp2pred exp = case exp.exp of
     --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
   EAnd {} -> PredFold Nothing PLAnd <$> foldPredAnd exp
   EPredSet (GML.MkVar var) val -> do
-    let varStr = T.unpack var
+    let varStr = [i|#{var}|]
     valEx <- exp2pred val
     let valExWithLabel = case valEx of
           PredVar _ -> valEx
@@ -321,7 +321,10 @@ getUserFuns ix firstPass funs =
     f firstPass (boundVars, exp) =
       case runToMathLang firstPass $ mkAppForUF exp [] of
         Right mlExp -> ([T.unpack v | GML.MkVar v <- nub boundVars], mlExp)
-        Left error -> trace (if firstPass /= Map.empty then [i|getUserFuns: #{error}|] else "") ([], Undefined Nothing)
+        Left error ->
+          trace
+            (if null firstPass then "" else [i|getUserFuns: #{error}|])
+            ([], Undefined Nothing)
 
     mkAppForUF :: GML.Exp -> [String] -> ToMathLang (Expr Double)
     mkAppForUF (isApp -> Just (f, arg)) args = mkAppForUF f (arg : args)
@@ -332,7 +335,7 @@ getUserFuns ix firstPass funs =
         Nothing -> fail [i|mkAppForUF: this really shouldn't happen, but #{f} is not found in userFuns|]
         Just (boundVars, expr) -> do
           let newVars = map MathVar args
-              replacedDef = replaceVars (zip boundVars newVars) expr
+              replacedDef = replaceVars (Map.fromList $ zip boundVars newVars) expr
           pure $ MathApp Nothing (T.unpack f) args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
 
     mkAppForUF exp _ = gml2ml exp
@@ -402,7 +405,7 @@ gml2ml exp =
 
   ELam (GML.MkVar v) body -> trace [i|\ngml2ml: found ELam #{exp}\n|] do
     bodyEx <- gml2ml body
-    let varEx = T.unpack v
+    let varEx = [i|#{v}|]
     trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] pure $ MathSet varEx bodyEx
   -- exp.exp :: BaseExp
 
@@ -434,14 +437,14 @@ gml2ml exp =
 
     mkApp (GML.exp -> EVar (GML.MkVar f)) args = do
       userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
-      case Map.lookup (T.unpack f) userFuns of
+      case Map.lookup [i|#{f}|] userFuns of
         Nothing -> fail [i|mkApp: trying to apply undefined function #{f}|]
         Just (boundVars, expr) -> do
           let funAppliedToArgsName = case getExprLabel <$> args of
                 [Just arg] -> [i|#{f} #{arg}|]
                 [Just arg1, Just arg2] -> [i|#{arg1} #{f} #{arg2}|]
                 _ -> [i|TODO: #{f} applied to 3 or more arguments, or the arguments don't have labels|]
-              expandedExpr = replaceVars (zip boundVars args) expr
+              expandedExpr = replaceVars (Map.fromList $ zip boundVars args) expr
               namedExpr = funAppliedToArgsName @|= expandedExpr
           ToMathLang $ tell emptyState {symtabF = Map.singleton funAppliedToArgsName namedExpr}
           pure $ MathVar funAppliedToArgsName
@@ -503,14 +506,15 @@ gml2ml exp =
       pure $ MathVar headName
 
 --             [(x, a),  (y, b)]          x + y          a + b
-replaceVars :: [(String, Expr Double)] -> Expr Double -> Expr Double
+replaceVars :: Map.HashMap String (Expr Double) -> Expr Double -> Expr Double
 replaceVars table = returnBody . replace
   where
     replace = \case
-      MathVar k@(_:_) -> case lookup k table of
+      MathVar k@(_:_) -> case Map.lookup k table of
                       Just v -> v
                       Nothing -> MathVar k
       x -> over (gplate @(Expr Double)) replace x
+
     returnBody = \case
       MathApp lbl _name _vars body -> body
       expr -> expr

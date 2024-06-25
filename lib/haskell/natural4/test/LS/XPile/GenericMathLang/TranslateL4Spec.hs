@@ -7,7 +7,6 @@ module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 import AnyAll (BoolStruct (..), Label (..))
 import AnyAll qualified as AA
 import Control.Arrow ((>>>))
-import Control.Monad (forM_)
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Control.Monad.Trans.Writer.Lazy (runWriter)
 import Data.HashMap.Strict qualified as Map

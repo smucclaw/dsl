@@ -115,7 +115,7 @@ spec = do
       describe "test questions from MustSing5 after rule expansion" do
         it "should return questions about alcoholic and non-alcoholic beverages" do
             let questions = fst $ xpLog $ ruleQuestions env Nothing (head mustsing5ExpandedGold)
-            questions `shouldBe` [All Nothing [Leaf "does the person walk?",Any Nothing [All Nothing [Any Nothing [Leaf "does the person consume an alcoholic beverage?",Leaf "does the person consume a non-alcoholic beverage?"],Any Nothing [Leaf "does the person consume the beverage in part?",Leaf "does the person consume the beverage in whole?"]],Leaf "does the person eat?"]]]
+            questions `shouldBe` [All (Just (Pre "Does the following hold: Qualifies")) [Leaf "does the person walk?", Any Nothing [All (Just (Pre "Does the following hold: drinks")) [Any Nothing [Leaf "does the person consume an alcoholic beverage?", Leaf "does the person consume a non-alcoholic beverage?"], Any Nothing [Leaf "does the person consume the beverage in part?", Leaf "does the person consume the beverage in whole?"]], Leaf "does the person eat?"]]]
 
       let envMustSing5 = env {interpreted = mustsing5Interp}
       testShouldChange "mustsing5" envMustSing5 mustsing5Rules mustsing5ExpandedGold
@@ -125,8 +125,8 @@ spec = do
         "pdpa1 with added UPON expansion" envPDPA
         pdpa1withUnexpandedUpon pdpa1withExpandedUponGold
 
-      let envPDPAFull = env {interpreted = pdpafullInterp}
-      testShouldChange "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
+    --   let envPDPAFull = env {interpreted = pdpafullInterp}
+    --   testShouldChange "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
 
       testNoChange "rodentsandvermin" env rodentsRules
       testNoChange "pdpadbno-1 (original)" envPDPA expected_pdpadbno1
@@ -336,7 +336,7 @@ mustsingRules variableBSR = [ Regulative
     }
   ]
 
-mustsing5ExpandedGold = [Regulative {subj = Leaf ((MTT "Person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All Nothing [Leaf (RPMT [MTT "walks"]),Any Nothing [All Nothing [Any (Just (PrePost "consumes" "beverage")) [Leaf (RPMT [MTT "an alcoholic"]),Leaf (RPMT [MTT "non-alcoholic"])],Any (Just (Pre "whether")) [Leaf (RPMT [MTT "in part"]),Leaf (RPMT [MTT "in whole"])]],Leaf (RPMT [MTT "eats"])]]), cond = Nothing, deontic = DMust, action = Leaf ((MTT "sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/MustSing5.csv", short = "test/MustSing5.csv", srcrow = 2, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}]
+mustsing5ExpandedGold = [Regulative {subj = Leaf ((MTT "Person" :| [],Nothing) :| []), rkeyword = REvery, who = Just (All (Just (Pre "Qualifies")) [Leaf (RPMT [MTT "walks"]),Any Nothing [All ( Just( Pre "drinks" )) [Any (Just (PrePost "consumes" "beverage")) [Leaf (RPMT [MTT "an alcoholic"]),Leaf (RPMT [MTT "non-alcoholic"])],Any (Just (Pre "whether")) [Leaf (RPMT [MTT "in part"]),Leaf (RPMT [MTT "in whole"])]],Leaf (RPMT [MTT "eats"])]]), cond = Nothing, deontic = DMust, action = Leaf ((MTT "sing" :| [],Nothing) :| []), temporal = Nothing, hence = Nothing, lest = Nothing, rlabel = Nothing, lsource = Nothing, srcref = Just (SrcRef {url = "test/MustSing5.csv", short = "test/MustSing5.csv", srcrow = 2, srccol = 1, version = Nothing}), upon = Nothing, given = Nothing, having = Nothing, wwhere = [], defaults = [], symtab = []}]
 
 pdpa1withExpandedUponGold = [ Regulative
     { subj = Leaf

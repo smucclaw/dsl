@@ -769,12 +769,30 @@ expandClauses' l4i depth hcs =
         f (expandRP l4i $ depth + 1) `g` h oldhc
 
 -- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
+-- As of 2024-06: leave a trace of the old LHS in form of a label.
 unleaf :: BoolStructR -> BoolStructR
-unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
-unleaf (AA.All  lbl xs) = AA.mkAll lbl $ unleaf <$> xs
-unleaf (AA.Any  lbl xs) = AA.mkAny lbl $ unleaf <$> xs
-unleaf (AA.Not      x ) = AA.mkNot     $ unleaf     x
-unleaf (AA.Leaf x     ) = AA.mkLeaf    x
+unleaf = unleaf' Nothing
+
+unleaf' :: MaybeLabel -> BoolStructR -> BoolStructR
+unleaf' _   (AA.Leaf (RPBoolStructR lhs RPis bsr)) =unleaf' (Just $ AA.Pre $ mt2text lhs) bsr
+unleaf' lbl (AA.All  lbl' xs) = AA.mkAll (unionMaybeWith concatLabels lbl lbl') $ unleaf <$> xs
+unleaf' lbl (AA.Any  lbl' xs) = AA.mkAny (unionMaybeWith concatLabels lbl lbl') $ unleaf <$> xs
+unleaf' lbl (AA.Not      x ) = AA.mkNot     $ unleaf     x
+unleaf' _   (AA.Leaf x     ) = AA.mkLeaf    x
+
+type MaybeLabel = Maybe (AA.Label T.Text)
+
+concatLabels :: AA.Label T.Text -> AA.Label T.Text -> AA.Label T.Text
+concatLabels x y = case (x,y) of
+  (AA.Pre a, AA.Pre b) -> AA.Pre $ [i|#{a} (#{b})|]
+  (AA.Pre a, AA.PrePost b c) -> AA.PrePost [i|#{a} (#{b})|] c
+  (AA.PrePost a b, AA.Pre c) -> AA.PrePost [i|#{a} (#{c})|] b
+  (AA.PrePost a b, AA.PrePost c d) -> AA.PrePost [i|#{a} (#{c})|] [i|#{b} (#{d})|]
+
+unionMaybeWith :: (a -> a -> a) -> Maybe a -> Maybe a -> Maybe a
+unionMaybeWith f Nothing mb      = mb
+unionMaybeWith f ma      Nothing = ma
+unionMaybeWith f (Just a) (Just b) = Just $ f a b
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
 -- from the below:
@@ -865,11 +883,12 @@ expandBSRM l4i depth x = do
   pure toreturn
 
 -- | Do expansion, throwing away the LHS IS part of any `RPBoolStructR` elements we encounter.
+-- However, do keep the title of the old LHS in a label.
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth = \case
   AA.Leaf rp -> case expandRP l4i depth1 rp of
-    RPBoolStructR _mt1 RPis bsr -> bsr
-    o                           -> AA.mkLeaf o
+    RPBoolStructR lhs RPis bsr -> unleaf' (Just $ AA.Pre $ mt2text lhs) bsr
+    o                          -> AA.mkLeaf o
   AA.Not item   -> {- AA.nnf $ -} AA.mkNot $ go item
   AA.All lbl xs -> goAnyAll AA.mkAll lbl xs
   AA.Any lbl xs -> goAnyAll AA.mkAny lbl xs

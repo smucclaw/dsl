@@ -106,10 +106,12 @@ docQ1 m (Node (Q sv  Neg              pp              v) c) = markbox v sv <+>  
 docQ1 m (Node (Q sv (Simply a)        pp              v) _) = markbox v sv <+> pretty a
 docQ1 m (Node (Q sv  And       (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  And       (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
+docQ1 m (Node (Q sv  And       (Just (Metadata   p1)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  And       Nothing                v) c) = markbox v sv <+> "all of:"        <> nest 2 (ppline <> vsep ((\i -> "&" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        Nothing                v) c) = markbox v sv <+> "any of:"        <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (Pre     p1   )) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 docQ1 m (Node (Q sv  Or        (Just (PrePost p1 p2)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c)) <> ppline <> pretty p2
+docQ1 m (Node (Q sv  Or        (Just (Metadata   p1)) v) c) = markbox v sv <+> pretty p1 <> ":" <> nest 2 (ppline <> vsep ((\i -> "|" <+> docQ1 m i) <$> c))
 
 ppQTree :: OptionallyLabeledBoolStruct T.Text -> Map.HashMap T.Text (Either (Maybe Bool) (Maybe Bool)) -> IO ()
 ppQTree i (coerce -> m) = do
@@ -117,8 +119,8 @@ ppQTree i (coerce -> m) = do
       softresult = softnormal m i
   print [__di|
     * Marking: #{drop 9 $ show m}
-    ** soft result = #{markbox (mark (rootLabel softresult)) View} 
-    ** hard result = #{markbox (mark (rootLabel hardresult)) View} 
+    ** soft result = #{markbox (mark (rootLabel softresult)) View}
+    ** hard result = #{markbox (mark (rootLabel hardresult)) View}
           = #{docQ1 m hardresult}
     ** JSON: #{asJSON hardresult}
     ** For UI: #{getForUI hardresult}
@@ -131,12 +133,12 @@ ppQTree i (coerce -> m) = do
 
 instance (IsString t, Pretty t, Pretty a) => Pretty (BoolStruct (Maybe (Label t)) a) where
   pretty (Leaf a)            = pretty a
-  pretty (All Nothing    xs)             = pretty (All (Just (Pre "All of the following:")) xs)
   pretty (All (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs))
   pretty (All (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
-  pretty (Any Nothing    xs)             = pretty (Any (Just (Pre "Any of the following:")) xs)
+  pretty (All _                      xs) = pretty (All (Just (Pre "All of the following:")) xs)
   pretty (Any (Just (Pre     p1   )) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs))
   pretty (Any (Just (PrePost p1 p2)) xs) = nest 4 (vsep $ pretty p1 : (pretty <$> xs)) <> line <> pretty p2
+  pretty (Any _                      xs) = pretty (Any (Just (Pre "Any of the following:")) xs)
   pretty (Not            x ) = "not" <+> pretty x
 
 instance (Pretty a) => Pretty (Label a) where

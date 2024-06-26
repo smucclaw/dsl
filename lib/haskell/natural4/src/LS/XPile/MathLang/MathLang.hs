@@ -18,10 +18,8 @@ module LS.XPile.MathLang.MathLang
   )
 where
 
-import AnyAll (BoolStructF (..))
+
 import Control.Arrow ((>>>))
-import Data.Functor.Foldable (Recursive (..))
-import Data.Generics.Sum.Constructors (AsConstructor (_Ctor))
 import Data.HashMap.Strict qualified as Map
 import Data.List (groupBy, nub, unfoldr, (\\))
 import Data.List.NonEmpty qualified as NE
@@ -34,27 +32,20 @@ import Effectful.Reader.Static (Reader, ask, runReader)
 import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
 import Flow ((|>))
-import LS.Rule qualified as L4
-import LS.Types qualified as L4
-import LS.Interpreter (expandClauses)
-import LS.Rule (Interpreted (..), Rule)
+
+import LS.Rule (Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
+import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang qualified as GML
 import Optics
   ( Iso',
     coerced,
-    cosmosOf,
-    filteredBy,
-    folded,
     gplate,
     over,
     re,
-    toListOf,
     view,
-    (%),
-    (^..),
   )
 import Prettyprinter (Doc, braces, vcat)
 import Text.Regex.PCRE.Heavy qualified as PCRE
@@ -72,51 +63,9 @@ toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
   Left errors -> trace [i|\ntoMathLang: failed when turning into GML, #{errors}\n|] ([], emptyState) -- GML.makeErrorOut errors
   Right prog -> lcProgToMathLang prog
   where
-    l4Hornlikes = insertTypeDecls allTypeDecls <$> if expand then expandedHLs else hlsRaw
-
-    -- TranslateL4 only checks for variables that are in the GIVEN part of each rule
-    -- TODO: restructure there so that DECLAREd variables are also taken into account
-    -- for now just quick and dirty insert DECLAREd variables into GIVENs (🙈)
-    tdRules = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"TypeDecl")
-    getTypeDecl :: Rule -> [L4.TypedMulti]
-    getTypeDecl td = case (td.has, td.name) of
-      ([], x:xs) -> [(x NE.:| xs                    , td.super)]
-      ([],   []) -> [(L4.MTT "UnnamedTypeDecl" NE.:| [], td.super)]
-      (ts,    _) -> concatMap getTypeDecl ts
-
-    allTypeDecls :: Maybe L4.ParamText
-    allTypeDecls = tdRules |> foldMap getTypeDecl |> NE.nonEmpty
-
-    insertTypeDecls :: Maybe L4.ParamText -> Rule -> Rule
-    insertTypeDecls tds rl =
-      rl
-        { L4.given = tds <> rl.given
-        }
-
-    -- Extract Hornlikes, expand if desired
-    hlsRaw =
-      l4i.origrules
-        ^.. folded
-        % cosmosOf (gplate @Rule)
-        % filteredBy (_Ctor @"Hornlike")
-    
-    expandedHLs =
-      [ r {L4.clauses = expandClauses l4i 1 (L4.clauses r)}
-        | r <- hlsRaw,
-          L4.name r `notElem` leaves
-      ]
-
-    allBS = toListOf (gplate @L4.BoolStructR) hlsRaw
-
-    getMTs :: L4.BoolStructR -> [L4.MultiTerm]
-    getMTs = cata \case
-      LeafF (L4.RPMT x@[L4.MTT _]) -> [x]
-      NotF x -> x
-      AnyF _ xs -> mconcat xs
-      AllF _ xs -> mconcat xs
-      _ -> []
-
-    leaves = foldMap getMTs allBS
+    l4Hornlikes = GML.getHornlikes l4i
+      |> (if expand then GML.expandHornLikes l4i else id)
+      |> GML.insertTypeDecls l4i
 
 lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
 lcProgToMathLang lamCalcProgram = (toplevels, st)
@@ -137,7 +86,7 @@ lcProgToMathLang lamCalcProgram = (toplevels, st)
 -- If all values in symtabF are Pred or Undefined, use symtabP
 relevantSymtab :: MyState -> [Expr Double]
 relevantSymtab st
-  | all predOrUndefined st.symtabF = MathPred <$> Map.elems st.symtabP  
+  | all predOrUndefined st.symtabF = MathPred <$> Map.elems st.symtabP
   | otherwise                      = Map.elems st.symtabF
   where
     predOrUndefined (Undefined _) = True

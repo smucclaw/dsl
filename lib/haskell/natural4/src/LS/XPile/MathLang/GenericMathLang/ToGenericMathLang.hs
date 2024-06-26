@@ -23,26 +23,32 @@ how much would be needed to in effect parse the notoriously complicated L4 data 
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE BlockArguments #-}
 
 module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
-  (toMathLangGen) 
+  (toMathLangGen, getHornlikes, insertTypeDecls, expandHornLikes)
 where
 
+import AnyAll (BoolStructF (..))
+import Data.Functor.Foldable (Recursive (..))
+import Flow ((|>))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 -- TODO: Add import list
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
   ( ToLCError, runToLC, l4ToLCProgram )
--- import LS.Interpreter (qaHornsT)
-import LS.Rule (Rule, Interpreted(..),
+
+import LS.Interpreter (expandClauses)
+import LS.Rule (Rule(..), Interpreted(..),
                 -- defaultHorn
                 -- defaultHorn is useful for prototyping in the REPL
                 )
--- import LS.Rule qualified as L4 (Rule(..))
+import LS.Types (ParamText, MultiTerm, TypedMulti, MTExpr(MTT), BoolStructR, RelationalPredicate(RPMT))
+import Data.List.NonEmpty (NonEmpty((:|)), nonEmpty)
 
 -- import Effectful
 -- experimenting with Effectful.Error rn
 -- see Mattermost slack for discussion of error handling and MonadValidate
-import Optics (cosmosOf, gplate, folded, (%), filteredBy, (^..) )
+import Optics (cosmosOf, toListOf, gplate, folded, (%), filteredBy, (^..))
 import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
@@ -58,8 +64,6 @@ import Data.String.Interpolate (__i)
 {-------------------------------------------------------------------------------
    Orchestrating and pretty printing
 -------------------------------------------------------------------------------}
-type Analyzed = Interpreted
-
 {- | Entry point for transforming the original L4 rules into generic lamda calculus
      Outputs either the LC repn or errors if there're errors.
 Note:
@@ -68,14 +72,50 @@ Note:
     for very little benefit. Can always refactor down the road to use it if nec
 * TODO re filtering for Hornlikes: Will want to work with type decls / record decls etc in the future
 -}
-toMathLangGen :: Analyzed -> (String, [String])
-toMathLangGen l4a =
-  let l4Hornlikes =
-        l4a.origrules ^.. folded % cosmosOf (gplate @Rule) %
-        filteredBy (_Ctor @"Hornlike")
+toMathLangGen :: Interpreted -> (String, [String])
+toMathLangGen l4i =
+  let l4Hornlikes = getHornlikes l4i
+--                      |> expandHornLikes l4i
+                      |> insertTypeDecls l4i
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (renderLC lamCalcProgram, [])
+
+-- Utility functions for expanding rules and inserting TypeDecls into GIVENs
+-- (Introduced in 2024-06, I hope we deal with global vs. local variables better later.)
+getHornlikes l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
+getTypeDecls l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"TypeDecl")
+
+insertTypeDecls :: Interpreted -> [Rule] -> [Rule]
+insertTypeDecls l4i = fmap (insertIntoRule allTypeDecls)
+  where
+    tdRules = getTypeDecls l4i
+    insertIntoRule tds rl = rl {given = tds <> rl.given}
+    rule2TypeDecls :: Rule -> [TypedMulti]
+    rule2TypeDecls td = case (td.has, td.name) of
+      ([], x:xs) -> [(x :| xs                    , td.super)]
+      ([],   []) -> [(MTT "UnnamedTypeDecl" :| [], td.super)]
+      (ts,    _) -> concatMap rule2TypeDecls ts
+
+    allTypeDecls :: Maybe ParamText
+    allTypeDecls = tdRules |> foldMap rule2TypeDecls |> nonEmpty
+
+expandHornLikes :: Interpreted -> [Rule] -> [Rule]
+expandHornLikes l4i hls =
+  [ r {clauses = expandClauses l4i 1 (clauses r)}
+  | r <- hls
+  , r.name `notElem` leaves ]
+  where
+    leaves = foldMap getMTs allBS
+    allBS = toListOf (gplate @BoolStructR) hls
+
+    getMTs :: BoolStructR -> [MultiTerm]
+    getMTs = cata \case
+      LeafF (RPMT x@[MTT _]) -> [x]
+      NotF x -> x
+      AnyF _ xs -> mconcat xs
+      AllF _ xs -> mconcat xs
+      _ -> []
 
 -- | Makes report for errors; can try using `diagnose` package / lib for this
 makeErrorOut :: ToLCError -> (String, [String])

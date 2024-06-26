@@ -26,7 +26,7 @@ how much would be needed to in effect parse the notoriously complicated L4 data 
 {-# LANGUAGE BlockArguments #-}
 
 module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
-  (toMathLangGen, getHornlikes, insertTypeDecls, expandHornLikes)
+  (toMathLangGen, getHornlikes, insertTypeDecls, expandHornlikes)
 where
 
 import AnyAll (BoolStructF (..))
@@ -75,7 +75,7 @@ Note:
 toMathLangGen :: Interpreted -> (String, [String])
 toMathLangGen l4i =
   let l4Hornlikes = getHornlikes l4i
---                      |> expandHornLikes l4i
+--                      |> expandHornlikes l4i
                       |> insertTypeDecls l4i
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
@@ -100,8 +100,8 @@ insertTypeDecls l4i = fmap (insertIntoRule allTypeDecls)
     allTypeDecls :: Maybe ParamText
     allTypeDecls = tdRules |> foldMap rule2TypeDecls |> nonEmpty
 
-expandHornLikes :: Interpreted -> [Rule] -> [Rule]
-expandHornLikes l4i hls =
+expandHornlikes :: Interpreted -> [Rule] -> [Rule]
+expandHornlikes l4i hls =
   [ r {clauses = expandClauses l4i 1 (clauses r)}
   | r <- hls
   , r.name `notElem` leaves ]

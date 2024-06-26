@@ -13,6 +13,7 @@
 module LS.XPile.MathLang.MathLang
   ( toMathLangMw,
     toMathLang,
+    toMathLangExpand,
     gml2ml,
     runToMathLang,
   )
@@ -25,6 +26,7 @@ import Data.List (groupBy, nub, unfoldr, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i, __i)
+import Data.Text qualified as T
 import Debug.Trace (trace)
 import Effectful (Eff, runPureEff)
 import Effectful.Fail (Fail, runFail)
@@ -35,7 +37,7 @@ import Flow ((|>))
 
 import LS.Rule (Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
-import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..))
+import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..), ExplnAnnot (l4RuleName))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
 import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang qualified as GML
@@ -64,7 +66,7 @@ toMathLang' expand l4i = case GML.runToLC $ GML.l4ToLCProgram l4Hornlikes of
   Right prog -> lcProgToMathLang prog
   where
     l4Hornlikes = GML.getHornlikes l4i
-      |> (if expand then GML.expandHornLikes l4i else id)
+      |> (if expand then GML.expandHornlikes l4i else id)
       |> GML.insertTypeDecls l4i
 
 lcProgToMathLang :: GML.LCProgram -> ([Expr Double], MyState)
@@ -147,9 +149,9 @@ exp2pred exp = case exp.exp of
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   ELit (GML.EString lit) -> pure $ PredVar [i|#{lit}|]
-  EOr {} -> PredFold Nothing PLOr <$> foldPredOr exp
+  EOr {} -> PredFold (getLabel exp) PLOr <$> foldPredOr exp
     --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
-  EAnd {} -> PredFold Nothing PLAnd <$> foldPredAnd exp
+  EAnd {} -> PredFold (getLabel exp) PLAnd <$> foldPredAnd exp
   EPredSet (GML.MkVar var) val -> do
     let varStr = [i|#{var}|]
     valEx <- exp2pred val
@@ -165,6 +167,11 @@ exp2pred exp = case exp.exp of
     pure case mlEx of
       MathVar x -> PredVar x
       x -> PredVar [i|Not implemented yet: #{x}|]
+
+getLabel :: GML.Exp -> Maybe String
+getLabel e = case e.md of
+  m:ms -> T.unpack . l4RuleName <$> m.explnAnnot
+  []   -> Nothing
 
 foldPredOr :: GML.Exp -> ToMathLang (PredList Double)
 foldPredOr e = case e.exp of
@@ -489,6 +496,7 @@ toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
 toMathLangMw l4i myenv = (rendered, [])
  where
   (exprs, stRaw) = toMathLangExpand l4i
+--  (exprs, stRaw) = toMathLang l4i
   state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
   rendered = [__i|
                 #{vcat $ fmap renderExp exprs}

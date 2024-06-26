@@ -525,10 +525,10 @@ inferredType pos typ = \case
         ]
   mds -> mds -- md {typeLabel = Just $ Inferred typ}:mds
 
-addRuleName :: SrcPositn -> T.Text -> MdGrp -> MdGrp
-addRuleName pos rname = \case
-  []     -> [MkExpMetadata pos Nothing annot]
-  md:mds -> md {explnAnnot = annot}:mds
+addRuleName :: SrcPositn -> T.Text -> Exp -> Exp
+addRuleName pos rname exp = case exp.md of
+  []   -> exp {md = [MkExpMetadata pos Nothing annot]}
+  m:ms -> exp {md = m {explnAnnot = annot}:ms}
   where
     annot = Just $ MkExplnAnnot rname Nothing Nothing
 
@@ -1190,8 +1190,10 @@ processHcBody bsr = do
   case bsr of
     AA.Leaf rp -> expifyBodyRP rp
   -- If the label is Metadata, then we add it to MdGrp
-    AA.All (Just (AA.Metadata lbl)) propns -> F.foldrM (makeOpMd lbl pos EAnd) emptyExp propns
-    AA.Any (Just (AA.Metadata lbl)) propns -> F.foldrM (makeOpMd lbl pos EOr) emptyExp propns
+    AA.All (Just (AA.Metadata lbl)) propns ->
+      addRuleName pos lbl <$> F.foldrM (makeOp pos EAnd) emptyExp propns
+    AA.Any (Just (AA.Metadata lbl)) propns ->
+      addRuleName pos lbl <$> F.foldrM (makeOp pos EOr) emptyExp propns
 
   -- If there is a label and it's not Metadata, it might be part of the text.
   -- If you uncomment fmap addLabel below, then the possible text in mlbl will be added to the leaves.
@@ -1209,14 +1211,10 @@ processHcBody bsr = do
         RPMT [MTT $ T.unwords [pre, rp2text rp, post]]
       _ -> rp
 
-    makeOp = makeOp' noExtraMdata
 
-    makeOpMd rname pos = makeOp' f pos
-      where
-        f bexp = MkExp bexp (addRuleName pos rname [])
-
-    makeOp' :: (BaseExp -> Exp) -> SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
-    makeOp' f pos op bsr exp = f <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
+    makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
+    makeOp pos op bsr exp =
+      noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
 
 
     toBoolEq pos e =

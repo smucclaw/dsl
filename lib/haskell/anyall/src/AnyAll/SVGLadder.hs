@@ -719,14 +719,14 @@ drawPrePostLabelTopBottom sc preTxt postTxt (childBox, childSVG) =
 
 decorateWithLabel :: Scale -> Maybe (Label T.Text) -> BoxedSVG -> BoxedSVG
 decorateWithLabel Tiny _ childBox = childBox
-decorateWithLabel _ Nothing childBox = childBox
 decorateWithLabel sc (Just (Pre txt)) childBox = drawPreLabelTop sc txt childBox
 decorateWithLabel sc (Just (PrePost preTxt postTxt)) childBox = drawPrePostLabelTopBottom sc preTxt postTxt childBox
+decorateWithLabel _  _ childBox = childBox
 
 decorateWithLabelR :: Maybe (Label T.Text) -> BoxedSVG -> SVGCanvas BoxedSVG
-decorateWithLabelR Nothing childBox = return childBox
 decorateWithLabelR (Just (Pre txt)) childBox = asks contextScale >>= \sc -> return $ drawPreLabelTop sc txt childBox
 decorateWithLabelR (Just (PrePost preTxt postTxt)) childBox = asks contextScale >>= \sc -> return $ drawPrePostLabelTopBottom sc preTxt postTxt childBox
+decorateWithLabelR _ childBox = return childBox
 
 decorateWithLabelGuardR :: Maybe (Label T.Text) -> BoxedSVG -> SVGCanvas BoxedSVG
 decorateWithLabelGuardR ml childBox = asks contextScale >>= \sc -> if sc == Tiny then pure childBox else decorateWithLabelR ml childBox

@@ -66,7 +66,7 @@ import Control.Arrow ((>>>))
 import Control.Monad (guard)
 import Data.Coerce (coerce)
 import Data.Either (fromRight, partitionEithers)
-import Data.Foldable (traverse_)
+import Data.Foldable (traverse_, asum)
 import Data.Graph.Inductive
   ( Gr,
     Graph (labNodes, mkGraph),
@@ -769,12 +769,34 @@ expandClauses' l4i depth hcs =
         f (expandRP l4i $ depth + 1) `g` h oldhc
 
 -- | Simple transformation to remove the "lhs IS" part of a BolStructR, leaving on the "rhs".
+-- As of 2024-06: leave a trace of the old LHS in form of a label.
 unleaf :: BoolStructR -> BoolStructR
-unleaf (AA.Leaf (RPBoolStructR _b RPis bsr)) = unleaf bsr
-unleaf (AA.All  lbl xs) = AA.mkAll lbl $ unleaf <$> xs
-unleaf (AA.Any  lbl xs) = AA.mkAny lbl $ unleaf <$> xs
-unleaf (AA.Not      x ) = AA.mkNot     $ unleaf     x
-unleaf (AA.Leaf x     ) = AA.mkLeaf    x
+unleaf = unleaf' Nothing
+
+unleaf' :: MaybeLabel -> BoolStructR -> BoolStructR
+-- 1) We encounter a foo IS bar -> tag bar with AA.Metadata "foo"
+unleaf' _ (AA.Leaf (RPBoolStructR lhs RPis bsr)) = unleaf' (Just $ AA.Metadata $ mt2text lhs) bsr
+
+-- 2) We tagged a thing with Metadata, and its child already has a label.
+-- Instead of throwing away the old label, wrap it in an additional layer of All or Any.
+-- Later applications may decide what to do with the extra layer.
+unleaf' (isMd -> Just md) (AA.All lbl@(Just _) xs) = AA.mkAll (Just md) [AA.mkAll lbl $ unleaf <$> xs]
+unleaf' (isMd -> Just md) (AA.Any lbl@(Just _) xs) = AA.mkAny (Just md) [AA.mkAny lbl $ unleaf <$> xs]
+
+-- 3) Either our thing is not metadata, or child has no label.
+-- In either case, pick the first non-Nothing value with asum.
+unleaf' lbl (AA.All lbl' xs) = AA.mkAll (asum [lbl, lbl']) $ unleaf <$> xs
+unleaf' lbl (AA.Any lbl' xs) = AA.mkAny (asum [lbl, lbl']) $ unleaf <$> xs
+
+-- 4) There is not even space to put a label, so totally ignore our maybelabel.
+unleaf' _   (AA.Not      x ) = AA.mkNot                    $ unleaf     x
+unleaf' _   (AA.Leaf x     ) = AA.mkLeaf                                 x
+
+type MaybeLabel = Maybe (AA.Label T.Text)
+
+isMd :: MaybeLabel -> MaybeLabel
+isMd x@(Just (AA.Metadata _)) = x
+isMd _ = Nothing
 
 -- take out the Leaf ( RPBoolStructR [ "b" ] RPis
 -- from the below:
@@ -865,11 +887,12 @@ expandBSRM l4i depth x = do
   pure toreturn
 
 -- | Do expansion, throwing away the LHS IS part of any `RPBoolStructR` elements we encounter.
+-- However, do keep the title of the old LHS in a label.
 expandBSR' :: Interpreted -> Int -> BoolStructR -> BoolStructR
 expandBSR' l4i depth = \case
   AA.Leaf rp -> case expandRP l4i depth1 rp of
-    RPBoolStructR _mt1 RPis bsr -> bsr
-    o                           -> AA.mkLeaf o
+    RPBoolStructR lhs RPis bsr -> unleaf' (Just $ AA.Metadata $ mt2text lhs) bsr
+    o                          -> AA.mkLeaf o
   AA.Not item   -> {- AA.nnf $ -} AA.mkNot $ go item
   AA.All lbl xs -> goAnyAll AA.mkAll lbl xs
   AA.Any lbl xs -> goAnyAll AA.mkAny lbl xs

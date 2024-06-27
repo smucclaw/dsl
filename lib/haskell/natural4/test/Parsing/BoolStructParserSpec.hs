@@ -4,7 +4,7 @@
 
 module Parsing.BoolStructParserSpec (spec) where
 
-import AnyAll (BoolStruct (All, Any, Not), mkLeaf)
+import AnyAll (BoolStruct (All, Any, Not), Label(Pre, Metadata), mkLeaf)
 import Data.ByteString.Lazy qualified as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import LS.BasicTypes (MyStream, MyToken (Given))
@@ -45,6 +45,7 @@ import LS.Types
     MTExpr (MTI, MTT),
     ParamType (TOne),
     RPRel (RPis),
+    BoolStructT,
     RelationalPredicate
       ( RPBoolStructR,
         RPConstraint,
@@ -66,6 +67,7 @@ import Test.Hspec
     describe,
     it,
     xit,
+    shouldBe
   )
 import Text.Megaparsec (ParseErrorBundle, ShowErrorComponent)
 import Data.Text qualified as T
@@ -368,7 +370,8 @@ spec = do
           ab1b2 = Just
             ( Any Nothing
               [ mkLeaf "a"
-              , All Nothing
+              , All
+                (Just (Metadata "b")) -- new label, in order to remember `b MEANS b1 && b2`
                 [ mkLeaf "b1"
                 , mkLeaf "b2"
                 ]
@@ -379,3 +382,58 @@ spec = do
       filetest "varsub-2-headbody" "should expand hornlike" parseSM ab1b2
       filetest "varsub-3-bodybody" "should expand hornlike" parseSM ab1b2
       filetest "varsub-4-bodyhead" "should expand hornlike" parseSM ab1b2
+
+      it "should work when the tree that substitutes has its own label" do
+        let result = getAndOrTree
+                       (l4interpret defaultInterpreterOptions rulesForSubstitutingLabels)
+                       1
+                       (head rulesForSubstitutingLabels)
+        result `shouldBe` substitutedLabelGold
+
+rulesForSubstitutingLabels :: [Rule]
+rulesForSubstitutingLabels =
+  [ defaultHorn {
+      name = [ MTT "c" ]
+    , clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "c" ] RPis
+                ( Any Nothing
+                    [ mkLeaf (RPMT [ MTT "a" ])
+                    , mkLeaf (RPMT [ MTT "b" ])]
+                )
+            , hBody = Nothing
+            }
+        ]
+    }
+  , defaultHorn {
+      name = [ MTT "b" ]
+    , clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "b" ] RPis
+                ( All (Just (Pre "old label"))
+                    [ mkLeaf (RPMT [ MTT "b1" ])
+                    , mkLeaf (RPMT [ MTT "b2" ])]
+                )
+            , hBody = Nothing
+            }
+        ]
+      }
+  ]
+
+substitutedLabelGold :: Maybe BoolStructT
+substitutedLabelGold = Just
+  ( Any Nothing
+      [ mkLeaf "a"
+      , All
+          ( Just
+              ( Metadata "b" )
+          )
+          [
+            All (Just (Pre "old label"))
+                    [ mkLeaf "b1"
+                    , mkLeaf "b2" ]
+          ]
+      ]
+  )

@@ -14,14 +14,15 @@ import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
 import Data.Text qualified as T
 import Explainable
 import Explainable.MathLang -- hiding ((|>))
-import LS.Rule (Interpreted (..), Rule (..), defaultL4I)
+import LS.Interpreter (l4interpret)
+import LS.Rule (Interpreted (..), Rule (..), defaultL4I, defaultReg, defaultHorn, defaultTypeDecl)
 import LS.Types
 import LS.XPile.IntroReader (defaultReaderEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import LS.XPile.MathLang.MathLang qualified as ML
--- import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen)
+import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen, expandHornlikes, getHornlikes)
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.QuickCheck
   ( Arbitrary (..),
@@ -309,17 +310,22 @@ spec = do
           res `shouldBe` 1050.0
 
   describe "mustsing5" do
-    let l4i = defaultL4I {origrules = mustsing5}
-        res = ML.toMathLang l4i
-    it "must sing 5 translated into ml" do
-        res `shouldBe` mustsing5Gold
-    xit "must sing 5 in typescript" do
-        let res' = ML.toMathLangMw l4i defaultReaderEnv
-        res' `shouldBe` mustsing5GoldTS
+    let l4i = l4interpret defaultInterpreterOptions mustsing5
 
---   describe "mustsing5 expanded" do
---       let l4i = defaultL4I {origrules = mustsing5_expanded }
+    it "should expand hornlikes from Must Sing 5" do
+        expandHornlikes l4i (getHornlikes l4i) `shouldBe` mustsing5GoldExpandedHornlikes
 
+    it "should translate Must Sing 5 into GML" do
+        toMathLangGen l4i `shouldBe` mustsing5GoldGML
+
+    it "should translate Must Sing 5 into ML without expanding rules" do
+        ML.toMathLang l4i `shouldBe` mustsing5Gold
+
+    it "should translate Must Sing 5 into ML, expanding the rules" do
+        ML.toMathLangExpand l4i `shouldBe` mustsing5GoldExpanded
+
+    it "must sing 5 in typescript, expanding the rules" do
+        ML.toMathLangMw l4i defaultReaderEnv `shouldBe` mustsing5GoldTS
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify = testLCProgram (fmap exp . lcProgram)
@@ -919,7 +925,7 @@ arithRule3 = mkTestRule'
                 ]
 
 arithRule2_gold :: BaseExp
-arithRule2_gold = ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3a"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3d"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
+arithRule2_gold = ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3a"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3d"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
 
 arithExpr3_gold :: Exp
 arithExpr3_gold =
@@ -985,7 +991,7 @@ arithRule3_gold_symtab =
   ]
 
 arithRule3_gold :: BaseExp
-arithRule3_gold = ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3a_plus_times"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3a_times_plus"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 3.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 4.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
+arithRule3_gold = ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3a_plus_times"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3a_times_plus"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 3.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 4.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
 
 arithRule4 :: Rule
 arithRule4 = mkTestRule'
@@ -1040,7 +1046,7 @@ arithRule4 = mkTestRule'
             ]
 
 arithRule4_gold :: BaseExp
-arithRule4_gold = ESeq {seq = SeqExp [MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "gibbous"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EVar {var = MkVar "vivacity"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Boolean")), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "waxing"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 3}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "full"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "waived"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = ELit {lit = EBoolTrue}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Bool"), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 0}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "annualIncome"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "netWorth"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
+arithRule4_gold = ESeq {seq = SeqExp [MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "gibbous"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EVar {var = MkVar "vivacity"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Boolean")), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "waxing"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 3}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "full"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "waived"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = ELit {lit = EBoolTrue}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Bool"), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 0}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "annualIncome"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "netWorth"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
 
 arithRule4_globalVars_gold :: GlobalVars
 arithRule4_globalVars_gold = MkGlobalVars [
@@ -1159,17 +1165,15 @@ complexFunAppGold = (
     })
 
 funCallsAnotherFun = [
-    Hornlike
+    defaultHorn
     { name =
         [ MTT "The Answer" ]
-    , super = Nothing
     , keyword = Decide
     , given = mkGivens
                 [ ("firstArgument" , Just (SimpleType TOne "Number"))
                 , ("secondArgument", Just (SimpleType TOne "Number"))
                 ]
     , giveth = mkGivens [("The Answer" , Just (SimpleType TOne "Number"))]
-    , upon = Nothing
     , clauses = [ HC
             { hHead = RPConstraint
                 [ MTT "The Answer" ] RPis
@@ -1177,31 +1181,15 @@ funCallsAnotherFun = [
             , hBody = Nothing
             }]
     , rlabel = Just ( "§", 2, "Top-Level" )
-    , lsource = Nothing
-    , wwhere = []
-    , srcref = Just
-        ( SrcRef
-            { url = "test/localFuns.csv"
-            , short = "test/localFuns.csv"
-            , srcrow = 4
-            , srccol = 8
-            , version = Nothing
-            }
-        )
-    , defaults = []
-    , symtab = []
     },
-    Hornlike
+    defaultHorn
     { name =
         [ MTT "c", MTT "f", MTT "d"]
-    , super = Nothing
     , keyword = Decide
     , given = mkGivens
                 [ ("c", Just (SimpleType TOne "Number"))
                 , ("d", Just (SimpleType TOne "Number"))
                 ]
-    , giveth = Nothing
-    , upon = Nothing
     , clauses =
         [ HC
             { hHead = RPConstraint
@@ -1212,33 +1200,16 @@ funCallsAnotherFun = [
             , hBody = Nothing
             }
         ]
-    , rlabel = Nothing
-    , lsource = Nothing
-    , wwhere = []
-    , srcref = Just
-        ( SrcRef
-            { url = "test/localFuns.csv"
-            , short = "test/localFuns.csv"
-            , srcrow = 4
-            , srccol = 15
-            , version = Nothing
-            }
-        )
-    , defaults = []
-    , symtab = []
     }
-    , Hornlike
+    , defaultHorn
     { name =
         [ MTT "a", MTT "plus", MTT "b"
         ]
-    , super = Nothing
     , keyword = Decide
     , given = mkGivens
                 [ ("a", Just (SimpleType TOne "Number"))
                 , ("b", Just (SimpleType TOne "Number"))
                 ]
-    , giveth = Nothing
-    , upon = Nothing
     , clauses =
         [ HC
             { hHead = RPConstraint
@@ -1249,27 +1220,13 @@ funCallsAnotherFun = [
             , hBody = Nothing
             }
         ]
-    , rlabel = Nothing
-    , lsource = Nothing
-    , wwhere = []
-    , srcref = Just
-        ( SrcRef
-            { url = "test/localFuns.csv"
-            , short = "test/localFuns.csv"
-            , srcrow = 4
-            , srccol = 23
-            , version = Nothing
-            }
-        )
-    , defaults = []
-    , symtab = []
     }]
 
 funCallsAnotherFunGold :: ([Expr Double], MyState)
 funCallsAnotherFunGold = ([MathSet "The Answer" (MathVar "firstArgument f secondArgument")], emptyState {symtabF = [("firstArgument f secondArgument",MathBin (Just "firstArgument f secondArgument") Plus (MathVar "firstArgument") (MathVar "secondArgument")),("Top-Level",MathSet "The Answer" (MathVar "firstArgument f secondArgument"))]})
 
 nestedGenitivesInFunAppGold :: [BaseExp]
-nestedGenitivesInFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+nestedGenitivesInFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "age"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "friend"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "ind"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "baz"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "bar"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, recName = MkExp {exp = EVar {var = MkVar "foo"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
 mkGivens = fmap mkTypedMulti >>> nonEmpty
@@ -1287,21 +1244,12 @@ mkTestRule' :: RuleName
            -> Maybe ParamText  -- giveth
            -> [HornClause2]    -- clauses
            -> Rule
-mkTestRule' name given giveth clauses = Hornlike
+mkTestRule' name given giveth clauses = defaultHorn
     { name = name
-    , super = Nothing
     , keyword = Decide
     , given = given
     , giveth = giveth
-    , upon = Nothing
     , clauses = clauses
-    , rlabel = Nothing
-    , lsource = Nothing
-    , wwhere = []
-    , srcref = Just ( SrcRef { url = "dummy" , short = "dummy"
-             , srcrow = 0, srccol = 0, version = Nothing })
-    , defaults = []
-    , symtab = []
     }
 
 simplifiedFib :: Rule
@@ -1316,7 +1264,7 @@ simplifiedFib = mkTestRule
 dummyMetadata :: [ExpMetadata]
 dummyMetadata = [ MkExpMetadata
                     { srcPos = MkPositn
-                        { row = 0, col = 0
+                        { row = 1, col = 1
                         }, typeLabel = Nothing, explnAnnot = Nothing
                     }
                 ]
@@ -1324,7 +1272,7 @@ dummyMetadata = [ MkExpMetadata
 mkMetadata :: TLabel -> [ExpMetadata]
 mkMetadata typelabel = [ MkExpMetadata
                     { srcPos = MkPositn
-                        { row = 0, col = 0
+                        { row = 1, col = 1
                         }, typeLabel = Just typelabel, explnAnnot = Nothing
                     }
                 ]
@@ -1384,7 +1332,7 @@ testCurrency = [
 
 testCurrencyGold :: [BaseExp]
 testCurrencyGold =
-  [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestNoSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestNoSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "notACurrency"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "PAU4"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}]}]
+  [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "sgdTestNoSpaceNoComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "SGD" 42.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "eurTestNoSpaceComma"}, md = []}, arg = MkExp {exp = ELit {lit = ECurrency "EUR" 500000.0}, md = []}}, md = []}, MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "notACurrency"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "PAU4"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}]}]
 
 testFunApp :: [Rule]
 testFunApp = testLambda :
@@ -1404,7 +1352,7 @@ testFunApp = testLambda :
 
 
 testFunAppGold :: [BaseExp]
-testFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
+testFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 listsum :: [Rule]
 listsum = [mkTestRule'
@@ -1428,7 +1376,7 @@ listsum = [mkTestRule'
     ]]
 
 listsumGMLGold :: [BaseExp]
-listsumGMLGold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listSum"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}, arg = MkExp {exp = ESeq {seq = SeqExp [MkExp {exp = ELit {lit = EInteger 1}, md = []},MkExp {exp = ELit {lit = EInteger 2}, md = []},MkExp {exp = ELit {lit = EInteger 3}, md = []}]}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 10}, md = [MkExpMetadata {srcPos = MkPositn {row = 0, col = 0}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = []}]}]
+listsumGMLGold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listSum"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}, arg = MkExp {exp = ESeq {seq = SeqExp [MkExp {exp = ELit {lit = EInteger 1}, md = []},MkExp {exp = ELit {lit = EInteger 2}, md = []},MkExp {exp = ELit {lit = EInteger 3}, md = []}]}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 10}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = []}]}]
 
 listsumMLGold :: ([Expr Double], MyState)
 listsumMLGold =
@@ -2319,7 +2267,7 @@ emptyE :: Map.HashMap () ()
 emptyE = mempty
 
 mustsing5 :: [Rule]
-mustsing5 = [ Regulative
+mustsing5 = [ defaultReg
   { subj = Leaf
       (
           ( MTT "Person" :| []
@@ -2333,7 +2281,6 @@ mustsing5 = [ Regulative
               [ MTT "Qualifies" ]
           )
       )
-  , cond = Nothing
   , deontic = DMust
   , action = Leaf
       (
@@ -2341,35 +2288,11 @@ mustsing5 = [ Regulative
           , Nothing
           ) :| []
       )
-  , temporal = Nothing
-  , hence = Nothing
-  , lest = Nothing
-  , rlabel = Nothing
-  , lsource = Nothing
-  , srcref = Just
-      ( SrcRef
-          { url = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , short = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , srcrow = 2
-          , srccol = 1
-          , version = Nothing
-          }
-      )
-  , upon = Nothing
-  , given = Nothing
-  , having = Nothing
-  , wwhere = []
-  , defaults = []
-  , symtab = []
   }
-  , Hornlike
+  , defaultHorn
   { name =
       [ MTT "Drinks" ]
-  , super = Nothing
   , keyword = Means
-  , given = Nothing
-  , giveth = Nothing
-  , upon = Nothing
   , clauses =
     [ HC
         { hHead = RPBoolStructR
@@ -2406,165 +2329,62 @@ mustsing5 = [ Regulative
           , hBody = Nothing
           }
       ]
-  , rlabel = Just
-      ( "§"
-      , 1
-      , "What does it mean to drink?"
-      )
-  , lsource = Nothing
-  , wwhere = []
-  , srcref = Just
-      ( SrcRef
-          { url = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , short = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , srcrow = 3
-          , srccol = 15
-          , version = Nothing
-          }
-      )
-  , defaults = []
-  , symtab = []
   }
-  , TypeDecl
+  , defaultTypeDecl
   { name =
       [ MTT "Person" ]
-  , super = Nothing
   , has =
-      [ TypeDecl
+      [ defaultTypeDecl
           { name =
               [ MTT "drinks" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
-          , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
-      , TypeDecl
+      , defaultTypeDecl
           { name =
               [ MTT "eats" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
-          , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
-      , TypeDecl
+      , defaultTypeDecl
           { name =
               [ MTT "walks" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
-          , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
-      , TypeDecl
+      , defaultTypeDecl
           { name =
               [ MTT "alcoholic" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
           , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
-      , TypeDecl
+      , defaultTypeDecl
           { name =
               [ MTT "non-alcoholic" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
           , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
-      , TypeDecl
+      , defaultTypeDecl
           { name =
               [ MTT "in part" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
           , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
-      , TypeDecl
+      , defaultTypeDecl
           { name =
               [ MTT "in whole" ]
           , super = Just
               ( SimpleType TOne "Boolean" )
-          , has = []
-          , enums = Nothing
-          , given = Nothing
-          , upon = Nothing
-          , rlabel = Nothing
-          , lsource = Nothing
-          , srcref = Nothing
-          , defaults = []
-          , symtab = []
           }
       ]
-  , enums = Nothing
-  , given = Nothing
-  , upon = Nothing
-  , rlabel = Just
-      ( "§"
-      , 1
-      , "People consume food and drink"
-      )
-  , lsource = Nothing
-  , srcref = Just
-      ( SrcRef
-          { url = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , short = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , srcrow = 3
-          , srccol = 25
-          , version = Nothing
-          }
-      )
-  , defaults = []
-  , symtab = []
   }
-  , Hornlike
+  , defaultHorn
   { name =
       [ MTT "Qualifies" ]
-  , super = Nothing
   , keyword = Means
-  , given = Nothing
-  , giveth = Nothing
-  , upon = Nothing
   , clauses =
       [ HC
           { hHead = RPBoolStructR
@@ -2589,28 +2409,157 @@ mustsing5 = [ Regulative
           , hBody = Nothing
           }
       ]
-  , rlabel = Nothing
-  , lsource = Nothing
-  , wwhere = []
-  , srcref = Just
-      ( SrcRef
-          { url = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , short = "/var/nl4/e4e823bb-5b45-4e90-8fd7-0b32fa4d94ca/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/259009466/20240605T075302.515555Z.csv"
-          , srcrow = 6
-          , srccol = 7
-          , version = Nothing
-          }
-      )
-  , defaults = []
-  , symtab = []
   }
   ]
 
+mustsing5GoldExpandedHornlikes :: [Rule]
+mustsing5GoldExpandedHornlikes = [ defaultHorn
+  { name =
+      [ MTT "Qualifies" ]
+  , clauses =
+    [ HC
+        { hHead = RPBoolStructR
+            [ MTT "Qualifies" ] RPis
+            ( All Nothing
+                [ Leaf
+                    ( RPMT
+                        [ MTT "walks" ]
+                    )
+                , Any Nothing
+                    [ All
+                        ( Just
+                            ( Metadata "Drinks" )
+                        )
+                        [ Any
+                            ( Just
+                                ( PrePost "consumes an" "beverage" )
+                            )
+                            [ Leaf
+                                ( RPMT
+                                    [ MTT "alcoholic" ]
+                                )
+                            , Leaf
+                                ( RPMT
+                                    [ MTT "non-alcoholic" ]
+                                )
+                            ]
+                        , Any
+                            ( Just
+                                ( Pre "whether" )
+                            )
+                            [ Leaf
+                                ( RPMT
+                                    [ MTT "in part" ]
+                                )
+                            , Leaf
+                                ( RPMT
+                                    [ MTT "in whole" ]
+                                )
+                            ]
+                        ]
+                    , Leaf
+                        ( RPMT
+                            [ MTT "eats" ]
+                        )
+                    ]
+                ]
+            )
+        , hBody = Nothing
+        }
+      ]
+    }
+  ]
+
+
+mustsing5GoldGML :: (String, [String])
+mustsing5GoldGML = ("progMetadata = MkLCProgMdata {filename = \"[TODO] Not Yet Implemented\"}\nlcProgram = [ MkExp\n    { exp = EIs\n        { isLeft = MkExp\n            { exp = EVar\n                { var = MkVar \"Drinks\" }\n            , md =\n                [ MkExpMetadata\n                    { srcPos = MkPositn\n                        { row = 1\n                        , col = 1\n                        }\n                    , typeLabel = Nothing\n                    , explnAnnot = Nothing\n                    }\n                ]\n            }\n        , isRight = MkExp\n            { exp = EAnd\n                { left = MkExp\n                    { exp = EOr\n                        { left = MkExp\n                            { exp = EVar\n                                { var = MkVar \"alcoholic\" }\n                            , md =\n                                [ MkExpMetadata\n                                    { srcPos = MkPositn\n                                        { row = 1\n                                        , col = 1\n                                        }\n                                    , typeLabel = Just\n                                        ( FromUser\n                                            ( L4EntType \"Boolean\" )\n                                        )\n                                    , explnAnnot = Nothing\n                                    }\n                                ]\n                            }\n                        , right = MkExp\n                            { exp = EOr\n                                { left = MkExp\n                                    { exp = EVar\n                                        { var = MkVar \"non-alcoholic\" }\n                                    , md =\n                                        [ MkExpMetadata\n                                            { srcPos = MkPositn\n                                                { row = 1\n                                                , col = 1\n                                                }\n                                            , typeLabel = Just\n                                                ( FromUser\n                                                    ( L4EntType \"Boolean\" )\n                                                )\n                                            , explnAnnot = Nothing\n                                            }\n                                        ]\n                                    }\n                                , right = MkExp\n                                    { exp = EEmpty\n                                    , md = []\n                                    }\n                                }\n                            , md = []\n                            }\n                        }\n                    , md =\n                        [ MkExpMetadata\n                            { srcPos = MkPositn\n                                { row = 1\n                                , col = 1\n                                }\n                            , typeLabel = Just\n                                ( Inferred \"Boolean\" )\n                            , explnAnnot = Nothing\n                            }\n                        ]\n                    }\n                , right = MkExp\n                    { exp = EAnd\n                        { left = MkExp\n                            { exp = EOr\n                                { left = MkExp\n                                    { exp = EVar\n                                        { var = MkVar \"in part\" }\n                                    , md =\n                                        [ MkExpMetadata\n                                            { srcPos = MkPositn\n                                                { row = 1\n                                                , col = 1\n                                                }\n                                            , typeLabel = Just\n                                                ( FromUser\n                                                    ( L4EntType \"Boolean\" )\n                                                )\n                                            , explnAnnot = Nothing\n                                            }\n                                        ]\n                                    }\n                                , right = MkExp\n                                    { exp = EOr\n                                        { left = MkExp\n                                            { exp = EVar\n                                                { var = MkVar \"in whole\" }\n                                            , md =\n                                                [ MkExpMetadata\n                                                    { srcPos = MkPositn\n                                                        { row = 1\n                                                        , col = 1\n                                                        }\n                                                    , typeLabel = Just\n                                                        ( FromUser\n                                                            ( L4EntType \"Boolean\" )\n                                                        )\n                                                    , explnAnnot = Nothing\n                                                    }\n                                                ]\n                                            }\n                                        , right = MkExp\n                                            { exp = EEmpty\n                                            , md = []\n                                            }\n                                        }\n                                    , md = []\n                                    }\n                                }\n                            , md =\n                                [ MkExpMetadata\n                                    { srcPos = MkPositn\n                                        { row = 1\n                                        , col = 1\n                                        }\n                                    , typeLabel = Just\n                                        ( Inferred \"Boolean\" )\n                                    , explnAnnot = Nothing\n                                    }\n                                ]\n                            }\n                        , right = MkExp\n                            { exp = EEmpty\n                            , md = []\n                            }\n                        }\n                    , md = []\n                    }\n                }\n            , md = []\n            }\n        }\n    , md = []\n    }\n, MkExp\n    { exp = EIs\n        { isLeft = MkExp\n            { exp = EVar\n                { var = MkVar \"Qualifies\" }\n            , md =\n                [ MkExpMetadata\n                    { srcPos = MkPositn\n                        { row = 1\n                        , col = 1\n                        }\n                    , typeLabel = Nothing\n                    , explnAnnot = Nothing\n                    }\n                ]\n            }\n        , isRight = MkExp\n            { exp = EAnd\n                { left = MkExp\n                    { exp = EVar\n                        { var = MkVar \"walks\" }\n                    , md =\n                        [ MkExpMetadata\n                            { srcPos = MkPositn\n                                { row = 1\n                                , col = 1\n                                }\n                            , typeLabel = Just\n                                ( FromUser\n                                    ( L4EntType \"Boolean\" )\n                                )\n                            , explnAnnot = Nothing\n                            }\n                        ]\n                    }\n                , right = MkExp\n                    { exp = EAnd\n                        { left = MkExp\n                            { exp = EOr\n                                { left = MkExp\n                                    { exp = EVar\n                                        { var = MkVar \"Drinks\" }\n                                    , md =\n                                        [ MkExpMetadata\n                                            { srcPos = MkPositn\n                                                { row = 1\n                                                , col = 1\n                                                }\n                                            , typeLabel = Nothing\n                                            , explnAnnot = Nothing\n                                            }\n                                        ]\n                                    }\n                                , right = MkExp\n                                    { exp = EOr\n                                        { left = MkExp\n                                            { exp = EVar\n                                                { var = MkVar \"eats\" }\n                                            , md =\n                                                [ MkExpMetadata\n                                                    { srcPos = MkPositn\n                                                        { row = 1\n                                                        , col = 1\n                                                        }\n                                                    , typeLabel = Just\n                                                        ( FromUser\n                                                            ( L4EntType \"Boolean\" )\n                                                        )\n                                                    , explnAnnot = Nothing\n                                                    }\n                                                ]\n                                            }\n                                        , right = MkExp\n                                            { exp = EEmpty\n                                            , md = []\n                                            }\n                                        }\n                                    , md = []\n                                    }\n                                }\n                            , md =\n                                [ MkExpMetadata\n                                    { srcPos = MkPositn\n                                        { row = 1\n                                        , col = 1\n                                        }\n                                    , typeLabel = Just\n                                        ( Inferred \"Boolean\" )\n                                    , explnAnnot = Nothing\n                                    }\n                                ]\n                            }\n                        , right = MkExp\n                            { exp = EEmpty\n                            , md = []\n                            }\n                        }\n                    , md = []\n                    }\n                }\n            , md = []\n            }\n        }\n    , md = []\n    }\n]\nglobalVars = MkGlobalVars\n    ( fromList\n        [\n            ( MkVar \"alcoholic\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ,\n            ( MkVar \"walks\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ,\n            ( MkVar \"non-alcoholic\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ,\n            ( MkVar \"in whole\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ,\n            ( MkVar \"drinks\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ,\n            ( MkVar \"in part\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ,\n            ( MkVar \"eats\"\n            , Just\n                ( L4EntType \"Boolean\" )\n            )\n        ]\n    )\ngiveths = []\nuserFuns = fromList []", [])
+
 mustsing5Gold :: ([Expr Double], MyState)
-mustsing5Gold = ([MathPred (PredFold (Just "Qualifies") PLAnd [PredVar "walks",PredFold Nothing PLAnd [PredFold Nothing PLOr [PredVar "Drinks",PredVar "eats"]]]),MathPred (PredFold (Just "Drinks") PLAnd [PredFold Nothing PLOr [PredVar "alcoholic",PredVar "non-alcoholic"],PredFold Nothing PLAnd [PredFold Nothing PLOr [PredVar "in part",PredVar "in whole"]]])], emptyState {symtabF = Map.fromList [("What does it mean to drink?",MathPred (PredSet "Drinks" (PredFold (Just "Drinks") PLAnd [PredFold Nothing PLOr [PredVar "alcoholic",PredVar "non-alcoholic"],PredFold Nothing PLAnd [PredFold Nothing PLOr [PredVar "in part",PredVar "in whole"]]])))], symtabP = Map.fromList [("Qualifies",PredFold (Just "Qualifies") PLAnd [PredVar "walks",PredFold Nothing PLAnd [PredFold Nothing PLOr [PredVar "Drinks",PredVar "eats"]]]),("Drinks",PredFold (Just "Drinks") PLAnd [PredFold Nothing PLOr [PredVar "alcoholic",PredVar "non-alcoholic"],PredFold Nothing PLAnd [PredFold Nothing PLOr [PredVar "in part",PredVar "in whole"]]])]})
+mustsing5Gold = (
+  [ MathPred
+    ( PredFold
+        ( Just "Qualifies" ) PLAnd
+        [ PredVar "walks"
+        , PredFold Nothing PLAnd
+            [ PredFold Nothing PLOr
+                [ PredVar "Drinks"
+                , PredVar "eats"
+                ]
+            ]
+        ]
+    )
+  , MathPred
+    ( PredFold
+        ( Just "Drinks" ) PLAnd
+        [ PredFold Nothing PLOr
+            [ PredVar "alcoholic"
+            , PredVar "non-alcoholic"
+            ]
+        , PredFold Nothing PLAnd
+            [ PredFold Nothing PLOr
+                [ PredVar "in part"
+                , PredVar "in whole"
+                ]
+            ]
+        ]
+    )
+  ],
+  emptyState
+    { symtabP = Map.fromList [
+          ( "Qualifies"
+          , PredFold
+              ( Just "Qualifies" ) PLAnd
+              [ PredVar "walks"
+              , PredFold Nothing PLAnd
+                  [ PredFold Nothing PLOr
+                      [ PredVar "Drinks"
+                      , PredVar "eats"
+                      ]
+                  ]
+              ]
+          )
+      ,
+          ( "Drinks"
+          , PredFold
+              ( Just "Drinks" ) PLAnd
+              [ PredFold Nothing PLOr
+                  [ PredVar "alcoholic"
+                  , PredVar "non-alcoholic"
+                  ]
+              , PredFold Nothing PLAnd
+                  [ PredFold Nothing PLOr
+                      [ PredVar "in part"
+                      , PredVar "in whole"
+                      ]
+                  ]
+              ]
+          )
+      ]
+  })
+
+mustsing5GoldExpanded = ([MathPred pred] , emptyState {symtabP = Map.singleton "Qualifies" pred})
+  where
+    pred = PredFold ( Just "Qualifies" ) PLAnd
+        [ PredVar "walks"
+        , PredFold Nothing PLAnd
+            [ PredFold Nothing PLOr
+                [ PredFold ( Just "Drinks" ) PLAnd
+                    [ PredFold Nothing PLOr
+                        [ PredVar "alcoholic"
+                        , PredVar "non-alcoholic" ]
+                    , PredFold Nothing PLAnd
+                        [ PredFold Nothing PLOr
+                            [ PredVar "in part"
+                            , PredVar "in whole" ]
+                        ]
+                    ]
+                , PredVar "eats"
+                ]
+            ]
+        ]
 
 mustsing5GoldTS :: (String, [String])
-mustsing5GoldTS = ("export const Qualifies = () => {return new tsm.BoolFold ( \"Qualifies\"\n                 , tsm.BoolFoldOp.All\n                 , [ new tsm.GetVar (\"walks\")\n                     , new tsm.BoolFold ( \"any/all\"\n                                        , tsm.BoolFoldOp.All\n                                        , [ new tsm.BoolFold ( \"any/all\"\n                                                             , tsm.BoolFoldOp.Any\n                                                             , [ new tsm.GetVar (\"Drinks\")\n                                                                 , new tsm.GetVar (\"eats\") ] ) ] ) ] )}\nexport const Drinks = () => {return new tsm.BoolFold ( \"Drinks\"\n                 , tsm.BoolFoldOp.All\n                 , [ new tsm.BoolFold ( \"any/all\"\n                                      , tsm.BoolFoldOp.Any\n                                      , [ new tsm.GetVar (\"an alcoholic beverage\")\n                                          , new tsm.GetVar (\"a non-alcoholic beverage\") ] )\n                     , new tsm.BoolFold ( \"any/all\"\n                                        , tsm.BoolFoldOp.All\n                                        , [ new tsm.BoolFold ( \"any/all\"\n                                                             , tsm.BoolFoldOp.Any\n                                                             , [ new tsm.GetVar (\"in part\")\n                                                                 , new tsm.GetVar (\"in whole\") ] ) ] ) ] )}\n", [])
+mustsing5GoldTS = ("export const Qualifies = () => {return new tsm.BoolFold ( \"Qualifies\"\n                 , tsm.BoolFoldOp.All\n                 , [ new tsm.GetVar (\"walks\")\n                     , new tsm.BoolFold ( \"any/all\"\n                                        , tsm.BoolFoldOp.All\n                                        , [ new tsm.BoolFold ( \"any/all\"\n                                                             , tsm.BoolFoldOp.Any\n                                                             , [ new tsm.BoolFold ( \"Drinks\"\n                                                                                  , tsm.BoolFoldOp.All\n                                                                                  , [ new tsm.BoolFold ( \"any/all\"\n                                                                                                       , tsm.BoolFoldOp.Any\n                                                                                                       , [ new tsm.GetVar (\"alcoholic\")\n                                                                                                           , new tsm.GetVar (\"non-alcoholic\") ] )\n                                                                                      , new tsm.BoolFold ( \"any/all\"\n                                                                                                         , tsm.BoolFoldOp.All\n                                                                                                         , [ new tsm.BoolFold ( \"any/all\"\n                                                                                                                              , tsm.BoolFoldOp.Any\n                                                                                                                              , [ new tsm.GetVar (\"in part\")\n                                                                                                                                  , new tsm.GetVar (\"in whole\") ] ) ] ) ] )\n                                                                 , new tsm.GetVar (\"eats\") ] ) ] ) ] )}\n", [])
 
 pauGoldTS :: (String, [String])
 pauGoldTS = ("export const How_Much_Money_Do_You_Get = () => {return new tsm.SetVar (\"How Much Money Do You Get\", (new tsm.GetVar (\"PAU0\")).val)}\nexport const Step_1 = () => {return new tsm.SetVar ( \"Step 1\"\n               , (new tsm.Bool3 ( \"Step 1\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"there were past ADD payouts\")\n                                , new tsm.GetVar (\"claimable limited base ADD benefit\")\n                                , new tsm.GetVar (\"base ADD benefit\") )).val )}\nexport const claimable_limited_base_ADD_benefit = () => {return new tsm.SetVar ( \"claimable limited base ADD benefit\"\n               , (new tsm.Num2 ( \"claimable limited base ADD benefit\"\n                               , tsm.NumBinOp.Sub\n                               , new tsm.GetVar (\"claimable limit\")\n                               , new tsm.GetVar (\"policyHolder.past ADD payouts\") )).val )}\nexport const Step_3 = () => {return new tsm.SetVar ( \"Step 3\"\n               , (new tsm.GetVar (\"multiplied by double triple benefit\")).val )}\nexport const juvenile_limited = () => {return new tsm.SetVar ( \"juvenile limited\"\n               , (new tsm.Num2 ( \"juvenile limited\"\n                               , tsm.NumBinOp.MinOf2\n                               , new tsm.GetVar (\"Part 1\")\n                               , new tsm.GetVar (\"juvenile limit\") )).val )}\nexport const ADD_benefit = () => {return new tsm.SetVar ( \"ADD benefit\"\n               , (new tsm.Num2 ( \"ADD benefit\"\n                               , tsm.NumBinOp.MinOf2\n                               , new tsm.Num2 ( \"binop Plus\"\n                                              , tsm.NumBinOp.Add\n                                              , new tsm.GetVar (\"addBenefit\")\n                                              , new tsm.GetVar (\"otherBenefits\") )\n                               , new tsm.GetVar (\"risk cap\") )).val )}\nexport const addBenefit = () => {return new tsm.SetVar (\"addBenefit\", (new tsm.GetVar (\"PAU4\")).val)}\nexport const The_Answer = () => {return new tsm.SetVar ( \"The Answer\"\n               , (new tsm.Bool3 ( \"The Answer\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"user input.accident_claim.selected\")\n                                , new tsm.GetVar (\"accident branch\")\n                                , new tsm.GetVar (\"illness branch\") )).val )}\nexport const accident_branch = () => {return new tsm.SetVar ( \"accident branch\"\n               , (new tsm.Bool3 ( \"accident branch\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"ADD is disqualified entirely\")\n                                , new tsm.GetVar (\"excludedZero\")\n                                , new tsm.GetVar (\"ADD benefit\") )).val )}\nexport const illness = () => {return new tsm.SetVar ( \"illness\"\n               , (new tsm.Bool3 ( \"illness\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.BoolFold ( \"any/all\"\n                                                   , tsm.BoolFoldOp.Any\n                                                   , [ new tsm.GetVar (\"illness.general exclusions apply\")\n                                                       , new tsm.GetVar (\"policy.ended\") ] )\n                                , new tsm.GetVar (\"disqualified\")\n                                , new tsm.Num0 ( \"No otherwise case\"\n                                               , undefined ) )).val )}\nexport const policyHolder.age = () => {return new tsm.SetVar ( \"policyHolder.age\"\n               , (new tsm.Num0 (\"policyHolder.age\", 50.0)).val )}\nexport const PAU4 = () => {return new tsm.SetVar (\"PAU4\", (new tsm.GetVar (\"Step 1\")).val)}\nexport const Step_2 = () => {return new tsm.SetVar ( \"Step 2\"\n               , (new tsm.Bool3 ( \"Step 2\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"accident.juvenile limit applies\")\n                                , new tsm.GetVar (\"juvenile limited\")\n                                , new tsm.GetVar (\"Step 1\") )).val )}\nexport const multiplied_by_double_triple_benefit = () => {return new tsm.SetVar ( \"multiplied by double triple benefit\"\n               , (new tsm.Bool3 ( \"multiplied by double triple benefit\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"accident.triple benefits apply\")\n                                , new tsm.Num2 ( \"multiplied by double triple benefit\"\n                                               , tsm.NumBinOp.Mul\n                                               , new tsm.GetVar (\"Step 2\")\n                                               , new tsm.Num0 (\"3.0\", 3.0) )\n                                , new tsm.Bool3 ( \"if-then-else\"\n                                                , tsm.BoolTriOp.IfThenElse\n                                                , new tsm.GetVar (\"accident.double benefits apply\")\n                                                , new tsm.Num2 ( \"multiplied by double triple benefit\"\n                                                               , tsm.NumBinOp.Mul\n                                                               , new tsm.GetVar (\"Step 2\")\n                                                               , new tsm.Num0 ( \"2.0\"\n                                                                              , 2.0 ) )\n                                                , new tsm.GetVar (\"Step 2\") ) )).val )}\nexport const PAU0 = () => {return new tsm.SetVar (\"PAU0\", (new tsm.GetVar (\"The Answer\")).val)}\nexport const Step_4 = () => {return new tsm.SetVar ( \"Step 4\"\n               , (new tsm.GetVar (\"Step 3 discounted by accident.risk percentage\")).val )}\nexport const claimable_limit = () => {return new tsm.SetVar ( \"claimable limit\"\n               , (new tsm.Num2 ( \"claimable limit\"\n                               , tsm.NumBinOp.MinOf2\n                               , new tsm.Num2 ( \"binop Times\"\n                                              , tsm.NumBinOp.Mul\n                                              , new tsm.Num0 (\"1.5\", 1.5)\n                                              , new tsm.GetVar (\"total sum assured\") )\n                               , new tsm.GetVar (\"lifetime claimable limit\") )).val )}\nexport const base_ADD_benefit = () => {return new tsm.SetVar (\"base ADD benefit\", (new tsm.GetVar (\"policy.benADD\")).val)}\nexport const Step_3_discounted_by_accident.risk_percentage = () => {return new tsm.SetVar ( \"Step 3 discounted by accident.risk percentage\"\n               , (new tsm.Num2 ( \"Step 3 discounted by accident.risk percentage\"\n                               , tsm.NumBinOp.Mul\n                               , new tsm.GetVar (\"Step 3\")\n                               , new tsm.Num2 ( \"binop Minus\"\n                                              , tsm.NumBinOp.Sub\n                                              , new tsm.Num0 (\"1.0\", 1.0)\n                                              , new tsm.GetVar (\"accident.risk percentage\") ) )).val )}\nexport const otherBenefits = () => {return new tsm.SetVar (\"otherBenefits\", (new tsm.Num0 (\"otherBenefits\", 50.0)).val)}\nexport const excludedZero = () => {return new tsm.SetVar (\"excludedZero\", (new tsm.Num0 (\"excludedZero\", 0.0)).val)}\nexport const lifetime_claimable_limit = () => {return new tsm.SetVar ( \"lifetime claimable limit\"\n               , (new tsm.Num0 (\"lifetime claimable limit\", 4500000.0)).val )}\nexport const juvenile_limit = () => {return new tsm.SetVar ( \"juvenile limit\"\n               , (new tsm.Num0 (\"juvenile limit\", 500000.0)).val )}\nexport const illness_branch = () => {return new tsm.SetVar ( \"illness branch\"\n               , (new tsm.Bool3 ( \"illness branch\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"illness.disqualified\")\n                                , new tsm.GetVar (\"excludedZero\")\n                                , new tsm.GetVar (\"policy.benMR\") )).val )}", [])

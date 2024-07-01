@@ -1,13 +1,9 @@
-## generated via `gen-hie` from the `implicit-hie` package
 cradle:
   stack:
     - path: "anyall/src"
       component: "anyall:lib"
 
-    - path: "anyall/app/Main.hs"
-      component: "anyall:exe:anyall-exe"
-
-    - path: "anyall/app/Paths_anyall.hs"
+    - path: "anyall/app/"
       component: "anyall:exe:anyall-exe"
 
     - path: "anyall/test"
@@ -16,10 +12,7 @@ cradle:
     - path: "explainable/src"
       component: "explainable:lib"
 
-    - path: "explainable/app/Main.hs"
-      component: "explainable:exe:explainable-exe"
-
-    - path: "explainable/app/Paths_explainable.hs"
+    - path: "explainable/app/"
       component: "explainable:exe:explainable-exe"
 
     - path: "explainable/test"
@@ -28,10 +21,7 @@ cradle:
     - path: "natural4/src"
       component: "natural4:lib"
 
-    - path: "natural4/app/Main.hs"
-      component: "natural4:exe:natural4-exe"
-
-    - path: "natural4/app/Paths_natural4.hs"
+    - path: "natural4/app"
       component: "natural4:exe:natural4-exe"
 
     - path: "natural4/test/doctests"
@@ -40,8 +30,5 @@ cradle:
     - path: "natural4/test"
       component: "natural4:test:natural4-test"
 
-    - path: "natural4/benchmarks/Bench.hs"
-      component: "natural4:bench:natural4-bench"
-
-    - path: "natural4/benchmarks/Paths_natural4.hs"
+    - path: "natural4/benchmarks"
       component: "natural4:bench:natural4-bench"

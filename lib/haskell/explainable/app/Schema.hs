@@ -17,7 +17,7 @@ import Data.OpenApi
 import Data.Proxy
 import Data.Text qualified as Text
 import Servant.OpenApi
-import Server hiding (name, description)
+import Server hiding (description, name)
 import Test.Hspec (hspec)
 import Test.QuickCheck (Arbitrary (..), oneof)
 import Test.QuickCheck.Instances ()
@@ -54,7 +54,7 @@ instance ToSchema SimpleFunction where
                  )
                ]
 
-          -- & required .~ ["name", "description"]
+-- & required .~ ["name", "description"]
 
 -- This is correct, since we don't overwrite the
 -- 'ToJSON SimpleResponse' instance yet.
@@ -74,16 +74,21 @@ instance ToSchema SimpleResponse
 instance ToSchema Arguments where
   declareNamedSchema _ = do
     fvRef <- declareSchemaRef (Proxy @FlatValue)
-    pure $ NamedSchema (Just "Arguments")
-      $ toSchema (Proxy @(Map Text.Text FlatValue))
-      & additionalProperties ?~ AdditionalPropertiesSchema fvRef
-      & example
-        ?~ Aeson.object
-          [ "walks" .= False
-          , "eats" .= True
-          , "drinks" .= False
-          , "drinks_amount" .= Aeson.Number 5.0
-          ]
+    pure $
+      NamedSchema (Just "Arguments") $
+        toSchema (Proxy @(Map Text.Text FlatValue))
+          & type_ ?~ OpenApiObject
+          & additionalProperties ?~ AdditionalPropertiesSchema fvRef
+          & properties
+            .~ [ ("prop", fvRef)
+               ]
+          & example
+            ?~ Aeson.object
+              [ "walks" .= False
+              , "eats" .= True
+              , "drinks" .= False
+              , "drinks_amount" .= Aeson.Number 5.0
+              ]
 
 instance ToParamSchema FlatValue where
   toParamSchema _ =
@@ -134,10 +139,14 @@ instance ToSchema Function where
 
 instance ToSchema Parameters where
   declareNamedSchema _ = do
+    parameterSchema <- declareSchemaRef (Proxy @Parameter)
     mapSchema <- declareNamedSchema (Proxy @(Map String Parameter))
     pure $
       mapSchema
         & name ?~ "Function Parameters"
+        & schema . properties
+          .~ [ ("prop", parameterSchema)
+             ]
 
 instance ToSchema Parameter where
   declareNamedSchema _ = do

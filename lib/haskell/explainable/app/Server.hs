@@ -9,8 +9,12 @@
 module Server (
   -- * REST API
   Api,
-  SingleFunctionApi (..),
-  FunctionCrud (..),
+  FunctionApi,
+  FunctionApi'(..),
+  SingleFunctionApi,
+  SingleFunctionApi' (..),
+  FunctionCrud,
+  FunctionCrud'(..),
   handler,
 
   -- * API json types
@@ -43,20 +47,24 @@ import System.Timeout (timeout)
 -- Servant API
 -- ----------------------------------------------------------------------------
 
-type Api = NamedRoutes FunctionApi
+type Api = NamedRoutes FunctionApi'
+type FunctionApi = NamedRoutes FunctionApi'
 
-data FunctionApi mode = FunctionApi
-  { functionRoutes :: mode :- "functions" :> NamedRoutes FunctionCrud
+data FunctionApi' mode = FunctionApi
+  { functionRoutes :: mode :- "functions" :> FunctionCrud
   }
   deriving (Generic)
 
-data FunctionCrud mode = FunctionCrud
+type FunctionCrud = NamedRoutes FunctionCrud'
+data FunctionCrud' mode = FunctionCrud
   { getAllFunctions :: mode :- Get '[JSON] [SimpleFunction]
-  , crud :: mode :- Capture "name" String :> NamedRoutes SingleFunctionApi
+  , crud :: mode :- Capture "name" String :> SingleFunctionApi
   }
   deriving (Generic)
 
-data SingleFunctionApi mode = SingleFunctionApi
+
+type SingleFunctionApi = NamedRoutes SingleFunctionApi'
+data SingleFunctionApi' mode = SingleFunctionApi
   { getFunction :: mode :- Get '[JSON] Function
   , postFunction :: mode :- ReqBody '[JSON] Arguments :> Post '[JSON] SimpleResponse
   }
@@ -160,6 +168,10 @@ timeoutAction act =
 instance FromJSON FlatValue where
   parseJSON (Aeson.Number sci) = pure $ Number $ toRealFloat sci
   parseJSON (Aeson.Bool b) = pure $ Boolean b
+  parseJSON o@(Aeson.String s) = case Text.toLower s of
+    "true" -> pure $ Boolean True
+    "false" -> pure $ Boolean False
+    _ -> Aeson.parseFail $ "Unexpected value, expected Number or Bool but got: " <> show o
   parseJSON o =
     Aeson.parseFail $ "Unexpected value, expected Number or Bool but got: " <> show o
 
@@ -291,7 +303,7 @@ personQualifies :: Expr Double
 personQualifies =
   "qualifies"
     @|= MathPred
-      ( (getvar "walks") |&& ((getvar "drinks") ||| (getvar "eats"))
+      ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
       )
 
 personQualifiesFunction :: Function

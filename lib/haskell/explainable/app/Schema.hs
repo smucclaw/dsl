@@ -17,17 +17,7 @@ import Data.OpenApi
 import Data.Proxy
 import Data.Text qualified as Text
 import Servant.OpenApi
-import Server (
-  Api,
-  Arguments,
-  FlatValue,
-  Function,
-  Parameter,
-  Parameters,
-  SimpleFunction,
-  SimpleResponse,
- )
-import Server qualified
+import Server hiding (name, description)
 import Test.Hspec (hspec)
 import Test.QuickCheck (Arbitrary (..), oneof)
 import Test.QuickCheck.Instances ()

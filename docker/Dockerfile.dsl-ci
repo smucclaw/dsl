@@ -7,5 +7,4 @@ RUN apt update; \
     libpcre3-dev
 
 RUN cd ./natural4 \
-    && stack build \
     && stack install

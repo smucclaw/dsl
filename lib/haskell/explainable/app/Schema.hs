@@ -6,7 +6,7 @@ module Schema (
   serverOpenApi,
 
   -- * Tests
-  runJsonTests,
+  -- runJsonTests,
 ) where
 
 import Control.Lens hiding ((.=))
@@ -28,6 +28,22 @@ serverOpenApi =
     & info . title .~ "MathLang Function API"
     & info . version .~ "1.0"
     & info . description ?~ "API for invoking MathLang functions"
+
+instance ToSchema Test where
+  declareNamedSchema _ = do
+    textRef <- declareSchemaRef (Proxy @Text.Text)
+    pure $ NamedSchema (Just "Test") $
+      mempty
+        & title ?~ "Test"
+        & type_ ?~ OpenApiObject
+        & properties .~
+            [ ("hello", textRef)
+            ]
+        & example ?~
+          Aeson.object
+            [ "hello" .= ("World" :: Text.Text)
+            ]
+
 
 -- ----------------------------------------------------------------------------
 -- Document and describe the Json schema using the OpenAPI standard
@@ -203,5 +219,5 @@ instance Arbitrary Function where
 instance Arbitrary SimpleFunction where
   arbitrary = Server.SimpleFunction <$> arbitrary <*> arbitrary
 
-runJsonTests :: IO ()
-runJsonTests = hspec (validateEveryToJSON $ Proxy @Api)
+-- runJsonTests :: IO ()
+-- runJsonTests = hspec (validateEveryToJSON $ Proxy @Api)

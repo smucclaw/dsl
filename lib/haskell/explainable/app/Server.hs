@@ -16,6 +16,8 @@ module Server (
   FunctionCrud,
   FunctionCrud'(..),
   handler,
+  -- * Debugging stuff
+  Test(..),
 
   -- * API json types
   FlatValue (..),
@@ -52,8 +54,15 @@ type FunctionApi = NamedRoutes FunctionApi'
 
 data FunctionApi' mode = FunctionApi
   { functionRoutes :: mode :- "functions" :> FunctionCrud
+  , debugPoints :: mode :- ReqBody '[JSON] Test :> Post '[JSON] Text.Text
   }
   deriving (Generic)
+
+data Test = Test
+  { hello :: Text.Text
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (ToJSON, FromJSON)
 
 type FunctionCrud = NamedRoutes FunctionCrud'
 data FunctionCrud' mode = FunctionCrud
@@ -123,6 +132,8 @@ handler =
                     handlerFunction name
                 }
           }
+    , debugPoints = \h -> do
+        pure $ "Hello, " <> hello h
     }
 
 -- handlerFunctions :: Handler [SimpleFunction]

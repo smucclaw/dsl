@@ -139,7 +139,9 @@ spec = do
     it "should evaluate taxesPayable correctly when info is given" do
       let st' = st {
               symtabF = symtabF st <> [
-                ("annualIncome", Val (Just "annualIncome") 10000) ]
+                ("annualIncome", Val (Just "annualIncome") 10000),
+                ("netWorth", Val (Just "netWorth") 0)
+                ]
             , symtabP = [
                 ("vivacity", PredVal (Just "vivacity") True),
                 ("phaseOfMoon.waxing", PredVal (Just "phaseOfMoon.waxing") False),

@@ -159,7 +159,7 @@ library
     , mtl
     , nonempty-containers
     , optics
-    , optparse-generic
+    , optparse-applicative
     , parser-combinators
     , parsers
     , pcre-heavy
@@ -234,7 +234,7 @@ executable natural4-exe
     , natural4
     , nonempty-containers
     , optics
-    , optparse-generic
+    , optparse-applicative
     , parser-combinators
     , parsers
     , pcre-heavy
@@ -311,7 +311,7 @@ test-suite doctests
     , natural4
     , nonempty-containers
     , optics
-    , optparse-generic
+    , optparse-applicative
     , parser-combinators
     , parsers
     , pcre-heavy
@@ -414,7 +414,7 @@ test-suite natural4-test
     , natural4
     , nonempty-containers
     , optics
-    , optparse-generic
+    , optparse-applicative
     , parser-combinators
     , parsers
     , pcre-heavy
@@ -493,7 +493,7 @@ benchmark natural4-bench
     , natural4
     , nonempty-containers
     , optics
-    , optparse-generic
+    , optparse-applicative
     , parser-combinators
     , parsers
     , pcre-heavy

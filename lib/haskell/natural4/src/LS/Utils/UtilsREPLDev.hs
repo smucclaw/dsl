@@ -18,11 +18,10 @@ module LS.Utils.UtilsREPLDev
   )
 where
 
-import Data.Coerce (coerce)
 import Data.Maybe (listToMaybe)
 import Flow ((|>))
 import LS qualified
-import LS.Lib (NoLabel (..), Opts (..))
+import LS.Lib (Options(..), defaultOptions)
 import LS.Utils ((|$>))
 import System.FilePath.Find
   ( always,
@@ -80,12 +79,11 @@ l4csv2rules startdir csvFpath =
     \case
       Nothing -> error "Can't find file"
         -- remember, this is meant to be for internal use by a developer in the REPL
-      Just file -> LS.dumpRules
-                          Opts
-                            { file = coerce ([file] :: [FilePath]),
-                              dbug = False,
-                              dstream = False
-                            }
+      Just file ->
+        LS.dumpRules $
+          defaultOptions
+            { file = [file]
+            }
 
 {-| 
 Util function for __pretty printing (in color)__ raw rules from a L4 CSV filepath

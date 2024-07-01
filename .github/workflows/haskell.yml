@@ -1,9 +1,9 @@
 name: Haskell CI
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+    branches: [ main ]
+  push:
     branches: [ main ]
 
 permissions:
@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, macos-13]
+        os: [ubuntu-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -22,11 +22,8 @@ jobs:
       - uses: haskell-actions/setup@v2
         with:
           enable-stack: true
-          ghc-version: '9.10.1'
-          cabal-version: '3.10.3.0'
-          stack-version: '2.15.7'
 
-      - name: Cache
+      - name: Cache Haskell stack
         uses: actions/cache@v4
         env:
           cache-name: cache-stack

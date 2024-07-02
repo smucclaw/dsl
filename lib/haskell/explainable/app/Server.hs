@@ -51,6 +51,7 @@ import Explainable.MathLang
 import GHC.Generics
 import Servant
 import System.Timeout (timeout)
+import System.IO
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -61,7 +62,7 @@ type FunctionApi = NamedRoutes FunctionApi'
 
 data FunctionApi' mode = FunctionApi
   { functionRoutes :: mode :- "functions" :> FunctionCrud
-  , debugPoints :: mode :- ReqBody '[JSON] Test :> Post '[JSON] Text.Text
+  , debugPoints :: mode :- ReqBody' '[Optional] '[JSON] Test :> Post '[JSON] Text.Text
   }
   deriving (Generic)
 
@@ -81,6 +82,7 @@ data FunctionCrud' mode = FunctionCrud
           :> QueryParam "drinks" Bool
           :> QueryParam "eats" Bool
           :> QueryParam "walks" Bool
+          :> ReqBody '[JSON] (Maybe Arguments)
           :> Post '[JSON] SimpleResponse
   }
   deriving (Generic)
@@ -186,8 +188,9 @@ handlerFunctions = do
       , simpleDescription = description s
       }
 
-computeQualifiesHandler :: Maybe Bool -> Maybe Bool -> Maybe Bool -> Handler SimpleResponse
-computeQualifiesHandler drinks eats walks = do
+computeQualifiesHandler :: Maybe Bool -> Maybe Bool -> Maybe Bool -> Maybe Arguments -> Handler SimpleResponse
+computeQualifiesHandler drinks eats walks args = do
+  liftIO $ hPrint stderr $ show args
   let params =
         [("drinks", drinks), ("walks", walks), ("eats", eats)]
   case Map.lookup "compute_qualifies" functions of

@@ -1,0 +1,291 @@
+{
+  "components": {
+    "schemas": {
+      "Arguments": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/FlatValue"
+        },
+        "example": {
+          "drinks": false,
+          "drinks_amount": 5,
+          "eats": true,
+          "walks": false
+        },
+        "properties": {
+          "prop": {
+            "$ref": "#/components/schemas/FlatValue"
+          }
+        },
+        "type": "object"
+      },
+      "FlatValue": {
+        "oneOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "format": "double",
+            "type": "number"
+          }
+        ],
+        "title": "FlatValue",
+        "type": "string"
+      },
+      "Function": {
+        "properties": {
+          "function": {
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "parameters": {
+                "properties": {
+                  "properties": {
+                    "$ref": "#/components/schemas/FunctionParameters"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "title": "Function",
+        "type": "object"
+      },
+      "FunctionParameter": {
+        "example": {
+          "description": "Can a person walk?",
+          "enum": [
+            "true",
+            "false",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "enum": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "title": "Parameter",
+        "type": "object"
+      },
+      "FunctionParameters": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/FunctionParameter"
+        },
+        "properties": {
+          "prop": {
+            "$ref": "#/components/schemas/FunctionParameter"
+          }
+        },
+        "type": "object"
+      },
+      "SimpleResponse": {
+        "oneOf": [
+          {
+            "properties": {
+              "contents": {
+                "format": "double",
+                "type": "number"
+              },
+              "tag": {
+                "enum": [
+                  "SimpleResponse"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "tag",
+              "contents"
+            ],
+            "title": "SimpleResponse",
+            "type": "object"
+          },
+          {
+            "properties": {
+              "contents": {
+                "type": "string"
+              },
+              "tag": {
+                "enum": [
+                  "Insufficient"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "tag",
+              "contents"
+            ],
+            "title": "Insufficient",
+            "type": "object"
+          }
+        ]
+      },
+      "Test": {
+        "example": {
+          "hello": "World"
+        },
+        "properties": {
+          "hello": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hello"
+        ],
+        "title": "Test",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "API for invoking MathLang functions",
+    "title": "MathLang Function API",
+    "version": "1.0"
+  },
+  "servers": [
+    {"url": "https://olive.well-typed.com"}
+  ],
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "post": {
+        "operationId": "testEndpoint",
+        "requestBody": {
+          "content": {
+            "application/json;charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/Test"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid `body`"
+          }
+        }
+      }
+    },
+    "/functions": {
+      "get": {
+        "operationId": "getAllFunctions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Function"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/functions/{name}": {
+      "get": {
+        "operationId": "getFunctionByName",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Function"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "description": "`name` not found"
+          }
+        }
+      },
+      "post": {
+        "operationId": "runFunctionByName",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json;charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/Arguments"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid `body`"
+          },
+          "404": {
+            "description": "`name` not found"
+          }
+        }
+      }
+    }
+  }
+}

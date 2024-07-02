@@ -1,0 +1,399 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Server (
+  -- * REST API
+  Api,
+  FunctionApi,
+  FunctionApi' (..),
+  SingleFunctionApi,
+  SingleFunctionApi' (..),
+  FunctionCrud,
+  FunctionCrud' (..),
+  handler,
+
+  -- * Debugging stuff
+  Test (..),
+
+  -- * API json types
+  FlatValue (..),
+  Arguments (..),
+  Parameters (..),
+  Parameter (..),
+  Function (..),
+  SimpleFunction (..),
+  SimpleResponse (..),
+  Reasoning (..),
+  ReasoningTree (..),
+  ResponseWithReason (..),
+  MathLangException (..),
+) where
+
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Trans.Except
+import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
+import Data.Aeson qualified as Aeson
+import Data.Aeson.Types qualified as Aeson
+import Data.HashMap.Strict qualified as HashMap
+import Data.Map qualified as Map
+import Data.Maybe qualified as Maybe
+import Data.Scientific (toRealFloat)
+import Data.String.Interpolate (__i)
+import Data.Text qualified as Text
+import Data.Tree qualified as Tree
+import Explainable (XP)
+import Explainable.MathLang
+import GHC.Generics
+import Servant
+import System.Timeout (timeout)
+import System.IO
+
+-- ----------------------------------------------------------------------------
+-- Servant API
+-- ----------------------------------------------------------------------------
+
+type Api = NamedRoutes FunctionApi'
+type FunctionApi = NamedRoutes FunctionApi'
+
+data FunctionApi' mode = FunctionApi
+  { functionRoutes :: mode :- "functions" :> FunctionCrud
+  , debugPoints :: mode :- ReqBody' '[Optional] '[JSON] Test :> Post '[JSON] Text.Text
+  }
+  deriving (Generic)
+
+newtype Test = Test
+  { hello :: Text.Text
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+type FunctionCrud = NamedRoutes FunctionCrud'
+data FunctionCrud' mode = FunctionCrud
+  { getAllFunctions :: mode :- Get '[JSON] [SimpleFunction]
+  , crud :: mode :- Capture "name" String :> SingleFunctionApi
+  , computeQualifiesFunc ::
+      mode
+        :- "compute_qualifies"
+          :> QueryParam "drinks" Bool
+          :> QueryParam "eats" Bool
+          :> QueryParam "walks" Bool
+          :> ReqBody '[JSON] (Maybe Arguments)
+          :> Post '[JSON] SimpleResponse
+  }
+  deriving (Generic)
+
+type SingleFunctionApi = NamedRoutes SingleFunctionApi'
+data SingleFunctionApi' mode = SingleFunctionApi
+  { getFunction :: mode :- Get '[JSON] Function
+  }
+  deriving (Generic)
+
+data FlatValue
+  = Number Double
+  | Boolean Bool
+  deriving (Show, Read, Ord, Eq, Generic)
+
+newtype Arguments = Arguments
+  { mkArguments :: Map.Map Text.Text FlatValue
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving newtype (ToJSON, FromJSON)
+
+data SimpleResponse
+  = SimpleResponse ResponseWithReason
+  | SimpleError MathLangException
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+newtype MathLangException = MathLangException
+  { getMathLangException :: Text.Text
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+data ResponseWithReason = ResponseWithReason
+  { responseValue :: Double
+  , responseReasoning :: Reasoning
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+data SimpleFunction = SimpleFunction
+  { simpleName :: Text.Text
+  , simpleDescription :: Text.Text
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+
+data Function = Function
+  { name :: Text.Text
+  , description :: Text.Text
+  , parameters :: Parameters
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+
+newtype Parameters = Parameters
+  { mkParameters :: Map.Map String Parameter
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+
+newtype Reasoning = Reasoning
+  { getReasoning :: ReasoningTree
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+-- | Basically a rose tree, but serialisable to json and specialised to our purposes.
+data ReasoningTree = ReasoningTree
+  { reasoningNodeExampleCode :: [Text.Text]
+  , reasoningNodeExplanation :: [Text.Text]
+  , reasoningNodeChildren :: [ReasoningTree]
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+-- ----------------------------------------------------------------------------
+-- Web Service Handlers
+-- ----------------------------------------------------------------------------
+
+handler :: Server Api
+handler =
+  FunctionApi
+    { functionRoutes =
+        FunctionCrud
+          { getAllFunctions = handlerFunctions
+          , crud = \name ->
+              SingleFunctionApi
+                { getFunction =
+                    handlerParameters name
+                }
+          , computeQualifiesFunc =
+              computeQualifiesHandler
+          }
+    , debugPoints = \h -> do
+        pure $ "Hello, " <> hello h
+    }
+
+handlerFunctions :: Handler [SimpleFunction]
+handlerFunctions = do
+  pure $ fmap (toSimpleFunction . snd) $ Map.elems functions
+ where
+  toSimpleFunction s =
+    SimpleFunction
+      { simpleName = name s
+      , simpleDescription = description s
+      }
+
+computeQualifiesHandler :: Maybe Bool -> Maybe Bool -> Maybe Bool -> Maybe Arguments -> Handler SimpleResponse
+computeQualifiesHandler drinks eats walks args = do
+  liftIO $ hPrint stderr $ show args
+  let params =
+        [("drinks", drinks), ("walks", walks), ("eats", eats)]
+  case Map.lookup "compute_qualifies" functions of
+    Nothing -> throwError err404
+    Just (function, _) ->
+      case runExcept $ fromParams params of
+        Left err ->
+          pure $ SimpleError $ MathLangException err
+        Right s -> do
+          response <- timeoutAction $ runFunction s function
+          pure $ SimpleResponse response
+
+handlerParameters :: String -> Handler Function
+handlerParameters name = case Map.lookup name functions of
+  Nothing -> throwError err404
+  Just (_, scenario) -> pure scenario
+
+timeoutAction :: IO b -> Handler b
+timeoutAction act =
+  liftIO (timeout (seconds 5) act) >>= \case
+    Nothing -> throwError err505
+    Just r -> pure r
+ where
+  seconds n = 1_000_000 * n
+
+-- ----------------------------------------------------------------------------
+-- Json encoders and decoders that are not derived.
+-- We often need custom instances, as we want to be more lenient in what we accept
+-- than what aeson does by default. Further, we try to provide a specific json schema
+--
+-- ----------------------------------------------------------------------------
+
+instance FromJSON FlatValue where
+  parseJSON (Aeson.Number sci) = pure $ Number $ toRealFloat sci
+  parseJSON (Aeson.Bool b) = pure $ Boolean b
+  parseJSON o@(Aeson.String s) = case Text.toLower s of
+    "true" -> pure $ Boolean True
+    "false" -> pure $ Boolean False
+    _ -> Aeson.parseFail $ "Unexpected value, expected Number or Bool but got: " <> show o
+  parseJSON o =
+    Aeson.parseFail $ "Unexpected value, expected Number or Bool but got: " <> show o
+
+instance ToJSON FlatValue where
+  toJSON (Number sci) = Aeson.Number $ fromRational $ toRational sci
+  toJSON (Boolean b) = Aeson.Bool b
+
+instance ToJSON SimpleFunction where
+  toJSON (SimpleFunction n desc) =
+    Aeson.object
+      [ "type" .= Aeson.String "function"
+      , "function"
+          .= Aeson.object
+            [ "name" .= Aeson.String n
+            , "description" .= Aeson.String desc
+            ]
+      ]
+
+instance FromJSON SimpleFunction where
+  parseJSON = Aeson.withObject "Function" $ \o -> do
+    _ :: Text.Text <- o .: "type"
+    props <- o .: "function"
+    (n, d) <-
+      Aeson.withObject
+        "function body"
+        ( \p -> do
+            (,)
+              <$> p .: "name"
+              <*> p .: "description"
+        )
+        props
+    pure $ SimpleFunction n d
+
+instance ToJSON Function where
+  toJSON (Function n desc params) =
+    Aeson.object
+      [ "type" .= Aeson.String "function"
+      , "function"
+          .= Aeson.object
+            [ "name" .= Aeson.String n
+            , "description" .= Aeson.String desc
+            , "parameters" .= params
+            ]
+      ]
+
+instance FromJSON Function where
+  parseJSON = Aeson.withObject "Function" $ \o -> do
+    _ :: Text.Text <- o .: "type"
+    props <- o .: "function"
+    (n, d, p) <-
+      Aeson.withObject
+        "function body"
+        ( \p -> do
+            (,,)
+              <$> p .: "name"
+              <*> p .: "description"
+              <*> p .: "parameters"
+        )
+        props
+    pure $ Function n d p
+
+instance ToJSON Parameters where
+  toJSON (Parameters props) =
+    Aeson.object
+      [ "type" .= Aeson.String "object"
+      , "properties" .= props
+      ]
+
+instance FromJSON Parameters where
+  parseJSON = Aeson.withObject "Parameters" $ \o -> do
+    _ :: Text.Text <- o .: "type"
+    props <- o .: "properties"
+    pure $ Parameters props
+
+data Parameter = Parameter
+  { parameterType :: String
+  , parameterEnum :: [String]
+  , parameterDescription :: String
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+
+instance ToJSON Parameter where
+  toJSON (Parameter ty enum desc) =
+    Aeson.object
+      [ "type" .= ty
+      , "enum" .= enum
+      , "description" .= desc
+      ]
+
+instance FromJSON Parameter where
+  parseJSON = Aeson.withObject "Parameter" $ \p ->
+    Parameter
+      <$> p .: "type"
+      <*> p .: "enum"
+      <*> p .: "description"
+
+-- ----------------------------------------------------------------------------
+-- Helpers
+-- ----------------------------------------------------------------------------
+
+runFunction :: (MonadIO m) => MyState -> Expr Double -> m ResponseWithReason
+runFunction s scenario = do
+  (res, xp, _, _) <- liftIO $ xplainF () s scenario
+  pure $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
+
+fromParams :: [(Text.Text, Maybe Bool)] -> Except Text.Text MyState
+fromParams attrs = do
+  let predMap = Maybe.mapMaybe (\(lbl, value) -> value >>= pure . (Text.unpack lbl,) . PredVal Nothing) attrs
+  pure $
+    emptyState
+      { symtabP = HashMap.fromList predMap
+      }
+
+{- | Translate a Tree of explanations into a reasoning tree that can be sent over
+the wire.
+For now, this is essentially just a 1:1 translation, but might prune the tree in the future.
+-}
+reasoningFromXp :: XP -> ReasoningTree
+reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
+  ReasoningTree
+    (fmap Text.pack xpExampleCode)
+    (fmap Text.pack xpJustification)
+    (fmap reasoningFromXp children)
+
+-- ----------------------------------------------------------------------------
+-- Example Rules
+-- ----------------------------------------------------------------------------
+
+-- | Example functions for the purpose of showcasing the REST API.
+functions :: Map.Map String (Expr Double, Function)
+functions =
+  Map.fromList
+    [ ("compute_qualifies", (personQualifies, personQualifiesFunction))
+    ]
+
+-- | Example function which computes whether a person qualifies for *something*.
+personQualifies :: Expr Double
+personQualifies =
+  "qualifies"
+    @|= MathPred
+      ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
+      )
+
+{- | Metadata about the function that the user might want to know.
+Further, an LLM could use this info to ask specific questions to the user.
+-}
+personQualifiesFunction :: Function
+personQualifiesFunction =
+  Function
+    "compute_qualifies"
+    [__i|Determines if a person qualifies for the purposes of the rule.
+      The input object describes the person's properties in the primary parameters: walks, eats, drinks.
+      Secondary parameters can be given which are sufficient to determine some of the primary parameters.
+      A person drinks whether or not they consume an alcoholic or a non-alcoholic beverage, in part or in whole;
+      those specific details don't really matter.
+      The output of the function can be either a request for required information;
+      a restatement of the user input requesting confirmation prior to function calling;
+      or a Boolean answer with optional explanation summary.
+    |]
+    $ Parameters
+    $ Map.fromList
+      [ ("walks", Parameter "string" ["true", "false"] "Did the person walk?")
+      , ("eats", Parameter "string" ["true", "false"] "Did the person eat?")
+      , ("drinks", Parameter "string" ["true", "false"] "Did the person drink?")
+      , ("beverage type", Parameter "string" ["alcoholic", "non-alcoholic"] "Did the person drink an alcoholic beverage?")
+      , ("in whole", Parameter "string" ["true", "false"] "Did the person drink all of the beverage?")
+      ]

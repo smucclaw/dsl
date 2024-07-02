@@ -54,7 +54,7 @@ type FunctionApi = NamedRoutes FunctionApi'
 
 data FunctionApi' mode = FunctionApi
   { functionRoutes :: mode :- "functions" :> FunctionCrud
-  , debugPoints :: mode :- ReqBody '[JSON] Test :> Post '[JSON] Text.Text
+  , debugPoints :: mode :- QueryParam "hello" Text.Text :> Post '[JSON] Text.Text
   }
   deriving (Generic)
 
@@ -133,8 +133,11 @@ handler =
                 }
           }
     , debugPoints = \h -> do
-        pure $ "Hello, " <> hello h
+        pure $ "Hello, " <> maybe "Test" id h
     }
+
+instance FromHttpApiData Test where
+
 
 -- handlerFunctions :: Handler [SimpleFunction]
 handlerFunctions :: Handler [SimpleFunction]

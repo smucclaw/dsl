@@ -44,6 +44,18 @@ instance ToSchema Test where
             [ "hello" .= ("World" :: Text.Text)
             ]
 
+instance ToParamSchema Test where
+  toParamSchema _ = do
+      mempty
+        & title ?~ "Test"
+        & type_ ?~ OpenApiObject
+        & properties .~
+            [ ("hello", Inline $ toSchema (Proxy @Text.Text))
+            ]
+        & example ?~
+          Aeson.object
+            [ "hello" .= ("World" :: Text.Text)
+            ]
 
 -- ----------------------------------------------------------------------------
 -- Document and describe the Json schema using the OpenAPI standard
@@ -159,7 +171,7 @@ instance ToSchema Parameters where
     mapSchema <- declareNamedSchema (Proxy @(Map String Parameter))
     pure $
       mapSchema
-        & name ?~ "Function Parameters"
+        & name ?~ "FunctionParameters"
         & schema . properties
           .~ [ ("prop", parameterSchema)
              ]
@@ -169,7 +181,7 @@ instance ToSchema Parameter where
     textSchema <- declareSchemaRef (Proxy @Text.Text)
     textListSchema <- declareSchemaRef (Proxy @[Text.Text])
     pure $
-      NamedSchema (Just "Function Parameter") $
+      NamedSchema (Just "FunctionParameter") $
         mempty
           & type_ ?~ OpenApiObject
           & title ?~ "Parameter"

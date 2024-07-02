@@ -6,8 +6,9 @@ module Schema (
   serverOpenApi,
 
   -- * Tests
-  -- runJsonTests,
 ) where
+
+-- runJsonTests,
 
 import Control.Lens hiding ((.=))
 import Data.Aeson ((.=))
@@ -32,31 +33,32 @@ serverOpenApi =
 instance ToSchema Test where
   declareNamedSchema _ = do
     textRef <- declareSchemaRef (Proxy @Text.Text)
-    pure $ NamedSchema (Just "Test") $
-      mempty
-        & title ?~ "Test"
-        & type_ ?~ OpenApiObject
-        & properties .~
-            [ ("hello", textRef)
-            ]
-        & example ?~
-          Aeson.object
-            [ "hello" .= ("World" :: Text.Text)
-            ]
-        & required .~ ["hello"]
+    pure $
+      NamedSchema (Just "Test") $
+        mempty
+          & title ?~ "Test"
+          & type_ ?~ OpenApiObject
+          & properties
+            .~ [ ("hello", textRef)
+               ]
+          & example
+            ?~ Aeson.object
+              [ "hello" .= ("World" :: Text.Text)
+              ]
+          & required .~ ["hello"]
 
 instance ToParamSchema Test where
   toParamSchema _ = do
-      mempty
-        & title ?~ "Test"
-        & type_ ?~ OpenApiObject
-        & properties .~
-            [ ("hello", Inline $ toSchema (Proxy @Text.Text))
-            ]
-        & example ?~
-          Aeson.object
-            [ "hello" .= ("World" :: Text.Text)
-            ]
+    mempty
+      & title ?~ "Test"
+      & type_ ?~ OpenApiObject
+      & properties
+        .~ [ ("hello", Inline $ toSchema (Proxy @Text.Text))
+           ]
+      & example
+        ?~ Aeson.object
+          [ "hello" .= ("World" :: Text.Text)
+          ]
 
 -- ----------------------------------------------------------------------------
 -- Document and describe the Json schema using the OpenAPI standard
@@ -88,6 +90,14 @@ instance ToSchema SimpleFunction where
 -- This is correct, since we don't overwrite the
 -- 'ToJSON SimpleResponse' instance yet.
 instance ToSchema SimpleResponse
+
+instance ToSchema ResponseWithReason
+
+instance ToSchema MathLangException
+
+instance ToSchema Reasoning
+
+instance ToSchema ReasoningTree
 
 -- instance ToParamSchema Arguments where
 --   toParamSchema _ =
@@ -203,11 +213,23 @@ instance ToSchema Parameter where
 -- instances and OpenAPI documentation agree on the schema.
 -- ----------------------------------------------------------------------------
 
+instance Arbitrary Reasoning where
+  arbitrary = Reasoning <$> arbitrary
+
+instance Arbitrary ReasoningTree where
+  arbitrary = ReasoningTree <$> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary ResponseWithReason where
+  arbitrary = ResponseWithReason <$> arbitrary <*> arbitrary
+
+instance Arbitrary MathLangException where
+  arbitrary = MathLangException <$> arbitrary
+
 instance Arbitrary SimpleResponse where
   arbitrary =
     oneof
       [ Server.SimpleResponse <$> arbitrary
-      , Server.Insufficient <$> arbitrary
+      , Server.SimpleError <$> arbitrary
       ]
 
 instance Arbitrary Arguments where

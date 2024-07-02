@@ -27,6 +27,10 @@ module Server (
   Function (..),
   SimpleFunction (..),
   SimpleResponse (..),
+  Reasoning(..),
+  ReasoningTree(..),
+  ResponseWithReason(..),
+  MathLangException(..),
 ) where
 
 import Control.Arrow (first)
@@ -44,6 +48,8 @@ import Explainable.MathLang
 import GHC.Generics
 import Servant
 import System.Timeout (timeout)
+import Explainable (XP)
+import qualified Data.Tree as Tree
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -91,8 +97,21 @@ newtype Arguments = Arguments
   deriving newtype (ToJSON, FromJSON)
 
 data SimpleResponse
-  = SimpleResponse Double
-  | Insufficient Text.Text
+  = SimpleResponse ResponseWithReason
+  | SimpleError MathLangException
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+newtype MathLangException = MathLangException
+  { getMathLangException :: Text.Text
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+data ResponseWithReason = ResponseWithReason
+  { responseValue :: Double
+  , responseReasoning :: Reasoning
+  }
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -113,6 +132,22 @@ newtype Parameters = Parameters
   { mkParameters :: Map.Map String Parameter
   }
   deriving (Show, Read, Ord, Eq, Generic)
+
+newtype Reasoning = Reasoning
+  { getReasoning :: ReasoningTree
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+-- | Basically a rose tree, but serialisable to json and specialised to our purposes.
+--
+data ReasoningTree = ReasoningTree
+  { reasoningNodeExampleCode :: [Text.Text]
+  , reasoningNodeExplanation :: [Text.Text]
+  , reasoningNodeChildren :: [ReasoningTree]
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
 
 -- ----------------------------------------------------------------------------
 -- Web Service Handlers
@@ -136,10 +171,6 @@ handler =
         pure $ "Hello, " <> hello h
     }
 
-instance FromHttpApiData Test where
-
-
--- handlerFunctions :: Handler [SimpleFunction]
 handlerFunctions :: Handler [SimpleFunction]
 handlerFunctions = do
   pure $ fmap (toSimpleFunction . snd) $ Map.elems functions
@@ -157,7 +188,7 @@ handlerFunction name query = do
     Just (function, _) ->
       case runExcept $ fromParams query of
         Left err ->
-          pure $ Insufficient err
+          pure $ SimpleError $ MathLangException err
         Right s -> do
           response <- timeoutAction $ runFunction s function
           pure $ SimpleResponse response
@@ -176,7 +207,10 @@ timeoutAction act =
   seconds n = 1_000_000 * n
 
 -- ----------------------------------------------------------------------------
--- API specification for LLMs
+-- Json encoders and decoders that are not derived.
+-- We often need custom instances, as we want to be more lenient in what we accept
+-- than what aeson does by default. Further, we try to provide a specific json schema
+--
 -- ----------------------------------------------------------------------------
 
 instance FromJSON FlatValue where
@@ -286,10 +320,10 @@ instance FromJSON Parameter where
 -- Helpers
 -- ----------------------------------------------------------------------------
 
-runFunction :: (MonadIO m) => MyState -> Expr Double -> m Double
+runFunction :: (MonadIO m) => MyState -> Expr Double -> m ResponseWithReason
 runFunction s scenario = do
-  (res, _, _, _) <- liftIO $ xplainF () s scenario
-  pure res
+  (res, xp, _, _) <- liftIO $ xplainF () s scenario
+  pure $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
 
 fromParams :: Arguments -> Except Text.Text MyState
 fromParams attrs = do
@@ -303,16 +337,29 @@ fromParams attrs = do
   go (Number n) = Left $ Val Nothing n
   go (Boolean b) = Right $ PredVal Nothing b
 
+-- | Translate a Tree of explanations into a reasoning tree that can be sent over
+-- the wire.
+-- For now, this is essentially just a 1:1 translation, but might prune the tree in the future.
+reasoningFromXp :: XP -> ReasoningTree
+reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
+  ReasoningTree
+    (fmap Text.pack xpExampleCode)
+    (fmap Text.pack xpJustification)
+    (fmap reasoningFromXp children )
+
 -- ----------------------------------------------------------------------------
 -- Example Rules
 -- ----------------------------------------------------------------------------
 
+-- | Example functions for the purpose of showcasing the REST API.
 functions :: Map.Map String (Expr Double, Function)
 functions =
   Map.fromList
     [ ("compute_qualifies", (personQualifies, personQualifiesFunction))
     ]
 
+-- | Example function which computes whether a person qualifies for *something*.
+--
 personQualifies :: Expr Double
 personQualifies =
   "qualifies"
@@ -320,6 +367,8 @@ personQualifies =
       ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
       )
 
+-- | Metadata about the function that the user might want to know.
+-- Further, an LLM could use this info to ask specific questions to the user.
 personQualifiesFunction :: Function
 personQualifiesFunction =
   Function

@@ -43,6 +43,7 @@ instance ToSchema Test where
           Aeson.object
             [ "hello" .= ("World" :: Text.Text)
             ]
+        & required .~ ["hello"]
 
 instance ToParamSchema Test where
   toParamSchema _ = do

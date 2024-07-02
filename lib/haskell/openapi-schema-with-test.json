@@ -1,5 +1,4 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "components": {
     "schemas": {
       "Arguments": {
@@ -45,7 +44,7 @@
               "parameters": {
                 "properties": {
                   "properties": {
-                    "$ref": "#/components/schemas/Function Parameters"
+                    "$ref": "#/components/schemas/FunctionParameters"
                   },
                   "type": {
                     "type": "string"
@@ -61,7 +60,7 @@
         "title": "Function",
         "type": "object"
       },
-      "Function Parameter": {
+      "FunctionParameter": {
         "example": {
           "description": "Can a person walk?",
           "enum": [
@@ -88,13 +87,13 @@
         "title": "Parameter",
         "type": "object"
       },
-      "Function Parameters": {
+      "FunctionParameters": {
         "additionalProperties": {
-          "$ref": "#/components/schemas/Function Parameter"
+          "$ref": "#/components/schemas/FunctionParameter"
         },
         "properties": {
           "prop": {
-            "$ref": "#/components/schemas/Function Parameter"
+            "$ref": "#/components/schemas/FunctionParameter"
           }
         },
         "type": "object"
@@ -151,6 +150,9 @@
             "type": "string"
           }
         },
+        "required": [
+          "hello"
+        ],
         "title": "Test",
         "type": "object"
       }

@@ -1,4 +1,4 @@
-FROM haskell:9.6.5-slim-buster as builder
+FROM haskell:9.6.5-slim-buster AS builder
 
 COPY lib/haskell .
 

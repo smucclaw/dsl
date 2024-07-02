@@ -415,14 +415,17 @@ runToLC' (unToLC -> m) =
 --------------------------------------------------------------------------------------------------
 
 
-{- | Translate L4 program consisting of Hornlike rules to a LC Program -}
-l4ToLCProgram :: Traversable t => t L4.Rule -> ToLC LCProgram
+-- | Main GML translation function.
+--
+-- Expects a list of Hornlike rules, produces a translated GML program
+-- in the form of an 'LCProgram'.
+--
+l4ToLCProgram :: [L4.Rule] -> ToLC LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   let customUserFuns = iterateFuns [] $ F.toList l4HLs
   lcProg <- withCustomFuns customUserFuns $ traverse expifyHL l4HLs
-  pure MkLCProgram { progMetadata = MkLCProgMdata "[TODO] Not Yet Implemented"
-                   , lcProgram = programWithoutUserFuns lcProg
+  pure MkLCProgram { lcProgram = programWithoutUserFuns lcProg
                    , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
                    , giveths = giveths
                    , userFuns = mkUserFuns customUserFuns}
@@ -1197,8 +1200,8 @@ processHcBody bsr = do
 
   -- If there is a label and it's not Metadata, it might be part of the text.
   -- If you uncomment fmap addLabel below, then the possible text in mlbl will be added to the leaves.
-    AA.All mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp ({-fmap (addLabel mlbl) <$> -} propns)
-    AA.Any mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp ({-fmap (addLabel mlbl) <$>-} propns)
+    AA.All _mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp ({-fmap (addLabel mlbl) <$> -} propns)
+    AA.Any _mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp ({-fmap (addLabel mlbl) <$>-} propns)
     AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
   where
     emptyExp :: Exp = noExtraMdata EEmpty

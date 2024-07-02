@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -W #-}
+{-# OPTIONS_GHC -Wall #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
@@ -18,8 +18,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
+-- | Defines the GML abstract syntax tree.
 module LS.XPile.MathLang.GenericMathLang.GenericMathLangAST where
--- TODO: Add export list
 
 import Data.Text qualified as T
 import Data.Time (Day(..))
@@ -44,11 +44,19 @@ import Language.Haskell.TH.Syntax (Lift)
 
 ------------ L4 declared entity types ----------------------
 
--- | Types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'
-data L4EntType = L4EntType T.Text | L4Enum [T.Text] | L4List L4EntType
-  deriving stock (Show)
-  deriving (Eq, Generic, Hashable)
+-- | GML types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'.
+--
+data L4EntType =
+    L4EntType T.Text  -- ^ a user-defined named type
+  | L4Enum [T.Text]   -- ^ a user-defined enumeration type
+  | L4List L4EntType  -- ^ a user-defined list type
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (Hashable)
 
+-- | Turn a surface-L4 type signature into a GML type.
+--
+-- NOTE / TODO: This translation seems lossy.
+--
 mkEntType :: TypeSig -> L4EntType
 mkEntType = \case
   SimpleType TOne      tn -> L4EntType tn
@@ -68,6 +76,8 @@ type FieldLabel = T.Text
 type Number = Double
 -- ^ TODO: Will want to change this to something that can represent money in the future
 
+-- | GML type information can either stem from annotations or from inference.
+--
 data TLabel = FromUser L4EntType
             | Inferred T.Text
   deriving stock (Eq, Show)
@@ -108,18 +118,25 @@ data ExplnAnnot = MkExplnAnnot
   } deriving stock (Eq, Ord, Show)
 makeFieldLabelsNoPrefix ''ExplnAnnot
 
+-- | Source position.
+--
+-- (Row and column, but not filename.)
+--
 data SrcPositn = MkPositn
-  { row :: Int
-  , col :: Int
+  { row :: !Int
+  , col :: !Int
   } deriving stock (Eq, Ord, Show, Generic)
     deriving Hashable
 makeFieldLabelsNoPrefix ''SrcPositn
 
--- | Could use HKDs, but that'd make things more complex in other ways
+-- | Metadata stored with an expression.
+--
 data ExpMetadata =
-  MkExpMetadata { srcPos :: SrcPositn
-                , typeLabel :: Maybe TLabel
-                , explnAnnot :: Maybe ExplnAnnot }
+  MkExpMetadata
+  { srcPos     :: SrcPositn        -- ^ source position of annotated expression
+  , typeLabel  :: Maybe TLabel     -- ^ (possibly) type information for annotated expression
+  , explnAnnot :: Maybe ExplnAnnot -- ^ (possibly) additional annotations
+  }
   deriving stock (Eq, Show)
 makeFieldLabelsNoPrefix ''ExpMetadata
 
@@ -131,6 +148,10 @@ type MdGrp = [ExpMetadata]
 ------------------------------------------------------------
 -- TODO: Look into whether the costs of using records for sum variants (eg partial functions) outweigh benefits
 
+-- | Variable names in GML.
+--
+-- The internal representation is text.
+--
 newtype Var = MkVar T.Text
   deriving stock (Show)
   deriving newtype (Eq, Hashable)
@@ -138,14 +159,35 @@ makePrisms ''Var
 -- Add metadata like what the original L4 string was?
 -- Or do that only at the final pretty printing stage, when we normalize the formatting etc?
 
+-- | Construct a variable from its name / text.
+--
 mkVar :: T.Text -> Var
-mkVar = view $ re _MkVar
+mkVar = coerce
 
+-- | Extract the text from a variable.
+--
 varAsTxt :: Var -> T.Text
-varAsTxt = view _MkVar
+varAsTxt = coerce
 
 type Currency = T.Text
 
+-- | Literals.
+--
+-- Currently supported:
+--
+-- - Booleans
+-- - currencies (pair of a commodity / currency and a float)
+-- - dates
+-- - integers
+-- - floats
+-- - enumeration types
+-- - strings
+--
+-- Remarks:
+--
+-- - Currencies are just strings.
+-- - The numeric values in currencies should probably not be 'Double', but 'Fixed' or 'Rational' or perhaps 'Scientific'.
+--
 data Lit
   = EBoolTrue
   | EBoolFalse
@@ -158,6 +200,11 @@ data Lit
   | EString T.Text
   deriving stock (Eq, Ord, Show)
 
+-- | Numeric binary operators.
+--
+-- (Consume two numbers, produce one number.)
+--
+--
 data NumOp
   = OpPlus
   | OpMinus
@@ -170,6 +217,10 @@ data NumOp
   | OpProduct
   deriving stock (Eq, Show, Lift)
 
+-- | Comparison operators.
+--
+-- (Consume two args, produce a Boolean.)
+--
 data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
   deriving stock (Eq, Show, Lift)
 
@@ -184,10 +235,24 @@ exprsToSeqExp :: [Exp] -> SeqExp
 exprsToSeqExp = coerce
 
 consSE :: Exp -> SeqExp -> SeqExp
-consSE expr (seqExpToExprs -> exprs) = exprsToSeqExp $ expr : exprs
+consSE expr (SeqExp exprs) = exprsToSeqExp $ expr : exprs
 
--- removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
--- | May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn
+-- | Un-annotated GML expression.
+--
+-- The recursive calls are all to 'Exp', which pairs a base expression with metadata.
+-- So we have an "annotated fixed point" construction here, but with the annotation
+-- being fixed to always be metadata.
+--
+-- Notes:
+--
+-- - It is unclear why the operators are separated from each other.
+-- - It is unclear why And / Or have separate constructors instead of being operators.
+--
+-- Old comments:
+--
+-- - Removed GADTs because had been experimenting with `unbound-generics` and didn't know how to get them to work well tgt
+-- - May want to put the `md`s back into BaseExp and collapse Exp and BaseExp back into one data structure. Not sure what's more ergo rn
+--
 data BaseExp =
     ELit { lit :: Lit }
   | ENumOp
@@ -264,6 +329,8 @@ data BaseExp =
   | EEmpty
   deriving stock (Show, Generic, Eq)
 
+-- | A GML expression is an unannotated 'BaseExp' together with metadata annotations.
+--
 data Exp = MkExp
   { exp :: BaseExp
   , md :: MdGrp }
@@ -296,29 +363,19 @@ mkGlobalVars :: HashMap Var (Maybe L4EntType) -> GlobalVars
 mkGlobalVars = view (re _MkGlobalVars)
 
 
-{- | Metadata for programs in generic lam calc
-[TODO] Things that could be added in the future:
-    * the timestamp from Main.hs
-    * feature flags, esp. the explanation-related ones
-    * config flags that downstream targets need to know about
--}
-data LCProgMetadata =
-  MkLCProgMdata { filename :: T.Text }
-  deriving stock (Eq, Show)
-
+-- | Datatype representing a GML program.
 data LCProgram =
-  MkLCProgram { progMetadata :: LCProgMetadata
-              , lcProgram :: [Exp]
-              , globalVars :: GlobalVars
-              , giveths :: [T.Text] -- if the L4 program specifies what it giveth, record it here
-              , userFuns :: HashMap String ([Var], Exp)
-              }
+  MkLCProgram
+  { lcProgram    :: [Exp]                       -- ^ actual program
+  , globalVars   :: GlobalVars                  -- ^ names of global variables and their types
+  , giveths      :: [T.Text]                    -- ^ if the L4 program specifies what it giveth, record it here
+  , userFuns     :: HashMap String ([Var], Exp) -- ^ user-defined functions
+  }
   deriving stock (Show, Eq)
 
 emptyProgram :: LCProgram
 emptyProgram = MkLCProgram {
-    progMetadata = MkLCProgMdata ""
-  , lcProgram = []
+    lcProgram = []
   , globalVars = MkGlobalVars empty
   , giveths = []
   , userFuns = empty

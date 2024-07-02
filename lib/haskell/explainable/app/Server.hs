@@ -10,14 +10,15 @@ module Server (
   -- * REST API
   Api,
   FunctionApi,
-  FunctionApi'(..),
+  FunctionApi' (..),
   SingleFunctionApi,
   SingleFunctionApi' (..),
   FunctionCrud,
-  FunctionCrud'(..),
+  FunctionCrud' (..),
   handler,
+
   -- * Debugging stuff
-  Test(..),
+  Test (..),
 
   -- * API json types
   FlatValue (..),
@@ -30,17 +31,22 @@ module Server (
 ) where
 
 import Control.Arrow (first)
+import Control.Monad (forM)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Trans.Except
 import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map qualified as Map
 import Data.Scientific (toRealFloat)
+import Data.String (IsString (fromString))
 import Data.String.Interpolate (__i)
 import Data.Text qualified as Text
+import Data.Traversable (for)
 import Explainable.MathLang
+import GHC.Exts (fromList)
 import GHC.Generics
 import Servant
 import System.Timeout (timeout)
@@ -71,7 +77,6 @@ data FunctionCrud' mode = FunctionCrud
   }
   deriving (Generic)
 
-
 type SingleFunctionApi = NamedRoutes SingleFunctionApi'
 data SingleFunctionApi' mode = SingleFunctionApi
   { getFunction :: mode :- Get '[JSON] Function
@@ -85,10 +90,9 @@ data FlatValue
   deriving (Show, Read, Ord, Eq, Generic)
 
 newtype Arguments = Arguments
-  { mkArguments :: Map.Map Text.Text FlatValue
+  { mkArguments :: [(Text.Text, FlatValue)]
   }
   deriving (Show, Read, Ord, Eq, Generic)
-  deriving newtype (ToJSON, FromJSON)
 
 data SimpleResponse
   = SimpleResponse Double
@@ -136,9 +140,6 @@ handler =
         pure $ "Hello, " <> maybe "Test" id h
     }
 
-instance FromHttpApiData Test where
-
-
 -- handlerFunctions :: Handler [SimpleFunction]
 handlerFunctions :: Handler [SimpleFunction]
 handlerFunctions = do
@@ -178,6 +179,18 @@ timeoutAction act =
 -- ----------------------------------------------------------------------------
 -- API specification for LLMs
 -- ----------------------------------------------------------------------------
+
+instance FromJSON Arguments where
+  parseJSON = Aeson.withArray "arguments" $ \arr -> do
+    vals <- mapM (Aeson.parseJSON @(Map.Map Text.Text FlatValue)) arr
+    pure $ Arguments $ concat $ fmap Map.toList vals
+
+instance ToJSON Arguments where
+  toJSON (Arguments list) =
+    Aeson.Array $ fromList $ flip map list $ \(k, v) ->
+      Aeson.object
+        [ Aeson.fromText k .= v
+        ]
 
 instance FromJSON FlatValue where
   parseJSON (Aeson.Number sci) = pure $ Number $ toRealFloat sci
@@ -293,7 +306,7 @@ runFunction s scenario = do
 
 fromParams :: Arguments -> Except Text.Text MyState
 fromParams attrs = do
-  let (valueMap, predMap) = Map.mapEither go (mkArguments attrs)
+  let (valueMap, predMap) = Map.mapEither go (Map.fromList $ mkArguments attrs)
   pure $
     emptyState
       { symtabF = HashMap.fromList $ fmap (first Text.unpack) $ Map.toList valueMap

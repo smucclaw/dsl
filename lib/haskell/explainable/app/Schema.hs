@@ -101,21 +101,18 @@ instance ToSchema SimpleResponse
 
 instance ToSchema Arguments where
   declareNamedSchema _ = do
-    fvRef <- declareSchemaRef (Proxy @FlatValue)
+    itemRef <- declareSchemaRef (Proxy @(FlatValue, Text.Text))
     pure $
       NamedSchema (Just "Arguments") $
-        toSchema (Proxy @(Map Text.Text FlatValue))
-          & type_ ?~ OpenApiObject
-          & additionalProperties ?~ AdditionalPropertiesSchema fvRef
-          & properties
-            .~ [ ("prop", fvRef)
-               ]
+        toSchema (Proxy @[(Text.Text, FlatValue)])
+          & type_ ?~ OpenApiArray
+          & items ?~ OpenApiItemsObject itemRef
           & example
-            ?~ Aeson.object
-              [ "walks" .= False
-              , "eats" .= True
-              , "drinks" .= False
-              , "drinks_amount" .= Aeson.Number 5.0
+            ?~ Aeson.Array
+              [ Aeson.object ["walks" .= False]
+              , Aeson.object ["eats" .= True]
+              , Aeson.object ["drinks" .= False]
+              , Aeson.object ["drinks_amount" .= Aeson.Number 5.0]
               ]
 
 instance ToParamSchema FlatValue where

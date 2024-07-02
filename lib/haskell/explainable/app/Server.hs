@@ -93,6 +93,7 @@ newtype Arguments = Arguments
   { mkArguments :: [(Text.Text, FlatValue)]
   }
   deriving (Show, Read, Ord, Eq, Generic)
+  deriving newtype (FromJSON, ToJSON)
 
 data SimpleResponse
   = SimpleResponse Double
@@ -180,17 +181,17 @@ timeoutAction act =
 -- API specification for LLMs
 -- ----------------------------------------------------------------------------
 
-instance FromJSON Arguments where
-  parseJSON = Aeson.withArray "arguments" $ \arr -> do
-    vals <- mapM (Aeson.parseJSON @(Map.Map Text.Text FlatValue)) arr
-    pure $ Arguments $ concat $ fmap Map.toList vals
+-- instance FromJSON Arguments where
+--   parseJSON = Aeson.withArray "arguments" $ \arr -> do
+--     vals <- mapM (Aeson.parseJSON @(Map.Map Text.Text FlatValue)) arr
+--     pure $ Arguments $ concat $ fmap Map.toList vals
 
-instance ToJSON Arguments where
-  toJSON (Arguments list) =
-    Aeson.Array $ fromList $ flip map list $ \(k, v) ->
-      Aeson.object
-        [ Aeson.fromText k .= v
-        ]
+-- instance ToJSON Arguments where
+--   toJSON (Arguments list) =
+--     Aeson.Array $ fromList $ flip map list $ \(k, v) ->
+--       Aeson.object
+--         [ Aeson.fromText k .= v
+--         ]
 
 instance FromJSON FlatValue where
   parseJSON (Aeson.Number sci) = pure $ Number $ toRealFloat sci

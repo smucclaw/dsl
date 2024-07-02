@@ -10,14 +10,15 @@ module Server (
   -- * REST API
   Api,
   FunctionApi,
-  FunctionApi'(..),
+  FunctionApi' (..),
   SingleFunctionApi,
   SingleFunctionApi' (..),
   FunctionCrud,
-  FunctionCrud'(..),
+  FunctionCrud' (..),
   handler,
+
   -- * Debugging stuff
-  Test(..),
+  Test (..),
 
   -- * API json types
   FlatValue (..),
@@ -27,13 +28,12 @@ module Server (
   Function (..),
   SimpleFunction (..),
   SimpleResponse (..),
-  Reasoning(..),
-  ReasoningTree(..),
-  ResponseWithReason(..),
-  MathLangException(..),
+  Reasoning (..),
+  ReasoningTree (..),
+  ResponseWithReason (..),
+  MathLangException (..),
 ) where
 
-import Control.Arrow (first)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Trans.Except
 import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
@@ -41,15 +41,16 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map qualified as Map
+import Data.Maybe qualified as Maybe
 import Data.Scientific (toRealFloat)
 import Data.String.Interpolate (__i)
 import Data.Text qualified as Text
+import Data.Tree qualified as Tree
+import Explainable (XP)
 import Explainable.MathLang
 import GHC.Generics
 import Servant
 import System.Timeout (timeout)
-import Explainable (XP)
-import qualified Data.Tree as Tree
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -74,14 +75,19 @@ type FunctionCrud = NamedRoutes FunctionCrud'
 data FunctionCrud' mode = FunctionCrud
   { getAllFunctions :: mode :- Get '[JSON] [SimpleFunction]
   , crud :: mode :- Capture "name" String :> SingleFunctionApi
+  , computeQualifiesFunc ::
+      mode
+        :- "compute_qualifies"
+          :> QueryParam "drinks" Bool
+          :> QueryParam "eats" Bool
+          :> QueryParam "walks" Bool
+          :> Post '[JSON] SimpleResponse
   }
   deriving (Generic)
-
 
 type SingleFunctionApi = NamedRoutes SingleFunctionApi'
 data SingleFunctionApi' mode = SingleFunctionApi
   { getFunction :: mode :- Get '[JSON] Function
-  , postFunction :: mode :- ReqBody '[JSON] Arguments :> Post '[JSON] SimpleResponse
   }
   deriving (Generic)
 
@@ -140,7 +146,6 @@ newtype Reasoning = Reasoning
   deriving anyclass (FromJSON, ToJSON)
 
 -- | Basically a rose tree, but serialisable to json and specialised to our purposes.
---
 data ReasoningTree = ReasoningTree
   { reasoningNodeExampleCode :: [Text.Text]
   , reasoningNodeExplanation :: [Text.Text]
@@ -163,9 +168,9 @@ handler =
               SingleFunctionApi
                 { getFunction =
                     handlerParameters name
-                , postFunction =
-                    handlerFunction name
                 }
+          , computeQualifiesFunc =
+              computeQualifiesHandler
           }
     , debugPoints = \h -> do
         pure $ "Hello, " <> hello h
@@ -181,12 +186,14 @@ handlerFunctions = do
       , simpleDescription = description s
       }
 
-handlerFunction :: String -> Arguments -> Handler SimpleResponse
-handlerFunction name query = do
-  case Map.lookup name functions of
+computeQualifiesHandler :: Maybe Bool -> Maybe Bool -> Maybe Bool -> Handler SimpleResponse
+computeQualifiesHandler drinks eats walks = do
+  let params =
+        [("drinks", drinks), ("walks", walks), ("eats", eats)]
+  case Map.lookup "compute_qualifies" functions of
     Nothing -> throwError err404
     Just (function, _) ->
-      case runExcept $ fromParams query of
+      case runExcept $ fromParams params of
         Left err ->
           pure $ SimpleError $ MathLangException err
         Right s -> do
@@ -325,27 +332,24 @@ runFunction s scenario = do
   (res, xp, _, _) <- liftIO $ xplainF () s scenario
   pure $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
 
-fromParams :: Arguments -> Except Text.Text MyState
+fromParams :: [(Text.Text, Maybe Bool)] -> Except Text.Text MyState
 fromParams attrs = do
-  let (valueMap, predMap) = Map.mapEither go (mkArguments attrs)
+  let predMap = Maybe.mapMaybe (\(lbl, value) -> value >>= pure . (Text.unpack lbl,) . PredVal Nothing) attrs
   pure $
     emptyState
-      { symtabF = HashMap.fromList $ fmap (first Text.unpack) $ Map.toList valueMap
-      , symtabP = HashMap.fromList $ fmap (first Text.unpack) $ Map.toList predMap
+      { symtabP = HashMap.fromList predMap
       }
- where
-  go (Number n) = Left $ Val Nothing n
-  go (Boolean b) = Right $ PredVal Nothing b
 
--- | Translate a Tree of explanations into a reasoning tree that can be sent over
--- the wire.
--- For now, this is essentially just a 1:1 translation, but might prune the tree in the future.
+{- | Translate a Tree of explanations into a reasoning tree that can be sent over
+the wire.
+For now, this is essentially just a 1:1 translation, but might prune the tree in the future.
+-}
 reasoningFromXp :: XP -> ReasoningTree
 reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
   ReasoningTree
     (fmap Text.pack xpExampleCode)
     (fmap Text.pack xpJustification)
-    (fmap reasoningFromXp children )
+    (fmap reasoningFromXp children)
 
 -- ----------------------------------------------------------------------------
 -- Example Rules
@@ -359,7 +363,6 @@ functions =
     ]
 
 -- | Example function which computes whether a person qualifies for *something*.
---
 personQualifies :: Expr Double
 personQualifies =
   "qualifies"
@@ -367,8 +370,9 @@ personQualifies =
       ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
       )
 
--- | Metadata about the function that the user might want to know.
--- Further, an LLM could use this info to ask specific questions to the user.
+{- | Metadata about the function that the user might want to know.
+Further, an LLM could use this info to ask specific questions to the user.
+-}
 personQualifiesFunction :: Function
 personQualifiesFunction =
   Function

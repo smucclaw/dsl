@@ -12,6 +12,10 @@ import Control.Monad.Trans.Writer.Lazy (runWriter)
 import Data.HashMap.Strict qualified as Map
 import Data.List.NonEmpty (NonEmpty (..), fromList, nonEmpty, toList)
 import Data.Text qualified as T
+import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.IO qualified as TL
+import System.FilePath
+import Text.Pretty.Simple qualified as Pretty
 import Explainable
 import Explainable.MathLang -- hiding ((|>))
 import LS.Interpreter (l4interpret)
@@ -24,6 +28,7 @@ import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import LS.XPile.MathLang.MathLang qualified as ML
 import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen, expandHornlikes, getHornlikes)
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
+import Test.Hspec.Golden
 import Test.QuickCheck
   ( Arbitrary (..),
     Property,
@@ -82,6 +87,19 @@ instance Arbitrary AndOr where
 --   where
 --     ks = map fst ks_vs
 --     vs = map snd ks_vs
+
+goldenGeneric :: Show a => String -> a -> Golden TL.Text
+goldenGeneric name output_ = Golden
+  { output = Pretty.pShowNoColor output_
+  , encodePretty = TL.unpack
+  , writeToFile = TL.writeFile
+  , readFromFile = TL.readFile
+  , goldenFile =  testPath <.> "expected"
+  , actualFile = Just (testPath <.> "actual")
+  , failFirstTime = False
+  }
+  where
+    testPath = "test" </> "testdata" </> "golden" </> name
 
 spec :: Spec
 spec = do
@@ -279,9 +297,8 @@ spec = do
     it "actual insurance policy" do
       res `shouldBe` testPauGold
 
-    it "pau as TS output" do
-      let res' = ML.toMathLangMw l4i defaultReaderEnv
-      res' `shouldBe` pauGoldTS
+    it "pau as TS output" $ goldenGeneric "pau" $ do
+      ML.toMathLangMw l4i defaultReaderEnv
 
     it "evaluate pau" do
       case res of
@@ -326,8 +343,8 @@ spec = do
     it "should translate Must Sing 5 into ML, expanding the rules" do
         ML.toMathLangExpand l4i `shouldBe` mustsing5GoldExpanded
 
-    it "must sing 5 in typescript, expanding the rules" do
-        ML.toMathLangMw l4i defaultReaderEnv `shouldBe` mustsing5GoldTS
+    it "must sing 5 in typescript, expanding the rules" $ goldenGeneric "mustSing" do
+        ML.toMathLangMw l4i defaultReaderEnv
 
 testBaseExpify :: String -> String -> [Rule] -> [BaseExp] -> Spec
 testBaseExpify = testLCProgram (fmap exp . lcProgram)
@@ -2559,9 +2576,3 @@ mustsing5GoldExpanded = ([MathPred pred] , emptyState {symtabP = Map.singleton "
                 ]
             ]
         ]
-
-mustsing5GoldTS :: (String, [String])
-mustsing5GoldTS = ("export const Qualifies = () => {return new tsm.BoolFold ( \"Qualifies\"\n                 , tsm.BoolFoldOp.All\n                 , [ new tsm.GetVar (\"walks\")\n                     , new tsm.BoolFold ( \"any/all\"\n                                        , tsm.BoolFoldOp.All\n                                        , [ new tsm.BoolFold ( \"any/all\"\n                                                             , tsm.BoolFoldOp.Any\n                                                             , [ new tsm.BoolFold ( \"Drinks\"\n                                                                                  , tsm.BoolFoldOp.All\n                                                                                  , [ new tsm.BoolFold ( \"any/all\"\n                                                                                                       , tsm.BoolFoldOp.Any\n                                                                                                       , [ new tsm.GetVar (\"alcoholic\")\n                                                                                                           , new tsm.GetVar (\"non-alcoholic\") ] )\n                                                                                      , new tsm.BoolFold ( \"any/all\"\n                                                                                                         , tsm.BoolFoldOp.All\n                                                                                                         , [ new tsm.BoolFold ( \"any/all\"\n                                                                                                                              , tsm.BoolFoldOp.Any\n                                                                                                                              , [ new tsm.GetVar (\"in part\")\n                                                                                                                                  , new tsm.GetVar (\"in whole\") ] ) ] ) ] )\n                                                                 , new tsm.GetVar (\"eats\") ] ) ] ) ] )}\n", [])
-
-pauGoldTS :: (String, [String])
-pauGoldTS = ("export const How_Much_Money_Do_You_Get = () => {return new tsm.SetVar (\"How Much Money Do You Get\", (new tsm.GetVar (\"PAU0\")).val)}\nexport const Step_1 = () => {return new tsm.SetVar ( \"Step 1\"\n               , (new tsm.Bool3 ( \"Step 1\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"there were past ADD payouts\")\n                                , new tsm.GetVar (\"claimable limited base ADD benefit\")\n                                , new tsm.GetVar (\"base ADD benefit\") )).val )}\nexport const claimable_limited_base_ADD_benefit = () => {return new tsm.SetVar ( \"claimable limited base ADD benefit\"\n               , (new tsm.Num2 ( \"claimable limited base ADD benefit\"\n                               , tsm.NumBinOp.Sub\n                               , new tsm.GetVar (\"claimable limit\")\n                               , new tsm.GetVar (\"policyHolder.past ADD payouts\") )).val )}\nexport const Step_3 = () => {return new tsm.SetVar ( \"Step 3\"\n               , (new tsm.GetVar (\"multiplied by double triple benefit\")).val )}\nexport const juvenile_limited = () => {return new tsm.SetVar ( \"juvenile limited\"\n               , (new tsm.Num2 ( \"juvenile limited\"\n                               , tsm.NumBinOp.MinOf2\n                               , new tsm.GetVar (\"Part 1\")\n                               , new tsm.GetVar (\"juvenile limit\") )).val )}\nexport const ADD_benefit = () => {return new tsm.SetVar ( \"ADD benefit\"\n               , (new tsm.Num2 ( \"ADD benefit\"\n                               , tsm.NumBinOp.MinOf2\n                               , new tsm.Num2 ( \"binop Plus\"\n                                              , tsm.NumBinOp.Add\n                                              , new tsm.GetVar (\"addBenefit\")\n                                              , new tsm.GetVar (\"otherBenefits\") )\n                               , new tsm.GetVar (\"risk cap\") )).val )}\nexport const addBenefit = () => {return new tsm.SetVar (\"addBenefit\", (new tsm.GetVar (\"PAU4\")).val)}\nexport const The_Answer = () => {return new tsm.SetVar ( \"The Answer\"\n               , (new tsm.Bool3 ( \"The Answer\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"user input.accident_claim.selected\")\n                                , new tsm.GetVar (\"accident branch\")\n                                , new tsm.GetVar (\"illness branch\") )).val )}\nexport const accident_branch = () => {return new tsm.SetVar ( \"accident branch\"\n               , (new tsm.Bool3 ( \"accident branch\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"ADD is disqualified entirely\")\n                                , new tsm.GetVar (\"excludedZero\")\n                                , new tsm.GetVar (\"ADD benefit\") )).val )}\nexport const illness = () => {return new tsm.SetVar ( \"illness\"\n               , (new tsm.Bool3 ( \"illness\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.BoolFold ( \"any/all\"\n                                                   , tsm.BoolFoldOp.Any\n                                                   , [ new tsm.GetVar (\"illness.general exclusions apply\")\n                                                       , new tsm.GetVar (\"policy.ended\") ] )\n                                , new tsm.GetVar (\"disqualified\")\n                                , new tsm.Num0 ( \"No otherwise case\"\n                                               , undefined ) )).val )}\nexport const policyHolder.age = () => {return new tsm.SetVar ( \"policyHolder.age\"\n               , (new tsm.Num0 (\"policyHolder.age\", 50.0)).val )}\nexport const PAU4 = () => {return new tsm.SetVar (\"PAU4\", (new tsm.GetVar (\"Step 1\")).val)}\nexport const Step_2 = () => {return new tsm.SetVar ( \"Step 2\"\n               , (new tsm.Bool3 ( \"Step 2\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"accident.juvenile limit applies\")\n                                , new tsm.GetVar (\"juvenile limited\")\n                                , new tsm.GetVar (\"Step 1\") )).val )}\nexport const multiplied_by_double_triple_benefit = () => {return new tsm.SetVar ( \"multiplied by double triple benefit\"\n               , (new tsm.Bool3 ( \"multiplied by double triple benefit\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"accident.triple benefits apply\")\n                                , new tsm.Num2 ( \"multiplied by double triple benefit\"\n                                               , tsm.NumBinOp.Mul\n                                               , new tsm.GetVar (\"Step 2\")\n                                               , new tsm.Num0 (\"3.0\", 3.0) )\n                                , new tsm.Bool3 ( \"if-then-else\"\n                                                , tsm.BoolTriOp.IfThenElse\n                                                , new tsm.GetVar (\"accident.double benefits apply\")\n                                                , new tsm.Num2 ( \"multiplied by double triple benefit\"\n                                                               , tsm.NumBinOp.Mul\n                                                               , new tsm.GetVar (\"Step 2\")\n                                                               , new tsm.Num0 ( \"2.0\"\n                                                                              , 2.0 ) )\n                                                , new tsm.GetVar (\"Step 2\") ) )).val )}\nexport const PAU0 = () => {return new tsm.SetVar (\"PAU0\", (new tsm.GetVar (\"The Answer\")).val)}\nexport const Step_4 = () => {return new tsm.SetVar ( \"Step 4\"\n               , (new tsm.GetVar (\"Step 3 discounted by accident.risk percentage\")).val )}\nexport const claimable_limit = () => {return new tsm.SetVar ( \"claimable limit\"\n               , (new tsm.Num2 ( \"claimable limit\"\n                               , tsm.NumBinOp.MinOf2\n                               , new tsm.Num2 ( \"binop Times\"\n                                              , tsm.NumBinOp.Mul\n                                              , new tsm.Num0 (\"1.5\", 1.5)\n                                              , new tsm.GetVar (\"total sum assured\") )\n                               , new tsm.GetVar (\"lifetime claimable limit\") )).val )}\nexport const base_ADD_benefit = () => {return new tsm.SetVar (\"base ADD benefit\", (new tsm.GetVar (\"policy.benADD\")).val)}\nexport const Step_3_discounted_by_accident.risk_percentage = () => {return new tsm.SetVar ( \"Step 3 discounted by accident.risk percentage\"\n               , (new tsm.Num2 ( \"Step 3 discounted by accident.risk percentage\"\n                               , tsm.NumBinOp.Mul\n                               , new tsm.GetVar (\"Step 3\")\n                               , new tsm.Num2 ( \"binop Minus\"\n                                              , tsm.NumBinOp.Sub\n                                              , new tsm.Num0 (\"1.0\", 1.0)\n                                              , new tsm.GetVar (\"accident.risk percentage\") ) )).val )}\nexport const otherBenefits = () => {return new tsm.SetVar (\"otherBenefits\", (new tsm.Num0 (\"otherBenefits\", 50.0)).val)}\nexport const excludedZero = () => {return new tsm.SetVar (\"excludedZero\", (new tsm.Num0 (\"excludedZero\", 0.0)).val)}\nexport const lifetime_claimable_limit = () => {return new tsm.SetVar ( \"lifetime claimable limit\"\n               , (new tsm.Num0 (\"lifetime claimable limit\", 4500000.0)).val )}\nexport const juvenile_limit = () => {return new tsm.SetVar ( \"juvenile limit\"\n               , (new tsm.Num0 (\"juvenile limit\", 500000.0)).val )}\nexport const illness_branch = () => {return new tsm.SetVar ( \"illness branch\"\n               , (new tsm.Bool3 ( \"illness branch\"\n                                , tsm.BoolTriOp.IfThenElse\n                                , new tsm.GetVar (\"illness.disqualified\")\n                                , new tsm.GetVar (\"excludedZero\")\n                                , new tsm.GetVar (\"policy.benMR\") )).val )}", [])

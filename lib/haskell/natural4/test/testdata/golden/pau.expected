@@ -1,0 +1,110 @@
+( "export const How_Much_Money_Do_You_Get = () => {return new tsm.SetVar ("How Much Money Do You Get", (new tsm.GetVar ("PAU0")).val)}
+  export const Step_1 = () => {return new tsm.SetVar ( "Step 1"
+                 , (new tsm.Bool3 ( "Step 1"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.GetVar ("there were past ADD payouts")
+                                  , new tsm.GetVar ("claimable limited base ADD benefit")
+                                  , new tsm.GetVar ("base ADD benefit") )).val )}
+  export const claimable_limited_base_ADD_benefit = () => {return new tsm.SetVar ( "claimable limited base ADD benefit"
+                 , (new tsm.Num2 ( "claimable limited base ADD benefit"
+                                 , tsm.NumBinOp.Sub
+                                 , new tsm.GetVar ("claimable limit")
+                                 , new tsm.GetVar ("policyHolder.past ADD payouts") )).val )}
+  export const Step_3 = () => {return new tsm.SetVar ( "Step 3"
+                 , (new tsm.GetVar ("multiplied by double triple benefit")).val )}
+  export const juvenile_limited = () => {return new tsm.SetVar ( "juvenile limited"
+                 , (new tsm.Num2 ( "juvenile limited"
+                                 , tsm.NumBinOp.MinOf2
+                                 , new tsm.GetVar ("Part 1")
+                                 , new tsm.GetVar ("juvenile limit") )).val )}
+  export const ADD_benefit = () => {return new tsm.SetVar ( "ADD benefit"
+                 , (new tsm.Num2 ( "ADD benefit"
+                                 , tsm.NumBinOp.MinOf2
+                                 , new tsm.Num2 ( "binop Plus"
+                                                , tsm.NumBinOp.Add
+                                                , new tsm.GetVar ("addBenefit")
+                                                , new tsm.GetVar ("otherBenefits") )
+                                 , new tsm.GetVar ("risk cap") )).val )}
+  export const addBenefit = () => {return new tsm.SetVar ("addBenefit", (new tsm.GetVar ("PAU4")).val)}
+  export const The_Answer = () => {return new tsm.SetVar ( "The Answer"
+                 , (new tsm.Bool3 ( "The Answer"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.GetVar ("user input.accident_claim.selected")
+                                  , new tsm.GetVar ("accident branch")
+                                  , new tsm.GetVar ("illness branch") )).val )}
+  export const accident_branch = () => {return new tsm.SetVar ( "accident branch"
+                 , (new tsm.Bool3 ( "accident branch"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.GetVar ("ADD is disqualified entirely")
+                                  , new tsm.GetVar ("excludedZero")
+                                  , new tsm.GetVar ("ADD benefit") )).val )}
+  export const illness = () => {return new tsm.SetVar ( "illness"
+                 , (new tsm.Bool3 ( "illness"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.BoolFold ( "any/all"
+                                                     , tsm.BoolFoldOp.Any
+                                                     , [ new tsm.GetVar ("illness.general exclusions apply")
+                                                         , new tsm.GetVar ("policy.ended") ] )
+                                  , new tsm.GetVar ("disqualified")
+                                  , new tsm.Num0 ( "No otherwise case"
+                                                 , undefined ) )).val )}
+  export const policyHolder.age = () => {return new tsm.SetVar ( "policyHolder.age"
+                 , (new tsm.Num0 ("policyHolder.age", 50.0)).val )}
+  export const PAU4 = () => {return new tsm.SetVar ("PAU4", (new tsm.GetVar ("Step 1")).val)}
+  export const Step_2 = () => {return new tsm.SetVar ( "Step 2"
+                 , (new tsm.Bool3 ( "Step 2"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.GetVar ("accident.juvenile limit applies")
+                                  , new tsm.GetVar ("juvenile limited")
+                                  , new tsm.GetVar ("Step 1") )).val )}
+  export const multiplied_by_double_triple_benefit = () => {return new tsm.SetVar ( "multiplied by double triple benefit"
+                 , (new tsm.Bool3 ( "multiplied by double triple benefit"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.GetVar ("accident.triple benefits apply")
+                                  , new tsm.Num2 ( "multiplied by double triple benefit"
+                                                 , tsm.NumBinOp.Mul
+                                                 , new tsm.GetVar ("Step 2")
+                                                 , new tsm.Num0 ("3.0", 3.0) )
+                                  , new tsm.Bool3 ( "if-then-else"
+                                                  , tsm.BoolTriOp.IfThenElse
+                                                  , new tsm.GetVar ("accident.double benefits apply")
+                                                  , new tsm.Num2 ( "multiplied by double triple benefit"
+                                                                 , tsm.NumBinOp.Mul
+                                                                 , new tsm.GetVar ("Step 2")
+                                                                 , new tsm.Num0 ( "2.0"
+                                                                                , 2.0 ) )
+                                                  , new tsm.GetVar ("Step 2") ) )).val )}
+  export const PAU0 = () => {return new tsm.SetVar ("PAU0", (new tsm.GetVar ("The Answer")).val)}
+  export const Step_4 = () => {return new tsm.SetVar ( "Step 4"
+                 , (new tsm.GetVar ("Step 3 discounted by accident.risk percentage")).val )}
+  export const claimable_limit = () => {return new tsm.SetVar ( "claimable limit"
+                 , (new tsm.Num2 ( "claimable limit"
+                                 , tsm.NumBinOp.MinOf2
+                                 , new tsm.Num2 ( "binop Times"
+                                                , tsm.NumBinOp.Mul
+                                                , new tsm.Num0 ("1.5", 1.5)
+                                                , new tsm.GetVar ("total sum assured") )
+                                 , new tsm.GetVar ("lifetime claimable limit") )).val )}
+  export const base_ADD_benefit = () => {return new tsm.SetVar ("base ADD benefit", (new tsm.GetVar ("policy.benADD")).val)}
+  export const Step_3_discounted_by_accident.risk_percentage = () => {return new tsm.SetVar ( "Step 3 discounted by accident.risk percentage"
+                 , (new tsm.Num2 ( "Step 3 discounted by accident.risk percentage"
+                                 , tsm.NumBinOp.Mul
+                                 , new tsm.GetVar ("Step 3")
+                                 , new tsm.Num2 ( "binop Minus"
+                                                , tsm.NumBinOp.Sub
+                                                , new tsm.Num0 ("1.0", 1.0)
+                                                , new tsm.GetVar ("accident.risk percentage") ) )).val )}
+  export const otherBenefits = () => {return new tsm.SetVar ("otherBenefits", (new tsm.Num0 ("otherBenefits", 50.0)).val)}
+  export const excludedZero = () => {return new tsm.SetVar ("excludedZero", (new tsm.Num0 ("excludedZero", 0.0)).val)}
+  export const lifetime_claimable_limit = () => {return new tsm.SetVar ( "lifetime claimable limit"
+                 , (new tsm.Num0 ("lifetime claimable limit", 4500000.0)).val )}
+  export const juvenile_limit = () => {return new tsm.SetVar ( "juvenile limit"
+                 , (new tsm.Num0 ("juvenile limit", 500000.0)).val )}
+  export const illness_branch = () => {return new tsm.SetVar ( "illness branch"
+                 , (new tsm.Bool3 ( "illness branch"
+                                  , tsm.BoolTriOp.IfThenElse
+                                  , new tsm.GetVar ("illness.disqualified")
+                                  , new tsm.GetVar ("excludedZero")
+                                  , new tsm.GetVar ("policy.benMR") )).val )}"
+, []
+)

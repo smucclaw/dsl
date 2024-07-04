@@ -91,11 +91,20 @@ getHornlikes l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filtered
 getTypeDecls :: Interpreted -> [Rule]
 getTypeDecls l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy _TypeDecl
 
+-- | Insert all the type declarations as additional "givens" into
+-- every horn-like rule.
+--
+-- Expects the passed rules to be horn-likes.
+--
 insertTypeDecls :: Interpreted -> [Rule] -> [Rule]
 insertTypeDecls l4i = fmap (insertIntoRule allTypeDecls)
   where
+    tdRules :: [Rule]
     tdRules = getTypeDecls l4i
+
+    insertIntoRule :: Maybe ParamText -> Rule -> Rule
     insertIntoRule tds rl = rl {given = tds <> rl.given}
+
     rule2TypeDecls :: Rule -> [TypedMulti]
     rule2TypeDecls td = case (td.has, td.name) of
       ([], x:xs) -> [(x :| xs                    , td.super)]
@@ -105,7 +114,14 @@ insertTypeDecls l4i = fmap (insertIntoRule allTypeDecls)
     allTypeDecls :: Maybe ParamText
     allTypeDecls = tdRules |> foldMap rule2TypeDecls |> nonEmpty
 
--- | TODO: Needs documentation.
+-- | This function expands the rules, i.e. inserting child rules into parent rules.
+-- To do that, it calls 'expandClauses' from 'Interpreter'. Direct output of
+-- 'expandClauses' leaves the child rules intact, which results in redundancy.
+--
+-- So the line @r.name `notElem` leaves@ removes the child rules that have
+-- already been inserted into the parent.
+--
+-- TODO: Yongming has worries about `expandClauses` being lossy.
 --
 expandHornlikes :: Interpreted -> [Rule] -> [Rule]
 expandHornlikes l4i hls =

@@ -31,6 +31,7 @@ import Data.Tree (Tree (..))
 import Debug.Trace (trace)
 import Explainable
   ( ExplainableIO,
+    ExplainableT,
     XP,
     drawTreeOrg,
     emptyXP,
@@ -356,7 +357,7 @@ data Var a
 
 -- | Evaluate floats
 
-eval,eval' :: Expr Double -> ExplainableIO r MyState Double
+eval,eval' :: MonadFail m => Expr Double -> ExplainableT m r MyState Double
 eval exprfloat = do
   (x, result) <- eval' exprfloat
   let lbl = getExprLabel exprfloat
@@ -389,7 +390,7 @@ eval' (MathVar      str) =
   let title = [i|variable expansion: #{str}|]
       (lhs,_rhs) = verbose title
   in retitle [i|#{title} #{str}|] do
-    (xvar, xpl1) <- getvarF str
+    (xvar, xpl1) <- getValueVariable str
     (xval, xpl2) <- eval xvar
     pure (xval, Node ([], [[i|#{xval}: #{lhs} #{str}|]]) [xpl1, xpl2])
 eval' (MathSet     str x) =
@@ -410,25 +411,25 @@ eval' (ListFold _lbl FoldSum     xs) = doFold "sum" sum xs
 eval' (ListFold _lbl FoldProduct xs) = doFold "product" product xs
 
 evalAndCoerceList ::
-  (Eq src, IsString src, Interpolatable False src String) =>
-  src -> Expr Double -> ExplainableIO r MyState Double
+  ( MonadFail m
+  , Eq src, IsString src, Interpolatable False src String) =>
+  src -> Expr Double -> ExplainableT m r MyState Double
 evalAndCoerceList binop (MathVar str) =
   let title = [i|variable expansion: #{str}|]
       (lhs,_rhs) = verbose title
   in retitle [i|#{title} #{str}|] do
-    (xlist, xpl1) <- getvarL str
+    (xlist, xpl1) <- getValueOrListVariable str
     case xlist of
-      MathList Nothing [] -> eval (MathVar str)
-      nonemptyList -> do
+      Right valueVar -> eval valueVar
+      Left nonemptyList -> do
         fold <- case binop of
           "addition" -> pure FoldSum
           "multiplication" -> pure FoldProduct
-          _x -> liftIO do
-            putStrLn [__i|
-              Illegal operation #{binop} applied to #{nonemptyList}, recovered by returning the minimum of the list
-              MathLang fatal error in evalAndCoerceList
-            |]
-            pure FoldMin
+          _x ->
+            fail [__i|
+                Illegal operation #{binop} applied to #{nonemptyList}, recovered by returning the minimum of the list
+                MathLang fatal error in evalAndCoerceList
+              |]
         let foldedList =
               ListFold
                 (Just [i|coerced #{binop} on a list due to its context|])
@@ -439,7 +440,7 @@ evalAndCoerceList binop (MathVar str) =
 evalAndCoerceList _ expr = eval expr
 
 -- | do a fold over an `ExprList`
-doFold :: String -> ([Double] -> Double) -> ExprList Double -> ExplainableIO r MyState Double
+doFold :: MonadFail m => String -> ([Double] -> Double) -> ExprList Double -> ExplainableT m r MyState Double
 doFold str f xs = retitle [i|listfold #{str}|] do
   (MathList _ylbl yvals,yexps) <- evalList xs
   zs <- eval `traverse` yvals
@@ -450,7 +451,7 @@ doFold str f xs = retitle [i|listfold #{str}|] do
            (yexps : (snd <$> zs)))
 
 -- | helper function, Unary evaluation of an `Expr` `Double` to some `Double`
-unaEval :: String -> (Double -> Double) -> Expr Double -> ExplainableIO r MyState Double
+unaEval :: MonadFail m => String -> (Double -> Double) -> Expr Double -> ExplainableT m r MyState Double
 unaEval title f x =
   let (lhs,_rhs) = verbose title
   in retitle title do
@@ -459,7 +460,7 @@ unaEval title f x =
     pure (toreturn, Node ([], [[i|#{toreturn}: #{lhs}|]]) [xpl])
 
 -- | helper function, Binary evaluation
-binEval :: String -> (Double -> Double -> Double) -> Expr Double -> Expr Double -> ExplainableIO r MyState Double
+binEval :: MonadFail m => String -> (Double -> Double -> Double) -> Expr Double -> Expr Double -> ExplainableT m r MyState Double
 binEval title f x y = retitle title do
   -- liftIO putStrLn should be treated as more of a Debug.Trace.
   -- "normal" output gets returned in the fst part of the Node.
@@ -476,7 +477,7 @@ binEval title f x y = retitle title do
 
 -- | Evaluate predicates
 
-evalP,evalP' :: Pred Double -> ExplainableIO r MyState Bool
+evalP,evalP' :: MonadFail m => Pred Double -> ExplainableT m r MyState Bool
 evalP pred = do
   (x, result) <- evalP' pred
   let lbl = getPredLabel pred
@@ -538,7 +539,7 @@ evalP' (PredVar str) =
   let title :: String = [i|variable expansion: #{str}|]
       (lhs,_rhs) = verbose title
   in retitle [i|#{title} #{str}|] do
-    (xvar, xpl1) <- getvarP str
+    (xvar, xpl1) <- getPredicateVariable str
     (xval, xpl2) <- evalP xvar
     pure (xval, Node ([], [[i|#{xval}: #{lhs} #{str}|]]) [xpl1, xpl2])
 
@@ -555,12 +556,12 @@ evalP' (PredITE _lbl p x y) = evalFP evalP p x y
 
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
 -- This works for both boolean Predicates and float Exprs.
-evalFP :: Show t
-       => (t -> ExplainableIO r MyState a)
+evalFP :: (Show t, MonadFail m)
+       => (t -> ExplainableT m r MyState a)
        -> Pred Double
        -> t
        -> t
-       -> ExplainableIO r MyState a
+       -> ExplainableT m r MyState a
 evalFP evf p x y = retitle "if-then-else" do
   (pval,pxpl) <- evalP p
   if pval
@@ -573,7 +574,7 @@ evalFP evf p x y = retitle "if-then-else" do
 
 -- | Evaluate an `ExprList`
 
-evalList :: ExprList Double -> ExplainableIO r MyState (ExprList Double)
+evalList :: MonadFail m => ExprList Double -> ExplainableT m r MyState (ExprList Double)
 evalList (MathList lbl a) = pure (MathList lbl a, Node (show <$> a,[[i|base MathList with #{length a} elements|]]) [])
 evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
   origs <- eval `traverse` ys
@@ -638,38 +639,51 @@ deepEvalList (other,_xp) = deepEvalList =<< evalList other
 -- * Variable retrieval and assignment into the symbol table.
 -- At present we have no notion of scope.
 
--- | Get an @Expr Double@ variable
+-- | Find the value associated with the given variable. If the variable is unknown, this operation 'fail's.
+getValueOrListVariable :: MonadFail m => String -> ExplainableT m r MyState (Either (ExprList Double) (Expr Double))
+getValueOrListVariable x = do
+  listSymtab <- gets symtabL
+  case listSymtab Map.!? x of
+    Just v ->
+      pure (Left v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+    Nothing -> do
+      variableSymtab <- gets symtabF
+      case variableSymtab Map.!? x of
+        Just v ->
+          pure (Right v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+        _ ->
+          fail $ "Variable \"" <> x <> "\" was not found. Perhaps you need to provide it?"
 
-getvarF :: String -> ExplainableIO r MyState (Expr Double)
-getvarF x = do
+
+-- | Get an @Expr Double@ variable. If the variable is unknown, this operation 'fail's.
+getValueVariable :: MonadFail m => String -> ExplainableT m r MyState (Expr Double)
+getValueVariable x = do
   symtab <- gets symtabF
   case symtab Map.!? x of
     Just v ->
       pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
-    _ -> liftIO do
-      putStrLn [__i|
-        getvarF: unable to find variable `#{x}` in symbol table
-        MathLang fatal error in getvarF
-      |]
-      pure (Val Nothing 0, emptyXP)
+    _ ->
+      fail $ "Variable \"" <> x <> "\" was not found. Perhaps you need to provide it?"
 
-getvarL :: String -> ExplainableIO r MyState (ExprList Double)
-getvarL x = do
+-- | Find the list value associated with the given variable. If the variable is unknown, this operation 'fail's.
+getListVariable :: MonadFail m => String -> ExplainableT m r MyState (ExprList Double)
+getListVariable x = do
   symtab <- gets symtabL
   case symtab Map.!? x of
-    Just l ->
-      pure (l, Node ([show l], [[i|variable `#{x}` has value #{l}|]]) [])
-    _ -> -- we check the result from calling function and call getvarF it wasn't a list
-      pure (MathList Nothing [], emptyXP)
+    Just v ->
+      pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+    Nothing ->
+      fail $ "Variable \"" <> x <> "\" was not found. Perhaps you need to provide it?"
 
--- | Get a @Pred Double@ variable
-
-getvarP :: String -> ExplainableIO r MyState (Pred Double)
-getvarP x = do
+-- | Find the predicate associated with the given variable. If the variable is unknown, this operation 'fail's.
+getPredicateVariable :: MonadFail m => String -> ExplainableT m r MyState (Pred Double)
+getPredicateVariable x = do
   symtab <- gets symtabP
   case symtab Map.!? x of
-    Just v -> pure (v, Node ([show v], [[i|looked up #{x}|]]) [])
-    _ -> pure (PredVar "", emptyXP)
+    Just v ->
+      pure (v, Node ([show v], [[i|looked up #{x}|]]) [])
+    Nothing ->
+      fail $ "Unknown predicate variable \"" <> x <> "\". Perhaps you need to provide it?"
 
 -- [TODO] ExprLists too, i suppose
 

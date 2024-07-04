@@ -15,7 +15,7 @@ I had used them b/c I was prototyping and wasn't sure from the outset
 how much would be needed to in effect parse the notoriously complicated L4 data structures.
 -}
 
-{-# OPTIONS_GHC -W #-}
+{-# OPTIONS_GHC -Wall #-}
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels #-}
@@ -38,7 +38,7 @@ import LS.XPile.MathLang.GenericMathLang.TranslateL4
   ( ToLCError, runToLC, l4ToLCProgram )
 
 import LS.Interpreter (expandClauses)
-import LS.Rule (Rule(..), Interpreted(..),
+import LS.Rule (Rule(..), Interpreted(..), _Hornlike, _TypeDecl
                 -- defaultHorn
                 -- defaultHorn is useful for prototyping in the REPL
                 )
@@ -49,7 +49,6 @@ import Data.List.NonEmpty (NonEmpty((:|)), nonEmpty)
 -- experimenting with Effectful.Error rn
 -- see Mattermost slack for discussion of error handling and MonadValidate
 import Optics (cosmosOf, toListOf, gplate, folded, (%), filteredBy, (^..))
-import Data.Generics.Sum.Constructors ( AsConstructor(_Ctor) )
 -- import Data.Generics.Product.Types (types)
 -- import Prettyprinter (Pretty)
 -- import Data.String.Interpolate (__i)
@@ -83,14 +82,29 @@ toMathLangGen l4i =
 
 -- Utility functions for expanding rules and inserting TypeDecls into GIVENs
 -- (Introduced in 2024-06, I hope we deal with global vs. local variables better later.)
-getHornlikes l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"Hornlike")
-getTypeDecls l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy (_Ctor @"TypeDecl")
 
+-- | Extract all 'Hornlike' rules.
+getHornlikes :: Interpreted -> [Rule]
+getHornlikes l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy _Hornlike
+
+-- | Extract all 'TypeDecl' rules.
+getTypeDecls :: Interpreted -> [Rule]
+getTypeDecls l4i = l4i.origrules ^.. folded % cosmosOf (gplate @Rule) % filteredBy _TypeDecl
+
+-- | Insert all the type declarations as additional "givens" into
+-- every horn-like rule.
+--
+-- Expects the passed rules to be horn-likes.
+--
 insertTypeDecls :: Interpreted -> [Rule] -> [Rule]
 insertTypeDecls l4i = fmap (insertIntoRule allTypeDecls)
   where
+    tdRules :: [Rule]
     tdRules = getTypeDecls l4i
+
+    insertIntoRule :: Maybe ParamText -> Rule -> Rule
     insertIntoRule tds rl = rl {given = tds <> rl.given}
+
     rule2TypeDecls :: Rule -> [TypedMulti]
     rule2TypeDecls td = case (td.has, td.name) of
       ([], x:xs) -> [(x :| xs                    , td.super)]
@@ -100,6 +114,15 @@ insertTypeDecls l4i = fmap (insertIntoRule allTypeDecls)
     allTypeDecls :: Maybe ParamText
     allTypeDecls = tdRules |> foldMap rule2TypeDecls |> nonEmpty
 
+-- | This function expands the rules, i.e. inserting child rules into parent rules.
+-- To do that, it calls 'expandClauses' from 'Interpreter'. Direct output of
+-- 'expandClauses' leaves the child rules intact, which results in redundancy.
+--
+-- So the line @r.name `notElem` leaves@ removes the child rules that have
+-- already been inserted into the parent.
+--
+-- TODO: Yongming has worries about `expandClauses` being lossy.
+--
 expandHornlikes :: Interpreted -> [Rule] -> [Rule]
 expandHornlikes l4i hls =
   [ r {clauses = expandClauses l4i 1 (clauses r)}
@@ -134,7 +157,6 @@ makeErrorOut _errors = ("not yet implemented", ["not yet implemented"])
 renderLC :: LCProgram -> String
 renderLC program =
   [__i|
-    progMetadata = #{progMetadata program}
     lcProgram = #{lcProgram}
     globalVars = #{globalVars}
     giveths = #{giveths}

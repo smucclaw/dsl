@@ -122,6 +122,17 @@ executables:
     dependencies:
       - natural4
 
+  l4-bnfc-exe:
+    main: Main.hs
+    source-dirs: bnfc
+    ghc-options:
+      - -Wunused-imports
+      - -threaded
+      - -rtsopts
+      - '"-with-rtsopts=-N -H500M -qg"'
+    dependencies:
+      - natural4
+
 tests:
   natural4-test:
     main: Spec.hs

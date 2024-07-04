@@ -2,25 +2,17 @@
 
 -- | Program to test parser.
 
+module Main where
 
-module TextuaL4.MyTest where
-
-import Prelude
-  ( ($), (.)
-  , Either(..)
-  , Int, (>)
-  , String, (++), concat, unlines
-  , Show, show
-  , IO, mapM_, putStrLn
-  )
 import System.Exit        ( exitFailure )
+import System.Environment ( getArgs )
 import Control.Monad      ( when )
 import Data.Text.Lazy qualified as Text
-import TextuaL4.AbsTextual qualified as TL4
+import TextuaL4.AbsTextuaL qualified as TL4
 import TextuaL4.Transform
-import TextuaL4.LexTextual   ( Token, mkPosToken )
-import TextuaL4.ParTextual   ( pRule, myLexer )
-import TextuaL4.PrintTextual ( Print, printTree )
+import TextuaL4.LexTextuaL   ( Token, mkPosToken )
+import TextuaL4.ParTextuaL   ( pRule, myLexer )
+import TextuaL4.PrintTextuaL ( Print, printTree )
 import Text.Pretty.Simple (pShowNoColor)
 
 type Err        = Either String
@@ -65,8 +57,14 @@ usage = do
     , "  -s (files)      Silent mode. Parse content of files silently."
     ]
 
-main :: String -> IO ()
-main = run 2 pRule
+main :: IO ()
+main = do
+  args <- getArgs
+  case args of
+    ["--help"] -> usage
+    []         -> getContents >>= run 2 pRule
+    -- "-s":fs    -> mapM_ (runFile 0 pRule) fs
+    -- fs         -> mapM_ (runFile 2 pRule) fs
 
 -- Things to try out in ghci
 -- main "EVERY Person WHO Qualifies MEANS ALL(walk, ANY(eat, drink), dance) MUST sing"

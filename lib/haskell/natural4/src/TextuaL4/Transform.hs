@@ -7,7 +7,7 @@
 module TextuaL4.Transform where
 
 import Prelude (($), (<$>), Bool(..), Maybe(..))
-import qualified TextuaL4.AbsTextual as TL4
+import qualified TextuaL4.AbsTextuaL as TL4
 import LS.Rule
 import LS.Types
 import AnyAll (BoolStruct(..), Label(..))

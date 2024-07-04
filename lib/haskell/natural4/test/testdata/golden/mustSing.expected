@@ -1,0 +1,23 @@
+( "export const Qualifies = () => {return new tsm.BoolFold ( "Qualifies"
+                   , tsm.BoolFoldOp.All
+                   , [ new tsm.GetVar ("walks")
+                       , new tsm.BoolFold ( "any/all"
+                                          , tsm.BoolFoldOp.All
+                                          , [ new tsm.BoolFold ( "any/all"
+                                                               , tsm.BoolFoldOp.Any
+                                                               , [ new tsm.BoolFold ( "Drinks"
+                                                                                    , tsm.BoolFoldOp.All
+                                                                                    , [ new tsm.BoolFold ( "any/all"
+                                                                                                         , tsm.BoolFoldOp.Any
+                                                                                                         , [ new tsm.GetVar ("alcoholic")
+                                                                                                             , new tsm.GetVar ("non-alcoholic") ] )
+                                                                                        , new tsm.BoolFold ( "any/all"
+                                                                                                           , tsm.BoolFoldOp.All
+                                                                                                           , [ new tsm.BoolFold ( "any/all"
+                                                                                                                                , tsm.BoolFoldOp.Any
+                                                                                                                                , [ new tsm.GetVar ("in part")
+                                                                                                                                    , new tsm.GetVar ("in whole") ] ) ] ) ] )
+                                                                   , new tsm.GetVar ("eats") ] ) ] ) ] )}
+  "
+, []
+)

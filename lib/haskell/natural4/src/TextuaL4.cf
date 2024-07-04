@@ -1,0 +1,79 @@
+entrypoints Rule ;
+
+RegSimple. Rule ::= "EVERY" Text Deontic BoolStructR ;
+RegWho. Rule ::= "EVERY" Text Who Deontic BoolStructR ;
+RegWhoInline. Rule ::= "EVERY" Text Who InlineHornlike Deontic BoolStructR ;
+Hornlike. Rule ::= Text "MEANS" BoolStructR ;
+
+rules Deontic ::= "MUST" | "MAY" | "SHANT" ;
+
+WhoSimple. Who ::= "WHO" BoolStructR ;
+
+MeansInline. InlineHornlike ::= "MEANS" BoolStructR ;
+
+
+
+-- RelationalPredicate
+RPMT. RelationalPredicate ::= [MTExpr] ;
+RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStructR  ;  -- eyes IS (left IS blue AND right IS brown)
+-- Commented out: this in combination with BoolStructR being a single RelationalPredicate causes 3 r/r conflicts
+-- RPConstraint. RelationalPredicate ::=  [MTExpr] RPRel [MTExpr]  ;   -- eyes IS blue
+
+-- Commented out: I believe that many of the uses of RPnary in the wild are covered by BoolStruct constructors.
+-- That and also because it introduces 62 conflicts.
+-- RPnary. RelationalPredicate ::= RPRel [RelationalPredicate] ; -- "NEVER GO FULL LISP!" "we went full Lisp".
+-- separator nonempty RelationalPredicate "," ;
+
+MTT . MTExpr ::= Text    ;
+MTI . MTExpr ::= Integer ;
+MTF . MTExpr ::= Double  ;
+MTB . MTExpr ::= Bool    ;
+
+rules Bool ::= "True" | "False" ;
+token Text letter (letter | '_' | '\'' | '-')* ;
+separator nonempty MTExpr " " ;
+
+-- BoolStructR
+Any . BoolStructR ::=  "ANY" "(" [BoolStructR] ")" ;
+AnyPre . BoolStructR ::= Text "ANY"  "(" [BoolStructR] ")" ;
+AnyPrePost . BoolStructR ::= Text  "ANY" "(" [BoolStructR] ")" Text ;
+All . BoolStructR ::=  "ALL" "(" [BoolStructR] ")" ;
+Not . BoolStructR ::= "NOT" BoolStructR ;
+
+-- If RPConstraint is uncommented, then this rule introduces 3 reduce/reduce conflicts.
+-- Can be fixed by prefixing it with something, but I think it's simpler to transform
+--     RPBoolStructR x rel (Leaf (RPMT y))   into
+--     RPConstraint  x rel             y
+Leaf . BoolStructR ::= RelationalPredicate ;
+
+separator nonempty BoolStructR "," ;
+
+-- RPRel
+RPis . RPRel ::= "IS" ;
+RPhas . RPRel ::= "HAS" ;
+RPeq . RPRel ::= "EQUALS" ;
+RPlt . RPRel ::= "<" ;
+RPlte . RPRel ::= "<=" ;
+RPgt . RPRel ::= ">" ;
+RPgte . RPRel ::= ">=" ;
+RPelem . RPRel ::= "IN" ;
+RPnotElem . RPRel ::= "NOT IN" ;
+RPnot . RPRel ::= "NOT" ;
+RPand . RPRel ::= "AND" ;
+RPor . RPRel ::= "OR" ;
+RPsum . RPRel ::= "SUM" ;
+RPproduct . RPRel ::= "PRODUCT" ;
+RPminus . RPRel ::= "MINUS" ;
+RPdivide . RPRel ::= "DIVIDE" ;
+RPmodulo . RPRel ::= "MODULO" ;
+RPsubjectTo . RPRel ::= "SUBJECT TO" ;
+RPmin . RPRel ::= "MIN" ;
+RPmax . RPRel ::= "MAX" ;
+RPmap . RPRel ::= "MAP" ;
+
+RPTC   . RPRel ::= TComparison ;
+TBefore. TComparison ::= "BEFORE" ;
+TAfter . TComparison ::= "AFTER" ;
+TBy    . TComparison ::= "BY" ;
+TOn    . TComparison ::= "ON" ;
+TVague . TComparison ::= "ABOUT" ;

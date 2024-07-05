@@ -3,6 +3,8 @@
 module Explainable
   ( XP,
     ExplainableIO,
+    ExplainableT,
+    Explainable,
     drawTreeOrg,
     emptyXP,
     historypath,
@@ -24,6 +26,7 @@ import Data.List (intercalate)
 import Data.Ord ()
 import Data.String.Interpolate (__i)
 import Data.Tree (Tree (..))
+import Control.Monad.Identity (Identity)
 
 -- | Our ExplainableIO monad supports evaluation-with-explanation of expressions in our DSL.
 -- Normally, a DSL is /evaluated/: its expressions are reduced from types in the DSL to types in the host language.
@@ -63,8 +66,9 @@ import Data.Tree (Tree (..))
 -- When an expression is evaluated the system automatically saves the
 -- value of that expression into the symbol table kept in State.
 --
-type ExplainableIO  r st a = RWST         (HistoryPath,r) [String] st IO (a,XP)
-type Explainable    r st a = ExplainableIO r st a
+type ExplainableIO  r st a = ExplainableT IO r st a
+type Explainable    r st a = ExplainableT Identity r st a
+type ExplainableT m r st a = RWST         (HistoryPath,r) [String] st m (a,XP)
 
 -- | we also provide a non-transformer form so we don't have do IO
 type ExplainableId  r st a = RWS          (HistoryPath,r) [String] st    (a,XP)
@@ -86,13 +90,13 @@ origReader  :: (hp,r) ->    r
 
 -- | Prepend some string to the path part of the @Reader ((history,path),r)@.
 -- So that any code that wants to know what its call stack looks like can consult "path"
-retitle :: String -> ExplainableIO r st a -> ExplainableIO r st a
+retitle :: String -> ExplainableT m r st a -> ExplainableT m r st a
 retitle str = local $ first $ fmap (str:)
 
 
 -- | The Writer supports logging, basically. We set it as @[String]@ in case you actually do want to use it.
 -- Our primary app doen't actually use the Writer, but returns XP as the @snd@ part in our return value instead.
--- 
+--
 -- The @XP@ explanation is designed to be readable as an Org-mode file.
 -- Inspired by Literate Programming we use the idea of Literate Outputting.
 -- We separate our output into two parts:
@@ -115,10 +119,10 @@ emptyXP = Node {rootLabel = ([], []), subForest = []}
 -- | Helper function to make a child-free explanation node
 mkNod :: a -> Tree ([b],[a])
 mkNod x = Node ([],[x]) []
-  
+
 -- * Utility functions
 
--- | utility function to format the call stack  
+-- | utility function to format the call stack
 pathSpec :: [String] -> String
 pathSpec = intercalate " / " . reverse
 

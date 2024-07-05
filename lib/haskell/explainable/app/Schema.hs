@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Schema (
   serverOpenApi,
-
+  ServerName,
   -- * Tests
   runJsonTests,
 ) where
@@ -14,9 +15,12 @@ import Control.Lens hiding ((.=))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
 import Data.Map (Map)
+import Data.Maybe qualified as Maybe
 import Data.OpenApi
 import Data.Proxy
 import Data.Text qualified as Text
+import GHC.TypeLits
+import Servant
 import Servant.OpenApi
 import Server hiding (description, name)
 import Test.Hspec (hspec)
@@ -24,12 +28,20 @@ import Test.QuickCheck (Arbitrary (..), oneof)
 import Test.QuickCheck.Gen qualified as Q
 import Test.QuickCheck.Instances ()
 
-serverOpenApi :: OpenApi
-serverOpenApi =
+type ServerName = Text.Text
+
+serverOpenApi :: Maybe ServerName -> OpenApi
+serverOpenApi serverName =
   toOpenApi (Proxy :: Proxy Api)
     & info . title .~ "MathLang Function API"
     & info . version .~ "1.0"
     & info . description ?~ "API for invoking MathLang functions"
+    & servers .~ Maybe.maybeToList ((\sName -> Server sName mempty mempty) <$> serverName)
+
+instance (KnownSymbol desc, HasOpenApi api) => HasOpenApi (OperationId desc :> api) where
+  toOpenApi _ =
+    toOpenApi (Proxy :: Proxy api)
+      & allOperations . operationId %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
 -- ----------------------------------------------------------------------------
 -- Document and describe the Json schema using the OpenAPI standard
@@ -154,8 +166,9 @@ instance ToSchema Parameter where
 instance Arbitrary Reasoning where
   arbitrary = Reasoning <$> arbitrary
 
--- | The code for this instance is taken from 'Arbitrary1 containers-Data.Tree.Tree'.
--- See https://hackage.haskell.org/package/QuickCheck-2.15.0.1/docs/src/Test.QuickCheck.Arbitrary.html#line-901
+{- | The code for this instance is taken from 'Arbitrary1 containers-Data.Tree.Tree'.
+See https://hackage.haskell.org/package/QuickCheck-2.15.0.1/docs/src/Test.QuickCheck.Arbitrary.html#line-901
+-}
 instance Arbitrary ReasoningTree where
   arbitrary = Q.sized $ \n -> do
     k <- Q.chooseInt (0, n)

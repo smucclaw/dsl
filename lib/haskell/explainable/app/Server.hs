@@ -4,9 +4,13 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Server (
+  -- * Servant
+  OperationId,
+
   -- * REST API
   Api,
   FunctionApi,
@@ -41,7 +45,9 @@ import Data.String.Interpolate (__i)
 import Data.Text qualified as Text
 import Data.Text.Read qualified as TextReader
 import Data.Tree qualified as Tree
+import Data.Typeable
 import GHC.Generics
+import GHC.TypeLits
 import Servant
 import System.Timeout (timeout)
 
@@ -55,23 +61,28 @@ import Explainable.MathLang
 type Api = NamedRoutes FunctionApi'
 type FunctionApi = NamedRoutes FunctionApi'
 
--- | API that can be invoked by a custom gpt.
---
--- See https://openai.com/index/introducing-gpts/
+{- | API that can be invoked by a custom gpt.
+
+See https://openai.com/index/introducing-gpts/
+-}
 data FunctionApi' mode = FunctionApi
   { functionRoutes :: mode :- "functions" :> FunctionCrud
   }
   deriving (Generic)
 
 type FunctionCrud = NamedRoutes FunctionCrud'
+
 -- | API for interacting with the 'function' resource.
---
 data FunctionCrud' mode = FunctionCrud
   { batchEntities ::
       mode
         :- Summary "Shortened descriptions of all available functions and their parameters"
+          :> OperationId "getAllFunctions"
           :> Get '[JSON] [SimpleFunction]
-  , singleEntity :: mode :- Capture "name" String :> SingleFunctionApi
+  , singleEntity ::
+      mode
+        :- Capture "name" String
+          :> SingleFunctionApi
   , computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
@@ -79,6 +90,7 @@ data FunctionCrud' mode = FunctionCrud
           :> QueryParam "eats" Text.Text
           :> QueryParam "walks" Text.Text
           :> Summary "Compute whether a person qualifies based on their properties"
+          :> OperationId "runComputeQualifies"
           :> Post '[JSON] SimpleResponse
   -- ^ Run the 'compute_qualifies' function with the given parameters.
   --
@@ -97,6 +109,7 @@ data SingleFunctionApi' mode = SingleFunctionApi
   { getFunction ::
       mode
         :- Summary "Get a detailed description of the function and its parameters"
+          :> OperationId "getSingleFunction"
           :> Get '[JSON] Function
   }
   deriving (Generic)
@@ -159,6 +172,34 @@ data ReasoningTree = ReasoningTree
   }
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
+
+-- ----------------------------------------------------------------------------
+-- Servant Combinators
+-- ----------------------------------------------------------------------------
+
+data OperationId (symbol :: Symbol)
+  deriving (Typeable)
+
+instance (HasLink sub) => HasLink (OperationId s :> sub) where
+  type MkLink (OperationId s :> sub) a = MkLink sub a
+  toLink = simpleToLink (Proxy :: Proxy sub)
+
+simpleToLink ::
+  forall sub a combinator.
+  (HasLink sub, MkLink sub a ~ MkLink (combinator :> sub) a) =>
+  Proxy sub ->
+  (Link -> a) ->
+  Proxy (combinator :> sub) ->
+  Link ->
+  MkLink (combinator :> sub) a
+simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
+
+-- | Ignore @'OperationId'@ in server handlers.
+instance (HasServer api ctx) => HasServer (OperationId desc :> api) ctx where
+  type ServerT (OperationId desc :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
 
 -- ----------------------------------------------------------------------------
 -- Web Service Handlers

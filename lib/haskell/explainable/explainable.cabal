@@ -85,6 +85,8 @@ executable explainable-exe
     , mtl
     , numeric-extras
     , openapi3
+    , optics
+    , optics-core
     , optparse-applicative
     , parsec
     , parser-combinators

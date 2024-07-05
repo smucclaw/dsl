@@ -82,6 +82,8 @@ executables:
     - directory
     - filepath
     - lens
+    - optics-core
+    - optics
     - optparse-applicative
     - scientific
     - QuickCheck

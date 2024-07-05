@@ -31,19 +31,19 @@ opts =
 
 main :: IO ()
 main = do
-  Options{port = port} <- execParser opts
+  Options{port, serverName} <- execParser opts
   withStdoutLogger $ \aplogger -> do
     let settings = setPort port $ setLogger aplogger defaultSettings
-    runSettings settings app
+    runSettings settings (app serverName)
 
 type ApiWithSwagger =
   SwaggerSchemaUI "swagger-ui" "swagger.json"
     :<|> Api
 
-appWithSwagger :: Servant.Server ApiWithSwagger
-appWithSwagger =
-  swaggerSchemaUIServer serverOpenApi
+appWithSwagger :: Maybe ServerName -> Servant.Server ApiWithSwagger
+appWithSwagger mServerName =
+  swaggerSchemaUIServer (serverOpenApi mServerName)
     :<|> handler
 
-app :: Application
-app = serve (Proxy @ApiWithSwagger) appWithSwagger
+app ::  Maybe ServerName -> Application
+app mServerName = serve (Proxy @ApiWithSwagger) (appWithSwagger mServerName)

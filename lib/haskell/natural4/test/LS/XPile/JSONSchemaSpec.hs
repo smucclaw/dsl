@@ -22,6 +22,7 @@ import LS.XPile.ExportTypes
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.QuickCheck
     ( Arbitrary(arbitrary), oneof, Testable(property) )
+import Test.QuickCheck.Gen
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
 instance Arbitrary ParamType where
@@ -37,10 +38,12 @@ instance Arbitrary EntityType where
     arbitrary = T.pack <$> arbitrary
 
 instance Arbitrary Rule where
-  arbitrary = do
+  arbitrary = sized $ \n -> do
     ruleName <- arbitrary
     maybeTypeSig <- arbitrary
-    hasRules <- arbitrary
+    hasRules <- do
+      k <- choose (1, n)
+      resize k (listOf arbitrary)
     pure $ TypeDecl {
             name = ruleName,
             super = maybeTypeSig,
@@ -111,5 +114,5 @@ spec = do
 
   -- TODO: this test gets stuck, why ???
   describe "Prettyprinting: property-based testing" do
-    xit "Applying rulesToJsonSchema to arbitrary rules, all should be normalised" do
+    it "Applying rulesToJsonSchema to arbitrary rules, all should be normalised" do
         property prop_RuleNormalisedAsJson

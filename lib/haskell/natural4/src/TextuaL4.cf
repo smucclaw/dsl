@@ -1,22 +1,22 @@
 entrypoints Rule ;
 
-RegSimple. Rule ::= "EVERY" Text Deontic BoolStructR ;
-RegWho. Rule ::= "EVERY" Text Who Deontic BoolStructR ;
-RegWhoInline. Rule ::= "EVERY" Text Who InlineHornlike Deontic BoolStructR ;
-Hornlike. Rule ::= Text "MEANS" BoolStructR ;
+RegSimple. Rule ::= "EVERY" BoolStruct Deontic BoolStruct ;
+RegWho. Rule ::= "EVERY" BoolStruct Who Deontic BoolStruct ;
+RegWhoInline. Rule ::= "EVERY" BoolStruct Who InlineHornlike Deontic BoolStruct ;
+Hornlike. Rule ::= Text "MEANS" BoolStruct ;
 
 rules Deontic ::= "MUST" | "MAY" | "SHANT" ;
 
-WhoSimple. Who ::= "WHO" BoolStructR ;
+WhoSimple. Who ::= "WHO" BoolStruct ;
 
-MeansInline. InlineHornlike ::= "MEANS" BoolStructR ;
+MeansInline. InlineHornlike ::= "MEANS" BoolStruct ;
 
 
 
 -- RelationalPredicate
 RPMT. RelationalPredicate ::= [MTExpr] ;
-RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStructR  ;  -- eyes IS (left IS blue AND right IS brown)
--- Commented out: this in combination with BoolStructR being a single RelationalPredicate causes 3 r/r conflicts
+RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStruct  ;  -- eyes IS (left IS blue AND right IS brown)
+-- Commented out: this in combination with BoolStruct being a single RelationalPredicate causes 3 r/r conflicts
 -- RPConstraint. RelationalPredicate ::=  [MTExpr] RPRel [MTExpr]  ;   -- eyes IS blue
 
 -- Commented out: I believe that many of the uses of RPnary in the wild are covered by BoolStruct constructors.
@@ -33,20 +33,22 @@ rules Bool ::= "True" | "False" ;
 token Text letter (letter | '_' | '\'' | '-')* ;
 separator nonempty MTExpr " " ;
 
--- BoolStructR
-Any . BoolStructR ::=  "ANY" "(" [BoolStructR] ")" ;
-AnyPre . BoolStructR ::= Text "ANY"  "(" [BoolStructR] ")" ;
-AnyPrePost . BoolStructR ::= Text  "ANY" "(" [BoolStructR] ")" Text ;
-All . BoolStructR ::=  "ALL" "(" [BoolStructR] ")" ;
-Not . BoolStructR ::= "NOT" BoolStructR ;
+-- BoolStruct
+Any . BoolStruct ::=  "ANY" "(" [BoolStruct] ")" ;
+AnyPrePost . BoolStruct ::= Text  "ANY" "(" [BoolStruct] ")" Text ;
+AnyPre . BoolStruct ::= Text "ANY"  "(" [BoolStruct] ")" ;
+All . BoolStruct ::=  "ALL" "(" [BoolStruct] ")" ;
+AllPre . BoolStruct ::= Text "ALL" "(" [BoolStruct] ")" ;
+AllPrePost . BoolStruct ::= Text  "ALL" "(" [BoolStruct] ")" Text ;
+Not . BoolStruct ::= "NOT" BoolStruct ;
 
 -- If RPConstraint is uncommented, then this rule introduces 3 reduce/reduce conflicts.
 -- Can be fixed by prefixing it with something, but I think it's simpler to transform
 --     RPBoolStructR x rel (Leaf (RPMT y))   into
 --     RPConstraint  x rel             y
-Leaf . BoolStructR ::= RelationalPredicate ;
+Leaf . BoolStruct ::= RelationalPredicate ;
 
-separator nonempty BoolStructR "," ;
+separator nonempty BoolStruct "," ;
 
 -- RPRel
 RPis . RPRel ::= "IS" ;

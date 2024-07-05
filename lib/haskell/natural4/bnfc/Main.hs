@@ -5,7 +5,6 @@
 module Main where
 
 import System.Exit        ( exitFailure )
-import System.Environment ( getArgs )
 import Control.Monad      ( when )
 import Data.Text.Lazy qualified as Text
 import TextuaL4.AbsTextuaL qualified as TL4
@@ -47,26 +46,8 @@ showTree v tree = do
   putStrV v $ "\n[Abstract Syntax]\n\n" ++ show tree
   putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
 
-usage :: IO ()
-usage = do
-  putStrLn $ unlines
-    [ "usage: Call with one of the following argument combinations:"
-    , "  --help          Display this help message."
-    , "  (no arguments)  Parse stdin verbosely."
-    , "  (files)         Parse content of files verbosely."
-    , "  -s (files)      Silent mode. Parse content of files silently."
-    ]
 
 main :: IO ()
-main = do
-  args <- getArgs
-  case args of
-    ["--help"] -> usage
-    []         -> getContents >>= run 2 pRule
-    -- "-s":fs    -> mapM_ (runFile 0 pRule) fs
-    -- fs         -> mapM_ (runFile 2 pRule) fs
+main = getContents >>= run 2 pRule
 
--- Things to try out in ghci
--- main "EVERY Person WHO Qualifies MEANS ALL(walk, ANY(eat, drink), dance) MUST sing"
--- main "Drinks MEANS consumes ANY (alcoholic, non-alcoholic) beverage"
 

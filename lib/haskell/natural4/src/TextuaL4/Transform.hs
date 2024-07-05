@@ -3,28 +3,29 @@
 -- Templates for pattern matching on abstract syntax
 
 {-# OPTIONS_GHC -fno-warn-unused-matches #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module TextuaL4.Transform where
 
-import Prelude (($), (<$>), Bool(..), Maybe(..))
+--import Prelude (($), (<$>), fmap, Bool(..), Maybe(..), error)
 import qualified TextuaL4.AbsTextuaL as TL4
 import LS.Rule
 import LS.Types
 import AnyAll (BoolStruct(..), Label(..))
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String.Interpolate (i)
 import Data.Text qualified as Text
-
 
 transText :: TL4.Text -> Text.Text
 transText (TL4.Text string) = Text.pack string
 
-
 transRule :: TL4.Rule -> Rule
 transRule x = case x of
-  TL4.RegSimple text deont action ->
+  TL4.RegSimple sbj deont act ->
     defaultReg {
-      subj = mkLeafPT (transText text)
+      subj = transBoolStructP sbj
     , deontic = transDeontic deont
-    , action = mkLeafPT $ bsr2text $ transBoolStructR action
+    , action = transBoolStructP act
     }
   TL4.RegWho text who deontic action ->
     let simple = transRule $ TL4.RegSimple text deontic action
@@ -38,9 +39,8 @@ mkHlike text bsr = defaultHorn {
     clauses = [HC (bsr2rp text bsr) Nothing]
   }
 
-bsr2rp :: Text.Text -> TL4.BoolStructR -> RelationalPredicate
+bsr2rp :: Text.Text -> TL4.BoolStruct -> RelationalPredicate
 bsr2rp text bsr = RPBoolStructR [MTT text] RPis (transBoolStructR bsr)
-
 
 transDeontic :: TL4.Deontic -> Deontic
 transDeontic x = case x of
@@ -65,6 +65,11 @@ transRelationalPredicate x = case x of
   TL4.RPBoolStructR mtes rprel bsr
     -> RPBoolStructR (transMTExpr <$> mtes) (transRPRel rprel) (transBoolStructR bsr)
 
+transParamText :: TL4.RelationalPredicate -> ParamText
+transParamText x = case x of
+  TL4.RPMT (mte:mtes)
+    -> (transMTExpr mte :| fmap transMTExpr mtes, Nothing) :| []
+  _ -> error [i|transParamText: #{x} not supported as ParamText|]
 
 transMTExpr :: TL4.MTExpr -> MTExpr
 transMTExpr x = case x of
@@ -78,7 +83,24 @@ transBool x = case x of
   TL4.Bool_True -> True
   TL4.Bool_False -> False
 
-transBoolStructR :: TL4.BoolStructR -> BoolStructR
+transBoolStructP :: TL4.BoolStruct -> BoolStructP
+transBoolStructP x = case x of
+  TL4.Leaf rp -> Leaf $ transParamText rp
+  TL4.Not bs -> Not $ transBoolStructP bs
+  TL4.Any bss
+    -> Any Nothing (transBoolStructP <$> bss)
+  TL4.AnyPre text bss
+    -> Any (Just $ Pre $ transText text) (transBoolStructP <$> bss)
+  TL4.AnyPrePost pr bss pst
+    -> Any (Just $ PrePost (transText pr) (transText pst)) (transBoolStructP <$> bss)
+  TL4.All bss
+    -> All Nothing (transBoolStructP <$> bss)
+  TL4.AllPre text bss
+    -> All (Just $ Pre $ transText text) (transBoolStructP <$> bss)
+  TL4.AllPrePost pr bss pst
+    -> All (Just $ PrePost (transText pr) (transText pst)) (transBoolStructP <$> bss)
+
+transBoolStructR :: TL4.BoolStruct -> BoolStructR
 transBoolStructR x = case x of
   TL4.Any bsrs
     -> Any Nothing (transBoolStructR <$> bsrs)
@@ -88,6 +110,10 @@ transBoolStructR x = case x of
     -> Any (Just $ PrePost (transText pr) (transText pst)) (transBoolStructR <$> bsrs)
   TL4.All bsrs
     -> All Nothing (transBoolStructR <$> bsrs)
+  TL4.AllPre text bsrs
+    -> All (Just $ Pre $ transText text) (transBoolStructR <$> bsrs)
+  TL4.AllPrePost pr bsrs pst
+    -> All (Just $ PrePost (transText pr) (transText pst)) (transBoolStructR <$> bsrs)
   TL4.Not bsr -> Not $ transBoolStructR bsr
   TL4.Leaf rp -> Leaf $ transRelationalPredicate rp
 

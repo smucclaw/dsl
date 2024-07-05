@@ -118,7 +118,6 @@ library
       TextuaL4.LexTextuaL
       TextuaL4.ParTextuaL
       TextuaL4.PrintTextuaL
-      TextuaL4.SkelTextuaL
       TextuaL4.Transform
   other-modules:
       Paths_natural4

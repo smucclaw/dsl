@@ -1,0 +1,116 @@
+Right
+    ( Regulative
+        { subj = Any
+            ( Just
+                ( Pre "tame" )
+            )
+            [ Leaf
+                (
+                    ( MTT "Person" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , Leaf
+                (
+                    ( MTT "Animal" :| []
+                    , Nothing
+                    ) :| []
+                )
+            ]
+        , rkeyword = REvery
+        , who = Just
+            ( Leaf
+                ( RPMT
+                    [ MTT "Qualifies" ]
+                )
+            )
+        , cond = Nothing
+        , deontic = DMust
+        , action = Any Nothing
+            [ Leaf
+                (
+                    ( MTT "sing" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , Leaf
+                (
+                    ( MTT "dance" :| []
+                    , Nothing
+                    ) :| []
+                )
+            ]
+        , temporal = Nothing
+        , hence = Nothing
+        , lest = Nothing
+        , rlabel = Nothing
+        , lsource = Nothing
+        , srcref = Just
+            ( SrcRef
+                { url = "test/Spec"
+                , short = "test/Spec"
+                , srcrow = 1
+                , srccol = 1
+                , version = Nothing
+                }
+            )
+        , upon = Nothing
+        , given = Nothing
+        , having = Nothing
+        , wwhere =
+            [ Hornlike
+                { name =
+                    [ MTT "Qualifies" ]
+                , super = Nothing
+                , keyword = Means
+                , given = Nothing
+                , giveth = Nothing
+                , upon = Nothing
+                , clauses =
+                    [ HC
+                        { hHead = RPBoolStructR
+                            [ MTT "Qualifies" ] RPis
+                            ( All Nothing
+                                [ Leaf
+                                    ( RPMT
+                                        [ MTT "walks" ]
+                                    )
+                                , Any Nothing
+                                    [ Leaf
+                                        ( RPMT
+                                            [ MTT "eats" ]
+                                        )
+                                    , Leaf
+                                        ( RPMT
+                                            [ MTT "drinks" ]
+                                        )
+                                    ]
+                                , Leaf
+                                    ( RPMT
+                                        [ MTT "climbs" ]
+                                    )
+                                ]
+                            )
+                        , hBody = Nothing
+                        }
+                    ]
+                , rlabel = Nothing
+                , lsource = Nothing
+                , wwhere = []
+                , srcref = Just
+                    ( SrcRef
+                        { url = "test/Spec"
+                        , short = "test/Spec"
+                        , srcrow = 1
+                        , srccol = 1
+                        , version = Nothing
+                        }
+                    )
+                , defaults = []
+                , symtab = []
+                }
+            ]
+        , defaults = []
+        , symtab = []
+        }
+    )

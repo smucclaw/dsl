@@ -7,13 +7,15 @@ Right
         , given = Just
             (
                 ( MTT "foo" :| []
-                , Nothing
+                , Just
+                    ( SimpleType TOne "Number" )
                 ) :| []
             )
         , giveth = Just
             (
                 ( MTT "bar" :| []
-                , Nothing
+                , Just
+                    ( SimpleType TOne "Boolean" )
                 ) :| []
             )
         , upon = Nothing
@@ -23,7 +25,7 @@ Right
                     [ MTT "bar" ] RPis
                     ( Leaf
                         ( RPConstraint
-                            [ MTI 1 ] RPgt
+                            [ MTT "foo" ] RPgt
                             [ MTI 2 ]
                         )
                     )

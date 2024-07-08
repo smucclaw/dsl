@@ -34,11 +34,13 @@ goldenGeneric name output_ = Golden
 spec :: Spec
 spec = do
   describe "TextuaL4 output" do
-    let text = "GIVEN foo GIVETH bar DECIDE bar IS 1 > 2"
-
-    it text $ goldenGeneric "hlike-given-giveth-1" $ do
-      run text
-
+    test "GIVEN foo GIVETH bar DECIDE bar IS 1 > 2" "hornlike-given-giveth-1"
+    test "GIVEN foo IS A Number GIVETH bar IS A Boolean DECIDE bar IS foo > 2" "hornlike-given-giveth-2"
+    test "EVERY tame ANY (Person, Animal) WHO Qualifies MEANS ALL(walks, ANY(eats, drinks), climbs) MUST ANY (sing, dance)" "regulative-any-tame-person-animal.expected"
+  where
+    test rule fname =
+      it rule $ goldenGeneric fname $ do
+        run rule
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a

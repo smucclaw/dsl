@@ -1,0 +1,46 @@
+Hornlike
+    { name =
+        [ MTT "bar" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "foo" :| []
+            , Nothing
+            ) :| []
+        )
+    , giveth = Just
+        (
+            ( MTT "bar" :| []
+            , Nothing
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "bar" ] RPis
+                ( Leaf
+                    ( RPConstraint
+                        [ MTI 1 ] RPgt asdadsd
+                        [ MTI 2 ]
+                    )
+                )
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }

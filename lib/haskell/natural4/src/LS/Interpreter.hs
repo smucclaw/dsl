@@ -4,6 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wall -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
 -- |
 --
@@ -219,9 +220,11 @@ import Text.Regex.PCRE.Heavy qualified as PCRE
 
 l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
 l4interpret iopts rs =
-  let ct = classHierarchy rs
+  let ct :: ClsTab
+      ct = classHierarchy rs
+      st :: ScopeTabs
       st = symbolTable    iopts rs
-      (vp, vpErr) = xpLog $ attrsAsMethods rs
+      (vp, _vpErr) = xpLog $ attrsAsMethods rs
       (rDGout, rDGerr) = xpLog $ ruleDecisionGraph rs
   in
     L4I { classtable = ct
@@ -256,7 +259,7 @@ qaHornsR l4i =
      [ ( ruleLabelName <$> uniqrs
        , expanded)
      | (grpval, uniqrs) <- groupedByAOTree l4i $ -- NUBBED
-                           let (eRout, eRerr) = xpLog $ exposedRoots l4i      -- EXPOSED
+                           let (eRout, _eRerr) = xpLog $ exposedRoots l4i      -- EXPOSED
                            in eRout
      , not $ null grpval
      , expanded <- expandBSR l4i 1 <$> maybeToList (getBSR (DL.head uniqrs))
@@ -366,11 +369,14 @@ classRoots ct@(unCT -> ch) =
      , typedClass <- maybeToList $ Map.lookup className ch
      ]
 
--- | deprecated, use classGraph instead.
+-- | Deprecated, use classGraph instead.
+--
+-- (But currently still used to generate output in the coreL4 transpiler.)
+--
 allCTkeys :: ClsTab -> [EntityType]
 allCTkeys o@(unCT -> ct) = getCTkeys o ++ [ T.replace " " "_" [i|#{childname}.{gcname}|]
                                      | (childname, (_ts, childct)) <- Map.toList ct
-                                     , gcname <- allCTkeys childct
+                                     , _gcname <- allCTkeys childct
                                      ]
 
 -- | attributes of a given class. Enums are dealt with separately.
@@ -440,7 +446,7 @@ extractEnums l4i =
   in foldMap go rs
   where
     go :: Rule -> [Rule]
-    go r@TypeDecl{super = Just (InlineEnum enumtype enumtext)} =
+    go r@TypeDecl{super = Just (InlineEnum _enumtype _enumtext)} =
       [r]
     go TypeDecl{has = has} = foldMap go has
     go Hornlike{given = Just givens, srcref=srcref} =
@@ -591,11 +597,7 @@ ruleDecisionGraph rs = do
     -- filter for just those rules which involve decisions
     decisionRules = [ r | r <- rs, not . null . getBSR $ r ]
 
-  -- we want to represent the leaf nodes in the rule decision graph, so we elevate those to the status of rules by including them in the map
-    groundTerms :: Map.HashMap Rule Int -> [RuleName]
-    groundTerms knownRules = []
-      -- find all the body elements which 
-
+    (***->) :: Show a => String -> a -> XPileLog ()
     (***->) str hs = mutterdhsf 3 [i|ruleDecisionGraph: #{show str}|] pShowNoColorS hs
 
 -- | walk all relationalpredicates in a set of rules, and return the list of edges showing how one rule relies on another.
@@ -626,7 +628,7 @@ relPredRefs ::
   Map.HashMap MultiTerm Rule ->
   Rule ->
   XPileLog [LEdge RuleGraphEdgeLabel]
-relPredRefs rs ridmap headElements r = do
+relPredRefs _rs ridmap headElements r = do
   -- given a rule, see which terms it relies on
   let myGetBSR = getBSR r
       myLeaves = foldMap AA.extractLeaves myGetBSR
@@ -653,10 +655,10 @@ relPredRefs rs ridmap headElements r = do
               (rid, targetRuleId, ())
             )
 
-  toreturn <- for toreturn \(action, edge) -> action >> pure edge
+  toreturn' <- for toreturn \(action, edge) -> action >> pure edge
 
-  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn
-  pure toreturn
+  mutterdhsf 5 "relPredRefs: returning" pShowNoColorS toreturn'
+  pure toreturn'
 
 -- | Which rules are "top-level", "entry-point" rules?
 --
@@ -901,10 +903,6 @@ expandBSR' l4i depth = \case
     go = expandBSR' l4i depth1
     goAnyAll ctor lbl xs = ctor lbl $ go <$> xs
 
--- | unimplemented
-expandBody :: Interpreted -> Maybe BoolStructR -> Maybe BoolStructR
-expandBody _l4i = id
-
 -- | used by the Petri xpiler.
 expandRulesByLabel :: [Rule] -> T.Text -> [Rule]
 expandRulesByLabel rules txt =
@@ -954,16 +952,6 @@ onlyTheItems l4i =
       simplified = AA.simplifyBoolStruct myitem
   in simplified
 
--- | subsidiary to the above function, look for only one item by name.
-onlyItemNamed :: Interpreted -> [Rule] -> [RuleName] -> BoolStructT
-onlyItemNamed l4i rs wanteds =
-  let ibr = itemsByRule l4i rs
-      found = DL.filter (\(rn, _simp) -> rn `elem` wanteds) ibr
-  in
-    if null found
-    then AA.mkLeaf [i|L4 Interpreter: unable to isolate rule named #{wanteds}|]
-    else snd $ DL.head found
-
 -- | return those Q&A leaf items arranged by the rule to which they contribute.
 itemsByRule :: Interpreted -> [Rule] -> [(RuleName, BoolStructT)]
 itemsByRule l4i rs =
@@ -983,9 +971,6 @@ extractRPMT2Text (RPMT ts) = mt2text ts
 extractRPMT2Text _         =
   trace "extractRPMT2Text: expecting RPMT only, other constructors not supported." ""
 
-ruleNameStr :: Rule -> String
-ruleNameStr r = T.unpack $ mt2text $ ruleLabelName r
-
 -- | A RuleSet is a list of rules. We occasionally see this alias used here and there across the codebase.
 type RuleSet = [Rule]
 
@@ -1000,15 +985,6 @@ getRuleByName rs rn = find (\r -> ruleName r == rn) rs
 -- note that this matches by `getRlabel` not by `ruleLabelName`
 getRuleByLabel :: RuleSet -> T.Text -> Maybe Rule
 getRuleByLabel rs t = find (\r -> (rl2text <$> getRlabel r) == Just t) rs
-
--- | Retrieve a rule by either `getRlabel` or `ruleName`
---
--- Note that this is not exactly the same thing as `ruleLabelName`.
-getRuleByLabelName :: RuleSet -> T.Text -> Maybe Rule
-getRuleByLabelName rs t = find (\r -> (rl2text <$> getRlabel r) == Just t
-                                      ||
-                                      ruleName r == [MTT t]
-                               ) rs
 
 -- | Transform every RelationalPredicate in a `BoolStructR` to use only the data constructor `RPMT`.
 bsr2bsmt :: BoolStructR -> BoolStructR
@@ -1103,7 +1079,7 @@ type NestedClass = Tree ParamText
 -- DEFINEs that have horn clauses with bodies are functions that need to be set up a little differently. We'll deal with those separately.
 globalFacts :: Interpreted -> [NestedClass]
 globalFacts l4i = do
-  Hornlike {name = name@(x : xs), keyword = Define, clauses, super} <-
+  Hornlike {name = x : xs, keyword = Define, clauses, super} <-
     origrules l4i
   pure
     Node
@@ -1165,7 +1141,7 @@ attrsAsMethods rs = do
   xpReturn successes
   where
     go :: HornClause2 -> XPileLogE (MultiTerm, Maybe RelationalPredicate, Maybe BoolStructR)
-    go hc@HC {..} =
+    go HC{..} =
       case hHead of
         RPnary RPis [RPMT headLHS, headRHS] ->
           xpReturn (headLHS, Just headRHS, hBody)
@@ -1236,17 +1212,20 @@ isAnEnum l4i mgiven mt =
 -- | does the current multiterm attribute match a GIVEN parameter which was annotated as an Enum, either explicitly or as a known enum type?
 -- [TODO] refactor this together with the above function to a single function
 isGivenEnum :: Maybe ParamText -> [MultiTerm] -> MultiTerm -> Bool
-isGivenEnum Nothing _ mt = False
+isGivenEnum Nothing _ _mt = False
 isGivenEnum (Just typedMultis) enumNames mt =
   any (enumMatch enumNames mt) $ NE.toList typedMultis
 
--- | does a specific typedmulti match an enum
+-- | Does a specific typedmulti match an enum?
+--
+-- TODO: This function is partial, and its preconditions need documentation.
+--
 enumMatch :: [MultiTerm] -> MultiTerm -> TypedMulti -> Bool
-enumMatch _ mt (givenName, Nothing) = False
-enumMatch _ mt (givenName, Just mgiven@(InlineEnum _ _)) =
+enumMatch _ _mt (_givenName, Nothing) = False
+enumMatch _ mt (givenName, Just _mgiven@(InlineEnum _ _)) =
   -- trace ("mt = " <> show mt <> "; givenName = " <> show givenName <> "; given = " <> show mgiven) $
   mt == NE.toList givenName
-enumMatch enumNames mt (givenName, Just mgiven@(SimpleType TOne etype)) =
+enumMatch enumNames _mt (_givenName, Just _mgiven@(SimpleType TOne etype)) =
   (pure . MTT . T.toLower . (<> "enum") $ etype) `elem` enumNames
 
 -- | lowercase a multiterm to support isAnEnum comparison

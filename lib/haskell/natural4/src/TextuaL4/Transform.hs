@@ -34,6 +34,33 @@ transRule x = case x of
     let simple = transRule $ TL4.RegWho text who deontic action
     in simple {wwhere = [transInlineHornlike who hlike]}
   TL4.Hornlike text bsr -> mkHlike (transText text) bsr
+  TL4.TypeDecl text fields ->
+    defaultTypeDecl {
+      name = [MTT $ transText text]
+    , has = transFields fields
+    }
+  TL4.TypeDeclIs isa fields ->
+    let isaRule = transIsA isa
+    in isaRule {
+      has = transFields fields
+    }
+
+
+mkSuper :: TL4.Text -> TypeSig
+mkSuper = SimpleType TOne . transText -- TODO: lists, sets, enums
+
+transIsA :: TL4.IsA -> Rule
+transIsA x = case x of
+  TL4.MkIsA rname typesig ->
+    defaultTypeDecl {
+      name = [MTT $ transText rname]
+    , super = Just $ mkSuper typesig
+    }
+
+transFields :: TL4.Fields -> [Rule]
+transFields x = case x of
+  TL4.Has isas -> transIsA <$> isas
+  TL4.EmptyFields -> []
 
 mkHlike text bsr = defaultHorn {
     clauses = [HC (bsr2rp text bsr) Nothing]

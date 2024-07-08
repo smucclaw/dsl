@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \( | \) | \, | \< | \< \= | \> | \> \=
+@rsyms = \; | \( | \) | \, | \< | \< \= | \> | \> \=
 
 :-
 
@@ -158,23 +158,25 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "IN" 20
-    (b "ALL" 10
-       (b "<=" 5
-          (b "," 3 (b ")" 2 (b "(" 1 N N) N) (b "<" 4 N N))
-          (b "ABOUT" 8 (b ">=" 7 (b ">" 6 N N) N) (b "AFTER" 9 N N)))
-       (b "DIVIDE" 15
-          (b "BEFORE" 13 (b "ANY" 12 (b "AND" 11 N N) N) (b "BY" 14 N N))
-          (b "False" 18
-             (b "EVERY" 17 (b "EQUALS" 16 N N) N) (b "HAS" 19 N N))))
-    (b "NOT" 30
-       (b "MEANS" 25
-          (b "MAX" 23 (b "MAP" 22 (b "IS" 21 N N) N) (b "MAY" 24 N N))
-          (b "MODULO" 28
-             (b "MINUS" 27 (b "MIN" 26 N N) N) (b "MUST" 29 N N)))
-       (b "SUBJECT" 35
-          (b "PRODUCT" 33 (b "OR" 32 (b "ON" 31 N N) N) (b "SHANT" 34 N N))
-          (b "True" 38 (b "TO" 37 (b "SUM" 36 N N) N) (b "WHO" 39 N N))))
+  b "HAS" 22
+    (b "AFTER" 11
+       (b "<=" 6
+          (b "," 3 (b ")" 2 (b "(" 1 N N) N) (b "<" 5 (b ";" 4 N N) N))
+          (b "A" 9 (b ">=" 8 (b ">" 7 N N) N) (b "ABOUT" 10 N N)))
+       (b "DECLARE" 17
+          (b "ANY" 14
+             (b "AND" 13 (b "ALL" 12 N N) N) (b "BY" 16 (b "BEFORE" 15 N N) N))
+          (b "EVERY" 20
+             (b "EQUALS" 19 (b "DIVIDE" 18 N N) N) (b "False" 21 N N))))
+    (b "NOT" 33
+       (b "MEANS" 28
+          (b "MAP" 25
+             (b "IS" 24 (b "IN" 23 N N) N) (b "MAY" 27 (b "MAX" 26 N N) N))
+          (b "MODULO" 31
+             (b "MINUS" 30 (b "MIN" 29 N N) N) (b "MUST" 32 N N)))
+       (b "SUBJECT" 38
+          (b "PRODUCT" 36 (b "OR" 35 (b "ON" 34 N N) N) (b "SHANT" 37 N N))
+          (b "True" 41 (b "TO" 40 (b "SUM" 39 N N) N) (b "WHO" 42 N N))))
   where
   b s n = B bs (TS bs n)
     where

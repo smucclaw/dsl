@@ -141,10 +141,26 @@ instance Print TextuaL4.AbsTextuaL.Text where
   prt _ (TextuaL4.AbsTextuaL.Text i) = doc $ showString i
 instance Print TextuaL4.AbsTextuaL.Rule where
   prt i = \case
+    TextuaL4.AbsTextuaL.TypeDecl text fields -> prPrec i 0 (concatD [doc (showString "DECLARE"), prt 0 text, prt 0 fields])
+    TextuaL4.AbsTextuaL.TypeDeclIs isa fields -> prPrec i 0 (concatD [doc (showString "DECLARE"), prt 0 isa, prt 0 fields])
     TextuaL4.AbsTextuaL.RegSimple boolstruct1 deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.RegWho boolstruct1 who deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 who, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.RegWhoInline boolstruct1 who inlinehornlike deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 who, prt 0 inlinehornlike, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.Hornlike text boolstruct -> prPrec i 0 (concatD [prt 0 text, doc (showString "MEANS"), prt 0 boolstruct])
+
+instance Print TextuaL4.AbsTextuaL.IsA where
+  prt i = \case
+    TextuaL4.AbsTextuaL.MkIsA text1 text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "IS"), doc (showString "A"), prt 0 text2])
+
+instance Print [TextuaL4.AbsTextuaL.IsA] where
+  prt _ [] = concatD []
+  prt _ [x] = concatD [prt 0 x]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
+
+instance Print TextuaL4.AbsTextuaL.Fields where
+  prt i = \case
+    TextuaL4.AbsTextuaL.Has isas -> prPrec i 0 (concatD [doc (showString "HAS"), prt 0 isas])
+    TextuaL4.AbsTextuaL.EmptyFields -> prPrec i 0 (concatD [])
 
 instance Print TextuaL4.AbsTextuaL.Deontic where
   prt i = \case

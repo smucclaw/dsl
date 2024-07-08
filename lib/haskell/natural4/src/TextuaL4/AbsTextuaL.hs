@@ -11,10 +11,18 @@ import qualified Prelude as C (Eq, Ord, Show, Read)
 import qualified Data.String
 
 data Rule
-    = RegSimple BoolStruct Deontic BoolStruct
+    = TypeDecl Text Fields
+    | TypeDeclIs IsA Fields
+    | RegSimple BoolStruct Deontic BoolStruct
     | RegWho BoolStruct Who Deontic BoolStruct
     | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
     | Hornlike Text BoolStruct
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data IsA = MkIsA Text Text
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data Fields = Has [IsA] | EmptyFields
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Deontic = Deontic_MUST | Deontic_MAY | Deontic_SHANT

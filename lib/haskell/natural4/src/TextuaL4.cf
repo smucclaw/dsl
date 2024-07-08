@@ -1,5 +1,13 @@
 entrypoints Rule ;
 
+TypeDecl. Rule ::= "DECLARE" Text Fields ;
+TypeDeclIs. Rule ::= "DECLARE" IsA Fields ;
+
+MkIsA.       IsA ::= Text "IS A" Text ;
+separator nonempty IsA ";" ;
+Has.         Fields ::= "HAS" [IsA] ;
+EmptyFields. Fields ::= ;
+
 RegSimple. Rule ::= "EVERY" BoolStruct Deontic BoolStruct ;
 RegWho. Rule ::= "EVERY" BoolStruct Who Deontic BoolStruct ;
 RegWhoInline. Rule ::= "EVERY" BoolStruct Who InlineHornlike Deontic BoolStruct ;
@@ -24,10 +32,10 @@ RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStruct  ;  -- eyes IS 
 -- RPnary. RelationalPredicate ::= RPRel [RelationalPredicate] ; -- "NEVER GO FULL LISP!" "we went full Lisp".
 -- separator nonempty RelationalPredicate "," ;
 
-MTT . MTExpr ::= Text    ;
-MTI . MTExpr ::= Integer ;
-MTF . MTExpr ::= Double  ;
-MTB . MTExpr ::= Bool    ;
+MTT. MTExpr ::= Text    ;
+MTI. MTExpr ::= Integer ;
+MTF. MTExpr ::= Double  ;
+MTB. MTExpr ::= Bool    ;
 
 rules Bool ::= "True" | "False" ;
 token Text letter (letter | '_' | '\'' | '-')* ;

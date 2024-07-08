@@ -26,42 +26,45 @@ import TextuaL4.LexTextuaL
   '('       { PT _ (TS _ 1)    }
   ')'       { PT _ (TS _ 2)    }
   ','       { PT _ (TS _ 3)    }
-  '<'       { PT _ (TS _ 4)    }
-  '<='      { PT _ (TS _ 5)    }
-  '>'       { PT _ (TS _ 6)    }
-  '>='      { PT _ (TS _ 7)    }
-  'ABOUT'   { PT _ (TS _ 8)    }
-  'AFTER'   { PT _ (TS _ 9)    }
-  'ALL'     { PT _ (TS _ 10)   }
-  'AND'     { PT _ (TS _ 11)   }
-  'ANY'     { PT _ (TS _ 12)   }
-  'BEFORE'  { PT _ (TS _ 13)   }
-  'BY'      { PT _ (TS _ 14)   }
-  'DIVIDE'  { PT _ (TS _ 15)   }
-  'EQUALS'  { PT _ (TS _ 16)   }
-  'EVERY'   { PT _ (TS _ 17)   }
-  'False'   { PT _ (TS _ 18)   }
-  'HAS'     { PT _ (TS _ 19)   }
-  'IN'      { PT _ (TS _ 20)   }
-  'IS'      { PT _ (TS _ 21)   }
-  'MAP'     { PT _ (TS _ 22)   }
-  'MAX'     { PT _ (TS _ 23)   }
-  'MAY'     { PT _ (TS _ 24)   }
-  'MEANS'   { PT _ (TS _ 25)   }
-  'MIN'     { PT _ (TS _ 26)   }
-  'MINUS'   { PT _ (TS _ 27)   }
-  'MODULO'  { PT _ (TS _ 28)   }
-  'MUST'    { PT _ (TS _ 29)   }
-  'NOT'     { PT _ (TS _ 30)   }
-  'ON'      { PT _ (TS _ 31)   }
-  'OR'      { PT _ (TS _ 32)   }
-  'PRODUCT' { PT _ (TS _ 33)   }
-  'SHANT'   { PT _ (TS _ 34)   }
-  'SUBJECT' { PT _ (TS _ 35)   }
-  'SUM'     { PT _ (TS _ 36)   }
-  'TO'      { PT _ (TS _ 37)   }
-  'True'    { PT _ (TS _ 38)   }
-  'WHO'     { PT _ (TS _ 39)   }
+  ';'       { PT _ (TS _ 4)    }
+  '<'       { PT _ (TS _ 5)    }
+  '<='      { PT _ (TS _ 6)    }
+  '>'       { PT _ (TS _ 7)    }
+  '>='      { PT _ (TS _ 8)    }
+  'A'       { PT _ (TS _ 9)    }
+  'ABOUT'   { PT _ (TS _ 10)   }
+  'AFTER'   { PT _ (TS _ 11)   }
+  'ALL'     { PT _ (TS _ 12)   }
+  'AND'     { PT _ (TS _ 13)   }
+  'ANY'     { PT _ (TS _ 14)   }
+  'BEFORE'  { PT _ (TS _ 15)   }
+  'BY'      { PT _ (TS _ 16)   }
+  'DECLARE' { PT _ (TS _ 17)   }
+  'DIVIDE'  { PT _ (TS _ 18)   }
+  'EQUALS'  { PT _ (TS _ 19)   }
+  'EVERY'   { PT _ (TS _ 20)   }
+  'False'   { PT _ (TS _ 21)   }
+  'HAS'     { PT _ (TS _ 22)   }
+  'IN'      { PT _ (TS _ 23)   }
+  'IS'      { PT _ (TS _ 24)   }
+  'MAP'     { PT _ (TS _ 25)   }
+  'MAX'     { PT _ (TS _ 26)   }
+  'MAY'     { PT _ (TS _ 27)   }
+  'MEANS'   { PT _ (TS _ 28)   }
+  'MIN'     { PT _ (TS _ 29)   }
+  'MINUS'   { PT _ (TS _ 30)   }
+  'MODULO'  { PT _ (TS _ 31)   }
+  'MUST'    { PT _ (TS _ 32)   }
+  'NOT'     { PT _ (TS _ 33)   }
+  'ON'      { PT _ (TS _ 34)   }
+  'OR'      { PT _ (TS _ 35)   }
+  'PRODUCT' { PT _ (TS _ 36)   }
+  'SHANT'   { PT _ (TS _ 37)   }
+  'SUBJECT' { PT _ (TS _ 38)   }
+  'SUM'     { PT _ (TS _ 39)   }
+  'TO'      { PT _ (TS _ 40)   }
+  'True'    { PT _ (TS _ 41)   }
+  'WHO'     { PT _ (TS _ 42)   }
   L_doubl   { PT _ (TD $$)     }
   L_integ   { PT _ (TI $$)     }
   L_Text    { PT _ (T_Text $$) }
@@ -79,10 +82,23 @@ Text  : L_Text { TextuaL4.AbsTextuaL.Text $1 }
 
 Rule :: { TextuaL4.AbsTextuaL.Rule }
 Rule
-  : 'EVERY' BoolStruct Deontic BoolStruct { TextuaL4.AbsTextuaL.RegSimple $2 $3 $4 }
+  : 'DECLARE' Text Fields { TextuaL4.AbsTextuaL.TypeDecl $2 $3 }
+  | 'DECLARE' IsA Fields { TextuaL4.AbsTextuaL.TypeDeclIs $2 $3 }
+  | 'EVERY' BoolStruct Deontic BoolStruct { TextuaL4.AbsTextuaL.RegSimple $2 $3 $4 }
   | 'EVERY' BoolStruct Who Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWho $2 $3 $4 $5 }
   | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
   | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.Hornlike $1 $3 }
+
+IsA :: { TextuaL4.AbsTextuaL.IsA }
+IsA : Text 'IS' 'A' Text { TextuaL4.AbsTextuaL.MkIsA $1 $4 }
+
+ListIsA :: { [TextuaL4.AbsTextuaL.IsA] }
+ListIsA : IsA { (:[]) $1 } | IsA ';' ListIsA { (:) $1 $3 }
+
+Fields :: { TextuaL4.AbsTextuaL.Fields }
+Fields
+  : 'HAS' ListIsA { TextuaL4.AbsTextuaL.Has $2 }
+  | {- empty -} { TextuaL4.AbsTextuaL.EmptyFields }
 
 Deontic :: { TextuaL4.AbsTextuaL.Deontic }
 Deontic

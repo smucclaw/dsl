@@ -158,25 +158,30 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "HAS" 22
-    (b "AFTER" 11
+  b "GIVETH" 24
+    (b "ALL" 12
        (b "<=" 6
           (b "," 3 (b ")" 2 (b "(" 1 N N) N) (b "<" 5 (b ";" 4 N N) N))
-          (b "A" 9 (b ">=" 8 (b ">" 7 N N) N) (b "ABOUT" 10 N N)))
-       (b "DECLARE" 17
-          (b "ANY" 14
-             (b "AND" 13 (b "ALL" 12 N N) N) (b "BY" 16 (b "BEFORE" 15 N N) N))
-          (b "EVERY" 20
-             (b "EQUALS" 19 (b "DIVIDE" 18 N N) N) (b "False" 21 N N))))
-    (b "NOT" 33
-       (b "MEANS" 28
-          (b "MAP" 25
-             (b "IS" 24 (b "IN" 23 N N) N) (b "MAY" 27 (b "MAX" 26 N N) N))
-          (b "MODULO" 31
-             (b "MINUS" 30 (b "MIN" 29 N N) N) (b "MUST" 32 N N)))
-       (b "SUBJECT" 38
-          (b "PRODUCT" 36 (b "OR" 35 (b "ON" 34 N N) N) (b "SHANT" 37 N N))
-          (b "True" 41 (b "TO" 40 (b "SUM" 39 N N) N) (b "WHO" 42 N N))))
+          (b "A" 9
+             (b ">=" 8 (b ">" 7 N N) N) (b "AFTER" 11 (b "ABOUT" 10 N N) N)))
+       (b "DECLARE" 18
+          (b "BEFORE" 15
+             (b "ANY" 14 (b "AND" 13 N N) N) (b "DECIDE" 17 (b "BY" 16 N N) N))
+          (b "EVERY" 21
+             (b "EQUALS" 20 (b "DIVIDE" 19 N N) N)
+             (b "GIVEN" 23 (b "False" 22 N N) N))))
+    (b "MUST" 36
+       (b "MAX" 30
+          (b "IN" 27
+             (b "IF" 26 (b "HAS" 25 N N) N) (b "MAP" 29 (b "IS" 28 N N) N))
+          (b "MIN" 33
+             (b "MEANS" 32 (b "MAY" 31 N N) N)
+             (b "MODULO" 35 (b "MINUS" 34 N N) N)))
+       (b "SUBJECT" 42
+          (b "OR" 39
+             (b "ON" 38 (b "NOT" 37 N N) N)
+             (b "SHANT" 41 (b "PRODUCT" 40 N N) N))
+          (b "True" 45 (b "TO" 44 (b "SUM" 43 N N) N) (b "WHO" 46 N N))))
   where
   b s n = B bs (TS bs n)
     where

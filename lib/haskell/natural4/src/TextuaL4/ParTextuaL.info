@@ -10,69 +10,74 @@ Grammar
 	Double -> L_doubl                                  (1)
 	Integer -> L_integ                                 (2)
 	Text -> L_Text                                     (3)
-	Rule -> 'DECLARE' Text Fields                      (4)
-	Rule -> 'DECLARE' IsA Fields                       (5)
+	Rule -> 'DECLARE' IsA Fields                       (4)
+	Rule -> 'GIVEN' ListIsA Rule                       (5)
 	Rule -> 'EVERY' BoolStruct Deontic BoolStruct      (6)
 	Rule -> 'EVERY' BoolStruct Who Deontic BoolStruct   (7)
 	Rule -> 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct   (8)
 	Rule -> Text 'MEANS' BoolStruct                    (9)
-	IsA -> Text 'IS' 'A' Text                          (10)
-	ListIsA -> IsA                                     (11)
-	ListIsA -> IsA ';' ListIsA                         (12)
-	Fields -> 'HAS' ListIsA                            (13)
-	Fields ->                                          (14)
-	Deontic -> 'MUST'                                  (15)
-	Deontic -> 'MAY'                                   (16)
-	Deontic -> 'SHANT'                                 (17)
-	Who -> 'WHO' BoolStruct                            (18)
-	InlineHornlike -> 'MEANS' BoolStruct               (19)
-	RelationalPredicate -> ListMTExpr                  (20)
-	RelationalPredicate -> ListMTExpr RPRel BoolStruct   (21)
-	MTExpr -> Text                                     (22)
-	MTExpr -> Integer                                  (23)
-	MTExpr -> Double                                   (24)
-	MTExpr -> Bool                                     (25)
-	Bool -> 'True'                                     (26)
-	Bool -> 'False'                                    (27)
-	ListMTExpr -> MTExpr                               (28)
-	ListMTExpr -> MTExpr ListMTExpr                    (29)
-	BoolStruct -> 'ANY' '(' ListBoolStruct ')'         (30)
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' Text   (31)
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')'    (32)
-	BoolStruct -> 'ALL' '(' ListBoolStruct ')'         (33)
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')'    (34)
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' Text   (35)
-	BoolStruct -> 'NOT' BoolStruct                     (36)
-	BoolStruct -> RelationalPredicate                  (37)
-	ListBoolStruct -> BoolStruct                       (38)
-	ListBoolStruct -> BoolStruct ',' ListBoolStruct    (39)
-	RPRel -> 'IS'                                      (40)
-	RPRel -> 'HAS'                                     (41)
-	RPRel -> 'EQUALS'                                  (42)
-	RPRel -> '<'                                       (43)
-	RPRel -> '<='                                      (44)
-	RPRel -> '>'                                       (45)
-	RPRel -> '>='                                      (46)
-	RPRel -> 'IN'                                      (47)
-	RPRel -> 'NOT' 'IN'                                (48)
-	RPRel -> 'NOT'                                     (49)
-	RPRel -> 'AND'                                     (50)
-	RPRel -> 'OR'                                      (51)
-	RPRel -> 'SUM'                                     (52)
-	RPRel -> 'PRODUCT'                                 (53)
-	RPRel -> 'MINUS'                                   (54)
-	RPRel -> 'DIVIDE'                                  (55)
-	RPRel -> 'MODULO'                                  (56)
-	RPRel -> 'SUBJECT' 'TO'                            (57)
-	RPRel -> 'MIN'                                     (58)
-	RPRel -> 'MAX'                                     (59)
-	RPRel -> 'MAP'                                     (60)
-	RPRel -> TComparison                               (61)
-	TComparison -> 'BEFORE'                            (62)
-	TComparison -> 'AFTER'                             (63)
-	TComparison -> 'BY'                                (64)
-	TComparison -> 'ON'                                (65)
-	TComparison -> 'ABOUT'                             (66)
+	Rule -> 'DECIDE' RelationalPredicate               (10)
+	Rule -> 'DECIDE' RelationalPredicate 'IF' BoolStruct   (11)
+	Rule -> 'GIVETH' IsA 'DECIDE' RelationalPredicate   (12)
+	Rule -> 'GIVETH' IsA 'DECIDE' RelationalPredicate 'IF' BoolStruct   (13)
+	IsA -> Text 'IS' 'A' Text                          (14)
+	IsA -> Text                                        (15)
+	ListIsA -> IsA                                     (16)
+	ListIsA -> IsA ';' ListIsA                         (17)
+	Fields -> 'HAS' ListIsA                            (18)
+	Fields ->                                          (19)
+	Deontic -> 'MUST'                                  (20)
+	Deontic -> 'MAY'                                   (21)
+	Deontic -> 'SHANT'                                 (22)
+	Who -> 'WHO' BoolStruct                            (23)
+	InlineHornlike -> 'MEANS' BoolStruct               (24)
+	RelationalPredicate -> ListMTExpr                  (25)
+	RelationalPredicate -> ListMTExpr RPRel BoolStruct   (26)
+	MTExpr -> Text                                     (27)
+	MTExpr -> Integer                                  (28)
+	MTExpr -> Double                                   (29)
+	MTExpr -> Bool                                     (30)
+	Bool -> 'True'                                     (31)
+	Bool -> 'False'                                    (32)
+	ListMTExpr -> MTExpr                               (33)
+	ListMTExpr -> MTExpr ListMTExpr                    (34)
+	BoolStruct -> 'ANY' '(' ListBoolStruct ')'         (35)
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' Text   (36)
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')'    (37)
+	BoolStruct -> 'ALL' '(' ListBoolStruct ')'         (38)
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')'    (39)
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' Text   (40)
+	BoolStruct -> 'NOT' BoolStruct                     (41)
+	BoolStruct -> RelationalPredicate                  (42)
+	ListBoolStruct -> BoolStruct                       (43)
+	ListBoolStruct -> BoolStruct ',' ListBoolStruct    (44)
+	RPRel -> 'IS'                                      (45)
+	RPRel -> 'HAS'                                     (46)
+	RPRel -> 'EQUALS'                                  (47)
+	RPRel -> '<'                                       (48)
+	RPRel -> '<='                                      (49)
+	RPRel -> '>'                                       (50)
+	RPRel -> '>='                                      (51)
+	RPRel -> 'IN'                                      (52)
+	RPRel -> 'NOT' 'IN'                                (53)
+	RPRel -> 'NOT'                                     (54)
+	RPRel -> 'AND'                                     (55)
+	RPRel -> 'OR'                                      (56)
+	RPRel -> 'SUM'                                     (57)
+	RPRel -> 'PRODUCT'                                 (58)
+	RPRel -> 'MINUS'                                   (59)
+	RPRel -> 'DIVIDE'                                  (60)
+	RPRel -> 'MODULO'                                  (61)
+	RPRel -> 'SUBJECT' 'TO'                            (62)
+	RPRel -> 'MIN'                                     (63)
+	RPRel -> 'MAX'                                     (64)
+	RPRel -> 'MAP'                                     (65)
+	RPRel -> TComparison                               (66)
+	TComparison -> 'BEFORE'                            (67)
+	TComparison -> 'AFTER'                             (68)
+	TComparison -> 'BY'                                (69)
+	TComparison -> 'ON'                                (70)
+	TComparison -> 'ABOUT'                             (71)
 
 -----------------------------------------------------------------------------
 Terminals
@@ -93,32 +98,36 @@ Terminals
 	'ANY'          { PT _ (TS _ 14) }
 	'BEFORE'       { PT _ (TS _ 15) }
 	'BY'           { PT _ (TS _ 16) }
-	'DECLARE'      { PT _ (TS _ 17) }
-	'DIVIDE'       { PT _ (TS _ 18) }
-	'EQUALS'       { PT _ (TS _ 19) }
-	'EVERY'        { PT _ (TS _ 20) }
-	'False'        { PT _ (TS _ 21) }
-	'HAS'          { PT _ (TS _ 22) }
-	'IN'           { PT _ (TS _ 23) }
-	'IS'           { PT _ (TS _ 24) }
-	'MAP'          { PT _ (TS _ 25) }
-	'MAX'          { PT _ (TS _ 26) }
-	'MAY'          { PT _ (TS _ 27) }
-	'MEANS'        { PT _ (TS _ 28) }
-	'MIN'          { PT _ (TS _ 29) }
-	'MINUS'        { PT _ (TS _ 30) }
-	'MODULO'       { PT _ (TS _ 31) }
-	'MUST'         { PT _ (TS _ 32) }
-	'NOT'          { PT _ (TS _ 33) }
-	'ON'           { PT _ (TS _ 34) }
-	'OR'           { PT _ (TS _ 35) }
-	'PRODUCT'      { PT _ (TS _ 36) }
-	'SHANT'        { PT _ (TS _ 37) }
-	'SUBJECT'      { PT _ (TS _ 38) }
-	'SUM'          { PT _ (TS _ 39) }
-	'TO'           { PT _ (TS _ 40) }
-	'True'         { PT _ (TS _ 41) }
-	'WHO'          { PT _ (TS _ 42) }
+	'DECIDE'       { PT _ (TS _ 17) }
+	'DECLARE'      { PT _ (TS _ 18) }
+	'DIVIDE'       { PT _ (TS _ 19) }
+	'EQUALS'       { PT _ (TS _ 20) }
+	'EVERY'        { PT _ (TS _ 21) }
+	'False'        { PT _ (TS _ 22) }
+	'GIVEN'        { PT _ (TS _ 23) }
+	'GIVETH'       { PT _ (TS _ 24) }
+	'HAS'          { PT _ (TS _ 25) }
+	'IF'           { PT _ (TS _ 26) }
+	'IN'           { PT _ (TS _ 27) }
+	'IS'           { PT _ (TS _ 28) }
+	'MAP'          { PT _ (TS _ 29) }
+	'MAX'          { PT _ (TS _ 30) }
+	'MAY'          { PT _ (TS _ 31) }
+	'MEANS'        { PT _ (TS _ 32) }
+	'MIN'          { PT _ (TS _ 33) }
+	'MINUS'        { PT _ (TS _ 34) }
+	'MODULO'       { PT _ (TS _ 35) }
+	'MUST'         { PT _ (TS _ 36) }
+	'NOT'          { PT _ (TS _ 37) }
+	'ON'           { PT _ (TS _ 38) }
+	'OR'           { PT _ (TS _ 39) }
+	'PRODUCT'      { PT _ (TS _ 40) }
+	'SHANT'        { PT _ (TS _ 41) }
+	'SUBJECT'      { PT _ (TS _ 42) }
+	'SUM'          { PT _ (TS _ 43) }
+	'TO'           { PT _ (TS _ 44) }
+	'True'         { PT _ (TS _ 45) }
+	'WHO'          { PT _ (TS _ 46) }
 	L_doubl        { PT _ (TD $$) }
 	L_integ        { PT _ (TI $$) }
 	L_Text         { PT _ (T_Text $$) }
@@ -130,21 +139,21 @@ Non-terminals
 	Double          rule  1
 	Integer         rule  2
 	Text            rule  3
-	Rule            rules 4, 5, 6, 7, 8, 9
-	IsA             rule  10
-	ListIsA         rules 11, 12
-	Fields          rules 13, 14
-	Deontic         rules 15, 16, 17
-	Who             rule  18
-	InlineHornlike  rule  19
-	RelationalPredicate rules 20, 21
-	MTExpr          rules 22, 23, 24, 25
-	Bool            rules 26, 27
-	ListMTExpr      rules 28, 29
-	BoolStruct      rules 30, 31, 32, 33, 34, 35, 36, 37
-	ListBoolStruct  rules 38, 39
-	RPRel           rules 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61
-	TComparison     rules 62, 63, 64, 65, 66
+	Rule            rules 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+	IsA             rules 14, 15
+	ListIsA         rules 16, 17
+	Fields          rules 18, 19
+	Deontic         rules 20, 21, 22
+	Who             rule  23
+	InlineHornlike  rule  24
+	RelationalPredicate rules 25, 26
+	MTExpr          rules 27, 28, 29, 30
+	Bool            rules 31, 32
+	ListMTExpr      rules 33, 34
+	BoolStruct      rules 35, 36, 37, 38, 39, 40, 41, 42
+	ListBoolStruct  rules 43, 44
+	RPRel           rules 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66
+	TComparison     rules 67, 68, 69, 70, 71
 
 -----------------------------------------------------------------------------
 States
@@ -153,9 +162,12 @@ State 0
 
 	%start_pRule -> . Rule                              (rule 0)
 
-	'DECLARE'      shift, and enter state 5
-	'EVERY'        shift, and enter state 6
-	L_Text         shift, and enter state 7
+	'DECIDE'       shift, and enter state 5
+	'DECLARE'      shift, and enter state 6
+	'EVERY'        shift, and enter state 7
+	'GIVEN'        shift, and enter state 8
+	'GIVETH'       shift, and enter state 9
+	L_Text         shift, and enter state 10
 
 	Text           goto state 3
 	Rule           goto state 4
@@ -186,6 +198,7 @@ State 2
 	'EQUALS'       reduce using rule 1
 	'False'        reduce using rule 1
 	'HAS'          reduce using rule 1
+	'IF'           reduce using rule 1
 	'IN'           reduce using rule 1
 	'IS'           reduce using rule 1
 	'MAP'          reduce using rule 1
@@ -215,7 +228,7 @@ State 3
 
 	Rule -> Text . 'MEANS' BoolStruct                   (rule 9)
 
-	'MEANS'        shift, and enter state 24
+	'MEANS'        shift, and enter state 32
 
 
 State 4
@@ -227,39 +240,77 @@ State 4
 
 State 5
 
-	Rule -> 'DECLARE' . Text Fields                     (rule 4)
-	Rule -> 'DECLARE' . IsA Fields                      (rule 5)
+	Rule -> 'DECIDE' . RelationalPredicate              (rule 10)
+	Rule -> 'DECIDE' . RelationalPredicate 'IF' BoolStruct    (rule 11)
 
-	L_Text         shift, and enter state 7
+	'False'        shift, and enter state 25
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
-	Text           goto state 22
-	IsA            goto state 23
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 30
+	RelationalPredicategoto state 31
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
 
 State 6
+
+	Rule -> 'DECLARE' . IsA Fields                      (rule 4)
+
+	L_Text         shift, and enter state 10
+
+	Text           goto state 11
+	IsA            goto state 29
+
+State 7
 
 	Rule -> 'EVERY' . BoolStruct Deontic BoolStruct     (rule 6)
 	Rule -> 'EVERY' . BoolStruct Who Deontic BoolStruct    (rule 7)
 	Rule -> 'EVERY' . BoolStruct Who InlineHornlike Deontic BoolStruct    (rule 8)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
 	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 15
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 22
 
-State 7
+State 8
+
+	Rule -> 'GIVEN' . ListIsA Rule                      (rule 5)
+
+	L_Text         shift, and enter state 10
+
+	Text           goto state 11
+	IsA            goto state 13
+	ListIsA        goto state 14
+
+State 9
+
+	Rule -> 'GIVETH' . IsA 'DECIDE' RelationalPredicate    (rule 12)
+	Rule -> 'GIVETH' . IsA 'DECIDE' RelationalPredicate 'IF' BoolStruct    (rule 13)
+
+	L_Text         shift, and enter state 10
+
+	Text           goto state 11
+	IsA            goto state 12
+
+State 10
 
 	Text -> L_Text .                                    (rule 3)
 
@@ -277,10 +328,16 @@ State 7
 	'ANY'          reduce using rule 3
 	'BEFORE'       reduce using rule 3
 	'BY'           reduce using rule 3
+	'DECIDE'       reduce using rule 3
+	'DECLARE'      reduce using rule 3
 	'DIVIDE'       reduce using rule 3
 	'EQUALS'       reduce using rule 3
+	'EVERY'        reduce using rule 3
 	'False'        reduce using rule 3
+	'GIVEN'        reduce using rule 3
+	'GIVETH'       reduce using rule 3
 	'HAS'          reduce using rule 3
+	'IF'           reduce using rule 3
 	'IN'           reduce using rule 3
 	'IS'           reduce using rule 3
 	'MAP'          reduce using rule 3
@@ -306,162 +363,108 @@ State 7
 	%eof           reduce using rule 3
 
 
-State 8
-
-	MTExpr -> Double .                                  (rule 24)
-
-	')'            reduce using rule 24
-	','            reduce using rule 24
-	'<'            reduce using rule 24
-	'<='           reduce using rule 24
-	'>'            reduce using rule 24
-	'>='           reduce using rule 24
-	'ABOUT'        reduce using rule 24
-	'AFTER'        reduce using rule 24
-	'AND'          reduce using rule 24
-	'BEFORE'       reduce using rule 24
-	'BY'           reduce using rule 24
-	'DIVIDE'       reduce using rule 24
-	'EQUALS'       reduce using rule 24
-	'False'        reduce using rule 24
-	'HAS'          reduce using rule 24
-	'IN'           reduce using rule 24
-	'IS'           reduce using rule 24
-	'MAP'          reduce using rule 24
-	'MAX'          reduce using rule 24
-	'MAY'          reduce using rule 24
-	'MEANS'        reduce using rule 24
-	'MIN'          reduce using rule 24
-	'MINUS'        reduce using rule 24
-	'MODULO'       reduce using rule 24
-	'MUST'         reduce using rule 24
-	'NOT'          reduce using rule 24
-	'ON'           reduce using rule 24
-	'OR'           reduce using rule 24
-	'PRODUCT'      reduce using rule 24
-	'SHANT'        reduce using rule 24
-	'SUBJECT'      reduce using rule 24
-	'SUM'          reduce using rule 24
-	'True'         reduce using rule 24
-	'WHO'          reduce using rule 24
-	L_doubl        reduce using rule 24
-	L_integ        reduce using rule 24
-	L_Text         reduce using rule 24
-	%eof           reduce using rule 24
-
-
-State 9
-
-	MTExpr -> Integer .                                 (rule 23)
-
-	')'            reduce using rule 23
-	','            reduce using rule 23
-	'<'            reduce using rule 23
-	'<='           reduce using rule 23
-	'>'            reduce using rule 23
-	'>='           reduce using rule 23
-	'ABOUT'        reduce using rule 23
-	'AFTER'        reduce using rule 23
-	'AND'          reduce using rule 23
-	'BEFORE'       reduce using rule 23
-	'BY'           reduce using rule 23
-	'DIVIDE'       reduce using rule 23
-	'EQUALS'       reduce using rule 23
-	'False'        reduce using rule 23
-	'HAS'          reduce using rule 23
-	'IN'           reduce using rule 23
-	'IS'           reduce using rule 23
-	'MAP'          reduce using rule 23
-	'MAX'          reduce using rule 23
-	'MAY'          reduce using rule 23
-	'MEANS'        reduce using rule 23
-	'MIN'          reduce using rule 23
-	'MINUS'        reduce using rule 23
-	'MODULO'       reduce using rule 23
-	'MUST'         reduce using rule 23
-	'NOT'          reduce using rule 23
-	'ON'           reduce using rule 23
-	'OR'           reduce using rule 23
-	'PRODUCT'      reduce using rule 23
-	'SHANT'        reduce using rule 23
-	'SUBJECT'      reduce using rule 23
-	'SUM'          reduce using rule 23
-	'True'         reduce using rule 23
-	'WHO'          reduce using rule 23
-	L_doubl        reduce using rule 23
-	L_integ        reduce using rule 23
-	L_Text         reduce using rule 23
-	%eof           reduce using rule 23
-
-
-State 10
-
-	MTExpr -> Text .                                    (rule 22)
-	BoolStruct -> Text . 'ANY' '(' ListBoolStruct ')' Text    (rule 31)
-	BoolStruct -> Text . 'ANY' '(' ListBoolStruct ')'    (rule 32)
-	BoolStruct -> Text . 'ALL' '(' ListBoolStruct ')'    (rule 34)
-	BoolStruct -> Text . 'ALL' '(' ListBoolStruct ')' Text    (rule 35)
-
-	')'            reduce using rule 22
-	','            reduce using rule 22
-	'<'            reduce using rule 22
-	'<='           reduce using rule 22
-	'>'            reduce using rule 22
-	'>='           reduce using rule 22
-	'ABOUT'        reduce using rule 22
-	'AFTER'        reduce using rule 22
-	'ALL'          shift, and enter state 68
-	'AND'          reduce using rule 22
-	'ANY'          shift, and enter state 69
-	'BEFORE'       reduce using rule 22
-	'BY'           reduce using rule 22
-	'DIVIDE'       reduce using rule 22
-	'EQUALS'       reduce using rule 22
-	'False'        reduce using rule 22
-	'HAS'          reduce using rule 22
-	'IN'           reduce using rule 22
-	'IS'           reduce using rule 22
-	'MAP'          reduce using rule 22
-	'MAX'          reduce using rule 22
-	'MAY'          reduce using rule 22
-	'MEANS'        reduce using rule 22
-	'MIN'          reduce using rule 22
-	'MINUS'        reduce using rule 22
-	'MODULO'       reduce using rule 22
-	'MUST'         reduce using rule 22
-	'NOT'          reduce using rule 22
-	'ON'           reduce using rule 22
-	'OR'           reduce using rule 22
-	'PRODUCT'      reduce using rule 22
-	'SHANT'        reduce using rule 22
-	'SUBJECT'      reduce using rule 22
-	'SUM'          reduce using rule 22
-	'True'         reduce using rule 22
-	'WHO'          reduce using rule 22
-	L_doubl        reduce using rule 22
-	L_integ        reduce using rule 22
-	L_Text         reduce using rule 22
-	%eof           reduce using rule 22
-
-
 State 11
 
-	BoolStruct -> RelationalPredicate .                 (rule 37)
+	IsA -> Text . 'IS' 'A' Text                         (rule 14)
+	IsA -> Text .                                       (rule 15)
 
-	')'            reduce using rule 37
-	','            reduce using rule 37
-	'MAY'          reduce using rule 37
-	'MEANS'        reduce using rule 37
-	'MUST'         reduce using rule 37
-	'SHANT'        reduce using rule 37
-	'WHO'          reduce using rule 37
-	%eof           reduce using rule 37
+	';'            reduce using rule 15
+	'DECIDE'       reduce using rule 15
+	'DECLARE'      reduce using rule 15
+	'EVERY'        reduce using rule 15
+	'GIVEN'        reduce using rule 15
+	'GIVETH'       reduce using rule 15
+	'HAS'          reduce using rule 15
+	'IS'           shift, and enter state 79
+	L_Text         reduce using rule 15
+	%eof           reduce using rule 15
 
 
 State 12
 
-	ListMTExpr -> MTExpr .                              (rule 28)
-	ListMTExpr -> MTExpr . ListMTExpr                   (rule 29)
+	Rule -> 'GIVETH' IsA . 'DECIDE' RelationalPredicate    (rule 12)
+	Rule -> 'GIVETH' IsA . 'DECIDE' RelationalPredicate 'IF' BoolStruct    (rule 13)
+
+	'DECIDE'       shift, and enter state 78
+
+
+State 13
+
+	ListIsA -> IsA .                                    (rule 16)
+	ListIsA -> IsA . ';' ListIsA                        (rule 17)
+
+	';'            shift, and enter state 77
+	'DECIDE'       reduce using rule 16
+	'DECLARE'      reduce using rule 16
+	'EVERY'        reduce using rule 16
+	'GIVEN'        reduce using rule 16
+	'GIVETH'       reduce using rule 16
+	L_Text         reduce using rule 16
+	%eof           reduce using rule 16
+
+
+State 14
+
+	Rule -> 'GIVEN' ListIsA . Rule                      (rule 5)
+
+	'DECIDE'       shift, and enter state 5
+	'DECLARE'      shift, and enter state 6
+	'EVERY'        shift, and enter state 7
+	'GIVEN'        shift, and enter state 8
+	'GIVETH'       shift, and enter state 9
+	L_Text         shift, and enter state 10
+
+	Text           goto state 3
+	Rule           goto state 76
+
+State 15
+
+	MTExpr -> Double .                                  (rule 29)
+
+	')'            reduce using rule 29
+	','            reduce using rule 29
+	'<'            reduce using rule 29
+	'<='           reduce using rule 29
+	'>'            reduce using rule 29
+	'>='           reduce using rule 29
+	'ABOUT'        reduce using rule 29
+	'AFTER'        reduce using rule 29
+	'AND'          reduce using rule 29
+	'BEFORE'       reduce using rule 29
+	'BY'           reduce using rule 29
+	'DIVIDE'       reduce using rule 29
+	'EQUALS'       reduce using rule 29
+	'False'        reduce using rule 29
+	'HAS'          reduce using rule 29
+	'IF'           reduce using rule 29
+	'IN'           reduce using rule 29
+	'IS'           reduce using rule 29
+	'MAP'          reduce using rule 29
+	'MAX'          reduce using rule 29
+	'MAY'          reduce using rule 29
+	'MEANS'        reduce using rule 29
+	'MIN'          reduce using rule 29
+	'MINUS'        reduce using rule 29
+	'MODULO'       reduce using rule 29
+	'MUST'         reduce using rule 29
+	'NOT'          reduce using rule 29
+	'ON'           reduce using rule 29
+	'OR'           reduce using rule 29
+	'PRODUCT'      reduce using rule 29
+	'SHANT'        reduce using rule 29
+	'SUBJECT'      reduce using rule 29
+	'SUM'          reduce using rule 29
+	'True'         reduce using rule 29
+	'WHO'          reduce using rule 29
+	L_doubl        reduce using rule 29
+	L_integ        reduce using rule 29
+	L_Text         reduce using rule 29
+	%eof           reduce using rule 29
+
+
+State 16
+
+	MTExpr -> Integer .                                 (rule 28)
 
 	')'            reduce using rule 28
 	','            reduce using rule 28
@@ -476,8 +479,9 @@ State 12
 	'BY'           reduce using rule 28
 	'DIVIDE'       reduce using rule 28
 	'EQUALS'       reduce using rule 28
-	'False'        shift, and enter state 18
+	'False'        reduce using rule 28
 	'HAS'          reduce using rule 28
+	'IF'           reduce using rule 28
 	'IN'           reduce using rule 28
 	'IS'           reduce using rule 28
 	'MAP'          reduce using rule 28
@@ -495,137 +499,21 @@ State 12
 	'SHANT'        reduce using rule 28
 	'SUBJECT'      reduce using rule 28
 	'SUM'          reduce using rule 28
-	'True'         shift, and enter state 20
+	'True'         reduce using rule 28
 	'WHO'          reduce using rule 28
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_doubl        reduce using rule 28
+	L_integ        reduce using rule 28
+	L_Text         reduce using rule 28
 	%eof           reduce using rule 28
-
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 66
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 67
-
-State 13
-
-	MTExpr -> Bool .                                    (rule 25)
-
-	')'            reduce using rule 25
-	','            reduce using rule 25
-	'<'            reduce using rule 25
-	'<='           reduce using rule 25
-	'>'            reduce using rule 25
-	'>='           reduce using rule 25
-	'ABOUT'        reduce using rule 25
-	'AFTER'        reduce using rule 25
-	'AND'          reduce using rule 25
-	'BEFORE'       reduce using rule 25
-	'BY'           reduce using rule 25
-	'DIVIDE'       reduce using rule 25
-	'EQUALS'       reduce using rule 25
-	'False'        reduce using rule 25
-	'HAS'          reduce using rule 25
-	'IN'           reduce using rule 25
-	'IS'           reduce using rule 25
-	'MAP'          reduce using rule 25
-	'MAX'          reduce using rule 25
-	'MAY'          reduce using rule 25
-	'MEANS'        reduce using rule 25
-	'MIN'          reduce using rule 25
-	'MINUS'        reduce using rule 25
-	'MODULO'       reduce using rule 25
-	'MUST'         reduce using rule 25
-	'NOT'          reduce using rule 25
-	'ON'           reduce using rule 25
-	'OR'           reduce using rule 25
-	'PRODUCT'      reduce using rule 25
-	'SHANT'        reduce using rule 25
-	'SUBJECT'      reduce using rule 25
-	'SUM'          reduce using rule 25
-	'True'         reduce using rule 25
-	'WHO'          reduce using rule 25
-	L_doubl        reduce using rule 25
-	L_integ        reduce using rule 25
-	L_Text         reduce using rule 25
-	%eof           reduce using rule 25
-
-
-State 14
-
-	RelationalPredicate -> ListMTExpr .                 (rule 20)
-	RelationalPredicate -> ListMTExpr . RPRel BoolStruct    (rule 21)
-
-	')'            reduce using rule 20
-	','            reduce using rule 20
-	'<'            shift, and enter state 41
-	'<='           shift, and enter state 42
-	'>'            shift, and enter state 43
-	'>='           shift, and enter state 44
-	'ABOUT'        shift, and enter state 45
-	'AFTER'        shift, and enter state 46
-	'AND'          shift, and enter state 47
-	'BEFORE'       shift, and enter state 48
-	'BY'           shift, and enter state 49
-	'DIVIDE'       shift, and enter state 50
-	'EQUALS'       shift, and enter state 51
-	'HAS'          shift, and enter state 52
-	'IN'           shift, and enter state 53
-	'IS'           shift, and enter state 54
-	'MAP'          shift, and enter state 55
-	'MAX'          shift, and enter state 56
-	'MAY'          reduce using rule 20
-	'MEANS'        reduce using rule 20
-	'MIN'          shift, and enter state 57
-	'MINUS'        shift, and enter state 58
-	'MODULO'       shift, and enter state 59
-	'MUST'         reduce using rule 20
-	'NOT'          shift, and enter state 60
-	'ON'           shift, and enter state 61
-	'OR'           shift, and enter state 62
-	'PRODUCT'      shift, and enter state 63
-	'SHANT'        reduce using rule 20
-	'SUBJECT'      shift, and enter state 64
-	'SUM'          shift, and enter state 65
-	'WHO'          reduce using rule 20
-	%eof           reduce using rule 20
-
-	RPRel          goto state 39
-	TComparison    goto state 40
-
-State 15
-
-	Rule -> 'EVERY' BoolStruct . Deontic BoolStruct     (rule 6)
-	Rule -> 'EVERY' BoolStruct . Who Deontic BoolStruct    (rule 7)
-	Rule -> 'EVERY' BoolStruct . Who InlineHornlike Deontic BoolStruct    (rule 8)
-
-	'MAY'          shift, and enter state 35
-	'MUST'         shift, and enter state 36
-	'SHANT'        shift, and enter state 37
-	'WHO'          shift, and enter state 38
-
-	Deontic        goto state 33
-	Who            goto state 34
-
-State 16
-
-	BoolStruct -> 'ALL' . '(' ListBoolStruct ')'        (rule 33)
-
-	'('            shift, and enter state 32
 
 
 State 17
 
-	BoolStruct -> 'ANY' . '(' ListBoolStruct ')'        (rule 30)
-
-	'('            shift, and enter state 31
-
-
-State 18
-
-	Bool -> 'False' .                                   (rule 27)
+	MTExpr -> Text .                                    (rule 27)
+	BoolStruct -> Text . 'ANY' '(' ListBoolStruct ')' Text    (rule 36)
+	BoolStruct -> Text . 'ANY' '(' ListBoolStruct ')'    (rule 37)
+	BoolStruct -> Text . 'ALL' '(' ListBoolStruct ')'    (rule 39)
+	BoolStruct -> Text . 'ALL' '(' ListBoolStruct ')' Text    (rule 40)
 
 	')'            reduce using rule 27
 	','            reduce using rule 27
@@ -635,13 +523,16 @@ State 18
 	'>='           reduce using rule 27
 	'ABOUT'        reduce using rule 27
 	'AFTER'        reduce using rule 27
+	'ALL'          shift, and enter state 74
 	'AND'          reduce using rule 27
+	'ANY'          shift, and enter state 75
 	'BEFORE'       reduce using rule 27
 	'BY'           reduce using rule 27
 	'DIVIDE'       reduce using rule 27
 	'EQUALS'       reduce using rule 27
 	'False'        reduce using rule 27
 	'HAS'          reduce using rule 27
+	'IF'           reduce using rule 27
 	'IN'           reduce using rule 27
 	'IS'           reduce using rule 27
 	'MAP'          reduce using rule 27
@@ -667,73 +558,302 @@ State 18
 	%eof           reduce using rule 27
 
 
+State 18
+
+	BoolStruct -> RelationalPredicate .                 (rule 42)
+
+	')'            reduce using rule 42
+	','            reduce using rule 42
+	'IF'           reduce using rule 42
+	'MAY'          reduce using rule 42
+	'MEANS'        reduce using rule 42
+	'MUST'         reduce using rule 42
+	'SHANT'        reduce using rule 42
+	'WHO'          reduce using rule 42
+	%eof           reduce using rule 42
+
+
 State 19
 
-	BoolStruct -> 'NOT' . BoolStruct                    (rule 36)
+	ListMTExpr -> MTExpr .                              (rule 33)
+	ListMTExpr -> MTExpr . ListMTExpr                   (rule 34)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
+	')'            reduce using rule 33
+	','            reduce using rule 33
+	'<'            reduce using rule 33
+	'<='           reduce using rule 33
+	'>'            reduce using rule 33
+	'>='           reduce using rule 33
+	'ABOUT'        reduce using rule 33
+	'AFTER'        reduce using rule 33
+	'AND'          reduce using rule 33
+	'BEFORE'       reduce using rule 33
+	'BY'           reduce using rule 33
+	'DIVIDE'       reduce using rule 33
+	'EQUALS'       reduce using rule 33
+	'False'        shift, and enter state 25
+	'HAS'          reduce using rule 33
+	'IF'           reduce using rule 33
+	'IN'           reduce using rule 33
+	'IS'           reduce using rule 33
+	'MAP'          reduce using rule 33
+	'MAX'          reduce using rule 33
+	'MAY'          reduce using rule 33
+	'MEANS'        reduce using rule 33
+	'MIN'          reduce using rule 33
+	'MINUS'        reduce using rule 33
+	'MODULO'       reduce using rule 33
+	'MUST'         reduce using rule 33
+	'NOT'          reduce using rule 33
+	'ON'           reduce using rule 33
+	'OR'           reduce using rule 33
+	'PRODUCT'      reduce using rule 33
+	'SHANT'        reduce using rule 33
+	'SUBJECT'      reduce using rule 33
+	'SUM'          reduce using rule 33
+	'True'         shift, and enter state 27
+	'WHO'          reduce using rule 33
 	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+	%eof           reduce using rule 33
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 30
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 30
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 73
 
 State 20
 
-	Bool -> 'True' .                                    (rule 26)
+	MTExpr -> Bool .                                    (rule 30)
 
-	')'            reduce using rule 26
-	','            reduce using rule 26
-	'<'            reduce using rule 26
-	'<='           reduce using rule 26
-	'>'            reduce using rule 26
-	'>='           reduce using rule 26
-	'ABOUT'        reduce using rule 26
-	'AFTER'        reduce using rule 26
-	'AND'          reduce using rule 26
-	'BEFORE'       reduce using rule 26
-	'BY'           reduce using rule 26
-	'DIVIDE'       reduce using rule 26
-	'EQUALS'       reduce using rule 26
-	'False'        reduce using rule 26
-	'HAS'          reduce using rule 26
-	'IN'           reduce using rule 26
-	'IS'           reduce using rule 26
-	'MAP'          reduce using rule 26
-	'MAX'          reduce using rule 26
-	'MAY'          reduce using rule 26
-	'MEANS'        reduce using rule 26
-	'MIN'          reduce using rule 26
-	'MINUS'        reduce using rule 26
-	'MODULO'       reduce using rule 26
-	'MUST'         reduce using rule 26
-	'NOT'          reduce using rule 26
-	'ON'           reduce using rule 26
-	'OR'           reduce using rule 26
-	'PRODUCT'      reduce using rule 26
-	'SHANT'        reduce using rule 26
-	'SUBJECT'      reduce using rule 26
-	'SUM'          reduce using rule 26
-	'True'         reduce using rule 26
-	'WHO'          reduce using rule 26
-	L_doubl        reduce using rule 26
-	L_integ        reduce using rule 26
-	L_Text         reduce using rule 26
-	%eof           reduce using rule 26
+	')'            reduce using rule 30
+	','            reduce using rule 30
+	'<'            reduce using rule 30
+	'<='           reduce using rule 30
+	'>'            reduce using rule 30
+	'>='           reduce using rule 30
+	'ABOUT'        reduce using rule 30
+	'AFTER'        reduce using rule 30
+	'AND'          reduce using rule 30
+	'BEFORE'       reduce using rule 30
+	'BY'           reduce using rule 30
+	'DIVIDE'       reduce using rule 30
+	'EQUALS'       reduce using rule 30
+	'False'        reduce using rule 30
+	'HAS'          reduce using rule 30
+	'IF'           reduce using rule 30
+	'IN'           reduce using rule 30
+	'IS'           reduce using rule 30
+	'MAP'          reduce using rule 30
+	'MAX'          reduce using rule 30
+	'MAY'          reduce using rule 30
+	'MEANS'        reduce using rule 30
+	'MIN'          reduce using rule 30
+	'MINUS'        reduce using rule 30
+	'MODULO'       reduce using rule 30
+	'MUST'         reduce using rule 30
+	'NOT'          reduce using rule 30
+	'ON'           reduce using rule 30
+	'OR'           reduce using rule 30
+	'PRODUCT'      reduce using rule 30
+	'SHANT'        reduce using rule 30
+	'SUBJECT'      reduce using rule 30
+	'SUM'          reduce using rule 30
+	'True'         reduce using rule 30
+	'WHO'          reduce using rule 30
+	L_doubl        reduce using rule 30
+	L_integ        reduce using rule 30
+	L_Text         reduce using rule 30
+	%eof           reduce using rule 30
 
 
 State 21
+
+	RelationalPredicate -> ListMTExpr .                 (rule 25)
+	RelationalPredicate -> ListMTExpr . RPRel BoolStruct    (rule 26)
+
+	')'            reduce using rule 25
+	','            reduce using rule 25
+	'<'            shift, and enter state 48
+	'<='           shift, and enter state 49
+	'>'            shift, and enter state 50
+	'>='           shift, and enter state 51
+	'ABOUT'        shift, and enter state 52
+	'AFTER'        shift, and enter state 53
+	'AND'          shift, and enter state 54
+	'BEFORE'       shift, and enter state 55
+	'BY'           shift, and enter state 56
+	'DIVIDE'       shift, and enter state 57
+	'EQUALS'       shift, and enter state 58
+	'HAS'          shift, and enter state 59
+	'IF'           reduce using rule 25
+	'IN'           shift, and enter state 60
+	'IS'           shift, and enter state 61
+	'MAP'          shift, and enter state 62
+	'MAX'          shift, and enter state 63
+	'MAY'          reduce using rule 25
+	'MEANS'        reduce using rule 25
+	'MIN'          shift, and enter state 64
+	'MINUS'        shift, and enter state 65
+	'MODULO'       shift, and enter state 66
+	'MUST'         reduce using rule 25
+	'NOT'          shift, and enter state 67
+	'ON'           shift, and enter state 68
+	'OR'           shift, and enter state 69
+	'PRODUCT'      shift, and enter state 70
+	'SHANT'        reduce using rule 25
+	'SUBJECT'      shift, and enter state 71
+	'SUM'          shift, and enter state 72
+	'WHO'          reduce using rule 25
+	%eof           reduce using rule 25
+
+	RPRel          goto state 46
+	TComparison    goto state 47
+
+State 22
+
+	Rule -> 'EVERY' BoolStruct . Deontic BoolStruct     (rule 6)
+	Rule -> 'EVERY' BoolStruct . Who Deontic BoolStruct    (rule 7)
+	Rule -> 'EVERY' BoolStruct . Who InlineHornlike Deontic BoolStruct    (rule 8)
+
+	'MAY'          shift, and enter state 42
+	'MUST'         shift, and enter state 43
+	'SHANT'        shift, and enter state 44
+	'WHO'          shift, and enter state 45
+
+	Deontic        goto state 40
+	Who            goto state 41
+
+State 23
+
+	BoolStruct -> 'ALL' . '(' ListBoolStruct ')'        (rule 38)
+
+	'('            shift, and enter state 39
+
+
+State 24
+
+	BoolStruct -> 'ANY' . '(' ListBoolStruct ')'        (rule 35)
+
+	'('            shift, and enter state 38
+
+
+State 25
+
+	Bool -> 'False' .                                   (rule 32)
+
+	')'            reduce using rule 32
+	','            reduce using rule 32
+	'<'            reduce using rule 32
+	'<='           reduce using rule 32
+	'>'            reduce using rule 32
+	'>='           reduce using rule 32
+	'ABOUT'        reduce using rule 32
+	'AFTER'        reduce using rule 32
+	'AND'          reduce using rule 32
+	'BEFORE'       reduce using rule 32
+	'BY'           reduce using rule 32
+	'DIVIDE'       reduce using rule 32
+	'EQUALS'       reduce using rule 32
+	'False'        reduce using rule 32
+	'HAS'          reduce using rule 32
+	'IF'           reduce using rule 32
+	'IN'           reduce using rule 32
+	'IS'           reduce using rule 32
+	'MAP'          reduce using rule 32
+	'MAX'          reduce using rule 32
+	'MAY'          reduce using rule 32
+	'MEANS'        reduce using rule 32
+	'MIN'          reduce using rule 32
+	'MINUS'        reduce using rule 32
+	'MODULO'       reduce using rule 32
+	'MUST'         reduce using rule 32
+	'NOT'          reduce using rule 32
+	'ON'           reduce using rule 32
+	'OR'           reduce using rule 32
+	'PRODUCT'      reduce using rule 32
+	'SHANT'        reduce using rule 32
+	'SUBJECT'      reduce using rule 32
+	'SUM'          reduce using rule 32
+	'True'         reduce using rule 32
+	'WHO'          reduce using rule 32
+	L_doubl        reduce using rule 32
+	L_integ        reduce using rule 32
+	L_Text         reduce using rule 32
+	%eof           reduce using rule 32
+
+
+State 26
+
+	BoolStruct -> 'NOT' . BoolStruct                    (rule 41)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 37
+
+State 27
+
+	Bool -> 'True' .                                    (rule 31)
+
+	')'            reduce using rule 31
+	','            reduce using rule 31
+	'<'            reduce using rule 31
+	'<='           reduce using rule 31
+	'>'            reduce using rule 31
+	'>='           reduce using rule 31
+	'ABOUT'        reduce using rule 31
+	'AFTER'        reduce using rule 31
+	'AND'          reduce using rule 31
+	'BEFORE'       reduce using rule 31
+	'BY'           reduce using rule 31
+	'DIVIDE'       reduce using rule 31
+	'EQUALS'       reduce using rule 31
+	'False'        reduce using rule 31
+	'HAS'          reduce using rule 31
+	'IF'           reduce using rule 31
+	'IN'           reduce using rule 31
+	'IS'           reduce using rule 31
+	'MAP'          reduce using rule 31
+	'MAX'          reduce using rule 31
+	'MAY'          reduce using rule 31
+	'MEANS'        reduce using rule 31
+	'MIN'          reduce using rule 31
+	'MINUS'        reduce using rule 31
+	'MODULO'       reduce using rule 31
+	'MUST'         reduce using rule 31
+	'NOT'          reduce using rule 31
+	'ON'           reduce using rule 31
+	'OR'           reduce using rule 31
+	'PRODUCT'      reduce using rule 31
+	'SHANT'        reduce using rule 31
+	'SUBJECT'      reduce using rule 31
+	'SUM'          reduce using rule 31
+	'True'         reduce using rule 31
+	'WHO'          reduce using rule 31
+	L_doubl        reduce using rule 31
+	L_integ        reduce using rule 31
+	L_Text         reduce using rule 31
+	%eof           reduce using rule 31
+
+
+State 28
 
 	Integer -> L_integ .                                (rule 2)
 
@@ -752,6 +872,7 @@ State 21
 	'EQUALS'       reduce using rule 2
 	'False'        reduce using rule 2
 	'HAS'          reduce using rule 2
+	'IF'           reduce using rule 2
 	'IN'           reduce using rule 2
 	'IS'           reduce using rule 2
 	'MAP'          reduce using rule 2
@@ -777,340 +898,322 @@ State 21
 	%eof           reduce using rule 2
 
 
-State 22
+State 29
 
-	Rule -> 'DECLARE' Text . Fields                     (rule 4)
-	IsA -> Text . 'IS' 'A' Text                         (rule 10)
+	Rule -> 'DECLARE' IsA . Fields                      (rule 4)
 
-	'HAS'          shift, and enter state 27
-	'IS'           shift, and enter state 29
-	%eof           reduce using rule 14
+	'HAS'          shift, and enter state 36
+	%eof           reduce using rule 19
 
-	Fields         goto state 28
+	Fields         goto state 35
 
-State 23
+State 30
 
-	Rule -> 'DECLARE' IsA . Fields                      (rule 5)
+	MTExpr -> Text .                                    (rule 27)
 
-	'HAS'          shift, and enter state 27
-	%eof           reduce using rule 14
+	')'            reduce using rule 27
+	','            reduce using rule 27
+	'<'            reduce using rule 27
+	'<='           reduce using rule 27
+	'>'            reduce using rule 27
+	'>='           reduce using rule 27
+	'ABOUT'        reduce using rule 27
+	'AFTER'        reduce using rule 27
+	'AND'          reduce using rule 27
+	'BEFORE'       reduce using rule 27
+	'BY'           reduce using rule 27
+	'DIVIDE'       reduce using rule 27
+	'EQUALS'       reduce using rule 27
+	'False'        reduce using rule 27
+	'HAS'          reduce using rule 27
+	'IF'           reduce using rule 27
+	'IN'           reduce using rule 27
+	'IS'           reduce using rule 27
+	'MAP'          reduce using rule 27
+	'MAX'          reduce using rule 27
+	'MAY'          reduce using rule 27
+	'MEANS'        reduce using rule 27
+	'MIN'          reduce using rule 27
+	'MINUS'        reduce using rule 27
+	'MODULO'       reduce using rule 27
+	'MUST'         reduce using rule 27
+	'NOT'          reduce using rule 27
+	'ON'           reduce using rule 27
+	'OR'           reduce using rule 27
+	'PRODUCT'      reduce using rule 27
+	'SHANT'        reduce using rule 27
+	'SUBJECT'      reduce using rule 27
+	'SUM'          reduce using rule 27
+	'True'         reduce using rule 27
+	'WHO'          reduce using rule 27
+	L_doubl        reduce using rule 27
+	L_integ        reduce using rule 27
+	L_Text         reduce using rule 27
+	%eof           reduce using rule 27
 
-	Fields         goto state 26
 
-State 24
+State 31
+
+	Rule -> 'DECIDE' RelationalPredicate .              (rule 10)
+	Rule -> 'DECIDE' RelationalPredicate . 'IF' BoolStruct    (rule 11)
+
+	'IF'           shift, and enter state 34
+	%eof           reduce using rule 10
+
+
+State 32
 
 	Rule -> Text 'MEANS' . BoolStruct                   (rule 9)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
 	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 25
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 33
 
-State 25
+State 33
 
 	Rule -> Text 'MEANS' BoolStruct .                   (rule 9)
 
 	%eof           reduce using rule 9
 
 
-State 26
+State 34
 
-	Rule -> 'DECLARE' IsA Fields .                      (rule 5)
+	Rule -> 'DECIDE' RelationalPredicate 'IF' . BoolStruct    (rule 11)
 
-	%eof           reduce using rule 5
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 97
 
-State 27
+State 35
 
-	Fields -> 'HAS' . ListIsA                           (rule 13)
-
-	L_Text         shift, and enter state 7
-
-	Text           goto state 84
-	IsA            goto state 85
-	ListIsA        goto state 86
-
-State 28
-
-	Rule -> 'DECLARE' Text Fields .                     (rule 4)
+	Rule -> 'DECLARE' IsA Fields .                      (rule 4)
 
 	%eof           reduce using rule 4
 
 
-State 29
-
-	IsA -> Text 'IS' . 'A' Text                         (rule 10)
-
-	'A'            shift, and enter state 83
-
-
-State 30
-
-	BoolStruct -> 'NOT' BoolStruct .                    (rule 36)
-
-	')'            reduce using rule 36
-	','            reduce using rule 36
-	'MAY'          reduce using rule 36
-	'MEANS'        reduce using rule 36
-	'MUST'         reduce using rule 36
-	'SHANT'        reduce using rule 36
-	'WHO'          reduce using rule 36
-	%eof           reduce using rule 36
-
-
-State 31
-
-	BoolStruct -> 'ANY' '(' . ListBoolStruct ')'        (rule 30)
-
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
-
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 80
-	ListBoolStruct goto state 82
-
-State 32
-
-	BoolStruct -> 'ALL' '(' . ListBoolStruct ')'        (rule 33)
-
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
-
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 80
-	ListBoolStruct goto state 81
-
-State 33
-
-	Rule -> 'EVERY' BoolStruct Deontic . BoolStruct     (rule 6)
-
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
-
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 79
-
-State 34
-
-	Rule -> 'EVERY' BoolStruct Who . Deontic BoolStruct    (rule 7)
-	Rule -> 'EVERY' BoolStruct Who . InlineHornlike Deontic BoolStruct    (rule 8)
-
-	'MAY'          shift, and enter state 35
-	'MEANS'        shift, and enter state 78
-	'MUST'         shift, and enter state 36
-	'SHANT'        shift, and enter state 37
-
-	Deontic        goto state 76
-	InlineHornlike goto state 77
-
-State 35
-
-	Deontic -> 'MAY' .                                  (rule 16)
-
-	'ALL'          reduce using rule 16
-	'ANY'          reduce using rule 16
-	'False'        reduce using rule 16
-	'NOT'          reduce using rule 16
-	'True'         reduce using rule 16
-	L_doubl        reduce using rule 16
-	L_integ        reduce using rule 16
-	L_Text         reduce using rule 16
-
-
 State 36
 
-	Deontic -> 'MUST' .                                 (rule 15)
+	Fields -> 'HAS' . ListIsA                           (rule 18)
 
-	'ALL'          reduce using rule 15
-	'ANY'          reduce using rule 15
-	'False'        reduce using rule 15
-	'NOT'          reduce using rule 15
-	'True'         reduce using rule 15
-	L_doubl        reduce using rule 15
-	L_integ        reduce using rule 15
-	L_Text         reduce using rule 15
+	L_Text         shift, and enter state 10
 
+	Text           goto state 11
+	IsA            goto state 13
+	ListIsA        goto state 96
 
 State 37
 
-	Deontic -> 'SHANT' .                                (rule 17)
+	BoolStruct -> 'NOT' BoolStruct .                    (rule 41)
 
-	'ALL'          reduce using rule 17
-	'ANY'          reduce using rule 17
-	'False'        reduce using rule 17
-	'NOT'          reduce using rule 17
-	'True'         reduce using rule 17
-	L_doubl        reduce using rule 17
-	L_integ        reduce using rule 17
-	L_Text         reduce using rule 17
+	')'            reduce using rule 41
+	','            reduce using rule 41
+	'IF'           reduce using rule 41
+	'MAY'          reduce using rule 41
+	'MEANS'        reduce using rule 41
+	'MUST'         reduce using rule 41
+	'SHANT'        reduce using rule 41
+	'WHO'          reduce using rule 41
+	%eof           reduce using rule 41
 
 
 State 38
 
-	Who -> 'WHO' . BoolStruct                           (rule 18)
+	BoolStruct -> 'ANY' '(' . ListBoolStruct ')'        (rule 35)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
 	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 75
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 93
+	ListBoolStruct goto state 95
 
 State 39
 
-	RelationalPredicate -> ListMTExpr RPRel . BoolStruct    (rule 21)
+	BoolStruct -> 'ALL' '(' . ListBoolStruct ')'        (rule 38)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
 	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 74
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 93
+	ListBoolStruct goto state 94
 
 State 40
 
-	RPRel -> TComparison .                              (rule 61)
+	Rule -> 'EVERY' BoolStruct Deontic . BoolStruct     (rule 6)
 
-	'ALL'          reduce using rule 61
-	'ANY'          reduce using rule 61
-	'False'        reduce using rule 61
-	'NOT'          reduce using rule 61
-	'True'         reduce using rule 61
-	L_doubl        reduce using rule 61
-	L_integ        reduce using rule 61
-	L_Text         reduce using rule 61
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 92
 
 State 41
 
-	RPRel -> '<' .                                      (rule 43)
+	Rule -> 'EVERY' BoolStruct Who . Deontic BoolStruct    (rule 7)
+	Rule -> 'EVERY' BoolStruct Who . InlineHornlike Deontic BoolStruct    (rule 8)
 
-	'ALL'          reduce using rule 43
-	'ANY'          reduce using rule 43
-	'False'        reduce using rule 43
-	'NOT'          reduce using rule 43
-	'True'         reduce using rule 43
-	L_doubl        reduce using rule 43
-	L_integ        reduce using rule 43
-	L_Text         reduce using rule 43
+	'MAY'          shift, and enter state 42
+	'MEANS'        shift, and enter state 91
+	'MUST'         shift, and enter state 43
+	'SHANT'        shift, and enter state 44
 
+	Deontic        goto state 89
+	InlineHornlike goto state 90
 
 State 42
 
-	RPRel -> '<=' .                                     (rule 44)
+	Deontic -> 'MAY' .                                  (rule 21)
 
-	'ALL'          reduce using rule 44
-	'ANY'          reduce using rule 44
-	'False'        reduce using rule 44
-	'NOT'          reduce using rule 44
-	'True'         reduce using rule 44
-	L_doubl        reduce using rule 44
-	L_integ        reduce using rule 44
-	L_Text         reduce using rule 44
+	'ALL'          reduce using rule 21
+	'ANY'          reduce using rule 21
+	'False'        reduce using rule 21
+	'NOT'          reduce using rule 21
+	'True'         reduce using rule 21
+	L_doubl        reduce using rule 21
+	L_integ        reduce using rule 21
+	L_Text         reduce using rule 21
 
 
 State 43
 
-	RPRel -> '>' .                                      (rule 45)
+	Deontic -> 'MUST' .                                 (rule 20)
 
-	'ALL'          reduce using rule 45
-	'ANY'          reduce using rule 45
-	'False'        reduce using rule 45
-	'NOT'          reduce using rule 45
-	'True'         reduce using rule 45
-	L_doubl        reduce using rule 45
-	L_integ        reduce using rule 45
-	L_Text         reduce using rule 45
+	'ALL'          reduce using rule 20
+	'ANY'          reduce using rule 20
+	'False'        reduce using rule 20
+	'NOT'          reduce using rule 20
+	'True'         reduce using rule 20
+	L_doubl        reduce using rule 20
+	L_integ        reduce using rule 20
+	L_Text         reduce using rule 20
 
 
 State 44
 
-	RPRel -> '>=' .                                     (rule 46)
+	Deontic -> 'SHANT' .                                (rule 22)
 
-	'ALL'          reduce using rule 46
-	'ANY'          reduce using rule 46
-	'False'        reduce using rule 46
-	'NOT'          reduce using rule 46
-	'True'         reduce using rule 46
-	L_doubl        reduce using rule 46
-	L_integ        reduce using rule 46
-	L_Text         reduce using rule 46
+	'ALL'          reduce using rule 22
+	'ANY'          reduce using rule 22
+	'False'        reduce using rule 22
+	'NOT'          reduce using rule 22
+	'True'         reduce using rule 22
+	L_doubl        reduce using rule 22
+	L_integ        reduce using rule 22
+	L_Text         reduce using rule 22
 
 
 State 45
 
-	TComparison -> 'ABOUT' .                            (rule 66)
+	Who -> 'WHO' . BoolStruct                           (rule 23)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 88
+
+State 46
+
+	RelationalPredicate -> ListMTExpr RPRel . BoolStruct    (rule 26)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 87
+
+State 47
+
+	RPRel -> TComparison .                              (rule 66)
 
 	'ALL'          reduce using rule 66
 	'ANY'          reduce using rule 66
@@ -1122,23 +1225,37 @@ State 45
 	L_Text         reduce using rule 66
 
 
-State 46
+State 48
 
-	TComparison -> 'AFTER' .                            (rule 63)
+	RPRel -> '<' .                                      (rule 48)
 
-	'ALL'          reduce using rule 63
-	'ANY'          reduce using rule 63
-	'False'        reduce using rule 63
-	'NOT'          reduce using rule 63
-	'True'         reduce using rule 63
-	L_doubl        reduce using rule 63
-	L_integ        reduce using rule 63
-	L_Text         reduce using rule 63
+	'ALL'          reduce using rule 48
+	'ANY'          reduce using rule 48
+	'False'        reduce using rule 48
+	'NOT'          reduce using rule 48
+	'True'         reduce using rule 48
+	L_doubl        reduce using rule 48
+	L_integ        reduce using rule 48
+	L_Text         reduce using rule 48
 
 
-State 47
+State 49
 
-	RPRel -> 'AND' .                                    (rule 50)
+	RPRel -> '<=' .                                     (rule 49)
+
+	'ALL'          reduce using rule 49
+	'ANY'          reduce using rule 49
+	'False'        reduce using rule 49
+	'NOT'          reduce using rule 49
+	'True'         reduce using rule 49
+	L_doubl        reduce using rule 49
+	L_integ        reduce using rule 49
+	L_Text         reduce using rule 49
+
+
+State 50
+
+	RPRel -> '>' .                                      (rule 50)
 
 	'ALL'          reduce using rule 50
 	'ANY'          reduce using rule 50
@@ -1150,207 +1267,9 @@ State 47
 	L_Text         reduce using rule 50
 
 
-State 48
-
-	TComparison -> 'BEFORE' .                           (rule 62)
-
-	'ALL'          reduce using rule 62
-	'ANY'          reduce using rule 62
-	'False'        reduce using rule 62
-	'NOT'          reduce using rule 62
-	'True'         reduce using rule 62
-	L_doubl        reduce using rule 62
-	L_integ        reduce using rule 62
-	L_Text         reduce using rule 62
-
-
-State 49
-
-	TComparison -> 'BY' .                               (rule 64)
-
-	'ALL'          reduce using rule 64
-	'ANY'          reduce using rule 64
-	'False'        reduce using rule 64
-	'NOT'          reduce using rule 64
-	'True'         reduce using rule 64
-	L_doubl        reduce using rule 64
-	L_integ        reduce using rule 64
-	L_Text         reduce using rule 64
-
-
-State 50
-
-	RPRel -> 'DIVIDE' .                                 (rule 55)
-
-	'ALL'          reduce using rule 55
-	'ANY'          reduce using rule 55
-	'False'        reduce using rule 55
-	'NOT'          reduce using rule 55
-	'True'         reduce using rule 55
-	L_doubl        reduce using rule 55
-	L_integ        reduce using rule 55
-	L_Text         reduce using rule 55
-
-
 State 51
 
-	RPRel -> 'EQUALS' .                                 (rule 42)
-
-	'ALL'          reduce using rule 42
-	'ANY'          reduce using rule 42
-	'False'        reduce using rule 42
-	'NOT'          reduce using rule 42
-	'True'         reduce using rule 42
-	L_doubl        reduce using rule 42
-	L_integ        reduce using rule 42
-	L_Text         reduce using rule 42
-
-
-State 52
-
-	RPRel -> 'HAS' .                                    (rule 41)
-
-	'ALL'          reduce using rule 41
-	'ANY'          reduce using rule 41
-	'False'        reduce using rule 41
-	'NOT'          reduce using rule 41
-	'True'         reduce using rule 41
-	L_doubl        reduce using rule 41
-	L_integ        reduce using rule 41
-	L_Text         reduce using rule 41
-
-
-State 53
-
-	RPRel -> 'IN' .                                     (rule 47)
-
-	'ALL'          reduce using rule 47
-	'ANY'          reduce using rule 47
-	'False'        reduce using rule 47
-	'NOT'          reduce using rule 47
-	'True'         reduce using rule 47
-	L_doubl        reduce using rule 47
-	L_integ        reduce using rule 47
-	L_Text         reduce using rule 47
-
-
-State 54
-
-	RPRel -> 'IS' .                                     (rule 40)
-
-	'ALL'          reduce using rule 40
-	'ANY'          reduce using rule 40
-	'False'        reduce using rule 40
-	'NOT'          reduce using rule 40
-	'True'         reduce using rule 40
-	L_doubl        reduce using rule 40
-	L_integ        reduce using rule 40
-	L_Text         reduce using rule 40
-
-
-State 55
-
-	RPRel -> 'MAP' .                                    (rule 60)
-
-	'ALL'          reduce using rule 60
-	'ANY'          reduce using rule 60
-	'False'        reduce using rule 60
-	'NOT'          reduce using rule 60
-	'True'         reduce using rule 60
-	L_doubl        reduce using rule 60
-	L_integ        reduce using rule 60
-	L_Text         reduce using rule 60
-
-
-State 56
-
-	RPRel -> 'MAX' .                                    (rule 59)
-
-	'ALL'          reduce using rule 59
-	'ANY'          reduce using rule 59
-	'False'        reduce using rule 59
-	'NOT'          reduce using rule 59
-	'True'         reduce using rule 59
-	L_doubl        reduce using rule 59
-	L_integ        reduce using rule 59
-	L_Text         reduce using rule 59
-
-
-State 57
-
-	RPRel -> 'MIN' .                                    (rule 58)
-
-	'ALL'          reduce using rule 58
-	'ANY'          reduce using rule 58
-	'False'        reduce using rule 58
-	'NOT'          reduce using rule 58
-	'True'         reduce using rule 58
-	L_doubl        reduce using rule 58
-	L_integ        reduce using rule 58
-	L_Text         reduce using rule 58
-
-
-State 58
-
-	RPRel -> 'MINUS' .                                  (rule 54)
-
-	'ALL'          reduce using rule 54
-	'ANY'          reduce using rule 54
-	'False'        reduce using rule 54
-	'NOT'          reduce using rule 54
-	'True'         reduce using rule 54
-	L_doubl        reduce using rule 54
-	L_integ        reduce using rule 54
-	L_Text         reduce using rule 54
-
-
-State 59
-
-	RPRel -> 'MODULO' .                                 (rule 56)
-
-	'ALL'          reduce using rule 56
-	'ANY'          reduce using rule 56
-	'False'        reduce using rule 56
-	'NOT'          reduce using rule 56
-	'True'         reduce using rule 56
-	L_doubl        reduce using rule 56
-	L_integ        reduce using rule 56
-	L_Text         reduce using rule 56
-
-
-State 60
-
-	RPRel -> 'NOT' . 'IN'                               (rule 48)
-	RPRel -> 'NOT' .                                    (rule 49)
-
-	'ALL'          reduce using rule 49
-	'ANY'          reduce using rule 49
-	'False'        reduce using rule 49
-	'IN'           shift, and enter state 73
-	'NOT'          reduce using rule 49
-	'True'         reduce using rule 49
-	L_doubl        reduce using rule 49
-	L_integ        reduce using rule 49
-	L_Text         reduce using rule 49
-
-
-State 61
-
-	TComparison -> 'ON' .                               (rule 65)
-
-	'ALL'          reduce using rule 65
-	'ANY'          reduce using rule 65
-	'False'        reduce using rule 65
-	'NOT'          reduce using rule 65
-	'True'         reduce using rule 65
-	L_doubl        reduce using rule 65
-	L_integ        reduce using rule 65
-	L_Text         reduce using rule 65
-
-
-State 62
-
-	RPRel -> 'OR' .                                     (rule 51)
+	RPRel -> '>=' .                                     (rule 51)
 
 	'ALL'          reduce using rule 51
 	'ANY'          reduce using rule 51
@@ -1362,30 +1281,121 @@ State 62
 	L_Text         reduce using rule 51
 
 
-State 63
+State 52
 
-	RPRel -> 'PRODUCT' .                                (rule 53)
+	TComparison -> 'ABOUT' .                            (rule 71)
 
-	'ALL'          reduce using rule 53
-	'ANY'          reduce using rule 53
-	'False'        reduce using rule 53
-	'NOT'          reduce using rule 53
-	'True'         reduce using rule 53
-	L_doubl        reduce using rule 53
-	L_integ        reduce using rule 53
-	L_Text         reduce using rule 53
-
-
-State 64
-
-	RPRel -> 'SUBJECT' . 'TO'                           (rule 57)
-
-	'TO'           shift, and enter state 72
+	'ALL'          reduce using rule 71
+	'ANY'          reduce using rule 71
+	'False'        reduce using rule 71
+	'NOT'          reduce using rule 71
+	'True'         reduce using rule 71
+	L_doubl        reduce using rule 71
+	L_integ        reduce using rule 71
+	L_Text         reduce using rule 71
 
 
-State 65
+State 53
 
-	RPRel -> 'SUM' .                                    (rule 52)
+	TComparison -> 'AFTER' .                            (rule 68)
+
+	'ALL'          reduce using rule 68
+	'ANY'          reduce using rule 68
+	'False'        reduce using rule 68
+	'NOT'          reduce using rule 68
+	'True'         reduce using rule 68
+	L_doubl        reduce using rule 68
+	L_integ        reduce using rule 68
+	L_Text         reduce using rule 68
+
+
+State 54
+
+	RPRel -> 'AND' .                                    (rule 55)
+
+	'ALL'          reduce using rule 55
+	'ANY'          reduce using rule 55
+	'False'        reduce using rule 55
+	'NOT'          reduce using rule 55
+	'True'         reduce using rule 55
+	L_doubl        reduce using rule 55
+	L_integ        reduce using rule 55
+	L_Text         reduce using rule 55
+
+
+State 55
+
+	TComparison -> 'BEFORE' .                           (rule 67)
+
+	'ALL'          reduce using rule 67
+	'ANY'          reduce using rule 67
+	'False'        reduce using rule 67
+	'NOT'          reduce using rule 67
+	'True'         reduce using rule 67
+	L_doubl        reduce using rule 67
+	L_integ        reduce using rule 67
+	L_Text         reduce using rule 67
+
+
+State 56
+
+	TComparison -> 'BY' .                               (rule 69)
+
+	'ALL'          reduce using rule 69
+	'ANY'          reduce using rule 69
+	'False'        reduce using rule 69
+	'NOT'          reduce using rule 69
+	'True'         reduce using rule 69
+	L_doubl        reduce using rule 69
+	L_integ        reduce using rule 69
+	L_Text         reduce using rule 69
+
+
+State 57
+
+	RPRel -> 'DIVIDE' .                                 (rule 60)
+
+	'ALL'          reduce using rule 60
+	'ANY'          reduce using rule 60
+	'False'        reduce using rule 60
+	'NOT'          reduce using rule 60
+	'True'         reduce using rule 60
+	L_doubl        reduce using rule 60
+	L_integ        reduce using rule 60
+	L_Text         reduce using rule 60
+
+
+State 58
+
+	RPRel -> 'EQUALS' .                                 (rule 47)
+
+	'ALL'          reduce using rule 47
+	'ANY'          reduce using rule 47
+	'False'        reduce using rule 47
+	'NOT'          reduce using rule 47
+	'True'         reduce using rule 47
+	L_doubl        reduce using rule 47
+	L_integ        reduce using rule 47
+	L_Text         reduce using rule 47
+
+
+State 59
+
+	RPRel -> 'HAS' .                                    (rule 46)
+
+	'ALL'          reduce using rule 46
+	'ANY'          reduce using rule 46
+	'False'        reduce using rule 46
+	'NOT'          reduce using rule 46
+	'True'         reduce using rule 46
+	L_doubl        reduce using rule 46
+	L_integ        reduce using rule 46
+	L_Text         reduce using rule 46
+
+
+State 60
+
+	RPRel -> 'IN' .                                     (rule 52)
 
 	'ALL'          reduce using rule 52
 	'ANY'          reduce using rule 52
@@ -1397,156 +1407,158 @@ State 65
 	L_Text         reduce using rule 52
 
 
+State 61
+
+	RPRel -> 'IS' .                                     (rule 45)
+
+	'ALL'          reduce using rule 45
+	'ANY'          reduce using rule 45
+	'False'        reduce using rule 45
+	'NOT'          reduce using rule 45
+	'True'         reduce using rule 45
+	L_doubl        reduce using rule 45
+	L_integ        reduce using rule 45
+	L_Text         reduce using rule 45
+
+
+State 62
+
+	RPRel -> 'MAP' .                                    (rule 65)
+
+	'ALL'          reduce using rule 65
+	'ANY'          reduce using rule 65
+	'False'        reduce using rule 65
+	'NOT'          reduce using rule 65
+	'True'         reduce using rule 65
+	L_doubl        reduce using rule 65
+	L_integ        reduce using rule 65
+	L_Text         reduce using rule 65
+
+
+State 63
+
+	RPRel -> 'MAX' .                                    (rule 64)
+
+	'ALL'          reduce using rule 64
+	'ANY'          reduce using rule 64
+	'False'        reduce using rule 64
+	'NOT'          reduce using rule 64
+	'True'         reduce using rule 64
+	L_doubl        reduce using rule 64
+	L_integ        reduce using rule 64
+	L_Text         reduce using rule 64
+
+
+State 64
+
+	RPRel -> 'MIN' .                                    (rule 63)
+
+	'ALL'          reduce using rule 63
+	'ANY'          reduce using rule 63
+	'False'        reduce using rule 63
+	'NOT'          reduce using rule 63
+	'True'         reduce using rule 63
+	L_doubl        reduce using rule 63
+	L_integ        reduce using rule 63
+	L_Text         reduce using rule 63
+
+
+State 65
+
+	RPRel -> 'MINUS' .                                  (rule 59)
+
+	'ALL'          reduce using rule 59
+	'ANY'          reduce using rule 59
+	'False'        reduce using rule 59
+	'NOT'          reduce using rule 59
+	'True'         reduce using rule 59
+	L_doubl        reduce using rule 59
+	L_integ        reduce using rule 59
+	L_Text         reduce using rule 59
+
+
 State 66
 
-	MTExpr -> Text .                                    (rule 22)
+	RPRel -> 'MODULO' .                                 (rule 61)
 
-	')'            reduce using rule 22
-	','            reduce using rule 22
-	'<'            reduce using rule 22
-	'<='           reduce using rule 22
-	'>'            reduce using rule 22
-	'>='           reduce using rule 22
-	'ABOUT'        reduce using rule 22
-	'AFTER'        reduce using rule 22
-	'AND'          reduce using rule 22
-	'BEFORE'       reduce using rule 22
-	'BY'           reduce using rule 22
-	'DIVIDE'       reduce using rule 22
-	'EQUALS'       reduce using rule 22
-	'False'        reduce using rule 22
-	'HAS'          reduce using rule 22
-	'IN'           reduce using rule 22
-	'IS'           reduce using rule 22
-	'MAP'          reduce using rule 22
-	'MAX'          reduce using rule 22
-	'MAY'          reduce using rule 22
-	'MEANS'        reduce using rule 22
-	'MIN'          reduce using rule 22
-	'MINUS'        reduce using rule 22
-	'MODULO'       reduce using rule 22
-	'MUST'         reduce using rule 22
-	'NOT'          reduce using rule 22
-	'ON'           reduce using rule 22
-	'OR'           reduce using rule 22
-	'PRODUCT'      reduce using rule 22
-	'SHANT'        reduce using rule 22
-	'SUBJECT'      reduce using rule 22
-	'SUM'          reduce using rule 22
-	'True'         reduce using rule 22
-	'WHO'          reduce using rule 22
-	L_doubl        reduce using rule 22
-	L_integ        reduce using rule 22
-	L_Text         reduce using rule 22
-	%eof           reduce using rule 22
+	'ALL'          reduce using rule 61
+	'ANY'          reduce using rule 61
+	'False'        reduce using rule 61
+	'NOT'          reduce using rule 61
+	'True'         reduce using rule 61
+	L_doubl        reduce using rule 61
+	L_integ        reduce using rule 61
+	L_Text         reduce using rule 61
 
 
 State 67
 
-	ListMTExpr -> MTExpr ListMTExpr .                   (rule 29)
+	RPRel -> 'NOT' . 'IN'                               (rule 53)
+	RPRel -> 'NOT' .                                    (rule 54)
 
-	')'            reduce using rule 29
-	','            reduce using rule 29
-	'<'            reduce using rule 29
-	'<='           reduce using rule 29
-	'>'            reduce using rule 29
-	'>='           reduce using rule 29
-	'ABOUT'        reduce using rule 29
-	'AFTER'        reduce using rule 29
-	'AND'          reduce using rule 29
-	'BEFORE'       reduce using rule 29
-	'BY'           reduce using rule 29
-	'DIVIDE'       reduce using rule 29
-	'EQUALS'       reduce using rule 29
-	'HAS'          reduce using rule 29
-	'IN'           reduce using rule 29
-	'IS'           reduce using rule 29
-	'MAP'          reduce using rule 29
-	'MAX'          reduce using rule 29
-	'MAY'          reduce using rule 29
-	'MEANS'        reduce using rule 29
-	'MIN'          reduce using rule 29
-	'MINUS'        reduce using rule 29
-	'MODULO'       reduce using rule 29
-	'MUST'         reduce using rule 29
-	'NOT'          reduce using rule 29
-	'ON'           reduce using rule 29
-	'OR'           reduce using rule 29
-	'PRODUCT'      reduce using rule 29
-	'SHANT'        reduce using rule 29
-	'SUBJECT'      reduce using rule 29
-	'SUM'          reduce using rule 29
-	'WHO'          reduce using rule 29
-	%eof           reduce using rule 29
+	'ALL'          reduce using rule 54
+	'ANY'          reduce using rule 54
+	'False'        reduce using rule 54
+	'IN'           shift, and enter state 86
+	'NOT'          reduce using rule 54
+	'True'         reduce using rule 54
+	L_doubl        reduce using rule 54
+	L_integ        reduce using rule 54
+	L_Text         reduce using rule 54
 
 
 State 68
 
-	BoolStruct -> Text 'ALL' . '(' ListBoolStruct ')'    (rule 34)
-	BoolStruct -> Text 'ALL' . '(' ListBoolStruct ')' Text    (rule 35)
+	TComparison -> 'ON' .                               (rule 70)
 
-	'('            shift, and enter state 71
+	'ALL'          reduce using rule 70
+	'ANY'          reduce using rule 70
+	'False'        reduce using rule 70
+	'NOT'          reduce using rule 70
+	'True'         reduce using rule 70
+	L_doubl        reduce using rule 70
+	L_integ        reduce using rule 70
+	L_Text         reduce using rule 70
 
 
 State 69
 
-	BoolStruct -> Text 'ANY' . '(' ListBoolStruct ')' Text    (rule 31)
-	BoolStruct -> Text 'ANY' . '(' ListBoolStruct ')'    (rule 32)
+	RPRel -> 'OR' .                                     (rule 56)
 
-	'('            shift, and enter state 70
+	'ALL'          reduce using rule 56
+	'ANY'          reduce using rule 56
+	'False'        reduce using rule 56
+	'NOT'          reduce using rule 56
+	'True'         reduce using rule 56
+	L_doubl        reduce using rule 56
+	L_integ        reduce using rule 56
+	L_Text         reduce using rule 56
 
 
 State 70
 
-	BoolStruct -> Text 'ANY' '(' . ListBoolStruct ')' Text    (rule 31)
-	BoolStruct -> Text 'ANY' '(' . ListBoolStruct ')'    (rule 32)
+	RPRel -> 'PRODUCT' .                                (rule 58)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	'ALL'          reduce using rule 58
+	'ANY'          reduce using rule 58
+	'False'        reduce using rule 58
+	'NOT'          reduce using rule 58
+	'True'         reduce using rule 58
+	L_doubl        reduce using rule 58
+	L_integ        reduce using rule 58
+	L_Text         reduce using rule 58
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 80
-	ListBoolStruct goto state 96
 
 State 71
 
-	BoolStruct -> Text 'ALL' '(' . ListBoolStruct ')'    (rule 34)
-	BoolStruct -> Text 'ALL' '(' . ListBoolStruct ')' Text    (rule 35)
+	RPRel -> 'SUBJECT' . 'TO'                           (rule 62)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	'TO'           shift, and enter state 85
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 80
-	ListBoolStruct goto state 95
 
 State 72
 
-	RPRel -> 'SUBJECT' 'TO' .                           (rule 57)
+	RPRel -> 'SUM' .                                    (rule 57)
 
 	'ALL'          reduce using rule 57
 	'ANY'          reduce using rule 57
@@ -1560,342 +1572,339 @@ State 72
 
 State 73
 
-	RPRel -> 'NOT' 'IN' .                               (rule 48)
+	ListMTExpr -> MTExpr ListMTExpr .                   (rule 34)
 
-	'ALL'          reduce using rule 48
-	'ANY'          reduce using rule 48
-	'False'        reduce using rule 48
-	'NOT'          reduce using rule 48
-	'True'         reduce using rule 48
-	L_doubl        reduce using rule 48
-	L_integ        reduce using rule 48
-	L_Text         reduce using rule 48
+	')'            reduce using rule 34
+	','            reduce using rule 34
+	'<'            reduce using rule 34
+	'<='           reduce using rule 34
+	'>'            reduce using rule 34
+	'>='           reduce using rule 34
+	'ABOUT'        reduce using rule 34
+	'AFTER'        reduce using rule 34
+	'AND'          reduce using rule 34
+	'BEFORE'       reduce using rule 34
+	'BY'           reduce using rule 34
+	'DIVIDE'       reduce using rule 34
+	'EQUALS'       reduce using rule 34
+	'HAS'          reduce using rule 34
+	'IF'           reduce using rule 34
+	'IN'           reduce using rule 34
+	'IS'           reduce using rule 34
+	'MAP'          reduce using rule 34
+	'MAX'          reduce using rule 34
+	'MAY'          reduce using rule 34
+	'MEANS'        reduce using rule 34
+	'MIN'          reduce using rule 34
+	'MINUS'        reduce using rule 34
+	'MODULO'       reduce using rule 34
+	'MUST'         reduce using rule 34
+	'NOT'          reduce using rule 34
+	'ON'           reduce using rule 34
+	'OR'           reduce using rule 34
+	'PRODUCT'      reduce using rule 34
+	'SHANT'        reduce using rule 34
+	'SUBJECT'      reduce using rule 34
+	'SUM'          reduce using rule 34
+	'WHO'          reduce using rule 34
+	%eof           reduce using rule 34
 
 
 State 74
 
-	RelationalPredicate -> ListMTExpr RPRel BoolStruct .    (rule 21)
+	BoolStruct -> Text 'ALL' . '(' ListBoolStruct ')'    (rule 39)
+	BoolStruct -> Text 'ALL' . '(' ListBoolStruct ')' Text    (rule 40)
 
-	')'            reduce using rule 21
-	','            reduce using rule 21
-	'MAY'          reduce using rule 21
-	'MEANS'        reduce using rule 21
-	'MUST'         reduce using rule 21
-	'SHANT'        reduce using rule 21
-	'WHO'          reduce using rule 21
-	%eof           reduce using rule 21
+	'('            shift, and enter state 84
 
 
 State 75
 
-	Who -> 'WHO' BoolStruct .                           (rule 18)
+	BoolStruct -> Text 'ANY' . '(' ListBoolStruct ')' Text    (rule 36)
+	BoolStruct -> Text 'ANY' . '(' ListBoolStruct ')'    (rule 37)
 
-	'MAY'          reduce using rule 18
-	'MEANS'        reduce using rule 18
-	'MUST'         reduce using rule 18
-	'SHANT'        reduce using rule 18
+	'('            shift, and enter state 83
 
 
 State 76
 
-	Rule -> 'EVERY' BoolStruct Who Deontic . BoolStruct    (rule 7)
+	Rule -> 'GIVEN' ListIsA Rule .                      (rule 5)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	%eof           reduce using rule 5
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 94
 
 State 77
 
-	Rule -> 'EVERY' BoolStruct Who InlineHornlike . Deontic BoolStruct    (rule 8)
+	ListIsA -> IsA ';' . ListIsA                        (rule 17)
 
-	'MAY'          shift, and enter state 35
-	'MUST'         shift, and enter state 36
-	'SHANT'        shift, and enter state 37
+	L_Text         shift, and enter state 10
 
-	Deontic        goto state 93
+	Text           goto state 11
+	IsA            goto state 13
+	ListIsA        goto state 82
 
 State 78
 
-	InlineHornlike -> 'MEANS' . BoolStruct              (rule 19)
+	Rule -> 'GIVETH' IsA 'DECIDE' . RelationalPredicate    (rule 12)
+	Rule -> 'GIVETH' IsA 'DECIDE' . RelationalPredicate 'IF' BoolStruct    (rule 13)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
+	'False'        shift, and enter state 25
+	'True'         shift, and enter state 27
 	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 92
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 30
+	RelationalPredicategoto state 81
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
 
 State 79
+
+	IsA -> Text 'IS' . 'A' Text                         (rule 14)
+
+	'A'            shift, and enter state 80
+
+
+State 80
+
+	IsA -> Text 'IS' 'A' . Text                         (rule 14)
+
+	L_Text         shift, and enter state 10
+
+	Text           goto state 107
+
+State 81
+
+	Rule -> 'GIVETH' IsA 'DECIDE' RelationalPredicate .    (rule 12)
+	Rule -> 'GIVETH' IsA 'DECIDE' RelationalPredicate . 'IF' BoolStruct    (rule 13)
+
+	'IF'           shift, and enter state 106
+	%eof           reduce using rule 12
+
+
+State 82
+
+	ListIsA -> IsA ';' ListIsA .                        (rule 17)
+
+	'DECIDE'       reduce using rule 17
+	'DECLARE'      reduce using rule 17
+	'EVERY'        reduce using rule 17
+	'GIVEN'        reduce using rule 17
+	'GIVETH'       reduce using rule 17
+	L_Text         reduce using rule 17
+	%eof           reduce using rule 17
+
+
+State 83
+
+	BoolStruct -> Text 'ANY' '(' . ListBoolStruct ')' Text    (rule 36)
+	BoolStruct -> Text 'ANY' '(' . ListBoolStruct ')'    (rule 37)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 93
+	ListBoolStruct goto state 105
+
+State 84
+
+	BoolStruct -> Text 'ALL' '(' . ListBoolStruct ')'    (rule 39)
+	BoolStruct -> Text 'ALL' '(' . ListBoolStruct ')' Text    (rule 40)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 93
+	ListBoolStruct goto state 104
+
+State 85
+
+	RPRel -> 'SUBJECT' 'TO' .                           (rule 62)
+
+	'ALL'          reduce using rule 62
+	'ANY'          reduce using rule 62
+	'False'        reduce using rule 62
+	'NOT'          reduce using rule 62
+	'True'         reduce using rule 62
+	L_doubl        reduce using rule 62
+	L_integ        reduce using rule 62
+	L_Text         reduce using rule 62
+
+
+State 86
+
+	RPRel -> 'NOT' 'IN' .                               (rule 53)
+
+	'ALL'          reduce using rule 53
+	'ANY'          reduce using rule 53
+	'False'        reduce using rule 53
+	'NOT'          reduce using rule 53
+	'True'         reduce using rule 53
+	L_doubl        reduce using rule 53
+	L_integ        reduce using rule 53
+	L_Text         reduce using rule 53
+
+
+State 87
+
+	RelationalPredicate -> ListMTExpr RPRel BoolStruct .    (rule 26)
+
+	')'            reduce using rule 26
+	','            reduce using rule 26
+	'IF'           reduce using rule 26
+	'MAY'          reduce using rule 26
+	'MEANS'        reduce using rule 26
+	'MUST'         reduce using rule 26
+	'SHANT'        reduce using rule 26
+	'WHO'          reduce using rule 26
+	%eof           reduce using rule 26
+
+
+State 88
+
+	Who -> 'WHO' BoolStruct .                           (rule 23)
+
+	'MAY'          reduce using rule 23
+	'MEANS'        reduce using rule 23
+	'MUST'         reduce using rule 23
+	'SHANT'        reduce using rule 23
+
+
+State 89
+
+	Rule -> 'EVERY' BoolStruct Who Deontic . BoolStruct    (rule 7)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 103
+
+State 90
+
+	Rule -> 'EVERY' BoolStruct Who InlineHornlike . Deontic BoolStruct    (rule 8)
+
+	'MAY'          shift, and enter state 42
+	'MUST'         shift, and enter state 43
+	'SHANT'        shift, and enter state 44
+
+	Deontic        goto state 102
+
+State 91
+
+	InlineHornlike -> 'MEANS' . BoolStruct              (rule 24)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 101
+
+State 92
 
 	Rule -> 'EVERY' BoolStruct Deontic BoolStruct .     (rule 6)
 
 	%eof           reduce using rule 6
 
 
-State 80
-
-	ListBoolStruct -> BoolStruct .                      (rule 38)
-	ListBoolStruct -> BoolStruct . ',' ListBoolStruct    (rule 39)
-
-	')'            reduce using rule 38
-	','            shift, and enter state 91
-
-
-State 81
-
-	BoolStruct -> 'ALL' '(' ListBoolStruct . ')'        (rule 33)
-
-	')'            shift, and enter state 90
-
-
-State 82
-
-	BoolStruct -> 'ANY' '(' ListBoolStruct . ')'        (rule 30)
-
-	')'            shift, and enter state 89
-
-
-State 83
-
-	IsA -> Text 'IS' 'A' . Text                         (rule 10)
-
-	L_Text         shift, and enter state 7
-
-	Text           goto state 88
-
-State 84
-
-	IsA -> Text . 'IS' 'A' Text                         (rule 10)
-
-	'IS'           shift, and enter state 29
-
-
-State 85
-
-	ListIsA -> IsA .                                    (rule 11)
-	ListIsA -> IsA . ';' ListIsA                        (rule 12)
-
-	';'            shift, and enter state 87
-	%eof           reduce using rule 11
-
-
-State 86
-
-	Fields -> 'HAS' ListIsA .                           (rule 13)
-
-	%eof           reduce using rule 13
-
-
-State 87
-
-	ListIsA -> IsA ';' . ListIsA                        (rule 12)
-
-	L_Text         shift, and enter state 7
-
-	Text           goto state 84
-	IsA            goto state 85
-	ListIsA        goto state 101
-
-State 88
-
-	IsA -> Text 'IS' 'A' Text .                         (rule 10)
-
-	';'            reduce using rule 10
-	'HAS'          reduce using rule 10
-	%eof           reduce using rule 10
-
-
-State 89
-
-	BoolStruct -> 'ANY' '(' ListBoolStruct ')' .        (rule 30)
-
-	')'            reduce using rule 30
-	','            reduce using rule 30
-	'MAY'          reduce using rule 30
-	'MEANS'        reduce using rule 30
-	'MUST'         reduce using rule 30
-	'SHANT'        reduce using rule 30
-	'WHO'          reduce using rule 30
-	%eof           reduce using rule 30
-
-
-State 90
-
-	BoolStruct -> 'ALL' '(' ListBoolStruct ')' .        (rule 33)
-
-	')'            reduce using rule 33
-	','            reduce using rule 33
-	'MAY'          reduce using rule 33
-	'MEANS'        reduce using rule 33
-	'MUST'         reduce using rule 33
-	'SHANT'        reduce using rule 33
-	'WHO'          reduce using rule 33
-	%eof           reduce using rule 33
-
-
-State 91
-
-	ListBoolStruct -> BoolStruct ',' . ListBoolStruct    (rule 39)
-
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
-
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 80
-	ListBoolStruct goto state 100
-
-State 92
-
-	InlineHornlike -> 'MEANS' BoolStruct .              (rule 19)
-
-	'MAY'          reduce using rule 19
-	'MUST'         reduce using rule 19
-	'SHANT'        reduce using rule 19
-
-
 State 93
 
-	Rule -> 'EVERY' BoolStruct Who InlineHornlike Deontic . BoolStruct    (rule 8)
+	ListBoolStruct -> BoolStruct .                      (rule 43)
+	ListBoolStruct -> BoolStruct . ',' ListBoolStruct    (rule 44)
 
-	'ALL'          shift, and enter state 16
-	'ANY'          shift, and enter state 17
-	'False'        shift, and enter state 18
-	'NOT'          shift, and enter state 19
-	'True'         shift, and enter state 20
-	L_doubl        shift, and enter state 2
-	L_integ        shift, and enter state 21
-	L_Text         shift, and enter state 7
+	')'            reduce using rule 43
+	','            shift, and enter state 100
 
-	Double         goto state 8
-	Integer        goto state 9
-	Text           goto state 10
-	RelationalPredicategoto state 11
-	MTExpr         goto state 12
-	Bool           goto state 13
-	ListMTExpr     goto state 14
-	BoolStruct     goto state 99
 
 State 94
 
-	Rule -> 'EVERY' BoolStruct Who Deontic BoolStruct .    (rule 7)
+	BoolStruct -> 'ALL' '(' ListBoolStruct . ')'        (rule 38)
 
-	%eof           reduce using rule 7
+	')'            shift, and enter state 99
 
 
 State 95
 
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct . ')'    (rule 34)
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct . ')' Text    (rule 35)
+	BoolStruct -> 'ANY' '(' ListBoolStruct . ')'        (rule 35)
 
 	')'            shift, and enter state 98
 
 
 State 96
 
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct . ')' Text    (rule 31)
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct . ')'    (rule 32)
+	Fields -> 'HAS' ListIsA .                           (rule 18)
 
-	')'            shift, and enter state 97
+	%eof           reduce using rule 18
 
 
 State 97
 
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' . Text    (rule 31)
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' .    (rule 32)
+	Rule -> 'DECIDE' RelationalPredicate 'IF' BoolStruct .    (rule 11)
 
-	')'            reduce using rule 32
-	','            reduce using rule 32
-	'MAY'          reduce using rule 32
-	'MEANS'        reduce using rule 32
-	'MUST'         reduce using rule 32
-	'SHANT'        reduce using rule 32
-	'WHO'          reduce using rule 32
-	L_Text         shift, and enter state 7
-	%eof           reduce using rule 32
+	%eof           reduce using rule 11
 
-	Text           goto state 103
 
 State 98
 
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' .    (rule 34)
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' . Text    (rule 35)
-
-	')'            reduce using rule 34
-	','            reduce using rule 34
-	'MAY'          reduce using rule 34
-	'MEANS'        reduce using rule 34
-	'MUST'         reduce using rule 34
-	'SHANT'        reduce using rule 34
-	'WHO'          reduce using rule 34
-	L_Text         shift, and enter state 7
-	%eof           reduce using rule 34
-
-	Text           goto state 102
-
-State 99
-
-	Rule -> 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct .    (rule 8)
-
-	%eof           reduce using rule 8
-
-
-State 100
-
-	ListBoolStruct -> BoolStruct ',' ListBoolStruct .    (rule 39)
-
-	')'            reduce using rule 39
-
-
-State 101
-
-	ListIsA -> IsA ';' ListIsA .                        (rule 12)
-
-	%eof           reduce using rule 12
-
-
-State 102
-
-	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' Text .    (rule 35)
+	BoolStruct -> 'ANY' '(' ListBoolStruct ')' .        (rule 35)
 
 	')'            reduce using rule 35
 	','            reduce using rule 35
+	'IF'           reduce using rule 35
 	'MAY'          reduce using rule 35
 	'MEANS'        reduce using rule 35
 	'MUST'         reduce using rule 35
@@ -1904,24 +1913,226 @@ State 102
 	%eof           reduce using rule 35
 
 
+State 99
+
+	BoolStruct -> 'ALL' '(' ListBoolStruct ')' .        (rule 38)
+
+	')'            reduce using rule 38
+	','            reduce using rule 38
+	'IF'           reduce using rule 38
+	'MAY'          reduce using rule 38
+	'MEANS'        reduce using rule 38
+	'MUST'         reduce using rule 38
+	'SHANT'        reduce using rule 38
+	'WHO'          reduce using rule 38
+	%eof           reduce using rule 38
+
+
+State 100
+
+	ListBoolStruct -> BoolStruct ',' . ListBoolStruct    (rule 44)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 93
+	ListBoolStruct goto state 112
+
+State 101
+
+	InlineHornlike -> 'MEANS' BoolStruct .              (rule 24)
+
+	'MAY'          reduce using rule 24
+	'MUST'         reduce using rule 24
+	'SHANT'        reduce using rule 24
+
+
+State 102
+
+	Rule -> 'EVERY' BoolStruct Who InlineHornlike Deontic . BoolStruct    (rule 8)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 111
+
 State 103
 
-	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' Text .    (rule 31)
+	Rule -> 'EVERY' BoolStruct Who Deontic BoolStruct .    (rule 7)
 
-	')'            reduce using rule 31
-	','            reduce using rule 31
-	'MAY'          reduce using rule 31
-	'MEANS'        reduce using rule 31
-	'MUST'         reduce using rule 31
-	'SHANT'        reduce using rule 31
-	'WHO'          reduce using rule 31
-	%eof           reduce using rule 31
+	%eof           reduce using rule 7
+
+
+State 104
+
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct . ')'    (rule 39)
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct . ')' Text    (rule 40)
+
+	')'            shift, and enter state 110
+
+
+State 105
+
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct . ')' Text    (rule 36)
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct . ')'    (rule 37)
+
+	')'            shift, and enter state 109
+
+
+State 106
+
+	Rule -> 'GIVETH' IsA 'DECIDE' RelationalPredicate 'IF' . BoolStruct    (rule 13)
+
+	'ALL'          shift, and enter state 23
+	'ANY'          shift, and enter state 24
+	'False'        shift, and enter state 25
+	'NOT'          shift, and enter state 26
+	'True'         shift, and enter state 27
+	L_doubl        shift, and enter state 2
+	L_integ        shift, and enter state 28
+	L_Text         shift, and enter state 10
+
+	Double         goto state 15
+	Integer        goto state 16
+	Text           goto state 17
+	RelationalPredicategoto state 18
+	MTExpr         goto state 19
+	Bool           goto state 20
+	ListMTExpr     goto state 21
+	BoolStruct     goto state 108
+
+State 107
+
+	IsA -> Text 'IS' 'A' Text .                         (rule 14)
+
+	';'            reduce using rule 14
+	'DECIDE'       reduce using rule 14
+	'DECLARE'      reduce using rule 14
+	'EVERY'        reduce using rule 14
+	'GIVEN'        reduce using rule 14
+	'GIVETH'       reduce using rule 14
+	'HAS'          reduce using rule 14
+	L_Text         reduce using rule 14
+	%eof           reduce using rule 14
+
+
+State 108
+
+	Rule -> 'GIVETH' IsA 'DECIDE' RelationalPredicate 'IF' BoolStruct .    (rule 13)
+
+	%eof           reduce using rule 13
+
+
+State 109
+
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' . Text    (rule 36)
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' .    (rule 37)
+
+	')'            reduce using rule 37
+	','            reduce using rule 37
+	'IF'           reduce using rule 37
+	'MAY'          reduce using rule 37
+	'MEANS'        reduce using rule 37
+	'MUST'         reduce using rule 37
+	'SHANT'        reduce using rule 37
+	'WHO'          reduce using rule 37
+	L_Text         shift, and enter state 10
+	%eof           reduce using rule 37
+
+	Text           goto state 114
+
+State 110
+
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' .    (rule 39)
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' . Text    (rule 40)
+
+	')'            reduce using rule 39
+	','            reduce using rule 39
+	'IF'           reduce using rule 39
+	'MAY'          reduce using rule 39
+	'MEANS'        reduce using rule 39
+	'MUST'         reduce using rule 39
+	'SHANT'        reduce using rule 39
+	'WHO'          reduce using rule 39
+	L_Text         shift, and enter state 10
+	%eof           reduce using rule 39
+
+	Text           goto state 113
+
+State 111
+
+	Rule -> 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct .    (rule 8)
+
+	%eof           reduce using rule 8
+
+
+State 112
+
+	ListBoolStruct -> BoolStruct ',' ListBoolStruct .    (rule 44)
+
+	')'            reduce using rule 44
+
+
+State 113
+
+	BoolStruct -> Text 'ALL' '(' ListBoolStruct ')' Text .    (rule 40)
+
+	')'            reduce using rule 40
+	','            reduce using rule 40
+	'IF'           reduce using rule 40
+	'MAY'          reduce using rule 40
+	'MEANS'        reduce using rule 40
+	'MUST'         reduce using rule 40
+	'SHANT'        reduce using rule 40
+	'WHO'          reduce using rule 40
+	%eof           reduce using rule 40
+
+
+State 114
+
+	BoolStruct -> Text 'ANY' '(' ListBoolStruct ')' Text .    (rule 36)
+
+	')'            reduce using rule 36
+	','            reduce using rule 36
+	'IF'           reduce using rule 36
+	'MAY'          reduce using rule 36
+	'MEANS'        reduce using rule 36
+	'MUST'         reduce using rule 36
+	'SHANT'        reduce using rule 36
+	'WHO'          reduce using rule 36
+	%eof           reduce using rule 36
 
 
 -----------------------------------------------------------------------------
 Grammar Totals
 -----------------------------------------------------------------------------
-Number of rules: 67
-Number of terminals: 45
+Number of rules: 72
+Number of terminals: 49
 Number of non-terminals: 19
-Number of states: 104
+Number of states: 115

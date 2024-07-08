@@ -1,17 +1,34 @@
 entrypoints Rule ;
 
-TypeDecl. Rule ::= "DECLARE" Text Fields ;
-TypeDeclIs. Rule ::= "DECLARE" IsA Fields ;
+TypeDecl. Rule ::= "DECLARE" IsA Fields ;
 
-MkIsA.       IsA ::= Text "IS A" Text ;
+IsAType.     IsA ::= Text "IS A" Text ;
+IsANoType.   IsA ::= Text ;
+
 separator nonempty IsA ";" ;
 Has.         Fields ::= "HAS" [IsA] ;
 EmptyFields. Fields ::= ;
 
+-- Any rule can have GIVEN
+Given.     Rule ::= "GIVEN" [IsA] Rule ;
+
+-- Regulatives
 RegSimple. Rule ::= "EVERY" BoolStruct Deontic BoolStruct ;
 RegWho. Rule ::= "EVERY" BoolStruct Who Deontic BoolStruct ;
 RegWhoInline. Rule ::= "EVERY" BoolStruct Who InlineHornlike Deontic BoolStruct ;
-Hornlike. Rule ::= Text "MEANS" BoolStruct ;
+
+
+-- text MEANS BoolStruct is going to be translated into RPBoolStruct text IS bsr
+HornlikeMeans. Rule ::= Text "MEANS" BoolStruct ;
+
+-- DECIDE text IS BoolStruct works to be a RelationalPredicate already,
+-- because there is no MEANS that breaks the RelationalPredicate
+HornlikeDecide. Rule ::= "DECIDE" RelationalPredicate ;
+HornlikeDecideIf. Rule ::= "DECIDE" RelationalPredicate "IF" BoolStruct ;
+
+-- Only Hornlikes have GIVETH
+HlikeGiveth. Rule ::= "GIVETH" IsA "DECIDE" RelationalPredicate ;
+HlikeGivethIf. Rule ::= "GIVETH" IsA "DECIDE" RelationalPredicate "IF" BoolStruct ;
 
 rules Deontic ::= "MUST" | "MAY" | "SHANT" ;
 

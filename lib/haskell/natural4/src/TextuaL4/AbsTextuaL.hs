@@ -11,15 +11,19 @@ import qualified Prelude as C (Eq, Ord, Show, Read)
 import qualified Data.String
 
 data Rule
-    = TypeDecl Text Fields
-    | TypeDeclIs IsA Fields
+    = TypeDecl IsA Fields
+    | Given [IsA] Rule
     | RegSimple BoolStruct Deontic BoolStruct
     | RegWho BoolStruct Who Deontic BoolStruct
     | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
-    | Hornlike Text BoolStruct
+    | HornlikeMeans Text BoolStruct
+    | HornlikeDecide RelationalPredicate
+    | HornlikeDecideIf RelationalPredicate BoolStruct
+    | HlikeGiveth IsA RelationalPredicate
+    | HlikeGivethIf IsA RelationalPredicate BoolStruct
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data IsA = MkIsA Text Text
+data IsA = IsAType Text Text | IsANoType Text
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Fields = Has [IsA] | EmptyFields

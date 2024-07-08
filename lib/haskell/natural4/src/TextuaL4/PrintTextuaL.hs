@@ -141,16 +141,21 @@ instance Print TextuaL4.AbsTextuaL.Text where
   prt _ (TextuaL4.AbsTextuaL.Text i) = doc $ showString i
 instance Print TextuaL4.AbsTextuaL.Rule where
   prt i = \case
-    TextuaL4.AbsTextuaL.TypeDecl text fields -> prPrec i 0 (concatD [doc (showString "DECLARE"), prt 0 text, prt 0 fields])
-    TextuaL4.AbsTextuaL.TypeDeclIs isa fields -> prPrec i 0 (concatD [doc (showString "DECLARE"), prt 0 isa, prt 0 fields])
+    TextuaL4.AbsTextuaL.TypeDecl isa fields -> prPrec i 0 (concatD [doc (showString "DECLARE"), prt 0 isa, prt 0 fields])
+    TextuaL4.AbsTextuaL.Given isas rule -> prPrec i 0 (concatD [doc (showString "GIVEN"), prt 0 isas, prt 0 rule])
     TextuaL4.AbsTextuaL.RegSimple boolstruct1 deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.RegWho boolstruct1 who deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 who, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.RegWhoInline boolstruct1 who inlinehornlike deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 who, prt 0 inlinehornlike, prt 0 deontic, prt 0 boolstruct2])
-    TextuaL4.AbsTextuaL.Hornlike text boolstruct -> prPrec i 0 (concatD [prt 0 text, doc (showString "MEANS"), prt 0 boolstruct])
+    TextuaL4.AbsTextuaL.HornlikeMeans text boolstruct -> prPrec i 0 (concatD [prt 0 text, doc (showString "MEANS"), prt 0 boolstruct])
+    TextuaL4.AbsTextuaL.HornlikeDecide relationalpredicate -> prPrec i 0 (concatD [doc (showString "DECIDE"), prt 0 relationalpredicate])
+    TextuaL4.AbsTextuaL.HornlikeDecideIf relationalpredicate boolstruct -> prPrec i 0 (concatD [doc (showString "DECIDE"), prt 0 relationalpredicate, doc (showString "IF"), prt 0 boolstruct])
+    TextuaL4.AbsTextuaL.HlikeGiveth isa relationalpredicate -> prPrec i 0 (concatD [doc (showString "GIVETH"), prt 0 isa, doc (showString "DECIDE"), prt 0 relationalpredicate])
+    TextuaL4.AbsTextuaL.HlikeGivethIf isa relationalpredicate boolstruct -> prPrec i 0 (concatD [doc (showString "GIVETH"), prt 0 isa, doc (showString "DECIDE"), prt 0 relationalpredicate, doc (showString "IF"), prt 0 boolstruct])
 
 instance Print TextuaL4.AbsTextuaL.IsA where
   prt i = \case
-    TextuaL4.AbsTextuaL.MkIsA text1 text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "IS"), doc (showString "A"), prt 0 text2])
+    TextuaL4.AbsTextuaL.IsAType text1 text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "IS"), doc (showString "A"), prt 0 text2])
+    TextuaL4.AbsTextuaL.IsANoType text -> prPrec i 0 (concatD [prt 0 text])
 
 instance Print [TextuaL4.AbsTextuaL.IsA] where
   prt _ [] = concatD []

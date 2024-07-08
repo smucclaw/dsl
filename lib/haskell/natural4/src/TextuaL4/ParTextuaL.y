@@ -39,32 +39,36 @@ import TextuaL4.LexTextuaL
   'ANY'     { PT _ (TS _ 14)   }
   'BEFORE'  { PT _ (TS _ 15)   }
   'BY'      { PT _ (TS _ 16)   }
-  'DECLARE' { PT _ (TS _ 17)   }
-  'DIVIDE'  { PT _ (TS _ 18)   }
-  'EQUALS'  { PT _ (TS _ 19)   }
-  'EVERY'   { PT _ (TS _ 20)   }
-  'False'   { PT _ (TS _ 21)   }
-  'HAS'     { PT _ (TS _ 22)   }
-  'IN'      { PT _ (TS _ 23)   }
-  'IS'      { PT _ (TS _ 24)   }
-  'MAP'     { PT _ (TS _ 25)   }
-  'MAX'     { PT _ (TS _ 26)   }
-  'MAY'     { PT _ (TS _ 27)   }
-  'MEANS'   { PT _ (TS _ 28)   }
-  'MIN'     { PT _ (TS _ 29)   }
-  'MINUS'   { PT _ (TS _ 30)   }
-  'MODULO'  { PT _ (TS _ 31)   }
-  'MUST'    { PT _ (TS _ 32)   }
-  'NOT'     { PT _ (TS _ 33)   }
-  'ON'      { PT _ (TS _ 34)   }
-  'OR'      { PT _ (TS _ 35)   }
-  'PRODUCT' { PT _ (TS _ 36)   }
-  'SHANT'   { PT _ (TS _ 37)   }
-  'SUBJECT' { PT _ (TS _ 38)   }
-  'SUM'     { PT _ (TS _ 39)   }
-  'TO'      { PT _ (TS _ 40)   }
-  'True'    { PT _ (TS _ 41)   }
-  'WHO'     { PT _ (TS _ 42)   }
+  'DECIDE'  { PT _ (TS _ 17)   }
+  'DECLARE' { PT _ (TS _ 18)   }
+  'DIVIDE'  { PT _ (TS _ 19)   }
+  'EQUALS'  { PT _ (TS _ 20)   }
+  'EVERY'   { PT _ (TS _ 21)   }
+  'False'   { PT _ (TS _ 22)   }
+  'GIVEN'   { PT _ (TS _ 23)   }
+  'GIVETH'  { PT _ (TS _ 24)   }
+  'HAS'     { PT _ (TS _ 25)   }
+  'IF'      { PT _ (TS _ 26)   }
+  'IN'      { PT _ (TS _ 27)   }
+  'IS'      { PT _ (TS _ 28)   }
+  'MAP'     { PT _ (TS _ 29)   }
+  'MAX'     { PT _ (TS _ 30)   }
+  'MAY'     { PT _ (TS _ 31)   }
+  'MEANS'   { PT _ (TS _ 32)   }
+  'MIN'     { PT _ (TS _ 33)   }
+  'MINUS'   { PT _ (TS _ 34)   }
+  'MODULO'  { PT _ (TS _ 35)   }
+  'MUST'    { PT _ (TS _ 36)   }
+  'NOT'     { PT _ (TS _ 37)   }
+  'ON'      { PT _ (TS _ 38)   }
+  'OR'      { PT _ (TS _ 39)   }
+  'PRODUCT' { PT _ (TS _ 40)   }
+  'SHANT'   { PT _ (TS _ 41)   }
+  'SUBJECT' { PT _ (TS _ 42)   }
+  'SUM'     { PT _ (TS _ 43)   }
+  'TO'      { PT _ (TS _ 44)   }
+  'True'    { PT _ (TS _ 45)   }
+  'WHO'     { PT _ (TS _ 46)   }
   L_doubl   { PT _ (TD $$)     }
   L_integ   { PT _ (TI $$)     }
   L_Text    { PT _ (T_Text $$) }
@@ -82,15 +86,21 @@ Text  : L_Text { TextuaL4.AbsTextuaL.Text $1 }
 
 Rule :: { TextuaL4.AbsTextuaL.Rule }
 Rule
-  : 'DECLARE' Text Fields { TextuaL4.AbsTextuaL.TypeDecl $2 $3 }
-  | 'DECLARE' IsA Fields { TextuaL4.AbsTextuaL.TypeDeclIs $2 $3 }
+  : 'DECLARE' IsA Fields { TextuaL4.AbsTextuaL.TypeDecl $2 $3 }
+  | 'GIVEN' ListIsA Rule { TextuaL4.AbsTextuaL.Given $2 $3 }
   | 'EVERY' BoolStruct Deontic BoolStruct { TextuaL4.AbsTextuaL.RegSimple $2 $3 $4 }
   | 'EVERY' BoolStruct Who Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWho $2 $3 $4 $5 }
   | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
-  | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.Hornlike $1 $3 }
+  | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.HornlikeMeans $1 $3 }
+  | 'DECIDE' RelationalPredicate { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
+  | 'DECIDE' RelationalPredicate 'IF' BoolStruct { TextuaL4.AbsTextuaL.HornlikeDecideIf $2 $4 }
+  | 'GIVETH' IsA 'DECIDE' RelationalPredicate { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
+  | 'GIVETH' IsA 'DECIDE' RelationalPredicate 'IF' BoolStruct { TextuaL4.AbsTextuaL.HlikeGivethIf $2 $4 $6 }
 
 IsA :: { TextuaL4.AbsTextuaL.IsA }
-IsA : Text 'IS' 'A' Text { TextuaL4.AbsTextuaL.MkIsA $1 $4 }
+IsA
+  : Text 'IS' 'A' Text { TextuaL4.AbsTextuaL.IsAType $1 $4 }
+  | Text { TextuaL4.AbsTextuaL.IsANoType $1 }
 
 ListIsA :: { [TextuaL4.AbsTextuaL.IsA] }
 ListIsA : IsA { (:[]) $1 } | IsA ';' ListIsA { (:) $1 $3 }

@@ -4,6 +4,7 @@
 
 {-# OPTIONS_GHC -fno-warn-unused-matches #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 
 module TextuaL4.Transform where
 
@@ -21,6 +22,7 @@ transText (TL4.Text string) = Text.pack string
 
 transRule :: TL4.Rule -> Rule
 transRule x = case x of
+-- Regulative
   TL4.RegSimple sbj deont act ->
     defaultReg {
       subj = transBoolStructP sbj
@@ -29,45 +31,117 @@ transRule x = case x of
     }
   TL4.RegWho text who deontic action ->
     let simple = transRule $ TL4.RegSimple text deontic action
-    in simple {who = Just $ transWho who }
+    in simple {who = Just $ transWho who}
   TL4.RegWhoInline text who hlike deontic action ->
     let simple = transRule $ TL4.RegWho text who deontic action
     in simple {wwhere = [transInlineHornlike who hlike]}
-  TL4.Hornlike text bsr -> mkHlike (transText text) bsr
-  TL4.TypeDecl text fields ->
-    defaultTypeDecl {
-      name = [MTT $ transText text]
-    , has = transFields fields
-    }
-  TL4.TypeDeclIs isa fields ->
+
+-- Hornlike
+  -- text MEANS boolstruct
+  TL4.HornlikeMeans name hhead
+    -> mkHlike Means (transText name) (bsr2rp' name hhead)
+
+  -- DECIDE relpred(foo IS bar)
+  TL4.HornlikeDecide hhead
+    -> mkHlike Decide (nameFromRP hhead) (transRelationalPredicate hhead)
+
+  -- DECIDE relpred IF boolstruct
+  TL4.HornlikeDecideIf hhead hbody ->
+    let simple = transRule $ TL4.HornlikeDecide hhead
+    in simple {
+        clauses = fmap (\x -> x {hBody = Just $ transBoolStructR hbody}) simple.clauses
+      }
+  -- Only Hornlikes have GIVETH
+  -- GIVETH foo (IS A bar) DECIDE relpred
+  TL4.HlikeGiveth giveth hhead ->
+    let simple = transRule $ TL4.HornlikeDecide hhead
+    in simple {
+        giveth = Just $ isa2pt giveth
+      }
+  -- GIVETH foo (IS A bar) DECIDE relpred IF boolstruct
+  TL4.HlikeGivethIf giveth hhead hbody ->
+    let simple = transRule $ TL4.HornlikeDecideIf hhead hbody
+    in simple {
+        giveth = Just $ isa2pt giveth
+      }
+
+-- TypeDecl
+  -- DECLARE Foo (IS A Bar) (HAS …)?
+  TL4.TypeDecl isa fields ->
     let isaRule = transIsA isa
     in isaRule {
       has = transFields fields
     }
 
+-- Any rule can have a GIVEN
+  TL4.Given (isa:isas) rule ->
+    let simple = transRule rule
+    in simple {
+        given = Just $ fmap isa2tm (isa :| isas)
+      }
+  -- Empty list shouldn't happen because we have separator nonempty in the grammar
+  -- But if someone changes the grammar later, this is totally valid case anyway:
+  -- if no givens, then just use the rule as is.
+  TL4.Given _ rule -> transRule rule
+
+
+nameFromRP :: TL4.RelationalPredicate -> Text.Text
+nameFromRP rp = case rp of
+  TL4.RPMT mtes
+    -> mt2text (transMTExpr <$> mtes)
+  TL4.RPBoolStructR mtes _rprel _bsr
+    -> nameFromRP $ TL4.RPMT mtes
+
+nameFromBS :: TL4.BoolStruct -> Text.Text
+nameFromBS bs = case bs of
+  TL4.Leaf rp -> nameFromRP rp
+  _ -> bsr2text $ transBoolStructR bs
 
 mkSuper :: TL4.Text -> TypeSig
 mkSuper = SimpleType TOne . transText -- TODO: lists, sets, enums
 
 transIsA :: TL4.IsA -> Rule
 transIsA x = case x of
-  TL4.MkIsA rname typesig ->
+  TL4.IsANoType rname ->
     defaultTypeDecl {
       name = [MTT $ transText rname]
-    , super = Just $ mkSuper typesig
-    }
+    , super = Nothing
+  }
+  TL4.IsAType rname typesig ->
+    let simple = transIsA $ TL4.IsANoType rname
+    in simple {
+        super = Just $ mkSuper typesig
+        }
+
+-- translates an IsA to ParamText, used in GIVEN and GIVETH
+-- type ParamText = NonEmpty (NonEmpty MTExpr, Maybe TypeSig)
+isa2pt :: TL4.IsA -> ParamText
+isa2pt isa = isa2tm isa :| []
+
+isa2tm :: TL4.IsA -> TypedMulti
+isa2tm isa = (nm :| [], sup)
+  where
+    rl = transIsA isa
+    nm:_ = name rl
+    sup = super rl
 
 transFields :: TL4.Fields -> [Rule]
 transFields x = case x of
   TL4.Has isas -> transIsA <$> isas
   TL4.EmptyFields -> []
 
-mkHlike text bsr = defaultHorn {
-    clauses = [HC (bsr2rp text bsr) Nothing]
+mkHlike :: MyToken -> Text.Text -> RelationalPredicate -> Rule
+mkHlike kw text rp = defaultHorn {
+    keyword = kw
+  , name = [MTT text]
+  , clauses = [HC rp Nothing]
   }
 
 bsr2rp :: Text.Text -> TL4.BoolStruct -> RelationalPredicate
 bsr2rp text bsr = RPBoolStructR [MTT text] RPis (transBoolStructR bsr)
+
+bsr2rp' :: TL4.Text -> TL4.BoolStruct -> RelationalPredicate
+bsr2rp' t = bsr2rp (transText t)
 
 transDeontic :: TL4.Deontic -> Deontic
 transDeontic x = case x of
@@ -81,7 +155,9 @@ transWho x = case x of
 
 transInlineHornlike :: TL4.Who -> TL4.InlineHornlike -> Rule
 transInlineHornlike (TL4.WhoSimple whoBSR) (TL4.MeansInline meansBSR) =
-  mkHlike (bsr2text $ transBoolStructR whoBSR) meansBSR
+  mkHlike Means whoText (bsr2rp whoText meansBSR)
+  where
+    whoText = bsr2text $ transBoolStructR whoBSR
 
 transRelationalPredicate :: TL4.RelationalPredicate -> RelationalPredicate
 transRelationalPredicate x = case x of
@@ -92,6 +168,7 @@ transRelationalPredicate x = case x of
   TL4.RPBoolStructR mtes rprel bsr
     -> RPBoolStructR (transMTExpr <$> mtes) (transRPRel rprel) (transBoolStructR bsr)
 
+-- type ParamText = NonEmpty (NonEmpty MTExpr, Maybe TypeSig)
 transParamText :: TL4.RelationalPredicate -> ParamText
 transParamText x = case x of
   TL4.RPMT (mte:mtes)

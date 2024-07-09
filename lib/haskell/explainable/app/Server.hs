@@ -51,6 +51,7 @@ import GHC.TypeLits
 import Servant
 import System.Timeout (timeout)
 
+import Control.Exception (try)
 import Explainable (XP)
 import Explainable.MathLang
 
@@ -265,8 +266,7 @@ computeQualifiesHandler drinks eats walks = do
               { errReasonPhrase = Text.unpack err
               }
         Right s -> do
-          response <- timeoutAction $ runFunction s function
-          pure $ SimpleResponse response
+          timeoutAction $ runFunction s function
 
 rodentsAndVerminHandler ::
   Maybe Text.Text ->
@@ -304,8 +304,7 @@ rodentsAndVerminHandler a b c d e f g h i j = do
               { errReasonPhrase = Text.unpack err
               }
         Right s -> do
-          response <- timeoutAction $ runFunction s function
-          pure $ SimpleResponse response
+          timeoutAction $ runFunction s function
 
 handlerParameters :: String -> Handler Function
 handlerParameters name = case Map.lookup name functions of
@@ -420,10 +419,14 @@ instance FromJSON Parameter where
 -- Helpers
 -- ----------------------------------------------------------------------------
 
-runFunction :: (MonadIO m) => MyState -> Expr Double -> m ResponseWithReason
+runFunction :: (MonadIO m) => MyState -> Expr Double -> m SimpleResponse
 runFunction s scenario = do
-  (res, xp, _, _) <- liftIO $ xplainF () s scenario
-  pure $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
+  executionResult <- liftIO $ try (xplainF () s scenario)
+  case executionResult of
+    Left (e :: IOError) -> do
+      pure $ SimpleError $ MathLangException $ Text.pack $ show e
+    Right (res, xp, _, _) -> do
+      pure $ SimpleResponse $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
 
 fromParams :: [(Text.Text, Text.Text)] -> Except Text.Text MyState
 fromParams attrs = do

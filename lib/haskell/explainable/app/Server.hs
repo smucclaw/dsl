@@ -101,6 +101,22 @@ data FunctionCrud' mode = FunctionCrud
   -- query parameters. See
   -- https://github.com/haskell-servant/servant/pull/1604 for the PR that we
   -- are interested in.
+  , rodentsAndVerminFunc ::
+      mode
+        :- "rodents_and_vermin"
+          :> QueryParam "Loss or Damage.caused by insects" Text.Text
+          :> QueryParam "Loss or Damage.caused by birds" Text.Text
+          :> QueryParam "Loss or Damage.caused by vermin" Text.Text
+          :> QueryParam "Loss or Damage.caused by rodents" Text.Text
+          :> QueryParam "Loss or Damage.to Contents" Text.Text
+          :> QueryParam "Loss or Damage.ensuing covered loss" Text.Text
+          :> QueryParam "any other exclusion applies" Text.Text
+          :> QueryParam "a household appliance" Text.Text
+          :> QueryParam "a swimming pool" Text.Text
+          :> QueryParam "a plumbing, heating, or air conditioning system" Text.Text
+          :> Summary "Compute whether a person qualifies based on their properties"
+          :> OperationId "runRodentsAndVermin"
+          :> Post '[JSON] SimpleResponse
   }
   deriving (Generic)
 
@@ -218,6 +234,8 @@ handler =
                 }
           , computeQualifiesFunc =
               computeQualifiesHandler
+          , rodentsAndVerminFunc =
+              rodentsAndVerminHandler
           }
     }
 
@@ -237,6 +255,45 @@ computeQualifiesHandler drinks eats walks = do
     params =
       [("drinks", drinks), ("walks", walks), ("eats", eats)]
   case Map.lookup "compute_qualifies" functions of
+    Nothing -> throwError err404
+    Just (function, _) ->
+      case runExcept $ fromParams $ Maybe.mapMaybe (\(k, v) -> (k,) <$> v) params of
+        Left err ->
+          throwError
+            err400
+              { errReasonPhrase = Text.unpack err
+              }
+        Right s -> do
+          response <- timeoutAction $ runFunction s function
+          pure $ SimpleResponse response
+
+rodentsAndVerminHandler ::
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Maybe Text.Text ->
+  Handler SimpleResponse
+rodentsAndVerminHandler a b c d e f g h i j = do
+  let
+    params =
+      [ ("Loss or Damage.caused by insects", a)
+      , ("Loss or Damage.caused by birds", b)
+      , ("Loss or Damage.caused by vermin", c)
+      , ("Loss or Damage.caused by rodents", d)
+      , ("Loss or Damage.to Contents", e)
+      , ("Loss or Damage.ensuing covered loss", f)
+      , ("any other exclusion applies", g)
+      , ("a household appliance", h)
+      , ("a swimming pool", i)
+      , ("a plumbing, heating, or air conditioning system", j)
+      ]
+  case Map.lookup "rodents_and_vermin" functions of
     Nothing -> throwError err404
     Just (function, _) ->
       case runExcept $ fromParams $ Maybe.mapMaybe (\(k, v) -> (k,) <$> v) params of
@@ -411,6 +468,7 @@ functions :: Map.Map String (Expr Double, Function)
 functions =
   Map.fromList
     [ ("compute_qualifies", (personQualifies, personQualifiesFunction))
+    , ("rodents_and_vermin", (rodentsAndVermin, rodentsAndVerminFunction))
     ]
 
 -- | Example function which computes whether a person qualifies for *something*.
@@ -420,6 +478,75 @@ personQualifies =
     @|= MathPred
       ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
       )
+
+rodentsAndVermin :: Expr Double
+rodentsAndVermin =
+  "not covered"
+    @|= ( MathITE
+            (Just "Not Covered If \8230")
+            ( PredFold
+                Nothing
+                PLAnd
+                [ PredFold
+                    Nothing
+                    PLOr
+                    [ PredVar "Loss or Damage.caused by rodents"
+                    , PredVar "Loss or Damage.caused by insects"
+                    , PredVar "Loss or Damage.caused by vermin"
+                    , PredVar "Loss or Damage.caused by birds"
+                    ]
+                , PredFold
+                    Nothing
+                    PLAnd
+                    [ PredNot
+                        Nothing
+                        ( PredFold
+                            Nothing
+                            PLOr
+                            [ PredFold
+                                Nothing
+                                PLAnd
+                                [ PredVar "Loss or Damage.to Contents"
+                                , PredFold
+                                    Nothing
+                                    PLAnd
+                                    [PredVar "Loss or Damage.caused by birds"]
+                                ]
+                            , PredFold
+                                Nothing
+                                PLAnd
+                                [ PredVar "Loss or Damage.ensuing covered loss"
+                                , PredFold
+                                    Nothing
+                                    PLAnd
+                                    [ PredNot
+                                        Nothing
+                                        ( PredFold
+                                            Nothing
+                                            PLOr
+                                            [ PredVar "any other exclusion applies"
+                                            , PredFold
+                                                Nothing
+                                                PLOr
+                                                [ PredVar "a household appliance"
+                                                , PredVar "a swimming pool"
+                                                , PredVar
+                                                    "a plumbing, heating, or air conditioning system"
+                                                ]
+                                            ]
+                                        )
+                                    ]
+                                ]
+                            ]
+                        )
+                    ]
+                ]
+            )
+            -- (MathSet "Loss or Damage" (MathVar "Not Covered"))
+            --
+            (Val Nothing 1.0)
+            (Val Nothing 0.0)
+        )
 
 {- | Metadata about the function that the user might want to know.
 Further, an LLM could use this info to ask specific questions to the user.
@@ -444,4 +571,31 @@ personQualifiesFunction =
       , ("drinks", Parameter "string" ["true", "false"] "Did the person drink?")
       , ("beverage type", Parameter "string" ["alcoholic", "non-alcoholic"] "Did the person drink an alcoholic beverage?")
       , ("in whole", Parameter "string" ["true", "false"] "Did the person drink all of the beverage?")
+      ]
+
+{- | Metadata about the function that the user might want to know.
+Further, an LLM could use this info to ask specific questions to the user.
+-}
+rodentsAndVerminFunction :: Function
+rodentsAndVerminFunction =
+  Function
+    "vermin_and_rodent"
+    [__i|We do not cover any loss or damage caused by rodents, insects, vermin, or birds.
+    However, this exclusion does not apply to:
+    a) loss or damage to your contents caused by birds; or
+    b) ensuing covered loss unless any other exclusion applies or where an animal causes water to escape from
+       a household appliance, swimming pool or plumbing, heating or air conditioning system
+    |]
+    $ Parameters
+    $ Map.fromList
+      [ ("Loss or Damage.caused by insects", Parameter "string" ["true", "false"] "Was the damage caused by insects?")
+      , ("Loss or Damage.caused by birds", Parameter "string" ["true", "false"] "Was the damage caused by birds?")
+      , ("Loss or Damage.caused by vermin", Parameter "string" ["true", "false"] "Was the damage caused by vermin?")
+      , ("Loss or Damage.caused by rodents", Parameter "string" ["true", "false"] "Was the damage caused by rodents?")
+      , ("Loss or Damage.to Contents", Parameter "string" ["true", "false"] "Is the damage to your contents?")
+      , ("Loss or Damage.ensuing covered loss", Parameter "string" ["true", "false"] "Is the damage ensuing covered loss")
+      , ("any other exclusion applies", Parameter "string" ["true", "false"] "Are any other exclusions besides mentioned ones?")
+      , ("a household appliance", Parameter "string" ["true", "false"] "Did water escape from a household appliance due to an animal?")
+      , ("a swimming pool", Parameter "string" ["true", "false"] "Did water escape from a swimming pool due to an animal?")
+      , ("a plumbing, heating, or air conditioning system", Parameter "string" ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
       ]

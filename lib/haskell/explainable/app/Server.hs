@@ -114,7 +114,8 @@ data FunctionCrud' mode = FunctionCrud
           :> QueryParam "a household appliance" Text.Text
           :> QueryParam "a swimming pool" Text.Text
           :> QueryParam "a plumbing, heating, or air conditioning system" Text.Text
-          :> Summary "Compute whether a person qualifies based on their properties"
+          :> Summary "Compute whether a person qualifies based on their properties."
+          :> Description "A response value of `0` means that the Loss or Damage is covered, while `1` means the Loss or Damage is not covered."
           :> OperationId "runRodentsAndVermin"
           :> Post '[JSON] SimpleResponse
   }

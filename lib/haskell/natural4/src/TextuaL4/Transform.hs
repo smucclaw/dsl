@@ -18,7 +18,9 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 
 transText :: TL4.Text -> Text.Text
-transText (TL4.Text string) = Text.pack string
+transText x = case x of
+  TL4.TextString string -> Text.pack string
+  TL4.TextToken (TL4.Token string) -> Text.pack string
 
 transRule :: TL4.Rule -> Rule
 transRule x = case x of

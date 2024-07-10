@@ -53,9 +53,11 @@ MTT. MTExpr ::= Text    ;
 MTI. MTExpr ::= Integer ;
 MTF. MTExpr ::= Double  ;
 MTB. MTExpr ::= Bool    ;
+-- MTString. MTExpr ::= String ;
 
 rules Bool ::= "True" | "False" ;
-token Text letter (letter | '_' | '\'' | '-')* ;
+rules Text ::= String | Token ;
+token Token letter (letter | '_' | '\'' | '-')*  ;
 separator nonempty MTExpr " " ;
 
 -- BoolStruct

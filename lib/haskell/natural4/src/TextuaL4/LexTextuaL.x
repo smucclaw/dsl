@@ -39,13 +39,17 @@ $white+ ;
 @rsyms
     { tok (eitherResIdent TV) }
 
--- token Text
+-- token Token
 $l ([\' \- \_]| $l)*
-    { tok (eitherResIdent T_Text) }
+    { tok (eitherResIdent T_Token) }
 
 -- Keywords and Ident
 $l $i*
     { tok (eitherResIdent TV) }
+
+-- String
+\" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t | r | f)))* \"
+    { tok (TL . unescapeInitTail) }
 
 -- Integer
 $d+
@@ -68,7 +72,7 @@ data Tok
   | TV !String                    -- ^ Identifier.
   | TD !String                    -- ^ Float literal.
   | TC !String                    -- ^ Character literal.
-  | T_Text !String
+  | T_Token !String
   deriving (Eq, Show, Ord)
 
 -- | Smart constructor for 'Tok' for the sake of backwards compatibility.
@@ -131,7 +135,7 @@ tokenText t = case t of
   PT _ (TD s)   -> s
   PT _ (TC s)   -> s
   Err _         -> "#error"
-  PT _ (T_Text s) -> s
+  PT _ (T_Token s) -> s
 
 -- | Convert a token to a string.
 prToken :: Token -> String

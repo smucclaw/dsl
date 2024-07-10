@@ -48,6 +48,9 @@ data MTExpr = MTT Text | MTI Integer | MTF Double | MTB Bool
 data Bool = Bool_True | Bool_False
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
+data Text = TextString String | TextToken Token
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
 data BoolStruct
     = Any [BoolStruct]
     | AnyPrePost Text [BoolStruct] Text
@@ -87,6 +90,6 @@ data RPRel
 data TComparison = TBefore | TAfter | TBy | TOn | TVague
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-newtype Text = Text String
+newtype Token = Token String
   deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)
 

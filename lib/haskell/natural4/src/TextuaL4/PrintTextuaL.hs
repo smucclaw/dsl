@@ -137,8 +137,8 @@ instance Print Integer where
 instance Print Double where
   prt _ x = doc (shows x)
 
-instance Print TextuaL4.AbsTextuaL.Text where
-  prt _ (TextuaL4.AbsTextuaL.Text i) = doc $ showString i
+instance Print TextuaL4.AbsTextuaL.Token where
+  prt _ (TextuaL4.AbsTextuaL.Token i) = doc $ showString i
 instance Print TextuaL4.AbsTextuaL.Rule where
   prt i = \case
     TextuaL4.AbsTextuaL.TypeDecl isa fields -> prPrec i 0 (concatD [doc (showString "DECLARE"), prt 0 isa, prt 0 fields])
@@ -197,6 +197,11 @@ instance Print TextuaL4.AbsTextuaL.Bool where
   prt i = \case
     TextuaL4.AbsTextuaL.Bool_True -> prPrec i 0 (concatD [doc (showString "True")])
     TextuaL4.AbsTextuaL.Bool_False -> prPrec i 0 (concatD [doc (showString "False")])
+
+instance Print TextuaL4.AbsTextuaL.Text where
+  prt i = \case
+    TextuaL4.AbsTextuaL.TextString str -> prPrec i 0 (concatD [printString str])
+    TextuaL4.AbsTextuaL.TextToken token -> prPrec i 0 (concatD [prt 0 token])
 
 instance Print [TextuaL4.AbsTextuaL.MTExpr] where
   prt _ [] = concatD []

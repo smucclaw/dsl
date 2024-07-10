@@ -59,6 +59,7 @@ data BoolStruct
     | AllPre Text [BoolStruct]
     | AllPrePost Text [BoolStruct] Text
     | Not BoolStruct
+    | Unless BoolStruct BoolStruct
     | Leaf RelationalPredicate
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 

@@ -68,7 +68,8 @@ import TextuaL4.LexTextuaL
   'SUM'     { PT _ (TS _ 43)    }
   'TO'      { PT _ (TS _ 44)    }
   'True'    { PT _ (TS _ 45)    }
-  'WHO'     { PT _ (TS _ 46)    }
+  'UNLESS'  { PT _ (TS _ 46)    }
+  'WHO'     { PT _ (TS _ 47)    }
   L_doubl   { PT _ (TD $$)      }
   L_integ   { PT _ (TI $$)      }
   L_quoted  { PT _ (TL $$)      }
@@ -130,7 +131,7 @@ InlineHornlike
 RelationalPredicate :: { TextuaL4.AbsTextuaL.RelationalPredicate }
 RelationalPredicate
   : ListMTExpr { TextuaL4.AbsTextuaL.RPMT $1 }
-  | ListMTExpr RPRel BoolStruct { TextuaL4.AbsTextuaL.RPBoolStructR $1 $2 $3 }
+  | ListMTExpr RPRel BoolStruct1 { TextuaL4.AbsTextuaL.RPBoolStructR $1 $2 $3 }
 
 MTExpr :: { TextuaL4.AbsTextuaL.MTExpr }
 MTExpr
@@ -152,16 +153,22 @@ Text
 ListMTExpr :: { [TextuaL4.AbsTextuaL.MTExpr] }
 ListMTExpr : MTExpr { (:[]) $1 } | MTExpr ListMTExpr { (:) $1 $2 }
 
-BoolStruct :: { TextuaL4.AbsTextuaL.BoolStruct }
-BoolStruct
+BoolStruct1 :: { TextuaL4.AbsTextuaL.BoolStruct }
+BoolStruct1
   : 'ANY' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.Any $3 }
   | Text 'ANY' '(' ListBoolStruct ')' Text { TextuaL4.AbsTextuaL.AnyPrePost $1 $4 $6 }
   | Text 'ANY' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.AnyPre $1 $4 }
   | 'ALL' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.All $3 }
   | Text 'ALL' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.AllPre $1 $4 }
   | Text 'ALL' '(' ListBoolStruct ')' Text { TextuaL4.AbsTextuaL.AllPrePost $1 $4 $6 }
-  | 'NOT' BoolStruct { TextuaL4.AbsTextuaL.Not $2 }
+  | 'NOT' BoolStruct1 { TextuaL4.AbsTextuaL.Not $2 }
   | RelationalPredicate { TextuaL4.AbsTextuaL.Leaf $1 }
+  | '(' BoolStruct ')' { $2 }
+
+BoolStruct :: { TextuaL4.AbsTextuaL.BoolStruct }
+BoolStruct
+  : BoolStruct1 'UNLESS' BoolStruct1 { TextuaL4.AbsTextuaL.Unless $1 $3 }
+  | BoolStruct1 { $1 }
 
 ListBoolStruct :: { [TextuaL4.AbsTextuaL.BoolStruct] }
 ListBoolStruct

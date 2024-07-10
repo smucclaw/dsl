@@ -40,7 +40,7 @@ MeansInline. InlineHornlike ::= "MEANS" BoolStruct ;
 
 -- RelationalPredicate
 RPMT. RelationalPredicate ::= [MTExpr] ;
-RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStruct  ;  -- eyes IS (left IS blue AND right IS brown)
+RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStruct1  ;  -- eyes IS (left IS blue AND right IS brown)
 -- Commented out: this in combination with BoolStruct being a single RelationalPredicate causes 3 r/r conflicts
 -- RPConstraint. RelationalPredicate ::=  [MTExpr] RPRel [MTExpr]  ;   -- eyes IS blue
 
@@ -61,21 +61,24 @@ token Token letter (letter | '_' | '\'' | '-')*  ;
 separator nonempty MTExpr " " ;
 
 -- BoolStruct
-Any . BoolStruct ::=  "ANY" "(" [BoolStruct] ")" ;
-AnyPrePost . BoolStruct ::= Text  "ANY" "(" [BoolStruct] ")" Text ;
-AnyPre . BoolStruct ::= Text "ANY"  "(" [BoolStruct] ")" ;
-All . BoolStruct ::=  "ALL" "(" [BoolStruct] ")" ;
-AllPre . BoolStruct ::= Text "ALL" "(" [BoolStruct] ")" ;
-AllPrePost . BoolStruct ::= Text  "ALL" "(" [BoolStruct] ")" Text ;
-Not . BoolStruct ::= "NOT" BoolStruct ;
+Any . BoolStruct1 ::=  "ANY" "(" [BoolStruct] ")" ;
+AnyPrePost . BoolStruct1 ::= Text  "ANY" "(" [BoolStruct] ")" Text ;
+AnyPre . BoolStruct1 ::= Text "ANY"  "(" [BoolStruct] ")" ;
+All . BoolStruct1 ::=  "ALL" "(" [BoolStruct] ")" ;
+AllPre . BoolStruct1 ::= Text "ALL" "(" [BoolStruct] ")" ;
+AllPrePost . BoolStruct1 ::= Text  "ALL" "(" [BoolStruct] ")" Text ;
+Not . BoolStruct1 ::= "NOT" BoolStruct1 ;
+Unless. BoolStruct ::=  BoolStruct1 "UNLESS" BoolStruct1  ;
 
 -- If RPConstraint is uncommented, then this rule introduces 3 reduce/reduce conflicts.
 -- Can be fixed by prefixing it with something, but I think it's simpler to transform
 --     RPBoolStructR x rel (Leaf (RPMT y))   into
 --     RPConstraint  x rel             y
-Leaf . BoolStruct ::= RelationalPredicate ;
+Leaf . BoolStruct1 ::= RelationalPredicate ;
 
 separator nonempty BoolStruct "," ;
+
+coercions BoolStruct 1 ;
 
 -- RPRel
 RPis . RPRel ::= "IS" ;

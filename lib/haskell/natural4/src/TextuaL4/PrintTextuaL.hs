@@ -184,7 +184,7 @@ instance Print TextuaL4.AbsTextuaL.InlineHornlike where
 instance Print TextuaL4.AbsTextuaL.RelationalPredicate where
   prt i = \case
     TextuaL4.AbsTextuaL.RPMT mtexprs -> prPrec i 0 (concatD [prt 0 mtexprs])
-    TextuaL4.AbsTextuaL.RPBoolStructR mtexprs rprel boolstruct -> prPrec i 0 (concatD [prt 0 mtexprs, prt 0 rprel, prt 0 boolstruct])
+    TextuaL4.AbsTextuaL.RPBoolStructR mtexprs rprel boolstruct -> prPrec i 0 (concatD [prt 0 mtexprs, prt 0 rprel, prt 1 boolstruct])
 
 instance Print TextuaL4.AbsTextuaL.MTExpr where
   prt i = \case
@@ -210,14 +210,15 @@ instance Print [TextuaL4.AbsTextuaL.MTExpr] where
 
 instance Print TextuaL4.AbsTextuaL.BoolStruct where
   prt i = \case
-    TextuaL4.AbsTextuaL.Any boolstructs -> prPrec i 0 (concatD [doc (showString "ANY"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
-    TextuaL4.AbsTextuaL.AnyPrePost text1 boolstructs text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "ANY"), doc (showString "("), prt 0 boolstructs, doc (showString ")"), prt 0 text2])
-    TextuaL4.AbsTextuaL.AnyPre text boolstructs -> prPrec i 0 (concatD [prt 0 text, doc (showString "ANY"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
-    TextuaL4.AbsTextuaL.All boolstructs -> prPrec i 0 (concatD [doc (showString "ALL"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
-    TextuaL4.AbsTextuaL.AllPre text boolstructs -> prPrec i 0 (concatD [prt 0 text, doc (showString "ALL"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
-    TextuaL4.AbsTextuaL.AllPrePost text1 boolstructs text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "ALL"), doc (showString "("), prt 0 boolstructs, doc (showString ")"), prt 0 text2])
-    TextuaL4.AbsTextuaL.Not boolstruct -> prPrec i 0 (concatD [doc (showString "NOT"), prt 0 boolstruct])
-    TextuaL4.AbsTextuaL.Leaf relationalpredicate -> prPrec i 0 (concatD [prt 0 relationalpredicate])
+    TextuaL4.AbsTextuaL.Any boolstructs -> prPrec i 1 (concatD [doc (showString "ANY"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
+    TextuaL4.AbsTextuaL.AnyPrePost text1 boolstructs text2 -> prPrec i 1 (concatD [prt 0 text1, doc (showString "ANY"), doc (showString "("), prt 0 boolstructs, doc (showString ")"), prt 0 text2])
+    TextuaL4.AbsTextuaL.AnyPre text boolstructs -> prPrec i 1 (concatD [prt 0 text, doc (showString "ANY"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
+    TextuaL4.AbsTextuaL.All boolstructs -> prPrec i 1 (concatD [doc (showString "ALL"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
+    TextuaL4.AbsTextuaL.AllPre text boolstructs -> prPrec i 1 (concatD [prt 0 text, doc (showString "ALL"), doc (showString "("), prt 0 boolstructs, doc (showString ")")])
+    TextuaL4.AbsTextuaL.AllPrePost text1 boolstructs text2 -> prPrec i 1 (concatD [prt 0 text1, doc (showString "ALL"), doc (showString "("), prt 0 boolstructs, doc (showString ")"), prt 0 text2])
+    TextuaL4.AbsTextuaL.Not boolstruct -> prPrec i 1 (concatD [doc (showString "NOT"), prt 1 boolstruct])
+    TextuaL4.AbsTextuaL.Unless boolstruct1 boolstruct2 -> prPrec i 0 (concatD [prt 1 boolstruct1, doc (showString "UNLESS"), prt 1 boolstruct2])
+    TextuaL4.AbsTextuaL.Leaf relationalpredicate -> prPrec i 1 (concatD [prt 0 relationalpredicate])
 
 instance Print [TextuaL4.AbsTextuaL.BoolStruct] where
   prt _ [] = concatD []

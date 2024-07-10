@@ -205,6 +205,7 @@ transBoolStructP x = case x of
     -> All (Just $ Pre $ transText text) (transBoolStructP <$> bss)
   TL4.AllPrePost pr bss pst
     -> All (Just $ PrePost (transText pr) (transText pst)) (transBoolStructP <$> bss)
+  TL4.Unless bs1 bs2 -> transBoolStructP $ TL4.All [bs1, TL4.Not bs2]
 
 transBoolStructR :: TL4.BoolStruct -> BoolStructR
 transBoolStructR x = case x of
@@ -222,6 +223,7 @@ transBoolStructR x = case x of
     -> All (Just $ PrePost (transText pr) (transText pst)) (transBoolStructR <$> bsrs)
   TL4.Not bsr -> Not $ transBoolStructR bsr
   TL4.Leaf rp -> Leaf $ transRelationalPredicate rp
+  TL4.Unless bs1 bs2 -> transBoolStructR $ TL4.All [bs1, TL4.Not bs2]
 
 transRPRel :: TL4.RPRel -> RPRel
 transRPRel x = case x of

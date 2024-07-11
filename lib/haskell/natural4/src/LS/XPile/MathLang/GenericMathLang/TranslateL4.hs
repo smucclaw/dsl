@@ -12,9 +12,19 @@
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
+  -- * Errors
   ToLCError(..),
+  stringifyToLCError,
+  throwNotYetImplError,
+  throwErrorBase,
+  throwNotSupportedWithMsgError,
+  throwNotSupportedError,
+  throwErrorImpossibleWithMsg,
+  throwParserProblemWithMsg,
+  -- * Transpilers
   runToLC,
   l4ToLCProgram,
+  -- * Helpers
   simplifyL4Hlike,
   baseExpifyMTEs,
   noExtraMdata,
@@ -43,7 +53,7 @@ import LS.Types as L4
   MultiClauseHL(..), mkMultiClauseHL,
   HeadOnlyHC, mkHeadOnlyAtomicHC,
   HnBodHC(..),
-  mtexpr2text, ParamText, pt2text, pt2multiterm
+  mtexpr2text, pt2text, pt2multiterm
   )
 
 import LS.Rule (
@@ -74,7 +84,7 @@ import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
 import Control.Monad.Trans (lift)
 import Text.Megaparsec (ParsecT, runParserT, eof, (<?>), try, some, many, between, choice, satisfy, notFollowedBy)
 import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, char, string)
-import Data.Char (isAlphaNum, isDigit)
+import Data.Char (isDigit)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Data.Void ( Void )
 import Text.Regex.PCRE.Heavy qualified as PCRE
@@ -318,54 +328,6 @@ addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
 withCustomFuns :: [UserDefinedFun] -> ToLC a -> ToLC a
 withCustomFuns funs = over _ToLC (local $ addCustomFuns funs)
 
--- vars and vals
-getTypeString :: MTExpr -> String
-getTypeString = \case
-  MTT _ -> "text"
-  MTI _ -> "integer"
-  MTF _ -> "double"
-  MTB _ -> "boolean"
-
-getVarVals :: L4.Rule -> HM.HashMap String String
-getVarVals = \case
-  L4.Hornlike { given = givens, clauses = hornClauses } ->
-    let givensMap = extractFromGivens givens HM.empty
-        clausesMap = extractFromHornClauses hornClauses HM.empty
-    in givensMap `HM.union` clausesMap
-  _ -> mempty
-
-extractFromGivens :: Maybe L4.ParamText -> HM.HashMap String String -> HM.HashMap String String
-extractFromGivens Nothing acc = acc
-extractFromGivens (Just givens) acc =
-  foldr (\(mtExpr NE.:| _, maybeTypeSig) hm ->
-          case (mtExpr, maybeTypeSig) of
-            (MTT t, Just (SimpleType _ ts)) -> HM.insert [i|#{t}|] [i|#{ts}|] hm
-            (MTT t, Just (InlineEnum _ values)) -> HM.insert [i|#{t}|] [i|#{pt2text values}|] hm
-            _ -> hm) acc givens
-
-extractFromHornClauses :: [HornClause2] -> HM.HashMap String String -> HM.HashMap String String
-extractFromHornClauses hornClauses hashmap =
-  foldr extractFromHornClause hashmap hornClauses
-
-extractFromHornClause :: HornClause2 -> HM.HashMap String String -> HM.HashMap String String
-extractFromHornClause (hHead -> RPConstraint vars _ expr) hashmap =
-  case expr of
-    [MTF val] -> go $ show val
-    [MTI val] -> go $ show val
-    [MTT txt] -> go $ T.unpack txt
-    _ -> hashmap
-  where
-    go str =
-      foldr
-        ( \case
-            MTT var -> HM.insert (T.unpack var) str
-            _ -> id
-        )
-        hashmap
-        vars
-
-extractFromHornClause _ hashmap = hashmap
-
 ------------------------------------------------------------------------------------
 
 {- | TODO: Revise this when time permits --- this is not 'idiomatic'
@@ -539,15 +501,6 @@ addRuleName pos rname exp = case exp.md of
   m:ms -> exp {md = m {explnAnnot = annot}:ms}
   where
     annot = Just $ MkExplnAnnot rname Nothing Nothing
-
--- | Treat the seq of L4 rules as being a block of statements
-l4sHLsToLCExp :: [SimpleHL] -> ToLC Exp
-l4sHLsToLCExp rules = fmap mkExpFrSeqExp (l4sHLsToLCSeqExp rules)
-  where
-    mkExpFrSeqExp :: SeqExp -> Exp
-    mkExpFrSeqExp seqExp = noExtraMdata (ESeq seqExp)
-    -- TODO: Can add metadata here in the future if needed.
-    -- Bear in mind already adding metadata at level of L4Prog and in `expifyHL`
 
 {- | Right now I don't think the order in which we compile the HLs actually matters,
 so just using a foldrM -}
@@ -784,15 +737,6 @@ isSetVarToTrue = \case
   RPMT mtes  -> Just mtes
   _ -> Nothing
     -- TODO: think about how to handle metadata specifically for vars (and if that is even necessary)
-
-{- | Is a Set Var that's NOT Set Var to True
-      eg: `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
--}
-isOtherSetVar :: L4.RelationalPredicate -> Maybe ([MTExpr], [MTExpr])
-isOtherSetVar = \case
-  RPConstraint lefts RPis rights -> Just (lefts, rights)
---  RPnary RPis [MTT mtes, rp] -- this is handled in expifyHeadRP
-  _ -> Nothing
 
 {- |
 We want to handle things like
@@ -1072,12 +1016,6 @@ pCurrency = choice $
 pFloat :: Parser BaseExp
 pFloat = ELit . EFloat <$> lexeme L.float <?> "float"
 
--- NB. assuming that a literal cannot be inside an arithmetic expression, that's why we try to consume the whole input
-pLiteral :: Parser BaseExp
-pLiteral = ELit . EString . T.pack <$> lexeme (some $ satisfy alphaNumOrSpaceChar <* eof)
-  where
-    alphaNumOrSpaceChar c = isAlphaNum c || c == ' '
-
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
@@ -1154,32 +1092,6 @@ mkVarExp var = do
 -- | Make a var set exp, when you know it's a var
 mkVarSetFromVar :: Var -> Exp -> ToLC BaseExp
 mkVarSetFromVar var argE = EVarSet <$> mkVarExp var <*> pure argE
-
-mkSetVarFromMTEsHelper :: [MTExpr] -> Exp -> ToLC BaseExp
-mkSetVarFromMTEsHelper putativeVar argE = do
-  var <- varFromMTEs putativeVar
-  mkVarSetFromVar var argE
-
-mkVarSetTrueFromVar :: Var
-                    -> (BaseExp -> Exp)
-                    -- ^ Func that augments base exp with metadata
-                    -> ToLC BaseExp
-mkVarSetTrueFromVar var mdFunc =
-  mkVarSetFromVar var $ mdFunc $ ELit EBoolTrue
-
-mkSetVarTrueExpFromVarNoMd :: Var -> ToLC Exp
-mkSetVarTrueExpFromVarNoMd var =
-  noExtraMdata <$> mkVarSetTrueFromVar var noExtraMdata
-
-mkSetVarTrue :: [MTExpr] -> ToLC BaseExp
-mkSetVarTrue putativeVar = do
-  pos <- mkToLC $ asks currSrcPos
-  mkSetVarFromMTEsHelper putativeVar $ typeMdata pos "Boolean" $ ELit EBoolTrue
-
-mkOtherSetVar :: [MTExpr] -> [MTExpr] -> ToLC BaseExp
-mkOtherSetVar putativeVar argMTEs = do
-  arg <- noExtraMdata <$> baseExpifyMTEs argMTEs
-  mkSetVarFromMTEsHelper putativeVar arg
 
 {- | TODO: Check that it meets the formatting etc requirements for a variable,
 (e.g. prob don't want var names to start with numbers, and probably want to error if the MTE is a MTB)

@@ -1,0 +1,104 @@
+Hornlike
+    { name =
+        [ MTT "Not Covered" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPMT
+                [ MTT "Not Covered" ]
+            , hBody = Just
+                ( All Nothing
+                    [ Leaf
+                        ( RPBoolStructR
+                            [ MTT "Loss or Damage" ] RPis
+                            ( Any Nothing
+                                [ Leaf
+                                    ( RPMT
+                                        [ MTT "caused by rodents" ]
+                                    )
+                                , Leaf
+                                    ( RPMT
+                                        [ MTT "caused by insects" ]
+                                    )
+                                , Leaf
+                                    ( RPMT
+                                        [ MTT "caused by vermin" ]
+                                    )
+                                , Leaf
+                                    ( RPMT
+                                        [ MTT "caused by birds" ]
+                                    )
+                                ]
+                            )
+                        )
+                    , Not
+                        ( Any Nothing
+                            [ All Nothing
+                                [ Leaf
+                                    ( RPConstraint
+                                        [ MTT "Loss or Damage" ] RPis
+                                        [ MTT "to Contents" ]
+                                    )
+                                , Leaf
+                                    ( RPConstraint
+                                        [ MTT "Loss or Damage" ] RPis
+                                        [ MTT "caused by birds" ]
+                                    )
+                                ]
+                            , All Nothing
+                                [ Leaf
+                                    ( RPConstraint
+                                        [ MTT "Loss or Damage" ] RPis
+                                        [ MTT "ensuing covered loss" ]
+                                    )
+                                , Not
+                                    ( Any Nothing
+                                        [ Leaf
+                                            ( RPMT
+                                                [ MTT "any other exclusion applies" ]
+                                            )
+                                        , Any
+                                            ( Just
+                                                ( Pre "an animal caused water to escape from" )
+                                            )
+                                            [ Leaf
+                                                ( RPMT
+                                                    [ MTT "a household appliance" ]
+                                                )
+                                            , Leaf
+                                                ( RPMT
+                                                    [ MTT "a swimming pool" ]
+                                                )
+                                            , Leaf
+                                                ( RPMT
+                                                    [ MTT "a plumbing, heating, or air conditioning system" ]
+                                                )
+                                            ]
+                                        ]
+                                    )
+                                ]
+                            ]
+                        )
+                    ]
+                )
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }

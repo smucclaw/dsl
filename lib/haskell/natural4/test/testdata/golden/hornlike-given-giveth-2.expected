@@ -1,50 +1,48 @@
-Right
-    ( Hornlike
-        { name =
-            [ MTT "bar" ]
-        , super = Nothing
-        , keyword = Decide
-        , given = Just
-            (
-                ( MTT "foo" :| []
-                , Just
-                    ( SimpleType TOne "Number" )
-                ) :| []
-            )
-        , giveth = Just
-            (
-                ( MTT "bar" :| []
-                , Just
-                    ( SimpleType TOne "Boolean" )
-                ) :| []
-            )
-        , upon = Nothing
-        , clauses =
-            [ HC
-                { hHead = RPBoolStructR
-                    [ MTT "bar" ] RPis
-                    ( Leaf
-                        ( RPConstraint
-                            [ MTT "foo" ] RPgt
-                            [ MTI 2 ]
-                        )
+Hornlike
+    { name =
+        [ MTT "bar" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "foo" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , giveth = Just
+        (
+            ( MTT "bar" :| []
+            , Just
+                ( SimpleType TOne "Boolean" )
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "bar" ] RPis
+                ( Leaf
+                    ( RPConstraint
+                        [ MTT "foo" ] RPgt
+                        [ MTI 2 ]
                     )
-                , hBody = Nothing
-                }
-            ]
-        , rlabel = Nothing
-        , lsource = Nothing
-        , wwhere = []
-        , srcref = Just
-            ( SrcRef
-                { url = "test/Spec"
-                , short = "test/Spec"
-                , srcrow = 1
-                , srccol = 1
-                , version = Nothing
-                }
-            )
-        , defaults = []
-        , symtab = []
-        }
-    )
+                )
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }

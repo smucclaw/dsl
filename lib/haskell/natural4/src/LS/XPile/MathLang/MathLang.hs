@@ -345,7 +345,6 @@ exp2pred exp = case exp.exp of
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False
   ELit (GML.EString lit) -> pure $ PredVar [i|#{lit}|]
   EOr {} -> PredFold (getLabel exp) PLOr <$> foldPredOr exp
-    --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
   EAnd {} -> PredFold (getLabel exp) PLAnd <$> foldPredAnd exp
   EPredSet (GML.MkVar var) val -> do
     let varStr = [i|#{var}|]
@@ -362,17 +361,21 @@ exp2pred exp = case exp.exp of
   EApp _ _ -> unhandledExpressionType
   EVarSet _ _ -> unhandledExpressionType
   ELet _ _ _ -> unhandledExpressionType
-  ERec _ _ -> unhandledExpressionType
+  ERec fieldname recname -> do
+    fnEx <- gml2ml fieldname
+    rnEx <- gml2ml recname
+    case (fnEx, rnEx) of
+      -- If both expressions can be resolved to a variable,
+      -- we infer that this a record access of the form "var1.var2".
+      (MathVar fname, MathVar rname) -> pure $ PredVar [i|#{rname}.#{fname}|]
+      _x -> pure $ PredVar [i|exp2pred: unsupported record #{expExp}|]
   ENumOp _ _ _ -> unhandledExpressionType
   ESeq _ -> unhandledExpressionType
   ELit _ -> unhandledExpressionType
   where
+    expExp = exp.exp
     unhandledExpressionType = trace ("exp2pred: not yet implemented\n    " <> show exp.exp) $ do
-      mlEx <- gml2ml exp
-      --trace ("but it is implemented in gml2ml\n    " <> show mlEx) $
-      pure case mlEx of
-        MathVar x -> PredVar x
-        x -> PredVar [i|Not implemented yet: #{x}|]
+      pure $ PredVar [i|Not implemented yet: #{expExp}|]
 
 numOptoMl :: GML.NumOp -> ToMathLang MathBinOp
 numOptoMl = \case

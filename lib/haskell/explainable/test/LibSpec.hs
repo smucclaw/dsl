@@ -447,7 +447,7 @@ sumOfDoublesOfPositivesAndNegativesExplanation :: Tree ([String], [String])
 sumOfDoublesOfPositivesAndNegativesExplanation = Node {
                    rootLabel = ([], ["9.0 = sum of 6 elements", "- -2.0", "- -1.0", "- 0.0", "- 2.0", "- 4.0", "- 6.0"]),
                    subForest = [Node {
-                   rootLabel = ([], ["fmap mathsection (* 2.0) over 3 relevant elements (who pass 0.0 CLT)"]),
+                   rootLabel = ([], ["fmap mathsection (* 2.0) over 3 relevant elements (who pass 0.0 <)"]),
                    subForest = [Node {
                    rootLabel = (["(-2.0)", "(-1.0)", "0.0", "1.0", "2.0", "3.0"], ["base MathList with 6 elements"]),
                    subForest = []

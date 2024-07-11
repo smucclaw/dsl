@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -Wredundant-constraints #-}
 
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
@@ -12,7 +12,7 @@
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
-  -- * Errors
+  -- * Specialised Errors we may throw
   ToLCError(..),
   stringifyToLCError,
   throwNotYetImplError,
@@ -22,9 +22,9 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
   throwErrorImpossibleWithMsg,
   throwParserProblemWithMsg,
   -- * Transpilers
-  runToLC,
   l4ToLCProgram,
-  -- * Helpers
+  -- * Helpers to run and test the transpiler
+  runToLC,
   simplifyL4Hlike,
   baseExpifyMTEs,
   noExtraMdata,
@@ -69,13 +69,10 @@ import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
 import Flow ((|>))
 import Optics hiding ((|>))
--- import Data.Text.Optics (packed, unpacked)
 import GHC.Generics (Generic)
 import Data.List.NonEmpty qualified as NE
--- import Data.Maybe (fromMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
--- import LS.Utils.TextUtils (int2Text, float2Text)
 import Data.Foldable qualified as F (toList, foldrM)
 import LS.Utils ((|$>))
 
@@ -91,7 +88,7 @@ import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.Read (readMaybe)
 import Prelude hiding (exp)
 import Debug.Trace (trace)
-import Effectful.State.Dynamic qualified as EffState
+import Effectful.State.Dynamic qualified as State
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -262,23 +259,23 @@ stringifyToLCError = \case
 ---- Specialized error throwing convenience funcs ---------------------------------
 
 -- | TODO: make this better with `pretty` and better structured errors later; see also `diagnose` package
-throwErrorBase :: (Error e :> '[Error ToLCError], Show p) => (ShowReprOfData -> Msg -> e) -> p -> Msg -> ToLC a
+throwErrorBase :: (Error e :> es, Show p) => (ShowReprOfData -> Msg -> e) -> p -> Msg -> Eff es a
 throwErrorBase errorType l4ds =
-  mkToLC . throwError . errorType (T.pack . show $ l4ds)
+  throwError . errorType (T.pack . show $ l4ds)
 
-throwNotYetImplError :: Show a => a -> ToLC b
+throwNotYetImplError :: (Error ToLCError :> es, Show a) => a -> Eff es b
 throwNotYetImplError l4ds = throwErrorBase NotYetImplemented l4ds ""
 
-throwNotSupportedError :: Show a => a -> ToLC b
+throwNotSupportedError :: (Error ToLCError :> es, Show a) => a -> Eff es b
 throwNotSupportedError l4ds = throwErrorBase NotSupported l4ds ""
 
-throwNotSupportedWithMsgError :: Show a => a -> T.Text  -> ToLC b
+throwNotSupportedWithMsgError :: (Error ToLCError :> es, Show a) => a -> T.Text  -> Eff es b
 throwNotSupportedWithMsgError = throwErrorBase NotSupported
 
-throwParserProblemWithMsg :: Show a => a -> T.Text -> ToLC c
+throwParserProblemWithMsg :: (Error ToLCError :> es, Show a) => a -> T.Text -> Eff es c
 throwParserProblemWithMsg = throwErrorBase ParserProblem
 
-throwErrorImpossibleWithMsg :: Show a => a -> T.Text -> ToLC c
+throwErrorImpossibleWithMsg :: (Error ToLCError :> es, Show a) => a -> T.Text -> Eff es c
 throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 -------- Env -----------------------------------------------------------------------
@@ -325,8 +322,8 @@ initialEnv = MkEnv { localVars = HM.empty
 addCustomFuns :: [UserDefinedFun] -> Env -> Env
 addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
 
-withCustomFuns :: [UserDefinedFun] -> ToLC a -> ToLC a
-withCustomFuns funs = over _ToLC (local $ addCustomFuns funs)
+withCustomFuns :: Reader Env :> es => [UserDefinedFun] -> Eff es a -> Eff es a
+withCustomFuns funs = local $ addCustomFuns funs
 
 ------------------------------------------------------------------------------------
 
@@ -342,42 +339,40 @@ Resources (stuff on other effects libs also translates well to `Effectful`):
   https://haskell-explained.gitlab.io/blog/posts/2019/07/28/polysemy-is-cool-part-1/
   https://code.well-typed.com/cclaw/haskell-course/-/blob/main/error-handling/ErrorHandling.hs
 -}
-newtype ToLC a =
-  ToLC (Eff '[Reader Env,
-              EffState.State [UserDefinedFun],
-              Error ToLCError] a
-        )
-  deriving newtype (Functor, Applicative, Monad)
+type ToLCEffs =
+  [ Reader Env
+  , State.State [UserDefinedFun]
+  , Error ToLCError
+  ]
 
-_ToLC :: Iso' (ToLC a) (Eff '[Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a)
-_ToLC = coerced
+type ParserEffs =
+  '[ Reader Env ]
 
-mkToLC :: Eff [Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a -> ToLC a
-mkToLC = view (re _ToLC)
-
-unToLC :: ToLC a -> Eff [Reader Env, EffState.State [UserDefinedFun], Error ToLCError] a
-unToLC = view _ToLC
-
-runToLC :: ToLC a -> Either ToLCError a
+runToLC :: Eff ToLCEffs a -> Either ToLCError a
 runToLC m = case runToLC' m of
               Right (res,_state) -> Right res
               Left err           -> Left err
 
-execToLC :: ToLC a -> [UserDefinedFun]
+execToLC :: Eff ToLCEffs a -> [UserDefinedFun]
 execToLC m = case runToLC' m of
               Right (_res,state) -> state
               Left _             -> []
 
-
-runToLC' :: ToLC a -> Either ToLCError (a, [UserDefinedFun])
-runToLC' (unToLC -> m) =
+runToLC' :: Eff ToLCEffs a -> Either ToLCError (a, [UserDefinedFun])
+runToLC' m =
   m
     |> runReader initialEnv
-    |> EffState.runStateLocal []
+    |> State.runStateLocal []
     |> runErrorNoCallStack
     |> runPureEff
-  -- where
-    -- initialState = mkGlobalVars HM.empty
+
+runParserInLCContext :: Reader Env :> es => Eff ParserEffs a -> Eff es a
+runParserInLCContext act = do
+  env <- ask
+  act
+    |> runReader env
+    |> runPureEff
+    |> pure
 
 --------------------------------------------------------------------------------------------------
 
@@ -387,7 +382,7 @@ runToLC' (unToLC -> m) =
 -- Expects a list of Hornlike rules, produces a translated GML program
 -- in the form of an 'LCProgram'.
 --
-l4ToLCProgram :: [L4.Rule] -> ToLC LCProgram
+l4ToLCProgram :: (Error ToLCError :> es, Reader Env :> es, State.State [UserDefinedFun] :> es) => [L4.Rule] -> Eff es LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   let customUserFuns = iterateFuns [] $ F.toList l4HLs
@@ -426,7 +421,7 @@ l4ToLCProgram rules = do
 
 type SimpleHL = SimpleHlike VarTypeDeclMap RetVarInfo (Maybe RuleLabel)
 
-simplifyL4Hlike :: L4.Rule -> ToLC SimpleHL
+simplifyL4Hlike :: Error ToLCError :> es => L4.Rule -> Eff es SimpleHL
 simplifyL4Hlike rule =
   case rule.srcref of
     Just srcref -> do
@@ -450,7 +445,7 @@ l4HcToAtomicHC hc =
     Just hbody -> HeadAndBody MkHnBHC {hbHead = hc.hHead, hbBody = hbody}
     Nothing -> mkHeadOnlyAtomicHC hc.hHead
 
-extractBaseHL :: L4.Rule -> ToLC BaseHL
+extractBaseHL :: Error ToLCError :> es => L4.Rule -> Eff es BaseHL
 extractBaseHL rule =
   case rule.clauses of
     [] -> throwParserProblemWithMsg rule "Parser should not return L4 Hornlikes with no clauses"
@@ -504,14 +499,19 @@ addRuleName pos rname exp = case exp.md of
 
 {- | Right now I don't think the order in which we compile the HLs actually matters,
 so just using a foldrM -}
-l4sHLsToLCSeqExp ::  [SimpleHL] -> ToLC SeqExp
+l4sHLsToLCSeqExp ::
+  (Error ToLCError :> es, Reader Env :> es, State.State [UserDefinedFun] :> es) =>
+  [SimpleHL] ->
+  Eff es SeqExp
 l4sHLsToLCSeqExp = F.foldrM go mempty
   where
-    go :: SimpleHL -> SeqExp -> ToLC SeqExp
     go hornlike seqExp = consSE <$> expifyHL hornlike <*> pure seqExp
 
 --------------------------------------------------------------------
-expifyHL :: SimpleHL -> ToLC Exp
+expifyHL ::
+  (Error ToLCError :> es, Reader Env :> es, State.State [UserDefinedFun] :> es) =>
+  SimpleHL ->
+  Eff es Exp
 expifyHL hl = do
   bexp <- baseExpify hl
   pure $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
@@ -534,7 +534,10 @@ expifyHL hl = do
 2. Lam Def
 3. Block of statements / expressions (TODO)
 -}
-baseExpify :: SimpleHL -> ToLC BaseExp
+baseExpify ::
+  (Error ToLCError :> es, Reader Env :> es, State.State [UserDefinedFun] :> es) =>
+  SimpleHL ->
+  Eff es BaseExp
 baseExpify hl = case lhsLooksLikeLambda hl of
   -- We have verified the LHS looks like a lambda abstraction! Now we must get
   -- monadic in order to parse the RHS and check if the bound variables appear there
@@ -545,7 +548,7 @@ baseExpify hl = case lhsLooksLikeLambda hl of
     if all (`elem` varsRHS) varsLHS -- FIXME: should also accept global variables
       then do
         let userFun = MkUserFun fname (noExtraMdata bexpRHS) varsLHS operMP
-        mkToLC $ EffState.modify $ (userFun :)
+        State.modify $ (userFun :)
         ELam v <$> mkLambda vs bexpRHS
       else baseExpify'
   _ -> baseExpify'
@@ -560,16 +563,16 @@ baseExpify hl = case lhsLooksLikeLambda hl of
       hornlike -> throwNotYetImplError hornlike
 
     argVarsOnly bexp = do
-      funNames <- ToLC $ asks $ fmap getFunName . userDefinedFuns
+      funNames <- asks $ fmap getFunName . userDefinedFuns
       pure $ filter (`notElem` funNames) $
         MkExp bexp [] ^.. cosmosOf (gplate @Exp) % gplate @Var
 
-mkLambda :: [Var] -> BaseExp -> ToLC Exp
+mkLambda :: Reader Env :> es => [Var] -> BaseExp -> Eff es Exp
 mkLambda [] bexp = do
-  pos <- mkToLC $ asks currSrcPos
+  pos <- asks currSrcPos
   pure $ typeMdata pos "Function" bexp
 mkLambda (v:vs) bexp = do
-  pos <- mkToLC $ asks currSrcPos
+  pos <- asks currSrcPos
   let funType = typeMdata pos "Function"
   funType . ELam v <$> mkLambda vs bexp
 
@@ -605,9 +608,13 @@ hasGivens hl = case HM.keys hl.shcGiven of
                 [] -> Nothing
                 ks -> Just ks
 
-mkOperator :: [MTExpr] -> [Var] -> ToLC (Var, Operator Parser BaseExp)
+mkOperator ::
+  (Error ToLCError :> es, Reader Env :> es) =>
+  [MTExpr] ->
+  [Var] ->
+  Eff es (Var, Operator Parser BaseExp)
 mkOperator mtes vars = do
-  pos <- mkToLC $ asks currSrcPos
+  pos <- asks currSrcPos
   case maybeOperator pos mtes vars of
     Just (fname, _vars, op) -> pure (fname, op)
     Nothing -> throwNotSupportedWithMsgError ("isLambda:" :: String) [i|not a lambda expression: #{mtes}|]
@@ -657,7 +664,7 @@ isMultiClause hl =
     keepOgHL :: AtomicHC -> SimpleHL
     keepOgHL hc = hl {baseHL = OneClause hc}
 
-toIfExp :: SimpleHL -> HnBodHC -> ToLC BaseExp
+toIfExp :: (Error ToLCError :> es, Reader Env :> es) => SimpleHL -> HnBodHC -> Eff es BaseExp
 toIfExp hl hc = do
   condE <- withLocalVarsAndSrcPos $ processHcBody hc.hbBody
   thenE <- withLocalVarsAndSrcPos $ processHcHeadForIf hc.hbHead
@@ -665,18 +672,18 @@ toIfExp hl hc = do
     EPredSet var (exp -> ELit EBoolTrue) -> pure $ EPredSet var condE
     _ -> pure $ EIfThen condE thenE
   where
-    withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
+    withLocalVarsAndSrcPos = local $ setCurrSrcPos . setLocalVars
     setCurrSrcPos, setLocalVars :: Env -> Env
     setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
     setLocalVars = set #localVars hl.shcGiven
 -- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
 
-toHeadOnlyExp :: SimpleHL -> HeadOnlyHC -> ToLC BaseExp
+toHeadOnlyExp :: (Error ToLCError :> es, Reader Env :> es) => SimpleHL -> HeadOnlyHC -> Eff es BaseExp
 toHeadOnlyExp hl hc =
   withLocalVarsAndSrcPos $ exp <$> processHcHeadForIf hc.hcHead
   where
-    withLocalVarsAndSrcPos = over _ToLC (local $ setCurrSrcPos . setLocalVars)
+    withLocalVarsAndSrcPos = local $ setCurrSrcPos . setLocalVars
     setCurrSrcPos, setLocalVars :: Env -> Env
     setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
     setLocalVars = set #localVars hl.shcGiven
@@ -697,9 +704,9 @@ What can be in hHead if the ambient L4 rule is an EIf?
 Things like arithmetic constraints (<, >, etc)
 don't appear here -- they appear in hBody
 -}
-processHcHeadForIf :: L4.RelationalPredicate -> ToLC Exp
+processHcHeadForIf :: (Error ToLCError :> es, Reader Env :> es) => L4.RelationalPredicate -> Eff es Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = do
-  pos <- mkToLC $ asks currSrcPos
+  pos <- asks currSrcPos
   pure $ noExtraMdata $
             EPredSet (mkVar . textifyMTEs $ putativeVar)
             (typeMdata pos "Boolean" $ ELit EBoolTrue)
@@ -763,9 +770,9 @@ isFun funs mte =
     MTT t -> t `elem` allFuns
     _ -> False
 
-baseExpifyMTEs :: [MTExpr] -> ToLC BaseExp
+baseExpifyMTEs :: (Reader Env :> es, Error ToLCError :> es) => [MTExpr] -> Eff es BaseExp
 baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
-  userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
+  userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
   case break (isFun userFuns) rest of
   -- ind's parent's sibling's … income
@@ -784,7 +791,7 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
 baseExpifyMTEs mtes = do
-  userFuns <- mkToLC $ asks $ fmap getFunName . userDefinedFuns -- :: [Var]
+  userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   case mtes of
     [mte] -> do
       -- Inari: assuming that the Var will be used for comparison
@@ -885,9 +892,9 @@ baseExpifyMTEs mtes = do
             trace [i|added parentheses (#{text})|] [i|(#{text})|]
           | otherwise = text
 
-parseExpr :: MTExpr -> ToLC BaseExp
+parseExpr :: Reader Env :> es => MTExpr -> Eff es BaseExp
 parseExpr x@(MTT str) = do
-  res <- runParserT pExpr "" str
+  res <- runParserInLCContext $ runParserT pExpr "" str
   case res of
     -- if it's just a String literal, don't use the megaparsec version—it removes whitespace, e.g. "Singapore citizen" -> "Singapore"
     Right (EVar _) -> pure $ EVar $ MkVar str
@@ -909,12 +916,12 @@ splitGenitives (mte:mtes) = (isGenitive mte, mtes)
 
 ---------------- Expr parser ------------------------------------------------------
 --type Parser = Parsec Void T.Text
-type Parser = ParsecT Void T.Text ToLC
+type Parser = ParsecT Void T.Text (Eff ParserEffs)
 
 pExpr :: Parser BaseExp
 pExpr = do
-  pos <- lift $ mkToLC $ asks currSrcPos
-  customOpers <- lift $ mkToLC $ asks userDefinedFuns
+  pos <- lift $ asks currSrcPos
+  customOpers <- lift $ asks userDefinedFuns
   makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression"
 
 --pTerm = parens pExpr <|> pIdentifier <?> "term"
@@ -978,7 +985,7 @@ pVariable = do
 
 pEnum :: Parser BaseExp
 pEnum = do
-  localVars :: VarTypeDeclMap <- lift $ mkToLC $ asks localVars
+  localVars :: VarTypeDeclMap <- lift $ asks localVars
   putativeEnumVal <- T.pack <$> lexeme (some alphaNumChar <?> "enum")
   case isDeclaredEnumTxt putativeEnumVal localVars of
     Just lit -> return $ ELit lit
@@ -1031,10 +1038,10 @@ sc = L.space
   (L.skipLineComment "//")       -- just copied and pasted this from the internet
   (L.skipBlockComment "/*" "*/") -- don't think L4 has this kind of comments but ¯\_(ツ)_/¯
 
-expifyMTEsNoMd :: [MTExpr] -> ToLC Exp
+expifyMTEsNoMd :: (Error ToLCError :> es, Reader Env :> es) => [MTExpr] -> Eff es Exp
 expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
  where
-  addMetadataToVar :: BaseExp -> ToLC Exp
+  addMetadataToVar :: Reader Env :> es => BaseExp -> Eff es Exp
   -- This is supposed to work as follows:
   -- baseExpifyMTEs for a single [mte] only returns a Var if it is declared
   -- baseExpifyMTEs for [mte1, mte2] returns an EApp
@@ -1070,19 +1077,19 @@ isDeclaredEnumTxt valtxt varTypeMap = case enums of
       | v `elem` vs = Just $ EENum v
       | otherwise   = Nothing
 
--- TODO: Look into trying to add Maybe to our ToLC transformer stack
+-- TODO: Look into trying to add Maybe to our Eff es transformer stack
 -- | Use this to check if some MTE is a Var
-isDeclaredVar :: MTExpr -> ToLC (Maybe Var)
+isDeclaredVar :: Reader Env :> es => MTExpr -> Eff es (Maybe Var)
 isDeclaredVar = \case
   MTT mteTxt -> do
-    localVars :: VarTypeDeclMap <- ToLC $ asks localVars
+    localVars <- asks localVars
     return $ isDeclaredVarTxt mteTxt localVars
   _ -> return Nothing
 
 -- | Annotate with TLabel metadata if available
-mkVarExp :: Var -> ToLC Exp
+mkVarExp :: Reader Env :> es => Var -> Eff es Exp
 mkVarExp var = do
-  env :: Env <- mkToLC ask
+  env :: Env <- ask
   let varExpMetadata = MkExpMetadata { srcPos = env.currSrcPos
                                      , typeLabel = FromUser <$> lookupVar var env.localVars
                                      , explnAnnot = Nothing --Temp plceholder; TODO
@@ -1090,14 +1097,14 @@ mkVarExp var = do
   return $ MkExp (EVar var) [varExpMetadata]
 
 -- | Make a var set exp, when you know it's a var
-mkVarSetFromVar :: Var -> Exp -> ToLC BaseExp
+mkVarSetFromVar :: Reader Env :> es => Var -> Exp -> Eff es BaseExp
 mkVarSetFromVar var argE = EVarSet <$> mkVarExp var <*> pure argE
 
 {- | TODO: Check that it meets the formatting etc requirements for a variable,
 (e.g. prob don't want var names to start with numbers, and probably want to error if the MTE is a MTB)
 and throw an error if not
 -}
-varFromMTEs :: [MTExpr] -> ToLC Var
+varFromMTEs :: [MTExpr] -> Eff es Var
 varFromMTEs mtes = pure $
   mkVar . textifyMTEs $ mtes -- NOT doing any validation rn! TODO
 
@@ -1114,9 +1121,9 @@ mteToLitExp = \case
 
 ---------------- Processing HC Body --------------------------------------------
 
-processHcBody :: L4.BoolStructR -> ToLC Exp
+processHcBody :: (Reader Env :> es, Error ToLCError :> es) => L4.BoolStructR -> Eff es Exp
 processHcBody bsr = do
-  pos <- mkToLC $ asks currSrcPos
+  pos <- asks currSrcPos
   case bsr of
     AA.Leaf rp -> expifyBodyRP rp
   -- If the label is Metadata, then we add it to MdGrp
@@ -1133,7 +1140,7 @@ processHcBody bsr = do
   where
     emptyExp = noExtraMdata EEmpty
 
-    makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
+    makeOp :: (Error ToLCError :> es, Reader Env :> es) => SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> Eff es Exp
     makeOp pos op boolStructR exp =
       noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody boolStructR) <*> pure exp)
 
@@ -1193,7 +1200,7 @@ So the things that can be part of hBody are:
 
   4. (edge case: OTHERWISE --- haven't thought too much abt this yet)
 -}
-expifyHeadRP :: RelationalPredicate -> ToLC Exp
+expifyHeadRP :: (Error ToLCError :> es, Reader Env :> es) => RelationalPredicate -> Eff es Exp
 expifyHeadRP = \case
   -- This is
   RPConstraint lefts RPis rights ->
@@ -1209,7 +1216,7 @@ expifyHeadRP = \case
         pure (varExp, valExp)
 
       Nothing -> do -- Var is not given, but we can try to infer it from the RHS
-        pos <- mkToLC $ asks currSrcPos
+        pos <- asks currSrcPos
         varNoType <- noExtraMdata . EVar <$> varFromMTEs [mte]
         let valExp = inferTypeRHS pos exp
         let varExp = inferTypeFromOtherExp varNoType valExp
@@ -1219,12 +1226,12 @@ expifyHeadRP = \case
 
   rp -> expifyBodyRP rp
 
-expifyBodyRP :: RelationalPredicate -> ToLC Exp
+expifyBodyRP :: (Error ToLCError :> es, Reader Env :> es) => RelationalPredicate -> Eff es Exp
 expifyBodyRP = \case
   -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> do
-    pos <- mkToLC $ asks currSrcPos
-    pure $ typeMdata pos "Bool" $ ELit EBoolTrue -- throwNotYetImplError "The IF ... OTHERWISE ... construct has not been implemented yet"
+    pos <- asks currSrcPos
+    pure $ typeMdata pos "Bool" $ ELit EBoolTrue
 
   _rp@(RPMT mtes) -> expifyMTEsNoMd mtes
 
@@ -1232,7 +1239,7 @@ expifyBodyRP = \case
     expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
 
   RPnary RPis [rp1, rp2] -> do
-    pos <- mkToLC $ asks currSrcPos
+    pos <- asks currSrcPos
     exp1maybeUntyped <- expifyBodyRP rp1
     exp2 <- inferTypeRHS pos <$> expifyBodyRP rp2
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
@@ -1252,9 +1259,10 @@ expifyBodyRP = \case
     (Just (Comp op), _:_) -> go op "Boolean" ECompOp
     _ -> throwNotSupportedWithMsgError ("not implemented" :: String) [i|#{rprel}|]
     where
-      go :: a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> ToLC Exp
+      go :: (Error ToLCError :> es, Reader Env :> es) =>
+            a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> Eff es Exp
       go op str ctor = do
-        pos <- mkToLC $ asks currSrcPos
+        pos <- asks currSrcPos
         exps <- traverse expifyBodyRP rps
         pure $ foldl1 (numOrCompOp pos str ctor op) exps
 

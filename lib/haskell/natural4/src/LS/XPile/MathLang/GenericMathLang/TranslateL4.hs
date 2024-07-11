@@ -7,6 +7,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE TypeApplications, DataKinds #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
@@ -1038,10 +1039,10 @@ sc = L.space
   (L.skipLineComment "//")       -- just copied and pasted this from the internet
   (L.skipBlockComment "/*" "*/") -- don't think L4 has this kind of comments but ¯\_(ツ)_/¯
 
-expifyMTEsNoMd :: (Error ToLCError :> es, Reader Env :> es) => [MTExpr] -> Eff es Exp
+expifyMTEsNoMd :: forall es . (Error ToLCError :> es, Reader Env :> es) => [MTExpr] -> Eff es Exp
 expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
  where
-  addMetadataToVar :: Reader Env :> es => BaseExp -> Eff es Exp
+  addMetadataToVar :: BaseExp -> Eff es Exp
   -- This is supposed to work as follows:
   -- baseExpifyMTEs for a single [mte] only returns a Var if it is declared
   -- baseExpifyMTEs for [mte1, mte2] returns an EApp
@@ -1121,7 +1122,7 @@ mteToLitExp = \case
 
 ---------------- Processing HC Body --------------------------------------------
 
-processHcBody :: (Reader Env :> es, Error ToLCError :> es) => L4.BoolStructR -> Eff es Exp
+processHcBody :: forall es . (Reader Env :> es, Error ToLCError :> es) => L4.BoolStructR -> Eff es Exp
 processHcBody bsr = do
   pos <- asks currSrcPos
   case bsr of
@@ -1140,7 +1141,7 @@ processHcBody bsr = do
   where
     emptyExp = noExtraMdata EEmpty
 
-    makeOp :: (Error ToLCError :> es, Reader Env :> es) => SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> Eff es Exp
+    makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> Eff es Exp
     makeOp pos op boolStructR exp =
       noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody boolStructR) <*> pure exp)
 
@@ -1226,7 +1227,7 @@ expifyHeadRP = \case
 
   rp -> expifyBodyRP rp
 
-expifyBodyRP :: (Error ToLCError :> es, Reader Env :> es) => RelationalPredicate -> Eff es Exp
+expifyBodyRP :: forall es . (Error ToLCError :> es, Reader Env :> es) => RelationalPredicate -> Eff es Exp
 expifyBodyRP = \case
   -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> do
@@ -1259,8 +1260,7 @@ expifyBodyRP = \case
     (Just (Comp op), _:_) -> go op "Boolean" ECompOp
     _ -> throwNotSupportedWithMsgError ("not implemented" :: String) [i|#{rprel}|]
     where
-      go :: (Error ToLCError :> es, Reader Env :> es) =>
-            a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> Eff es Exp
+      go :: a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> Eff es Exp
       go op str ctor = do
         pos <- asks currSrcPos
         exps <- traverse expifyBodyRP rps

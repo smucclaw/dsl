@@ -155,7 +155,15 @@ instance Print TextuaL4.AbsTextuaL.Rule where
 instance Print TextuaL4.AbsTextuaL.IsA where
   prt i = \case
     TextuaL4.AbsTextuaL.IsAType text1 text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "IS"), doc (showString "A"), prt 0 text2])
+    TextuaL4.AbsTextuaL.IsAEnum text texts -> prPrec i 0 (concatD [prt 0 text, doc (showString "IS"), doc (showString "ONE"), doc (showString "OF"), prt 0 texts])
+    TextuaL4.AbsTextuaL.IsAList text1 text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "IS"), doc (showString "LIST"), doc (showString "OF"), prt 0 text2])
+    TextuaL4.AbsTextuaL.IsASet text1 text2 -> prPrec i 0 (concatD [prt 0 text1, doc (showString "IS"), doc (showString "SET"), doc (showString "OF"), prt 0 text2])
     TextuaL4.AbsTextuaL.IsANoType text -> prPrec i 0 (concatD [prt 0 text])
+
+instance Print [TextuaL4.AbsTextuaL.Text] where
+  prt _ [] = concatD []
+  prt _ [x] = concatD [prt 0 x]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
 instance Print [TextuaL4.AbsTextuaL.IsA] where
   prt _ [] = concatD []

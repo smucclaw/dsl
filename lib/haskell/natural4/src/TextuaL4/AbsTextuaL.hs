@@ -23,7 +23,12 @@ data Rule
     | HlikeGivethIf IsA RelationalPredicate BoolStruct
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data IsA = IsAType Text Text | IsANoType Text
+data IsA
+    = IsAType Text Text
+    | IsAEnum Text [Text]
+    | IsAList Text Text
+    | IsASet Text Text
+    | IsANoType Text
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Fields = Has [IsA] | EmptyFields

@@ -51,25 +51,29 @@ import TextuaL4.LexTextuaL
   'IF'      { PT _ (TS _ 26)    }
   'IN'      { PT _ (TS _ 27)    }
   'IS'      { PT _ (TS _ 28)    }
-  'MAP'     { PT _ (TS _ 29)    }
-  'MAX'     { PT _ (TS _ 30)    }
-  'MAY'     { PT _ (TS _ 31)    }
-  'MEANS'   { PT _ (TS _ 32)    }
-  'MIN'     { PT _ (TS _ 33)    }
-  'MINUS'   { PT _ (TS _ 34)    }
-  'MODULO'  { PT _ (TS _ 35)    }
-  'MUST'    { PT _ (TS _ 36)    }
-  'NOT'     { PT _ (TS _ 37)    }
-  'ON'      { PT _ (TS _ 38)    }
-  'OR'      { PT _ (TS _ 39)    }
-  'PRODUCT' { PT _ (TS _ 40)    }
-  'SHANT'   { PT _ (TS _ 41)    }
-  'SUBJECT' { PT _ (TS _ 42)    }
-  'SUM'     { PT _ (TS _ 43)    }
-  'TO'      { PT _ (TS _ 44)    }
-  'True'    { PT _ (TS _ 45)    }
-  'UNLESS'  { PT _ (TS _ 46)    }
-  'WHO'     { PT _ (TS _ 47)    }
+  'LIST'    { PT _ (TS _ 29)    }
+  'MAP'     { PT _ (TS _ 30)    }
+  'MAX'     { PT _ (TS _ 31)    }
+  'MAY'     { PT _ (TS _ 32)    }
+  'MEANS'   { PT _ (TS _ 33)    }
+  'MIN'     { PT _ (TS _ 34)    }
+  'MINUS'   { PT _ (TS _ 35)    }
+  'MODULO'  { PT _ (TS _ 36)    }
+  'MUST'    { PT _ (TS _ 37)    }
+  'NOT'     { PT _ (TS _ 38)    }
+  'OF'      { PT _ (TS _ 39)    }
+  'ON'      { PT _ (TS _ 40)    }
+  'ONE'     { PT _ (TS _ 41)    }
+  'OR'      { PT _ (TS _ 42)    }
+  'PRODUCT' { PT _ (TS _ 43)    }
+  'SET'     { PT _ (TS _ 44)    }
+  'SHANT'   { PT _ (TS _ 45)    }
+  'SUBJECT' { PT _ (TS _ 46)    }
+  'SUM'     { PT _ (TS _ 47)    }
+  'TO'      { PT _ (TS _ 48)    }
+  'True'    { PT _ (TS _ 49)    }
+  'UNLESS'  { PT _ (TS _ 50)    }
+  'WHO'     { PT _ (TS _ 51)    }
   L_doubl   { PT _ (TD $$)      }
   L_integ   { PT _ (TI $$)      }
   L_quoted  { PT _ (TL $$)      }
@@ -105,7 +109,13 @@ Rule
 IsA :: { TextuaL4.AbsTextuaL.IsA }
 IsA
   : Text 'IS' 'A' Text { TextuaL4.AbsTextuaL.IsAType $1 $4 }
+  | Text 'IS' 'ONE' 'OF' ListText { TextuaL4.AbsTextuaL.IsAEnum $1 $5 }
+  | Text 'IS' 'LIST' 'OF' Text { TextuaL4.AbsTextuaL.IsAList $1 $5 }
+  | Text 'IS' 'SET' 'OF' Text { TextuaL4.AbsTextuaL.IsASet $1 $5 }
   | Text { TextuaL4.AbsTextuaL.IsANoType $1 }
+
+ListText :: { [TextuaL4.AbsTextuaL.Text] }
+ListText : Text { (:[]) $1 } | Text ',' ListText { (:) $1 $3 }
 
 ListIsA :: { [TextuaL4.AbsTextuaL.IsA] }
 ListIsA : IsA { (:[]) $1 } | IsA ';' ListIsA { (:) $1 $3 }

@@ -8,7 +8,6 @@
 
 module TextuaL4.Transform where
 
---import Prelude (($), (<$>), fmap, Bool(..), Maybe(..), error)
 import qualified TextuaL4.AbsTextuaL as TL4
 import LS.Rule
 import LS.Types
@@ -99,21 +98,28 @@ nameFromBS bs = case bs of
   TL4.Leaf rp -> nameFromRP rp
   _ -> bsr2text $ transBoolStructR bs
 
-mkSuper :: TL4.Text -> TypeSig
-mkSuper = SimpleType TOne . transText -- TODO: lists, sets, enums
+mkSimpleType :: ParamType -> TL4.Text -> TypeSig
+mkSimpleType pt = SimpleType pt . transText
 
 transIsA :: TL4.IsA -> Rule
 transIsA x = case x of
-  TL4.IsANoType rname ->
-    defaultTypeDecl {
-      name = [MTT $ transText rname]
-    , super = Nothing
-  }
-  TL4.IsAType rname typesig ->
-    let simple = transIsA $ TL4.IsANoType rname
-    in simple {
-        super = Just $ mkSuper typesig
+  TL4.IsANoType tname -> isaNotype tname
+  TL4.IsAType tname typesig -> isaType TOne tname typesig
+  TL4.IsAList tname typesig -> isaType TList1 tname typesig
+  TL4.IsASet tname typesig -> isaType TSet1 tname typesig
+  TL4.IsAEnum tname enums ->
+    let pt = transParamText $ TL4.RPMT $ fmap TL4.MTT enums
+    in (isaNotype tname) {
+        super = Just $ InlineEnum TOne pt
         }
+  where
+    isaNotype tname = defaultTypeDecl {
+      name = [MTT $ transText tname]
+    , super = Nothing
+    }
+    isaType pt tname typesig = (isaNotype tname) {
+      super = Just $ mkSimpleType pt typesig
+    }
 
 -- translates an IsA to ParamText, used in GIVEN and GIVETH
 -- type ParamText = NonEmpty (NonEmpty MTExpr, Maybe TypeSig)

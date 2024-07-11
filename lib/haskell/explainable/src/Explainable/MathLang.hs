@@ -243,7 +243,7 @@ data ExprList a
   | ListITE    ExprLabel (Pred a) (ExprList a) (ExprList a)        -- ^ if-then-else for expr lists
   deriving (Eq, Show, Generic)
 
--- If you want prettier outout, overwrite this instance and use 'pretty'.
+-- If you want prettier output for `ExprList a`, overwrite this instance and use 'pretty'.
 instance Show a => Pretty (ExprList a) where
   pretty = viaShow
 

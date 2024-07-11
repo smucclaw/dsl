@@ -1,16 +1,14 @@
-{-# OPTIONS_GHC -W #-}
--- {-# OPTIONS_GHC -foptimal-applicative-do #-}
+{-# OPTIONS_GHC -Wall #-}
 
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot, DuplicateRecordFields, OverloadedLabels, UndecidableInstances, RecordWildCards #-}
+{-# LANGUAGE OverloadedRecordDot, OverloadedLabels, RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE AllowAmbiguousTypes, TypeApplications, DataKinds, TypeFamilies, FunctionalDependencies #-}
-{-# LANGUAGE PatternSynonyms, ViewPatterns #-}
+{-# LANGUAGE TypeApplications, DataKinds #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
@@ -38,7 +36,7 @@ import LS.Types as L4
   MultiClauseHL(..), mkMultiClauseHL,
   HeadOnlyHC, mkHeadOnlyAtomicHC,
   HnBodHC(..),
-  mtexpr2text, ParamText, pt2text, pt2multiterm, rp2text
+  mtexpr2text, ParamText, pt2text, pt2multiterm
   )
 
 import LS.Rule (
@@ -77,8 +75,6 @@ import Text.Read (readMaybe)
 import Prelude hiding (exp)
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as EffState
-
-import Language.Haskell.TH.Syntax qualified as TH
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -287,6 +283,7 @@ instance Eq UserDefinedFun where
 instance Show UserDefinedFun where
   show = showUserDefinedFun
 
+showUserDefinedFun :: UserDefinedFun -> String
 showUserDefinedFun f = [i|#{fname f} #{args} = #{getFunDef f}|]
   where
     fname (getFunName -> MkVar v) = v
@@ -311,7 +308,7 @@ initialEnv = MkEnv { localVars = HM.empty
 addCustomFuns :: [UserDefinedFun] -> Env -> Env
 addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
 
---withCustomFuns :: [UserDefinedFun] -> a
+withCustomFuns :: [UserDefinedFun] -> ToLC a -> ToLC a
 withCustomFuns funs = over _ToLC (local $ addCustomFuns funs)
 
 -- vars and vals
@@ -332,7 +329,7 @@ getVarVals = \case
 
 extractFromGivens :: Maybe L4.ParamText -> HM.HashMap String String -> HM.HashMap String String
 extractFromGivens Nothing acc = acc
-extractFromGivens (Just (givens)) acc =
+extractFromGivens (Just givens) acc =
   foldr (\(mtExpr NE.:| _, maybeTypeSig) hm ->
           case (mtExpr, maybeTypeSig) of
             (MTT t, Just (SimpleType _ ts)) -> HM.insert [i|#{t}|] [i|#{ts}|] hm
@@ -556,7 +553,6 @@ l4sHLsToLCSeqExp = F.foldrM go mempty
 --------------------------------------------------------------------
 expifyHL :: SimpleHL -> ToLC Exp
 expifyHL hl = do
-  _userFuns <- mkToLC $ asks userDefinedFuns
   bexp <- baseExpify hl
   pure $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
@@ -591,16 +587,17 @@ baseExpify hl = case lhsLooksLikeLambda hl of
         let userFun = MkUserFun fname (noExtraMdata bexpRHS) varsLHS operMP
         mkToLC $ EffState.modify $ (userFun :)
         ELam v <$> mkLambda vs bexpRHS
-      else baseExpify' hl
-  _ -> baseExpify' hl
+      else baseExpify'
+  _ -> baseExpify'
   where
-    baseExpify' hl@(shRLabel -> Just (_section, _number, rname)) = do
-      bexp <- baseExpify $ hl {shRLabel = Nothing}
-      mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
-    baseExpify' (isIf -> Just (hl, hc)) = toIfExp hl hc
-    baseExpify' hl@(baseHL -> OneClause (HeadOnly hc)) = toHeadOnlyExp hl hc
-    baseExpify' (isMultiClause -> hls@(_:_)) = ESeq <$> l4sHLsToLCSeqExp hls
-    baseExpify' hornlike = throwNotYetImplError hornlike
+    baseExpify' = case hl of
+      (shRLabel -> Just (_section, _number, rname)) -> do
+        bexp <- baseExpify $ hl {shRLabel = Nothing}
+        mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
+      (isIf -> Just hc) -> toIfExp hl hc
+      (baseHL -> OneClause (HeadOnly hc)) -> toHeadOnlyExp hl hc
+      (isMultiClause -> hls@(_:_)) -> ESeq <$> l4sHLsToLCSeqExp hls
+      hornlike -> throwNotYetImplError hornlike
 
     argVarsOnly bexp = do
       funNames <- ToLC $ asks $ fmap getFunName . userDefinedFuns
@@ -616,24 +613,32 @@ mkLambda (v:vs) bexp = do
   let funType = typeMdata pos "Function"
   funType . ELam v <$> mkLambda vs bexp
 
-isIf :: SimpleHL -> Maybe (SimpleHL, HnBodHC)
+isIf :: SimpleHL -> Maybe HnBodHC
 isIf hl =
   case hl.baseHL of
     MultiClause _ -> Nothing
     OneClause atomicHC ->
       case atomicHC of
         HeadOnly _ -> Nothing
-        HeadAndBody hc -> Just (hl, hc)
+        HeadAndBody hc -> Just hc
 
+-- | If this horn rule looks like a lambda, we can translate it into a lambda!
+--
+-- A horn rule looks like a lambda if it has givens and its head and body looks
+-- like an 'Is' constraint. For example, @GIVEN foo DECIDE bar IS baz@ looks like a lambda.
+--
+-- In this case is @foo@ a parameter that can occur freely in both @bar@.
+-- Why not also in @baz@? Can't answer that, yet.
 lhsLooksLikeLambda :: SimpleHL -> Maybe ([Var], [MTExpr], [MTExpr])
 lhsLooksLikeLambda hl = case (hasGivens hl, isConstraint hl) of
   (Just givens, Just (lhs, rhs)) -> (,lhs,rhs) <$> maybeBoundVars lhs givens
   _ -> Nothing -- not a function: LHS is none of `f x`, `x f y` or `x f`
 
 isConstraint :: SimpleHL -> Maybe ([MTExpr], [MTExpr])
-isConstraint (baseHL -> OneClause (HeadOnly (
-                hcHead -> RPConstraint lhs RPis rhs))) = Just (lhs, rhs)
-isConstraint _                                         = Nothing
+isConstraint hornlike = do
+  OneClause (HeadOnly hornClauseHead) <- Just $ baseHL hornlike
+  RPConstraint lhs RPis rhs <- Just $ hcHead hornClauseHead
+  Just (lhs, rhs)
 
 hasGivens :: SimpleHL -> Maybe [Var]
 hasGivens hl = case HM.keys hl.shcGiven of
@@ -645,8 +650,10 @@ mkOperator mtes vars = do
   pos <- mkToLC $ asks currSrcPos
   case maybeOperator pos mtes vars of
     Just (fname, _vars, op) -> pure (fname, op)
-    Nothing -> throwNotSupportedWithMsgError "isLambda:" [i|not a lambda expression: #{mtes}|]
+    Nothing -> throwNotSupportedWithMsgError ("isLambda:" :: String) [i|not a lambda expression: #{mtes}|]
 
+-- | Get the variables that are already bound if any.
+--
 maybeBoundVars :: [MTExpr] -> [Var] -> Maybe [Var]
 maybeBoundVars mtes givens = getBoundVars <$> maybeOperator dummyPos mtes givens
   where
@@ -671,7 +678,7 @@ maybeOperator pos [MTT x, MTT f] [var]
     postfix f mkBexp)          -- megaparsec operator
 maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
   | all (`elem` vs) [vx, vy]
-    && f `notElem` $(TH.lift allArithOps)
+    && f `notElem` allArithOps
     = Just (
       MkVar f,                     -- fun name
       [vx, vy],                    -- bound vars
@@ -799,7 +806,7 @@ NOTE: If it seems like literals will appear here (e.g. number literals), see def
 
 isFun :: [Var] -> MTExpr -> Bool
 isFun funs mte =
-  let ops = $(TH.lift allArithOps)
+  let ops = allArithOps
       allFuns = foldr (Set.insert . varAsTxt) ops funs
   in case mte of
     MTT t -> t `elem` allFuns
@@ -868,7 +875,7 @@ baseExpifyMTEs mtes = do
             [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
             _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-    mtes ->
+    _mtes ->
       case break (isFun userFuns) mtes of
       -- function, rest
         ([],f:ys) -> do
@@ -909,12 +916,12 @@ baseExpifyMTEs mtes = do
     consSeqExp = consSE . noExtraMdata
 
     parenExps :: [MTExpr] -> [MTExpr]
-    parenExps mtes
-      | any (isOp . mtexpr2text) mtes = parenNestedExprs <$> mtes
-      | otherwise = mtes
+    parenExps mtexpr
+      | any (isOp . mtexpr2text) mtexpr = parenNestedExprs <$> mtexpr
+      | otherwise = mtexpr
 
     isOp :: T.Text -> Bool
-    isOp = (`elem` $(TH.lift arithOps))
+    isOp = (`elem` arithOps)
 
     -- don't parenthesize single variables or literals, like "taxesPayable" or "Singapore citizen"
     -- do parenthesize "(x + 6)"
@@ -1205,24 +1212,15 @@ processHcBody bsr = do
     AA.Any _mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp ({-fmap (addLabel mlbl) <$>-} propns)
     AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
   where
-    emptyExp :: Exp = noExtraMdata EEmpty
-
-    addLabel :: Maybe (AA.Label T.Text) -> RelationalPredicate -> RelationalPredicate
-    addLabel lbl rp = case lbl of
-      Just (AA.Pre pre) ->
-        RPMT [MTT $ T.unwords [pre, rp2text rp]]
-      Just (AA.PrePost pre post) ->
-        RPMT [MTT $ T.unwords [pre, rp2text rp, post]]
-      _ -> rp
-
+    emptyExp = noExtraMdata EEmpty
 
     makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> ToLC Exp
-    makeOp pos op bsr exp =
-      noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody bsr) <*> pure exp)
+    makeOp pos op boolStructR exp =
+      noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody boolStructR) <*> pure exp)
 
 
-    toBoolEq pos e =
-      e {exp = toBoolEqBE e.exp, md = inferredType pos "Boolean" e.md}
+    toBoolEq pos expr =
+      expr {exp = toBoolEqBE expr.exp, md = inferredType pos "Boolean" expr.md}
       where
         inferredBool = typeMdata pos "Boolean"
         toBoolEqBE _e@(ELit (EString str)) =
@@ -1333,7 +1331,7 @@ expifyBodyRP = \case
     (Just (Num op), _) -> go op "Number" ENumOp
    -- Comparison operations can only have two
     (Just (Comp op), _:_) -> go op "Boolean" ECompOp
-    _ -> throwNotSupportedWithMsgError "not implemented" [i|#{rprel}|]
+    _ -> throwNotSupportedWithMsgError ("not implemented" :: String) [i|#{rprel}|]
     where
       go :: a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> ToLC Exp
       go op str ctor = do
@@ -1358,7 +1356,7 @@ expifyBodyRP = \case
       in typeMdata pos str $ ctor op (coerceNumber x) $ coerceNumber y
 
     rprel2op :: RPRel -> Maybe NumCompOp
-    rprel2op =  (`Map.lookup` $(TH.lift rpRel2opTable))
+    rprel2op =  (`Map.lookup` rpRel2opTable)
 
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
     coerceType :: SrcPositn -> T.Text -> Exp -> Exp

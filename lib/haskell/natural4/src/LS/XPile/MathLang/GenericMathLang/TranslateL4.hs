@@ -11,8 +11,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 
-module LS.XPile.MathLang.GenericMathLang.TranslateL4 where
--- TODO: Add export list
+module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
+  ToLCError(..),
+  runToLC,
+  l4ToLCProgram,
+  simplifyL4Hlike,
+  baseExpifyMTEs,
+  noExtraMdata,
+)
+where
 
 import Control.Arrow ((>>>))
 import Control.Applicative (asum)

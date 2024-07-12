@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module LS.XPile.MathLang.MathLang
   ( toMathLangMw,
@@ -19,10 +20,11 @@ module LS.XPile.MathLang.MathLang
   )
 where
 
+import Prelude hiding (exp)
 
 import Control.Arrow ((>>>))
 import Data.HashMap.Strict qualified as Map
-import Data.List (groupBy, nub, unfoldr, (\\))
+import Data.List (groupBy, nub, (\\))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i, __i)
@@ -46,7 +48,6 @@ import Optics
     coerced,
     gplate,
     over,
-    re,
     view,
   )
 import Prettyprinter (Doc, braces, vcat)
@@ -56,8 +57,14 @@ YM: This is currently more like a NOTES file,
 with comments from MEng. Will integrate these later.
 -}
 
-toMathLang, toMathLangExpand :: Interpreted -> ([Expr Double], MyState)
-toMathLang       = toMathLang' False
+-- ----------------------------------------------------------------------------
+-- Main entry points for MathLang interpretations and translations (e.g., transpilers)
+-- ----------------------------------------------------------------------------
+
+toMathLang :: Interpreted -> ([Expr Double], MyState)
+toMathLang = toMathLang' False
+
+toMathLangExpand :: Interpreted -> ([Expr Double], MyState)
 toMathLangExpand = toMathLang' True
 
 toMathLang' :: Bool -> Interpreted -> ([Expr Double], MyState)
@@ -95,168 +102,41 @@ relevantSymtab st
     predOrUndefined (MathPred _) = True
     predOrUndefined _ = False
 
---numOptoMl :: MonadError T.Text m => GML.NumOp -> m MathBinOp
-numOptoMl :: GML.NumOp -> ToMathLang MathBinOp
-numOptoMl = \case
-  GML.OpPlus -> pure Plus
-  GML.OpSum -> pure Plus
-  GML.OpMinus -> pure Minus
-  GML.OpMul -> pure Times
-  GML.OpProduct -> pure Times
-  GML.OpDiv -> pure Divide
-  GML.OpModulo -> pure Modulo
-  op -> fail [i|numOptoMl: encountered #{op}|]
+-- | calling the output "MyState" is misleading, but this is the most general way to cover the idea that
+-- a ruleset consists of more than one rule, similar to how the Vue interface gives more than one
+-- element in the left nav; each of the different rules will have its own entry in the SymTab dictionary.
+--
+-- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
+-- to contain an @Expr Double@ called "must sing"
+toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
+toMathLangMw l4i _myenv = (rendered, [])
+ where
+  (exprs, stRaw) = toMathLangExpand l4i
+  state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
+  rendered = [__i|
+                #{vcat $ fmap renderExp exprs}
+                #{vcat $ fmap renderExp $ stateNotInExprs exprs state}
+             |]
 
-compOptoMl :: GML.CompOp -> Comp
-compOptoMl = \case
-  GML.OpNumEq -> CEQ
-  GML.OpLt -> CLT
-  GML.OpLte -> CLTE
-  GML.OpGt -> CGT
-  GML.OpGte -> CGTE
-  _ -> CNEQ -----
+  stateNotInExprs _es st = relevantSymtab st \\ exprs
 
---mkVal :: MonadError T.Text m => GML.Lit -> m (Expr Double)
-mkVal :: GML.Lit -> Expr Double
-mkVal = \case
-  GML.EInteger int -> Val Nothing $ fromInteger int
-  GML.EFloat float -> Val Nothing float
-  GML.EString lit -> MathVar [i|#{lit}|]
-  GML.ECurrency curr double -> Val (Just [i|#{curr} #{double}|]) double
-  -- These should probably be handled in a different way? Booleans are handled in Pred, not Expr. There is currently nowhere that Dates are handled in MathLang.
-  GML.EBoolTrue -> MathVar "True"
-  GML.EBoolFalse -> MathVar "False"
-  GML.EDate day -> MathVar [i|#{day}|]
-  GML.EENum val -> MathVar [i|#{val}|]
---  lit -> throwError [i|mkVal: encountered #{lit}|]
+  renderExp :: (Show a) => Expr a -> Doc ann
+  renderExp expr = [i|export const #{name} = () => #{ret expr}|]
+    where
+      name = maybe "unnamedExpr" replaceSpaces $ getExprLabel expr
+      ret doc = braces [i|return #{pp doc}|]
 
-exp2pred :: GML.Exp -> ToMathLang (Pred Double)
-exp2pred exp = case exp.exp of
-  EEmpty -> fail "exp2pred: Unexpected EEmpty"
-  EVar (GML.MkVar var) -> pure $ PredVar [i|#{var}|]
-  ECompOp op e1 e2 ->
-    PredComp Nothing (compOptoMl op) <$> gml2ml e1 <*> gml2ml e2
-  EIs e1 e2 -> do
-    ex1 <- gml2ml e1
-    ex2 <- gml2ml e2
-    case (ex1, ex2) of
-      (MathVar var, MathVar val) -> -- phaseOfMoon IS gibbous, for now treat as a record. Should work nicely for enums, but do we want freeform text?
-        pure $ PredVar [i|#{var}.#{val}|]
-      (MathVar var, val) -> do
-        let ex2withLabel = var @|= val
-        pure $ PredComp Nothing CEQ ex1 ex2withLabel
-      _ -> fail [i|\nexp2pred: expected Var, got #{ex1}\n|]
-  ELit GML.EBoolTrue -> pure $ PredVal Nothing True
-  ELit GML.EBoolFalse -> pure $ PredVal Nothing False
-  ELit (GML.EString lit) -> pure $ PredVar [i|#{lit}|]
-  EOr {} -> PredFold (getLabel exp) PLOr <$> foldPredOr exp
-    --PredBin Nothing PredOr <$> exp2pred l <*> exp2pred r
-  EAnd {} -> PredFold (getLabel exp) PLAnd <$> foldPredAnd exp
-  EPredSet (GML.MkVar var) val -> do
-    let varStr = [i|#{var}|]
-    valEx <- exp2pred val
-    let valExWithLabel = case valEx of
-          PredVar _ -> valEx
-          PredSet _ _ -> valEx
-          _ -> varStr @|= valEx
-    pure $ PredSet varStr valExWithLabel
---  e -> trace ("exp2pred: not yet implemented\n    " <> show e) $ do
-  e -> do
-    mlEx <- gml2ml exp
-    --trace ("but it is implemented in gml2ml\n    " <> show mlEx) $
-    pure case mlEx of
-      MathVar x -> PredVar x
-      x -> PredVar [i|Not implemented yet: #{x}|]
+      replaceSpaces :: String -> String
+      replaceSpaces = PCRE.gsub [PCRE.re| |] ("_" :: String)
 
-getLabel :: GML.Exp -> Maybe String
-getLabel e = case e.md of
-  m:ms -> T.unpack . l4RuleName <$> m.explnAnnot
-  []   -> Nothing
+-- ----------------------------------------------------------------------------
+-- Generic MathLang to explainable MathLang translation.
+-- Note, not all constructs are supported in explainable MathLang.
+-- ----------------------------------------------------------------------------
 
-foldPredOr :: GML.Exp -> ToMathLang (PredList Double)
-foldPredOr e = case e.exp of
-  EOr l r -> do
-    predL <- exp2pred l
-    predR <- foldPredOr r
-    pure $ predL : predR
-  EEmpty -> pure []
-  x -> (:[]) <$> exp2pred e
-
-foldPredAnd :: GML.Exp -> ToMathLang (PredList Double)
-foldPredAnd e = case e.exp of
-  EAnd l r -> do
-    predL <- exp2pred l
-    predR <- foldPredOr r
-    pure $ predL : predR
-  EEmpty -> pure []
-  x -> (:[]) <$> exp2pred e
-
-chainITEs :: [Expr Double] -> [Expr Double]
-chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
-  where
-    moveVarsetToTop :: Expr Double -> [Expr Double] -> Expr Double
-    moveVarsetToTop
-      (MathITE lbl condP (MathSet var1 val1) (Undefined _)) xs =
-        MathSet var1 $ MathITE lbl condP val1 $ go xs
-      where
-        go [MathITE _ (PredVal _ True) (MathSet var2 val2) (Undefined _)] = val2
-        go ((MathITE lbl2 condP2 (MathSet var2 val2) (Undefined _)):xs)
-          | var1 == var2 = MathITE lbl2 condP2 val2 (go xs)
-        go [] = Undefined (Just "No otherwise case")
-
-    moveVarsetToTop x [] = x
-
-    moveVarsetToTop x _ =
-      trace "moveVarsetToTop: groupBy didn't do what's expected" x
-
-    sameVarSet :: Expr Double -> Expr Double -> Bool
-    sameVarSet (MathITE _ _ (MathSet var1 _) _ )
-               (MathITE _ _ (MathSet var2 _) _ ) = var1 == var2
-    sameVarSet _ _ = False
-
-placeholderITE :: Expr Double
-placeholderITE = Undefined (Just "placeholder for ITE")
-
-type ToMathLangError = String
-type VarsAndBody = ([String], Expr Double)
-
-newtype ToMathLang a =
-  ToMathLang (Eff [ Writer MyState
-                  , Reader (SymTab VarsAndBody)
-                  , Fail ] a)
-  deriving newtype (Functor, Applicative, Monad, MonadFail)
-
-_ToMathLang ::
-  Iso' (ToMathLang a) (Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a)
-_ToMathLang = coerced
-
-mkToMathLang ::
-  Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a -> ToMathLang a
-mkToMathLang = view (re _ToMathLang)
-
-unToMathLang ::
-  ToMathLang a -> Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a
-unToMathLang = view _ToMathLang
-
-runToMathLang :: SymTab VarsAndBody -> ToMathLang a -> Either String a
-runToMathLang r m = case runToMathLang' r m of
-              Right (res,_state) -> Right res
-              Left err           -> Left err
-
-execToMathLang :: SymTab VarsAndBody -> ToMathLang a -> MyState
-execToMathLang r m = case runToMathLang' r m of
-                    Right (_res,state) -> state
-                    Left _             -> emptyState
-
-runToMathLang' :: SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
-runToMathLang' r =
-  unToMathLang
-    >>> runWriterLocal
-    >>> runReader r
-    >>> runFail
-    >>> runPureEff
-
--- all of the results are in MyState, so we can ignore the actual res
+-- | Translate the given generic mathlang expressions to explainable mathlang.
+--
+-- All of the results are in MyState, so we can ignore the actual res
 gmls2ml :: SymTab VarsAndBody -> [GML.Exp] -> MyState
 gmls2ml _userfuns [] = emptyState
 gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
@@ -266,57 +146,20 @@ gmls2ml userfuns (e:es) = st <> gmls2ml userfuns es
       _ -> GML.MkExp (ESeq (GML.SeqExp [e])) []
     st = execToMathLang userfuns $ gml2ml seqE -- NB. returns emptyState if gml2ml fails
 
-getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
-getUserFuns ix firstPass funs =
-  NE.last $ firstPass NE.:| unfoldr go (ix, firstPass, funs)
-  where
-    go (ix, firstPass, funs@((f firstPass <$>) -> newFuns)) =
-      trace [i|#{ix}: firstPass = #{firstPass}|]
-        if firstPass == newFuns
-          then Nothing
-          else Just (newFuns, (ix + 1, newFuns, funs))
-
-    f :: SymTab VarsAndBody -> ([GML.Var], GML.Exp) -> VarsAndBody
-    f firstPass (boundVars, exp) =
-      case runToMathLang firstPass $ mkAppForUF exp [] of
-        Right mlExp -> ([[i|#{v}|] | GML.MkVar v <- nub boundVars], mlExp)
-        Left error ->
-          trace
-            (if null firstPass then "" else [i|getUserFuns: #{error}|])
-            ([], Undefined Nothing)
-
-    mkAppForUF :: GML.Exp -> [String] -> ToMathLang (Expr Double)
-    mkAppForUF (isApp -> Just (f, arg)) args = mkAppForUF f (arg : args)
-
-    mkAppForUF (GML.exp -> EVar (GML.MkVar f)) args = do
-      userFuns :: SymTab VarsAndBody <- ToMathLang ask -- HashMap String ([Var], Expr Double)
-      case Map.lookup f' userFuns of
-        Nothing -> fail [i|mkAppForUF: this really shouldn't happen, but #{f} is not found in userFuns|]
-        Just (boundVars, expr) -> do
-          let newVars = map MathVar args
-              replacedDef = replaceVars (Map.fromList $ zip boundVars newVars) expr
-          pure $ MathApp Nothing f' args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
-      where
-        f' = [i|#{f}|]
-
-    mkAppForUF exp _ = gml2ml exp
-
-    isApp :: GML.Exp -> Maybe (GML.Exp, String)
-    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) =
-      Just (f, [i|#{arg}|])
-    isApp _ = Nothing
-
+-- | Translate a generic mathlang expression to an explainable mathlang expression if possible.
+-- If it isn't possible, we try our best to avoid crashes. If an expression can't be translated,
+-- we insert a variable placeholder. This may allow the run-time to insert expressions later.
+-- However, in the future, we should make sure explainable mathlang and generic mathlang have the
+-- same feature set.
 gml2ml :: GML.Exp -> ToMathLang (Expr Double)
-gml2ml exp =
-  let expExp = exp.exp
-  in case expExp of
+gml2ml exp = case expExp of
   EEmpty -> fail "gml2ml: unexpected EEmpty"
-  ESeq seq -> case getList exp of
+  ESeq expSeq -> case getList exp of
     Just exps -> do
       let varname = "FIXME: unlabeled list found outside a context, probably an error"
-      mkList varname exps
-      pure $ MathVar varname
-    Nothing -> mkVarSet $ GML.seqExpToExprs seq
+      _ <- mkList varname exps -- puts list in MyState
+      pure $ MathVar varname -- this function needs to return an Expr, not an ExprList so just return the MathVar
+    Nothing -> mkVarSet $ GML.seqExpToExprs expSeq
 
   ELit lit -> pure $ mkVal lit
 
@@ -330,15 +173,15 @@ gml2ml exp =
     MathMax Nothing <$> gml2ml e1 <*> gml2ml e2
 
   ENumOp op e1 e2 -> do
-    op <- numOptoMl op
-    ex1 <- gml2mlWithListCoercion op e1
-    ex2 <- gml2mlWithListCoercion op e2
-    pure $ MathBin Nothing op ex1 ex2
+    mathOp <- numOptoMl op
+    ex1 <- gml2mlWithListCoercion mathOp e1
+    ex2 <- gml2mlWithListCoercion mathOp e2
+    pure $ MathBin Nothing mathOp ex1 ex2
 
   EVarSet var (getList -> Just exps) ->
     trace [i|!!! found list #{var} = #{exps}|] do
       MathVar varName <- gml2ml var
-      mkList varName exps -- puts list in MyState
+      _ <- mkList varName exps -- puts list in MyState
       pure $ MathVar varName -- this function needs to return an Expr, not an ExprList so just return the MathVar
 
   EVarSet var val -> do
@@ -350,9 +193,9 @@ gml2ml exp =
     pure $ MathSet varEx valExWithLabel
 
   EPredSet _ _ -> do
-    pred@(PredSet name pr) <- exp2pred exp
+    predSet@(PredSet name pr) <- exp2pred exp
     ToMathLang $ tell emptyState {symtabP = Map.singleton name pr}
-    pure $ MathPred pred -- this is just dummy to not have it crash, this value won't be present in the final result
+    pure $ MathPred predSet -- this is just dummy to not have it crash, this value won't be present in the final result
 
   EIfThen condE thenE -> do
     condP <- exp2pred condE
@@ -364,14 +207,13 @@ gml2ml exp =
     rnEx <- gml2ml recname
     case (fnEx, rnEx) of
       (MathVar fname, MathVar rname) -> pure $ MathVar [i|#{rname}.#{fname}|]
-      x -> pure $ MathVar [i|gml2ml: unsupported record #{expExp}|]
+      _x -> pure $ MathVar [i|gml2ml: unsupported record #{expExp}|]
 
   ELam (GML.MkVar v) body -> trace [i|\ngml2ml: found ELam #{exp}\n|] do
     bodyEx <- gml2ml body
     let varEx = [i|#{v}|]
     trace [i|     arg = #{v}\n      body = #{bodyEx}\n|] pure $
       MathSet varEx bodyEx
-  -- exp.exp :: BaseExp
 
   EApp {} -> mkApp exp []
 
@@ -381,11 +223,24 @@ gml2ml exp =
 
   EIs left right -> gml2ml exp {GML.exp = EVarSet left right}
 
-  _ ->
-    trace [i|\ngml2ml: not supported #{exp}\n|]
-      pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
+  ENot body -> do
+    mlBody <- exp2pred body
+    pure $ MathPred (PredNot Nothing mlBody)
+
+  ECompOp _ _ _ -> unhandledExpressionType
+
+  EIfTE _ _ _ -> unhandledExpressionType
+
+  ELet _ _ _ -> unhandledExpressionType
+
+  EAnd _ _ -> unhandledExpressionType
+
+  EOr _ _ -> unhandledExpressionType
 
   where
+    expExp = exp.exp
+    unhandledExpressionType = trace [i|\ngml2ml: not supported #{exp}\n|]
+      pure $ MathVar [i|gml2ml: not implemented yet #{expExp}|]
     {- In order to keep the information of application but also expand it, we do two things:
         i) put the expanded function application into the state, as follows
             ( "Step 3 discounted by accident.risk percentage"
@@ -422,19 +277,19 @@ gml2ml exp =
         fold <- op2somefold op
         pure $ ListFold Nothing fold list
 
-    gml2mlWithListCoercion _ exp = gml2ml exp -- not a list
+    gml2mlWithListCoercion _ gmlExp = gml2ml gmlExp -- not a list
 
     getList :: GML.Exp -> Maybe [GML.Exp]
-    getList exp = case (exp.exp, GML.typeLabel <$> exp.md) of
-      (ESeq seq, Just (GML.FromUser (GML.L4List _)):_)
-        -> Just (GML.seqExpToExprs seq)
+    getList gmlExp = case (gmlExp.exp, GML.typeLabel <$> gmlExp.md) of
+      (ESeq seqExp, Just (GML.FromUser (GML.L4List _)):_)
+        -> Just (GML.seqExpToExprs seqExp)
       _ -> Nothing
 
     getPred :: GML.Exp -> Maybe GML.Exp
-    getPred exp = case exp.exp of
-      EAnd {} -> Just exp
-      EOr {} -> Just exp
-      ENot {} -> Just exp
+    getPred gmlExp = case gmlExp.exp of
+      EAnd {} -> Just gmlExp
+      EOr {} -> Just gmlExp
+      ENot {} -> Just gmlExp
       _ -> Nothing
 
     mkList :: String -> [GML.Exp] -> ToMathLang (ExprList Double)
@@ -462,14 +317,229 @@ gml2ml exp =
 
       ToMathLang $ tell emptyState {symtabF = newF}
 
-      let headName = case newSeqs of
+      let seqHeadName = case newSeqs of
             MathSet headName _ : _ -> headName
             MathVar headName : _ -> headName
             _ -> fail [i|\nUnexpected thing: #{newSeqs}\n\nFrom #{seqs}\n\nFrom #{exps}|]
 
-      pure $ MathVar headName
+      pure $ MathVar seqHeadName
 
---             [(x, a),  (y, b)]                      x + y          a + b
+-- | Translate an expression into an explainable predicate.
+exp2pred :: GML.Exp -> ToMathLang (Pred Double)
+exp2pred exp = case exp.exp of
+  EEmpty -> fail "exp2pred: Unexpected EEmpty"
+  EVar (GML.MkVar var) -> pure $ PredVar [i|#{var}|]
+  ECompOp op e1 e2 ->
+    PredComp Nothing (compOptoMl op) <$> gml2ml e1 <*> gml2ml e2
+  EIs e1 e2 -> do
+    ex1 <- gml2ml e1
+    ex2 <- gml2ml e2
+    case (ex1, ex2) of
+      (MathVar var, MathVar val) -> -- phaseOfMoon IS gibbous, for now treat as a record. Should work nicely for enums, but do we want freeform text?
+        pure $ PredVar [i|#{var}.#{val}|]
+      (MathVar var, val) -> do
+        let ex2withLabel = var @|= val
+        pure $ PredComp Nothing CEQ ex1 ex2withLabel
+      _ -> fail [i|\nexp2pred: expected Var, got #{ex1}\n|]
+  ELit GML.EBoolTrue -> pure $ PredVal Nothing True
+  ELit GML.EBoolFalse -> pure $ PredVal Nothing False
+  ELit (GML.EString lit) -> pure $ PredVar [i|#{lit}|]
+  EOr {} -> PredFold (getLabel exp) PLOr <$> foldPredOr exp
+  EAnd {} -> PredFold (getLabel exp) PLAnd <$> foldPredAnd exp
+  EPredSet (GML.MkVar var) val -> do
+    let varStr = [i|#{var}|]
+    valEx <- exp2pred val
+    let valExWithLabel = case valEx of
+          PredVar _ -> valEx
+          PredSet _ _ -> valEx
+          _ -> varStr @|= valEx
+    pure $ PredSet varStr valExWithLabel
+  ENot body -> PredNot Nothing <$> exp2pred body
+  EIfThen _ _ -> unhandledExpressionType
+  EIfTE _ _ _ -> unhandledExpressionType
+  ELam _ _ -> unhandledExpressionType
+  EApp _ _ -> unhandledExpressionType
+  EVarSet _ _ -> unhandledExpressionType
+  ELet _ _ _ -> unhandledExpressionType
+  ERec fieldname recname -> do
+    fnEx <- gml2ml fieldname
+    rnEx <- gml2ml recname
+    case (fnEx, rnEx) of
+      -- If both expressions can be resolved to a variable,
+      -- we infer that this a record access of the form "var1.var2".
+      (MathVar fname, MathVar rname) -> pure $ PredVar [i|#{rname}.#{fname}|]
+      _x -> pure $ PredVar [i|exp2pred: unsupported record #{expExp}|]
+  ENumOp _ _ _ -> unhandledExpressionType
+  ESeq _ -> unhandledExpressionType
+  ELit _ -> unhandledExpressionType
+  where
+    expExp = exp.exp
+    unhandledExpressionType = trace ("exp2pred: not yet implemented\n    " <> show exp.exp) $ do
+      pure $ PredVar [i|Not implemented yet: #{expExp}|]
+
+numOptoMl :: GML.NumOp -> ToMathLang MathBinOp
+numOptoMl = \case
+  GML.OpPlus -> pure Plus
+  GML.OpMinus -> pure Minus
+  GML.OpMul -> pure Times
+  GML.OpDiv -> pure Divide
+  GML.OpModulo -> pure Modulo
+  GML.OpSum -> pure Plus
+  GML.OpProduct -> pure Times
+  GML.OpMaxOf -> fail [i|numOptoMl: encountered OpMaxOf|]
+  GML.OpMinOf -> fail [i|numOptoMl: encountered OpMinOf|]
+
+-- | Translate generic mathlang comparisons to explainable mathlang.
+-- Note, we don't differentiate between String, Bool or Number equality.
+-- Further, explainable mathlang doesn't support Strings, so we throw an
+-- error if a string equality is encountered.
+compOptoMl :: GML.CompOp -> Comp
+compOptoMl = \case
+  GML.OpNumEq -> CEQ
+  GML.OpLt -> CLT
+  GML.OpLte -> CLTE
+  GML.OpGt -> CGT
+  GML.OpGte -> CGTE
+  GML.OpBoolEq -> CEQ
+  GML.OpStringEq -> error "MathLang doesn't support strings"
+
+-- | Constant representing 'True'.
+trueVariableName :: String
+trueVariableName = "True"
+
+-- | Constant representing 'False'.
+falseVariableName :: String
+falseVariableName = "False"
+
+-- | Turn a literal into an explainable mathlang expression.
+-- As explainable mathlang only supports 'Double's, this conversion is lossy.
+-- For example, we lose date information and create variables for boolean literals.
+-- However, we can provide variable assignment for
+mkVal :: GML.Lit -> Expr Double
+mkVal = \case
+  GML.EInteger int -> Val Nothing $ fromInteger int
+  GML.EFloat float -> Val Nothing float
+  GML.EString lit -> MathVar [i|#{lit}|]
+  GML.ECurrency curr double -> Val (Just [i|#{curr} #{double}|]) double
+  -- These should probably be handled in a different way?
+  -- Booleans are handled in Pred, not Expr. There is currently nowhere that Dates are handled in MathLang.
+  GML.EBoolTrue -> MathVar trueVariableName
+  GML.EBoolFalse -> MathVar falseVariableName
+  GML.EDate day -> MathVar [i|#{day}|]
+  GML.EENum val -> MathVar [i|#{val}|]
+
+getLabel :: GML.Exp -> Maybe String
+getLabel e = case e.md of
+  m:_ms -> T.unpack . l4RuleName <$> m.explnAnnot
+  []   -> Nothing
+
+foldPredOr :: GML.Exp -> ToMathLang (PredList Double)
+foldPredOr e = case e.exp of
+  EOr l r -> do
+    predL <- exp2pred l
+    predR <- foldPredOr r
+    pure $ predL : predR
+  EEmpty -> pure []
+  _x -> (:[]) <$> exp2pred e
+
+foldPredAnd :: GML.Exp -> ToMathLang (PredList Double)
+foldPredAnd e = case e.exp of
+  EAnd l r -> do
+    predL <- exp2pred l
+    predR <- foldPredOr r
+    pure $ predL : predR
+  EEmpty -> pure []
+  _ -> (:[]) <$> exp2pred e
+
+chainITEs :: [Expr Double] -> [Expr Double]
+chainITEs es = [moveVarsetToTop x xs | (x:xs) <- groupBy sameVarSet es]
+  where
+    moveVarsetToTop :: Expr Double -> [Expr Double] -> Expr Double
+    moveVarsetToTop
+      (MathITE lbl condP (MathSet var1 val1) (Undefined _)) exprs =
+        MathSet var1 $ MathITE lbl condP val1 $ go exprs
+      where
+        go [MathITE _ (PredVal _ True) (MathSet _var2 val2) (Undefined _)] = val2
+        go ((MathITE lbl2 condP2 (MathSet var2 val2) (Undefined _)):xs)
+          | var1 == var2 = MathITE lbl2 condP2 val2 (go xs)
+        go [] = Undefined (Just "No otherwise case")
+        go xs = error $ "chainITEs.go: unexpected arguments: " <> show xs
+
+    moveVarsetToTop x [] = x
+
+    moveVarsetToTop x _ =
+      trace "moveVarsetToTop: groupBy didn't do what's expected" x
+
+    sameVarSet :: Expr Double -> Expr Double -> Bool
+    sameVarSet (MathITE _ _ (MathSet var1 _) _ )
+               (MathITE _ _ (MathSet var2 _) _ ) = var1 == var2
+    sameVarSet _ _ = False
+
+placeholderITE :: Expr Double
+placeholderITE = Undefined (Just "placeholder for ITE")
+
+-- | Add all user defined functions to the symbol table that maps function names to
+-- a list of parameters and its respective implementation.
+getUserFuns :: Int -> SymTab VarsAndBody -> SymTab ([GML.Var], GML.Exp) -> SymTab VarsAndBody
+getUserFuns initialIx initialFirstPass initialFuns =
+  NE.last $ NE.unfoldr go (initialIx, initialFirstPass, initialFuns)
+  where
+    go (ix, firstPass, funs) =
+      let
+        newFuns = funToVarAndBody firstPass <$> funs
+      in
+      trace [i|#{ix}: firstPass = #{firstPass}|]
+        let fixPoint = if firstPass == newFuns
+              then Nothing
+              else Just (ix + 1, newFuns, funs)
+        in
+          (newFuns, fixPoint)
+
+    funToVarAndBody :: SymTab VarsAndBody -> ([GML.Var], GML.Exp) -> VarsAndBody
+    funToVarAndBody firstPass (boundVars, exp) =
+      case runToMathLang firstPass $ mkAppForUF exp [] of
+        Right mlExp -> ([[i|#{v}|] | GML.MkVar v <- nub boundVars], mlExp)
+        Left errorMessage ->
+          trace
+            (if null firstPass then "" else [i|getUserFuns: #{errorMessage}|])
+            ([], Undefined Nothing)
+
+    mkAppForUF :: GML.Exp -> [String] -> ToMathLang (Expr Double)
+    mkAppForUF (isApp -> Just (f, arg)) args = mkAppForUF f (arg : args)
+    mkAppForUF (GML.exp -> EVar (GML.MkVar f)) args = do
+      userFuns <- ToMathLang ask -- HashMap String ([Var], Expr Double)
+      case Map.lookup f' userFuns of
+        Nothing -> fail [i|mkAppForUF: this really shouldn't happen, but #{f} is not found in userFuns|]
+        Just (boundVars, expr) -> do
+          let newVars = map MathVar args
+              replacedDef = replaceVars (Map.fromList $ zip boundVars newVars) expr
+          pure $ MathApp Nothing f' args replacedDef -- still only replaced with the new set of arguments, not with more complex expressions
+      where
+        f' = [i|#{f}|]
+
+    mkAppForUF exp _ = gml2ml exp
+
+    isApp :: GML.Exp -> Maybe (GML.Exp, String)
+    isApp (GML.exp -> EApp f (GML.exp -> GML.EVar (GML.MkVar arg))) =
+      Just (f, [i|#{arg}|])
+    isApp _ = Nothing
+
+-- | Replace already resolved variables in an expression with their respective value.
+-- If a variable isn't known yet, we leave it as is.
+--
+-- Example, assume the variables that are bound are:
+--
+-- * @[("x", a), ("y", b)]@
+--
+-- and the expressoin is roughly @"Var x" + Var "y"@. Then we can safely
+-- rewrite this expression to @a + b@.
+--
+-- +----------------------+-------------------+--------+
+-- |     Symbol Table     |    Expression     | Result |
+-- +----------------------+-------------------+--------+
+-- | [("x", a), ("y", b)] | Var "x" + Var "y" | a + b  |
+-- +----------------------+-------------------+--------+
+--
 replaceVars :: Map.HashMap String (Expr Double) -> Expr Double -> Expr Double
 replaceVars table = replace >>> returnBody
   where
@@ -480,63 +550,59 @@ replaceVars table = replace >>> returnBody
       x -> over (gplate @(Expr Double)) replace x
 
     returnBody = \case
-      MathApp lbl _name _vars body -> body
+      MathApp _lbl _name _vars body -> body
       expr -> expr
-{-  ECompOp
-    ELet
-    EIs
- -}
--- | calling the output "MyState" is misleading, but this is the most general way to cover the idea that
--- a ruleset consists of more than one rule, similar to how the Vue interface gives more than one
--- element in the left nav; each of the different rules will have its own entry in the SymTab dictionary.
---
--- so, for example, if we have a single MustSing input, we would expect the output MyState dictionary symtab
--- to contain an @Expr Double@ called "must sing"
-toMathLangMw :: Interpreted -> MyEnv -> (String, [String])
-toMathLangMw l4i myenv = (rendered, [])
- where
-  (exprs, stRaw) = toMathLangExpand l4i
---  (exprs, stRaw) = toMathLang l4i
-  state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
-  rendered = [__i|
-                #{vcat $ fmap renderExp exprs}
-                #{vcat $ fmap renderExp $ stateNotInExprs exprs state}
-             |]
 
-  stateNotInExprs es st = relevantSymtab st \\ exprs
+isSetOrPred :: Expr a -> Bool
+isSetOrPred (MathSet _ _) = True
+isSetOrPred (MathPred _) = True
+isSetOrPred _ = False
 
-  -- MathSet "varName" expr --> expr
-  reintroduceSetVar :: String -> Expr Double -> Expr Double
-  reintroduceSetVar _var expr@(isSetOrPred -> True) = expr
-  reintroduceSetVar var  expr                       = MathSet var expr
+-- MathSet "varName" expr --> expr
+reintroduceSetVar :: String -> Expr Double -> Expr Double
+reintroduceSetVar _var expr@(isSetOrPred -> True) = expr
+reintroduceSetVar var  expr                       = MathSet var expr
 
-  isSetOrPred (MathSet _ _) = True
-  isSetOrPred (MathPred _) = True
-  isSetOrPred _ = False
+-- ----------------------------------------------------------------------------
+-- Translation types and effect monad types.
+-- ----------------------------------------------------------------------------
 
-  renderExp :: (Show a) => Expr a -> Doc ann
-  renderExp expr = [i|export const #{name} = () => #{ret expr}|]
-    where
-      name = maybe "unnamedExpr" replaceSpaces $ getExprLabel expr
-      ret doc = braces [i|return #{pp doc}|]
+type ToMathLangError = String
+type VarsAndBody = ([String], Expr Double)
 
-      replaceSpaces :: String -> String
-      replaceSpaces = PCRE.gsub [PCRE.re| |] ("_" :: String)
+newtype ToMathLang a =
+  ToMathLang (Eff [ Writer MyState
+                  , Reader (SymTab VarsAndBody)
+                  , Fail ] a)
+  deriving newtype (Functor, Applicative, Monad, MonadFail)
 
---   intermediate l4i myenv
-    -- the desired output of this function should be something consistent with what app/Main.hs is expecting.
-    -- the most important transformations are:
-    -- starting with the rules in l4i, or the slightly transformed versions available in qaHorns,
-    -- we want to output a MathLang version of the input rules,
-    -- named after the top-level rule entrypoints already given in qaHorns.
-    -- The target output is Typescript such as is shown in sect10-typescript/src/pau.ts, which is produced by sect10-typescript/Makefile
+_ToMathLang ::
+  Iso' (ToMathLang a) (Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a)
+_ToMathLang = coerced
 
--- intermediate generates a MyState containing something like this:
---
---  MyState { symtabF = Map.fromList [("maxClaim", ... -- snd element dumps to { return new tsm.Bool3 )] }
+unToMathLang ::
+  ToMathLang a -> Eff [Writer MyState, Reader (SymTab VarsAndBody), Fail] a
+unToMathLang = view _ToMathLang
 
-intermediate :: Interpreted -> MyEnv -> (String, [String])
-intermediate l4i myenv = ("", [])
+-- | Run the 'ToMathLang' action with the symbol table as a read-only variable.
+runToMathLang :: SymTab VarsAndBody -> ToMathLang a -> Either String a
+runToMathLang r m = case runToMathLang' r m of
+              Right (res,_state) -> Right res
+              Left err           -> Left err
+
+execToMathLang :: SymTab VarsAndBody -> ToMathLang a -> MyState
+execToMathLang r m = case runToMathLang' r m of
+                    Right (_res,state) -> state
+                    Left _             -> emptyState
+
+runToMathLang' :: SymTab VarsAndBody -> ToMathLang a -> Either ToMathLangError (a, MyState)
+runToMathLang' r =
+  unToMathLang
+    >>> runWriterLocal
+    >>> runReader r
+    >>> runFail
+    >>> runPureEff
+
 {-
   let topLevelExprs = qaHorns l4i
 

@@ -20,14 +20,13 @@ Hornlike
     , upon = Nothing
     , clauses =
         [ HC
-            { hHead = RPBoolStructR
-                [ MTT "bar" ] RPis
-                ( Leaf
-                    ( RPConstraint
-                        [ MTT "foo" ] RPgt
-                        [ MTI 2 ]
-                    )
-                )
+            { hHead = RPnary RPis
+                [ RPMT
+                    [ MTT "bar" ]
+                , RPConstraint
+                    [ MTT "foo" ] RPgt
+                    [ MTI 2 ]
+                ]
             , hBody = Nothing
             }
         ]

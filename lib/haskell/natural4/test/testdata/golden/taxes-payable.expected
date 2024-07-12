@@ -110,53 +110,50 @@ Hornlike
                 )
             }
         , HC
-            { hHead = RPBoolStructR
-                [ MTT "taxesPayableAlive" ] RPis
-                ( Leaf
-                    ( RPnary RPsum
-                        [ RPMT
-                            [ MTT "income tax component" ]
-                        , RPMT
-                            [ MTT "asset tax component" ]
-                        ]
-                    )
-                )
+            { hHead = RPnary RPis
+                [ RPMT
+                    [ MTT "taxesPayableAlive" ]
+                , RPnary RPsum
+                    [ RPMT
+                        [ MTT "income tax component" ]
+                    , RPMT
+                        [ MTT "asset tax component" ]
+                    ]
+                ]
             , hBody = Nothing
             }
         , HC
-            { hHead = RPBoolStructR
-                [ MTT "income tax component" ] RPis
-                ( Leaf
-                    ( RPnary RPproduct
+            { hHead = RPnary RPis
+                [ RPMT
+                    [ MTT "income tax component" ]
+                , RPnary RPproduct
+                    [ RPMT
+                        [ MTT "annualIncome" ]
+                    , RPnary RPproduct
                         [ RPMT
-                            [ MTT "annualIncome" ]
-                        , RPnary RPproduct
+                            [ MTT "incomeTaxRate" ]
+                        , RPnary RPminus
                             [ RPMT
-                                [ MTT "incomeTaxRate" ]
-                            , RPnary RPminus
-                                [ RPMT
-                                    [ MTI 2 ]
-                                , RPMT
-                                    [ MTI 1 ]
-                                ]
+                                [ MTI 2 ]
+                            , RPMT
+                                [ MTI 1 ]
                             ]
                         ]
-                    )
-                )
+                    ]
+                ]
             , hBody = Nothing
             }
         , HC
-            { hHead = RPBoolStructR
-                [ MTT "asset tax component" ] RPis
-                ( Leaf
-                    ( RPnary RPproduct
-                        [ RPMT
-                            [ MTT "netWorth" ]
-                        , RPMT
-                            [ MTT "assetTaxRate" ]
-                        ]
-                    )
-                )
+            { hHead = RPnary RPis
+                [ RPMT
+                    [ MTT "asset tax component" ]
+                , RPnary RPproduct
+                    [ RPMT
+                        [ MTT "netWorth" ]
+                    , RPMT
+                        [ MTT "assetTaxRate" ]
+                    ]
+                ]
             , hBody = Nothing
             }
         , HC

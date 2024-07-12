@@ -177,6 +177,8 @@ transRelationalPredicate x = case x of
     -> RPMT (transMTExpr <$> mtes)
   TL4.RPBoolStructR xs rprel (TL4.Leaf (TL4.RPMT ys))
     -> RPConstraint (transMTExpr <$> xs) (transRPRel rprel) (transMTExpr <$> ys)
+  TL4.RPBoolStructR xs rprel (TL4.Leaf rp)
+    -> RPnary (transRPRel rprel) [RPMT $ fmap transMTExpr xs, transRelationalPredicate rp]
   TL4.RPBoolStructR mtes rprel bsr
     -> RPBoolStructR (transMTExpr <$> mtes) (transRPRel rprel) (transBoolStructR bsr)
   TL4.RPnary rprel rps

@@ -8,7 +8,6 @@
 module Explainable.MathLang where
 
 import Control.Monad (mapAndUnzipM, unless)
-import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.RWS
   ( RWST (runRWST),
     asks,
@@ -61,7 +60,9 @@ import Prettyprinter
     tupled,
     viaShow,
     (<+>),
+    layoutCompact,
   )
+import Prettyprinter.Render.String (renderString)
 import Prettyprinter.Interpolate (__di)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Prelude hiding (pred)
@@ -112,11 +113,10 @@ data Expr a = Val      ExprLabel a                            -- ^ simple value
             | MathApp  ExprLabel String [String] (Expr a)     -- ^ TEMPORARY thing, to be removed in final result. (TODO: is there a neater way to do things?)
             | MathPred (Pred a) -- a wrapper for Pred, when the Hornlike has no numeric computations
             | Undefined ExprLabel -- ^ we realize, too late, that we needed an Expr ( Maybe Double ) or perhaps a Maybe (Expr Double)
-            deriving (Eq, Generic)
---            deriving (Eq, Generic, Show) -- if you prefer to output the original AST
+            deriving (Show, Eq, Generic)
 
-instance (Show a) => Show (Expr a) where
-  show = showExpr
+instance Show a => Pretty (Expr a) where
+  pretty = pretty . showExpr
 
 showExpr :: Show a => Expr a -> String
 showExpr (Val _lbl a) = [i|#{parensIfNeeded (show a)}|]
@@ -124,13 +124,13 @@ showExpr (Parens _lbl e) = [i|(#{e})|]
 showExpr (MathBin _lbl binop e1 e2) = [i|#{parensIfNeeded $ showExpr e1} #{showbop binop} #{parensIfNeeded $ showExpr e2}|]
 showExpr (MathVar str) = str
 showExpr (MathSet str e) = [i|#{str} := #{e}|]
-showExpr (MathITE _lbl pred e1 e2) = [i|if #{pred} then #{e1} else #{e2}|]
-showExpr (MathMax _lbl e1 e2) = [i|max(#{e1}, #{e2})|]
-showExpr (MathMin _lbl e1 e2) = [i|min(#{e1}, #{e2})|]
+showExpr (MathITE _lbl pred e1 e2) = [i|if #{showPred pred} then #{showExpr e1} else #{showExpr e2}|]
+showExpr (MathMax _lbl e1 e2) = [i|max(#{showExpr e1}, #{showExpr e2})|]
+showExpr (MathMin _lbl e1 e2) = [i|min(#{showExpr e1}, #{showExpr e2})|]
 showExpr (ListFold _lbl f el) = [i|#{f}(#{el})|]
 showExpr (Undefined lbl) = [i|Undefined #{showlbl lbl}|]
 showExpr (MathPred pred) = showPred pred
-showExpr (MathApp _lbl f vars body) = [i|#{f}(#{intercalate "," vars}) = #{body}|]
+showExpr (MathApp _lbl f vars body) = [i|#{f}(#{intercalate "," vars}) = #{showExpr body}|]
 
 type ExprLabel = Maybe String
 
@@ -243,6 +243,10 @@ data ExprList a
   | ListITE    ExprLabel (Pred a) (ExprList a) (ExprList a)        -- ^ if-then-else for expr lists
   deriving (Eq, Show, Generic)
 
+-- If you want prettier output for `ExprList a`, overwrite this instance and use 'pretty'.
+instance Show a => Pretty (ExprList a) where
+  pretty = viaShow
+
 -- * Some sugary constructors for expressions in our math language.
 
 -- | An ExprList contains expressions which have been filtered by being less or greater than some threshold.
@@ -259,14 +263,17 @@ x |> ys = ListFilt Nothing x CGT ys
 data Comp = CEQ | CGT | CLT | CGTE | CLTE | CNEQ
   deriving (Eq, Show, Generic)
 
--- | @show@ for comparisons
-shw :: Comp -> String
-shw CEQ  = "=="
-shw CNEQ = "!="
-shw CGT  = ">"
-shw CGTE = ">="
-shw CLT  = "<"
-shw CLTE = "<="
+instance Pretty Comp where
+  pretty = pretty . showComparison
+
+-- | A pretty @show@ for comparisons
+showComparison :: Comp -> String
+showComparison CEQ  = "=="
+showComparison CNEQ = "!="
+showComparison CGT  = ">"
+showComparison CGTE = ">="
+showComparison CLT  = "<"
+showComparison CLTE = "<="
 
 -- * Syntactic Sugar
 
@@ -318,15 +325,15 @@ data Pred a
   | PredSet  String (Pred a)                          -- ^ boolean variable assignment
   | PredITE  ExprLabel (Pred a) (Pred a) (Pred a)     -- ^ if then else, booleans
   | PredFold ExprLabel AndOr (PredList a)             -- ^ and / or a list
-  deriving (Eq, Generic)
+  deriving (Show, Eq, Generic)
 
-instance (Show a) => Show (Pred a) where
-  show = showPred
+instance Show a => Pretty (Pred a) where
+  pretty = pretty . showPred
 
 showPred :: Show a => Pred a -> String
 showPred (PredVal lbl v) = [i|#{lbl} = #{v}|]
 showPred (PredNot _lbl p) = [i|¬#{p}|]
-showPred (PredComp _lbl comp e1 e2) = [i|#{e1} #{shw comp} #{e2}|]
+showPred (PredComp _lbl comp e1 e2) = [i|#{e1} #{showComparison comp} #{e2}|]
 showPred (PredBin _lbl op p1 p2) = [i|#{p1} #{op} #{p2}|]
 showPred (PredVar str) = str
 showPred (PredSet str p) = [i|#{str} := #{p}|]
@@ -467,7 +474,7 @@ binEval title f x y = retitle title do
   -- normal output then gets output inside a #+begin_example/#+end_example block.
   -- liftIO $ putStrLn $ "eval " ++ title ++ ": path is " ++ intercalate " / " (reverse path)
   (xval, xpl) <- evalAndCoerceList title x
-  (yval, ypl) <- local (\((h,p),r) -> ((h ++ [show xval],p),r)) (evalAndCoerceList title y)
+  (yval, ypl) <- local (\((h,p),r) -> ((h ++ [simpleRender xval],p),r)) (evalAndCoerceList title y)
    -- we sneak in monadic history of the upper evaluations
   let toreturn = f xval yval
       (lhs,rhs) = verbose title
@@ -505,7 +512,7 @@ evalP' (PredBin _lbl binop x y) = do
 
 evalP' (PredComp lbl c x y) =
   let title :: String = [i|comparison#{showlbl lbl}|]
-  in retitle [i|#{title} #{shw c}|] do
+  in retitle [i|#{title} #{showComparison c}|] do
     (xval, xpl) <- eval x
     (yval, ypl) <- eval y
     let c' = compare xval yval
@@ -519,7 +526,7 @@ evalP' (PredComp lbl c x y) =
           _                         -> False
         (lhs,rhs) = verbose title
     pure (toreturn, Node ([]
-                            ,[[i|#{toreturn} #{lhs} (#{shw c})|]])
+                            ,[[i|#{toreturn} #{lhs} (#{showComparison c})|]])
                        [ xpl
                        , mkNod rhs
                        , ypl ])
@@ -545,7 +552,7 @@ evalP' (PredVar str) =
 
 evalP' (PredSet str x) =
   let title :: String = [i|variable assignment: #{str}|]
-  in retitle [i|#{title} #{str} := #{fromMaybe (show x) (getPredLabel x)}|] do
+  in retitle [i|#{title} #{str} := #{fromMaybe (simpleRender x) (getPredLabel x)}|] do
     symtab <- gets symtabP
     let newmap = Map.insert str x symtab
     modify \ms -> ms { symtabP = newmap }
@@ -556,7 +563,7 @@ evalP' (PredITE _lbl p x y) = evalFP evalP p x y
 
 -- | Evaluate If-Then-Else by first evaluating the conditional, and then evaluating the chosen branch.
 -- This works for both boolean Predicates and float Exprs.
-evalFP :: (Show t, MonadFail m)
+evalFP :: (Pretty t, MonadFail m)
        => (t -> ExplainableT m r MyState a)
        -> Pred Double
        -> t
@@ -567,7 +574,7 @@ evalFP evf p x y = retitle "if-then-else" do
   if pval
     then do
       (xval,xxpl) <- evf x
-      pure (xval, Node ([],[[i|if #{p} then #{show x} else #{show y}|]]) [pxpl, mkNod "thus we choose the then branch", xxpl])
+      pure (xval, Node ([],[[i|if #{p} then #{pretty x} else #{pretty y}|]]) [pxpl, mkNod "thus we choose the then branch", xxpl])
     else do
       (yval,yxpl) <- evf y
       pure (yval, Node ([],["if-then-else false"] ) [pxpl, mkNod "thus we choose the else branch", yxpl])
@@ -575,16 +582,16 @@ evalFP evf p x y = retitle "if-then-else" do
 -- | Evaluate an `ExprList`
 
 evalList :: MonadFail m => ExprList Double -> ExplainableT m r MyState (ExprList Double)
-evalList (MathList lbl a) = pure (MathList lbl a, Node (show <$> a,[[i|base MathList with #{length a} elements|]]) [])
+evalList (MathList lbl a) = pure (MathList lbl a, Node (simpleRender <$> a,[[i|base MathList with #{length a} elements|]]) [])
 evalList (ListFilt lbl1 x comp (MathList lbl2 ys)) = do
   origs <- eval `traverse` ys
   -- [TODO] exclude Undefined values from origs
   round1 <- (evalP . PredComp lbl1 comp x) `traverse` ys
   let round2 = [ if not r1
-                 then (Nothing, Node ([show xval]
-                                     , [[i|excluded #{xval} due to failing comparison test|]]) [xpl])
-                 else (Just xval, Node ([show xval]
-                                     , [[i|included #{xval} due to passing comparison test|]]) [xpl])
+                 then (Nothing, Node ([simpleRender xval]
+                                     , [[i|excluded #{pretty xval} due to failing comparison test|]]) [xpl])
+                 else (Just xval, Node ([simpleRender xval]
+                                     , [[i|included #{pretty xval} due to passing comparison test|]]) [xpl])
                | ((r1,xpl), xval) <- zip round1 ys
                ]
       round3 = mapMaybe fst round2
@@ -603,7 +610,7 @@ evalList (ListMap lbl Id ylist) = pure (ylist, mkNod ("id on ExprList" ++ showlb
 evalList (ListMap _lbl1 (MathSection binop x) ylist) = retitle "fmap mathsection" do
   (MathList lbl2 ylist', yxpl) <- evalList ylist
   pure ( MathList lbl2 [ MathBin Nothing binop x y | y <- ylist' ]
-         , Node ([],[[i|fmap mathsection (#{showbop binop} #{x}) over #{length ylist'} elements|]]) [yxpl] )
+         , Node ([],[[i|fmap mathsection (#{showbop binop} #{simpleRender x}) over #{length ylist'} elements|]]) [yxpl] )
 
 evalList (ListMapIf lbl Id _c _comp ylist) =
   retitle [i|fmap mathsection id#{showlbl lbl}|] $ evalList ylist
@@ -615,7 +622,7 @@ evalList (ListMapIf lbl1 (MathSection binop x) c comp ylist) =
 
     pure ( MathList (Just "evaled list") [ if b then MathBin (Just "boolean true") binop x y else y
                                           | (y,b) <- zip ylist' (fst <$> liveElements) ]
-          , Node ([],[[i|fmap mathsection (#{showbop binop} #{x}) over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{c} #{comp})|]])
+          , Node ([],[[i|fmap mathsection (#{showbop binop} #{pretty x}) over #{length $ filter id (fst <$> liveElements)} relevant elements (who pass #{pretty c} #{pretty comp})|]])
             [ yxpl , Node ([],["selection of relevant elements"]) (snd <$> liveElements) ] )
 
 evalList (ListConcat lbl xxs) = do
@@ -645,12 +652,12 @@ getValueOrListVariable x = do
   listSymtab <- gets symtabL
   case listSymtab Map.!? x of
     Just v ->
-      pure (Left v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+      pure (Left v, Node ([simpleRender v], [[i|variable `#{x}` has value #{v}|]]) [])
     Nothing -> do
       variableSymtab <- gets symtabF
       case variableSymtab Map.!? x of
         Just v ->
-          pure (Right v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+          pure (Right v, Node ([simpleRender v], [[i|variable `#{x}` has value #{v}|]]) [])
         _ ->
           fail $ "Variable \"" <> x <> "\" was not found. Perhaps you need to provide it?"
 
@@ -661,7 +668,7 @@ getValueVariable x = do
   symtab <- gets symtabF
   case symtab Map.!? x of
     Just v ->
-      pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+      pure (v, Node ([simpleRender v], [[i|variable `#{x}` has value #{v}|]]) [])
     _ ->
       fail $ "Variable \"" <> x <> "\" was not found. Perhaps you need to provide it?"
 
@@ -671,7 +678,7 @@ getListVariable x = do
   symtab <- gets symtabL
   case symtab Map.!? x of
     Just v ->
-      pure (v, Node ([show v], [[i|variable `#{x}` has value #{v}|]]) [])
+      pure (v, Node ([simpleRender v], [[i|variable `#{x}` has value #{v}|]]) [])
     Nothing ->
       fail $ "Variable \"" <> x <> "\" was not found. Perhaps you need to provide it?"
 
@@ -681,7 +688,7 @@ getPredicateVariable x = do
   symtab <- gets symtabP
   case symtab Map.!? x of
     Just v ->
-      pure (v, Node ([show v], [[i|looked up #{x}|]]) [])
+      pure (v, Node ([simpleRender v], [[i|looked up #{x}|]]) [])
     Nothing ->
       fail $ "Unknown predicate variable \"" <> x <> "\". Perhaps you need to provide it?"
 
@@ -1048,3 +1055,10 @@ h0tupled = hang 0 . tupled
 
 allVars :: Expr Double -> ExplainableIO r MyState (Expr Double)
 allVars inexpr = pure (inexpr, emptyXP)
+
+-- ----------------------------------------------------------------------------
+-- Pretty print utilities
+-- ----------------------------------------------------------------------------
+
+simpleRender :: Pretty a => a -> String
+simpleRender = renderString . layoutCompact . pretty

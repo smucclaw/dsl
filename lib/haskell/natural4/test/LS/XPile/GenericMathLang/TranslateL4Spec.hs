@@ -1,6 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module LS.XPile.GenericMathLang.TranslateL4Spec (spec) where
 
@@ -43,6 +44,9 @@ import Test.QuickCheck.Arbitrary.Generic
     genericArbitrary,
     genericShrink,
   )
+import TextuaL4.Transform    ( transRule )
+import TextuaL4.ParTextuaL   ( pRule, myLexer )
+import Text.RawString.QQ (r)
 
 import Prelude hiding (exp, seq)
 
@@ -524,36 +528,16 @@ mathLangGold4 = (
 -- Test rules
 
 rule3predicate :: Rule
-rule3predicate =
-  let description = [ MTT "ind", MTT "qualifies a la case 3" ]
-  in mkTestRule
-        description
-        (Just (
-            ( MTT "ind" :| []
-            , Just ( SimpleType TOne "Person" )
-            ) :| [] ))
-        [ HC { hHead = RPMT description
-             , hBody = Just
-                ( AA.All Nothing
-                    [ AA.Leaf ( RPConstraint
-                            [ MTT "ind" ] RPis
-                            [ MTT "Singapore citizen" ] )
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "ind's", MTT "place of residence" ] RPis
-                            [ MTT "Singapore" ])
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "ind's", MTT "age"] RPgte
-                            [ MTI 21 ] )
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "ind's", MTT "property annual value" ] RPlte
-                            [ MTI 21000 ])
-                    , AA.Leaf ( RPMT
-                            [ MTT "ind"
-                            , MTT "meets the property eligibility criteria for GSTV-Cash" ])
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "ind's", MTT "annual income" ] RPlte
-                            [ MTI 34000 ])
-                    ])}]
+rule3predicate = parseRule [r|
+GIVEN ind IS A Person
+DECIDE "ind" "qualifies a la case 3"
+IF ALL ( ind IS "Singapore citizen"
+       , ind's "place of residence" IS Singapore
+       , ind's age >= 21
+       , ind's "property annual value" <= 21000
+       , ind  "meets the property eligibility criteria for GSTV-Cash"
+       , ind's "annual income" <= 34000
+       )|]
 
 -- TODO: Which ones of the following should be replaced by records?
 rule3predicatesGold :: BaseExp
@@ -687,32 +671,21 @@ rule3predicatesGold = EIfThen
     }
 
 rule2givens :: Rule
-rule2givens =
-  let description = [ MTT "case 2 qualifies" ]
-  in mkTestRule
-        description
-        (mkGivens $ map (, Nothing) ["place of residence", "age", "property annual value", "meets the property eligibility criteria for GSTV-Cash", "annual income"])
-        [ HC { hHead = RPMT description
-             , hBody = Just
-                ( AA.All Nothing
-                    [ AA.Leaf ( RPMT [ MTT "Singapore citizen" ])
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "place of residence" ] RPis [ MTT "Singapore" ])
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "age" ] RPgte [ MTT "21" ])
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "property annual value" ] RPlte [ MTI 21000 ])
-                    , AA.Leaf ( RPMT
-                            [ MTT "meets the property eligibility criteria for GSTV-Cash" ])
-                    , AA.Leaf ( RPConstraint
-                            [ MTT "annual income" ] RPlte [ MTI 34000 ]
-                        )
-                    ])}]
+rule2givens = parseRule [r|
+GIVEN "place of residence" ; "age" ; "property annual value" ; "meets the property eligibility criteria for GSTV-Cash" ; "annual income"
+DECIDE "case 2 qualifies"
+    IF ALL ( "Singapore citizen"
+           , "place of residence" IS "Singapore"
+           , age >= 21
+           , "property annual value" <= 21000
+           , "meets the property eligibility criteria for GSTV-Cash"
+           , "annual income" <= 34000
+           )|]
 
 rule2givens_shl_gold :: BaseHL
 rule2givens_shl_gold = OneClause (HeadAndBody MkHnBHC {
                    hbHead = RPMT [MTT "case 2 qualifies"],
-                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTT "21"]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
+                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTI 21]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
                  })
 
 rule2nogivens :: Rule
@@ -721,7 +694,7 @@ rule2nogivens = rule2givens {given = Nothing}
 rule2nogivens_shl_gold :: BaseHL
 rule2nogivens_shl_gold = OneClause (HeadAndBody MkHnBHC {
                    hbHead = RPMT [MTT "case 2 qualifies"],
-                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTT "21"]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
+                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTI 21]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
                  })
 
 -- Simple case? The conditions are all checked with OpBoolEq, OpStringEq and Op[GL]te
@@ -832,17 +805,26 @@ arithRule1 = mkTestRule
                 , hBody = Nothing } ]
 
 arithRule2withInitializedValues :: Rule
-arithRule2withInitializedValues = mkTestRule'
+arithRule2withInitializedValues = parseRule [r|
+GIVEN m1 IS A Number ; m2 IS A Number
+GIVETH result IS A Number
+DECIDE m1 IS 10 ;
+       m2 IS 5 ;
+       result IS MINUS (m1, m2, 3, 1)
+|]
+
+arithRule2withInitializedValuesManual :: Rule
+arithRule2withInitializedValuesManual = mkTestRule'
                 [ MTT "result" ]
                 (mkGivens [("m1", Just ( SimpleType TOne "Number" )), ("m2", Just ( SimpleType TOne "Number" ))])
                 (mkGivens [("result", Just ( SimpleType TOne "Number"))])
                 [ HC { hHead = RPConstraint
                         [ MTT "m1" ] RPis
-                        [ MTT "10" ]
+                        [ MTI 10 ]
                     , hBody = Nothing }
                 , HC { hHead = RPConstraint
                         [ MTT "m2" ] RPis
-                        [ MTT "5" ]
+                        [ MTI 5 ]
                     , hBody = Nothing }
                 , HC { hHead = RPnary RPis
                         [ RPMT
@@ -1012,57 +994,34 @@ arithRule3_gold_symtab =
 arithRule3_gold :: BaseExp
 arithRule3_gold = ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3a_plus_times"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3a_times_plus"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}, nopRight = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3b"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "o3c"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o1"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 3.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "o2"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EFloat 4.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
 
+-- All these come from TextuaL4
+parseRule :: String -> Rule
+parseRule = either (const RegBreach) transRule . pRule . myLexer
+
 arithRule4 :: Rule
-arithRule4 = mkTestRule'
-                [ MTT "taxesPayable" ]
-                (Just (
-                    ( MTT "annualIncome" :| [] , Just ( SimpleType TOne "Number" )) :|
-                    [ ( MTT "netWorth" :| [], Just ( SimpleType TOne "Number" ))
-                    , ( MTT "vivacity" :| [], Just ( SimpleType TOne "Boolean" ))
-                    , ( MTT "phaseOfMoon" :| []
-                      , Just ( InlineEnum TOne (
-                                ( MTT "new" :| [ MTT "waxing", MTT "full", MTT "gibbous"] , Nothing ) :| []
-                                )
-                             )
-                      )
-                    ]
-                ))
-                (mkGivens [("taxesPayable", Just ( SimpleType TOne "Number"))])
-                [ HC { hHead = RPConstraint
-                                [ MTT "taxesPayable" ] RPis [ MTT "taxesPayableAlive / 2" ]
-                     , hBody = Just ( AA.Leaf ( RPConstraint
-                                [ MTT "phaseOfMoon" ] RPis [ MTT "gibbous" ]))}
-                , HC { hHead = RPConstraint
-                                [ MTT "taxesPayable" ] RPis [ MTT "taxesPayableAlive" ]
-                     , hBody = Just ( AA.Leaf ( RPMT [ MTT "vivacity" ]))}
-                , HC { hHead = RPConstraint [ MTT "taxesPayable" ] RPis [ MTT "taxesPayableAlive"
-                                                                        , MTT "/"
-                                                                        , MTI 3
-                                                                        ]
-                     , hBody = Just ( AA.Leaf ( RPConstraint
-                                [ MTT "phaseOfMoon" ] RPis [ MTT "waxing" ]))}
-                , HC { hHead = RPConstraint [ MTT "taxesPayable" ] RPis [ MTT "waived" ]
-                     , hBody = Just ( AA.Leaf ( RPConstraint
-                                [ MTT "phaseOfMoon" ] RPis [ MTT "full" ]))}
-                , HC { hHead = RPConstraint [ MTT "taxesPayable" ] RPis [ MTI 0 ]
-                    , hBody = Just ( AA.Leaf ( RPMT [ MTT "OTHERWISE" ]))}
-                , HC { hHead = RPnary RPis [ RPMT [ MTT "taxesPayableAlive" ]
-                                          , RPnary RPsum [ RPMT [ MTT "income tax component" ]
-                                                         , RPMT [ MTT "asset tax component" ]]]
-                     , hBody = Nothing }
-                , HC { hHead = RPnary RPis [ RPMT [ MTT "income tax component" ]
-                                           , RPnary RPproduct [ RPMT [ MTT "annualIncome" ]
-                                                              , RPMT [ MTT "incomeTaxRate" ]]]
-                     , hBody = Nothing }
-                , HC { hHead = RPnary RPis [ RPMT [ MTT "asset tax component" ]
-                                           , RPnary RPproduct [ RPMT [ MTT "netWorth" ]
-                                                              , RPMT [ MTT "assetTaxRate" ]]]
-                     , hBody = Nothing }
-                , HC { hHead = RPConstraint [ MTT "incomeTaxRate" ] RPis [ MTF 1.0e-2 ]
-                     , hBody = Nothing }
-                , HC { hHead = RPConstraint [ MTT "assetTaxRate" ] RPis [ MTF 7.0e-2 ]
-                     , hBody = Nothing }
-            ]
+arithRule4 = parseRule [r|
+  GIVEN annualIncome IS A Number ;
+  netWorth IS A Number ;
+  vivacity IS A Boolean ;
+  phaseOfMoon IS ONE OF new , waxing, full, gibbous
+  GIVETH  taxesPayable IS A Number
+  DECIDE  taxesPayable IS "taxesPayableAlive / 2" IF phaseOfMoon IS gibbous ;
+
+          taxesPayable  IS  taxesPayableAlive IF vivacity ;
+          taxesPayable  IS  taxesPayableAlive "/" 3 IF phaseOfMoon IS waxing ;
+          taxesPayable  IS  waived IF phaseOfMoon IS full ;
+          taxesPayable  IS  0 OTHERWISE ;
+
+          taxesPayableAlive       IS SUM ( "income tax component"
+                                      , "asset tax component" ) ;
+          "income tax component"  IS PRODUCT	( annualIncome
+                                              , incomeTaxRate
+                                              ) ;
+          "asset tax component"   IS PRODUCT ( netWorth
+                                          , assetTaxRate );
+          incomeTaxRate           IS 0.01 ;
+          assetTaxRate           IS 0.07|]
+
 
 arithRule4_gold :: BaseExp
 arithRule4_gold = ESeq {seq = SeqExp [MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "gibbous"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EVar {var = MkVar "vivacity"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Boolean")), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "waxing"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpDiv, nopLeft = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, nopRight = MkExp {exp = ELit {lit = EInteger 3}, md = []}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = EIs {isLeft = MkExp {exp = EVar {var = MkVar "phaseOfMoon"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4Enum ["new","waxing","full","gibbous"])), explnAnnot = Nothing}]}, isRight = MkExp {exp = ELit {lit = EENum "full"}, md = []}}, md = []}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, arg = MkExp {exp = EVar {var = MkVar "waived"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EIfThen {condExp = MkExp {exp = ELit {lit = EBoolTrue}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Bool"), explnAnnot = Nothing}]}, thenExp = MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayable"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 0}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "taxesPayableAlive"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "income tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "annualIncome"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "asset tax component"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "netWorth"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "incomeTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 1.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "assetTaxRate"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EFloat 7.0e-2}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
@@ -1374,25 +1333,13 @@ testFunAppGold :: [BaseExp]
 testFunAppGold = [EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "Answer"}, md = []}, arg = MkExp {exp = EApp {func = MkExp {exp = EApp {func = MkExp {exp = EVar {var = MkVar "discounted by"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, appArg = MkExp {exp = EVar {var = MkVar "Step 3"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}, appArg = MkExp {exp = ERec {fieldName = MkExp {exp = EVar {var = MkVar "risk cap"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}, recName = MkExp {exp = EVar {var = MkVar "accident"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Nothing, explnAnnot = Nothing}]}}, md = []}}, md = []}}]
 
 listsum :: [Rule]
-listsum = [mkTestRule'
-    [ MTT "test for lists" ]
-    (mkGivens [
-        ( "listThing", Just (SimpleType TList1 "Number") )
-      , ( "singleThing", Just (SimpleType TOne "Number") ) ])
-    (mkGivens [("listSum", Just (SimpleType TOne "Number") )])
-    [ HC { hHead = RPConstraint
-            [ MTT "listSum" ] RPis
-            [ MTT "singleThing", MTT "+", MTT "listThing" ]
-         , hBody = Nothing }
-    , HC { hHead = RPConstraint
-            [ MTT "listThing" ] RPis
-            [ MTI 1, MTI 2, MTI 3 ]
-         , hBody = Nothing }
-    , HC { hHead = RPConstraint
-            [ MTT "singleThing" ] RPis
-            [ MTI 10 ]
-         , hBody = Nothing }
-    ]]
+listsum = [parseRule [r|
+GIVEN listThing IS LIST OF Number ;
+      singleThing IS A Number
+GIVETH listSum IS A Number
+DECIDE listSum IS SUM (singleThing, listThing);
+listThing IS 1 2 3 ;
+singleThing IS 10|]]
 
 listsumGMLGold :: [BaseExp]
 listsumGMLGold = [ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listSum"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpPlus, nopLeft = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "listThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}, arg = MkExp {exp = ESeq {seq = SeqExp [MkExp {exp = ELit {lit = EInteger 1}, md = []},MkExp {exp = ELit {lit = EInteger 2}, md = []},MkExp {exp = ELit {lit = EInteger 3}, md = []}]}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4List (L4EntType "Number"))), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "singleThing"}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}, arg = MkExp {exp = ELit {lit = EInteger 10}, md = [MkExpMetadata {srcPos = MkPositn {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntType "Number")), explnAnnot = Nothing}]}}, md = []}]}]
@@ -2286,150 +2233,28 @@ emptyE :: Map.HashMap () ()
 emptyE = mempty
 
 mustsing5 :: [Rule]
-mustsing5 = [ defaultReg
-  { subj = Leaf
-      (
-          ( MTT "Person" :| []
-          , Nothing
-          ) :| []
-      )
-  , rkeyword = REvery
-  , who = Just
-      ( Leaf
-          ( RPMT
-              [ MTT "Qualifies" ]
-          )
-      )
-  , deontic = DMust
-  , action = Leaf
-      (
-          ( MTT "sing" :| []
-          , Nothing
-          ) :| []
-      )
-  }
-  , defaultHorn
-  { name =
-      [ MTT "Drinks" ]
-  , keyword = Means
-  , clauses =
-    [ HC
-        { hHead = RPBoolStructR
-            [ MTT "Drinks" ] RPis
-            ( All Nothing
-                [ Any
-                    ( Just
-                        ( PrePost "consumes an" "beverage" )
-                    )
-                    [ Leaf
-                        ( RPMT
-                            [ MTT "alcoholic" ]
-                        )
-                    , Leaf
-                        ( RPMT
-                            [ MTT "non-alcoholic" ]
-                        )
-                    ]
-                , Any
-                    ( Just
-                        ( Pre "whether" )
-                    )
-                    [ Leaf
-                        ( RPMT
-                            [ MTT "in part" ]
-                        )
-                    , Leaf
-                        ( RPMT
-                            [ MTT "in whole" ]
-                        )
-                    ]
-                ]
-              )
-          , hBody = Nothing
-          }
-      ]
-  }
-  , defaultTypeDecl
-  { name =
-      [ MTT "Person" ]
-  , has =
-      [ defaultTypeDecl
-          { name =
-              [ MTT "drinks" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          }
-      , defaultTypeDecl
-          { name =
-              [ MTT "eats" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          }
-      , defaultTypeDecl
-          { name =
-              [ MTT "walks" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          }
-      , defaultTypeDecl
-          { name =
-              [ MTT "alcoholic" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          , has = []
-          }
-      , defaultTypeDecl
-          { name =
-              [ MTT "non-alcoholic" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          , has = []
-          }
-      , defaultTypeDecl
-          { name =
-              [ MTT "in part" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          , has = []
-          }
-      , defaultTypeDecl
-          { name =
-              [ MTT "in whole" ]
-          , super = Just
-              ( SimpleType TOne "Boolean" )
-          }
-      ]
-  }
-  , defaultHorn
-  { name =
-      [ MTT "Qualifies" ]
-  , keyword = Means
-  , clauses =
-      [ HC
-          { hHead = RPBoolStructR
-              [ MTT "Qualifies" ] RPis
-              ( All Nothing
-                  [ Leaf
-                      ( RPMT
-                          [ MTT "walks" ]
-                      )
-                  , Any Nothing
-                      [ Leaf
-                          ( RPMT
-                              [ MTT "Drinks" ]
-                          )
-                      , Leaf
-                          ( RPMT
-                              [ MTT "eats" ]
-                          )
-                      ]
-                  ]
-              )
-          , hBody = Nothing
-          }
-      ]
-  }
-  ]
+mustsing5 = parseRule <$> [reg, drinks, person, qualifies]
+ where
+  person = [r|DECLARE Person
+  HAS drinks IS A Boolean ;
+      eats IS A Boolean ;
+      walks IS A Boolean ;
+      alcoholic IS A Boolean ;
+      non-alcoholic IS A Boolean ;
+      "in part" IS A Boolean ;
+      "in whole" IS A Boolean|]
+
+  reg = [r|
+  EVERY Person
+    WHO Qualifies
+    MUST sing|]
+  qualifies = "Qualifies MEANS ALL(walks, ANY(Drinks, eats))"
+  drinks = [r|
+  Drinks MEANS
+    ALL("consumes an" ANY(alcoholic, non-alcoholic) beverage
+       , whether ANY("in part", "in whole"))
+    |]
+
 
 mustsing5GoldExpandedHornlikes :: [Rule]
 mustsing5GoldExpandedHornlikes = [ defaultHorn
@@ -2438,51 +2263,28 @@ mustsing5GoldExpandedHornlikes = [ defaultHorn
   , clauses =
     [ HC
         { hHead = RPBoolStructR
-            [ MTT "Qualifies" ] RPis
-            ( All Nothing
-                [ Leaf
-                    ( RPMT
-                        [ MTT "walks" ]
-                    )
-                , Any Nothing
-                    [ All
-                        ( Just
-                            ( Metadata "Drinks" )
-                        )
-                        [ Any
-                            ( Just
-                                ( PrePost "consumes an" "beverage" )
-                            )
-                            [ Leaf
-                                ( RPMT
-                                    [ MTT "alcoholic" ]
-                                )
-                            , Leaf
-                                ( RPMT
-                                    [ MTT "non-alcoholic" ]
-                                )
-                            ]
-                        , Any
-                            ( Just
-                                ( Pre "whether" )
-                            )
-                            [ Leaf
-                                ( RPMT
-                                    [ MTT "in part" ]
-                                )
-                            , Leaf
-                                ( RPMT
-                                    [ MTT "in whole" ]
-                                )
-                            ]
+        [ MTT "Qualifies" ] RPis
+        ( All Nothing
+            [ Leaf
+                ( RPMT [ MTT "walks" ] ), Any Nothing
+                [ All
+                    ( Just ( Metadata "Drinks" ) ) -- can't replace with BNFC grammar because Metadata only comes from Interpreter
+                    [ Any
+                        ( Just ( PrePost "consumes an" "beverage" ) )
+                        [ Leaf
+                            ( RPMT [ MTT "alcoholic" ] ), Leaf
+                            ( RPMT [ MTT "non-alcoholic" ] )
+                        ], Any
+                        ( Just ( Pre "whether" ) )
+                        [ Leaf
+                            ( RPMT [ MTT "in part" ] ), Leaf
+                            ( RPMT [ MTT "in whole" ] )
                         ]
-                    , Leaf
-                        ( RPMT
-                            [ MTT "eats" ]
-                        )
-                    ]
+                    ], Leaf
+                    ( RPMT [ MTT "eats" ] )
                 ]
-            )
+            ]
+        )
         , hBody = Nothing
         }
       ]

@@ -7,13 +7,11 @@ module LS.TextuaL4Spec (spec) where
 
 import LS.Rule
 import LS.Types
-import TextuaL4.AbsTextuaL qualified as TL4
 import TextuaL4.Transform
 import TextuaL4.LexTextuaL   ( Token )
 import TextuaL4.ParTextuaL   ( pRule, myLexer )
-import TextuaL4.PrintTextuaL ( Print, printTree )
-import Text.Pretty.Simple (pShowNoColor)
-import Text.RawString.QQ
+import Text.Pretty.Simple ( pShowNoColor )
+import Text.RawString.QQ ( r )
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.IO qualified as TL
 import System.FilePath ( (<.>), (</>) )

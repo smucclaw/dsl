@@ -40,7 +40,7 @@ $white+ ;
     { tok (eitherResIdent TV) }
 
 -- token Token
-([\' \+ \- \/ \_]| $l)+
+$l ([\' \+ \- \/ \_]| ($d | $l)) *
     { tok (eitherResIdent T_Token) }
 
 -- Keywords and Ident

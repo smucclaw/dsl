@@ -77,10 +77,10 @@ netWorth IS A Number ;
 vivacity IS A Boolean ;
 phaseOfMoon IS ONE OF new , waxing, full, gibbous
 GIVETH  taxesPayable IS A Number
-DECIDE  taxesPayable IS taxesPayableAlive / 2 IF phaseOfMoon IS gibbous ;
+DECIDE  taxesPayable IS taxesPayableAlive "/" 2 IF phaseOfMoon IS gibbous ;
 
         taxesPayable  IS  taxesPayableAlive IF vivacity ;
-        taxesPayable  IS  taxesPayableAlive / 3 IF phaseOfMoon IS waxing ;
+        taxesPayable  IS  DIVIDE (taxesPayableAlive, 3) IF phaseOfMoon IS waxing ;
         taxesPayable  IS  waived IF phaseOfMoon IS full ;
         taxesPayable  IS  0 OTHERWISE ;
 

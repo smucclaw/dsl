@@ -72,11 +72,15 @@ Hornlike
                 )
             }
         , HC
-            { hHead = RPConstraint
-                [ MTT "taxesPayable" ] RPis
-                [ MTT "taxesPayableAlive"
-                , MTT "/"
-                , MTI 3
+            { hHead = RPnary RPis
+                [ RPMT
+                    [ MTT "taxesPayable" ]
+                , RPnary RPdivide
+                    [ RPMT
+                        [ MTT "taxesPayableAlive" ]
+                    , RPMT
+                        [ MTI 3 ]
+                    ]
                 ]
             , hBody = Just
                 ( Leaf

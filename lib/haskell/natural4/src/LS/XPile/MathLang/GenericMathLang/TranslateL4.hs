@@ -79,6 +79,7 @@ import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as EffState
 
 import Language.Haskell.TH.Syntax qualified as TH
+
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
 {-----------------------------------------------------

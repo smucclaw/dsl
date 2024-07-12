@@ -11,7 +11,6 @@ import TextuaL4.AbsTextuaL qualified as TL4
 import TextuaL4.Transform
 import TextuaL4.LexTextuaL   ( Token, mkPosToken )
 import TextuaL4.ParTextuaL   ( pRule, myLexer )
-import TextuaL4.PrintTextuaL ( Print, printTree )
 import Text.Pretty.Simple (pShowNoColor)
 
 type Err        = Either String
@@ -41,10 +40,9 @@ run v p s =
   ts = myLexer s
   showPosToken ((l,c),t) = concat [ show l, ":", show c, "\t", show t ]
 
-showTree :: (Show a, Print a) => Int -> a -> IO ()
+showTree :: (Show a) => Int -> a -> IO ()
 showTree v tree = do
   putStrV v $ "\n[Abstract Syntax]\n\n" ++ show tree
-  putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
 
 
 main :: IO ()

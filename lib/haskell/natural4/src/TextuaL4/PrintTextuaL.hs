@@ -147,10 +147,8 @@ instance Print TextuaL4.AbsTextuaL.Rule where
     TextuaL4.AbsTextuaL.RegWho boolstruct1 who deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 who, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.RegWhoInline boolstruct1 who inlinehornlike deontic boolstruct2 -> prPrec i 0 (concatD [doc (showString "EVERY"), prt 0 boolstruct1, prt 0 who, prt 0 inlinehornlike, prt 0 deontic, prt 0 boolstruct2])
     TextuaL4.AbsTextuaL.HornlikeMeans text boolstruct -> prPrec i 0 (concatD [prt 0 text, doc (showString "MEANS"), prt 0 boolstruct])
-    TextuaL4.AbsTextuaL.HornlikeDecide relationalpredicate -> prPrec i 0 (concatD [doc (showString "DECIDE"), prt 0 relationalpredicate])
-    TextuaL4.AbsTextuaL.HornlikeDecideIf relationalpredicate boolstruct -> prPrec i 0 (concatD [doc (showString "DECIDE"), prt 0 relationalpredicate, doc (showString "IF"), prt 0 boolstruct])
-    TextuaL4.AbsTextuaL.HlikeGiveth isa relationalpredicate -> prPrec i 0 (concatD [doc (showString "GIVETH"), prt 0 isa, doc (showString "DECIDE"), prt 0 relationalpredicate])
-    TextuaL4.AbsTextuaL.HlikeGivethIf isa relationalpredicate boolstruct -> prPrec i 0 (concatD [doc (showString "GIVETH"), prt 0 isa, doc (showString "DECIDE"), prt 0 relationalpredicate, doc (showString "IF"), prt 0 boolstruct])
+    TextuaL4.AbsTextuaL.HornlikeDecide hornclauses -> prPrec i 0 (concatD [doc (showString "DECIDE"), prt 0 hornclauses])
+    TextuaL4.AbsTextuaL.HlikeGiveth isa hornclauses -> prPrec i 0 (concatD [doc (showString "GIVETH"), prt 0 isa, doc (showString "DECIDE"), prt 0 hornclauses])
 
 instance Print TextuaL4.AbsTextuaL.IsA where
   prt i = \case
@@ -175,6 +173,17 @@ instance Print TextuaL4.AbsTextuaL.Fields where
     TextuaL4.AbsTextuaL.Has isas -> prPrec i 0 (concatD [doc (showString "HAS"), prt 0 isas])
     TextuaL4.AbsTextuaL.EmptyFields -> prPrec i 0 (concatD [])
 
+instance Print TextuaL4.AbsTextuaL.HornClause where
+  prt i = \case
+    TextuaL4.AbsTextuaL.HeadBody relationalpredicate boolstruct -> prPrec i 0 (concatD [prt 0 relationalpredicate, doc (showString "IF"), prt 0 boolstruct])
+    TextuaL4.AbsTextuaL.HeadOtherwise relationalpredicate -> prPrec i 0 (concatD [prt 0 relationalpredicate, doc (showString "OTHERWISE")])
+    TextuaL4.AbsTextuaL.HeadOnly relationalpredicate -> prPrec i 0 (concatD [prt 0 relationalpredicate])
+
+instance Print [TextuaL4.AbsTextuaL.HornClause] where
+  prt _ [] = concatD []
+  prt _ [x] = concatD [prt 0 x]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
+
 instance Print TextuaL4.AbsTextuaL.Deontic where
   prt i = \case
     TextuaL4.AbsTextuaL.Deontic_MUST -> prPrec i 0 (concatD [doc (showString "MUST")])
@@ -193,6 +202,12 @@ instance Print TextuaL4.AbsTextuaL.RelationalPredicate where
   prt i = \case
     TextuaL4.AbsTextuaL.RPMT mtexprs -> prPrec i 0 (concatD [prt 0 mtexprs])
     TextuaL4.AbsTextuaL.RPBoolStructR mtexprs rprel boolstruct -> prPrec i 0 (concatD [prt 0 mtexprs, prt 0 rprel, prt 1 boolstruct])
+    TextuaL4.AbsTextuaL.RPnary rprel relationalpredicates -> prPrec i 0 (concatD [prt 1 rprel, doc (showString "("), prt 0 relationalpredicates, doc (showString ")")])
+
+instance Print [TextuaL4.AbsTextuaL.RelationalPredicate] where
+  prt _ [] = concatD []
+  prt _ [x] = concatD [prt 0 x]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
 instance Print TextuaL4.AbsTextuaL.MTExpr where
   prt i = \case
@@ -247,15 +262,15 @@ instance Print TextuaL4.AbsTextuaL.RPRel where
     TextuaL4.AbsTextuaL.RPnot -> prPrec i 0 (concatD [doc (showString "NOT")])
     TextuaL4.AbsTextuaL.RPand -> prPrec i 0 (concatD [doc (showString "AND")])
     TextuaL4.AbsTextuaL.RPor -> prPrec i 0 (concatD [doc (showString "OR")])
-    TextuaL4.AbsTextuaL.RPsum -> prPrec i 0 (concatD [doc (showString "SUM")])
-    TextuaL4.AbsTextuaL.RPproduct -> prPrec i 0 (concatD [doc (showString "PRODUCT")])
-    TextuaL4.AbsTextuaL.RPminus -> prPrec i 0 (concatD [doc (showString "MINUS")])
-    TextuaL4.AbsTextuaL.RPdivide -> prPrec i 0 (concatD [doc (showString "DIVIDE")])
-    TextuaL4.AbsTextuaL.RPmodulo -> prPrec i 0 (concatD [doc (showString "MODULO")])
+    TextuaL4.AbsTextuaL.RPsum -> prPrec i 1 (concatD [doc (showString "SUM")])
+    TextuaL4.AbsTextuaL.RPproduct -> prPrec i 1 (concatD [doc (showString "PRODUCT")])
+    TextuaL4.AbsTextuaL.RPminus -> prPrec i 1 (concatD [doc (showString "MINUS")])
+    TextuaL4.AbsTextuaL.RPdivide -> prPrec i 1 (concatD [doc (showString "DIVIDE")])
+    TextuaL4.AbsTextuaL.RPmodulo -> prPrec i 1 (concatD [doc (showString "MODULO")])
     TextuaL4.AbsTextuaL.RPsubjectTo -> prPrec i 0 (concatD [doc (showString "SUBJECT"), doc (showString "TO")])
-    TextuaL4.AbsTextuaL.RPmin -> prPrec i 0 (concatD [doc (showString "MIN")])
-    TextuaL4.AbsTextuaL.RPmax -> prPrec i 0 (concatD [doc (showString "MAX")])
-    TextuaL4.AbsTextuaL.RPmap -> prPrec i 0 (concatD [doc (showString "MAP")])
+    TextuaL4.AbsTextuaL.RPmin -> prPrec i 1 (concatD [doc (showString "MIN")])
+    TextuaL4.AbsTextuaL.RPmax -> prPrec i 1 (concatD [doc (showString "MAX")])
+    TextuaL4.AbsTextuaL.RPmap -> prPrec i 1 (concatD [doc (showString "MAP")])
     TextuaL4.AbsTextuaL.RPTC tcomparison -> prPrec i 0 (concatD [prt 0 tcomparison])
 
 instance Print TextuaL4.AbsTextuaL.TComparison where

@@ -23,61 +23,62 @@ import TextuaL4.LexTextuaL
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '('       { PT _ (TS _ 1)     }
-  ')'       { PT _ (TS _ 2)     }
-  ','       { PT _ (TS _ 3)     }
-  ';'       { PT _ (TS _ 4)     }
-  '<'       { PT _ (TS _ 5)     }
-  '<='      { PT _ (TS _ 6)     }
-  '>'       { PT _ (TS _ 7)     }
-  '>='      { PT _ (TS _ 8)     }
-  'A'       { PT _ (TS _ 9)     }
-  'ABOUT'   { PT _ (TS _ 10)    }
-  'AFTER'   { PT _ (TS _ 11)    }
-  'ALL'     { PT _ (TS _ 12)    }
-  'AND'     { PT _ (TS _ 13)    }
-  'ANY'     { PT _ (TS _ 14)    }
-  'BEFORE'  { PT _ (TS _ 15)    }
-  'BY'      { PT _ (TS _ 16)    }
-  'DECIDE'  { PT _ (TS _ 17)    }
-  'DECLARE' { PT _ (TS _ 18)    }
-  'DIVIDE'  { PT _ (TS _ 19)    }
-  'EQUALS'  { PT _ (TS _ 20)    }
-  'EVERY'   { PT _ (TS _ 21)    }
-  'False'   { PT _ (TS _ 22)    }
-  'GIVEN'   { PT _ (TS _ 23)    }
-  'GIVETH'  { PT _ (TS _ 24)    }
-  'HAS'     { PT _ (TS _ 25)    }
-  'IF'      { PT _ (TS _ 26)    }
-  'IN'      { PT _ (TS _ 27)    }
-  'IS'      { PT _ (TS _ 28)    }
-  'LIST'    { PT _ (TS _ 29)    }
-  'MAP'     { PT _ (TS _ 30)    }
-  'MAX'     { PT _ (TS _ 31)    }
-  'MAY'     { PT _ (TS _ 32)    }
-  'MEANS'   { PT _ (TS _ 33)    }
-  'MIN'     { PT _ (TS _ 34)    }
-  'MINUS'   { PT _ (TS _ 35)    }
-  'MODULO'  { PT _ (TS _ 36)    }
-  'MUST'    { PT _ (TS _ 37)    }
-  'NOT'     { PT _ (TS _ 38)    }
-  'OF'      { PT _ (TS _ 39)    }
-  'ON'      { PT _ (TS _ 40)    }
-  'ONE'     { PT _ (TS _ 41)    }
-  'OR'      { PT _ (TS _ 42)    }
-  'PRODUCT' { PT _ (TS _ 43)    }
-  'SET'     { PT _ (TS _ 44)    }
-  'SHANT'   { PT _ (TS _ 45)    }
-  'SUBJECT' { PT _ (TS _ 46)    }
-  'SUM'     { PT _ (TS _ 47)    }
-  'TO'      { PT _ (TS _ 48)    }
-  'True'    { PT _ (TS _ 49)    }
-  'UNLESS'  { PT _ (TS _ 50)    }
-  'WHO'     { PT _ (TS _ 51)    }
-  L_doubl   { PT _ (TD $$)      }
-  L_integ   { PT _ (TI $$)      }
-  L_quoted  { PT _ (TL $$)      }
-  L_Token   { PT _ (T_Token $$) }
+  '('         { PT _ (TS _ 1)     }
+  ')'         { PT _ (TS _ 2)     }
+  ','         { PT _ (TS _ 3)     }
+  ';'         { PT _ (TS _ 4)     }
+  '<'         { PT _ (TS _ 5)     }
+  '<='        { PT _ (TS _ 6)     }
+  '>'         { PT _ (TS _ 7)     }
+  '>='        { PT _ (TS _ 8)     }
+  'A'         { PT _ (TS _ 9)     }
+  'ABOUT'     { PT _ (TS _ 10)    }
+  'AFTER'     { PT _ (TS _ 11)    }
+  'ALL'       { PT _ (TS _ 12)    }
+  'AND'       { PT _ (TS _ 13)    }
+  'ANY'       { PT _ (TS _ 14)    }
+  'BEFORE'    { PT _ (TS _ 15)    }
+  'BY'        { PT _ (TS _ 16)    }
+  'DECIDE'    { PT _ (TS _ 17)    }
+  'DECLARE'   { PT _ (TS _ 18)    }
+  'DIVIDE'    { PT _ (TS _ 19)    }
+  'EQUALS'    { PT _ (TS _ 20)    }
+  'EVERY'     { PT _ (TS _ 21)    }
+  'False'     { PT _ (TS _ 22)    }
+  'GIVEN'     { PT _ (TS _ 23)    }
+  'GIVETH'    { PT _ (TS _ 24)    }
+  'HAS'       { PT _ (TS _ 25)    }
+  'IF'        { PT _ (TS _ 26)    }
+  'IN'        { PT _ (TS _ 27)    }
+  'IS'        { PT _ (TS _ 28)    }
+  'LIST'      { PT _ (TS _ 29)    }
+  'MAP'       { PT _ (TS _ 30)    }
+  'MAX'       { PT _ (TS _ 31)    }
+  'MAY'       { PT _ (TS _ 32)    }
+  'MEANS'     { PT _ (TS _ 33)    }
+  'MIN'       { PT _ (TS _ 34)    }
+  'MINUS'     { PT _ (TS _ 35)    }
+  'MODULO'    { PT _ (TS _ 36)    }
+  'MUST'      { PT _ (TS _ 37)    }
+  'NOT'       { PT _ (TS _ 38)    }
+  'OF'        { PT _ (TS _ 39)    }
+  'ON'        { PT _ (TS _ 40)    }
+  'ONE'       { PT _ (TS _ 41)    }
+  'OR'        { PT _ (TS _ 42)    }
+  'OTHERWISE' { PT _ (TS _ 43)    }
+  'PRODUCT'   { PT _ (TS _ 44)    }
+  'SET'       { PT _ (TS _ 45)    }
+  'SHANT'     { PT _ (TS _ 46)    }
+  'SUBJECT'   { PT _ (TS _ 47)    }
+  'SUM'       { PT _ (TS _ 48)    }
+  'TO'        { PT _ (TS _ 49)    }
+  'True'      { PT _ (TS _ 50)    }
+  'UNLESS'    { PT _ (TS _ 51)    }
+  'WHO'       { PT _ (TS _ 52)    }
+  L_doubl     { PT _ (TD $$)      }
+  L_integ     { PT _ (TI $$)      }
+  L_quoted    { PT _ (TL $$)      }
+  L_Token     { PT _ (T_Token $$) }
 
 %%
 
@@ -101,10 +102,8 @@ Rule
   | 'EVERY' BoolStruct Who Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWho $2 $3 $4 $5 }
   | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
   | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.HornlikeMeans $1 $3 }
-  | 'DECIDE' RelationalPredicate { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
-  | 'DECIDE' RelationalPredicate 'IF' BoolStruct { TextuaL4.AbsTextuaL.HornlikeDecideIf $2 $4 }
-  | 'GIVETH' IsA 'DECIDE' RelationalPredicate { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
-  | 'GIVETH' IsA 'DECIDE' RelationalPredicate 'IF' BoolStruct { TextuaL4.AbsTextuaL.HlikeGivethIf $2 $4 $6 }
+  | 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
+  | 'GIVETH' IsA 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
 
 IsA :: { TextuaL4.AbsTextuaL.IsA }
 IsA
@@ -125,6 +124,17 @@ Fields
   : 'HAS' ListIsA { TextuaL4.AbsTextuaL.Has $2 }
   | {- empty -} { TextuaL4.AbsTextuaL.EmptyFields }
 
+HornClause :: { TextuaL4.AbsTextuaL.HornClause }
+HornClause
+  : RelationalPredicate 'IF' BoolStruct { TextuaL4.AbsTextuaL.HeadBody $1 $3 }
+  | RelationalPredicate 'OTHERWISE' { TextuaL4.AbsTextuaL.HeadOtherwise $1 }
+  | RelationalPredicate { TextuaL4.AbsTextuaL.HeadOnly $1 }
+
+ListHornClause :: { [TextuaL4.AbsTextuaL.HornClause] }
+ListHornClause
+  : HornClause { (:[]) $1 }
+  | HornClause ';' ListHornClause { (:) $1 $3 }
+
 Deontic :: { TextuaL4.AbsTextuaL.Deontic }
 Deontic
   : 'MUST' { TextuaL4.AbsTextuaL.Deontic_MUST }
@@ -142,6 +152,12 @@ RelationalPredicate :: { TextuaL4.AbsTextuaL.RelationalPredicate }
 RelationalPredicate
   : ListMTExpr { TextuaL4.AbsTextuaL.RPMT $1 }
   | ListMTExpr RPRel BoolStruct1 { TextuaL4.AbsTextuaL.RPBoolStructR $1 $2 $3 }
+  | RPRel1 '(' ListRelationalPredicate ')' { TextuaL4.AbsTextuaL.RPnary $1 $3 }
+
+ListRelationalPredicate :: { [TextuaL4.AbsTextuaL.RelationalPredicate] }
+ListRelationalPredicate
+  : RelationalPredicate { (:[]) $1 }
+  | RelationalPredicate ',' ListRelationalPredicate { (:) $1 $3 }
 
 MTExpr :: { TextuaL4.AbsTextuaL.MTExpr }
 MTExpr
@@ -199,16 +215,21 @@ RPRel
   | 'NOT' { TextuaL4.AbsTextuaL.RPnot }
   | 'AND' { TextuaL4.AbsTextuaL.RPand }
   | 'OR' { TextuaL4.AbsTextuaL.RPor }
-  | 'SUM' { TextuaL4.AbsTextuaL.RPsum }
+  | 'SUBJECT' 'TO' { TextuaL4.AbsTextuaL.RPsubjectTo }
+  | TComparison { TextuaL4.AbsTextuaL.RPTC $1 }
+  | RPRel1 { $1 }
+
+RPRel1 :: { TextuaL4.AbsTextuaL.RPRel }
+RPRel1
+  : 'SUM' { TextuaL4.AbsTextuaL.RPsum }
   | 'PRODUCT' { TextuaL4.AbsTextuaL.RPproduct }
   | 'MINUS' { TextuaL4.AbsTextuaL.RPminus }
   | 'DIVIDE' { TextuaL4.AbsTextuaL.RPdivide }
   | 'MODULO' { TextuaL4.AbsTextuaL.RPmodulo }
-  | 'SUBJECT' 'TO' { TextuaL4.AbsTextuaL.RPsubjectTo }
   | 'MIN' { TextuaL4.AbsTextuaL.RPmin }
   | 'MAX' { TextuaL4.AbsTextuaL.RPmax }
   | 'MAP' { TextuaL4.AbsTextuaL.RPmap }
-  | TComparison { TextuaL4.AbsTextuaL.RPTC $1 }
+  | '(' RPRel ')' { $2 }
 
 TComparison :: { TextuaL4.AbsTextuaL.TComparison }
 TComparison

@@ -17,10 +17,8 @@ data Rule
     | RegWho BoolStruct Who Deontic BoolStruct
     | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
     | HornlikeMeans Text BoolStruct
-    | HornlikeDecide RelationalPredicate
-    | HornlikeDecideIf RelationalPredicate BoolStruct
-    | HlikeGiveth IsA RelationalPredicate
-    | HlikeGivethIf IsA RelationalPredicate BoolStruct
+    | HornlikeDecide [HornClause]
+    | HlikeGiveth IsA [HornClause]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data IsA
@@ -34,6 +32,12 @@ data IsA
 data Fields = Has [IsA] | EmptyFields
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
+data HornClause
+    = HeadBody RelationalPredicate BoolStruct
+    | HeadOtherwise RelationalPredicate
+    | HeadOnly RelationalPredicate
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
 data Deontic = Deontic_MUST | Deontic_MAY | Deontic_SHANT
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
@@ -44,7 +48,9 @@ data InlineHornlike = MeansInline BoolStruct
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data RelationalPredicate
-    = RPMT [MTExpr] | RPBoolStructR [MTExpr] RPRel BoolStruct
+    = RPMT [MTExpr]
+    | RPBoolStructR [MTExpr] RPRel BoolStruct
+    | RPnary RPRel [RelationalPredicate]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data MTExpr = MTT Text | MTI Integer | MTF Double | MTB Bool

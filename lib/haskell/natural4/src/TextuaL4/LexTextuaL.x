@@ -40,7 +40,7 @@ $white+ ;
     { tok (eitherResIdent TV) }
 
 -- token Token
-$l ([\' \- \_]| $l)*
+([\' \+ \- \/ \_]| $l)+
     { tok (eitherResIdent T_Token) }
 
 -- Keywords and Ident
@@ -162,35 +162,36 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "IF" 26
-    (b "AND" 13
+  b "IN" 27
+    (b "ANY" 14
        (b ">" 7
           (b ";" 4
              (b ")" 2 (b "(" 1 N N) (b "," 3 N N)) (b "<=" 6 (b "<" 5 N N) N))
-          (b "ABOUT" 10
-             (b "A" 9 (b ">=" 8 N N) N) (b "ALL" 12 (b "AFTER" 11 N N) N)))
-       (b "EQUALS" 20
-          (b "DECIDE" 17
-             (b "BEFORE" 15 (b "ANY" 14 N N) (b "BY" 16 N N))
-             (b "DIVIDE" 19 (b "DECLARE" 18 N N) N))
-          (b "GIVEN" 23
-             (b "False" 22 (b "EVERY" 21 N N) N)
-             (b "HAS" 25 (b "GIVETH" 24 N N) N))))
-    (b "OF" 39
-       (b "MEANS" 33
-          (b "MAP" 30
-             (b "IS" 28 (b "IN" 27 N N) (b "LIST" 29 N N))
-             (b "MAY" 32 (b "MAX" 31 N N) N))
-          (b "MODULO" 36
-             (b "MINUS" 35 (b "MIN" 34 N N) N)
-             (b "NOT" 38 (b "MUST" 37 N N) N)))
-       (b "SUBJECT" 46
-          (b "PRODUCT" 43
-             (b "ONE" 41 (b "ON" 40 N N) (b "OR" 42 N N))
-             (b "SHANT" 45 (b "SET" 44 N N) N))
-          (b "True" 49
-             (b "TO" 48 (b "SUM" 47 N N) N)
-             (b "WHO" 51 (b "UNLESS" 50 N N) N))))
+          (b "AFTER" 11
+             (b "A" 9 (b ">=" 8 N N) (b "ABOUT" 10 N N))
+             (b "AND" 13 (b "ALL" 12 N N) N)))
+       (b "EVERY" 21
+          (b "DECLARE" 18
+             (b "BY" 16 (b "BEFORE" 15 N N) (b "DECIDE" 17 N N))
+             (b "EQUALS" 20 (b "DIVIDE" 19 N N) N))
+          (b "GIVETH" 24
+             (b "GIVEN" 23 (b "False" 22 N N) N)
+             (b "IF" 26 (b "HAS" 25 N N) N))))
+    (b "ON" 40
+       (b "MIN" 34
+          (b "MAX" 31
+             (b "LIST" 29 (b "IS" 28 N N) (b "MAP" 30 N N))
+             (b "MEANS" 33 (b "MAY" 32 N N) N))
+          (b "MUST" 37
+             (b "MODULO" 36 (b "MINUS" 35 N N) N)
+             (b "OF" 39 (b "NOT" 38 N N) N)))
+       (b "SUBJECT" 47
+          (b "PRODUCT" 44
+             (b "OR" 42 (b "ONE" 41 N N) (b "OTHERWISE" 43 N N))
+             (b "SHANT" 46 (b "SET" 45 N N) N))
+          (b "True" 50
+             (b "TO" 49 (b "SUM" 48 N N) N)
+             (b "WHO" 52 (b "UNLESS" 51 N N) N))))
   where
   b s n = B bs (TS bs n)
     where

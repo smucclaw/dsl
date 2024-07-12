@@ -27,19 +27,20 @@ HornlikeMeans. Rule ::= Text "MEANS" BoolStruct ;
 
 -- DECIDE text IS BoolStruct works to be a RelationalPredicate already,
 -- because there is no MEANS that breaks the RelationalPredicate
-HornlikeDecide. Rule ::= "DECIDE" RelationalPredicate ;
-HornlikeDecideIf. Rule ::= "DECIDE" RelationalPredicate "IF" BoolStruct ;
-
+HornlikeDecide. Rule ::= "DECIDE" [HornClause] ;
 -- Only Hornlikes have GIVETH
-HlikeGiveth. Rule ::= "GIVETH" IsA "DECIDE" RelationalPredicate ;
-HlikeGivethIf. Rule ::= "GIVETH" IsA "DECIDE" RelationalPredicate "IF" BoolStruct ;
+HlikeGiveth. Rule ::= "GIVETH" IsA "DECIDE" [HornClause] ;
+
+HeadBody. HornClause ::= RelationalPredicate "IF" BoolStruct ;
+HeadOtherwise. HornClause ::= RelationalPredicate "OTHERWISE" ;
+HeadOnly. HornClause ::= RelationalPredicate ;
+separator nonempty HornClause ";" ;
 
 rules Deontic ::= "MUST" | "MAY" | "SHANT" ;
 
 WhoSimple. Who ::= "WHO" BoolStruct ;
 
 MeansInline. InlineHornlike ::= "MEANS" BoolStruct ;
-
 
 
 -- RelationalPredicate
@@ -52,6 +53,10 @@ RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStruct1  ;  -- eyes IS
 -- That and also because it introduces 62 conflicts.
 -- RPnary. RelationalPredicate ::= RPRel [RelationalPredicate] ; -- "NEVER GO FULL LISP!" "we went full Lisp".
 -- separator nonempty RelationalPredicate "," ;
+-- Special cases for the constructs that usually appear as RPnary
+RPnary. RelationalPredicate ::= RPRel1 "(" [RelationalPredicate] ")" ;
+
+separator nonempty RelationalPredicate "," ;
 
 MTT. MTExpr ::= Text    ;
 MTI. MTExpr ::= Integer ;
@@ -61,7 +66,7 @@ MTB. MTExpr ::= Bool    ;
 
 rules Bool ::= "True" | "False" ;
 rules Text ::= String | Token ;
-token Token letter (letter | '_' | '\'' | '-')*  ;
+token Token (letter | '_' | '\'' | '-' | '+' | '/')+  ;
 separator nonempty MTExpr " " ;
 
 -- BoolStruct
@@ -97,15 +102,15 @@ RPnotElem . RPRel ::= "NOT IN" ;
 RPnot . RPRel ::= "NOT" ;
 RPand . RPRel ::= "AND" ;
 RPor . RPRel ::= "OR" ;
-RPsum . RPRel ::= "SUM" ;
-RPproduct . RPRel ::= "PRODUCT" ;
-RPminus . RPRel ::= "MINUS" ;
-RPdivide . RPRel ::= "DIVIDE" ;
-RPmodulo . RPRel ::= "MODULO" ;
+RPsum . RPRel1 ::= "SUM" ;
+RPproduct . RPRel1 ::= "PRODUCT" ;
+RPminus . RPRel1 ::= "MINUS" ;
+RPdivide . RPRel1 ::= "DIVIDE" ;
+RPmodulo . RPRel1 ::= "MODULO" ;
 RPsubjectTo . RPRel ::= "SUBJECT TO" ;
-RPmin . RPRel ::= "MIN" ;
-RPmax . RPRel ::= "MAX" ;
-RPmap . RPRel ::= "MAP" ;
+RPmin . RPRel1 ::= "MIN" ;
+RPmax . RPRel1 ::= "MAX" ;
+RPmap . RPRel1 ::= "MAP" ;
 
 RPTC   . RPRel ::= TComparison ;
 TBefore. TComparison ::= "BEFORE" ;
@@ -113,3 +118,8 @@ TAfter . TComparison ::= "AFTER" ;
 TBy    . TComparison ::= "BY" ;
 TOn    . TComparison ::= "ON" ;
 TVague . TComparison ::= "ABOUT" ;
+
+-- This is a hack, not about precedences but to create lightweight subtypes.
+-- What 1 really means is "this is used as a prefix", but thanks to coercions, it can also be used as infix.
+-- (I'm sorry.) /Inari
+coercions RPRel 1 ;

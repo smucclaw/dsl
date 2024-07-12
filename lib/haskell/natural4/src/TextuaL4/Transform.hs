@@ -5,6 +5,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-matches #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module TextuaL4.Transform where
 
@@ -43,25 +44,17 @@ transRule x = case x of
     -> mkHlike Means (transText name) (bsr2rp' name hhead)
 
   -- DECIDE relpred(foo IS bar)
-  TL4.HornlikeDecide hhead
-    -> mkHlike Decide (nameFromRP hhead) (transRelationalPredicate hhead)
+  TL4.HornlikeDecide [] -> error [i|transRule: empty clauses in Hornlike|]
+  TL4.HornlikeDecide hcs@(hc:_) -> defaultHorn {
+      keyword = Decide
+    , name = nameFromHC hc
+    , clauses = transHornClause <$> hcs
+    }
 
-  -- DECIDE relpred IF boolstruct
-  TL4.HornlikeDecideIf hhead hbody ->
-    let simple = transRule $ TL4.HornlikeDecide hhead
-    in simple {
-        clauses = fmap (\x -> x {hBody = Just $ transBoolStructR hbody}) simple.clauses
-      }
   -- Only Hornlikes have GIVETH
   -- GIVETH foo (IS A bar) DECIDE relpred
   TL4.HlikeGiveth giveth hhead ->
     let simple = transRule $ TL4.HornlikeDecide hhead
-    in simple {
-        giveth = Just $ isa2pt giveth
-      }
-  -- GIVETH foo (IS A bar) DECIDE relpred IF boolstruct
-  TL4.HlikeGivethIf giveth hhead hbody ->
-    let simple = transRule $ TL4.HornlikeDecideIf hhead hbody
     in simple {
         giveth = Just $ isa2pt giveth
       }
@@ -75,27 +68,29 @@ transRule x = case x of
     }
 
 -- Any rule can have a GIVEN
-  TL4.Given (isa:isas) rule ->
-    let simple = transRule rule
-    in simple {
-        given = Just $ fmap isa2tm (isa :| isas)
-      }
+  TL4.Given (isa:isas) rule -> (transRule rule) {
+      given = Just $ fmap isa2tm (isa :| isas)
+    }
   -- Empty list shouldn't happen because we have separator nonempty in the grammar
   -- But if someone changes the grammar later, this is totally valid case anyway:
   -- if no givens, then just use the rule as is.
   TL4.Given _ rule -> transRule rule
 
+nameFromHC :: TL4.HornClause -> [MTExpr]
+nameFromHC hc = case hc of
+  TL4.HeadOnly hhead   -> nameFromRP hhead
+  TL4.HeadBody hhead _ -> nameFromRP hhead
 
-nameFromRP :: TL4.RelationalPredicate -> Text.Text
+nameFromRP :: TL4.RelationalPredicate -> [MTExpr]
 nameFromRP rp = case rp of
-  TL4.RPMT mtes
-    -> mt2text (transMTExpr <$> mtes)
-  TL4.RPBoolStructR mtes _rprel _bsr
-    -> nameFromRP $ TL4.RPMT mtes
+  TL4.RPMT mtes -> transMTExpr <$> mtes
+  TL4.RPBoolStructR mtes _ _ -> nameFromRP $ TL4.RPMT mtes
+  TL4.RPnary rprel (rp:_) -> nameFromRP rp
+  TL4.RPnary rprel [] -> error [i|nameFromRP: empty RPnary|]
 
 nameFromBS :: TL4.BoolStruct -> Text.Text
 nameFromBS bs = case bs of
-  TL4.Leaf rp -> nameFromRP rp
+  TL4.Leaf rp -> mt2text $ nameFromRP rp
   _ -> bsr2text $ transBoolStructR bs
 
 mkSimpleType :: ParamType -> TL4.Text -> TypeSig
@@ -145,6 +140,15 @@ mkHlike kw text rp = defaultHorn {
   , clauses = [HC rp Nothing]
   }
 
+transHornClause :: TL4.HornClause -> HornClause2
+transHornClause x = case x of
+  TL4.HeadOnly hhead
+   -> HC (transRelationalPredicate hhead) Nothing
+  TL4.HeadBody hhead hbody
+   -> HC (transRelationalPredicate hhead) (Just $ transBoolStructR hbody)
+  TL4.HeadOtherwise hhead
+   -> HC (transRelationalPredicate hhead) (Just otherwiseBSR)
+
 bsr2rp :: Text.Text -> TL4.BoolStruct -> RelationalPredicate
 bsr2rp text bsr = RPBoolStructR [MTT text] RPis (transBoolStructR bsr)
 
@@ -175,6 +179,8 @@ transRelationalPredicate x = case x of
     -> RPConstraint (transMTExpr <$> xs) (transRPRel rprel) (transMTExpr <$> ys)
   TL4.RPBoolStructR mtes rprel bsr
     -> RPBoolStructR (transMTExpr <$> mtes) (transRPRel rprel) (transBoolStructR bsr)
+  TL4.RPnary rprel rps
+    -> RPnary (transRPRel rprel) (transRelationalPredicate <$> rps)
 
 -- type ParamText = NonEmpty (NonEmpty MTExpr, Maybe TypeSig)
 transParamText :: TL4.RelationalPredicate -> ParamText
@@ -230,6 +236,10 @@ transBoolStructR x = case x of
   TL4.Not bsr -> Not $ transBoolStructR bsr
   TL4.Leaf rp -> Leaf $ transRelationalPredicate rp
   TL4.Unless bs1 bs2 -> transBoolStructR $ TL4.All [bs1, TL4.Not bs2]
+
+-- in case we switch to a special construct for OTHERWISE, change this
+otherwiseBSR :: BoolStructR
+otherwiseBSR = Leaf (RPMT [MTT "OTHERWISE"])
 
 transRPRel :: TL4.RPRel -> RPRel
 transRPRel x = case x of

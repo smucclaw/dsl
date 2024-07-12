@@ -19,6 +19,7 @@ import Data.Text.Lazy.IO qualified as TL
 import System.FilePath ( (<.>), (</>) )
 import Test.Hspec.Golden
 import Test.Hspec (Spec, describe, it, shouldBe)
+import Data.Either (fromRight)
 
 goldenGeneric :: Show a => String -> a -> Golden TL.Text
 goldenGeneric name output_ = Golden
@@ -40,12 +41,13 @@ spec = do
     test "GIVEN foo IS A Number GIVETH bar IS A Boolean DECIDE bar IS foo > 2" "hornlike-given-giveth-2"
     test "EVERY tame ANY (Person, Animal) WHO Qualifies MEANS ALL(walks, ANY(eats, drinks), climbs) MUST ANY (sing, dance)" "regulative-any-tame-person-animal"
     test' rodents "rodents and vermin" "rodents-and-vermin"
+    test' taxesPayable "taxes payable" "taxes-payable"
   where
     test rule = test' rule rule
 
     test' rule desc fname =  do
-      let res :: Rule = either (const RegBreach) id $ run rule
-      it rule $ goldenGeneric fname res
+      let res :: Rule = fromRight RegBreach $ run rule
+      it desc $ goldenGeneric fname res
 
 
 rodents = [r|DECIDE "Not Covered"
@@ -68,6 +70,32 @@ IF          "Loss or Damage" IS ANY ( "caused by rodents"
                                         , "a plumbing, heating, or air conditioning system" )
                         )
                 )|]
+
+taxesPayable = [r|
+GIVEN annualIncome IS A Number ;
+netWorth IS A Number ;
+vivacity IS A Boolean ;
+phaseOfMoon IS ONE OF new , waxing, full, gibbous
+GIVETH  taxesPayable IS A Number
+DECIDE  taxesPayable IS taxesPayableAlive / 2 IF phaseOfMoon IS gibbous ;
+
+        taxesPayable  IS  taxesPayableAlive IF vivacity ;
+        taxesPayable  IS  taxesPayableAlive / 3 IF phaseOfMoon IS waxing ;
+        taxesPayable  IS  waived IF phaseOfMoon IS full ;
+        taxesPayable  IS  0 OTHERWISE ;
+
+        taxesPayableAlive       IS SUM ( "income tax component"
+                                       , "asset tax component" ) ;
+        "income tax component"  IS PRODUCT	( annualIncome
+                                            , PRODUCT (incomeTaxRate
+                                                      , MINUS ( 2
+                                                              , 1 )
+                                                      )
+                                            ) ;
+        "asset tax component"   IS PRODUCT ( netWorth
+                                           , assetTaxRate );
+        incomeTaxRate           IS 0.01 ;
+        assetTaxRate           IS 0.07|]
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a

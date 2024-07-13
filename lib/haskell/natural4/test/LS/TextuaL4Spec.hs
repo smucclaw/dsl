@@ -49,25 +49,28 @@ spec = do
 
 
 rodents = [r|DECIDE "Not Covered"
-IF          "Loss or Damage" IS ANY ( "caused by rodents"
+IF
+   UNLESS ( "Loss or Damage" IS ANY ( "caused by rodents"
                                     , "caused by insects"
                                     , "caused by vermin"
                                     , "caused by birds"
                                     )
-  UNLESS
-            ANY ( ALL ( "Loss or Damage" IS "to Contents"
+
+          , ANY ( ALL ( "Loss or Damage" IS "to Contents"
                       , "Loss or Damage" IS "caused by birds"
                       )
 
-                , "Loss or Damage" IS "ensuing covered loss"
+                , UNLESS ( "Loss or Damage" IS "ensuing covered loss"
 
-                  UNLESS  ANY ( "any other exclusion applies"
-                              , "an animal caused water to escape from"
+                         , ANY ( "any other exclusion applies"
+                               , "an animal caused water to escape from"
                                     ANY ( "a household appliance"
                                         , "a swimming pool"
                                         , "a plumbing, heating, or air conditioning system" )
-                        )
-                )|]
+                               )
+                         )
+                )
+        )|]
 
 taxesPayable = [r|
 GIVEN annualIncome IS A Number ;

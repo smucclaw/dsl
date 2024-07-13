@@ -151,7 +151,7 @@ InlineHornlike
 RelationalPredicate :: { TextuaL4.AbsTextuaL.RelationalPredicate }
 RelationalPredicate
   : ListMTExpr { TextuaL4.AbsTextuaL.RPMT $1 }
-  | ListMTExpr RPRel BoolStruct1 { TextuaL4.AbsTextuaL.RPBoolStructR $1 $2 $3 }
+  | ListMTExpr RPRel BoolStruct { TextuaL4.AbsTextuaL.RPBoolStructR $1 $2 $3 }
   | RPRel1 '(' ListRelationalPredicate ')' { TextuaL4.AbsTextuaL.RPnary $1 $3 }
 
 ListRelationalPredicate :: { [TextuaL4.AbsTextuaL.RelationalPredicate] }
@@ -179,22 +179,17 @@ Text
 ListMTExpr :: { [TextuaL4.AbsTextuaL.MTExpr] }
 ListMTExpr : MTExpr { (:[]) $1 } | MTExpr ListMTExpr { (:) $1 $2 }
 
-BoolStruct1 :: { TextuaL4.AbsTextuaL.BoolStruct }
-BoolStruct1
+BoolStruct :: { TextuaL4.AbsTextuaL.BoolStruct }
+BoolStruct
   : 'ANY' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.Any $3 }
   | Text 'ANY' '(' ListBoolStruct ')' Text { TextuaL4.AbsTextuaL.AnyPrePost $1 $4 $6 }
   | Text 'ANY' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.AnyPre $1 $4 }
   | 'ALL' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.All $3 }
   | Text 'ALL' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.AllPre $1 $4 }
   | Text 'ALL' '(' ListBoolStruct ')' Text { TextuaL4.AbsTextuaL.AllPrePost $1 $4 $6 }
-  | 'NOT' BoolStruct1 { TextuaL4.AbsTextuaL.Not $2 }
+  | 'NOT' '(' BoolStruct ')' { TextuaL4.AbsTextuaL.Not $3 }
+  | 'UNLESS' '(' BoolStruct ',' BoolStruct ')' { TextuaL4.AbsTextuaL.Unless $3 $5 }
   | RelationalPredicate { TextuaL4.AbsTextuaL.Leaf $1 }
-  | '(' BoolStruct ')' { $2 }
-
-BoolStruct :: { TextuaL4.AbsTextuaL.BoolStruct }
-BoolStruct
-  : BoolStruct1 'UNLESS' BoolStruct1 { TextuaL4.AbsTextuaL.Unless $1 $3 }
-  | BoolStruct1 { $1 }
 
 ListBoolStruct :: { [TextuaL4.AbsTextuaL.BoolStruct] }
 ListBoolStruct

@@ -1,10 +1,9 @@
-FROM haskell:9.6.5-slim-buster AS builder
+FROM fpco/stack-build-small:lts-22.29 AS builder
 
-COPY lib/haskell .
+COPY ./lib/haskell .
 
 RUN apt update; \
     apt-get install -y --no-install-recommends \
     libpcre3-dev
 
-RUN cd ./natural4 \
-    && stack install
+RUN stack install

@@ -343,11 +343,9 @@ exp2pred exp = case exp.exp of
     ex1 <- gml2ml e1
     ex2 <- gml2ml e2
     case (ex1, ex2) of
-      (MathVar var, MathVar val) -> -- phaseOfMoon IS gibbous, for now treat as a record. Should work nicely for enums, but do we want freeform text?
-        pure $ PredVar [i|#{var}.#{val}|]
       (MathVar var, val) -> do
         let ex2withLabel = var @|= val
-        pure $ PredComp Nothing CEQ ex1 ex2withLabel
+        pure $ PredComp (Just [i|#{var} == #{showExpr val}|]) CEQ ex1 ex2withLabel
       _ -> fail [i|\nexp2pred: expected Var, got #{ex1}\n|]
   ELit GML.EBoolTrue -> pure $ PredVal Nothing True
   ELit GML.EBoolFalse -> pure $ PredVal Nothing False

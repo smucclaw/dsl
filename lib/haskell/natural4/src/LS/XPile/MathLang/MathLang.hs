@@ -321,7 +321,7 @@ gml2ml exp = case expExp of
             chainITEs seqs
           newF =
             -- trace [i|\ngml2ml: newSeqs #{newSeqs}\n|] $
-            Map.fromList [(var, var @|= val) | MathSet var val <- newSeqs]
+            Map.fromList [(var, MathSet var val) | MathSet var val <- newSeqs]
 
       ToMathLang $ tell emptyState {symtabF = newF}
 

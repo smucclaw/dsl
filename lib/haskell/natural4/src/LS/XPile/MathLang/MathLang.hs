@@ -50,7 +50,8 @@ import Optics
     over,
     view,
   )
-import Prettyprinter (Doc, braces, vcat, pretty, list)
+import Prettyprinter (Doc, braces, vcat, pretty)
+import qualified Prettyprinter as PP
 import Text.Regex.PCRE.Heavy qualified as PCRE
 {-
 YM: This is currently more like a NOTES file,
@@ -115,7 +116,7 @@ toMathLangMw l4i _myenv = (rendered, [])
   state = stRaw {symtabF = Map.mapWithKey reintroduceSetVar $ symtabF stRaw}
   rendered = [__i|
                 #{vcat $ fmap renderExp exprs}
-                export const AllExprs = #{list $ fmap (pretty.renderName) exprs}
+                export const AllExprs = #{PP.list $ fmap (pretty.renderName) exprs}
                 #{vcat $ fmap renderExp $ stateNotInExprs exprs state}
              |]
 

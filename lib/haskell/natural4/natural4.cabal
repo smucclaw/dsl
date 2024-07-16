@@ -106,6 +106,9 @@ library
       LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.Purescript
+      LS.XPile.Simala.Log
+      LS.XPile.Simala.Transpile
+      LS.XPile.Simala.Types
       LS.XPile.SVG
       LS.XPile.Typescript
       LS.XPile.Uppaal

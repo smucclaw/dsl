@@ -46,10 +46,10 @@ import Language.Haskell.TH.Syntax (Lift)
 
 -- | GML types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'.
 --
-data L4EntType =
-    L4EntType T.Text  -- ^ a user-defined named type
+data L4EntityType =
+    L4EntityType T.Text  -- ^ a user-defined named type
   | L4Enum [T.Text]   -- ^ a user-defined enumeration type
-  | L4List L4EntType  -- ^ a user-defined list type
+  | L4List L4EntityType  -- ^ a user-defined list type
   deriving stock (Eq, Generic, Show, Ord)
   deriving anyclass (Hashable)
 
@@ -57,10 +57,10 @@ data L4EntType =
 --
 -- NOTE / TODO: This translation seems lossy.
 --
-mkEntType :: TypeSig -> L4EntType
+mkEntType :: TypeSig -> L4EntityType
 mkEntType = \case
-  SimpleType TOne      tn -> L4EntType tn
-  SimpleType TOptional tn -> L4EntType tn -- no optional
+  SimpleType TOne      tn -> L4EntityType tn
+  SimpleType TOptional tn -> L4EntityType tn -- no optional
   SimpleType _         tn -> L4List $ mkEntType $ SimpleType TOne tn -- lists, sets, no difference
   InlineEnum _         pt -> L4Enum $ enumLabels pt -- assuming no lists here (is there an example of a list of enum values?)
 
@@ -78,7 +78,7 @@ type Number = Double
 
 -- | GML type information can either stem from annotations or from inference.
 --
-data TLabel = FromUser L4EntType
+data TLabel = FromUser L4EntityType
             | Inferred T.Text
   deriving stock (Eq, Ord, Show)
 makePrisms ''TLabel
@@ -122,18 +122,18 @@ makeFieldLabelsNoPrefix ''ExplnAnnot
 --
 -- (Row and column, but not filename.)
 --
-data SrcPositn = MkPositn
+data SrcPosition = MkPosition
   { row :: !Int
   , col :: !Int
   } deriving stock (Eq, Ord, Show, Generic)
     deriving Hashable
-makeFieldLabelsNoPrefix ''SrcPositn
+makeFieldLabelsNoPrefix ''SrcPosition
 
 -- | Metadata stored with an expression.
 --
 data ExpMetadata =
   MkExpMetadata
-  { srcPos     :: SrcPositn        -- ^ source position of annotated expression
+  { srcPos     :: SrcPosition        -- ^ source position of annotated expression
   , typeLabel  :: Maybe TLabel     -- ^ (possibly) type information for annotated expression
   , explnAnnot :: Maybe ExplnAnnot -- ^ (possibly) additional annotations
   }
@@ -353,13 +353,13 @@ makeFieldLabelsNoPrefix ''Exp
 This should be useful b/c most langs require more upfront declaration of global vars than Meng seems to want in L4
 -}
 
---newtype GlobalVars = MkGlobalVars {mkGlobalVars :: HashMap Var (Maybe L4EntType)}
-newtype GlobalVars = MkGlobalVars (HashMap Var (Maybe L4EntType))
+--newtype GlobalVars = MkGlobalVars {mkGlobalVars :: HashMap Var (Maybe L4EntityType)}
+newtype GlobalVars = MkGlobalVars (HashMap Var (Maybe L4EntityType))
   deriving stock (Show)
-  deriving (Semigroup, Monoid, Eq) via (HashMap Var (Maybe L4EntType))
+  deriving (Semigroup, Monoid, Eq) via (HashMap Var (Maybe L4EntityType))
 makePrisms ''GlobalVars
 
-mkGlobalVars :: HashMap Var (Maybe L4EntType) -> GlobalVars
+mkGlobalVars :: HashMap Var (Maybe L4EntityType) -> GlobalVars
 mkGlobalVars = view (re _MkGlobalVars)
 
 

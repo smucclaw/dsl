@@ -42,9 +42,21 @@ import GHC.Generics (Generic)
 import LS.BasicTypes
 import LS.Utils ((|$>))
 import Language.Haskell.TH.Syntax (Lift)
-import Optics (Iso', coerced, re, view)
+import Optics (Iso', coerced, re, view, makePrisms)
 import Safe (headMay)
 import Text.Megaparsec (Parsec)
+
+-- | Previously `MultiTerm`s were just @[Text]@.
+-- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
+data MTExpr = MTT Text.Text -- ^ Text string
+            | MTI Integer   -- ^ Integer
+            | MTF Double     -- ^ Float
+            | MTB Bool      -- ^ Boolean
+--            | MTC Text.Text -- ^ Currency money
+--            | MTD Text.Text -- ^ Date
+            deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
+
+makePrisms ''MTExpr
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
 -- A parser generates a list of rules (in the "appendix", representing nested rules defined inline) and optionally some other value
@@ -70,16 +82,6 @@ data RPRel = RPis | RPhas | RPeq | RPlt | RPlte | RPgt | RPgte | RPelem | RPnotE
            | RPmap
            | RPTC TComparison -- ^ temporal constraint as part of a relational predicate; note there is a separate `TemporalConstraint` type.
   deriving (Eq, Ord, Show, Generic, Hashable, ToJSON, Lift)
-
--- | Previously `MultiTerm`s were just @[Text]@.
--- We give them a long-overdue upgrade to match a handful of cell types that are native to spreadsheets
-data MTExpr = MTT Text.Text -- ^ Text string
-            | MTI Integer   -- ^ Integer
-            | MTF Double     -- ^ Float
-            | MTB Bool      -- ^ Boolean
---            | MTC Text.Text -- ^ Currency money
---            | MTD Text.Text -- ^ Date
-            deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
 -- | the parser returns a list of MTExpr, to be parsed further at some later point
 type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970

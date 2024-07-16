@@ -39,7 +39,6 @@ import Data.HashSet qualified as Set
 
 import LS.XPile.MathLang.GenericMathLang.ArithOps ( allArithOps, arithOps )
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 -- TODO: Haven't actually finished setting up logging infra, unfortunately.
 -- But it's also not really necessary for working on the transpiler
 import LS.XPile.MathLang.GenericMathLang.RPrel2opTable
@@ -90,6 +89,11 @@ import Text.Read (readMaybe)
 import Prelude hiding (exp)
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as State
+
+-- $setup
+-- >>> import Data.Text qualified as T
+-- >>> import LS.Types
+-- >>> :set -XOverloadedStrings
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -295,6 +299,11 @@ instance Eq UserDefinedFun where
            getFunDef f == getFunDef g &&
            getBoundVars f == getBoundVars g
 
+instance Ord UserDefinedFun where
+  f `compare` g = getFunName f `compare` getFunName g <>
+           getFunDef f `compare` getFunDef g <>
+           getBoundVars f `compare` getBoundVars g
+
 instance Show UserDefinedFun where
   show = showUserDefinedFun
 
@@ -310,15 +319,13 @@ data Env =
         -- , retVarInfo :: RetVarInfo
           -- ^ not sure we need retVarInfo
         , userDefinedFuns :: [UserDefinedFun]
-        , currSrcPos :: SrcPositn
-        , logConfig :: LogConfig }
+        , currSrcPos :: SrcPositn }
   deriving stock (Generic)
 
 initialEnv :: Env
 initialEnv = MkEnv { localVars = HM.empty
                    , userDefinedFuns = []
-                   , currSrcPos = MkPositn 0 0
-                   , logConfig = defaultLogConfig }
+                   , currSrcPos = MkPositn 0 0 }
 
 addCustomFuns :: [UserDefinedFun] -> Env -> Env
 addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
@@ -555,6 +562,9 @@ baseExpify hl = case lhsLooksLikeLambda hl of
   _ -> baseExpify'
   where
     baseExpify' = case hl of
+      -- A labelled function that can be called later.
+      -- Thus, parse the function and assign the result to a variable.
+      -- TODO: what happens with recursion?
       (shRLabel -> Just (_section, _number, rname)) -> do
         bexp <- baseExpify $ hl {shRLabel = Nothing}
         mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
@@ -577,6 +587,8 @@ mkLambda (v:vs) bexp = do
   let funType = typeMdata pos "Function"
   funType . ELam v <$> mkLambda vs bexp
 
+-- | A 'SimpleHL' represents an 'If' expression, if it is a single clause
+-- with a body.
 isIf :: SimpleHL -> Maybe HnBodHC
 isIf hl =
   case hl.baseHL of
@@ -646,7 +658,7 @@ maybeOperator pos [MTT x, MTT f] [var]
     postfix f mkBexp)          -- megaparsec operator
 maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
   | all (`elem` vs) [vx, vy]
-    && f `notElem` allArithOps
+    && not (f `Set.member` allArithOps)
     = Just (
       MkVar f,                     -- fun name
       [vx, vy],                    -- bound vars
@@ -748,7 +760,7 @@ isSetVarToTrue = \case
 
 {- |
 We want to handle things like
-  * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+  * @[ MTT "n1 + n2" ]@, from @RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]@
 
 To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github.com/mrkkrp/parser-combinators/Control/Monad/Combinators/Expr.hs)
 
@@ -768,17 +780,29 @@ isFun funs mte =
   let ops = allArithOps
       allFuns = foldr (Set.insert . varAsTxt) ops funs
   in case mte of
-    MTT t -> t `elem` allFuns
+    MTT t -> t `Set.member` allFuns
     _ -> False
 
-baseExpifyMTEs :: (Reader Env :> es, Error ToLCError :> es) => [MTExpr] -> Eff es BaseExp
-baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
+-- | Interpret the given 'MTExpr' and its subsequent 'MTExpr's params
+-- as a record selector. If all 'MTExpr's are record selectors, we simply
+-- create one record selector.
+--
+-- However, often a record selector is passed
+-- to a function application, for example @sibling's beverage discountedBy 20@, where
+-- @discountedBy@ is a function.
+-- If that's the case, we roughly translate this to @discountedBy (sibling.beverage) 20@.
+genetivesMultiTermExpression ::
+  (Error ToLCError :> es, Reader Env :> es) =>
+  MTExpr ->
+  NE.NonEmpty MTExpr ->
+  Eff es BaseExp
+genetivesMultiTermExpression g rest = do
   userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
-  case break (isFun userFuns) rest of
+  case NE.break (isFun userFuns) rest of
   -- ind's parent's sibling's … income
     (_x:_xs,[]) -> do
-      fieldname <- expifyMTEsNoMd rest -- income
+      fieldname <- expifyMTEsNoMd $ NE.toList rest -- income
       pure $ ERec fieldname recname
 
   -- ind's parent's sibling's … income, discountedBy, foo
@@ -789,87 +813,105 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
       let arg1 = ERec fieldname recname
           fArg1 = noExtraMdata $ EApp fExp $ noExtraMdata arg1
       pure $ EApp fArg1 arg2
+
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
+baseExpifyMTEs :: (Reader Env :> es, Error ToLCError :> es) => [MTExpr] -> Eff es BaseExp
 baseExpifyMTEs mtes = do
-  userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
-  case mtes of
-    [mte] -> do
-      -- Inari: assuming that the Var will be used for comparison
-      -- because SetVar is handled elsewhere, by extracting it
-      -- from RPConstraint
-      mvar <- isDeclaredVar mte
-      case mvar of
-        Just var -> return $ EVar var
-        Nothing -> parseExpr mte
+  case splitGenitives mtes of
+    Just (g, nonEmptyMtes) -> genetivesMultiTermExpression g nonEmptyMtes
+    Nothing -> do
+      userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
+      -- Now, we differentiate the following cases:
+      -- 1. It might be a variable
+      -- 2. It might be a simple function aplication
+      -- 3. It might be a more complex function application or expression
+      --    that requires more analysis.
+      case mtes of
+        [mte] -> do
+          -- Inari: assuming that the Var will be used for comparison
+          -- because SetVar is handled elsewhere, by extracting it
+          -- from RPConstraint
+          mvar <- isDeclaredVar mte
+          case mvar of
+            Just var -> return $ EVar var
+            Nothing -> parseExpr mte
 
-    [mte1@(MTT _), mte2@(MTT _)] -> do
-      mvar1 <- isDeclaredVar mte1
-      mvar2 <- isDeclaredVar mte2
-      case (mvar1, mvar2) of
-        (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
-          varWeAssumeToBePred <- varFromMTEs [mte2]
-          fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp $ noExtraMdata $ EVar var1
+        -- Exactly two elements, might be a function application like:
+        --
+        -- * f x
+        -- * x f
+        --
+        -- Check whether 'f' and 'x' are functions or variables, etc...
+        -- However, it seems we do not *really* care whether it is a user-defined
+        -- function or simply a variable.
+        [mte1@(MTT _), mte2@(MTT _)] -> do
+          mvar1 <- isDeclaredVar mte1
+          mvar2 <- isDeclaredVar mte2
+          case (mvar1, mvar2) of
+            (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
+              varWeAssumeToBePred <- varFromMTEs [mte2]
+              fExp <- mkVarExp varWeAssumeToBePred
+              pure $ EApp fExp $ noExtraMdata $ EVar var1
 
-        (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
-          varWeAssumeToBePred <- varFromMTEs [mte1]
-          fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp $ noExtraMdata $ EVar var2
+            (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
+              varWeAssumeToBePred <- varFromMTEs [mte1]
+              fExp <- mkVarExp varWeAssumeToBePred
+              pure $ EApp fExp $ noExtraMdata $ EVar var2
 
-        (Nothing, Nothing)
-          -> throwNotSupportedWithMsgError (RPMT mtes)
-                "baseExpifyMTEs: trying to apply non-function"
+            (Nothing, Nothing)
+              -> throwNotSupportedWithMsgError (RPMT mtes)
+                    "baseExpifyMTEs: trying to apply non-function"
 
-        (Just var1, Just var2) -> do
-          case fmap (`elem` userFuns) [var1, var2] of
-            [True, False] -> do
-              let f = noExtraMdata $ EVar var1
-                  x = noExtraMdata $ EVar var2
-              pure $ EApp f x
-            [False, True] -> do
-              let f = noExtraMdata (EVar var2)
-                  x = noExtraMdata (EVar var1)
-              pure $ EApp f x
-            [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
-            _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
+            (Just var1, Just var2) -> do
+              case (var1, var2) & both %~ (`elem` userFuns) of
+                (True, False) -> do
+                  let f = noExtraMdata $ EVar var1
+                      x = noExtraMdata $ EVar var2
+                  pure $ EApp f x
+                (False, True) -> do
+                  let f = noExtraMdata (EVar var2)
+                      x = noExtraMdata (EVar var1)
+                  pure $ EApp f x
+                (True, True) -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
+                (False, False) -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-    _mtes ->
-      case break (isFun userFuns) mtes of
-      -- function, rest
-        ([],f:ys) -> do
-          arg <- expifyMTEsNoMd ys
-          assumedVar <- varFromMTEs [f]
-          fExp <- mkVarExp assumedVar
-          pure $ EApp fExp arg
-
-      -- mte1 [, …, mteN], function, rest
-        (xs,f:ys) -> do
-          arg1 <- expifyMTEsNoMd xs
-          arg2 <- expifyMTEsNoMd ys
-          -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
-          bexp <- parseExpr $ MTT [i|x #{mtexpr2text f} y|]
-          case bexp of
-            ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
-            ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
-            _ -> do
+        _mtes ->
+          case break (isFun userFuns) mtes of
+          -- function, rest
+            ([],f:ys) -> do
+              arg <- expifyMTEsNoMd ys
               assumedVar <- varFromMTEs [f]
               fExp <- mkVarExp assumedVar
-              let fArg1 = noExtraMdata $ EApp fExp arg1
-              pure $ EApp fArg1 arg2
+              pure $ EApp fExp arg
 
-      -- no userfuns here
-        (_xs,[]) -> do
-          let parenExp = MTT $ textifyMTEs $ parenExps mtes
-          expParsedAsText <- parseExpr parenExp
-          case expParsedAsText of
-            ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
-            -- TODO: this should definitely not be a sequence, what should it be instead???
-              parsedExs <- traverse parseExpr mtes
-              pure $ ESeq $ foldr consSeqExp mempty parsedExs
+          -- mte1 [, …, mteN], function, rest
+            (xs,f:ys) -> do
+              arg1 <- expifyMTEsNoMd xs
+              arg2 <- expifyMTEsNoMd ys
+              -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
+              bexp <- parseExpr $ MTT [i|x #{mtexpr2text f} y|]
+              case bexp of
+                ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
+                ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
+                _ -> do
+                  assumedVar <- varFromMTEs [f]
+                  fExp <- mkVarExp assumedVar
+                  let fArg1 = noExtraMdata $ EApp fExp arg1
+                  pure $ EApp fArg1 arg2
 
-            -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
-            notStringLit -> pure notStringLit
+          -- no userfuns here
+            (_xs,[]) -> do
+              let parenExp = MTT $ textifyMTEs $ parenExps mtes
+              expParsedAsText <- parseExpr parenExp
+              case expParsedAsText of
+                ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
+                -- TODO: this should definitely not be a sequence, what should it be instead???
+                  parsedExs <- traverse parseExpr mtes
+                  pure $ ESeq $ foldr consSeqExp mempty parsedExs
+
+                -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
+                notStringLit -> pure notStringLit
   where
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
     consSeqExp = consSE . noExtraMdata
@@ -880,7 +922,7 @@ baseExpifyMTEs mtes = do
       | otherwise = mtexpr
 
     isOp :: T.Text -> Bool
-    isOp = (`elem` arithOps)
+    isOp = (`Set.member` arithOps)
 
     -- don't parenthesize single variables or literals, like "taxesPayable" or "Singapore citizen"
     -- do parenthesize "(x + 6)"
@@ -903,9 +945,25 @@ parseExpr x@(MTT str) = do
     Left _error -> trace [i|can't parse with pExpr: #{x}|] pure $ mteToLitExp x
 parseExpr x = pure $ mteToLitExp x
 
-splitGenitives :: [MTExpr] -> (Maybe MTExpr, [MTExpr])
-splitGenitives [] = (Nothing, [])
-splitGenitives (mte:mtes) = (isGenitive mte, mtes)
+-- | Given a '[MTExpr]' that looks like:
+--
+-- @[MTT "parent's", MTT "sibling's", MTT "income"]@
+--
+-- strip away the suffix @"'s"@ from the first element of the list
+-- if there is any.
+--
+-- >>> splitGenitives [MTT "parent's", MTT "sibling's", MTT "income"]
+-- Just (MTT "parent",MTT "sibling's" :| [MTT "income"])
+--
+-- >>> splitGenitives [MTI 0, MTT "parent's", MTT "income"]
+-- Nothing
+--
+splitGenitives :: [MTExpr] -> Maybe (MTExpr, NE.NonEmpty MTExpr)
+splitGenitives [] = Nothing
+splitGenitives (mte:mtes) = do
+  mtesNE <- NE.nonEmpty mtes
+  noun <- isGenitive mte
+  pure $ (noun, mtesNE)
   where
     -- removes the genitive s if it is genitive
     isGenitive :: MTExpr -> Maybe MTExpr

@@ -87,14 +87,11 @@ library
       LS.XPile.LogicalEnglish.ValidateL4Input
       LS.XPile.Markdown
       LS.XPile.MathLang
-      LS.XPile.MathLang.ForMengEval.GenericMathLangToMengMathLang
-      LS.XPile.MathLang.ForMengEval.TypeInferForMengEval
       LS.XPile.MathLang.GenericMathLang.ArithOps
       LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
       LS.XPile.MathLang.GenericMathLang.RPrel2opTable
       LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
       LS.XPile.MathLang.GenericMathLang.TranslateL4
-      LS.XPile.MathLang.Logging
       LS.XPile.MathLang.MathLang
       LS.XPile.MathLang.UtilsLCReplDev
       LS.XPile.Maude

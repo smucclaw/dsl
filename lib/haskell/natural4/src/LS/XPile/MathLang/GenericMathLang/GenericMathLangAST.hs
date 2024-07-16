@@ -50,7 +50,7 @@ data L4EntType =
     L4EntType T.Text  -- ^ a user-defined named type
   | L4Enum [T.Text]   -- ^ a user-defined enumeration type
   | L4List L4EntType  -- ^ a user-defined list type
-  deriving stock (Eq, Generic, Show)
+  deriving stock (Eq, Generic, Show, Ord)
   deriving anyclass (Hashable)
 
 -- | Turn a surface-L4 type signature into a GML type.
@@ -80,7 +80,7 @@ type Number = Double
 --
 data TLabel = FromUser L4EntType
             | Inferred T.Text
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Ord, Show)
 makePrisms ''TLabel
 
 
@@ -137,7 +137,7 @@ data ExpMetadata =
   , typeLabel  :: Maybe TLabel     -- ^ (possibly) type information for annotated expression
   , explnAnnot :: Maybe ExplnAnnot -- ^ (possibly) additional annotations
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Ord, Show)
 makeFieldLabelsNoPrefix ''ExpMetadata
 
 
@@ -153,7 +153,7 @@ type MdGrp = [ExpMetadata]
 -- The internal representation is text.
 --
 newtype Var = MkVar T.Text
-  deriving stock (Show)
+  deriving stock (Show, Ord)
   deriving newtype (Eq, Hashable)
 makePrisms ''Var
 -- Add metadata like what the original L4 string was?
@@ -215,17 +215,17 @@ data NumOp
   | OpMinOf
   | OpSum
   | OpProduct
-  deriving stock (Eq, Show, Lift)
+  deriving stock (Eq, Show, Ord, Lift)
 
 -- | Comparison operators.
 --
 -- (Consume two args, produce a Boolean.)
 --
 data CompOp = OpBoolEq | OpStringEq | OpNumEq | OpLt | OpLte | OpGt | OpGte
-  deriving stock (Eq, Show, Lift)
+  deriving stock (Eq, Show, Ord, Lift)
 
 newtype SeqExp = SeqExp [Exp]
-  deriving stock (Show, Generic, Eq)
+  deriving stock (Show, Generic, Eq, Ord)
   deriving (Semigroup, Monoid) via [Exp]
 
 seqExpToExprs :: SeqExp -> [Exp]
@@ -327,14 +327,14 @@ data BaseExp =
       right :: Exp
     }
   | EEmpty
-  deriving stock (Show, Generic, Eq)
+  deriving stock (Show, Generic, Eq, Ord)
 
 -- | A GML expression is an unannotated 'BaseExp' together with metadata annotations.
 --
 data Exp = MkExp
   { exp :: BaseExp
   , md :: MdGrp }
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Ord, Eq, Generic)
 makeFieldLabelsNoPrefix ''Exp
 
 -- Consider doing something like the following in the future (http://blog.vmchale.com/article/ir-instances)

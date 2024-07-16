@@ -13,6 +13,7 @@ import qualified Data.String
 data Rule
     = TypeDecl IsA Fields
     | Given [IsA] Rule
+    | Where Rule [HornClause]
     | RegSimple BoolStruct Deontic BoolStruct
     | RegWho BoolStruct Who Deontic BoolStruct
     | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
@@ -23,6 +24,8 @@ data Rule
 
 data IsA
     = IsAType Text Text
+    | IsAnType Text Text
+    | IsAOptional Text Text
     | IsAEnum Text [Text]
     | IsAList Text Text
     | IsASet Text Text

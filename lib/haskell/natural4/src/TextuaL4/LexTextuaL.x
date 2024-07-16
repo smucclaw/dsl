@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \, | \; | \( | \) | \< | \< \= | \> | \> \=
+@rsyms = \§ | \, | \; | \( | \) | \< | \< \= | \> | \> \=
 
 :-
 
@@ -162,36 +162,37 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "IN" 27
-    (b "ANY" 14
-       (b ">" 7
+  b "IS" 29
+    (b "ANY" 15
+       (b ">=" 8
           (b ";" 4
-             (b ")" 2 (b "(" 1 N N) (b "," 3 N N)) (b "<=" 6 (b "<" 5 N N) N))
-          (b "AFTER" 11
-             (b "A" 9 (b ">=" 8 N N) (b "ABOUT" 10 N N))
-             (b "AND" 13 (b "ALL" 12 N N) N)))
-       (b "EVERY" 21
-          (b "DECLARE" 18
-             (b "BY" 16 (b "BEFORE" 15 N N) (b "DECIDE" 17 N N))
-             (b "EQUALS" 20 (b "DIVIDE" 19 N N) N))
-          (b "GIVETH" 24
-             (b "GIVEN" 23 (b "False" 22 N N) N)
-             (b "IF" 26 (b "HAS" 25 N N) N))))
-    (b "ON" 40
-       (b "MIN" 34
-          (b "MAX" 31
-             (b "LIST" 29 (b "IS" 28 N N) (b "MAP" 30 N N))
-             (b "MEANS" 33 (b "MAY" 32 N N) N))
-          (b "MUST" 37
-             (b "MODULO" 36 (b "MINUS" 35 N N) N)
-             (b "OF" 39 (b "NOT" 38 N N) N)))
-       (b "SUBJECT" 47
-          (b "PRODUCT" 44
-             (b "OR" 42 (b "ONE" 41 N N) (b "OTHERWISE" 43 N N))
-             (b "SHANT" 46 (b "SET" 45 N N) N))
-          (b "True" 50
-             (b "TO" 49 (b "SUM" 48 N N) N)
-             (b "WHO" 52 (b "UNLESS" 51 N N) N))))
+             (b ")" 2 (b "(" 1 N N) (b "," 3 N N))
+             (b "<=" 6 (b "<" 5 N N) (b ">" 7 N N)))
+          (b "ALL" 12
+             (b "ABOUT" 10 (b "A" 9 N N) (b "AFTER" 11 N N))
+             (b "AND" 14 (b "AN" 13 N N) N)))
+       (b "EVERY" 22
+          (b "DECLARE" 19
+             (b "BY" 17 (b "BEFORE" 16 N N) (b "DECIDE" 18 N N))
+             (b "EQUALS" 21 (b "DIVIDE" 20 N N) N))
+          (b "HAS" 26
+             (b "GIVEN" 24 (b "False" 23 N N) (b "GIVETH" 25 N N))
+             (b "IN" 28 (b "IF" 27 N N) N))))
+    (b "OPTIONAL" 43
+       (b "MINUS" 36
+          (b "MAY" 33
+             (b "MAP" 31 (b "LIST" 30 N N) (b "MAX" 32 N N))
+             (b "MIN" 35 (b "MEANS" 34 N N) N))
+          (b "OF" 40
+             (b "MUST" 38 (b "MODULO" 37 N N) (b "NOT" 39 N N))
+             (b "ONE" 42 (b "ON" 41 N N) N)))
+       (b "SUM" 50
+          (b "SET" 47
+             (b "OTHERWISE" 45 (b "OR" 44 N N) (b "PRODUCT" 46 N N))
+             (b "SUBJECT" 49 (b "SHANT" 48 N N) N))
+          (b "WHERE" 54
+             (b "True" 52 (b "TO" 51 N N) (b "UNLESS" 53 N N))
+             (b "\167" 56 (b "WHO" 55 N N) N))))
   where
   b s n = B bs (TS bs n)
     where

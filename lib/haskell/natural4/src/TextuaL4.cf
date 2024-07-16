@@ -1,8 +1,11 @@
-entrypoints Rule ;
+entrypoints [Rule], Rule ;
 
 TypeDecl. Rule ::= "DECLARE" IsA Fields ;
+separator nonempty Rule "§" ;
 
 IsAType.     IsA ::= Text "IS A" Text ;
+IsAnType.     IsA ::= Text "IS AN" Text ;
+IsAOptional. IsA ::= Text "IS OPTIONAL" Text ;
 IsAEnum.     IsA ::= Text "IS ONE OF" [Text] ;
 IsAList.     IsA ::= Text "IS LIST OF" Text ;
 IsASet.      IsA ::= Text "IS SET OF" Text ;
@@ -13,9 +16,9 @@ separator nonempty IsA ";" ;
 Has.         Fields ::= "HAS" [IsA] ;
 EmptyFields. Fields ::= ;
 
--- Any rule can have GIVEN
+-- Any rule can have GIVEN and WHERE
 Given.     Rule ::= "GIVEN" [IsA] Rule ;
-
+Where.     Rule ::= Rule "WHERE" [HornClause] ;
 -- Regulatives
 RegSimple. Rule ::= "EVERY" BoolStruct Deontic BoolStruct ;
 RegWho. Rule ::= "EVERY" BoolStruct Who Deontic BoolStruct ;

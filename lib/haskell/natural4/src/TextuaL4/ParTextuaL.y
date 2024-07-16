@@ -8,6 +8,7 @@
 module TextuaL4.ParTextuaL
   ( happyError
   , myLexer
+  , pListRule
   , pRule
   ) where
 
@@ -18,6 +19,7 @@ import TextuaL4.LexTextuaL
 
 }
 
+%name pListRule ListRule
 %name pRule Rule
 -- no lexer declaration
 %monad { Err } { (>>=) } { return }
@@ -35,46 +37,50 @@ import TextuaL4.LexTextuaL
   'ABOUT'     { PT _ (TS _ 10)    }
   'AFTER'     { PT _ (TS _ 11)    }
   'ALL'       { PT _ (TS _ 12)    }
-  'AND'       { PT _ (TS _ 13)    }
-  'ANY'       { PT _ (TS _ 14)    }
-  'BEFORE'    { PT _ (TS _ 15)    }
-  'BY'        { PT _ (TS _ 16)    }
-  'DECIDE'    { PT _ (TS _ 17)    }
-  'DECLARE'   { PT _ (TS _ 18)    }
-  'DIVIDE'    { PT _ (TS _ 19)    }
-  'EQUALS'    { PT _ (TS _ 20)    }
-  'EVERY'     { PT _ (TS _ 21)    }
-  'False'     { PT _ (TS _ 22)    }
-  'GIVEN'     { PT _ (TS _ 23)    }
-  'GIVETH'    { PT _ (TS _ 24)    }
-  'HAS'       { PT _ (TS _ 25)    }
-  'IF'        { PT _ (TS _ 26)    }
-  'IN'        { PT _ (TS _ 27)    }
-  'IS'        { PT _ (TS _ 28)    }
-  'LIST'      { PT _ (TS _ 29)    }
-  'MAP'       { PT _ (TS _ 30)    }
-  'MAX'       { PT _ (TS _ 31)    }
-  'MAY'       { PT _ (TS _ 32)    }
-  'MEANS'     { PT _ (TS _ 33)    }
-  'MIN'       { PT _ (TS _ 34)    }
-  'MINUS'     { PT _ (TS _ 35)    }
-  'MODULO'    { PT _ (TS _ 36)    }
-  'MUST'      { PT _ (TS _ 37)    }
-  'NOT'       { PT _ (TS _ 38)    }
-  'OF'        { PT _ (TS _ 39)    }
-  'ON'        { PT _ (TS _ 40)    }
-  'ONE'       { PT _ (TS _ 41)    }
-  'OR'        { PT _ (TS _ 42)    }
-  'OTHERWISE' { PT _ (TS _ 43)    }
-  'PRODUCT'   { PT _ (TS _ 44)    }
-  'SET'       { PT _ (TS _ 45)    }
-  'SHANT'     { PT _ (TS _ 46)    }
-  'SUBJECT'   { PT _ (TS _ 47)    }
-  'SUM'       { PT _ (TS _ 48)    }
-  'TO'        { PT _ (TS _ 49)    }
-  'True'      { PT _ (TS _ 50)    }
-  'UNLESS'    { PT _ (TS _ 51)    }
-  'WHO'       { PT _ (TS _ 52)    }
+  'AN'        { PT _ (TS _ 13)    }
+  'AND'       { PT _ (TS _ 14)    }
+  'ANY'       { PT _ (TS _ 15)    }
+  'BEFORE'    { PT _ (TS _ 16)    }
+  'BY'        { PT _ (TS _ 17)    }
+  'DECIDE'    { PT _ (TS _ 18)    }
+  'DECLARE'   { PT _ (TS _ 19)    }
+  'DIVIDE'    { PT _ (TS _ 20)    }
+  'EQUALS'    { PT _ (TS _ 21)    }
+  'EVERY'     { PT _ (TS _ 22)    }
+  'False'     { PT _ (TS _ 23)    }
+  'GIVEN'     { PT _ (TS _ 24)    }
+  'GIVETH'    { PT _ (TS _ 25)    }
+  'HAS'       { PT _ (TS _ 26)    }
+  'IF'        { PT _ (TS _ 27)    }
+  'IN'        { PT _ (TS _ 28)    }
+  'IS'        { PT _ (TS _ 29)    }
+  'LIST'      { PT _ (TS _ 30)    }
+  'MAP'       { PT _ (TS _ 31)    }
+  'MAX'       { PT _ (TS _ 32)    }
+  'MAY'       { PT _ (TS _ 33)    }
+  'MEANS'     { PT _ (TS _ 34)    }
+  'MIN'       { PT _ (TS _ 35)    }
+  'MINUS'     { PT _ (TS _ 36)    }
+  'MODULO'    { PT _ (TS _ 37)    }
+  'MUST'      { PT _ (TS _ 38)    }
+  'NOT'       { PT _ (TS _ 39)    }
+  'OF'        { PT _ (TS _ 40)    }
+  'ON'        { PT _ (TS _ 41)    }
+  'ONE'       { PT _ (TS _ 42)    }
+  'OPTIONAL'  { PT _ (TS _ 43)    }
+  'OR'        { PT _ (TS _ 44)    }
+  'OTHERWISE' { PT _ (TS _ 45)    }
+  'PRODUCT'   { PT _ (TS _ 46)    }
+  'SET'       { PT _ (TS _ 47)    }
+  'SHANT'     { PT _ (TS _ 48)    }
+  'SUBJECT'   { PT _ (TS _ 49)    }
+  'SUM'       { PT _ (TS _ 50)    }
+  'TO'        { PT _ (TS _ 51)    }
+  'True'      { PT _ (TS _ 52)    }
+  'UNLESS'    { PT _ (TS _ 53)    }
+  'WHERE'     { PT _ (TS _ 54)    }
+  'WHO'       { PT _ (TS _ 55)    }
+  '§'         { PT _ (TS _ 56)    }
   L_doubl     { PT _ (TD $$)      }
   L_integ     { PT _ (TI $$)      }
   L_quoted    { PT _ (TL $$)      }
@@ -98,6 +104,7 @@ Rule :: { TextuaL4.AbsTextuaL.Rule }
 Rule
   : 'DECLARE' IsA Fields { TextuaL4.AbsTextuaL.TypeDecl $2 $3 }
   | 'GIVEN' ListIsA Rule { TextuaL4.AbsTextuaL.Given $2 $3 }
+  | Rule 'WHERE' ListHornClause { TextuaL4.AbsTextuaL.Where $1 $3 }
   | 'EVERY' BoolStruct Deontic BoolStruct { TextuaL4.AbsTextuaL.RegSimple $2 $3 $4 }
   | 'EVERY' BoolStruct Who Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWho $2 $3 $4 $5 }
   | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
@@ -105,9 +112,14 @@ Rule
   | 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
   | 'GIVETH' IsA 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
 
+ListRule :: { [TextuaL4.AbsTextuaL.Rule] }
+ListRule : Rule { (:[]) $1 } | Rule '§' ListRule { (:) $1 $3 }
+
 IsA :: { TextuaL4.AbsTextuaL.IsA }
 IsA
   : Text 'IS' 'A' Text { TextuaL4.AbsTextuaL.IsAType $1 $4 }
+  | Text 'IS' 'AN' Text { TextuaL4.AbsTextuaL.IsAnType $1 $4 }
+  | Text 'IS' 'OPTIONAL' Text { TextuaL4.AbsTextuaL.IsAOptional $1 $4 }
   | Text 'IS' 'ONE' 'OF' ListText { TextuaL4.AbsTextuaL.IsAEnum $1 $5 }
   | Text 'IS' 'LIST' 'OF' Text { TextuaL4.AbsTextuaL.IsAList $1 $5 }
   | Text 'IS' 'SET' 'OF' Text { TextuaL4.AbsTextuaL.IsASet $1 $5 }
@@ -187,7 +199,7 @@ BoolStruct
   | 'ALL' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.All $3 }
   | Text 'ALL' '(' ListBoolStruct ')' { TextuaL4.AbsTextuaL.AllPre $1 $4 }
   | Text 'ALL' '(' ListBoolStruct ')' Text { TextuaL4.AbsTextuaL.AllPrePost $1 $4 $6 }
-  | 'NOT' '(' BoolStruct ')' { TextuaL4.AbsTextuaL.Not $3 }
+  | 'NOT' BoolStruct { TextuaL4.AbsTextuaL.Not $2 }
   | 'UNLESS' '(' BoolStruct ',' BoolStruct ')' { TextuaL4.AbsTextuaL.Unless $3 $5 }
   | RelationalPredicate { TextuaL4.AbsTextuaL.Leaf $1 }
 

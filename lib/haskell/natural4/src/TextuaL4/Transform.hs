@@ -76,6 +76,14 @@ transRule x = case x of
   -- if no givens, then just use the rule as is.
   TL4.Given _ rule -> transRule rule
 
+-- Deviation from og grammar: we allow a list of HornClauses in WHERE, not arbitrary Rules
+  TL4.Where rule hclauses -> case transRule rule of
+    TypeDecl{} -> error [i|transRule: no wwhere allowed in TypeDecl|]
+    rl -> rl {
+      wwhere = [transRule $ TL4.HornlikeDecide hclauses]
+      }
+
+
 nameFromHC :: TL4.HornClause -> [MTExpr]
 nameFromHC hc = case hc of
   TL4.HeadOnly hhead   -> nameFromRP hhead
@@ -100,6 +108,8 @@ transIsA :: TL4.IsA -> Rule
 transIsA x = case x of
   TL4.IsANoType tname -> isaNotype tname
   TL4.IsAType tname typesig -> isaType TOne tname typesig
+  TL4.IsAnType tname typesig -> isaType TOne tname typesig
+  TL4.IsAOptional tname typesig -> isaType TOptional tname typesig
   TL4.IsAList tname typesig -> isaType TList1 tname typesig
   TL4.IsASet tname typesig -> isaType TSet1 tname typesig
   TL4.IsAEnum tname enums ->

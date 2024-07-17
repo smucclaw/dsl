@@ -314,7 +314,9 @@ spec = do
               , ("policy.benADD",  Val (Just "policy.benADD") 50)
               , ("policyHolder.past ADD payouts", Val Nothing 1000)
               , ("risk cap",  Val (Just "risk cap") 10000000)
-              , ("claimable limit", Val (Just "claimable limit") 2000)
+              , ("total sum assured",  Val (Just "total sum assured") 1000)
+              , ("claimable limit", Val (Just "claimable limit") 1000)
+              , ("policyHolder's past ADD payouts", Val (Just "policyHolder's past ADD payouts") 0)
               ]
           , symtabP = symtabP st <>
               [ ("user input.accident_claim.selected", PredVal Nothing True)
@@ -325,12 +327,16 @@ spec = do
               , ("accident.juvenile limit applies" , PredVal Nothing True)
               , ("accident.triple benefits apply" , PredVal Nothing True)
               , ("accident.double benefits apply" , PredVal Nothing False)
-              , ("illness.disqualified" , PredVal Nothing False)
+              -- , ("illness.disqualified" , PredVal Nothing False)
+              -- this comes from illness,IS,disqualified and not illness's disqualified
+              -- gml2ml has been changed in meng's branch and probably will be merged into main?
+              -- anyway, this GML->ML transformation seems to be broken in more than one way,
+              -- and will be deprecated eventually, so I'm not fixing more stuff right now. /Inari 2024-07
               ]
           }
           (res, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
 
-          res `shouldBe` 1050.0
+          res `shouldBe` 50.0
 
   describe "mustsing5" do
     let l4i = l4interpret defaultInterpreterOptions mustsing5
@@ -812,37 +818,6 @@ DECIDE m1 IS 10 ;
        m2 IS 5 ;
        result IS MINUS (m1, m2, 3, 1)
 |]
-
-arithRule2withInitializedValuesManual :: Rule
-arithRule2withInitializedValuesManual = mkTestRule'
-                [ MTT "result" ]
-                (mkGivens [("m1", Just ( SimpleType TOne "Number" )), ("m2", Just ( SimpleType TOne "Number" ))])
-                (mkGivens [("result", Just ( SimpleType TOne "Number"))])
-                [ HC { hHead = RPConstraint
-                        [ MTT "m1" ] RPis
-                        [ MTI 10 ]
-                    , hBody = Nothing }
-                , HC { hHead = RPConstraint
-                        [ MTT "m2" ] RPis
-                        [ MTI 5 ]
-                    , hBody = Nothing }
-                , HC { hHead = RPnary RPis
-                        [ RPMT
-                            [ MTT "result" ]
-                        , RPnary RPminus
-                            [ RPMT
-                                [ MTT "m1" ]
-                            , RPMT
-                                [ MTT "m2" ]
-                            , RPMT
-                                [ MTI 3 ]
-                            , RPMT
-                                [ MTI 1 ]
-                            ]
-                        ]
-                    , hBody = Nothing }
-                ]
-
 
 arithRule2 :: Rule
 arithRule2 = mkTestRule

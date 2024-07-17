@@ -1,6 +1,5 @@
 entrypoints [Rule], Rule ;
 
-TypeDecl. Rule ::= "DECLARE" IsA Fields ;
 separator nonempty Rule "§" ;
 
 IsAType.     IsA ::= Text "IS A" Text ;
@@ -16,23 +15,34 @@ separator nonempty IsA ";" ;
 Has.         Fields ::= "HAS" [IsA] ;
 EmptyFields. Fields ::= ;
 
--- Any rule can have GIVEN and WHERE
-Given.     Rule ::= "GIVEN" [IsA] Rule ;
-Where.     Rule ::= Rule "WHERE" [HornClause] ;
--- Regulatives
-RegSimple. Rule ::= "EVERY" BoolStruct Deontic BoolStruct ;
-RegWho. Rule ::= "EVERY" BoolStruct Who Deontic BoolStruct ;
-RegWhoInline. Rule ::= "EVERY" BoolStruct Who InlineHornlike Deontic BoolStruct ;
+-- Any rule can have a label
+Rlabel.    Rule ::= "§" Text Rule1 ;
 
+-- Also just any Rule1 can become Rule without Rlabel
+coercions Rule 3 ;
+
+-- TypeDecl is Rule1 from start, that prevents adding GIVEN and WHERE
+TypeDecl. Rule1 ::= "DECLARE" IsA Fields ;
+
+-- Other rule types may have GIVEN and WHERE
+-- Order is arbitrary, important is just that GIVEN and WHERE
+-- may not attach to TypeDecl which is Rule1
+Given.     Rule2 ::= "GIVEN" [IsA] Rule2 ;
+Where.     Rule2 ::= Rule3 "WHERE" [HornClause] ;
+
+-- Regulatives
+RegSimple. Rule3 ::= "EVERY" BoolStruct Deontic BoolStruct ;
+RegWho. Rule3 ::= "EVERY" BoolStruct Who Deontic BoolStruct ;
+RegWhoInline. Rule3 ::= "EVERY" BoolStruct Who InlineHornlike Deontic BoolStruct ;
 
 -- text MEANS BoolStruct is going to be translated into RPBoolStruct text IS bsr
-HornlikeMeans. Rule ::= Text "MEANS" BoolStruct ;
+HornlikeMeans. Rule3 ::= Text "MEANS" BoolStruct ;
 
 -- DECIDE text IS BoolStruct works to be a RelationalPredicate already,
 -- because there is no MEANS that breaks the RelationalPredicate
-HornlikeDecide. Rule ::= "DECIDE" [HornClause] ;
+HornlikeDecide. Rule3 ::= "DECIDE" [HornClause] ;
 -- Only Hornlikes have GIVETH
-HlikeGiveth. Rule ::= "GIVETH" IsA "DECIDE" [HornClause] ;
+HlikeGiveth. Rule3 ::= "GIVETH" IsA "DECIDE" [HornClause] ;
 
 HeadBody. HornClause ::= RelationalPredicate "IF" BoolStruct ;
 HeadOtherwise. HornClause ::= RelationalPredicate "OTHERWISE" ;

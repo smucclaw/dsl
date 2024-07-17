@@ -100,18 +100,6 @@ String   : L_quoted { $1 }
 Token :: { TextuaL4.AbsTextuaL.Token }
 Token  : L_Token { TextuaL4.AbsTextuaL.Token $1 }
 
-Rule :: { TextuaL4.AbsTextuaL.Rule }
-Rule
-  : 'DECLARE' IsA Fields { TextuaL4.AbsTextuaL.TypeDecl $2 $3 }
-  | 'GIVEN' ListIsA Rule { TextuaL4.AbsTextuaL.Given $2 $3 }
-  | Rule 'WHERE' ListHornClause { TextuaL4.AbsTextuaL.Where $1 $3 }
-  | 'EVERY' BoolStruct Deontic BoolStruct { TextuaL4.AbsTextuaL.RegSimple $2 $3 $4 }
-  | 'EVERY' BoolStruct Who Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWho $2 $3 $4 $5 }
-  | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
-  | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.HornlikeMeans $1 $3 }
-  | 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
-  | 'GIVETH' IsA 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
-
 ListRule :: { [TextuaL4.AbsTextuaL.Rule] }
 ListRule : Rule { (:[]) $1 } | Rule '§' ListRule { (:) $1 $3 }
 
@@ -135,6 +123,32 @@ Fields :: { TextuaL4.AbsTextuaL.Fields }
 Fields
   : 'HAS' ListIsA { TextuaL4.AbsTextuaL.Has $2 }
   | {- empty -} { TextuaL4.AbsTextuaL.EmptyFields }
+
+Rule :: { TextuaL4.AbsTextuaL.Rule }
+Rule
+  : '§' Text Rule1 { TextuaL4.AbsTextuaL.Rlabel $2 $3 }
+  | Rule1 { $1 }
+
+Rule1 :: { TextuaL4.AbsTextuaL.Rule }
+Rule1
+  : Rule2 { $1 }
+  | 'DECLARE' IsA Fields { TextuaL4.AbsTextuaL.TypeDecl $2 $3 }
+
+Rule2 :: { TextuaL4.AbsTextuaL.Rule }
+Rule2
+  : Rule3 { $1 }
+  | 'GIVEN' ListIsA Rule2 { TextuaL4.AbsTextuaL.Given $2 $3 }
+  | Rule3 'WHERE' ListHornClause { TextuaL4.AbsTextuaL.Where $1 $3 }
+
+Rule3 :: { TextuaL4.AbsTextuaL.Rule }
+Rule3
+  : '(' Rule ')' { $2 }
+  | 'EVERY' BoolStruct Deontic BoolStruct { TextuaL4.AbsTextuaL.RegSimple $2 $3 $4 }
+  | 'EVERY' BoolStruct Who Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWho $2 $3 $4 $5 }
+  | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
+  | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.HornlikeMeans $1 $3 }
+  | 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
+  | 'GIVETH' IsA 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
 
 HornClause :: { TextuaL4.AbsTextuaL.HornClause }
 HornClause

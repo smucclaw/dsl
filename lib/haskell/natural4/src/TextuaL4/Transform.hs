@@ -80,9 +80,20 @@ transRule x = case x of
   TL4.Where rule hclauses -> case transRule rule of
     TypeDecl{} -> error [i|transRule: no wwhere allowed in TypeDecl|]
     rl -> rl {
-      wwhere = [transRule $ TL4.HornlikeDecide hclauses]
+      wwhere = [
+        (transRule $ TL4.HornlikeDecide hclauses) {
+          keyword = Where
+        }
+      ]
       }
 
+  TL4.Rlabel text rule -> (transRule rule) {
+    rlabel = Just
+      ( "§"
+      , 1 -- is this important for some transpiler? it records how many § were there originally
+      , transText text
+      )
+  }
 
 nameFromHC :: TL4.HornClause -> [MTExpr]
 nameFromHC hc = case hc of

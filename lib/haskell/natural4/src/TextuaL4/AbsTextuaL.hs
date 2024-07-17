@@ -10,18 +10,6 @@ import Prelude (Double, Integer, String)
 import qualified Prelude as C (Eq, Ord, Show, Read)
 import qualified Data.String
 
-data Rule
-    = TypeDecl IsA Fields
-    | Given [IsA] Rule
-    | Where Rule [HornClause]
-    | RegSimple BoolStruct Deontic BoolStruct
-    | RegWho BoolStruct Who Deontic BoolStruct
-    | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
-    | HornlikeMeans Text BoolStruct
-    | HornlikeDecide [HornClause]
-    | HlikeGiveth IsA [HornClause]
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
 data IsA
     = IsAType Text Text
     | IsAnType Text Text
@@ -33,6 +21,19 @@ data IsA
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Fields = Has [IsA] | EmptyFields
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data Rule
+    = Rlabel Text Rule
+    | TypeDecl IsA Fields
+    | Given [IsA] Rule
+    | Where Rule [HornClause]
+    | RegSimple BoolStruct Deontic BoolStruct
+    | RegWho BoolStruct Who Deontic BoolStruct
+    | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
+    | HornlikeMeans Text BoolStruct
+    | HornlikeDecide [HornClause]
+    | HlikeGiveth IsA [HornClause]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data HornClause

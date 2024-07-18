@@ -1,0 +1,587 @@
+[ TypeDecl
+    { name =
+        [ MTT "PolicyHolder" ]
+    , super = Just
+        ( SimpleType TOne "Person" )
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "address" ]
+            , super = Just
+                ( SimpleType TOne "Address" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "birthdate" ]
+            , super = Just
+                ( SimpleType TOne "Date" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "current policy" ]
+            , super = Just
+                ( SimpleType TOne "Policy" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "past policies" ]
+            , super = Just
+                ( SimpleType TList1 "Policy" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "addSA over all policies" ]
+            , super = Just
+                ( SimpleType TOne "Money" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "past ADD payouts" ]
+            , super = Just
+                ( SimpleType TOne "Money" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "death date" ]
+            , super = Just
+                ( SimpleType TOptional "Date" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "Policy" ]
+    , super = Just
+        ( SimpleType TOne "Contract" )
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "planAF" ]
+            , super = Just
+                ( SimpleType TOne "PlanAF" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "benADD" ]
+            , super = Just
+                ( SimpleType TOne "Benefit" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "benMR" ]
+            , super = Just
+                ( SimpleType TOne "Benefit" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "benTCM" ]
+            , super = Just
+                ( SimpleType TOne "Benefit" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "benRA" ]
+            , super = Just
+                ( SimpleType TOptional "Benefit" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "benFCPA" ]
+            , super = Just
+                ( SimpleType TOptional "Benefit" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "accidents" ]
+            , super = Just
+                ( SimpleType TList1 "Accident" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "start date" ]
+            , super = Just
+                ( SimpleType TOne "Date" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "ended" ]
+            , super = Just
+                ( SimpleType TOne "Boolean" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "Claim" ]
+    , super = Nothing
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "date" ]
+            , super = Just
+                ( SimpleType TOne "Date" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "outcome" ]
+            , super = Just
+                ( InlineEnum TOne
+                    (
+                        ( MTT "Successful" :|
+                            [ MTT "Unsuccessful" ]
+                        , Nothing
+                        ) :| []
+                    )
+                )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "amount" ]
+            , super = Just
+                ( SimpleType TOne "Money" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "general exclusions apply" ]
+            , super = Just
+                ( SimpleType TOne "Boolean" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "Accident" ]
+    , super = Nothing
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "injuries" ]
+            , super = Just
+                ( SimpleType TSet1 "loss" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "general exclusions apply" ]
+            , super = Just
+                ( SimpleType TOne "Boolean" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "juvenile limit applies" ]
+            , super = Just
+                ( SimpleType TOne "Boolean" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "triple benefits apply" ]
+            , super = Just
+                ( SimpleType TOne "Boolean" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "double benefits apply" ]
+            , super = Just
+                ( SimpleType TOne "Boolean" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "risk percentage" ]
+            , super = Just
+                ( SimpleType TOne "Number" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "Benefit" ]
+    , super = Nothing
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "initial sum assured" ]
+            , super = Just
+                ( SimpleType TOne "Number" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "stepUpSumAssured" ]
+            , super = Just
+                ( SimpleType TOne "Number" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "name" ]
+            , super = Just
+                ( SimpleType TOne "String" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        , TypeDecl
+            { name =
+                [ MTT "claim" ]
+            , super = Just
+                ( SimpleType TOne "Claim" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "PlanAF" ]
+    , super = Just
+        ( InlineEnum TOne
+            (
+                ( MTT "planA" :|
+                    [ MTT "planB"
+                    , MTT "planC"
+                    , MTT "planD"
+                    , MTT "planE"
+                    , MTT "planF"
+                    ]
+                , Nothing
+                ) :| []
+            )
+        )
+    , has = []
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "Plan14" ]
+    , super = Just
+        ( InlineEnum TOne
+            (
+                ( MTT "plan1" :|
+                    [ MTT "plan2"
+                    , MTT "plan3"
+                    , MTT "plan4"
+                    ]
+                , Nothing
+                ) :| []
+            )
+        )
+    , has = []
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+]

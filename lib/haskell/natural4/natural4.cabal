@@ -113,6 +113,12 @@ library
       LS.XPile.Typescript
       LS.XPile.Uppaal
       LS.XPile.VueJSON
+      TextuaL4.AbsTextuaL
+      TextuaL4.ErrM
+      TextuaL4.LexTextuaL
+      TextuaL4.ParTextuaL
+      TextuaL4.PrintTextuaL
+      TextuaL4.Transform
   other-modules:
       Paths_natural4
   hs-source-dirs:
@@ -123,6 +129,7 @@ library
     , aeson
     , aeson-pretty
     , anyall
+    , array
     , baby-l4
     , base >=4.7 && <5
     , boxes
@@ -186,6 +193,82 @@ library
     , witherable
   default-language: GHC2021
 
+executable l4-bnfc-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_natural4
+  hs-source-dirs:
+      bnfc
+  ghc-options: -Wdefault -Wno-missed-extra-shared-lib -fconstraint-solver-iterations=10 -fwrite-ide-info -hiedir hie -Wunused-imports -threaded -rtsopts "-with-rtsopts=-N -H500M -qg"
+  build-depends:
+      QuickCheck
+    , aeson
+    , aeson-pretty
+    , anyall
+    , array
+    , baby-l4
+    , base >=4.7 && <5
+    , boxes
+    , bytestring
+    , cassava
+    , containers
+    , deque
+    , diagnose
+    , directory
+    , effectful
+    , effectful-th
+    , explainable
+    , extra
+    , fgl
+    , filepath
+    , flow
+    , generic-arbitrary
+    , generic-optics
+    , gf
+    , graphviz
+    , hashable
+    , hedn
+    , hxt
+    , iso8601-time
+    , json
+    , lens-regex-pcre
+    , log-base
+    , log-effectful
+    , megaparsec
+    , monad-validate
+    , monadic-recursion-schemes
+    , mono-traversable
+    , mtl
+    , natural4
+    , nonempty-containers
+    , optics
+    , optparse-generic
+    , parser-combinators
+    , parsers
+    , pcre-heavy
+    , pretty-simple
+    , prettyprinter
+    , prettyprinter-interp
+    , prolog
+    , quickcheck-text
+    , raw-strings-qq
+    , recursion-schemes
+    , safe
+    , safe-money
+    , split
+    , string-conversions
+    , string-interpolate
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , tuple
+    , unordered-containers
+    , utf8-string
+    , vector
+    , witherable
+  default-language: GHC2021
+
 executable natural4-exe
   main-is: Main.hs
   other-modules:
@@ -198,6 +281,7 @@ executable natural4-exe
     , aeson
     , aeson-pretty
     , anyall
+    , array
     , baby-l4
     , base >=4.7 && <5
     , boxes
@@ -274,6 +358,7 @@ test-suite doctests
     , aeson
     , aeson-pretty
     , anyall
+    , array
     , baby-l4
     , base >=4.7 && <5
     , boxes
@@ -374,6 +459,7 @@ test-suite natural4-test
     , aeson
     , aeson-pretty
     , anyall
+    , array
     , baby-l4
     , base >=4.7 && <5
     , boxes
@@ -455,6 +541,7 @@ benchmark natural4-bench
     , aeson
     , aeson-pretty
     , anyall
+    , array
     , baby-l4
     , base >=4.7 && <5
     , boxes

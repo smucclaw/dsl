@@ -90,6 +90,7 @@ dependencies:
   - monadic-recursion-schemes
   - deque
   - safe-money
+  - array
   # - unbound-generics
   # - holmes
 # Note: when adding `extra-deps` in `stack.yaml`, have to add them under the relevant package in `package.yaml` too
@@ -113,6 +114,17 @@ executables:
   natural4-exe:
     main: Main.hs
     source-dirs: app
+    ghc-options:
+      - -Wunused-imports
+      - -threaded
+      - -rtsopts
+      - '"-with-rtsopts=-N -H500M -qg"'
+    dependencies:
+      - natural4
+
+  l4-bnfc-exe:
+    main: Main.hs
+    source-dirs: bnfc
     ghc-options:
       - -Wunused-imports
       - -threaded

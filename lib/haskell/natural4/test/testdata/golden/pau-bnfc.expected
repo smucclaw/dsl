@@ -1,0 +1,706 @@
+[ Hornlike
+    { name =
+        [ MTT "The Answer" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "addBenefit" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :|
+            [
+                ( MTT "otherBenefits" :| []
+                , Just
+                    ( SimpleType TList1 "Number" )
+                )
+            ,
+                ( MTT "policy" :| []
+                , Just
+                    ( SimpleType TOne "Policy" )
+                )
+            ,
+                ( MTT "policyHolder" :| []
+                , Just
+                    ( SimpleType TOne "PolicyHolder" )
+                )
+            ,
+                ( MTT "accident" :| []
+                , Just
+                    ( SimpleType TOne "Accident" )
+                )
+            ,
+                ( MTT "illness" :| []
+                , Just
+                    ( SimpleType TOne "Claim" )
+                )
+            ,
+                ( MTT "user input" :| []
+                , Just
+                    ( SimpleType TOne "Dictionary" )
+                )
+            ]
+        )
+    , giveth = Just
+        (
+            ( MTT "The Answer" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "The Answer" ] RPis
+                [ MTT "accident branch" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPConstraint
+                        [ MTT "user input's"
+                        , MTT "accident_claim"
+                        ] RPis
+                        [ MTT "selected" ]
+                    )
+                )
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "The Answer" ] RPis
+                [ MTT "act of god branch" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPConstraint
+                        [ MTT "user input's"
+                        , MTT "act of god"
+                        ] RPis
+                        [ MTT "selected" ]
+                    )
+                )
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "The Answer" ] RPis
+                [ MTT "illness branch" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPMT
+                        [ MTT "OTHERWISE" ]
+                    )
+                )
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 1
+        , "PAU0"
+        )
+    , lsource = Nothing
+    , wwhere =
+        [ Hornlike
+            { name =
+                [ MTT "accident branch" ]
+            , super = Nothing
+            , keyword = Where
+            , given = Nothing
+            , giveth = Nothing
+            , upon = Nothing
+            , clauses =
+                [ HC
+                    { hHead = RPConstraint
+                        [ MTT "accident branch" ] RPis
+                        [ MTT "excludedZero" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "ADD is disqualified entirely" ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "accident branch" ] RPis
+                        [ MTT "ADD benefit" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "OTHERWISE" ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "illness branch" ] RPis
+                        [ MTT "excludedZero" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPConstraint
+                                [ MTT "illness" ] RPis
+                                [ MTT "disqualified" ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "illness branch" ] RPis
+                        [ MTT "policy's"
+                        , MTT "benMR"
+                        ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "OTHERWISE" ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPMT
+                        [ MTT "ADD is disqualified entirely" ]
+                    , hBody = Just
+                        ( Any Nothing
+                            [ Leaf
+                                ( RPConstraint
+                                    [ MTT "policyHolder's"
+                                    , MTT "age"
+                                    ] RPgte
+                                    [ MTI 75 ]
+                                )
+                            , Leaf
+                                ( RPMT
+                                    [ MTT "accident's"
+                                    , MTT "general exclusions apply"
+                                    ]
+                                )
+                            , Leaf
+                                ( RPMT
+                                    [ MTT "policy's"
+                                    , MTT "ended"
+                                    ]
+                                )
+                            ]
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "excludedZero" ] RPis
+                        [ MTI 0 ]
+                    , hBody = Nothing
+                    }
+                , HC
+                    { hHead = RPnary RPis
+                        [ RPMT
+                            [ MTT "ADD benefit" ]
+                        , RPnary RPmin
+                            [ RPnary RPsum
+                                [ RPMT
+                                    [ MTT "addBenefit" ]
+                                , RPMT
+                                    [ MTT "otherBenefits" ]
+                                ]
+                            , RPMT
+                                [ MTT "risk cap" ]
+                            ]
+                        ]
+                    , hBody = Nothing
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "illness" ] RPis
+                        [ MTT "disqualified" ]
+                    , hBody = Just
+                        ( Any Nothing
+                            [ Leaf
+                                ( RPMT
+                                    [ MTT "illness's"
+                                    , MTT "general exclusions apply"
+                                    ]
+                                )
+                            , Leaf
+                                ( RPMT
+                                    [ MTT "policy's"
+                                    , MTT "ended"
+                                    ]
+                                )
+                            ]
+                        )
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere = []
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+, Hornlike
+    { name =
+        [ MTT "Step 1" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "policy" :| []
+            , Just
+                ( SimpleType TOne "Policy" )
+            ) :|
+            [
+                ( MTT "policyHolder" :| []
+                , Just
+                    ( SimpleType TOne "PolicyHolder" )
+                )
+            ,
+                ( MTT "accident" :| []
+                , Just
+                    ( SimpleType TOne "Accident" )
+                )
+            ]
+        )
+    , giveth = Just
+        (
+            ( MTT "Step 4" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "Step 1" ] RPis
+                [ MTT "claimable limited base ADD benefit" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPMT
+                        [ MTT "there were past ADD payouts" ]
+                    )
+                )
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "Step 1" ] RPis
+                [ MTT "base ADD benefit" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPMT
+                        [ MTT "OTHERWISE" ]
+                    )
+                )
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "Step 2" ] RPis
+                [ MTT "juvenile limited" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPMT
+                        [ MTT "accident's"
+                        , MTT "juvenile limit applies"
+                        ]
+                    )
+                )
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "Step 2" ] RPis
+                [ MTT "Step 1" ]
+            , hBody = Just
+                ( Leaf
+                    ( RPMT
+                        [ MTT "OTHERWISE" ]
+                    )
+                )
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "Step 3" ] RPis
+                [ MTT "multiplied by double triple benefit" ]
+            , hBody = Nothing
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "Step 4" ] RPis
+                [ MTT "Step 3"
+                , MTT "discounted by"
+                , MTT "accident's"
+                , MTT "risk percentage"
+                ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 1
+        , "PAU4"
+        )
+    , lsource = Nothing
+    , wwhere =
+        [ Hornlike
+            { name =
+                [ MTT "base ADD benefit" ]
+            , super = Nothing
+            , keyword = Where
+            , given = Nothing
+            , giveth = Nothing
+            , upon = Nothing
+            , clauses =
+                [ HC
+                    { hHead = RPConstraint
+                        [ MTT "base ADD benefit" ] RPis
+                        [ MTT "policy's"
+                        , MTT "benADD"
+                        ]
+                    , hBody = Nothing
+                    }
+                , HC
+                    { hHead = RPMT
+                        [ MTT "there were past ADD payouts" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPConstraint
+                                [ MTT "policyHolder's"
+                                , MTT "past ADD payouts"
+                                ] RPgt
+                                [ MTI 0 ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "claimable limited base ADD benefit" ] RPis
+                        [ MTT "claimable limit"
+                        , MTT "-"
+                        , MTT "policyHolder's"
+                        , MTT "past ADD payouts"
+                        ]
+                    , hBody = Nothing
+                    }
+                , HC
+                    { hHead = RPnary RPis
+                        [ RPMT
+                            [ MTT "juvenile limited" ]
+                        , RPnary RPmin
+                            [ RPMT
+                                [ MTT "Step 1" ]
+                            , RPMT
+                                [ MTT "juvenile limit" ]
+                            ]
+                        ]
+                    , hBody = Nothing
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "multiplied by double triple benefit" ] RPis
+                        [ MTT "Step 2"
+                        , MTT "*"
+                        , MTI 3
+                        ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "accident's"
+                                , MTT "triple benefits apply"
+                                ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "multiplied by double triple benefit" ] RPis
+                        [ MTT "Step 2"
+                        , MTT "*"
+                        , MTI 2
+                        ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "accident's"
+                                , MTT "double benefits apply"
+                                ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "multiplied by double triple benefit" ] RPis
+                        [ MTT "Step 2" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "OTHERWISE" ]
+                            )
+                        )
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere = []
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+, Hornlike
+    { name =
+        [ MTT "How Much Money Do You Get" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "policy" :| []
+            , Just
+                ( SimpleType TOne "Policy" )
+            ) :|
+            [
+                ( MTT "policyHolder" :| []
+                , Just
+                    ( SimpleType TOne "PolicyHolder" )
+                )
+            ,
+                ( MTT "accident" :| []
+                , Just
+                    ( SimpleType TOne "Accident" )
+                )
+            ,
+                ( MTT "illness" :| []
+                , Just
+                    ( SimpleType TOne "Claim" )
+                )
+            ,
+                ( MTT "user input" :| []
+                , Just
+                    ( SimpleType TOne "Dictionary" )
+                )
+            ]
+        )
+    , giveth = Just
+        (
+            ( MTT "How Much Money Do You Get" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "How Much Money Do You Get" ] RPis
+                [ MTT "PAU0" ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 1
+        , "Top-Level"
+        )
+    , lsource = Nothing
+    , wwhere =
+        [ Hornlike
+            { name =
+                [ MTT "addBenefit" ]
+            , super = Nothing
+            , keyword = Where
+            , given = Nothing
+            , giveth = Nothing
+            , upon = Nothing
+            , clauses =
+                [ HC
+                    { hHead = RPConstraint
+                        [ MTT "addBenefit" ] RPis
+                        [ MTT "PAU4" ]
+                    , hBody = Nothing
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "otherBenefits" ] RPis
+                        [ MTI 1
+                        , MTI 2
+                        , MTI 3
+                        , MTI 4
+                        ]
+                    , hBody = Nothing
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere = []
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+, Hornlike
+    { name =
+        [ MTT "claimable limit" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "total sum assured" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPnary RPis
+                [ RPMT
+                    [ MTT "claimable limit" ]
+                , RPnary RPmin
+                    [ RPnary RPproduct
+                        [ RPMT
+                            [ MTF 1.5 ]
+                        , RPMT
+                            [ MTT "total sum assured" ]
+                        ]
+                    , RPMT
+                        [ MTT "lifetime claimable limit" ]
+                    ]
+                ]
+            , hBody = Nothing
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "lifetime claimable limit" ] RPis
+                [ MTT "$4,500,000" ]
+            , hBody = Nothing
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "juvenile limit" ] RPis
+                [ MTT "$500,000" ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Just
+        ( "§"
+        , 1
+        , "subsidiary computations"
+        )
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+, Hornlike
+    { name =
+        [ MTT "x"
+        , MTT "discounted by"
+        , MTT "y"
+        ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "x" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :|
+            [
+                ( MTT "y" :| []
+                , Just
+                    ( SimpleType TOne "Number" )
+                )
+            ]
+        )
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "x"
+                , MTT "discounted by"
+                , MTT "y"
+                ] RPis
+                [ MTT "x * (1 - y)" ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+]

@@ -1,0 +1,136 @@
+entrypoints [Rule], Rule ;
+
+separator nonempty Rule "§" ;
+
+IsAType.     IsA ::= Text "IS A" Text ;
+IsAnType.     IsA ::= Text "IS AN" Text ;
+IsAOptional. IsA ::= Text "IS OPTIONAL" Text ;
+IsAEnum.     IsA ::= Text "IS ONE OF" [Text] ;
+IsAList.     IsA ::= Text "IS LIST OF" Text ;
+IsASet.      IsA ::= Text "IS SET OF" Text ;
+IsANoType.   IsA ::= Text ;
+
+separator nonempty Text "," ;
+separator nonempty IsA ";" ;
+Has.         Fields ::= "HAS" [IsA] ;
+EmptyFields. Fields ::= ;
+
+-- Any rule can have a label
+Rlabel.    Rule ::= "§" Text Rule1 ;
+
+-- Also just any Rule1 can become Rule without Rlabel
+coercions Rule 3 ;
+
+-- TypeDecl is Rule1 from start, that prevents adding GIVEN and WHERE
+TypeDecl. Rule1 ::= "DECLARE" IsA Fields ;
+
+-- Other rule types may have GIVEN and WHERE
+-- Order is arbitrary, important is just that GIVEN and WHERE
+-- may not attach to TypeDecl which is Rule1
+Given.     Rule2 ::= "GIVEN" [IsA] Rule2 ;
+Where.     Rule2 ::= Rule3 "WHERE" [HornClause] ;
+
+-- Regulatives
+RegSimple. Rule3 ::= "EVERY" BoolStruct Deontic BoolStruct ;
+RegWho. Rule3 ::= "EVERY" BoolStruct Who Deontic BoolStruct ;
+RegWhoInline. Rule3 ::= "EVERY" BoolStruct Who InlineHornlike Deontic BoolStruct ;
+
+-- text MEANS BoolStruct is going to be translated into RPBoolStruct text IS bsr
+HornlikeMeans. Rule3 ::= Text "MEANS" BoolStruct ;
+
+-- DECIDE text IS BoolStruct works to be a RelationalPredicate already,
+-- because there is no MEANS that breaks the RelationalPredicate
+HornlikeDecide. Rule3 ::= "DECIDE" [HornClause] ;
+-- Only Hornlikes have GIVETH
+HlikeGiveth. Rule3 ::= "GIVETH" IsA "DECIDE" [HornClause] ;
+
+HeadBody. HornClause ::= RelationalPredicate "IF" BoolStruct ;
+HeadOtherwise. HornClause ::= RelationalPredicate "OTHERWISE" ;
+HeadOnly. HornClause ::= RelationalPredicate ;
+separator nonempty HornClause ";" ;
+
+rules Deontic ::= "MUST" | "MAY" | "SHANT" ;
+
+WhoSimple. Who ::= "WHO" BoolStruct ;
+
+MeansInline. InlineHornlike ::= "MEANS" BoolStruct ;
+
+
+-- RelationalPredicate
+RPMT. RelationalPredicate ::= [MTExpr] ;
+RPBoolStructR. RelationalPredicate ::= [MTExpr] RPRel BoolStruct  ;  -- eyes IS (left IS blue AND right IS brown)
+-- Commented out: this in combination with BoolStruct being a single RelationalPredicate causes 3 r/r conflicts
+-- RPConstraint. RelationalPredicate ::=  [MTExpr] RPRel [MTExpr]  ;   -- eyes IS blue
+
+-- Commented out: I believe that many of the uses of RPnary in the wild are covered by BoolStruct constructors.
+-- That and also because it introduces 62 conflicts.
+-- RPnary. RelationalPredicate ::= RPRel [RelationalPredicate] ; -- "NEVER GO FULL LISP!" "we went full Lisp".
+-- separator nonempty RelationalPredicate "," ;
+-- Special cases for the constructs that usually appear as RPnary
+RPnary. RelationalPredicate ::= RPRel1 "(" [RelationalPredicate] ")" ;
+
+separator nonempty RelationalPredicate "," ;
+
+MTT. MTExpr ::= Text    ;
+MTI. MTExpr ::= Integer ;
+MTF. MTExpr ::= Double  ;
+MTB. MTExpr ::= Bool    ;
+-- MTString. MTExpr ::= String ;
+
+rules Bool ::= "True" | "False" ;
+rules Text ::= String | Token ;
+token Token letter (letter | '_' | '\'' | '-' | '+' | '/' | digit)*  ;
+separator nonempty MTExpr " " ;
+
+-- BoolStruct
+Any . BoolStruct ::=  "ANY" "(" [BoolStruct] ")" ;
+AnyPrePost . BoolStruct ::= Text  "ANY" "(" [BoolStruct] ")" Text ;
+AnyPre . BoolStruct ::= Text "ANY"  "(" [BoolStruct] ")" ;
+All . BoolStruct ::=  "ALL" "(" [BoolStruct] ")" ;
+AllPre . BoolStruct ::= Text "ALL" "(" [BoolStruct] ")" ;
+AllPrePost . BoolStruct ::= Text  "ALL" "(" [BoolStruct] ")" Text ;
+Not . BoolStruct ::= "NOT" BoolStruct ;
+Unless. BoolStruct ::= "UNLESS" "(" BoolStruct "," BoolStruct ")" ;
+
+-- If RPConstraint is uncommented, then this rule introduces 3 reduce/reduce conflicts.
+-- Can be fixed by prefixing it with something, but I think it's simpler to transform
+--     RPBoolStructR x rel (Leaf (RPMT y))   into
+--     RPConstraint  x rel             y
+Leaf . BoolStruct ::= RelationalPredicate ;
+
+separator nonempty BoolStruct "," ;
+
+-- RPRel
+RPis . RPRel ::= "IS" ;
+RPhas . RPRel ::= "HAS" ;
+RPeq . RPRel ::= "EQUALS" ;
+RPlt . RPRel ::= "<" ;
+RPlte . RPRel ::= "<=" ;
+RPgt . RPRel ::= ">" ;
+RPgte . RPRel ::= ">=" ;
+RPelem . RPRel ::= "IN" ;
+RPnotElem . RPRel ::= "NOT IN" ;
+RPnot . RPRel ::= "NOT" ;
+RPand . RPRel ::= "AND" ;
+RPor . RPRel ::= "OR" ;
+RPsum . RPRel1 ::= "SUM" ;
+RPproduct . RPRel1 ::= "PRODUCT" ;
+RPminus . RPRel1 ::= "MINUS" ;
+RPdivide . RPRel1 ::= "DIVIDE" ;
+RPmodulo . RPRel1 ::= "MODULO" ;
+RPsubjectTo . RPRel ::= "SUBJECT TO" ;
+RPmin . RPRel1 ::= "MIN" ;
+RPmax . RPRel1 ::= "MAX" ;
+RPmap . RPRel1 ::= "MAP" ;
+
+RPTC   . RPRel ::= TComparison ;
+TBefore. TComparison ::= "BEFORE" ;
+TAfter . TComparison ::= "AFTER" ;
+TBy    . TComparison ::= "BY" ;
+TOn    . TComparison ::= "ON" ;
+TVague . TComparison ::= "ABOUT" ;
+
+-- This is a hack, not about precedences but to create lightweight subtypes.
+-- What 1 really means is "this is used as a prefix", but thanks to coercions, it can also be used as infix.
+-- (I'm sorry.) /Inari
+coercions RPRel 1 ;

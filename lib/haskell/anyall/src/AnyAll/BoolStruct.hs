@@ -63,6 +63,14 @@ data BoolStruct lbl a
   | Not (BoolStruct lbl a)
   deriving (Eq, Ord, Show, Generic, Hashable, FromJSON, ToJSON, Functor, Foldable, Traversable)
 
+-- This turns the 'BoolStruct' into an equivalent 'BoolStructF'
+-- recursion scheme.
+-- It eliminates any self-recursion in 'BoolStruct', allowing us to derive
+-- Functor, Applicative and many other useful data structures, and write convenient folds
+-- over 'BoolStruct'.
+--
+-- See https://blog.sumtypeofway.com/posts/introduction-to-recursion-schemes.html
+-- for a good introduction why this is nice to have in certain scenarios.
 makeBaseFunctor ''BoolStruct
 
 mkLeaf :: a -> BoolStruct lbl a
@@ -85,7 +93,7 @@ type BoolStructLT = BoolStruct (Label T.Text) T.Text
 nnf :: BoolStruct lbl a -> BoolStruct lbl a
 nnf = \case
   Not (Not p) -> nnf p
-  Not (All l ps) -> go Any l Not ps 
+  Not (All l ps) -> go Any l Not ps
   Not (Any l ps) -> go All l Not ps
   All l ps -> go All l id ps
   Any l ps -> go Any l id ps
@@ -129,7 +137,7 @@ alwaysLabeled' ::
   BoolStruct (Label T.Text) a
 alwaysLabeled' anyLabel allLabel = \case
   Any maybeLbl xs -> go Any anyLabel maybeLbl xs
-  All maybeLbl xs -> go All allLabel maybeLbl xs 
+  All maybeLbl xs -> go All allLabel maybeLbl xs
   Not x -> Not $ alwaysLabeled' anyLabel allLabel x
   Leaf x -> Leaf x
   where

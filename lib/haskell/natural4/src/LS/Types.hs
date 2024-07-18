@@ -751,6 +751,14 @@ enumLabels nelist =
 enumLabels_ :: ParamText -> [Text.Text]
 enumLabels_ = fmap (Text.replace " " "_") . enumLabels
 
+-- This turns the 'RelationalPredicate' into an equivalent 'RelationalPredicateF'
+-- recursion scheme.
+-- It eliminates any self-recursion in 'RelationalPredicate', allowing us to derive
+-- Functor, Applicative and many other useful data structures, and write convenient folds
+-- over 'RelationalPredicate'.
+--
+-- See https://blog.sumtypeofway.com/posts/introduction-to-recursion-schemes.html
+-- for a good introduction why this is nice to have in certain scenarios.
 makeBaseFunctor ''RelationalPredicate
 
 makePrisms ''BaseHL

@@ -114,7 +114,6 @@ library
       TextuaL4.ErrM
       TextuaL4.LexTextuaL
       TextuaL4.ParTextuaL
-      TextuaL4.PrintTextuaL
       TextuaL4.Transform
   other-modules:
       Paths_natural4
@@ -428,6 +427,7 @@ test-suite natural4-test
       LS.InterpreterSpec
       LS.NLGSpec
       LS.RelationalPredicatesSpec
+      LS.TextuaL4Spec
       LS.TypesSpec
       LS.XPile.CoreL4.LogicProgramSpec
       LS.XPile.GenericMathLang.TranslateL4Spec

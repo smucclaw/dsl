@@ -975,7 +975,7 @@ extractRPMT2Text _         =
 type RuleSet = [Rule]
 
 -- * the getRuleBy* family
--- 
+--
 -- | Retrieve a rule by name, using `ruleName`
 getRuleByName :: RuleSet -> RuleName -> Maybe Rule
 getRuleByName rs rn = find (\r -> ruleName r == rn) rs
@@ -1089,7 +1089,7 @@ globalFacts l4i = do
           pure $ Node pt []
       }
 
--- * Extract everything that looks like a method.
+-- | Extract everything that looks like a method.
 --
 -- A common form is:
 -- @
@@ -1097,14 +1097,14 @@ globalFacts l4i = do
 --           ClassA's RecordAttr's AttributeName IS baz WHEN quux
 --           ClassA's RecordAttr's AttributeName IS baz OTHERWISE
 -- @
--- 
+--
 -- Extract and return all of these decisions in the form:
 --
 -- @
 --    [([ClassA, RecordAttr, AttributeName], foo, Just bar
 -- @
--- 
--- | we extract the methods to a fully qualified and annotatable form defined as `ValuePredicate` -- see Types.hs
+--
+-- we extract the methods to a fully qualified and annotatable form defined as `ValuePredicate` -- see Types.hs
 --
 -- Go through every rule and break it down into this structure.
 
@@ -1160,7 +1160,7 @@ attrsAsMethods rs = do
           xpError ["unhandled RelationalPredicate", show hHead]
 
 -- | input: [MTT "foo's", MTT "bar's", MTT "baz"]
--- 
+--
 --  output: (["foo", "bar"], "baz")
 toObjectPath :: MultiTerm -> XPileLogE ([EntityName], EntityName)
 toObjectPath [] = do

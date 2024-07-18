@@ -4,6 +4,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-# OPTIONS_GHC -Wall #-}
+
 {-|
 This module provides parser and utility functions for the RelationalPredicate group of types.
 

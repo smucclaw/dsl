@@ -130,7 +130,7 @@
 ,,,,,,,,,,,,,,,,,,
 ,,,GIVEN,x,,,IS A,Number,,,,,,,,,,
 ,,,,y,,,IS A,Number,,,,,,,,,,
-,,,DECIDE,x,discounted by,y,IS,x * (1 - y),,,,,,,,,,,
+,,,DECIDE,x,discounted by,y,IS,x * (1 - y),,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,
 ,,,DECIDE,lifetime claimable limit,,IS,"$4,500,000",,,,,,,,,,,

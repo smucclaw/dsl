@@ -49,6 +49,7 @@ import TextuaL4.ParTextuaL   ( pRule, myLexer )
 import Text.RawString.QQ (r)
 
 import Prelude hiding (exp, seq)
+import LS.XPile.Common
 
 instance Arbitrary (Expr Double) where
   arbitrary = genericArbitrary

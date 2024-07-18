@@ -26,7 +26,7 @@ how much would be needed to in effect parse the notoriously complicated L4 data 
 {-# LANGUAGE BlockArguments #-}
 
 module LS.XPile.MathLang.GenericMathLang.ToGenericMathLang
-  (toMathLangGen, getHornlikes, insertTypeDecls, expandHornlikes)
+  (toMathLangGen, getHornlikes, insertTypeDecls, expandHornlikes, toMathLangGen')
 where
 
 import AnyAll (BoolStructF (..))
@@ -79,6 +79,15 @@ toMathLangGen l4i =
   in case runToLC $ l4ToLCProgram l4Hornlikes of
     Left errors -> makeErrorOut errors
     Right lamCalcProgram -> (renderLC lamCalcProgram, [])
+
+toMathLangGen' :: Interpreted -> LCProgram
+toMathLangGen' l4i =
+  let l4Hornlikes = getHornlikes l4i
+--                      |> expandHornlikes l4i
+                      |> insertTypeDecls l4i
+  in case runToLC $ l4ToLCProgram l4Hornlikes of
+    Left errors -> error $ show errors
+    Right lamCalcProgram -> lamCalcProgram
 
 -- Utility functions for expanding rules and inserting TypeDecls into GIVENs
 -- (Introduced in 2024-06, I hope we deal with global vs. local variables better later.)

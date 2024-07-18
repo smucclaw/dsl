@@ -27,42 +27,12 @@ import Data.Time (Day(..))
 import Optics (re, view)
 import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 import GHC.Generics
--- import Data.List.NonEmpty (NonEmpty(..))
--- import Data.List.NonEmpty qualified as NE
-
--- import Data.Generics.Product.Types (types)
--- import Data.String ( IsString )
--- import Data.String.Interpolate (i)
-
-import LS.Types (TypeSig(..), ParamType(..), enumLabels)
 
 import Data.HashMap.Strict (HashMap, empty)
 import Data.Hashable (Hashable)
 import Data.Coerce (coerce)
 import Language.Haskell.TH.Syntax (Lift)
--- import GHC.Generics (Generic)
-
------------- L4 declared entity types ----------------------
-
--- | GML types that are declared in L4 by the user, e.g. 'Person' or 'Singaporean citizen'.
---
-data L4EntityType =
-    L4EntityType T.Text  -- ^ a user-defined named type
-  | L4Enum [T.Text]   -- ^ a user-defined enumeration type
-  | L4List L4EntityType  -- ^ a user-defined list type
-  deriving stock (Eq, Generic, Show, Ord)
-  deriving anyclass (Hashable)
-
--- | Turn a surface-L4 type signature into a GML type.
---
--- NOTE / TODO: This translation seems lossy.
---
-mkEntType :: TypeSig -> L4EntityType
-mkEntType = \case
-  SimpleType TOne      tn -> L4EntityType tn
-  SimpleType TOptional tn -> L4EntityType tn -- no optional
-  SimpleType _         tn -> L4List $ mkEntType $ SimpleType TOne tn -- lists, sets, no difference
-  InlineEnum _         pt -> L4Enum $ enumLabels pt -- assuming no lists here (is there an example of a list of enum values?)
+import LS.XPile.Common
 
 {-------------------------------------------------------
     AST

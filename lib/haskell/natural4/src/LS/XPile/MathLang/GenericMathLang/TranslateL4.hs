@@ -65,10 +65,13 @@ import LS.Rule (
                 getGiven,
                 RuleLabel)
 import LS.Rule qualified as L4 (Rule(..))
+import LS.Utils ((|$>))
+import LS.XPile.Common
 
 import Effectful (Eff, (:>), runPureEff)
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.Reader.Static (Reader, runReader, local, asks, ask)
+import Effectful.State.Dynamic qualified as State
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable (Hashable)
 import Flow ((|>))
@@ -78,7 +81,7 @@ import Data.List.NonEmpty qualified as NE
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Foldable qualified as F (toList, foldrM)
-import LS.Utils ((|$>))
+import Data.Bifunctor (bimap)
 
 -- for parsing expressions that are just strings inside MTExpr
 import Control.Monad.Combinators.Expr (makeExprParser, Operator(..))
@@ -92,7 +95,7 @@ import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.Read (readMaybe)
 import Prelude hiding (exp)
 import Debug.Trace (trace)
-import Effectful.State.Dynamic qualified as State
+
 
 -- $setup
 -- >>> import Data.Text qualified as T
@@ -291,8 +294,8 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntityType)
 type ReturnVarInfo = [(Var, Maybe L4EntityType)]
-data UserDefinedFun = MkUserFun {
-    getFunName :: Var
+data UserDefinedFun = MkUserFun
+  { getFunName :: Var
   , getFunDef :: Exp
   , getBoundVars :: [Var]
   , getOperMP :: Operator Parser BaseExp
@@ -394,7 +397,10 @@ runParserInLCContext act = do
 -- Expects a list of Hornlike rules, produces a translated GML program
 -- in the form of an 'LCProgram'.
 --
-l4ToLCProgram :: (Error ToLCError :> es, Reader Env :> es, State.State [UserDefinedFun] :> es) => [L4.Rule] -> Eff es LCProgram
+l4ToLCProgram ::
+  (Error ToLCError :> es, Reader Env :> es, State.State [UserDefinedFun] :> es) =>
+  [L4.Rule] ->
+  Eff es LCProgram
 l4ToLCProgram rules = do
   l4HLs <- traverse simplifyL4Hlike rules
   let customUserFuns = iterateFuns [] $ F.toList l4HLs
@@ -474,7 +480,7 @@ mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
     declaredVarsToAssocList dvars = dvars ^.. folded % to getGiven % folded
 
     convertL4Types :: [(T.Text, Maybe TypeSig)] -> [(Var, Maybe L4EntityType)]
-    convertL4Types = each % _1 %~ mkVar >>> each % _2 %~ fmap mkEntType
+    convertL4Types = fmap (bimap mkVar (fmap mkEntityType))
 
 mkVarEntityMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
 mkVarEntityMap = HM.fromList . mkL4VarTypeDeclAssocList

@@ -39,6 +39,7 @@ import Flow ((|>))
 
 import LS.Rule (Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
+import LS.XPile.Common qualified as Common
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..), ExplnAnnot (l4RuleName))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4 qualified as GML
@@ -281,7 +282,7 @@ gml2ml exp = case expExp of
 
     getList :: GML.Exp -> Maybe [GML.Exp]
     getList gmlExp = case (gmlExp.exp, GML.typeLabel <$> gmlExp.md) of
-      (ESeq seqExp, Just (GML.FromUser (GML.L4List _)):_)
+      (ESeq seqExp, Just (GML.FromUser (Common.L4List _)):_)
         -> Just (GML.seqExpToExprs seqExp)
       _ -> Nothing
 

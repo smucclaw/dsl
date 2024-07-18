@@ -57,6 +57,16 @@ data MTExpr = MTT Text.Text -- ^ Text string
 --            | MTD Text.Text -- ^ Date
             deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
+-- GIVEN x
+-- DECIDE f x IS y
+-- WHERE  y's book's color IS 'green
+
+-- let f = fun(x) => { book = { color = 'green } }
+
+-- [ MTT x's, MTT book's, MTT color ]
+-- [ RnVariable x, RnSelector book, RnSelector color]
+-- [ x.book.color ]
+
 makePrisms ''MTExpr
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)
@@ -120,8 +130,8 @@ type MultiTerm = [MTExpr] --- | apple | banana | 100 | $100 | 1 Feb 1970
 --
 -- > action = ( "walk" :| [] , Nothing )
 --
--- | notify | the government |    |         |
--- |        | immediately    | :: | Urgency |
+-- >| notify | the government |    |         |
+-- >|        | immediately    | :: | Urgency |
 type ParamText = NonEmpty TypedMulti
 
 text2pt :: Text.Text -> ParamText
@@ -133,6 +143,10 @@ mtexpr2text (MTI n) = [i|#{n}|]
 mtexpr2text (MTF n) = [i|#{n}|]
 mtexpr2text (MTB True) = "TRUE"
 mtexpr2text (MTB False) = "FALSE"
+
+isMtexprText :: MTExpr -> Maybe Text.Text
+isMtexprText (MTT t) = Just t
+isMtexprText _ = Nothing
 
 pt2text :: ParamText -> Text.Text
 pt2text = Text.unwords . fmap mtexpr2text . toList . (fst =<<)
@@ -523,10 +537,10 @@ type ClassHierarchyMap = Map.HashMap EntityType TypedClass
 
 -- | ScopeTabs: In the course of a program we will sometimes see ad-hoc variables used in GIVEN and elsewhere.
 -- those end up in the ScopeTabs object returned by the `symbolTable` function.
-
+--
 -- We also see explicit variable definitions given by (DEFINE ... HAS ...). These also end up in ScopeTabs.
 -- If such a definition appears under a WHERE limb of another rule, it is scoped to that rule.
-
+--
 -- If it is given at top level, then it is under ... global scope, which is represented by Rulename=[]
 -- The keys to ScopeTabs are from ruleLabelName.
 
@@ -535,9 +549,9 @@ type ScopeTabs = Map.HashMap RuleName SymTab
 --  | SymTabs are a helper data structure used by ScopeTabs.
 -- the fst contains type-related information.
 -- the snd contains value-related information.
-
+--
 -- this type is getting pretty hefty, soon it'll be time to give it a proper type definition.
-
+--
 type SymTab = Map.HashMap MultiTerm (Inferrable TypeSig, [HornClause2])
 
 -- | The explicitly annotated types from the L4 source text are recorded in the fst of Inferrable.

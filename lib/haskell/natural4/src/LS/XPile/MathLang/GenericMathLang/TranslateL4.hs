@@ -30,6 +30,8 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
   simplifyL4Hlike,
   baseExpifyMTEs,
   noExtraMetadata,
+  -- * Exported for doctests, don't use them! They are private 😠
+  splitGenitives,
 )
 where
 

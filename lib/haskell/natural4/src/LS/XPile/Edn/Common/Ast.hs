@@ -82,6 +82,14 @@ data Op
   | OrOp
   deriving (Eq, Ord, Show, Generic, Hashable)
 
+-- This turns the 'AstNode' into an equivalent 'AstNodeF'
+-- recursion scheme.
+-- It eliminates any self-recursion in 'AstNode', allowing us to derive
+-- Functor, Applicative and many other useful data structures, and write convenient folds
+-- over 'AstNode'.
+--
+-- See https://blog.sumtypeofway.com/posts/introduction-to-recursion-schemes.html
+-- for a good introduction why this is nice to have in certain scenarios.
 makeBaseFunctor ''AstNode
 
 pattern IsA ::

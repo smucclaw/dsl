@@ -10,6 +10,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 
 module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
@@ -28,7 +29,9 @@ module LS.XPile.MathLang.GenericMathLang.TranslateL4 (
   runToLC,
   simplifyL4Hlike,
   baseExpifyMTEs,
-  noExtraMdata,
+  noExtraMetadata,
+  -- * Exported for doctests, don't use them! They are private 😠
+  splitGenitives,
 )
 where
 
@@ -39,7 +42,6 @@ import Data.HashSet qualified as Set
 
 import LS.XPile.MathLang.GenericMathLang.ArithOps ( allArithOps, arithOps )
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST -- TODO: Add import list
-import LS.XPile.MathLang.Logging (LogConfig, defaultLogConfig)
 -- TODO: Haven't actually finished setting up logging infra, unfortunately.
 -- But it's also not really necessary for working on the transpiler
 import LS.XPile.MathLang.GenericMathLang.RPrel2opTable
@@ -51,9 +53,10 @@ import LS.Types as L4
   HornClause (..), HornClause2, BoolStructR,
   TypeSig(..), TypedMulti,
   SimpleHlike(..), BaseHL(..), AtomicHC(..), HeadOnlyHC(..),
-  MultiClauseHL(..), mkMultiClauseHL,
   HeadOnlyHC, mkHeadOnlyAtomicHC,
-  HnBodHC(..),
+  pattern OneClause,
+  pattern MultiClause,
+  HornBodyHeadClause(..),
   mtexpr2text, pt2text, pt2multiterm
   )
 
@@ -90,6 +93,11 @@ import Text.Read (readMaybe)
 import Prelude hiding (exp)
 import Debug.Trace (trace)
 import Effectful.State.Dynamic qualified as State
+
+-- $setup
+-- >>> import Data.Text qualified as T
+-- >>> import LS.Types
+-- >>> :set -XOverloadedStrings
 
 {- | Parse L4 into a Generic MathLang lambda calculus (and thence to Meng's Math Lang AST) -}
 
@@ -281,8 +289,8 @@ throwErrorImpossibleWithMsg = throwErrorBase ErrImpossible
 
 -------- Env -----------------------------------------------------------------------
 
-type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntType)
-type RetVarInfo = [(Var, Maybe L4EntType)]
+type VarTypeDeclMap = HM.HashMap Var (Maybe L4EntityType)
+type ReturnVarInfo = [(Var, Maybe L4EntityType)]
 data UserDefinedFun = MkUserFun {
     getFunName :: Var
   , getFunDef :: Exp
@@ -294,6 +302,11 @@ instance Eq UserDefinedFun where
   f == g = getFunName f == getFunName g &&
            getFunDef f == getFunDef g &&
            getBoundVars f == getBoundVars g
+
+instance Ord UserDefinedFun where
+  f `compare` g = getFunName f `compare` getFunName g <>
+           getFunDef f `compare` getFunDef g <>
+           getBoundVars f `compare` getBoundVars g
 
 instance Show UserDefinedFun where
   show = showUserDefinedFun
@@ -307,18 +320,16 @@ showUserDefinedFun f = [i|#{fname f} #{args} = #{getFunDef f}|]
 data Env =
   MkEnv { localVars :: VarTypeDeclMap
         -- ^ vars declared in GIVENs and WHERE (but NOT including those declared in GIVETH)
-        -- , retVarInfo :: RetVarInfo
-          -- ^ not sure we need retVarInfo
+        -- , returnVarInfo :: ReturnVarInfo
+          -- ^ not sure we need returnVarInfo
         , userDefinedFuns :: [UserDefinedFun]
-        , currSrcPos :: SrcPositn
-        , logConfig :: LogConfig }
+        , currentSrcPosition :: SrcPosition }
   deriving stock (Generic)
 
 initialEnv :: Env
 initialEnv = MkEnv { localVars = HM.empty
                    , userDefinedFuns = []
-                   , currSrcPos = MkPositn 0 0
-                   , logConfig = defaultLogConfig }
+                   , currentSrcPosition = MkPosition 0 0 }
 
 addCustomFuns :: [UserDefinedFun] -> Env -> Env
 addCustomFuns funs env = env {userDefinedFuns = funs <> userDefinedFuns env}
@@ -389,7 +400,7 @@ l4ToLCProgram rules = do
   let customUserFuns = iterateFuns [] $ F.toList l4HLs
   lcProg <- withCustomFuns customUserFuns $ traverse expifyHL l4HLs
   pure MkLCProgram { lcProgram = programWithoutUserFuns lcProg
-                   , globalVars = mkGlobalVars $ HM.unions $ shcGiven <$> F.toList l4HLs
+                   , globalVars = mkGlobalVars $ HM.unions $ shGiven <$> F.toList l4HLs
                    , giveths = giveths
                    , userFuns = mkUserFuns customUserFuns}
   where
@@ -420,18 +431,18 @@ l4ToLCProgram rules = do
   1. Simplify L4: massage L4.Rule (Hornlike) into the more convenient SimpleHL
 ===============================================================================-}
 
-type SimpleHL = SimpleHlike VarTypeDeclMap RetVarInfo (Maybe RuleLabel)
+type SimpleHL = SimpleHlike VarTypeDeclMap ReturnVarInfo (Maybe RuleLabel)
 
 simplifyL4Hlike :: Error ToLCError :> es => L4.Rule -> Eff es SimpleHL
 simplifyL4Hlike rule =
   case rule.srcref of
     Just srcref -> do
-      baseHL <- extractBaseHL rule
-      pure MkSimpleHL { shcSrcRef = srcref
-                      , shcGiven = maybe HM.empty mkVarEntMap rule.given
-                      , shcRet  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
-                      , baseHL = baseHL
-                      , shRLabel = rule.rlabel
+      shClauses <- extractBaseHL rule
+      pure MkSimpleHL { shSrcRef = srcref
+                      , shGiven = maybe HM.empty mkVarEntityMap rule.given
+                      , shReturnVariables  = rule.giveth ^.. folded % folding mkL4VarTypeDeclAssocList
+                      , shClauses = shClauses
+                      , shLabel = rule.rlabel
                       }
     Nothing -> throwParserProblemWithMsg rule "Parser should not be returning L4 rules with Nothing in src ref"
 {- this always takes up more time than one expects:
@@ -443,7 +454,7 @@ given :: Maybe ParamText = Maybe (NonEmpty TypedMulti)
 l4HcToAtomicHC :: L4.HornClause2 -> AtomicHC
 l4HcToAtomicHC hc =
   case hc.hBody of
-    Just hbody -> HeadAndBody MkHnBHC {hbHead = hc.hHead, hbBody = hbody}
+    Just hbody -> HeadAndBody MkHornBodyHeadClause {hbHead = hc.hHead, hbBody = hbody}
     Nothing -> mkHeadOnlyAtomicHC hc.hHead
 
 extractBaseHL :: Error ToLCError :> es => L4.Rule -> Eff es BaseHL
@@ -453,36 +464,36 @@ extractBaseHL rule =
     [hc] -> pure $ OneClause $ l4HcToAtomicHC hc
     hc : hcs ->
       (hc NE.:| hcs)
-        |$> l4HcToAtomicHC |> mkMultiClauseHL |> MultiClause |> pure
+        |$> l4HcToAtomicHC |> MultiClause |> pure
 
 --- Utils for dealing with 'Maybe ParamText' -------------------------------------
-mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntType)]
+mkL4VarTypeDeclAssocList :: Foldable f => f TypedMulti -> [(Var, Maybe L4EntityType)]
 mkL4VarTypeDeclAssocList = convertL4Types . declaredVarsToAssocList
   where
     declaredVarsToAssocList :: Foldable f => f TypedMulti -> [(T.Text, Maybe TypeSig)]
     declaredVarsToAssocList dvars = dvars ^.. folded % to getGiven % folded
 
-    convertL4Types :: [(T.Text, Maybe TypeSig)] -> [(Var, Maybe L4EntType)]
+    convertL4Types :: [(T.Text, Maybe TypeSig)] -> [(Var, Maybe L4EntityType)]
     convertL4Types = each % _1 %~ mkVar >>> each % _2 %~ fmap mkEntType
 
-mkVarEntMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
-mkVarEntMap = HM.fromList . mkL4VarTypeDeclAssocList
+mkVarEntityMap :: Foldable f => f TypedMulti -> VarTypeDeclMap
+mkVarEntityMap = HM.fromList . mkL4VarTypeDeclAssocList
 
 {-================================================================================
   2. SimpleHL to LC Exp
 =================================================================================-}
 
-srcRefToSrcPos :: SrcRef -> SrcPositn
-srcRefToSrcPos sr = MkPositn { row = sr.srcrow, col = sr.srccol }
+srcRefToSrcPos :: SrcRef -> SrcPosition
+srcRefToSrcPos sr = MkPosition { row = sr.srcrow, col = sr.srccol }
 
 -- | Convenience fn: For when there's no (additional) metadata to add to base exp
-noExtraMdata :: BaseExp -> Exp
-noExtraMdata baseexp = MkExp baseexp []
+noExtraMetadata :: BaseExp -> Exp
+noExtraMetadata baseexp = MkExp baseexp []
 
-typeMdata :: SrcPositn -> T.Text -> BaseExp -> Exp
-typeMdata pos typ bexp = MkExp bexp (inferredType pos typ [])
+typeMetadata :: SrcPosition -> T.Text -> BaseExp -> Exp
+typeMetadata pos typ bexp = MkExp bexp (inferredType pos typ [])
 
-inferredType :: SrcPositn -> T.Text -> MdGrp -> MdGrp
+inferredType :: SrcPosition -> T.Text -> MdGrp -> MdGrp
 inferredType pos typ = \case
   [] -> [ MkExpMetadata
             pos
@@ -491,7 +502,7 @@ inferredType pos typ = \case
         ]
   mds -> mds -- md {typeLabel = Just $ Inferred typ}:mds
 
-addRuleName :: SrcPositn -> T.Text -> Exp -> Exp
+addRuleName :: SrcPosition -> T.Text -> Exp -> Exp
 addRuleName pos rname exp = case exp.md of
   []   -> exp {md = [MkExpMetadata pos Nothing annot]}
   m:ms -> exp {md = m {explnAnnot = annot}:ms}
@@ -518,14 +529,14 @@ expifyHL hl = do
   pure $ MkExp bexp [] -- using mdata here puts it in weird place! but we don't care about types so much at this stage so leave it empty for now
 --  return $ MkExp bexp [mdata]
    where
-    returnType = case hl.shcRet of
+    returnType = case hl.shReturnVariables of
       [(_, mReturnType)] -> mReturnType
       [] -> Nothing
-      xs -> fail [i|expifyHL: the SimpleHL's shcRet has multiple return types, is this weird? #{xs}|]
+      xs -> fail [i|expifyHL: the SimpleHL's shReturnVariables has multiple return types, is this weird? #{xs}|]
       -- TODO: when would this list have more than 1 element? if there are multiple GIVETHs?
 
     _mdata = MkExpMetadata {
-              srcPos = srcRefToSrcPos $ shcSrcRef hl
+              srcPos = srcRefToSrcPos $ shSrcRef hl
             , typeLabel = FromUser <$> returnType
             , explnAnnot = Nothing
             }
@@ -548,18 +559,21 @@ baseExpify hl = case lhsLooksLikeLambda hl of
     varsRHS <- argVarsOnly bexpRHS
     if all (`elem` varsRHS) varsLHS -- FIXME: should also accept global variables
       then do
-        let userFun = MkUserFun fname (noExtraMdata bexpRHS) varsLHS operMP
+        let userFun = MkUserFun fname (noExtraMetadata bexpRHS) varsLHS operMP
         State.modify $ (userFun :)
         ELam v <$> mkLambda vs bexpRHS
       else baseExpify'
   _ -> baseExpify'
   where
     baseExpify' = case hl of
-      (shRLabel -> Just (_section, _number, rname)) -> do
-        bexp <- baseExpify $ hl {shRLabel = Nothing}
-        mkVarSetFromVar (MkVar rname) (noExtraMdata bexp)
+      -- A labelled function that can be called later.
+      -- Thus, parse the function and assign the result to a variable.
+      -- TODO: what happens with recursion?
+      (shLabel -> Just (_section, _number, rname)) -> do
+        bexp <- baseExpify $ hl {shLabel = Nothing}
+        mkVarSetFromVar (MkVar rname) (noExtraMetadata bexp)
       (isIf -> Just hc) -> toIfExp hl hc
-      (baseHL -> OneClause (HeadOnly hc)) -> toHeadOnlyExp hl hc
+      (shClauses -> OneClause (HeadOnly hc)) -> toHeadOnlyExp hl hc
       (isMultiClause -> hls@(_:_)) -> ESeq <$> l4sHLsToLCSeqExp hls
       hornlike -> throwNotYetImplError hornlike
 
@@ -570,16 +584,18 @@ baseExpify hl = case lhsLooksLikeLambda hl of
 
 mkLambda :: Reader Env :> es => [Var] -> BaseExp -> Eff es Exp
 mkLambda [] bexp = do
-  pos <- asks currSrcPos
-  pure $ typeMdata pos "Function" bexp
+  pos <- asks currentSrcPosition
+  pure $ typeMetadata pos "Function" bexp
 mkLambda (v:vs) bexp = do
-  pos <- asks currSrcPos
-  let funType = typeMdata pos "Function"
+  pos <- asks currentSrcPosition
+  let funType = typeMetadata pos "Function"
   funType . ELam v <$> mkLambda vs bexp
 
-isIf :: SimpleHL -> Maybe HnBodHC
+-- | A 'SimpleHL' represents an 'If' expression, if it is a single clause
+-- with a body.
+isIf :: SimpleHL -> Maybe HornBodyHeadClause
 isIf hl =
-  case hl.baseHL of
+  case hl.shClauses of
     MultiClause _ -> Nothing
     OneClause atomicHC ->
       case atomicHC of
@@ -600,12 +616,12 @@ lhsLooksLikeLambda hl = case (hasGivens hl, isConstraint hl) of
 
 isConstraint :: SimpleHL -> Maybe ([MTExpr], [MTExpr])
 isConstraint hornlike = do
-  OneClause (HeadOnly hornClauseHead) <- Just $ baseHL hornlike
+  OneClause (HeadOnly hornClauseHead) <- Just $ shClauses hornlike
   RPConstraint lhs RPis rhs <- Just $ hcHead hornClauseHead
   Just (lhs, rhs)
 
 hasGivens :: SimpleHL -> Maybe [Var]
-hasGivens hl = case HM.keys hl.shcGiven of
+hasGivens hl = case HM.keys hl.shGiven of
                 [] -> Nothing
                 ks -> Just ks
 
@@ -615,7 +631,7 @@ mkOperator ::
   [Var] ->
   Eff es (Var, Operator Parser BaseExp)
 mkOperator mtes vars = do
-  pos <- asks currSrcPos
+  pos <- asks currentSrcPosition
   case maybeOperator pos mtes vars of
     Just (fname, _vars, op) -> pure (fname, op)
     Nothing -> throwNotSupportedWithMsgError ("isLambda:" :: String) [i|not a lambda expression: #{mtes}|]
@@ -626,10 +642,10 @@ maybeBoundVars :: [MTExpr] -> [Var] -> Maybe [Var]
 maybeBoundVars mtes givens = getBoundVars <$> maybeOperator dummyPos mtes givens
   where
     getBoundVars (_fname, vars, _op) = vars
-    dummyPos = MkPositn undefined undefined
+    dummyPos = MkPosition undefined undefined
 
 -- We require explicit arguments, otherwise impossible to distinguish from normal variable assignment
-maybeOperator :: SrcPositn -> [MTExpr] -> [Var] -> Maybe (Var, [Var], Operator Parser BaseExp)
+maybeOperator :: SrcPosition -> [MTExpr] -> [Var] -> Maybe (Var, [Var], Operator Parser BaseExp)
 maybeOperator pos [MTT f, MTT x] [var]
   | MkVar f /= var && MkVar x == var =
   let mkBexp = customUnary (MkVar f) pos
@@ -646,7 +662,7 @@ maybeOperator pos [MTT x, MTT f] [var]
     postfix f mkBexp)          -- megaparsec operator
 maybeOperator pos [MTT x, MTT f, MTT y] vs@[_, _]
   | all (`elem` vs) [vx, vy]
-    && f `notElem` allArithOps
+    && not (f `Set.member` allArithOps)
     = Just (
       MkVar f,                     -- fun name
       [vx, vy],                    -- bound vars
@@ -658,14 +674,14 @@ maybeOperator _pos _mtes _vars = Nothing
 
 isMultiClause :: SimpleHL -> [SimpleHL]
 isMultiClause hl =
-  case hl.baseHL of
-    MultiClause (MkMultiClauseHL hls) -> keepOgHL <$> NE.toList hls
+  case hl.shClauses of
+    MultiClause hls -> keepOgHL <$> NE.toList hls
     _ -> []
   where
     keepOgHL :: AtomicHC -> SimpleHL
-    keepOgHL hc = hl {baseHL = OneClause hc}
+    keepOgHL hc = hl {shClauses = OneClause hc}
 
-toIfExp :: (Error ToLCError :> es, Reader Env :> es) => SimpleHL -> HnBodHC -> Eff es BaseExp
+toIfExp :: (Error ToLCError :> es, Reader Env :> es) => SimpleHL -> HornBodyHeadClause -> Eff es BaseExp
 toIfExp hl hc = do
   condE <- withLocalVarsAndSrcPos $ processHcBody hc.hbBody
   thenE <- withLocalVarsAndSrcPos $ processHcHeadForIf hc.hbHead
@@ -675,8 +691,8 @@ toIfExp hl hc = do
   where
     withLocalVarsAndSrcPos = local $ setCurrSrcPos . setLocalVars
     setCurrSrcPos, setLocalVars :: Env -> Env
-    setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
-    setLocalVars = set #localVars hl.shcGiven
+    setCurrSrcPos = set #currentSrcPosition (srcRefToSrcPos hl.shSrcRef)
+    setLocalVars = set #localVars hl.shGiven
 -- TODO: Add metadata from hl
 -- TODO: If Then with ELSE for v2
 
@@ -686,8 +702,8 @@ toHeadOnlyExp hl hc =
   where
     withLocalVarsAndSrcPos = local $ setCurrSrcPos . setLocalVars
     setCurrSrcPos, setLocalVars :: Env -> Env
-    setCurrSrcPos = set #currSrcPos (srcRefToSrcPos hl.shcSrcRef)
-    setLocalVars = set #localVars hl.shcGiven
+    setCurrSrcPos = set #currentSrcPosition (srcRefToSrcPos hl.shSrcRef)
+    setLocalVars = set #localVars hl.shGiven
 
 
 --------------------- Head of HL and Var Set ------------------------------------------------------------
@@ -707,10 +723,10 @@ don't appear here -- they appear in hBody
 -}
 processHcHeadForIf :: (Error ToLCError :> es, Reader Env :> es) => L4.RelationalPredicate -> Eff es Exp
 processHcHeadForIf (isSetVarToTrue -> Just putativeVar) = do
-  pos <- asks currSrcPos
-  pure $ noExtraMdata $
+  pos <- asks currentSrcPosition
+  pure $ noExtraMetadata $
             EPredSet (mkVar . textifyMTEs $ putativeVar)
-            (typeMdata pos "Boolean" $ ELit EBoolTrue)
+            (typeMetadata pos "Boolean" $ ELit EBoolTrue)
   --noExtraMdata <$> mkSetVarTrue putativeVar
 processHcHeadForIf rp = expifyHeadRP rp
 -- processHcHeadForIf rp = throwNotSupportedError rp
@@ -748,7 +764,7 @@ isSetVarToTrue = \case
 
 {- |
 We want to handle things like
-  * `[ MTT "n1 + n2" ]`, from `RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]`
+  * @[ MTT "n1 + n2" ]@, from @RPConstraint [ MTT "n3c" ] RPis [ MTT "n1 + n2" ]@
 
 To handle arithmetic parsing, try Control.Monad.Combinators.Expr (https://github.com/mrkkrp/parser-combinators/Control/Monad/Combinators/Expr.hs)
 
@@ -768,17 +784,29 @@ isFun funs mte =
   let ops = allArithOps
       allFuns = foldr (Set.insert . varAsTxt) ops funs
   in case mte of
-    MTT t -> t `elem` allFuns
+    MTT t -> t `Set.member` allFuns
     _ -> False
 
-baseExpifyMTEs :: (Reader Env :> es, Error ToLCError :> es) => [MTExpr] -> Eff es BaseExp
-baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
+-- | Interpret the given 'MTExpr' and its subsequent 'MTExpr's params
+-- as a record selector. If all 'MTExpr's are record selectors, we simply
+-- create one record selector.
+--
+-- However, often a record selector is passed
+-- to a function application, for example @sibling's beverage discountedBy 20@, where
+-- @discountedBy@ is a function.
+-- If that's the case, we roughly translate this to @discountedBy (sibling.beverage) 20@.
+genetivesMultiTermExpression ::
+  (Error ToLCError :> es, Reader Env :> es) =>
+  MTExpr ->
+  NE.NonEmpty MTExpr ->
+  Eff es BaseExp
+genetivesMultiTermExpression g rest = do
   userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
   recname <- expifyMTEsNoMd [g]
-  case break (isFun userFuns) rest of
+  case NE.break (isFun userFuns) rest of
   -- ind's parent's sibling's … income
     (_x:_xs,[]) -> do
-      fieldname <- expifyMTEsNoMd rest -- income
+      fieldname <- expifyMTEsNoMd $ NE.toList rest -- income
       pure $ ERec fieldname recname
 
   -- ind's parent's sibling's … income, discountedBy, foo
@@ -787,92 +815,110 @@ baseExpifyMTEs (splitGenitives -> (Just g, rest@(_:_))) = do
       fExp <- expifyMTEsNoMd [f]
       arg2 <- expifyMTEsNoMd ys
       let arg1 = ERec fieldname recname
-          fArg1 = noExtraMdata $ EApp fExp $ noExtraMdata arg1
+          fArg1 = noExtraMetadata $ EApp fExp $ noExtraMetadata arg1
       pure $ EApp fArg1 arg2
+
     _ -> throwErrorImpossibleWithMsg g "shouldn't happen because we matched that the stuff after genitives is not empty"
 
+baseExpifyMTEs :: (Reader Env :> es, Error ToLCError :> es) => [MTExpr] -> Eff es BaseExp
 baseExpifyMTEs mtes = do
-  userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
-  case mtes of
-    [mte] -> do
-      -- Inari: assuming that the Var will be used for comparison
-      -- because SetVar is handled elsewhere, by extracting it
-      -- from RPConstraint
-      mvar <- isDeclaredVar mte
-      case mvar of
-        Just var -> return $ EVar var
-        Nothing -> parseExpr mte
+  case splitGenitives mtes of
+    Just (g, nonEmptyMtes) -> genetivesMultiTermExpression g nonEmptyMtes
+    Nothing -> do
+      userFuns <- asks $ fmap getFunName . userDefinedFuns -- :: [Var]
+      -- Now, we differentiate the following cases:
+      -- 1. It might be a variable
+      -- 2. It might be a simple function aplication
+      -- 3. It might be a more complex function application or expression
+      --    that requires more analysis.
+      case mtes of
+        [mte] -> do
+          -- Inari: assuming that the Var will be used for comparison
+          -- because SetVar is handled elsewhere, by extracting it
+          -- from RPConstraint
+          mvar <- isDeclaredVar mte
+          case mvar of
+            Just var -> return $ EVar var
+            Nothing -> parseExpr mte
 
-    [mte1@(MTT _), mte2@(MTT _)] -> do
-      mvar1 <- isDeclaredVar mte1
-      mvar2 <- isDeclaredVar mte2
-      case (mvar1, mvar2) of
-        (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
-          varWeAssumeToBePred <- varFromMTEs [mte2]
-          fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp $ noExtraMdata $ EVar var1
+        -- Exactly two elements, might be a function application like:
+        --
+        -- * f x
+        -- * x f
+        --
+        -- Check whether 'f' and 'x' are functions or variables, etc...
+        -- However, it seems we do not *really* care whether it is a user-defined
+        -- function or simply a variable.
+        [mte1@(MTT _), mte2@(MTT _)] -> do
+          mvar1 <- isDeclaredVar mte1
+          mvar2 <- isDeclaredVar mte2
+          case (mvar1, mvar2) of
+            (Just var1, Nothing) -> do -- "ind","qualifies" = qualifies(ind)
+              varWeAssumeToBePred <- varFromMTEs [mte2]
+              fExp <- mkVarExp varWeAssumeToBePred
+              pure $ EApp fExp $ noExtraMetadata $ EVar var1
 
-        (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
-          varWeAssumeToBePred <- varFromMTEs [mte1]
-          fExp <- mkVarExp varWeAssumeToBePred
-          pure $ EApp fExp $ noExtraMdata $ EVar var2
+            (Nothing, Just var2) -> do -- "qualifies","ind" = qualifies(ind)
+              varWeAssumeToBePred <- varFromMTEs [mte1]
+              fExp <- mkVarExp varWeAssumeToBePred
+              pure $ EApp fExp $ noExtraMetadata $ EVar var2
 
-        (Nothing, Nothing)
-          -> throwNotSupportedWithMsgError (RPMT mtes)
-                "baseExpifyMTEs: trying to apply non-function"
+            (Nothing, Nothing)
+              -> throwNotSupportedWithMsgError (RPMT mtes)
+                    "baseExpifyMTEs: trying to apply non-function"
 
-        (Just var1, Just var2) -> do
-          case fmap (`elem` userFuns) [var1, var2] of
-            [True, False] -> do
-              let f = noExtraMdata $ EVar var1
-                  x = noExtraMdata $ EVar var2
-              pure $ EApp f x
-            [False, True] -> do
-              let f = noExtraMdata (EVar var2)
-                  x = noExtraMdata (EVar var1)
-              pure $ EApp f x
-            [True, True] -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
-            _ -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
+            (Just var1, Just var2) -> do
+              case (var1, var2) & both %~ (`elem` userFuns) of
+                (True, False) -> do
+                  let f = noExtraMetadata $ EVar var1
+                      x = noExtraMetadata $ EVar var2
+                  pure $ EApp f x
+                (False, True) -> do
+                  let f = noExtraMetadata (EVar var2)
+                      x = noExtraMetadata (EVar var1)
+                  pure $ EApp f x
+                (True, True) -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply function to another function—we probably don't support that"
+                (False, False) -> throwNotSupportedWithMsgError (RPMT mtes) "baseExpifyMTEs: trying to apply non-function"
 
-    _mtes ->
-      case break (isFun userFuns) mtes of
-      -- function, rest
-        ([],f:ys) -> do
-          arg <- expifyMTEsNoMd ys
-          assumedVar <- varFromMTEs [f]
-          fExp <- mkVarExp assumedVar
-          pure $ EApp fExp arg
-
-      -- mte1 [, …, mteN], function, rest
-        (xs,f:ys) -> do
-          arg1 <- expifyMTEsNoMd xs
-          arg2 <- expifyMTEsNoMd ys
-          -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
-          bexp <- parseExpr $ MTT [i|x #{mtexpr2text f} y|]
-          case bexp of
-            ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
-            ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
-            _ -> do
+        _mtes ->
+          case break (isFun userFuns) mtes of
+          -- function, rest
+            ([],f:ys) -> do
+              arg <- expifyMTEsNoMd ys
               assumedVar <- varFromMTEs [f]
               fExp <- mkVarExp assumedVar
-              let fArg1 = noExtraMdata $ EApp fExp arg1
-              pure $ EApp fArg1 arg2
+              pure $ EApp fExp arg
 
-      -- no userfuns here
-        (_xs,[]) -> do
-          let parenExp = MTT $ textifyMTEs $ parenExps mtes
-          expParsedAsText <- parseExpr parenExp
-          case expParsedAsText of
-            ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
-            -- TODO: this should definitely not be a sequence, what should it be instead???
-              parsedExs <- traverse parseExpr mtes
-              pure $ ESeq $ foldr consSeqExp mempty parsedExs
+          -- mte1 [, …, mteN], function, rest
+            (xs,f:ys) -> do
+              arg1 <- expifyMTEsNoMd xs
+              arg2 <- expifyMTEsNoMd ys
+              -- since f is in userfuns, we can parse it using parseExpr. replacing args to some dummy x and y (but will fail if there is a userfun called x or y ¯\_(ツ)_/¯)
+              bexp <- parseExpr $ MTT [i|x #{mtexpr2text f} y|]
+              case bexp of
+                ENumOp {} -> pure $ ENumOp bexp.numOp arg1 arg2
+                ECompOp {} -> pure $ ECompOp bexp.compOp arg1 arg2
+                _ -> do
+                  assumedVar <- varFromMTEs [f]
+                  fExp <- mkVarExp assumedVar
+                  let fArg1 = noExtraMetadata $ EApp fExp arg1
+                  pure $ EApp fArg1 arg2
 
-            -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
-            notStringLit -> pure notStringLit
+          -- no userfuns here
+            (_xs,[]) -> do
+              let parenExp = MTT $ textifyMTEs $ parenExps mtes
+              expParsedAsText <- parseExpr parenExp
+              case expParsedAsText of
+                ELit _ -> trace [i|parseExpr returned this as a string literal: #{expParsedAsText}|] do
+                -- TODO: this should definitely not be a sequence, what should it be instead???
+                  parsedExs <- traverse parseExpr mtes
+                  pure $ ESeq $ foldr consSeqExp mempty parsedExs
+
+                -- arithmetic expression like [MTT "m1",MTT "*",MTT "m2"]
+                notStringLit -> pure notStringLit
   where
     consSeqExp :: BaseExp -> SeqExp -> SeqExp
-    consSeqExp = consSE . noExtraMdata
+    consSeqExp = consSE . noExtraMetadata
 
     parenExps :: [MTExpr] -> [MTExpr]
     parenExps mtexpr
@@ -880,7 +926,7 @@ baseExpifyMTEs mtes = do
       | otherwise = mtexpr
 
     isOp :: T.Text -> Bool
-    isOp = (`elem` arithOps)
+    isOp = (`Set.member` arithOps)
 
     -- don't parenthesize single variables or literals, like "taxesPayable" or "Singapore citizen"
     -- do parenthesize "(x + 6)"
@@ -903,9 +949,25 @@ parseExpr x@(MTT str) = do
     Left _error -> trace [i|can't parse with pExpr: #{x}|] pure $ mteToLitExp x
 parseExpr x = pure $ mteToLitExp x
 
-splitGenitives :: [MTExpr] -> (Maybe MTExpr, [MTExpr])
-splitGenitives [] = (Nothing, [])
-splitGenitives (mte:mtes) = (isGenitive mte, mtes)
+-- | Given a '[MTExpr]' that looks like:
+--
+-- @[MTT "parent's", MTT "sibling's", MTT "income"]@
+--
+-- strip away the suffix @"'s"@ from the first element of the list
+-- if there is any.
+--
+-- >>> splitGenitives [MTT "parent's", MTT "sibling's", MTT "income"]
+-- Just (MTT "parent",MTT "sibling's" :| [MTT "income"])
+--
+-- >>> splitGenitives [MTI 0, MTT "parent's", MTT "income"]
+-- Nothing
+--
+splitGenitives :: [MTExpr] -> Maybe (MTExpr, NE.NonEmpty MTExpr)
+splitGenitives [] = Nothing
+splitGenitives (mte:mtes) = do
+  mtesNE <- NE.nonEmpty mtes
+  noun <- isGenitive mte
+  pure $ (noun, mtesNE)
   where
     -- removes the genitive s if it is genitive
     isGenitive :: MTExpr -> Maybe MTExpr
@@ -921,7 +983,7 @@ type Parser = ParsecT Void T.Text (Eff ParserEffs)
 
 pExpr :: Parser BaseExp
 pExpr = do
-  pos <- lift $ asks currSrcPos
+  pos <- lift $ asks currentSrcPosition
   customOpers <- lift $ asks userDefinedFuns
   makeExprParser pTerm (fmap getOperMP customOpers : table pos) <?> "expression"
 
@@ -936,7 +998,7 @@ pTerm = choice $ map try
   , pInteger
   ]
 
-table :: SrcPositn -> [[Operator Parser BaseExp]]
+table :: SrcPosition -> [[Operator Parser BaseExp]]
 table pos = [ [ binary  "*" (mul' pos)
             , binary  "/" (div' pos) ]
           , [ binary  "+" (plus' pos)
@@ -955,26 +1017,26 @@ prefix, postfix :: T.Text -> (BaseExp -> BaseExp) -> Operator Parser BaseExp
 prefix  name f = Prefix  (f <$ symbol name)
 postfix name f = Postfix (f <$ symbol name)
 
-mul', div', plus', minus', lt', lte', gt', gte', numeq' :: SrcPositn -> BaseExp -> BaseExp -> BaseExp
-mul' pos x y = ENumOp OpMul (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-div' pos x y = ENumOp OpDiv (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-plus' pos x y = ENumOp OpPlus (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-minus' pos x y =  ENumOp OpMinus (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-lt' pos x y =  ECompOp OpLt (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-lte' pos x y =  ECompOp OpLte (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-gt' pos x y =  ECompOp OpGt (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-gte' pos x y =  ECompOp OpGte (typeMdata pos "Number" x) (typeMdata pos "Number" y)
-numeq' pos x y = ECompOp OpNumEq (typeMdata pos "Number" x) (typeMdata pos "Number" y)
+mul', div', plus', minus', lt', lte', gt', gte', numeq' :: SrcPosition -> BaseExp -> BaseExp -> BaseExp
+mul' pos x y = ENumOp OpMul (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+div' pos x y = ENumOp OpDiv (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+plus' pos x y = ENumOp OpPlus (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+minus' pos x y =  ENumOp OpMinus (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+lt' pos x y =  ECompOp OpLt (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+lte' pos x y =  ECompOp OpLte (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+gt' pos x y =  ECompOp OpGt (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+gte' pos x y =  ECompOp OpGte (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
+numeq' pos x y = ECompOp OpNumEq (typeMetadata pos "Number" x) (typeMetadata pos "Number" y)
 
-customUnary :: Var -> SrcPositn -> BaseExp -> BaseExp
+customUnary :: Var -> SrcPosition -> BaseExp -> BaseExp
 customUnary fname pos x =
-  let f = typeMdata pos "Function" (EVar fname)
-  in EApp f (noExtraMdata x)
+  let f = typeMetadata pos "Function" (EVar fname)
+  in EApp f (noExtraMetadata x)
 
-customBinary :: Var -> SrcPositn -> BaseExp -> BaseExp -> BaseExp
+customBinary :: Var -> SrcPosition -> BaseExp -> BaseExp -> BaseExp
 customBinary fname pos x y =
-  let f = typeMdata pos "Function" (EVar fname)
-  in EApp (noExtraMdata (EApp f (noExtraMdata x))) (noExtraMdata y)
+  let f = typeMetadata pos "Function" (EVar fname)
+  in EApp (noExtraMetadata (EApp f (noExtraMetadata x))) (noExtraMetadata y)
 
 -- TODO: should we identify already here whether things are Vars or Lits?
 -- Or make everything by default Var, and later on correct if the Var is not set.
@@ -1049,11 +1111,11 @@ expifyMTEsNoMd mtes = addMetadataToVar =<< baseExpifyMTEs mtes
   -- baseExpifyMTEs for [mte1, mte2, …] returns an arithmetic expression
   addMetadataToVar = \case
     EVar var -> mkVarExp var
-    bexp -> return $ noExtraMdata bexp
+    bexp -> return $ noExtraMetadata bexp
 
 ----- Util funcs for looking up / annotating / making Vars -------------------------------------
 
-lookupVar :: Var -> VarTypeDeclMap -> Maybe L4EntType
+lookupVar :: Var -> VarTypeDeclMap -> Maybe L4EntityType
 lookupVar var = preview (ix var % _Just)
 
 {- | Returns (Just $ Var <txt>) iff input text (a T.Text!) corresponds to a local var (i.e., either a GIVEN or a type decl in WHERE)
@@ -1091,7 +1153,7 @@ isDeclaredVar = \case
 mkVarExp :: Reader Env :> es => Var -> Eff es Exp
 mkVarExp var = do
   env :: Env <- ask
-  let varExpMetadata = MkExpMetadata { srcPos = env.currSrcPos
+  let varExpMetadata = MkExpMetadata { srcPos = env.currentSrcPosition
                                      , typeLabel = FromUser <$> lookupVar var env.localVars
                                      , explnAnnot = Nothing --Temp plceholder; TODO
                                      }
@@ -1124,7 +1186,7 @@ mteToLitExp = \case
 
 processHcBody :: forall es . (Reader Env :> es, Error ToLCError :> es) => L4.BoolStructR -> Eff es Exp
 processHcBody bsr = do
-  pos <- asks currSrcPos
+  pos <- asks currentSrcPosition
   case bsr of
     AA.Leaf rp -> expifyBodyRP rp
   -- If the label is Metadata, then we add it to MdGrp
@@ -1137,19 +1199,19 @@ processHcBody bsr = do
   -- If you uncomment fmap addLabel below, then the possible text in mlbl will be added to the leaves.
     AA.All _mlbl propns -> F.foldrM (makeOp pos EAnd) emptyExp ({-fmap (addLabel mlbl) <$> -} propns)
     AA.Any _mlbl propns -> F.foldrM (makeOp pos EOr) emptyExp ({-fmap (addLabel mlbl) <$>-} propns)
-    AA.Not propn -> typeMdata pos "Boolean" . ENot <$> processHcBody propn
+    AA.Not propn -> typeMetadata pos "Boolean" . ENot <$> processHcBody propn
   where
-    emptyExp = noExtraMdata EEmpty
+    emptyExp = noExtraMetadata EEmpty
 
-    makeOp :: SrcPositn -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> Eff es Exp
+    makeOp :: SrcPosition -> (Exp -> a -> BaseExp) -> L4.BoolStructR -> a -> Eff es Exp
     makeOp pos op boolStructR exp =
-      noExtraMdata <$> ((op . toBoolEq pos <$> processHcBody boolStructR) <*> pure exp)
+      noExtraMetadata <$> ((op . toBoolEq pos <$> processHcBody boolStructR) <*> pure exp)
 
 
     toBoolEq pos expr =
       expr {exp = toBoolEqBE expr.exp, md = inferredType pos "Boolean" expr.md}
       where
-        inferredBool = typeMdata pos "Boolean"
+        inferredBool = typeMetadata pos "Boolean"
         toBoolEqBE _e@(ELit (EString str)) =
           let varExp = EVar (MkVar str)
           in ECompOp OpBoolEq (inferredBool varExp) $ inferredBool $ ELit EBoolTrue
@@ -1217,13 +1279,13 @@ expifyHeadRP = \case
         pure (varExp, valExp)
 
       Nothing -> do -- Var is not given, but we can try to infer it from the RHS
-        pos <- asks currSrcPos
-        varNoType <- noExtraMdata . EVar <$> varFromMTEs [mte]
+        pos <- asks currentSrcPosition
+        varNoType <- noExtraMetadata . EVar <$> varFromMTEs [mte]
         let valExp = inferTypeRHS pos exp
         let varExp = inferTypeFromOtherExp varNoType valExp
         pure (varExp, valExp)
 
-    pure $ noExtraMdata $ EVarSet varExp valExp
+    pure $ noExtraMetadata $ EVarSet varExp valExp
 
   rp -> expifyBodyRP rp
 
@@ -1231,8 +1293,8 @@ expifyBodyRP :: forall es . (Error ToLCError :> es, Reader Env :> es) => Relatio
 expifyBodyRP = \case
   -- OTHERWISE
   RPMT (MTT "OTHERWISE" : _mtes) -> do
-    pos <- asks currSrcPos
-    pure $ typeMdata pos "Bool" $ ELit EBoolTrue
+    pos <- asks currentSrcPosition
+    pure $ typeMetadata pos "Bool" $ ELit EBoolTrue
 
   _rp@(RPMT mtes) -> expifyMTEsNoMd mtes
 
@@ -1240,11 +1302,11 @@ expifyBodyRP = \case
     expifyBodyRP $ RPnary rel [RPMT lefts, RPMT rights]
 
   RPnary RPis [rp1, rp2] -> do
-    pos <- asks currSrcPos
+    pos <- asks currentSrcPosition
     exp1maybeUntyped <- expifyBodyRP rp1
     exp2 <- inferTypeRHS pos <$> expifyBodyRP rp2
     let exp1 = inferTypeFromOtherExp exp1maybeUntyped exp2
-    pure $ noExtraMdata $ EIs exp1 exp2
+    pure $ noExtraMetadata $ EIs exp1 exp2
 
   -- RPnary with logical relations: convert into BoolStruct and reuse processHcBody
   RPnary RPand rps -> processHcBody $ AA.All Nothing $ AA.Leaf <$> rps
@@ -1262,7 +1324,7 @@ expifyBodyRP = \case
     where
       go :: a -> T.Text -> (a -> Exp -> Exp -> BaseExp) -> Eff es Exp
       go op str ctor = do
-        pos <- asks currSrcPos
+        pos <- asks currentSrcPosition
         exps <- traverse expifyBodyRP rps
         pure $ foldl1 (numOrCompOp pos str ctor op) exps
 
@@ -1273,20 +1335,20 @@ expifyBodyRP = \case
   RPBoolStructR lhs RPis bsr -> do
     lhsExp <- expifyMTEsNoMd lhs
     rhsExp <- processHcBody bsr
-    pure $ noExtraMdata $ EIs lhsExp rhsExp
+    pure $ noExtraMetadata $ EIs lhsExp rhsExp
   rp@(RPBoolStructR _lhs rprel _bsr) -> throwNotSupportedWithMsgError rp [i|#{rprel} not supported with RPBoolStructR|]
 
   where
-    numOrCompOp :: SrcPositn -> T.Text -> (t -> Exp -> Exp -> BaseExp) -> t -> Exp -> Exp -> Exp
+    numOrCompOp :: SrcPosition -> T.Text -> (t -> Exp -> Exp -> BaseExp) -> t -> Exp -> Exp -> Exp
     numOrCompOp pos str ctor op x y =
       let coerceNumber = coerceType pos "Number"
-      in typeMdata pos str $ ctor op (coerceNumber x) $ coerceNumber y
+      in typeMetadata pos str $ ctor op (coerceNumber x) $ coerceNumber y
 
     rprel2op :: RPRel -> Maybe NumCompOp
     rprel2op =  (`Map.lookup` rpRel2opTable)
 
     -- inferTypeFromOtherExp already does the check whether target has empty typeLabel
-    coerceType :: SrcPositn -> T.Text -> Exp -> Exp
+    coerceType :: SrcPosition -> T.Text -> Exp -> Exp
     coerceType pos typ exp@(MkExp bexp _) =
       inferTypeFromOtherExp exp $ MkExp bexp $ inferredType pos typ []
 
@@ -1297,7 +1359,7 @@ inferTypeFromOtherExp copyTarget copySource = case copyTarget.md of
             Nothing -> copyTarget {md = copySource.md}
   [] -> copyTarget {md = copySource.md} -- copySource has potentially more reliable type info
 
-inferTypeRHS :: SrcPositn -> Exp -> Exp
+inferTypeRHS :: SrcPosition -> Exp -> Exp
 inferTypeRHS pos x@(MkExp bexp md) = case bexp of
   ELit (EString _) -> go "String"
   ELit (EInteger _) -> go "Number"

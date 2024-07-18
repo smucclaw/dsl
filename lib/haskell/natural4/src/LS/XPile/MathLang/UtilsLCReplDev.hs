@@ -25,7 +25,7 @@ prl :: BaseFileName -> IO ()
 prl = pRules testcasesDir
 
 
--- | Returns a list of csvs in the relevant testcases subdir 
+-- | Returns a list of csvs in the relevant testcases subdir
 testCSVs :: IO [FilePath]
 testCSVs = csvsInDir testcasesDir
 

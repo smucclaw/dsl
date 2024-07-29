@@ -146,7 +146,7 @@ library
     , generic-arbitrary
     , generic-optics
     , gf
-    , graphviz
+    , graphviz >=2999.20.0.0
     , hashable
     , hedn
     , hxt
@@ -221,7 +221,7 @@ executable l4-bnfc-exe
     , generic-arbitrary
     , generic-optics
     , gf
-    , graphviz
+    , graphviz >=2999.20.0.0
     , hashable
     , hedn
     , hxt
@@ -297,7 +297,7 @@ executable natural4-exe
     , generic-arbitrary
     , generic-optics
     , gf
-    , graphviz
+    , graphviz >=2999.20.0.0
     , hashable
     , hedn
     , hxt
@@ -375,7 +375,7 @@ test-suite doctests
     , generic-arbitrary
     , generic-optics
     , gf
-    , graphviz
+    , graphviz >=2999.20.0.0
     , hashable
     , hedn
     , hxt
@@ -477,7 +477,7 @@ test-suite natural4-test
     , generic-arbitrary
     , generic-optics
     , gf
-    , graphviz
+    , graphviz >=2999.20.0.0
     , hashable
     , hedn
     , hspec
@@ -560,7 +560,7 @@ benchmark natural4-bench
     , generic-arbitrary
     , generic-optics
     , gf
-    , graphviz
+    , graphviz >=2999.20.0.0
     , hashable
     , hedn
     , hxt

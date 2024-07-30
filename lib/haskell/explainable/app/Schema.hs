@@ -158,6 +158,13 @@ instance ToSchema Parameter where
               , "type" .= Aeson.String "string"
               ]
 
+instance ToParamSchema FunctionParam where
+  toParamSchema _ = mempty
+    & type_ ?~ OpenApiString
+    & title ?~ "Function parameter"
+    & example ?~ Aeson.String "true"
+    & description ?~ "A Function parameter which can be either 'true' or 'false', or a floating point number. Additionally accepts 'yes' and 'no' as synonyms for 'true' and 'false' respectively."
+
 -- ----------------------------------------------------------------------------
 -- Arbitrary instances that allow us to verify that the JSON
 -- instances and OpenAPI documentation agree on the schema.

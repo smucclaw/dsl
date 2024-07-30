@@ -4,6 +4,9 @@ COPY ./lib/haskell .
 
 RUN apt update; \
     apt-get install -y --no-install-recommends \
-    libpcre3-dev
+    libpcre3-dev \
+    # These are required by the Haskell lzma package, which is used by
+    # servant-swagger-ui in explainable.
+    pkg-config liblzma-dev
 
 RUN stack install

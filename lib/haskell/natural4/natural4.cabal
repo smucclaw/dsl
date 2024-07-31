@@ -238,7 +238,7 @@ executable l4-bnfc-exe
     , natural4
     , nonempty-containers
     , optics
-    , optparse-generic
+    , optparse-applicative
     , parser-combinators
     , parsers
     , pcre-heavy

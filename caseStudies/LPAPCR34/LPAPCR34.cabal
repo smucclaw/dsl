@@ -1,10 +1,8 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: f5f56b68013cfb47cc348e2bd225f6c58a8b7b9c3c98a79d8d6c6f6345afcff3
 
 name:           LPAPCR34
 version:        0.1.0.0

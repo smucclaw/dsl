@@ -21,7 +21,7 @@ import Data.String.Interpolate (i)
 import Flow ((.>), (|>))
 import GHC.Generics (Generic)
 import LS qualified
-import LS.Lib (NoLabel (..), Opts (..))
+import LS.Lib (Options (..))
 import LS.Utils ((|$>))
 import LS.XPile.CoreL4 (sfl4ToASP, sfl4ToEpilog)
 import LS.XPile.CoreL4.LogicProgram.Common (LPLang (..))
@@ -73,12 +73,9 @@ testcase2spec lpLang LPTestcase {..} =
   it dir do
     Just csvFile <- findFileWithName csvFile
     rules :: [LS.Rule] <-
-      LS.dumpRules
-        Opts
-          { file = coerce ([csvFile] :: [FilePath]),
-            dbug = False,
-            dstream = False
-          }
+      LS.dumpRules $
+        LS.defaultOptions
+          { file = [csvFile] }
 
     Just expectedOutputFile <- findFileWithName expectedOutputFile
     expectedOutput :: String <- readFile expectedOutputFile

@@ -5,14 +5,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wall #-}
 
 -- |
 -- Parser functions not organized into their own separate modules elsewhere.
 --
--- This includes some top-leve parsers like pRules and pBoolStruct.
+-- This includes some top-level parsers like pRules and pBoolStruct.
 module LS.Lib
-  ( NoLabel (..),
-    Opts (..),
+  ( Options(..),
+    Mode(..),
+    ModeName(..),
+    defaultOptions,
     dumpRules,
     exampleStream,
     exampleStreams,
@@ -25,6 +28,45 @@ module LS.Lib
     pScenarioRule,
     pToplevel,
     pTypeDeclaration,
+
+    -- modes
+    checklistMode,
+    gftreesMode,
+    mdMode,
+    logicalEnglishMode,
+    introMode,
+    mathlangmwMode,
+    genmathlangMode,
+    prologMode,
+    prologTpMode,
+    haskellTpMode,
+    jsonTpMode,
+    jsonUIMode,
+    scaspMode,
+    nativeMode,
+    aatreeMode,
+    petriMode,
+    jsrMode,
+    tsMode,
+    nlMode,
+    nlgMode,
+    groundsMode,
+    maudeMode,
+    ednMode,
+    aasvgMode,
+    classesMode,
+    symtabMode,
+    corel4Mode,
+    babyl4Mode,
+    aspMode,
+    epilogMode,
+    dmnMode,
+    jsonMode,
+    vueMode,
+    pursMode,
+    uppaalMode,
+    defaultModes,
+    knownModes
   )
 where
 
@@ -47,15 +89,15 @@ import Data.Foldable (traverse_)
 import Data.List (transpose)
 import Data.List.NonEmpty qualified as NE
 import Data.List.Split qualified as DLS
-import Data.Maybe (listToMaybe, maybeToList)
+import Data.Maybe (listToMaybe)
 import Data.String.Interpolate (i, __i)
 import Data.Text qualified as Text
-import Data.Text.Lazy qualified as LT
-import Data.Vector ((!), (!?))
+import Data.Vector ((!))
 import Data.Vector qualified as V
 import Data.Void (Void)
 import Debug.Trace (trace)
 import Flow ((|>))
+import GHC.Generics (Generic)
 import LS.Error (errorBundlePrettyCustom)
 import LS.Parser
   ( MyBoolStruct,
@@ -69,7 +111,6 @@ import LS.RelationalPredicates
     c2hornlike,
     mergePBRS,
     pBSR,
-    pBoolConnector,
     pConstitutiveRule,
     pHornlike,
     pHornlike',
@@ -91,7 +132,6 @@ import LS.Rule
     Rule
       ( Constitutive,
         Hornlike,
-        NotARule,
         RegBreach,
         RegFulfilled,
         Regulative,
@@ -136,9 +176,7 @@ import LS.Tokens
   ( IsParser (debugName),
     asks,
     dnl,
-    getTokenNonDeep,
     liftSLOptional,
-    manyDeep,
     manyIndentation,
     myTraceM,
     pDeontic,
@@ -152,7 +190,6 @@ import LS.Tokens
     sameDepth,
     someDeep,
     someIndentation,
-    tellIdFirst,
     ($>|),
     (|&|),
     (|*|),
@@ -164,7 +201,6 @@ import LS.Types
     BoolStructR,
     Deontic,
     HornClause (HC, hBody, hHead),
-    HornClause2,
     MTExpr,
     MyStream (MyStream, unMyStream),
     MyToken
@@ -228,22 +264,11 @@ import LS.Types
     toTokens,
   )
 import LS.Utils ((|$>))
-import Options.Generic
-  ( Generic,
-    ParseFields (..),
-    ParseRecord,
-    Unwrapped,
-    Wrapped,
-    type (:::),
-    type (<!>),
-    type (<?>),
-  )
 import System.Environment (lookupEnv)
 import Text.Megaparsec
   ( MonadParsec (eof, lookAhead, notFollowedBy, try),
     ParseErrorBundle,
     SourcePos (SourcePos, sourceColumn, sourceLine),
-    anySingle,
     choice,
     many,
     mkPos,
@@ -255,14 +280,62 @@ import Text.Megaparsec
     (<|>),
   )
 import Text.Parser.Permutation (permute, (<$$>), (<|?>), (<||>))
-import Text.Pretty.Simple (pPrintString, pStringNoColor)
-import Text.PrettyPrint.Boxes (nullBox, render)
-import Text.PrettyPrint.Boxes qualified as Box
+import Text.Pretty.Simple (pPrintString)
 
 -- our task: to parse an input CSV into a collection of Rules.
 -- example "real-world" input can be found at https://docs.google.com/spreadsheets/d/1qMGwFhgPYLm-bmoN2es2orGkTaTN382pG2z3RjZ_s-4/edit
 
 -- the wrapping 'w' here is needed for <!> defaults and <?> documentation
+--
+--
+-- NOTE [ks]: optparse-generic treats Boolean flags as toggles, so if the default is True,
+-- setting the option turns it into False
+
+data Options =
+  MkOptions
+    { demo    :: Bool
+    , mode    :: Mode
+    , workdir :: Maybe FilePath
+    , uuiddir :: Maybe FilePath
+    , dbug    :: Bool
+    , extd    :: Bool
+    , file    :: [FilePath]
+    , dstream :: Bool
+    }
+  deriving (Generic, Show)
+
+data Mode =
+    Exclude [ModeName]
+  | Only [ModeName]
+  | ListModes
+  deriving Show
+
+newtype ModeName =
+  MkModeName String
+  deriving (Eq, Ord, Show)
+
+defaultOptions :: Options
+defaultOptions =
+  MkOptions
+    { demo    = False
+    , mode    = Exclude []
+    , workdir = Nothing
+    , uuiddir = Nothing
+    , dbug    = False
+    , extd    = False
+    , file    = []
+    , dstream = False
+    }
+
+only :: Options -> [ModeName]
+only o =
+  case mode o of
+    Exclude _ -> []
+    Only mns  -> mns
+    ListModes -> []
+
+
+{-
 data Opts w = Opts { demo :: w ::: Bool <!> "False"
                    , only :: w ::: String <!> "" <?> "native | tree | svg | babyl4 | corel4 | prolog | uppaal | vue | grounds | checklist"
 
@@ -309,65 +382,205 @@ data Opts w = Opts { demo :: w ::: Bool <!> "False"
 
 instance ParseRecord (Opts Wrapped)
 deriving instance Show (Opts Unwrapped)
+-}
 
--- [TODO]
--- | a convention for representing a transpiler's interface
--- - what comment syntax do we use?
--- - what file extension do we use?
--- - what is the command line parameter?
--- (this can also be a typeclass if we want.)
-data Transpiler = XPiler
-  { comment   :: ()
-  , extension :: ()
-  , cliParam  :: ()
-  }
-  deriving (Show)
+-- | Modes that are run by default unless only-mode is used or modes are
+-- explicitly excluded.
+--
+defaultModes :: [ModeName]
+defaultModes =
+  [ prologMode
+  , prologTpMode
+  , haskellTpMode
+  , jsonTpMode
+  , jsonUIMode
+  , scaspMode
+  , nativeMode
+  , petriMode
+  , aasvgMode
+  , corel4Mode
+  , babyl4Mode
+  , aspMode
+  , epilogMode
+  , dmnMode
+  , jsonMode
+  , vueMode
+  , pursMode
+  , mdMode
+  , gftreesMode
+  , groundsMode
+  , tsMode
+  , jsrMode
+  , nlMode
+  , maudeMode
+  , ednMode
+  , checklMode
+  , logicalEnglishMode
+  , mathlangmwMode
+  , genmathlangMode
+  , introMode
+  ]
 
--- technique for getting varargs argv https://github.com/Gabriel439/Haskell-Optparse-Generic-Library/issues/65
-newtype NoLabel a = NoLabel a
-  deriving (Generic, Show)
+-- | All known modes, including ones that are off by default.
+--
+knownModes :: [ModeName]
+knownModes =
+  defaultModes <>
+  [ classesMode
+  , symtabMode
+  ]
 
-mkNoLabel :: a -> NoLabel a
-mkNoLabel = coerce
+jsonMode :: ModeName
+jsonMode = MkModeName "json"
 
-instance ParseFields a => ParseRecord (NoLabel a)
-instance ParseFields a => ParseFields (NoLabel a) where
-  parseFields msg _ _ def = mkNoLabel <$> parseFields msg Nothing Nothing def
+babyl4Mode :: ModeName
+babyl4Mode = MkModeName "babyl4"
 
-getConfig :: Opts Unwrapped -> IO RunConfig
+corel4Mode :: ModeName
+corel4Mode = MkModeName "corel4"
+
+aspMode :: ModeName
+aspMode = MkModeName "asp"
+
+prologMode :: ModeName
+prologMode = MkModeName "prolog"
+
+prologTpMode :: ModeName
+prologTpMode = MkModeName "prologTp"
+
+jsonTpMode :: ModeName
+jsonTpMode = MkModeName "jsonTp"
+
+jsonUIMode :: ModeName
+jsonUIMode = MkModeName "jsonUI"
+
+maudeMode :: ModeName
+maudeMode = MkModeName "maude"
+
+mathlangMode :: ModeName
+mathlangMode = MkModeName "mathlang"
+
+logicalEnglishMode :: ModeName
+logicalEnglishMode = MkModeName "logicalenglish"
+
+scaspMode :: ModeName
+scaspMode = MkModeName "scasp"
+
+uppaalMode :: ModeName
+uppaalMode = MkModeName "uppaal"
+
+groundsMode :: ModeName
+groundsMode = MkModeName "grounds"
+
+checklistMode :: ModeName
+checklistMode = MkModeName "checklist"
+
+vueMode :: ModeName
+vueMode = MkModeName "vue"
+
+htmlMode :: ModeName
+htmlMode = MkModeName "html"
+
+typescriptMode :: ModeName
+typescriptMode = MkModeName "typescript"
+
+tsMode :: ModeName
+tsMode = MkModeName "ts"
+
+haskellTpMode :: ModeName
+haskellTpMode = MkModeName "haskellTp"
+
+nativeMode :: ModeName
+nativeMode = MkModeName "native"
+
+aatreeMode :: ModeName
+aatreeMode = MkModeName "aatree"
+
+classesMode :: ModeName
+classesMode = MkModeName "classes"
+
+symtabMode :: ModeName
+symtabMode = MkModeName "symtab"
+
+petriMode :: ModeName
+petriMode = MkModeName "petri"
+
+aasvgMode :: ModeName
+aasvgMode = MkModeName "aasvg"
+
+epilogMode :: ModeName
+epilogMode = MkModeName "epilog"
+
+dmnMode :: ModeName
+dmnMode = MkModeName "dmn"
+
+pursMode :: ModeName
+pursMode = MkModeName "purs"
+
+mdMode :: ModeName
+mdMode = MkModeName "md"
+
+gftreesMode :: ModeName
+gftreesMode = MkModeName "gftrees"
+
+jsrMode :: ModeName
+jsrMode = MkModeName "jsr"
+
+nlMode :: ModeName
+nlMode = MkModeName "nl"
+
+nlgMode :: ModeName
+nlgMode = MkModeName "nlg"
+
+ednMode :: ModeName
+ednMode = MkModeName "edn"
+
+checklMode :: ModeName
+checklMode = MkModeName "checkl"
+
+mathlangmwMode :: ModeName
+mathlangmwMode = MkModeName "mathlangmw"
+
+genmathlangMode :: ModeName
+genmathlangMode = MkModeName "genmathlang"
+
+introMode :: ModeName
+introMode = MkModeName "intro"
+
+getConfig :: Options -> IO RunConfig
 getConfig o = do
   mpd <- lookupEnv "MP_DEBUG"
   mpn <- lookupEnv "MP_NLG"
   let str2bool :: String -> Bool = read
   pure RC
-    { debug       = maybe (dbug o) str2bool mpd
-    , printstream = maybe (dstream o) str2bool mpd
-    , callDepth = 0
-    , oldDepth = 0
-    , parseCallStack = []
-    , sourceURL = "STDIN"
-    , asJSON = only o == "json" -- maybe False (read :: String -> Bool) mpj
-    , toNLG = maybe False str2bool mpn
-    , toBabyL4  = only o == "babyl4" || only o == "corel4"
-    , toASP     = only o == "asp"
-    , toProlog  = only o == "prolog"
-    , toPrologTp  = only o == "prologTp"
-    , toJsonTp  = only o == "jsonTp"
-    , toJsonUI  = only o == "jsonUI"
-    , toMaude = only o == "maude"
-    , toMathLang = only o == "mathlang"
-    , toLogicalEnglish = only o == "LogicalEnglish"
-    , toSCasp   = only o == "scasp"
-    , toUppaal  = only o == "uppaal"
-    , toGrounds = only o == "grounds"
-    , toChecklist = only o == "checklist"
-    , toVue     = only o == "vue"
-    , toHTML    = only o == "html"
-    , toTS      = only o `elem` words "typescript ts"
-    , saveAKA = False
-    , wantNotRules = False
-    , extendedGrounds = extd o
-    , runNLGtests = False
+    { debug            = maybe (dbug o) str2bool mpd
+    , printstream      = maybe (dstream o) str2bool mpd
+    , callDepth        = 0
+    , oldDepth         = 0
+    , parseCallStack   = []
+    , sourceURL        = "STDIN"
+    , asJSON           = jsonMode `elem` only o
+    , toNLG            = maybe False str2bool mpn
+    , toBabyL4         = babyl4Mode `elem` only o || corel4Mode `elem` only o
+    , toASP            = aspMode `elem` only o
+    , toProlog         = prologMode `elem` only o
+    , toPrologTp       = prologTpMode `elem` only o
+    , toJsonTp         = jsonTpMode `elem` only o
+    , toJsonUI         = jsonUIMode `elem` only o
+    , toMaude          = maudeMode `elem` only o
+    , toMathLang       = mathlangMode `elem` only o
+    , toLogicalEnglish = logicalEnglishMode `elem` only o
+    , toSCasp          = scaspMode `elem` only o
+    , toUppaal         = uppaalMode `elem` only o
+    , toGrounds        = groundsMode `elem` only o
+    , toChecklist      = checklistMode `elem` only o
+    , toVue            = vueMode `elem` only o
+    , toHTML           = htmlMode `elem` only o
+    , toTS             = typescriptMode `elem` only o || tsMode `elem` only o
+    , saveAKA          = False
+    , wantNotRules     = False
+    , extendedGrounds  = extd o
+    , runNLGtests      = False
     }
 
 
@@ -379,7 +592,7 @@ getConfig o = do
 --
 -- Shouldn't the idea of sub-rules and top-level rules be reflected in a type hierarchy?
 --
-parseRules :: Opts Unwrapped -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
+parseRules :: Options -> IO [Either (ParseErrorBundle MyStream Void) [Rule]] -- [TODO] why inner [Rule] and not just a plain Rule? Give explanation in comment.
 parseRules o = do
   runConfig <- getConfig o
   let files = coerce $ file o
@@ -414,7 +627,7 @@ parseRules o = do
           when ((not . null) toreturn && printstream rc) $ printStream stream
           pure $ Right toreturn
 
-dumpRules :: Opts Unwrapped -> IO [Rule]
+dumpRules :: Options -> IO [Rule]
 dumpRules opts = mconcat . rights <$> parseRules opts
 
 
@@ -424,9 +637,6 @@ printStream = pPrintString . renderStream
 renderStream :: MyStream -> String
 renderStream stream = unwords $ renderToken . tokenVal <$> unMyStream stream
 
-pRenderStream :: MyStream -> String
-pRenderStream = Text.unpack . LT.toStrict . pStringNoColor . renderStream
-
 exampleStream :: ByteString -> MyStream
 exampleStream = head . exampleStreams
 
@@ -435,28 +645,9 @@ exampleStreams s = case getStanzas <$> asCSV s of
                     Left errstr -> trace errstr []
                     Right rawsts -> stanzaAsStream <$> rawsts
 
-    -- the raw input looks like this:
-dummySing :: ByteString
-dummySing =
-  -- ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,AND,drinks,,\n,MUST,,,\n,->,sing,,\n"
-  -- ",,,,\n,EVERY,person,,\n,WHO,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n"
-  ",,,,\n,EVERY,person,,\n,WHO,walks,// comment,continued comment should be ignored\n,AND,runs,,\n,AND,eats,,\n,OR,drinks,,\n,MUST,,,\n,->,sing,,\n"
-
-indentedDummySing :: ByteString
-indentedDummySing =
-  ",,,,\n,EVERY,person,,\n,WHO,walks,,\n,AND,runs,,\n,AND,eats,,\n,OR,,drinks,\n,,AND,swallows,\n,MUST,,,\n,>,sing,,\n"
-
---
--- the desired output has type Rule
---
-
 --
 -- we begin by stripping comments and extracting the stanzas. Cassava gives us Vector Vector Text.
 --
-
-asBoxes :: RawStanza -> String
-asBoxes _rs =
-  render $ nullBox Box.<> nullBox Box.<> nullBox Box.<> Box.char 'a' Box.<> Box.char 'b' Box.<> Box.char 'c'
 
 asCSV :: ByteString -> Either String RawStanza
 asCSV s =
@@ -506,8 +697,7 @@ rewriteDitto vvt = V.imap (V.imap . rD) vvt
     rD _   _   orig = orig
 
 getStanzas :: RawStanza -> [RawStanza]
-getStanzas rs = splitPilcrows `foldMap` chunks
-  where chunks = getChunks rs
+getStanzas rs = splitPilcrows rs
 
 splitPilcrows :: RawStanza -> [RawStanza]
 splitPilcrows rs = map (listsToStanza . transpose) splitted
@@ -516,55 +706,6 @@ splitPilcrows rs = map (listsToStanza . transpose) splitted
     stanzaToLists = map V.toList . V.toList
     rst = transpose $ stanzaToLists rs
     splitted = (DLS.split . DLS.dropDelims . DLS.whenElt) (all (== "¶")) rst
-
--- highlight each chunk using range attribute.
--- method: cheat and use Data.List.Split's splitWhen to chunk on paragraphs separated by newlines
-getChunks :: RawStanza -> [RawStanza]
-getChunks rs = [rs]
-  -- let listChunks = (DLS.split . DLS.keepDelimsR . DLS.whenElt) emptyRow [ 0 .. V.length rs - 1 ]
-  --     containsMagicKeyword rowNr = V.any (`elem` magicKeywords) (rs ! rowNr)
-  --     emptyRow rowNr = V.all Text.null (rs ! rowNr)
-  --     wantedChunks = [ firstAndLast neRows
-  --                    | rows <- listChunks
-  --                    ,    any containsMagicKeyword rows
-  --                      || all emptyRow rows
-  --                    , Just neRows <- pure $ NE.nonEmpty rows
-  --                    ]
-  --     toreturn = extractLines rs <$> glueLineNumbers wantedChunks
-  -- in -- trace ("getChunks: input = " ++ show [ 0 .. V.length rs - 1 ])
-  --    -- trace ("getChunks: listChunks = " ++ show listChunks)
-  --    -- trace ("getChunks: wantedChunks = " ++ show wantedChunks)
-  --    -- trace ("getChunks: returning " ++ show (length toreturn) ++ " stanzas: " ++ show toreturn)
-  -- toreturn
-
-firstAndLast :: NE.NonEmpty Int -> (Int, Int)
-firstAndLast xs = (NE.head xs, NE.last xs)
-
--- because sometimes a chunk followed by another chunk is really part of the same chunk.
--- so we glue contiguous chunks together.
-glueLineNumbers :: [(Int, Int)] -> [(Int, Int)]
-glueLineNumbers [] = []
-glueLineNumbers [x] = [x]
-glueLineNumbers xs = zipWith f xs $ tail xs
-  where
-    f a01@(a0, a1) (b0, b1)
-      | a1 + 1 == b0 = (a0, b1)
-      | otherwise = a01
-
--- glueLineNumbers ((a0, a1) : (b0, b1) : xs)
---   | a1 + 1 == b0 = glueLineNumbers $ (a0, b1) : xs
---   | otherwise = (a0, a1) : glueLineNumbers ((b0, b1) : xs)
--- glueLineNumbers [x] = [x]
--- glueLineNumbers [] = []
-
-extractLines :: RawStanza -> (Int,Int) -> RawStanza
-extractLines rs (y0, yLast) = V.slice y0 (yLast - y0 + 1) rs
-
-vvlookup :: RawStanza -> (Int, Int) -> Maybe Text.Text
-vvlookup rs (x,y) = rs !? y >>= (!? x)
-
--- gaze Down 1 (== "UNLESS") >> gaze rs Right 1
-
 
 -- a multistanza is multiple stanzas separated by pilcrow symbols
 
@@ -660,22 +801,6 @@ semicolonBetweenRules =
 
 pRules :: Parser [Rule]
 pRules = pRulesOnly
-
-pRulesAndNotRules :: Parser [Rule]
-pRulesAndNotRules = do
-  wanted   <- try $ many pRule
-  notarule <- optional $ notFollowedBy eof *> pNotARule
-  next <- [] <$ eof <|> pRules
-  wantNotRules <- asks wantNotRules
-  pure $ wanted <> next <>
-    if wantNotRules then maybeToList notarule else []
-
-pNotARule :: Parser Rule
-pNotARule = debugName "pNotARule" do
-  myTraceM "pNotARule: starting"
-  toreturn <- NotARule <$> manyDeep getTokenNonDeep
-  myTraceM "pNotARule: returning"
-  pure toreturn
 
 -- the goal is tof return a list of Rule, which an be either regulative or constitutive:
 pRule :: Parser Rule
@@ -912,13 +1037,13 @@ pRegRuleSugary = debugName "pRegRuleSugary" do
 
 stackGiven :: Maybe ParamText -> Rule -> Rule
 stackGiven gvn r = case r of
-  Regulative {given} -> go r given
-  Hornlike {given} -> go r given
-  TypeDecl {given} -> go r given
-  Constitutive {given} -> go r given
+  Regulative {given} -> go given
+  Hornlike {given} -> go given
+  TypeDecl {given} -> go given
+  Constitutive {given} -> go given
   _ -> r
   where
-    go r given = r {given = gvn <> given}
+    go given = r {given = gvn <> given}
 
 pRegRuleNormal :: Parser Rule
 pRegRuleNormal = debugName "pRegRuleNormal" do
@@ -1005,9 +1130,6 @@ pActor keywords = debugName [i|pActor #{keywords}|] do
 pDoAction ::  Parser BoolStructP
 pDoAction = debugName "pDoAction" $ snd <$> preambleBoolStructP [ Do ]
 
-pAction :: Parser BoolStructP
-pAction = debugName "pAction calling pParamText" $ AA.mkLeaf <$> pParamText
-
 -- we create a permutation parser returning one or more RuleBodies, which we treat as monoidal,
 -- though later we may object if there is more than one.
 
@@ -1038,13 +1160,6 @@ mkRBfromDA :: (Deontic, BoolStructP)
            -> RuleBody
 mkRBfromDA (rbd,rba) (rbkn,rbwho) rbt rbpb rbpbneg rbu rbg rbh rbwhere
   = RuleBody rba rbpb rbpbneg rbd rbt rbu rbg rbh rbkn rbwho rbwhere
-
-
-preambleRelPred :: [MyToken] -> Parser (Preamble, RelationalPredicate)
-preambleRelPred preambles = do
-  preamble <- choice (try . pToken <$> preambles)
-  relpred  <- someIndentation pRelationalPredicate
-  return (preamble, relpred)
 
 permutationsReg :: Parser ((RegKeywords, BoolStructP), Maybe (Preamble, BoolStructR))
                 -> Parser RuleBody
@@ -1129,74 +1244,6 @@ exprP = debugName "expr pParamText" do
     prefixItem :: NE.NonEmpty MTExpr -> ParamText -> ParamText
     prefixItem t = NE.cons (t, Nothing)
 
-pAndGroup :: Parser BoolStructP
-pAndGroup = fst pAndOrGroup
-
-pOrGroup :: Parser BoolStructP
-pOrGroup = snd pAndOrGroup
-
-pAndOrGroup :: (Parser BoolStructP, Parser BoolStructP)
-pAndOrGroup =
-  (go "pAndGroup" pOrGroup And AA.mkAll, go "pOrGroup" pElement Or AA.mkAny)
-  where
-    go name group tok ctor = debugName name do
-      group1 <- group
-      groupN <- many $ pToken tok *> group
-      pure if null groupN then group1 else ctor Nothing $ group1 : groupN
-
-pAtomicElement ::  Parser BoolStructP
-pAtomicElement = debugName "pAtomicElement" do
-  try pNestedBool
-    <|> pNotElement
-    <|> pLeafVal
-
--- [TODO]: switch all this over the the Expr parser
-
-pElement :: Parser BoolStructP
-pElement = debugName "pElement" do
-        try (hornlikeAsElement <$> tellIdFirst (debugName "nested pHornlike" pHornlike))
-    <|> pAtomicElement
-
--- Makes a leaf with just the name of a hornlike rule
-hornlikeAsElement ::  Rule -> BoolStructP
-hornlikeAsElement hlr = AA.mkLeaf $ multiterm2pt $ name hlr
-
-pNotElement :: Parser BoolStructP
-pNotElement = debugName "pNotElement" do
-  inner <- pToken MPNot *> pElement
-  pure $ AA.mkNot inner
-
-pLeafVal ::  Parser BoolStructP
-pLeafVal = debugName "pLeafVal" do
-  leafVal <- pParamText
-  myTraceM [i|pLeafVal returning #{leafVal}|]
-  pure $ AA.mkLeaf leafVal
-
 -- [TODO]: we should be able to get rid of pNestedBool and just use a recursive call into dBoolStructP without pre-checking for a pBoolConnector. Refactor when the test suite is a bit more comprehensive.
 
-pNestedBool ::  Parser BoolStructP
-pNestedBool = debugName "pNestedBool" do
-  -- "foo AND bar" is a nestedBool; but just "foo" is a leafval.
-  (leftX,foundBool) <- lookAhead do
-      pLeafVal
-      optional dnl
-      (,) <$> lookAhead pXLocation <*> pBoolConnector
-  myTraceM [i|pNestedBool matched #{foundBool} at location #{leftX}|]
-  dBoolStructP
-
 -- helper functions for parsing
-
-anything :: Parser [WithPos MyToken]
-anything = many anySingle
-
-pHornClause2 :: Parser HornClause2
-pHornClause2 = do
-  hhead <- pHornHead2
-  _when <- pToken When
-  HC hhead . Just <$> pHornBody2
-
-pHornHead2 :: Parser RelationalPredicate
-pHornHead2 = pRelationalPredicate
-
-pHornBody2 :: Parser BoolStructR
-pHornBody2 = pBSR

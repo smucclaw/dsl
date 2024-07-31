@@ -31,6 +31,7 @@ module Server (
   ReasoningTree (..),
   ResponseWithReason (..),
   MathLangException (..),
+  FunctionParam (..),
 ) where
 
 import Control.Monad (foldM)
@@ -73,6 +74,11 @@ data FunctionApi' mode = FunctionApi
 
 type FunctionCrud = NamedRoutes FunctionCrud'
 
+data FunctionParam
+  = BoolArgument Bool
+  | DoubleArgument Double
+  deriving (Generic)
+
 -- | API for interacting with the 'function' resource.
 data FunctionCrud' mode = FunctionCrud
   { batchEntities ::
@@ -87,9 +93,9 @@ data FunctionCrud' mode = FunctionCrud
   , computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
-          :> QueryParam "drinks" Text.Text
-          :> QueryParam "eats" Text.Text
-          :> QueryParam "walks" Text.Text
+          :> QueryParam "drinks" FunctionParam
+          :> QueryParam "eats" FunctionParam
+          :> QueryParam "walks" FunctionParam
           :> Summary "Compute whether a person qualifies based on their properties"
           :> OperationId "runComputeQualifies"
           :> Post '[JSON] SimpleResponse
@@ -105,16 +111,16 @@ data FunctionCrud' mode = FunctionCrud
   , rodentsAndVerminFunc ::
       mode
         :- "rodents_and_vermin"
-          :> QueryParam "Loss or Damage.caused by insects" Text.Text
-          :> QueryParam "Loss or Damage.caused by birds" Text.Text
-          :> QueryParam "Loss or Damage.caused by vermin" Text.Text
-          :> QueryParam "Loss or Damage.caused by rodents" Text.Text
-          :> QueryParam "Loss or Damage.to Contents" Text.Text
-          :> QueryParam "Loss or Damage.ensuing covered loss" Text.Text
-          :> QueryParam "any other exclusion applies" Text.Text
-          :> QueryParam "a household appliance" Text.Text
-          :> QueryParam "a swimming pool" Text.Text
-          :> QueryParam "a plumbing, heating, or air conditioning system" Text.Text
+          :> QueryParam "Loss or Damage.caused by insects" FunctionParam
+          :> QueryParam "Loss or Damage.caused by birds" FunctionParam
+          :> QueryParam "Loss or Damage.caused by vermin" FunctionParam
+          :> QueryParam "Loss or Damage.caused by rodents" FunctionParam
+          :> QueryParam "Loss or Damage.to Contents" FunctionParam
+          :> QueryParam "Loss or Damage.ensuing covered loss" FunctionParam
+          :> QueryParam "any other exclusion applies" FunctionParam
+          :> QueryParam "a household appliance" FunctionParam
+          :> QueryParam "a swimming pool" FunctionParam
+          :> QueryParam "a plumbing, heating, or air conditioning system" FunctionParam
           :> Summary "Compute whether a person qualifies based on their properties."
           :> Description "A response value of `0` means that the Loss or Damage is covered, while `1` means the Loss or Damage is not covered."
           :> OperationId "runRodentsAndVermin"
@@ -251,7 +257,7 @@ handlerFunctions = do
       , simpleDescription = description s
       }
 
-computeQualifiesHandler :: Maybe Text.Text -> Maybe Text.Text -> Maybe Text.Text -> Handler SimpleResponse
+computeQualifiesHandler :: Maybe FunctionParam -> Maybe FunctionParam -> Maybe FunctionParam -> Handler SimpleResponse
 computeQualifiesHandler drinks eats walks = do
   let
     params =
@@ -269,16 +275,16 @@ computeQualifiesHandler drinks eats walks = do
           timeoutAction $ runFunction s function
 
 rodentsAndVerminHandler ::
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
-  Maybe Text.Text ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
+  Maybe FunctionParam ->
   Handler SimpleResponse
 rodentsAndVerminHandler a b c d e f g h i j = do
   let
@@ -415,6 +421,21 @@ instance FromJSON Parameter where
       <*> p .: "enum"
       <*> p .: "description"
 
+instance FromHttpApiData FunctionParam where
+  parseQueryParam t
+    | Right (d, "") <- TextReader.double t =
+        Right $ DoubleArgument d
+    | Just b <- parseAsBool =
+        Right $ BoolArgument b
+    | otherwise = Left $ "Unexpected value \"" <> t <> "\", expected either a floating point number or \"true\" or \"false\""
+   where
+    parseAsBool = case Text.toLower t of
+      "true" -> Just True
+      "false" -> Just False
+      "yes" -> Just True
+      "no" -> Just False
+      _ -> Nothing
+
 -- ----------------------------------------------------------------------------
 -- Helpers
 -- ----------------------------------------------------------------------------
@@ -428,29 +449,23 @@ runFunction s scenario = do
     Right (res, xp, _, _) -> do
       pure $ SimpleResponse $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
 
-fromParams :: [(Text.Text, Text.Text)] -> Except Text.Text MyState
+fromParams :: [(Text.Text, FunctionParam)] -> Except Text.Text MyState
 fromParams attrs = do
   let
     explainableState = emptyState
 
-    parseTextToVariables key val state
-      | Right (d, "") <- TextReader.double val =
-          pure $
-            state
-              { symtabF = HashMap.insert (Text.unpack key) (Val Nothing d) (symtabF state)
-              }
-      | Just b <- parseAsBool val =
-          pure $
-            state
-              { symtabP = HashMap.insert (Text.unpack key) (PredVal Nothing b) (symtabP state)
-              }
-      | otherwise = throwError $ "Unexpected value \"" <> val <> "\" for argument " <> key
-  foldM (\s (k, v) -> parseTextToVariables k v s) explainableState attrs
- where
-  parseAsBool t = case Text.toLower t of
-    "true" -> Just True
-    "false" -> Just False
-    _ -> Nothing
+    splitParameters key arg state = case arg of
+      DoubleArgument d ->
+        pure $
+          state
+            { symtabF = HashMap.insert (Text.unpack key) (Val Nothing d) (symtabF state)
+            }
+      BoolArgument b ->
+        pure $
+          state
+            { symtabP = HashMap.insert (Text.unpack key) (PredVal Nothing b) (symtabP state)
+            }
+  foldM (\s (k, v) -> splitParameters k v s) explainableState attrs
 
 {- | Translate a Tree of explanations into a reasoning tree that can be sent over
 the wire.

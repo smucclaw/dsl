@@ -251,39 +251,74 @@ mergeGroups simalaTermGroups = do
 
 -- | Do the heavy lifting of how to actually merge multiple clauses into a single term.
 mergeGroups' :: (MonadError String m) => NonEmpty (SimalaTerm, Maybe Simala.Expr) -> m SimalaTerm
-mergeGroups' ((TermAttribute name [] expr, Nothing) :| _) = pure $ TermLetIn Simala.Transparent name expr
 mergeGroups' terms@((TermAttribute name _ _, _) :| _) = do
-  rowUpdates <-
+  attributeTerms <-
     traverse
-      (Tuple.firstM assertAttributeHasSelectors)
-      (NE.toList terms)
-  let
-    rowGroups = NE.groupWith (fst . fst) rowUpdates
-    rowGroups' = fmap simplifyAttributeAssignment rowGroups
-  rowExprs <- traverse (\(attrName, selectors) -> pure $ buildRecordUpdate attrName selectors) rowGroups'
-  recordRows <- traverse assertIsRecord rowExprs
-  treeRows <- mergeRecordUpdates recordRows
-  pure $ TermLetIn Simala.Transparent name treeRows
+      ( \(term, guard) -> do
+          (_, attrs, expr) <- assertIsTermAttribute term
+          pure (attrs, expr, guard)
+      )
+      terms
+  mergeAttributes name attributeTerms
 mergeGroups' ((term, Nothing) :| _) =
   pure term
 mergeGroups' ((term, Just g) :| []) = do
-  ifThenElseTerm <- mkIfThenElse g term (TermExpr Simala.Undefined)
+  ifThenElseTerm <- mkIfThenElse g term mkUndefinedTerm
   pure ifThenElseTerm
 mergeGroups' ((term, Just g) :| (n : ns)) = do
   elseBranch <- mergeGroups' (n :| ns)
   mkIfThenElse g term elseBranch
 
-simplifyAttributeAssignment :: NonEmpty ((NonEmpty Simala.Name, Simala.Expr), Maybe Simala.Expr) -> (NonEmpty Simala.Name, Simala.Expr)
-simplifyAttributeAssignment ((attributeAssignment, Nothing) :| []) = attributeAssignment
-simplifyAttributeAssignment (((attrPath, expr), Just guard) :| []) = (attrPath, Simala.Builtin Simala.IfThenElse [guard, expr, Simala.Undefined])
-simplifyAttributeAssignment (((attrPath, expr), guard) :| terms) =
+mergeAttributes :: (MonadError String m) => Simala.Name -> NonEmpty ([Simala.Name], Simala.Expr, Maybe Simala.Expr) -> m SimalaTerm
+mergeAttributes name terms = do
   let
-    exprWithGuard = fmap (\((_, expr), g) -> (expr, g)) terms
-    go _ (expr, Nothing) = (expr, Nothing)
-    go (expr2, newGuard) (expr, Just g) = (Simala.Builtin Simala.IfThenElse [g, expr, expr2], newGuard)
-    (newTerms, _) = List.foldr go (expr, guard) exprWithGuard
+    initSelectors = NE.head terms ^. _1
+
+  case initSelectors of
+    [] -> do
+      simpleTerms <-
+        traverse
+          ( \(selector, expr, guard) -> do
+              _ <- assertEmptyList selector
+              pure (expr, guard)
+          )
+          terms
+      pure $ TermLetIn Simala.Transparent name $ toIfThenElseChain simpleTerms
+    (_ : _) -> do
+      rowTerms <-
+        traverse
+          ( \(selector, expr, guard) -> do
+              nonEmptySelectors <- assertNonEmpty selector
+              pure (nonEmptySelectors, expr, guard)
+          )
+          terms
+      let
+        rowGroups = NE.groupWith (^. _1) rowTerms
+        rowGroups' = fmap reduceAttrPaths rowGroups
+      rowExprs <- traverse (\(attrName, expr) -> pure $ buildRecordUpdate attrName expr) rowGroups'
+      recordRows <- traverse assertIsRecord rowExprs
+      treeRows <- mergeRecordUpdates recordRows
+      pure $ TermLetIn Simala.Transparent name treeRows
+ where
+  reduceAttrPaths attrs =
+    let
+      attrPath = NE.head attrs ^. _1
+      exprs = fmap (\(_, selectors, guards) -> (selectors, guards)) attrs
+    in
+      (attrPath, toIfThenElseChain exprs)
+
+toIfThenElseChain :: NonEmpty (Simala.Expr, Maybe Simala.Expr) -> Simala.Expr
+toIfThenElseChain ((expr, Nothing) :| []) = expr
+toIfThenElseChain ((expr, Just guard) :| []) =
+  Simala.Builtin Simala.IfThenElse [guard, expr, Simala.Undefined]
+toIfThenElseChain ((expr, guard) :| terms) =
+  let
+    elseExpr = case terms of
+      (x : xs) -> toIfThenElseChain (x :| xs)
   in
-    (attrPath, newTerms)
+    case guard of
+      Nothing -> expr
+      Just g -> Simala.Builtin Simala.IfThenElse [g, expr, elseExpr]
 
 -- ----------------------------------------------------------------------------
 -- Transpilation
@@ -501,6 +536,10 @@ rnNameTypePrefix = \case
 -- Assertion helpers
 -- ----------------------------------------------------------------------------
 
+assertIsTermAttribute :: (MonadError String m) => SimalaTerm -> m (Simala.Name, [Simala.Name], Simala.Expr)
+assertIsTermAttribute (TermAttribute name selectors expr) = pure (name, selectors, expr)
+assertIsTermAttribute term = throwError $ "Expected TermAttribute but got: " <> show term
+
 assertSingletonList :: (MonadError String m) => String -> [a] -> m a
 assertSingletonList _errMsg [a] = pure a
 assertSingletonList errMsg as =
@@ -538,6 +577,10 @@ assertLength l as =
             <> show (length as)
       else pure as
 
+assertNonEmpty :: (MonadError String m) => [a] -> m (NonEmpty a)
+assertNonEmpty [] = throwError "Expected non-empty list"
+assertNonEmpty (x : xs) = pure $ x :| xs
+
 assertPredicateIsMultiTerm :: (MonadError String m) => String -> RnRelationalPredicate -> m RnMultiTerm
 assertPredicateIsMultiTerm _errMsg (RnRelationalTerm mt) = pure mt
 assertPredicateIsMultiTerm errMsg predicate = throwError $ errMsg <> "\nExpected RnRelationalTerm but got: " <> show predicate
@@ -557,12 +600,15 @@ assertIsRecord simalaExpr = throwError $ "Unexpected simala expression, expected
 
 assertAttributeHasSelectors :: (MonadError String m) => SimalaTerm -> m (NonEmpty Simala.Name, Simala.Expr)
 assertAttributeHasSelectors (TermAttribute _ (x : xs) expr) = pure (x :| xs, expr)
-assertAttributeHasSelectors expr@(TermAttribute _ [] _) = throwError $ "Unexpected term, expected non-empty TermAttribute but got : " <> show expr
-assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-empty TermAttribute but got : " <> show expr
+assertAttributeHasSelectors expr@(TermAttribute _ [] _) = throwError $ "Unexpected term, expected non-empty TermAttribute but got: " <> show expr
+assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-empty TermAttribute but got: " <> show expr
 
 -- ----------------------------------------------------------------------------
 -- Construction helpers for simala terms
 -- ----------------------------------------------------------------------------
+
+mkUndefinedTerm :: SimalaTerm
+mkUndefinedTerm = TermExpr Simala.Undefined
 
 mkAssignment :: (MonadError String m) => Simala.Name -> [Simala.Name] -> Simala.Expr -> m SimalaTerm
 mkAssignment name selectors expr = pure $ TermAttribute name selectors expr
@@ -682,6 +728,18 @@ mergeRecordUpdates xs = worker xs
 -- ----------------------------------------------------------------------------
 -- Test cases
 -- ----------------------------------------------------------------------------
+
+-- >>> transpileRulePure outputWithIndirection
+-- "let v_x_0 = let v_y_1 = 5 in v_y_1"
+
+outputWithIndirection :: String
+outputWithIndirection =
+  [i|
+GIVETH x
+DECIDE x IS y
+WHERE
+    y IS 5
+|]
 
 -- >>> transpileRulePure exampleWithOneOf
 -- "let f_g_4 = fun(v_d_0) => let v_y_1 = if v_d_0 > 0 then 'green else if b_OTHERWISE_3 then 'red else undefined in v_y_1"
@@ -815,7 +873,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure decideWithConditionalAttributes
--- "let f_f_5 = fun(v_x_0) => let v_y_1 = {s_p_4 = if v_x_0 > 5 then v_x_0 else v_x_0 + v_x_0,s_z_2 = if v_x_0 > 3 then 5 else 0} in v_y_1"
+-- "let f_f_5 = fun(v_x_0) => let v_y_1 = {s_p_4 = if v_x_0 > 5 then v_x_0 else if b_OTHERWISE_3 then v_x_0 + v_x_0 else undefined,s_z_2 = if v_x_0 > 3 then 5 else if b_OTHERWISE_3 then 0 else undefined} in v_y_1"
 
 decideWithConditionalAttributes :: String
 decideWithConditionalAttributes =

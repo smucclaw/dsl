@@ -150,7 +150,10 @@ spec = do
                   "mengs complex case"
                   [arithRule4]
                   [arithRule4_gold]
-
+  testBaseExpify "strings and backticks"
+                 "should handle strings and backtics correctly"
+                 [stringsAndBackticks]
+                 [stringsAndBackticks_gold]
   describe "toMathLang" do
     let l4i = defaultL4I {origrules = [arithRule4]}
         res@(exprs,st) = ML.toMathLang l4i
@@ -533,6 +536,32 @@ mathLangGold4 = (
 -----------------------------------------------------------------------------
 -- Test rules
 
+stringsAndBackticks :: Rule
+stringsAndBackticks = parseRule [r|DECIDE `name of the book` IS "Perhaps the Stars"|]
+
+stringsAndBackticks_gold :: BaseExp
+stringsAndBackticks_gold = EVarSet
+    { vsetVar = MkExp
+        { exp = EVar
+            { var = MkVar "name of the book" }, md =
+            [ MkExpMetadata
+                { srcPos = MkPosition
+                    { row = 1, col = 1 }, typeLabel = Just
+                    ( Inferred "String" ), explnAnnot = Nothing
+                }
+            ]
+        }, arg = MkExp
+        { exp = ELit
+            { lit = EString "\"Perhaps the Stars\"" }, md =
+            [ MkExpMetadata
+                { srcPos = MkPosition
+                    { row = 1, col = 1 }, typeLabel = Just
+                    ( Inferred "String" ), explnAnnot = Nothing
+                }
+            ]
+        }
+    }
+
 rule3predicate :: Rule
 rule3predicate = parseRule [r|
 GIVEN ind IS A Person
@@ -678,14 +707,14 @@ rule3predicatesGold = EIfThen
 
 rule2givens :: Rule
 rule2givens = parseRule [r|
-GIVEN "place of residence" ; "age" ; "property annual value" ; "meets the property eligibility criteria for GSTV-Cash" ; "annual income"
-DECIDE "case 2 qualifies"
-    IF ALL ( "Singapore citizen"
-           , "place of residence" IS "Singapore"
+GIVEN `place of residence` ; `age` ; `property annual value` ; `meets the property eligibility criteria for GSTV-Cash` ; `annual income`
+DECIDE `case 2 qualifies`
+    IF ALL ( `Singapore citizen`
+           , `place of residence` IS `Singapore`
            , age >= 21
-           , "property annual value" <= 21000
-           , "meets the property eligibility criteria for GSTV-Cash"
-           , "annual income" <= 34000
+           , `property annual value` <= 21000
+           , `meets the property eligibility criteria for GSTV-Cash`
+           , `annual income` <= 34000
            )|]
 
 rule2givens_shl_gold :: BaseHL
@@ -980,20 +1009,20 @@ arithRule4 = parseRule [r|
   vivacity IS A Boolean ;
   phaseOfMoon IS ONE OF new , waxing, full, gibbous
   GIVETH  taxesPayable IS A Number
-  DECIDE  taxesPayable IS "taxesPayableAlive / 2" IF phaseOfMoon IS gibbous ;
+  DECIDE  taxesPayable IS `taxesPayableAlive / 2` IF phaseOfMoon IS gibbous ;
 
           taxesPayable  IS  taxesPayableAlive IF vivacity ;
-          taxesPayable  IS  taxesPayableAlive "/" 3 IF phaseOfMoon IS waxing ;
+          taxesPayable  IS  taxesPayableAlive `/` 3 IF phaseOfMoon IS waxing ;
           taxesPayable  IS  waived IF phaseOfMoon IS full ;
           taxesPayable  IS  0 OTHERWISE ;
 
-          taxesPayableAlive       IS SUM ( "income tax component"
-                                      , "asset tax component" ) ;
-          "income tax component"  IS PRODUCT	( annualIncome
+          taxesPayableAlive       IS SUM ( `income tax component`
+                                         , `asset tax component` ) ;
+          `income tax component`  IS PRODUCT  ( annualIncome
                                               , incomeTaxRate
                                               ) ;
-          "asset tax component"   IS PRODUCT ( netWorth
-                                          , assetTaxRate );
+          `asset tax component`   IS PRODUCT ( netWorth
+                                             , assetTaxRate );
           incomeTaxRate           IS 0.01 ;
           assetTaxRate           IS 0.07|]
 
@@ -1350,6 +1379,96 @@ listsumMLGold =
           ]
       }
   )
+
+paus_ :: [Rule]
+paus_ = parseRule <$> [pau0, pau4, pauToplevel, sub1, sub2]
+ where
+  pau0 = [r|
+  § PAU0
+  GIVEN	addBenefit IS A Number ;
+        otherBenefits IS LIST OF	Number ;
+        policy IS A Policy ;
+        policyHolder IS A PolicyHolder ;
+        accident IS AN Accident ;
+        illness IS A Claim ;
+        "user input" IS A Dictionary
+  GIVETH	"The Answer" IS A Number
+  DECIDE	"The Answer" IS	"accident branch" IF "user input's"	accident_claim IS	selected ;
+          "The Answer" IS "illness branch"  OTHERWISE
+
+  WHERE	"accident branch" IS	excludedZero  IF "ADD is disqualified entirely" ;
+        "accident branch" IS "ADD benefit"  OTHERWISE ;
+
+        "illness branch" IS excludedZero    IF illness IS disqualified ;
+        "illness branch" IS policy's benMR  OTHERWISE ;
+
+        "ADD is disqualified entirely"
+                        IF ANY ( policyHolder's age	>=	75
+                               , accident's "general exclusions apply"
+                               , policy's ended ) ;
+        excludedZero  IS	0 ;
+        "ADD benefit" IS MIN ( SUM ( addBenefit
+                                   , otherBenefits )
+                              , "risk cap"
+                              ) ;
+
+        illness IS disqualified       IF	ANY ( illness's "general exclusions apply"
+                                              , policy's ended )
+        illness IS "not disqualified" OTHERWISE|]
+
+  pau4 = [r|
+  § PAU4
+  GIVEN	policy IS A		Policy ;
+        policyHolder IS A		PolicyHolder ;
+        accident IS AN		Accident
+  GIVETH	`Step 4` IS A		Number
+  DECIDE	`Step 1` IS	`claimable limited base ADD benefit` IF	`there were past ADD payouts` ;
+          `Step 1` IS `base ADD benefit`			             OTHERWISE ;
+          `Step 2` IS	`juvenile limited`	IF	accident's `juvenile limit applies` ;
+          `Step 2` IS `Step 1`			      OTHERWISE ;
+          `Step 3` IS	`multiplied by double triple benefit` ;
+          `Step 4` IS	`Step 3` `discounted by`	accident's `risk percentage`
+
+  WHERE	`base ADD benefit` IS	policy's benADD ;
+        `there were past ADD payouts` IF	policyHolder's `past ADD payouts`		>	0 ;
+        `claimable limited base ADD benefit` IS	MINUS (`claimable limit`,	`policyHolder's past ADD payouts`) ;
+
+        `juvenile limited` IS	MIN ( `Step 1`
+                                  , `juvenile limit` ) ;
+        `multiplied by double triple benefit` IS	PRODUCT (`Step 2`, 3)
+                                              IF	accident's `triple benefits apply` ;
+        `multiplied by double triple benefit` IS	PRODUCT (`Step 2`, 2)
+                                              IF	accident's `double benefits apply` ;
+        `multiplied by double triple benefit` IS	`Step 2` OTHERWISE
+  |]
+  pauToplevel = [r|
+  §	Top-Level
+  GIVEN	policy IS A Policy ;
+        policyHolder IS A PolicyHolder ;
+        accident IS AN Accident ;
+        illness IS A Claim ;
+        `user input` IS A Dictionary
+  GIVETH	`How Much Money Do You Get` IS A Number
+  DECIDE	`How Much Money Do You Get` IS PAU0
+  WHERE	addBenefit    IS PAU4 ;
+        otherBenefits IS 50|]
+  sub1 = [r|
+  §	`subsidiary computations`
+  GIVEN	`total sum assured` IS A		Number
+  DECIDE	`claimable limit` IS
+              MIN	( PRODUCT ( 1.5
+                            , `total sum assured` )
+                  , `lifetime claimable limit`
+              ) ;
+
+
+          `lifetime claimable limit`  IS `$4,500,000` ;
+          `juvenile limit` IS	`$500,000`|]
+  sub2 = [r|
+  GIVEN	x IS A	Number ;
+        y IS A	Number
+  DECIDE	x	`discounted by`	y	IS	`x * (1 - y)`
+  |]
 
 paus :: [Rule]
 paus = [
@@ -2215,9 +2334,9 @@ mustsing5 = parseRule <$> [reg, drinks, person, qualifies]
       eats IS A Boolean ;
       walks IS A Boolean ;
       alcoholic IS A Boolean ;
-      non-alcoholic IS A Boolean ;
-      "in part" IS A Boolean ;
-      "in whole" IS A Boolean|]
+      `non-alcoholic` IS A Boolean ;
+      `in part` IS A Boolean ;
+      `in whole` IS A Boolean|]
 
   reg = [r|
   EVERY Person
@@ -2226,8 +2345,8 @@ mustsing5 = parseRule <$> [reg, drinks, person, qualifies]
   qualifies = "Qualifies MEANS ALL(walks, ANY(Drinks, eats))"
   drinks = [r|
   Drinks MEANS
-    ALL("consumes an" ANY(alcoholic, non-alcoholic) beverage
-       , whether ANY("in part", "in whole"))
+    ALL(`consumes an` ANY(alcoholic, `non-alcoholic`) beverage
+       , whether ANY(`in part`, `in whole`))
     |]
 
 

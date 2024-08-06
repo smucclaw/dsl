@@ -19,8 +19,9 @@ import Data.Text qualified as Text
 
 transText :: TL4.Text -> Text.Text
 transText x = case x of
-  TL4.TextString string -> Text.pack string
+  TL4.TextString string -> Text.pack $ show string
   TL4.TextToken (TL4.Token string) -> Text.pack string
+  TL4.TextBacktickToken (TL4.BacktickToken string) -> Text.pack $ filter (/= '`') string
 
 transRule :: TL4.Rule -> Rule
 transRule x = case x of

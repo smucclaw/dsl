@@ -865,7 +865,7 @@ baseExpifyMTEs mtes = do
 
             (Nothing, Nothing)
               -> throwNotSupportedWithMsgError (RPMT mtes)
-                    "baseExpifyMTEs: trying to apply non-function"
+                    [i|baseExpifyMTEs: trying to apply non-function #{mtes}|]
 
             (Just var1, Just var2) -> do
               case (var1, var2) & both %~ (`elem` userFuns) of

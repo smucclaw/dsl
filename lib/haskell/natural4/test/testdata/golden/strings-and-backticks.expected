@@ -1,0 +1,31 @@
+Hornlike
+    { name =
+        [ MTT "name of the book" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "name of the book" ] RPis
+                [ MTT ""Perhaps the Stars"" ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }

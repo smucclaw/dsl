@@ -167,7 +167,7 @@ data BindingScope
 
 data ScopeTable = ScopeTable
   { _stVariables :: Map OccName RnName
-  , _stFunction :: Map FuncOccName FuncInfo
+  , _stFunction :: Map RnName FuncInfo
   }
   deriving (Eq, Ord, Show)
 
@@ -230,19 +230,19 @@ insertName occName nameType = do
       .~ Just rnName
   pure rnName
 
-insertFunction :: (MonadState Scope m) => FuncOccName -> FuncInfo -> m ()
-insertFunction funcOccName funcInfo = do
+insertFunction :: (MonadState Scope m) => RnName -> FuncInfo -> m ()
+insertFunction rnFnName funcInfo = do
   State.modify' $ \s ->
     s
       & scScopeTable
       % stFunction
-      % at funcOccName
+      % at rnFnName
       .~ Just funcInfo
 
-lookupFunction :: (MonadState Scope m) => FuncOccName -> m (Maybe FuncInfo)
-lookupFunction funcOccName =
+lookupFunction :: (MonadState Scope m) => RnName -> m (Maybe FuncInfo)
+lookupFunction rnFnName =
   State.gets $ \s ->
-    s ^. scScopeTable % stFunction % at funcOccName
+    s ^. scScopeTable % stFunction % at rnFnName
 
 -- ----------------------------------------------------------------------------
 -- Helper types for local context
@@ -288,7 +288,8 @@ renameRuleTopLevel' rule =
 -- Resolve functions and their respective arities
 -- ----------------------------------------------------------------------------
 
--- fixRuleArity :: (MonadState Scope m, MonadError String m) => Rule -> m RnRule
+-- fixFunctionFixity :: (MonadState Scope m, MonadError String m) => RnRule -> m RnRule
+-- fixFunctionFixity
 
 -- ----------------------------------------------------------------------------
 -- Renamer passes
@@ -304,10 +305,11 @@ renameRule rule@Rule.Hornlike{} = do
   defaults <- assertEmptyList rule.defaults
   symtab <- assertEmptyList rule.symtab
   clauses <- traverse renameHornClause rule.clauses
+  name <- renameMultiTerm rule.name
   pure $
     Hornlike
       RnHornlike
-        { name = []
+        { name = name
         , super = super
         , keyword = rule.keyword
         , given = given
@@ -390,7 +392,7 @@ renameTypeSignature sig = case sig of
     -- 'EntityType's with the same name over the whole program.
     lookupOrInsertName (mkSimpleOccName eType) RnType
 
-  -- Why not reuse 'renameParamText'? It is basically the same type!
+  -- Why not reuse 'renameGivens'? It is basically the same type!
   -- Well, we don't handle arbitrary nested type signatures.
   -- In fact, it is a bit dubious we have them at all!
   -- The following seems to be possible in theory:
@@ -499,23 +501,23 @@ renameDecideMultiTerm mt = do
       pure [RnExprName rnName]
     [LS.MTT f, LS.MTT x]
       | Just [rnX] <- variableAndFunction scopeTable [x] f -> do
-          insertFunction f (FuncInfo{funcArity = (0, 1)})
           rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
+          insertFunction rnF (FuncInfo{funcArity = (0, 1)})
           pure $ [RnExprName rnF, RnExprName rnX]
     [LS.MTT x, LS.MTT f]
       | Just [rnX] <- variableAndFunction scopeTable [x] f -> do
-          insertFunction f (FuncInfo{funcArity = (1, 0)})
           rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
+          insertFunction rnF (FuncInfo{funcArity = (1, 0)})
           pure $ [RnExprName rnF, RnExprName rnX]
     [LS.MTT x, LS.MTT f, LS.MTT y]
       | Just [rnX, rnY] <- variableAndFunction scopeTable [x, y] f -> do
-          insertFunction f (FuncInfo{funcArity = (1, 1)})
           rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
+          insertFunction rnF (FuncInfo{funcArity = (1, 1)})
           pure $ [RnExprName rnF, RnExprName rnX, RnExprName rnY]
     [LS.MTT f, LS.MTT x, LS.MTT y]
       | Just [rnX, rnY] <- variableAndFunction scopeTable [x, y] f -> do
-          insertFunction f (FuncInfo{funcArity = (0, 2)})
           rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
+          insertFunction rnF (FuncInfo{funcArity = (0, 2)})
           pure $ [RnExprName rnF, RnExprName rnX, RnExprName rnY]
     [] -> throwError "renameDecideMultiTerm: Unexpected empty list of MultiTerm"
     unknownPattern -> throwError $ "While renaming a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
@@ -600,6 +602,8 @@ renameMultiTermExpression ctx = \case
       lookupName (mkSimpleOccName name) >>= \case
         Just rnName -> pure (RnExprName rnName, notInSelectorContext ctx)
         Nothing
+          | Just literal <- isTextLiteral name ->
+              pure (RnExprLit $ RnString literal, notInSelectorContext ctx)
           | isL4BuiltIn name -> do
               rnName <- RnExprName <$> rnL4Builtin name
               pure (rnName, notInSelectorContext ctx)
@@ -607,8 +611,11 @@ renameMultiTermExpression ctx = \case
               rnName <- RnExprName <$> insertName (mkSimpleOccName name) RnSelector
               pure (rnName, notInSelectorContext ctx)
           | otherwise -> do
-              -- If this is not a selector, or a known variable, we infer it is a string type.
-              -- TODO: only accept this, if the @name@ is enclosed in `"`.
+              -- If this is not a selector, or a known variable, we infer
+              -- it is a string type. This is ok, because users can
+              -- disambiguate variables and string literals by enclosing the
+              -- literal in quotes, e.g. @"This is a string"@
+              --
               pure (RnExprLit $ RnString name, notInSelectorContext ctx)
     Just nameSelector -> do
       -- Is this name known already?
@@ -625,6 +632,13 @@ renameMultiTermExpression ctx = \case
   LS.MTI int -> pure (RnExprLit $ RnInt int, notInSelectorContext ctx)
   LS.MTF double -> pure (RnExprLit $ RnDouble double, notInSelectorContext ctx)
   LS.MTB bool -> pure (RnExprLit $ RnBool bool, notInSelectorContext ctx)
+ where
+  -- There is no doubt this is a text literal, if it is enclosed in quotes.
+  -- Strips away the quotes.
+  isTextLiteral t = do
+    ('"', t') <- uncons t
+    (t'', '"') <- unsnoc t'
+    pure t''
 
 -- ----------------------------------------------------------------------------
 -- Builtins

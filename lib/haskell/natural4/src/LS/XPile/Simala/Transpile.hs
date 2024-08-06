@@ -21,7 +21,6 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Data.Text.Lazy.IO qualified as TL
 import Data.Tuple.Extra qualified as Tuple
-import Debug.Trace
 import Optics
 import Text.Pretty.Simple qualified as Pretty
 
@@ -216,11 +215,11 @@ groupClauses simalaTerms = do
 foldInSubTerms :: forall m. (MonadError String m) => SimalaTerm -> [SimalaTerm] -> m SimalaTerm
 foldInSubTerms top [] = pure top
 foldInSubTerms top (x : xs) = case top of
+  TermExpr{} -> throwError $ "foldInSubTerms: Unexpected SimalaTerm: " <> show top
   TermApp{} -> throwError $ "foldInSubTerms: Unexpected SimalaTerm: " <> show top
   TermLetIn t name expr -> do
     exprWithLocals <- linearLetIns expr (x :| xs)
     pure $ TermLetIn t name exprWithLocals
-  TermExpr{} -> throwError $ "foldInSubTerms: Unexpected SimalaTerm: " <> show top
   TermAttribute name selectors expr -> do
     exprWithLocals <- linearLetIns expr (x :| xs)
     pure $ TermAttribute name selectors exprWithLocals

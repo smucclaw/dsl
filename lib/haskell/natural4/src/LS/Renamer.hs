@@ -10,7 +10,6 @@
 module LS.Renamer where
 
 import AnyAll.BoolStruct qualified as AA
-import L4.Lexer qualified as Parser
 import LS.Rule (Rule, RuleLabel)
 import LS.Rule qualified as Rule
 import LS.Types (MyToken, RuleName, SrcRef)
@@ -32,7 +31,6 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy.IO qualified as TL
-import Debug.Trace (traceShowId)
 import GHC.Generics (Generic)
 import Optics
 import Text.Pretty.Simple qualified as Pretty
@@ -217,9 +215,6 @@ lookupOrInsertName occName nameType = do
 insertName :: (MonadState Scope m) => OccName -> RnNameType -> m RnName
 insertName occName nameType = do
   n <- newUniqueM
-  -- TODO: error handling, would we accept an enum such as `a IS ONE OF 1, 2, 3`?
-  -- Only if we treat them as text, which might be confusing, as user might infer
-  -- this to be some kind of type checked number type.
   let
     rnName =
       RnName
@@ -382,6 +377,9 @@ renameTypeSignature sig = case sig of
     rnEntityType <- renameEntityType entityType
     pure $ RnSimpleType pType rnEntityType
   LS.InlineEnum pType paramText -> do
+    -- TODO: error handling, would we accept an enum such as `a IS ONE OF 1, 2, 3`?
+    -- Only if we treat them as text, which might be confusing, as user might infer
+    -- this to be some kind of type checked number type.
     rnParamText <- renameGivenInlineEnumParamText paramText
     pure $ RnInlineEnum pType rnParamText
  where
@@ -427,7 +425,7 @@ renameTypeSignature sig = case sig of
             , rnTypedMultiTypeSig = Nothing
             }
 
-    rnParams <- mapM renameEach $ traceShowId params
+    rnParams <- mapM renameEach params
     pure $ RnParamText rnParams
 
 renameHornClause :: (MonadState Scope m, MonadError String m) => LS.HornClause2 -> m RnHornClause

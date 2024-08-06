@@ -19,7 +19,7 @@ import TextuaL4.ParTextuaL qualified as Parser
 import TextuaL4.Transform qualified as Parser
 
 import Control.Monad.Error.Class
-import Control.Monad.Extra (fromMaybeM)
+import Control.Monad.Extra (foldM, fromMaybeM)
 import Control.Monad.State.Class qualified as State
 import Control.Monad.State.Strict (MonadState)
 import Control.Monad.Trans.Except qualified as Except
@@ -119,6 +119,7 @@ data RnLit
   = RnInt Integer
   | RnDouble Double
   | RnBool Bool
+  | RnString Text
   deriving (Eq, Ord, Show, Generic)
 
 type RnMultiTerm = [RnExpr]
@@ -247,6 +248,28 @@ lookupFunction :: (MonadState Scope m) => FuncOccName -> m (Maybe FuncInfo)
 lookupFunction funcOccName =
   State.gets $ \s ->
     s ^. scScopeTable % stFunction % at funcOccName
+
+-- ----------------------------------------------------------------------------
+-- Helper types for local context
+-- ----------------------------------------------------------------------------
+
+-- | Intermediate context when renaming a '[MultiTerm]'.
+data MultiTermContext = MultiTermContext
+  { _multiTermContextInSelector :: Bool
+  -- ^ Did the previous 'MultiTerm' introduce a selector chain?
+  -- A selector chain is introduced, if the multi term has a genitive suffix.
+  -- For example: @[MTT "book's", MTT "title"]@, when @"title"@ is renamed,
+  -- the 'multiTermContextInSelector' is set expected to be to 'True', so that
+  -- we can infer that @"title"@ is a 'RnSelector'.
+  }
+
+makeFieldsNoPrefix 'MultiTermContext
+
+inSelectorContext :: MultiTermContext -> MultiTermContext
+inSelectorContext mtc = mtc & multiTermContextInSelector .~ True
+
+notInSelectorContext :: MultiTermContext -> MultiTermContext
+notInSelectorContext mtc = mtc & multiTermContextInSelector .~ False
 
 -- ----------------------------------------------------------------------------
 -- Top Level Definitions
@@ -468,7 +491,11 @@ renameDecideMultiTerm :: (MonadState Scope m, MonadError String m) => LS.MultiTe
 renameDecideMultiTerm mt = do
   scopeTable <- State.gets _scScopeTable
   case mt of
-    [] -> throwError "renameDecideMultiTerm: Unexpected empty list of MultiTerm"
+    attrs@(_ : _)
+      | Just (obj, objAttrs) <- toObjectPath attrs -> do
+          rnName <- lookupOrInsertName (mkSimpleOccName obj) RnVariable
+          rnObjAttrs <- mapM (\attr -> RnExprName <$> lookupOrInsertName (mkSimpleOccName attr) RnSelector) objAttrs
+          pure $ RnExprName rnName : rnObjAttrs
     [LS.MTT x] -> do
       rnName <- lookupOrInsertName (mkSimpleOccName x) RnVariable
       pure [RnExprName rnName]
@@ -492,11 +519,7 @@ renameDecideMultiTerm mt = do
           insertFunction f (FuncInfo{funcArity = (0, 2)})
           rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
           pure $ [RnExprName rnF, RnExprName rnX, RnExprName rnY]
-    attrs@(_ : _)
-      | Just (obj, objAttrs) <- toObjectPath attrs -> do
-          rnName <- lookupOrInsertName (mkSimpleOccName obj) RnVariable
-          rnObjAttrs <- mapM (\attr -> RnExprName <$> lookupOrInsertName (mkSimpleOccName attr) RnSelector) objAttrs
-          pure $ RnExprName rnName : rnObjAttrs
+    [] -> throwError "renameDecideMultiTerm: Unexpected empty list of MultiTerm"
     unknownPattern -> throwError $ "While renaming a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
 
 -- | Check whether this could be a function like structure.
@@ -548,10 +571,24 @@ renameBoolStruct = \case
   AA.Not cs -> AA.Not <$> renameBoolStruct cs
 
 renameMultiTerm :: (MonadState Scope m, MonadError String m) => LS.MultiTerm -> m RnMultiTerm
-renameMultiTerm = mapM renameMultiTermExpression
+renameMultiTerm multiTerms = do
+  (results, _finalCtx) <-
+    foldM
+      ( \(results, state) mt -> do
+          (rnExpr, newState) <- renameMultiTermExpression state mt
+          pure (rnExpr : results, newState)
+      )
+      ([], initialMultiTermContext)
+      multiTerms
+  pure $ reverse results
+ where
+  initialMultiTermContext =
+    MultiTermContext
+      { _multiTermContextInSelector = False
+      }
 
-renameMultiTermExpression :: (MonadState Scope m, MonadError String m) => LS.MTExpr -> m RnExpr
-renameMultiTermExpression = \case
+renameMultiTermExpression :: (MonadState Scope m, MonadError String m) => MultiTermContext -> LS.MTExpr -> m (RnExpr, MultiTermContext)
+renameMultiTermExpression ctx = \case
   -- TODO: this could be an expression such as "2+2" (for whatever reason), so perhaps
   -- we need to parse this further. Allegedly, we also want to support
   -- expressions nested into one csv-cell, for example:
@@ -561,17 +598,20 @@ renameMultiTermExpression = \case
   -- where 'f' is a function.
   -- We ignore this for now, though.
   LS.MTT name -> case isGenitive name of
-    Nothing ->
+    Nothing -> do
       lookupName (mkSimpleOccName name) >>= \case
-        Just rnName -> pure $ RnExprName rnName
+        Just rnName -> pure (RnExprName rnName, notInSelectorContext ctx)
         Nothing
-          | isL4BuiltIn name -> RnExprName <$> rnL4Builtin name
+          | isL4BuiltIn name -> do
+              rnName <- RnExprName <$> rnL4Builtin name
+              pure (rnName, notInSelectorContext ctx)
+          | ctx ^. multiTermContextInSelector -> do
+              rnName <- RnExprName <$> insertName (mkSimpleOccName name) RnSelector
+              pure (rnName, notInSelectorContext ctx)
           | otherwise -> do
-              -- TODO: review, this feels wrong.
-              -- Perhaps renaming without context is simply not possible for an 'MTExpr'?
-              --
-              -- if this is not a known variable, let's assume it is a selector.
-              RnExprName <$> insertName (mkSimpleOccName name) RnSelector
+              -- If this is not a selector, or a known variable, we infer it is a string type.
+              -- TODO: only accept this, if the @name@ is enclosed in `"`.
+              pure (RnExprLit $ RnString name, notInSelectorContext ctx)
     Just nameSelector -> do
       -- Is this name known already?
       -- If not, we assume this is a selector we haven't encountered before.
@@ -583,10 +623,10 @@ renameMultiTermExpression = \case
       --
       -- Then 'y' and 'z' are anonymous selectors for 'x'.
       rnName <- fromMaybeM (lookupOrInsertName (mkSimpleOccName nameSelector) RnSelector) (lookupName (mkSimpleOccName nameSelector))
-      pure $ RnExprName rnName
-  LS.MTI int -> pure $ RnExprLit $ RnInt int
-  LS.MTF double -> pure $ RnExprLit $ RnDouble double
-  LS.MTB bool -> pure $ RnExprLit $ RnBool bool
+      pure (RnExprName rnName, inSelectorContext ctx)
+  LS.MTI int -> pure (RnExprLit $ RnInt int, notInSelectorContext ctx)
+  LS.MTF double -> pure (RnExprLit $ RnDouble double, notInSelectorContext ctx)
+  LS.MTB bool -> pure (RnExprLit $ RnBool bool, notInSelectorContext ctx)
 
 -- ----------------------------------------------------------------------------
 -- Builtins
@@ -670,6 +710,12 @@ assertEmptyList xs = throwError $ "Expected an empty list, but got: " <> show xs
 --
 -- >>> toObjectPath []
 -- Nothing
+--
+-- >>> toObjectPath [LS.MTT "y's"]
+-- Nothing
+--
+-- >>> toObjectPath [LS.MTT "y"]
+-- Nothing
 toObjectPath :: LS.MultiTerm -> Maybe (Text, [Text])
 toObjectPath [] = Nothing
 toObjectPath (varNameInGenitive : attrs) = do
@@ -679,7 +725,7 @@ toObjectPath (varNameInGenitive : attrs) = do
   pure (varName, textAttrs)
  where
   applyToInit :: (a -> Maybe a) -> [a] -> Maybe [a]
-  applyToInit _ [] = Just []
+  applyToInit _ [] = Nothing
   applyToInit _ [x] = Just [x]
   applyToInit f (x : xs) = (:) <$> f x <*> applyToInit f xs
 
@@ -694,10 +740,6 @@ genitiveSuffix = Text.pack "'s"
 -- Example data for debugging.
 -- TODO: don't merge this
 -- ----------------------------------------------------------------------------
-
-type Err = Either String
-type ParseFun a = [Parser.Token] -> Err a
-type Verbosity = Int
 
 run :: String -> Either String Rule
 run = fmap Parser.transRule . Parser.pRule . Parser.myLexer

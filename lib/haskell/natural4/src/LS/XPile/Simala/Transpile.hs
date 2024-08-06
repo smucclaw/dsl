@@ -214,8 +214,8 @@ mergeGroups simalaTermGroups = do
   traverse mergeGroups' simalaTermGroups
 
 mergeGroups' :: (MonadError String m) => NonEmpty (SimalaTerm, Maybe Simala.Expr) -> m SimalaTerm
-mergeGroups' ((TermAttribute name [] expr, _) :| _) = pure $ TermLetIn Simala.Transparent name expr
-mergeGroups' terms@((TermAttribute name _ _, _) :| _) = do
+mergeGroups' ((TermAttribute name [] expr, Nothing) :| _) = pure $ TermLetIn Simala.Transparent name expr
+mergeGroups' terms@((TermAttribute name _ _, Nothing) :| _) = do
   rowUpdates <- traverse assertNonEmptyTermAttribute $ fmap fst $ NE.toList terms
   rowExprs <- traverse (pure . uncurry buildRecordUpdate) rowUpdates
   recordRows <- traverse assertIsRecord rowExprs
@@ -233,7 +233,7 @@ mergeGroups' ((term, Just g) :| (n : ns)) = do
 compareClauseHeads :: SimalaTerm -> SimalaTerm -> Bool
 compareClauseHeads (TermLetIn _ name1 _) (TermLetIn _ name2 _) = name1 == name2
 compareClauseHeads (TermFunction fnName1 _ _) (TermFunction fnName2 _ _) = fnName1 == fnName2
-compareClauseHeads (TermAttribute name1 _ _) (TermAttribute name2 _ _) = name1 == name2
+compareClauseHeads (TermAttribute name1 selectors1 _) (TermAttribute name2 selectors2 _) = name1 == name2 && selectors1 == selectors2
 compareClauseHeads _ _ = False
 
 -- ----------------------------------------------------------------------------
@@ -257,8 +257,8 @@ relationalPredicateToSimala = \case
     lhsSimalaExpr' <- lhsMultiTermToSimala lhs
     lhsSimalaExpr <- assertTermExpr lhsSimalaExpr'
     rhsSimalaExpr <- rhsMultiTermToSimala rhs
-    builtin <- fst <$> predRelToBuiltIn predicate
-    fixedArity builtin 2 [lhsSimalaExpr, rhsSimalaExpr]
+    (_builtin, builder) <- predRelToBuiltIn predicate
+    builder [lhsSimalaExpr, rhsSimalaExpr]
   RnNary LS.RPis (lhs : rhs) -> do
     multiTerm <- assertPredicateIsMultiTerm "relationalPredicateToSimala" lhs
     lhsSimalaTerm <- lhsMultiTermToSimala multiTerm
@@ -277,11 +277,14 @@ relationalPredicateToSimala = \case
       TermFunction{} -> throwError "Not implemented yet"
       TermExpr expr -> throwError $ "A saturated expression can't be left hand side: " <> show expr
   -- TODO: this is wrong, what about Var and Project?
-  RnNary relationalPredicate mt ->
-    predicateToSimala relationalPredicate mt
-  RnBoolStructR lhsExpr relationalPredicate bs -> do
-    lhsMultiTermToSimala lhsExpr
-  p -> throwError $ "Unhandled relational predicate: " <> show p
+  RnNary predicate mt ->
+    predicateToSimala predicate mt
+  RnBoolStructR lhs predicate rhs -> do
+    lhsTerm <- lhsMultiTermToSimala lhs
+    lhsExpr <- assertTermExpr lhsTerm
+    rhsSimalaExpr <- boolStructToSimala rhs
+    (_builtin, builder) <- predRelToBuiltIn predicate
+    builder [lhsExpr, rhsSimalaExpr]
 
 predicateToSimala :: (MonadError String m) => LS.RPRel -> [RnRelationalPredicate] -> m SimalaTerm
 predicateToSimala rp params' = do
@@ -392,13 +395,14 @@ isProjection mtHead args = do
 
 exprToSimala :: RnExpr -> Simala.Expr
 exprToSimala (RnExprName name) = Simala.Var $ toSimalaName name
-exprToSimala (RnExprLit lit) = Simala.Lit $ litToSimala lit
+exprToSimala (RnExprLit lit) = litToSimala lit
 
-litToSimala :: RnLit -> Simala.Lit
+litToSimala :: RnLit -> Simala.Expr
 litToSimala = \case
-  RnInt int -> Simala.IntLit $ fromIntegral int -- TODO: why does simala only support 'Int'?
+  RnInt int -> Simala.Lit $ Simala.IntLit $ fromIntegral int -- TODO: why does simala only support 'Int'?
   RnDouble _double -> error "Floating point numbers are unsupported in simala"
-  RnBool boolean -> Simala.BoolLit boolean
+  RnBool boolean -> Simala.Lit $ Simala.BoolLit boolean
+  RnString text -> Simala.Atom text
 
 isFunction :: RnExpr -> Maybe RnName
 isFunction expr = isExprOfType expr (RnFunction ==)
@@ -552,6 +556,10 @@ mkIfThenElse b (TermAttribute name1 selectors1 expr1) (TermAttribute name2 selec
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
   ifThenElse <- assertTermExpr ifThenElseTerm
   pure $ TermAttribute name1 selectors1 ifThenElse
+mkIfThenElse b (TermAttribute name1 selectors1 expr1) (TermExpr expr2) = do
+  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
+  ifThenElse <- assertTermExpr ifThenElseTerm
+  pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElse b (TermFunction fnName1 fnParams1 expr1) (TermFunction fnName2 fnParams2 expr2) = do
   assertEquals fnName1 fnName2
   assertEquals fnParams1 fnParams2
@@ -621,18 +629,6 @@ mergeRecordUpdates xs = worker xs
     recordRows <- traverse assertIsRecord rowExprs
     mergedRows <- worker recordRows
     pure $ (n, mergedRows)
-
--- [ (x, 4)]
--- [ (y, 5)]
--- [ (z, (a, (b, 5)))
--- , (z, (b, 4))
--- , (z, (a, (c, 5)))
--- ]
---
---
--- [ (z, [ (b, 4), (a, [(b, 5), (c, 5)]) ]) ]
-
--- { x=4; y=5; z = { a = { b = 5; c = 5 }; b = 4 }
 
 -- ----------------------------------------------------------------------------
 -- Test cases
@@ -757,10 +753,21 @@ WHERE
   y's p IS SUM(x, x)
 |]
 
--- >>> transpileRulePure decideWithConditionalAttributes
--- "relationalPredicateToSimala: Unsupported [RnExprName (RnName {rnOccName = MTT \"y's\" :| [], rnUniqueId = 3, rnNameType = RnFunction}),RnExprName (RnName {rnOccName = MTT \"z\" :| [], rnUniqueId = 2, rnNameType = RnSelector})]"
+-- >>> transpileRulePure decideWithSimpleConditionalAttributes
+-- "let f_f_3 = fun(v_x_0) => let v_y_1 = {s_z_2 = if v_x_0 > 3 then 5 else undefined} in v_y_1"
 
--- TODO: renamer bug, "y's" incorrectly
+decideWithSimpleConditionalAttributes :: String
+decideWithSimpleConditionalAttributes =
+  [i|
+GIVEN x
+DECIDE f x IS y
+WHERE
+  y's z IS 5 IF x > 3
+|]
+
+
+-- >>> transpileRulePure decideWithConditionalAttributes
+-- "Provided args are not equal: [\"s_z_2\"] /= [\"s_p_4\"]"
 
 decideWithConditionalAttributes :: String
 decideWithConditionalAttributes =
@@ -768,7 +775,7 @@ decideWithConditionalAttributes =
 GIVEN x
 DECIDE f x IS y
 WHERE
-  y's z IS 5 IF x > 5;
+  y's z IS 5 IF x > 3;
   y's z IS 0 OTHERWISE;
 
   y's p IS x IF x > 5;
@@ -782,7 +789,7 @@ WHERE
 --    y
 
 -- >>> transpileRulePure givethDefinition
--- "let v_y_0 = {s_z_1 = 5}\n"
+-- "let v_y_0 = {s_z_1 = 5}"
 
 givethDefinition :: String
 givethDefinition =
@@ -802,7 +809,7 @@ DECIDE y's a's b's c's z IS 5
 |]
 
 -- >>> transpileRulePure eragonBookDescription
--- "let v_eragon_0 = {s_character_4 = {s_friend_8 = s_Ork_9,s_main_5 = s_Eragon_2,s_villain_6 = s_Galbatorix_7},s_size_3 = 512,s_title_1 = s_Eragon_2}"
+-- "let v_eragon_0 = {s_character_3 = {s_friend_6 = 'Ork,s_main_4 = 'Eragon,s_villain_5 = 'Galbatorix},s_size_2 = 512,s_title_1 = 'Eragon}"
 
 -- TODO: Renamer bug: handle string literals
 
@@ -819,7 +826,7 @@ DECIDE
 |]
 
 -- >>> transpileRulePure eragonBookDescriptionWithWhere
--- "let v_eragon_0 = let v_localVar_1 = {s_character_5 = {s_friend_9 = s_Ork_10,s_main_6 = s_Eragon_3,s_villain_7 = s_Galbatorix_8},s_size_4 = 512,s_title_2 = s_Eragon_3} in v_localVar_1"
+-- "let v_eragon_0 = let v_localVar_1 = {s_character_4 = {s_friend_7 = 'Ork,s_main_5 = 'Eragon,s_villain_6 = 'Galbatorix},s_size_3 = 512,s_title_2 = 'Eragon} in v_localVar_1"
 
 -- TODO: Renamer bug: handle string literals
 
@@ -858,7 +865,7 @@ DECIDE y IS 5
 |]
 
 -- >>> transpileRulePure rodentsAndVermin
--- "relationalPredicateToSimala: Unsupported [RnExprName (RnName {rnOccName = MTT \"Loss or Damage\" :| [], rnUniqueId = 1, rnNameType = RnSelector})]"
+-- "Unsupported relational predicate: RPis"
 --
 rodentsAndVermin :: String
 rodentsAndVermin =

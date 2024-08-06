@@ -20,6 +20,7 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Data.Text.Lazy.IO qualified as TL
+import Data.Tuple.Extra qualified as Tuple
 import Debug.Trace
 import Optics
 import Text.Pretty.Simple qualified as Pretty
@@ -29,6 +30,7 @@ import LS.Renamer qualified as Renamer
 import LS.Types qualified as LS
 
 import AnyAll.BoolStruct qualified as AA
+import Data.List qualified as List
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
@@ -133,7 +135,6 @@ transpileRulePure ruleSrc =
           Right expr ->
             render expr
 
-
 render :: SimalaTerm -> Text
 render (TermExpr e) = Simala.render e
 render (TermLetIn _ name var) = "let " <> Simala.render name <> " = " <> Simala.render var
@@ -143,9 +144,7 @@ render (TermAttribute name [] expr) = "let " <> Simala.render name <> " = " <> S
 render (TermAttribute name (x : xs) expr) = "let " <> Simala.render name <> " = " <> Simala.render (buildRecordUpdate (x :| xs) expr)
 
 -- ----------------------------------------------------------------------------
--- Post Processing of rule transpilation
--- These steps include:
--- 1.
+-- Main translation helpers
 -- ----------------------------------------------------------------------------
 
 ruleToSimala :: (MonadError String m) => RnRule -> m SimalaTerm
@@ -154,6 +153,40 @@ ruleToSimala (Hornlike hornlike) = do
   term <- assertSingletonList "ruleToSimala" terms
   subTerms <- traverse ruleToSimala hornlike.wwhere
   foldInSubTerms term subTerms
+
+-- ----------------------------------------------------------------------------
+-- Post Processing of rule translation.
+-- These steps include:
+--
+-- 1. Group terms for by their respective head clauses
+--    This aims to create a single function / definition for multiple decide clauses.
+--    These clauses can have bodies to express conditionals.
+--    For example, functions can be defined as:
+--
+--    @
+--      f x IS x IF x > 0;
+--      f x IS 0 OTHERWISE
+--    @
+--
+--    And we want to translate this to the Simala function:
+--    @let f = fun(x) => if x > 0 then x else 0@
+--
+--    Thus, we group by the clause head (e.g. @f x@) and "fold" the clause bodies
+--    into a chain of @if-then-else@ in Simala.
+--
+-- 2. Merge clause bodies referring to the same clause head.
+--    E.g. @[(f x, x, x > 0), (f x, 0, "OTHERWISE")]@ is translated
+--    to @(f x, if x > 0 then x else 0)@
+--
+--    A similar idea is applied for variable assignments and attribute decisions.
+--
+-- 3. At last, a hornlike rule has a 'WHERE' clause which contains arbitrary
+--    rules. For now, we assume these are hornlike rules themselves, which define
+--    functions and computations.
+--    These functions and computations need to be included in the definition of
+--    @f@, by "folding" them into the body of the function via nested @let-in@s.
+--
+-- ----------------------------------------------------------------------------
 
 hornClausesToSimala :: (MonadError String m) => [RnHornClause] -> m [SimalaTerm]
 hornClausesToSimala clauses = do
@@ -168,14 +201,17 @@ hornClausesToSimala clauses = do
     hornBody <- traverse boolStructToSimala clause.rnHcBody
     pure (hornHead, hornBody)
 
-  groupClauses simalaTerms = do
-    NE.groupBy (compareClauseHeads `on` fst) simalaTerms
-
--- ----------------------------------------------------------------------------
--- Post Processing of rule translation.
--- These steps include:
--- 1.
--- ----------------------------------------------------------------------------
+-- | Group clauses and their respective bodies based on the similarity of the
+-- clause head.
+groupClauses :: (Foldable f) => f (SimalaTerm, Maybe Simala.Expr) -> [NonEmpty (SimalaTerm, Maybe Simala.Expr)]
+groupClauses simalaTerms = do
+  NE.groupBy (compareClauseHeads `on` fst) simalaTerms
+ where
+  compareClauseHeads :: SimalaTerm -> SimalaTerm -> Bool
+  compareClauseHeads (TermLetIn _ name1 _) (TermLetIn _ name2 _) = name1 == name2
+  compareClauseHeads (TermFunction fnName1 _ _) (TermFunction fnName2 _ _) = fnName1 == fnName2
+  compareClauseHeads (TermAttribute name1 _ _) (TermAttribute name2 _ _) = name1 == name2
+  compareClauseHeads _ _ = False
 
 foldInSubTerms :: forall m. (MonadError String m) => SimalaTerm -> [SimalaTerm] -> m SimalaTerm
 foldInSubTerms top [] = pure top
@@ -209,15 +245,23 @@ foldInSubTerms top (x : xs) = case top of
       TermFunction fnName fnParams fnExpr -> do
         pure $ mkLetIn Simala.Transparent fnName (Simala.Fun Simala.Transparent fnParams fnExpr) inExpr
 
+-- | Given a collection of groups, merge each group into a single expression.
 mergeGroups :: (Traversable t, MonadError String m) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> m (t SimalaTerm)
 mergeGroups simalaTermGroups = do
   traverse mergeGroups' simalaTermGroups
 
+-- | Do the heavy lifting of how to actually merge multiple clauses into a single term.
 mergeGroups' :: (MonadError String m) => NonEmpty (SimalaTerm, Maybe Simala.Expr) -> m SimalaTerm
 mergeGroups' ((TermAttribute name [] expr, Nothing) :| _) = pure $ TermLetIn Simala.Transparent name expr
-mergeGroups' terms@((TermAttribute name _ _, Nothing) :| _) = do
-  rowUpdates <- traverse assertNonEmptyTermAttribute $ fmap fst $ NE.toList terms
-  rowExprs <- traverse (pure . uncurry buildRecordUpdate) rowUpdates
+mergeGroups' terms@((TermAttribute name _ _, _) :| _) = do
+  rowUpdates <-
+    traverse
+      (Tuple.firstM assertAttributeHasSelectors)
+      (NE.toList terms)
+  let
+    rowGroups = NE.groupWith (fst . fst) rowUpdates
+    rowGroups' = fmap simplifyAttributeAssignment rowGroups
+  rowExprs <- traverse (\(attrName, selectors) -> pure $ buildRecordUpdate attrName selectors) rowGroups'
   recordRows <- traverse assertIsRecord rowExprs
   treeRows <- mergeRecordUpdates recordRows
   pure $ TermLetIn Simala.Transparent name treeRows
@@ -230,11 +274,17 @@ mergeGroups' ((term, Just g) :| (n : ns)) = do
   elseBranch <- mergeGroups' (n :| ns)
   mkIfThenElse g term elseBranch
 
-compareClauseHeads :: SimalaTerm -> SimalaTerm -> Bool
-compareClauseHeads (TermLetIn _ name1 _) (TermLetIn _ name2 _) = name1 == name2
-compareClauseHeads (TermFunction fnName1 _ _) (TermFunction fnName2 _ _) = fnName1 == fnName2
-compareClauseHeads (TermAttribute name1 selectors1 _) (TermAttribute name2 selectors2 _) = name1 == name2 && selectors1 == selectors2
-compareClauseHeads _ _ = False
+simplifyAttributeAssignment :: NonEmpty ((NonEmpty Simala.Name, Simala.Expr), Maybe Simala.Expr) -> (NonEmpty Simala.Name, Simala.Expr)
+simplifyAttributeAssignment ((attributeAssignment, Nothing) :| []) = attributeAssignment
+simplifyAttributeAssignment (((attrPath, expr), Just guard) :| []) = (attrPath, Simala.Builtin Simala.IfThenElse [guard, expr, Simala.Undefined])
+simplifyAttributeAssignment (((attrPath, expr), guard) :| terms) =
+  let
+    exprWithGuard = fmap (\((_, expr), g) -> (expr, g)) terms
+    go _ (expr, Nothing) = (expr, Nothing)
+    go (expr2, newGuard) (expr, Just g) = (Simala.Builtin Simala.IfThenElse [g, expr, expr2], newGuard)
+    (newTerms, _) = List.foldr go (expr, guard) exprWithGuard
+  in
+    (attrPath, newTerms)
 
 -- ----------------------------------------------------------------------------
 -- Transpilation
@@ -390,7 +440,7 @@ isProjection mtHead args = do
   pure (varName, selectors)
 
 -- ----------------------------------------------------------------------------
--- Name translations
+-- Renamed Names utilities
 -- ----------------------------------------------------------------------------
 
 exprToSimala :: RnExpr -> Simala.Expr
@@ -506,10 +556,10 @@ assertIsRecord :: (MonadError String m) => Simala.Expr -> m (Simala.Row Simala.E
 assertIsRecord (Simala.Record row) = pure row
 assertIsRecord simalaExpr = throwError $ "Unexpected simala expression, expected Record but got: " <> show simalaExpr
 
-assertNonEmptyTermAttribute :: (MonadError String m) => SimalaTerm -> m (NonEmpty Simala.Name, Simala.Expr)
-assertNonEmptyTermAttribute (TermAttribute _ (x : xs) expr) = pure (x :| xs, expr)
-assertNonEmptyTermAttribute expr@(TermAttribute _ [] _) = throwError $ "Unexpected term, expected non-empty TermAttribute but got : " <> show expr
-assertNonEmptyTermAttribute expr = throwError $ "Unexpected term, expected non-empty TermAttribute but got : " <> show expr
+assertAttributeHasSelectors :: (MonadError String m) => SimalaTerm -> m (NonEmpty Simala.Name, Simala.Expr)
+assertAttributeHasSelectors (TermAttribute _ (x : xs) expr) = pure (x :| xs, expr)
+assertAttributeHasSelectors expr@(TermAttribute _ [] _) = throwError $ "Unexpected term, expected non-empty TermAttribute but got : " <> show expr
+assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-empty TermAttribute but got : " <> show expr
 
 -- ----------------------------------------------------------------------------
 -- Construction helpers for simala terms
@@ -635,7 +685,7 @@ mergeRecordUpdates xs = worker xs
 -- ----------------------------------------------------------------------------
 
 -- >>> transpileRulePure exampleWithOneOf
--- "let f_g_6 = fun(v_d_0) => let v_y_1 = s_green_3 in v_y_1"
+-- "let f_g_4 = fun(v_d_0) => let v_y_1 = if v_d_0 > 0 then 'green else if b_OTHERWISE_3 then 'red else undefined in v_y_1"
 
 exampleWithOneOf :: String
 exampleWithOneOf =
@@ -649,7 +699,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure bookWithAttributes
--- "relationalPredicateToSimala: Unsupported [RnExprName (RnName {rnOccName = MTT \"y's\" :| [], rnUniqueId = 4, rnNameType = RnFunction}),RnExprName (RnName {rnOccName = MTT \"book\" :| [], rnUniqueId = 2, rnNameType = RnSelector})]"
+-- "let f_g_4 = fun(v_d_0) => let v_y_1 = {s_book_2 = if v_d_0 > 0 then 'green else if b_OTHERWISE_3 then 'red else undefined} in v_y_1"
 
 bookWithAttributes :: String
 bookWithAttributes =
@@ -682,7 +732,7 @@ DECIDE sum3 x IS SUM(x, x, x)
 |]
 
 -- >>> transpileRulePure simpleSelector
--- "let f_f_1 = fun(v_x_0) => v_x_0.s_z_2\n"
+-- "let f_f_1 = fun(v_x_0) => v_x_0.s_z_2"
 
 simpleSelector :: String
 simpleSelector =
@@ -765,9 +815,8 @@ WHERE
   y's z IS 5 IF x > 3
 |]
 
-
 -- >>> transpileRulePure decideWithConditionalAttributes
--- "Provided args are not equal: [\"s_z_2\"] /= [\"s_p_4\"]"
+-- "let f_f_5 = fun(v_x_0) => let v_y_1 = {s_p_4 = if v_x_0 > 5 then v_x_0 else v_x_0 + v_x_0,s_z_2 = if v_x_0 > 3 then 5 else 0} in v_y_1"
 
 decideWithConditionalAttributes :: String
 decideWithConditionalAttributes =
@@ -785,7 +834,7 @@ WHERE
 -- let f = fun(x) =>
 --    let y_z = if x > 5 then 5 else 0 in
 --    let y_p = if x > 5 then x else sum(x, x) in
---    let y = { z = y_s, p = y_p } in
+--    let y = { z = y_z, p = y_p } in
 --    y
 
 -- >>> transpileRulePure givethDefinition
@@ -811,8 +860,6 @@ DECIDE y's a's b's c's z IS 5
 -- >>> transpileRulePure eragonBookDescription
 -- "let v_eragon_0 = {s_character_3 = {s_friend_6 = 'Ork,s_main_4 = 'Eragon,s_villain_5 = 'Galbatorix},s_size_2 = 512,s_title_1 = 'Eragon}"
 
--- TODO: Renamer bug: handle string literals
-
 eragonBookDescription :: String
 eragonBookDescription =
   [i|
@@ -827,8 +874,6 @@ DECIDE
 
 -- >>> transpileRulePure eragonBookDescriptionWithWhere
 -- "let v_eragon_0 = let v_localVar_1 = {s_character_4 = {s_friend_7 = 'Ork,s_main_5 = 'Eragon,s_villain_6 = 'Galbatorix},s_size_3 = 512,s_title_2 = 'Eragon} in v_localVar_1"
-
--- TODO: Renamer bug: handle string literals
 
 eragonBookDescriptionWithWhere :: String
 eragonBookDescriptionWithWhere =
@@ -895,4 +940,3 @@ IF
                 )
         )
 |]
-

@@ -63,7 +63,10 @@ data MTExpr = MTT Text | MTI Integer | MTF Double | MTB Bool
 data Bool = Bool_True | Bool_False
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Text = TextString String | TextToken Token
+data Text
+    = TextString String
+    | TextToken Token
+    | TextBacktickToken BacktickToken
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data BoolStruct
@@ -107,5 +110,8 @@ data TComparison = TBefore | TAfter | TBy | TOn | TVague
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 newtype Token = Token String
+  deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)
+
+newtype BacktickToken = BacktickToken String
   deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)
 

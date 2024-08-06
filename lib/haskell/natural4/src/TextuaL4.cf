@@ -78,8 +78,9 @@ MTB. MTExpr ::= Bool    ;
 -- MTString. MTExpr ::= String ;
 
 rules Bool ::= "True" | "False" ;
-rules Text ::= String | Token ;
+rules Text ::= String | Token | BacktickToken ;
 token Token letter (letter | '_' | '\'' | '-' | '+' | '/' | digit)*  ;
+token BacktickToken '`' (char - ["`"])+ '`' ;
 separator nonempty MTExpr " " ;
 
 -- BoolStruct

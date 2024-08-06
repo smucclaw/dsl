@@ -25,66 +25,67 @@ import TextuaL4.LexTextuaL
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '('         { PT _ (TS _ 1)     }
-  ')'         { PT _ (TS _ 2)     }
-  ','         { PT _ (TS _ 3)     }
-  ';'         { PT _ (TS _ 4)     }
-  '<'         { PT _ (TS _ 5)     }
-  '<='        { PT _ (TS _ 6)     }
-  '>'         { PT _ (TS _ 7)     }
-  '>='        { PT _ (TS _ 8)     }
-  'A'         { PT _ (TS _ 9)     }
-  'ABOUT'     { PT _ (TS _ 10)    }
-  'AFTER'     { PT _ (TS _ 11)    }
-  'ALL'       { PT _ (TS _ 12)    }
-  'AN'        { PT _ (TS _ 13)    }
-  'AND'       { PT _ (TS _ 14)    }
-  'ANY'       { PT _ (TS _ 15)    }
-  'BEFORE'    { PT _ (TS _ 16)    }
-  'BY'        { PT _ (TS _ 17)    }
-  'DECIDE'    { PT _ (TS _ 18)    }
-  'DECLARE'   { PT _ (TS _ 19)    }
-  'DIVIDE'    { PT _ (TS _ 20)    }
-  'EQUALS'    { PT _ (TS _ 21)    }
-  'EVERY'     { PT _ (TS _ 22)    }
-  'False'     { PT _ (TS _ 23)    }
-  'GIVEN'     { PT _ (TS _ 24)    }
-  'GIVETH'    { PT _ (TS _ 25)    }
-  'HAS'       { PT _ (TS _ 26)    }
-  'IF'        { PT _ (TS _ 27)    }
-  'IN'        { PT _ (TS _ 28)    }
-  'IS'        { PT _ (TS _ 29)    }
-  'LIST'      { PT _ (TS _ 30)    }
-  'MAP'       { PT _ (TS _ 31)    }
-  'MAX'       { PT _ (TS _ 32)    }
-  'MAY'       { PT _ (TS _ 33)    }
-  'MEANS'     { PT _ (TS _ 34)    }
-  'MIN'       { PT _ (TS _ 35)    }
-  'MINUS'     { PT _ (TS _ 36)    }
-  'MODULO'    { PT _ (TS _ 37)    }
-  'MUST'      { PT _ (TS _ 38)    }
-  'NOT'       { PT _ (TS _ 39)    }
-  'OF'        { PT _ (TS _ 40)    }
-  'ON'        { PT _ (TS _ 41)    }
-  'ONE'       { PT _ (TS _ 42)    }
-  'OPTIONAL'  { PT _ (TS _ 43)    }
-  'OR'        { PT _ (TS _ 44)    }
-  'OTHERWISE' { PT _ (TS _ 45)    }
-  'PRODUCT'   { PT _ (TS _ 46)    }
-  'SET'       { PT _ (TS _ 47)    }
-  'SHANT'     { PT _ (TS _ 48)    }
-  'SUBJECT'   { PT _ (TS _ 49)    }
-  'SUM'       { PT _ (TS _ 50)    }
-  'TO'        { PT _ (TS _ 51)    }
-  'True'      { PT _ (TS _ 52)    }
-  'UNLESS'    { PT _ (TS _ 53)    }
-  'WHERE'     { PT _ (TS _ 54)    }
-  'WHO'       { PT _ (TS _ 55)    }
-  '§'         { PT _ (TS _ 56)    }
-  L_doubl     { PT _ (TD $$)      }
-  L_integ     { PT _ (TI $$)      }
-  L_quoted    { PT _ (TL $$)      }
-  L_Token     { PT _ (T_Token $$) }
+  '('             { PT _ (TS _ 1)             }
+  ')'             { PT _ (TS _ 2)             }
+  ','             { PT _ (TS _ 3)             }
+  ';'             { PT _ (TS _ 4)             }
+  '<'             { PT _ (TS _ 5)             }
+  '<='            { PT _ (TS _ 6)             }
+  '>'             { PT _ (TS _ 7)             }
+  '>='            { PT _ (TS _ 8)             }
+  'A'             { PT _ (TS _ 9)             }
+  'ABOUT'         { PT _ (TS _ 10)            }
+  'AFTER'         { PT _ (TS _ 11)            }
+  'ALL'           { PT _ (TS _ 12)            }
+  'AN'            { PT _ (TS _ 13)            }
+  'AND'           { PT _ (TS _ 14)            }
+  'ANY'           { PT _ (TS _ 15)            }
+  'BEFORE'        { PT _ (TS _ 16)            }
+  'BY'            { PT _ (TS _ 17)            }
+  'DECIDE'        { PT _ (TS _ 18)            }
+  'DECLARE'       { PT _ (TS _ 19)            }
+  'DIVIDE'        { PT _ (TS _ 20)            }
+  'EQUALS'        { PT _ (TS _ 21)            }
+  'EVERY'         { PT _ (TS _ 22)            }
+  'False'         { PT _ (TS _ 23)            }
+  'GIVEN'         { PT _ (TS _ 24)            }
+  'GIVETH'        { PT _ (TS _ 25)            }
+  'HAS'           { PT _ (TS _ 26)            }
+  'IF'            { PT _ (TS _ 27)            }
+  'IN'            { PT _ (TS _ 28)            }
+  'IS'            { PT _ (TS _ 29)            }
+  'LIST'          { PT _ (TS _ 30)            }
+  'MAP'           { PT _ (TS _ 31)            }
+  'MAX'           { PT _ (TS _ 32)            }
+  'MAY'           { PT _ (TS _ 33)            }
+  'MEANS'         { PT _ (TS _ 34)            }
+  'MIN'           { PT _ (TS _ 35)            }
+  'MINUS'         { PT _ (TS _ 36)            }
+  'MODULO'        { PT _ (TS _ 37)            }
+  'MUST'          { PT _ (TS _ 38)            }
+  'NOT'           { PT _ (TS _ 39)            }
+  'OF'            { PT _ (TS _ 40)            }
+  'ON'            { PT _ (TS _ 41)            }
+  'ONE'           { PT _ (TS _ 42)            }
+  'OPTIONAL'      { PT _ (TS _ 43)            }
+  'OR'            { PT _ (TS _ 44)            }
+  'OTHERWISE'     { PT _ (TS _ 45)            }
+  'PRODUCT'       { PT _ (TS _ 46)            }
+  'SET'           { PT _ (TS _ 47)            }
+  'SHANT'         { PT _ (TS _ 48)            }
+  'SUBJECT'       { PT _ (TS _ 49)            }
+  'SUM'           { PT _ (TS _ 50)            }
+  'TO'            { PT _ (TS _ 51)            }
+  'True'          { PT _ (TS _ 52)            }
+  'UNLESS'        { PT _ (TS _ 53)            }
+  'WHERE'         { PT _ (TS _ 54)            }
+  'WHO'           { PT _ (TS _ 55)            }
+  '§'             { PT _ (TS _ 56)            }
+  L_doubl         { PT _ (TD $$)              }
+  L_integ         { PT _ (TI $$)              }
+  L_quoted        { PT _ (TL $$)              }
+  L_Token         { PT _ (T_Token $$)         }
+  L_BacktickToken { PT _ (T_BacktickToken $$) }
 
 %%
 
@@ -99,6 +100,9 @@ String   : L_quoted { $1 }
 
 Token :: { TextuaL4.AbsTextuaL.Token }
 Token  : L_Token { TextuaL4.AbsTextuaL.Token $1 }
+
+BacktickToken :: { TextuaL4.AbsTextuaL.BacktickToken }
+BacktickToken  : L_BacktickToken { TextuaL4.AbsTextuaL.BacktickToken $1 }
 
 ListRule :: { [TextuaL4.AbsTextuaL.Rule] }
 ListRule : Rule { (:[]) $1 } | Rule '§' ListRule { (:) $1 $3 }
@@ -201,6 +205,7 @@ Text :: { TextuaL4.AbsTextuaL.Text }
 Text
   : String { TextuaL4.AbsTextuaL.TextString $1 }
   | Token { TextuaL4.AbsTextuaL.TextToken $1 }
+  | BacktickToken { TextuaL4.AbsTextuaL.TextBacktickToken $1 }
 
 ListMTExpr :: { [TextuaL4.AbsTextuaL.MTExpr] }
 ListMTExpr : MTExpr { (:[]) $1 } | MTExpr ListMTExpr { (:) $1 $2 }

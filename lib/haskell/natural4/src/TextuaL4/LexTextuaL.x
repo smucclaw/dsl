@@ -43,6 +43,10 @@ $white+ ;
 $l ([\' \+ \- \/ \_]| ($d | $l)) *
     { tok (eitherResIdent T_Token) }
 
+-- token BacktickToken
+\` [$u # \`]+ \`
+    { tok (eitherResIdent T_BacktickToken) }
+
 -- Keywords and Ident
 $l $i*
     { tok (eitherResIdent TV) }
@@ -73,6 +77,7 @@ data Tok
   | TD !String                    -- ^ Float literal.
   | TC !String                    -- ^ Character literal.
   | T_Token !String
+  | T_BacktickToken !String
   deriving (Eq, Show, Ord)
 
 -- | Smart constructor for 'Tok' for the sake of backwards compatibility.
@@ -136,6 +141,7 @@ tokenText t = case t of
   PT _ (TC s)   -> s
   Err _         -> "#error"
   PT _ (T_Token s) -> s
+  PT _ (T_BacktickToken s) -> s
 
 -- | Convert a token to a string.
 prToken :: Token -> String

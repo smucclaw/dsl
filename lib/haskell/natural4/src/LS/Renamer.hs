@@ -1,3 +1,5 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
@@ -19,7 +21,9 @@ import Control.Monad.Error.Class
 import Control.Monad.Extra (foldM, fromMaybeM)
 import Control.Monad.State.Class qualified as State
 import Control.Monad.State.Strict (MonadState)
+import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Except qualified as Except
+import Control.Monad.Trans.State.Strict (State)
 import Control.Monad.Trans.State.Strict qualified as State (runState)
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
@@ -132,10 +136,12 @@ data RnRelationalPredicate
 -- Scope tables
 -- ----------------------------------------------------------------------------
 
-type StVariable = Text
+newtype Renamer a = Renamer {runRenamer :: ExceptT String (State Scope) a}
+  deriving (Functor, Applicative, Monad)
+  deriving newtype (MonadState Scope, MonadError String)
+
 type Unique = Int
 type OccName = NonEmpty LS.MTExpr
-type FuncOccName = Text
 
 data FuncInfo = FuncInfo
   { funcArity :: (Int, Int)
@@ -186,18 +192,18 @@ emptyScope =
 prefixScope :: RuleName -> Scope -> Scope
 prefixScope = undefined
 
-newUniqueM :: (MonadState Scope m) => m Unique
+newUniqueM :: Renamer Unique
 newUniqueM = do
   u <- State.gets _scUnique
   State.modify' (\s -> s & scUnique %~ (+ 1))
   pure u
 
-lookupName :: (MonadState Scope m) => OccName -> m (Maybe RnName)
+lookupName :: OccName -> Renamer (Maybe RnName)
 lookupName occName = do
   st <- State.gets _scScopeTable
   pure $ Map.lookup occName (_stVariables st)
 
-lookupOrInsertName :: (MonadState Scope m, MonadError String m) => OccName -> RnNameType -> m RnName
+lookupOrInsertName :: OccName -> RnNameType -> Renamer RnName
 lookupOrInsertName occName nameType = do
   lookupName occName >>= \case
     Nothing -> insertName occName nameType
@@ -210,7 +216,7 @@ lookupOrInsertName occName nameType = do
               <> " but expected: "
               <> show (rnNameType name)
 
-insertName :: (MonadState Scope m) => OccName -> RnNameType -> m RnName
+insertName :: OccName -> RnNameType -> Renamer RnName
 insertName occName nameType = do
   n <- newUniqueM
   let
@@ -228,7 +234,7 @@ insertName occName nameType = do
       .~ Just rnName
   pure rnName
 
-insertFunction :: (MonadState Scope m) => RnName -> FuncInfo -> m ()
+insertFunction :: RnName -> FuncInfo -> Renamer ()
 insertFunction rnFnName funcInfo = do
   State.modify' $ \s ->
     s
@@ -237,7 +243,7 @@ insertFunction rnFnName funcInfo = do
       % at rnFnName
       .~ Just funcInfo
 
-lookupFunction :: (MonadState Scope m) => RnName -> m (Maybe FuncInfo)
+lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
 lookupFunction rnFnName =
   State.gets $ \s ->
     s ^. scScopeTable % stFunction % at rnFnName
@@ -280,7 +286,7 @@ renameRuleTopLevel rule = do
 
 renameRuleTopLevel' :: Rule -> (Either String RnRule, Scope)
 renameRuleTopLevel' rule =
-  State.runState (Except.runExceptT (renameRule rule)) emptyScope
+  State.runState (Except.runExceptT (runRenamer $ renameRule rule)) emptyScope
 
 -- ----------------------------------------------------------------------------
 -- Resolve functions and their respective arities
@@ -293,7 +299,7 @@ renameRuleTopLevel' rule =
 -- Renamer passes
 -- ----------------------------------------------------------------------------
 
-renameRule :: (MonadState Scope m, MonadError String m) => Rule -> m RnRule
+renameRule :: Rule -> Renamer RnRule
 renameRule rule@Rule.Hornlike{} = do
   super <- traverse renameTypeSignature rule.super
   given <- renameGivens rule.given
@@ -334,25 +340,19 @@ renameRule r@Rule.RegBreach{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.NotARule{} = throwError $ "Unsupported rule: " <> show r
 
 renameUpons ::
-  forall m.
-  (MonadState Scope m, MonadError String m) =>
   Maybe LS.ParamText ->
-  m (Maybe RnParamText)
+  Renamer (Maybe RnParamText)
 renameUpons Nothing = pure Nothing
 renameUpons (Just xs) = throwError $ "Unsupported \"UPON\", got: " <> show xs
 
 renameGiveths ::
-  forall m.
-  (MonadState Scope m, MonadError String m) =>
   Maybe LS.ParamText ->
-  m (Maybe RnParamText)
+  Renamer (Maybe RnParamText)
 renameGiveths = renameGivens
 
 renameGivens ::
-  forall m.
-  (MonadState Scope m, MonadError String m) =>
   Maybe LS.ParamText ->
-  m (Maybe RnParamText)
+  Renamer (Maybe RnParamText)
 renameGivens Nothing = pure Nothing
 renameGivens (Just givens) = do
   rnGivens <- mapM renameGiven givens
@@ -368,10 +368,8 @@ renameGivens (Just givens) = do
     insertName (pure mt) RnVariable
 
 renameTypeSignature ::
-  forall m.
-  (MonadState Scope m, MonadError String m) =>
   LS.TypeSig ->
-  m RnTypeSig
+  Renamer RnTypeSig
 renameTypeSignature sig = case sig of
   LS.SimpleType pType entityType -> do
     rnEntityType <- renameEntityType entityType
@@ -383,7 +381,7 @@ renameTypeSignature sig = case sig of
     rnParamText <- renameGivenInlineEnumParamText paramText
     pure $ RnInlineEnum pType rnParamText
  where
-  renameEntityType :: LS.EntityType -> m RnEntityType
+  renameEntityType :: LS.EntityType -> Renamer RnEntityType
   renameEntityType eType =
     -- This is might be a new entity type. However, we allow ad-hoc type definitions.
     -- Thus, insert a new entity type. This definition defines one name for all
@@ -412,7 +410,7 @@ renameTypeSignature sig = case sig of
   -- TODO: We reuse this for Type declarations as well, are nested type signatures allowed in this case?
   -- Even in that case, since 'TypeDecl''s 'has' is a list of 'TypeDecl''s, it seems like
   -- there is no arbitrary nesting.
-  renameGivenInlineEnumParamText :: LS.ParamText -> m RnParamText
+  renameGivenInlineEnumParamText :: LS.ParamText -> Renamer RnParamText
   renameGivenInlineEnumParamText params = do
     let
       renameEach tm = do
@@ -428,7 +426,7 @@ renameTypeSignature sig = case sig of
     rnParams <- mapM renameEach params
     pure $ RnParamText rnParams
 
-renameHornClause :: (MonadState Scope m, MonadError String m) => LS.HornClause2 -> m RnHornClause
+renameHornClause :: LS.HornClause2 -> Renamer RnHornClause
 renameHornClause hc = do
   rnHead <- renameDecideHeadClause hc.hHead
   rnBody <- traverse renameBoolStruct hc.hBody
@@ -438,7 +436,7 @@ renameHornClause hc = do
       , rnHcBody = rnBody
       }
 
-renameDecideHeadClause :: (MonadState Scope m, MonadError String m) => LS.RelationalPredicate -> m RnRelationalPredicate
+renameDecideHeadClause :: LS.RelationalPredicate -> Renamer RnRelationalPredicate
 renameDecideHeadClause = \case
   LS.RPParamText pText -> throwError $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
   LS.RPMT mt -> RnRelationalTerm <$> renameDecideMultiTerm mt
@@ -485,7 +483,7 @@ renameDecideHeadClause = \case
 -- * @x@: a variable, might be bound ad-hoc
 --
 -- Note, this doesn't accept literals such as '42' or '3.5f'.
-renameDecideMultiTerm :: (MonadState Scope m, MonadError String m) => LS.MultiTerm -> m RnMultiTerm
+renameDecideMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
 renameDecideMultiTerm mt = do
   scopeTable <- State.gets _scScopeTable
   case mt of
@@ -538,7 +536,7 @@ variableAndFunction st variables function = do
       | otherwise -> Nothing
     Nothing -> Just rnBoundVariables
 
-renameRelationalPredicate :: (MonadState Scope m, MonadError String m) => LS.RelationalPredicate -> m RnRelationalPredicate
+renameRelationalPredicate :: LS.RelationalPredicate -> Renamer RnRelationalPredicate
 renameRelationalPredicate = \case
   LS.RPParamText pText -> throwError $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
   LS.RPMT mt -> RnRelationalTerm <$> renameMultiTerm mt
@@ -554,7 +552,7 @@ renameRelationalPredicate = \case
     rnRhs <- traverse renameRelationalPredicate rhs
     pure $ RnNary relationalPredicate rnRhs
 
-renameBoolStruct :: (MonadState Scope m, MonadError String m) => LS.BoolStructR -> m RnBoolStructR
+renameBoolStruct :: LS.BoolStructR -> Renamer RnBoolStructR
 renameBoolStruct = \case
   AA.Leaf p -> AA.Leaf <$> renameRelationalPredicate p
   AA.All lbl cs -> do
@@ -565,7 +563,7 @@ renameBoolStruct = \case
     pure $ AA.Any lbl rnBoolStruct
   AA.Not cs -> AA.Not <$> renameBoolStruct cs
 
-renameMultiTerm :: (MonadState Scope m, MonadError String m) => LS.MultiTerm -> m RnMultiTerm
+renameMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
 renameMultiTerm multiTerms = do
   (results, _finalCtx) <-
     foldM
@@ -582,7 +580,7 @@ renameMultiTerm multiTerms = do
       { _multiTermContextInSelector = False
       }
 
-renameMultiTermExpression :: (MonadState Scope m, MonadError String m) => MultiTermContext -> LS.MTExpr -> m (RnExpr, MultiTermContext)
+renameMultiTermExpression :: MultiTermContext -> LS.MTExpr -> Renamer (RnExpr, MultiTermContext)
 renameMultiTermExpression ctx = \case
   -- TODO: this could be an expression such as "2+2" (for whatever reason), so perhaps
   -- we need to parse this further. Allegedly, we also want to support
@@ -642,7 +640,7 @@ renameMultiTermExpression ctx = \case
 isL4BuiltIn :: Text -> Bool
 isL4BuiltIn name = Set.member name (Set.fromList l4Builtins)
 
-rnL4Builtin :: (MonadState Scope m, MonadError String m) => Text -> m RnName
+rnL4Builtin :: Text -> Renamer RnName
 rnL4Builtin name = do
   lookupOrInsertName (mkSimpleOccName name) RnBuiltin
 
@@ -662,25 +660,25 @@ oTHERWISE = "OTHERWISE"
 --
 -- TODO: This is lossy, we can't reconstruct the 'NonEmpty LS.MTExpr' given the
 -- text. Fix this! It is likely wrong, too.
-assertMultiExprIsOnlyText :: (MonadError String m) => NonEmpty LS.MTExpr -> m Text
+assertMultiExprIsOnlyText :: NonEmpty LS.MTExpr -> Renamer Text
 assertMultiExprIsOnlyText mtt = do
   xs <- traverse assertExprIsText mtt
   pure $ Text.unwords $ NE.toList xs
 
-assertSingletonMultiTerm :: (MonadError String m) => NonEmpty LS.MTExpr -> m LS.MTExpr
+assertSingletonMultiTerm :: NonEmpty LS.MTExpr -> Renamer LS.MTExpr
 assertSingletonMultiTerm (x NE.:| []) = pure x
 assertSingletonMultiTerm xs = throwError $ "Expected singleton but got: " <> show xs
 
-assertMultiExprIsText :: (MonadError String m) => NonEmpty LS.MTExpr -> m Text
+assertMultiExprIsText :: NonEmpty LS.MTExpr -> Renamer Text
 assertMultiExprIsText mts = do
   mt <- assertSingletonMultiTerm mts
   assertExprIsText mt
 
-assertExprIsText :: (MonadError String m) => LS.MTExpr -> m Text
+assertExprIsText :: LS.MTExpr -> Renamer Text
 assertExprIsText (LS.MTT t) = pure t
 assertExprIsText mt = throwError $ "Expected MTT but got: " <> show mt
 
-assertNoTypeSignature :: (MonadError String m) => LS.TypedMulti -> m (NonEmpty LS.MTExpr)
+assertNoTypeSignature :: LS.TypedMulti -> Renamer (NonEmpty LS.MTExpr)
 assertNoTypeSignature tm@(_, Just _) = throwError $ "Expected no type signature but got: " <> show tm
 assertNoTypeSignature (mtt, Nothing) = do
   pure mtt
@@ -723,7 +721,6 @@ assertEmptyList xs = throwError $ "Expected an empty list, but got: " <> show xs
 --
 -- >>> toObjectPath [LS.MTT "y"]
 -- Just ("y",[])
---
 toObjectPath :: LS.MultiTerm -> Maybe (Text, [Text])
 toObjectPath [] = Nothing
 toObjectPath [LS.MTT varName] = case isGenitive varName of

@@ -491,14 +491,11 @@ renameDecideMultiTerm :: (MonadState Scope m, MonadError String m) => LS.MultiTe
 renameDecideMultiTerm mt = do
   scopeTable <- State.gets _scScopeTable
   case mt of
-    attrs@(_ : _)
+    attrs
       | Just (obj, objAttrs) <- toObjectPath attrs -> do
           rnName <- lookupOrInsertName (mkSimpleOccName obj) RnVariable
           rnObjAttrs <- mapM (\attr -> RnExprName <$> lookupOrInsertName (mkSimpleOccName attr) RnSelector) objAttrs
           pure $ RnExprName rnName : rnObjAttrs
-    [LS.MTT x] -> do
-      rnName <- lookupOrInsertName (mkSimpleOccName x) RnVariable
-      pure [RnExprName rnName]
     [LS.MTT f, LS.MTT x]
       | Just [rnX] <- variableAndFunction scopeTable [x] f -> do
           rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
@@ -727,9 +724,13 @@ assertEmptyList xs = throwError $ "Expected an empty list, but got: " <> show xs
 -- Nothing
 --
 -- >>> toObjectPath [LS.MTT "y"]
--- Nothing
+-- Just ("y",[])
+--
 toObjectPath :: LS.MultiTerm -> Maybe (Text, [Text])
 toObjectPath [] = Nothing
+toObjectPath [LS.MTT varName] = case isGenitive varName of
+  Nothing -> Just (varName, [])
+  Just _ -> Nothing
 toObjectPath (varNameInGenitive : attrs) = do
   varName <- LS.isMtexprText varNameInGenitive >>= isGenitive
   textAttrsInGenitive <- traverse LS.isMtexprText attrs

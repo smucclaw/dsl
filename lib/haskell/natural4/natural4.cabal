@@ -449,6 +449,7 @@ test-suite natural4-test
       LS.XPile.JSONSchemaSpec
       LS.XPile.LogicalEnglishSpec
       LS.XPile.PrologSpec
+      LS.XPile.SimalaSpec
       Parsing.BoolStructParserSpec
       Parsing.CoreL4ParserSpec
       Parsing.MegaparsingMeansSpec

@@ -14,8 +14,6 @@ import LS.Rule (Rule, RuleLabel)
 import LS.Rule qualified as Rule
 import LS.Types (MyToken, RuleName, SrcRef)
 import LS.Types qualified as LS
-import TextuaL4.ParTextuaL qualified as Parser
-import TextuaL4.Transform qualified as Parser
 
 import Control.Monad.Error.Class
 import Control.Monad.Extra (foldM, fromMaybeM)
@@ -748,14 +746,3 @@ isGenitive = Text.stripSuffix genitiveSuffix
 
 genitiveSuffix :: Text
 genitiveSuffix = Text.pack "'s"
-
--- ----------------------------------------------------------------------------
--- Example data for debugging.
--- TODO: don't merge this
--- ----------------------------------------------------------------------------
-
-run :: String -> Either String Rule
-run = fmap Parser.transRule . Parser.pRule . Parser.myLexer
-
-runList :: String -> Either String [Rule]
-runList = fmap (fmap Parser.transRule) . Parser.pListRule . Parser.myLexer

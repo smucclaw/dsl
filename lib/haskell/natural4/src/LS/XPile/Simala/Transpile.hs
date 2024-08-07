@@ -20,16 +20,17 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Data.Text.Lazy.IO qualified as TL
-import Data.Tuple.Extra qualified as Tuple
 import Optics
 import Text.Pretty.Simple qualified as Pretty
 
+import qualified LS.Rule as LS
+import qualified TextuaL4.Transform as Parser
+import qualified TextuaL4.ParTextuaL as Parser
 import LS.Renamer
 import LS.Renamer qualified as Renamer
 import LS.Types qualified as LS
 
 import AnyAll.BoolStruct qualified as AA
-import Data.List qualified as List
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
@@ -99,48 +100,7 @@ data SimalaTerm
 -- Top Level transpilation functions and test helpers
 -- ----------------------------------------------------------------------------
 
-transpileRule :: String -> IO ()
-transpileRule ruleSrc = do
-  rule <- case Renamer.run ruleSrc of
-    Left err -> do
-      putStrLn err
-      error ""
-    Right r -> pure r
-  TL.putStrLn $ Pretty.pShow rule
-  let
-    (res, s) = renameRuleTopLevel' rule
-  TL.putStrLn $ Pretty.pShow s
-  case res of
-    Left err -> putStrLn err
-    Right rnRule -> do
-      TL.putStrLn $ Pretty.pShow rnRule
-      simalaTerms <- runExceptT $ ruleToSimala rnRule
-      case simalaTerms of
-        Left err -> putStrLn err
-        Right expr -> do
-          Text.putStrLn $ "Expr: " <> render expr
 
-transpileRulePure :: String -> Text
-transpileRulePure ruleSrc =
-  let
-    Right rule = Renamer.run ruleSrc
-    (res, _s) = renameRuleTopLevel' rule
-  in
-    case res of
-      Left err -> Text.pack err
-      Right rnRule -> do
-        case runExcept $ ruleToSimala rnRule of
-          Left err -> Text.pack err
-          Right expr ->
-            render expr
-
-render :: SimalaTerm -> Text
-render (TermExpr e) = Simala.render e
-render (TermLetIn _ name var) = "let " <> Simala.render name <> " = " <> Simala.render var
-render (TermApp name params) = Simala.render name <> "(" <> Text.intercalate ", " (fmap Simala.render params) <> ")"
-render (TermFunction name params expr) = "let " <> Simala.render name <> " = fun(" <> Text.intercalate ", " (fmap Simala.render params) <> ") => " <> Simala.render expr
-render (TermAttribute name [] expr) = "let " <> Simala.render name <> " = " <> Simala.render expr
-render (TermAttribute name (x : xs) expr) = "let " <> Simala.render name <> " = " <> Simala.render (buildRecordUpdate (x :| xs) expr)
 
 -- ----------------------------------------------------------------------------
 -- Main translation helpers
@@ -997,3 +957,56 @@ IF
                 )
         )
 |]
+
+-- ----------------------------------------------------------------------------
+-- Debugger helpers
+-- ----------------------------------------------------------------------------
+
+debugTranspileRule :: String -> IO ()
+debugTranspileRule ruleSrc = do
+  rule <- case run ruleSrc of
+    Left err -> do
+      putStrLn err
+      error ""
+    Right r -> pure r
+  TL.putStrLn $ Pretty.pShow rule
+  let
+    (res, s) = renameRuleTopLevel' rule
+  TL.putStrLn $ Pretty.pShow s
+  case res of
+    Left err -> putStrLn err
+    Right rnRule -> do
+      TL.putStrLn $ Pretty.pShow rnRule
+      simalaTerms <- runExceptT $ ruleToSimala rnRule
+      case simalaTerms of
+        Left err -> putStrLn err
+        Right expr -> do
+          Text.putStrLn $ "Expr: " <> render expr
+
+transpileRulePure :: String -> Text
+transpileRulePure ruleSrc =
+  let
+    Right rule = run ruleSrc
+    (res, _s) = renameRuleTopLevel' rule
+  in
+    case res of
+      Left err -> Text.pack err
+      Right rnRule -> do
+        case runExcept $ ruleToSimala rnRule of
+          Left err -> Text.pack err
+          Right expr ->
+            render expr
+
+render :: SimalaTerm -> Text
+render (TermExpr e) = Simala.render e
+render (TermLetIn _ name var) = "let " <> Simala.render name <> " = " <> Simala.render var
+render (TermApp name params) = Simala.render name <> "(" <> Text.intercalate ", " (fmap Simala.render params) <> ")"
+render (TermFunction name params expr) = "let " <> Simala.render name <> " = fun(" <> Text.intercalate ", " (fmap Simala.render params) <> ") => " <> Simala.render expr
+render (TermAttribute name [] expr) = "let " <> Simala.render name <> " = " <> Simala.render expr
+render (TermAttribute name (x : xs) expr) = "let " <> Simala.render name <> " = " <> Simala.render (buildRecordUpdate (x :| xs) expr)
+
+run :: String -> Either String LS.Rule
+run = fmap Parser.transRule . Parser.pRule . Parser.myLexer
+
+runList :: String -> Either String [LS.Rule]
+runList = fmap (fmap Parser.transRule) . Parser.pListRule . Parser.myLexer

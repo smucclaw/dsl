@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
@@ -24,6 +25,7 @@ import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Except qualified as Except
 import Control.Monad.Trans.State.Strict (State)
 import Control.Monad.Trans.State.Strict qualified as State (runState)
+import Data.Foldable qualified as Foldable
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
@@ -33,7 +35,7 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy.IO qualified as TL
 import GHC.Generics (Generic)
-import Optics
+import Optics hiding (has)
 import Text.Pretty.Simple qualified as Pretty
 
 -- ----------------------------------------------------------------------------
@@ -43,6 +45,7 @@ import Text.Pretty.Simple qualified as Pretty
 -- | A rename rule is the same as a 'Rule' but
 data RnRule
   = Hornlike RnHornlike
+  | TypeDecl RnTypeDecl
   deriving (Eq, Ord, Show, Generic)
 
 type RnBoolStructR = AA.OptionallyLabeledBoolStruct RnRelationalPredicate
@@ -55,6 +58,7 @@ data RnHornClause = RnHornClause
   deriving (Eq, Ord, Show, Generic)
 
 type RnRuleName = RnMultiTerm
+type RnEntityType = RnName
 
 data RnHornlike = RnHornlike
   { name :: RnRuleName -- MyInstance
@@ -73,7 +77,20 @@ data RnHornlike = RnHornlike
   }
   deriving (Eq, Ord, Show, Generic)
 
-type RnEntityType = RnName
+data RnTypeDecl = RnTypeDecl
+  { name :: RnRuleName -- MyInstance
+  , super :: Maybe RnTypeSig -- IS A Superclass
+  , has :: [RnRule] -- HAS foo :: List Hand, bar :: Optional Restaurant
+  , enums :: Maybe RnParamText -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
+  , given :: Maybe RnParamText
+  , upon :: Maybe RnParamText
+  , rlabel :: Maybe RuleLabel
+  , lsource :: Maybe Text.Text
+  , srcref :: Maybe SrcRef
+  , defaults :: [RnRelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+  , symtab :: [RnRelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+  }
+  deriving (Eq, Ord, Show, Generic)
 
 data RnTypeSig
   = RnSimpleType LS.ParamType RnEntityType
@@ -160,7 +177,8 @@ mkSimpleOccName = NE.singleton . LS.MTT
 
 data Scope = Scope
   { _scScopeTable :: ScopeTable
-  , _scUnique :: Unique -- ^ next unique value that we can use
+  , _scUnique :: Unique
+  -- ^ next unique value that we can use
   }
   deriving (Eq, Ord, Show)
 
@@ -171,14 +189,18 @@ data BindingScope
   | GivethScope
   deriving (Eq, Ord, Show)
 
--- | Invariant:
+-- | A 'ScopeTable' keeps tab on the variables and functions that occur in a
+-- program.
+--
+-- Invariant:
 --
 -- Every name that gets resolved to an 'RnName' with 'RnNameType' being
 -- 'RnFunction' should have additional 'FuncInfo' in '_stFunction'.
---
 data ScopeTable = ScopeTable
-  { _stVariables :: Map OccName RnName -- ^ all names currently in scope
-  , _stFunction :: Map RnName FuncInfo -- ^ additional information for resolved functions
+  { _stVariables :: Map OccName RnName
+  -- ^ all names currently in scope
+  , _stFunction :: Map RnName FuncInfo
+  -- ^ additional information for resolved functions
   }
   deriving (Eq, Ord, Show)
 
@@ -213,7 +235,6 @@ lookupName occName =
 -- is already in scope with the given type.
 --
 -- Fails if the name type does not match.
---
 lookupOrInsertName :: OccName -> RnNameType -> Renamer RnName
 lookupOrInsertName occName nameType =
   lookupName occName >>= \case
@@ -239,18 +260,20 @@ insertName occName nameType = do
         }
   assign'
     ( scScopeTable
-    % stVariables
-    % at occName
-    ) (Just rnName)
+        % stVariables
+        % at occName
+    )
+    (Just rnName)
   pure rnName
 
 insertFunction :: RnName -> FuncInfo -> Renamer ()
 insertFunction rnFnName funcInfo =
   assign'
     ( scScopeTable
-    % stFunction
-    % at rnFnName
-    ) (Just funcInfo)
+        % stFunction
+        % at rnFnName
+    )
+    (Just funcInfo)
 
 lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
 lookupFunction rnFnName =
@@ -312,7 +335,7 @@ renameRule rule@Rule.Hornlike{} = do
   super <- traverse renameTypeSignature rule.super
   given <- renameGivens rule.given
   giveth <- renameGiveths rule.giveth
-  upons <- renameUpons rule.upon
+  upon <- renameUpons rule.upon
   wwhere <- traverse renameRule rule.wwhere
   defaults <- assertEmptyList rule.defaults
   symtab <- assertEmptyList rule.symtab
@@ -326,7 +349,7 @@ renameRule rule@Rule.Hornlike{} = do
         , keyword = rule.keyword
         , given = given
         , giveth = giveth
-        , upon = upons
+        , upon = upon
         , clauses = clauses
         , rlabel = rule.rlabel
         , lsource = rule.lsource
@@ -337,7 +360,30 @@ renameRule rule@Rule.Hornlike{} = do
         }
 renameRule r@Rule.Regulative{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.Constitutive{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.TypeDecl{} = throwError $ "Unsupported rule: " <> show r
+renameRule rule@Rule.TypeDecl{} = do
+  super <- traverse renameTypeSignature rule.super
+  defaults <- assertEmptyList rule.defaults
+  enums <- renameEnums rule.enums
+  given <- renameGivens rule.given
+  upon <- renameUpons rule.upon
+  symtab <- assertEmptyList rule.symtab
+  has <- traverse renameRule rule.has
+  name <- renameTypeDeclName rule.name
+  pure $
+    TypeDecl
+      RnTypeDecl
+        { name
+        , super
+        , has
+        , enums
+        , given
+        , upon
+        , rlabel = rule.rlabel
+        , lsource = rule.lsource
+        , srcref = rule.srcref
+        , defaults
+        , symtab
+        }
 renameRule r@Rule.Scenario{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.DefNameAlias{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.DefTypically{} = throwError $ "Unsupported rule: " <> show r
@@ -346,6 +392,12 @@ renameRule r@Rule.RuleGroup{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.RegFulfilled{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.RegBreach{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.NotARule{} = throwError $ "Unsupported rule: " <> show r
+
+renameTypeDeclName :: RuleName -> Renamer RnRuleName
+renameTypeDeclName mtexprs = do
+  mt <- assertSingletonMultiTerm mtexprs
+  rnTyName <- insertName (NE.singleton mt) RnType
+  pure [RnExprName rnTyName]
 
 renameUpons ::
   Maybe LS.ParamText ->
@@ -358,6 +410,11 @@ renameGiveths ::
   Renamer (Maybe RnParamText)
 renameGiveths = renameGivens
 
+renameEnums ::
+  Maybe LS.ParamText ->
+  Renamer (Maybe RnParamText)
+renameEnums = traverse renameGivenInlineEnumParamText
+
 renameGivens ::
   Maybe LS.ParamText ->
   Renamer (Maybe RnParamText)
@@ -365,7 +422,7 @@ renameGivens Nothing = pure Nothing
 renameGivens (Just givens) = do
   rnGivens <- traverse renameGiven givens
   pure $ Just $ RnParamText rnGivens
- 
+
 renameGiven :: LS.TypedMulti -> Renamer RnTypedMulti
 renameGiven (mtExprs, typeSig) = do
   rnMtExprs <- renameGivenMultiTerm mtExprs
@@ -398,47 +455,49 @@ renameTypeSignature sig = case sig of
     -- of the same name in the same scope must be consistent.
     lookupOrInsertName (mkSimpleOccName eType) RnType
 
-  -- Why not reuse 'renameGivens'? It is basically the same type!
-  -- Well, we don't handle arbitrary nested type signatures.
-  -- In fact, it is a bit dubious we have them at all!
-  -- The following seems to be possible in theory:
-  --
-  -- @
-  -- GIVEN x IS ONE OF foo IS ONE OF foobar, foobaz
-  -- @
-  --
-  -- What would that suppose to mean? So, for now, we only allow enum definitions
-  -- to be of the following form:
-  --
-  -- @
-  -- GIVEN x IS ONE OF foo, bar, foo baz
-  -- @
-  --
-  -- This means 'x' is one of three possible enum values 'foo', 'bar'
-  -- and 'foo baz'.
-  --
-  -- TODO: We reuse this for Type declarations as well, are nested type signatures allowed in this case?
-  -- Even in that case, since 'TypeDecl''s 'has' is a list of 'TypeDecl''s, it seems like
-  -- there is no arbitrary nesting.
-  --
-  -- ANDRES: I think the fact that type signatures allow nested
-  -- type signatures is a shortcoming of the input syntax that should
-  -- be fixed at that level.
-  renameGivenInlineEnumParamText :: LS.ParamText -> Renamer RnParamText
-  renameGivenInlineEnumParamText params = do
-    let
-      renameEach tm = do
-        mt <- assertNoTypeSignature tm
-        _t <- assertMultiExprIsOnlyText mt -- unclear if we really want this
-        enumName <- insertName mt RnEnum
-        pure $
-          RnTypedMulti
-            { rnTypedMultiExpr = NE.singleton $ RnExprName enumName
-            , rnTypedMultiTypeSig = Nothing
-            }
+-- | Rename an enum definition.
+--
+-- Why not reuse 'renameGivens'? It is basically the same type!
+-- Well, we don't handle arbitrary nested type signatures.
+-- In fact, it is a bit dubious we have them at all!
+-- The following seems to be possible in theory:
+--
+-- @
+-- GIVEN x IS ONE OF foo IS ONE OF foobar, foobaz
+-- @
+--
+-- What would that suppose to mean? So, for now, we only allow enum definitions
+-- to be of the following form:
+--
+-- @
+-- GIVEN x IS ONE OF foo, bar, foo baz
+-- @
+--
+-- This means 'x' is one of three possible enum values 'foo', 'bar'
+-- and 'foo baz'.
+--
+-- TODO: We reuse this for Type declarations as well, are nested type signatures allowed in this case?
+-- Even in that case, since 'TypeDecl''s 'has' is a list of 'TypeDecl''s, it seems like
+-- there is no arbitrary nesting.
+--
+-- ANDRES: I think the fact that type signatures allow nested
+-- type signatures is a shortcoming of the input syntax that should
+-- be fixed at that level.
+renameGivenInlineEnumParamText :: LS.ParamText -> Renamer RnParamText
+renameGivenInlineEnumParamText params = do
+  let
+    renameEach tm = do
+      mt <- assertNoTypeSignature tm
+      _t <- assertMultiExprIsOnlyText mt -- unclear if we really want this
+      enumNames <- traverse (\t -> insertName (NE.singleton t) RnEnum) mt
+      pure $
+        RnTypedMulti
+          { rnTypedMultiExpr = fmap RnExprName enumNames
+          , rnTypedMultiTypeSig = Nothing
+          }
 
-    rnParams <- traverse renameEach params
-    pure $ RnParamText rnParams
+  rnParams <- traverse renameEach params
+  pure $ RnParamText rnParams
 
 renameHornClause :: LS.HornClause2 -> Renamer RnHornClause
 renameHornClause hc = do
@@ -707,9 +766,10 @@ assertMultiExprIsOnlyText mtt = do
   xs <- traverse assertExprIsText mtt
   pure $ Text.unwords $ NE.toList xs
 
-assertSingletonMultiTerm :: NonEmpty LS.MTExpr -> Renamer LS.MTExpr
-assertSingletonMultiTerm (x NE.:| []) = pure x
-assertSingletonMultiTerm xs = throwError $ "Expected singleton but got: " <> show xs
+assertSingletonMultiTerm :: (Show (f LS.MTExpr), Foldable f) => f LS.MTExpr -> Renamer LS.MTExpr
+assertSingletonMultiTerm xs = case Foldable.toList xs of
+  [x] -> pure x
+  _ -> throwError $ "Expected singleton but got: " <> show xs
 
 assertMultiExprIsText :: NonEmpty LS.MTExpr -> Renamer Text
 assertMultiExprIsText mts = do

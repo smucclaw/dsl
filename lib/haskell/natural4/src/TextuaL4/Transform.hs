@@ -54,13 +54,15 @@ transRule x = case x of
 
   -- Only Hornlikes have GIVETH
   -- GIVETH foo (IS A bar) DECIDE relpred
-  TL4.HlikeGiveth giveth hhead ->
+  TL4.HlikeGiveth (giv:givs) hhead ->
     let simple = transRule $ TL4.HornlikeDecide hhead
     in simple {
-        giveth = Just $ isa2pt giveth
+        giveth = Just $ fmap isa2tm (giv :| givs)
       }
 
--- TypeDecl
+  TL4.HlikeGiveth _ hhead -> transRule $ TL4.HornlikeDecide hhead
+
+  -- TypeDecl
   -- DECLARE Foo (IS A Bar) (HAS …)?
   TL4.TypeDecl isa fields ->
     let isaRule = transIsA isa

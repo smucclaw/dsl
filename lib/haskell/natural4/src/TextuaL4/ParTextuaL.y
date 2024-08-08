@@ -152,7 +152,7 @@ Rule3
   | 'EVERY' BoolStruct Who InlineHornlike Deontic BoolStruct { TextuaL4.AbsTextuaL.RegWhoInline $2 $3 $4 $5 $6 }
   | Text 'MEANS' BoolStruct { TextuaL4.AbsTextuaL.HornlikeMeans $1 $3 }
   | 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HornlikeDecide $2 }
-  | 'GIVETH' IsA 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
+  | 'GIVETH' ListIsA 'DECIDE' ListHornClause { TextuaL4.AbsTextuaL.HlikeGiveth $2 $4 }
 
 HornClause :: { TextuaL4.AbsTextuaL.HornClause }
 HornClause

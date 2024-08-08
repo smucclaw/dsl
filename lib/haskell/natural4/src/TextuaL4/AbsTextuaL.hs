@@ -33,7 +33,7 @@ data Rule
     | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct
     | HornlikeMeans Text BoolStruct
     | HornlikeDecide [HornClause]
-    | HlikeGiveth IsA [HornClause]
+    | HlikeGiveth [IsA] [HornClause]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data HornClause

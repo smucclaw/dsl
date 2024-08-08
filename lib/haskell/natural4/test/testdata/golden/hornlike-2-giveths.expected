@@ -1,0 +1,47 @@
+Hornlike
+    { name =
+        [ MTT "x" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Nothing
+    , giveth = Just
+        (
+            ( MTT "x" :| []
+            , Nothing
+            ) :|
+            [
+                ( MTT "y" :| []
+                , Nothing
+                )
+            ]
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "x" ] RPis
+                [ MTI 5 ]
+            , hBody = Nothing
+            }
+        , HC
+            { hHead = RPConstraint
+                [ MTT "y" ] RPis
+                [ MTI 4 ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }

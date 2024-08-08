@@ -42,7 +42,7 @@ HornlikeMeans. Rule3 ::= Text "MEANS" BoolStruct ;
 -- because there is no MEANS that breaks the RelationalPredicate
 HornlikeDecide. Rule3 ::= "DECIDE" [HornClause] ;
 -- Only Hornlikes have GIVETH
-HlikeGiveth. Rule3 ::= "GIVETH" IsA "DECIDE" [HornClause] ;
+HlikeGiveth. Rule3 ::= "GIVETH" [IsA] "DECIDE" [HornClause] ;
 
 HeadBody. HornClause ::= RelationalPredicate "IF" BoolStruct ;
 HeadOtherwise. HornClause ::= RelationalPredicate "OTHERWISE" ;

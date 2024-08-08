@@ -55,3 +55,9 @@ jobs:
       - name: Build and test
         run: stack test
         working-directory: lib/haskell
+
+      - name: Check that generate .cabal files are up-to-date
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          curl -sSL https://raw.githubusercontent.com/sol/hpack/main/get-hpack.sh | bash
+          find -name 'package.yaml' -exec hpack '{}' \; && git diff --color --exit-code

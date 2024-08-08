@@ -1,10 +1,8 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 53a86999121b80e6f038caac39afd633c12251151ad9c71f82c6ba39c628d705
 
 name:           NLBPW
 version:        0.1.0.0
@@ -18,7 +16,7 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    README.md
+    README.org
     ChangeLog.md
 
 source-repository head

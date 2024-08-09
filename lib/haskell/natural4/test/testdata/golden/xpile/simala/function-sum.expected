@@ -1,0 +1,1 @@
+let f_sum3_1 = fun(v_x_0) => sum(v_x_0,v_x_0,v_x_0)

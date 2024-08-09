@@ -1,2 +1,0 @@
-let f_g_4 = fun( v_d_0 ) => let v_y_1 =
-    { s_book_2 = if v_d_0 > 0 then 'green else if b_OTHERWISE_3 then 'red else undefined } in v_y_1

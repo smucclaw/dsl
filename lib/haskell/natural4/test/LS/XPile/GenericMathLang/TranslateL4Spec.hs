@@ -275,8 +275,8 @@ spec = do
   describe "mustsing5" do
     let l4i = l4interpret defaultInterpreterOptions mustsing5
 
-    it "should expand hornlikes from Must Sing 5" do
-        expandHornlikes l4i (getHornlikes l4i) `shouldBe` mustsing5GoldExpandedHornlikes
+    it "should expand hornlikes from Must Sing 5" $ goldenGeneric "mustSingHornlikesExpanded" do
+        expandHornlikes l4i (getHornlikes l4i)
 
     it "should translate Must Sing 5 into GML" $ goldenGeneric "mustSingGML" do
         toMathLangGen l4i
@@ -284,8 +284,8 @@ spec = do
     it "should translate Must Sing 5 into ML without expanding rules" $ goldenGeneric "mustSingMathLang" do
         ML.toMathLang l4i
 
-    it "should translate Must Sing 5 into ML, expanding the rules" do
-        ML.toMathLangExpand l4i `shouldBe` mustsing5GoldExpanded
+    it "should translate Must Sing 5 into ML, expanding the rules" $ goldenGeneric "mustSingExpandedMathLang" do
+        ML.toMathLangExpand l4i
 
     it "must sing 5 in typescript, expanding the rules" $ goldenGeneric "mustSing" do
         ML.toMathLangMw l4i defaultReaderEnv
@@ -1522,60 +1522,3 @@ mustsing5 = parseRule <$> [reg, drinks, person, qualifies]
     ALL(`consumes an` ANY(alcoholic, `non-alcoholic`) beverage
        , whether ANY(`in part`, `in whole`))
     |]
-
-
-mustsing5GoldExpandedHornlikes :: [Rule]
-mustsing5GoldExpandedHornlikes = [ defaultHorn
-  { name =
-      [ MTT "Qualifies" ]
-  , clauses =
-    [ HC
-        { hHead = RPBoolStructR
-        [ MTT "Qualifies" ] RPis
-        ( All Nothing
-            [ Leaf
-                ( RPMT [ MTT "walks" ] ), Any Nothing
-                [ All
-                    ( Just ( Metadata "Drinks" ) ) -- can't replace with BNFC grammar because Metadata only comes from Interpreter
-                    [ Any
-                        ( Just ( PrePost "consumes an" "beverage" ) )
-                        [ Leaf
-                            ( RPMT [ MTT "alcoholic" ] ), Leaf
-                            ( RPMT [ MTT "non-alcoholic" ] )
-                        ], Any
-                        ( Just ( Pre "whether" ) )
-                        [ Leaf
-                            ( RPMT [ MTT "in part" ] ), Leaf
-                            ( RPMT [ MTT "in whole" ] )
-                        ]
-                    ], Leaf
-                    ( RPMT [ MTT "eats" ] )
-                ]
-            ]
-        )
-        , hBody = Nothing
-        }
-      ]
-    }
-  ]
-
-mustsing5GoldExpanded = ([MathPred pred] , emptyState {symtabP = Map.singleton "Qualifies" pred})
-  where
-    pred = PredFold ( Just "Qualifies" ) PLAnd
-        [ PredVar "walks"
-        , PredFold Nothing PLAnd
-            [ PredFold Nothing PLOr
-                [ PredFold ( Just "Drinks" ) PLAnd
-                    [ PredFold Nothing PLOr
-                        [ PredVar "alcoholic"
-                        , PredVar "non-alcoholic" ]
-                    , PredFold Nothing PLAnd
-                        [ PredFold Nothing PLOr
-                            [ PredVar "in part"
-                            , PredVar "in whole" ]
-                        ]
-                    ]
-                , PredVar "eats"
-                ]
-            ]
-        ]

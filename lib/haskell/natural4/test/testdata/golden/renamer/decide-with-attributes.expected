@@ -1,11 +1,11 @@
 Right
-    ( Hornlike
+    [ Hornlike
         ( RnHornlike
             { name =
                 [ RnExprName
                     ( RnName
                         { rnOccName = MTT "g" :| []
-                        , rnUniqueId = 4
+                        , rnUniqueId = 1
                         , rnNameType = RnFunction
                         }
                     )
@@ -41,7 +41,7 @@ Right
                         [ RnExprName
                             ( RnName
                                 { rnOccName = MTT "g" :| []
-                                , rnUniqueId = 4
+                                , rnUniqueId = 1
                                 , rnNameType = RnFunction
                                 }
                             )
@@ -56,7 +56,7 @@ Right
                         [ RnExprName
                             ( RnName
                                 { rnOccName = MTT "y" :| []
-                                , rnUniqueId = 1
+                                , rnUniqueId = 2
                                 , rnNameType = RnVariable
                                 }
                             )
@@ -73,14 +73,14 @@ Right
                             [ RnExprName
                                 ( RnName
                                     { rnOccName = MTT "y" :| []
-                                    , rnUniqueId = 1
+                                    , rnUniqueId = 2
                                     , rnNameType = RnVariable
                                     }
                                 )
                             , RnExprName
                                 ( RnName
                                     { rnOccName = MTT "book" :| []
-                                    , rnUniqueId = 2
+                                    , rnUniqueId = 3
                                     , rnNameType = RnSelector
                                     }
                                 )
@@ -96,14 +96,14 @@ Right
                                     [ RnExprName
                                         ( RnName
                                             { rnOccName = MTT "y" :| []
-                                            , rnUniqueId = 1
+                                            , rnUniqueId = 2
                                             , rnNameType = RnVariable
                                             }
                                         )
                                     , RnExprName
                                         ( RnName
                                             { rnOccName = MTT "book" :| []
-                                            , rnUniqueId = 2
+                                            , rnUniqueId = 3
                                             , rnNameType = RnSelector
                                             }
                                         )
@@ -133,14 +133,14 @@ Right
                                     [ RnExprName
                                         ( RnName
                                             { rnOccName = MTT "y" :| []
-                                            , rnUniqueId = 1
+                                            , rnUniqueId = 2
                                             , rnNameType = RnVariable
                                             }
                                         )
                                     , RnExprName
                                         ( RnName
                                             { rnOccName = MTT "book" :| []
-                                            , rnUniqueId = 2
+                                            , rnUniqueId = 3
                                             , rnNameType = RnSelector
                                             }
                                         )
@@ -154,7 +154,7 @@ Right
                                             [ RnExprName
                                                 ( RnName
                                                     { rnOccName = MTT "OTHERWISE" :| []
-                                                    , rnUniqueId = 3
+                                                    , rnUniqueId = 4
                                                     , rnNameType = RnBuiltin
                                                     }
                                                 )
@@ -193,4 +193,4 @@ Right
             , symtab = []
             }
         )
-    )
+    ]

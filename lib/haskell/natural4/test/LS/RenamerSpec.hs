@@ -61,12 +61,14 @@ spec = do
   test rule = test' rule rule
 
   test' desc fname ruleSource = do
-    let
-      rule :: Rule = fromRight RegBreach $ run ruleSource
-    let
-      rnRule :: Either String Renamer.RnRule =
-        State.evalState (Except.runExceptT (Renamer.runRenamer $ Renamer.renameRule rule)) Renamer.emptyScope
-    it desc $ goldenGeneric fname $ rnRule
+    it desc $ do
+      let
+        Right rules = runList ruleSource
+        rnRules =
+          State.evalState
+            (Except.runExceptT (Renamer.runRenamer $ Renamer.renamer rules))
+            Renamer.emptyScope
+      goldenGeneric fname rnRules
 
 type Err = Either String
 type ParseFun a = [Token] -> Err a

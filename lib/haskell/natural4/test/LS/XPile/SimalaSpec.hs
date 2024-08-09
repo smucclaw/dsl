@@ -24,49 +24,206 @@ import TextuaL4.Transform qualified as Parser
 spec :: Spec
 spec = do
   describe "rule transpilation" do
-    it "id" $
-      runSimalaTranspilerForRule
-        "id"
-        [i|
-            GIVEN x
-            DECIDE id x IS x
-            |]
+    describe "basic" do
+      basicTests
+    describe "real-world" do
+      realWorldTests
 
-    it "bookWithAttributes" $
-      runSimalaTranspilerForRule
-        "bookWithAttributes"
-        [i|
-            GIVEN d
-            DECIDE g d IS y
-            WHERE
-                y's book IS green IF d > 0;
-                y's book IS red OTHERWISE
-            |]
+basicTests = do
+  transpilerTest
+    "function-id"
+    [i|
+      GIVEN x
+      DECIDE id x IS x
+      |]
+  transpilerTest
+    "function-record"
+    [i|
+      GIVEN d
+      DECIDE g d IS y
+      WHERE
+          y's book IS green IF d > 0;
+          y's book IS red OTHERWISE
+      |]
+  transpilerTest
+    "function-sum"
+    [i|
+      GIVEN x
+      DECIDE sum3 x IS SUM(x, x, x)
+      |]
+  transpilerTest
+    "function-selector"
+    [i|
+      GIVEN x
+      DECIDE f x IS x's z
+      |]
+  transpilerTest
+    "function-nested-selector"
+    [i|
+      GIVEN x
+      DECIDE f x IS x's y's z
+      |]
+  transpilerTest
+    "function-with-conditionals-1"
+    [i|
+      GIVEN x
+      DECIDE f x IS 1 IF x > 0;
+              f x IS 0 OTHERWISE;
+              f x IS 2 IF x < 0
+      |]
+  transpilerTest
+    "function-with-conditionals-2"
+    [i|
+      GIVEN x
+      DECIDE f x IS 1 IF x > 0;
+              f x IS 0 OTHERWISE
+      |]
+  transpilerTest
+    "function-with-conditionals-3"
+    [i|
+      GIVEN x
+      DECIDE f x IS 1 IF x > 0;
+              f x IS 0
+      |]
+  transpilerTest
+    "function-with-attributes-1"
+    [i|
+      GIVEN x
+      DECIDE f x IS y
+      WHERE
+        y's z IS 0;
+        y's p IS SUM(x, x)
+      |]
+  transpilerTest
+    "function-with-attributes-conditionals-1"
+    [i|
+      GIVEN x
+      DECIDE f x IS y
+      WHERE
+        y's z IS 5 IF x > 3
+      |]
+  transpilerTest
+    "function-with-attributes-conditionals-2"
+    [i|
+      GIVEN x
+      DECIDE f x IS y
+      WHERE
+        y's z IS 5 IF x > 3;
+        y's z IS 0 OTHERWISE;
 
-runSimalaTranspilerForRule :: String -> String -> Golden TL.Text
-runSimalaTranspilerForRule outputName ruleString = goldenGeneric outputName $
-  case run ruleString of
-    Left err -> "Failed to parse program:\n" <> ruleString
-    Right rule -> do
-      case Renamer.renameRuleTopLevel' rule of
-        (Left err, scope) ->
-          unlines
-            [ "Renaming failed for program:"
-            , ruleString
-            , "Because:"
-            , err
-            , "Scope table:"
-            , pShowNoColorS scope
-            ]
-        (Right rnRule, _) -> do
-          case runExcept (Simala.ruleToSimala rnRule) of
-            Left err -> "Failed transpilation:\n" <> err
-            Right simala -> Text.unpack $ Simala.render simala
+        y's p IS x IF x > 5;
+        y's p IS SUM(x, x) OTHERWISE
+      |]
+  transpilerTest
+    "giveth"
+    [i|
+      GIVETH x
+      DECIDE x IS y
+      WHERE
+          y IS 5
+      |]
+  transpilerTest
+    "giveth-record"
+    [i|
+      GIVETH y
+      DECIDE y's z IS 5
+      |]
+  transpilerTest
+    "giveth-record-nested"
+    [i|
+      GIVETH y
+      DECIDE y's a's b's c's z IS 5
+      |]
+  transpilerTest
+    "eragon-book"
+    [i|
+      GIVETH eragon
+      DECIDE
+        eragon's title IS Eragon;
+        eragon's size IS 512;
+        eragon's character's main IS "Eragon";
+        eragon's character's villain IS "Galbatorix";
+        eragon's character's friend IS "Ork"
+      |]
+  transpilerTest
+    "eragon-book-with-attributes"
+    [i|
+      GIVETH eragon
+      DECIDE
+        eragon IS localVar
+      WHERE
+        localVar's title IS "Eragon";
+        localVar's size IS 512;
+        localVar's character's main IS "Eragon";
+        localVar's character's villain IS "Galbatorix";
+        localVar's character's friend IS "Ork"
+      |]
+  transpilerTest
+    "no-giveth-adhoc-y"
+    [i|
+      DECIDE y IS 5
+      |]
+  transpilerTest
+    "no-giveth-adhoc-y-attribute"
+    [i|
+      DECIDE y's z IS 5
+      |]
+
+realWorldTests = do
+  transpilerTest
+    "rodents-and-vermin"
+    [i|
+§ "Rodents and vermin"
+DECIDE "Not Covered"
+IF
+  UNLESS ( "Loss or Damage" IS ANY ( "caused by rodents"
+                                    , "caused by insects"
+                                    , "caused by vermin"
+                                    , "caused by birds"
+                                    )
+
+          , ANY ( ALL ( "Loss or Damage" IS "to Contents"
+                      , "Loss or Damage" IS "caused by birds"
+                      )
+
+                , UNLESS ( "Loss or Damage" IS "ensuing covered loss"
+
+                        , ANY ( "any other exclusion applies"
+                              , "an animal caused water to escape from"
+                                    ANY ( "a household appliance"
+                                        , "a swimming pool"
+                                        , "a plumbing, heating, or air conditioning system" )
+                              )
+                        )
+                )
+        )
+        |]
+
+transpilerTest :: String -> String -> SpecWith (Arg (Golden TL.Text))
+transpilerTest outputName ruleString = it outputName $
+  goldenGeneric outputName $
+    case run ruleString of
+      Left err -> "Failed to parse program:\n" <> ruleString
+      Right rule -> do
+        case Renamer.renameRuleTopLevel' rule of
+          (Left err, scope) ->
+            unlines
+              [ "Renaming failed for program:"
+              , ruleString
+              , "Because:"
+              , err
+              , "Scope table:"
+              , pShowNoColorS scope
+              ]
+          (Right rnRule, _) -> do
+            case runExcept (Simala.ruleToSimala rnRule) of
+              Left err -> "Failed transpilation:\n" <> err
+              Right simala -> Text.unpack $ Simala.render simala
 
 goldenGeneric :: String -> String -> Golden TL.Text
 goldenGeneric name output_ =
   Golden
-    { output = Pretty.pStringNoColor output_
+    { output = TL.pack output_
     , encodePretty = TL.unpack
     , writeToFile = TL.writeFile
     , readFromFile = TL.readFile

@@ -8,9 +8,12 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wall #-}
 
 module LS.Renamer where
+
+import Prelude hiding (lookup)
 
 import AnyAll.BoolStruct qualified as AA
 import LS.Rule (Rule, RuleLabel)
@@ -21,20 +24,23 @@ import LS.Types qualified as LS
 import Control.Monad.Error.Class
 import Control.Monad.Extra (foldM, fromMaybeM)
 import Control.Monad.State.Strict (MonadState)
+import Control.Monad.State.Strict qualified as State
 import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Except qualified as Except
 import Control.Monad.Trans.State.Strict (State)
-import Control.Monad.Trans.State.Strict qualified as State (runState)
+import Control.Monad.Trans.State.Strict qualified as State (runStateT)
 import Data.Foldable qualified as Foldable
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy.IO qualified as TL
 import GHC.Generics (Generic)
+import GHC.List qualified as List
 import Optics hiding (has)
 import Text.Pretty.Simple qualified as Pretty
 
@@ -58,6 +64,8 @@ data RnHornClause = RnHornClause
   deriving (Eq, Ord, Show, Generic)
 
 type RnRuleName = RnMultiTerm
+type RnFullRuleName = [RnRuleOccName]
+type RnRuleOccName = [Text]
 type RnEntityType = RnName
 
 data RnHornlike = RnHornlike
@@ -111,6 +119,7 @@ data RnTypedMulti = RnTypedMulti
 -- | A name is something that can be resolved as either a variable, function, or enum.
 data RnName = RnName
   { rnOccName :: OccName
+  , rnRuleOccName :: RnFullRuleName
   , rnUniqueId :: Unique
   , rnNameType :: RnNameType
   -- TODO: add the binding scope for scope checking
@@ -150,6 +159,76 @@ data RnRelationalPredicate
   deriving (Eq, Ord, Show, Generic)
 
 -- ----------------------------------------------------------------------------
+-- Utility data structures. To be moved outside of this module. Perhaps use
+-- third-party library?
+-- ----------------------------------------------------------------------------
+
+-- rename (Let decls expr) = do { ns <- scanNames decls; rdecls <- withExtendedScope ns (traverse renameDecl decls); rexpr <- withExtendedScope ns (renameExpr expr); pure (RLet rdecls rexpr) }
+
+data Trie k v = Trie
+  { _trieValue :: !(Maybe v)
+  , _trieChildren :: !(Map k (Trie k v))
+  }
+  deriving (Eq, Ord, Foldable, Functor, Show, Traversable)
+
+empty :: Trie k v
+empty = Trie Nothing Map.empty
+
+singleton :: (Eq k) => [k] -> v -> Trie k v
+singleton [] x = Trie (Just x) Map.empty
+singleton (k : ks) x = Trie Nothing (Map.singleton k (singleton ks x))
+
+unionWith ::
+  (Eq k, Ord k) =>
+  (v -> v -> v) ->
+  Trie k v ->
+  Trie k v ->
+  Trie k v
+unionWith f (Trie v1 c1) (Trie v2 c2) =
+  Trie v $ Map.unionWith (unionWith f) c1 c2
+ where
+  v = case (v1, v2) of
+    (Nothing, _) -> v2
+    (_, Nothing) -> v1
+    (Just x, Just y) -> Just (f x y)
+
+unionsWith ::
+  (Eq k, Ord k) =>
+  (v -> v -> v) ->
+  [Trie k v] ->
+  Trie k v
+unionsWith f = List.foldl' (unionWith f) empty
+
+prefix :: (Eq k, Ord k) => [k] -> Trie k v -> Trie k v
+prefix [] trie = trie
+prefix (k : ks) trie = Trie Nothing $ Map.singleton k (prefix ks trie)
+
+lookup :: (Eq k, Ord k) => [k] -> Trie k v -> Maybe v
+lookup [] (Trie Nothing _) = Nothing
+lookup [] (Trie (Just x) _) = Just x
+lookup (k : ks) (Trie _ children) = do
+  trie <- Map.lookup k children
+  lookup ks trie
+
+-- alterF :: Functor f
+--        => (Maybe a -> f (Maybe a)) -> [k] -> Trie k a -> f (Trie k a)
+-- -- This implementation was stolen from 'Control.Lens.At'.
+-- alterF f [] (Trie Nothing _) = Nothing
+-- alterF f [] (Trie (Just x) _) = Just x
+-- alterF f (k : ks) (Trie _ children) = do
+--   trie <- alterF f ks children
+--   lookup ks trie
+
+-- instance Ord k => At (Trie k a) where
+--   at k = lensVL $ \f -> alterF f k
+--   {-# INLINE at #-}
+
+-- type instance Index (Trie k a) = [k]
+-- type instance IxValue (Trie k a) = a
+-- -- Default implementation uses Map.alterF
+-- instance Ord k => Ixed (Trie k a)
+
+-- ----------------------------------------------------------------------------
 -- Scope tables
 -- ----------------------------------------------------------------------------
 
@@ -176,14 +255,16 @@ mkSimpleOccName :: Text -> OccName
 mkSimpleOccName = NE.singleton . LS.MTT
 
 data Scope = Scope
-  { _scScopeTable :: ScopeTable
+  { _scScopeTable :: Trie RnRuleOccName ScopeTable
   , _scUnique :: Unique
   -- ^ next unique value that we can use
+  , _scBindingScope :: BindingScope
+  , _scRuleOccName :: RnFullRuleName
   }
   deriving (Eq, Ord, Show)
 
 data BindingScope
-  = ToplevelScope
+  = TopLevelScope
   | WhereScope
   | GivenScope
   | GivethScope
@@ -204,18 +285,24 @@ data ScopeTable = ScopeTable
   }
   deriving (Eq, Ord, Show)
 
+emptyScopeTable :: ScopeTable
+emptyScopeTable =
+  ScopeTable
+    { _stVariables = Map.empty
+    , _stFunction = Map.empty
+    }
+
 makeFieldsNoPrefix 'Scope
+makeFields 'Trie
 makeFieldsNoPrefix 'ScopeTable
 
 emptyScope :: Scope
 emptyScope =
   Scope
-    { _scScopeTable =
-        ScopeTable
-          { _stVariables = Map.empty
-          , _stFunction = Map.empty
-          }
+    { _scScopeTable = empty
     , _scUnique = 0
+    , _scBindingScope = TopLevelScope
+    , _scRuleOccName = []
     }
 
 prefixScope :: RuleName -> Scope -> Scope
@@ -228,8 +315,11 @@ newUniqueM = do
   pure u
 
 lookupName :: OccName -> Renamer (Maybe RnName)
-lookupName occName =
-  use (scScopeTable % stVariables % at occName)
+lookupName occName = do
+  ruleOccName <- use scRuleOccName
+  State.gets $ \s -> do
+    (scope :: ScopeTable) <- lookup ruleOccName s._scScopeTable
+    occName `Map.lookup` scope._stVariables
 
 -- | Either inserts a new name of the given type, or checks that the name
 -- is already in scope with the given type.
@@ -251,33 +341,72 @@ lookupOrInsertName occName nameType =
 insertName :: OccName -> RnNameType -> Renamer RnName
 insertName occName nameType = do
   n <- newUniqueM
+  ruleOccName <- use scRuleOccName
   let
     rnName =
       RnName
         { rnUniqueId = n
         , rnOccName = occName
+        , rnRuleOccName = ruleOccName
         , rnNameType = nameType
         }
-  assign'
-    ( scScopeTable
-        % stVariables
-        % at occName
-    )
-    (Just rnName)
+
+  State.modify' $ \s ->
+    let
+      st =
+        unionWith
+          unionScopeTable
+          s._scScopeTable
+          ( singleton ruleOccName $
+              ScopeTable
+                { _stVariables = Map.singleton occName rnName
+                , _stFunction = Map.empty
+                }
+          )
+    in
+      s{_scScopeTable = st}
+
   pure rnName
 
+unionScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
+unionScopeTable sc1 sc2 =
+  ScopeTable
+    { _stVariables =
+        Map.unionWith
+          (\a b -> if a == b then a else error "Invariant unionWith")
+          sc1._stVariables
+          sc2._stVariables
+    , _stFunction =
+        Map.unionWith
+          (\a b -> if a == b then a else error "Invariant unionWith")
+          sc1._stFunction
+          sc2._stFunction
+    }
+
 insertFunction :: RnName -> FuncInfo -> Renamer ()
-insertFunction rnFnName funcInfo =
-  assign'
-    ( scScopeTable
-        % stFunction
-        % at rnFnName
-    )
-    (Just funcInfo)
+insertFunction rnFnName funcInfo = do
+  ruleOccName <- use scRuleOccName
+  State.modify' $ \s ->
+    let
+      st =
+        unionWith
+          const
+          s._scScopeTable
+          ( singleton ruleOccName $
+              ScopeTable
+                { _stVariables = Map.empty
+                , _stFunction = Map.singleton rnFnName funcInfo
+                }
+          )
+    in
+      s{_scScopeTable = st}
 
 lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
-lookupFunction rnFnName =
-  use (scScopeTable % stFunction % at rnFnName)
+lookupFunction rnFnName = do
+  ruleOccName <- use scRuleOccName
+  State.gets $ \s -> do
+    (scope :: ScopeTable) <- lookup ruleOccName s._scScopeTable
+    rnFnName `Map.lookup` scope._stFunction
 
 -- ----------------------------------------------------------------------------
 -- Helper types for local context
@@ -566,7 +695,8 @@ renameDecideHeadClause = \case
 -- Note, this doesn't accept literals such as '42' or '3.5f'.
 renameDecideMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
 renameDecideMultiTerm mt = do
-  scopeTable <- use scScopeTable
+  ruleOccName <- use scRuleOccName
+  scopeTable <- (fromMaybe emptyScopeTable . lookup ruleOccName) <$> use scScopeTable
   case mt of
     attrs
       | Just (obj, objAttrs) <- toObjectPath attrs -> do

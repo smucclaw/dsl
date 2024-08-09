@@ -23,14 +23,15 @@ import Data.Text.Lazy.IO qualified as TL
 import Optics
 import Text.Pretty.Simple qualified as Pretty
 
-import qualified LS.Rule as LS
-import qualified TextuaL4.Transform as Parser
-import qualified TextuaL4.ParTextuaL as Parser
 import LS.Renamer
 import LS.Renamer qualified as Renamer
+import LS.Rule qualified as LS
 import LS.Types qualified as LS
+import TextuaL4.ParTextuaL qualified as Parser
+import TextuaL4.Transform qualified as Parser
 
 import AnyAll.BoolStruct qualified as AA
+import Data.Maybe qualified as Maybe
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
@@ -87,7 +88,7 @@ data SimalaTerm
     -- @
     --
     -- Note, in practice, we might not remove 'OTHERWISE' and define a constant for it.
-    TermFunction Simala.Name [Simala.Name] Simala.Expr
+    TermFunction Simala.Transparency Simala.Name [Simala.Name] Simala.Expr
   | -- | A Let-In construct without an 'in' part.
     -- This is supposed to be used in simple variable assignment.
     TermLetIn Simala.Transparency Simala.Name Simala.Expr
@@ -100,18 +101,38 @@ data SimalaTerm
 -- Top Level transpilation functions and test helpers
 -- ----------------------------------------------------------------------------
 
+transpile :: (MonadError String m) => [RnRule] -> m Simala.Expr
+transpile rules = do
+  simalaTerms <- Maybe.catMaybes <$> traverse ruleToSimala rules
+  combineSimalaTerms Simala.Undefined simalaTerms
 
+combineSimalaTerms :: (MonadError String m) => Simala.Expr -> [SimalaTerm] -> m Simala.Expr
+combineSimalaTerms inExpr [] = pure inExpr
+combineSimalaTerms inExpr (TermLetIn t name expr : terms) = do
+  restOfInExpr <- combineSimalaTerms inExpr terms
+  pure $ mkLetIn t name expr restOfInExpr
+combineSimalaTerms inExpr (TermFunction t name params expr : terms) = do
+  restOfInExpr <- combineSimalaTerms inExpr terms
+  pure $ mkFunction t name params expr restOfInExpr
+combineSimalaTerms _inExpr _terms = do
+  throwError $ "combineSimalaTerms: Cannot combine SimalaTerms: " <> show _terms
 
 -- ----------------------------------------------------------------------------
 -- Main translation helpers
 -- ----------------------------------------------------------------------------
 
-ruleToSimala :: (MonadError String m) => RnRule -> m SimalaTerm
+ruleToSimala :: (MonadError String m) => RnRule -> m (Maybe SimalaTerm)
+ruleToSimala (TypeDecl _typedecl) =
+  -- Simala doesn't need to declare types, we can use anonymously.
+  -- We assume that ach rule has been typechecked already, so we don't need to
+  -- re-check anything.
+  --
+  pure Nothing
 ruleToSimala (Hornlike hornlike) = do
   terms <- hornClausesToSimala hornlike.clauses
   term <- assertSingletonList "ruleToSimala" terms
   subTerms <- traverse ruleToSimala hornlike.wwhere
-  foldInSubTerms term subTerms
+  Just <$> foldInSubTerms term (Maybe.catMaybes subTerms)
 
 -- ----------------------------------------------------------------------------
 -- Post Processing of rule translation.
@@ -168,7 +189,7 @@ groupClauses simalaTerms = do
  where
   compareClauseHeads :: SimalaTerm -> SimalaTerm -> Bool
   compareClauseHeads (TermLetIn _ name1 _) (TermLetIn _ name2 _) = name1 == name2
-  compareClauseHeads (TermFunction fnName1 _ _) (TermFunction fnName2 _ _) = fnName1 == fnName2
+  compareClauseHeads (TermFunction _ fnName1 _ _) (TermFunction _ fnName2 _ _) = fnName1 == fnName2
   compareClauseHeads (TermAttribute name1 _ _) (TermAttribute name2 _ _) = name1 == name2
   compareClauseHeads _ _ = False
 
@@ -183,16 +204,16 @@ foldInSubTerms top (x : xs) = case top of
   TermAttribute name selectors expr -> do
     exprWithLocals <- linearLetIns expr (x :| xs)
     pure $ TermAttribute name selectors exprWithLocals
-  TermFunction fnName fnParams fnExpr -> do
+  TermFunction t fnName fnParams fnExpr -> do
     fnExprWithLocals <- linearLetIns fnExpr (x :| xs)
-    pure $ TermFunction fnName fnParams fnExprWithLocals
+    pure $ TermFunction t fnName fnParams fnExprWithLocals
  where
   linearLetIns :: Simala.Expr -> NonEmpty SimalaTerm -> m Simala.Expr
-  linearLetIns finalExpr (x :| xs) = do
-    inExpr <- case xs of
+  linearLetIns finalExpr terms = do
+    inExpr <- case NE.tail terms of
       [] -> pure finalExpr
       (a : as) -> linearLetIns finalExpr (a :| as)
-    case x of
+    case NE.head terms of
       TermApp{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show top
       TermLetIn t name expr -> do
         pure $ mkLetIn t name expr inExpr
@@ -201,8 +222,8 @@ foldInSubTerms top (x : xs) = case top of
         pure $ mkLetIn Simala.Transparent name expr inExpr
       TermAttribute name (a : as) expr -> do
         pure $ mkLetIn Simala.Transparent name (buildRecordUpdate (a :| as) expr) inExpr
-      TermFunction fnName fnParams fnExpr -> do
-        pure $ mkLetIn Simala.Transparent fnName (Simala.Fun Simala.Transparent fnParams fnExpr) inExpr
+      TermFunction t fnName fnParams fnExpr -> do
+        pure $ mkLetIn t fnName (Simala.Fun Simala.Transparent fnParams fnExpr) inExpr
 
 -- | Given a collection of groups, merge each group into a single expression.
 mergeGroups :: (Traversable t, MonadError String m) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> m (t SimalaTerm)
@@ -223,11 +244,11 @@ mergeGroups' terms@((TermAttribute name _ _, _) :| _) = do
 mergeGroups' ((term, Nothing) :| _) =
   pure term
 mergeGroups' ((term, Just g) :| []) = do
-  ifThenElseTerm <- mkIfThenElse g term mkUndefinedTerm
+  ifThenElseTerm <- mkIfThenElseTerm g term mkUndefinedTerm
   pure ifThenElseTerm
 mergeGroups' ((term, Just g) :| (n : ns)) = do
   elseBranch <- mergeGroups' (n :| ns)
-  mkIfThenElse g term elseBranch
+  mkIfThenElseTerm g term elseBranch
 
 mergeAttributes :: (MonadError String m) => Simala.Name -> NonEmpty ([Simala.Name], Simala.Expr, Maybe Simala.Expr) -> m SimalaTerm
 mergeAttributes name terms = do
@@ -291,10 +312,10 @@ relationalPredicateToSimala = \case
     (mtHead : args)
       | Just (fnName, fnParams) <- isFunctionDeclaration mtHead args -> do
           rhsExpr <- rhsMultiTermToSimala rhs
-          mkFunction (toSimalaName fnName) (fmap toSimalaName fnParams) (TermExpr rhsExpr)
+          mkFunctionTerm (toSimalaName fnName) (fmap toSimalaName fnParams) (TermExpr rhsExpr)
       | Just (var, selectors) <- isAssignment mtHead args -> do
           rhsExpr <- rhsMultiTermToSimala rhs
-          mkAssignment (toSimalaName var) (fmap toSimalaName selectors) rhsExpr
+          mkAssignmentTerm (toSimalaName var) (fmap toSimalaName selectors) rhsExpr
       | otherwise -> throwError $ "relationalPredicateToSimala: Unsupported " <> show lhs
     [] -> throwError "empty lhs"
   RnConstraint lhs predicate rhs -> do
@@ -311,7 +332,7 @@ relationalPredicateToSimala = \case
       TermApp fnName fnParams -> do
         fnExpr <- assertSingletonList "RnNary.TermApp" rhsExprs
         rhsExpr <- assertTermExpr fnExpr
-        mkFunction fnName fnParams (TermExpr rhsExpr)
+        mkFunctionTerm fnName fnParams (TermExpr rhsExpr)
       TermLetIn{} -> throwError "Not implemented yet"
       TermAttribute name selectors Simala.Undefined -> do
         someRhs <- assertSingletonList "RnNary.TermAttribute" rhsExprs
@@ -382,7 +403,7 @@ lhsMultiTermToSimala (mtHead : rest)
   | Just (fnName, fnParams) <- isFunctionDeclaration mtHead rest =
       mkFunctionHead (toSimalaName fnName) (fmap toSimalaName fnParams)
   | Just (varName, selectors) <- isProjection mtHead rest =
-      mkRecordAssignment (toSimalaName varName) (fmap toSimalaName selectors)
+      mkRecordAssignmentTerm (toSimalaName varName) (fmap toSimalaName selectors)
 lhsMultiTermToSimala xs = throwError $ "lhsMultiTermToSimala: unsupported pattern: " <> show xs
 
 rhsMultiTermToSimala :: (MonadError String m) => RnMultiTerm -> m Simala.Expr
@@ -570,66 +591,67 @@ assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-e
 mkUndefinedTerm :: SimalaTerm
 mkUndefinedTerm = TermExpr Simala.Undefined
 
-mkAssignment :: (MonadError String m) => Simala.Name -> [Simala.Name] -> Simala.Expr -> m SimalaTerm
-mkAssignment name selectors expr = pure $ TermAttribute name selectors expr
+mkAssignmentTerm :: (MonadError String m) => Simala.Name -> [Simala.Name] -> Simala.Expr -> m SimalaTerm
+mkAssignmentTerm name selectors expr = pure $ TermAttribute name selectors expr
 
 mkFunctionHead :: (MonadError String m) => Simala.Name -> [Simala.Name] -> m SimalaTerm
 mkFunctionHead funcName funcParams = pure $ TermApp funcName funcParams
 
-mkRecordAssignment :: (MonadError String m) => Simala.Name -> NE.NonEmpty Simala.Name -> m SimalaTerm
-mkRecordAssignment varName selectors =
+mkRecordAssignmentTerm :: (MonadError String m) => Simala.Name -> NE.NonEmpty Simala.Name -> m SimalaTerm
+mkRecordAssignmentTerm varName selectors =
   pure $
     TermAttribute
       varName
       (NE.toList selectors)
       Simala.Undefined
 
-mkTransparentLetIn :: (MonadError String m) => Simala.Name -> SimalaTerm -> m SimalaTerm
-mkTransparentLetIn var term = do
+mkLetInTerm :: (MonadError String m) => Simala.Name -> SimalaTerm -> m SimalaTerm
+mkLetInTerm var term = do
   body <- assertTermExpr term
   pure $ TermLetIn Simala.Transparent var body
 
-mkFunction :: (MonadError String m) => Simala.Name -> [Simala.Name] -> SimalaTerm -> m SimalaTerm
-mkFunction fnName fnParams term = do
+mkFunctionTerm :: (MonadError String m) => Simala.Name -> [Simala.Name] -> SimalaTerm -> m SimalaTerm
+mkFunctionTerm fnName fnParams term = do
   body <- assertTermExpr term
-  pure $ TermFunction fnName fnParams body
+  pure $ TermFunction Simala.Transparent fnName fnParams body
 
-mkIfThenElse :: (MonadError String m) => Simala.Expr -> SimalaTerm -> SimalaTerm -> m SimalaTerm
-mkIfThenElse b (TermLetIn t1 name1 expr1) (TermLetIn t2 name2 expr2) = do
+mkIfThenElseTerm :: (MonadError String m) => Simala.Expr -> SimalaTerm -> SimalaTerm -> m SimalaTerm
+mkIfThenElseTerm b (TermLetIn t1 name1 expr1) (TermLetIn t2 name2 expr2) = do
   assertEquals t1 t2
   assertEquals name1 name2
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
   ifThenElse <- assertTermExpr ifThenElseTerm
   pure $ TermLetIn t1 name1 ifThenElse
-mkIfThenElse b (TermLetIn t1 name1 body1) (TermExpr expr) = do
+mkIfThenElseTerm b (TermLetIn t1 name1 body1) (TermExpr expr) = do
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, body1, expr]
   ifThenElse <- assertTermExpr ifThenElseTerm
   pure $ TermLetIn t1 name1 ifThenElse
-mkIfThenElse b (TermAttribute name1 selectors1 expr1) (TermAttribute name2 selectors2 expr2) = do
+mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermAttribute name2 selectors2 expr2) = do
   assertEquals name1 name2
   assertEquals selectors1 selectors2
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
   ifThenElse <- assertTermExpr ifThenElseTerm
   pure $ TermAttribute name1 selectors1 ifThenElse
-mkIfThenElse b (TermAttribute name1 selectors1 expr1) (TermExpr expr2) = do
+mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermExpr expr2) = do
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
   ifThenElse <- assertTermExpr ifThenElseTerm
   pure $ TermAttribute name1 selectors1 ifThenElse
-mkIfThenElse b (TermFunction fnName1 fnParams1 expr1) (TermFunction fnName2 fnParams2 expr2) = do
+mkIfThenElseTerm b (TermFunction t1 fnName1 fnParams1 expr1) (TermFunction t2 fnName2 fnParams2 expr2) = do
+  assertEquals t1 t2
   assertEquals fnName1 fnName2
   assertEquals fnParams1 fnParams2
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
   ifThenElse <- assertTermExpr ifThenElseTerm
-  pure $ TermFunction fnName1 fnParams1 ifThenElse
-mkIfThenElse b (TermFunction fnName1 fnParams1 expr1) (TermExpr expr) = do
+  pure $ TermFunction t1 fnName1 fnParams1 ifThenElse
+mkIfThenElseTerm b (TermFunction t fnName1 fnParams1 expr1) (TermExpr expr) = do
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr]
   ifThenElse <- assertTermExpr ifThenElseTerm
-  pure $ TermFunction fnName1 fnParams1 ifThenElse
-mkIfThenElse b (TermExpr expr1) (TermExpr expr2) = do
+  pure $ TermFunction t fnName1 fnParams1 ifThenElse
+mkIfThenElseTerm b (TermExpr expr1) (TermExpr expr2) = do
   ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
   ifThenElse <- assertTermExpr ifThenElseTerm
   pure $ TermExpr ifThenElse
-mkIfThenElse _b term1 term2 =
+mkIfThenElseTerm _b term1 term2 =
   throwError $
     "Can't wrap terms in an if-then-else.\nFirst term: "
       <> show term1
@@ -653,6 +675,14 @@ applySelector expr proj = Simala.Project expr proj
 mkLetIn :: Simala.Transparency -> Simala.Name -> Simala.Expr -> Simala.Expr -> Simala.Expr
 mkLetIn transparency name rhs nextExpr =
   Simala.Let transparency name rhs nextExpr
+
+mkFunction :: Simala.Transparency -> Simala.Name -> [Simala.Name] -> Simala.Expr -> Simala.Expr -> Simala.Expr
+mkFunction transparency name params rhs nextExpr =
+  mkLetIn transparency name (mkFunctionDecl transparency params rhs) nextExpr
+
+mkFunctionDecl :: Simala.Transparency -> [Simala.Name] -> Simala.Expr -> Simala.Expr
+mkFunctionDecl transparency params rhs =
+  Simala.Fun transparency params rhs
 
 buildRecordUpdate :: NonEmpty Simala.Name -> Simala.Expr -> Simala.Expr
 buildRecordUpdate names expr = go $ NE.toList names
@@ -702,7 +732,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure exampleWithOneOf
--- "let f_g_4 = fun(v_d_0) => let v_y_1 = if v_d_0 > 0 then e_green_2 else if b_OTHERWISE_5 then e_red_3 else undefined in v_y_1"
+-- "let f_g_4 = fun (v_d_0) => let v_y_1 = if v_d_0 > 0 then e_green_2 else if b_OTHERWISE_5 then e_red_3 else undefined in v_y_1 in undefined"
 
 exampleWithOneOf :: String
 exampleWithOneOf =
@@ -977,11 +1007,11 @@ debugTranspileRule ruleSrc = do
     Left err -> putStrLn err
     Right rnRule -> do
       TL.putStrLn $ Pretty.pShow rnRule
-      simalaTerms <- runExceptT $ ruleToSimala rnRule
+      simalaTerms <- runExceptT $ transpile [rnRule]
       case simalaTerms of
         Left err -> putStrLn err
         Right expr -> do
-          Text.putStrLn $ "Expr: " <> render expr
+          Text.putStrLn $ "Expr: " <> Simala.render expr
 
 transpileRulePure :: String -> Text
 transpileRulePure ruleSrc =
@@ -992,18 +1022,10 @@ transpileRulePure ruleSrc =
     case res of
       Left err -> Text.pack err
       Right rnRule -> do
-        case runExcept $ ruleToSimala rnRule of
+        case runExcept $ transpile [rnRule] of
           Left err -> Text.pack err
           Right expr ->
-            render expr
-
-render :: SimalaTerm -> Text
-render (TermExpr e) = Simala.render e
-render (TermLetIn _ name var) = "let " <> Simala.render name <> " = " <> Simala.render var
-render (TermApp name params) = Simala.render name <> "(" <> Text.intercalate ", " (fmap Simala.render params) <> ")"
-render (TermFunction name params expr) = "let " <> Simala.render name <> " = fun(" <> Text.intercalate ", " (fmap Simala.render params) <> ") => " <> Simala.render expr
-render (TermAttribute name [] expr) = "let " <> Simala.render name <> " = " <> Simala.render expr
-render (TermAttribute name (x : xs) expr) = "let " <> Simala.render name <> " = " <> Simala.render (buildRecordUpdate (x :| xs) expr)
+            Simala.render expr
 
 run :: String -> Either String LS.Rule
 run = fmap Parser.transRule . Parser.pRule . Parser.myLexer

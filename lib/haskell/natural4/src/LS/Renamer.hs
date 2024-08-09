@@ -185,11 +185,11 @@ data Scope = Scope
   }
   deriving (Eq, Ord, Show)
 
-data BindingScope
-  = ToplevelScope
-  | WhereScope
-  | GivenScope
-  | GivethScope
+data BindingSite
+  = WhereClause
+  | GivenClause
+  | DecideClause
+  | GivethClause
   deriving (Eq, Ord, Show)
 
 -- | A 'ScopeTable' keeps tab on the variables and functions that occur in a
@@ -378,26 +378,26 @@ renamer rules = do
 -- 3. Types and selectors defined via 'DEFINE'
 scanRule :: Rule -> Renamer ()
 scanRule rule@Rule.Hornlike{} = do
+  scanGiveths rule.giveth
   -- TODO: givens should only be scanned for 'scanHornClause' and then removed again.
   scanGivens rule.given
-  scanGiveths rule.giveth
   traverse_ scanHornClause rule.clauses
-scanRule r@Rule.Regulative{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.Constitutive{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.Regulative{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.Constitutive{} = throwError $ "scanRule: Unsupported rule: " <> show r
 scanRule rule@Rule.TypeDecl{} = do
   traverse_ scanTypeSignature rule.super
   scanEnums rule.enums
   scanGivens rule.given
   traverse_ scanRule rule.has
   scanTypeDeclName rule.name
-scanRule r@Rule.Scenario{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.DefNameAlias{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.DefTypically{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.RuleAlias{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.RuleGroup{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.RegFulfilled{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.RegBreach{} = throwError $ "Unsupported rule: " <> show r
-scanRule r@Rule.NotARule{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.Scenario{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.DefNameAlias{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.DefTypically{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.RuleAlias{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.RuleGroup{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.RegFulfilled{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.RegBreach{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.NotARule{} = throwError $ "scanRule: Unsupported rule: " <> show r
 
 -- | Scan a 'LS.HornClause2' for declarations of variables and functions.
 scanHornClause :: LS.HornClause2 -> Renamer ()
@@ -593,6 +593,13 @@ scanTypeDeclName mtexprs = do
 -- Renamer passes
 -- ----------------------------------------------------------------------------
 
+-- Lexical Scoping rules for hornlike rules:
+--
+-- GIVETH's are global
+-- GIVEN's are local
+-- DECIDE head term in "IS" clauses is global
+--
+
 renameLocalRules :: [Rule] -> Renamer ([RnRule], ScopeTable)
 renameLocalRules localRules = do
   origScopeTable <- use scScopeTable
@@ -631,8 +638,8 @@ renameRule rule@Rule.Hornlike{} = do
         , defaults
         , symtab
         }
-renameRule r@Rule.Regulative{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.Constitutive{} = throwError $ "Unsupported rule: " <> show r
+renameRule r@Rule.Regulative{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.Constitutive{} = throwError $ "renameRule: Unsupported rule: " <> show r
 renameRule rule@Rule.TypeDecl{} = do
   super <- traverse renameTypeSignature rule.super
   defaults <- assertEmptyList rule.defaults
@@ -657,14 +664,14 @@ renameRule rule@Rule.TypeDecl{} = do
         , defaults
         , symtab
         }
-renameRule r@Rule.Scenario{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.DefNameAlias{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.DefTypically{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.RuleAlias{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.RuleGroup{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.RegFulfilled{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.RegBreach{} = throwError $ "Unsupported rule: " <> show r
-renameRule r@Rule.NotARule{} = throwError $ "Unsupported rule: " <> show r
+renameRule r@Rule.Scenario{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.DefNameAlias{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.DefTypically{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.RuleAlias{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.RuleGroup{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.RegFulfilled{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.RegBreach{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.NotARule{} = throwError $ "renameRule: Unsupported rule: " <> show r
 
 renameTypeDeclName :: RuleName -> Renamer RnRuleName
 renameTypeDeclName mtexprs = do

@@ -14,6 +14,7 @@ import LS.Renamer qualified as Renamer
 import LS.Rule
 import LS.XPile.Logging (pShowNoColorS)
 import LS.XPile.Simala.Transpile qualified as Simala
+import Simala.Expr.Render qualified as Simala
 import System.FilePath
 import Test.Hspec
 import Test.Hspec.Golden
@@ -29,6 +30,7 @@ spec = do
     describe "real-world" do
       realWorldTests
 
+basicTests :: Spec
 basicTests = do
   transpilerTest
     "function-id"
@@ -169,6 +171,7 @@ basicTests = do
       DECIDE y's z IS 5
       |]
 
+realWorldTests :: Spec
 realWorldTests = do
   transpilerTest
     "rodents-and-vermin"
@@ -216,7 +219,7 @@ transpilerTest outputName ruleString = it outputName $
               , pShowNoColorS scope
               ]
           (Right rnRule, _) -> do
-            case runExcept (Simala.ruleToSimala rnRule) of
+            case runExcept (Simala.transpile [rnRule]) of
               Left err -> "Failed transpilation:\n" <> err
               Right simala -> Text.unpack $ Simala.render simala
 

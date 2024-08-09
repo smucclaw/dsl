@@ -1,0 +1,32 @@
+(
+    [ MathSet "Answer"
+        ( MathVar "firstArg `funThatRepeatsArgs` secondArg" )
+    ]
+, MyState
+    { symtabF = fromList
+        [
+            ( "firstArg `funThatRepeatsArgs` secondArg"
+            , MathBin
+                ( Just "firstArg `funThatRepeatsArgs` secondArg" ) Times
+                ( MathBin Nothing Plus
+                    ( MathVar "firstArg" )
+                    ( MathVar "secondArg" )
+                )
+                ( MathBin Nothing Plus
+                    ( MathBin Nothing Minus
+                        ( Val Nothing 42.0 )
+                        ( MathVar "secondArg" )
+                    )
+                    ( MathVar "firstArg" )
+                )
+            )
+        ,
+            ( "Answer"
+            , MathVar "firstArg `funThatRepeatsArgs` secondArg"
+            )
+        ]
+    , symtabP = fromList []
+    , symtabL = fromList []
+    , symtabS = fromList []
+    }
+)

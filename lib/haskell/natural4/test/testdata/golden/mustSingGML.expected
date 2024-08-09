@@ -1,0 +1,298 @@
+( "lcProgram = [ MkExp
+      { exp = EIs
+          { isLeft = MkExp
+              { exp = EVar
+                  { var = MkVar "Drinks" }
+              , md =
+                  [ MkExpMetadata
+                      { srcPos = MkPosition
+                          { row = 1
+                          , col = 1
+                          }
+                      , typeLabel = Nothing
+                      , explnAnnot = Nothing
+                      }
+                  ]
+              }
+          , isRight = MkExp
+              { exp = EAnd
+                  { left = MkExp
+                      { exp = EOr
+                          { left = MkExp
+                              { exp = EVar
+                                  { var = MkVar "alcoholic" }
+                              , md =
+                                  [ MkExpMetadata
+                                      { srcPos = MkPosition
+                                          { row = 1
+                                          , col = 1
+                                          }
+                                      , typeLabel = Just
+                                          ( FromUser
+                                              ( L4EntityType "Boolean" )
+                                          )
+                                      , explnAnnot = Nothing
+                                      }
+                                  ]
+                              }
+                          , right = MkExp
+                              { exp = EOr
+                                  { left = MkExp
+                                      { exp = EVar
+                                          { var = MkVar "non-alcoholic" }
+                                      , md =
+                                          [ MkExpMetadata
+                                              { srcPos = MkPosition
+                                                  { row = 1
+                                                  , col = 1
+                                                  }
+                                              , typeLabel = Just
+                                                  ( FromUser
+                                                      ( L4EntityType "Boolean" )
+                                                  )
+                                              , explnAnnot = Nothing
+                                              }
+                                          ]
+                                      }
+                                  , right = MkExp
+                                      { exp = EEmpty
+                                      , md = []
+                                      }
+                                  }
+                              , md = []
+                              }
+                          }
+                      , md =
+                          [ MkExpMetadata
+                              { srcPos = MkPosition
+                                  { row = 1
+                                  , col = 1
+                                  }
+                              , typeLabel = Just
+                                  ( Inferred "Boolean" )
+                              , explnAnnot = Nothing
+                              }
+                          ]
+                      }
+                  , right = MkExp
+                      { exp = EAnd
+                          { left = MkExp
+                              { exp = EOr
+                                  { left = MkExp
+                                      { exp = EVar
+                                          { var = MkVar "in part" }
+                                      , md =
+                                          [ MkExpMetadata
+                                              { srcPos = MkPosition
+                                                  { row = 1
+                                                  , col = 1
+                                                  }
+                                              , typeLabel = Just
+                                                  ( FromUser
+                                                      ( L4EntityType "Boolean" )
+                                                  )
+                                              , explnAnnot = Nothing
+                                              }
+                                          ]
+                                      }
+                                  , right = MkExp
+                                      { exp = EOr
+                                          { left = MkExp
+                                              { exp = EVar
+                                                  { var = MkVar "in whole" }
+                                              , md =
+                                                  [ MkExpMetadata
+                                                      { srcPos = MkPosition
+                                                          { row = 1
+                                                          , col = 1
+                                                          }
+                                                      , typeLabel = Just
+                                                          ( FromUser
+                                                              ( L4EntityType "Boolean" )
+                                                          )
+                                                      , explnAnnot = Nothing
+                                                      }
+                                                  ]
+                                              }
+                                          , right = MkExp
+                                              { exp = EEmpty
+                                              , md = []
+                                              }
+                                          }
+                                      , md = []
+                                      }
+                                  }
+                              , md =
+                                  [ MkExpMetadata
+                                      { srcPos = MkPosition
+                                          { row = 1
+                                          , col = 1
+                                          }
+                                      , typeLabel = Just
+                                          ( Inferred "Boolean" )
+                                      , explnAnnot = Nothing
+                                      }
+                                  ]
+                              }
+                          , right = MkExp
+                              { exp = EEmpty
+                              , md = []
+                              }
+                          }
+                      , md = []
+                      }
+                  }
+              , md = []
+              }
+          }
+      , md = []
+      }
+  , MkExp
+      { exp = EIs
+          { isLeft = MkExp
+              { exp = EVar
+                  { var = MkVar "Qualifies" }
+              , md =
+                  [ MkExpMetadata
+                      { srcPos = MkPosition
+                          { row = 1
+                          , col = 1
+                          }
+                      , typeLabel = Nothing
+                      , explnAnnot = Nothing
+                      }
+                  ]
+              }
+          , isRight = MkExp
+              { exp = EAnd
+                  { left = MkExp
+                      { exp = EVar
+                          { var = MkVar "walks" }
+                      , md =
+                          [ MkExpMetadata
+                              { srcPos = MkPosition
+                                  { row = 1
+                                  , col = 1
+                                  }
+                              , typeLabel = Just
+                                  ( FromUser
+                                      ( L4EntityType "Boolean" )
+                                  )
+                              , explnAnnot = Nothing
+                              }
+                          ]
+                      }
+                  , right = MkExp
+                      { exp = EAnd
+                          { left = MkExp
+                              { exp = EOr
+                                  { left = MkExp
+                                      { exp = EVar
+                                          { var = MkVar "Drinks" }
+                                      , md =
+                                          [ MkExpMetadata
+                                              { srcPos = MkPosition
+                                                  { row = 1
+                                                  , col = 1
+                                                  }
+                                              , typeLabel = Nothing
+                                              , explnAnnot = Nothing
+                                              }
+                                          ]
+                                      }
+                                  , right = MkExp
+                                      { exp = EOr
+                                          { left = MkExp
+                                              { exp = EVar
+                                                  { var = MkVar "eats" }
+                                              , md =
+                                                  [ MkExpMetadata
+                                                      { srcPos = MkPosition
+                                                          { row = 1
+                                                          , col = 1
+                                                          }
+                                                      , typeLabel = Just
+                                                          ( FromUser
+                                                              ( L4EntityType "Boolean" )
+                                                          )
+                                                      , explnAnnot = Nothing
+                                                      }
+                                                  ]
+                                              }
+                                          , right = MkExp
+                                              { exp = EEmpty
+                                              , md = []
+                                              }
+                                          }
+                                      , md = []
+                                      }
+                                  }
+                              , md =
+                                  [ MkExpMetadata
+                                      { srcPos = MkPosition
+                                          { row = 1
+                                          , col = 1
+                                          }
+                                      , typeLabel = Just
+                                          ( Inferred "Boolean" )
+                                      , explnAnnot = Nothing
+                                      }
+                                  ]
+                              }
+                          , right = MkExp
+                              { exp = EEmpty
+                              , md = []
+                              }
+                          }
+                      , md = []
+                      }
+                  }
+              , md = []
+              }
+          }
+      , md = []
+      }
+  ]
+  globalVars = MkGlobalVars
+      ( fromList
+          [
+              ( MkVar "alcoholic"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ,
+              ( MkVar "walks"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ,
+              ( MkVar "non-alcoholic"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ,
+              ( MkVar "in whole"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ,
+              ( MkVar "drinks"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ,
+              ( MkVar "in part"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ,
+              ( MkVar "eats"
+              , Just
+                  ( L4EntityType "Boolean" )
+              )
+          ]
+      )
+  giveths = []
+  userFuns = fromList []"
+, []
+)

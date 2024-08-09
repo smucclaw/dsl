@@ -1,0 +1,26 @@
+(
+    [ MathSet "Answer"
+        ( MathVar "firstArg discounted by secondArg" )
+    ]
+, MyState
+    { symtabF = fromList
+        [
+            ( "firstArg discounted by secondArg"
+            , MathBin
+                ( Just "firstArg discounted by secondArg" ) Times
+                ( MathVar "firstArg" )
+                ( MathBin Nothing Minus
+                    ( Val Nothing 1.0 )
+                    ( MathVar "secondArg" )
+                )
+            )
+        ,
+            ( "Answer"
+            , MathVar "firstArg discounted by secondArg"
+            )
+        ]
+    , symtabP = fromList []
+    , symtabL = fromList []
+    , symtabS = fromList []
+    }
+)

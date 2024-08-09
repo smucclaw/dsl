@@ -1,0 +1,24 @@
+(
+    [ MathSet "The Answer"
+        ( MathVar "firstArgument f secondArgument" )
+    ]
+, MyState
+    { symtabF = fromList
+        [
+            ( "firstArgument f secondArgument"
+            , MathBin
+                ( Just "firstArgument f secondArgument" ) Plus
+                ( MathVar "firstArgument" )
+                ( MathVar "secondArgument" )
+            )
+        ,
+            ( "Top-Level"
+            , MathSet "The Answer"
+                ( MathVar "firstArgument f secondArgument" )
+            )
+        ]
+    , symtabP = fromList []
+    , symtabL = fromList []
+    , symtabS = fromList []
+    }
+)

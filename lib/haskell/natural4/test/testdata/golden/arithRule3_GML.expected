@@ -1,0 +1,567 @@
+Right
+    ( MkLCProgram
+        { lcProgram =
+            [ MkExp
+                { exp = ESeq
+                    { seq = SeqExp
+                        [ MkExp
+                            { exp = EVarSet
+                                { vsetVar = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "o3a_plus_times" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                , arg = MkExp
+                                    { exp = ENumOp
+                                        { numOp = OpPlus
+                                        , nopLeft = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o1" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 1.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md = []
+                                            }
+                                        , nopRight = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o2" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 7.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md = []
+                                            }
+                                        }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md = []
+                            }
+                        , MkExp
+                            { exp = EVarSet
+                                { vsetVar = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "o3a_times_plus" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                , arg = MkExp
+                                    { exp = ENumOp
+                                        { numOp = OpMul
+                                        , nopLeft = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpPlus
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o1" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 1.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md = []
+                                            }
+                                        , nopRight = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpPlus
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o2" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 7.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md = []
+                                            }
+                                        }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md = []
+                            }
+                        , MkExp
+                            { exp = EVarSet
+                                { vsetVar = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "o3b" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                , arg = MkExp
+                                    { exp = ENumOp
+                                        { numOp = OpPlus
+                                        , nopLeft = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o1" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( FromUser
+                                                                    ( L4EntityType "Number" )
+                                                                )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 1.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md =
+                                                [ MkExpMetadata
+                                                    { srcPos = MkPosition
+                                                        { row = 1
+                                                        , col = 1
+                                                        }
+                                                    , typeLabel = Just
+                                                        ( Inferred "Number" )
+                                                    , explnAnnot = Nothing
+                                                    }
+                                                ]
+                                            }
+                                        , nopRight = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o2" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( FromUser
+                                                                    ( L4EntityType "Number" )
+                                                                )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 7.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md =
+                                                [ MkExpMetadata
+                                                    { srcPos = MkPosition
+                                                        { row = 1
+                                                        , col = 1
+                                                        }
+                                                    , typeLabel = Just
+                                                        ( Inferred "Number" )
+                                                    , explnAnnot = Nothing
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md = []
+                            }
+                        , MkExp
+                            { exp = EVarSet
+                                { vsetVar = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "o3c" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                , arg = MkExp
+                                    { exp = ENumOp
+                                        { numOp = OpPlus
+                                        , nopLeft = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpMul
+                                                , nopLeft = MkExp
+                                                    { exp = EVar
+                                                        { var = MkVar "o1" }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ELit
+                                                        { lit = EFloat 1.0e-2 }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md =
+                                                [ MkExpMetadata
+                                                    { srcPos = MkPosition
+                                                        { row = 1
+                                                        , col = 1
+                                                        }
+                                                    , typeLabel = Just
+                                                        ( Inferred "Number" )
+                                                    , explnAnnot = Nothing
+                                                    }
+                                                ]
+                                            }
+                                        , nopRight = MkExp
+                                            { exp = ENumOp
+                                                { numOp = OpPlus
+                                                , nopLeft = MkExp
+                                                    { exp = ENumOp
+                                                        { numOp = OpMul
+                                                        , nopLeft = MkExp
+                                                            { exp = EVar
+                                                                { var = MkVar "o2" }
+                                                            , md =
+                                                                [ MkExpMetadata
+                                                                    { srcPos = MkPosition
+                                                                        { row = 1
+                                                                        , col = 1
+                                                                        }
+                                                                    , typeLabel = Just
+                                                                        ( Inferred "Number" )
+                                                                    , explnAnnot = Nothing
+                                                                    }
+                                                                ]
+                                                            }
+                                                        , nopRight = MkExp
+                                                            { exp = ELit
+                                                                { lit = EFloat 3.0e-2 }
+                                                            , md =
+                                                                [ MkExpMetadata
+                                                                    { srcPos = MkPosition
+                                                                        { row = 1
+                                                                        , col = 1
+                                                                        }
+                                                                    , typeLabel = Just
+                                                                        ( Inferred "Number" )
+                                                                    , explnAnnot = Nothing
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                , nopRight = MkExp
+                                                    { exp = ENumOp
+                                                        { numOp = OpMul
+                                                        , nopLeft = MkExp
+                                                            { exp = EVar
+                                                                { var = MkVar "o2" }
+                                                            , md =
+                                                                [ MkExpMetadata
+                                                                    { srcPos = MkPosition
+                                                                        { row = 1
+                                                                        , col = 1
+                                                                        }
+                                                                    , typeLabel = Just
+                                                                        ( Inferred "Number" )
+                                                                    , explnAnnot = Nothing
+                                                                    }
+                                                                ]
+                                                            }
+                                                        , nopRight = MkExp
+                                                            { exp = ELit
+                                                                { lit = EFloat 4.0e-2 }
+                                                            , md =
+                                                                [ MkExpMetadata
+                                                                    { srcPos = MkPosition
+                                                                        { row = 1
+                                                                        , col = 1
+                                                                        }
+                                                                    , typeLabel = Just
+                                                                        ( Inferred "Number" )
+                                                                    , explnAnnot = Nothing
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    , md =
+                                                        [ MkExpMetadata
+                                                            { srcPos = MkPosition
+                                                                { row = 1
+                                                                , col = 1
+                                                                }
+                                                            , typeLabel = Just
+                                                                ( Inferred "Number" )
+                                                            , explnAnnot = Nothing
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            , md =
+                                                [ MkExpMetadata
+                                                    { srcPos = MkPosition
+                                                        { row = 1
+                                                        , col = 1
+                                                        }
+                                                    , typeLabel = Just
+                                                        ( Inferred "Number" )
+                                                    , explnAnnot = Nothing
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md = []
+                            }
+                        ]
+                    }
+                , md = []
+                }
+            ]
+        , globalVars = MkGlobalVars
+            ( fromList
+                [
+                    ( MkVar "o2"
+                    , Just
+                        ( L4EntityType "Number" )
+                    )
+                ,
+                    ( MkVar "o1"
+                    , Just
+                        ( L4EntityType "Number" )
+                    )
+                ]
+            )
+        , giveths = [ "o3a_plus_times" ]
+        , userFuns = fromList []
+        }
+    )

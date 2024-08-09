@@ -618,3 +618,8 @@ rodentsAndVerminFunction =
       , ("a swimming pool", Parameter "string" ["true", "false"] "Did water escape from a swimming pool due to an animal?")
       , ("a plumbing, heating, or air conditioning system", Parameter "string" ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
       ]
+
+{- * TODO
+Add logic here for the royalflush project
+-}
+    

@@ -157,7 +157,7 @@ data RnRelationalPredicate
 -- ----------------------------------------------------------------------------
 
 newtype Renamer a = Renamer {runRenamer :: ExceptT String (State Scope) a}
-  deriving (Functor, Applicative, Monad)
+  deriving newtype (Functor, Applicative, Monad)
   deriving newtype (MonadState Scope, MonadError String)
 
 type Unique = Int

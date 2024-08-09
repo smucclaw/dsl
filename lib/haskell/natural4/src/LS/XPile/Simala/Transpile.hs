@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
@@ -24,7 +23,6 @@ import Optics
 import Text.Pretty.Simple qualified as Pretty
 
 import LS.Renamer
-import LS.Renamer qualified as Renamer
 import LS.Rule qualified as LS
 import LS.Types qualified as LS
 import TextuaL4.ParTextuaL qualified as Parser
@@ -101,12 +99,16 @@ data SimalaTerm
 -- Top Level transpilation functions and test helpers
 -- ----------------------------------------------------------------------------
 
-transpile :: (MonadError String m) => [RnRule] -> m Simala.Expr
+newtype Transpiler a = Transpiler {runTranspiler :: Except String a}
+  deriving newtype (Functor, Applicative, Monad)
+  deriving newtype (MonadError String)
+
+transpile :: [RnRule] -> Transpiler Simala.Expr
 transpile rules = do
   simalaTerms <- Maybe.catMaybes <$> traverse ruleToSimala rules
   combineSimalaTerms Simala.Undefined simalaTerms
 
-combineSimalaTerms :: (MonadError String m) => Simala.Expr -> [SimalaTerm] -> m Simala.Expr
+combineSimalaTerms :: Simala.Expr -> [SimalaTerm] -> Transpiler Simala.Expr
 combineSimalaTerms inExpr [] = pure inExpr
 combineSimalaTerms inExpr (TermLetIn t name expr : terms) = do
   restOfInExpr <- combineSimalaTerms inExpr terms
@@ -121,7 +123,7 @@ combineSimalaTerms _inExpr _terms = do
 -- Main translation helpers
 -- ----------------------------------------------------------------------------
 
-ruleToSimala :: (MonadError String m) => RnRule -> m (Maybe SimalaTerm)
+ruleToSimala :: RnRule -> Transpiler (Maybe SimalaTerm)
 ruleToSimala (TypeDecl _typedecl) =
   -- Simala doesn't need to declare types, we can use anonymously.
   -- We assume that ach rule has been typechecked already, so we don't need to
@@ -168,7 +170,7 @@ ruleToSimala (Hornlike hornlike) = do
 --
 -- ----------------------------------------------------------------------------
 
-hornClausesToSimala :: (MonadError String m) => [RnHornClause] -> m [SimalaTerm]
+hornClausesToSimala :: [RnHornClause] -> Transpiler [SimalaTerm]
 hornClausesToSimala clauses = do
   simalaTerms <- traverse processClause clauses
   let
@@ -193,7 +195,7 @@ groupClauses simalaTerms = do
   compareClauseHeads (TermAttribute name1 _ _) (TermAttribute name2 _ _) = name1 == name2
   compareClauseHeads _ _ = False
 
-foldInSubTerms :: forall m. (MonadError String m) => SimalaTerm -> [SimalaTerm] -> m SimalaTerm
+foldInSubTerms :: SimalaTerm -> [SimalaTerm] -> Transpiler SimalaTerm
 foldInSubTerms top [] = pure top
 foldInSubTerms top (x : xs) = case top of
   TermExpr{} -> throwError $ "foldInSubTerms: Unexpected SimalaTerm: " <> show top
@@ -208,7 +210,7 @@ foldInSubTerms top (x : xs) = case top of
     fnExprWithLocals <- linearLetIns fnExpr (x :| xs)
     pure $ TermFunction t fnName fnParams fnExprWithLocals
  where
-  linearLetIns :: Simala.Expr -> NonEmpty SimalaTerm -> m Simala.Expr
+  linearLetIns :: Simala.Expr -> NonEmpty SimalaTerm -> Transpiler Simala.Expr
   linearLetIns finalExpr terms = do
     inExpr <- case NE.tail terms of
       [] -> pure finalExpr
@@ -226,12 +228,12 @@ foldInSubTerms top (x : xs) = case top of
         pure $ mkLetIn t fnName (Simala.Fun Simala.Transparent fnParams fnExpr) inExpr
 
 -- | Given a collection of groups, merge each group into a single expression.
-mergeGroups :: (Traversable t, MonadError String m) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> m (t SimalaTerm)
+mergeGroups :: (Traversable t) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> Transpiler (t SimalaTerm)
 mergeGroups simalaTermGroups = do
   traverse mergeGroups' simalaTermGroups
 
 -- | Do the heavy lifting of how to actually merge multiple clauses into a single term.
-mergeGroups' :: (MonadError String m) => NonEmpty (SimalaTerm, Maybe Simala.Expr) -> m SimalaTerm
+mergeGroups' :: NonEmpty (SimalaTerm, Maybe Simala.Expr) -> Transpiler SimalaTerm
 mergeGroups' terms@((TermAttribute name _ _, _) :| _) = do
   attributeTerms <-
     traverse
@@ -250,7 +252,7 @@ mergeGroups' ((term, Just g) :| (n : ns)) = do
   elseBranch <- mergeGroups' (n :| ns)
   mkIfThenElseTerm g term elseBranch
 
-mergeAttributes :: (MonadError String m) => Simala.Name -> NonEmpty ([Simala.Name], Simala.Expr, Maybe Simala.Expr) -> m SimalaTerm
+mergeAttributes :: Simala.Name -> NonEmpty ([Simala.Name], Simala.Expr, Maybe Simala.Expr) -> Transpiler SimalaTerm
 mergeAttributes name terms = do
   let
     initSelectors = NE.head terms ^. _1
@@ -305,7 +307,7 @@ toIfThenElseChain ((expr, guard) :| terms) =
 -- Transpilation
 -- ----------------------------------------------------------------------------
 
-relationalPredicateToSimala :: (MonadError String m) => RnRelationalPredicate -> m SimalaTerm
+relationalPredicateToSimala :: RnRelationalPredicate -> Transpiler SimalaTerm
 relationalPredicateToSimala = \case
   RnRelationalTerm lhs -> lhsMultiTermToSimala lhs
   RnConstraint lhs LS.RPis rhs -> case lhs of
@@ -351,14 +353,14 @@ relationalPredicateToSimala = \case
     (_builtin, builder) <- predRelToBuiltIn predicate
     builder [lhsExpr, rhsSimalaExpr]
 
-predicateToSimala :: (MonadError String m) => LS.RPRel -> [RnRelationalPredicate] -> m SimalaTerm
+predicateToSimala :: LS.RPRel -> [RnRelationalPredicate] -> Transpiler SimalaTerm
 predicateToSimala rp params' = do
   params <- traverse relationalPredicateToSimala params'
   exprs <- traverse assertTermExpr params
   (_, builder) <- predRelToBuiltIn rp
   builder exprs
 
-predRelToBuiltIn :: (MonadError String m) => LS.RPRel -> m (Simala.Builtin, [Simala.Expr] -> m SimalaTerm)
+predRelToBuiltIn :: LS.RPRel -> Transpiler (Simala.Builtin, [Simala.Expr] -> Transpiler SimalaTerm)
 predRelToBuiltIn rp = case rp of
   LS.RPis -> throwError $ "Unsupported relational predicate: " <> show rp
   LS.RPhas -> throwError $ "Unsupported relational predicate: " <> show rp
@@ -383,21 +385,21 @@ predRelToBuiltIn rp = case rp of
   LS.RPmap -> throwError $ "Unsupported relational predicate: " <> show rp
   LS.RPTC _temporal -> throwError $ "Unsupported relational predicate: " <> show rp
 
-flexibleArity :: (MonadError String m) => Simala.Builtin -> [Simala.Expr] -> m SimalaTerm
+flexibleArity :: Simala.Builtin -> [Simala.Expr] -> Transpiler SimalaTerm
 flexibleArity b params = do
   pure $ TermExpr $ Simala.Builtin b params
 
-atLeastArity :: (MonadError String m) => Simala.Builtin -> Int -> [Simala.Expr] -> m SimalaTerm
+atLeastArity :: Simala.Builtin -> Int -> [Simala.Expr] -> Transpiler SimalaTerm
 atLeastArity b arity params' = do
   params <- assertLengthAtLeast arity params'
   pure $ TermExpr $ Simala.Builtin b params
 
-fixedArity :: (MonadError String m) => Simala.Builtin -> Int -> [Simala.Expr] -> m SimalaTerm
+fixedArity :: Simala.Builtin -> Int -> [Simala.Expr] -> Transpiler SimalaTerm
 fixedArity b arity params' = do
   params <- assertLength arity params'
   pure $ TermExpr $ Simala.Builtin b params
 
-lhsMultiTermToSimala :: (MonadError String m) => RnMultiTerm -> m SimalaTerm
+lhsMultiTermToSimala :: RnMultiTerm -> Transpiler SimalaTerm
 lhsMultiTermToSimala [rnExpr] = pure $ TermExpr $ exprToSimala rnExpr
 lhsMultiTermToSimala (mtHead : rest)
   | Just (fnName, fnParams) <- isFunctionDeclaration mtHead rest =
@@ -406,14 +408,14 @@ lhsMultiTermToSimala (mtHead : rest)
       mkRecordAssignmentTerm (toSimalaName varName) (fmap toSimalaName selectors)
 lhsMultiTermToSimala xs = throwError $ "lhsMultiTermToSimala: unsupported pattern: " <> show xs
 
-rhsMultiTermToSimala :: (MonadError String m) => RnMultiTerm -> m Simala.Expr
+rhsMultiTermToSimala :: RnMultiTerm -> Transpiler Simala.Expr
 rhsMultiTermToSimala [rnExpr] = pure $ exprToSimala rnExpr
 rhsMultiTermToSimala (mtHead : rest)
   | Just _fnName <- isFunction mtHead = pure $ Simala.App (exprToSimala mtHead) $ fmap exprToSimala rest
   | Just (varName, selectors) <- isProjection mtHead rest = pure $ applySelectors (toSimalaName varName) (fmap toSimalaName selectors)
 rhsMultiTermToSimala exprs = throwError $ "Unhandled rhs: " <> show exprs
 
-boolStructToSimala :: (MonadError String m) => RnBoolStructR -> m Simala.Expr
+boolStructToSimala :: RnBoolStructR -> Transpiler Simala.Expr
 boolStructToSimala = \case
   AA.Leaf relationalPredicate -> do
     simalaTerm <- relationalPredicateToSimala relationalPredicate
@@ -517,11 +519,11 @@ rnNameTypePrefix = \case
 -- Assertion helpers
 -- ----------------------------------------------------------------------------
 
-assertIsTermAttribute :: (MonadError String m) => SimalaTerm -> m (Simala.Name, [Simala.Name], Simala.Expr)
+assertIsTermAttribute :: SimalaTerm -> Transpiler (Simala.Name, [Simala.Name], Simala.Expr)
 assertIsTermAttribute (TermAttribute name selectors expr) = pure (name, selectors, expr)
 assertIsTermAttribute term = throwError $ "Expected TermAttribute but got: " <> show term
 
-assertSingletonList :: (MonadError String m) => String -> [a] -> m a
+assertSingletonList :: String -> [a] -> Transpiler a
 assertSingletonList _errMsg [a] = pure a
 assertSingletonList errMsg as =
   throwError $
@@ -530,7 +532,7 @@ assertSingletonList errMsg as =
       <> show (length as)
       <> " elements"
 
-assertLengthAtLeast :: (MonadError String m) => Int -> [a] -> m [a]
+assertLengthAtLeast :: Int -> [a] -> Transpiler [a]
 assertLengthAtLeast l as =
   let
     len = length as
@@ -544,7 +546,7 @@ assertLengthAtLeast l as =
             <> show (length as)
       else pure as
 
-assertLength :: (MonadError String m) => Int -> [a] -> m [a]
+assertLength :: Int -> [a] -> Transpiler [a]
 assertLength l as =
   let
     len = length as
@@ -558,28 +560,28 @@ assertLength l as =
             <> show (length as)
       else pure as
 
-assertNonEmpty :: (MonadError String m) => [a] -> m (NonEmpty a)
+assertNonEmpty :: [a] -> Transpiler (NonEmpty a)
 assertNonEmpty [] = throwError "Expected non-empty list"
 assertNonEmpty (x : xs) = pure $ x :| xs
 
-assertPredicateIsMultiTerm :: (MonadError String m) => String -> RnRelationalPredicate -> m RnMultiTerm
+assertPredicateIsMultiTerm :: String -> RnRelationalPredicate -> Transpiler RnMultiTerm
 assertPredicateIsMultiTerm _errMsg (RnRelationalTerm mt) = pure mt
 assertPredicateIsMultiTerm errMsg predicate = throwError $ errMsg <> "\nExpected RnRelationalTerm but got: " <> show predicate
 
-assertTermExpr :: (MonadError String m) => SimalaTerm -> m Simala.Expr
+assertTermExpr :: SimalaTerm -> Transpiler Simala.Expr
 assertTermExpr (TermExpr expr) = pure expr
 assertTermExpr term = throwError $ "Expected TermExpr but got: " <> show term
 
-assertEquals :: (MonadError String m, Eq a, Show a) => a -> a -> m ()
+assertEquals :: (Eq a, Show a) => a -> a -> Transpiler ()
 assertEquals a b
   | a == b = pure ()
   | otherwise = throwError $ "Provided args are not equal: " <> show a <> " /= " <> show b
 
-assertIsRecord :: (MonadError String m) => Simala.Expr -> m (Simala.Row Simala.Expr)
+assertIsRecord :: Simala.Expr -> Transpiler (Simala.Row Simala.Expr)
 assertIsRecord (Simala.Record row) = pure row
 assertIsRecord simalaExpr = throwError $ "Unexpected simala expression, expected Record but got: " <> show simalaExpr
 
-assertAttributeHasSelectors :: (MonadError String m) => SimalaTerm -> m (NonEmpty Simala.Name, Simala.Expr)
+assertAttributeHasSelectors :: SimalaTerm -> Transpiler (NonEmpty Simala.Name, Simala.Expr)
 assertAttributeHasSelectors (TermAttribute _ (x : xs) expr) = pure (x :| xs, expr)
 assertAttributeHasSelectors expr@(TermAttribute _ [] _) = throwError $ "Unexpected term, expected non-empty TermAttribute but got: " <> show expr
 assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-empty TermAttribute but got: " <> show expr
@@ -591,13 +593,13 @@ assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-e
 mkUndefinedTerm :: SimalaTerm
 mkUndefinedTerm = TermExpr Simala.Undefined
 
-mkAssignmentTerm :: (MonadError String m) => Simala.Name -> [Simala.Name] -> Simala.Expr -> m SimalaTerm
+mkAssignmentTerm :: Simala.Name -> [Simala.Name] -> Simala.Expr -> Transpiler SimalaTerm
 mkAssignmentTerm name selectors expr = pure $ TermAttribute name selectors expr
 
-mkFunctionHead :: (MonadError String m) => Simala.Name -> [Simala.Name] -> m SimalaTerm
+mkFunctionHead :: Simala.Name -> [Simala.Name] -> Transpiler SimalaTerm
 mkFunctionHead funcName funcParams = pure $ TermApp funcName funcParams
 
-mkRecordAssignmentTerm :: (MonadError String m) => Simala.Name -> NE.NonEmpty Simala.Name -> m SimalaTerm
+mkRecordAssignmentTerm :: Simala.Name -> NE.NonEmpty Simala.Name -> Transpiler SimalaTerm
 mkRecordAssignmentTerm varName selectors =
   pure $
     TermAttribute
@@ -605,17 +607,17 @@ mkRecordAssignmentTerm varName selectors =
       (NE.toList selectors)
       Simala.Undefined
 
-mkLetInTerm :: (MonadError String m) => Simala.Name -> SimalaTerm -> m SimalaTerm
+mkLetInTerm :: Simala.Name -> SimalaTerm -> Transpiler SimalaTerm
 mkLetInTerm var term = do
   body <- assertTermExpr term
   pure $ TermLetIn Simala.Transparent var body
 
-mkFunctionTerm :: (MonadError String m) => Simala.Name -> [Simala.Name] -> SimalaTerm -> m SimalaTerm
+mkFunctionTerm :: Simala.Name -> [Simala.Name] -> SimalaTerm -> Transpiler SimalaTerm
 mkFunctionTerm fnName fnParams term = do
   body <- assertTermExpr term
   pure $ TermFunction Simala.Transparent fnName fnParams body
 
-mkIfThenElseTerm :: (MonadError String m) => Simala.Expr -> SimalaTerm -> SimalaTerm -> m SimalaTerm
+mkIfThenElseTerm :: Simala.Expr -> SimalaTerm -> SimalaTerm -> Transpiler SimalaTerm
 mkIfThenElseTerm b (TermLetIn t1 name1 expr1) (TermLetIn t2 name2 expr2) = do
   assertEquals t1 t2
   assertEquals name1 name2
@@ -691,7 +693,7 @@ buildRecordUpdate names expr = go $ NE.toList names
   go (x : xs) = Simala.Record [(x, go xs)]
 
 -- TODO: what was I thinking?
-mergeRecordUpdates :: (MonadError String m) => [Simala.Row Simala.Expr] -> m Simala.Expr
+mergeRecordUpdates :: [Simala.Row Simala.Expr] -> Transpiler Simala.Expr
 mergeRecordUpdates xs = worker xs
  where
   worker rows = do
@@ -704,9 +706,8 @@ mergeRecordUpdates xs = worker xs
     pure $ Simala.Record simpleRows
 
   simplifyRow ::
-    (MonadError String m) =>
     NonEmpty (Simala.Name, Simala.Expr) ->
-    m (Simala.Name, Simala.Expr)
+    Transpiler (Simala.Name, Simala.Expr)
   simplifyRow ((n, expr) :| []) = pure (n, expr)
   simplifyRow rows@((n, _) :| _) = do
     let
@@ -1007,8 +1008,7 @@ debugTranspileRule ruleSrc = do
     Left err -> putStrLn err
     Right rnRule -> do
       TL.putStrLn $ Pretty.pShow rnRule
-      simalaTerms <- runExceptT $ transpile [rnRule]
-      case simalaTerms of
+      case runExcept $ runTranspiler $ transpile [rnRule] of
         Left err -> putStrLn err
         Right expr -> do
           Text.putStrLn $ "Expr: " <> Simala.render expr
@@ -1022,7 +1022,7 @@ transpileRulePure ruleSrc =
     case res of
       Left err -> Text.pack err
       Right rnRule -> do
-        case runExcept $ transpile [rnRule] of
+        case runExcept $ runTranspiler $ transpile [rnRule] of
           Left err -> Text.pack err
           Right expr ->
             Simala.render expr

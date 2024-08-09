@@ -219,7 +219,7 @@ transpilerTest outputName ruleString = it outputName $
               , pShowNoColorS scope
               ]
           (Right rnRule, _) -> do
-            case runExcept (Simala.transpile [rnRule]) of
+            case runExcept (Simala.runTranspiler $ Simala.transpile [rnRule]) of
               Left err -> "Failed transpilation:\n" <> err
               Right simala -> Text.unpack $ Simala.render simala
 

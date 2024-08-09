@@ -8,12 +8,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wall #-}
 
 module LS.Renamer where
-
-import Prelude hiding (lookup)
 
 import AnyAll.BoolStruct qualified as AA
 import LS.Rule (Rule, RuleLabel)
@@ -24,23 +21,23 @@ import LS.Types qualified as LS
 import Control.Monad.Error.Class
 import Control.Monad.Extra (foldM, fromMaybeM)
 import Control.Monad.State.Strict (MonadState)
-import Control.Monad.State.Strict qualified as State
 import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Except qualified as Except
 import Control.Monad.Trans.State.Strict (State)
-import Control.Monad.Trans.State.Strict qualified as State (runStateT)
+import Control.Monad.Trans.State.Strict qualified as State (runState)
+import Data.Foldable (traverse_)
 import Data.Foldable qualified as Foldable
+import Data.Functor (void)
+import Data.List qualified as List
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Lazy.IO qualified as TL
 import GHC.Generics (Generic)
-import GHC.List qualified as List
 import Optics hiding (has)
 import Text.Pretty.Simple qualified as Pretty
 
@@ -64,8 +61,6 @@ data RnHornClause = RnHornClause
   deriving (Eq, Ord, Show, Generic)
 
 type RnRuleName = RnMultiTerm
-type RnFullRuleName = [RnRuleOccName]
-type RnRuleOccName = [Text]
 type RnEntityType = RnName
 
 data RnHornlike = RnHornlike
@@ -119,7 +114,6 @@ data RnTypedMulti = RnTypedMulti
 -- | A name is something that can be resolved as either a variable, function, or enum.
 data RnName = RnName
   { rnOccName :: OccName
-  , rnRuleOccName :: RnFullRuleName
   , rnUniqueId :: Unique
   , rnNameType :: RnNameType
   -- TODO: add the binding scope for scope checking
@@ -159,76 +153,6 @@ data RnRelationalPredicate
   deriving (Eq, Ord, Show, Generic)
 
 -- ----------------------------------------------------------------------------
--- Utility data structures. To be moved outside of this module. Perhaps use
--- third-party library?
--- ----------------------------------------------------------------------------
-
--- rename (Let decls expr) = do { ns <- scanNames decls; rdecls <- withExtendedScope ns (traverse renameDecl decls); rexpr <- withExtendedScope ns (renameExpr expr); pure (RLet rdecls rexpr) }
-
-data Trie k v = Trie
-  { _trieValue :: !(Maybe v)
-  , _trieChildren :: !(Map k (Trie k v))
-  }
-  deriving (Eq, Ord, Foldable, Functor, Show, Traversable)
-
-empty :: Trie k v
-empty = Trie Nothing Map.empty
-
-singleton :: (Eq k) => [k] -> v -> Trie k v
-singleton [] x = Trie (Just x) Map.empty
-singleton (k : ks) x = Trie Nothing (Map.singleton k (singleton ks x))
-
-unionWith ::
-  (Eq k, Ord k) =>
-  (v -> v -> v) ->
-  Trie k v ->
-  Trie k v ->
-  Trie k v
-unionWith f (Trie v1 c1) (Trie v2 c2) =
-  Trie v $ Map.unionWith (unionWith f) c1 c2
- where
-  v = case (v1, v2) of
-    (Nothing, _) -> v2
-    (_, Nothing) -> v1
-    (Just x, Just y) -> Just (f x y)
-
-unionsWith ::
-  (Eq k, Ord k) =>
-  (v -> v -> v) ->
-  [Trie k v] ->
-  Trie k v
-unionsWith f = List.foldl' (unionWith f) empty
-
-prefix :: (Eq k, Ord k) => [k] -> Trie k v -> Trie k v
-prefix [] trie = trie
-prefix (k : ks) trie = Trie Nothing $ Map.singleton k (prefix ks trie)
-
-lookup :: (Eq k, Ord k) => [k] -> Trie k v -> Maybe v
-lookup [] (Trie Nothing _) = Nothing
-lookup [] (Trie (Just x) _) = Just x
-lookup (k : ks) (Trie _ children) = do
-  trie <- Map.lookup k children
-  lookup ks trie
-
--- alterF :: Functor f
---        => (Maybe a -> f (Maybe a)) -> [k] -> Trie k a -> f (Trie k a)
--- -- This implementation was stolen from 'Control.Lens.At'.
--- alterF f [] (Trie Nothing _) = Nothing
--- alterF f [] (Trie (Just x) _) = Just x
--- alterF f (k : ks) (Trie _ children) = do
---   trie <- alterF f ks children
---   lookup ks trie
-
--- instance Ord k => At (Trie k a) where
---   at k = lensVL $ \f -> alterF f k
---   {-# INLINE at #-}
-
--- type instance Index (Trie k a) = [k]
--- type instance IxValue (Trie k a) = a
--- -- Default implementation uses Map.alterF
--- instance Ord k => Ixed (Trie k a)
-
--- ----------------------------------------------------------------------------
 -- Scope tables
 -- ----------------------------------------------------------------------------
 
@@ -255,16 +179,14 @@ mkSimpleOccName :: Text -> OccName
 mkSimpleOccName = NE.singleton . LS.MTT
 
 data Scope = Scope
-  { _scScopeTable :: Trie RnRuleOccName ScopeTable
-  , _scUnique :: Unique
+  { _scScopeTable :: ScopeTable
+  , _scUniqueSupply :: Unique
   -- ^ next unique value that we can use
-  , _scBindingScope :: BindingScope
-  , _scRuleOccName :: RnFullRuleName
   }
   deriving (Eq, Ord, Show)
 
 data BindingScope
-  = TopLevelScope
+  = ToplevelScope
   | WhereScope
   | GivenScope
   | GivethScope
@@ -285,6 +207,16 @@ data ScopeTable = ScopeTable
   }
   deriving (Eq, Ord, Show)
 
+unionScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
+unionScopeTable tbl1 tbl2 =
+  ScopeTable
+    { _stVariables = Map.union tbl1._stVariables tbl2._stVariables
+    , _stFunction = Map.union tbl1._stFunction tbl2._stFunction
+    }
+
+makeFieldsNoPrefix 'Scope
+makeFieldsNoPrefix 'ScopeTable
+
 emptyScopeTable :: ScopeTable
 emptyScopeTable =
   ScopeTable
@@ -292,34 +224,47 @@ emptyScopeTable =
     , _stFunction = Map.empty
     }
 
-makeFieldsNoPrefix 'Scope
-makeFields 'Trie
-makeFieldsNoPrefix 'ScopeTable
-
 emptyScope :: Scope
 emptyScope =
   Scope
-    { _scScopeTable = empty
-    , _scUnique = 0
-    , _scBindingScope = TopLevelScope
-    , _scRuleOccName = []
+    { _scScopeTable = emptyScopeTable
+    , _scUniqueSupply = 0
     }
 
 prefixScope :: RuleName -> Scope -> Scope
 prefixScope = undefined
 
-newUniqueM :: Renamer Unique
-newUniqueM = do
-  u <- use scUnique
-  modifying' scUnique (+ 1)
+newUnique :: Renamer Unique
+newUnique = do
+  u <- use scUniqueSupply
+  modifying' scUniqueSupply (+ 1)
   pure u
 
+-- | Lookup the given name in the 'ScopeTable'.
 lookupName :: OccName -> Renamer (Maybe RnName)
-lookupName occName = do
-  ruleOccName <- use scRuleOccName
-  State.gets $ \s -> do
-    (scope :: ScopeTable) <- lookup ruleOccName s._scScopeTable
-    occName `Map.lookup` scope._stVariables
+lookupName occName =
+  use (scScopeTable % stVariables % at occName)
+
+-- | Look up the name associated with a given 'OccName' and assert it has
+-- the correct 'RnNameType'.
+--
+-- This can be used when the 'OccName' *must* be present in the 'ScopeTable',
+-- otherwise an assumption has been violated.
+-- If the name cannot be found, or the name is not of the expected type, we
+-- throw an exception.
+lookupExistingName :: OccName -> RnNameType -> Renamer RnName
+lookupExistingName occName nameType = do
+  mRnName <- lookupName occName
+  case mRnName of
+    Nothing -> throwError $ "lookupExistingName: Assumptions violated, name wasn't found: " <> show occName
+    Just name
+      | name.rnNameType == nameType -> pure name
+      | otherwise ->
+          throwError $
+            "lookupExistingName: Invariant violated, trying to insert a different name type for a name that's already known. Got: "
+              <> show nameType
+              <> " but expected: "
+              <> show (rnNameType name)
 
 -- | Either inserts a new name of the given type, or checks that the name
 -- is already in scope with the given type.
@@ -340,73 +285,34 @@ lookupOrInsertName occName nameType =
 
 insertName :: OccName -> RnNameType -> Renamer RnName
 insertName occName nameType = do
-  n <- newUniqueM
-  ruleOccName <- use scRuleOccName
+  n <- newUnique
   let
     rnName =
       RnName
         { rnUniqueId = n
         , rnOccName = occName
-        , rnRuleOccName = ruleOccName
         , rnNameType = nameType
         }
-
-  State.modify' $ \s ->
-    let
-      st =
-        unionWith
-          unionScopeTable
-          s._scScopeTable
-          ( singleton ruleOccName $
-              ScopeTable
-                { _stVariables = Map.singleton occName rnName
-                , _stFunction = Map.empty
-                }
-          )
-    in
-      s{_scScopeTable = st}
-
+  assign'
+    ( scScopeTable
+        % stVariables
+        % at occName
+    )
+    (Just rnName)
   pure rnName
 
-unionScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
-unionScopeTable sc1 sc2 =
-  ScopeTable
-    { _stVariables =
-        Map.unionWith
-          (\a b -> if a == b then a else error "Invariant unionWith")
-          sc1._stVariables
-          sc2._stVariables
-    , _stFunction =
-        Map.unionWith
-          (\a b -> if a == b then a else error "Invariant unionWith")
-          sc1._stFunction
-          sc2._stFunction
-    }
-
 insertFunction :: RnName -> FuncInfo -> Renamer ()
-insertFunction rnFnName funcInfo = do
-  ruleOccName <- use scRuleOccName
-  State.modify' $ \s ->
-    let
-      st =
-        unionWith
-          const
-          s._scScopeTable
-          ( singleton ruleOccName $
-              ScopeTable
-                { _stVariables = Map.empty
-                , _stFunction = Map.singleton rnFnName funcInfo
-                }
-          )
-    in
-      s{_scScopeTable = st}
+insertFunction rnFnName funcInfo =
+  assign'
+    ( scScopeTable
+        % stFunction
+        % at rnFnName
+    )
+    (Just funcInfo)
 
 lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
-lookupFunction rnFnName = do
-  ruleOccName <- use scRuleOccName
-  State.gets $ \s -> do
-    (scope :: ScopeTable) <- lookup ruleOccName s._scScopeTable
-    rnFnName `Map.lookup` scope._stFunction
+lookupFunction rnFnName =
+  use (scScopeTable % stFunction % at rnFnName)
 
 -- ----------------------------------------------------------------------------
 -- Helper types for local context
@@ -420,15 +326,18 @@ data MultiTermContext = MultiTermContext
   -- For example: @[MTT "book's", MTT "title"]@, when @"title"@ is renamed,
   -- the 'multiTermContextInSelector' is set expected to be to 'True', so that
   -- we can infer that @"title"@ is a 'RnSelector'.
+  , _multiTermContextFunctionCall :: Maybe RnName
+  -- ^ During renaming a 'MultiTerm', did we encounter a function application?
+  -- If so, we need to fix the arity!
   }
 
-makeFieldsNoPrefix 'MultiTermContext
+makeFields 'MultiTermContext
 
 inSelectorContext :: MultiTermContext -> MultiTermContext
-inSelectorContext mtc = mtc & multiTermContextInSelector .~ True
+inSelectorContext mtc = mtc & inSelector .~ True
 
 notInSelectorContext :: MultiTermContext -> MultiTermContext
-notInSelectorContext mtc = mtc & multiTermContextInSelector .~ False
+notInSelectorContext mtc = mtc & inSelector .~ False
 
 -- ----------------------------------------------------------------------------
 -- Top Level Definitions
@@ -446,26 +355,261 @@ renameRuleTopLevel rule = do
 
 renameRuleTopLevel' :: Rule -> (Either String RnRule, Scope)
 renameRuleTopLevel' rule =
-  State.runState (Except.runExceptT (runRenamer $ renameRule rule)) emptyScope
+  let
+    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renamer [rule])) emptyScope
+  in
+    (fmap head resE, scope)
+
+renamer :: [Rule] -> Renamer [RnRule]
+renamer rules = do
+  traverse_ scanRule rules
+  traverse renameRule rules
 
 -- ----------------------------------------------------------------------------
 -- Resolve functions and their respective arities
 -- ----------------------------------------------------------------------------
 
--- fixFunctionFixity :: (MonadState Scope m, MonadError String m) => RnRule -> m RnRule
--- fixFunctionFixity
+-- | Scan the structure of 'Rule' to find declarations that affect other rules.
+--
+-- We identify the following names that can be referenced from other rules:
+--
+-- 1. Functions and variables in the head of 'HornClauses'.
+-- 2. Names declared in 'GIVETH' clauses.
+-- 3. Types and selectors defined via 'DEFINE'
+scanRule :: Rule -> Renamer ()
+scanRule rule@Rule.Hornlike{} = do
+  -- TODO: givens should only be scanned for 'scanHornClause' and then removed again.
+  scanGivens rule.given
+  scanGiveths rule.giveth
+  traverse_ scanHornClause rule.clauses
+scanRule r@Rule.Regulative{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.Constitutive{} = throwError $ "Unsupported rule: " <> show r
+scanRule rule@Rule.TypeDecl{} = do
+  traverse_ scanTypeSignature rule.super
+  scanEnums rule.enums
+  scanGivens rule.given
+  traverse_ scanRule rule.has
+  scanTypeDeclName rule.name
+scanRule r@Rule.Scenario{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.DefNameAlias{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.DefTypically{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.RuleAlias{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.RuleGroup{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.RegFulfilled{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.RegBreach{} = throwError $ "Unsupported rule: " <> show r
+scanRule r@Rule.NotARule{} = throwError $ "Unsupported rule: " <> show r
+
+-- | Scan a 'LS.HornClause2' for declarations of variables and functions.
+scanHornClause :: LS.HornClause2 -> Renamer ()
+scanHornClause hc = do
+  scanDecideHeadClause hc.hHead
+
+-- | Scan the head of relational predicates that occur in
+-- the head of @DECIDE clauses@, e.g. @DECIDE foo IS bar@.
+--
+-- We detect the occurrence of @IS@ and treat it in a special way,
+-- and in the case of a multi-term, we use 'scanDecideMultiTerm'
+-- which allows the *introduction* of variables.
+scanDecideHeadClause :: LS.RelationalPredicate -> Renamer ()
+scanDecideHeadClause = \case
+  LS.RPParamText pText -> throwError $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
+  LS.RPMT mt -> scanDecideMultiTerm mt
+  LS.RPConstraint lhs _predicate _rhs -> do
+    scanDecideMultiTerm lhs
+  LS.RPBoolStructR lhs _predicate _rhs -> do
+    scanDecideMultiTerm lhs
+  LS.RPnary LS.RPis (lhs : _rhs) -> do
+    -- When the assignment has multiple complicated relational predicates,
+    -- it is translated to this 'RPNary'. Then the first element is before the 'IS'
+    -- and the rest after.
+    -- Example:
+    -- @f x IS SUM(x, x, x)@
+    -- is parsed to @RPnary RPis [[f, x], [RPnary RPSum [x, x, x]]]@
+    -- ignoring some details.
+    -- Thus, we scan the first item of 'IS' predicates.
+    scanDecideHeadClause lhs
+  LS.RPnary _predicate _rhs -> do
+    pure ()
+
+-- | Scan a top-level occurrence of 'LS.MultiTerm'.
+--
+-- This is slightly special, as this may be the definition site of functions.
+--
+-- For now, we accept the following 'LS.MultiTerm''s for function definitions:
+--
+-- * @f x1 x2 ...@: function @f@ in prefix with a variable number of parameters @x1, x2, ...@
+-- * @x1 x2 ... f@: function @f@ in postfix with a variable number of parameters @x1, x2, ...@
+-- * @x1 x2 ... f y1 y2 ...@: function @f@ in infix with a variable number of prefix
+--   parameters @x1, x2, ...@ and a variable numbers of postfix parameters @y1 y2 ...@.
+--
+-- Note, to be recognized as a function, variables must have been specified by 'GIVEN'
+-- clauses and the function name must be unbound in its current scope.
+-- TODO: scope checking is currently a WIP.
+--
+-- Additionally, we recognize the following forms:
+--
+-- * @f's x's y's z@: An attribute path from variable @f@ to something that has a @z@ attribute.
+-- * @x@: a variable, might be bound ad-hoc
+--
+-- Note, this doesn't accept literals such as '42' or '3.5f' or True or False.
+scanDecideMultiTerm :: LS.MultiTerm -> Renamer ()
+scanDecideMultiTerm mt = do
+  scopeTable <- use scScopeTable
+  case mt of
+    attrs
+      | Just (obj, objAttrs) <- toObjectPath attrs -> do
+          -- DECIDE x IS ...
+          -- DECIDE x's y's z IS ...
+          _ <- lookupOrInsertName (mkSimpleOccName obj) RnVariable
+          traverse_ (\attr -> RnExprName <$> lookupOrInsertName (mkSimpleOccName attr) RnSelector) objAttrs
+    fnDecl
+      | Just (fnOccName, preArgs, postArgs) <- scanForFunctionDecl scopeTable fnDecl -> do
+          rnF <- lookupOrInsertName fnOccName RnFunction
+          insertFunction rnF (FuncInfo{funcArity = (preArgs, postArgs)})
+    unknownPattern -> throwError $ "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
+
+-- | Check whether this could be a function like structure.
+--
+-- It might be, if all the variables are already bound, and the function name
+-- is unbound or already known as a function.
+--
+-- ANDRES: It surprises me that we do not have to check whether
+-- the arity matches.
+scanForFunctionDecl :: ScopeTable -> LS.MultiTerm -> Maybe (OccName, Int, Int)
+scanForFunctionDecl scopeTable mts = do
+  let
+    (preVars, fnWithArgs) = List.break (not . isVariable) mts
+  (fnTerm, postVars) <- case fnWithArgs of
+    [] -> Nothing
+    (LS.MTT fnTerm : postTerms) ->
+      if all isVariable postTerms
+        then Just (fnTerm, postTerms)
+        else Nothing
+    _terms -> Nothing
+
+  pure (mkSimpleOccName fnTerm, length preVars, length postVars)
+ where
+  isVariable (LS.MTT x) = case Map.lookup (mkSimpleOccName x) (scopeTable ^. stVariables) of
+    Nothing -> False
+    Just rnName
+      | rnName.rnNameType == RnVariable -> True
+      | otherwise -> False
+  isVariable _ = False
+
+scanGiveths ::
+  Maybe LS.ParamText ->
+  Renamer ()
+scanGiveths = scanGivens
+
+scanEnums ::
+  Maybe LS.ParamText ->
+  Renamer ()
+scanEnums = traverse_ scanGivenInlineEnumParamText
+
+scanGivens ::
+  Maybe LS.ParamText ->
+  Renamer ()
+scanGivens Nothing = pure ()
+scanGivens (Just givens) = do
+  traverse_ scanGiven givens
+
+scanGiven :: LS.TypedMulti -> Renamer ()
+scanGiven (mtExprs, typeSig) = do
+  scanGivenMultiTerm mtExprs
+  traverse_ scanTypeSignature typeSig
+
+scanGivenMultiTerm :: NonEmpty LS.MTExpr -> Renamer ()
+scanGivenMultiTerm mtExprs = do
+  mt <- assertSingletonMultiTerm mtExprs
+  void $ insertName (pure mt) RnVariable
+
+scanTypeSignature ::
+  LS.TypeSig ->
+  Renamer ()
+scanTypeSignature sig = case sig of
+  LS.SimpleType _pType entityType -> do
+    scanEntityType entityType
+  LS.InlineEnum _pType paramText -> do
+    -- TODO: error handling, would we accept an enum such as `a IS ONE OF 1, 2, 3`?
+    -- Only if we treat them as text, which might be confusing, as user might infer
+    -- this to be some kind of type checked number type.
+    scanGivenInlineEnumParamText paramText
+ where
+  scanEntityType :: LS.EntityType -> Renamer ()
+  scanEntityType eType =
+    -- This can either refer to an existing entity type, or define a new,
+    -- ad-hoc, entity type. We just assume that multiple ad-hoc definitions
+    -- of the same name in the same scope must be consistent.
+    void $ lookupOrInsertName (mkSimpleOccName eType) RnType
+
+-- | Scan for names in the enum definition.
+--
+-- Why not reuse 'scanGivens'? It is basically the same type!
+-- Well, we don't handle arbitrary nested type signatures.
+-- In fact, it is a bit dubious we have them at all!
+-- The following seems to be possible in theory:
+--
+-- @
+-- GIVEN x IS ONE OF foo IS ONE OF foobar, foobaz
+-- @
+--
+-- What would that suppose to mean? So, for now, we only allow enum definitions
+-- to be of the following form:
+--
+-- @
+-- GIVEN x IS ONE OF foo, bar, foo baz
+-- @
+--
+-- This means 'x' is one of three possible enum values 'foo', 'bar'
+-- and 'foo baz'.
+--
+-- TODO: We reuse this for Type declarations as well, are nested type signatures allowed in this case?
+-- Even in that case, since 'TypeDecl''s 'has' is a list of 'TypeDecl''s, it seems like
+-- there is no arbitrary nesting.
+--
+-- ANDRES: I think the fact that type signatures allow nested
+-- type signatures is a shortcoming of the input syntax that should
+-- be fixed at that level.
+scanGivenInlineEnumParamText :: LS.ParamText -> Renamer ()
+scanGivenInlineEnumParamText params = do
+  let
+    scanEach tm = do
+      mt <- assertNoTypeSignature tm
+      enumNames <- traverse (\t -> insertName (NE.singleton t) RnEnum) mt
+      pure $
+        RnTypedMulti
+          { rnTypedMultiExpr = fmap RnExprName enumNames
+          , rnTypedMultiTypeSig = Nothing
+          }
+
+  traverse_ scanEach params
+
+scanTypeDeclName :: RuleName -> Renamer ()
+scanTypeDeclName mtexprs = do
+  mt <- assertSingletonMultiTerm mtexprs
+  void $ insertName (NE.singleton mt) RnType
 
 -- ----------------------------------------------------------------------------
 -- Renamer passes
 -- ----------------------------------------------------------------------------
+
+renameLocalRules :: [Rule] -> Renamer ([RnRule], ScopeTable)
+renameLocalRules localRules = do
+  origScopeTable <- use scScopeTable
+  traverse_ scanRule localRules
+  localExports <- use scScopeTable
+  rnLocalRules <- traverse renameRule localRules
+  -- TODO: handle name conflicts
+  pure (rnLocalRules, origScopeTable `unionScopeTable` localExports)
 
 renameRule :: Rule -> Renamer RnRule
 renameRule rule@Rule.Hornlike{} = do
   super <- traverse renameTypeSignature rule.super
   given <- renameGivens rule.given
   giveth <- renameGiveths rule.giveth
+  (wwhere, scopeTableWithLocalDecls) <- renameLocalRules rule.wwhere
+  assign' scScopeTable scopeTableWithLocalDecls
   upon <- renameUpons rule.upon
-  wwhere <- traverse renameRule rule.wwhere
   defaults <- assertEmptyList rule.defaults
   symtab <- assertEmptyList rule.symtab
   clauses <- traverse renameHornClause rule.clauses
@@ -473,19 +617,19 @@ renameRule rule@Rule.Hornlike{} = do
   pure $
     Hornlike
       RnHornlike
-        { name = name
-        , super = super
+        { name
+        , super
         , keyword = rule.keyword
-        , given = given
-        , giveth = giveth
-        , upon = upon
-        , clauses = clauses
+        , given
+        , giveth
+        , upon
+        , clauses
         , rlabel = rule.rlabel
         , lsource = rule.lsource
-        , wwhere = wwhere
+        , wwhere
         , srcref = rule.srcref
-        , defaults = defaults
-        , symtab = symtab
+        , defaults
+        , symtab
         }
 renameRule r@Rule.Regulative{} = throwError $ "Unsupported rule: " <> show r
 renameRule r@Rule.Constitutive{} = throwError $ "Unsupported rule: " <> show r
@@ -525,7 +669,7 @@ renameRule r@Rule.NotARule{} = throwError $ "Unsupported rule: " <> show r
 renameTypeDeclName :: RuleName -> Renamer RnRuleName
 renameTypeDeclName mtexprs = do
   mt <- assertSingletonMultiTerm mtexprs
-  rnTyName <- insertName (NE.singleton mt) RnType
+  rnTyName <- lookupExistingName (NE.singleton mt) RnType
   pure [RnExprName rnTyName]
 
 renameUpons ::
@@ -561,7 +705,7 @@ renameGiven (mtExprs, typeSig) = do
 renameGivenMultiTerm :: NonEmpty LS.MTExpr -> Renamer RnName
 renameGivenMultiTerm mtExprs = do
   mt <- assertSingletonMultiTerm mtExprs
-  insertName (pure mt) RnVariable
+  lookupExistingName (pure mt) RnVariable
 
 renameTypeSignature ::
   LS.TypeSig ->
@@ -579,46 +723,14 @@ renameTypeSignature sig = case sig of
  where
   renameEntityType :: LS.EntityType -> Renamer RnEntityType
   renameEntityType eType =
-    -- This can either refer to an existing entity type, or define a new,
-    -- ad-hoc, entity type. We just assume that multiple ad-hoc definitions
-    -- of the same name in the same scope must be consistent.
-    lookupOrInsertName (mkSimpleOccName eType) RnType
+    lookupExistingName (mkSimpleOccName eType) RnType
 
--- | Rename an enum definition.
---
--- Why not reuse 'renameGivens'? It is basically the same type!
--- Well, we don't handle arbitrary nested type signatures.
--- In fact, it is a bit dubious we have them at all!
--- The following seems to be possible in theory:
---
--- @
--- GIVEN x IS ONE OF foo IS ONE OF foobar, foobaz
--- @
---
--- What would that suppose to mean? So, for now, we only allow enum definitions
--- to be of the following form:
---
--- @
--- GIVEN x IS ONE OF foo, bar, foo baz
--- @
---
--- This means 'x' is one of three possible enum values 'foo', 'bar'
--- and 'foo baz'.
---
--- TODO: We reuse this for Type declarations as well, are nested type signatures allowed in this case?
--- Even in that case, since 'TypeDecl''s 'has' is a list of 'TypeDecl''s, it seems like
--- there is no arbitrary nesting.
---
--- ANDRES: I think the fact that type signatures allow nested
--- type signatures is a shortcoming of the input syntax that should
--- be fixed at that level.
 renameGivenInlineEnumParamText :: LS.ParamText -> Renamer RnParamText
 renameGivenInlineEnumParamText params = do
   let
     renameEach tm = do
       mt <- assertNoTypeSignature tm
-      _t <- assertMultiExprIsOnlyText mt -- unclear if we really want this
-      enumNames <- traverse (\t -> insertName (NE.singleton t) RnEnum) mt
+      enumNames <- traverse (\t -> lookupExistingName (NE.singleton t) RnEnum) mt
       pure $
         RnTypedMulti
           { rnTypedMultiExpr = fmap RnExprName enumNames
@@ -630,139 +742,13 @@ renameGivenInlineEnumParamText params = do
 
 renameHornClause :: LS.HornClause2 -> Renamer RnHornClause
 renameHornClause hc = do
-  rnHead <- renameDecideHeadClause hc.hHead
+  rnHead <- renameRelationalPredicate hc.hHead
   rnBody <- traverse renameBoolStruct hc.hBody
   pure $
     RnHornClause
       { rnHcHead = rnHead
       , rnHcBody = rnBody
       }
-
--- Special renaming function for the relational predicates that occur in
--- the head of @DECIDE clauses@, e.g. @DECIDE foo IS bar@.
---
--- We detect the occurrence of @IS@ and treat it in a special way,
--- and in the case of a multi-term, we use 'renameDecideMultiTerm'
--- which allows the *introduction* of variables rather than just referencing
--- them.
---
-renameDecideHeadClause :: LS.RelationalPredicate -> Renamer RnRelationalPredicate
-renameDecideHeadClause = \case
-  LS.RPParamText pText -> throwError $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
-  LS.RPMT mt -> RnRelationalTerm <$> renameDecideMultiTerm mt
-  LS.RPConstraint lhs relationalPredicate rhs -> do
-    rnLhs <- renameDecideMultiTerm lhs
-    rnRhs <- renameMultiTerm rhs
-    pure $ RnConstraint rnLhs relationalPredicate rnRhs
-  LS.RPBoolStructR lhs relationalPredicate rhs -> do
-    rnLhs <- renameDecideMultiTerm lhs
-    rnRhs <- renameBoolStruct rhs
-    pure $ RnBoolStructR rnLhs relationalPredicate rnRhs
-  LS.RPnary LS.RPis (lhs : rhs) -> do
-    -- When the assignment has multiple complicated relational predicates,
-    -- it is translated to this 'RPNary'. Then the first element is before the 'IS'
-    -- and the rest after.
-    -- Example:
-    -- @f x IS SUM(x, x, x)@
-    -- is parsed to @RPnary RPis [[f, x], [RPnary RPSum [x, x, x]]]@
-    -- ignoring some details.
-    rnLhs <- renameDecideHeadClause lhs
-    rnRhs <- traverse renameRelationalPredicate rhs
-    pure $ RnNary LS.RPis (rnLhs : rnRhs)
-  LS.RPnary relationalPredicate rhs -> do
-    rnRhs <- traverse renameRelationalPredicate rhs
-    pure $ RnNary relationalPredicate rnRhs
-
--- | Rename a top-level occurrence of 'LS.MultiTerm'.
---
--- This is slightly special, as this may be the definition site of functions.
---
--- For now, we accept the following 'LS.MultiTerm''s for function definitions:
---
--- * @f x@: function @f@ in prefix with parameter @x@
--- * @x f@: function @f@ in postfix with parameter @x@
--- * @f x y@: function @f@ in prefix with parameters @x@ and @y@
--- * @x f y@: function @f@ in infix with parameters @x@ and @y@
---
--- Note, to be recognized as a function, variables must have been specified by 'GIVEN'
--- clauses and the function name must be unbound in its current scope.
---
--- Additionally, we recognize the following forms:
---
--- * @f's x's y's z@: An attribute path from @f@ to something that has a @z@ attribute.
--- * @x@: a variable, might be bound ad-hoc
---
--- Note, this doesn't accept literals such as '42' or '3.5f'.
-renameDecideMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
-renameDecideMultiTerm mt = do
-  ruleOccName <- use scRuleOccName
-  scopeTable <- (fromMaybe emptyScopeTable . lookup ruleOccName) <$> use scScopeTable
-  case mt of
-    attrs
-      | Just (obj, objAttrs) <- toObjectPath attrs -> do
-          -- DECIDE x IS ...
-          -- DECIDE x's y's z IS ...
-          rnName <- lookupOrInsertName (mkSimpleOccName obj) RnVariable
-          rnObjAttrs <- mapM (\attr -> RnExprName <$> lookupOrInsertName (mkSimpleOccName attr) RnSelector) objAttrs
-          pure $ RnExprName rnName : rnObjAttrs
-
-    -- ANDRES: I think we should generalise this to something like
-    -- the following:
-    --
-    -- If we have a list of names x_1, x_2, ... x_n, check if
-    -- there is an x_i such that all x_j with i /= j are known
-    -- (givens), and x_i is either unknown, or already known as
-    -- a function.
-    --
-    -- I'm not completely sure if this is enough, because we probably
-    -- should be more precise about shadowing existing functions ...
-    --
-    [LS.MTT f, LS.MTT x]
-      | Just [rnX] <- variableAndFunction scopeTable [x] f -> do
-          rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
-          insertFunction rnF (FuncInfo{funcArity = (0, 1)})
-          pure $ [RnExprName rnF, RnExprName rnX]
-    [LS.MTT x, LS.MTT f]
-      | Just [rnX] <- variableAndFunction scopeTable [x] f -> do
-          rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
-          insertFunction rnF (FuncInfo{funcArity = (1, 0)})
-          pure $ [RnExprName rnF, RnExprName rnX]
-    [LS.MTT x, LS.MTT f, LS.MTT y]
-      | Just [rnX, rnY] <- variableAndFunction scopeTable [x, y] f -> do
-          rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
-          insertFunction rnF (FuncInfo{funcArity = (1, 1)})
-          pure $ [RnExprName rnF, RnExprName rnX, RnExprName rnY]
-    [LS.MTT f, LS.MTT x, LS.MTT y]
-      | Just [rnX, rnY] <- variableAndFunction scopeTable [x, y] f -> do
-          rnF <- lookupOrInsertName (mkSimpleOccName f) RnFunction
-          insertFunction rnF (FuncInfo{funcArity = (0, 2)})
-          pure $ [RnExprName rnF, RnExprName rnX, RnExprName rnY]
-    [] -> throwError "renameDecideMultiTerm: Unexpected empty list of MultiTerm"
-    unknownPattern -> throwError $ "While renaming a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
-
--- | Check whether this could be a function like structure.
---
--- It might be, if all the variables are already bound, and the function name
--- is unbound or already known as a function.
---
--- ANDRES: It surprises me that we do not have to check whether
--- the arity matches.
-variableAndFunction :: ScopeTable -> [Text] -> Text -> Maybe [RnName]
-variableAndFunction st variables function = do
-  -- TODO: this is wrong, only consider arguments in the GIVEN's, otherwise
-  -- that's name shadowing. E.g.
-  --
-  -- @
-  -- GIVEN x DECIDE f x y IS SUM(x, y) WHERE y IS 5
-  -- @
-  rnBoundVariables <- traverse ((`Map.lookup` st._stVariables) . mkSimpleOccName) variables
-  case mkSimpleOccName function `Map.lookup` st._stVariables of
-    -- The function name must be either unbound, or
-    -- registered as a function.
-    Just fnName
-      | fnName.rnNameType == RnFunction -> Just rnBoundVariables
-      | otherwise -> Nothing
-    Nothing -> Just rnBoundVariables
 
 renameRelationalPredicate :: LS.RelationalPredicate -> Renamer RnRelationalPredicate
 renameRelationalPredicate = \case
@@ -793,7 +779,7 @@ renameBoolStruct = \case
 
 renameMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
 renameMultiTerm multiTerms = do
-  (results, _finalCtx) <-
+  (reversedRnMultiTerms, ctx) <-
     foldM
       ( \(results, state) mt -> do
           (rnExpr, newState) <- renameMultiTermExpression state mt
@@ -801,11 +787,24 @@ renameMultiTerm multiTerms = do
       )
       ([], initialMultiTermContext)
       multiTerms
-  pure $ reverse results
+  let
+    rnMultiTerms = reverse reversedRnMultiTerms
+  fixityFixedRnMultiTerms <- fixFixity ctx rnMultiTerms
+  pure fixityFixedRnMultiTerms
  where
+  fixFixity ctx rnMultiTerms = case ctx ^. functionCall of
+    Nothing -> pure rnMultiTerms
+    Just fnName -> do
+      let
+        (preArgs, postArgsWithName) = List.break (== (RnExprName fnName)) rnMultiTerms
+      case postArgsWithName of
+        [] -> throwError ""
+        (fnExpr : postArgs) -> pure $ fnExpr : preArgs ++ postArgs
+
   initialMultiTermContext =
     MultiTermContext
       { _multiTermContextInSelector = False
+      , _multiTermContextFunctionCall = Nothing
       }
 
 renameMultiTermExpression :: MultiTermContext -> LS.MTExpr -> Renamer (RnExpr, MultiTermContext)
@@ -820,27 +819,35 @@ renameMultiTermExpression ctx = \case
   -- We ignore this for now, though.
   LS.MTT name -> case isGenitive name of
     Nothing -> do
+      let
+        ctx' = notInSelectorContext ctx
       lookupName (mkSimpleOccName name) >>= \case
-        Just rnName -> pure (RnExprName rnName, notInSelectorContext ctx)
+        Just rnName -> do
+          let
+            ctx'' =
+              if rnName.rnNameType == RnFunction
+                then ctx' & functionCall ?~ rnName
+                else ctx'
+          pure (RnExprName rnName, ctx'')
         Nothing
           | Just literal <- isTextLiteral name ->
-              pure (RnExprLit $ RnString literal, notInSelectorContext ctx)
+              pure (RnExprLit $ RnString literal, ctx')
           | isL4BuiltIn name -> do
               -- ANDRES: I'm not convinced that built-ins should be renamed, and
               -- if we already detected that they're built-ins, perhaps we should
               -- just use a different dedicated constructor for this case.
               rnName <- RnExprName <$> rnL4Builtin name
-              pure (rnName, notInSelectorContext ctx)
-          | ctx ^. multiTermContextInSelector -> do
+              pure (rnName, ctx')
+          | ctx ^. inSelector -> do
               rnName <- RnExprName <$> insertName (mkSimpleOccName name) RnSelector
-              pure (rnName, notInSelectorContext ctx)
+              pure (rnName, ctx')
           | otherwise -> do
               -- If this is not a selector, or a known variable, we infer
               -- it is a string type. This is ok, because users can
               -- disambiguate variables and string literals by enclosing the
               -- literal in quotes, e.g. @"This is a string"@
               --
-              pure (RnExprLit $ RnString name, notInSelectorContext ctx)
+              pure (RnExprLit $ RnString name, ctx')
     Just nameSelector -> do
       -- Is this name known already?
       -- If not, we assume this is a selector we haven't encountered before.
@@ -887,28 +894,10 @@ oTHERWISE = "OTHERWISE"
 -- by giving us exactly what we need, followed by throwErroring if assumptions are violated.
 -- ----------------------------------------------------------------------------
 
--- | Assert the collection of 'MTExpr' consists only of text fragments.
---
--- TODO: This is lossy, we can't reconstruct the 'NonEmpty LS.MTExpr' given the
--- text. Fix this! It is likely wrong, too.
-assertMultiExprIsOnlyText :: NonEmpty LS.MTExpr -> Renamer Text
-assertMultiExprIsOnlyText mtt = do
-  xs <- traverse assertExprIsText mtt
-  pure $ Text.unwords $ NE.toList xs
-
 assertSingletonMultiTerm :: (Show (f LS.MTExpr), Foldable f) => f LS.MTExpr -> Renamer LS.MTExpr
 assertSingletonMultiTerm xs = case Foldable.toList xs of
   [x] -> pure x
   _ -> throwError $ "Expected singleton but got: " <> show xs
-
-assertMultiExprIsText :: NonEmpty LS.MTExpr -> Renamer Text
-assertMultiExprIsText mts = do
-  mt <- assertSingletonMultiTerm mts
-  assertExprIsText mt
-
-assertExprIsText :: LS.MTExpr -> Renamer Text
-assertExprIsText (LS.MTT t) = pure t
-assertExprIsText mt = throwError $ "Expected MTT but got: " <> show mt
 
 assertNoTypeSignature :: LS.TypedMulti -> Renamer (NonEmpty LS.MTExpr)
 assertNoTypeSignature tm@(_, Just _) = throwError $ "Expected no type signature but got: " <> show tm

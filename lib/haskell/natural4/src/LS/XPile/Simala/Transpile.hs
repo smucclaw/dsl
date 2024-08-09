@@ -702,7 +702,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure exampleWithOneOf
--- "let f_g_4 = fun(v_d_0) => let v_y_1 = if v_d_0 > 0 then 'green else if b_OTHERWISE_3 then 'red else undefined in v_y_1"
+-- "let f_g_4 = fun(v_d_0) => let v_y_1 = if v_d_0 > 0 then e_green_2 else if b_OTHERWISE_5 then e_red_3 else undefined in v_y_1"
 
 exampleWithOneOf :: String
 exampleWithOneOf =
@@ -716,7 +716,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure bookWithAttributes
--- "let f_g_4 = fun(v_d_0) => let v_y_1 = {s_book_2 = if v_d_0 > 0 then 'green else if b_OTHERWISE_3 then 'red else undefined} in v_y_1"
+-- "let f_g_1 = fun(v_d_0) => let v_y_2 = {s_book_3 = if v_d_0 > 0 then 'green else if b_OTHERWISE_4 then 'red else undefined} in v_y_2"
 
 bookWithAttributes :: String
 bookWithAttributes =
@@ -808,7 +808,7 @@ DECIDE f x IS 1 IF x > 0;
 |]
 
 -- >>> transpileRulePure decideWithAttributes
--- "let f_f_4 = fun(v_x_0) => let v_y_1 = {s_p_3 = v_x_0 + v_x_0,s_z_2 = 0} in v_y_1"
+-- "let f_f_1 = fun(v_x_0) => let v_y_2 = {s_p_4 = v_x_0 + v_x_0,s_z_3 = 0} in v_y_2"
 
 decideWithAttributes :: String
 decideWithAttributes =
@@ -821,7 +821,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure decideWithSimpleConditionalAttributes
--- "let f_f_3 = fun(v_x_0) => let v_y_1 = {s_z_2 = if v_x_0 > 3 then 5 else undefined} in v_y_1"
+-- "let f_f_1 = fun(v_x_0) => let v_y_2 = {s_z_3 = if v_x_0 > 3 then 5 else undefined} in v_y_2"
 
 decideWithSimpleConditionalAttributes :: String
 decideWithSimpleConditionalAttributes =
@@ -833,7 +833,7 @@ WHERE
 |]
 
 -- >>> transpileRulePure decideWithConditionalAttributes
--- "let f_f_5 = fun(v_x_0) => let v_y_1 = {s_p_4 = if v_x_0 > 5 then v_x_0 else if b_OTHERWISE_3 then v_x_0 + v_x_0 else undefined,s_z_2 = if v_x_0 > 3 then 5 else if b_OTHERWISE_3 then 0 else undefined} in v_y_1"
+-- "let f_f_1 = fun(v_x_0) => let v_y_2 = {s_p_4 = if v_x_0 > 5 then v_x_0 else if b_OTHERWISE_5 then v_x_0 + v_x_0 else undefined,s_z_3 = if v_x_0 > 3 then 5 else if b_OTHERWISE_5 then 0 else undefined} in v_y_2"
 
 decideWithConditionalAttributes :: String
 decideWithConditionalAttributes =

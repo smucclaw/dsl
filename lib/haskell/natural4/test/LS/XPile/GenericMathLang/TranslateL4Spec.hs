@@ -48,7 +48,7 @@ goldenGeneric name output_ = Golden
   , failFirstTime = False
   }
   where
-    testPath = "test" </> "testdata" </> "golden" </> name
+    testPath = "test" </> "testdata" </> "golden" </> "TranslateL4Spec" </> name
 
 spec :: Spec
 spec = do

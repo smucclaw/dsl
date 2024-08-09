@@ -30,67 +30,11 @@ import LS.XPile.MathLang.MathLang qualified as ML
 import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen, expandHornlikes, getHornlikes)
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.Hspec.Golden
-import Test.QuickCheck
-  ( Arbitrary (..),
-    Property,
-    Testable (property),
-    genericShrink,
-    verbose,
-    (===),
-    (==>),
-  )
-import Test.QuickCheck.Arbitrary.Generic
-  ( Arbitrary (..),
-    genericArbitrary,
-    genericShrink,
-  )
 import TextuaL4.Transform    ( transRule )
 import TextuaL4.ParTextuaL   ( pRule, myLexer )
 import Text.RawString.QQ (r)
-
 import Prelude hiding (exp, seq)
 
-instance Arbitrary (Expr Double) where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary (ExprList Double) where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary (MathSection Double) where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary (Pred Double) where
-    arbitrary = genericArbitrary
-    shrink = genericShrink
-
-instance Arbitrary SomeFold where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary Comp where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary MathBinOp where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary PredBinOp where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary AndOr where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
--- prop_changeVars :: (Expr Double, [(String, Expr Double)]) -> Property
--- prop_changeVars (e, ks_vs) = ML.replaceVars [] e fst ks vs === ML.replaceVars' ks vs e
---   where
---     ks = map fst ks_vs
---     vs = map snd ks_vs
 
 goldenGeneric :: Show a => String -> a -> Golden TL.Text
 goldenGeneric name output_ = Golden
@@ -107,11 +51,6 @@ goldenGeneric name output_ = Golden
 
 spec :: Spec
 spec = do
-  -- describe "replaceVars different implementations" do
-  --   it "should do the same thing" do
-  --     --Test.QuickCheck.verbose $
-  --     property prop_changeVars
-
 
   describe "rule 2 into SimpleHL" do
     it "should become a SimpleHL" do
@@ -188,8 +127,6 @@ spec = do
         (expr:_,st) -> do
           (e, _xp, _st, _strs) <- xplainE emptyE st $ eval expr
           e `shouldBe` 4.0
-
-    -- testBaseExpify "foo" "bar" [arithRule2withInitializedValues] EEmpty
 
   describe "evalComplex" do
     it "should evaluate arithRule2" do
@@ -373,64 +310,6 @@ testLCProgram f name desc rules gold =
         Right p -> f p `shouldBe` gold
         Left err -> err `shouldBe` MiscError "" ""
 
------------------------------------------------------------------------------
--- gold for mathlang transformation
-mathLangGold23 :: [Expr Double]
-mathLangGold23 = [
-    MathSet "m3a"
-    ( MathBin (Just "m3a") Times
-        ( MathVar "m1" )
-        ( MathVar "m2" )
-    )
-  , MathSet "m3b"
-    ( MathBin (Just "m3b") Times
-        ( MathVar "m1" )
-        ( MathVar "m2" )
-    )
-  , MathSet "m3c"
-    ( MathBin  (Just "m3c") Times
-        ( MathVar "m1" )
-        ( MathVar "m2" )
-    )
-  , MathSet "o3a"
-    ( MathBin (Just "o3a") Plus
-        ( MathBin Nothing Times
-            ( MathVar "o1" )
-            ( Val Nothing 1.0e-2 )
-        )
-        ( MathBin Nothing Times
-            ( MathVar "o2" )
-            ( Val Nothing 7.0e-2 )
-        )
-    )
-  , MathSet "o3b"
-    ( MathBin (Just "o3b")  Plus
-        ( MathBin Nothing Times
-            ( MathVar "o1" )
-            ( Val Nothing 1.0e-2 )
-        )
-        ( MathBin Nothing Times
-            ( MathVar "o2" )
-            ( Val Nothing 7.0e-2 )
-        )
-    )
-  , MathSet "o3c"
-    ( MathBin (Just "o3c") Plus
-        ( MathBin Nothing Times
-            ( MathVar "o1" )
-            ( Val Nothing 1.0e-2 )
-        )
-        ( MathBin Nothing Plus
-            ( MathBin Nothing Times
-                ( MathVar "o2" )
-                ( Val Nothing 3.0e-2 )
-            )
-            ( MathBin Nothing Times
-                ( MathVar "o2" )
-                ( Val Nothing 4.0e-2 )
-            )
-        )
-    )]
 
 mathLangGold4 :: ([Expr Double], MyState)
 mathLangGold4 = (
@@ -574,137 +453,6 @@ IF ALL ( ind IS "Singapore citizen"
        , ind's "annual income" <= 34000
        )|]
 
--- TODO: Which ones of the following should be replaced by records?
-rule3predicatesGold :: BaseExp
-rule3predicatesGold = EIfThen
-    { condExp = MkExp
-        { exp = EAnd
-            { left = MkExp
-                { exp = EIs
-                    { isLeft = MkExp
-                        { exp = EVar
-                            { var = MkVar "ind" }, md = []
-                        }, isRight = MkExp
-                        { exp = ELit
-                            { lit = EString "Singapore citizen" }, md = []
-                        }
-                    }, md = []
-                }, right = MkExp
-                { exp = EAnd
-                    { left = MkExp
-                        { exp = EIs
-                            { isLeft = MkExp
-                                { exp = ERec
-                                    { fieldName = MkExp
-                                        { exp = ELit
-                                            { lit = EString "place of residence" }, md = []
-                                        }, recName = MkExp
-                                        { exp = EVar
-                                            { var = MkVar "ind" }, md = []
-                                        }
-                                    }, md = []
-                                }, isRight = MkExp
-                                { exp = ELit
-                                    { lit = EString "Singapore" }, md = []
-                                }
-                            }, md = []
-                        }, right = MkExp
-                        { exp = EAnd
-                            { left = MkExp
-                                { exp = ECompOp
-                                    { compOp = OpGte, compLeft = MkExp
-                                        { exp = ERec
-                                            { fieldName = MkExp
-                                                { exp = ELit
-                                                    { lit = EString "age" }, md = []
-                                                }, recName = MkExp
-                                                { exp = EVar
-                                                    { var = MkVar "ind" }, md = []
-                                                }
-                                            }, md = []
-                                        }, compRight = MkExp
-                                        { exp = ELit
-                                            { lit = EInteger 21 }, md = []
-                                        }
-                                    }, md = []
-                                }, right = MkExp
-                                { exp = EAnd
-                                    { left = MkExp
-                                        { exp = ECompOp
-                                            { compOp = OpLte, compLeft = MkExp
-                                                { exp = ERec
-                                                    { fieldName = MkExp
-                                                        { exp = ELit
-                                                            { lit = EString "property annual value" }, md = []
-                                                        }, recName = MkExp
-                                                        { exp = EVar
-                                                            { var = MkVar "ind" }, md = []
-                                                        }
-                                                    }, md = []
-                                                }, compRight = MkExp
-                                                { exp = ELit
-                                                    { lit = EInteger 21000 }, md = []
-                                                }
-                                            }, md = []
-                                        }, right = MkExp
-                                        { exp = EAnd
-                                            { left = MkExp
-                                                { exp = ECompOp
-                                                    { compOp = OpBoolEq, compLeft = MkExp
-                                                        { exp = EApp
-                                                            { func = MkExp
-                                                                { exp = ELit
-                                                                    { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
-                                                                }, appArg = MkExp (EVar (MkVar "ind")) []
-                                                            }, md = []
-                                                        }, compRight = MkExp
-                                                        { exp = ELit { lit = EBoolTrue }, md = []
-                                                        }
-                                                    }, md = []
-                                                }, right = MkExp
-                                                { exp = EAnd
-                                                    { left = MkExp
-                                                        { exp = ECompOp
-                                                            { compOp = OpLte, compLeft = MkExp
-                                                                { exp = ERec
-                                                                    { fieldName = MkExp
-                                                                        { exp = ELit
-                                                                            { lit = EString "annual income" }, md = []
-                                                                        }, recName = MkExp
-                                                                        { exp = EVar
-                                                                            { var = MkVar "ind" }, md = []
-                                                                        }
-                                                                    }, md = []
-                                                                }, compRight = MkExp
-                                                                { exp = ELit
-                                                                    { lit = EInteger 34000 }, md = []
-                                                                }
-                                                            }, md = []
-                                                        }, right = MkExp
-                                                        { exp = EEmpty, md = []
-                                                        }
-                                                    }, md = []
-                                                }
-                                            }, md = []
-                                        }
-                                    }, md = []
-                                }
-                            }, md = []
-                        }
-                    }, md = []
-                }
-            }, md = []
-        }, thenExp = MkExp
-        { exp = EVarSet
-            { vsetVar = MkExp
-                { exp = EVar
-                    { var = MkVar "ind qualifies a la case 3" }, md = dummyMetadata
-                }, arg = MkExp
-                { exp = ELit { lit = EBoolTrue }, md = [] }
-            }, md = []
-        }
-    }
-
 rule2givens :: Rule
 rule2givens = parseRule [r|
 GIVEN `place of residence` ; `age` ; `property annual value` ; `meets the property eligibility criteria for GSTV-Cash` ; `annual income`
@@ -725,110 +473,6 @@ rule2givens_shl_gold = OneClause (HeadAndBody MkHornBodyHeadClause {
 
 rule2nogivens :: Rule
 rule2nogivens = rule2givens {given = Nothing}
-
-rule2nogivens_shl_gold :: BaseHL
-rule2nogivens_shl_gold = OneClause (HeadAndBody MkHornBodyHeadClause {
-                   hbHead = RPMT [MTT "case 2 qualifies"],
-                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTI 21]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
-                 })
-
--- Simple case? The conditions are all checked with OpBoolEq, OpStringEq and Op[GL]te
--- No Vars, because there were no givens in the original rule
-rule2nogivens_gold :: BaseExp
-rule2nogivens_gold = EIfThen
-    { condExp = MkExp
-        { exp = EAnd
-            { left = MkExp
-                { exp = ECompOp
-                    { compOp = OpBoolEq, compLeft = MkExp
-                        { exp = ELit
-                            { lit = EString "Singapore citizen" }, md = []
-                        }, compRight = MkExp
-                        { exp = ELit { lit = EBoolTrue }, md = [] }
-                    }, md = []
-                }, right = MkExp
-                { exp = EAnd
-                    { left = MkExp
-                        { exp = EIs
-                            { isLeft = MkExp
-                                { exp = ELit
-                                    { lit = EString "place of residence" }, md = []
-                                }, isRight = MkExp
-                                { exp = ELit
-                                    { lit = EString "Singapore" }, md = []
-                                }
-                            }, md = []
-                        }, right = MkExp
-                        { exp = EAnd
-                            { left = MkExp
-                                { exp = ECompOp
-                                    { compOp = OpGte, compLeft = MkExp
-                                        { exp = EVar
-                                            { var = MkVar "age" }, md = dummyMetadata
-                                        }, compRight = MkExp
-                                        { exp = ELit
-                                            { lit = EInteger 21 }, md = []
-                                        }
-                                    }, md = []
-                                }, right = MkExp
-                                { exp = EAnd
-                                    { left = MkExp
-                                        { exp = ECompOp
-                                            { compOp = OpLte, compLeft = MkExp
-                                                { exp = ELit
-                                                    { lit = EString "property annual value" }, md = []
-                                                }, compRight = MkExp
-                                                { exp = ELit
-                                                    { lit = EInteger 21000 }, md = []
-                                                }
-                                            }, md = []
-                                        }, right = MkExp
-                                        { exp = EAnd
-                                            { left = MkExp
-                                                { exp = ECompOp
-                                                    { compOp = OpBoolEq, compLeft = MkExp
-                                                        { exp = ELit
-                                                            { lit = EString "meets the property eligibility criteria for GSTV-Cash" }, md = []
-                                                        }, compRight = MkExp
-                                                        { exp = ELit { lit = EBoolTrue }, md = []
-                                                        }
-                                                    }, md = []
-                                                }, right = MkExp
-                                                { exp = EAnd
-                                                    { left = MkExp
-                                                        { exp = ECompOp
-                                                            { compOp = OpLte, compLeft = MkExp
-                                                                { exp = ELit
-                                                                    { lit = EString "annual income" }, md = []
-                                                                }, compRight = MkExp
-                                                                { exp = ELit
-                                                                    { lit = EInteger 34000 }, md = []
-                                                                }
-                                                            }, md = []
-                                                        }, right = MkExp
-                                                        { exp = EEmpty, md = []
-                                                        }
-                                                    }, md = []
-                                                }
-                                            }, md = []
-                                        }
-                                    }, md = []
-                                }
-                            }, md = []
-                        }
-                    }, md = []
-                }
-            }, md = []
-        }, thenExp = MkExp
-        { exp = EVarSet
-            { vsetVar = MkExp
-                { exp = EVar
-                    { var = MkVar "case 2 qualifies" }, md = dummyMetadata
-                }, arg = MkExp
-                { exp = ELit { lit = EBoolTrue }, md = [] }
-            }, md = []
-        }
-    }
 
 arithRule1 :: Rule
 arithRule1 = mkTestRule
@@ -931,33 +575,6 @@ arithRule3 = mkTestRule'
 
 arithRule2_gold :: BaseExp
 arithRule2_gold = ESeq {seq = SeqExp [MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3a"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntityType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntityType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3b"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntityType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntityType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3c"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMul, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []},MkExp {exp = EVarSet {vsetVar = MkExp {exp = EVar {var = MkVar "m3d"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}, arg = MkExp {exp = ENumOp {numOp = OpMinus, nopLeft = MkExp {exp = EVar {var = MkVar "m1"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntityType "Number")), explnAnnot = Nothing}]}, nopRight = MkExp {exp = EVar {var = MkVar "m2"}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (FromUser (L4EntityType "Number")), explnAnnot = Nothing}]}}, md = [MkExpMetadata {srcPos = MkPosition {row = 1, col = 1}, typeLabel = Just (Inferred "Number"), explnAnnot = Nothing}]}}, md = []}]}
-
-arithExpr3_gold :: Exp
-arithExpr3_gold =
-  MkExp { exp = ENumOp
-    { numOp = OpPlus, nopLeft = MkExp
-        { exp = ENumOp
-            { numOp = OpMul, nopLeft = MkExp
-                { exp = EVar
-                    { var = MkVar "o1" }, md = mkMetadata ( FromUser ( L4EntityType "Number" ))
-                }, nopRight = MkExp
-                { exp = ELit
-                    { lit = EFloat 1.0e-2 }, md = mkMetadata ( Inferred "Number" )
-                }
-            }, md = mkMetadata ( Inferred "Number" )
-        }, nopRight = MkExp
-        { exp = ENumOp
-            { numOp = OpMul, nopLeft = MkExp
-                { exp = EVar
-                    { var = MkVar "o2" }, md = mkMetadata ( FromUser ( L4EntityType "Number" ))
-                }, nopRight = MkExp
-                { exp = ELit
-                    { lit = EFloat 7.0e-2 }, md = mkMetadata ( Inferred "Number" )
-                }
-            }, md = mkMetadata (Inferred "Number")
-        }
-    }, md = mkMetadata (Inferred "Number")
-  }
 
 arithRule3_gold_symtab :: Explainable.MathLang.SymTab (Expr Double)
 arithRule3_gold_symtab =
@@ -1233,15 +850,6 @@ mkTestRule' name given giveth clauses = defaultHorn
     , giveth = giveth
     , clauses = clauses
     }
-
-simplifiedFib :: Rule
-simplifiedFib = mkTestRule
-            [ MTT "fib n" ]
-            (mkGivens [("n", Just (SimpleType TOne "Number" ))])
-            [ HC { hHead = RPConstraint
-                    [ MTT "fib n" ] RPis [ MTI 0 ]
-            , hBody = Nothing
-            }]
 
 dummyMetadata :: [ExpMetadata]
 dummyMetadata = [ MkExpMetadata

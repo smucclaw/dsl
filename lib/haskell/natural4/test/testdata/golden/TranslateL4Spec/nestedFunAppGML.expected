@@ -80,7 +80,8 @@ Right
                                         { row = 0
                                         , col = 0
                                         }
-                                    , typeLabel = Nothing
+                                    , typeLabel = Just
+                                        ( Inferred "Number" )
                                     , explnAnnot = Nothing
                                     }
                                 ]
@@ -94,7 +95,8 @@ Right
                                         { row = 0
                                         , col = 0
                                         }
-                                    , typeLabel = Nothing
+                                    , typeLabel = Just
+                                        ( Inferred "Number" )
                                     , explnAnnot = Nothing
                                     }
                                 ]

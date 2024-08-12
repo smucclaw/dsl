@@ -60,22 +60,6 @@ spec = do
         Left err -> err `shouldBe` MiscError "" ""
         Right res -> shClauses res `shouldBe` rule2givens_shl_gold
 
-    -- Postpone
-    -- testBaseExpify "rule 2 (basic, simple arithmetic) into BaseExp"
-    --                "should become something that makes sense"
-    --                 [rule2nogivens]
-    --                 [EEmpty]
-
-    -- testBaseExpify "rule 2 with givens into BaseExp"
-    --                 "should become (eventually) something where the givens are... ??? at least not SetVar"
-    --                 [rule2givens]
-    --                 [rule2givens_gold]
-
-    -- testBaseExpify "rule 3 into BaseExp"
-    --                 "should become something with records?"
-    --                 [rule3predicate]
-    --                 [rule3predicate_gold]
-
   testBaseExpify "arithRule2"
                  "arithmetics testcase 2"
                  "should parse inside a cell"
@@ -260,16 +244,11 @@ spec = do
               , ("accident.juvenile limit applies" , PredVal Nothing True)
               , ("accident.triple benefits apply" , PredVal Nothing True)
               , ("accident.double benefits apply" , PredVal Nothing False)
-              -- , ("illness.disqualified" , PredVal Nothing False)
-              -- this comes from illness,IS,disqualified and not illness's disqualified
-              -- gml2ml has been changed in meng's branch and probably will be merged into main?
-              -- anyway, this GML->ML transformation seems to be broken in more than one way,
-              -- and will be deprecated eventually, so I'm not fixing more stuff right now. /Inari 2024-07
               ]
           }
           (res, _xp, _st, _strs) <- xplainE emptyE st' $ eval expr
 
-          res `shouldBe` 50.0
+          res `shouldBe` 550.0
 
   describe "mustsing5" do
     let l4i = l4interpret defaultInterpreterOptions mustsing5
@@ -299,24 +278,27 @@ testLCProgram f goldPath name desc rules  =
   describe name do
     it desc $ goldenGeneric goldPath $ runToLC $ f <$> l4ToLCProgram rules
 
+emptyE :: Map.HashMap () ()
+emptyE = mempty
+
+-----------------------------------------------------------------------------
+-- Gold versions (that are not in files)
+
+rule2givens_shl_gold :: BaseHL
+rule2givens_shl_gold = OneClause (HeadAndBody MkHornBodyHeadClause {
+                   hbHead = RPMT [MTT "case 2 qualifies"],
+                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTI 21]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
+                 })
 
 -----------------------------------------------------------------------------
 -- Test rules
 
+-- | From TextuaL4
+parseRule :: String -> Rule
+parseRule = either (const RegBreach) transRule . pRule . myLexer
+
 stringsAndBackticks :: Rule
 stringsAndBackticks = parseRule [r|DECIDE `name of the book` IS "Perhaps the Stars"|]
-
-rule3predicate :: Rule
-rule3predicate = parseRule [r|
-GIVEN ind IS A Person
-DECIDE "ind" "qualifies a la case 3"
-IF ALL ( ind IS "Singapore citizen"
-       , ind's "place of residence" IS Singapore
-       , ind's age >= 21
-       , ind's "property annual value" <= 21000
-       , ind  "meets the property eligibility criteria for GSTV-Cash"
-       , ind's "annual income" <= 34000
-       )|]
 
 rule2givens :: Rule
 rule2givens = parseRule [r|
@@ -330,23 +312,11 @@ DECIDE `case 2 qualifies`
            , `annual income` <= 34000
            )|]
 
-rule2givens_shl_gold :: BaseHL
-rule2givens_shl_gold = OneClause (HeadAndBody MkHornBodyHeadClause {
-                   hbHead = RPMT [MTT "case 2 qualifies"],
-                   hbBody = AA.All Nothing [AA.Leaf (RPMT [MTT "Singapore citizen"]), AA.Leaf (RPConstraint [MTT "place of residence"] RPis [MTT "Singapore"]), AA.Leaf (RPConstraint [MTT "age"] RPgte [MTI 21]), AA.Leaf (RPConstraint [MTT "property annual value"] RPlte [MTI 21000]), AA.Leaf (RPMT [MTT "meets the property eligibility criteria for GSTV-Cash"]), AA.Leaf (RPConstraint [MTT "annual income"] RPlte [MTI 34000])]
-                 })
-
 rule2nogivens :: Rule
 rule2nogivens = rule2givens {given = Nothing}
 
 arithRule1 :: Rule
-arithRule1 = mkTestRule
-               [ MTT "two plus two" ]
-               Nothing
-               [ HC { hHead = RPConstraint
-                    [ MTT "m1" ] RPis
-                    [ MTT "2 + 2" ]
-                , hBody = Nothing } ]
+arithRule1 = parseRule [r|DECIDE m1 IS `2 + 2`|]
 
 arithRule2withInitializedValues :: Rule
 arithRule2withInitializedValues = parseRule [r|
@@ -358,89 +328,24 @@ DECIDE m1 IS 10 ;
 |]
 
 arithRule2 :: Rule
-arithRule2 = mkTestRule
-                [ MTT "m3a" ]
-                (mkGivens [("m1", Just ( SimpleType TOne "Number" )), ("m2", Just ( SimpleType TOne "Number" ))])
-                [ HC { hHead = RPConstraint
-                                [ MTT "m3a" ] RPis
-                                [ MTT "m1"
-                                , MTT "*"
-                                , MTT "m2"
-                                ]
-                    , hBody = Nothing}
-                , HC { hHead = RPnary RPis
-                        [ RPMT
-                            [ MTT "m3b" ]
-                        , RPnary RPproduct
-                            [ RPMT
-                                [ MTT "m1" ]
-                            , RPMT
-                                [ MTT "m2" ]
-                            ]
-                        ]
-                    , hBody = Nothing }
-                , HC
-                    { hHead = RPConstraint
-                        [ MTT "m3c" ] RPis
-                        [ MTT "m1 * m2" ]
-                    , hBody = Nothing }
-                , HC { hHead = RPnary RPis
-                        [ RPMT
-                            [ MTT "m3d" ]
-                        , RPnary RPminus
-                            [ RPMT
-                                [ MTT "m1" ]
-                            , RPMT
-                                [ MTT "m2" ]
-                            ]
-                        ]
-                    , hBody = Nothing }
-                ]
+arithRule2 = parseRule [r|
+GIVEN m1 IS A Number ;
+      m2 IS A Number
+DECIDE m3a IS m1 `*` m2 ;
+       m3b IS PRODUCT (m1, m2) ;
+       m3c IS `m1 * m2` ;
+       m3d IS MINUS (m1, m2)|]
+
 
 arithRule3 :: Rule
-arithRule3 = mkTestRule'
-                [ MTT "o3a" ]
-                (mkGivens [("o1", Just ( SimpleType TOne "Number" )), ("o2", Just ( SimpleType TOne "Number" ))])
-                (mkGivens [("o3a_plus_times", Just ( SimpleType TOne "Number" ))])
-                [ HC { hHead = RPConstraint
-                        [ MTT "o3a_plus_times" ] RPis
-                                [ MTT "o1 * 0.01"
-                                , MTT "+"
-                                , MTT "o2 * 0.07"
-                                ]
-                    , hBody = Nothing }
-                , HC { hHead = RPConstraint
-                        [ MTT "o3a_times_plus" ] RPis
-                        [ MTT "o1 + 0.01"
-                        , MTT "*"
-                        , MTT "o2 + 0.07"
-                        ]
-                    , hBody = Nothing }
-                , HC { hHead = RPnary RPis
-                        [ RPMT
-                            [ MTT "o3b" ]
-                        , RPnary RPsum
-                            [ RPnary RPproduct
-                        [ RPMT [ MTT "o1" ]
-                        , RPMT [ MTF 1.0e-2 ] ]
-                            , RPnary RPproduct
-                        [ RPMT [ MTT "o2" ]
-                        , RPMT [ MTF 7.0e-2 ] ]
-                            ]
-                        ]
-                    , hBody = Nothing
-                    }
-                , HC
-                    { hHead = RPConstraint
-                        [ MTT "o3c" ] RPis
-                        [ MTT "o1 * 0.01 + (o2 * 0.03 + o2 * 0.04)" ]
-                    , hBody = Nothing
-                    }
-                ]
-
--- All these come from TextuaL4
-parseRule :: String -> Rule
-parseRule = either (const RegBreach) transRule . pRule . myLexer
+arithRule3 = parseRule [r|
+GIVEN o1 IS A Number ;
+      o2 IS A Number
+GIVETH o3a_plus_times IS A Number
+DECIDE o3a_plus_times IS `o1 * 0.01` `+` `o2 * 0.07` ;
+       o3a_times_plus IS `o1 + 0.01` `*` `o2 + 0.07` ;
+       o3b IS SUM( PRODUCT(o1, 0.01) , PRODUCT (o2, 0.07) ) ;
+       o3c IS `o1 * 0.01 + (o2 * 0.03 + o2 * 0.04)`|]
 
 arithRule4 :: Rule
 arithRule4 = parseRule [r|
@@ -466,214 +371,71 @@ arithRule4 = parseRule [r|
           incomeTaxRate           IS 0.01 ;
           assetTaxRate           IS 0.07|]
 
+testLambda :: Rule
+testLambda = parseRule [r|
+GIVEN x IS A Number ; y IS A Number
+DECIDE x `discounted by` y IS `x * (1 - y)`|]
+
+
+testLambdaComplex :: Rule
+testLambdaComplex = parseRule [r|
+GIVEN x IS A Number ; y IS A Number
+DECIDE x `funThatRepeatsArgs` y IS `(x + y) * ((42 - y) + x)`|]
+
+testFunApp :: [Rule]
+testFunApp = testLambda :
+  [ parseRule [r|
+    GIVETH Answer IS A Number
+    DECIDE Answer IS `Step 3` `discounted by` accident's `risk cap`|]
+  ]
+
 nestedGenitives :: [MTExpr]
 nestedGenitives = [ MTT "ind's", MTT "friend's", MTT "age"]
 
 nestedGenitivesInFunApp :: [Rule]
-nestedGenitivesInFunApp =  testLambda :
-  [ mkTestRule'
-      [ MTT "test function application" ]
-      Nothing
-      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
-      [ HC { hHead = RPConstraint
-            [ MTT "Answer" ] RPis
-            [ MTT "ind's", MTT "friend's", MTT "age"
-            , MTT "discounted by"
-            , MTT "foo's", MTT "bar's", MTT "baz" ]
-        , hBody = Nothing
-        }]
+nestedGenitivesInFunApp = testLambda :
+  [ parseRule [r|
+    GIVETH Answer IS A Number
+    DECIDE Answer IS `ind's` `friend's` `age` `discounted by` `foo's` `bar's` `baz`|]
   ]
 
 simpleFunApp :: [Rule]
 simpleFunApp = testLambda :
-  [ mkTestRule'
-      [ MTT "simple test function application" ]
-      Nothing
-      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
-      [ HC { hHead = RPConstraint
-            [ MTT "Answer" ] RPis
-            [ MTT "firstArg"
-            , MTT "discounted by"
-            , MTT "secondArg" ]
-        , hBody = Nothing
-        }]
+  [ parseRule [r|
+    GIVETH Answer IS A Number
+    DECIDE Answer IS firstArg `discounted by` secondArg|]
   ]
+
 
 complexFunApp :: [Rule]
 complexFunApp = testLambdaComplex :
-  [ mkTestRule'
-      [ MTT "complex test function application" ]
-      Nothing
-      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
-      [ HC { hHead = RPConstraint
-            [ MTT "Answer" ] RPis
-            [ MTT "firstArg"
-            , MTT "`funThatRepeatsArgs`"
-            , MTT "secondArg" ]
-        , hBody = Nothing
-        }]
+  [ parseRule [r|
+    GIVETH Answer IS A Number
+    DECIDE Answer IS firstArg `funThatRepeatsArgs` secondArg|]
   ]
 
-funCallsAnotherFun = [
-    defaultHorn
-    { name =
-        [ MTT "The Answer" ]
-    , keyword = Decide
-    , given = mkGivens
-                [ ("firstArgument" , Just (SimpleType TOne "Number"))
-                , ("secondArgument", Just (SimpleType TOne "Number"))
-                ]
-    , giveth = mkGivens [("The Answer" , Just (SimpleType TOne "Number"))]
-    , clauses = [ HC
-            { hHead = RPConstraint
-                [ MTT "The Answer" ] RPis
-                [ MTT "firstArgument", MTT "f", MTT "secondArgument"]
-            , hBody = Nothing
-            }]
-    , rlabel = Just ( "§", 2, "Top-Level" )
-    },
-    defaultHorn
-    { name =
-        [ MTT "c", MTT "f", MTT "d"]
-    , keyword = Decide
-    , given = mkGivens
-                [ ("c", Just (SimpleType TOne "Number"))
-                , ("d", Just (SimpleType TOne "Number"))
-                ]
-    , clauses =
-        [ HC
-            { hHead = RPConstraint
-                [ MTT "c", MTT "f", MTT "d"
-                ] RPis
-                [ MTT "c", MTT "plus", MTT "d"
-                ]
-            , hBody = Nothing
-            }
-        ]
-    }
-    , defaultHorn
-    { name =
-        [ MTT "a", MTT "plus", MTT "b"
-        ]
-    , keyword = Decide
-    , given = mkGivens
-                [ ("a", Just (SimpleType TOne "Number"))
-                , ("b", Just (SimpleType TOne "Number"))
-                ]
-    , clauses =
-        [ HC
-            { hHead = RPConstraint
-                [ MTT "a", MTT "plus", MTT "b"
-                ] RPis
-                [ MTT "a", MTT "+", MTT "b"
-                ]
-            , hBody = Nothing
-            }
-        ]
-    }]
-
-mkGivens :: [(T.Text, Maybe TypeSig)] -> Maybe ParamText
-mkGivens = fmap mkTypedMulti >>> nonEmpty
-  where
-    mkTypedMulti (t, typesig) = (MTT t :| [], typesig)
-
-mkTestRule :: RuleName
-           -> Maybe ParamText  -- given
-           -> [HornClause2]    -- clauses
-           -> Rule
-mkTestRule n g = mkTestRule' n g Nothing
-
-mkTestRule' :: RuleName
-           -> Maybe ParamText  -- given
-           -> Maybe ParamText  -- giveth
-           -> [HornClause2]    -- clauses
-           -> Rule
-mkTestRule' name given giveth clauses = defaultHorn
-    { name = name
-    , keyword = Decide
-    , given = given
-    , giveth = giveth
-    , clauses = clauses
-    }
-
-dummyMetadata :: [ExpMetadata]
-dummyMetadata = [ MkExpMetadata
-                    { srcPos = MkPosition
-                        { row = 1, col = 1
-                        }, typeLabel = Nothing, explnAnnot = Nothing
-                    }
-                ]
-
-mkMetadata :: TLabel -> [ExpMetadata]
-mkMetadata typelabel = [ MkExpMetadata
-                    { srcPos = MkPosition
-                        { row = 1, col = 1
-                        }, typeLabel = Just typelabel, explnAnnot = Nothing
-                    }
-                ]
-
-
-testLambda :: Rule
-testLambda = mkTestRule
-    [ MTT "discounted by" ]
-    (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
-    [ HC { hHead = RPConstraint
-            [ MTT "x", MTT "discounted by", MTT "y" ] RPis
-            [ MTT "x * (1 - y)" ]
-        , hBody = Nothing}]
-
-testLambdaComplex :: Rule
-testLambdaComplex = mkTestRule
-    [ MTT "`funThatRepeatsArgs`" ]
-    (mkGivens [("x", Just (SimpleType TOne "Number")), ("y", Just (SimpleType TOne "Number"))])
-    [ HC { hHead = RPConstraint
-            [ MTT "x", MTT "`funThatRepeatsArgs`", MTT "y" ] RPis
-            [ MTT "(x + y) * ((42 - y) + x)" ]
-        , hBody = Nothing}]
+funCallsAnotherFun :: [Rule]
+funCallsAnotherFun = parseRule <$> [toplevel, f, plus]
+ where
+  toplevel = [r|
+  § Top-Level
+  GIVEN firstArgument ; secondArgument
+  GIVETH `The Answer` IS A Number
+  DECIDE `The Answer` IS firstArgument `f` secondArgument|]
+  f = [r|
+  GIVEN c ; d
+  DECIDE c `f` d IS c `plus` d|]
+  plus = [r|
+  GIVEN a ; b
+  DECIDE a `plus` b IS `a + b`|]
 
 testCurrency :: [Rule]
-testCurrency = [
-  mkTestRule
-    [ MTT "test currencies" ]
-    Nothing
-    [ HC { hHead = RPConstraint
-            [ MTT "sgdTestSpaceNoComma" ] RPis
-            [ MTT "SGD 42" ]
-        , hBody = Nothing }
-    , HC { hHead = RPConstraint
-            [ MTT "sgdTestNoSpaceNoComma" ] RPis
-            [ MTT "SGD42" ]
-          , hBody = Nothing }
-    , HC { hHead = RPConstraint
-            [ MTT "eurTestSpaceComma" ] RPis
-            [ MTT "€ 500,000" ]
-          , hBody = Nothing }
-    , HC { hHead = RPConstraint
-            [ MTT "eurTestNoSpaceComma" ] RPis
-            [ MTT "€500,000" ]
-          , hBody = Nothing }
-    , HC { hHead = RPConstraint
-          [ MTT "notACurrency" ] RPis
-          [ MTT "PAU4" ]
-        , hBody = Nothing }
-    ]
-  ]
-
-testFunApp :: [Rule]
-testFunApp = testLambda :
-  [ mkTestRule'
-      [ MTT "test function application" ]
-      Nothing
-      (mkGivens [("Answer", Just (SimpleType TOne "Number"))])
-      [ HC { hHead = RPConstraint
-            [ MTT "Answer" ] RPis
-            [ MTT "Step 3"
-            , MTT "discounted by"
-            , MTT "accident's"
-            , MTT "risk cap" ]
-        , hBody = Nothing
-        }]
-  ]
+testCurrency = [parseRule [r|
+DECIDE sgdTestSpaceNoComma IS `SGD 42` ;
+       sgdTestNoSpaceNoComma IS SGD42 ;
+       eurTestSpaceComma IS `€ 500,000` ;
+       eurTestNoSpaceComma IS `€500,000` ;
+       notACurrency IS PAU4|]]
 
 listsum :: [Rule]
 listsum = [parseRule [r|
@@ -773,24 +535,6 @@ paus = parseRule <$> [pau0, pau4, pauToplevel, sub1, sub2]
         y IS A	Number
   DECIDE	x	`discounted by`	y	IS	`x * (1 - y)`
   |]
-
-
-pausGlobalVarsGold :: GlobalVars
-pausGlobalVarsGold = MkGlobalVars [
-  ( MkVar "x", Just ( L4EntityType "Number" ) ),
-  ( MkVar "y", Just ( L4EntityType "Number" ) ),
-  ( MkVar "user input", Just ( L4EntityType "Dictionary" ) ),
-  ( MkVar "accident", Just ( L4EntityType "Accident" ) ),
-  ( MkVar "addBenefit", Just ( L4EntityType "Number" ) ),
-  ( MkVar "otherBenefits", Just ( L4List ( L4EntityType "Number" ) ) ),
-  ( MkVar "total sum assured", Just ( L4EntityType "Number" ) ),
-  ( MkVar "policyHolder", Just ( L4EntityType "PolicyHolder" ) ),
-  ( MkVar "policy", Just ( L4EntityType "Policy" ) ),
-  ( MkVar "illness", Just ( L4EntityType "Claim" ) )
-  ]
-
-emptyE :: Map.HashMap () ()
-emptyE = mempty
 
 mustsing5 :: [Rule]
 mustsing5 = parseRule <$> [reg, drinks, person, qualifies]

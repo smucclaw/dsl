@@ -1,13 +1,13 @@
 (
     [ MathSet "Answer"
-        ( MathVar "firstArg `funThatRepeatsArgs` secondArg" )
+        ( MathVar "firstArg funThatRepeatsArgs secondArg" )
     ]
 , MyState
     { symtabF = fromList
         [
-            ( "firstArg `funThatRepeatsArgs` secondArg"
+            ( "firstArg funThatRepeatsArgs secondArg"
             , MathBin
-                ( Just "firstArg `funThatRepeatsArgs` secondArg" ) Times
+                ( Just "firstArg funThatRepeatsArgs secondArg" ) Times
                 ( MathBin Nothing Plus
                     ( MathVar "firstArg" )
                     ( MathVar "secondArg" )
@@ -22,7 +22,7 @@
             )
         ,
             ( "Answer"
-            , MathVar "firstArg `funThatRepeatsArgs` secondArg"
+            , MathVar "firstArg funThatRepeatsArgs secondArg"
             )
         ]
     , symtabP = fromList []

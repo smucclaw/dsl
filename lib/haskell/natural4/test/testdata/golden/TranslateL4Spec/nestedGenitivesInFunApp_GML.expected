@@ -1,237 +1,137 @@
 Right
-    ( MkLCProgram
-        { lcProgram =
-            [ MkExp
-                { exp = EVarSet
-                    { vsetVar = MkExp
-                        { exp = EVar
-                            { var = MkVar "Answer" }
-                        , md = []
-                        }
-                    , arg = MkExp
-                        { exp = EApp
-                            { func = MkExp
-                                { exp = EApp
-                                    { func = MkExp
-                                        { exp = EVar
-                                            { var = MkVar "discounted by" }
-                                        , md =
-                                            [ MkExpMetadata
-                                                { srcPos = MkPosition
-                                                    { row = 1
-                                                    , col = 1
-                                                    }
-                                                , typeLabel = Nothing
-                                                , explnAnnot = Nothing
-                                                }
-                                            ]
+    [ EVarSet
+        { vsetVar = MkExp
+            { exp = EVar
+                { var = MkVar "Answer" }
+            , md = []
+            }
+        , arg = MkExp
+            { exp = EApp
+                { func = MkExp
+                    { exp = EApp
+                        { func = MkExp
+                            { exp = EVar
+                                { var = MkVar "discounted by" }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 1
+                                        , col = 1
                                         }
-                                    , appArg = MkExp
-                                        { exp = ERec
-                                            { fieldName = MkExp
-                                                { exp = ERec
-                                                    { fieldName = MkExp
-                                                        { exp = EVar
-                                                            { var = MkVar "age" }
-                                                        , md =
-                                                            [ MkExpMetadata
-                                                                { srcPos = MkPosition
-                                                                    { row = 1
-                                                                    , col = 1
-                                                                    }
-                                                                , typeLabel = Nothing
-                                                                , explnAnnot = Nothing
-                                                                }
-                                                            ]
-                                                        }
-                                                    , recName = MkExp
-                                                        { exp = EVar
-                                                            { var = MkVar "friend" }
-                                                        , md =
-                                                            [ MkExpMetadata
-                                                                { srcPos = MkPosition
-                                                                    { row = 1
-                                                                    , col = 1
-                                                                    }
-                                                                , typeLabel = Nothing
-                                                                , explnAnnot = Nothing
-                                                                }
-                                                            ]
-                                                        }
-                                                    }
-                                                , md = []
-                                                }
-                                            , recName = MkExp
-                                                { exp = EVar
-                                                    { var = MkVar "ind" }
-                                                , md =
-                                                    [ MkExpMetadata
-                                                        { srcPos = MkPosition
-                                                            { row = 1
-                                                            , col = 1
-                                                            }
-                                                        , typeLabel = Nothing
-                                                        , explnAnnot = Nothing
-                                                        }
-                                                    ]
-                                                }
-                                            }
-                                        , md = []
-                                        }
+                                    , typeLabel = Nothing
+                                    , explnAnnot = Nothing
                                     }
-                                , md = []
-                                }
-                            , appArg = MkExp
-                                { exp = ERec
-                                    { fieldName = MkExp
-                                        { exp = ERec
-                                            { fieldName = MkExp
-                                                { exp = EVar
-                                                    { var = MkVar "baz" }
-                                                , md =
-                                                    [ MkExpMetadata
-                                                        { srcPos = MkPosition
-                                                            { row = 1
-                                                            , col = 1
-                                                            }
-                                                        , typeLabel = Nothing
-                                                        , explnAnnot = Nothing
-                                                        }
-                                                    ]
-                                                }
-                                            , recName = MkExp
-                                                { exp = EVar
-                                                    { var = MkVar "bar" }
-                                                , md =
-                                                    [ MkExpMetadata
-                                                        { srcPos = MkPosition
-                                                            { row = 1
-                                                            , col = 1
-                                                            }
-                                                        , typeLabel = Nothing
-                                                        , explnAnnot = Nothing
-                                                        }
-                                                    ]
-                                                }
-                                            }
-                                        , md = []
-                                        }
-                                    , recName = MkExp
-                                        { exp = EVar
-                                            { var = MkVar "foo" }
-                                        , md =
-                                            [ MkExpMetadata
-                                                { srcPos = MkPosition
-                                                    { row = 1
-                                                    , col = 1
-                                                    }
-                                                , typeLabel = Nothing
-                                                , explnAnnot = Nothing
-                                                }
-                                            ]
-                                        }
-                                    }
-                                , md = []
-                                }
+                                ]
                             }
-                        , md = []
+                        , appArg = MkExp
+                            { exp = ERec
+                                { fieldName = MkExp
+                                    { exp = ERec
+                                        { fieldName = MkExp
+                                            { exp = EVar
+                                                { var = MkVar "age" }
+                                            , md =
+                                                [ MkExpMetadata
+                                                    { srcPos = MkPosition
+                                                        { row = 1
+                                                        , col = 1
+                                                        }
+                                                    , typeLabel = Nothing
+                                                    , explnAnnot = Nothing
+                                                    }
+                                                ]
+                                            }
+                                        , recName = MkExp
+                                            { exp = EVar
+                                                { var = MkVar "friend" }
+                                            , md =
+                                                [ MkExpMetadata
+                                                    { srcPos = MkPosition
+                                                        { row = 1
+                                                        , col = 1
+                                                        }
+                                                    , typeLabel = Nothing
+                                                    , explnAnnot = Nothing
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    , md = []
+                                    }
+                                , recName = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "ind" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Nothing
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md = []
+                            }
                         }
+                    , md = []
                     }
-                , md = []
-                }
-            ]
-        , globalVars = MkGlobalVars
-            ( fromList
-                [
-                    ( MkVar "x"
-                    , Just
-                        ( L4EntityType "Number" )
-                    )
-                ,
-                    ( MkVar "y"
-                    , Just
-                        ( L4EntityType "Number" )
-                    )
-                ]
-            )
-        , giveths = [ "Answer" ]
-        , userFuns = fromList
-            [
-                ( "discounted by"
-                ,
-                    (
-                        [ MkVar "x"
-                        , MkVar "y"
-                        ]
-                    , MkExp
-                        { exp = ENumOp
-                            { numOp = OpMul
-                            , nopLeft = MkExp
-                                { exp = EVar
-                                    { var = MkVar "x" }
-                                , md =
-                                    [ MkExpMetadata
-                                        { srcPos = MkPosition
-                                            { row = 0
-                                            , col = 0
+                , appArg = MkExp
+                    { exp = ERec
+                        { fieldName = MkExp
+                            { exp = ERec
+                                { fieldName = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "baz" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Nothing
+                                            , explnAnnot = Nothing
                                             }
-                                        , typeLabel = Just
-                                            ( Inferred "Number" )
-                                        , explnAnnot = Nothing
-                                        }
-                                    ]
-                                }
-                            , nopRight = MkExp
-                                { exp = ENumOp
-                                    { numOp = OpMinus
-                                    , nopLeft = MkExp
-                                        { exp = ELit
-                                            { lit = EInteger 1 }
-                                        , md =
-                                            [ MkExpMetadata
-                                                { srcPos = MkPosition
-                                                    { row = 0
-                                                    , col = 0
-                                                    }
-                                                , typeLabel = Just
-                                                    ( Inferred "Number" )
-                                                , explnAnnot = Nothing
-                                                }
-                                            ]
-                                        }
-                                    , nopRight = MkExp
-                                        { exp = EVar
-                                            { var = MkVar "y" }
-                                        , md =
-                                            [ MkExpMetadata
-                                                { srcPos = MkPosition
-                                                    { row = 0
-                                                    , col = 0
-                                                    }
-                                                , typeLabel = Just
-                                                    ( Inferred "Number" )
-                                                , explnAnnot = Nothing
-                                                }
-                                            ]
-                                        }
+                                        ]
                                     }
-                                , md =
-                                    [ MkExpMetadata
-                                        { srcPos = MkPosition
-                                            { row = 0
-                                            , col = 0
+                                , recName = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "bar" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 1
+                                                , col = 1
+                                                }
+                                            , typeLabel = Nothing
+                                            , explnAnnot = Nothing
                                             }
-                                        , typeLabel = Just
-                                            ( Inferred "Number" )
-                                        , explnAnnot = Nothing
-                                        }
-                                    ]
+                                        ]
+                                    }
                                 }
+                            , md = []
                             }
-                        , md = []
+                        , recName = MkExp
+                            { exp = EVar
+                                { var = MkVar "foo" }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 1
+                                        , col = 1
+                                        }
+                                    , typeLabel = Nothing
+                                    , explnAnnot = Nothing
+                                    }
+                                ]
+                            }
                         }
-                    )
-                )
-            ]
+                    , md = []
+                    }
+                }
+            , md = []
+            }
         }
-    )
+    ]

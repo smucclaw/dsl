@@ -15,7 +15,7 @@
   export const juvenile_limited = () => {return new tsm.SetVar ( "juvenile limited"
                  , (new tsm.Num2 ( "juvenile limited"
                                  , tsm.NumBinOp.MinOf2
-                                 , new tsm.GetVar ("Part 1")
+                                 , new tsm.GetVar ("Step 1")
                                  , new tsm.GetVar ("juvenile limit") )).val )}
   export const ADD_benefit = () => {return new tsm.SetVar ( "ADD benefit"
                  , (new tsm.Num2 ( "ADD benefit"
@@ -38,6 +38,14 @@
                                   , new tsm.GetVar ("ADD is disqualified entirely")
                                   , new tsm.GetVar ("excludedZero")
                                   , new tsm.GetVar ("ADD benefit") )).val )}
+  export const claimable_limit = () => {return new tsm.SetVar ( "claimable limit"
+                 , (new tsm.Num2 ( "claimable limit"
+                                 , tsm.NumBinOp.MinOf2
+                                 , new tsm.Num2 ( "binop Times"
+                                                , tsm.NumBinOp.Mul
+                                                , new tsm.Num0 ("1.5", 1.5)
+                                                , new tsm.GetVar ("total sum assured") )
+                                 , new tsm.GetVar ("lifetime claimable limit") )).val )}
   export const illness = () => {return new tsm.SetVar ( "illness"
                  , (new tsm.Bool3 ( "illness"
                                   , tsm.BoolTriOp.IfThenElse
@@ -77,14 +85,6 @@
   export const PAU0 = () => {return new tsm.SetVar ("PAU0", (new tsm.GetVar ("The Answer")).val)}
   export const Step_4 = () => {return new tsm.SetVar ( "Step 4"
                  , (new tsm.GetVar ("Step 3 discounted by accident.risk percentage")).val )}
-  export const claimable_limit = () => {return new tsm.SetVar ( "claimable limit"
-                 , (new tsm.Num2 ( "claimable limit"
-                                 , tsm.NumBinOp.MinOf2
-                                 , new tsm.Num2 ( "binop Times"
-                                                , tsm.NumBinOp.Mul
-                                                , new tsm.Num0 ("1.5", 1.5)
-                                                , new tsm.GetVar ("total sum assured") )
-                                 , new tsm.GetVar ("lifetime claimable limit") )).val )}
   export const base_ADD_benefit = () => {return new tsm.SetVar ("base ADD benefit", (new tsm.GetVar ("policy.benADD")).val)}
   export const Step_3_discounted_by_accident.risk_percentage = () => {return new tsm.SetVar ( "Step 3 discounted by accident.risk percentage"
                  , (new tsm.Num2 ( "Step 3 discounted by accident.risk percentage"

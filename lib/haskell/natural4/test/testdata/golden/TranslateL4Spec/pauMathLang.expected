@@ -27,7 +27,7 @@
             ( "juvenile limited"
             , MathMin
                 ( Just "juvenile limited" )
-                ( MathVar "Part 1" )
+                ( MathVar "Step 1" )
                 ( MathVar "juvenile limit" )
             )
         ,
@@ -59,6 +59,16 @@
                 ( PredVar "ADD is disqualified entirely" )
                 ( MathVar "excludedZero" )
                 ( MathVar "ADD benefit" )
+            )
+        ,
+            ( "claimable limit"
+            , MathMin
+                ( Just "claimable limit" )
+                ( MathBin Nothing Times
+                    ( Val Nothing 1.5 )
+                    ( MathVar "total sum assured" )
+                )
+                ( MathVar "lifetime claimable limit" )
             )
         ,
             ( "illness"
@@ -118,18 +128,6 @@
         ,
             ( "Step 4"
             , MathVar "Step 3 discounted by accident.risk percentage"
-            )
-        ,
-            ( "subsidiary computations"
-            , MathSet "claimable limit"
-                ( MathMin
-                    ( Just "claimable limit" )
-                    ( MathBin Nothing Times
-                        ( Val Nothing 1.5 )
-                        ( MathVar "total sum assured" )
-                    )
-                    ( MathVar "lifetime claimable limit" )
-                )
             )
         ,
             ( "base ADD benefit"

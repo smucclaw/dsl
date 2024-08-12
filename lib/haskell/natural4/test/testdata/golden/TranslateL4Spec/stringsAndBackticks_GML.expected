@@ -1,45 +1,34 @@
 Right
-    ( MkLCProgram
-        { lcProgram =
-            [ MkExp
-                { exp = EVarSet
-                    { vsetVar = MkExp
-                        { exp = EVar
-                            { var = MkVar "name of the book" }
-                        , md =
-                            [ MkExpMetadata
-                                { srcPos = MkPosition
-                                    { row = 1
-                                    , col = 1
-                                    }
-                                , typeLabel = Just
-                                    ( Inferred "String" )
-                                , explnAnnot = Nothing
-                                }
-                            ]
+    [ EVarSet
+        { vsetVar = MkExp
+            { exp = EVar
+                { var = MkVar "name of the book" }
+            , md =
+                [ MkExpMetadata
+                    { srcPos = MkPosition
+                        { row = 1
+                        , col = 1
                         }
-                    , arg = MkExp
-                        { exp = ELit
-                            { lit = EString ""Perhaps the Stars"" }
-                        , md =
-                            [ MkExpMetadata
-                                { srcPos = MkPosition
-                                    { row = 1
-                                    , col = 1
-                                    }
-                                , typeLabel = Just
-                                    ( Inferred "String" )
-                                , explnAnnot = Nothing
-                                }
-                            ]
-                        }
+                    , typeLabel = Just
+                        ( Inferred "String" )
+                    , explnAnnot = Nothing
                     }
-                , md = []
-                }
-            ]
-        , globalVars = MkGlobalVars
-            ( fromList [] )
-        , giveths = []
-        , userFuns = fromList []
+                ]
+            }
+        , arg = MkExp
+            { exp = ELit
+                { lit = EString ""Perhaps the Stars"" }
+            , md =
+                [ MkExpMetadata
+                    { srcPos = MkPosition
+                        { row = 1
+                        , col = 1
+                        }
+                    , typeLabel = Just
+                        ( Inferred "String" )
+                    , explnAnnot = Nothing
+                    }
+                ]
+            }
         }
-    )
+    ]

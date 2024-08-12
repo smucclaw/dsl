@@ -298,7 +298,7 @@ testLCProgram ::
   (LCProgram -> a) -> FilePath -> String -> String -> [Rule] -> Spec
 testLCProgram f goldPath name desc rules  =
   describe name do
-    it desc $ goldenGeneric goldPath $ runToLC $ l4ToLCProgram rules
+    it desc $ goldenGeneric goldPath $ runToLC $ f <$> l4ToLCProgram rules
 
 
 -----------------------------------------------------------------------------

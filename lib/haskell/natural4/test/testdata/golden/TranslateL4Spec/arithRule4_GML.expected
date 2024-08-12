@@ -1,694 +1,655 @@
 Right
-    ( MkLCProgram
-        { lcProgram =
+    [ ESeq
+        { seq = SeqExp
             [ MkExp
-                { exp = ESeq
-                    { seq = SeqExp
-                        [ MkExp
-                            { exp = EIfThen
-                                { condExp = MkExp
-                                    { exp = EIs
-                                        { isLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "phaseOfMoon" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4Enum
-                                                                [ "new"
-                                                                , "waxing"
-                                                                , "full"
-                                                                , "gibbous"
-                                                                ]
-                                                            )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
+                { exp = EIfThen
+                    { condExp = MkExp
+                        { exp = EIs
+                            { isLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "phaseOfMoon" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        , isRight = MkExp
-                                            { exp = ELit
-                                                { lit = EENum "gibbous" }
-                                            , md = []
-                                            }
-                                        }
-                                    , md = []
-                                    }
-                                , thenExp = MkExp
-                                    { exp = EVarSet
-                                        { vsetVar = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "taxesPayable" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , arg = MkExp
-                                            { exp = ENumOp
-                                                { numOp = OpDiv
-                                                , nopLeft = MkExp
-                                                    { exp = EVar
-                                                        { var = MkVar "taxesPayableAlive" }
-                                                    , md =
-                                                        [ MkExpMetadata
-                                                            { srcPos = MkPosition
-                                                                { row = 1
-                                                                , col = 1
-                                                                }
-                                                            , typeLabel = Just
-                                                                ( Inferred "Number" )
-                                                            , explnAnnot = Nothing
-                                                            }
-                                                        ]
-                                                    }
-                                                , nopRight = MkExp
-                                                    { exp = ELit
-                                                        { lit = EInteger 2 }
-                                                    , md =
-                                                        [ MkExpMetadata
-                                                            { srcPos = MkPosition
-                                                                { row = 1
-                                                                , col = 1
-                                                                }
-                                                            , typeLabel = Just
-                                                                ( Inferred "Number" )
-                                                            , explnAnnot = Nothing
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    , md = []
-                                    }
-                                }
-                            , md = []
-                            }
-                        , MkExp
-                            { exp = EIfThen
-                                { condExp = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "vivacity" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( FromUser
-                                                    ( L4EntityType "Boolean" )
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4Enum
+                                                    [ "new"
+                                                    , "waxing"
+                                                    , "full"
+                                                    , "gibbous"
+                                                    ]
                                                 )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
-                                , thenExp = MkExp
-                                    { exp = EVarSet
-                                        { vsetVar = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "taxesPayable" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Nothing
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , arg = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "taxesPayableAlive" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Nothing
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                            )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md = []
-                                    }
+                                    ]
                                 }
-                            , md = []
+                            , isRight = MkExp
+                                { exp = ELit
+                                    { lit = EENum "gibbous" }
+                                , md = []
+                                }
                             }
-                        , MkExp
-                            { exp = EIfThen
-                                { condExp = MkExp
-                                    { exp = EIs
-                                        { isLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "phaseOfMoon" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4Enum
-                                                                [ "new"
-                                                                , "waxing"
-                                                                , "full"
-                                                                , "gibbous"
-                                                                ]
-                                                            )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
+                        , md = []
+                        }
+                    , thenExp = MkExp
+                        { exp = EVarSet
+                            { vsetVar = MkExp
+                                { exp = EVar
+                                    { var = MkVar "taxesPayable" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        , isRight = MkExp
-                                            { exp = ELit
-                                                { lit = EENum "waxing" }
-                                            , md = []
-                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md = []
-                                    }
-                                , thenExp = MkExp
-                                    { exp = EVarSet
-                                        { vsetVar = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "taxesPayable" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
+                                    ]
+                                }
+                            , arg = MkExp
+                                { exp = ENumOp
+                                    { numOp = OpDiv
+                                    , nopLeft = MkExp
+                                        { exp = EVar
+                                            { var = MkVar "taxesPayableAlive" }
+                                        , md =
+                                            [ MkExpMetadata
+                                                { srcPos = MkPosition
+                                                    { row = 1
+                                                    , col = 1
                                                     }
-                                                ]
-                                            }
-                                        , arg = MkExp
-                                            { exp = ENumOp
-                                                { numOp = OpDiv
-                                                , nopLeft = MkExp
-                                                    { exp = EVar
-                                                        { var = MkVar "taxesPayableAlive" }
-                                                    , md =
-                                                        [ MkExpMetadata
-                                                            { srcPos = MkPosition
-                                                                { row = 1
-                                                                , col = 1
-                                                                }
-                                                            , typeLabel = Nothing
-                                                            , explnAnnot = Nothing
-                                                            }
-                                                        ]
-                                                    }
-                                                , nopRight = MkExp
-                                                    { exp = ELit
-                                                        { lit = EInteger 3 }
-                                                    , md = []
-                                                    }
+                                                , typeLabel = Just
+                                                    ( Inferred "Number" )
+                                                , explnAnnot = Nothing
                                                 }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                            ]
                                         }
-                                    , md = []
-                                    }
-                                }
-                            , md = []
-                            }
-                        , MkExp
-                            { exp = EIfThen
-                                { condExp = MkExp
-                                    { exp = EIs
-                                        { isLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "phaseOfMoon" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4Enum
-                                                                [ "new"
-                                                                , "waxing"
-                                                                , "full"
-                                                                , "gibbous"
-                                                                ]
-                                                            )
-                                                        )
-                                                    , explnAnnot = Nothing
+                                    , nopRight = MkExp
+                                        { exp = ELit
+                                            { lit = EInteger 2 }
+                                        , md =
+                                            [ MkExpMetadata
+                                                { srcPos = MkPosition
+                                                    { row = 1
+                                                    , col = 1
                                                     }
-                                                ]
-                                            }
-                                        , isRight = MkExp
-                                            { exp = ELit
-                                                { lit = EENum "full" }
-                                            , md = []
-                                            }
+                                                , typeLabel = Just
+                                                    ( Inferred "Number" )
+                                                , explnAnnot = Nothing
+                                                }
+                                            ]
                                         }
-                                    , md = []
                                     }
-                                , thenExp = MkExp
-                                    { exp = EVarSet
-                                        { vsetVar = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "taxesPayable" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Nothing
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        , arg = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "waived" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Nothing
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md = []
-                                    }
+                                    ]
                                 }
-                            , md = []
                             }
-                        , MkExp
-                            { exp = EIfThen
-                                { condExp = MkExp
-                                    { exp = ELit { lit = EBoolTrue }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Bool" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EIfThen
+                    { condExp = MkExp
+                        { exp = EVar
+                            { var = MkVar "vivacity" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
                                     }
-                                , thenExp = MkExp
-                                    { exp = EVarSet
-                                        { vsetVar = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "taxesPayable" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
+                                , typeLabel = Just
+                                    ( FromUser
+                                        ( L4EntityType "Boolean" )
+                                    )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , thenExp = MkExp
+                        { exp = EVarSet
+                            { vsetVar = MkExp
+                                { exp = EVar
+                                    { var = MkVar "taxesPayable" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        , arg = MkExp
-                                            { exp = ELit
-                                                { lit = EInteger 0 }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Nothing
+                                        , explnAnnot = Nothing
                                         }
-                                    , md = []
-                                    }
+                                    ]
                                 }
-                            , md = []
-                            }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "taxesPayableAlive" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                            , arg = MkExp
+                                { exp = EVar
+                                    { var = MkVar "taxesPayableAlive" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpPlus
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "income tax component" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "asset tax component" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Nothing
+                                        , explnAnnot = Nothing
                                         }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                    ]
                                 }
-                            , md = []
                             }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "income tax component" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EIfThen
+                    { condExp = MkExp
+                        { exp = EIs
+                            { isLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "phaseOfMoon" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpMul
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "annualIncome" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "incomeTaxRate" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4Enum
+                                                    [ "new"
+                                                    , "waxing"
+                                                    , "full"
+                                                    , "gibbous"
+                                                    ]
+                                                )
+                                            )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                    ]
                                 }
-                            , md = []
+                            , isRight = MkExp
+                                { exp = ELit
+                                    { lit = EENum "waxing" }
+                                , md = []
+                                }
                             }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "asset tax component" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                        , md = []
+                        }
+                    , thenExp = MkExp
+                        { exp = EVarSet
+                            { vsetVar = MkExp
+                                { exp = EVar
+                                    { var = MkVar "taxesPayable" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpMul
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "netWorth" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "assetTaxRate" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                    ]
                                 }
-                            , md = []
-                            }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "incomeTaxRate" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
+                            , arg = MkExp
+                                { exp = ENumOp
+                                    { numOp = OpDiv
+                                    , nopLeft = MkExp
+                                        { exp = EVar
+                                            { var = MkVar "taxesPayableAlive" }
+                                        , md =
+                                            [ MkExpMetadata
+                                                { srcPos = MkPosition
+                                                    { row = 1
+                                                    , col = 1
+                                                    }
+                                                , typeLabel = Nothing
+                                                , explnAnnot = Nothing
                                                 }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
+                                            ]
+                                        }
+                                    , nopRight = MkExp
+                                        { exp = ELit
+                                            { lit = EInteger 3 }
+                                        , md = []
+                                        }
                                     }
-                                , arg = MkExp
-                                    { exp = ELit
-                                        { lit = EFloat 1.0e-2 }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
                                 }
-                            , md = []
                             }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "assetTaxRate" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EIfThen
+                    { condExp = MkExp
+                        { exp = EIs
+                            { isLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "phaseOfMoon" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
-                                , arg = MkExp
-                                    { exp = ELit
-                                        { lit = EFloat 7.0e-2 }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4Enum
+                                                    [ "new"
+                                                    , "waxing"
+                                                    , "full"
+                                                    , "gibbous"
+                                                    ]
+                                                )
+                                            )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
                                 }
-                            , md = []
+                            , isRight = MkExp
+                                { exp = ELit
+                                    { lit = EENum "full" }
+                                , md = []
+                                }
                             }
-                        ]
+                        , md = []
+                        }
+                    , thenExp = MkExp
+                        { exp = EVarSet
+                            { vsetVar = MkExp
+                                { exp = EVar
+                                    { var = MkVar "taxesPayable" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Nothing
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , arg = MkExp
+                                { exp = EVar
+                                    { var = MkVar "waived" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Nothing
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EIfThen
+                    { condExp = MkExp
+                        { exp = ELit { lit = EBoolTrue }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Bool" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , thenExp = MkExp
+                        { exp = EVarSet
+                            { vsetVar = MkExp
+                                { exp = EVar
+                                    { var = MkVar "taxesPayable" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , arg = MkExp
+                                { exp = ELit
+                                    { lit = EInteger 0 }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "taxesPayableAlive" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpPlus
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "income tax component" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "asset tax component" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "income tax component" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMul
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "annualIncome" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "incomeTaxRate" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "asset tax component" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMul
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "netWorth" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "assetTaxRate" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "incomeTaxRate" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ELit
+                            { lit = EFloat 1.0e-2 }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "assetTaxRate" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ELit
+                            { lit = EFloat 7.0e-2 }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
                     }
                 , md = []
                 }
             ]
-        , globalVars = MkGlobalVars
-            ( fromList
-                [
-                    ( MkVar "netWorth"
-                    , Just
-                        ( L4EntityType "Number" )
-                    )
-                ,
-                    ( MkVar "annualIncome"
-                    , Just
-                        ( L4EntityType "Number" )
-                    )
-                ,
-                    ( MkVar "phaseOfMoon"
-                    , Just
-                        ( L4Enum
-                            [ "new"
-                            , "waxing"
-                            , "full"
-                            , "gibbous"
-                            ]
-                        )
-                    )
-                ,
-                    ( MkVar "vivacity"
-                    , Just
-                        ( L4EntityType "Boolean" )
-                    )
-                ]
-            )
-        , giveths = [ "taxesPayable" ]
-        , userFuns = fromList []
         }
-    )
+    ]

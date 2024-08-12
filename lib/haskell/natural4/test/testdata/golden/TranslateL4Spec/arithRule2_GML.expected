@@ -1,305 +1,282 @@
 Right
-    ( MkLCProgram
-        { lcProgram =
+    [ ESeq
+        { seq = SeqExp
             [ MkExp
-                { exp = ESeq
-                    { seq = SeqExp
-                        [ MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "m3a" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "m3a" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
                                     }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpMul
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m1" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m2" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
                                 }
-                            , md = []
-                            }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "m3b" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMul
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m1" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpMul
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m1" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m2" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                    ]
                                 }
-                            , md = []
-                            }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "m3c" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m2" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        ]
-                                    }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpMul
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m1" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m2" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( Inferred "Number" )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                    ]
                                 }
-                            , md = []
                             }
-                        , MkExp
-                            { exp = EVarSet
-                                { vsetVar = MkExp
-                                    { exp = EVar
-                                        { var = MkVar "m3d" }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
                                     }
-                                , arg = MkExp
-                                    { exp = ENumOp
-                                        { numOp = OpMinus
-                                        , nopLeft = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m1" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "m3b" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMul
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m1" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
                                             }
-                                        , nopRight = MkExp
-                                            { exp = EVar
-                                                { var = MkVar "m2" }
-                                            , md =
-                                                [ MkExpMetadata
-                                                    { srcPos = MkPosition
-                                                        { row = 1
-                                                        , col = 1
-                                                        }
-                                                    , typeLabel = Just
-                                                        ( FromUser
-                                                            ( L4EntityType "Number" )
-                                                        )
-                                                    , explnAnnot = Nothing
-                                                    }
-                                                ]
-                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
                                         }
-                                    , md =
-                                        [ MkExpMetadata
-                                            { srcPos = MkPosition
-                                                { row = 1
-                                                , col = 1
-                                                }
-                                            , typeLabel = Just
-                                                ( Inferred "Number" )
-                                            , explnAnnot = Nothing
-                                            }
-                                        ]
-                                    }
+                                    ]
                                 }
-                            , md = []
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m2" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
                             }
-                        ]
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "m3c" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMul
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m1" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m2" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( Inferred "Number" )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "m3d" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = ENumOp
+                            { numOp = OpMinus
+                            , nopLeft = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m1" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            , nopRight = MkExp
+                                { exp = EVar
+                                    { var = MkVar "m2" }
+                                , md =
+                                    [ MkExpMetadata
+                                        { srcPos = MkPosition
+                                            { row = 1
+                                            , col = 1
+                                            }
+                                        , typeLabel = Just
+                                            ( FromUser
+                                                ( L4EntityType "Number" )
+                                            )
+                                        , explnAnnot = Nothing
+                                        }
+                                    ]
+                                }
+                            }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Just
+                                    ( Inferred "Number" )
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
                     }
                 , md = []
                 }
             ]
-        , globalVars = MkGlobalVars
-            ( fromList
-                [
-                    ( MkVar "m1"
-                    , Just
-                        ( L4EntityType "Number" )
-                    )
-                ,
-                    ( MkVar "m2"
-                    , Just
-                        ( L4EntityType "Number" )
-                    )
-                ]
-            )
-        , giveths = []
-        , userFuns = fromList []
         }
-    )
+    ]

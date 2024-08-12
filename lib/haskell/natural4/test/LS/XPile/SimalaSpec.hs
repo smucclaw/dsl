@@ -1,10 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module LS.XPile.SimalaSpec (spec) where
 
-import Base (runExceptT)
 import Control.Monad.Trans.Except (runExcept)
 import Data.String.Interpolate
 import Data.Text qualified as Text
@@ -18,7 +18,6 @@ import Simala.Expr.Render qualified as Simala
 import System.FilePath
 import Test.Hspec
 import Test.Hspec.Golden
-import Text.Pretty.Simple qualified as Pretty
 import TextuaL4.ParTextuaL qualified as Parser
 import TextuaL4.Transform qualified as Parser
 
@@ -172,7 +171,6 @@ basicTests = do
       DECIDE y's z IS 5
       |]
 
-
 multiRuleTests :: Spec
 multiRuleTests = describe "multi-rules" do
   transpilerTest
@@ -225,9 +223,15 @@ transpilerTest :: String -> String -> SpecWith (Arg (Golden TL.Text))
 transpilerTest outputName ruleString = it outputName $
   goldenGeneric outputName $
     case runList ruleString of
-      Left err -> "Failed to parse program:\n" <> ruleString
+      Left err ->
+        unlines
+          [ "Failed to parse program:"
+          , ruleString
+          , "Err:"
+          , err
+          ]
       Right rules -> do
-        case Renamer.renameRules rules of
+        case Renamer.runRenamerFor rules of
           (Left err, scope) ->
             unlines
               [ "Renaming failed for program:"

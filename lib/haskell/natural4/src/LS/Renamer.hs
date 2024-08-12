@@ -166,7 +166,7 @@ type Unique = Int
 type OccName = NonEmpty LS.MTExpr
 
 data FuncInfo = FuncInfo
-  { funcArity :: (Int, Int)
+  { _funcArity :: (Int, Int)
   -- ^ Arity of a function. The first component means how many parameters
   -- are allowed before the function, the second component how many parameters
   -- are allowed afterwards.
@@ -183,13 +183,6 @@ data Scope = Scope
   , _scUniqueSupply :: Unique
   -- ^ next unique value that we can use
   }
-  deriving (Eq, Ord, Show)
-
-data BindingSite
-  = WhereClause
-  | GivenClause
-  | DecideClause
-  | GivethClause
   deriving (Eq, Ord, Show)
 
 -- | A 'ScopeTable' keeps tab on the variables and functions that occur in a
@@ -223,6 +216,7 @@ differenceScopeTable tbl1 tbl2 =
 
 makeFieldsNoPrefix 'Scope
 makeFieldsNoPrefix 'ScopeTable
+makeFieldsNoPrefix 'FuncInfo
 
 emptyScopeTable :: ScopeTable
 emptyScopeTable =
@@ -237,9 +231,6 @@ emptyScope =
     { _scScopeTable = emptyScopeTable
     , _scUniqueSupply = 0
     }
-
-prefixScope :: RuleName -> Scope -> Scope
-prefixScope = undefined
 
 newUnique :: Renamer Unique
 newUnique = do
@@ -290,6 +281,8 @@ lookupOrInsertName occName nameType =
               <> " but expected: "
               <> show (rnNameType name)
 
+-- | Insert an occurrence name into the current 'ScopeTable'.
+-- The new 'OccName' will overwrite (shadow?) any existing names.
 insertName :: OccName -> RnNameType -> Renamer RnName
 insertName occName nameType = do
   n <- newUnique
@@ -308,6 +301,7 @@ insertName occName nameType = do
     (Just rnName)
   pure rnName
 
+-- | Insert an function meta information into the current 'ScopeTable'.
 insertFunction :: RnName -> FuncInfo -> Renamer ()
 insertFunction rnFnName funcInfo =
   assign'
@@ -321,15 +315,19 @@ lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
 lookupFunction rnFnName =
   use (scScopeTable % stFunction % at rnFnName)
 
-withLocalScopeTable :: Renamer a -> Renamer (a, ScopeTable)
-withLocalScopeTable act = do
+-- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo'
+-- were introduced during this action.
+--
+-- Note, this operation is rather expensive, so use it with caution!
+recordScopeTable :: Renamer a -> Renamer (a, ScopeTable)
+recordScopeTable act = do
   orig <- use scScopeTable
   a <- act
   origWithNew <- use scScopeTable
   pure (a, origWithNew `differenceScopeTable` orig)
 
-withLocalScopeTable_ :: Renamer a -> Renamer ScopeTable
-withLocalScopeTable_ = fmap snd . withLocalScopeTable
+recordScopeTable_ :: Renamer a -> Renamer ScopeTable
+recordScopeTable_ = fmap snd . recordScopeTable
 
 -- ----------------------------------------------------------------------------
 -- Helper types for local context
@@ -364,47 +362,18 @@ renameRuleTopLevel :: Rule -> IO ()
 renameRuleTopLevel rule = do
   TL.putStrLn $ Pretty.pShow rule
   let
-    (res, s) = renameRuleTopLevel' rule
+    (res, s) = runRenamerFor [rule]
   TL.putStrLn $ Pretty.pShow s
   case res of
     Left err -> putStrLn err
-    Right rnRule -> TL.putStrLn $ Pretty.pShow rnRule
+    Right rnRules -> TL.putStrLn $ Pretty.pShow $ head rnRules
 
-renameRuleTopLevel' :: Rule -> (Either String RnRule, Scope)
-renameRuleTopLevel' rule =
+runRenamerFor :: (Traversable f) => f Rule -> (Either String (f RnRule), Scope)
+runRenamerFor rule =
   let
-    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renamer [rule])) emptyScope
-  in
-    (fmap head resE, scope)
-
-renameRules :: [Rule] -> (Either String [RnRule], Scope)
-renameRules rule =
-  let
-    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renamer rule)) emptyScope
+    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renameRules rule)) emptyScope
   in
     (resE, scope)
-
-renamer :: [Rule] -> Renamer [RnRule]
-renamer rules = do
-  rulesWithLocalDefs <-
-    traverse
-      ( \r -> do
-          prev <- use scScopeTable
-          exportedScope <- scanRule r
-          fullRuleScope <- use scScopeTable
-          assign' scScopeTable (prev `unionScopeTable` exportedScope)
-          pure (r, fullRuleScope)
-      )
-      rules
-  traverse
-    ( \(r, ruleScope) -> do
-        orig <- use scScopeTable
-        modifying' scScopeTable (`unionScopeTable` ruleScope)
-        rnRule <- renameRule r
-        assign' scScopeTable orig
-        pure rnRule
-    )
-    rulesWithLocalDefs
 
 -- ----------------------------------------------------------------------------
 -- Resolve functions and their respective arities
@@ -417,10 +386,13 @@ renamer rules = do
 -- 1. Functions and variables in the head of 'HornClauses'.
 -- 2. Names declared in 'GIVETH' clauses.
 -- 3. Types and selectors defined via 'DEFINE'
+--
+-- 'scanRule' produces a 'ScopeTable' of items that are exported from this rule.
+-- Further, 'scanRule' may only *add* new names to the 'ScopeTable'.
 scanRule :: Rule -> Renamer ScopeTable
 scanRule rule@Rule.Hornlike{} = do
   scanGivens rule.given
-  exports <- withLocalScopeTable_ $ do
+  exports <- recordScopeTable_ $ do
     scanGiveths rule.giveth
     traverse_ scanHornClause rule.clauses
   pure exports
@@ -508,7 +480,7 @@ scanDecideMultiTerm mt = do
     fnDecl
       | Just (fnOccName, preArgs, postArgs) <- scanForFunctionDecl scopeTable fnDecl -> do
           rnF <- lookupOrInsertName fnOccName RnFunction
-          insertFunction rnF (FuncInfo{funcArity = (preArgs, postArgs)})
+          insertFunction rnF (FuncInfo{_funcArity = (preArgs, postArgs)})
     unknownPattern -> throwError $ "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
 
 -- | Check whether this could be a function like structure.
@@ -636,30 +608,41 @@ scanTypeDeclName mtexprs = do
 -- Renamer passes
 -- ----------------------------------------------------------------------------
 
+-- |
 -- Lexical Scoping rules for hornlike rules:
 --
 -- GIVETH's are global
 -- GIVEN's are local
 -- DECIDE head term in "IS" clauses is global
 --
-
-renameLocalRules :: [Rule] -> Renamer ([RnRule], ScopeTable)
-renameLocalRules localRules = do
-  origScopeTable <- use scScopeTable
-  -- TODO: fix like in renamer
-  traverse_ scanRule localRules
-  localExports <- use scScopeTable
-  rnLocalRules <- traverse renameRule localRules
-  -- TODO: handle name conflicts
-  pure (rnLocalRules, origScopeTable `unionScopeTable` localExports)
+renameRules :: (Traversable f) => f Rule -> Renamer (f RnRule)
+renameRules rules = do
+  rulesWithLocalDefs <-
+    traverse
+      ( \r -> do
+          prev <- use scScopeTable
+          exportedScope <- scanRule r
+          fullRuleScope <- use scScopeTable
+          assign' scScopeTable (prev `unionScopeTable` exportedScope)
+          pure (r, fullRuleScope)
+      )
+      rules
+  traverse
+    ( \(r, ruleScope) -> do
+        orig <- use scScopeTable
+        modifying' scScopeTable (`unionScopeTable` ruleScope)
+        rnRule <- renameRule r
+        assign' scScopeTable orig
+        pure rnRule
+    )
+    rulesWithLocalDefs
 
 renameRule :: Rule -> Renamer RnRule
 renameRule rule@Rule.Hornlike{} = do
   super <- traverse renameTypeSignature rule.super
   given <- renameGivens rule.given
   giveth <- renameGiveths rule.giveth
-  (wwhere, scopeTableWithLocalDecls) <- renameLocalRules rule.wwhere
-  assign' scScopeTable scopeTableWithLocalDecls
+  wwhere <- renameLocalRules rule.wwhere
   upon <- renameUpons rule.upon
   defaults <- assertEmptyList rule.defaults
   symtab <- assertEmptyList rule.symtab
@@ -716,6 +699,9 @@ renameRule r@Rule.RuleGroup{} = throwError $ "renameRule: Unsupported rule: " <>
 renameRule r@Rule.RegFulfilled{} = throwError $ "renameRule: Unsupported rule: " <> show r
 renameRule r@Rule.RegBreach{} = throwError $ "renameRule: Unsupported rule: " <> show r
 renameRule r@Rule.NotARule{} = throwError $ "renameRule: Unsupported rule: " <> show r
+
+renameLocalRules :: [Rule] -> Renamer [RnRule]
+renameLocalRules = renameRules
 
 renameTypeDeclName :: RuleName -> Renamer RnRuleName
 renameTypeDeclName mtexprs = do

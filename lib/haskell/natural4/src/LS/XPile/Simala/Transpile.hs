@@ -14,11 +14,13 @@ import Data.Foldable qualified as Foldable
 import Data.Function (on)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe qualified as Maybe
 import Data.String.Interpolate
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Data.Text.Lazy.IO qualified as TL
+import Data.Tuple (Solo (..))
 import Optics
 import Text.Pretty.Simple qualified as Pretty
 
@@ -29,7 +31,7 @@ import TextuaL4.ParTextuaL qualified as Parser
 import TextuaL4.Transform qualified as Parser
 
 import AnyAll.BoolStruct qualified as AA
-import Data.Maybe qualified as Maybe
+
 import Simala.Expr.Parser (mkIfThenElse)
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
@@ -133,9 +135,11 @@ ruleToSimala (TypeDecl _typedecl) =
   pure Nothing
 ruleToSimala (Hornlike hornlike) = do
   terms <- hornClausesToSimala hornlike.clauses
-  term <- assertSingletonList "ruleToSimala" terms
-  subTerms <- traverse ruleToSimala hornlike.wwhere
-  Just <$> foldInSubTerms term (Maybe.catMaybes subTerms)
+  -- TODO: handle multiple GIVETH's.
+  -- Actually, handle GIVETHs at all.
+  mainDefinition <- assertSingletonList "ruleToSimala" terms
+  localDefinitions <- traverse ruleToSimala hornlike.wwhere
+  Just <$> addLocalDefinitions mainDefinition (Maybe.catMaybes localDefinitions)
 
 -- ----------------------------------------------------------------------------
 -- Post Processing of rule translation.
@@ -199,12 +203,11 @@ groupClauses simalaTerms = do
 
 -- | Takes the translation of local variables in where clauses and turns
 -- them into a Simala-let underneath potential lambdas.
---
-foldInSubTerms :: SimalaTerm -> [SimalaTerm] -> Transpiler SimalaTerm
-foldInSubTerms top [] = pure top
-foldInSubTerms top (x : xs) = case top of
-  TermExpr{} -> throwError $ "foldInSubTerms: Unexpected SimalaTerm: " <> show top
-  TermApp{} -> throwError $ "foldInSubTerms: Unexpected SimalaTerm: " <> show top
+addLocalDefinitions :: SimalaTerm -> [SimalaTerm] -> Transpiler SimalaTerm
+addLocalDefinitions top [] = pure top
+addLocalDefinitions top (x : xs) = case top of
+  TermExpr{} -> throwError $ "addLocalDefinitions: Unexpected SimalaTerm: " <> show top
+  TermApp{} -> throwError $ "addLocalDefinitions: Unexpected SimalaTerm: " <> show top
   TermLetIn t name expr -> do
     exprWithLocals <- linearLetIns expr (x :| xs)
     pure $ TermLetIn t name exprWithLocals
@@ -221,16 +224,16 @@ foldInSubTerms top (x : xs) = case top of
       [] -> pure finalExpr
       (a : as) -> linearLetIns finalExpr (a :| as)
     case NE.head terms of
-      TermApp{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show top
+      TermApp{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show (NE.head terms)
       TermLetIn t name expr -> do
         pure $ mkLetIn t name expr inExpr
-      TermExpr{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show top
+      TermExpr{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show (NE.head terms)
       TermAttribute name [] expr -> do
         pure $ mkLetIn Simala.Transparent name expr inExpr
       TermAttribute name (a : as) expr -> do
         pure $ mkLetIn Simala.Transparent name (buildRecordUpdate (a :| as) expr) inExpr
       TermFunction t fnName fnParams fnExpr -> do
-        pure $ mkLetIn t fnName (Simala.Fun Simala.Transparent fnParams fnExpr) inExpr
+        pure $ mkFunction t fnName fnParams fnExpr inExpr
 
 -- | Given a collection of groups, merge each group into a single expression.
 mergeGroups :: (Traversable t) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> Transpiler (t SimalaTerm)
@@ -259,7 +262,6 @@ mergeGroups' ((term, Just g) :| (n : ns)) = do
 
 -- | Tries to merge multiple assignments for fields of a single record
 -- into a single record construction.
---
 mergeAttributes :: Simala.Name -> NonEmpty ([Simala.Name], Simala.Expr, Maybe Simala.Expr) -> Transpiler SimalaTerm
 mergeAttributes name terms = do
   let
@@ -286,7 +288,7 @@ mergeAttributes name terms = do
       let
         rowGroups = NE.groupWith (^. _1) rowTerms
         rowGroups' = fmap reduceAttrPaths rowGroups
-      rowExprs <- traverse (\(attrName, expr) -> pure $ buildRecordUpdate attrName expr) rowGroups'
+        rowExprs = fmap (\(attrName, expr) -> buildRecordUpdate attrName expr) rowGroups'
       recordRows <- traverse assertIsRecord rowExprs
       treeRows <- mergeRecordUpdates recordRows
       pure $ TermLetIn Simala.Transparent name treeRows
@@ -333,8 +335,7 @@ relationalPredicateToSimala = \case
     lhsSimalaExpr' <- lhsMultiTermToSimala lhs
     lhsSimalaExpr <- assertTermExpr lhsSimalaExpr'
     rhsSimalaExpr <- rhsMultiTermToSimala rhs
-    (_builtin, builder) <- predRelToBuiltIn predicate
-    builder [lhsSimalaExpr, rhsSimalaExpr]
+    predRelToBuiltIn predicate [lhsSimalaExpr, rhsSimalaExpr]
   RnNary LS.RPis (lhs : rhs) -> do
     multiTerm <- assertPredicateIsMultiTerm "relationalPredicateToSimala" lhs
     lhsSimalaTerm <- lhsMultiTermToSimala multiTerm
@@ -359,38 +360,36 @@ relationalPredicateToSimala = \case
     lhsTerm <- lhsMultiTermToSimala lhs
     lhsExpr <- assertTermExpr lhsTerm
     rhsSimalaExpr <- boolStructToSimala rhs
-    (_builtin, builder) <- predRelToBuiltIn predicate
-    builder [lhsExpr, rhsSimalaExpr]
+    predRelToBuiltIn predicate [lhsExpr, rhsSimalaExpr]
 
 predicateToSimala :: LS.RPRel -> [RnRelationalPredicate] -> Transpiler SimalaTerm
 predicateToSimala rp params' = do
   params <- traverse relationalPredicateToSimala params'
   exprs <- traverse assertTermExpr params
-  (_, builder) <- predRelToBuiltIn rp
-  builder exprs
+  predRelToBuiltIn rp exprs
 
-predRelToBuiltIn :: LS.RPRel -> Transpiler (Simala.Builtin, [Simala.Expr] -> Transpiler SimalaTerm)
-predRelToBuiltIn rp = case rp of
+predRelToBuiltIn :: LS.RPRel -> [Simala.Expr] -> Transpiler SimalaTerm
+predRelToBuiltIn rp exprs = case rp of
   LS.RPis -> throwError $ "Unsupported relational predicate: " <> show rp
   LS.RPhas -> throwError $ "Unsupported relational predicate: " <> show rp
-  LS.RPeq -> pure (Simala.Eq, fixedArity Simala.Eq 2)
-  LS.RPlt -> pure (Simala.Lt, fixedArity Simala.Lt 2)
-  LS.RPlte -> pure (Simala.Le, fixedArity Simala.Le 2)
-  LS.RPgt -> pure (Simala.Gt, fixedArity Simala.Gt 2)
-  LS.RPgte -> pure (Simala.Ge, fixedArity Simala.Ge 2)
+  LS.RPeq -> fixedArity Simala.Eq 2 exprs
+  LS.RPlt -> fixedArity Simala.Lt 2 exprs
+  LS.RPlte -> fixedArity Simala.Le 2 exprs
+  LS.RPgt -> fixedArity Simala.Gt 2 exprs
+  LS.RPgte -> fixedArity Simala.Ge 2 exprs
   LS.RPelem -> throwError $ "Unsupported relational predicate: " <> show rp
   LS.RPnotElem -> throwError $ "Unsupported relational predicate: " <> show rp
-  LS.RPnot -> pure (Simala.Not, fixedArity Simala.Not 1)
-  LS.RPand -> pure (Simala.And, flexibleArity Simala.And)
-  LS.RPor -> pure (Simala.Or, flexibleArity Simala.Or)
-  LS.RPsum -> pure (Simala.Sum, flexibleArity Simala.Sum)
-  LS.RPproduct -> pure (Simala.Product, flexibleArity Simala.Product)
-  LS.RPminus -> pure (Simala.Minus, fixedArity Simala.Minus 2)
-  LS.RPdivide -> pure (Simala.Divide, fixedArity Simala.Divide 2)
-  LS.RPmodulo -> pure (Simala.Modulo, fixedArity Simala.Modulo 2)
+  LS.RPnot -> fixedArity Simala.Not 1 exprs
+  LS.RPand -> flexibleArity Simala.And exprs
+  LS.RPor -> flexibleArity Simala.Or exprs
+  LS.RPsum -> flexibleArity Simala.Sum exprs
+  LS.RPproduct -> flexibleArity Simala.Product exprs
+  LS.RPminus -> fixedArity Simala.Minus 2 exprs
+  LS.RPdivide -> fixedArity Simala.Divide 2 exprs
+  LS.RPmodulo -> fixedArity Simala.Modulo 2 exprs
   LS.RPsubjectTo -> throwError $ "Unsupported relational predicate: " <> show rp
-  LS.RPmin -> pure (Simala.Maximum, atLeastArity Simala.Maximum 1)
-  LS.RPmax -> pure (Simala.Minimum, atLeastArity Simala.Minimum 1)
+  LS.RPmin -> atLeastArity Simala.Maximum 1 exprs
+  LS.RPmax -> atLeastArity Simala.Minimum 1 exprs
   LS.RPmap -> throwError $ "Unsupported relational predicate: " <> show rp
   LS.RPTC _temporal -> throwError $ "Unsupported relational predicate: " <> show rp
 
@@ -631,30 +630,37 @@ mkIfThenElseTerm :: Simala.Expr -> SimalaTerm -> SimalaTerm -> Transpiler Simala
 mkIfThenElseTerm b (TermLetIn t1 name1 expr1) (TermLetIn t2 name2 expr2) = do
   assertEquals t1 t2
   assertEquals name1 name2
-  let ifThenElse = mkIfThenElse b expr1 expr2
+  let
+    ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermLetIn t1 name1 ifThenElse
 mkIfThenElseTerm b (TermLetIn t1 name1 body1) (TermExpr expr) = do
-  let ifThenElse = mkIfThenElse b body1 expr
+  let
+    ifThenElse = mkIfThenElse b body1 expr
   pure $ TermLetIn t1 name1 ifThenElse
 mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermAttribute name2 selectors2 expr2) = do
   assertEquals name1 name2
   assertEquals selectors1 selectors2
-  let ifThenElse = mkIfThenElse b expr1 expr2
+  let
+    ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermExpr expr2) = do
-  let ifThenElse = mkIfThenElse b expr1 expr2
+  let
+    ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElseTerm b (TermFunction t1 fnName1 fnParams1 expr1) (TermFunction t2 fnName2 fnParams2 expr2) = do
   assertEquals t1 t2
   assertEquals fnName1 fnName2
   assertEquals fnParams1 fnParams2
-  let ifThenElse = mkIfThenElse b expr1 expr2
+  let
+    ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermFunction t1 fnName1 fnParams1 ifThenElse
 mkIfThenElseTerm b (TermFunction t fnName1 fnParams1 expr1) (TermExpr expr) = do
-  let ifThenElse = mkIfThenElse b expr1 expr
+  let
+    ifThenElse = mkIfThenElse b expr1 expr
   pure $ TermFunction t fnName1 fnParams1 ifThenElse
 mkIfThenElseTerm b (TermExpr expr1) (TermExpr expr2) = do
-  let ifThenElse = mkIfThenElse b expr1 expr2
+  let
+    ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermExpr ifThenElse
 mkIfThenElseTerm _b term1 term2 =
   throwError $
@@ -672,7 +678,6 @@ applySelectors name selectors =
   Foldable.foldl' applySelector (Simala.Var name) selectors
 
 -- | Apply a selector to the given expression.
---
 applySelector :: Simala.Expr -> Simala.Name -> Simala.Expr
 applySelector expr proj = Simala.Project expr proj
 
@@ -1000,15 +1005,15 @@ debugTranspileRule ruleSrc = do
   rule <- case run ruleSrc of
     Left err -> do
       putStrLn err
-      error ""
+      fail "translation failed"
     Right r -> pure r
   TL.putStrLn $ Pretty.pShow rule
   let
-    (res, s) = renameRuleTopLevel' rule
+    (res, s) = runRenamerFor $ MkSolo rule
   TL.putStrLn $ Pretty.pShow s
   case res of
     Left err -> putStrLn err
-    Right rnRule -> do
+    Right (MkSolo rnRule) -> do
       TL.putStrLn $ Pretty.pShow rnRule
       case runExcept $ runTranspiler $ transpile [rnRule] of
         Left err -> putStrLn err
@@ -1017,13 +1022,11 @@ debugTranspileRule ruleSrc = do
 
 transpileRulePure :: String -> Text
 transpileRulePure ruleSrc =
-  let
-    Right rule = run ruleSrc
-    (res, _s) = renameRuleTopLevel' rule
-  in
-    case res of
+  case run ruleSrc of
+    Left err -> Text.pack err
+    Right rule -> case fst $ runRenamerFor (MkSolo rule) of
       Left err -> Text.pack err
-      Right rnRule -> do
+      Right (MkSolo rnRule) -> do
         case runExcept $ runTranspiler $ transpile [rnRule] of
           Left err -> Text.pack err
           Right expr ->

@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module LS.RenamerSpec (spec) where
 
@@ -16,10 +17,11 @@ import LS.Renamer qualified as Renamer
 import LS.Rule
 import LS.Types
 import System.FilePath ((<.>), (</>))
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec (Example (Arg), Spec, SpecWith, describe, it, shouldBe)
 import Test.Hspec.Golden
 import Text.Pretty.Simple (pShowNoColor)
 import Text.RawString.QQ (r)
+import Data.String.Interpolate
 import TextuaL4.LexTextuaL (Token)
 import TextuaL4.ParTextuaL (myLexer, pListRule, pRule)
 import TextuaL4.Transform
@@ -42,7 +44,6 @@ spec :: Spec
 spec = do
   describe "Renamer" do
     test'
-      "Book Attributes"
       "decide-with-attributes"
       [r|
         GIVEN d DECIDE g d IS y
@@ -51,31 +52,37 @@ spec = do
             y's book IS red OTHERWISE
         |]
     test'
-      "Id Function"
       "id-func"
       [r|
         GIVEN x
         DECIDE id x IS x
         |]
+    test'
+      "id-func-multi"
+      [i|
+GIVEN x
+DECIDE f x IS x
+§
+GIVEN x
+DECIDE g x IS x
+        |]
  where
-  test rule = test' rule rule
-
-  test' desc fname ruleSource = do
-    it desc $ do
-      let
-        Right rules = runList ruleSource
-        rnRules =
-          State.evalState
-            (Except.runExceptT (Renamer.runRenamer $ Renamer.renamer rules))
-            Renamer.emptyScope
-      goldenGeneric fname rnRules
-
-type Err = Either String
-type ParseFun a = [Token] -> Err a
-type Verbosity = Int
-
-run :: String -> Either String Rule
-run = fmap transRule . pRule . myLexer
+  test' :: String -> String -> SpecWith (Arg (Golden TL.Text))
+  test' fname ruleSource = do
+    it fname $
+      goldenGeneric fname $
+        case runList ruleSource of
+          Left err -> Left $ "Failed to parse program:\n" <> ruleSource <> "\n" <> err
+          Right rules ->
+            let
+              parse =
+                State.evalState
+                  (Except.runExceptT (Renamer.runRenamer $ Renamer.renamer rules))
+                  Renamer.emptyScope
+            in
+              case parse of
+                Left err -> Left $ "Failed to rename program: " <> err
+                Right rnRules -> Right rnRules
 
 runList :: String -> Either String [Rule]
 runList = fmap (fmap transRule) . pListRule . myLexer

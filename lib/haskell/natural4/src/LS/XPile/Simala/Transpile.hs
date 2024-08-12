@@ -673,7 +673,6 @@ applySelectors name selectors =
 
 -- | Apply a selector to the given expression.
 --
--- TODO: this should only succeed if 'RnName.rnNameType == RnSelector'.
 applySelector :: Simala.Expr -> Simala.Name -> Simala.Expr
 applySelector expr proj = Simala.Project expr proj
 

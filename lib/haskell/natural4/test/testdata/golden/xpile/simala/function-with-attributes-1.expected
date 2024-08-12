@@ -1,1 +1,1 @@
-let f_f_1 = fun(v_x_0) => let v_y_2 = {s_p_4 = v_x_0 + v_x_0,s_z_3 = 0} in v_y_2
+let f_f_1 = fun (v_x_0) => let v_y_2 = {s_p_4 = v_x_0 + v_x_0,s_z_3 = 0} in v_y_2 in undefined

@@ -24,9 +24,10 @@ import TextuaL4.Transform qualified as Parser
 
 spec :: Spec
 spec = do
-  describe "rule transpilation" do
+  describe "Simala" do
     describe "basic" do
       basicTests
+      multiRuleTests
     describe "real-world" do
       realWorldTests
 
@@ -171,6 +172,24 @@ basicTests = do
       DECIDE y's z IS 5
       |]
 
+
+multiRuleTests :: Spec
+multiRuleTests = describe "multi-rules" do
+  transpilerTest
+    "calls-functions"
+    [i|
+      GIVEN x DECIDE f x IS x
+      §
+      GIVEN x DECIDE g x IS f x
+      |]
+  transpilerTest
+    "functions"
+    [i|
+      GIVEN x DECIDE f x IS x
+      §
+      GIVEN x DECIDE g x IS x
+      |]
+
 realWorldTests :: Spec
 realWorldTests = do
   transpilerTest
@@ -205,10 +224,10 @@ IF
 transpilerTest :: String -> String -> SpecWith (Arg (Golden TL.Text))
 transpilerTest outputName ruleString = it outputName $
   goldenGeneric outputName $
-    case run ruleString of
+    case runList ruleString of
       Left err -> "Failed to parse program:\n" <> ruleString
-      Right rule -> do
-        case Renamer.renameRuleTopLevel' rule of
+      Right rules -> do
+        case Renamer.renameRules rules of
           (Left err, scope) ->
             unlines
               [ "Renaming failed for program:"
@@ -218,8 +237,8 @@ transpilerTest outputName ruleString = it outputName $
               , "Scope table:"
               , pShowNoColorS scope
               ]
-          (Right rnRule, _) -> do
-            case runExcept (Simala.runTranspiler $ Simala.transpile [rnRule]) of
+          (Right rnRules, _) -> do
+            case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
               Left err -> "Failed transpilation:\n" <> err
               Right simala -> Text.unpack $ Simala.render simala
 
@@ -236,9 +255,6 @@ goldenGeneric name output_ =
     }
  where
   testPath = "test" </> "testdata" </> "golden" </> "xpile" </> "simala" </> name
-
-run :: String -> Either String Rule
-run = fmap Parser.transRule . Parser.pRule . Parser.myLexer
 
 runList :: String -> Either String [Rule]
 runList = fmap (fmap Parser.transRule) . Parser.pListRule . Parser.myLexer

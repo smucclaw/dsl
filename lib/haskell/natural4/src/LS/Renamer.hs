@@ -214,6 +214,13 @@ unionScopeTable tbl1 tbl2 =
     , _stFunction = Map.union tbl1._stFunction tbl2._stFunction
     }
 
+differenceScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
+differenceScopeTable tbl1 tbl2 =
+  ScopeTable
+    { _stVariables = Map.difference tbl1._stVariables tbl2._stVariables
+    , _stFunction = Map.difference tbl1._stFunction tbl2._stFunction
+    }
+
 makeFieldsNoPrefix 'Scope
 makeFieldsNoPrefix 'ScopeTable
 
@@ -314,6 +321,16 @@ lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
 lookupFunction rnFnName =
   use (scScopeTable % stFunction % at rnFnName)
 
+withLocalScopeTable :: Renamer a -> Renamer (a, ScopeTable)
+withLocalScopeTable act = do
+  orig <- use scScopeTable
+  a <- act
+  origWithNew <- use scScopeTable
+  pure (a, origWithNew `differenceScopeTable` orig)
+
+withLocalScopeTable_ :: Renamer a -> Renamer ScopeTable
+withLocalScopeTable_ = fmap snd . withLocalScopeTable
+
 -- ----------------------------------------------------------------------------
 -- Helper types for local context
 -- ----------------------------------------------------------------------------
@@ -360,10 +377,34 @@ renameRuleTopLevel' rule =
   in
     (fmap head resE, scope)
 
+renameRules :: [Rule] -> (Either String [RnRule], Scope)
+renameRules rule =
+  let
+    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renamer rule)) emptyScope
+  in
+    (resE, scope)
+
 renamer :: [Rule] -> Renamer [RnRule]
 renamer rules = do
-  traverse_ scanRule rules
-  traverse renameRule rules
+  rulesWithLocalDefs <-
+    traverse
+      ( \r -> do
+          prev <- use scScopeTable
+          exportedScope <- scanRule r
+          fullRuleScope <- use scScopeTable
+          assign' scScopeTable (prev `unionScopeTable` exportedScope)
+          pure (r, fullRuleScope)
+      )
+      rules
+  traverse
+    ( \(r, ruleScope) -> do
+        orig <- use scScopeTable
+        modifying' scScopeTable (`unionScopeTable` ruleScope)
+        rnRule <- renameRule r
+        assign' scScopeTable orig
+        pure rnRule
+    )
+    rulesWithLocalDefs
 
 -- ----------------------------------------------------------------------------
 -- Resolve functions and their respective arities
@@ -376,12 +417,13 @@ renamer rules = do
 -- 1. Functions and variables in the head of 'HornClauses'.
 -- 2. Names declared in 'GIVETH' clauses.
 -- 3. Types and selectors defined via 'DEFINE'
-scanRule :: Rule -> Renamer ()
+scanRule :: Rule -> Renamer ScopeTable
 scanRule rule@Rule.Hornlike{} = do
-  scanGiveths rule.giveth
-  -- TODO: givens should only be scanned for 'scanHornClause' and then removed again.
   scanGivens rule.given
-  traverse_ scanHornClause rule.clauses
+  exports <- withLocalScopeTable_ $ do
+    scanGiveths rule.giveth
+    traverse_ scanHornClause rule.clauses
+  pure exports
 scanRule r@Rule.Regulative{} = throwError $ "scanRule: Unsupported rule: " <> show r
 scanRule r@Rule.Constitutive{} = throwError $ "scanRule: Unsupported rule: " <> show r
 scanRule rule@Rule.TypeDecl{} = do
@@ -390,6 +432,8 @@ scanRule rule@Rule.TypeDecl{} = do
   scanGivens rule.given
   traverse_ scanRule rule.has
   scanTypeDeclName rule.name
+  typeScope <- use scScopeTable
+  pure typeScope
 scanRule r@Rule.Scenario{} = throwError $ "scanRule: Unsupported rule: " <> show r
 scanRule r@Rule.DefNameAlias{} = throwError $ "scanRule: Unsupported rule: " <> show r
 scanRule r@Rule.DefTypically{} = throwError $ "scanRule: Unsupported rule: " <> show r
@@ -444,7 +488,6 @@ scanDecideHeadClause = \case
 --
 -- Note, to be recognized as a function, variables must have been specified by 'GIVEN'
 -- clauses and the function name must be unbound in its current scope.
--- TODO: scope checking is currently a WIP.
 --
 -- Additionally, we recognize the following forms:
 --
@@ -603,6 +646,7 @@ scanTypeDeclName mtexprs = do
 renameLocalRules :: [Rule] -> Renamer ([RnRule], ScopeTable)
 renameLocalRules localRules = do
   origScopeTable <- use scScopeTable
+  -- TODO: fix like in renamer
   traverse_ scanRule localRules
   localExports <- use scScopeTable
   rnLocalRules <- traverse renameRule localRules

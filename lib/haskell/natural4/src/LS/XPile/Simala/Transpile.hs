@@ -30,6 +30,7 @@ import TextuaL4.Transform qualified as Parser
 
 import AnyAll.BoolStruct qualified as AA
 import Data.Maybe qualified as Maybe
+import Simala.Expr.Parser (mkIfThenElse)
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
@@ -125,8 +126,8 @@ combineSimalaTerms _inExpr _terms = do
 
 ruleToSimala :: RnRule -> Transpiler (Maybe SimalaTerm)
 ruleToSimala (TypeDecl _typedecl) =
-  -- Simala doesn't need to declare types, we can use anonymously.
-  -- We assume that ach rule has been typechecked already, so we don't need to
+  -- Simala doesn't need to declare types, we can use them anonymously.
+  -- We assume that each rule has been typechecked already, so we don't need to
   -- re-check anything.
   --
   pure Nothing
@@ -178,6 +179,7 @@ hornClausesToSimala clauses = do
   simplifiedSimalaTerms <- mergeGroups groupedSimalaTerms
   pure simplifiedSimalaTerms
  where
+  processClause :: RnHornClause -> Transpiler (SimalaTerm, Maybe Simala.Expr)
   processClause clause = do
     hornHead <- relationalPredicateToSimala clause.rnHcHead
     hornBody <- traverse boolStructToSimala clause.rnHcBody
@@ -195,6 +197,9 @@ groupClauses simalaTerms = do
   compareClauseHeads (TermAttribute name1 _ _) (TermAttribute name2 _ _) = name1 == name2
   compareClauseHeads _ _ = False
 
+-- | Takes the translation of local variables in where clauses and turns
+-- them into a Simala-let underneath potential lambdas.
+--
 foldInSubTerms :: SimalaTerm -> [SimalaTerm] -> Transpiler SimalaTerm
 foldInSubTerms top [] = pure top
 foldInSubTerms top (x : xs) = case top of
@@ -252,6 +257,9 @@ mergeGroups' ((term, Just g) :| (n : ns)) = do
   elseBranch <- mergeGroups' (n :| ns)
   mkIfThenElseTerm g term elseBranch
 
+-- | Tries to merge multiple assignments for fields of a single record
+-- into a single record construction.
+--
 mergeAttributes :: Simala.Name -> NonEmpty ([Simala.Name], Simala.Expr, Maybe Simala.Expr) -> Transpiler SimalaTerm
 mergeAttributes name terms = do
   let
@@ -283,6 +291,7 @@ mergeAttributes name terms = do
       treeRows <- mergeRecordUpdates recordRows
       pure $ TermLetIn Simala.Transparent name treeRows
  where
+  reduceAttrPaths :: NonEmpty (NonEmpty Simala.Name, Simala.Expr, Maybe Simala.Expr) -> (NonEmpty Simala.Name, Simala.Expr)
   reduceAttrPaths attrs =
     let
       attrPath = NE.head attrs ^. _1
@@ -617,41 +626,35 @@ mkFunctionTerm fnName fnParams term = do
   body <- assertTermExpr term
   pure $ TermFunction Simala.Transparent fnName fnParams body
 
+-- Andres: needs documentation
 mkIfThenElseTerm :: Simala.Expr -> SimalaTerm -> SimalaTerm -> Transpiler SimalaTerm
 mkIfThenElseTerm b (TermLetIn t1 name1 expr1) (TermLetIn t2 name2 expr2) = do
   assertEquals t1 t2
   assertEquals name1 name2
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermLetIn t1 name1 ifThenElse
 mkIfThenElseTerm b (TermLetIn t1 name1 body1) (TermExpr expr) = do
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, body1, expr]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b body1 expr
   pure $ TermLetIn t1 name1 ifThenElse
 mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermAttribute name2 selectors2 expr2) = do
   assertEquals name1 name2
   assertEquals selectors1 selectors2
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermExpr expr2) = do
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElseTerm b (TermFunction t1 fnName1 fnParams1 expr1) (TermFunction t2 fnName2 fnParams2 expr2) = do
   assertEquals t1 t2
   assertEquals fnName1 fnName2
   assertEquals fnParams1 fnParams2
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermFunction t1 fnName1 fnParams1 ifThenElse
 mkIfThenElseTerm b (TermFunction t fnName1 fnParams1 expr1) (TermExpr expr) = do
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b expr1 expr
   pure $ TermFunction t fnName1 fnParams1 ifThenElse
 mkIfThenElseTerm b (TermExpr expr1) (TermExpr expr2) = do
-  ifThenElseTerm <- fixedArity Simala.IfThenElse 3 [b, expr1, expr2]
-  ifThenElse <- assertTermExpr ifThenElseTerm
+  let ifThenElse = mkIfThenElse b expr1 expr2
   pure $ TermExpr ifThenElse
 mkIfThenElseTerm _b term1 term2 =
   throwError $

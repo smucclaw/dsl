@@ -47,8 +47,10 @@ data SimalaTerm
   = -- | The head of a simala function.
     -- For example @f(x, y)@, where @f@ is a function and @x,y@ are its parameters.
     --
-    -- This is primarily used to translate a function head when we don't
-    -- know yet how to translate the body expression of the function.
+    -- This constructor is used to model function application of any supported
+    -- form, and declaration of function definitions, e.g. `f x IS ...`, then
+    -- 'TermApp' could be @'TermApp' "f" ["x"]@. Such a definition needs to be
+    -- translated to 'TermFunction' once the right hand side is translated.
     TermApp Simala.Name [Simala.Name]
   | -- | Assign the given name with some expression.
     -- May contain intermediate selectors.
@@ -202,7 +204,23 @@ groupClauses simalaTerms = do
   compareClauseHeads _ _ = False
 
 -- | Takes the translation of local variables in where clauses and turns
--- them into a Simala-let underneath potential lambdas.
+-- them into a Simala-let underneath potential lambdas or variable definitions.
+--
+-- Local definitions are, by definition, local to the encompassing 'SimalaTerm'
+-- and may depend on parameters of said encompassing 'SimalaTerm'.
+-- As such, the local definitions need to be added to the 'SimalaTerm', such
+-- that it has access to said local definitions.
+--
+-- We do this, by moving local definition inside of any lambdas or let-ins
+-- for variables.
+--
+-- For example
+--
+-- @GIVEN x DECIDE f x IS y WHERE y IS SUM(x,x)@
+--
+-- is supposed to be translated to:
+--
+-- @let f = fun(x) => let y = x + x in y@
 addLocalDefinitions :: SimalaTerm -> [SimalaTerm] -> Transpiler SimalaTerm
 addLocalDefinitions top [] = pure top
 addLocalDefinitions top (x : xs) = case top of
@@ -236,6 +254,7 @@ addLocalDefinitions top (x : xs) = case top of
         pure $ mkFunction t fnName fnParams fnExpr inExpr
 
 -- | Given a collection of groups, merge each group into a single expression.
+--
 mergeGroups :: (Traversable t) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> Transpiler (t SimalaTerm)
 mergeGroups simalaTermGroups = do
   traverse mergeGroups' simalaTermGroups

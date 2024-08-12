@@ -311,9 +311,12 @@ insertFunction rnFnName funcInfo =
     )
     (Just funcInfo)
 
-lookupFunction :: RnName -> Renamer (Maybe FuncInfo)
-lookupFunction rnFnName =
-  use (scScopeTable % stFunction % at rnFnName)
+lookupExistingFunction :: RnName -> Renamer FuncInfo
+lookupExistingFunction rnFnName = do
+  funcInfoM <- use (scScopeTable % stFunction % at rnFnName)
+  case funcInfoM of
+    Nothing -> throwError $ "lookupExistingFunction: Assumptions violated, function name wasn't found: " <> show rnFnName
+    Just funcInfo -> pure funcInfo
 
 -- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo'
 -- were introduced during this action.
@@ -343,7 +346,7 @@ data MultiTermContext = MultiTermContext
   -- we can infer that @"title"@ is a 'RnSelector'.
   , _multiTermContextFunctionCall :: Maybe RnName
   -- ^ During renaming a 'MultiTerm', did we encounter a function application?
-  -- If so, we need to fix the arity!
+  -- If so, we want to fix the call convention from infix/postfix to prefix!
   }
 
 makeFields 'MultiTermContext
@@ -572,7 +575,7 @@ scanTypeSignature sig = case sig of
 -- to be of the following form:
 --
 -- @
--- GIVEN x IS ONE OF foo, bar, foo baz
+-- GIVEN x IS ONE OF foo, bar, `foo baz`
 -- @
 --
 -- This means 'x' is one of three possible enum values 'foo', 'bar'
@@ -614,7 +617,6 @@ scanTypeDeclName mtexprs = do
 -- GIVETH's are global
 -- GIVEN's are local
 -- DECIDE head term in "IS" clauses is global
---
 renameRules :: (Traversable f) => f Rule -> Renamer (f RnRule)
 renameRules rules = do
   rulesWithLocalDefs <-
@@ -814,6 +816,26 @@ renameBoolStruct = \case
     pure $ AA.Any lbl rnBoolStruct
   AA.Not cs -> AA.Not <$> renameBoolStruct cs
 
+-- | Rename a 'LS.MultiTerm' and turn each 'LS.MTExpr' into a 'RnExpr'.
+--
+-- Renaming a list of 'LS.MTExpr' cannot be done without keeping intermediate
+-- state. Take for example this input:
+--
+-- @[MTT "x's", MTT "y's", MTT "z"]@
+--
+-- In this example, @x's@ and @y's@ can be relatively unambiguously renamed,
+-- but @z@ is tricky. Without context, @z@ could be a variable, a string
+-- constant... or perhaps even a function name! No real way to tell, as the
+-- syntax of the 'LS.MultiTerm' is ambiguous.
+--
+-- To resolve this ambiguity, we keep track of intermediate state in
+-- 'MultiTermContext'. Using this intermediate state, we can clearly
+-- disambiguate @z@ as being a 'RnSelector', as it is the last element
+-- of a "selector chain".
+--
+-- Further, we analyze whether we encounter a function application. If so,
+-- we prepare fixing all function applications to their prefix form.
+-- For example, @[MTT "x", MTT "f"]@ will be changed @[MTT "f", MTT "x"]@.
 renameMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
 renameMultiTerm multiTerms = do
   (reversedRnMultiTerms, ctx) <-
@@ -826,17 +848,45 @@ renameMultiTerm multiTerms = do
       multiTerms
   let
     rnMultiTerms = reverse reversedRnMultiTerms
-  fixityFixedRnMultiTerms <- fixFixity ctx rnMultiTerms
-  pure fixityFixedRnMultiTerms
+  fixFixity ctx rnMultiTerms
  where
   fixFixity ctx rnMultiTerms = case ctx ^. functionCall of
     Nothing -> pure rnMultiTerms
     Just fnName -> do
+      funcInfo <- lookupExistingFunction fnName
       let
-        (preArgs, postArgsWithName) = List.break (== (RnExprName fnName)) rnMultiTerms
-      case postArgsWithName of
-        [] -> throwError ""
-        (fnExpr : postArgs) -> pure $ fnExpr : preArgs ++ postArgs
+        (preNum, postNum) = funcInfo ^. funcArity
+      (lhs, fnExpr, rhs) <- findFunctionApplication fnName rnMultiTerms
+      (leftNonArgs, leftArgs) <- processLhs preNum lhs
+      (rightNonArgs, rightArgs) <- processRhs postNum rhs
+      pure $ reverse leftNonArgs <> [fnExpr] <> leftArgs <> rightArgs <> rightNonArgs
+
+  findFunctionApplication fnName rnMultiTerms = do
+    let
+      (preArgs, postArgsWithName) = List.break (== (RnExprName fnName)) rnMultiTerms
+    case postArgsWithName of
+      [] -> throwError "fixFixity: Invariant violated, function name reported, but none found."
+      (fnExpr : postArgs) -> pure (preArgs, fnExpr, postArgs)
+
+  processLhs n lhs = do
+    case safeSplitAt n (reverse lhs) of
+      Nothing ->
+        throwError $
+          "Not enough elements in left hand side of function application. Required: "
+            <> show n
+            <> " but got: "
+            <> show (length lhs)
+      Just (args, nonArgs) -> pure (reverse nonArgs, reverse args)
+
+  processRhs n rhs = do
+    case safeSplitAt n rhs of
+      Nothing ->
+        throwError $
+          "Not enough elements in left hand side of function application. Required: "
+            <> show n
+            <> " but got: "
+            <> show (length rhs)
+      Just (nonArgs, args) -> pure (nonArgs, args)
 
   initialMultiTermContext =
     MultiTermContext
@@ -844,6 +894,7 @@ renameMultiTerm multiTerms = do
       , _multiTermContextFunctionCall = Nothing
       }
 
+-- | Rename a single 'LS.MTExpr' to a 'RnExpr'.
 renameMultiTermExpression :: MultiTermContext -> LS.MTExpr -> Renamer (RnExpr, MultiTermContext)
 renameMultiTermExpression ctx = \case
   -- TODO: this could be an expression such as "2+2" (for whatever reason), so perhaps
@@ -1001,3 +1052,17 @@ isGenitive = Text.stripSuffix genitiveSuffix
 
 genitiveSuffix :: Text
 genitiveSuffix = Text.pack "'s"
+
+-- | Like 'splitAt', but produces a 'Nothing' if there are not enough elements.
+safeSplitAt :: Int -> [a] -> Maybe ([a], [a])
+safeSplitAt i _as
+  | i < 0 = Nothing
+safeSplitAt i as =
+  case go i as [] of
+    Nothing -> Nothing
+    Just (lhs, rhs) -> Just (reverse lhs, rhs)
+ where
+  go 0 [] lhs = Just (lhs, [])
+  go _n [] _lhs = Nothing
+  go 0 xs lhs = Just (lhs, xs)
+  go n (x : xs) lhs = go (n - 1) xs (x : lhs)

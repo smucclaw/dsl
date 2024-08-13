@@ -57,16 +57,6 @@ data MTExpr = MTT Text.Text -- ^ Text string
 --            | MTD Text.Text -- ^ Date
             deriving (Eq, Ord, Show, Generic, Hashable, ToJSON)
 
--- GIVEN x
--- DECIDE f x IS y
--- WHERE  y's book's color IS 'green
-
--- let f = fun(x) => { book = { color = 'green } }
-
--- [ MTT x's, MTT book's, MTT color ]
--- [ RnVariable x, RnSelector book, RnSelector color]
--- [ x.book.color ]
-
 makePrisms ''MTExpr
 
 type PlainParser = ReaderT RunConfig (Parsec Void MyStream)

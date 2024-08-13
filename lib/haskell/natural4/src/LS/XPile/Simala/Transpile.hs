@@ -15,7 +15,6 @@ import Data.Function (on)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe qualified as Maybe
-import Data.String.Interpolate
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
@@ -32,7 +31,7 @@ import TextuaL4.Transform qualified as Parser
 
 import AnyAll.BoolStruct qualified as AA
 
-import Simala.Expr.Parser (mkIfThenElse)
+import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
@@ -254,7 +253,6 @@ addLocalDefinitions top (x : xs) = case top of
         pure $ mkFunction t fnName fnParams fnExpr inExpr
 
 -- | Given a collection of groups, merge each group into a single expression.
---
 mergeGroups :: (Traversable t) => t (NonEmpty (SimalaTerm, Maybe Simala.Expr)) -> Transpiler (t SimalaTerm)
 mergeGroups simalaTermGroups = do
   traverse mergeGroups' simalaTermGroups
@@ -644,42 +642,50 @@ mkFunctionTerm fnName fnParams term = do
   body <- assertTermExpr term
   pure $ TermFunction Simala.Transparent fnName fnParams body
 
--- Andres: needs documentation
+-- | Combine two 'SimalaTerm's via a Simala 'if-then-else' expression.
+-- 'SimalaTerm's can not be generally combined. For example, combining
+-- a function term and a let-in term cannot be done meaningfully, since the
+-- result needs to be a single 'SimalaTerm' itself.
+-- However, 'SimalaTerm's of the same constructor can sometimes be meaningfully combined!
+-- For example, for two function terms with the same head (e.g., same name and same parameters),
+-- we may weave the 'if-then-else' into the function body.
+-- The same holds for 'TermLetIn' and 'TermAttribute' terms. Further, most terms can be combined
+-- with arbitrary 'TermExpr's.
 mkIfThenElseTerm :: Simala.Expr -> SimalaTerm -> SimalaTerm -> Transpiler SimalaTerm
 mkIfThenElseTerm b (TermLetIn t1 name1 expr1) (TermLetIn t2 name2 expr2) = do
   assertEquals t1 t2
   assertEquals name1 name2
   let
-    ifThenElse = mkIfThenElse b expr1 expr2
+    ifThenElse = Simala.mkIfThenElse b expr1 expr2
   pure $ TermLetIn t1 name1 ifThenElse
 mkIfThenElseTerm b (TermLetIn t1 name1 body1) (TermExpr expr) = do
   let
-    ifThenElse = mkIfThenElse b body1 expr
+    ifThenElse = Simala.mkIfThenElse b body1 expr
   pure $ TermLetIn t1 name1 ifThenElse
 mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermAttribute name2 selectors2 expr2) = do
   assertEquals name1 name2
   assertEquals selectors1 selectors2
   let
-    ifThenElse = mkIfThenElse b expr1 expr2
+    ifThenElse = Simala.mkIfThenElse b expr1 expr2
   pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElseTerm b (TermAttribute name1 selectors1 expr1) (TermExpr expr2) = do
   let
-    ifThenElse = mkIfThenElse b expr1 expr2
+    ifThenElse = Simala.mkIfThenElse b expr1 expr2
   pure $ TermAttribute name1 selectors1 ifThenElse
 mkIfThenElseTerm b (TermFunction t1 fnName1 fnParams1 expr1) (TermFunction t2 fnName2 fnParams2 expr2) = do
   assertEquals t1 t2
   assertEquals fnName1 fnName2
   assertEquals fnParams1 fnParams2
   let
-    ifThenElse = mkIfThenElse b expr1 expr2
+    ifThenElse = Simala.mkIfThenElse b expr1 expr2
   pure $ TermFunction t1 fnName1 fnParams1 ifThenElse
 mkIfThenElseTerm b (TermFunction t fnName1 fnParams1 expr1) (TermExpr expr) = do
   let
-    ifThenElse = mkIfThenElse b expr1 expr
+    ifThenElse = Simala.mkIfThenElse b expr1 expr
   pure $ TermFunction t fnName1 fnParams1 ifThenElse
 mkIfThenElseTerm b (TermExpr expr1) (TermExpr expr2) = do
   let
-    ifThenElse = mkIfThenElse b expr1 expr2
+    ifThenElse = Simala.mkIfThenElse b expr1 expr2
   pure $ TermExpr ifThenElse
 mkIfThenElseTerm _b term1 term2 =
   throwError $
@@ -718,302 +724,40 @@ buildRecordUpdate names expr = go $ NE.toList names
   go [] = expr
   go (x : xs) = Simala.Record [(x, go xs)]
 
--- TODO: what was I thinking?
+-- | Given a list of record updates, merge them into a singular record update.
+-- Assumption: All record updates are unique, for example (in pseudo code):
+--
+-- @
+--  { x = { y = 5 } }
+--  { x = { z = { a = 0 } } }
+--  { x = { z = { b = 1 } } }
+--  { f = 2 }
+-- @
+--
+-- is merged into:
+--
+-- @
+--   { x = { y = 5, z = { a = 0, b = 1 } }, f = 2 }
+-- @
+--
 mergeRecordUpdates :: [Simala.Row Simala.Expr] -> Transpiler Simala.Expr
-mergeRecordUpdates xs = worker xs
+mergeRecordUpdates rows = do
+  let
+    vars = NE.groupAllWith fst $ concat rows
+  simpleRows <- traverse simplifyRow vars
+  pure $ Simala.Record simpleRows
  where
-  worker rows = do
-    let
-      vars = NE.groupAllWith fst $ concat rows
-    simpleRows <-
-      traverse
-        simplifyRow
-        vars
-    pure $ Simala.Record simpleRows
-
   simplifyRow ::
     NonEmpty (Simala.Name, Simala.Expr) ->
     Transpiler (Simala.Name, Simala.Expr)
   simplifyRow ((n, expr) :| []) = pure (n, expr)
-  simplifyRow rows@((n, _) :| _) = do
+  simplifyRow assignment = do
     let
-      rowExprs = fmap snd $ NE.toList rows
-    recordRows <- traverse assertIsRecord rowExprs
-    mergedRows <- worker recordRows
-    pure $ (n, mergedRows)
-
--- ----------------------------------------------------------------------------
--- Test cases
--- ----------------------------------------------------------------------------
-
--- >>> transpileRulePure outputWithIndirection
--- "let v_x_0 = let v_y_1 = 5 in v_y_1"
-
-outputWithIndirection :: String
-outputWithIndirection =
-  [i|
-GIVETH x
-DECIDE x IS y
-WHERE
-    y IS 5
-|]
-
--- >>> transpileRulePure exampleWithOneOf
--- "let f_g_4 = fun (v_d_0) => let v_y_1 = if v_d_0 > 0 then e_green_2 else if b_OTHERWISE_5 then e_red_3 else undefined in v_y_1 in undefined"
-
-exampleWithOneOf :: String
-exampleWithOneOf =
-  [i|
-GIVEN d
-GIVETH y IS ONE OF green, red
-DECIDE g d IS y
-WHERE
-    y IS green IF d > 0;
-    y IS red OTHERWISE
-|]
-
--- >>> transpileRulePure bookWithAttributes
--- "let f_g_1 = fun(v_d_0) => let v_y_2 = {s_book_3 = if v_d_0 > 0 then 'green else if b_OTHERWISE_4 then 'red else undefined} in v_y_2"
-
-bookWithAttributes :: String
-bookWithAttributes =
-  [i|
-GIVEN d
-DECIDE g d IS y
-WHERE
-    y's book IS green IF d > 0;
-    y's book IS red OTHERWISE
-|]
-
--- >>> transpileRulePure idFunction
--- "let f_id_1 = fun(v_x_0) => v_x_0"
-
-idFunction :: String
-idFunction =
-  [i|
-GIVEN x
-DECIDE id x IS x
-|]
-
--- >>> transpileRulePure sumFunction
--- "let f_sum3_1 = fun(v_x_0) => sum(v_x_0,v_x_0,v_x_0)"
-
-sumFunction :: String
-sumFunction =
-  [i|
-GIVEN x
-DECIDE sum3 x IS SUM(x, x, x)
-|]
-
--- >>> transpileRulePure simpleSelector
--- "let f_f_1 = fun(v_x_0) => v_x_0.s_z_2"
-
-simpleSelector :: String
-simpleSelector =
-  [i|
-GIVEN x
-DECIDE f x IS x's z
-|]
-
--- >>> transpileRulePure nestedSelector
--- "let f_f_1 = fun(v_x_0) => v_x_0.s_y_2.s_z_3"
-
-nestedSelector :: String
-nestedSelector =
-  [i|
-GIVEN x
-DECIDE f x IS x's y's z
-|]
-
--- >>> transpileRulePure decideWithIfs
--- "let f_f_1 = fun(v_x_0) => if v_x_0 > 0 then 1 else if b_OTHERWISE_2 then 0 else undefined"
-
-decideWithIfs :: String
-decideWithIfs =
-  [i|
-GIVEN x
-DECIDE f x IS 1 IF x > 0;
-       f x IS 0 OTHERWISE
-|]
-
--- >>> transpileRulePure decideWithIfsNoOtherwise
--- "let f_f_1 = fun(v_x_0) => if v_x_0 > 0 then 1 else 0"
-
-decideWithIfsNoOtherwise :: String
-decideWithIfsNoOtherwise =
-  [i|
-GIVEN x
-DECIDE f x IS 1 IF x > 0;
-       f x IS 0
-|]
-
--- f = fun(x) => if y > 0 then 1 else 0
--- let otherwise = true
--- in
---  let f = fun(x) => if y > 0 then 1 else 0
-
--- >>> transpileRulePure decideWithIfs2
--- "let f_f_1 = fun(v_x_0) => if v_x_0 > 0 then 1 else if b_OTHERWISE_2 then 0 else if v_x_0 < 0 then 2 else undefined"
-
-decideWithIfs2 :: String
-decideWithIfs2 =
-  [i|
-GIVEN x
-DECIDE f x IS 1 IF x > 0;
-       f x IS 0 OTHERWISE;
-       f x IS 2 IF x < 0
-|]
-
--- >>> transpileRulePure decideWithAttributes
--- "let f_f_1 = fun(v_x_0) => let v_y_2 = {s_p_4 = v_x_0 + v_x_0,s_z_3 = 0} in v_y_2"
-
-decideWithAttributes :: String
-decideWithAttributes =
-  [i|
-GIVEN x
-DECIDE f x IS y
-WHERE
-  y's z IS 0;
-  y's p IS SUM(x, x)
-|]
-
--- >>> transpileRulePure decideWithSimpleConditionalAttributes
--- "let f_f_1 = fun(v_x_0) => let v_y_2 = {s_z_3 = if v_x_0 > 3 then 5 else undefined} in v_y_2"
-
-decideWithSimpleConditionalAttributes :: String
-decideWithSimpleConditionalAttributes =
-  [i|
-GIVEN x
-DECIDE f x IS y
-WHERE
-  y's z IS 5 IF x > 3
-|]
-
--- >>> transpileRulePure decideWithConditionalAttributes
--- "let f_f_1 = fun(v_x_0) => let v_y_2 = {s_p_4 = if v_x_0 > 5 then v_x_0 else if b_OTHERWISE_5 then v_x_0 + v_x_0 else undefined,s_z_3 = if v_x_0 > 3 then 5 else if b_OTHERWISE_5 then 0 else undefined} in v_y_2"
-
-decideWithConditionalAttributes :: String
-decideWithConditionalAttributes =
-  [i|
-GIVEN x
-DECIDE f x IS y
-WHERE
-  y's z IS 5 IF x > 3;
-  y's z IS 0 OTHERWISE;
-
-  y's p IS x IF x > 5;
-  y's p IS SUM(x, x) OTHERWISE
-|]
-
--- let f = fun(x) =>
---    let y_z = if x > 5 then 5 else 0 in
---    let y_p = if x > 5 then x else sum(x, x) in
---    let y = { z = y_z, p = y_p } in
---    y
-
--- >>> transpileRulePure givethDefinition
--- "let v_y_0 = {s_z_1 = 5}"
-
-givethDefinition :: String
-givethDefinition =
-  [i|
-GIVETH y
-DECIDE y's z IS 5
-|]
-
--- >>> transpileRulePure givethNestedDefinition
--- "let v_y_0 = {s_a_1 = {s_b_2 = {s_c_3 = {s_z_4 = 5}}}}"
-
-givethNestedDefinition :: String
-givethNestedDefinition =
-  [i|
-GIVETH y
-DECIDE y's a's b's c's z IS 5
-|]
-
--- >>> transpileRulePure eragonBookDescription
--- "let v_eragon_0 = {s_character_3 = {s_friend_6 = 'Ork,s_main_4 = 'Eragon,s_villain_5 = 'Galbatorix},s_size_2 = 512,s_title_1 = 'Eragon}"
-
-eragonBookDescription :: String
-eragonBookDescription =
-  [i|
-GIVETH eragon
-DECIDE
-  eragon's title IS Eragon;
-  eragon's size IS 512;
-  eragon's character's main IS "Eragon";
-  eragon's character's villain IS "Galbatorix";
-  eragon's character's friend IS "Ork"
-|]
-
--- >>> transpileRulePure eragonBookDescriptionWithWhere
--- "let v_eragon_0 = let v_localVar_1 = {s_character_4 = {s_friend_7 = 'Ork,s_main_5 = 'Eragon,s_villain_6 = 'Galbatorix},s_size_3 = 512,s_title_2 = 'Eragon} in v_localVar_1"
-
-eragonBookDescriptionWithWhere :: String
-eragonBookDescriptionWithWhere =
-  [i|
-GIVETH eragon
-DECIDE
-  eragon IS localVar
-WHERE
-  localVar's title IS "Eragon";
-  localVar's size IS 512;
-  localVar's character's main IS "Eragon";
-  localVar's character's villain IS "Galbatorix";
-  localVar's character's friend IS "Ork"
-|]
-
--- >>> transpileRulePure noGivethDefinitionShouldFail
--- "let v_y_0 = {s_z_1 = 5}"
---
--- TODO: renamer fail, y is unknown, needs to fail!
-noGivethDefinitionShouldFail :: String
-noGivethDefinitionShouldFail =
-  [i|
-DECIDE y's z IS 5
-|]
-
--- >>> transpileRulePure noGivethSimpleDefinitionShouldFail
--- "let v_y_0 = 5"
---
--- TODO: renamer fail, y is unknown, needs to fail!
-noGivethSimpleDefinitionShouldFail :: String
-noGivethSimpleDefinitionShouldFail =
-  [i|
-DECIDE y IS 5
-|]
-
--- >>> transpileRulePure rodentsAndVermin
--- "Unsupported relational predicate: RPis"
---
-rodentsAndVermin :: String
-rodentsAndVermin =
-  [i|
-§ "Rodents and vermin"
-DECIDE "Not Covered"
-IF
-   UNLESS ( "Loss or Damage" IS ANY ( "caused by rodents"
-                                    , "caused by insects"
-                                    , "caused by vermin"
-                                    , "caused by birds"
-                                    )
-
-          , ANY ( ALL ( "Loss or Damage" IS "to Contents"
-                      , "Loss or Damage" IS "caused by birds"
-                      )
-
-                , UNLESS ( "Loss or Damage" IS "ensuing covered loss"
-
-                         , ANY ( "any other exclusion applies"
-                               , "an animal caused water to escape from"
-                                    ANY ( "a household appliance"
-                                        , "a swimming pool"
-                                        , "a plumbing, heating, or air conditioning system" )
-                               )
-                         )
-                )
-        )
-|]
+      name = fst $ NE.head assignment
+      rowRhsExprs = fmap snd $ NE.toList assignment
+    recordRows <- traverse assertIsRecord rowRhsExprs
+    mergedRows <- mergeRecordUpdates recordRows
+    pure (name, mergedRows)
 
 -- ----------------------------------------------------------------------------
 -- Debugger helpers

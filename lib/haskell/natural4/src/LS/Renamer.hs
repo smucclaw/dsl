@@ -10,7 +10,52 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module LS.Renamer where
+module LS.Renamer (
+  -- * Renamed Rule types
+  RnRule (..),
+  RnHornlike (..),
+  RnTypeDecl (..),
+  RnHornClause(..),
+  RnTypedMulti(..),
+  RnMultiTerm,
+  RnExpr(..),
+  RnName(..),
+  RnNameType(..),
+  RnLit(..),
+  RnRelationalPredicate(..),
+  RnBoolStructR,
+  OccName,
+  Unique,
+  mkSimpleOccName,
+  -- * Renamer Monad and runners
+  Renamer(..),
+  runRenamerFor,
+
+  -- * Scope checking types
+  Scope (..),
+  scScopeTable,
+  scUniqueSupply,
+  newUnique,
+  lookupName,
+  lookupExistingName,
+  lookupOrInsertName,
+  insertName,
+  insertFunction,
+  lookupExistingFunction,
+  ScopeTable (..),
+  stVariables,
+  stFunction,
+  unionScopeTable,
+  differenceScopeTable,
+  emptyScopeTable,
+  FuncInfo (..),
+  -- * Assertion helpers
+  assertEmptyList,
+  assertSingletonMultiTerm,
+  assertNoTypeSignature,
+  -- * Debugging helpers
+  renameRuleTopLevel,
+) where
 
 import AnyAll.BoolStruct qualified as AA
 import LS.Rule (Rule, RuleLabel)
@@ -45,7 +90,11 @@ import Text.Pretty.Simple qualified as Pretty
 -- Types specific to the renamer phase
 -- ----------------------------------------------------------------------------
 
--- | A rename rule is the same as a 'Rule' but
+-- | A rename rule is the same as a 'Rule' but names that occur in the rule
+-- are resolved and renamed.
+-- This aims to provide common ground for transpilers, s.t. a transpiler can
+-- assume a name is already defined, and language ambiguities are resolved.
+-- Further, this representation aims to be usable for typechecking.
 data RnRule
   = Hornlike RnHornlike
   | TypeDecl RnTypeDecl
@@ -54,6 +103,8 @@ data RnRule
 type RnBoolStructR = AA.OptionallyLabeledBoolStruct RnRelationalPredicate
 
 -- | Corresponds to 'HornClause2', which is equivalent to @HornClause BoolStructR@.
+--
+-- We don't seem to require any parameterization.
 data RnHornClause = RnHornClause
   { rnHcHead :: RnRelationalPredicate
   , rnHcBody :: Maybe RnBoolStructR
@@ -177,7 +228,6 @@ data FuncInfo = FuncInfo
 
 mkSimpleOccName :: Text -> OccName
 mkSimpleOccName = NE.singleton . LS.MTT
-
 data Scope = Scope
   { _scScopeTable :: ScopeTable
   , _scUniqueSupply :: Unique
@@ -214,16 +264,17 @@ differenceScopeTable tbl1 tbl2 =
     , _stFunction = Map.difference tbl1._stFunction tbl2._stFunction
     }
 
-makeFieldsNoPrefix 'Scope
-makeFieldsNoPrefix 'ScopeTable
-makeFieldsNoPrefix 'FuncInfo
-
 emptyScopeTable :: ScopeTable
 emptyScopeTable =
   ScopeTable
     { _stVariables = Map.empty
     , _stFunction = Map.empty
     }
+
+makeFieldsNoPrefix 'Scope
+makeFieldsNoPrefix 'ScopeTable
+makeFieldsNoPrefix 'FuncInfo
+
 
 emptyScope :: Scope
 emptyScope =
@@ -318,7 +369,7 @@ lookupExistingFunction rnFnName = do
     Nothing -> throwError $ "lookupExistingFunction: Assumptions violated, function name wasn't found: " <> show rnFnName
     Just funcInfo -> pure funcInfo
 
--- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo'
+-- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo's
 -- were introduced during this action.
 --
 -- Note, this operation is rather expensive, so use it with caution!
@@ -825,8 +876,8 @@ renameBoolStruct = \case
 --
 -- In this example, @x's@ and @y's@ can be relatively unambiguously renamed,
 -- but @z@ is tricky. Without context, @z@ could be a variable, a string
--- constant... or perhaps even a function name! No real way to tell, as the
--- syntax of the 'LS.MultiTerm' is ambiguous.
+-- constant... or perhaps even a function name! No way to tell, as the
+-- text fragment of the 'LS.MultiTerm' is ambiguous.
 --
 -- To resolve this ambiguity, we keep track of intermediate state in
 -- 'MultiTermContext'. Using this intermediate state, we can clearly
@@ -834,8 +885,10 @@ renameBoolStruct = \case
 -- of a "selector chain".
 --
 -- Further, we analyze whether we encounter a function application. If so,
--- we prepare fixing all function applications to their prefix form.
--- For example, @[MTT "x", MTT "f"]@ will be changed @[MTT "f", MTT "x"]@.
+-- we fix the function application to its prefix form.
+-- For example, @[MTT "x", MTT "f"]@ will be changed @[MTT "f", MTT "x"]@,
+-- if and only if @"f"@ is a known function variable in scope with associated
+-- arity information.
 renameMultiTerm :: LS.MultiTerm -> Renamer RnMultiTerm
 renameMultiTerm multiTerms = do
   (reversedRnMultiTerms, ctx) <-
@@ -1062,7 +1115,6 @@ safeSplitAt i as =
     Nothing -> Nothing
     Just (lhs, rhs) -> Just (reverse lhs, rhs)
  where
-  go 0 [] lhs = Just (lhs, [])
-  go _n [] _lhs = Nothing
   go 0 xs lhs = Just (lhs, xs)
+  go _n [] _lhs = Nothing
   go n (x : xs) lhs = go (n - 1) xs (x : lhs)

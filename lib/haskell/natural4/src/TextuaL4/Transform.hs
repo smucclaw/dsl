@@ -79,7 +79,14 @@ transRule x = case x of
   -- if no givens, then just use the rule as is.
   TL4.Given _ rule -> transRule rule
 
--- Deviation from og grammar: we allow a list of HornClauses in WHERE, not arbitrary Rules
+  -- Arbitrary Rules in WHERE: DECIDE foo IS bar WHERE ( … any rules … )
+  TL4.WhereRule rule rules -> case transRule rule of
+    TypeDecl{} -> error [i|transRule: no wwhere allowed in TypeDecl|]
+    rl -> rl {
+      wwhere = keywordWhere . transRule <$> rules
+      }
+
+-- Special syntax: we allow a list of HornClauses in WHERE without parentheses
   TL4.Where rule hclauses -> case transRule rule of
     TypeDecl{} -> error [i|transRule: no wwhere allowed in TypeDecl|]
     rl -> rl {
@@ -97,6 +104,11 @@ transRule x = case x of
       , transText text
       )
   }
+
+keywordWhere :: Rule -> Rule
+keywordWhere rl = case rl of
+  Hornlike{} -> rl {keyword = Where}
+  _ -> rl
 
 nameFromHC :: TL4.HornClause -> [MTExpr]
 nameFromHC hc = case hc of

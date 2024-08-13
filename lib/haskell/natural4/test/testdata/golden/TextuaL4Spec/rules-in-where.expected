@@ -76,7 +76,7 @@
             { name =
                 [ MTT "color" ]
             , super = Nothing
-            , keyword = Decide
+            , keyword = Where
             , given = Nothing
             , giveth = Nothing
             , upon = Nothing
@@ -126,7 +126,7 @@
                 , MTT "a"
                 ]
             , super = Nothing
-            , keyword = Decide
+            , keyword = Where
             , given = Just
                 (
                     ( MTT "a" :| []
@@ -171,7 +171,7 @@
             { name =
                 [ MTT "b" ]
             , super = Nothing
-            , keyword = Decide
+            , keyword = Where
             , given = Just
                 (
                     ( MTT "a" :| []

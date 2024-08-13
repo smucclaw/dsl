@@ -46,6 +46,7 @@ spec = do
     testList rulesInWhere "rules in WHERE clause" "rules-in-where"
     testList pauTypedecls "PAU typedecls only" "pau-typedecls"
     testList pauRules "PAU rules" "pau-bnfc"
+    testSame "WHERE ( rule ) should be same as WHERE hornclause" ruleInWhere hcInWhere
   where
     test rule = test' rule rule
 
@@ -56,6 +57,13 @@ spec = do
     testList rule desc fname = do
       let res :: [Rule] = fromRight [] $ runList rule
       it desc $ goldenGeneric fname res
+
+    testSame desc rule1 rule2 = do
+      let res1 = run rule1
+          res2 = run rule2
+      it desc $ do
+        res1 `shouldBe` res2
+
 
 rodents = [r|§ `Rodents and vermin`
 DECIDE `Not Covered`
@@ -272,6 +280,28 @@ WHERE (
   DECIDE b IS f a
 )
 |]
+
+hcInWhere :: String
+hcInWhere = [r|
+GIVEN price IS A Number
+GIVETH `book color`
+DECIDE `book color` IS color
+WHERE
+    color IS green IF price > 1 ;
+    color IS red OTHERWISE
+|]
+
+ruleInWhere :: String
+ruleInWhere = [r|
+GIVEN price IS A Number
+GIVETH `book color`
+DECIDE `book color` IS color
+WHERE (
+  DECIDE
+    color IS green IF price > 1 ;
+    color IS red OTHERWISE
+  )|]
+
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a

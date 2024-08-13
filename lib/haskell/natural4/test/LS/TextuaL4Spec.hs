@@ -43,6 +43,7 @@ spec = do
     test [r|DECIDE `name of the book` IS "Perhaps the Stars"|] "strings-and-backticks"
     test' rodents "rodents and vermin" "rodents-and-vermin"
     test' taxesPayable "taxes payable" "taxes-payable"
+    testList rulesInWhere "rules in WHERE clause" "rules-in-where"
     testList pauTypedecls "PAU typedecls only" "pau-typedecls"
     testList pauRules "PAU rules" "pau-bnfc"
   where
@@ -245,6 +246,31 @@ DECIDE	`claimable limit` IS
 GIVEN	x IS A	Number ;
 	    y IS A	Number
 DECIDE	x	`discounted by`	y	IS	`x * (1 - y)`
+|]
+
+
+rulesInWhere :: String
+rulesInWhere = [r|
+DECLARE Color
+§
+DECLARE Book
+HAS color IS A Color
+§
+GIVEN price IS A Number
+GIVETH `book color`
+DECIDE `book color` IS color
+WHERE (
+  DECIDE
+    color IS green IF price > 1 ;
+    color IS red OTHERWISE
+  §
+  GIVEN a
+  DECIDE f a IS MINUS(a, 1)
+  §
+  GIVEN a
+  GIVETH b
+  DECIDE b IS f a
+)
 |]
 
 type Err        = Either String

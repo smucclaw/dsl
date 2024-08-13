@@ -1,0 +1,226 @@
+[ TypeDecl
+    { name =
+        [ MTT "Color" ]
+    , super = Nothing
+    , has = []
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, TypeDecl
+    { name =
+        [ MTT "Book" ]
+    , super = Nothing
+    , has =
+        [ TypeDecl
+            { name =
+                [ MTT "color" ]
+            , super = Just
+                ( SimpleType TOne "Color" )
+            , has = []
+            , enums = Nothing
+            , given = Nothing
+            , upon = Nothing
+            , rlabel = Nothing
+            , lsource = Nothing
+            , srcref = Nothing
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , enums = Nothing
+    , given = Nothing
+    , upon = Nothing
+    , rlabel = Nothing
+    , lsource = Nothing
+    , srcref = Nothing
+    , defaults = []
+    , symtab = []
+    }
+, Hornlike
+    { name =
+        [ MTT "book color" ]
+    , super = Nothing
+    , keyword = Decide
+    , given = Just
+        (
+            ( MTT "price" :| []
+            , Just
+                ( SimpleType TOne "Number" )
+            ) :| []
+        )
+    , giveth = Just
+        (
+            ( MTT "book color" :| []
+            , Nothing
+            ) :| []
+        )
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPConstraint
+                [ MTT "book color" ] RPis
+                [ MTT "color" ]
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere =
+        [ Hornlike
+            { name =
+                [ MTT "color" ]
+            , super = Nothing
+            , keyword = Decide
+            , given = Nothing
+            , giveth = Nothing
+            , upon = Nothing
+            , clauses =
+                [ HC
+                    { hHead = RPConstraint
+                        [ MTT "color" ] RPis
+                        [ MTT "green" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPConstraint
+                                [ MTT "price" ] RPgt
+                                [ MTI 1 ]
+                            )
+                        )
+                    }
+                , HC
+                    { hHead = RPConstraint
+                        [ MTT "color" ] RPis
+                        [ MTT "red" ]
+                    , hBody = Just
+                        ( Leaf
+                            ( RPMT
+                                [ MTT "OTHERWISE" ]
+                            )
+                        )
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere = []
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        , Hornlike
+            { name =
+                [ MTT "f"
+                , MTT "a"
+                ]
+            , super = Nothing
+            , keyword = Decide
+            , given = Just
+                (
+                    ( MTT "a" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , giveth = Nothing
+            , upon = Nothing
+            , clauses =
+                [ HC
+                    { hHead = RPnary RPis
+                        [ RPMT
+                            [ MTT "f"
+                            , MTT "a"
+                            ]
+                        , RPnary RPminus
+                            [ RPMT
+                                [ MTT "a" ]
+                            , RPMT
+                                [ MTI 1 ]
+                            ]
+                        ]
+                    , hBody = Nothing
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere = []
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        , Hornlike
+            { name =
+                [ MTT "b" ]
+            , super = Nothing
+            , keyword = Decide
+            , given = Just
+                (
+                    ( MTT "a" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , giveth = Just
+                (
+                    ( MTT "b" :| []
+                    , Nothing
+                    ) :| []
+                )
+            , upon = Nothing
+            , clauses =
+                [ HC
+                    { hHead = RPConstraint
+                        [ MTT "b" ] RPis
+                        [ MTT "f"
+                        , MTT "a"
+                        ]
+                    , hBody = Nothing
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere = []
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        ]
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+]

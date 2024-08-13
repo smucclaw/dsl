@@ -251,7 +251,7 @@ transpilerTest outputName ruleString = it outputName $
           (Right rnRules, _) -> do
             case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
               Left err -> "Failed transpilation:\n" <> err
-              Right simala -> Text.unpack $ Simala.render simala
+              Right simalaDecls -> Text.unpack $ Text.unlines $ fmap Simala.render simalaDecls
 
 goldenGeneric :: String -> String -> Golden TL.Text
 goldenGeneric name output_ =

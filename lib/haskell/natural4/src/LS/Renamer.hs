@@ -396,7 +396,7 @@ data MultiTermContext = MultiTermContext
   -- the 'multiTermContextInSelector' is set expected to be to 'True', so that
   -- we can infer that @"title"@ is a 'RnSelector'.
   , _multiTermContextFunctionCall :: Maybe RnName
-  -- ^ During renaming a 'MultiTerm', did we encounter a function application?
+  -- ^ While renaming a 'MultiTerm', did we encounter a function application?
   -- If so, we want to fix the call convention from infix/postfix to prefix!
   }
 

@@ -2,7 +2,6 @@ packages:
   ./natural4
   ./anyall
   ./explainable
-  ../../../simala
 
 -- Environment files are required to run the doctests via `cabal test doctests`
 write-ghc-environment-files: always
@@ -27,6 +26,11 @@ source-repository-package
   type: git
   location: https://github.com/anka-213/haskell-wordnet
   tag: a6d675bcbe1585fc652f95f60e0dec826a660646
+
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/simala
+  tag: ca666a3b7155f306a9240a787910a2738b464f60
 
 allow-newer:
   compact:*,

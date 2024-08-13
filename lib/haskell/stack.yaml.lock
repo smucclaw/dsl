@@ -49,6 +49,17 @@ packages:
   original:
     url: https://github.com/anka-213/haskell-wordnet/archive/a6d675bcbe1585fc652f95f60e0dec826a660646.tar.gz
 - completed:
+    name: simala
+    pantry-tree:
+      sha256: 5aeda5482faee42502897d077389e7fcfb29d3ea961e9429ea1a0a900721647a
+      size: 2422
+    sha256: 11235aef474590cd11d77369c9ccacb65cb3b1b24b3048873bccb889d91794e5
+    size: 16142
+    url: https://github.com/smucclaw/simala/archive/ca666a3b7155f306a9240a787910a2738b464f60.tar.gz
+    version: '0.1'
+  original:
+    url: https://github.com/smucclaw/simala/archive/ca666a3b7155f306a9240a787910a2738b464f60.tar.gz
+- completed:
     hackage: monad-validate-1.3.0.0@sha256:eb6ddd5c9cf72ff0563cba604fa00291376e96138fdb4932d00ff3a99d66706e,2605
     pantry-tree:
       sha256: 0b2a3a57be48fcc739708b214fca202f1e95b1cd773dd3bb9589d3007cf8cf5e

@@ -1,1 +1,2 @@
-let f_f_1 = fun (v_x_0) => v_x_0 in let f_g_3 = fun (v_x_2) => v_x_2 in undefined
+ f_f_1 = fun (v_x_0) => v_x_0
+ f_g_3 = fun (v_x_2) => v_x_2

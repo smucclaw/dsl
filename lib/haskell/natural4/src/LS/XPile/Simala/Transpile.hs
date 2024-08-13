@@ -107,21 +107,18 @@ newtype Transpiler a = Transpiler {runTranspiler :: Except String a}
   deriving newtype (Functor, Applicative, Monad)
   deriving newtype (MonadError String)
 
-transpile :: [RnRule] -> Transpiler Simala.Expr
+transpile :: [RnRule] -> Transpiler [Simala.Decl]
 transpile rules = do
   simalaTerms <- Maybe.catMaybes <$> traverse ruleToSimala rules
-  combineSimalaTerms Simala.Undefined simalaTerms
+  traverse toSimalaDecl simalaTerms
 
-combineSimalaTerms :: Simala.Expr -> [SimalaTerm] -> Transpiler Simala.Expr
-combineSimalaTerms inExpr [] = pure inExpr
-combineSimalaTerms inExpr (TermLetIn t name expr : terms) = do
-  restOfInExpr <- combineSimalaTerms inExpr terms
-  pure $ mkLetIn t name expr restOfInExpr
-combineSimalaTerms inExpr (TermFunction t name params expr : terms) = do
-  restOfInExpr <- combineSimalaTerms inExpr terms
-  pure $ mkFunction t name params expr restOfInExpr
-combineSimalaTerms _inExpr _terms = do
-  throwError $ "combineSimalaTerms: Cannot combine SimalaTerms: " <> show _terms
+toSimalaDecl :: SimalaTerm -> Transpiler Simala.Decl
+toSimalaDecl (TermLetIn t name expr) = do
+  pure $ Simala.NonRec t name expr
+toSimalaDecl (TermFunction t name params expr) = do
+  pure $ Simala.NonRec t name $ mkFunctionDecl t params expr
+toSimalaDecl _term = do
+  throwError $ "toSimalaDecl: Cannot convert SimalaTerms to Decl: " <> show _term
 
 -- ----------------------------------------------------------------------------
 -- Main translation helpers
@@ -780,8 +777,8 @@ debugTranspileRule ruleSrc = do
       TL.putStrLn $ Pretty.pShow rnRule
       case runExcept $ runTranspiler $ transpile [rnRule] of
         Left err -> putStrLn err
-        Right expr -> do
-          Text.putStrLn $ "Expr: " <> Simala.render expr
+        Right decls -> flip Foldable.traverse_ decls $ \decl -> do
+          Text.putStrLn $ "Decl: " <> Simala.render decl
 
 transpileRulePure :: String -> Text
 transpileRulePure ruleSrc =
@@ -793,7 +790,7 @@ transpileRulePure ruleSrc =
         case runExcept $ runTranspiler $ transpile [rnRule] of
           Left err -> Text.pack err
           Right expr ->
-            Simala.render expr
+            Text.unlines $ fmap Simala.render expr
 
 run :: String -> Either String LS.Rule
 run = fmap Parser.transRule . Parser.pRule . Parser.myLexer

@@ -1,1 +1,1 @@
-let f_f_1 = fun (v_x_0) => v_x_0.s_y_2.s_z_3 in undefined
+ f_f_1 = fun (v_x_0) => v_x_0.s_y_2.s_z_3

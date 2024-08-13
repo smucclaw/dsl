@@ -15,21 +15,26 @@ module LS.Renamer (
   RnRule (..),
   RnHornlike (..),
   RnTypeDecl (..),
-  RnHornClause(..),
-  RnTypedMulti(..),
+  RnHornClause (..),
+  RnTypedMulti (..),
   RnMultiTerm,
-  RnExpr(..),
-  RnName(..),
-  RnNameType(..),
-  RnLit(..),
-  RnRelationalPredicate(..),
+  RnExpr (..),
+  RnName (..),
+  RnNameType (..),
+  RnLit (..),
+  RnRelationalPredicate (..),
   RnBoolStructR,
   OccName,
   Unique,
   mkSimpleOccName,
+
   -- * Renamer Monad and runners
-  Renamer(..),
+  Renamer (..),
   runRenamerFor,
+
+  -- * Renamer Errors
+  RenamerError (..),
+  renderRenamerError,
 
   -- * Scope checking types
   Scope (..),
@@ -49,10 +54,12 @@ module LS.Renamer (
   differenceScopeTable,
   emptyScopeTable,
   FuncInfo (..),
+
   -- * Assertion helpers
   assertEmptyList,
   assertSingletonMultiTerm,
   assertNoTypeSignature,
+
   -- * Debugging helpers
   renameRuleTopLevel,
 ) where
@@ -63,7 +70,7 @@ import LS.Rule qualified as Rule
 import LS.Types (MyToken, RuleName, SrcRef)
 import LS.Types qualified as LS
 
-import Control.Monad.Error.Class
+import Control.Monad.Error.Class as Error
 import Control.Monad.Extra (foldM, fromMaybeM)
 import Control.Monad.State.Strict (MonadState)
 import Control.Monad.Trans.Except (ExceptT)
@@ -81,6 +88,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 import Data.Text.Lazy.IO qualified as TL
 import GHC.Generics (Generic)
 import Optics hiding (has)
@@ -204,12 +212,85 @@ data RnRelationalPredicate
   deriving (Eq, Ord, Show, Generic)
 
 -- ----------------------------------------------------------------------------
+-- Typed Errors
+-- ----------------------------------------------------------------------------
+
+data RenamerError
+  = UnsupportedRule Text Rule
+  | UnsupportedRPParamText LS.ParamText
+  | UnsupportedUpon LS.ParamText
+  | UnknownMultiTerms LS.MultiTerm
+  | FixArityFunctionNotFound RnName [RnExpr]
+  | ArityErrorLeft !Int RnName [RnExpr]
+  | ArityErrorRight !Int RnName [RnExpr]
+  | -- Scope Error
+    UnexpectedNameNotFound OccName
+  | UnexpectedRnNameNotFound RnName
+  | InsertNameUnexpectedType RnNameType RnNameType
+  | LookupOrInsertNameUnexpectedType RnNameType RnNameType
+  | -- Validation Errors
+    forall a. (Show a) => UnexpectedNonEmptyList [a]
+  | forall a f. (Show (f a), Foldable f) => UnexpectedNonSingletonList (f a)
+  | UnexpectedTypeSignature LS.TypedMulti
+
+renderRenamerError :: RenamerError -> Text.Text
+renderRenamerError = \case
+  UnsupportedRule herald r -> herald <> ": Unsupported rule: " <> Text.pack (show r)
+  UnsupportedRPParamText rp -> "Received 'RPParamText', we can't handle that yet. Got: " <> Text.pack (show rp)
+  UnsupportedUpon pText -> "Clause \"UPON\" is currently unsupported: " <> Text.pack (show pText)
+  UnknownMultiTerms mts -> "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> Text.pack (show mts)
+  FixArityFunctionNotFound name list ->
+    "Invariant violated, function " <> Text.pack (show name) <> " reported, but not found in " <> Text.pack (show list)
+  ArityErrorLeft expected name list ->
+    "Not enough elements in left hand side of function "
+      <> Text.pack (show name)
+      <> ". Required: "
+      <> Text.pack (show expected)
+      <> " but got: "
+      <> Text.pack (show (length list))
+      <> " ("
+      <> Text.pack (show list)
+      <> ")"
+  ArityErrorRight expected name list ->
+    "Not enough elements in right hand side of function "
+      <> Text.pack (show name)
+      <> ". Required: "
+      <> Text.pack (show expected)
+      <> " but got: "
+      <> Text.pack (show (length list))
+      <> " ("
+      <> Text.pack (show list)
+      <> ")"
+  -- Scope Error
+  UnexpectedNameNotFound occName ->
+    "Assumption violated, OccName not found: " <> Text.pack (show occName)
+  UnexpectedRnNameNotFound rnName ->
+    "Assumption violated, RnName not found: " <> Text.pack (show rnName)
+  InsertNameUnexpectedType expected actual ->
+    "Invariant violated, trying to insert an incorrect RnNameType for a resolved name. Got: "
+      <> Text.pack (show actual)
+      <> " but expected: "
+      <> Text.pack (show expected)
+  LookupOrInsertNameUnexpectedType expected actual ->
+    "Invariant violated, trying to insert or lookup an incorrect RnNameType for a resolved name. Got: "
+      <> Text.pack (show actual)
+      <> " but expected: "
+      <> Text.pack (show expected)
+  -- Validation Errrors
+  UnexpectedNonEmptyList xs ->
+    "Expected an empty list, but got: " <> Text.pack (show xs)
+  UnexpectedNonSingletonList xs ->
+    "Expected an singleton list, but got: " <> Text.pack (show xs)
+  UnexpectedTypeSignature tm ->
+    "Expected no type signature, but got: " <> Text.pack (show tm)
+
+-- ----------------------------------------------------------------------------
 -- Scope tables
 -- ----------------------------------------------------------------------------
 
-newtype Renamer a = Renamer {runRenamer :: ExceptT String (State Scope) a}
+newtype Renamer a = Renamer {runRenamer :: ExceptT RenamerError (State Scope) a}
   deriving newtype (Functor, Applicative, Monad)
-  deriving newtype (MonadState Scope, MonadError String)
+  deriving newtype (MonadState Scope, MonadError RenamerError)
 
 type Unique = Int
 
@@ -275,7 +356,6 @@ makeFieldsNoPrefix 'Scope
 makeFieldsNoPrefix 'ScopeTable
 makeFieldsNoPrefix 'FuncInfo
 
-
 emptyScope :: Scope
 emptyScope =
   Scope
@@ -305,15 +385,11 @@ lookupExistingName :: OccName -> RnNameType -> Renamer RnName
 lookupExistingName occName nameType = do
   mRnName <- lookupName occName
   case mRnName of
-    Nothing -> throwError $ "lookupExistingName: Assumptions violated, name wasn't found: " <> show occName
+    Nothing -> throwError $ UnexpectedNameNotFound occName
     Just name
       | name.rnNameType == nameType -> pure name
       | otherwise ->
-          throwError $
-            "lookupExistingName: Invariant violated, trying to insert a different name type for a name that's already known. Got: "
-              <> show nameType
-              <> " but expected: "
-              <> show (rnNameType name)
+          throwError $ InsertNameUnexpectedType (rnNameType name) nameType
 
 -- | Either inserts a new name of the given type, or checks that the name
 -- is already in scope with the given type.
@@ -326,11 +402,7 @@ lookupOrInsertName occName nameType =
     Just name
       | rnNameType name == nameType -> pure name
       | otherwise ->
-          throwError $
-            "lookupOrInsertName: Invariant violated, trying to insert a different name type for a name that's already known. Got: "
-              <> show nameType
-              <> " but expected: "
-              <> show (rnNameType name)
+          throwError $ LookupOrInsertNameUnexpectedType (rnNameType name) nameType
 
 -- | Insert an occurrence name into the current 'ScopeTable'.
 -- The new 'OccName' will overwrite (shadow?) any existing names.
@@ -366,7 +438,7 @@ lookupExistingFunction :: RnName -> Renamer FuncInfo
 lookupExistingFunction rnFnName = do
   funcInfoM <- use (scScopeTable % stFunction % at rnFnName)
   case funcInfoM of
-    Nothing -> throwError $ "lookupExistingFunction: Assumptions violated, function name wasn't found: " <> show rnFnName
+    Nothing -> throwError $ UnexpectedRnNameNotFound rnFnName
     Just funcInfo -> pure funcInfo
 
 -- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo's
@@ -419,10 +491,10 @@ renameRuleTopLevel rule = do
     (res, s) = runRenamerFor [rule]
   TL.putStrLn $ Pretty.pShow s
   case res of
-    Left err -> putStrLn err
+    Left err -> Text.putStrLn $ renderRenamerError err
     Right rnRules -> TL.putStrLn $ Pretty.pShow $ head rnRules
 
-runRenamerFor :: (Traversable f) => f Rule -> (Either String (f RnRule), Scope)
+runRenamerFor :: (Traversable f) => f Rule -> (Either RenamerError (f RnRule), Scope)
 runRenamerFor rule =
   let
     (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renameRules rule)) emptyScope
@@ -450,8 +522,8 @@ scanRule rule@Rule.Hornlike{} = do
     scanGiveths rule.giveth
     traverse_ scanHornClause rule.clauses
   pure exports
-scanRule r@Rule.Regulative{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.Constitutive{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.Regulative{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.Constitutive{} = throwError $ UnsupportedRule "scanRule" r
 scanRule rule@Rule.TypeDecl{} = do
   traverse_ scanTypeSignature rule.super
   scanEnums rule.enums
@@ -460,14 +532,14 @@ scanRule rule@Rule.TypeDecl{} = do
   scanTypeDeclName rule.name
   typeScope <- use scScopeTable
   pure typeScope
-scanRule r@Rule.Scenario{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.DefNameAlias{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.DefTypically{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.RuleAlias{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.RuleGroup{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.RegFulfilled{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.RegBreach{} = throwError $ "scanRule: Unsupported rule: " <> show r
-scanRule r@Rule.NotARule{} = throwError $ "scanRule: Unsupported rule: " <> show r
+scanRule r@Rule.Scenario{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.DefNameAlias{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.DefTypically{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.RuleAlias{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.RuleGroup{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.RegFulfilled{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.RegBreach{} = throwError $ UnsupportedRule "scanRule" r
+scanRule r@Rule.NotARule{} = throwError $ UnsupportedRule "scanRule" r
 
 -- | Scan a 'LS.HornClause2' for declarations of variables and functions.
 scanHornClause :: LS.HornClause2 -> Renamer ()
@@ -482,7 +554,7 @@ scanHornClause hc = do
 -- which allows the *introduction* of variables.
 scanDecideHeadClause :: LS.RelationalPredicate -> Renamer ()
 scanDecideHeadClause = \case
-  LS.RPParamText pText -> throwError $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
+  LS.RPParamText pText -> throwError $ UnsupportedRPParamText pText --  $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
   LS.RPMT mt -> scanDecideMultiTerm mt
   LS.RPConstraint lhs _predicate _rhs -> do
     scanDecideMultiTerm lhs
@@ -535,7 +607,9 @@ scanDecideMultiTerm mt = do
       | Just (fnOccName, preArgs, postArgs) <- scanForFunctionDecl scopeTable fnDecl -> do
           rnF <- lookupOrInsertName fnOccName RnFunction
           insertFunction rnF (FuncInfo{_funcArity = (preArgs, postArgs)})
-    unknownPattern -> throwError $ "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
+    unknownPattern -> throwError $ UnknownMultiTerms unknownPattern
+
+-- throwError $ "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> show unknownPattern
 
 -- | Check whether this could be a function like structure.
 --
@@ -718,8 +792,8 @@ renameRule rule@Rule.Hornlike{} = do
         , defaults
         , symtab
         }
-renameRule r@Rule.Regulative{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.Constitutive{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.Regulative{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.Constitutive{} = throwError $ UnsupportedRule "renameRule" r
 renameRule rule@Rule.TypeDecl{} = do
   super <- traverse renameTypeSignature rule.super
   defaults <- assertEmptyList rule.defaults
@@ -744,14 +818,14 @@ renameRule rule@Rule.TypeDecl{} = do
         , defaults
         , symtab
         }
-renameRule r@Rule.Scenario{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.DefNameAlias{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.DefTypically{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.RuleAlias{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.RuleGroup{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.RegFulfilled{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.RegBreach{} = throwError $ "renameRule: Unsupported rule: " <> show r
-renameRule r@Rule.NotARule{} = throwError $ "renameRule: Unsupported rule: " <> show r
+renameRule r@Rule.Scenario{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.DefNameAlias{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.DefTypically{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.RuleAlias{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.RuleGroup{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.RegFulfilled{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.RegBreach{} = throwError $ UnsupportedRule "renameRule" r
+renameRule r@Rule.NotARule{} = throwError $ UnsupportedRule "renameRule" r
 
 renameLocalRules :: [Rule] -> Renamer [RnRule]
 renameLocalRules = renameRules
@@ -766,7 +840,7 @@ renameUpons ::
   Maybe LS.ParamText ->
   Renamer (Maybe RnParamText)
 renameUpons Nothing = pure Nothing
-renameUpons (Just xs) = throwError $ "Unsupported \"UPON\", got: " <> show xs
+renameUpons (Just xs) = throwError $ UnsupportedUpon xs
 
 renameGiveths ::
   Maybe LS.ParamText ->
@@ -842,7 +916,8 @@ renameHornClause hc = do
 
 renameRelationalPredicate :: LS.RelationalPredicate -> Renamer RnRelationalPredicate
 renameRelationalPredicate = \case
-  LS.RPParamText pText -> throwError $ "Received 'RPParamText', we can't handle that yet. Got: " <> show pText
+  LS.RPParamText pText ->
+    throwError $ UnsupportedRPParamText pText
   LS.RPMT mt -> RnRelationalTerm <$> renameMultiTerm mt
   LS.RPConstraint lhs relationalPredicate rhs -> do
     rnLhs <- renameMultiTerm lhs
@@ -910,35 +985,28 @@ renameMultiTerm multiTerms = do
       let
         (preNum, postNum) = funcInfo ^. funcArity
       (lhs, fnExpr, rhs) <- findFunctionApplication fnName rnMultiTerms
-      (leftNonArgs, leftArgs) <- processLhs preNum lhs
-      (rightNonArgs, rightArgs) <- processRhs postNum rhs
+      (leftNonArgs, leftArgs) <- processLhs fnName preNum lhs
+      (rightNonArgs, rightArgs) <- processRhs fnName postNum rhs
       pure $ reverse leftNonArgs <> [fnExpr] <> leftArgs <> rightArgs <> rightNonArgs
 
   findFunctionApplication fnName rnMultiTerms = do
     let
       (preArgs, postArgsWithName) = List.break (== (RnExprName fnName)) rnMultiTerms
     case postArgsWithName of
-      [] -> throwError "fixFixity: Invariant violated, function name reported, but none found."
+      [] -> throwError $ FixArityFunctionNotFound fnName rnMultiTerms
+      -- throwError "fixFixity: Invariant violated, function name reported, but none found."
       (fnExpr : postArgs) -> pure (preArgs, fnExpr, postArgs)
 
-  processLhs n lhs = do
+  processLhs name n lhs = do
     case safeSplitAt n (reverse lhs) of
       Nothing ->
-        throwError $
-          "Not enough elements in left hand side of function application. Required: "
-            <> show n
-            <> " but got: "
-            <> show (length lhs)
+        throwError $ ArityErrorLeft n name lhs
       Just (args, nonArgs) -> pure (reverse nonArgs, reverse args)
 
-  processRhs n rhs = do
+  processRhs name n rhs = do
     case safeSplitAt n rhs of
       Nothing ->
-        throwError $
-          "Not enough elements in left hand side of function application. Required: "
-            <> show n
-            <> " but got: "
-            <> show (length rhs)
+        throwError $ ArityErrorRight n name rhs
       Just (nonArgs, args) -> pure (nonArgs, args)
 
   initialMultiTermContext =
@@ -1038,19 +1106,19 @@ oTHERWISE = "OTHERWISE"
 assertSingletonMultiTerm :: (Show (f LS.MTExpr), Foldable f) => f LS.MTExpr -> Renamer LS.MTExpr
 assertSingletonMultiTerm xs = case Foldable.toList xs of
   [x] -> pure x
-  _ -> throwError $ "Expected singleton but got: " <> show xs
+  _ -> throwError $ UnexpectedNonSingletonList xs
 
 assertNoTypeSignature :: LS.TypedMulti -> Renamer (NonEmpty LS.MTExpr)
-assertNoTypeSignature tm@(_, Just _) = throwError $ "Expected no type signature but got: " <> show tm
+assertNoTypeSignature tm@(_, Just _) = throwError $ UnexpectedTypeSignature tm
 assertNoTypeSignature (mtt, Nothing) = do
   pure mtt
 
 -- | If we can't handle renaming certain list of things, we just hope that
 -- the parser doesn't give us a list with any elements.
 -- We throwError if the list is not @'null'@.
-assertEmptyList :: (Show a, MonadError String m) => [a] -> m [b]
+assertEmptyList :: (Show a, MonadError RenamerError m) => [a] -> m [b]
 assertEmptyList [] = pure []
-assertEmptyList xs = throwError $ "Expected an empty list, but got: " <> show xs
+assertEmptyList xs = throwError $ UnexpectedNonEmptyList xs
 
 -- ----------------------------------------------------------------------------
 -- Helper utils non specific to the renamer.

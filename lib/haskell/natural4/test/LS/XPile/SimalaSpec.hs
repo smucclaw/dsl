@@ -8,6 +8,7 @@ module LS.XPile.SimalaSpec (spec) where
 import Control.Monad.Trans.Except (runExcept)
 import Data.String.Interpolate
 import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.IO qualified as TL
 import LS.Renamer qualified as Renamer
@@ -231,35 +232,35 @@ transpilerTest outputName ruleString = it outputName $
   goldenGeneric outputName $
     case runList ruleString of
       Left err ->
-        unlines
+        Text.unlines
           [ "Failed to parse program:"
-          , ruleString
+          , Text.pack ruleString
           , "Err:"
-          , err
+          , Text.pack err
           ]
       Right rules -> do
         case Renamer.runRenamerFor rules of
           (Left err, scope) ->
-            unlines
+            Text.unlines
               [ "Renaming failed for program:"
-              , ruleString
+              , Text.pack ruleString
               , "Because:"
-              , err
+              , Renamer.renderRenamerError err
               , "Scope table:"
-              , pShowNoColorS scope
+              , Text.pack $ pShowNoColorS scope
               ]
           (Right rnRules, _) -> do
             case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
-              Left err -> "Failed transpilation:\n" <> err
-              Right simalaDecls -> Text.unpack $ Text.unlines $ fmap Simala.render simalaDecls
+              Left err -> "Failed transpilation:\n" <> Text.pack err
+              Right simalaDecls -> Text.unlines $ fmap Simala.render simalaDecls
 
-goldenGeneric :: String -> String -> Golden TL.Text
+goldenGeneric :: String -> Text.Text -> Golden Text.Text
 goldenGeneric name output_ =
   Golden
-    { output = TL.pack output_
-    , encodePretty = TL.unpack
-    , writeToFile = TL.writeFile
-    , readFromFile = TL.readFile
+    { output = output_
+    , encodePretty = Text.unpack
+    , writeToFile = Text.writeFile
+    , readFromFile = Text.readFile
     , goldenFile = testPath <.> "expected"
     , actualFile = Just (testPath <.> "actual")
     , failFirstTime = False

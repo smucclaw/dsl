@@ -7,6 +7,7 @@
 module LS.RenamerSpec (spec) where
 
 import Data.String.Interpolate
+import Data.Text qualified as Text
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.IO qualified as TL
 import LS.Renamer qualified as Renamer
@@ -115,9 +116,9 @@ spec = do
         case runList ruleSource of
           Left err -> Left $ "Failed to parse program:\n" <> ruleSource <> "\n" <> err
           Right rules ->
-              case fst $ Renamer.runRenamerFor rules of
-                Left err -> Left $ "Failed to rename program: " <> err
-                Right rnRules -> Right rnRules
+            case fst $ Renamer.runRenamerFor rules of
+              Left err -> Left $ "Failed to rename program: " <> Text.unpack (Renamer.renderRenamerError err)
+              Right rnRules -> Right rnRules
 
 runList :: String -> Either String [Rule]
 runList = fmap (fmap transRule) . pListRule . myLexer

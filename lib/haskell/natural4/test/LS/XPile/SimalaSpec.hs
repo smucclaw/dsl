@@ -170,6 +170,13 @@ basicTests = do
     [i|
       DECIDE y's z IS 5
       |]
+  transpilerTest
+    "function-nested-builtins"
+    [i|
+      GIVEN x IS A Number ;
+            y IS A Number
+      DECIDE x `discounted by` y IS SUM(x, MINUS(1, y))
+    |]
 
 multiRuleTests :: Spec
 multiRuleTests = describe "multi-rules" do

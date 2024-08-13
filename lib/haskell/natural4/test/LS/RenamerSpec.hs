@@ -53,38 +53,38 @@ spec = do
     test'
       "id-func-multi"
       [i|
-GIVEN x
-DECIDE f x IS x
-§
-GIVEN x
-DECIDE g x IS x
+        GIVEN x
+        DECIDE f x IS x
+        §
+        GIVEN x
+        DECIDE g x IS x
         |]
     test'
       "id-func-multi-postfix"
       [i|
-GIVEN x
-DECIDE f x IS x g
-§
-GIVEN x
-DECIDE x g IS x
+        GIVEN x
+        DECIDE f x IS x g
+        §
+        GIVEN x
+        DECIDE x g IS x
         |]
     test'
       "fail-id-func-multi-wrong-arity-1"
       [i|
-GIVEN x
-DECIDE f x IS g x
-§
-GIVEN x
-DECIDE x g IS x
+        GIVEN x
+        DECIDE f x IS g x
+        §
+        GIVEN x
+        DECIDE x g IS x
         |]
     test'
       "fail-id-func-multi-wrong-arity-2"
       [i|
-GIVEN x
-DECIDE f x IS g x x
-§
-GIVEN x
-DECIDE x g IS x
+        GIVEN x
+        DECIDE f x IS g x x
+        §
+        GIVEN x
+        DECIDE x g IS x
         |]
     test'
       "fail-id-func-multi-wrong-arity-3"
@@ -92,20 +92,20 @@ DECIDE x g IS x
       -- `x g x`, which is strictly speaking legit. Perhaps,
       -- if `x` is a function, this even makes sense?
       [i|
-GIVEN x
-DECIDE f x IS x x g
-§
-GIVEN x
-DECIDE x g IS x
+        GIVEN x
+        DECIDE f x IS x x g
+        §
+        GIVEN x
+        DECIDE x g IS x
         |]
     test'
       "fail-id-func-multi-wrong-arity-4"
       [i|
-GIVEN x
-DECIDE f x IS x g x
-§
-GIVEN x
-DECIDE x g IS x
+        GIVEN x
+        DECIDE f x IS x g x
+        §
+        GIVEN x
+        DECIDE x g IS x
         |]
  where
   test' :: String -> String -> SpecWith (Arg (Golden TL.Text))

@@ -1,0 +1,100 @@
+(
+    [ MathSet "taxesPayable"
+        ( MathITE
+            ( Just "taxesPayable" )
+            ( PredVar "phaseOfMoon.gibbous" )
+            ( MathBin
+                ( Just "taxesPayable" ) Divide
+                ( MathVar "taxesPayableAlive" )
+                ( Val Nothing 2.0 )
+            )
+            ( MathITE Nothing
+                ( PredVar "vivacity" )
+                ( MathVar "taxesPayableAlive" )
+                ( MathITE Nothing
+                    ( PredVar "phaseOfMoon.waxing" )
+                    ( MathBin
+                        ( Just "taxesPayable" ) Divide
+                        ( MathVar "taxesPayableAlive" )
+                        ( Val Nothing 3.0 )
+                    )
+                    ( MathITE Nothing
+                        ( PredVar "phaseOfMoon.full" )
+                        ( MathVar "waived" )
+                        ( Val
+                            ( Just "taxesPayable" ) 0.0
+                        )
+                    )
+                )
+            )
+        )
+    ]
+, MyState
+    { symtabF = fromList
+        [
+            ( "income tax component"
+            , MathBin
+                ( Just "income tax component" ) Times
+                ( MathVar "annualIncome" )
+                ( MathVar "incomeTaxRate" )
+            )
+        ,
+            ( "taxesPayable"
+            , MathITE
+                ( Just "taxesPayable" )
+                ( PredVar "phaseOfMoon.gibbous" )
+                ( MathBin
+                    ( Just "taxesPayable" ) Divide
+                    ( MathVar "taxesPayableAlive" )
+                    ( Val Nothing 2.0 )
+                )
+                ( MathITE Nothing
+                    ( PredVar "vivacity" )
+                    ( MathVar "taxesPayableAlive" )
+                    ( MathITE Nothing
+                        ( PredVar "phaseOfMoon.waxing" )
+                        ( MathBin
+                            ( Just "taxesPayable" ) Divide
+                            ( MathVar "taxesPayableAlive" )
+                            ( Val Nothing 3.0 )
+                        )
+                        ( MathITE Nothing
+                            ( PredVar "phaseOfMoon.full" )
+                            ( MathVar "waived" )
+                            ( Val
+                                ( Just "taxesPayable" ) 0.0
+                            )
+                        )
+                    )
+                )
+            )
+        ,
+            ( "asset tax component"
+            , MathBin
+                ( Just "asset tax component" ) Times
+                ( MathVar "netWorth" )
+                ( MathVar "assetTaxRate" )
+            )
+        ,
+            ( "assetTaxRate"
+            , Val
+                ( Just "assetTaxRate" ) 7.0e-2
+            )
+        ,
+            ( "incomeTaxRate"
+            , Val
+                ( Just "incomeTaxRate" ) 1.0e-2
+            )
+        ,
+            ( "taxesPayableAlive"
+            , MathBin
+                ( Just "taxesPayableAlive" ) Plus
+                ( MathVar "income tax component" )
+                ( MathVar "asset tax component" )
+            )
+        ]
+    , symtabP = fromList []
+    , symtabL = fromList []
+    , symtabS = fromList []
+    }
+)

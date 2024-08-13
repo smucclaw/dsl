@@ -1,0 +1,58 @@
+Right
+    ( MkGlobalVars
+        ( fromList
+            [
+                ( MkVar "x"
+                , Just
+                    ( L4EntityType "Number" )
+                )
+            ,
+                ( MkVar "y"
+                , Just
+                    ( L4EntityType "Number" )
+                )
+            ,
+                ( MkVar "user input"
+                , Just
+                    ( L4EntityType "Dictionary" )
+                )
+            ,
+                ( MkVar "accident"
+                , Just
+                    ( L4EntityType "Accident" )
+                )
+            ,
+                ( MkVar "addBenefit"
+                , Just
+                    ( L4EntityType "Number" )
+                )
+            ,
+                ( MkVar "otherBenefits"
+                , Just
+                    ( L4List
+                        ( L4EntityType "Number" )
+                    )
+                )
+            ,
+                ( MkVar "total sum assured"
+                , Just
+                    ( L4EntityType "Number" )
+                )
+            ,
+                ( MkVar "policyHolder"
+                , Just
+                    ( L4EntityType "PolicyHolder" )
+                )
+            ,
+                ( MkVar "policy"
+                , Just
+                    ( L4EntityType "Policy" )
+                )
+            ,
+                ( MkVar "illness"
+                , Just
+                    ( L4EntityType "Claim" )
+                )
+            ]
+        )
+    )

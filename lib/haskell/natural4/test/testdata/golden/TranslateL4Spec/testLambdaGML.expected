@@ -1,0 +1,80 @@
+Right
+    ( fromList
+        [
+            ( "discounted by"
+            ,
+                (
+                    [ MkVar "x"
+                    , MkVar "y"
+                    ]
+                , MkExp
+                    { exp = ENumOp
+                        { numOp = OpMul
+                        , nopLeft = MkExp
+                            { exp = EVar
+                                { var = MkVar "x" }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 0
+                                        , col = 0
+                                        }
+                                    , typeLabel = Just
+                                        ( Inferred "Number" )
+                                    , explnAnnot = Nothing
+                                    }
+                                ]
+                            }
+                        , nopRight = MkExp
+                            { exp = ENumOp
+                                { numOp = OpMinus
+                                , nopLeft = MkExp
+                                    { exp = ELit
+                                        { lit = EInteger 1 }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 0
+                                                , col = 0
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                , nopRight = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "y" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 0
+                                                , col = 0
+                                                }
+                                            , typeLabel = Just
+                                                ( Inferred "Number" )
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 0
+                                        , col = 0
+                                        }
+                                    , typeLabel = Just
+                                        ( Inferred "Number" )
+                                    , explnAnnot = Nothing
+                                    }
+                                ]
+                            }
+                        }
+                    , md = []
+                    }
+                )
+            )
+        ]
+    )

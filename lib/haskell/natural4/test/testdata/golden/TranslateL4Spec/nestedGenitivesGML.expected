@@ -1,0 +1,49 @@
+ERec
+    { fieldName = MkExp
+        { exp = ERec
+            { fieldName = MkExp
+                { exp = EVar
+                    { var = MkVar "age" }
+                , md =
+                    [ MkExpMetadata
+                        { srcPos = MkPosition
+                            { row = 0
+                            , col = 0
+                            }
+                        , typeLabel = Nothing
+                        , explnAnnot = Nothing
+                        }
+                    ]
+                }
+            , recName = MkExp
+                { exp = EVar
+                    { var = MkVar "friend" }
+                , md =
+                    [ MkExpMetadata
+                        { srcPos = MkPosition
+                            { row = 0
+                            , col = 0
+                            }
+                        , typeLabel = Nothing
+                        , explnAnnot = Nothing
+                        }
+                    ]
+                }
+            }
+        , md = []
+        }
+    , recName = MkExp
+        { exp = EVar
+            { var = MkVar "ind" }
+        , md =
+            [ MkExpMetadata
+                { srcPos = MkPosition
+                    { row = 0
+                    , col = 0
+                    }
+                , typeLabel = Nothing
+                , explnAnnot = Nothing
+                }
+            ]
+        }
+    }

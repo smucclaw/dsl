@@ -1,0 +1,32 @@
+Right
+    ( MkGlobalVars
+        ( fromList
+            [
+                ( MkVar "netWorth"
+                , Just
+                    ( L4EntityType "Number" )
+                )
+            ,
+                ( MkVar "annualIncome"
+                , Just
+                    ( L4EntityType "Number" )
+                )
+            ,
+                ( MkVar "phaseOfMoon"
+                , Just
+                    ( L4Enum
+                        [ "new"
+                        , "waxing"
+                        , "full"
+                        , "gibbous"
+                        ]
+                    )
+                )
+            ,
+                ( MkVar "vivacity"
+                , Just
+                    ( L4EntityType "Boolean" )
+                )
+            ]
+        )
+    )

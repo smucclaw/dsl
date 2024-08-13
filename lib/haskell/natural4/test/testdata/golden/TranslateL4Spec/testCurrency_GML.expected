@@ -1,0 +1,99 @@
+Right
+    [ ESeq
+        { seq = SeqExp
+            [ MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "sgdTestSpaceNoComma" }
+                        , md = []
+                        }
+                    , arg = MkExp
+                        { exp = ELit
+                            { lit = ECurrency "SGD" 42.0 }
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "sgdTestNoSpaceNoComma" }
+                        , md = []
+                        }
+                    , arg = MkExp
+                        { exp = ELit
+                            { lit = ECurrency "SGD" 42.0 }
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "eurTestSpaceComma" }
+                        , md = []
+                        }
+                    , arg = MkExp
+                        { exp = ELit
+                            { lit = ECurrency "EUR" 500000.0 }
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "eurTestNoSpaceComma" }
+                        , md = []
+                        }
+                    , arg = MkExp
+                        { exp = ELit
+                            { lit = ECurrency "EUR" 500000.0 }
+                        , md = []
+                        }
+                    }
+                , md = []
+                }
+            , MkExp
+                { exp = EVarSet
+                    { vsetVar = MkExp
+                        { exp = EVar
+                            { var = MkVar "notACurrency" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Nothing
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    , arg = MkExp
+                        { exp = EVar
+                            { var = MkVar "PAU4" }
+                        , md =
+                            [ MkExpMetadata
+                                { srcPos = MkPosition
+                                    { row = 1
+                                    , col = 1
+                                    }
+                                , typeLabel = Nothing
+                                , explnAnnot = Nothing
+                                }
+                            ]
+                        }
+                    }
+                , md = []
+                }
+            ]
+        }
+    ]

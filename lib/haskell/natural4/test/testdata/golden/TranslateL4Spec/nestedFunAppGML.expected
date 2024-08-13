@@ -1,0 +1,110 @@
+Right
+    ( fromList
+        [
+            ( "f"
+            ,
+                (
+                    [ MkVar "c"
+                    , MkVar "d"
+                    ]
+                , MkExp
+                    { exp = EApp
+                        { func = MkExp
+                            { exp = EApp
+                                { func = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "plus" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 0
+                                                , col = 0
+                                                }
+                                            , typeLabel = Nothing
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                , appArg = MkExp
+                                    { exp = EVar
+                                        { var = MkVar "c" }
+                                    , md =
+                                        [ MkExpMetadata
+                                            { srcPos = MkPosition
+                                                { row = 0
+                                                , col = 0
+                                                }
+                                            , typeLabel = Nothing
+                                            , explnAnnot = Nothing
+                                            }
+                                        ]
+                                    }
+                                }
+                            , md = []
+                            }
+                        , appArg = MkExp
+                            { exp = EVar
+                                { var = MkVar "d" }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 0
+                                        , col = 0
+                                        }
+                                    , typeLabel = Nothing
+                                    , explnAnnot = Nothing
+                                    }
+                                ]
+                            }
+                        }
+                    , md = []
+                    }
+                )
+            )
+        ,
+            ( "plus"
+            ,
+                (
+                    [ MkVar "a"
+                    , MkVar "b"
+                    ]
+                , MkExp
+                    { exp = ENumOp
+                        { numOp = OpPlus
+                        , nopLeft = MkExp
+                            { exp = EVar
+                                { var = MkVar "a" }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 0
+                                        , col = 0
+                                        }
+                                    , typeLabel = Just
+                                        ( Inferred "Number" )
+                                    , explnAnnot = Nothing
+                                    }
+                                ]
+                            }
+                        , nopRight = MkExp
+                            { exp = EVar
+                                { var = MkVar "b" }
+                            , md =
+                                [ MkExpMetadata
+                                    { srcPos = MkPosition
+                                        { row = 0
+                                        , col = 0
+                                        }
+                                    , typeLabel = Just
+                                        ( Inferred "Number" )
+                                    , explnAnnot = Nothing
+                                    }
+                                ]
+                            }
+                        }
+                    , md = []
+                    }
+                )
+            )
+        ]
+    )

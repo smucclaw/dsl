@@ -1,0 +1,59 @@
+(
+    [ MathPred
+        ( PredFold
+            ( Just "Qualifies" ) PLAnd
+            [ PredVar "walks"
+            , PredFold Nothing PLAnd
+                [ PredFold Nothing PLOr
+                    [ PredFold
+                        ( Just "Drinks" ) PLAnd
+                        [ PredFold Nothing PLOr
+                            [ PredVar "alcoholic"
+                            , PredVar "non-alcoholic"
+                            ]
+                        , PredFold Nothing PLAnd
+                            [ PredFold Nothing PLOr
+                                [ PredVar "in part"
+                                , PredVar "in whole"
+                                ]
+                            ]
+                        ]
+                    , PredVar "eats"
+                    ]
+                ]
+            ]
+        )
+    ]
+, MyState
+    { symtabF = fromList []
+    , symtabP = fromList
+        [
+            ( "Qualifies"
+            , PredFold
+                ( Just "Qualifies" ) PLAnd
+                [ PredVar "walks"
+                , PredFold Nothing PLAnd
+                    [ PredFold Nothing PLOr
+                        [ PredFold
+                            ( Just "Drinks" ) PLAnd
+                            [ PredFold Nothing PLOr
+                                [ PredVar "alcoholic"
+                                , PredVar "non-alcoholic"
+                                ]
+                            , PredFold Nothing PLAnd
+                                [ PredFold Nothing PLOr
+                                    [ PredVar "in part"
+                                    , PredVar "in whole"
+                                    ]
+                                ]
+                            ]
+                        , PredVar "eats"
+                        ]
+                    ]
+                ]
+            )
+        ]
+    , symtabL = fromList []
+    , symtabS = fromList []
+    }
+)

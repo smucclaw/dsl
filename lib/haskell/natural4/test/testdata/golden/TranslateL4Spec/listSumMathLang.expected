@@ -1,0 +1,37 @@
+(
+    [ MathSet "listSum"
+        ( MathBin
+            ( Just "listSum" ) Plus
+            ( MathVar "singleThing" )
+            ( MathVar "listThing" )
+        )
+    ]
+, MyState
+    { symtabF = fromList
+        [
+            ( "singleThing"
+            , Val
+                ( Just "singleThing" ) 10.0
+            )
+        ,
+            ( "listSum"
+            , MathBin
+                ( Just "listSum" ) Plus
+                ( MathVar "singleThing" )
+                ( MathVar "listThing" )
+            )
+        ]
+    , symtabP = fromList []
+    , symtabL = fromList
+        [
+            ( "listThing"
+            , MathList Nothing
+                [ Val Nothing 1.0
+                , Val Nothing 2.0
+                , Val Nothing 3.0
+                ]
+            )
+        ]
+    , symtabS = fromList []
+    }
+)

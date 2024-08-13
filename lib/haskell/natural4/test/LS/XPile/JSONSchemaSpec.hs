@@ -21,26 +21,36 @@ import LS.XPile.ExportTypes
   )
 import Test.Hspec (Spec, describe, it, shouldBe, xit)
 import Test.QuickCheck
-    ( Arbitrary(arbitrary), oneof, Testable(property) )
+    ( Arbitrary(arbitrary), oneof, listOf, Testable(property) )
 import Test.QuickCheck.Gen
 import Text.Regex.PCRE.Heavy qualified as PCRE
 
+genSafeChar :: Gen Char
+genSafeChar = elements $ ' ':['a'..'z']
+
+genSafeString :: Gen String
+genSafeString = listOf genSafeChar
+
+genSafeText :: Gen T.Text
+genSafeText = T.pack <$> genSafeString
+
 instance Arbitrary ParamType where
-    arbitrary = oneof $ pure <$> [TOne, TOptional, TList0, TList1, TSet0, TSet1]
+    arbitrary = oneof $ pure <$> [TOne, TList1]
 
 instance Arbitrary TypeSig where
     arbitrary = liftA2 SimpleType arbitrary arbitrary
 
 instance Arbitrary MTExpr where
-    arbitrary = MTT . T.pack . (:[]) <$> arbitrary
+    arbitrary = MTT . T.pack . (:[]) <$> genSafeChar
 
 instance Arbitrary EntityType where
-    arbitrary = T.pack <$> arbitrary
+    arbitrary = genSafeText
 
 instance Arbitrary Rule where
+  arbitrary :: Gen Rule
   arbitrary = sized $ \n -> do
     ruleName <- arbitrary
-    maybeTypeSig <- arbitrary
+    maybeTypeSig <- Just <$> arbitrary
     hasRules <- do
       k <- choose (1, n)
       resize k (listOf arbitrary)

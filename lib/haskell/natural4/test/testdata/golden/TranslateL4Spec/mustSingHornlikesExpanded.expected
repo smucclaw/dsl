@@ -1,0 +1,75 @@
+[ Hornlike
+    { name =
+        [ MTT "Qualifies" ]
+    , super = Nothing
+    , keyword = Means
+    , given = Nothing
+    , giveth = Nothing
+    , upon = Nothing
+    , clauses =
+        [ HC
+            { hHead = RPBoolStructR
+                [ MTT "Qualifies" ] RPis
+                ( All Nothing
+                    [ Leaf
+                        ( RPMT
+                            [ MTT "walks" ]
+                        )
+                    , Any Nothing
+                        [ All
+                            ( Just
+                                ( Metadata "Drinks" )
+                            )
+                            [ Any
+                                ( Just
+                                    ( PrePost "consumes an" "beverage" )
+                                )
+                                [ Leaf
+                                    ( RPMT
+                                        [ MTT "alcoholic" ]
+                                    )
+                                , Leaf
+                                    ( RPMT
+                                        [ MTT "non-alcoholic" ]
+                                    )
+                                ]
+                            , Any
+                                ( Just
+                                    ( Pre "whether" )
+                                )
+                                [ Leaf
+                                    ( RPMT
+                                        [ MTT "in part" ]
+                                    )
+                                , Leaf
+                                    ( RPMT
+                                        [ MTT "in whole" ]
+                                    )
+                                ]
+                            ]
+                        , Leaf
+                            ( RPMT
+                                [ MTT "eats" ]
+                            )
+                        ]
+                    ]
+                )
+            , hBody = Nothing
+            }
+        ]
+    , rlabel = Nothing
+    , lsource = Nothing
+    , wwhere = []
+    , srcref = Just
+        ( SrcRef
+            { url = "test/Spec"
+            , short = "test/Spec"
+            , srcrow = 1
+            , srccol = 1
+            , version = Nothing
+            }
+        )
+    , defaults = []
+    , symtab = []
+    }
+]

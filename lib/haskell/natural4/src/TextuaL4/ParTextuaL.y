@@ -143,6 +143,7 @@ Rule2
   : Rule3 { $1 }
   | 'GIVEN' ListIsA Rule2 { TextuaL4.AbsTextuaL.Given $2 $3 }
   | Rule3 'WHERE' ListHornClause { TextuaL4.AbsTextuaL.Where $1 $3 }
+  | Rule3 'WHERE' '(' ListRule ')' { TextuaL4.AbsTextuaL.WhereRule $1 $4 }
 
 Rule3 :: { TextuaL4.AbsTextuaL.Rule }
 Rule3

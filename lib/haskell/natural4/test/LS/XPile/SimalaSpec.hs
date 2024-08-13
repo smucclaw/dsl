@@ -10,7 +10,6 @@ import Data.String.Interpolate
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Data.Text.Lazy qualified as TL
-import Data.Text.Lazy.IO qualified as TL
 import LS.Renamer qualified as Renamer
 import LS.Rule
 import LS.XPile.Logging (pShowNoColorS)
@@ -251,7 +250,7 @@ transpilerTest outputName ruleString = it outputName $
               ]
           (Right rnRules, _) -> do
             case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
-              Left err -> "Failed transpilation:\n" <> Text.pack err
+              Left err -> "Failed transpilation:\n" <> Simala.renderTranspilerError err
               Right simalaDecls -> Text.unlines $ fmap Simala.render simalaDecls
 
 goldenGeneric :: String -> Text.Text -> Golden Text.Text

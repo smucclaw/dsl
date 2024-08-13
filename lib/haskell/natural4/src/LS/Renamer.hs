@@ -34,6 +34,7 @@ module LS.Renamer (
 
   -- * Renamer Errors
   RenamerError (..),
+  AssertionError(..),
   renderRenamerError,
 
   -- * Scope checking types
@@ -228,8 +229,10 @@ data RenamerError
   | UnexpectedRnNameNotFound RnName
   | InsertNameUnexpectedType RnNameType RnNameType
   | LookupOrInsertNameUnexpectedType RnNameType RnNameType
-  | -- Validation Errors
-    forall a. (Show a) => UnexpectedNonEmptyList [a]
+  | AssertErr AssertionError
+
+data AssertionError -- Validation Errors
+  = forall a. (Show a) => UnexpectedNonEmptyList [a]
   | forall a f. (Show (f a), Foldable f) => UnexpectedNonSingletonList (f a)
   | UnexpectedTypeSignature LS.TypedMulti
 
@@ -277,11 +280,11 @@ renderRenamerError = \case
       <> " but expected: "
       <> Text.pack (show expected)
   -- Validation Errrors
-  UnexpectedNonEmptyList xs ->
+  AssertErr (UnexpectedNonEmptyList xs) ->
     "Expected an empty list, but got: " <> Text.pack (show xs)
-  UnexpectedNonSingletonList xs ->
+  AssertErr (UnexpectedNonSingletonList xs) ->
     "Expected an singleton list, but got: " <> Text.pack (show xs)
-  UnexpectedTypeSignature tm ->
+  AssertErr (UnexpectedTypeSignature tm) ->
     "Expected no type signature, but got: " <> Text.pack (show tm)
 
 -- ----------------------------------------------------------------------------
@@ -1106,19 +1109,19 @@ oTHERWISE = "OTHERWISE"
 assertSingletonMultiTerm :: (Show (f LS.MTExpr), Foldable f) => f LS.MTExpr -> Renamer LS.MTExpr
 assertSingletonMultiTerm xs = case Foldable.toList xs of
   [x] -> pure x
-  _ -> throwError $ UnexpectedNonSingletonList xs
+  _ -> throwError $ AssertErr $ UnexpectedNonSingletonList xs
 
 assertNoTypeSignature :: LS.TypedMulti -> Renamer (NonEmpty LS.MTExpr)
-assertNoTypeSignature tm@(_, Just _) = throwError $ UnexpectedTypeSignature tm
+assertNoTypeSignature tm@(_, Just _) = throwError $ AssertErr $ UnexpectedTypeSignature tm
 assertNoTypeSignature (mtt, Nothing) = do
   pure mtt
 
 -- | If we can't handle renaming certain list of things, we just hope that
 -- the parser doesn't give us a list with any elements.
 -- We throwError if the list is not @'null'@.
-assertEmptyList :: (Show a, MonadError RenamerError m) => [a] -> m [b]
+assertEmptyList :: (Show a) => [a] -> Renamer [b]
 assertEmptyList [] = pure []
-assertEmptyList xs = throwError $ UnexpectedNonEmptyList xs
+assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList xs
 
 -- ----------------------------------------------------------------------------
 -- Helper utils non specific to the renamer.

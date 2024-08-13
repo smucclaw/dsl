@@ -1,1 +1,1 @@
-Left "Failed to rename program: Not enough elements in left hand side of function application. Required: 1 but got: 0"
+Left "Failed to rename program: Not enough elements in left hand side of function RnName {rnOccName = MTT "g" :| [], rnUniqueId = 3, rnNameType = RnFunction}. Required: 1 but got: 0 ([])"

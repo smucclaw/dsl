@@ -23,7 +23,7 @@ import Data.Tuple (Solo (..))
 import Optics
 import Text.Pretty.Simple qualified as Pretty
 
-import LS.Renamer
+import LS.Renamer hiding (AssertionError (..), RenamerError (..), assertEmptyList)
 import LS.Rule qualified as LS
 import LS.Types qualified as LS
 import TextuaL4.ParTextuaL qualified as Parser
@@ -100,12 +100,104 @@ data SimalaTerm
   deriving (Show)
 
 -- ----------------------------------------------------------------------------
+-- Typed Error
+-- ----------------------------------------------------------------------------
+
+data TranspilerError
+  = TermToDeclUnsupported SimalaTerm
+  | UnsupportedLocalTerm Text SimalaTerm
+  | UnsupportedMultiTerm RnMultiTerm
+  | UnsupportedEmptyMultiTerm
+  | ImpossibleLeftSide SimalaTerm
+  | UnsupportedLeftSide RnMultiTerm
+  | UnsupportedRightSide RnMultiTerm
+  | NotImplemented Text
+  | UnsupportedPredicate LS.RPRel
+  | FailedToCombineTerms SimalaTerm SimalaTerm
+  | AssertErr AssertionError
+
+data ExpectedSize
+  = SizeExact !Int
+  | SizeAtLeast !Int
+
+data AssertionError
+  = forall a. (Show a) => UnexpectedNonEmptyList [a]
+  | NotTermAttribute SimalaTerm
+  | NotSingletonList Text !Int
+  | NotTermExpr SimalaTerm
+  | NotMultiTerm Text RnRelationalPredicate
+  | NotRecord Simala.Expr
+  | NotSelectorChain SimalaTerm
+  | forall a. (Show a) => NotEquals a a
+  | UnexpectedEmptyList
+  | UnexpectedListSize ExpectedSize !Int
+
+throwAssertion :: AssertionError -> Transpiler a
+throwAssertion = throwError . AssertErr
+
+renderTranspilerError :: TranspilerError -> Text
+renderTranspilerError = \case
+  TermToDeclUnsupported term ->
+    "Cannot convert SimalaTerm to Decl: " <> tshow term
+  UnsupportedLocalTerm herald term ->
+    herald <> ": Unexpected local term: " <> tshow term
+  UnsupportedMultiTerm multiTerm ->
+    "Unsupported RnMultiTerms: " <> tshow multiTerm
+  UnsupportedEmptyMultiTerm ->
+    "Unexpected empty list of RnMultiTerms"
+  ImpossibleLeftSide term ->
+    "The following SimalaTerm cannot occur on the left hand side of an assignment: " <> tshow term
+  UnsupportedLeftSide multiTerm ->
+    "Unsupported on the left side of an assignment: " <> tshow multiTerm
+  UnsupportedRightSide multiTerm ->
+    "Unsupported on the right side of an assignment: " <> tshow multiTerm
+  NotImplemented herald ->
+    herald <> ": unsupported"
+  UnsupportedPredicate relPred ->
+    "Unsupported RelationalPredicate: " <> tshow relPred
+  FailedToCombineTerms term1 term2 ->
+    "Can't wrap terms in an if-then-else.\nFirst term: "
+      <> tshow term1
+      <> "\nSecond term: "
+      <> tshow term2
+  AssertErr assertionErr -> case assertionErr of
+    UnexpectedNonEmptyList list ->
+      "Expected empty list, but got: " <> tshow list
+    NotTermAttribute term ->
+      "Expected TermAttribute, but got: " <> tshow term
+    NotSingletonList herald size ->
+      herald <> ": Expected singleton list, but got: " <> tshow size
+    NotTermExpr term ->
+      "Expected TermAttribute, but got: " <> tshow term
+    NotMultiTerm herald rnPred ->
+      herald <> ": Expected MultiTerm, but got: " <> tshow rnPred
+    NotRecord expr ->
+      "Expected Record, but got: " <> tshow expr
+    NotSelectorChain term ->
+      "Expected TermAttribute with non-empty selectors, but got: " <> tshow term
+    NotEquals a b ->
+      "Not equal: " <> tshow a <> ", " <> tshow b
+    UnexpectedEmptyList ->
+      "Expected non-empty list"
+    UnexpectedListSize len n ->
+      "Expected list of "
+        <> ( case len of
+              SizeExact i -> "size " <> tshow i
+              SizeAtLeast i -> "at least size " <> tshow i
+           )
+        <> ", but got "
+        <> tshow n
+
+tshow :: (Show a) => a -> Text
+tshow = Text.pack . show
+
+-- ----------------------------------------------------------------------------
 -- Top Level transpilation functions and test helpers
 -- ----------------------------------------------------------------------------
 
-newtype Transpiler a = Transpiler {runTranspiler :: Except String a}
+newtype Transpiler a = Transpiler {runTranspiler :: Except TranspilerError a}
   deriving newtype (Functor, Applicative, Monad)
-  deriving newtype (MonadError String)
+  deriving newtype (MonadError TranspilerError)
 
 transpile :: [RnRule] -> Transpiler [Simala.Decl]
 transpile rules = do
@@ -117,8 +209,8 @@ toSimalaDecl (TermLetIn t name expr) = do
   pure $ Simala.NonRec t name expr
 toSimalaDecl (TermFunction t name params expr) = do
   pure $ Simala.NonRec t name $ mkFunctionDecl t params expr
-toSimalaDecl _term = do
-  throwError $ "toSimalaDecl: Cannot convert SimalaTerms to Decl: " <> show _term
+toSimalaDecl term = do
+  throwError $ TermToDeclUnsupported term
 
 -- ----------------------------------------------------------------------------
 -- Main translation helpers
@@ -220,8 +312,8 @@ groupClauses simalaTerms = do
 addLocalDefinitions :: SimalaTerm -> [SimalaTerm] -> Transpiler SimalaTerm
 addLocalDefinitions top [] = pure top
 addLocalDefinitions top (x : xs) = case top of
-  TermExpr{} -> throwError $ "addLocalDefinitions: Unexpected SimalaTerm: " <> show top
-  TermApp{} -> throwError $ "addLocalDefinitions: Unexpected SimalaTerm: " <> show top
+  TermExpr{} -> throwError $ UnsupportedLocalTerm "addLocalDefinitions" top
+  TermApp{} -> throwError $ UnsupportedLocalTerm "addLocalDefinitions" top
   TermLetIn t name expr -> do
     exprWithLocals <- linearLetIns expr (x :| xs)
     pure $ TermLetIn t name exprWithLocals
@@ -238,10 +330,10 @@ addLocalDefinitions top (x : xs) = case top of
       [] -> pure finalExpr
       (a : as) -> linearLetIns finalExpr (a :| as)
     case NE.head terms of
-      TermApp{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show (NE.head terms)
+      TermApp{} -> throwError $ UnsupportedLocalTerm "linearLetIns" (NE.head terms)
+      TermExpr{} -> throwError $ UnsupportedLocalTerm "linearLetIns" (NE.head terms)
       TermLetIn t name expr -> do
         pure $ mkLetIn t name expr inExpr
-      TermExpr{} -> throwError $ "linearLetIns: Unexpected SimalaTerm: " <> show (NE.head terms)
       TermAttribute name [] expr -> do
         pure $ mkLetIn Simala.Transparent name expr inExpr
       TermAttribute name (a : as) expr -> do
@@ -343,8 +435,8 @@ relationalPredicateToSimala = \case
       | Just (var, selectors) <- isAssignment mtHead args -> do
           rhsExpr <- rhsMultiTermToSimala rhs
           mkAssignmentTerm (toSimalaName var) (fmap toSimalaName selectors) rhsExpr
-      | otherwise -> throwError $ "relationalPredicateToSimala: Unsupported " <> show lhs
-    [] -> throwError "empty lhs"
+      | otherwise -> throwError $ UnsupportedMultiTerm lhs
+    [] -> throwError UnsupportedEmptyMultiTerm
   RnConstraint lhs predicate rhs -> do
     lhsSimalaExpr' <- lhsMultiTermToSimala lhs
     lhsSimalaExpr <- assertTermExpr lhsSimalaExpr'
@@ -359,14 +451,14 @@ relationalPredicateToSimala = \case
         fnExpr <- assertSingletonList "RnNary.TermApp" rhsExprs
         rhsExpr <- assertTermExpr fnExpr
         mkFunctionTerm fnName fnParams (TermExpr rhsExpr)
-      TermLetIn{} -> throwError "Not implemented yet"
+      TermLetIn{} -> throwError $ ImpossibleLeftSide lhsSimalaTerm
       TermAttribute name selectors Simala.Undefined -> do
         someRhs <- assertSingletonList "RnNary.TermAttribute" rhsExprs
         rhsExpr <- assertTermExpr someRhs
         pure $ TermAttribute name selectors rhsExpr
-      TermAttribute _name _selectors _expr -> throwError "Not implemented yet"
-      TermFunction{} -> throwError "Not implemented yet"
-      TermExpr expr -> throwError $ "A saturated expression can't be left hand side: " <> show expr
+      TermAttribute{} -> throwError $ ImpossibleLeftSide lhsSimalaTerm
+      TermFunction{} -> throwError $ NotImplemented "RpNary RPis TermFunction"
+      TermExpr{} -> throwError $ ImpossibleLeftSide lhsSimalaTerm
   -- TODO: this is wrong, what about Var and Project?
   RnNary predicate mt ->
     predicateToSimala predicate mt
@@ -384,15 +476,15 @@ predicateToSimala rp params' = do
 
 predRelToBuiltIn :: LS.RPRel -> [Simala.Expr] -> Transpiler SimalaTerm
 predRelToBuiltIn rp exprs = case rp of
-  LS.RPis -> throwError $ "Unsupported relational predicate: " <> show rp
-  LS.RPhas -> throwError $ "Unsupported relational predicate: " <> show rp
+  LS.RPis -> throwError $ UnsupportedPredicate rp
+  LS.RPhas -> throwError $ UnsupportedPredicate rp
   LS.RPeq -> fixedArity Simala.Eq 2 exprs
   LS.RPlt -> fixedArity Simala.Lt 2 exprs
   LS.RPlte -> fixedArity Simala.Le 2 exprs
   LS.RPgt -> fixedArity Simala.Gt 2 exprs
   LS.RPgte -> fixedArity Simala.Ge 2 exprs
-  LS.RPelem -> throwError $ "Unsupported relational predicate: " <> show rp
-  LS.RPnotElem -> throwError $ "Unsupported relational predicate: " <> show rp
+  LS.RPelem -> throwError $ UnsupportedPredicate rp
+  LS.RPnotElem -> throwError $ UnsupportedPredicate rp
   LS.RPnot -> fixedArity Simala.Not 1 exprs
   LS.RPand -> flexibleArity Simala.And exprs
   LS.RPor -> flexibleArity Simala.Or exprs
@@ -401,11 +493,11 @@ predRelToBuiltIn rp exprs = case rp of
   LS.RPminus -> fixedArity Simala.Minus 2 exprs
   LS.RPdivide -> fixedArity Simala.Divide 2 exprs
   LS.RPmodulo -> fixedArity Simala.Modulo 2 exprs
-  LS.RPsubjectTo -> throwError $ "Unsupported relational predicate: " <> show rp
+  LS.RPsubjectTo -> throwError $ UnsupportedPredicate rp
   LS.RPmin -> atLeastArity Simala.Maximum 1 exprs
   LS.RPmax -> atLeastArity Simala.Minimum 1 exprs
-  LS.RPmap -> throwError $ "Unsupported relational predicate: " <> show rp
-  LS.RPTC _temporal -> throwError $ "Unsupported relational predicate: " <> show rp
+  LS.RPmap -> throwError $ UnsupportedPredicate rp
+  LS.RPTC _temporal -> throwError $ UnsupportedPredicate rp
 
 flexibleArity :: Simala.Builtin -> [Simala.Expr] -> Transpiler SimalaTerm
 flexibleArity b params = do
@@ -428,14 +520,14 @@ lhsMultiTermToSimala (mtHead : rest)
       mkFunctionHead (toSimalaName fnName) (fmap toSimalaName fnParams)
   | Just (varName, selectors) <- isProjection mtHead rest =
       mkRecordAssignmentTerm (toSimalaName varName) (fmap toSimalaName selectors)
-lhsMultiTermToSimala xs = throwError $ "lhsMultiTermToSimala: unsupported pattern: " <> show xs
+lhsMultiTermToSimala exprs = throwError $ UnsupportedLeftSide exprs
 
 rhsMultiTermToSimala :: RnMultiTerm -> Transpiler Simala.Expr
 rhsMultiTermToSimala [rnExpr] = pure $ exprToSimala rnExpr
 rhsMultiTermToSimala (mtHead : rest)
   | Just _fnName <- isFunction mtHead = pure $ Simala.App (exprToSimala mtHead) $ fmap exprToSimala rest
   | Just (varName, selectors) <- isProjection mtHead rest = pure $ applySelectors (toSimalaName varName) (fmap toSimalaName selectors)
-rhsMultiTermToSimala exprs = throwError $ "Unhandled rhs: " <> show exprs
+rhsMultiTermToSimala exprs = throwError $ UnsupportedRightSide exprs
 
 boolStructToSimala :: RnBoolStructR -> Transpiler Simala.Expr
 boolStructToSimala = \case
@@ -543,16 +635,12 @@ rnNameTypePrefix = \case
 
 assertIsTermAttribute :: SimalaTerm -> Transpiler (Simala.Name, [Simala.Name], Simala.Expr)
 assertIsTermAttribute (TermAttribute name selectors expr) = pure (name, selectors, expr)
-assertIsTermAttribute term = throwError $ "Expected TermAttribute but got: " <> show term
+assertIsTermAttribute term = throwAssertion $ NotTermAttribute term
 
-assertSingletonList :: String -> [a] -> Transpiler a
+assertSingletonList :: Text -> [a] -> Transpiler a
 assertSingletonList _errMsg [a] = pure a
 assertSingletonList errMsg as =
-  throwError $
-    errMsg
-      <> "\nExpected singleton list but got: "
-      <> show (length as)
-      <> " elements"
+  throwAssertion $ NotSingletonList errMsg (length as)
 
 assertLengthAtLeast :: Int -> [a] -> Transpiler [a]
 assertLengthAtLeast l as =
@@ -561,11 +649,7 @@ assertLengthAtLeast l as =
   in
     if len < l
       then
-        throwError $
-          "Unexpected list size, expected at least: "
-            <> show l
-            <> " but got: "
-            <> show (length as)
+        throwAssertion $ UnexpectedListSize (SizeAtLeast l) len
       else pure as
 
 assertLength :: Int -> [a] -> Transpiler [a]
@@ -575,38 +659,46 @@ assertLength l as =
   in
     if len /= l
       then
-        throwError $
-          "Expected list size, expected: "
-            <> show l
-            <> " but got: "
-            <> show (length as)
+        throwAssertion $ UnexpectedListSize (SizeExact l) len
       else pure as
 
 assertNonEmpty :: [a] -> Transpiler (NonEmpty a)
-assertNonEmpty [] = throwError "Expected non-empty list"
+assertNonEmpty [] = throwAssertion UnexpectedEmptyList
 assertNonEmpty (x : xs) = pure $ x :| xs
 
-assertPredicateIsMultiTerm :: String -> RnRelationalPredicate -> Transpiler RnMultiTerm
+assertPredicateIsMultiTerm :: Text -> RnRelationalPredicate -> Transpiler RnMultiTerm
 assertPredicateIsMultiTerm _errMsg (RnRelationalTerm mt) = pure mt
-assertPredicateIsMultiTerm errMsg predicate = throwError $ errMsg <> "\nExpected RnRelationalTerm but got: " <> show predicate
+assertPredicateIsMultiTerm errMsg predicate =
+  throwAssertion $ NotMultiTerm errMsg predicate
 
 assertTermExpr :: SimalaTerm -> Transpiler Simala.Expr
 assertTermExpr (TermExpr expr) = pure expr
-assertTermExpr term = throwError $ "Expected TermExpr but got: " <> show term
+assertTermExpr term =
+  throwAssertion $ NotTermExpr term
 
 assertEquals :: (Eq a, Show a) => a -> a -> Transpiler ()
 assertEquals a b
   | a == b = pure ()
-  | otherwise = throwError $ "Provided args are not equal: " <> show a <> " /= " <> show b
+  | otherwise =
+      throwAssertion $ NotEquals a b
 
 assertIsRecord :: Simala.Expr -> Transpiler (Simala.Row Simala.Expr)
 assertIsRecord (Simala.Record row) = pure row
-assertIsRecord simalaExpr = throwError $ "Unexpected simala expression, expected Record but got: " <> show simalaExpr
+assertIsRecord simalaExpr = throwAssertion $ NotRecord simalaExpr
 
 assertAttributeHasSelectors :: SimalaTerm -> Transpiler (NonEmpty Simala.Name, Simala.Expr)
 assertAttributeHasSelectors (TermAttribute _ (x : xs) expr) = pure (x :| xs, expr)
-assertAttributeHasSelectors expr@(TermAttribute _ [] _) = throwError $ "Unexpected term, expected non-empty TermAttribute but got: " <> show expr
-assertAttributeHasSelectors expr = throwError $ "Unexpected term, expected non-empty TermAttribute but got: " <> show expr
+assertAttributeHasSelectors expr@(TermAttribute _ [] _) =
+  throwAssertion $ NotSelectorChain expr
+assertAttributeHasSelectors expr =
+  throwAssertion $ NotTermAttribute expr
+
+-- | If we can't handle transpiling certain list of things, we just hope that
+-- the parser doesn't give us a list with any elements.
+-- We throwError if the list is not @'null'@.
+assertEmptyList :: (Show a) => [a] -> Transpiler [b]
+assertEmptyList [] = pure []
+assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList xs
 
 -- ----------------------------------------------------------------------------
 -- Construction helpers for simala terms
@@ -685,11 +777,7 @@ mkIfThenElseTerm b (TermExpr expr1) (TermExpr expr2) = do
     ifThenElse = Simala.mkIfThenElse b expr1 expr2
   pure $ TermExpr ifThenElse
 mkIfThenElseTerm _b term1 term2 =
-  throwError $
-    "Can't wrap terms in an if-then-else.\nFirst term: "
-      <> show term1
-      <> "\nSecond term: "
-      <> show term2
+  throwError $ FailedToCombineTerms term1 term2
 
 -- ----------------------------------------------------------------------------
 -- Construction helpers for simala expressions
@@ -736,7 +824,6 @@ buildRecordUpdate names expr = go $ NE.toList names
 -- @
 --   { x = { y = 5, z = { a = 0, b = 1 } }, f = 2 }
 -- @
---
 mergeRecordUpdates :: [Simala.Row Simala.Expr] -> Transpiler Simala.Expr
 mergeRecordUpdates rows = do
   let
@@ -772,11 +859,11 @@ debugTranspileRule ruleSrc = do
     (res, s) = runRenamerFor $ MkSolo rule
   TL.putStrLn $ Pretty.pShow s
   case res of
-    Left err -> putStrLn err
+    Left err -> Text.putStrLn $ renderRenamerError err
     Right (MkSolo rnRule) -> do
       TL.putStrLn $ Pretty.pShow rnRule
       case runExcept $ runTranspiler $ transpile [rnRule] of
-        Left err -> putStrLn err
+        Left err -> Text.putStrLn $ renderTranspilerError err
         Right decls -> flip Foldable.traverse_ decls $ \decl -> do
           Text.putStrLn $ "Decl: " <> Simala.render decl
 
@@ -785,10 +872,10 @@ transpileRulePure ruleSrc =
   case run ruleSrc of
     Left err -> Text.pack err
     Right rule -> case fst $ runRenamerFor (MkSolo rule) of
-      Left err -> Text.pack err
+      Left err -> renderRenamerError err
       Right (MkSolo rnRule) -> do
         case runExcept $ runTranspiler $ transpile [rnRule] of
-          Left err -> Text.pack err
+          Left err -> renderTranspilerError err
           Right expr ->
             Text.unlines $ fmap Simala.render expr
 

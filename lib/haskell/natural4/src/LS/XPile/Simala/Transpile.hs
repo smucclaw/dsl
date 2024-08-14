@@ -289,6 +289,7 @@ groupClauses simalaTerms = do
   compareClauseHeads (TermLetIn _ name1 _) (TermLetIn _ name2 _) = name1 == name2
   compareClauseHeads (TermFunction _ fnName1 _ _) (TermFunction _ fnName2 _ _) = fnName1 == fnName2
   compareClauseHeads (TermAttribute name1 _ _) (TermAttribute name2 _ _) = name1 == name2
+  compareClauseHeads (TermExpr _) (TermExpr _) = True
   compareClauseHeads _ _ = False
 
 -- | Takes the translation of local variables in where clauses and turns
@@ -330,8 +331,8 @@ addLocalDefinitions top (x : xs) = case top of
       [] -> pure finalExpr
       (a : as) -> linearLetIns finalExpr (a :| as)
     case NE.head terms of
-      TermApp{} -> throwError $ UnsupportedLocalTerm "linearLetIns" (NE.head terms)
       TermExpr{} -> throwError $ UnsupportedLocalTerm "linearLetIns" (NE.head terms)
+      TermApp{} -> throwError $ UnsupportedLocalTerm "linearLetIns" (NE.head terms)
       TermLetIn t name expr -> do
         pure $ mkLetIn t name expr inExpr
       TermAttribute name [] expr -> do

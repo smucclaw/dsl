@@ -550,6 +550,10 @@ transpilersMap =
     , "an anyall SVG of the decision trees"
     , [aasvgTranspiler]
     )
+  , ( SFL4.simalaMode
+    , "Simala expressions for hornlike"
+    , [simalaTranspiler]
+    )
   ]
 
 toNative :: [SFL4.Rule] -> SFL4.Interpreted -> String
@@ -1108,6 +1112,10 @@ aasvgTranspiler =
             myMkLink ds.timestamp $ dir </> subdir </> "LATEST"
           Nothing ->
             pure () -- no on-screen output
+
+simalaTranspiler :: Transpiler
+simalaTranspiler = undefined
+  -- simpleTranspiler "simala" "simala" (withErrors (onlyRules id))
 
 rulesTranspiler :: Transpiler
 rulesTranspiler =

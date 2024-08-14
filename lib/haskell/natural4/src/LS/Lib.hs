@@ -65,6 +65,7 @@ module LS.Lib
     vueMode,
     pursMode,
     uppaalMode,
+    simalaMode,
     defaultModes,
     knownModes
   )
@@ -419,6 +420,7 @@ defaultModes =
   , mathlangmwMode
   , genmathlangMode
   , introMode
+  , simalaMode
   ]
 
 -- | All known modes, including ones that are off by default.
@@ -546,6 +548,9 @@ genmathlangMode = MkModeName "genmathlang"
 
 introMode :: ModeName
 introMode = MkModeName "intro"
+
+simalaMode :: ModeName
+simalaMode = MkModeName "simala"
 
 getConfig :: Options -> IO RunConfig
 getConfig o = do

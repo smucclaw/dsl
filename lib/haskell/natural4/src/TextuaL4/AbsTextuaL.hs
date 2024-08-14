@@ -28,6 +28,7 @@ data Rule
     | TypeDecl IsA Fields
     | Given [IsA] Rule
     | Where Rule [HornClause]
+    | WhereRule Rule [Rule]
     | RegSimple BoolStruct Deontic BoolStruct
     | RegWho BoolStruct Who Deontic BoolStruct
     | RegWhoInline BoolStruct Who InlineHornlike Deontic BoolStruct

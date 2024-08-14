@@ -28,7 +28,9 @@ TypeDecl. Rule1 ::= "DECLARE" IsA Fields ;
 -- Order is arbitrary, important is just that GIVEN and WHERE
 -- may not attach to TypeDecl which is Rule1
 Given.     Rule2 ::= "GIVEN" [IsA] Rule2 ;
-Where.     Rule2 ::= Rule3 "WHERE" [HornClause] ;
+Where.     Rule2 ::= Rule3 "WHERE" [HornClause]  ;
+WhereRule. Rule2 ::= Rule3 "WHERE" "(" [Rule] ")" ;
+
 
 -- Regulatives
 RegSimple. Rule3 ::= "EVERY" BoolStruct Deontic BoolStruct ;

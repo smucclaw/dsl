@@ -14,12 +14,12 @@ import LS.Renamer qualified as Renamer
 import LS.Rule
 import LS.XPile.Logging (pShowNoColorS)
 import LS.XPile.Simala.Transpile qualified as Simala
-import Simala.Expr.Render qualified as Simala
 import System.FilePath
 import Test.Hspec
 import Test.Hspec.Golden
 import TextuaL4.ParTextuaL qualified as Parser
 import TextuaL4.Transform qualified as Parser
+import LS.Renamer (RenamerResult(..))
 
 spec :: Spec
 spec = do
@@ -239,7 +239,7 @@ transpilerTest outputName ruleString = it outputName $
           ]
       Right rules -> do
         case Renamer.runRenamerFor rules of
-          (Left err, scope) ->
+          RenamerFail err scope ->
             Text.unlines
               [ "Renaming failed for program:"
               , Text.pack ruleString
@@ -248,10 +248,10 @@ transpilerTest outputName ruleString = it outputName $
               , "Scope table:"
               , Text.pack $ pShowNoColorS scope
               ]
-          (Right rnRules, _) -> do
+          RenamerSuccess rnRules _ -> do
             case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
               Left err -> "Failed transpilation:\n" <> Simala.renderTranspilerError err
-              Right simalaDecls -> Text.unlines $ fmap Simala.render simalaDecls
+              Right simalaDecls -> Simala.render simalaDecls
 
 goldenGeneric :: String -> Text.Text -> Golden Text.Text
 goldenGeneric name output_ =

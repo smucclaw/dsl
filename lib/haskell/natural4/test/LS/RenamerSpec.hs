@@ -19,6 +19,7 @@ import Text.Pretty.Simple (pShowNoColor)
 import Text.RawString.QQ (r)
 import TextuaL4.ParTextuaL (myLexer, pListRule)
 import TextuaL4.Transform
+import LS.Renamer (RenamerResult(..))
 
 goldenGeneric :: (Show a) => String -> a -> Golden TL.Text
 goldenGeneric name output_ =
@@ -116,9 +117,9 @@ spec = do
         case runList ruleSource of
           Left err -> Left $ "Failed to parse program:\n" <> ruleSource <> "\n" <> err
           Right rules ->
-            case fst $ Renamer.runRenamerFor rules of
-              Left err -> Left $ "Failed to rename program: " <> Text.unpack (Renamer.renderRenamerError err)
-              Right rnRules -> Right rnRules
+            case Renamer.runRenamerFor rules of
+              RenamerFail err _ -> Left $ "Failed to rename program: " <> Text.unpack (Renamer.renderRenamerError err)
+              RenamerSuccess rnRules _ -> Right rnRules
 
 runList :: String -> Either String [Rule]
 runList = fmap (fmap transRule) . pListRule . myLexer

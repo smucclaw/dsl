@@ -199,6 +199,9 @@ newtype Transpiler a = Transpiler {runTranspiler :: Except TranspilerError a}
   deriving newtype (Functor, Applicative, Monad)
   deriving newtype (MonadError TranspilerError)
 
+runSimalaTranspiler :: [RnRule] -> Either TranspilerError [Simala.Decl]
+runSimalaTranspiler = runExcept . runTranspiler . transpile
+
 transpile :: [RnRule] -> Transpiler [Simala.Decl]
 transpile rules = do
   simalaTerms <- Maybe.catMaybes <$> traverse ruleToSimala rules
@@ -211,6 +214,9 @@ toSimalaDecl (TermFunction t name params expr) = do
   pure $ Simala.NonRec t name $ mkFunctionDecl t params expr
 toSimalaDecl term = do
   throwError $ TermToDeclUnsupported term
+
+render :: [Simala.Decl] -> Text
+render = Text.unlines . fmap Simala.render
 
 -- ----------------------------------------------------------------------------
 -- Main translation helpers
@@ -857,11 +863,11 @@ debugTranspileRule ruleSrc = do
     Right r -> pure r
   TL.putStrLn $ Pretty.pShow rule
   let
-    (res, s) = runRenamerFor $ MkSolo rule
-  TL.putStrLn $ Pretty.pShow s
-  case res of
-    Left err -> Text.putStrLn $ renderRenamerError err
-    Right (MkSolo rnRule) -> do
+    renamerResult = runRenamerFor $ MkSolo rule
+  TL.putStrLn $ Pretty.pShow $ rnResultScope renamerResult
+  case renamerResult of
+    RenamerFail err _ -> Text.putStrLn $ renderRenamerError err
+    RenamerSuccess (MkSolo rnRule) _ -> do
       TL.putStrLn $ Pretty.pShow rnRule
       case runExcept $ runTranspiler $ transpile [rnRule] of
         Left err -> Text.putStrLn $ renderTranspilerError err
@@ -872,9 +878,9 @@ transpileRulePure :: String -> Text
 transpileRulePure ruleSrc =
   case run ruleSrc of
     Left err -> Text.pack err
-    Right rule -> case fst $ runRenamerFor (MkSolo rule) of
-      Left err -> renderRenamerError err
-      Right (MkSolo rnRule) -> do
+    Right rule -> case runRenamerFor (MkSolo rule) of
+      RenamerFail err _ -> renderRenamerError err
+      RenamerSuccess (MkSolo rnRule) _ -> do
         case runExcept $ runTranspiler $ transpile [rnRule] of
           Left err -> renderTranspilerError err
           Right expr ->

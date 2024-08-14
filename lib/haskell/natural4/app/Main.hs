@@ -83,6 +83,7 @@ import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
+import LS.XPile.Simala.Transpile qualified as Simala
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
 import LS.XPile.VueJSON
@@ -123,6 +124,7 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
+import qualified LS.Renamer as Renamer
 
 --
 -- Command-line options parsing
@@ -551,7 +553,7 @@ transpilersMap =
     , [aasvgTranspiler]
     )
   , ( SFL4.simalaMode
-    , "Simala expressions for hornlike"
+    , "Transpile hornlike rules to the purely functional Simala language"
     , [simalaTranspiler]
     )
   ]
@@ -655,6 +657,13 @@ withNLGData k ds =
   case ds.nlgData of
     Nothing  -> pure (Skipped "skipping transpiler due to lacking NLG environment")
     Just env -> k env ds
+
+withRnRules :: ([Renamer.RnRule] -> (TranspilationResult a)) -> DriverState -> (TranspilationResult a)
+withRnRules k ds = case ds.interpreted.renamedRules of
+  Renamer.RenamerFail errMsg _scope -> Skipped $ "Failed to rename rules: " <> errorToString errMsg
+  Renamer.RenamerSuccess rnRules _scope -> k rnRules
+  where
+    errorToString = Text.unpack . Renamer.renderRenamerError
 
 simpleTranspiler ::
      FilePath
@@ -1114,8 +1123,12 @@ aasvgTranspiler =
             pure () -- no on-screen output
 
 simalaTranspiler :: Transpiler
-simalaTranspiler = undefined
-  -- simpleTranspiler "simala" "simala" (withErrors (onlyRules id))
+simalaTranspiler =
+  simpleTranspiler "simala" "simala" (withRnRules runSimalaTranspiler)
+  where
+    runSimalaTranspiler rnRules = case Simala.runSimalaTranspiler rnRules of
+      Left err -> mkResultWithErrors ("", lines $ Text.unpack $ Simala.renderTranspilerError err)
+      Right decls -> mkResultWithoutErrors (Text.unpack $ Simala.render decls)
 
 rulesTranspiler :: Transpiler
 rulesTranspiler =

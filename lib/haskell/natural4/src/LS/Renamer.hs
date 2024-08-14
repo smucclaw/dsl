@@ -29,6 +29,9 @@ module LS.Renamer (
   mkSimpleOccName,
 
   -- * Renamer Monad and runners
+  RenamerResult(..),
+  rnResultScope,
+
   Renamer (..),
   runRenamerFor,
 
@@ -39,6 +42,7 @@ module LS.Renamer (
 
   -- * Scope checking types
   Scope (..),
+  emptyScope,
   scScopeTable,
   scUniqueSupply,
   newUnique,
@@ -94,6 +98,7 @@ import Data.Text.Lazy.IO qualified as TL
 import GHC.Generics (Generic)
 import Optics hiding (has)
 import Text.Pretty.Simple qualified as Pretty
+import Data.Tuple (Solo(MkSolo))
 
 -- ----------------------------------------------------------------------------
 -- Types specific to the renamer phase
@@ -230,11 +235,21 @@ data RenamerError
   | InsertNameUnexpectedType RnNameType RnNameType
   | LookupOrInsertNameUnexpectedType RnNameType RnNameType
   | AssertErr AssertionError
+  deriving (Show, Eq, Ord)
 
 data AssertionError -- Validation Errors
-  = forall a. (Show a) => UnexpectedNonEmptyList [a]
-  | forall a f. (Show (f a), Foldable f) => UnexpectedNonSingletonList (f a)
+  = UnexpectedNonEmptyList Text.Text
+  -- ^ List is expected to be empty, but it wasn't!
+  -- The 'Text' parameter is a textual representation of the list that not
+  -- empty! We could use existentials (and we used to), but that makes deriving
+  -- more difficult, so I opted to the simpler solution for now.
+  | UnexpectedNonSingletonList Text.Text
+  -- ^ List is expected to be singleton list, but it wasn't!
+  -- The 'Text' parameter is a textual representation of the list that not
+  -- empty! We could use existentials (and we used to), but that makes deriving
+  -- more difficult, so I opted to the simpler solution for now.
   | UnexpectedTypeSignature LS.TypedMulti
+  deriving (Show, Eq, Ord)
 
 renderRenamerError :: RenamerError -> Text.Text
 renderRenamerError = \case
@@ -279,12 +294,16 @@ renderRenamerError = \case
       <> Text.pack (show actual)
       <> " but expected: "
       <> Text.pack (show expected)
+  AssertErr err -> renderAssertionError err
+
+renderAssertionError :: AssertionError -> Text.Text
+renderAssertionError = \case
   -- Validation Errrors
-  AssertErr (UnexpectedNonEmptyList xs) ->
-    "Expected an empty list, but got: " <> Text.pack (show xs)
-  AssertErr (UnexpectedNonSingletonList xs) ->
-    "Expected an singleton list, but got: " <> Text.pack (show xs)
-  AssertErr (UnexpectedTypeSignature tm) ->
+  UnexpectedNonEmptyList xs ->
+    "Expected an empty list, but got: " <> xs
+  UnexpectedNonSingletonList xs ->
+    "Expected an singleton list, but got: " <> xs
+  UnexpectedTypeSignature tm ->
     "Expected no type signature, but got: " <> Text.pack (show tm)
 
 -- ----------------------------------------------------------------------------
@@ -294,6 +313,16 @@ renderRenamerError = \case
 newtype Renamer a = Renamer {runRenamer :: ExceptT RenamerError (State Scope) a}
   deriving newtype (Functor, Applicative, Monad)
   deriving newtype (MonadState Scope, MonadError RenamerError)
+
+data RenamerResult a
+  = RenamerFail RenamerError Scope
+  | RenamerSuccess a Scope
+  deriving (Show, Eq, Ord)
+  deriving (Functor, Traversable, Foldable)
+
+rnResultScope :: RenamerResult a -> Scope
+rnResultScope (RenamerFail _ s) = s
+rnResultScope (RenamerSuccess _ s) = s
 
 type Unique = Int
 
@@ -491,18 +520,20 @@ renameRuleTopLevel :: Rule -> IO ()
 renameRuleTopLevel rule = do
   TL.putStrLn $ Pretty.pShow rule
   let
-    (res, s) = runRenamerFor [rule]
-  TL.putStrLn $ Pretty.pShow s
-  case res of
-    Left err -> Text.putStrLn $ renderRenamerError err
-    Right rnRules -> TL.putStrLn $ Pretty.pShow $ head rnRules
+    renamerResult = runRenamerFor (MkSolo rule)
+  TL.putStrLn $ Pretty.pShow $ rnResultScope renamerResult
+  case renamerResult of
+    RenamerFail err _ -> Text.putStrLn $ renderRenamerError err
+    RenamerSuccess (MkSolo rnRules) _ -> TL.putStrLn $ Pretty.pShow rnRules
 
-runRenamerFor :: (Traversable f) => f Rule -> (Either RenamerError (f RnRule), Scope)
-runRenamerFor rule =
+runRenamerFor :: (Traversable f) => f Rule -> RenamerResult (f RnRule)
+runRenamerFor rules =
   let
-    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renameRules rule)) emptyScope
+    (resE, scope) = State.runState (Except.runExceptT (runRenamer $ renameRules rules)) emptyScope
   in
-    (resE, scope)
+    case resE of
+      Left err -> RenamerFail err scope
+      Right rnRules -> RenamerSuccess rnRules scope
 
 -- ----------------------------------------------------------------------------
 -- Resolve functions and their respective arities
@@ -1109,7 +1140,7 @@ oTHERWISE = "OTHERWISE"
 assertSingletonMultiTerm :: (Show (f LS.MTExpr), Foldable f) => f LS.MTExpr -> Renamer LS.MTExpr
 assertSingletonMultiTerm xs = case Foldable.toList xs of
   [x] -> pure x
-  _ -> throwError $ AssertErr $ UnexpectedNonSingletonList xs
+  _ -> throwError $ AssertErr $ UnexpectedNonSingletonList (Text.pack $ show xs)
 
 assertNoTypeSignature :: LS.TypedMulti -> Renamer (NonEmpty LS.MTExpr)
 assertNoTypeSignature tm@(_, Just _) = throwError $ AssertErr $ UnexpectedTypeSignature tm
@@ -1121,7 +1152,7 @@ assertNoTypeSignature (mtt, Nothing) = do
 -- We throwError if the list is not @'null'@.
 assertEmptyList :: (Show a) => [a] -> Renamer [b]
 assertEmptyList [] = pure []
-assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList xs
+assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList (Text.pack $ show xs)
 
 -- ----------------------------------------------------------------------------
 -- Helper utils non specific to the renamer.

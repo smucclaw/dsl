@@ -30,7 +30,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/smucclaw/simala
-  tag: ca666a3b7155f306a9240a787910a2738b464f60
+  tag: 1cc4400e105cd8d6afa89cf742476d8303074d5f
 
 allow-newer:
   compact:*,

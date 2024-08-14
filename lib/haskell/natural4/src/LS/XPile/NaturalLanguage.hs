@@ -2,8 +2,7 @@
 
 module LS.XPile.NaturalLanguage (toNatLang) where
 
-import LS.Interpreter (qaHornsT)
-import LS.Rule (Interpreted)
+import LS.Interpreter (Interpreted, qaHornsT)
 
 -- import Debug.Trace (trace)
 

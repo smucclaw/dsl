@@ -33,10 +33,9 @@ import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
 import Flow ((|>))
+import LS.Interpreter (Interpreted, RuleGraph, ruleGraph, ruleGraphErr)
 import LS.Rule
-  ( Interpreted (ruleGraph, ruleGraphErr),
-    Rule,
-    RuleGraph,
+  ( Rule,
     ruleName,
   )
 import LS.Types (MTExpr (MTT), mt2text)

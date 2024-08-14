@@ -89,30 +89,32 @@ import L4.Syntax as L4
   )
 import L4.SyntaxManipulation (applyVarsNoType, funArgsToAppNoType)
 import LS.Interpreter as SFL4
-  ( allCTkeys,
+  ( Interpreted(..),
+    allCTkeys,
     classGraph,
     getAttrTypesIn,
     getCTkeys,
     l4interpret,
   )
 import LS.PrettyPrinter
-  ( ParamText3 (PT3),
-    RP1 (RP1),
+  ( RP1 (RP1),
     commentWith,
     inPredicateForm,
     myrender,
-    prettySimpleType,
     snake_case,
     snake_inner,
     untaint,
+  )
+import LS.PrettyPrinter.TypeSig
+  ( ParamText3 (PT3),
+    prettySimpleType,
   )
 import LS.RelationalPredicates as SFL4
   ( bsr2pt,
     partitionExistentials,
   )
 import LS.Rule as SFL4
-  ( Interpreted (classtable),
-    Rule
+  ( Rule
       ( Constitutive,
         DefNameAlias,
         DefTypically,
@@ -207,7 +209,7 @@ type ExprM ann a = MonoidValidate (Doc ann) (Expr a)
 
 -- output to Core L4 for further transformation
 
--- TODO: could be removed: the result type of transpilation 
+-- TODO: could be removed: the result type of transpilation
 -- is now ... () (as in Program()) and not ... SRng (as in Program SRng)
 sfl4Dummy :: SRng
 sfl4Dummy = DummySRng "From spreadsheet"
@@ -367,7 +369,7 @@ trueFalseVNoType = (go True, go False)
 -- maybe move into BabyL4/SyntaxManipulations.hs
 
 -- Convert variable name to global variable
--- TODO: should be refined to generate local/global variable 
+-- TODO: should be refined to generate local/global variable
 -- depending on contextual information when available
 -- ASP TODO: add env (var list) as a second arg, and look up varname in env
 -- i.e varNameToVarNoType :: VarName -> [String] -> Var ()
@@ -922,10 +924,10 @@ runTestrules =
 [rule <Rule_exceeds1>
 
 if (((numberOfAffectedIndividuals db) >= 500) && ((numberOfAffectedIndividuals db) && ((numberOfAffectedIndividuals db) >= (foobars db))))
-then (exceedsPrescrNumberOfIndividuals db),rule 
+then (exceedsPrescrNumberOfIndividuals db),rule
 
 if ((green Bar) && (blue Baz))
-then Foo,rule 
+then Foo,rule
 
 if ((green Bloo) && (red Blubs))
 then Foo]
@@ -933,9 +935,9 @@ then Foo]
 -}
 
 {-
-§	Rule_exceeds1								
-GIVEN		db	IS	A	DataBreach				
-DECIDE		exceedsPrescrNumberOfIndividuals					db		
+§	Rule_exceeds1
+GIVEN		db	IS	A	DataBreach
+DECIDE		exceedsPrescrNumberOfIndividuals					db
 WHEN		numberOfAffectedIndividuals					db	>=	500
 -}
 r1 :: SFL4.Rule
@@ -970,7 +972,7 @@ r1 = defaultHorn
     }
 
 {-
-DECIDE		Foo		
+DECIDE		Foo
 WHEN		Bar	IS	green
 AND		Baz	IS	blue
 -}

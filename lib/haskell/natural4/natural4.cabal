@@ -39,6 +39,7 @@ library
       LS.NLP.NLG
       LS.Parser
       LS.PrettyPrinter
+      LS.PrettyPrinter.TypeSig
       LS.RelationalPredicates
       LS.Rule
       LS.Tokens

@@ -9,9 +9,8 @@ module LS.XPile.IntroReader (toReader, defaultReaderEnv, MyEnv(..)) where
 import Control.Monad.Reader (Reader, asks, runReader)
 import Data.HashMap.Strict (HashMap)
 import Data.Text qualified as Text
-import LS.Interpreter (qaHornsT)
+import LS.Interpreter (Interpreted (..), qaHornsT)
 import LS.PrettyPrinter (myrender, (<//>), (</>))
-import LS.Rule (Interpreted (..))
 import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)
 

@@ -37,8 +37,8 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
   ( ToLCError, runToLC, l4ToLCProgram )
 
-import LS.Interpreter (expandClauses)
-import LS.Rule (Rule(..), Interpreted(..), _Hornlike, _TypeDecl
+import LS.Interpreter (Interpreted(..), expandClauses)
+import LS.Rule (Rule(..), _Hornlike, _TypeDecl
                 -- defaultHorn
                 -- defaultHorn is useful for prototyping in the REPL
                 )

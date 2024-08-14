@@ -11,9 +11,10 @@ import LS.Interpreter
     itemsByRule,
     onlyTheItems,
   )
+
+import LS.Interpreter (Interpreted (..))
 import LS.Rule
-  ( Interpreted (classtable, scopetable),
-    Rule (clauses),
+  ( Rule (clauses),
     hasClauses,
     ruleLabelName,
   )

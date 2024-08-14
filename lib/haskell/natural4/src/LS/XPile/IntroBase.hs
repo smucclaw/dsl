@@ -9,9 +9,8 @@ module LS.XPile.IntroBase (toBase) where
 
 import Data.Bifunctor (first)
 import Data.Text qualified as Text
-import LS.Interpreter (qaHornsT)
+import LS.Interpreter (Interpreted (..), qaHornsT)
 import LS.PrettyPrinter (myrender, (<//>), (</>))
-import LS.Rule (Interpreted (..))
 import LS.XPile.IntroReader (MyEnv (..))
 import LS.XPile.Logging (XPileLogS, XPileLogW)
 import Prettyprinter (Doc, pretty)

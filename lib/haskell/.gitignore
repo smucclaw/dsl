@@ -24,7 +24,7 @@ out/
 workdir/
 
 ## ignore the expected golden files output
-**/test/testdata/golden/*.actual
+**/test/testdata/golden/**/*.actual
 
 ## Configurations
 .vscode/

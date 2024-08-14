@@ -35,7 +35,7 @@ import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Traversable (for)
 import Flow ((|>))
-import LS.Interpreter (getMarkings, qaHornsT)
+import LS.Interpreter (Interpreted (..), getMarkings, qaHornsT)
 import LS.NLP.NLG
   ( NLGEnv (..),
     expandRulesForNLG,
@@ -45,7 +45,7 @@ import LS.NLP.NLG
     ruleQuestionsNamed,
     textViaQaHorns,
   )
-import LS.Rule (Interpreted (..), Rule (..), ruleLabelName)
+import LS.Rule (Rule (..), ruleLabelName)
 import LS.Types
   ( BoolStructT,
     RuleName,

@@ -37,7 +37,7 @@ import Effectful.Writer.Dynamic (Writer, runWriterLocal, tell)
 import Explainable.MathLang hiding ((|>))
 import Flow ((|>))
 
-import LS.Rule (Interpreted (..))
+import LS.Interpreter (Interpreted (..))
 import LS.XPile.IntroReader (MyEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST (BaseExp (..), ExplnAnnot (l4RuleName))
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML

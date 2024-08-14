@@ -7,10 +7,9 @@ module LS.InterpreterSpec (spec) where
 import AnyAll (mkAll, mkAny, mkLeaf, mkNot)
 import Data.HashMap.Strict qualified as Map
 import Data.String.Interpolate (i)
-import LS.Interpreter (expandBSR')
+import LS.Interpreter (Interpreted (L4I, classtable, origrules, scopetable), defaultL4I, expandBSR')
 import LS.Rule
-  ( Interpreted (L4I, classtable, origrules, scopetable)
-  , defaultL4I
+  (
   )
 import LS.Types
   ( ClsTab (CT),
@@ -28,7 +27,7 @@ spec = do
     it "expand Leaf" do
       let bsr = mkRpmtLeaf ["it is a Notifiable Data Breach"]
       expandBSR'' bsr `shouldBe` bsr
-    
+
     it "expand Leaf RPBoolStructR is" do
       let l2 = mkRpmtLeaf ["sky", "is", "blue"]
           l1 = mkLeaf (RPBoolStructR (MTT <$> ["head2"]) RPis l2)

@@ -18,8 +18,8 @@ import AnyAll as AA
   )
 import Data.HashMap.Strict qualified as Map
 import Data.Text qualified as T
-import LS.Interpreter (getMarkings, qaHornsT)
-import LS.Rule (Interpreted, Rule)
+import LS.Interpreter (Interpreted, getMarkings, qaHornsT)
+import LS.Rule (Rule)
 import LS.Types (BoolStructT, RuleName)
 
 -- import Debug.Trace (trace)

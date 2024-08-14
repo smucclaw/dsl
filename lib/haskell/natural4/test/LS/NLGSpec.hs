@@ -11,7 +11,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (mapMaybe)
 import Data.String.Interpolate (i)
 import Data.Text qualified as Text
-import LS.Interpreter (qaHornsR, qaHornsT)
+import LS.Interpreter (Interpreted (..), defaultL4I, qaHornsR, qaHornsT)
 import LS.NLP.NL4 (Tree (GqCONSTR, GqPREPOST))
 import LS.NLP.NLG
   ( NLGEnv (..),
@@ -25,8 +25,7 @@ import LS.NLP.NLG
   )
 import LS.RelationalPredicates (getBSR)
 import LS.Rule
-  ( Interpreted (..),
-    Rule
+  ( Rule
       ( DefNameAlias,
         DefTypically,
         Hornlike,
@@ -59,7 +58,6 @@ import LS.Rule
         wwhere
       ),
     defaultHorn,
-    defaultL4I,
   )
 import LS.Types
   ( BoolStructR,

@@ -19,8 +19,8 @@ import System.FilePath
 import Text.Pretty.Simple qualified as Pretty
 import Explainable
 import Explainable.MathLang -- hiding ((|>))
-import LS.Interpreter (l4interpret)
-import LS.Rule (Interpreted (..), Rule (..), defaultL4I, defaultReg, defaultHorn, defaultTypeDecl)
+import LS.Interpreter (Interpreted (..), defaultL4I, l4interpret)
+import LS.Rule (Rule (..), defaultReg, defaultHorn, defaultTypeDecl)
 import LS.Types
 import LS.XPile.IntroReader (defaultReaderEnv)
 import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST

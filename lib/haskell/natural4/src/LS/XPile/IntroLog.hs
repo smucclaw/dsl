@@ -6,9 +6,8 @@
 module LS.XPile.IntroLog (toLog) where
 
 import Data.Text qualified as Text
-import LS.Interpreter (qaHornsT)
+import LS.Interpreter (Interpreted (..), qaHornsT)
 import LS.PrettyPrinter (myrender, (<//>), (</>))
-import LS.Rule (Interpreted (..))
 import LS.XPile.IntroReader (MyEnv (..))
 import LS.XPile.Logging (XPileLog, mutter)
 import Prettyprinter (Doc, pretty)

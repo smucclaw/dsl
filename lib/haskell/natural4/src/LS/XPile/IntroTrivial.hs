@@ -3,9 +3,7 @@
 
 module LS.XPile.IntroTrivial where
 
-import LS.Rule
-  ( Interpreted (..)
-  )
+import LS.Interpreter (Interpreted (..))
 
 toTrivial :: Interpreted -> String
 toTrivial l4i = do

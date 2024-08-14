@@ -129,19 +129,21 @@ import LS.Interpreter
     topsortedClasses,
   )
 import LS.PrettyPrinter
-  ( ParamText4 (PT4, PT5),
-    commentWith,
-    prettyMaybeType,
-    prettySimpleType,
+  ( commentWith,
     snake_case,
     snake_inner,
     vvsep,
     (<//>),
     (</>),
   )
+import LS.PrettyPrinter.TypeSig
+  ( ParamText4 (PT4, PT5),
+    prettyMaybeType,
+    prettySimpleType,
+  )
+import LS.Interpreter (Interpreted(..))
 import LS.Rule as SFL4R
-  ( Interpreted (classtable, ruleGraph, scopetable, valuePreds),
-    Rule (..),
+  ( Rule (..),
     ValuePredicate (..),
     isFact,
     ruleLabelName,
@@ -208,7 +210,7 @@ import Text.JSON (Result (Error, Ok), decode, encode)
 import Text.Pretty.Simple (pShowNoColor)
 
 -- | top-level function
-asTypescript :: SFL4R.Interpreted -> XPileLog (Doc ann)
+asTypescript :: Interpreted -> XPileLog (Doc ann)
 asTypescript l4i = do
   vvsep <$> sequenceA [                              tsPrelude   l4i
                      , pure "// tsEnums",           tsEnums     l4i
@@ -543,7 +545,7 @@ vpToTS l4i ValPred{..}
     renderRPrel RPlt = "<"
     renderRPrel _    = trace "add a renderRPrel in Typescript.hs" ""
 
-    -- upgrade a value Monday to a DaysEnum.Monday 
+    -- upgrade a value Monday to a DaysEnum.Monday
     handleEnum :: MultiTerm -> MultiTerm -> Doc ann
     handleEnum mt1 mt2
       | isAnEnum l4i (given =<< origRule) mt1 =

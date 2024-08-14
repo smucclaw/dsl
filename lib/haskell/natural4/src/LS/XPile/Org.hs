@@ -13,7 +13,8 @@ import Data.List.NonEmpty qualified as NE
 import Data.Maybe (mapMaybe)
 import Data.Text qualified as Text
 import LS.Interpreter
-  ( attrsAsMethods,
+  ( Interpreted (..),
+    attrsAsMethods,
     classGraph,
     classRoots,
     expandBSR,
@@ -41,8 +42,7 @@ import LS.PrettyPrinter
   )
 import LS.RelationalPredicates (getBSR, partitionExistentials)
 import LS.Rule
-  ( Interpreted (..),
-    Rule (..),
+  ( Rule (..),
     hasClauses,
     hasGiven,
     ruleLabelName,
@@ -112,7 +112,7 @@ musings l4i rs =
            , "** the roots of the graph"
            , "have indegree count 0"
            , srchs (classRoots (classtable l4i))
-           
+
            , "** Enums"
            , vvsep [ "***" <+> snake_case className
                    <//> vsep [ "-" <+> snake_case [enumStr]

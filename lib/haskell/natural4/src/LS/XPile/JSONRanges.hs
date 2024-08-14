@@ -16,7 +16,7 @@ import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import Data.Traversable (for)
 import Debug.Trace (trace)
-import LS.Rule (Interpreted (classtable))
+import LS.Interpreter (Interpreted (..))
 import LS.Types
   ( EntityType,
     MTExpr (MTB, MTI, MTT),
@@ -97,7 +97,7 @@ asJSONRanges l4i = do
     isArbitrary (_, ((Just (SimpleType TOne st), _), _)) = isBool st
     isArbitrary _                                        = False
 
-    isBool = (PCRE.≈ [PCRE.re|^(b|B)ool(ean)?$|]) 
+    isBool = (PCRE.≈ [PCRE.re|^(b|B)ool(ean)?$|])
 
     curlyList = encloseSep "{" "}" comma
 

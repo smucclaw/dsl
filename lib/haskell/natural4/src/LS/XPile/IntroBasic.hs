@@ -6,9 +6,8 @@
 module LS.XPile.IntroBasic (toBasic) where
 
 import Data.Text qualified as Text
-import LS.Interpreter (qaHornsT)
+import LS.Interpreter (Interpreted (..), qaHornsT)
 import LS.PrettyPrinter (myrender, (</>))
-import LS.Rule (Interpreted (..))
 import Prettyprinter (Doc, pretty)
 import Text.Pretty.Simple (pShowNoColor)
 

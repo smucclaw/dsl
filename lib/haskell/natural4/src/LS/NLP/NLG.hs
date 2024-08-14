@@ -139,7 +139,8 @@ import LS.NLP.NL4Transformations
     pushPrePostIntoMain,
     referNP,
   )
-import LS.Rule (Interpreted (..), Rule (..), ruleConstructor, ruleLabelName, ruleName)
+import LS.Interpreter (Interpreted (..))
+import LS.Rule (Rule (..), ruleConstructor, ruleLabelName, ruleName)
 import LS.Types
   ( BoolStructP,
     BoolStructR,
@@ -531,7 +532,7 @@ parseTxtToGFNoRecover :: Gf a => NLGEnv -> String -> Text.Text -> [a]
 parseTxtToGFNoRecover env cat = (fg <$>) . parseAnyNoRecover cat env
 
 parseWhoNoRecover :: NLGEnv -> BoolStructR -> [BoolStructWho]
-parseWhoNoRecover = parseWhoCondNoRecover "Who" 
+parseWhoNoRecover = parseWhoCondNoRecover "Who"
 
 parseCondNoRecover :: NLGEnv -> BoolStructR -> [BoolStructCond]
 parseCondNoRecover= parseWhoCondNoRecover "Cond"
@@ -626,7 +627,7 @@ parseAction :: NLGEnv -> BoolStructP -> GAction
 parseAction env = parseTxtToGF "Action" env . bsp2text
 
 parseSubj :: NLGEnv -> BoolStructP -> GNP
-parseSubj env = parseTxtToGF "NP" env . bsp2text 
+parseSubj env = parseTxtToGF "NP" env . bsp2text
 
 parseWho :: NLGEnv -> RelationalPredicate -> GWho
 parseWho env = parseTxtToGF "Who" env . rp2text
@@ -788,7 +789,7 @@ parseAny :: String -> NLGEnv -> Text.Text -> NonEmpty Expr
 parseAny cat env = snd . parseAny' cat env
 
 parseAnyNoRecover :: String -> NLGEnv -> Text.Text -> [Expr]
-parseAnyNoRecover cat env = fst . parseAny' cat env 
+parseAnyNoRecover cat env = fst . parseAny' cat env
 
 parseAny' :: String -> NLGEnv -> Text.Text -> ([Expr], NonEmpty Expr)
 parseAny' cat env txt = (toreturn, toreturnRecovered)

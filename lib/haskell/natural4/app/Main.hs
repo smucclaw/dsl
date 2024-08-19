@@ -277,7 +277,7 @@ main = do
   rc       <- SFL4.getConfig opts
 --  putStrLn "main: doing dumpRules"
   rules    <- SFL4.dumpRules opts
-  let l4i  = l4interpret SFL4.defaultInterpreterOptions rules
+  l4i      <- l4interpret SFL4.defaultInterpreterOptions rules
   iso8601  <- now8601
 
   -- NLG stuff
@@ -1019,7 +1019,7 @@ jsonTranspiler =
 
 coreL4Transpiler :: Transpiler
 coreL4Transpiler =
-  simpleTranspiler "corel4" "l4" (withErrors (onlyRules (first (commentIfError "--") . xpLog . sfl4ToCorel4)))
+  simpleTranspiler "corel4" "l4" (withErrors (onlyInterpreted (first (commentIfError "--") . xpLog . sfl4ToCorel4)))
 
 babyL4Transpiler :: Transpiler
 babyL4Transpiler =

@@ -366,7 +366,9 @@ spec = do
     describe "variable substitution and rule expansion" do
       let parseSM s m = do
             rs <- parseR pToplevel s m
-            return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) 1 (head rs)
+            pure $ do
+              interpreted <- l4interpret defaultInterpreterOptions rs
+              pure $ getAndOrTree interpreted 1 (head rs)
           ab1b2 = Just
             ( Any Nothing
               [ mkLeaf "a"
@@ -378,14 +380,15 @@ spec = do
               ]
             )
 
-      filetest "varsub-1-headhead" "should expand hornlike" parseSM ab1b2
-      filetest "varsub-2-headbody" "should expand hornlike" parseSM ab1b2
-      filetest "varsub-3-bodybody" "should expand hornlike" parseSM ab1b2
-      filetest "varsub-4-bodyhead" "should expand hornlike" parseSM ab1b2
+      filetestIO "varsub-1-headhead" "should expand hornlike" parseSM ab1b2
+      filetestIO "varsub-2-headbody" "should expand hornlike" parseSM ab1b2
+      filetestIO "varsub-3-bodybody" "should expand hornlike" parseSM ab1b2
+      filetestIO "varsub-4-bodyhead" "should expand hornlike" parseSM ab1b2
 
       it "should work when the tree that substitutes has its own label" do
+        interpreted <- l4interpret defaultInterpreterOptions rulesForSubstitutingLabels
         let result = getAndOrTree
-                       (l4interpret defaultInterpreterOptions rulesForSubstitutingLabels)
+                       interpreted
                        1
                        (head rulesForSubstitutingLabels)
         result `shouldBe` substitutedLabelGold

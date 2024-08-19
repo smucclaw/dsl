@@ -31,6 +31,7 @@ import TextuaL4.Transform qualified as Parser
 
 import AnyAll.BoolStruct qualified as AA
 
+import LS.Log qualified as Log
 import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
@@ -862,8 +863,7 @@ debugTranspileRule ruleSrc = do
       fail "translation failed"
     Right r -> pure r
   TL.putStrLn $ Pretty.pShow rule
-  let
-    renamerResult = runRenamerFor $ MkSolo rule
+  renamerResult <- runRenamerFor (liftRenamerTracer Log.prettyTracer) $ MkSolo rule
   TL.putStrLn $ Pretty.pShow $ rnResultScope renamerResult
   case renamerResult of
     RenamerFail err _ -> Text.putStrLn $ renderRenamerError err
@@ -873,18 +873,6 @@ debugTranspileRule ruleSrc = do
         Left err -> Text.putStrLn $ renderTranspilerError err
         Right decls -> flip Foldable.traverse_ decls $ \decl -> do
           Text.putStrLn $ "Decl: " <> Simala.render decl
-
-transpileRulePure :: String -> Text
-transpileRulePure ruleSrc =
-  case run ruleSrc of
-    Left err -> Text.pack err
-    Right rule -> case runRenamerFor (MkSolo rule) of
-      RenamerFail err _ -> renderRenamerError err
-      RenamerSuccess (MkSolo rnRule) _ -> do
-        case runExcept $ runTranspiler $ transpile [rnRule] of
-          Left err -> renderTranspilerError err
-          Right expr ->
-            Text.unlines $ fmap Simala.render expr
 
 run :: String -> Either String LS.Rule
 run = fmap Parser.transRule . Parser.pRule . Parser.myLexer

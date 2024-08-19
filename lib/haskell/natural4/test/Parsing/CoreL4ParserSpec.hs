@@ -14,7 +14,7 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String.Interpolate (i)
 import Data.Text qualified as T
 import LS.BasicTypes (MyStream, MyToken (Decide))
-import LS.Interpreter (classHierarchy, getCTkeys)
+import LS.Interpreter (classHierarchy, getCTkeys, l4interpret)
 import LS.Lib
   ( exampleStreams,
     pRules,
@@ -42,7 +42,7 @@ import LS.Types
     defaultRC,
     extendedAttributes,
     mkLeafR,
-    thisAttributes,
+    thisAttributes, defaultInterpreterOptions, InterpreterOptions (enums2decls),
   )
 import LS.XPile.CoreL4
 import LS.XPile.Logging (fromxpLogE)
@@ -86,7 +86,8 @@ spec  = do
         let testfile = "seca"
         testcsv <- BS.readFile $ "test" </> testfile -<.> "csv"
         let rules  = parseR pRules "" `traverse` exampleStreams testcsv
-        (fmap (fromxpLogE . sfl4ToCorel4) <$> rules) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
+        interpreted <- (traverse . traverse) (l4interpret (defaultInterpreterOptions {enums2decls = True})) rules
+        (fmap (fromxpLogE . sfl4ToCorel4) <$> interpreted) `shouldParse` ["\n#\n# outputted directly from XPile/CoreL4.hs\n#\n\n\n\n-- [SecA_RecoverPassengersVehicleAuthorizedOp]\ndecl s: Situation\n\n--facts\n\nfact <SecA_RecoverPassengersVehicleAuthorizedOp> fromList [([\"s\"],((Just (SimpleType TOne \"Situation\"),[]),[]))]\n\n\n# directToCore\n\n\nrule <SecA_RecoverPassengersVehicleAuthorizedOp>\nfor s: Situation\nif (secA_Applicability && currentSit_s && s == missingKeys)\nthen coverProvided s recoverPassengersVehicleAuthorizedOp SecA_RecoverPassengersVehicleAuthorizedOp\n\n\n"]
 
       filetest "class-1" "type definitions"
         (parseR pRules)
@@ -190,7 +191,7 @@ spec  = do
         (Just ["bar address","firstname","id","lastname","office address","work address"], [])
 
       filetest "class-fa-1" "financial advisor data modelling"
-        (parseR pToplevel) 
+        (parseR pToplevel)
         [ defaultTypeDecl
             { name = [MTT "FinancialStatus"],
               super = Just (InlineEnum TOne ((MTT <$> "adequate" :| ["inadequate"], Nothing) :| [])),

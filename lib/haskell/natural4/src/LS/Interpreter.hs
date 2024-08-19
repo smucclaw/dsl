@@ -285,24 +285,24 @@ type RuleGraph = Gr Rule RuleGraphEdgeLabel
 -- handed to each transpiler for use, as an `l4i` argument.
 --
 
-l4interpret :: InterpreterOptions -> [Rule] -> Interpreted
-l4interpret iopts rs =
+l4interpret :: InterpreterOptions -> [Rule] -> IO Interpreted
+l4interpret iopts rs = do
   let ct :: ClsTab
       ct = classHierarchy rs
       st :: ScopeTabs
       st = symbolTable    iopts rs
       (vp, _vpErr) = xpLog $ attrsAsMethods rs
       (rDGout, rDGerr) = xpLog $ ruleDecisionGraph rs
-      rnRules = Renamer.runRenamerFor rs
-  in
-    L4I { classtable = ct
-        , scopetable = st
-        , origrules  = rs
-        , renamedRules = rnRules
-        , valuePreds = fromRight [] vp
-        , ruleGraph  = rDGout
-        , ruleGraphErr = rDGerr
-        }
+  rnRules <- Renamer.runRenamerFor mempty rs
+
+  pure L4I { classtable = ct
+           , scopetable = st
+           , origrules  = rs
+           , renamedRules = rnRules
+           , valuePreds = fromRight [] vp
+           , ruleGraph  = rDGout
+           , ruleGraphErr = rDGerr
+           }
 
 -- | Provide the fully expanded, exposed, decision roots of all rules in the ruleset,
 --   grouped ("nubbed") into rule groups (since multiple rules may have the same decision body).

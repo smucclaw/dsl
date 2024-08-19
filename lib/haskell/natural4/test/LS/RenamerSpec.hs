@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.RenamerSpec (spec) where
 
@@ -110,16 +111,16 @@ spec = do
         DECIDE x g IS x
         |]
  where
-  test' :: String -> String -> SpecWith (Arg (Golden TL.Text))
-  test' fname ruleSource = do
-    it fname $
-      goldenGeneric fname $
-        case runList ruleSource of
-          Left err -> Left $ "Failed to parse program:\n" <> ruleSource <> "\n" <> err
+  test' :: String -> String -> SpecWith (Arg (IO (Golden TL.Text)))
+  test' fname ruleSource =
+    it fname $ do
+      result <- case runList ruleSource of
+          Left err -> pure $ Left $ "Failed to parse program:\n" <> ruleSource <> "\n" <> err
           Right rules ->
-            case Renamer.runRenamerFor rules of
-              RenamerFail err _ -> Left $ "Failed to rename program: " <> Text.unpack (Renamer.renderRenamerError err)
-              RenamerSuccess rnRules _ -> Right rnRules
+            Renamer.runRenamerFor mempty rules >>= \case
+              RenamerFail err _ -> pure $ Left $ "Failed to rename program: " <> Text.unpack (Renamer.renderRenamerError err)
+              RenamerSuccess rnRules _ -> pure $ Right rnRules
+      pure $ goldenGeneric fname result
 
 runList :: String -> Either String [Rule]
 runList = fmap (fmap transRule) . pListRule . myLexer

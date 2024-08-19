@@ -28,7 +28,7 @@ import LS.XPile.MathLang.GenericMathLang.GenericMathLangAST qualified as GML
 import LS.XPile.MathLang.GenericMathLang.TranslateL4
 import LS.XPile.MathLang.MathLang qualified as ML
 import LS.XPile.MathLang.GenericMathLang.ToGenericMathLang (toMathLangGen, expandHornlikes, getHornlikes)
-import Test.Hspec (Spec, describe, it, shouldBe, xit)
+import Test.Hspec (Spec, describe, it, shouldBe, xit, runIO)
 import Test.Hspec.Golden
 import TextuaL4.Transform    ( transRule )
 import TextuaL4.ParTextuaL   ( pRule, myLexer )
@@ -251,7 +251,7 @@ spec = do
           res `shouldBe` 550.0
 
   describe "mustsing5" do
-    let l4i = l4interpret defaultInterpreterOptions mustsing5
+    l4i <- runIO $ l4interpret defaultInterpreterOptions mustsing5
 
     it "should expand hornlikes from Must Sing 5" $ goldenGeneric "mustSingHornlikesExpanded" do
         expandHornlikes l4i (getHornlikes l4i)

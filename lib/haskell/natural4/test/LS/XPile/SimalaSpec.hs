@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE LambdaCase #-}
 
 module LS.XPile.SimalaSpec (spec) where
 
@@ -226,32 +227,32 @@ IF
         )
         |]
 
-transpilerTest :: String -> String -> SpecWith (Arg (Golden TL.Text))
-transpilerTest outputName ruleString = it outputName $
-  goldenGeneric outputName $
-    case runList ruleString of
-      Left err ->
-        Text.unlines
-          [ "Failed to parse program:"
-          , Text.pack ruleString
-          , "Err:"
-          , Text.pack err
-          ]
-      Right rules -> do
-        case Renamer.runRenamerFor rules of
-          RenamerFail err scope ->
-            Text.unlines
-              [ "Renaming failed for program:"
-              , Text.pack ruleString
-              , "Because:"
-              , Renamer.renderRenamerError err
-              , "Scope table:"
-              , Text.pack $ pShowNoColorS scope
-              ]
-          RenamerSuccess rnRules _ -> do
-            case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
-              Left err -> "Failed transpilation:\n" <> Simala.renderTranspilerError err
-              Right simalaDecls -> Simala.render simalaDecls
+transpilerTest :: String -> String -> SpecWith (Arg (IO (Golden TL.Text)))
+transpilerTest outputName ruleString = it outputName $ do
+  result <- case runList ruleString of
+    Left err -> pure $
+      Text.unlines
+        [ "Failed to parse program:"
+        , Text.pack ruleString
+        , "Err:"
+        , Text.pack err
+        ]
+    Right rules -> do
+      Renamer.runRenamerFor mempty rules >>= \case
+        RenamerFail err scope ->
+          pure $ Text.unlines
+            [ "Renaming failed for program:"
+            , Text.pack ruleString
+            , "Because:"
+            , Renamer.renderRenamerError err
+            , "Scope table:"
+            , Text.pack $ pShowNoColorS scope
+            ]
+        RenamerSuccess rnRules _ -> pure $
+          case runExcept (Simala.runTranspiler $ Simala.transpile rnRules) of
+            Left err -> "Failed transpilation:\n" <> Simala.renderTranspilerError err
+            Right simalaDecls -> Simala.render simalaDecls
+  pure $ goldenGeneric outputName result
 
 goldenGeneric :: String -> Text.Text -> Golden Text.Text
 goldenGeneric name output_ =

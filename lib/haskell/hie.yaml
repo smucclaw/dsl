@@ -1,3 +1,37 @@
 cradle:
-  cabal:
-    component: all
+  stack:
+    - path: "anyall/src"
+      component: "anyall:lib"
+
+    - path: "anyall/app/"
+      component: "anyall:exe:anyall-exe"
+
+    - path: "anyall/test"
+      component: "anyall:test:anyall-test"
+
+    - path: "explainable/src"
+      component: "explainable:lib"
+
+    - path: "explainable/app/"
+      component: "explainable:exe:explainable-exe"
+
+    - path: "explainable/test"
+      component: "explainable:test:explainable-test"
+
+    - path: "natural4/src"
+      component: "natural4:lib"
+
+    - path: "natural4/app"
+      component: "natural4:exe:natural4-exe"
+
+    - path: "natural4/test/doctests"
+      component: "natural4:test:doctests"
+
+    - path: "natural4/test"
+      component: "natural4:test:natural4-test"
+
+    - path: "natural4/benchmarks"
+      component: "natural4:bench:natural4-bench"
+
+    - path: "natural4/bnfc"
+      component: "natural4:exe:l4-bnfc-exe"

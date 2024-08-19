@@ -480,17 +480,6 @@ data TypeSig = SimpleType ParamType EntityType
 
 type VarPath = [TypedMulti]
 
-newtype InterpreterOptions = IOpts
-  { enums2decls :: Bool -- ^ convert inlineEnums in a class declaration to top-level decls? Used by corel4.
-  }
-  deriving (Eq, Show)
-
--- [TODO] consider using typeclass Default https://hackage.haskell.org/package/data-default
-defaultInterpreterOptions :: InterpreterOptions
-defaultInterpreterOptions = IOpts
-  { enums2decls = False
-  }
-
 -- | a basic symbol table to track "variable names" and their associated types.
 
 getUnderlyingType :: TypeSig -> Either String EntityType

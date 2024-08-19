@@ -94,7 +94,6 @@ import LS.Interpreter as SFL4
     classGraph,
     getAttrTypesIn,
     getCTkeys,
-    l4interpret,
   )
 import LS.PrettyPrinter
   ( RP1 (RP1),
@@ -149,7 +148,6 @@ import LS.Types as SFL4
     ClsTab (..),
     HornClause (HC, hBody, hHead),
     HornClause2,
-    InterpreterOptions (enums2decls),
     MTExpr (..),
     MultiTerm,
     MyToken (Decide, Define),
@@ -162,7 +160,6 @@ import LS.Types as SFL4
     SrcRef (SrcRef, short, srccol, srcrow, url, version),
     TypeSig (..),
     clsParent,
-    defaultInterpreterOptions,
     enumLabels_,
     getSymType,
     getUnderlyingType,
@@ -252,12 +249,9 @@ sfl4ToLogicProgramStr (otoList -> rules) =
 sfl4ToDMN :: [SFL4.Rule] -> HXT.IOSLA (HXT.XIOState ()) HXT.XmlTree HXT.XmlTree
 sfl4ToDMN rules = rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
-sfl4ToCorel4 :: [SFL4.Rule] -> XPileLogE String
-sfl4ToCorel4 rs =
-  let interpreted =
-        l4interpret (defaultInterpreterOptions { enums2decls = True }) rs
-      -- sTable = scopetable interpreted
-      cTable = classtable interpreted
+sfl4ToCorel4 :: Interpreted -> XPileLogE String
+sfl4ToCorel4 interpreted =
+  let cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
       pBoilerplate = myrender $ prettyBoilerplate cTable
       hardCoded = unlines [ "decl age: Number"
@@ -285,7 +279,7 @@ sfl4ToCorel4 rs =
     , "\n\n## boilerplate\n",               T.unpack pBoilerplate
 
     , "\n\n## decls for predicates used in rules (and not defined above already)\n"
-    , T.unpack . myrender $ prettyDecls [i|#{hardCoded}#{pclasses}#{pBoilerplate}|] rs
+    , T.unpack . myrender $ prettyDecls [i|#{hardCoded}#{pclasses}#{pBoilerplate}|] (origrules interpreted)
 
     -- honestly i think we can just live without these
     --               , "\n\n## facts\n",                     show $ prettyFacts   sTable
@@ -294,7 +288,7 @@ sfl4ToCorel4 rs =
     , "\n# directToCore\n\n"
     ] ++
     [ T.unpack $ myrender $ directToCore r
-    | r <- rs
+    | r <- origrules interpreted
     ]
   )
   where

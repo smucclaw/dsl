@@ -69,6 +69,9 @@ module LS.Renamer (
   assertSingletonMultiTerm,
   assertNoTypeSignature,
 
+  -- * Utilities for analyzing the L4 AST
+  toObjectPath,
+
   -- * Debugging helpers
   renameRuleTopLevel,
 ) where
@@ -1229,6 +1232,8 @@ assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList (Text.pack 
 
 -- | Given a 'LS.MultiTerm', check whether it has the form of an attribute
 -- selector.
+--
+-- >>> :set -XOverloadedStrings
 --
 -- >>> toObjectPath [LS.MTT "x's", LS.MTT "z"]
 -- Just ("x",["z"])

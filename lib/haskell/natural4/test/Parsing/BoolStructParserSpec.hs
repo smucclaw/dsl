@@ -54,7 +54,6 @@ import LS.Types
       ),
     RunConfig (debug, extendedGrounds, sourceURL),
     TypeSig (InlineEnum),
-    defaultInterpreterOptions,
     defaultRC,
     mkRpmt,
     mkRpmtLeaf,
@@ -366,7 +365,7 @@ spec = do
     describe "variable substitution and rule expansion" do
       let parseSM s m = do
             rs <- parseR pToplevel s m
-            return $ getAndOrTree (l4interpret defaultInterpreterOptions rs) 1 (head rs)
+            return $ getAndOrTree (l4interpret rs) 1 (head rs)
           ab1b2 = Just
             ( Any Nothing
               [ mkLeaf "a"
@@ -385,7 +384,7 @@ spec = do
 
       it "should work when the tree that substitutes has its own label" do
         let result = getAndOrTree
-                       (l4interpret defaultInterpreterOptions rulesForSubstitutingLabels)
+                       (l4interpret rulesForSubstitutingLabels)
                        1
                        (head rulesForSubstitutingLabels)
         result `shouldBe` substitutedLabelGold

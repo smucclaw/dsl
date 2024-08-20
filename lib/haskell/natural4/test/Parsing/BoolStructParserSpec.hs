@@ -54,7 +54,6 @@ import LS.Types
       ),
     RunConfig (debug, extendedGrounds, sourceURL),
     TypeSig (InlineEnum),
-    defaultInterpreterOptions,
     defaultRC,
     mkRpmt,
     mkRpmtLeaf,
@@ -367,7 +366,7 @@ spec = do
       let parseSM s m = do
             rs <- parseR pToplevel s m
             pure $ do
-              interpreted <- l4interpret defaultInterpreterOptions rs
+              interpreted <- l4interpret rs
               pure $ getAndOrTree interpreted 1 (head rs)
           ab1b2 = Just
             ( Any Nothing
@@ -386,7 +385,7 @@ spec = do
       filetestIO "varsub-4-bodyhead" "should expand hornlike" parseSM ab1b2
 
       it "should work when the tree that substitutes has its own label" do
-        interpreted <- l4interpret defaultInterpreterOptions rulesForSubstitutingLabels
+        interpreted <- l4interpret rulesForSubstitutingLabels
         let result = getAndOrTree
                        interpreted
                        1

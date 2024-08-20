@@ -251,7 +251,7 @@ spec = do
           res `shouldBe` 550.0
 
   describe "mustsing5" do
-    l4i <- runIO $ l4interpret defaultInterpreterOptions mustsing5
+    l4i <- runIO $ l4interpret mustsing5
 
     it "should expand hornlikes from Must Sing 5" $ goldenGeneric "mustSingHornlikesExpanded" do
         expandHornlikes l4i (getHornlikes l4i)

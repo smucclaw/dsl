@@ -277,7 +277,7 @@ main = do
   rc       <- SFL4.getConfig opts
 --  putStrLn "main: doing dumpRules"
   rules    <- SFL4.dumpRules opts
-  l4i      <- l4interpret SFL4.defaultInterpreterOptions rules
+  l4i      <- l4interpret rules
   iso8601  <- now8601
 
   -- NLG stuff

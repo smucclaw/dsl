@@ -251,8 +251,7 @@ sfl4ToDMN rules = rules |> sfl4ToUntypedBabyL4 |> genXMLTreeNoType
 
 sfl4ToCorel4 :: Interpreted -> XPileLogE String
 sfl4ToCorel4 interpreted =
-  let
-      cTable = classtable interpreted
+  let cTable = classtable interpreted
       pclasses = myrender $ prettyClasses cTable
       pBoilerplate = myrender $ prettyBoilerplate cTable
       hardCoded = unlines [ "decl age: Number"
@@ -280,7 +279,7 @@ sfl4ToCorel4 interpreted =
     , "\n\n## boilerplate\n",               T.unpack pBoilerplate
 
     , "\n\n## decls for predicates used in rules (and not defined above already)\n"
-    , T.unpack . myrender $ prettyDecls [i|#{hardCoded}#{pclasses}#{pBoilerplate}|] $ origrules interpreted
+    , T.unpack . myrender $ prettyDecls [i|#{hardCoded}#{pclasses}#{pBoilerplate}|] (origrules interpreted)
 
     -- honestly i think we can just live without these
     --               , "\n\n## facts\n",                     show $ prettyFacts   sTable

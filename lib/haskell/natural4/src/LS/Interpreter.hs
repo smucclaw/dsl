@@ -174,7 +174,6 @@ import LS.Types
     HornClause (HC, hBody, hHead),
     HornClause2,
     Inferrable,
-    InterpreterOptions,
     MTExpr (MTB, MTF, MTT),
     MultiTerm,
     MyToken (Decide, Define, Is, Means),
@@ -285,12 +284,12 @@ type RuleGraph = Gr Rule RuleGraphEdgeLabel
 -- handed to each transpiler for use, as an `l4i` argument.
 --
 
-l4interpret :: InterpreterOptions -> [Rule] -> IO Interpreted
-l4interpret iopts rs = do
+l4interpret :: [Rule] -> IO Interpreted
+l4interpret rs = do
   let ct :: ClsTab
       ct = classHierarchy rs
       st :: ScopeTabs
-      st = symbolTable    iopts rs
+      st = symbolTable rs
       (vp, _vpErr) = xpLog $ attrsAsMethods rs
       (rDGout, rDGerr) = xpLog $ ruleDecisionGraph rs
   rnRules <- Renamer.runRenamerFor mempty rs
@@ -340,8 +339,8 @@ qaHornsR l4i =
 -- future we will organize the symbol tables according to section
 -- scope.
 
-symbolTable :: InterpreterOptions -> [Rule] -> ScopeTabs
-symbolTable _iopts rs =
+symbolTable :: [Rule] -> ScopeTabs
+symbolTable rs =
   Map.fromListWith (<>) (fromGivens <> fromDefines <> fromDecides)
   -- [BUG] this marshalling produces duplicate entries, one from where a thing is DEFINEd and one where its attributes are DECIDEd.
   -- <> trace ("all rules = " ++ TL.unpack (pShow rs)) []

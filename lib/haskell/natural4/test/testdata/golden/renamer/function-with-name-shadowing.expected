@@ -1,0 +1,172 @@
+Right
+    [ Hornlike
+        ( RnHornlike
+            { name =
+                [ RnExprName
+                    ( RnName
+                        { rnOccName = MTT "f" :| []
+                        , rnUniqueId = 1
+                        , rnNameType = RnFunction
+                        }
+                    )
+                , RnExprName
+                    ( RnName
+                        { rnOccName = MTT "x" :| []
+                        , rnUniqueId = 0
+                        , rnNameType = RnVariable
+                        }
+                    )
+                ]
+            , super = Nothing
+            , keyword = Decide
+            , given = Just
+                ( RnParamText
+                    { mkParamText = RnTypedMulti
+                        { rnTypedMultiExpr = RnExprName
+                            ( RnName
+                                { rnOccName = MTT "x" :| []
+                                , rnUniqueId = 0
+                                , rnNameType = RnVariable
+                                }
+                            ) :| []
+                        , rnTypedMultiTypeSig = Nothing
+                        } :| []
+                    }
+                )
+            , giveth = Nothing
+            , upon = Nothing
+            , clauses =
+                [ RnHornClause
+                    { rnHcHead = RnConstraint
+                        [ RnExprName
+                            ( RnName
+                                { rnOccName = MTT "f" :| []
+                                , rnUniqueId = 1
+                                , rnNameType = RnFunction
+                                }
+                            )
+                        , RnExprName
+                            ( RnName
+                                { rnOccName = MTT "x" :| []
+                                , rnUniqueId = 0
+                                , rnNameType = RnVariable
+                                }
+                            )
+                        ] RPis
+                        [ RnExprName
+                            ( RnName
+                                { rnOccName = MTT "g" :| []
+                                , rnUniqueId = 3
+                                , rnNameType = RnFunction
+                                }
+                            )
+                        , RnExprName
+                            ( RnName
+                                { rnOccName = MTT "x" :| []
+                                , rnUniqueId = 0
+                                , rnNameType = RnVariable
+                                }
+                            )
+                        ]
+                    , rnHcBody = Nothing
+                    }
+                ]
+            , rlabel = Nothing
+            , lsource = Nothing
+            , wwhere =
+                [ Hornlike
+                    ( RnHornlike
+                        { name =
+                            [ RnExprName
+                                ( RnName
+                                    { rnOccName = MTT "g" :| []
+                                    , rnUniqueId = 3
+                                    , rnNameType = RnFunction
+                                    }
+                                )
+                            , RnExprName
+                                ( RnName
+                                    { rnOccName = MTT "x" :| []
+                                    , rnUniqueId = 2
+                                    , rnNameType = RnVariable
+                                    }
+                                )
+                            ]
+                        , super = Nothing
+                        , keyword = Where
+                        , given = Just
+                            ( RnParamText
+                                { mkParamText = RnTypedMulti
+                                    { rnTypedMultiExpr = RnExprName
+                                        ( RnName
+                                            { rnOccName = MTT "x" :| []
+                                            , rnUniqueId = 2
+                                            , rnNameType = RnVariable
+                                            }
+                                        ) :| []
+                                    , rnTypedMultiTypeSig = Nothing
+                                    } :| []
+                                }
+                            )
+                        , giveth = Nothing
+                        , upon = Nothing
+                        , clauses =
+                            [ RnHornClause
+                                { rnHcHead = RnConstraint
+                                    [ RnExprName
+                                        ( RnName
+                                            { rnOccName = MTT "g" :| []
+                                            , rnUniqueId = 3
+                                            , rnNameType = RnFunction
+                                            }
+                                        )
+                                    , RnExprName
+                                        ( RnName
+                                            { rnOccName = MTT "x" :| []
+                                            , rnUniqueId = 2
+                                            , rnNameType = RnVariable
+                                            }
+                                        )
+                                    ] RPis
+                                    [ RnExprName
+                                        ( RnName
+                                            { rnOccName = MTT "x" :| []
+                                            , rnUniqueId = 2
+                                            , rnNameType = RnVariable
+                                            }
+                                        )
+                                    ]
+                                , rnHcBody = Nothing
+                                }
+                            ]
+                        , rlabel = Nothing
+                        , lsource = Nothing
+                        , wwhere = []
+                        , srcref = Just
+                            ( SrcRef
+                                { url = "test/Spec"
+                                , short = "test/Spec"
+                                , srcrow = 1
+                                , srccol = 1
+                                , version = Nothing
+                                }
+                            )
+                        , defaults = []
+                        , symtab = []
+                        }
+                    )
+                ]
+            , srcref = Just
+                ( SrcRef
+                    { url = "test/Spec"
+                    , short = "test/Spec"
+                    , srcrow = 1
+                    , srccol = 1
+                    , version = Nothing
+                    }
+                )
+            , defaults = []
+            , symtab = []
+            }
+        )
+    ]

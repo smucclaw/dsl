@@ -178,6 +178,36 @@ basicTests = do
             y IS A Number
       DECIDE x `discounted by` y IS SUM(x, MINUS(1, y))
     |]
+  transpilerTest "function-with-name-shadowing"
+    [i|
+      GIVEN x
+      DECIDE f x IS g x
+      WHERE (
+        GIVEN x DECIDE g x IS x
+      )
+      |]
+  transpilerTest
+    "function-with-name-shadowing-with-where-rules-1"
+    [i|
+    GIVEN x
+    DECIDE f x IS y
+    WHERE (
+      GIVETH y DECIDE y IS g x
+      §
+      GIVEN d DECIDE g d IS y WHERE y IS SUM(d, d)
+    )
+    |]
+  transpilerTest
+    "function-with-name-shadowing-with-where-rules-2"
+    [i|
+    GIVEN x
+    DECIDE f x IS y
+    WHERE (
+      GIVEN d DECIDE g d IS y WHERE y IS SUM(d, d)
+      §
+      GIVETH y DECIDE y IS g x
+    )
+    |]
 
 multiRuleTests :: Spec
 multiRuleTests = describe "multi-rules" do

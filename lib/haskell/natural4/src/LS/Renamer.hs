@@ -410,9 +410,11 @@ scanTypeDeclName tracer mtexprs = do
 -- |
 -- Lexical Scoping rules for hornlike rules:
 --
--- GIVETH's are global
--- GIVEN's are local
--- DECIDE head term in "IS" clauses is global
+-- * GIVENs are local to the rule
+-- * A GIVETH can be referred to in other rules up the scope hierarchy
+-- * The head in DECIDE clauses can also be referred to by other rules in scope hierarchy
+-- * WHERE clauses are local to the rule
+--
 renameRules :: (Traversable f) => Tracer Log -> f Rule -> Renamer (f RnRule)
 renameRules tracer rules = do
   rulesWithLocalDefs <-

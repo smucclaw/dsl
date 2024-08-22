@@ -1,0 +1,1 @@
+ f_f_1 = fun (v_x_0) => let f_g_3 = fun (v_d_2) => let v_y_4 = v_d_2 + v_d_2 in v_y_4 in let v_y_4 = f_g_3(v_x_0) in v_y_4

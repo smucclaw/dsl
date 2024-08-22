@@ -110,6 +110,25 @@ spec = do
         GIVEN x
         DECIDE x g IS x
         |]
+    test' "function-with-name-shadowing"
+      [i|
+        GIVEN x
+        DECIDE f x IS g x
+        WHERE (
+          GIVEN x DECIDE g x IS x
+        )
+        |]
+    test'
+      "function-with-name-shadowing-with-where-rules"
+      [i|
+        GIVEN x
+        DECIDE f x IS y
+        WHERE (
+          GIVETH y DECIDE y IS g x
+          §
+          GIVEN d DECIDE g d IS y WHERE y IS SUM(d, d)
+        )
+      |]
  where
   test' :: String -> String -> SpecWith (Arg (IO (Golden TL.Text)))
   test' fname ruleSource =

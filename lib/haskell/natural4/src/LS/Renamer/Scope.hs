@@ -61,8 +61,8 @@ data ScopeTable = ScopeTable
 unionScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
 unionScopeTable tbl1 tbl2 =
   ScopeTable
-    { _stVariables = Map.union tbl1._stVariables tbl2._stVariables
-    , _stFunction = Map.union tbl1._stFunction tbl2._stFunction
+    { _stVariables = Map.union tbl2._stVariables tbl1._stVariables
+    , _stFunction = Map.union tbl2._stFunction tbl1._stFunction
     }
 
 differenceScopeTable :: ScopeTable -> ScopeTable -> ScopeTable

@@ -150,16 +150,7 @@ Right
                                     ]
                                 , rnHcBody = Just
                                     ( Leaf
-                                        ( RnRelationalTerm
-                                            [ RnExprName
-                                                ( RnName
-                                                    { rnOccName = MTT "OTHERWISE" :| []
-                                                    , rnUniqueId = 4
-                                                    , rnNameType = RnBuiltin
-                                                    }
-                                                )
-                                            ]
-                                        )
+                                        ( RnRelationalTerm [ RnExprBuiltin RnOtherwise ] )
                                     )
                                 }
                             ]

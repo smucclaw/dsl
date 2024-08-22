@@ -585,6 +585,7 @@ isProjection mtHead args = do
 
 exprToSimala :: RnExpr -> Simala.Expr
 exprToSimala (RnExprName name) = Simala.Var $ toSimalaName name
+exprToSimala (RnExprBuiltin builtin) = builtinToSimala builtin
 exprToSimala (RnExprLit lit) = litToSimala lit
 
 litToSimala :: RnLit -> Simala.Expr
@@ -607,6 +608,7 @@ isExprOfType :: RnExpr -> (RnNameType -> Bool) -> Maybe RnName
 isExprOfType (RnExprName name) hasTy
   | hasTy name.rnNameType = Just name
   | otherwise = Nothing
+isExprOfType (RnExprBuiltin _) _ = Nothing
 isExprOfType (RnExprLit _) _ = Nothing
 
 -- ----------------------------------------------------------------------------
@@ -636,7 +638,9 @@ rnNameTypePrefix = \case
   RnVariable -> "v"
   RnType -> "t"
   RnEnum -> "e"
-  RnBuiltin -> "b"
+
+builtinToSimala :: RnBuiltin -> Simala.Expr
+builtinToSimala RnOtherwise = Simala.Var "otherwise"
 
 -- ----------------------------------------------------------------------------
 -- Assertion helpers

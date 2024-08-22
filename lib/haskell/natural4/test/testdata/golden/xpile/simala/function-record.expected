@@ -1,1 +1,1 @@
- f_g_1 = fun (v_d_0) => let v_y_2 = {s_book_3 = if v_d_0 > 0 then 'green else if b_OTHERWISE_4 then 'red else undefined} in v_y_2
+ f_g_1 = fun (v_d_0) => let v_y_2 = {s_book_3 = if v_d_0 > 0 then 'green else if otherwise then 'red else undefined} in v_y_2

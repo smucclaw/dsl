@@ -32,6 +32,11 @@ module LS.Renamer.Rules (
   Unique,
   mkSimpleOccName,
 
+  -- * Builtins
+  RnBuiltin (..),
+  isL4BuiltIn,
+  l4Builtins,
+
   -- * Pretty functions for types that do not have a canonical 'Pretty' unique
   prettyMT,
 ) where
@@ -43,6 +48,8 @@ import LS.Types qualified as LS
 
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.Generics (Generic)
@@ -140,11 +147,11 @@ data RnNameType
   | RnVariable
   | RnType
   | RnEnum
-  | RnBuiltin
   deriving (Eq, Ord, Show, Generic)
 
 data RnExpr
   = RnExprName RnName
+  | RnExprBuiltin RnBuiltin
   | RnExprLit RnLit
   deriving (Eq, Ord, Show, Generic)
 
@@ -175,6 +182,26 @@ mkSimpleOccName :: Text -> OccName
 mkSimpleOccName = NE.singleton . LS.MTT
 
 -- ----------------------------------------------------------------------------
+-- Builtins
+-- ----------------------------------------------------------------------------
+
+data RnBuiltin
+  = RnOtherwise
+  deriving (Eq, Ord, Show, Generic)
+
+isL4BuiltIn :: OccName -> Maybe RnBuiltin
+isL4BuiltIn name = Map.lookup name l4Builtins
+
+l4Builtins :: Map OccName RnBuiltin
+l4Builtins =
+  Map.fromList
+    [ (oTHERWISE, RnOtherwise)
+    ]
+
+oTHERWISE :: OccName
+oTHERWISE = mkSimpleOccName "OTHERWISE"
+
+-- ----------------------------------------------------------------------------
 -- Pretty instances
 -- ----------------------------------------------------------------------------
 
@@ -191,4 +218,3 @@ instance Pretty RnNameType where
     RnVariable -> "Variable"
     RnType -> "Type"
     RnEnum -> "Enum"
-    RnBuiltin -> "Builtin"

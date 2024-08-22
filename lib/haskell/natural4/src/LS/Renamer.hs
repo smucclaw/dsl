@@ -67,7 +67,6 @@ import Data.List qualified as List
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
@@ -715,12 +714,8 @@ renameMultiTermExpression tracer ctx = \case
         Nothing
           | Just literal <- isTextLiteral name ->
               pure (RnExprLit $ RnString literal, ctx')
-          | isL4BuiltIn name -> do
-              -- ANDRES: I'm not convinced that built-ins should be renamed, and
-              -- if we already detected that they're built-ins, perhaps we should
-              -- just use a different dedicated constructor for this case.
-              rnName <- RnExprName <$> rnL4Builtin tracer name
-              pure (rnName, ctx')
+          | Just builtin <- isL4BuiltIn (mkSimpleOccName name) -> do
+              pure (RnExprBuiltin builtin, ctx')
           | ctx.multiTermContextInSelector -> do
               rnName <- RnExprName <$> insertName tracer (mkSimpleOccName name) RnSelector
               pure (rnName, ctx')
@@ -753,23 +748,6 @@ renameMultiTermExpression tracer ctx = \case
     ('"', t') <- uncons t
     (t'', '"') <- unsnoc t'
     pure t''
-
--- ----------------------------------------------------------------------------
--- Builtins
--- ----------------------------------------------------------------------------
-
-isL4BuiltIn :: Text -> Bool
-isL4BuiltIn name = Set.member name (Set.fromList l4Builtins)
-
-rnL4Builtin :: Tracer Log -> Text -> Renamer RnName
-rnL4Builtin tracer name = do
-  lookupOrInsertName tracer (mkSimpleOccName name) RnBuiltin
-
-l4Builtins :: [Text]
-l4Builtins = [oTHERWISE]
-
-oTHERWISE :: Text
-oTHERWISE = "OTHERWISE"
 
 -- ----------------------------------------------------------------------------
 -- Typed Errors

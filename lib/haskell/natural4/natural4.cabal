@@ -44,6 +44,8 @@ library
       LS.PrettyPrinter.TypeSig
       LS.RelationalPredicates
       LS.Renamer
+      LS.Renamer.Rules
+      LS.Renamer.Scope
       LS.Rule
       LS.Tokens
       LS.TokenTable

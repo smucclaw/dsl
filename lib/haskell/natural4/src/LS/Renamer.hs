@@ -11,23 +11,6 @@
 {-# OPTIONS_GHC -Wall #-}
 
 module LS.Renamer (
-  -- * Renamed Rule types
-  RnRule (..),
-  RnHornlike (..),
-  RnTypeDecl (..),
-  RnHornClause (..),
-  RnTypedMulti (..),
-  RnMultiTerm,
-  RnExpr (..),
-  RnName (..),
-  RnNameType (..),
-  RnLit (..),
-  RnRelationalPredicate (..),
-  RnBoolStructR,
-  OccName,
-  Unique,
-  mkSimpleOccName,
-
   -- * Renamer Monad and runners
   RenamerResult (..),
   rnResultScope,
@@ -44,11 +27,7 @@ module LS.Renamer (
   AssertionError (..),
   renderRenamerError,
 
-  -- * Scope checking types
-  Scope (..),
-  emptyScope,
-  scScopeTable,
-  scUniqueSupply,
+  -- * Renamer functions for Scope
   newUnique,
   lookupName,
   lookupExistingName,
@@ -56,13 +35,6 @@ module LS.Renamer (
   insertName,
   insertFunction,
   lookupExistingFunction,
-  ScopeTable (..),
-  stVariables,
-  stFunction,
-  unionScopeTable,
-  differenceScopeTable,
-  emptyScopeTable,
-  FuncInfo (..),
 
   -- * Assertion helpers
   assertEmptyList,
@@ -77,9 +49,8 @@ module LS.Renamer (
 ) where
 
 import AnyAll.BoolStruct qualified as AA
-import LS.Rule (Rule, RuleLabel)
+import LS.Rule (Rule)
 import LS.Rule qualified as Rule
-import LS.Types (MyToken, RuleName, SrcRef)
 import LS.Types qualified as LS
 
 import Control.Monad.Error.Class as Error
@@ -95,7 +66,6 @@ import Data.Functor (void)
 import Data.List qualified as List
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
-import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -103,218 +73,75 @@ import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
 import Data.Text.Lazy.IO qualified as TL
 import Data.Tuple (Solo (MkSolo))
-import GHC.Generics (Generic)
 import LS.Log (traceWith)
 import LS.Log qualified as Log
 import Optics hiding (has)
 import Prettyprinter
 import Text.Pretty.Simple qualified as Pretty
 
+import LS.Renamer.Rules
+import LS.Renamer.Scope
+
+{--
+Renamer Phase:
+~~~~~~~~~~~~~~
+
+This module implements the 'Renamer' phase of the transformation pipeline from naturalL4 surface syntax
+to one of the many transpilation targets we support.
+The 'Renamer' phase resolves text fragments, or 'MTExpr', to resolved names that can be referred to
+across multiple rules.
+
+A resolved name is unique across all rules that are renamed in the same 'Renamer' phase. This makes sure that all names that occur
+in renamed rules can be trivially disambiguated, even if their original in-source name was ambiguous.
+Further, a resolved name is tagged with its occurrence name ('OccName') which is the exact fragment of how it appeared in the
+original sources. This can be used for better error messages or easier to understand transpilation results.
+At last, a resolved name is annotated with its "type" or "role", for example, whether it is a function, a record field, or simply a variable.
+
+The main entry point of the 'Renamer' phase is 'runRenamerFor', which hides all irrelevant implementation details and renames a collection
+of rules to their renamed corresponding structures.
+This operation may fail for various reasons, for example when a text fragment cannot be resolved because it wasn't defined it.
+
+Scope Checking:
+~~~~~~~~~~~~~~~
+
+To resolve a text fragment to a resolved name, the 'Renamer' phase implements lexical scope checking.
+This means we separate a rule into blocks of visibility or scopes. Sometimes, we refer to these blocks as clauses.
+For example, a `Hornlike` rule could looks like:
+
+@
+GIVEN x
+GIVETH y
+DECIDE y IS f x
+WHERE
+  f x IS x+x
+@
+
+There are four block here, introduced by `GIVEN`, `GIVETH`, `DECIDE` and `WHERE` respectively.
+The blocks `GIVEN` and `GIVETH` may introduce variables that are used in `DECIDE` or `WHERE` blocks.
+A `WHERE` block may introduce new variables that can be used in the `DECIDE` block or in the same `WHERE` block.
+However, names defined in `DECIDE` can not be used by any other block but are defined in the outer scope of the rule.
+In other words, while `GIVEN`, `GIVETH` and `WHERE` may introduce new names, they are all local to the `DECIDE` clause.
+Names introduced by these blocks may not leak outside of the rule definition.
+However, `DECIDE` blocks define names that can only be used outside of the current rule.
+
+This is what we call "lexical scope checking" in this module.
+Each rule may have a slightly different notion of blocks and lexical scopes.
+
+--}
+
 -- ----------------------------------------------------------------------------
--- Types specific to the renamer phase
+-- Top Level Definitions
 -- ----------------------------------------------------------------------------
 
--- | A rename rule is the same as a 'Rule' but names that occur in the rule
--- are resolved and renamed.
--- This aims to provide common ground for transpilers, s.t. a transpiler can
--- assume a name is already defined, and language ambiguities are resolved.
--- Further, this representation aims to be usable for typechecking.
-data RnRule
-  = Hornlike RnHornlike
-  | TypeDecl RnTypeDecl
-  deriving (Eq, Ord, Show, Generic)
-
-type RnBoolStructR = AA.OptionallyLabeledBoolStruct RnRelationalPredicate
-
--- | Corresponds to 'HornClause2', which is equivalent to @HornClause BoolStructR@.
+-- | Run the renamer phase for a collection of rules.
 --
--- We don't seem to require any parameterization.
-data RnHornClause = RnHornClause
-  { rnHcHead :: RnRelationalPredicate
-  , rnHcBody :: Maybe RnBoolStructR
-  }
-  deriving (Eq, Ord, Show, Generic)
-
-type RnRuleName = RnMultiTerm
-type RnEntityType = RnName
-
-data RnHornlike = RnHornlike
-  { name :: RnRuleName -- MyInstance
-  , super :: Maybe RnTypeSig -- IS A Superclass
-  , keyword :: MyToken -- decide / define / means
-  , given :: Maybe RnParamText -- a:Applicant, p:Person, l:Lender       -- the type signature of the input
-  , giveth :: Maybe RnParamText -- m:Amount,   mp:Principal, mi:Interest -- the type signature of the output
-  , upon :: Maybe RnParamText -- second request occurs
-  , clauses :: [RnHornClause] -- colour IS blue WHEN fee > $10 ; colour IS green WHEN fee > $20 AND approver IS happy
-  , rlabel :: Maybe RuleLabel
-  , lsource :: Maybe Text
-  , wwhere :: [RnRule]
-  , srcref :: Maybe SrcRef
-  , defaults :: [RnRelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-  , symtab :: [RnRelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-  }
-  deriving (Eq, Ord, Show, Generic)
-
-data RnTypeDecl = RnTypeDecl
-  { name :: RnRuleName -- MyInstance
-  , super :: Maybe RnTypeSig -- IS A Superclass
-  , has :: [RnRule] -- HAS foo :: List Hand, bar :: Optional Restaurant
-  , enums :: Maybe RnParamText -- ONE OF rock, paper, scissors (basically, disjoint subtypes)
-  , given :: Maybe RnParamText
-  , upon :: Maybe RnParamText
-  , rlabel :: Maybe RuleLabel
-  , lsource :: Maybe Text.Text
-  , srcref :: Maybe SrcRef
-  , defaults :: [RnRelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-  , symtab :: [RnRelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
-  }
-  deriving (Eq, Ord, Show, Generic)
-
-data RnTypeSig
-  = RnSimpleType LS.ParamType RnEntityType
-  | RnInlineEnum LS.ParamType RnParamText
-  deriving (Eq, Ord, Show, Generic)
-
-newtype RnParamText = RnParamText
-  { mkParamText :: NonEmpty RnTypedMulti
-  }
-  deriving (Eq, Ord, Show, Generic)
-
-data RnTypedMulti = RnTypedMulti
-  { rnTypedMultiExpr :: NonEmpty RnExpr
-  , rnTypedMultiTypeSig :: Maybe RnTypeSig
-  }
-  deriving (Eq, Ord, Show, Generic)
-
--- | A name is something that can be resolved as either a variable, function, or enum.
-data RnName = RnName
-  { rnOccName :: OccName
-  , rnUniqueId :: Unique
-  , rnNameType :: RnNameType
-  -- TODO: add the binding scope for scope checking
-  -- , rnBindingScope :: BindingScope
-  }
-  deriving (Eq, Ord, Show, Generic)
-
-data RnNameType
-  = RnSelector
-  | RnFunction
-  | RnVariable
-  | RnType
-  | RnEnum
-  | RnBuiltin
-  deriving (Eq, Ord, Show, Generic)
-
-data RnExpr
-  = RnExprName RnName
-  | RnExprLit RnLit
-  deriving (Eq, Ord, Show, Generic)
-
-data RnLit
-  = RnInt Integer
-  | RnDouble Double
-  | RnBool Bool
-  | RnString Text
-  deriving (Eq, Ord, Show, Generic)
-
-type RnMultiTerm = [RnExpr]
-
-data RnRelationalPredicate
-  = -- | Might be something like a record access.
-    RnRelationalTerm RnMultiTerm
-  | RnConstraint RnMultiTerm LS.RPRel RnMultiTerm
-  | RnBoolStructR RnMultiTerm LS.RPRel RnBoolStructR
-  | RnNary LS.RPRel [RnRelationalPredicate]
-  deriving (Eq, Ord, Show, Generic)
-
--- ----------------------------------------------------------------------------
--- Typed Errors
--- ----------------------------------------------------------------------------
-
-data RenamerError
-  = UnsupportedRule Text Rule
-  | UnsupportedRPParamText LS.ParamText
-  | UnsupportedUpon LS.ParamText
-  | UnknownMultiTerms LS.MultiTerm
-  | FixArityFunctionNotFound RnName [RnExpr]
-  | ArityErrorLeft !Int RnName [RnExpr]
-  | ArityErrorRight !Int RnName [RnExpr]
-  | UnexpectedNameNotFound OccName
-  | UnexpectedRnNameNotFound RnName
-  | InsertNameUnexpectedType RnNameType RnNameType
-  | LookupOrInsertNameUnexpectedType RnNameType RnNameType
-  | AssertErr AssertionError
-  deriving (Show, Eq, Ord)
-
--- | Validation Errors
-data AssertionError
-  = -- | List is expected to be empty, but it wasn't!
-    -- The 'Text' parameter is a textual representation of the list that not
-    -- empty! We could use existentials (and we used to), but that makes deriving
-    -- more difficult, so I opted to the simpler solution for now.
-    UnexpectedNonEmptyList Text.Text
-  | -- | List is expected to be singleton list, but it wasn't!
-    -- The 'Text' parameter is a textual representation of the list that not
-    -- empty! We could use existentials (and we used to), but that makes deriving
-    -- more difficult, so I opted to the simpler solution for now.
-    UnexpectedNonSingletonList Text.Text
-  | UnexpectedTypeSignature LS.TypedMulti
-  deriving (Show, Eq, Ord)
-
-renderRenamerError :: RenamerError -> Text.Text
-renderRenamerError = \case
-  UnsupportedRule herald r -> herald <> ": Unsupported rule: " <> Text.pack (show r)
-  UnsupportedRPParamText rp -> "Received 'RPParamText', we can't handle that yet. Got: " <> Text.pack (show rp)
-  UnsupportedUpon pText -> "Clause \"UPON\" is currently unsupported: " <> Text.pack (show pText)
-  UnknownMultiTerms mts -> "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> Text.pack (show mts)
-  FixArityFunctionNotFound name l ->
-    "Invariant violated, function " <> Text.pack (show name) <> " reported, but not found in " <> Text.pack (show l)
-  ArityErrorLeft expected name l ->
-    "Not enough elements in left hand side of function "
-      <> Text.pack (show name)
-      <> ". Required: "
-      <> Text.pack (show expected)
-      <> " but got: "
-      <> Text.pack (show (length l))
-      <> " ("
-      <> Text.pack (show l)
-      <> ")"
-  ArityErrorRight expected name l ->
-    "Not enough elements in right hand side of function "
-      <> Text.pack (show name)
-      <> ". Required: "
-      <> Text.pack (show expected)
-      <> " but got: "
-      <> Text.pack (show (length l))
-      <> " ("
-      <> Text.pack (show l)
-      <> ")"
-  -- Scope Error
-  UnexpectedNameNotFound occName ->
-    "Assumption violated, OccName not found: " <> Text.pack (show occName)
-  UnexpectedRnNameNotFound rnName ->
-    "Assumption violated, RnName not found: " <> Text.pack (show rnName)
-  InsertNameUnexpectedType expected actual ->
-    "Invariant violated, trying to insert an incorrect RnNameType for a resolved name. Got: "
-      <> Text.pack (show actual)
-      <> " but expected: "
-      <> Text.pack (show expected)
-  LookupOrInsertNameUnexpectedType expected actual ->
-    "Invariant violated, trying to insert or lookup an incorrect RnNameType for a resolved name. Got: "
-      <> Text.pack (show actual)
-      <> " but expected: "
-      <> Text.pack (show expected)
-  AssertErr err -> renderAssertionError err
-
-renderAssertionError :: AssertionError -> Text.Text
-renderAssertionError = \case
-  -- Validation Errrors
-  UnexpectedNonEmptyList xs ->
-    "Expected an empty list, but got: " <> xs
-  UnexpectedNonSingletonList xs ->
-    "Expected an singleton list, but got: " <> xs
-  UnexpectedTypeSignature tm ->
-    "Expected no type signature, but got: " <> Text.pack (show tm)
+-- This operation is solely in the `IO` monad due to the 'Tracer'.
+runRenamerFor :: (Traversable f) => Tracer Log -> f Rule -> IO (RenamerResult (f RnRule))
+runRenamerFor tracer rules = do
+  (resE, scope) <- State.runStateT (Except.runExceptT (runRenamer $ renameRules tracer rules)) emptyScope
+  pure $ case resE of
+    Left err -> RenamerFail err scope
+    Right rnRules -> RenamerSuccess rnRules scope
 
 -- ----------------------------------------------------------------------------
 -- Renamer Main Types.
@@ -342,266 +169,8 @@ rnResultScope (RenamerFail _ s) = s
 rnResultScope (RenamerSuccess _ s) = s
 
 -- ----------------------------------------------------------------------------
--- Log Messages
--- ----------------------------------------------------------------------------
-
-data Log
-  = LogNewRnName RnName
-  | LogNewFuncInfo RnName FuncInfo
-  | LogScopeTableForRule RuleName ScopeTable
-
-instance Pretty Log where
-  pretty = \case
-    LogNewRnName name ->
-      "Renamed name:"
-        <+> (prettyMultiTerm $ rnOccName name)
-        <+> "with id"
-        <+> pretty (rnUniqueId name)
-        <+> "with type"
-        <+> pretty (rnNameType name)
-    LogNewFuncInfo name funcInfo ->
-      "New Function Information for" <+> prettyMultiTerm (rnOccName name) <> ":" <+> pretty (_funcArity funcInfo)
-    LogScopeTableForRule name sc ->
-      "Renaming Rule with name"
-        <+> prettyMultiTerm name
-        <+> "with"
-        <+> pretty (Pretty.pShow sc)
-
-prettyMultiTerm :: (Traversable f) => f LS.MTExpr -> Doc ann
-prettyMultiTerm = list . Foldable.toList . fmap prettyMT
-
-prettyMT :: LS.MTExpr -> Doc ann
-prettyMT (LS.MTT t) = pretty t
-prettyMT (LS.MTI int) = pretty int
-prettyMT (LS.MTF float) = pretty float
-prettyMT (LS.MTB boolean) = pretty boolean
-
-instance Pretty RnNameType where
-  pretty = \case
-    RnSelector -> "Selector"
-    RnFunction -> "Function"
-    RnVariable -> "Variable"
-    RnType -> "Type"
-    RnEnum -> "Enum"
-    RnBuiltin -> "Builtin"
-
--- ----------------------------------------------------------------------------
--- Scope tables
--- ----------------------------------------------------------------------------
-
-type Unique = Int
-
--- | An unresolved name as it occurs in the original source.
-type OccName = NonEmpty LS.MTExpr
-
-mkSimpleOccName :: Text -> OccName
-mkSimpleOccName = NE.singleton . LS.MTT
-
-data FuncInfo = FuncInfo
-  { _funcArity :: (Int, Int)
-  -- ^ Arity of a function. The first component means how many parameters
-  -- are allowed before the function, the second component how many parameters
-  -- are allowed afterwards.
-  -- For example @(1, 1)@ is a simple infix function of the form @x f y@ where @f@
-  -- is the name of the function.
-  }
-  deriving (Eq, Ord, Show)
-
-data Scope = Scope
-  { _scScopeTable :: ScopeTable
-  , _scUniqueSupply :: Unique
-  -- ^ next unique value that we can use
-  }
-  deriving (Eq, Ord, Show)
-
--- | A 'ScopeTable' keeps tab on the variables and functions that occur in a
--- program.
---
--- Invariant:
---
--- Every name that gets resolved to an 'RnName' with 'RnNameType' being
--- 'RnFunction' should have additional 'FuncInfo' in '_stFunction'.
-data ScopeTable = ScopeTable
-  { _stVariables :: Map OccName RnName
-  -- ^ all names currently in scope
-  , _stFunction :: Map RnName FuncInfo
-  -- ^ additional information for resolved functions
-  }
-  deriving (Eq, Ord, Show)
-
-unionScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
-unionScopeTable tbl1 tbl2 =
-  ScopeTable
-    { _stVariables = Map.union tbl1._stVariables tbl2._stVariables
-    , _stFunction = Map.union tbl1._stFunction tbl2._stFunction
-    }
-
-differenceScopeTable :: ScopeTable -> ScopeTable -> ScopeTable
-differenceScopeTable tbl1 tbl2 =
-  ScopeTable
-    { _stVariables = Map.difference tbl1._stVariables tbl2._stVariables
-    , _stFunction = Map.difference tbl1._stFunction tbl2._stFunction
-    }
-
-emptyScopeTable :: ScopeTable
-emptyScopeTable =
-  ScopeTable
-    { _stVariables = Map.empty
-    , _stFunction = Map.empty
-    }
-
-makeFieldsNoPrefix 'Scope
-makeFieldsNoPrefix 'ScopeTable
-makeFieldsNoPrefix 'FuncInfo
-
-emptyScope :: Scope
-emptyScope =
-  Scope
-    { _scScopeTable = emptyScopeTable
-    , _scUniqueSupply = 0
-    }
-
-newUnique :: Renamer Unique
-newUnique = do
-  u <- use scUniqueSupply
-  modifying' scUniqueSupply (+ 1)
-  pure u
-
--- | Lookup the given name in the 'ScopeTable'.
-lookupName :: OccName -> Renamer (Maybe RnName)
-lookupName occName =
-  use (scScopeTable % stVariables % at occName)
-
--- | Look up the name associated with a given 'OccName' and assert it has
--- the correct 'RnNameType'.
---
--- This can be used when the 'OccName' *must* be present in the 'ScopeTable',
--- otherwise an assumption has been violated.
--- If the name cannot be found, or the name is not of the expected type, we
--- throw an exception.
-lookupExistingName :: OccName -> RnNameType -> Renamer RnName
-lookupExistingName occName nameType = do
-  mRnName <- lookupName occName
-  case mRnName of
-    Nothing -> throwError $ UnexpectedNameNotFound occName
-    Just name
-      | name.rnNameType == nameType -> pure name
-      | otherwise ->
-          throwError $ InsertNameUnexpectedType (rnNameType name) nameType
-
--- | Either inserts a new name of the given type, or checks that the name
--- is already in scope with the given type.
---
--- Fails if the name type does not match.
-lookupOrInsertName :: Tracer Log -> OccName -> RnNameType -> Renamer RnName
-lookupOrInsertName tracer occName nameType =
-  lookupName occName >>= \case
-    Nothing -> insertName tracer occName nameType
-    Just name
-      | rnNameType name == nameType -> pure name
-      | otherwise ->
-          throwError $ LookupOrInsertNameUnexpectedType (rnNameType name) nameType
-
--- | Insert an occurrence name into the current 'ScopeTable'.
--- The new 'OccName' will overwrite (shadow?) any existing names.
-insertName :: Tracer Log -> OccName -> RnNameType -> Renamer RnName
-insertName tracer occName nameType = do
-  n <- newUnique
-  let
-    rnName =
-      RnName
-        { rnUniqueId = n
-        , rnOccName = occName
-        , rnNameType = nameType
-        }
-  traceWith tracer $ LogNewRnName rnName
-  assign'
-    ( scScopeTable
-        % stVariables
-        % at occName
-    )
-    (Just rnName)
-  pure rnName
-
--- | Insert an function meta information into the current 'ScopeTable'.
-insertFunction :: Tracer Log -> RnName -> FuncInfo -> Renamer ()
-insertFunction tracer rnFnName funcInfo = do
-  traceWith tracer $ LogNewFuncInfo rnFnName funcInfo
-  assign'
-    ( scScopeTable
-        % stFunction
-        % at rnFnName
-    )
-    (Just funcInfo)
-
-lookupExistingFunction :: RnName -> Renamer FuncInfo
-lookupExistingFunction rnFnName = do
-  funcInfoM <- use (scScopeTable % stFunction % at rnFnName)
-  case funcInfoM of
-    Nothing -> throwError $ UnexpectedRnNameNotFound rnFnName
-    Just funcInfo -> pure funcInfo
-
--- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo's
--- were introduced during this action.
---
--- Note, this operation is rather expensive, so use it with caution!
-recordScopeTable :: Renamer a -> Renamer (a, ScopeTable)
-recordScopeTable act = do
-  orig <- use scScopeTable
-  a <- act
-  origWithNew <- use scScopeTable
-  pure (a, origWithNew `differenceScopeTable` orig)
-
-recordScopeTable_ :: Renamer a -> Renamer ScopeTable
-recordScopeTable_ = fmap snd . recordScopeTable
-
--- ----------------------------------------------------------------------------
--- Helper types for local context
--- ----------------------------------------------------------------------------
-
--- | Intermediate context when renaming a '[MultiTerm]'.
-data MultiTermContext = MultiTermContext
-  { _multiTermContextInSelector :: Bool
-  -- ^ Did the previous 'MultiTerm' introduce a selector chain?
-  -- A selector chain is introduced, if the multi term has a genitive suffix.
-  -- For example: @[MTT "book's", MTT "title"]@, when @"title"@ is renamed,
-  -- the 'multiTermContextInSelector' is set expected to be to 'True', so that
-  -- we can infer that @"title"@ is a 'RnSelector'.
-  , _multiTermContextFunctionCall :: Maybe RnName
-  -- ^ While renaming a 'MultiTerm', did we encounter a function application?
-  -- If so, we want to fix the call convention from infix/postfix to prefix!
-  }
-
-makeFields 'MultiTermContext
-
-inSelectorContext :: MultiTermContext -> MultiTermContext
-inSelectorContext mtc = mtc & inSelector .~ True
-
-notInSelectorContext :: MultiTermContext -> MultiTermContext
-notInSelectorContext mtc = mtc & inSelector .~ False
-
--- ----------------------------------------------------------------------------
--- Top Level Definitions
--- ----------------------------------------------------------------------------
-
-renameRuleTopLevel :: Rule -> IO ()
-renameRuleTopLevel rule = do
-  TL.putStrLn $ Pretty.pShow rule
-  renamerResult <- runRenamerFor (liftRenamerTracer Log.prettyTracer) (MkSolo rule)
-  TL.putStrLn $ Pretty.pShow $ rnResultScope renamerResult
-  case renamerResult of
-    RenamerFail err _ -> Text.putStrLn $ renderRenamerError err
-    RenamerSuccess (MkSolo rnRules) _ -> TL.putStrLn $ Pretty.pShow rnRules
-
-runRenamerFor :: (Traversable f) => Tracer Log -> f Rule -> IO (RenamerResult (f RnRule))
-runRenamerFor tracer rules = do
-  (resE, scope) <- State.runStateT (Except.runExceptT (runRenamer $ renameRules tracer rules)) emptyScope
-  pure $ case resE of
-    Left err -> RenamerFail err scope
-    Right rnRules -> RenamerSuccess rnRules scope
-
--- ----------------------------------------------------------------------------
--- Resolve functions and their respective arities
+-- Scan the rule structure and look for names that might influence the renaming
+-- of other rules, such as global variables and function definitions.
 -- ----------------------------------------------------------------------------
 
 -- | Scan the structure of 'Rule' to find declarations that affect other rules.
@@ -689,7 +258,7 @@ scanDecideHeadClause tracer = \case
 -- Additionally, we recognize the following forms:
 --
 -- * @f's x's y's z@: An attribute path from variable @f@ to something that has a @z@ attribute.
--- * @x@: a variable, might be bound ad-hoc
+-- * @x@: a variable, might be bound ad-hoc. In this context, ad-hoc means without prior declaration.
 --
 -- Note, this doesn't accept literals such as '42' or '3.5f' or True or False.
 scanDecideMultiTerm :: Tracer Log -> LS.MultiTerm -> Renamer ()
@@ -830,7 +399,7 @@ scanGivenInlineEnumParamText tracer params = do
 
   traverse_ scanEach params
 
-scanTypeDeclName :: Tracer Log -> RuleName -> Renamer ()
+scanTypeDeclName :: Tracer Log -> LS.RuleName -> Renamer ()
 scanTypeDeclName tracer mtexprs = do
   mt <- assertSingletonMultiTerm mtexprs
   void $ insertName tracer (NE.singleton mt) RnType
@@ -935,7 +504,7 @@ renameRule _ r@Rule.NotARule{} = throwError $ UnsupportedRule "renameRule" r
 renameLocalRules :: Tracer Log -> [Rule] -> Renamer [RnRule]
 renameLocalRules = renameRules
 
-renameTypeDeclName :: RuleName -> Renamer RnRuleName
+renameTypeDeclName :: LS.RuleName -> Renamer RnRuleName
 renameTypeDeclName mtexprs = do
   mt <- assertSingletonMultiTerm mtexprs
   rnTyName <- lookupExistingName (NE.singleton mt) RnType
@@ -1083,7 +652,7 @@ renameMultiTerm tracer multiTerms = do
     rnMultiTerms = reverse reversedRnMultiTerms
   fixFixity ctx rnMultiTerms
  where
-  fixFixity ctx rnMultiTerms = case ctx ^. functionCall of
+  fixFixity ctx rnMultiTerms = case ctx.multiTermContextFunctionCall of
     Nothing -> pure rnMultiTerms
     Just fnName -> do
       funcInfo <- lookupExistingFunction fnName
@@ -1116,8 +685,8 @@ renameMultiTerm tracer multiTerms = do
 
   initialMultiTermContext =
     MultiTermContext
-      { _multiTermContextInSelector = False
-      , _multiTermContextFunctionCall = Nothing
+      { multiTermContextInSelector = False
+      , multiTermContextFunctionCall = Nothing
       }
 
 -- | Rename a single 'LS.MTExpr' to a 'RnExpr'.
@@ -1140,7 +709,7 @@ renameMultiTermExpression tracer ctx = \case
           let
             ctx'' =
               if rnName.rnNameType == RnFunction
-                then ctx' & functionCall ?~ rnName
+                then setMultiTermContextFunctionCall rnName ctx'
                 else ctx'
           pure (RnExprName rnName, ctx'')
         Nothing
@@ -1152,7 +721,7 @@ renameMultiTermExpression tracer ctx = \case
               -- just use a different dedicated constructor for this case.
               rnName <- RnExprName <$> rnL4Builtin tracer name
               pure (rnName, ctx')
-          | ctx ^. inSelector -> do
+          | ctx.multiTermContextInSelector -> do
               rnName <- RnExprName <$> insertName tracer (mkSimpleOccName name) RnSelector
               pure (rnName, ctx')
           | otherwise -> do
@@ -1201,6 +770,248 @@ l4Builtins = [oTHERWISE]
 
 oTHERWISE :: Text
 oTHERWISE = "OTHERWISE"
+
+-- ----------------------------------------------------------------------------
+-- Typed Errors
+-- ----------------------------------------------------------------------------
+
+data RenamerError
+  = UnsupportedRule Text Rule
+  | UnsupportedRPParamText LS.ParamText
+  | UnsupportedUpon LS.ParamText
+  | UnknownMultiTerms LS.MultiTerm
+  | FixArityFunctionNotFound RnName [RnExpr]
+  | ArityErrorLeft !Int RnName [RnExpr]
+  | ArityErrorRight !Int RnName [RnExpr]
+  | UnexpectedNameNotFound OccName
+  | UnexpectedRnNameNotFound RnName
+  | InsertNameUnexpectedType RnNameType RnNameType
+  | LookupOrInsertNameUnexpectedType RnNameType RnNameType
+  | AssertErr AssertionError
+  deriving (Show, Eq, Ord)
+
+-- | Validation Errors
+data AssertionError
+  = -- | List is expected to be empty, but it wasn't!
+    -- The 'Text' parameter is a textual representation of the list that not
+    -- empty! We could use existentials (and we used to), but that makes deriving
+    -- more difficult, so I opted to the simpler solution for now.
+    UnexpectedNonEmptyList Text.Text
+  | -- | List is expected to be singleton list, but it wasn't!
+    -- The 'Text' parameter is a textual representation of the list that not
+    -- empty! We could use existentials (and we used to), but that makes deriving
+    -- more difficult, so I opted to the simpler solution for now.
+    UnexpectedNonSingletonList Text.Text
+  | UnexpectedTypeSignature LS.TypedMulti
+  deriving (Show, Eq, Ord)
+
+renderRenamerError :: RenamerError -> Text.Text
+renderRenamerError = \case
+  UnsupportedRule herald r -> herald <> ": Unsupported rule: " <> Text.pack (show r)
+  UnsupportedRPParamText rp -> "Received 'RPParamText', we can't handle that yet. Got: " <> Text.pack (show rp)
+  UnsupportedUpon pText -> "Clause \"UPON\" is currently unsupported: " <> Text.pack (show pText)
+  UnknownMultiTerms mts -> "While scanning a multi term in a top-level DECIDE clause, we encountered an unsupported pattern: " <> Text.pack (show mts)
+  FixArityFunctionNotFound name l ->
+    "Invariant violated, function " <> Text.pack (show name) <> " reported, but not found in " <> Text.pack (show l)
+  ArityErrorLeft expected name l ->
+    "Not enough elements in left hand side of function "
+      <> Text.pack (show name)
+      <> ". Required: "
+      <> Text.pack (show expected)
+      <> " but got: "
+      <> Text.pack (show (length l))
+      <> " ("
+      <> Text.pack (show l)
+      <> ")"
+  ArityErrorRight expected name l ->
+    "Not enough elements in right hand side of function "
+      <> Text.pack (show name)
+      <> ". Required: "
+      <> Text.pack (show expected)
+      <> " but got: "
+      <> Text.pack (show (length l))
+      <> " ("
+      <> Text.pack (show l)
+      <> ")"
+  -- Scope Error
+  UnexpectedNameNotFound occName ->
+    "Assumption violated, OccName not found: " <> Text.pack (show occName)
+  UnexpectedRnNameNotFound rnName ->
+    "Assumption violated, RnName not found: " <> Text.pack (show rnName)
+  InsertNameUnexpectedType expected actual ->
+    "Invariant violated, trying to insert an incorrect RnNameType for a resolved name. Got: "
+      <> Text.pack (show actual)
+      <> " but expected: "
+      <> Text.pack (show expected)
+  LookupOrInsertNameUnexpectedType expected actual ->
+    "Invariant violated, trying to insert or lookup an incorrect RnNameType for a resolved name. Got: "
+      <> Text.pack (show actual)
+      <> " but expected: "
+      <> Text.pack (show expected)
+  AssertErr err -> renderAssertionError err
+
+renderAssertionError :: AssertionError -> Text.Text
+renderAssertionError = \case
+  -- Validation Errrors
+  UnexpectedNonEmptyList xs ->
+    "Expected an empty list, but got: " <> xs
+  UnexpectedNonSingletonList xs ->
+    "Expected an singleton list, but got: " <> xs
+  UnexpectedTypeSignature tm ->
+    "Expected no type signature, but got: " <> Text.pack (show tm)
+
+-- ----------------------------------------------------------------------------
+-- Log Messages
+-- ----------------------------------------------------------------------------
+
+data Log
+  = LogNewRnName RnName
+  | LogNewFuncInfo RnName FuncInfo
+  | LogScopeTableForRule LS.RuleName ScopeTable
+
+instance Pretty Log where
+  pretty = \case
+    LogNewRnName name ->
+      "Renamed name:"
+        <+> (prettyMultiTerm $ rnOccName name)
+        <+> "with id"
+        <+> pretty (rnUniqueId name)
+        <+> "with type"
+        <+> pretty (rnNameType name)
+    LogNewFuncInfo name funcInfo ->
+      "New Function Information for" <+> prettyMultiTerm (rnOccName name) <> ":" <+> pretty (_funcArity funcInfo)
+    LogScopeTableForRule name sc ->
+      "Renaming Rule with name"
+        <+> prettyMultiTerm name
+        <+> "with"
+        <+> pretty (Pretty.pShow sc)
+
+prettyMultiTerm :: (Traversable f) => f LS.MTExpr -> Doc ann
+prettyMultiTerm = list . Foldable.toList . fmap prettyMT
+
+-- ----------------------------------------------------------------------------
+-- Scope tables
+-- ----------------------------------------------------------------------------
+
+newUnique :: Renamer Unique
+newUnique = do
+  u <- use scUniqueSupply
+  modifying' scUniqueSupply (+ 1)
+  pure u
+
+-- | Lookup the given name in the 'ScopeTable'.
+lookupName :: OccName -> Renamer (Maybe RnName)
+lookupName occName =
+  use (scScopeTable % stVariables % at occName)
+
+-- | Look up the name associated with a given 'OccName' and assert it has
+-- the correct 'RnNameType'.
+--
+-- This can be used when the 'OccName' *must* be present in the 'ScopeTable',
+-- otherwise an assumption has been violated.
+-- If the name cannot be found, or the name is not of the expected type, we
+-- throw an exception.
+lookupExistingName :: OccName -> RnNameType -> Renamer RnName
+lookupExistingName occName nameType = do
+  mRnName <- lookupName occName
+  case mRnName of
+    Nothing -> throwError $ UnexpectedNameNotFound occName
+    Just name
+      | name.rnNameType == nameType -> pure name
+      | otherwise ->
+          throwError $ InsertNameUnexpectedType (rnNameType name) nameType
+
+-- | Either inserts a new name of the given type, or checks that the name
+-- is already in scope with the given type.
+--
+-- Fails if the name type does not match.
+lookupOrInsertName :: Tracer Log -> OccName -> RnNameType -> Renamer RnName
+lookupOrInsertName tracer occName nameType =
+  lookupName occName >>= \case
+    Nothing -> insertName tracer occName nameType
+    Just name
+      | rnNameType name == nameType -> pure name
+      | otherwise ->
+          throwError $ LookupOrInsertNameUnexpectedType (rnNameType name) nameType
+
+-- | Insert an occurrence name into the current 'ScopeTable'.
+-- The new 'OccName' will overwrite (shadow?) any existing names.
+insertName :: Tracer Log -> OccName -> RnNameType -> Renamer RnName
+insertName tracer occName nameType = do
+  n <- newUnique
+  let
+    rnName =
+      RnName
+        { rnUniqueId = n
+        , rnOccName = occName
+        , rnNameType = nameType
+        }
+  traceWith tracer $ LogNewRnName rnName
+  assign'
+    ( scScopeTable
+        % stVariables
+        % at occName
+    )
+    (Just rnName)
+  pure rnName
+
+-- | Insert an function meta information into the current 'ScopeTable'.
+insertFunction :: Tracer Log -> RnName -> FuncInfo -> Renamer ()
+insertFunction tracer rnFnName funcInfo = do
+  traceWith tracer $ LogNewFuncInfo rnFnName funcInfo
+  assign'
+    ( scScopeTable
+        % stFunction
+        % at rnFnName
+    )
+    (Just funcInfo)
+
+lookupExistingFunction :: RnName -> Renamer FuncInfo
+lookupExistingFunction rnFnName = do
+  funcInfoM <- use (scScopeTable % stFunction % at rnFnName)
+  case funcInfoM of
+    Nothing -> throwError $ UnexpectedRnNameNotFound rnFnName
+    Just funcInfo -> pure funcInfo
+
+-- | Execute a 'Renamer' action, but record which 'RnName's and 'FuncInfo's
+-- were introduced during this action.
+--
+-- Note, this operation is rather expensive, so use it with caution!
+recordScopeTable :: Renamer a -> Renamer (a, ScopeTable)
+recordScopeTable act = do
+  orig <- use scScopeTable
+  a <- act
+  origWithNew <- use scScopeTable
+  pure (a, origWithNew `differenceScopeTable` orig)
+
+recordScopeTable_ :: Renamer a -> Renamer ScopeTable
+recordScopeTable_ = fmap snd . recordScopeTable
+
+-- ----------------------------------------------------------------------------
+-- Helper types for local context
+-- ----------------------------------------------------------------------------
+
+-- | Intermediate context when renaming a '[MultiTerm]'.
+data MultiTermContext = MultiTermContext
+  { multiTermContextInSelector :: Bool
+  -- ^ Did the previous 'MultiTerm' introduce a selector chain?
+  -- A selector chain is introduced, if the multi term has a genitive suffix.
+  -- For example: @[MTT "book's", MTT "title"]@, when @"title"@ is renamed,
+  -- the 'multiTermContextInSelector' is set expected to be to 'True', so that
+  -- we can infer that @"title"@ is a 'RnSelector'.
+  , multiTermContextFunctionCall :: Maybe RnName
+  -- ^ While renaming a 'MultiTerm', did we encounter a function application?
+  -- If so, we want to fix the call convention from infix/postfix to prefix!
+  }
+
+inSelectorContext :: MultiTermContext -> MultiTermContext
+inSelectorContext mtc = mtc{multiTermContextInSelector = True}
+
+notInSelectorContext :: MultiTermContext -> MultiTermContext
+notInSelectorContext mtc = mtc{multiTermContextInSelector = False}
+
+setMultiTermContextFunctionCall :: RnName -> MultiTermContext -> MultiTermContext
+setMultiTermContextFunctionCall name mtc = mtc{multiTermContextFunctionCall = Just name}
 
 -- ----------------------------------------------------------------------------
 -- Assertions and helpers.
@@ -1293,3 +1104,16 @@ safeSplitAt i as =
   go 0 xs lhs = Just (lhs, xs)
   go _n [] _lhs = Nothing
   go n (x : xs) lhs = go (n - 1) xs (x : lhs)
+
+-- ----------------------------------------------------------------------------
+-- Debugging helper
+-- ----------------------------------------------------------------------------
+
+renameRuleTopLevel :: Rule -> IO ()
+renameRuleTopLevel rule = do
+  TL.putStrLn $ Pretty.pShow rule
+  renamerResult <- runRenamerFor (liftRenamerTracer Log.prettyTracer) (MkSolo rule)
+  TL.putStrLn $ Pretty.pShow $ rnResultScope renamerResult
+  case renamerResult of
+    RenamerFail err _ -> Text.putStrLn $ renderRenamerError err
+    RenamerSuccess (MkSolo rnRules) _ -> TL.putStrLn $ Pretty.pShow rnRules

@@ -125,6 +125,7 @@ import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
 import qualified LS.Renamer as Renamer
+import LS.Renamer.Rules (RnRule)
 
 --
 -- Command-line options parsing
@@ -658,7 +659,7 @@ withNLGData k ds =
     Nothing  -> pure (Skipped "skipping transpiler due to lacking NLG environment")
     Just env -> k env ds
 
-withRnRules :: ([Renamer.RnRule] -> (TranspilationResult a)) -> DriverState -> (TranspilationResult a)
+withRnRules :: ([RnRule] -> (TranspilationResult a)) -> DriverState -> (TranspilationResult a)
 withRnRules k ds = case ds.interpreted.renamedRules of
   Renamer.RenamerFail errMsg _scope -> Skipped $ "Failed to rename rules: " <> errorToString errMsg
   Renamer.RenamerSuccess rnRules _scope -> k rnRules

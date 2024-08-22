@@ -35,6 +35,7 @@ import LS.Log qualified as Log
 import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
+import LS.Renamer.Rules
 
 -- | A @'SimalaTerm'@ is like a 'Simala.Expr' but in an unsaturated form.
 -- By "unsaturated", we mean that there might be holes in the expression that

@@ -2,6 +2,7 @@ packages:
   ./natural4
   ./anyall
   ./explainable
+  ./web-service
 
 -- Environment files are required to run the doctests via `cabal test doctests`
 write-ghc-environment-files: always

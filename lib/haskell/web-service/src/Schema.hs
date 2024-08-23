@@ -6,8 +6,6 @@
 module Schema (
   serverOpenApi,
   ServerName,
-  -- * Tests
-  runJsonTests,
 ) where
 
 --
@@ -23,11 +21,6 @@ import GHC.TypeLits
 import Servant
 import Servant.OpenApi
 import Server hiding (description, name)
-import Test.Hspec (hspec)
-import Test.QuickCheck (Arbitrary (..), oneof)
-import Test.QuickCheck.Gen qualified as Q
-import Test.QuickCheck.Instances ()
-
 type ServerName = Text.Text
 
 serverOpenApi :: Maybe ServerName -> OpenApi
@@ -73,12 +66,12 @@ instance ToSchema SimpleFunction where
 instance ToSchema SimpleResponse
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON ResponseWithReason' instance yet.
-instance ToSchema ResponseWithReason
+-- 'ToJSON SimpleResponse' instance yet.
+instance ToSchema EvaluatorError
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON MathLangException' instance yet.
-instance ToSchema MathLangException
+-- 'ToJSON ResponseWithReason' instance yet.
+instance ToSchema ResponseWithReason
 
 -- This is correct, since we don't overwrite the
 -- 'ToJSON Reasoning' instance yet.
@@ -87,13 +80,13 @@ instance ToSchema Reasoning
 -- This is correct, since we don't overwrite the
 -- 'ToJSON ReasoningTree' instance yet.
 instance ToSchema ReasoningTree where
-  declareNamedSchema p = do
-    defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
-    pure $ defSchema
-      & schema.required .~
-        [ "reasoningNodeExampleCode"
-        , "reasoningNodeExplanation"
-        ]
+  -- declareNamedSchema p = do
+  --   defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
+  --   pure $ defSchema
+  --     & schema.required .~
+  --       [ "reasoningNodeExampleCode"
+  --       , "reasoningNodeExplanation"
+  --       ]
 
 instance ToSchema Function where
   declareNamedSchema _ = do
@@ -165,68 +158,3 @@ instance ToParamSchema FunctionParam where
     & example ?~ Aeson.String "true"
     & description ?~ "A Function parameter which can be either 'true' or 'false', or a floating point number. Additionally accepts 'yes' and 'no' as synonyms for 'true' and 'false' respectively."
 
--- ----------------------------------------------------------------------------
--- Arbitrary instances that allow us to verify that the JSON
--- instances and OpenAPI documentation agree on the schema.
--- ----------------------------------------------------------------------------
-
-instance Arbitrary Reasoning where
-  arbitrary = Reasoning <$> arbitrary
-
-{- | The code for this instance is taken from 'Arbitrary1 containers-Data.Tree.Tree'.
-See https://hackage.haskell.org/package/QuickCheck-2.15.0.1/docs/src/Test.QuickCheck.Arbitrary.html#line-901
--}
-instance Arbitrary ReasoningTree where
-  arbitrary = Q.sized $ \n -> do
-    k <- Q.chooseInt (0, n)
-    go k
-   where
-    go n = do
-      -- n is the size of the trees.
-      reasoningTrace <- arbitrary
-      reasoningExample <- arbitrary
-      pars <- arbPartition (n - 1) -- can go negative!
-      forest <- mapM go pars
-      return $
-        ReasoningTree
-          { reasoningNodeExampleCode = reasoningExample
-          , reasoningNodeExplanation = reasoningTrace
-          , reasoningNodeChildren = forest
-          }
-
-    arbPartition :: Int -> Q.Gen [Int]
-    arbPartition k = case compare k 1 of
-      LT -> pure []
-      EQ -> pure [1]
-      GT -> do
-        first <- Q.chooseInt (1, k)
-        rest <- arbPartition $ k - first
-        Q.shuffle (first : rest)
-
-instance Arbitrary ResponseWithReason where
-  arbitrary = ResponseWithReason <$> arbitrary <*> arbitrary
-
-instance Arbitrary MathLangException where
-  arbitrary = MathLangException <$> arbitrary
-
-instance Arbitrary SimpleResponse where
-  arbitrary =
-    oneof
-      [ Server.SimpleResponse <$> arbitrary
-      , Server.SimpleError <$> arbitrary
-      ]
-
-instance Arbitrary Parameters where
-  arbitrary = Server.Parameters <$> arbitrary
-
-instance Arbitrary Parameter where
-  arbitrary = Server.Parameter <$> arbitrary <*> arbitrary <*> arbitrary
-
-instance Arbitrary Function where
-  arbitrary = Server.Function <$> arbitrary <*> arbitrary <*> arbitrary
-
-instance Arbitrary SimpleFunction where
-  arbitrary = Server.SimpleFunction <$> arbitrary <*> arbitrary
-
-runJsonTests :: IO ()
-runJsonTests = hspec (validateEveryToJSON $ Proxy @Api)

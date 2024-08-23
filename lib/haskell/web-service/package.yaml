@@ -1,13 +1,12 @@
-name:                explainable
+name:                web-service
 version:             0.1.0.0
-github:              "githubuser/explainable"
+github:              "githubuser/web-service"
 license:             BSD3
 author:              "Author name here"
 maintainer:          "example@example.com"
 copyright:           "2023 Author name here"
 
 extra-source-files:
-- README.org
 - CHANGELOG.md
 
 # Metadata used when publishing your package
@@ -17,7 +16,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/explainable#readme>
+description:         Please see the README on GitHub at <https://github.com/githubuser/web-service#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -26,19 +25,27 @@ dependencies:
 - unordered-containers
 - transformers
 - mtl
-- megaparsec
-- parsec
-- parser-combinators
-- boxes
 - prettyprinter
 - text
-- prettyprinter-interp
-- fgl
-- graphviz
 - effectful
 - string-interpolate
 - numeric-extras
-- pcre-heavy
+- explainable
+- servant
+- servant-server
+- servant-openapi3
+- servant-swagger-ui
+- openapi3
+- warp
+- wai
+- wai-logger
+- directory
+- filepath
+- lens
+- optics-core
+- optics
+- optparse-applicative
+- scientific
 
 language: GHC2021
 
@@ -56,8 +63,19 @@ ghc-options:
 library:
   source-dirs: src
 
+executables:
+  web-service-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - web-service
+
 tests:
-  explainable-test:
+  web-service-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -66,5 +84,7 @@ tests:
     - -with-rtsopts=-N
     build-tools: hspec-discover:hspec-discover
     dependencies:
-    - explainable
+    - web-service
     - hspec
+    - QuickCheck
+    - quickcheck-instances

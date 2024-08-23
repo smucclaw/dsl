@@ -30,7 +30,7 @@ module Server (
   Reasoning (..),
   ReasoningTree (..),
   ResponseWithReason (..),
-  MathLangException (..),
+  EvaluatorError (..),
   FunctionParam (..),
 ) where
 
@@ -55,6 +55,7 @@ import System.Timeout (timeout)
 import Control.Exception (try)
 import Explainable (XP)
 import Explainable.MathLang
+import Backend.Error
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -140,21 +141,10 @@ data SingleFunctionApi' mode = SingleFunctionApi
 
 data SimpleResponse
   = SimpleResponse ResponseWithReason
-  | SimpleError MathLangException
+  | SimpleError EvaluatorError
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-{- | A MathLangException is some form of panic thrown by 'MathLang'.
-The execution of a function had to be interrupted for /some/ reason.
-Such an exception is unrecoverable.
-The error message may contain hints of what might have gone wrong.
--}
-newtype MathLangException = MathLangException
-  { getMathLangException :: Text.Text
-  -- ^ Error message of a fatal math lang execution exception.
-  }
-  deriving (Show, Read, Ord, Eq, Generic)
-  deriving anyclass (FromJSON, ToJSON)
 
 data ResponseWithReason = ResponseWithReason
   { responseValue :: Double
@@ -445,7 +435,7 @@ runFunction s scenario = do
   executionResult <- liftIO $ try (xplainF () s scenario)
   case executionResult of
     Left (e :: IOError) -> do
-      pure $ SimpleError $ MathLangException $ Text.pack $ show e
+      pure $ SimpleError $ EvaluatorError $ Text.pack $ show e
     Right (res, xp, _, _) -> do
       pure $ SimpleResponse $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
 

@@ -1,2 +1,0 @@
-module LS.Logger where
-

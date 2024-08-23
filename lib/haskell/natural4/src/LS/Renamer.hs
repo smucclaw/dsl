@@ -1018,7 +1018,7 @@ assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList (Text.pack 
 
 -- ----------------------------------------------------------------------------
 -- Helper utils non specific to the renamer.
--- Should be moved out into a general purpose function.
+-- Should be moved out into a general purpose module.
 -- ----------------------------------------------------------------------------
 
 -- | Given a 'LS.MultiTerm', check whether it has the form of an attribute

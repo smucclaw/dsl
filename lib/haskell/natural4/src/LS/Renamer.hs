@@ -555,7 +555,7 @@ renameTypeSignature sig = case sig of
     pure $ RnSimpleType pType rnEntityType
   LS.InlineEnum pType paramText -> do
     -- TODO: error handling, would we accept an enum such as `a IS ONE OF 1, 2, 3`?
-    -- Only if we treat them as text, which might be confusing, as user might infer
+    -- Only if we treat them as text, which might be confusing, as the user might infer
     -- this to be some kind of type checked number type.
     rnParamText <- renameGivenInlineEnumParamText paramText
     pure $ RnInlineEnum pType rnParamText
@@ -653,6 +653,20 @@ renameMultiTerm tracer multiTerms = do
     rnMultiTerms = reverse reversedRnMultiTerms
   fixFixity ctx rnMultiTerms
  where
+  -- Fixing the arity of a function requires us rewrite infix and postfix
+  -- notation to a prefix notation.
+  --
+  -- To rewrite a function application, we first gather the 'FuncInfo' to
+  -- find the declared arity of the function. Say the arity of the function @f@ is
+  -- given by the tuple @(p, q)@ where @p@ is the number of arguments before the
+  -- function name and @q@ is the number of arguments after the function name.
+  -- This captures functions applied in prefix, infix and postfix notation.
+  -- Then, we find the index of the function name as it occurs in the 'LS.MultiTerm'
+  -- and take @p@ elements from the back of the list of @[LS.MTExpr]@ that occur before
+  -- the function, which we name @ps@, and take @q@ elements from the list of
+  -- @[LS.MTExpr]@ that occur after the function name, called @qs@.
+  --
+  -- Finally, we replace the function application by @[f] ++ ps ++ qs@.
   fixFixity ctx rnMultiTerms = case ctx.multiTermContextFunctionCall of
     Nothing -> pure rnMultiTerms
     Just fnName -> do
@@ -669,7 +683,6 @@ renameMultiTerm tracer multiTerms = do
       (preArgs, postArgsWithName) = List.break (== (RnExprName fnName)) rnMultiTerms
     case postArgsWithName of
       [] -> throwError $ FixArityFunctionNotFound fnName rnMultiTerms
-      -- throwError "fixFixity: Invariant violated, function name reported, but none found."
       (fnExpr : postArgs) -> pure (preArgs, fnExpr, postArgs)
 
   processLhs name n lhs = do
@@ -873,6 +886,8 @@ prettyMultiTerm = list . Foldable.toList . fmap prettyMT
 -- Scope tables
 -- ----------------------------------------------------------------------------
 
+-- | Produce the next 'Unique' value that can be used disambiguate a resolved
+-- name.
 newUnique :: Renamer Unique
 newUnique = do
   u <- use scUniqueSupply
@@ -936,6 +951,7 @@ insertName tracer occName nameType = do
   pure rnName
 
 -- | Insert an function meta information into the current 'ScopeTable'.
+-- Overwrites existing 'FuncInfo' for the given name.
 insertFunction :: Tracer Log -> RnName -> FuncInfo -> Renamer ()
 insertFunction tracer rnFnName funcInfo = do
   traceWith tracer $ LogNewFuncInfo rnFnName funcInfo
@@ -946,6 +962,9 @@ insertFunction tracer rnFnName funcInfo = do
     )
     (Just funcInfo)
 
+-- | Lookup 'FuncInfo' for a resolved Name.
+-- Due to invariants of 'ScopeTable', this operation should never fail.
+-- However, if the invariant is violated, we throw an error.
 lookupExistingFunction :: RnName -> Renamer FuncInfo
 lookupExistingFunction rnFnName = do
   funcInfoM <- use (scScopeTable % stFunction % at rnFnName)
@@ -959,10 +978,11 @@ lookupExistingFunction rnFnName = do
 -- Note, this operation is rather expensive, so use it with caution!
 recordScopeTable :: Renamer a -> Renamer (a, ScopeTable)
 recordScopeTable act = do
-  orig <- use scScopeTable
+  prevUnique <- use scUniqueSupply
   a <- act
-  origWithNew <- use scScopeTable
-  pure (a, origWithNew `differenceScopeTable` orig)
+  scTable <- use scScopeTable
+  let scTableWithNewNames = filterScopeTable (\_ name -> name.rnUniqueId >= prevUnique) scTable
+  pure (a, scTableWithNewNames)
 
 recordScopeTable_ :: Renamer a -> Renamer ScopeTable
 recordScopeTable_ = fmap snd . recordScopeTable
@@ -977,7 +997,7 @@ data MultiTermContext = MultiTermContext
   -- ^ Did the previous 'MultiTerm' introduce a selector chain?
   -- A selector chain is introduced, if the multi term has a genitive suffix.
   -- For example: @[MTT "book's", MTT "title"]@, when @"title"@ is renamed,
-  -- the 'multiTermContextInSelector' is set expected to be to 'True', so that
+  -- the 'multiTermContextInSelector' is expected to be set to 'True', so that
   -- we can infer that @"title"@ is a 'RnSelector'.
   , multiTermContextFunctionCall :: Maybe RnName
   -- ^ While renaming a 'MultiTerm', did we encounter a function application?
@@ -1011,7 +1031,7 @@ assertNoTypeSignature (mtt, Nothing) = do
 
 -- | If we can't handle renaming certain list of things, we just hope that
 -- the parser doesn't give us a list with any elements.
--- We throwError if the list is not @'null'@.
+-- We throw an error if the list is not empty.
 assertEmptyList :: (Show a) => [a] -> Renamer [b]
 assertEmptyList [] = pure []
 assertEmptyList xs = throwError $ AssertErr $ UnexpectedNonEmptyList (Text.pack $ show xs)

@@ -27,6 +27,11 @@ source-repository-package
   location: https://github.com/anka-213/haskell-wordnet
   tag: a6d675bcbe1585fc652f95f60e0dec826a660646
 
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/simala
+  tag: 85afeb86678a65d48bfac2bbb90306693d51582e
+
 allow-newer:
   compact:*,
   udpipe-hs:base,

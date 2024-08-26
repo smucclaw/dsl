@@ -34,6 +34,7 @@ library
       LS.Error
       LS.Interpreter
       LS.Lib
+      LS.Log
       LS.NLP.NL4
       LS.NLP.NL4Transformations
       LS.NLP.NLG
@@ -41,6 +42,9 @@ library
       LS.PrettyPrinter
       LS.PrettyPrinter.TypeSig
       LS.RelationalPredicates
+      LS.Renamer
+      LS.Renamer.Rules
+      LS.Renamer.Scope
       LS.Rule
       LS.Tokens
       LS.TokenTable
@@ -50,6 +54,7 @@ library
       LS.Utils.TextUtils
       LS.Utils.UtilsREPLDev
       LS.Verdict
+      LS.XPile.Common
       LS.XPile.CoreL4
       LS.XPile.CoreL4.LogicProgram
       LS.XPile.CoreL4.LogicProgram.Common
@@ -107,6 +112,7 @@ library
       LS.XPile.Petri
       LS.XPile.Prolog
       LS.XPile.Purescript
+      LS.XPile.Simala.Transpile
       LS.XPile.SVG
       LS.XPile.Typescript
       LS.XPile.Uppaal
@@ -132,6 +138,7 @@ library
     , boxes
     , bytestring
     , cassava
+    , co-log-core
     , containers
     , deque
     , diagnose
@@ -176,6 +183,7 @@ library
     , recursion-schemes
     , safe
     , safe-money
+    , simala
     , split
     , string-conversions
     , string-interpolate
@@ -208,6 +216,7 @@ executable l4-bnfc-exe
     , boxes
     , bytestring
     , cassava
+    , co-log-core
     , containers
     , deque
     , diagnose
@@ -252,6 +261,7 @@ executable l4-bnfc-exe
     , recursion-schemes
     , safe
     , safe-money
+    , simala
     , split
     , string-conversions
     , string-interpolate
@@ -284,6 +294,7 @@ executable natural4-exe
     , boxes
     , bytestring
     , cassava
+    , co-log-core
     , containers
     , deque
     , diagnose
@@ -328,6 +339,7 @@ executable natural4-exe
     , recursion-schemes
     , safe
     , safe-money
+    , simala
     , split
     , string-conversions
     , string-interpolate
@@ -361,6 +373,7 @@ test-suite doctests
     , boxes
     , bytestring
     , cassava
+    , co-log-core
     , containers
     , deque
     , diagnose
@@ -406,6 +419,7 @@ test-suite doctests
     , recursion-schemes
     , safe
     , safe-money
+    , simala
     , split
     , string-conversions
     , string-interpolate
@@ -428,6 +442,7 @@ test-suite natural4-test
       LS.InterpreterSpec
       LS.NLGSpec
       LS.RelationalPredicatesSpec
+      LS.RenamerSpec
       LS.TextuaL4Spec
       LS.TypesSpec
       LS.XPile.CoreL4.LogicProgramSpec
@@ -435,6 +450,7 @@ test-suite natural4-test
       LS.XPile.JSONSchemaSpec
       LS.XPile.LogicalEnglishSpec
       LS.XPile.PrologSpec
+      LS.XPile.SimalaSpec
       Parsing.BoolStructParserSpec
       Parsing.CoreL4ParserSpec
       Parsing.MegaparsingMeansSpec
@@ -463,6 +479,7 @@ test-suite natural4-test
     , boxes
     , bytestring
     , cassava
+    , co-log-core
     , containers
     , deque
     , diagnose
@@ -511,6 +528,7 @@ test-suite natural4-test
     , recursion-schemes
     , safe
     , safe-money
+    , simala
     , split
     , string-conversions
     , string-interpolate
@@ -545,6 +563,7 @@ benchmark natural4-bench
     , boxes
     , bytestring
     , cassava
+    , co-log-core
     , containers
     , criterion
     , deepseq
@@ -591,6 +610,7 @@ benchmark natural4-bench
     , recursion-schemes
     , safe
     , safe-money
+    , simala
     , split
     , string-conversions
     , string-interpolate

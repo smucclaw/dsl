@@ -31,6 +31,9 @@ extra-deps:
 - github: anka-213/haskell-wordnet
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
+- github: smucclaw/simala
+  commit: 85afeb86678a65d48bfac2bbb90306693d51582e
+
 - monad-validate-1.3.0.0
 - simple-smt-0.9.7
 - diagnose-2.5.1

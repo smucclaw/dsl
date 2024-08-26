@@ -83,6 +83,7 @@ import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
 import LS.XPile.SVG qualified as AAS
+import LS.XPile.Simala.Transpile qualified as Simala
 import LS.XPile.Typescript (asTypescript)
 import LS.XPile.Uppaal qualified as Uppaal
 import LS.XPile.VueJSON
@@ -123,6 +124,8 @@ import System.IO.Unsafe (unsafeInterleaveIO)
 import Text.Pretty.Simple (pPrint, pShowNoColor)
 import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
+import qualified LS.Renamer as Renamer
+import LS.Renamer.Rules (RnRule)
 
 --
 -- Command-line options parsing
@@ -275,7 +278,7 @@ main = do
   rc       <- SFL4.getConfig opts
 --  putStrLn "main: doing dumpRules"
   rules    <- SFL4.dumpRules opts
-  let l4i  = l4interpret rules
+  l4i      <- l4interpret rules
   iso8601  <- now8601
 
   -- NLG stuff
@@ -550,6 +553,10 @@ transpilersMap =
     , "an anyall SVG of the decision trees"
     , [aasvgTranspiler]
     )
+  , ( SFL4.simalaMode
+    , "Transpile hornlike rules to the purely functional Simala language"
+    , [simalaTranspiler]
+    )
   ]
 
 toNative :: [SFL4.Rule] -> SFL4.Interpreted -> String
@@ -651,6 +658,13 @@ withNLGData k ds =
   case ds.nlgData of
     Nothing  -> pure (Skipped "skipping transpiler due to lacking NLG environment")
     Just env -> k env ds
+
+withRnRules :: ([RnRule] -> (TranspilationResult a)) -> DriverState -> (TranspilationResult a)
+withRnRules k ds = case ds.interpreted.renamedRules of
+  Renamer.RenamerFail errMsg _scope -> Skipped $ "Failed to rename rules: " <> errorToString errMsg
+  Renamer.RenamerSuccess rnRules _scope -> k rnRules
+  where
+    errorToString = Text.unpack . Renamer.renderRenamerError
 
 simpleTranspiler ::
      FilePath
@@ -1108,6 +1122,14 @@ aasvgTranspiler =
             myMkLink ds.timestamp $ dir </> subdir </> "LATEST"
           Nothing ->
             pure () -- no on-screen output
+
+simalaTranspiler :: Transpiler
+simalaTranspiler =
+  simpleTranspiler "simala" "simala" (withRnRules runSimalaTranspiler)
+  where
+    runSimalaTranspiler rnRules = case Simala.runSimalaTranspiler rnRules of
+      Left err -> mkResultWithErrors ("", lines $ Text.unpack $ Simala.renderTranspilerError err)
+      Right decls -> mkResultWithoutErrors (Text.unpack $ Simala.render decls)
 
 rulesTranspiler :: Transpiler
 rulesTranspiler =

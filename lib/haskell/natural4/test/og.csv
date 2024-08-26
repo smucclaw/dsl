@@ -57,7 +57,7 @@ I will give you input. Please help me translate from the input to correctly inde
 ,,,,,,,,,,,
 //,https://www.becsv.com/csv-table.php,,,to convert the above to an HTML table you can copy and paste into this spreadsheet,,,,,,,
 ,,,,,,,,,,,
-,DECIDE,Prof says covered,,,,,,,,,
+,DECIDE,Prof says covered,IS,1,,,,,,,
 ,IF,is signed,,,,,,,,,
 ,,AND,,paid premium,,,,,,,
 ,,AND,,condition met,,,,,,,

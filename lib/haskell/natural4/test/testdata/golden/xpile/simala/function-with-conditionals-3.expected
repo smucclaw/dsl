@@ -1,0 +1,1 @@
+ f_f_1 = fun (v_x_0) => if v_x_0 > 0 then 1 else 0

@@ -1,0 +1,1 @@
+ f_discounted_by_3 = fun (v_x_0,v_y_2) => v_x_0 + (1 - v_y_2)

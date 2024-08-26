@@ -2,8 +2,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# OPTIONS_GHC -Wall #-}
 
 module LS.XPile.Simala.Transpile (

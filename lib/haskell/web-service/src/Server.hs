@@ -31,31 +31,26 @@ module Server (
   ReasoningTree (..),
   ResponseWithReason (..),
   EvaluatorError (..),
-  FunctionParam (..),
+  FnLiteral (..),
+  EvalBackends (..),
 ) where
 
-import Control.Monad (foldM)
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except
 import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
 import Data.Aeson qualified as Aeson
-import Data.HashMap.Strict qualified as HashMap
 import Data.Map qualified as Map
-import Data.Maybe qualified as Maybe
 import Data.String.Interpolate (__i)
 import Data.Text qualified as Text
-import Data.Text.Read qualified as TextReader
-import Data.Tree qualified as Tree
 import Data.Typeable
 import GHC.Generics
 import GHC.TypeLits
 import Servant
 import System.Timeout (timeout)
 
-import Control.Exception (try)
-import Explainable (XP)
-import Explainable.MathLang
-import Backend.Error
+import Backend.Api
+import Backend.Explainable (genericMathLangEvaluator)
+import Data.Maybe qualified as Maybe
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -64,21 +59,15 @@ import Backend.Error
 type Api = NamedRoutes FunctionApi'
 type FunctionApi = NamedRoutes FunctionApi'
 
-{- | API that can be invoked by a custom gpt.
-
-See https://openai.com/index/introducing-gpts/
--}
+-- | API that can be invoked by a custom gpt.
+--
+-- See https://openai.com/index/introducing-gpts/
 data FunctionApi' mode = FunctionApi
   { functionRoutes :: mode :- "functions" :> FunctionCrud
   }
   deriving (Generic)
 
 type FunctionCrud = NamedRoutes FunctionCrud'
-
-data FunctionParam
-  = BoolArgument Bool
-  | DoubleArgument Double
-  deriving (Generic)
 
 -- | API for interacting with the 'function' resource.
 data FunctionCrud' mode = FunctionCrud
@@ -91,12 +80,19 @@ data FunctionCrud' mode = FunctionCrud
       mode
         :- Capture "name" String
           :> SingleFunctionApi
-  , computeQualifiesFunc ::
+  , functionEvaluation ::
+      mode
+        :- QueryParam "backend" EvalBackends :> NamedRoutes FunctionEvaluationApi
+  }
+  deriving (Generic)
+
+data FunctionEvaluationApi mode = FunctionEvaluationApi
+  { computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
-          :> QueryParam "drinks" FunctionParam
-          :> QueryParam "eats" FunctionParam
-          :> QueryParam "walks" FunctionParam
+          :> QueryParam "drinks" FnLiteral
+          :> QueryParam "eats" FnLiteral
+          :> QueryParam "walks" FnLiteral
           :> Summary "Compute whether a person qualifies based on their properties"
           :> OperationId "runComputeQualifies"
           :> Post '[JSON] SimpleResponse
@@ -112,16 +108,16 @@ data FunctionCrud' mode = FunctionCrud
   , rodentsAndVerminFunc ::
       mode
         :- "rodents_and_vermin"
-          :> QueryParam "Loss or Damage.caused by insects" FunctionParam
-          :> QueryParam "Loss or Damage.caused by birds" FunctionParam
-          :> QueryParam "Loss or Damage.caused by vermin" FunctionParam
-          :> QueryParam "Loss or Damage.caused by rodents" FunctionParam
-          :> QueryParam "Loss or Damage.to Contents" FunctionParam
-          :> QueryParam "Loss or Damage.ensuing covered loss" FunctionParam
-          :> QueryParam "any other exclusion applies" FunctionParam
-          :> QueryParam "a household appliance" FunctionParam
-          :> QueryParam "a swimming pool" FunctionParam
-          :> QueryParam "a plumbing, heating, or air conditioning system" FunctionParam
+          :> QueryParam "Loss or Damage.caused by insects" FnLiteral
+          :> QueryParam "Loss or Damage.caused by birds" FnLiteral
+          :> QueryParam "Loss or Damage.caused by vermin" FnLiteral
+          :> QueryParam "Loss or Damage.caused by rodents" FnLiteral
+          :> QueryParam "Loss or Damage.to Contents" FnLiteral
+          :> QueryParam "Loss or Damage.ensuing covered loss" FnLiteral
+          :> QueryParam "any other exclusion applies" FnLiteral
+          :> QueryParam "a household appliance" FnLiteral
+          :> QueryParam "a swimming pool" FnLiteral
+          :> QueryParam "a plumbing, heating, or air conditioning system" FnLiteral
           :> Summary "Compute whether a person qualifies based on their properties."
           :> Description "A response value of `0` means that the Loss or Damage is covered, while `1` means the Loss or Damage is not covered."
           :> OperationId "runRodentsAndVermin"
@@ -138,20 +134,6 @@ data SingleFunctionApi' mode = SingleFunctionApi
           :> Get '[JSON] Function
   }
   deriving (Generic)
-
-data SimpleResponse
-  = SimpleResponse ResponseWithReason
-  | SimpleError EvaluatorError
-  deriving (Show, Read, Ord, Eq, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-
-
-data ResponseWithReason = ResponseWithReason
-  { responseValue :: Double
-  , responseReasoning :: Reasoning
-  }
-  deriving (Show, Read, Ord, Eq, Generic)
-  deriving anyclass (FromJSON, ToJSON)
 
 data SimpleFunction = SimpleFunction
   { simpleName :: Text.Text
@@ -171,19 +153,16 @@ newtype Parameters = Parameters
   }
   deriving (Show, Read, Ord, Eq, Generic)
 
--- | Wrap our reasoning into a top-level field.
-newtype Reasoning = Reasoning
-  { getReasoning :: ReasoningTree
+data Parameter = Parameter
+  { parameterType :: String
+  , parameterEnum :: [String]
+  , parameterDescription :: String
   }
   deriving (Show, Read, Ord, Eq, Generic)
-  deriving newtype (FromJSON, ToJSON)
 
--- | Basically a rose tree, but serialisable to json and specialised to our purposes.
-data ReasoningTree = ReasoningTree
-  { reasoningNodeExampleCode :: [Text.Text]
-  , reasoningNodeExplanation :: [Text.Text]
-  , reasoningNodeChildren :: [ReasoningTree]
-  }
+data SimpleResponse
+  = SimpleResponse ResponseWithReason
+  | SimpleError EvaluatorError
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -219,6 +198,10 @@ instance (HasServer api ctx) => HasServer (OperationId desc :> api) ctx where
 -- Web Service Handlers
 -- ----------------------------------------------------------------------------
 
+data EvalBackends
+  = GenericMathLang
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
 handler :: Server Api
 handler =
   FunctionApi
@@ -228,18 +211,21 @@ handler =
           , singleEntity = \name ->
               SingleFunctionApi
                 { getFunction =
-                    handlerParameters name
+                    getFunctionHandler name
                 }
-          , computeQualifiesFunc =
-              computeQualifiesHandler
-          , rodentsAndVerminFunc =
-              rodentsAndVerminHandler
+          , functionEvaluation = \backend ->
+              FunctionEvaluationApi
+                { computeQualifiesFunc =
+                    computeQualifiesHandler backend
+                , rodentsAndVerminFunc =
+                    rodentsAndVerminHandler backend
+                }
           }
     }
 
 handlerFunctions :: Handler [SimpleFunction]
 handlerFunctions = do
-  pure $ fmap (toSimpleFunction . snd) $ Map.elems functions
+  pure $ fmap toSimpleFunction $ Map.elems functionSpecs
  where
   toSimpleFunction s =
     SimpleFunction
@@ -247,73 +233,117 @@ handlerFunctions = do
       , simpleDescription = description s
       }
 
-computeQualifiesHandler :: Maybe FunctionParam -> Maybe FunctionParam -> Maybe FunctionParam -> Handler SimpleResponse
-computeQualifiesHandler drinks eats walks = do
+computeQualifiesHandler ::
+  Maybe EvalBackends -> Maybe FnLiteral -> Maybe FnLiteral -> Maybe FnLiteral -> Handler SimpleResponse
+computeQualifiesHandler backend drinks eats walks = do
   let
-    params =
-      [("drinks", drinks), ("walks", walks), ("eats", eats)]
-  case Map.lookup "compute_qualifies" functions of
-    Nothing -> throwError err404
-    Just (function, _) ->
-      case runExcept $ fromParams $ Maybe.mapMaybe (\(k, v) -> (k,) <$> v) params of
-        Left err ->
-          throwError
-            err400
-              { errReasonPhrase = Text.unpack err
-              }
-        Right s -> do
-          timeoutAction $ runFunction s function
+    args = [drinks, eats, walks]
+  runEvaluatorFor backend ComputeQualifies args
 
 rodentsAndVerminHandler ::
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
-  Maybe FunctionParam ->
+  Maybe EvalBackends ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
+  Maybe FnLiteral ->
   Handler SimpleResponse
-rodentsAndVerminHandler a b c d e f g h i j = do
+rodentsAndVerminHandler backend a b c d e f g h i j = do
   let
-    params =
-      [ ("Loss or Damage.caused by insects", a)
-      , ("Loss or Damage.caused by birds", b)
-      , ("Loss or Damage.caused by vermin", c)
-      , ("Loss or Damage.caused by rodents", d)
-      , ("Loss or Damage.to Contents", e)
-      , ("Loss or Damage.ensuing covered loss", f)
-      , ("any other exclusion applies", g)
-      , ("a household appliance", h)
-      , ("a swimming pool", i)
-      , ("a plumbing, heating, or air conditioning system", j)
-      ]
-  case Map.lookup "rodents_and_vermin" functions of
-    Nothing -> throwError err404
-    Just (function, _) ->
-      case runExcept $ fromParams $ Maybe.mapMaybe (\(k, v) -> (k,) <$> v) params of
-        Left err ->
-          throwError
-            err400
-              { errReasonPhrase = Text.unpack err
-              }
-        Right s -> do
-          timeoutAction $ runFunction s function
+    args = [a, b, c, d, e, f, g, h, i, j]
+  runEvaluatorFor backend RodentsAndVermin args
 
-handlerParameters :: String -> Handler Function
-handlerParameters name = case Map.lookup name functions of
+runEvaluatorFor :: Maybe EvalBackends -> FunctionName -> [Maybe FnLiteral] -> Handler SimpleResponse
+runEvaluatorFor engine name arguments = do
+  evaluationResult <- timeoutAction $ runExceptT (runEvaluatorForFunction eval name arguments)
+  case evaluationResult of
+    Left err -> pure $ SimpleError err
+    Right r -> pure $ SimpleResponse r
+ where
+  eval = evaluationEngine $ Maybe.fromMaybe GenericMathLang engine
+
+getFunctionHandler :: String -> Handler Function
+getFunctionHandler name = case Map.lookup (Text.pack name) functionSpecs of
   Nothing -> throwError err404
-  Just (_, scenario) -> pure scenario
+  Just function -> pure function
 
 timeoutAction :: IO b -> Handler b
 timeoutAction act =
   liftIO (timeout (seconds 5) act) >>= \case
-    Nothing -> throwError err505
+    Nothing -> throwError err500
     Just r -> pure r
  where
   seconds n = 1_000_000 * n
+
+-- ----------------------------------------------------------------------------
+-- "Database" layer
+-- ----------------------------------------------------------------------------
+
+evaluationEngine :: EvalBackends -> Evaluator
+evaluationEngine = \case
+  GenericMathLang -> genericMathLangEvaluator
+
+functionSpecs :: Map.Map Text.Text Function
+functionSpecs =
+  Map.fromList
+    [ (name f, f)
+    | f <- [personQualifiesFunction, rodentsAndVerminFunction]
+    ]
+
+-- | Metadata about the function that the user might want to know.
+-- Further, an LLM could use this info to ask specific questions to the user.
+personQualifiesFunction :: Function
+personQualifiesFunction =
+  Function
+    "compute_qualifies"
+    [__i|Determines if a person qualifies for the purposes of the rule.
+      The input object describes the person's properties in the primary parameters: walks, eats, drinks.
+      Secondary parameters can be given which are sufficient to determine some of the primary parameters.
+      A person drinks whether or not they consume an alcoholic or a non-alcoholic beverage, in part or in whole;
+      those specific details don't really matter.
+      The output of the function can be either a request for required information;
+      a restatement of the user input requesting confirmation prior to function calling;
+      or a Boolean answer with optional explanation summary.
+    |]
+    $ Parameters
+    $ Map.fromList
+      [ ("walks", Parameter "string" ["true", "false"] "Did the person walk?")
+      , ("eats", Parameter "string" ["true", "false"] "Did the person eat?")
+      , ("drinks", Parameter "string" ["true", "false"] "Did the person drink?")
+      , ("beverage type", Parameter "string" ["alcoholic", "non-alcoholic"] "Did the person drink an alcoholic beverage?")
+      , ("in whole", Parameter "string" ["true", "false"] "Did the person drink all of the beverage?")
+      ]
+
+-- | Metadata about the function that the user might want to know.
+-- Further, an LLM could use this info to ask specific questions to the user.
+rodentsAndVerminFunction :: Function
+rodentsAndVerminFunction =
+  Function
+    "vermin_and_rodent"
+    [__i|We do not cover any loss or damage caused by rodents, insects, vermin, or birds.
+    However, this exclusion does not apply to:
+    a) loss or damage to your contents caused by birds; or
+    b) ensuing covered loss unless any other exclusion applies or where an animal causes water to escape from
+       a household appliance, swimming pool or plumbing, heating or air conditioning system
+    |]
+    $ Parameters
+    $ Map.fromList
+      [ ("Loss or Damage.caused by insects", Parameter "string" ["true", "false"] "Was the damage caused by insects?")
+      , ("Loss or Damage.caused by birds", Parameter "string" ["true", "false"] "Was the damage caused by birds?")
+      , ("Loss or Damage.caused by vermin", Parameter "string" ["true", "false"] "Was the damage caused by vermin?")
+      , ("Loss or Damage.caused by rodents", Parameter "string" ["true", "false"] "Was the damage caused by rodents?")
+      , ("Loss or Damage.to Contents", Parameter "string" ["true", "false"] "Is the damage to your contents?")
+      , ("Loss or Damage.ensuing covered loss", Parameter "string" ["true", "false"] "Is the damage ensuing covered loss")
+      , ("any other exclusion applies", Parameter "string" ["true", "false"] "Are any other exclusions besides mentioned ones?")
+      , ("a household appliance", Parameter "string" ["true", "false"] "Did water escape from a household appliance due to an animal?")
+      , ("a swimming pool", Parameter "string" ["true", "false"] "Did water escape from a swimming pool due to an animal?")
+      , ("a plumbing, heating, or air conditioning system", Parameter "string" ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
+      ]
 
 -- ----------------------------------------------------------------------------
 -- Json encoders and decoders that are not derived.
@@ -389,12 +419,6 @@ instance FromJSON Parameters where
     props <- o .: "properties"
     pure $ Parameters props
 
-data Parameter = Parameter
-  { parameterType :: String
-  , parameterEnum :: [String]
-  , parameterDescription :: String
-  }
-  deriving (Show, Read, Ord, Eq, Generic)
 
 instance ToJSON Parameter where
   toJSON (Parameter ty enum desc) =
@@ -411,200 +435,7 @@ instance FromJSON Parameter where
       <*> p .: "enum"
       <*> p .: "description"
 
-instance FromHttpApiData FunctionParam where
-  parseQueryParam t
-    | Right (d, "") <- TextReader.double t =
-        Right $ DoubleArgument d
-    | Just b <- parseAsBool =
-        Right $ BoolArgument b
-    | otherwise = Left $ "Unexpected value \"" <> t <> "\", expected either a floating point number or \"true\" or \"false\""
-   where
-    parseAsBool = case Text.toLower t of
-      "true" -> Just True
-      "false" -> Just False
-      "yes" -> Just True
-      "no" -> Just False
-      _ -> Nothing
-
--- ----------------------------------------------------------------------------
--- Helpers
--- ----------------------------------------------------------------------------
-
-runFunction :: (MonadIO m) => MyState -> Expr Double -> m SimpleResponse
-runFunction s scenario = do
-  executionResult <- liftIO $ try (xplainF () s scenario)
-  case executionResult of
-    Left (e :: IOError) -> do
-      pure $ SimpleError $ EvaluatorError $ Text.pack $ show e
-    Right (res, xp, _, _) -> do
-      pure $ SimpleResponse $ ResponseWithReason res (Reasoning $ reasoningFromXp xp)
-
-fromParams :: [(Text.Text, FunctionParam)] -> Except Text.Text MyState
-fromParams attrs = do
-  let
-    explainableState = emptyState
-
-    splitParameters key arg state = case arg of
-      DoubleArgument d ->
-        pure $
-          state
-            { symtabF = HashMap.insert (Text.unpack key) (Val Nothing d) (symtabF state)
-            }
-      BoolArgument b ->
-        pure $
-          state
-            { symtabP = HashMap.insert (Text.unpack key) (PredVal Nothing b) (symtabP state)
-            }
-  foldM (\s (k, v) -> splitParameters k v s) explainableState attrs
-
-{- | Translate a Tree of explanations into a reasoning tree that can be sent over
-the wire.
-For now, this is essentially just a 1:1 translation, but might prune the tree in the future.
--}
-reasoningFromXp :: XP -> ReasoningTree
-reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
-  ReasoningTree
-    (fmap Text.pack xpExampleCode)
-    (fmap Text.pack xpJustification)
-    (fmap reasoningFromXp children)
-
--- ----------------------------------------------------------------------------
--- Example Rules
--- ----------------------------------------------------------------------------
-
--- | Example functions for the purpose of showcasing the REST API.
-functions :: Map.Map String (Expr Double, Function)
-functions =
-  Map.fromList
-    [ ("compute_qualifies", (personQualifies, personQualifiesFunction))
-    , ("rodents_and_vermin", (rodentsAndVermin, rodentsAndVerminFunction))
-    ]
-
--- | Example function which computes whether a person qualifies for *something*.
-personQualifies :: Expr Double
-personQualifies =
-  "qualifies"
-    @|= MathPred
-      ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
-      )
-
-rodentsAndVermin :: Expr Double
-rodentsAndVermin =
-  "not covered"
-    @|= ( MathITE
-            (Just "Not Covered If \8230")
-            ( PredFold
-                Nothing
-                PLAnd
-                [ PredFold
-                    Nothing
-                    PLOr
-                    [ PredVar "Loss or Damage.caused by rodents"
-                    , PredVar "Loss or Damage.caused by insects"
-                    , PredVar "Loss or Damage.caused by vermin"
-                    , PredVar "Loss or Damage.caused by birds"
-                    ]
-                , PredFold
-                    Nothing
-                    PLAnd
-                    [ PredNot
-                        Nothing
-                        ( PredFold
-                            Nothing
-                            PLOr
-                            [ PredFold
-                                Nothing
-                                PLAnd
-                                [ PredVar "Loss or Damage.to Contents"
-                                , PredFold
-                                    Nothing
-                                    PLAnd
-                                    [PredVar "Loss or Damage.caused by birds"]
-                                ]
-                            , PredFold
-                                Nothing
-                                PLAnd
-                                [ PredVar "Loss or Damage.ensuing covered loss"
-                                , PredFold
-                                    Nothing
-                                    PLAnd
-                                    [ PredNot
-                                        Nothing
-                                        ( PredFold
-                                            Nothing
-                                            PLOr
-                                            [ PredVar "any other exclusion applies"
-                                            , PredFold
-                                                Nothing
-                                                PLOr
-                                                [ PredVar "a household appliance"
-                                                , PredVar "a swimming pool"
-                                                , PredVar
-                                                    "a plumbing, heating, or air conditioning system"
-                                                ]
-                                            ]
-                                        )
-                                    ]
-                                ]
-                            ]
-                        )
-                    ]
-                ]
-            )
-            -- (MathSet "Loss or Damage" (MathVar "Not Covered"))
-            --
-            (Val Nothing 1.0)
-            (Val Nothing 0.0)
-        )
-
-{- | Metadata about the function that the user might want to know.
-Further, an LLM could use this info to ask specific questions to the user.
--}
-personQualifiesFunction :: Function
-personQualifiesFunction =
-  Function
-    "compute_qualifies"
-    [__i|Determines if a person qualifies for the purposes of the rule.
-      The input object describes the person's properties in the primary parameters: walks, eats, drinks.
-      Secondary parameters can be given which are sufficient to determine some of the primary parameters.
-      A person drinks whether or not they consume an alcoholic or a non-alcoholic beverage, in part or in whole;
-      those specific details don't really matter.
-      The output of the function can be either a request for required information;
-      a restatement of the user input requesting confirmation prior to function calling;
-      or a Boolean answer with optional explanation summary.
-    |]
-    $ Parameters
-    $ Map.fromList
-      [ ("walks", Parameter "string" ["true", "false"] "Did the person walk?")
-      , ("eats", Parameter "string" ["true", "false"] "Did the person eat?")
-      , ("drinks", Parameter "string" ["true", "false"] "Did the person drink?")
-      , ("beverage type", Parameter "string" ["alcoholic", "non-alcoholic"] "Did the person drink an alcoholic beverage?")
-      , ("in whole", Parameter "string" ["true", "false"] "Did the person drink all of the beverage?")
-      ]
-
-{- | Metadata about the function that the user might want to know.
-Further, an LLM could use this info to ask specific questions to the user.
--}
-rodentsAndVerminFunction :: Function
-rodentsAndVerminFunction =
-  Function
-    "vermin_and_rodent"
-    [__i|We do not cover any loss or damage caused by rodents, insects, vermin, or birds.
-    However, this exclusion does not apply to:
-    a) loss or damage to your contents caused by birds; or
-    b) ensuing covered loss unless any other exclusion applies or where an animal causes water to escape from
-       a household appliance, swimming pool or plumbing, heating or air conditioning system
-    |]
-    $ Parameters
-    $ Map.fromList
-      [ ("Loss or Damage.caused by insects", Parameter "string" ["true", "false"] "Was the damage caused by insects?")
-      , ("Loss or Damage.caused by birds", Parameter "string" ["true", "false"] "Was the damage caused by birds?")
-      , ("Loss or Damage.caused by vermin", Parameter "string" ["true", "false"] "Was the damage caused by vermin?")
-      , ("Loss or Damage.caused by rodents", Parameter "string" ["true", "false"] "Was the damage caused by rodents?")
-      , ("Loss or Damage.to Contents", Parameter "string" ["true", "false"] "Is the damage to your contents?")
-      , ("Loss or Damage.ensuing covered loss", Parameter "string" ["true", "false"] "Is the damage ensuing covered loss")
-      , ("any other exclusion applies", Parameter "string" ["true", "false"] "Are any other exclusions besides mentioned ones?")
-      , ("a household appliance", Parameter "string" ["true", "false"] "Did water escape from a household appliance due to an animal?")
-      , ("a swimming pool", Parameter "string" ["true", "false"] "Did water escape from a swimming pool due to an animal?")
-      , ("a plumbing, heating, or air conditioning system", Parameter "string" ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
-      ]
+instance FromHttpApiData EvalBackends where
+  parseQueryParam t = case Text.toLower t of
+    "gml" -> Right GenericMathLang
+    _ -> Left $ "Invalid evaluation backend: " <> t

@@ -26,7 +26,6 @@ library
   exposed-modules:
       Application
       Backend.Api
-      Backend.Error
       Backend.Explainable
       Options
       Schema
@@ -108,7 +107,7 @@ test-suite web-service-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      LibSpec
+      SchemaSpec
       Paths_web_service
   hs-source-dirs:
       test

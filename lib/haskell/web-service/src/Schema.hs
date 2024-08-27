@@ -9,6 +9,8 @@ module Schema (
 ) where
 
 --
+
+import Backend.Api
 import Control.Lens hiding ((.=))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -21,6 +23,7 @@ import GHC.TypeLits
 import Servant
 import Servant.OpenApi
 import Server hiding (description, name)
+
 type ServerName = Text.Text
 
 serverOpenApi :: Maybe ServerName -> OpenApi
@@ -77,16 +80,23 @@ instance ToSchema ResponseWithReason
 -- 'ToJSON Reasoning' instance yet.
 instance ToSchema Reasoning
 
--- This is correct, since we don't overwrite the
--- 'ToJSON ReasoningTree' instance yet.
-instance ToSchema ReasoningTree where
-  -- declareNamedSchema p = do
-  --   defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
-  --   pure $ defSchema
-  --     & schema.required .~
-  --       [ "reasoningNodeExampleCode"
-  --       , "reasoningNodeExplanation"
-  --       ]
+
+instance ToSchema ReasoningTree
+-- where
+--   declareNamedSchema p = do
+--     defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
+--     pure defSchema
+
+instance ToSchema ReasonNode
+-- where
+--   declareNamedSchema p = do
+--     defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
+--     pure $
+--       defSchema
+--         & schema . required
+--           .~ [ "reasoningNodeExampleCode"
+--              , "reasoningNodeExplanation"
+--              ]
 
 instance ToSchema Function where
   declareNamedSchema _ = do
@@ -151,10 +161,22 @@ instance ToSchema Parameter where
               , "type" .= Aeson.String "string"
               ]
 
-instance ToParamSchema FunctionParam where
-  toParamSchema _ = mempty
-    & type_ ?~ OpenApiString
-    & title ?~ "Function parameter"
-    & example ?~ Aeson.String "true"
-    & description ?~ "A Function parameter which can be either 'true' or 'false', or a floating point number. Additionally accepts 'yes' and 'no' as synonyms for 'true' and 'false' respectively."
+instance ToParamSchema FnLiteral where
+  toParamSchema _ =
+    mempty
+      & title ?~ "Function argument"
+      & example ?~ Aeson.String "true"
+      & description ?~ "A Function argument which can be either 'true' or 'false', or a floating point number. Additionally accepts 'yes' and 'no' as synonyms for 'true' and 'false' respectively."
 
+instance ToSchema FnLiteral where
+  declareNamedSchema p = do
+    pure $ NamedSchema (Just "Literal") $ toParamSchema p
+
+instance ToParamSchema EvalBackends where
+  toParamSchema _ =
+    mempty
+      & type_ ?~ OpenApiString
+      & title ?~ "Backend to use for function evaluation"
+      & example ?~ Aeson.String "gml"
+      & default_ ?~ Aeson.String "gml"
+      & description ?~ "Backend for evaluation of a function. Backends can greatly affect how good the explanation for results. Additionally, backends may or may not support parts of natural4."

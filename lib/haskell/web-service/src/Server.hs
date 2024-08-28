@@ -40,6 +40,7 @@ import Control.Monad.Trans.Except
 import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
 import Data.Aeson qualified as Aeson
 import Data.Map qualified as Map
+import Data.Maybe qualified as Maybe
 import Data.String.Interpolate (__i)
 import Data.Text qualified as Text
 import Data.Typeable
@@ -50,7 +51,7 @@ import System.Timeout (timeout)
 
 import Backend.Api
 import Backend.Explainable (genericMathLangEvaluator)
-import Data.Maybe qualified as Maybe
+import Backend.Simala (simalaEvaluator)
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -200,6 +201,7 @@ instance (HasServer api ctx) => HasServer (OperationId desc :> api) ctx where
 
 data EvalBackends
   = GenericMathLang
+  | Simala
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 handler :: Server Api
@@ -265,7 +267,7 @@ runEvaluatorFor engine name arguments = do
     Left err -> pure $ SimpleError err
     Right r -> pure $ SimpleResponse r
  where
-  eval = evaluationEngine $ Maybe.fromMaybe GenericMathLang engine
+  eval = evaluationEngine $ Maybe.fromMaybe Simala engine
 
 getFunctionHandler :: String -> Handler Function
 getFunctionHandler name = case Map.lookup (Text.pack name) functionSpecs of
@@ -287,6 +289,7 @@ timeoutAction act =
 evaluationEngine :: EvalBackends -> Evaluator
 evaluationEngine = \case
   GenericMathLang -> genericMathLangEvaluator
+  Simala -> simalaEvaluator
 
 functionSpecs :: Map.Map Text.Text Function
 functionSpecs =
@@ -419,7 +422,6 @@ instance FromJSON Parameters where
     props <- o .: "properties"
     pure $ Parameters props
 
-
 instance ToJSON Parameter where
   toJSON (Parameter ty enum desc) =
     Aeson.object
@@ -438,4 +440,5 @@ instance FromJSON Parameter where
 instance FromHttpApiData EvalBackends where
   parseQueryParam t = case Text.toLower t of
     "gml" -> Right GenericMathLang
+    "simala" -> Right Simala
     _ -> Left $ "Invalid evaluation backend: " <> t

@@ -30,7 +30,6 @@ dependencies:
 - effectful
 - string-interpolate
 - numeric-extras
-- explainable
 - servant
 - servant-server
 - servant-openapi3
@@ -46,6 +45,9 @@ dependencies:
 - optics
 - optparse-applicative
 - scientific
+# Backends
+- explainable
+- simala
 
 language: GHC2021
 

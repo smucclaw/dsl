@@ -27,6 +27,7 @@ library
       Application
       Backend.Api
       Backend.Explainable
+      Backend.Simala
       Options
       Schema
       Server
@@ -56,6 +57,7 @@ library
     , servant-openapi3
     , servant-server
     , servant-swagger-ui
+    , simala
     , string-interpolate
     , text
     , transformers
@@ -93,6 +95,7 @@ executable web-service-exe
     , servant-openapi3
     , servant-server
     , servant-swagger-ui
+    , simala
     , string-interpolate
     , text
     , transformers
@@ -138,6 +141,7 @@ test-suite web-service-test
     , servant-openapi3
     , servant-server
     , servant-swagger-ui
+    , simala
     , string-interpolate
     , text
     , transformers

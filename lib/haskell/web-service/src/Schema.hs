@@ -80,14 +80,15 @@ instance ToSchema ResponseWithReason
 -- 'ToJSON Reasoning' instance yet.
 instance ToSchema Reasoning
 
-
 instance ToSchema ReasoningTree
+
 -- where
 --   declareNamedSchema p = do
 --     defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
 --     pure defSchema
 
 instance ToSchema ReasonNode
+
 -- where
 --   declareNamedSchema p = do
 --     defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
@@ -177,6 +178,7 @@ instance ToParamSchema EvalBackends where
     mempty
       & type_ ?~ OpenApiString
       & title ?~ "Backend to use for function evaluation"
-      & example ?~ Aeson.String "gml"
-      & default_ ?~ Aeson.String "gml"
+      & example ?~ Aeson.String "simala"
+      & default_ ?~ Aeson.String "simala"
+      & enum_ ?~ [Aeson.String "simala", Aeson.String "gml"]
       & description ?~ "Backend for evaluation of a function. Backends can greatly affect how good the explanation for results. Additionally, backends may or may not support parts of natural4."

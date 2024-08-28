@@ -177,7 +177,7 @@ workdirOption =
 
 uuiddirOption :: Parser (Options -> Options)
 uuiddirOption =
-  dirOption #workdir "uuiddir" (help "uuid prefix to follow the workdir")
+  dirOption #uuiddir "uuiddir" (help "uuid prefix to follow the workdir")
 
 modeOption :: Parser (Options -> Options)
 modeOption =

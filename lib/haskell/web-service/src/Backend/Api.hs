@@ -84,7 +84,10 @@ data ReasonNode = ReasonNode
 -- The error message may contain hints of what might have gone wrong.
 data EvaluatorError
   = InterpreterError !Text.Text
-  | RequiredParameterMissing !Int !Int
+  | RequiredParameterMissing
+      { expectedParameters :: !Int
+      , actualParameters :: !Int
+      }
   | CannotHandleUnknownVars
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)

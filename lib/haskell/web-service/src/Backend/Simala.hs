@@ -30,7 +30,12 @@ simalaEvaluator =
 
 functionHandler :: (MonadIO m) => [Text] -> [Maybe FnLiteral] -> Text -> ExceptT EvaluatorError m ResponseWithReason
 functionHandler labels arguments func
-  | length labels /= length arguments = throwError $ RequiredParameterMissing (length labels) (length arguments)
+  | length labels /= length arguments =
+    throwError $
+        RequiredParameterMissing
+          { expectedParameters = length labels
+          , actualParameters = length arguments
+          }
   | otherwise = do
       let
         labelledArguments = zip labels arguments

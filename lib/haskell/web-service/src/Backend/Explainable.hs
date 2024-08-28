@@ -76,7 +76,12 @@ reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
 
 functionHandler :: (MonadIO m) => [Text.Text] -> [Maybe FnLiteral] -> Expr Double -> ExceptT EvaluatorError m ResponseWithReason
 functionHandler labels arguments func
-  | length labels /= length arguments = throwError $ RequiredParameterMissing (length labels) (length arguments)
+  | length labels /= length arguments =
+      throwError $
+        RequiredParameterMissing
+          { expectedParameters = length labels
+          , actualParameters = length arguments
+          }
   | otherwise = do
       let
         labelledArguments = zip labels arguments

@@ -4,10 +4,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wall -Wno-name-shadowing #-}
 
 module LS.NLP.NLG
-  ( NLGEnv (..),
+  ( NLGData(..),
+    initialiseNlgEnv,
+
+    NLGEnv (..),
+    NlgLog (..),
     allLangs,
     expandRulesForNLG,
     expandRulesForNLGE,
@@ -26,9 +30,14 @@ module LS.NLP.NLG
   )
 where
 
+import Paths_natural4 (getDataFileName)
+
 import AnyAll qualified as AA
 import Control.Arrow ((>>>))
-import Control.Monad (when, guard)
+import Control.Monad (when, guard, unless)
+import Control.Monad.Trans.Except
+import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.Error.Class (MonadError(..))
 import Data.Char qualified as Char (toLower)
 import Data.Foldable qualified as F
 import Data.HashMap.Strict qualified as Map
@@ -74,52 +83,7 @@ import LS.NLP.NL4
     GWho,
     GYear,
     Gf (fg, gf),
-    Tree
-      ( GAFTER,
-        GAdvVP,
-        GBEFORE,
-        GBY,
-        GDay_Unit,
-        GIDig,
-        GIIDig,
-        GMAY,
-        GMUST,
-        GMkDate,
-        GMkVPS,
-        GMkYear,
-        GMonth_Unit,
-        GON,
-        GPredVPS,
-        GRPConstraint,
-        GRPleafS,
-        GRegulative,
-        GSHANT,
-        GString,
-        GSubjWho,
-        GTemporalConstraint,
-        GTemporalConstraintNoDigits,
-        GUPON,
-        GUPONnp,
-        GVAGUE,
-        GWHEN,
-        GYear_Unit,
-        GYou,
-        GadvUPON,
-        GqCOND,
-        GqCONSTR,
-        GqPREPOST,
-        GqUPON,
-        GqWHO,
-        GrecoverRPis,
-        GrecoverRPmath,
-        GrecoverUnparsedConstraint,
-        GrecoverUnparsedTimeUnit,
-        LexDay,
-        LexDig,
-        LexMonth,
-        LexVP,
-        LexYearComponent
-      ),
+    Tree (..),
   )
 import LS.NLP.NL4Transformations
   ( BoolStructCond,
@@ -146,18 +110,13 @@ import LS.Types
     BoolStructR,
     BoolStructT,
     Deontic (..),
-    HornClause (hBody, hHead),
+    HornClause (..),
     HornClause2,
     MTExpr (MTT),
     MultiTerm,
     ParamText,
     RPRel (..),
-    RelationalPredicate
-      ( RPBoolStructR,
-        RPConstraint,
-        RPMT,
-        RPParamText
-      ),
+    RelationalPredicate (..),
     RuleName,
     TComparison (..),
     TemporalConstraint (..),
@@ -173,16 +132,10 @@ import LS.Types
 import LS.Utils ((|$>))
 import LS.XPile.Logging
   ( XPileLog,
-    XPileLogE,
-    mutter,
     mutterd,
     mutterdhsf,
-    mutters,
     pShowNoColorS,
     runLog,
-    xpError,
-    xpLog,
-    xpReturn,
   )
 import PGF
   ( CId,
@@ -204,9 +157,11 @@ import PGF
     showExpr,
     showLanguage,
   )
-import Paths_natural4 (getDataFileName)
+import Prettyprinter
 import System.Environment (lookupEnv)
 import Text.Regex.PCRE.Heavy qualified as PCRE
+import LS.Log
+import Data.Either
 
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF
@@ -214,8 +169,70 @@ data NLGEnv = NLGEnv
   , gfParse :: Type -> Text.Text -> [Expr]
   , gfLin :: Expr -> Text.Text
   , verbose :: Bool
-  , interpreted :: Interpreted
   }
+
+data NlgLog
+  = LogReadingLangEng
+  | LogGetLang String
+  | LogNlgEnv
+  | LogEngError [Text.Text]
+  | LogEngNlgEnvError [Text.Text]
+  | LogAnyLangNlgEnvError [Text.Text]
+
+instance Pretty NlgLog where
+  pretty = \case
+    LogReadingLangEng -> "*** langEng reading NL4.pgf, calling getLang NL4Eng"
+    LogGetLang s -> [i|*** getLang #{s}|]
+    LogNlgEnv -> "** myNLGEnv"
+    LogEngError errs -> vcat $ "natural4: encountered error when obtaining langEng" : (fmap pretty errs)
+    LogEngNlgEnvError errs -> vcat $ "natural4: encountered error while obtaining myNLGEnv" : (fmap pretty errs)
+    LogAnyLangNlgEnvError errs ->
+      vcat $
+        [ "natural4: encountered error while obtaining allNLGEnv"
+        ]
+          <> fmap pretty errs
+
+data NLGData =
+  MkNLGData
+    { env       :: NLGEnv
+    -- ^ Default environment. Use this, if you don't need anything in particular
+    , allEnv    :: [NLGEnv]
+    -- ^ All supported NLG environments, excluding 'env'.
+    }
+
+-- | Initialise the NLGData environment if possible.
+-- If the english lang file cannot be decoded, this returns 'Nothing'.
+-- We ignore errors in other languages and only log these errors.
+initialiseNlgEnv :: IOTracer NlgLog -> IO (Maybe NLGData)
+initialiseNlgEnv tracer = do
+  nlgLangs <- allLangs
+  engE <- runExceptT $ langEng tracer
+  case engE of
+    Left err -> do
+      traceWith tracer $ LogEngError err
+      pure Nothing
+    Right eng -> do
+      nlgEnv <- runExceptT $ myNLGEnv tracer eng -- Only load the NLG environment if we need it.
+      allNLGEnv <- do
+        traverse (runExceptT . myNLGEnv tracer) nlgLangs
+
+      case nlgEnv of
+        Left  err     -> do
+          traceWith tracer $ LogEngNlgEnvError err
+          pure Nothing
+        Right nlgEnvR -> do
+          let allNLGEnvErrors = mconcat $ lefts allNLGEnv
+          unless (null allNLGEnvErrors) do
+            traceWith tracer $ LogAnyLangNlgEnvError allNLGEnvErrors
+          let allNLGEnvR = rights allNLGEnv
+
+          let
+            nlgData =
+              MkNLGData
+                nlgEnvR
+                allNLGEnvR
+
+          pure $ Just nlgData
 
 allLangs :: IO [Language]
 allLangs = do
@@ -223,49 +240,45 @@ allLangs = do
   gr <- readPGF grammarFile
   pure $ languages gr
 
-langEng :: IO (XPileLogE Language)
-langEng = do
-  grammarFile <- getDataFileName $ gfPath "NL4.pgf"
-  gr <- readPGF grammarFile
-  pure do
-    mutter "*** langEng reading NL4.pgf, calling getLang NL4Eng"
-    getLang "NL4Eng" gr
+langEng :: IOTracer NlgLog -> ExceptT [Text.Text] IO Language
+langEng tracer = do
+  grammarFile <- liftIO $ getDataFileName $ gfPath "NL4.pgf"
+  gr <- liftIO $ readPGF grammarFile
+  traceWith (liftIOTracer tracer) LogReadingLangEng
+  getLang tracer "NL4Eng" gr
 
 printLangs :: IO [Language] -> IO String
 printLangs = fmap (intercalate "\", \"" . map (map Char.toLower . showLanguage))
 
-getLang :: String -> PGF -> XPileLogE Language
-getLang str gr = do
-  mutter [i|*** getLang #{str}|]
+getLang :: IOTracer NlgLog -> String -> PGF -> ExceptT [Text.Text] IO Language
+getLang tracer str gr = do
+  traceWith (liftIOTracer tracer) $ LogGetLang str
   case (readLanguage str, languages gr) of
     (Just l, langs@(l':_))  -- Language looks valid, check if in grammar
       -> if l `elem` langs
-           then xpReturn l
+           then pure l
                 -- Expected case: language looks valid and is in grammar
-           else xpError [fallbackMsg $ show l']
+           else throwError [fallbackMsg $ show l']
                 -- Language is valid but not in grammar, warn and fall back to another language
     (Nothing, l':_) -- Language not valid, warn and fall back to another language
-      -> xpError [fallbackMsg $ show l']
+      -> throwError [fallbackMsg $ show l']
     (_, []) -- The PGF has no languages, truly unexpected and fatal
-      -> xpError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
+      -> throwError ["NLG.getLang: the PGF has no languages, maybe you only compiled the abstract syntax?"]
   where
     fallbackMsg fblang = [i|language #{str} not found, falling back to #{fblang}|]
 
-myNLGEnv :: Interpreted -> Language -> IO (XPileLogE NLGEnv)
-myNLGEnv l4i lang = do
-  mpn <- lookupEnv "MP_NLG"
+myNLGEnv :: IOTracer NlgLog -> Language -> ExceptT [Text.Text] IO NLGEnv
+myNLGEnv tracer lang = do
+  mpn <- liftIO $ lookupEnv "MP_NLG"
   let verbose = maybe False (read :: String -> Bool) mpn
-  grammarFile <- getDataFileName $ gfPath "NL4.pgf"
-  gr <- readPGF grammarFile
-  (eng, engErr) <- xpLog <$> langEng
-  case eng of
-    Left  engL -> return $ mutter "** myNLGEnv" >> mutters engErr >> xpError engL
-    Right engR -> do
-      let myParse typ txt = parse gr engR typ (Text.unpack txt)
-          myLin = uncapKeywords . rmBIND . Text.pack . linearize gr lang
-      return do
-        mutter "** myNLGEnv"
-        xpReturn $ NLGEnv gr lang myParse myLin verbose l4i
+  grammarFile <- liftIO $ getDataFileName $ gfPath "NL4.pgf"
+  gr <- liftIO $ readPGF grammarFile
+  eng <- langEng tracer
+  let myParse typ txt = parse gr eng typ (Text.unpack txt)
+      myLin = uncapKeywords . rmBIND . Text.pack . linearize gr lang
+
+  traceWith (liftIOTracer tracer) $ LogNlgEnv
+  pure $ NLGEnv gr lang myParse myLin verbose
 
 rmBIND :: Text.Text -> Text.Text
 rmBIND = PCRE.gsub [PCRE.re|\s+&\+\s+|] ("" :: Text.Text)
@@ -273,7 +286,7 @@ rmBIND = PCRE.gsub [PCRE.re|\s+&\+\s+|] ("" :: Text.Text)
 uncapKeywords :: Text.Text -> Text.Text
 uncapKeywords =
   PCRE.gsub [PCRE.re|(BEFORE|AFTER|IS)|]
-    \(keyword:_) -> Text.toLower keyword
+    \keyword -> Text.toLower keyword
 
   -- Text.unwords . map (lowerWhole ["BEFORE","AFTER","IS"]) . Text.words
   -- where
@@ -342,7 +355,7 @@ nlg' thl env = \case
                       in [I.i|#{gfLin env uponExpr}, |]
                     Nothing -> mempty
         tcText :: Text.Text = case temporal of
-                    Just t -> [I.i| #{gfLin env (gf $ parseTemporal env t)}|]
+                    Just t -> [I.i| #{gfLin env (gf $ parseTemporal t)}|]
                     Nothing -> mempty
         condText :: Text.Text = case cond of
                     Just c ->
@@ -429,17 +442,17 @@ ruleQuestions :: NLGEnv
               -> XPileLog [BoolStructT]
 ruleQuestions env alias rule =
   case rule of
-    Regulative {subj,who,cond,upon} -> do
+    Regulative {} -> do
       t <- text
       mutterdhsf 4 [i|ruleQuestions: regulative #{ruleLabelName rule}|]  pShowNoColorS t
       text
-    Hornlike {clauses} -> do
+    Hornlike {} -> do
       rqn <- ruleQnTrees env alias rule
       mutterdhsf 4 "ruleQuestions: horn; ruleQnTrees =" show rqn
       t <- text
       mutterdhsf 4 "ruleQuestions: horn; returning linBStext" show t
       text
-    Constitutive {cond} -> do
+    Constitutive {} -> do
       t <- text
       mutterdhsf 4 "ruleQuestions: constitutive; returning linBStext" show t
       text
@@ -514,11 +527,11 @@ ruleQnTrees env alias rule = do
 
 ----------------------------------------------------------------------
 
-textViaQaHorns :: NLGEnv -> Alias -> Maybe GNP -> [([RuleName],  BoolStructT)]
-textViaQaHorns env alias subj = [ (rn, linBStext env $ mkGFtext env alias (referNP <$> subj) bsr) | (rn, bsr) <- qaHornsR (interpreted env)]
+textViaQaHorns :: NLGEnv -> Interpreted -> Maybe GNP -> [([RuleName],  BoolStructT)]
+textViaQaHorns env l4i subj = [ (rn, linBStext env $ mkGFtext env (referNP <$> subj) bsr) | (rn, bsr) <- qaHornsR l4i]
 
-mkGFtext :: NLGEnv -> Alias -> Maybe GNP -> BoolStructR -> BoolStructGText
-mkGFtext env alias subj bsr = case (whoParses, condParses) of
+mkGFtext :: NLGEnv -> Maybe GNP -> BoolStructR -> BoolStructGText
+mkGFtext env subj bsr = case (whoParses, condParses) of
   ([], []) -> mkConstraintText env GqPREPOST GqCONSTR bsr
   ([], _:_) -> mkCondText env GqPREPOST GqCOND bsr
   (_:_, _) -> case subj of
@@ -605,13 +618,13 @@ parseDate = \case
     dummyYear = mkYear "1970"
 
     mkYear :: Text.Text -> GYear
-    mkYear (splitYear -> [y1, y2, y3, y4]) =
+    mkYear (splitYear -> (y1, y2, y3, y4)) =
       GMkYear (LexYearComponent y1) (LexYearComponent y2) (LexYearComponent y3) (LexYearComponent y4)
 
-    splitYear :: Text.Text -> [String]
+    splitYear :: Text.Text -> (String, String, String, String)
     splitYear y = case [[i|Y#{d}|] | d <- Text.unpack y] of
-      xs@[_, _, _, _] -> xs
-      _ -> ["Y2", "Y0", "Y0", "Y0"]
+      [a, b, c, d] -> (a, b, c, d)
+      _ -> ("Y2", "Y0", "Y0", "Y0")
 
     tDay :: Text.Text -> GDay
     tDay t = LexDay [i|Day#{t}|]
@@ -674,8 +687,8 @@ parseUpon env pt = case (upons, nps) of
     go :: Gf a => String -> [a]
     go txt' = fg <$> parseAnyNoRecover txt' env txt
 
-parseTemporal :: NLGEnv -> TemporalConstraint Text.Text -> GTemporal
-parseTemporal env (TemporalConstraint t (Just int) text) =
+parseTemporal :: TemporalConstraint Text.Text -> GTemporal
+parseTemporal (TemporalConstraint t (Just int) text) =
   GTemporalConstraint tc digits unit
   where
     tc = parseTComparison t
@@ -688,7 +701,7 @@ parseTemporal env (TemporalConstraint t (Just int) text) =
       [dig] -> GIDig dig
       xs -> foldr GIIDig (GIDig (last xs)) (init xs)
 
-parseTemporal _ (TemporalConstraint t Nothing text) =
+parseTemporal (TemporalConstraint t Nothing text) =
   GTemporalConstraintNoDigits tc unit
   where
     tc = parseTComparison t
@@ -771,6 +784,7 @@ parseConstraint
         RPlte -> ("<=", "at most", "at most")
         RPgt -> (">", "more than", "greater than")
         RPgte -> (">=", "at least", "at least")
+        _ -> error "parseConstraint"
 
       nps = parseAnyNoRecover "NP" env a'
       vps = parseAnyNoRecover "VPS" env b'
@@ -843,7 +857,7 @@ splitDigits =
 
     -- Note that this is NOT the same as (Text.all Char.isDigit str)
     -- because that allows for the c ase when str is empty, but this does not.
-    isNumeric (decimal -> Right (_, "")) = True
+    isNumeric (decimal @Integer -> Right (_, "")) = True
     isNumeric _ = False
 
     -- splitDigit d
@@ -863,20 +877,19 @@ splitDigits =
 -----------------------------------------------------------------------------
 -- Expand a set of rules
 
-expandRulesForNLGE :: NLGEnv -> [Rule] -> XPileLog [Rule]
+expandRulesForNLGE :: Interpreted -> [Rule] -> XPileLog [Rule]
 expandRulesForNLGE = expandRulesForNLGE' 4
 
-expandRulesForNLG :: NLGEnv -> [Rule] -> [Rule]
-expandRulesForNLG env = runLog . expandRulesForNLGE' 0 env
+expandRulesForNLG :: Interpreted -> [Rule] -> [Rule]
+expandRulesForNLG l4i = runLog . expandRulesForNLGE' 0 l4i
 
-expandRulesForNLGE' :: Int -> NLGEnv -> [Rule] -> XPileLog [Rule]
-expandRulesForNLGE' depth env rules = do
+expandRulesForNLGE' :: Int -> Interpreted -> [Rule] -> XPileLog [Rule]
+expandRulesForNLGE' depth l4i rules = do
   mutterdhsf depth "expandRulesForNLG() called with rules" pShowNoColorS rules
   toreturn <- for uniqrs $ expandRuleForNLGE l4i $ depth + 1
   mutterdhsf depth "expandRulesForNLG() returning" pShowNoColorS toreturn
   pure toreturn
   where
-    l4i = interpreted env
     usedrules = getExpandedRuleNames l4i `foldMap` rules
     uniqrs = [r | r <- rules, ruleName r `notElem` usedrules]
 
@@ -892,16 +905,16 @@ getExpandedRuleNames l4i = \case
         RPBoolStructR mt1 RPis _bsr -> [mt1]
         _                           -> []
     getNamesBSR l4i depth (AA.Not item)   = getNamesBSR l4i (depth + 1) item
-    getNamesBSR l4i depth (AA.All lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
+    getNamesBSR l4i depth (AA.All _lbl xs) = getNamesBSR l4i (depth + 1) `foldMap` xs
     getNamesBSR l4i depth (AA.Any lbl xs) = getNamesBSR l4i depth $ AA.All lbl xs
 
     getNamesRP :: Interpreted -> Int -> RelationalPredicate -> [RuleName]
-    getNamesRP l4i depth (RPConstraint  mt1 RPis mt2) = [mt2]
-    getNamesRP l4i depth (RPBoolStructR mt1 RPis bsr) = getNamesBSR l4i depth bsr
+    getNamesRP _l4i _depth (RPConstraint  _mt1 RPis mt2) = [mt2]
+    getNamesRP l4i   depth (RPBoolStructR _mt1 RPis bsr) = getNamesBSR l4i depth bsr
     getNamesRP _l4i _depth _x                          = []
 
     getNamesHC :: Interpreted -> HornClause2 -> [RuleName]
-    getNamesHC l4i clause = headNames <> bodyNames
+    getNamesHC _l4i clause = headNames <> bodyNames
       where
         headNames = go getNamesRP $ hHead clause
         bodyNames = clause |> hBody |> maybeToList |> foldMap (go getNamesBSR)
@@ -946,11 +959,6 @@ expandRuleForNLGE _ _ rule = do
   mutterd 4 "expandRuleForNLGE: running some other rule"
   pure rule
 
--- This is used for creating questions from the rule, so we only expand
--- the fields that are used in ruleQuestions
-expandRuleForNLG :: Interpreted -> Int -> Rule -> Rule
-expandRuleForNLG l4i depth = runLog . expandRuleForNLGE l4i depth
-
 -- I suspect that original intention was to not include expansions in UPON?
 -- But in any case, here is a function that is applied in expandRuleForNLG to expand the UPON field.
 -- There's a test case for this in NLGSpec ("test expandRulesForNLG for pdpa1 with added UPON expansion")
@@ -962,7 +970,7 @@ expandPT l4i depth pt = maybe pt ptFromRP expanded
     ptFromRP (RPParamText pt)         = pt
     ptFromRP (RPMT mt)                = mt2pt mt
     ptFromRP (RPConstraint _ RPis mt) = mt2pt mt
-    ptFromRP rp@(RPBoolStructR _ RPis bsr@(AA.Leaf _)) = mt2pt [MTT $ bsr2text bsr] -- Only works if the BSR is a leaf; otherwise we lose structure when trying to convert a BSR into ParamText
+    ptFromRP (RPBoolStructR _ RPis bsr@(AA.Leaf _)) = mt2pt [MTT $ bsr2text bsr] -- Only works if the BSR is a leaf; otherwise we lose structure when trying to convert a BSR into ParamText
     ptFromRP rp = trace [i|ptFromRP: encountered #{rp}|] $ fallbackPTfromRP rp
 
     expanded = listToMaybe

@@ -107,11 +107,11 @@ namesAndStruct l4i rl = do
 
 -- | for each rule, construct the questions for that rule;
 -- and then jam them together with all the names for all the rules???
-namesAndQ :: NLGEnv -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
-namesAndQ env rl = do
+namesAndQ :: NLGEnv -> Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
+namesAndQ env l4i rl = do
   mutterdhsf 3 "namesAndQ: name" show name
   mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
-  expandedRules <- expandRulesForNLGE env rl
+  expandedRules <- expandRulesForNLGE l4i rl
   questStruct <- traverse (ruleQuestions env alias) expandedRules
   mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
   let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
@@ -169,11 +169,11 @@ justStatements xs y = xs
 labelQs :: [AA.OptionallyLabeledBoolStruct T.Text] -> [AA.BoolStruct (AA.Label T.Text) T.Text]
 labelQs = map alwaysLabeled
 
-biggestQ :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
-biggestQ env rl = do
+biggestQ :: NLGEnv -> Interpreted -> [Rule] -> XPileLog [BoolStructT]
+biggestQ env l4i rl = do
   mutter "*** biggestQ: running"
   let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rl]
-  q <- ruleQuestionsNamed env alias `traverse` expandRulesForNLG env rl
+  q <- ruleQuestionsNamed env alias `traverse` expandRulesForNLG l4i  rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
       onlyqs = Map.fromList q
       sorted = sortOn (Data.Ord.Down . DL.length) flattened
@@ -184,10 +184,10 @@ biggestQ env rl = do
       pure []
     (_, Just x) -> pure x
 
-biggestS :: NLGEnv -> [Rule] -> XPileLog [BoolStructT]
-biggestS env rl = do
+biggestS :: NLGEnv -> Interpreted -> [Rule] -> XPileLog [BoolStructT]
+biggestS env l4i rl = do
   mutter "*** biggestS running"
-  q <- join $ combine <$> namesAndStruct (interpreted env) rl <*> namesAndQ env rl
+  q <- join $ combine <$> namesAndStruct l4i rl <*> namesAndQ env l4i rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
 
       onlys = Map.fromList
@@ -209,11 +209,11 @@ biggestS env rl = do
 
 asPurescript
   :: NLGEnv -- ^ Used to produce more human readable versions of the questions
+  -> Interpreted
   -> [Rule]
   -> XPileLogE String
-asPurescript env rl = do
+asPurescript env l4i rl = do
   let nlgEnvStr = env |> gfLang |> showLanguage
-      l4i       = env |> interpreted
   mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
 
   mutterd 3 "building namesAndStruct"
@@ -221,7 +221,7 @@ asPurescript env rl = do
   mutterdhsf 3 "built namesAndStruct" pShowNoColorS nAS
 
   mutterd 3 "building namesAndQ"
-  nAQ <- namesAndQ      env rl
+  nAQ <- namesAndQ      env l4i rl
   mutterdhsf 3 "built namesAndQ" pShowNoColorS nAQ
 
   mutterd 3 "combining nAS and nAQ to form c'"
@@ -279,8 +279,8 @@ asPurescript env rl = do
           --       )
           --   )
 
-translate2PS :: [NLGEnv] -> NLGEnv -> [Rule] -> XPileLogE String
-translate2PS nlgEnvs eng rules = do
+translate2PS :: [NLGEnv] -> NLGEnv -> Interpreted -> [Rule] -> XPileLogE String
+translate2PS nlgEnvs eng l4i rules = do
   traverse_
     mutter
     [ [__i|** translate2PS: running against #{length rules} rules|],
@@ -292,7 +292,7 @@ translate2PS nlgEnvs eng rules = do
   -- topBit
   -------------------------------------------------------------
   mutter "** calling biggestQ"
-  bigQ <- biggestQ eng rules
+  bigQ <- biggestQ eng l4i rules
   traverse_ mutter ["** got back bigQ", show bigQ]
   let topBit =
         bigQ
@@ -310,12 +310,11 @@ translate2PS nlgEnvs eng rules = do
   qaHornsAllLangs :: [Either XPileLogW String] <-
     for nlgEnvs \nlgEnv@(NLGEnv {gfLang}) -> do
       let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
-          l4i       = interpreted nlgEnv
           listOfMarkings = l4i |> getMarkings |> AA.getMarking |> Map.toList
 
       -- The Right may contain duplicates, so we need to nub later.
       hornByLang :: Either XPileLogW [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)] <-
-        qaHornsByLang rules nlgEnv
+        qaHornsByLang rules nlgEnv l4i
 
       case hornByLang of
         Left err -> xpError err
@@ -356,12 +355,12 @@ translate2PS nlgEnvs eng rules = do
 
 
 
-qaHornsByLang :: [Rule] -> NLGEnv -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
-qaHornsByLang rules langEnv = do
+qaHornsByLang :: [Rule] -> NLGEnv -> Interpreted -> XPileLogE [Tuple String (AA.BoolStruct (AA.Label T.Text) T.Text)]
+qaHornsByLang rules langEnv l4i = do
   mutterd 3 [i|qaHornsByLang for language #{gfLang langEnv}|]
   let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rules]
       subject = listToMaybe [ parseSubj langEnv person | Regulative{subj = person} <- rules]
-      qaHT = textViaQaHorns langEnv alias subject
+      qaHT = textViaQaHorns langEnv l4i subject
       qaHornNames = foldMap fst qaHT
       -- qaHT = qaHornsT $ interpreted langEnv -- [ (names, bs) | (names, bs) <- qaHornsT (interpreted langEnv)]
       d = 4
@@ -369,7 +368,7 @@ qaHornsByLang rules langEnv = do
   mutterdhsf d "all qaHT" pShowNoColorS qaHT
   mutterdhsf d "qaHornNames" show qaHornNames
   mutterd d "traversing ruleQuestionsNamed"
-  allRQs <- ruleQuestionsNamed langEnv alias `traverse` expandRulesForNLG langEnv rules
+  allRQs <- ruleQuestionsNamed langEnv alias `traverse` expandRulesForNLG l4i rules
   -- first we see which of these actually returned anything useful
   mutterd d "all rulequestionsNamed returned"
 

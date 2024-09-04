@@ -73,6 +73,10 @@ instance ToSchema SimpleResponse
 instance ToSchema EvaluatorError
 
 -- This is correct, since we don't overwrite the
+-- 'ToJSON SimpleResponse' instance yet.
+instance ToSchema ParameterMismatch
+
+-- This is correct, since we don't overwrite the
 -- 'ToJSON ResponseWithReason' instance yet.
 instance ToSchema ResponseWithReason
 

@@ -68,14 +68,14 @@ data ReasoningTree = ReasoningTree
   { treeNode :: ReasonNode
   , treeChildren :: [ReasoningTree]
   }
-  deriving (Show, Read, Ord, Eq, Generic)
+  deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 data ReasonNode = ReasonNode
   { reasoningNodeExampleCode :: [Text.Text]
   , reasoningNodeExplanation :: [Text.Text]
   }
-  deriving (Show, Read, Ord, Eq, Generic)
+  deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 -- | An 'EvaluatorError' is some form of panic thrown by an evaluator.
@@ -84,12 +84,16 @@ data ReasonNode = ReasonNode
 -- The error message may contain hints of what might have gone wrong.
 data EvaluatorError
   = InterpreterError !Text.Text
-  | RequiredParameterMissing
-      { expectedParameters :: !Int
-      , actualParameters :: !Int
-      }
+  | RequiredParameterMissing !ParameterMismatch
   | CannotHandleUnknownVars
-  deriving (Show, Read, Ord, Eq, Generic)
+  deriving stock (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+data ParameterMismatch = ParameterMismatch
+  { expectedParameters :: !Int
+  , actualParameters :: !Int
+  }
+  deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 instance FromHttpApiData FnLiteral where

@@ -78,10 +78,11 @@ functionHandler :: (MonadIO m) => [Text.Text] -> [Maybe FnLiteral] -> Expr Doubl
 functionHandler labels arguments func
   | length labels /= length arguments =
       throwError $
-        RequiredParameterMissing
-          { expectedParameters = length labels
-          , actualParameters = length arguments
-          }
+        RequiredParameterMissing $
+          ParameterMismatch
+            { expectedParameters = length labels
+            , actualParameters = length arguments
+            }
   | otherwise = do
       let
         labelledArguments = zip labels arguments

@@ -170,12 +170,21 @@ instance ToParamSchema FnLiteral where
   toParamSchema _ =
     mempty
       & title ?~ "Function argument"
+      -- Even though this is strictly speaking not *only* a string, custom GPT seem
+      -- to need this, otherwise they will fail to send any requests to any endpoint with
+      -- this query parameter.
+      & type_ ?~ OpenApiString
       & example ?~ Aeson.String "true"
       & description ?~ "A Function argument which can be either 'true' or 'false', or a floating point number. Additionally accepts 'yes' and 'no' as synonyms for 'true' and 'false' respectively."
 
 instance ToSchema FnLiteral where
   declareNamedSchema p = do
     pure $ NamedSchema (Just "Literal") $ toParamSchema p
+      -- We overwrite this, as the schema itself may be one of
+      -- string, int, double or bool... And I don't think we can express that
+      -- here?
+      -- Schema validation doesn't like this set to 'OpenApiString', likely for good reason.
+      & type_ .~ Nothing
 
 instance ToParamSchema EvalBackends where
   toParamSchema _ =

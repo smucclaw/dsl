@@ -18,11 +18,70 @@ import LS.NLP.NLG (NLGEnv, allLangs, langEng, myNLGEnv, printLangs)
 import LS.XPile.Logging (XPileLogW, fmapE, mutter, xpLog)
 import LS.XPile.Purescript (translate2PS)
 import System.FilePath
-import System.IO.Unsafe (unsafeInterleaveIO)
 import Test.Hspec (Spec, describe, it, runIO)
 import Test.Hspec.Golden ( Golden(..) )
 import Prelude hiding (exp, seq)
 import LS.Interpreter (l4interpret)
+import PGF (Language)
+import LS (Interpreted)
+data NLGData
+  = MkNLGData
+  { env :: NLGEnv,
+    allEnv :: [NLGEnv]
+  }
+
+loadNLGEnv ::  Either [String] Language -> Interpreted -> IO NLGData
+loadNLGEnv engE l4i =
+      case engE of
+        Left err -> do
+          error $ unlines $ "natural4: encountered error when obtaining langEng" : err
+        Right eng -> do
+          (nlgEnv, _nlgEnvErr) <-  xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
+          (allNLGEnv, _) <- do
+            nlgLangs <- allLangs
+            xps <- traverse (myNLGEnv l4i) nlgLangs
+            return (xpLog $ sequenceA xps)
+          case nlgEnv of
+            Left err -> do
+              error $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
+            Right nlgEnvR -> do
+              let allNLGEnvErrors = mconcat $ lefts allNLGEnv
+              unless (null allNLGEnvErrors) do
+                putStrLn "natural4: encountered error while obtaining allNLGEnv"
+                DF.traverse_ putStrLn allNLGEnvErrors
+
+              let allNLGEnvR = rights allNLGEnv
+
+              let nlgData =
+                    MkNLGData
+                      nlgEnvR
+                      allNLGEnvR
+
+              pure nlgData
+
+transpileFile :: String -> IO TL.Text
+transpileFile filename = do
+    let testPath = "test" </> "testdata" </> "golden" </> "PurescriptSpec" </> filename <.> "csv"
+        opts = SFL4.defaultOptions {SFL4.file = [testPath]}
+    strLangs <-  printLangs allLangs
+    rules <- SFL4.dumpRules opts
+    l4i <-  l4interpret rules
+    (engE, _) <- xpLog <$> langEng
+    nlgData <- loadNLGEnv engE l4i
+
+    let justNLGDate = nlgData
+        nlgEnvs = justNLGDate.allEnv
+        eng = justNLGDate.env
+        (psResult, _) = xpLog do
+          fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgEnvs eng rules)
+ 
+    case psResult of
+        Left err -> do
+          error $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
+        Right goodResult -> do
+          pure $ TL.pack goodResult
+
+
 
 goldenGeneric :: String -> TL.Text -> Golden TL.Text
 goldenGeneric name myoutput =
@@ -38,61 +97,9 @@ goldenGeneric name myoutput =
   where
     testPath = "test" </> "testdata" </> "golden" </> "PurescriptSpec" </> name
 
-data NLGData
-  = MkNLGData
-  { env :: NLGEnv,
-    allEnv :: [NLGEnv],
-    allEnvErr :: XPileLogW,
-    engErr :: XPileLogW
-  }
 
 spec :: Spec
 spec = do
   describe "toMathLang for arithRule3" do
-    let testPath = "test" </> "testdata" </> "golden" </> "PurescriptSpec" </> "must_sing.csv"
-        opts = SFL4.defaultOptions {SFL4.file = [testPath]}
-    nlgLangs <- runIO allLangs
-    strLangs <- runIO $ printLangs allLangs
-    rules <- runIO (SFL4.dumpRules opts)
-    l4i <- runIO $ l4interpret rules
-    (engE, engErr) <- runIO $ xpLog <$> langEng
-    (_, nlgData) <- runIO $
-      case engE of
-        Left err -> do
-          putStrLn $ unlines $ "natural4: encountered error when obtaining langEng" : err
-          pure (Nothing, Nothing)
-        Right eng -> do
-          (nlgEnv, _nlgEnvErr) <- unsafeInterleaveIO $ xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
-          (allNLGEnv, allNLGEnvErr) <- unsafeInterleaveIO do
-            xps <- traverse (myNLGEnv l4i) nlgLangs
-            return (xpLog $ sequenceA xps)
-
-          case nlgEnv of
-            Left err -> do
-              putStrLn $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
-              pure (Nothing, Nothing)
-            Right nlgEnvR -> do
-              let allNLGEnvErrors = mconcat $ lefts allNLGEnv
-              unless (null allNLGEnvErrors) do
-                putStrLn "natural4: encountered error while obtaining allNLGEnv"
-                DF.traverse_ putStrLn allNLGEnvErrors
-
-              let allNLGEnvR = rights allNLGEnv
-
-              let nlgData =
-                    MkNLGData
-                      nlgEnvR
-                      allNLGEnvR
-                      allNLGEnvErr
-                      engErr
-
-              pure (Just nlgEnvR, Just nlgData)
-    let Just justNLGDate = nlgData
-        nlgEnvs = justNLGDate.allEnv
-        eng = justNLGDate.env
-        (psResult, _) = xpLog do
-          mutter "* main calling translate2PS"
-          fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgEnvs eng rules)
-        (Right justResult) = psResult
-        finalResult = TL.pack justResult
-    it "convert must sing to Purescript" $ goldenGeneric "must_sing" finalResult
+    must_sing_purs <- runIO $ transpileFile "must_sing"
+    it "convert must sing to Purescript" $ goldenGeneric "must_sing" must_sing_purs

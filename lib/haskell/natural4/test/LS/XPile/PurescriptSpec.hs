@@ -10,12 +10,11 @@ module LS.XPile.PurescriptSpec (spec) where
 
 import Control.Monad (unless)
 import Data.Either (lefts, rights)
-import Data.Foldable qualified as DF
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.IO qualified as TL
 import LS qualified as SFL4
 import LS.NLP.NLG (NLGEnv, allLangs, langEng, myNLGEnv, printLangs)
-import LS.XPile.Logging (XPileLogW, fmapE, mutter, xpLog)
+import LS.XPile.Logging (fmapE, xpLog)
 import LS.XPile.Purescript (translate2PS)
 import System.FilePath
 import Test.Hspec (Spec, describe, it, runIO)
@@ -47,8 +46,7 @@ loadNLGEnv engE l4i =
             Right nlgEnvR -> do
               let allNLGEnvErrors = mconcat $ lefts allNLGEnv
               unless (null allNLGEnvErrors) do
-                putStrLn "natural4: encountered error while obtaining allNLGEnv"
-                DF.traverse_ putStrLn allNLGEnvErrors
+                error $ unlines $ "natural4: encountered error while obtaining allNLGEnv" : allNLGEnvErrors
 
               let allNLGEnvR = rights allNLGEnv
 
@@ -100,6 +98,8 @@ goldenGeneric name myoutput =
 
 spec :: Spec
 spec = do
-  describe "toMathLang for arithRule3" do
-    must_sing_purs <- runIO $ transpileFile "must_sing"
-    it "convert must sing to Purescript" $ goldenGeneric "must_sing" must_sing_purs
+  describe "Purescript transpiler" do
+    describe "must_sing" do
+      must_sing_purs <- runIO $ transpileFile "must_sing"
+      it "convert must sing to Purescript" do
+        goldenGeneric "must_sing" must_sing_purs

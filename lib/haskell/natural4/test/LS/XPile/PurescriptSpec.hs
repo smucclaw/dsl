@@ -103,3 +103,8 @@ spec = do
       must_sing_purs <- runIO $ transpileFile "must_sing"
       it "convert must sing to Purescript" do
         goldenGeneric "must_sing" must_sing_purs
+
+    describe "rodents" do
+      rodents_purs <- runIO $ transpileFile "rodents"
+      it "convert must sing to Purescript" do
+        goldenGeneric "rodents" rodents_purs

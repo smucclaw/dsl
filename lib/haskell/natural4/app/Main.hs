@@ -11,11 +11,10 @@ module Main (main) where
 import AnyAll.BoolStruct (alwaysLabeled)
 import AnyAll.SVGLadder (defaultAAVConfig)
 import Control.Arrow ((>>>))
-import Control.Monad (unless, void, when)
+import Control.Monad (void, when)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Bifunctor (first)
 import Data.ByteString.Lazy.UTF8 (toString)
-import Data.Either (lefts, rights)
 import Data.Foldable qualified as DF
 import Data.HashMap.Strict qualified as HashMap
 import Data.List (intercalate, isPrefixOf, sortOn, (\\))
@@ -37,12 +36,8 @@ import LS.Interpreter
 import LS.Lib (Mode(..), ModeName(..), Options(..))
 import LS.NLP.NLG
   ( NLGEnv,
-    allLangs,
-    expandRulesForNLG,
-    langEng,
-    myNLGEnv,
-    nlg,
-    printLangs,
+    initialiseNlgEnv,
+    NLGData(..), printLangs, allLangs, nlg, expandRulesForNLG,
   )
 import LS.XPile.CoreL4
   ( sfl4ToASP,
@@ -126,7 +121,8 @@ import Text.Regex.PCRE.Heavy qualified as PCRE
 import Text.XML.HXT.Core qualified as HXT
 import qualified LS.Renamer as Renamer
 import LS.Renamer.Rules (RnRule)
-
+import LS.Log qualified as Log
+import Control.Concurrent.Extra (once)
 --
 -- Command-line options parsing
 --
@@ -244,8 +240,7 @@ data DriverState =
     , parsed      :: [SFL4.Rule]
     , interpreted :: SFL4.Interpreted
     , timestamp   :: String
-    , nlgEnv      :: Maybe NLGEnv
-    , nlgData     :: Maybe NLGData
+    , nlgData     :: IO (Maybe NLGData)
     }
 
 -- | Computes the unique output path we potentially want to use,
@@ -269,7 +264,7 @@ workuuid MkDriverState { options } =
 --
 main :: IO ()
 main = do
-
+  let tracer = Log.prettyTracer
   -- Part 1: Parse options
   opts     <- execParser (info allOptions mempty)
 
@@ -281,46 +276,7 @@ main = do
   l4i      <- l4interpret rules
   iso8601  <- now8601
 
-  -- NLG stuff
-  --
-  -- TODO: unsafeInterleaveIO should probably be replaced by "once",
-  -- i.e., code that runs the IO actions at most once, but only if needed
-  -- by one of the selected transpilers
-
-  nlgLangs <- unsafeInterleaveIO allLangs
-  (engE, engErr) <- xpLog <$> langEng
-  (nlgEnv, nlgData) <-
-    case engE of
-      Left err -> do
-        putStrLn $ unlines $ "natural4: encountered error when obtaining langEng" : err
-        pure (Nothing, Nothing)
-      Right eng -> do
-        (nlgEnv, _nlgEnvErr)  <- unsafeInterleaveIO $ xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
-        (allNLGEnv, allNLGEnvErr) <- unsafeInterleaveIO do
-          xps <- traverse (myNLGEnv l4i) nlgLangs
-          return (xpLog $ sequenceA xps)
-
-        case nlgEnv of
-          Left  err     -> do
-            putStrLn $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
-            pure (Nothing, Nothing)
-          Right nlgEnvR -> do
-            let allNLGEnvErrors = mconcat $ lefts allNLGEnv
-            unless (null allNLGEnvErrors) do
-              putStrLn "natural4: encountered error while obtaining allNLGEnv"
-              DF.traverse_ putStrLn allNLGEnvErrors
-
-            let allNLGEnvR = rights allNLGEnv
-
-            let
-              nlgData =
-                MkNLGData
-                  nlgEnvR
-                  allNLGEnvR
-                  allNLGEnvErr
-                  engErr
-
-            pure (Just nlgEnvR, Just nlgData)
+  nlgData  <- once $ initialiseNlgEnv tracer
 
   let
     driverState =
@@ -330,7 +286,6 @@ main = do
         , parsed      = rules
         , interpreted = l4i
         , timestamp   = iso8601
-        , nlgEnv      = nlgEnv
         , nlgData     = nlgData
         }
 
@@ -637,25 +592,19 @@ data TranspilerOutputConfig a =
     , ppStdout   :: a -> IO () -- ^ post-process result when writing to screen
     }
 
-data NLGData =
-  MkNLGData
-    { env       :: NLGEnv
-    , allEnv    :: [NLGEnv]
-    , allEnvErr :: XPileLogW
-    , engErr    :: XPileLogW
-    }
-
 withNLGEnv ::
-  (NLGEnv -> DriverState -> TranspilationResult a) -> DriverState -> TranspilationResult a
-withNLGEnv k ds =
-  case ds.nlgEnv of
-    Nothing  -> Skipped "skipping transpiler due to lacking NLG environment"
-    Just env -> k env ds
+  (NLGEnv -> DriverState -> TranspilationResult a) -> DriverState -> IO (TranspilationResult a)
+withNLGEnv k ds = do
+  dat <- ds.nlgData
+  case dat of
+    Nothing  -> pure $ Skipped "skipping transpiler due to lacking NLG environment"
+    Just n -> pure $ k n.env ds
 
 withNLGData ::
   (NLGData -> DriverState -> IO (TranspilationResult a)) -> DriverState -> IO (TranspilationResult a)
-withNLGData k ds =
-  case ds.nlgData of
+withNLGData k ds = do
+  dat <- ds.nlgData
+  case dat of
     Nothing  -> pure (Skipped "skipping transpiler due to lacking NLG environment")
     Just env -> k env ds
 
@@ -676,6 +625,19 @@ simpleTranspiler subdir ext entry =
     { subdir     = subdir
     , extension  = ext
     , entryPoint = \ ds -> pure (entry ds)
+    , output     = DefaultTranspilerOutput (MkTranspilerOutputConfig Just writeFile putStrLn)
+    }
+
+ioTranspiler ::
+     FilePath
+  -> String
+  -> (DriverState -> IO (TranspilationResult String))
+  -> Transpiler
+ioTranspiler subdir ext entry =
+  MkTranspiler
+    { subdir     = subdir
+    , extension  = ext
+    , entryPoint = \ ds -> entry ds
     , output     = DefaultTranspilerOutput (MkTranspilerOutputConfig Just writeFile putStrLn)
     }
 
@@ -805,14 +767,14 @@ writeTranspilationResultWith write doLink dirname filename ext result =
 
 checklistTranspiler :: Transpiler
 checklistTranspiler =
-  simpleTranspiler "checkl" "txt"
+  ioTranspiler "checkl" "txt"
     (withNLGEnv (\ nlge -> withErrors (\ ds ->
       first show (xpLog (checklist nlge ds.runConfig ds.parsed))
     )))
 
 gftreesTranspiler :: Transpiler
 gftreesTranspiler =
-  simpleTranspiler "gftrees" "gftrees"
+  ioTranspiler "gftrees" "gftrees"
     (withNLGEnv (\ nlge -> withErrors (\ ds ->
       first pShowNoColorS (xpLog (gftrees nlge ds.parsed))
     )))
@@ -840,8 +802,8 @@ purescriptTranspiler =
       strLangs <- unsafeInterleaveIO $ printLangs allLangs
       let (psResult, psErrors) = xpLog do
             mutter "* main calling translate2PS"
-            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgd.allEnv nlgd.env ds.parsed)
-      pure (Success (commentIfError "-- ! -- " psResult) (Just (nlgd.engErr <> nlgd.allEnvErr <> psErrors)))
+            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgd.allEnv nlgd.env ds.interpreted ds.parsed)
+      pure (Success (commentIfError "-- ! -- " psResult) (Just psErrors))
       )
 
 prologTranspiler :: Transpiler
@@ -980,7 +942,7 @@ nlgTranspiler =
   where
     go = \ (nlgd, ds) ->
       DF.for_ nlgd.allEnv $ \ env -> do
-        naturalLangSents <- nlg env `traverse` expandRulesForNLG env ds.parsed
+        naturalLangSents <- nlg env `traverse` expandRulesForNLG ds.interpreted ds.parsed
         DF.for_ naturalLangSents $ putStrLn . Text.unpack
 
 

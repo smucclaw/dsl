@@ -5,6 +5,7 @@
 module LS.NLGSpec (spec) where
 
 import AnyAll (BoolStruct (..), Label (..))
+import Control.Monad.Trans.Except
 import Data.Graph.Inductive qualified as Graph (empty)
 import Data.HashMap.Strict as Map (empty, fromList)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -90,10 +91,10 @@ import Test.Hspec
 spec :: Spec
 spec = do
   let eng = mkCId "NL4Eng"
-  (env, _) <- xpLog <$> runIO (myNLGEnv rodentsInterp eng)
+  env <- runIO $ runExceptT (myNLGEnv mempty eng)
   case env of
     Left xpLogW ->
-      it [i|rodentsInterp nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
+      it [i|nlgEnv is a left of: #{xpLogW}|] $ expectationFailure ""
     Right env -> do
       describe "test rodents" do
         it "Should return questions about rodent damage" do
@@ -115,19 +116,16 @@ spec = do
             let questions = fst $ xpLog $ ruleQuestions env Nothing (head mustsing5ExpandedGold)
             questions `shouldBe` [All Nothing [Leaf "does the person walk?", Any Nothing [All Nothing [Any Nothing [Leaf "does the person consume an alcoholic beverage?", Leaf "does the person consume a non-alcoholic beverage?"], Any Nothing [Leaf "does the person consume the beverage in part?", Leaf "does the person consume the beverage in whole?"]], Leaf "does the person eat?"]]]
 
-      let envMustSing5 = env {interpreted = mustsing5Interp}
-      testShouldChange "mustsing5" envMustSing5 mustsing5Rules mustsing5ExpandedGold
+      testShouldChange "mustsing5" mustsing5Interp mustsing5Rules mustsing5ExpandedGold
 
-      let envPDPA = env {interpreted = pdpa1withUnexpandedUponInterp}
       testShouldChange
-        "pdpa1 with added UPON expansion" envPDPA
+        "pdpa1 with added UPON expansion" pdpa1withUnexpandedUponInterp
         pdpa1withUnexpandedUpon pdpa1withExpandedUponGold
 
-      let envPDPAFull = env {interpreted = pdpafullInterp}
-      testShouldChange "pdpa full" envPDPAFull pdpafullRules pdpafullExpandedGold
+      testShouldChange "pdpa full" pdpafullInterp pdpafullRules pdpafullExpandedGold
 
-      testNoChange "rodentsandvermin" env rodentsRules
-      testNoChange "pdpadbno-1 (original)" envPDPA expected_pdpadbno1
+      testNoChange "rodentsandvermin" rodentsInterp rodentsRules
+      testNoChange "pdpadbno-1 (original)" pdpa1withUnexpandedUponInterp expected_pdpadbno1
 
 
 -- the following tests were broken by the nlg-qahorns branch. commented out so as to get the dataflow branch working.
@@ -158,18 +156,18 @@ spec = do
 
 ---------------------------------------------------------------
 
-testNoChange :: String -> NLGEnv -> [Rule] -> Spec
-testNoChange description env ogrules =
+testNoChange :: String -> Interpreted -> [Rule] -> Spec
+testNoChange description l4i ogrules =
   describe ("test expandRulesForNLG for " <> description) do
     it ("should not change " <> description) do
-        let expanded = expandRulesForNLG env ogrules
+        let expanded = expandRulesForNLG l4i ogrules
         expanded `shouldBe` ogrules
 
-testShouldChange :: String -> NLGEnv -> [Rule] -> [Rule] -> Spec
-testShouldChange description env ogrules exprules =
+testShouldChange :: String -> Interpreted -> [Rule] -> [Rule] -> Spec
+testShouldChange description l4i ogrules exprules =
   describe ("test expandRulesForNLG for " <> description) do
     it ("should change " <> description) do
-        let expanded = expandRulesForNLG env ogrules
+        let expanded = expandRulesForNLG l4i ogrules
         expanded `shouldBe` exprules
 
 testViaQaHorns :: String -> [BoolStructT] -> [BoolStructT] -> Spec

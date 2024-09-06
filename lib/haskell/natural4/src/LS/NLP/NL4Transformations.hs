@@ -2,7 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wall -Wno-name-shadowing #-}
 
 module LS.NLP.NL4Transformations
   ( BoolStructCond,
@@ -41,58 +41,14 @@ import LS.NLP.NL4
     GNP,
     GPol,
     GPrePost,
-    GString,
     GTComparison,
     GTemp,
     GText,
     GV2,
-    GVP,
     GWho,
     GWho_,
     Gf,
-    Tree
-      ( GAPWho,
-        GAdjCN,
-        GAdvVP,
-        GAdvWho,
-        GComplV2,
-        GConjCond,
-        GConjConstraint,
-        GConjPreCond,
-        GConjPreConstraint,
-        GConjPrePostCond,
-        GConjPrePostConstraint,
-        GConjPrePostWho,
-        GConjPreWho,
-        GConjTComparison,
-        GConjVPS,
-        GConjWho,
-        GDetCN,
-        GEVERY,
-        GListCond,
-        GListConstraint,
-        GListTComparison,
-        GListVPS,
-        GListWho,
-        GMassNP,
-        GMkVPS,
-        GNEG,
-        GNP_PrePost,
-        GPOS,
-        GRPConstraint,
-        GRPleafS,
-        GUseN,
-        GV2_PrePost,
-        GWHO,
-        GaSg,
-        GpastSimul,
-        GqPREPOST,
-        GqWHO,
-        GrecoverUnparsedAdv,
-        GrecoverUnparsedPrePost,
-        GtheSg,
-        LexConj
-      ),
+    Tree( .. ),
     composOp,
   )
 import PGF (Language, mkCId)
@@ -109,14 +65,12 @@ pushPrePostIntoMain = \case
   Any l xs -> tryTransformWhole (Any l (pushPrePostIntoMain <$> xs))
   Not x -> Not (pushPrePostIntoMain x)
   where
-    hackStrVP :: GString -> GVP -> GVP
-    hackStrVP in_part vp = GAdvVP vp $ GrecoverUnparsedAdv in_part
-
     transformWho :: GTemp -> GPol -> GV2 -> GNP -> GText -> GText
     transformWho t p consume beverage (GqWHO person (GAPWho alcoholic)) =
       GqWHO (referNP person) (GWHO t p (GComplV2 consume (introduceNP (insertAP alcoholic beverage))))
     transformWho t p consume beverage (GqWHO person (GAdvWho in_part)) =
       GqWHO (referNP person) (GWHO t p (GAdvVP (GComplV2 consume (referNP beverage)) in_part))
+    transformWho _ _ _       _        _                                = error "transformWho"
 
     tryTransformWhole :: BoolStructGText -> BoolStructGText
     tryTransformWhole = \case
@@ -126,7 +80,7 @@ pushPrePostIntoMain = \case
                                (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  Any
-            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
+            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost _whether ))))
             inpart_inwhole
           : restOfInnerRules ) ->
         All pp
@@ -144,7 +98,7 @@ pushPrePostIntoMain = \case
                                (GqPREPOST ( GNP_PrePost beverage))))
               alcoholic_nonalcoholic
           :  All
-            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost whether ))))
+            ( Just ( Pre (GqPREPOST ( GrecoverUnparsedPrePost _whether ))))
             inpart_inwhole
           : restOfInnerRules ) ->
         Any pp
@@ -195,6 +149,8 @@ bs2gf conj conjPre conjPrePost mkList bs = case bs' of
     AA.All (Just (AA.Pre pre)) xs -> conjPre pre (LexConj "AND") $ mkList $ f <$> xs
     AA.Any (Just (AA.PrePost pre post)) xs -> conjPrePost pre post (LexConj "OR") $ mkList $ f <$> xs
     AA.All (Just (AA.PrePost pre post)) xs -> conjPrePost pre post (LexConj "AND") $ mkList $ f <$> xs
+    AA.Any (Just (AA.Metadata _)) _ -> error $ "bs2gd: " <> show bs'
+    AA.All (Just (AA.Metadata _)) _ -> error $ "bs2gd: " <> show bs'
     AA.Not unexpectedBS -> trace unexpectedNegationMsg $ bs2gf conj conjPre conjPrePost mkList unexpectedBS
 --    AA.Not _ -> error unexpectedNegationMsg
   where

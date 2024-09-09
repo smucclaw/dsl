@@ -44,7 +44,7 @@ instance (HasOpenApi sub) => HasOpenApi (QueryString :> sub) where
       & addParam param
       & addDefaultResponse400 tname
    where
-    tname = "params"
+    tname = "mycoolnewparams"
     backendParam =
       mempty
         & name .~ "backend"
@@ -137,24 +137,13 @@ instance ToSchema ResponseWithReason
 -- 'ToJSON Reasoning' instance yet.
 instance ToSchema Reasoning
 
+-- This is correct, since we don't overwrite the
+-- 'ToJSON Reasoning' instance yet.
 instance ToSchema ReasoningTree
 
--- where
---   declareNamedSchema p = do
---     defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
---     pure defSchema
-
+-- This is correct, since we don't overwrite the
+-- 'ToJSON Reasoning' instance yet.
 instance ToSchema ReasonNode
-
--- where
---   declareNamedSchema p = do
---     defSchema <- genericDeclareNamedSchema defaultSchemaOptions p
---     pure $
---       defSchema
---         & schema . required
---           .~ [ "reasoningNodeExampleCode"
---              , "reasoningNodeExplanation"
---              ]
 
 instance ToSchema Function where
   declareNamedSchema _ = do
@@ -222,7 +211,7 @@ instance ToSchema Parameter where
 instance ToParamSchema FnLiteral where
   toParamSchema _ =
     mempty
-      & title ?~ "Function argument"
+      & title ?~ "Argument"
       -- Even though this is strictly speaking not *only* a string, custom GPT seem
       -- to need this, otherwise they will fail to send any requests to any endpoint with
       -- this query parameter.
@@ -235,11 +224,6 @@ instance ToSchema FnLiteral where
     pure $
       NamedSchema (Just "Literal") $
         toParamSchema p
-          -- We overwrite this, as the schema itself may be one of
-          -- string, int, double or bool... And I don't think we can express that
-          -- here?
-          -- Schema validation doesn't like this set to 'OpenApiString', likely for good reason.
-          & type_ .~ Nothing
 
 instance ToSchema EvalBackends where
   declareNamedSchema p = do
@@ -251,7 +235,7 @@ instance ToParamSchema EvalBackends where
   toParamSchema _ =
     mempty
       & type_ ?~ OpenApiString
-      & title ?~ "Backend to use for function evaluation"
+      & title ?~ "Evaluation Backends"
       & example ?~ Aeson.String "simala"
       & default_ ?~ Aeson.String "simala"
       & enum_ ?~ [Aeson.String "simala", Aeson.String "gml"]

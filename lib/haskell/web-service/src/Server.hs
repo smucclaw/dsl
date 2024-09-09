@@ -59,8 +59,6 @@ import System.Timeout (timeout)
 import Backend.Api
 import Backend.Explainable (genericMathLangEvaluator)
 import Backend.Simala (simalaEvaluator)
-import Data.Function (on)
-import Data.Map (Map)
 
 -- ----------------------------------------------------------------------------
 -- Servant API

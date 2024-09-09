@@ -17,6 +17,7 @@ import Data.Text.Read qualified as TextReader
 import GHC.Generics (Generic)
 import Optics.Cons
 import Servant.API
+import Data.Text (Text)
 
 data FunctionName
   = ComputeQualifies
@@ -27,22 +28,23 @@ data FnLiteral
   = FnLitInt !Integer
   | FnLitDouble !Double
   | FnLitBool !Bool
-  | FnLitString !Text.Text
+  | FnLitString !Text
   deriving (Show, Read, Ord, Eq, Generic)
 
 instance ToJSON FnLiteral where
   toJSON = \case
-    FnLitInt val -> Aeson.Number $ fromIntegral val
-    FnLitDouble val -> Aeson.Number $ Scientific.fromFloatDigits val
+    FnLitInt val -> Aeson.String $ tshow val
+    FnLitDouble val -> Aeson.String $ tshow val
     FnLitBool val -> Aeson.String $ tshow val
     FnLitString val -> Aeson.String val
    where
-    tshow :: forall a. (Show a) => a -> Text.Text
+    tshow :: forall a. (Show a) => a -> Text
     tshow = Text.pack . show
 
 instance FromJSON FnLiteral where
   parseJSON = \case
     Aeson.String val -> pure $ parseTextAsFnLiteral val
+    Aeson.Bool val -> pure $ FnLitBool val
     Aeson.Number val
       | Just (i :: Int) <- Scientific.toBoundedInteger val -> pure $ FnLitInt $ fromIntegral i
       | Right d <- Scientific.toBoundedRealFloat val -> pure $ FnLitDouble d
@@ -72,8 +74,8 @@ data ReasoningTree = ReasoningTree
   deriving anyclass (FromJSON, ToJSON)
 
 data ReasonNode = ReasonNode
-  { reasoningNodeExampleCode :: [Text.Text]
-  , reasoningNodeExplanation :: [Text.Text]
+  { reasoningNodeExampleCode :: [Text]
+  , reasoningNodeExplanation :: [Text]
   }
   deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
@@ -83,8 +85,9 @@ data ReasonNode = ReasonNode
 -- Such an exception is unrecoverable.
 -- The error message may contain hints of what might have gone wrong.
 data EvaluatorError
-  = InterpreterError !Text.Text
+  = InterpreterError !Text
   | RequiredParameterMissing !ParameterMismatch
+  | UnknownArguments ![Text]
   | CannotHandleUnknownVars
   deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
@@ -99,7 +102,7 @@ data ParameterMismatch = ParameterMismatch
 instance FromHttpApiData FnLiteral where
   parseQueryParam t = Right $ parseTextAsFnLiteral t
 
-parseTextAsFnLiteral :: Text.Text -> FnLiteral
+parseTextAsFnLiteral :: Text -> FnLiteral
 parseTextAsFnLiteral t
   | Right (d, "") <- TextReader.signed TextReader.decimal t = FnLitInt d
   | Right (d, "") <- TextReader.double t = FnLitDouble d
@@ -120,5 +123,5 @@ parseTextAsFnLiteral t
     pure t''
 
 data Evaluator = Evaluator
-  { runEvaluatorForFunction :: FunctionName -> [Maybe FnLiteral] -> ExceptT EvaluatorError IO ResponseWithReason
+  { runEvaluatorForFunction :: FunctionName -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError IO ResponseWithReason
   }

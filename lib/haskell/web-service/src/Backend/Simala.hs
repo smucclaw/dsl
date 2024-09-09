@@ -10,6 +10,8 @@ import Control.Monad.Error.Class
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
 import Data.Map.Strict qualified as Map
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -28,7 +30,7 @@ simalaEvaluator =
         RodentsAndVermin -> rodentsAndVerminImpl params
     }
 
-functionHandler :: (MonadIO m) => [Text] -> [Maybe FnLiteral] -> Text -> ExceptT EvaluatorError m ResponseWithReason
+functionHandler :: (MonadIO m) => Set Text -> [(Text, Maybe FnLiteral)] -> Text -> ExceptT EvaluatorError m ResponseWithReason
 functionHandler labels arguments func
   | length labels /= length arguments =
       throwError $
@@ -37,10 +39,12 @@ functionHandler labels arguments func
             { expectedParameters = length labels
             , actualParameters = length arguments
             }
+  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k labels) arguments =
+      throwError $
+        UnknownArguments $
+          fmap fst unknowns
   | otherwise = do
-      let
-        labelledArguments = zip labels arguments
-      evaluatorState <- transformParameters labelledArguments
+      evaluatorState <- transformParameters arguments
       case Simala.parseExpr "" func of
         Left err -> throwError $ InterpreterError $ "Failed to parse Simala program: " <> Text.pack err
         Right expr -> evaluator evaluatorState expr
@@ -115,32 +119,34 @@ simalaValToFnLiteral = \case
   Simala.VAtom atom -> pure $ FnLitString atom
   val -> throwError $ InterpreterError $ "Cannot translate " <> Simala.render val
 
-rodentsAndVerminImpl :: (MonadIO m) => [Maybe FnLiteral] -> ExceptT EvaluatorError m ResponseWithReason
+rodentsAndVerminImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
 rodentsAndVerminImpl args = functionHandler argument_labels args rodentsAndVermin
  where
-  argument_labels :: [Text]
+  argument_labels :: Set Text
   argument_labels =
-    [ "Loss or Damage.caused by insects"
-    , "Loss or Damage.caused by birds"
-    , "Loss or Damage.caused by vermin"
-    , "Loss or Damage.caused by rodents"
-    , "Loss or Damage.to Contents"
-    , "Loss or Damage.ensuing covered loss"
-    , "any other exclusion applies"
-    , "a household appliance"
-    , "a swimming pool"
-    , "a plumbing, heating, or air conditioning system"
-    ]
+    Set.fromList
+      [ "Loss or Damage.caused by insects"
+      , "Loss or Damage.caused by birds"
+      , "Loss or Damage.caused by vermin"
+      , "Loss or Damage.caused by rodents"
+      , "Loss or Damage.to Contents"
+      , "Loss or Damage.ensuing covered loss"
+      , "any other exclusion applies"
+      , "a household appliance"
+      , "a swimming pool"
+      , "a plumbing, heating, or air conditioning system"
+      ]
 
-computeQualifiedImpl :: (MonadIO m) => [Maybe FnLiteral] -> ExceptT EvaluatorError m ResponseWithReason
+computeQualifiedImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
 computeQualifiedImpl args = functionHandler argument_labels args computeQualifies
  where
-  argument_labels :: [Text]
+  argument_labels :: Set Text
   argument_labels =
-    [ "drinks"
-    , "walks"
-    , "eats"
-    ]
+    Set.fromList
+      [ "drinks"
+      , "walks"
+      , "eats"
+      ]
 
 computeQualifies :: Text
 computeQualifies =

@@ -36,19 +36,40 @@ serverOpenApi serverName =
     & info . description ?~ "API for invoking MathLang functions"
     & servers .~ Maybe.maybeToList ((\sName -> Server sName mempty mempty) <$> serverName)
 
-instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub) => HasOpenApi (DeepQuery sym a :> sub) where
-  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
-    & addParam param
-    & addDefaultResponse400 tname
-    where
-      tname = Text.pack (symbolVal (Proxy :: Proxy sym))
-      param = mempty
+-- TODO: turn QueryString into a custom type that reflects accurately the parameters we expect
+instance (HasOpenApi sub) => HasOpenApi (QueryString :> sub) where
+  toOpenApi _ =
+    toOpenApi (Proxy :: Proxy sub)
+      & addParam backendParam
+      & addParam param
+      & addDefaultResponse400 tname
+   where
+    tname = "params"
+    backendParam =
+      mempty
+        & name .~ "backend"
+        & in_ .~ ParamQuery
+        & schema ?~ Inline (toParamSchema $ Proxy @EvalBackends)
+
+    param =
+      mempty
         & name .~ tname
         & in_ .~ ParamQuery
         & schema ?~ Inline pschema
-      pschema = mempty
-        & type_ ?~ OpenApiArray
-        & items ?~ OpenApiItemsObject (Inline $ toParamSchema (Proxy :: Proxy a))
+
+    pschema =
+      mempty
+        & title ?~ "arguments"
+        & type_ ?~ OpenApiObject
+        & additionalProperties
+          ?~ AdditionalPropertiesSchema (Inline $ toParamSchema $ Proxy @FnLiteral)
+        & properties .~ [("argument1", (Inline $ toParamSchema $ Proxy @FnLiteral))]
+        & example
+          ?~ Aeson.Object
+            [ "drinks" .= Aeson.String "yes"
+            , "eats" .= Aeson.String "yes"
+            , "walks" .= Aeson.String "no"
+            ]
 
 -- | Add parameter to every operation in the spec.
 addParam :: OA3.Param -> OpenApi -> OpenApi
@@ -220,6 +241,12 @@ instance ToSchema FnLiteral where
           -- Schema validation doesn't like this set to 'OpenApiString', likely for good reason.
           & type_ .~ Nothing
 
+instance ToSchema EvalBackends where
+  declareNamedSchema p = do
+    pure $
+      NamedSchema (Just "EvalBackends") $
+        toParamSchema p
+
 instance ToParamSchema EvalBackends where
   toParamSchema _ =
     mempty
@@ -235,7 +262,8 @@ instance ToParamSchema (Map Text FnLiteral) where
     mempty
       & type_ ?~ OpenApiObject
       & title ?~ "Function Arguments"
-      & example ?~ Aeson.Object
+      & example
+        ?~ Aeson.Object
           [ "drinks" .= Aeson.String "true"
           , "eats" .= Aeson.String "true"
           , "walks" .= Aeson.String "false"

@@ -35,15 +35,21 @@ module Server (
   EvalBackends (..),
 ) where
 
+import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except
 import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
 import Data.Aeson qualified as Aeson
+import Data.ByteString (ByteString)
+import Data.List qualified as List
 import Data.Map qualified as Map
 import Data.Maybe qualified as Maybe
 import Data.String.Interpolate (__i)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
+import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.Encoding qualified as TL
 import Data.Typeable
 import GHC.Generics
 import GHC.TypeLits
@@ -53,7 +59,8 @@ import System.Timeout (timeout)
 import Backend.Api
 import Backend.Explainable (genericMathLangEvaluator)
 import Backend.Simala (simalaEvaluator)
-import Data.Map.Strict (Map)
+import Data.Function (on)
+import Data.Map (Map)
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -85,7 +92,7 @@ data FunctionCrud' mode = FunctionCrud
           :> SingleFunctionApi
   , functionEvaluation ::
       mode
-        :- QueryParam "backend" EvalBackends :> NamedRoutes FunctionEvaluationApi
+        :- NamedRoutes FunctionEvaluationApi
   }
   deriving (Generic)
 
@@ -93,32 +100,14 @@ data FunctionEvaluationApi mode = FunctionEvaluationApi
   { computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
-          :> ReqBody '[JSON] (Map Text FnLiteral)
+          :> QueryString
           :> Summary "Compute whether a person qualifies based on their properties"
           :> OperationId "runComputeQualifies"
           :> Post '[JSON] SimpleResponse
-  -- ^ Run the 'compute_qualifies' function with the given parameters.
-  --
-  -- Due to some issues, it seems like it is impossible (or very difficult),
-  -- to make custom gpts invoke REST endpoints with JSON bodies... So, for
-  -- now we simply send all parameters via Query Parameters.
-  -- Until the next servant release, we have to explicitly name all
-  -- query parameters. See
-  -- https://github.com/haskell-servant/servant/pull/1604 for the PR that we
-  -- are interested in.
   , rodentsAndVerminFunc ::
       mode
         :- "rodents_and_vermin"
-          :> QueryParam "Loss or Damage.caused by insects" FnLiteral
-          :> QueryParam "Loss or Damage.caused by birds" FnLiteral
-          :> QueryParam "Loss or Damage.caused by vermin" FnLiteral
-          :> QueryParam "Loss or Damage.caused by rodents" FnLiteral
-          :> QueryParam "Loss or Damage.to Contents" FnLiteral
-          :> QueryParam "Loss or Damage.ensuing covered loss" FnLiteral
-          :> QueryParam "any other exclusion applies" FnLiteral
-          :> QueryParam "a household appliance" FnLiteral
-          :> QueryParam "a swimming pool" FnLiteral
-          :> QueryParam "a plumbing, heating, or air conditioning system" FnLiteral
+          :> QueryString
           :> Summary "Compute whether a person qualifies based on their properties."
           :> Description "A response value of `0` means that the Loss or Damage is covered, while `1` means the Loss or Damage is not covered."
           :> OperationId "runRodentsAndVermin"
@@ -215,12 +204,12 @@ handler =
                 { getFunction =
                     getFunctionHandler name
                 }
-          , functionEvaluation = \backend ->
+          , functionEvaluation =
               FunctionEvaluationApi
                 { computeQualifiesFunc =
-                    computeQualifiesHandler backend
+                    computeQualifiesHandler
                 , rodentsAndVerminFunc =
-                    rodentsAndVerminHandler backend
+                    rodentsAndVerminHandler
                 }
           }
     }
@@ -236,33 +225,46 @@ handlerFunctions = do
       }
 
 computeQualifiesHandler ::
-  Maybe EvalBackends -> Map Text FnLiteral -> Handler SimpleResponse
-computeQualifiesHandler backend queryParameters = do
-  runEvaluatorFor backend ComputeQualifies
-    [ Map.lookup "drinks" queryParameters
-    , Map.lookup "walks" queryParameters
-    , Map.lookup "eats" queryParameters
-    ]
+  [(ByteString, Maybe ByteString)] -> Handler SimpleResponse
+computeQualifiesHandler queryParameters = parseToFunctionCall queryParameters $ \backend params -> do
+  runEvaluatorFor
+    backend
+    ComputeQualifies
+    params
 
 rodentsAndVerminHandler ::
-  Maybe EvalBackends ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
-  Maybe FnLiteral ->
+  [(ByteString, Maybe ByteString)] ->
   Handler SimpleResponse
-rodentsAndVerminHandler backend a b c d e f g h i j = do
-  let
-    args = [a, b, c, d, e, f, g, h, i, j]
-  runEvaluatorFor backend RodentsAndVermin args
+rodentsAndVerminHandler queryParameters = parseToFunctionCall queryParameters $ \backend params -> do
+  runEvaluatorFor
+    backend
+    RodentsAndVermin
+    params
 
-runEvaluatorFor :: Maybe EvalBackends -> FunctionName -> [Maybe FnLiteral] -> Handler SimpleResponse
+parseToFunctionCall :: [(ByteString, Maybe ByteString)] -> (Maybe EvalBackends -> [(Text, Maybe FnLiteral)] -> Handler a) -> Handler a
+parseToFunctionCall queryParameters k = do
+  backend <- getQueryParam (join (List.lookup "backend" queryParameters))
+  params <-
+    traverse
+      ( \(name, val) -> do
+          fnLiteral <- getQueryParam val
+          let
+            name' = Text.decodeUtf8 name
+          pure (name', fnLiteral)
+      )
+      queryParameters
+  let finalParams = filter (("backend" /=) . fst) params
+  k
+    backend
+    finalParams
+
+getQueryParam :: (FromHttpApiData a) => Maybe ByteString -> Handler (Maybe a)
+getQueryParam Nothing = pure Nothing
+getQueryParam (Just bs) = case parseQueryParamByteString bs of
+  Left err -> throwError err400{errBody = TL.encodeUtf8 $ TL.fromStrict err}
+  Right a -> pure $ Just a
+
+runEvaluatorFor :: Maybe EvalBackends -> FunctionName -> [(Text, Maybe FnLiteral)] -> Handler SimpleResponse
 runEvaluatorFor engine name arguments = do
   evaluationResult <- timeoutAction $ runExceptT (runEvaluatorForFunction eval name arguments)
   case evaluationResult of
@@ -444,3 +446,9 @@ instance FromHttpApiData EvalBackends where
     "gml" -> Right GenericMathLang
     "simala" -> Right Simala
     _ -> Left $ "Invalid evaluation backend: " <> t
+
+parseQueryParamByteString :: (FromHttpApiData a) => ByteString -> Either Text a
+parseQueryParamByteString bs =
+  case Text.decodeUtf8' bs of
+    Left err -> Left $ Text.pack $ show err
+    Right t -> parseQueryParam t

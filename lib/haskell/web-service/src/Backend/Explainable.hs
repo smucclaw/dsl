@@ -10,6 +10,9 @@ import Control.Monad (foldM)
 import Control.Monad.Except
 import Control.Monad.IO.Class
 import Data.HashMap.Strict qualified as HashMap
+import Data.Set (Set)
+import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Tree qualified as Tree
 import Explainable (XP)
@@ -32,7 +35,7 @@ evaluator s scenario = do
     Right (res, xp, _, _) -> do
       pure $ ResponseWithReason (FnLitDouble res) (Reasoning $ reasoningFromXp xp)
 
-transformParameters :: (MonadIO m) => [(Text.Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m MyState
+transformParameters :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m MyState
 transformParameters attrs = do
   let
     explainableState = emptyState
@@ -74,7 +77,7 @@ reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
 -- Example Rules
 -- ----------------------------------------------------------------------------
 
-functionHandler :: (MonadIO m) => [Text.Text] -> [Maybe FnLiteral] -> Expr Double -> ExceptT EvaluatorError m ResponseWithReason
+functionHandler :: (MonadIO m) => Set Text -> [(Text, Maybe FnLiteral)] -> Expr Double -> ExceptT EvaluatorError m ResponseWithReason
 functionHandler labels arguments func
   | length labels /= length arguments =
       throwError $
@@ -83,38 +86,42 @@ functionHandler labels arguments func
             { expectedParameters = length labels
             , actualParameters = length arguments
             }
+  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k labels) arguments =
+      throwError $
+        UnknownArguments $
+          fmap fst unknowns
   | otherwise = do
-      let
-        labelledArguments = zip labels arguments
-      evaluatorState <- transformParameters labelledArguments
+      evaluatorState <- transformParameters arguments
       evaluator evaluatorState func
 
-rodentsAndVerminImpl :: (MonadIO m) => [Maybe FnLiteral] -> ExceptT EvaluatorError m ResponseWithReason
+rodentsAndVerminImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
 rodentsAndVerminImpl args = functionHandler argument_labels args rodentsAndVermin
  where
-  argument_labels :: [Text.Text]
+  argument_labels :: Set Text
   argument_labels =
-    [ "Loss or Damage.caused by insects"
-    , "Loss or Damage.caused by birds"
-    , "Loss or Damage.caused by vermin"
-    , "Loss or Damage.caused by rodents"
-    , "Loss or Damage.to Contents"
-    , "Loss or Damage.ensuing covered loss"
-    , "any other exclusion applies"
-    , "a household appliance"
-    , "a swimming pool"
-    , "a plumbing, heating, or air conditioning system"
-    ]
+    Set.fromList
+      [ "Loss or Damage.caused by insects"
+      , "Loss or Damage.caused by birds"
+      , "Loss or Damage.caused by vermin"
+      , "Loss or Damage.caused by rodents"
+      , "Loss or Damage.to Contents"
+      , "Loss or Damage.ensuing covered loss"
+      , "any other exclusion applies"
+      , "a household appliance"
+      , "a swimming pool"
+      , "a plumbing, heating, or air conditioning system"
+      ]
 
-personQualifiesImpl :: (MonadIO m) => [Maybe FnLiteral] -> ExceptT EvaluatorError m ResponseWithReason
+personQualifiesImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
 personQualifiesImpl args = functionHandler argument_labels args personQualifies
  where
-  argument_labels :: [Text.Text]
+  argument_labels :: Set Text
   argument_labels =
-    [ "drinks"
-    , "walks"
-    , "eats"
-    ]
+    Set.fromList
+      [ "drinks"
+      , "walks"
+      , "eats"
+      ]
 
 -- | Example function which computes whether a person qualifies for *something*.
 personQualifies :: Expr Double

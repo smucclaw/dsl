@@ -93,7 +93,7 @@ data FunctionEvaluationApi mode = FunctionEvaluationApi
   { computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
-          :> DeepQuery "argument" (Map Text FnLiteral)
+          :> ReqBody '[JSON] (Map Text FnLiteral)
           :> Summary "Compute whether a person qualifies based on their properties"
           :> OperationId "runComputeQualifies"
           :> Post '[JSON] SimpleResponse

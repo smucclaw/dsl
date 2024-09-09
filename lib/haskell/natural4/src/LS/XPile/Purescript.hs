@@ -279,8 +279,9 @@ asPurescript env l4i rl = do
           --       )
           --   )
 
-translate2PS :: [NLGEnv] -> NLGEnv -> Interpreted -> [Rule] -> XPileLogE String
-translate2PS nlgEnvs eng l4i rules = do
+translate2PS :: [NLGEnv] -> NLGEnv -> Interpreted -> XPileLogE String
+translate2PS nlgEnvs eng l4i = do
+  let rules = origrules l4i
   traverse_
     mutter
     [ [__i|** translate2PS: running against #{length rules} rules|],

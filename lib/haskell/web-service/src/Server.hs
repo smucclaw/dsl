@@ -42,6 +42,7 @@ import Data.Aeson qualified as Aeson
 import Data.Map qualified as Map
 import Data.Maybe qualified as Maybe
 import Data.String.Interpolate (__i)
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Typeable
 import GHC.Generics
@@ -52,6 +53,7 @@ import System.Timeout (timeout)
 import Backend.Api
 import Backend.Explainable (genericMathLangEvaluator)
 import Backend.Simala (simalaEvaluator)
+import Data.Map.Strict (Map)
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -91,9 +93,7 @@ data FunctionEvaluationApi mode = FunctionEvaluationApi
   { computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
-          :> QueryParam "drinks" FnLiteral
-          :> QueryParam "eats" FnLiteral
-          :> QueryParam "walks" FnLiteral
+          :> DeepQuery "argument" (Map Text FnLiteral)
           :> Summary "Compute whether a person qualifies based on their properties"
           :> OperationId "runComputeQualifies"
           :> Post '[JSON] SimpleResponse
@@ -236,11 +236,13 @@ handlerFunctions = do
       }
 
 computeQualifiesHandler ::
-  Maybe EvalBackends -> Maybe FnLiteral -> Maybe FnLiteral -> Maybe FnLiteral -> Handler SimpleResponse
-computeQualifiesHandler backend drinks eats walks = do
-  let
-    args = [drinks, eats, walks]
-  runEvaluatorFor backend ComputeQualifies args
+  Maybe EvalBackends -> Map Text FnLiteral -> Handler SimpleResponse
+computeQualifiesHandler backend queryParameters = do
+  runEvaluatorFor backend ComputeQualifies
+    [ Map.lookup "drinks" queryParameters
+    , Map.lookup "walks" queryParameters
+    , Map.lookup "eats" queryParameters
+    ]
 
 rodentsAndVerminHandler ::
   Maybe EvalBackends ->

@@ -21,7 +21,9 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 - aeson
+- bytestring
 - containers
+- extra
 - unordered-containers
 - transformers
 - mtl
@@ -30,8 +32,8 @@ dependencies:
 - effectful
 - string-interpolate
 - numeric-extras
-- servant
-- servant-server
+- servant ^>= 0.20.2
+- servant-server ^>= 0.20.2
 - servant-openapi3
 - servant-swagger-ui
 - openapi3

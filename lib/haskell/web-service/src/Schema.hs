@@ -17,7 +17,9 @@ import Data.Aeson qualified as Aeson
 import Data.Map (Map)
 import Data.Maybe qualified as Maybe
 import Data.OpenApi
+import Data.OpenApi qualified as OA3
 import Data.Proxy
+import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.TypeLits
 import Servant
@@ -33,6 +35,36 @@ serverOpenApi serverName =
     & info . version .~ "1.0"
     & info . description ?~ "API for invoking MathLang functions"
     & servers .~ Maybe.maybeToList ((\sName -> Server sName mempty mempty) <$> serverName)
+
+instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub) => HasOpenApi (DeepQuery sym a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
+    & addParam param
+    & addDefaultResponse400 tname
+    where
+      tname = Text.pack (symbolVal (Proxy :: Proxy sym))
+      param = mempty
+        & name .~ tname
+        & in_ .~ ParamQuery
+        & schema ?~ Inline pschema
+      pschema = mempty
+        & type_ ?~ OpenApiArray
+        & items ?~ OpenApiItemsObject (Inline $ toParamSchema (Proxy :: Proxy a))
+
+-- | Add parameter to every operation in the spec.
+addParam :: OA3.Param -> OpenApi -> OpenApi
+addParam param = allOperations . OA3.parameters %~ (Inline param :)
+
+addDefaultResponse400 :: ParamName -> OpenApi -> OpenApi
+addDefaultResponse400 pname = setResponseWith (\old _new -> alter400 old) 400 (return response400)
+ where
+  sname = markdownCode pname
+  description400 = "Invalid " <> sname
+  alter400 = description %~ (<> (" or " <> sname))
+  response400 = mempty & description .~ description400
+
+-- | Format given text as inline code in Markdown.
+markdownCode :: Text -> Text
+markdownCode s = "`" <> s <> "`"
 
 instance (KnownSymbol desc, HasOpenApi api) => HasOpenApi (OperationId desc :> api) where
   toOpenApi _ =
@@ -179,12 +211,14 @@ instance ToParamSchema FnLiteral where
 
 instance ToSchema FnLiteral where
   declareNamedSchema p = do
-    pure $ NamedSchema (Just "Literal") $ toParamSchema p
-      -- We overwrite this, as the schema itself may be one of
-      -- string, int, double or bool... And I don't think we can express that
-      -- here?
-      -- Schema validation doesn't like this set to 'OpenApiString', likely for good reason.
-      & type_ .~ Nothing
+    pure $
+      NamedSchema (Just "Literal") $
+        toParamSchema p
+          -- We overwrite this, as the schema itself may be one of
+          -- string, int, double or bool... And I don't think we can express that
+          -- here?
+          -- Schema validation doesn't like this set to 'OpenApiString', likely for good reason.
+          & type_ .~ Nothing
 
 instance ToParamSchema EvalBackends where
   toParamSchema _ =
@@ -194,4 +228,17 @@ instance ToParamSchema EvalBackends where
       & example ?~ Aeson.String "simala"
       & default_ ?~ Aeson.String "simala"
       & enum_ ?~ [Aeson.String "simala", Aeson.String "gml"]
-      & description ?~ "Backend for evaluation of a function. Backends can greatly affect how good the explanation for results. Additionally, backends may or may not support parts of natural4."
+      & description ?~ "Backend for evaluation of a function. Backends can greatly affect the explanation quality. Additionally, backends may or may not support parts of natural4."
+
+instance ToParamSchema (Map Text FnLiteral) where
+  toParamSchema _ =
+    mempty
+      & type_ ?~ OpenApiObject
+      & title ?~ "Function Arguments"
+      & example ?~ Aeson.Object
+          [ "drinks" .= Aeson.String "true"
+          , "eats" .= Aeson.String "true"
+          , "walks" .= Aeson.String "false"
+          , "amount" .= Aeson.Number 2.0
+          ]
+      & description ?~ "Provide arguments to the function to be invoked."

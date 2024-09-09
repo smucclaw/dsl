@@ -39,10 +39,12 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , effectful
     , explainable
+    , extra
     , filepath
     , lens
     , mtl
@@ -53,9 +55,9 @@ library
     , optparse-applicative
     , prettyprinter
     , scientific
-    , servant
+    , servant >=0.20.2 && <0.21
     , servant-openapi3
-    , servant-server
+    , servant-server >=0.20.2 && <0.21
     , servant-swagger-ui
     , simala
     , string-interpolate
@@ -77,10 +79,12 @@ executable web-service-exe
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , effectful
     , explainable
+    , extra
     , filepath
     , lens
     , mtl
@@ -91,9 +95,9 @@ executable web-service-exe
     , optparse-applicative
     , prettyprinter
     , scientific
-    , servant
+    , servant >=0.20.2 && <0.21
     , servant-openapi3
-    , servant-server
+    , servant-server >=0.20.2 && <0.21
     , servant-swagger-ui
     , simala
     , string-interpolate
@@ -121,10 +125,12 @@ test-suite web-service-test
       QuickCheck
     , aeson
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , effectful
     , explainable
+    , extra
     , filepath
     , hspec
     , lens
@@ -137,9 +143,9 @@ test-suite web-service-test
     , prettyprinter
     , quickcheck-instances
     , scientific
-    , servant
+    , servant >=0.20.2 && <0.21
     , servant-openapi3
-    , servant-server
+    , servant-server >=0.20.2 && <0.21
     , servant-swagger-ui
     , simala
     , string-interpolate

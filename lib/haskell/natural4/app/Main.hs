@@ -802,7 +802,7 @@ purescriptTranspiler =
       strLangs <- unsafeInterleaveIO $ printLangs allLangs
       let (psResult, psErrors) = xpLog do
             mutter "* main calling translate2PS"
-            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgd.allEnv nlgd.env ds.interpreted ds.parsed)
+            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgd.allEnv nlgd.env ds.interpreted)
       pure (Success (commentIfError "-- ! -- " psResult) (Just psErrors))
       )
 

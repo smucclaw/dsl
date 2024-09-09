@@ -9,44 +9,49 @@
 module LS.XPile.PurescriptSpec (spec) where
 
 import Control.Monad (unless)
+import Control.Monad.Trans.Except (runExceptT)
 import Data.Either (lefts, rights)
+import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.IO qualified as TL
-import LS qualified as SFL4
-import LS.NLP.NLG (NLGEnv, allLangs, langEng, myNLGEnv, printLangs)
-import LS.XPile.Logging (fmapE, xpLog)
-import LS.XPile.Purescript (translate2PS)
 import System.FilePath
-import Test.Hspec (Spec, describe, it, runIO)
+import System.IO.Unsafe (unsafeInterleaveIO)
+import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Golden ( Golden(..) )
 import Prelude hiding (exp, seq)
 import LS.Interpreter (l4interpret)
 import PGF (Language)
-import LS (Interpreted)
+
+import LS qualified as SFL4
+import LS.Log
+import LS.NLP.NLG (NLGEnv, allLangs, langEng, myNLGEnv, NlgLog, printLangs)
+import LS.XPile.Logging (xpLog, fmapE)
+import LS.XPile.Purescript (translate2PS)
+
 data NLGData
   = MkNLGData
   { env :: NLGEnv,
     allEnv :: [NLGEnv]
   }
 
-loadNLGEnv ::  Either [String] Language -> Interpreted -> IO NLGData
-loadNLGEnv engE l4i =
+loadNLGEnv :: IOTracer NlgLog -> Either [Text] Language -> IO NLGData
+loadNLGEnv tracer engE =
       case engE of
         Left err -> do
-          error $ unlines $ "natural4: encountered error when obtaining langEng" : err
+          fail $ Text.unpack $ Text.unlines $ "natural4: encountered error when obtaining langEng" : err
         Right eng -> do
-          (nlgEnv, _nlgEnvErr) <-  xpLog <$> myNLGEnv l4i eng -- Only load the NLG environment if we need it.
-          (allNLGEnv, _) <- do
+          nlgEnv <- runExceptT $ myNLGEnv tracer eng
+          allNLGEnv <- do
             nlgLangs <- allLangs
-            xps <- traverse (myNLGEnv l4i) nlgLangs
-            return (xpLog $ sequenceA xps)
+            traverse (runExceptT . myNLGEnv tracer) nlgLangs
           case nlgEnv of
             Left err -> do
-              error $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
+              fail $ Text.unpack $ Text.unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
             Right nlgEnvR -> do
               let allNLGEnvErrors = mconcat $ lefts allNLGEnv
               unless (null allNLGEnvErrors) do
-                error $ unlines $ "natural4: encountered error while obtaining allNLGEnv" : allNLGEnvErrors
+                fail $ Text.unpack $ Text.unlines $ "natural4: encountered error while obtaining allNLGEnv" : allNLGEnvErrors
 
               let allNLGEnvR = rights allNLGEnv
 
@@ -59,23 +64,26 @@ loadNLGEnv engE l4i =
 
 transpileFile :: String -> IO TL.Text
 transpileFile filename = do
+    let tracer =
+          -- Use the 'prettyTracer' if you need logs for debugging
+          -- prettyTracer
+          mempty
     let testPath = "test" </> "testdata" </> "golden" </> "PurescriptSpec" </> filename <.> "csv"
         opts = SFL4.defaultOptions {SFL4.file = [testPath]}
-    strLangs <-  printLangs allLangs
     rules <- SFL4.dumpRules opts
     l4i <-  l4interpret rules
-    (engE, _) <- xpLog <$> langEng
-    nlgData <- loadNLGEnv engE l4i
-
+    engE <- runExceptT $ langEng tracer
+    nlgData <- loadNLGEnv tracer engE
+    strLangs <- unsafeInterleaveIO $ printLangs allLangs
     let justNLGDate = nlgData
         nlgEnvs = justNLGDate.allEnv
         eng = justNLGDate.env
         (psResult, _) = xpLog do
-          fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgEnvs eng rules)
- 
+            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgEnvs eng l4i)
+
     case psResult of
         Left err -> do
-          error $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
+          fail $ unlines $ "natural4: encountered error while obtaining myNLGEnv" : err
         Right goodResult -> do
           pure $ TL.pack goodResult
 
@@ -100,11 +108,11 @@ spec :: Spec
 spec = do
   describe "Purescript transpiler" do
     describe "must_sing" do
-      must_sing_purs <- runIO $ transpileFile "must_sing"
       it "convert must sing to Purescript" do
-        goldenGeneric "must_sing" must_sing_purs
+        must_sing_purs <- transpileFile "must_sing"
+        pure $ goldenGeneric "must_sing" must_sing_purs
 
     describe "rodents" do
-      rodents_purs <- runIO $ transpileFile "rodents"
       it "convert must sing to Purescript" do
-        goldenGeneric "rodents" rodents_purs
+        rodents_purs <- transpileFile "rodents"
+        pure $ goldenGeneric "rodents" rodents_purs

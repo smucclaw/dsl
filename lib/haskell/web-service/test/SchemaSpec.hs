@@ -7,12 +7,11 @@ module SchemaSpec (spec) where
 import Data.Proxy
 import Servant.OpenApi
 import Test.Hspec
-import Test.QuickCheck (Arbitrary (..), Gen)
+import Test.QuickCheck (Arbitrary (..))
 import Test.QuickCheck qualified as Q
 import Test.QuickCheck.Instances ()
 
 import Backend.Api
-import Data.Text
 import Data.Text qualified as Text
 import Schema ()
 import Servant.API (FromHttpApiData (..))
@@ -45,22 +44,6 @@ instance Arbitrary FnLiteral where
       , (3, FnLitString <$> arbitrary)
       , (3, FnLitInt <$> arbitrary)
       ]
-
-genFnLiteralTexts :: Gen Text
-genFnLiteralTexts =
-  Q.frequency
-    [ (1, fmap (Text.pack . show) (arbitrary :: Gen Bool))
-    , (2, fmap (Text.pack . show) (arbitrary :: Gen Double))
-    , (2, fmap (Text.pack . show) (arbitrary :: Gen Int))
-    , (2, arbitrary :: Gen Text)
-    , (1, fmap (surroundWith "\"" . Text.concatMap escapeChar) (arbitrary :: Gen Text))
-    ]
- where
-  surroundWith :: Text -> Text -> Text
-  surroundWith t = (t <>) . (<> t)
-
-  escapeChar '\"' = Text.pack "\\\""
-  escapeChar n = Text.singleton n
 
 instance Arbitrary Reasoning where
   arbitrary = Reasoning <$> arbitrary

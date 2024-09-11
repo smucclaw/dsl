@@ -1,0 +1,159 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           web-service
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/web-service#readme>
+homepage:       https://github.com/githubuser/web-service#readme
+bug-reports:    https://github.com/githubuser/web-service/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2023 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/web-service
+
+library
+  exposed-modules:
+      Application
+      Backend.Api
+      Backend.Explainable
+      Backend.Simala
+      Options
+      Schema
+      Server
+  other-modules:
+      Paths_web_service
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , effectful
+    , explainable
+    , extra
+    , filepath
+    , lens
+    , mtl
+    , numeric-extras
+    , openapi3
+    , optics
+    , optics-core
+    , optparse-applicative
+    , prettyprinter
+    , scientific
+    , servant >=0.20.2 && <0.21
+    , servant-openapi3
+    , servant-server >=0.20.2 && <0.21
+    , servant-swagger-ui
+    , simala
+    , string-interpolate
+    , text
+    , transformers
+    , unordered-containers
+    , wai
+    , wai-logger
+    , warp
+  default-language: GHC2021
+
+executable web-service-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_web_service
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , effectful
+    , explainable
+    , extra
+    , filepath
+    , lens
+    , mtl
+    , numeric-extras
+    , openapi3
+    , optics
+    , optics-core
+    , optparse-applicative
+    , prettyprinter
+    , scientific
+    , servant >=0.20.2 && <0.21
+    , servant-openapi3
+    , servant-server >=0.20.2 && <0.21
+    , servant-swagger-ui
+    , simala
+    , string-interpolate
+    , text
+    , transformers
+    , unordered-containers
+    , wai
+    , wai-logger
+    , warp
+    , web-service
+  default-language: GHC2021
+
+test-suite web-service-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      SchemaSpec
+      Paths_web_service
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      QuickCheck
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , effectful
+    , explainable
+    , extra
+    , filepath
+    , hspec
+    , lens
+    , mtl
+    , numeric-extras
+    , openapi3
+    , optics
+    , optics-core
+    , optparse-applicative
+    , prettyprinter
+    , quickcheck-instances
+    , scientific
+    , servant >=0.20.2 && <0.21
+    , servant-openapi3
+    , servant-server >=0.20.2 && <0.21
+    , servant-swagger-ui
+    , simala
+    , string-interpolate
+    , text
+    , transformers
+    , unordered-containers
+    , wai
+    , wai-logger
+    , warp
+    , web-service
+  default-language: GHC2021

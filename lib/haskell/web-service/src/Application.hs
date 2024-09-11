@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 
-module Main (main) where
+module Application (defaultMain) where
 
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -29,8 +29,8 @@ opts =
 -- Main Application and wiring
 -- ----------------------------------------------------------------------------
 
-main :: IO ()
-main = do
+defaultMain :: IO ()
+defaultMain = do
   Options{port, serverName} <- execParser opts
   withStdoutLogger $ \aplogger -> do
     let settings = setPort port $ setLogger aplogger defaultSettings

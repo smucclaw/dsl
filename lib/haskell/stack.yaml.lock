@@ -101,6 +101,27 @@ packages:
       size: 356
   original:
     hackage: monadic-recursion-schemes-0.1.13.2
+- completed:
+    hackage: servant-0.20.2@sha256:a4613dc1caa40d1b8db7aff00417dc2d651a8d73a90add3d934218b1778df35c,5371
+    pantry-tree:
+      sha256: 23364c969c171541475d270a7cf0d20ee59b4b88058deafef80b0070416670f0
+      size: 2944
+  original:
+    hackage: servant-0.20.2
+- completed:
+    hackage: servant-server-0.20.2@sha256:5a2d11959256fed8f4918f02f55cb597b61cc92191a672cd2d2228fadd5ee0ec,6226
+    pantry-tree:
+      sha256: 234c87e0a70ab6b15df75b526b344715584693be4a5c1b373ecfaaebc9c4127b
+      size: 2615
+  original:
+    hackage: servant-server-0.20.2
+- completed:
+    hackage: servant-openapi3-2.0.1.6@sha256:60be03aa18d9a2e267ec3814d3305c3bd341398dcfcdf868ab851a12a1e81591,4939
+    pantry-tree:
+      sha256: a43be8a3c3b88606dd8856006e7ad60ee70e64474e85717bfa6d580d69cb5a0b
+      size: 1637
+  original:
+    hackage: servant-openapi3-2.0.1.6
 snapshots:
 - completed:
     sha256: 98fe98dae6f42f9b4405e5467f62f57df2896c57b742a09772688c900c722510

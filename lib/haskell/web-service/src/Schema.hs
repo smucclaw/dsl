@@ -274,3 +274,104 @@ instance ToParamSchema (Map Text FnLiteral) where
           , "amount" .= Aeson.Number 2.0
           ]
       & description ?~ "Provide arguments to the function to be invoked."
+
+instance ToSchema BatchRequest where
+  declareNamedSchema _ = do
+    textRef <- declareSchemaRef (Proxy @Text)
+    let
+      intRef =
+        Inline $
+          (toParamSchema $ Proxy @Int)
+            & default_ ?~ Aeson.Number 0
+            & example ?~ Aeson.Number 0
+    pure $
+      NamedSchema (Just "BatchRequest") $
+        mempty
+          & type_ ?~ OpenApiObject
+          & title ?~ "Batch Request"
+          & properties
+            .~ [
+                 ( "outcomes"
+                 , Inline $
+                    mempty
+                      & type_ ?~ OpenApiArray
+                      & items
+                        ?~ OpenApiItemsObject
+                          ( Inline $
+                              mempty
+                                & oneOf
+                                  ?~ [ textRef
+                                     , Inline $
+                                        mempty
+                                          & type_ ?~ OpenApiObject
+                                          & additionalProperties ?~ AdditionalPropertiesAllowed True
+                                          & properties
+                                            .~ [ ("@id", textRef)
+                                               ]
+                                     ]
+                          )
+                 )
+               ,
+                 ( "cases"
+                 , Inline $
+                    mempty
+                      & type_ ?~ OpenApiArray
+                      & items
+                        ?~ OpenApiItemsObject
+                          ( Inline $
+                              mempty
+                                & additionalProperties ?~ AdditionalPropertiesAllowed True
+                                & type_ ?~ OpenApiObject
+                                & properties
+                                  .~ [ ("@id", intRef)
+                                     ]
+                          )
+                 )
+               ]
+
+instance ToSchema BatchResponse where
+  declareNamedSchema _ = do
+    let
+      intRef =
+        Inline $
+          (toParamSchema $ Proxy @Int)
+            & default_ ?~ Aeson.Number 0
+            & example ?~ Aeson.Number 0
+    doubleRef <- declareSchemaRef (Proxy @Double)
+    pure $
+      NamedSchema (Just "BatchResponse") $
+        mempty
+          & type_ ?~ OpenApiObject
+          & title ?~ "Batch Response"
+          & properties
+            .~ [
+                 ( "cases"
+                 , Inline $
+                    mempty
+                      & type_ ?~ OpenApiArray
+                      & items
+                        ?~ OpenApiItemsObject
+                          ( Inline $
+                              mempty
+                                & type_ ?~ OpenApiObject
+                                & additionalProperties ?~ AdditionalPropertiesAllowed True
+                                & properties
+                                  .~ [("@id", intRef)]
+                          )
+                 )
+               ,
+                 ( "summary"
+                 , Inline $
+                    mempty
+                      & type_ ?~ OpenApiArray
+                      & type_ ?~ OpenApiObject
+                      & properties
+                        .~ [ ("casesRead", intRef)
+                           , ("casesProcessed", intRef)
+                           , ("casesIgnored", intRef)
+                           , ("processorDurationSec", doubleRef)
+                           , ("processorCasesPerSec", doubleRef)
+                           , ("processorQueuedSec", doubleRef)
+                           ]
+                 )
+               ]

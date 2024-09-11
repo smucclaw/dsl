@@ -42,11 +42,20 @@ module Server (
   EvalBackend (..),
   FunctionImplementation (..),
   FnArguments (..),
+  Outcomes (..),
+  OutcomeObject (..),
+  OutcomeStyle (..),
+  BatchRequest (..),
+  InputCase (..),
+  OutputCase (..),
+  BatchResponse (..),
+  OutputSummary (..),
 
   -- * utilities
   toDecl,
 ) where
 
+import Control.Applicative
 import Control.Concurrent.STM
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
@@ -54,8 +63,12 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey, (.:), (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Combinators.Decode (Decoder)
+import Data.Aeson.Combinators.Decode qualified as ACD
+import Data.Aeson.Key qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.ByteString qualified as BS
+import Data.Fixed
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe qualified as Maybe
@@ -69,8 +82,10 @@ import GHC.TypeLits
 import Servant
 import System.Timeout (timeout)
 
+import Backend.Api
 import Backend.Api as Api
 import Backend.Simala qualified as Simala
+import Data.Scientific (Scientific)
 import Data.Text.Lazy.Encoding qualified as TL
 
 -- ----------------------------------------------------------------------------
@@ -148,6 +163,16 @@ data SingleFunctionApi' mode = SingleFunctionApi
           :> ReqBody '[JSON] FnArguments
           :> OperationId "evalFunction"
           :> Post '[JSON] SimpleResponse
+  , batchFunction ::
+      mode
+        :- "batch"
+          :> Summary "Run a function using a batch of arguments"
+          :> Description "Evaluate a function with a batch of arguments, conforming to Oracle Intelligent Advisor Batch API"
+          :> ReqBody '[JSON] BatchRequest
+          :> Post '[JSON] BatchResponse
+  -- ^ Run a function with a "batch" of parameters.
+  -- This API aims to be consistent with
+  -- https://docs.oracle.com/en/cloud/saas/b2c-service/opawx/using-batch-assess-rest-api.html
   }
   deriving (Generic)
 
@@ -251,6 +276,8 @@ handler =
                     deleteFunctionHandler name
                 , evalFunction =
                     evalFunctionHandler name
+                , batchFunction =
+                    batchFunctionHandler name
                 }
           }
     }
@@ -265,6 +292,9 @@ evalFunctionHandler name' args = do
       runEvaluatorFor args.fnEvalBackend fnImpl args
  where
   name = Text.pack name'
+
+batchFunctionHandler :: String -> BatchRequest -> AppM BatchResponse
+batchFunctionHandler = undefined
 
 runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> FnArguments -> AppM SimpleResponse
 runEvaluatorFor engine validatedFunc args = do
@@ -404,7 +434,7 @@ evaluationEngine b valFn = do
     Nothing -> throwError err404
     Just eval -> pure eval
 
--------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
 -- Json encoders and decoders that are not derived.
 -- We often need custom instances, as we want to be more lenient in what we accept
 -- than what aeson does by default. Further, we try to provide a specific json schema.
@@ -535,3 +565,211 @@ toDecl fn =
     , Api.description = fn.description
     , Api.parameters = Map.keysSet $ fn.parameters.getParameters
     }
+
+-- ----------------------------------------------------------------------------
+-- Oracle DB
+-- ----------------------------------------------------------------------------
+
+type Id = Int
+
+data Outcomes
+  = OutcomeAttribute Text
+  | OutcomePropertyObject OutcomeObject
+  deriving (Show, Eq, Ord)
+
+data OutcomeObject = OutcomeObject
+  { outcomeObjectId :: Text
+  , outcomeObjectShowSilent :: Maybe Bool
+  , outcomeObjectShowInvisible :: Maybe Bool
+  , outcomeObjectResolveIndecisionRelationships :: Maybe Bool
+  , outcomeObjectKnownOutcomeStyle :: Maybe OutcomeStyle
+  , outcomeObjectUnknownOutcomeStyle :: Maybe OutcomeStyle
+  }
+  deriving (Show, Eq, Ord)
+
+data OutcomeStyle
+  = ValueOnly
+  | DecisionReport
+  | BaseAttributes
+  deriving (Show, Ord, Eq, Enum, Bounded)
+
+data BatchRequest = BatchRequest
+  { batchRequestOutcomes :: [Outcomes]
+  , batchRequestCases :: [InputCase]
+  }
+  deriving (Show, Eq, Ord)
+
+data InputCase = InputCase
+  { inputCaseId :: Id
+  , inputCaseAttributes :: Map Text FnLiteral
+  }
+  deriving (Show, Eq, Ord)
+
+data OutputCase = OutputCase
+  { outputCaseId :: Id
+  , outputCaseAttributes :: Map Text FnLiteral
+  }
+  deriving (Show, Eq, Ord)
+
+data BatchResponse = BatchResponse
+  { batchResponseCases :: [OutputCase]
+  , batchResponseSummary :: OutputSummary
+  }
+  deriving (Show, Eq, Ord)
+
+data OutputSummary = OutputSummary
+  { outputSummaryCasesRead :: Int
+  , outputSummaryCasesProcessed :: Int
+  , outputSummaryCasesIgnored :: Int
+  , outputSummaryProcessorDurationSec :: Fixed E2
+  , outputSummaryCasesPerSec :: Fixed E2
+  , outputSummaryProcessorQueuedSec :: Fixed E2
+  }
+  deriving (Show, Eq, Ord)
+
+-- ----------------------------------------------------------------------------
+-- Batch request json
+-- ----------------------------------------------------------------------------
+
+batchRequestDecoder :: Decoder BatchRequest
+batchRequestDecoder =
+  BatchRequest
+    <$> ACD.key "outcomes" (ACD.list outcomesDecoder)
+    <*> ACD.key "cases" (ACD.list inputCaseDecoder)
+
+outcomeStyleDecoder :: Decoder OutcomeStyle
+outcomeStyleDecoder =
+  ACD.text >>= \case
+    "value-only" -> pure ValueOnly
+    "decision-report" -> pure DecisionReport
+    "base-attributes" -> pure BaseAttributes
+    val -> fail $ "Unknown value " <> show val
+
+outcomeObjectDecoder :: Decoder OutcomeObject
+outcomeObjectDecoder =
+  OutcomeObject
+    <$> ACD.key "id" ACD.text
+    <*> ACD.maybeKey "showSilent" ACD.bool
+    <*> ACD.maybeKey "showInvisible" ACD.bool
+    <*> ACD.maybeKey "resolveIndecisionRelationships" ACD.bool
+    <*> ACD.maybeKey "knownOutcomeStyle" outcomeStyleDecoder
+    <*> ACD.maybeKey "unknownOutcomeStyle" outcomeStyleDecoder
+
+outcomesDecoder :: Decoder Outcomes
+outcomesDecoder =
+  (OutcomeAttribute <$> ACD.text)
+    <|> (OutcomePropertyObject <$> outcomeObjectDecoder)
+
+inputCaseDecoder :: Decoder InputCase
+inputCaseDecoder = do
+  caseId <- ACD.key "@id" ACD.int
+  attributes <- ACD.mapStrict fnLiteralDecoder
+  let
+    attributes' = Map.delete "@id" attributes
+  pure $ InputCase caseId attributes'
+
+fnLiteralDecoder :: Decoder FnLiteral
+fnLiteralDecoder =
+  (FnLitInt <$> ACD.integer)
+    <|> (FnLitDouble <$> ACD.double)
+    <|> (FnLitBool <$> ACD.bool)
+    <|> (parseTextAsFnLiteral <$> ACD.text)
+
+batchRequestEncoder :: BatchRequest -> Aeson.Value
+batchRequestEncoder br =
+  Aeson.object
+    [ "outcomes" .= fmap outcomesEncoder (batchRequestOutcomes br)
+    ]
+
+outcomesEncoder :: Outcomes -> Aeson.Value
+outcomesEncoder (OutcomeAttribute t) = Aeson.String t
+outcomesEncoder (OutcomePropertyObject o) =
+  Aeson.object
+    [ "@id" .= outcomeObjectId o
+    , "showSilent" .= outcomeObjectShowSilent o
+    , "showInvisible" .= outcomeObjectShowInvisible o
+    , "resolveIndecisionRelationships" .= outcomeObjectResolveIndecisionRelationships o
+    , "knownOutcomeStyle" .= fmap outcomeStyleEncoder (outcomeObjectKnownOutcomeStyle o)
+    , "unknownOutcomeStyle" .= fmap outcomeStyleEncoder (outcomeObjectUnknownOutcomeStyle o)
+    ]
+
+outcomeStyleEncoder :: OutcomeStyle -> Aeson.Value
+outcomeStyleEncoder = \case
+  ValueOnly -> Aeson.String "value-only"
+  DecisionReport -> Aeson.String "decision-report"
+  BaseAttributes -> Aeson.String "base-attributes"
+
+-- ----------------------------------------------------------------------------
+-- Batch response json
+-- ----------------------------------------------------------------------------
+
+batchResponseDecoder :: Decoder BatchResponse
+batchResponseDecoder =
+  BatchResponse
+    <$> ACD.key "cases" (ACD.list casesDecoder)
+    <*> ACD.key "summary" summaryDecoder
+
+casesDecoder :: Decoder OutputCase
+casesDecoder = do
+  caseId <- ACD.key "@id" ACD.int
+  attributes <- ACD.mapStrict fnLiteralDecoder
+  let
+    attributes' = Map.delete "@id" attributes
+  pure $ OutputCase caseId attributes'
+
+summaryDecoder :: Decoder OutputSummary
+summaryDecoder =
+  OutputSummary
+    <$> ACD.key "casesRead" ACD.int
+    <*> ACD.key "casesProcessed" ACD.int
+    <*> ACD.key "casesIgnored" ACD.int
+    <*> ACD.key "processorDurationSec" (fmap toFixed ACD.scientific)
+    <*> ACD.key "processorCasesPerSec" (fmap toFixed ACD.scientific)
+    <*> ACD.key "processorQueuedSec" (fmap toFixed ACD.scientific)
+ where
+  toFixed = realToFrac @Scientific @Centi
+
+batchResponseEncoder :: BatchResponse -> Aeson.Value
+batchResponseEncoder br =
+  Aeson.object $
+    [ "cases" .= (fmap outputCaseEncoder $ batchResponseCases br)
+    , "summary" .= outputSummaryEncoder (batchResponseSummary br)
+    ]
+
+outputSummaryEncoder :: OutputSummary -> Aeson.Value
+outputSummaryEncoder os =
+  Aeson.object
+    [ "casesRead" .= outputSummaryCasesRead os
+    , "casesProcessed" .= outputSummaryCasesProcessed os
+    , "casesIgnored" .= outputSummaryCasesIgnored os
+    , "processorDurationSec" .= (toSci $ outputSummaryProcessorDurationSec os)
+    , "processorCasesPerSec" .= (toSci $ outputSummaryCasesPerSec os)
+    , "processorQueuedSec" .= (toSci $ outputSummaryProcessorQueuedSec os)
+    ]
+ where
+  toSci = realToFrac @Centi @Scientific
+
+outputCaseEncoder :: OutputCase -> Aeson.Value
+outputCaseEncoder oc =
+  Aeson.object $
+    [ "@id" .= outputCaseId oc
+    ]
+      <> [ (Aeson.fromText k .= v)
+         | (k, v) <- Map.assocs $ outputCaseAttributes oc
+         ]
+
+-- ----------------------------------------------------------------------------
+-- Final FromJSON/ToJSON instances
+-- ----------------------------------------------------------------------------
+
+instance FromJSON BatchRequest where
+  parseJSON = ACD.fromDecoder batchRequestDecoder
+
+instance ToJSON BatchRequest where
+  toJSON = batchRequestEncoder
+
+instance ToJSON BatchResponse where
+  toJSON = batchResponseEncoder
+
+instance FromJSON BatchResponse where
+  parseJSON = ACD.fromDecoder batchResponseDecoder

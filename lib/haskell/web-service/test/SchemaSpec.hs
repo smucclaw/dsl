@@ -98,7 +98,18 @@ instance Arbitrary Parameter where
   arbitrary = Server.Parameter <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary Function where
-  arbitrary = Server.Function <$> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary = Server.Function <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary EvalBackend where
+  arbitrary = Q.chooseEnum (minBound, maxBound)
+
+instance Arbitrary FunctionImplementation where
+  arbitrary =
+    Server.FunctionImplementation <$> arbitrary <*> arbitrary
+
+instance Arbitrary FnArguments where
+  arbitrary =
+    Server.FnArguments <$> arbitrary <*> arbitrary
 
 instance Arbitrary SimpleFunction where
   arbitrary = Server.SimpleFunction <$> arbitrary <*> arbitrary

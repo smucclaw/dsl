@@ -1,7 +1,13 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Application (defaultMain) where
 
+import Control.Concurrent.STM (newTVarIO)
+import Control.Monad.Trans.Reader (ReaderT (..))
+import Examples qualified
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Logger
@@ -32,18 +38,26 @@ opts =
 defaultMain :: IO ()
 defaultMain = do
   Options{port, serverName} <- execParser opts
+  dbRef <- newTVarIO Examples.functionSpecs
+  let
+    initialState = DbState dbRef
   withStdoutLogger $ \aplogger -> do
-    let settings = setPort port $ setLogger aplogger defaultSettings
-    runSettings settings (app serverName)
+    let
+      settings = setPort port $ setLogger aplogger defaultSettings
+    runSettings settings (app initialState serverName)
 
 type ApiWithSwagger =
   SwaggerSchemaUI "swagger-ui" "swagger.json"
     :<|> Api
 
-appWithSwagger :: Maybe ServerName -> Servant.Server ApiWithSwagger
-appWithSwagger mServerName =
+appWithSwagger :: DbState -> Maybe ServerName -> Servant.Server ApiWithSwagger
+appWithSwagger initialDb mServerName =
   swaggerSchemaUIServer (serverOpenApi mServerName)
-    :<|> handler
+    :<|> hoistServer (Proxy @Api) (nt initialDb) handler
+ where
+  nt :: DbState -> AppM a -> Handler a
+  nt s x = runReaderT x s
 
-app ::  Maybe ServerName -> Application
-app mServerName = serve (Proxy @ApiWithSwagger) (appWithSwagger mServerName)
+app :: DbState -> Maybe ServerName -> Application
+app initialDb mServerName = do
+  serve (Proxy @ApiWithSwagger) (appWithSwagger initialDb mServerName)

@@ -28,6 +28,7 @@ library
       Backend.Api
       Backend.Explainable
       Backend.Simala
+      Examples
       Options
       Schema
       Server
@@ -42,7 +43,6 @@ library
     , bytestring
     , containers
     , directory
-    , effectful
     , explainable
     , extra
     , filepath
@@ -60,6 +60,7 @@ library
     , servant-server >=0.20.2 && <0.21
     , servant-swagger-ui
     , simala
+    , stm
     , string-interpolate
     , text
     , transformers
@@ -82,7 +83,6 @@ executable web-service-exe
     , bytestring
     , containers
     , directory
-    , effectful
     , explainable
     , extra
     , filepath
@@ -100,6 +100,7 @@ executable web-service-exe
     , servant-server >=0.20.2 && <0.21
     , servant-swagger-ui
     , simala
+    , stm
     , string-interpolate
     , text
     , transformers
@@ -128,7 +129,6 @@ test-suite web-service-test
     , bytestring
     , containers
     , directory
-    , effectful
     , explainable
     , extra
     , filepath
@@ -148,6 +148,7 @@ test-suite web-service-test
     , servant-server >=0.20.2 && <0.21
     , servant-swagger-ui
     , simala
+    , stm
     , string-interpolate
     , text
     , transformers

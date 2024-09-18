@@ -2,12 +2,19 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Server (
+  -- * AppM
+  AppM,
+  DbState (..),
+  ValidatedFunction (..),
+
   -- * Servant
   OperationId,
 
@@ -32,37 +39,57 @@ module Server (
   ResponseWithReason (..),
   EvaluatorError (..),
   FnLiteral (..),
-  EvalBackends (..),
+  EvalBackend (..),
+  FunctionImplementation (..),
+  FnArguments (..),
+
+  -- * utilities
+  toDecl,
 ) where
 
-import Control.Monad (join)
+import Control.Concurrent.STM
+import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except
-import Data.Aeson (FromJSON, ToJSON, (.:), (.=))
+import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey, (.:), (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Types qualified as Aeson
 import Data.ByteString (ByteString)
-import Data.List qualified as List
-import Data.Map qualified as Map
+import Data.ByteString qualified as BS
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Maybe qualified as Maybe
-import Data.String.Interpolate (__i)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Data.Text.Lazy qualified as TL
-import Data.Text.Lazy.Encoding qualified as TL
 import Data.Typeable
 import GHC.Generics
 import GHC.TypeLits
 import Servant
 import System.Timeout (timeout)
 
-import Backend.Api
-import Backend.Explainable (genericMathLangEvaluator)
-import Backend.Simala (simalaEvaluator)
+import Backend.Api as Api
+import Backend.Simala qualified as Simala
+import Data.Text.Lazy.Encoding qualified as TL
 
 -- ----------------------------------------------------------------------------
 -- Servant API
 -- ----------------------------------------------------------------------------
+
+data DbState = DbState
+  { functionDatabase :: TVar (Map Text ValidatedFunction)
+  }
+  deriving (Eq, Generic)
+
+data ValidatedFunction = ValidatedFunction
+  { fnImpl :: !Function
+  , fnEvaluator :: !(Map EvalBackend Evaluator)
+  }
+  deriving (Generic)
+
+type AppM = ReaderT DbState Handler
 
 type Api = NamedRoutes FunctionApi'
 type FunctionApi = NamedRoutes FunctionApi'
@@ -98,6 +125,7 @@ data FunctionEvaluationApi mode = FunctionEvaluationApi
   { computeQualifiesFunc ::
       mode
         :- "compute_qualifies"
+          :> "eval"
           :> QueryString
           :> Summary "Compute whether a person qualifies based on their properties"
           :> OperationId "runComputeQualifies"
@@ -105,6 +133,7 @@ data FunctionEvaluationApi mode = FunctionEvaluationApi
   , rodentsAndVerminFunc ::
       mode
         :- "rodents_and_vermin"
+          :> "eval"
           :> QueryString
           :> Summary "Compute whether a person qualifies based on their properties."
           :> Description "A response value of `0` means that the Loss or Damage is covered, while `1` means the Loss or Damage is not covered."
@@ -118,39 +147,77 @@ data SingleFunctionApi' mode = SingleFunctionApi
   { getFunction ::
       mode
         :- Summary "Get a detailed description of the function and its parameters"
-          :> OperationId "getSingleFunction"
+          :> OperationId "getFunction"
           :> Get '[JSON] Function
+  , postFunction ::
+      mode
+        :- Summary "Add a function resource that can be evaluated."
+          :> ReqBody '[JSON] FunctionImplementation
+          :> OperationId "createFunction"
+          :> Post '[JSON] ()
+  , putFunction ::
+      mode
+        :- Summary "Update a function resource"
+          :> ReqBody '[JSON] FunctionImplementation
+          :> OperationId "updateFunction"
+          :> Put '[JSON] ()
+  , deleteFunction ::
+      mode
+        :- Summary "Delete the function"
+          :> OperationId "deleteFunction"
+          :> Delete '[JSON] ()
+  , evalFunction ::
+      mode
+        :- "evaluation"
+          :> Summary "Evaluate a function with arguments"
+          :> ReqBody '[JSON] FnArguments
+          :> OperationId "evalFunction"
+          :> Post '[JSON] SimpleResponse
   }
   deriving (Generic)
 
 data SimpleFunction = SimpleFunction
-  { simpleName :: Text.Text
-  , simpleDescription :: Text.Text
+  { simpleName :: Text
+  , simpleDescription :: Text
   }
   deriving (Show, Read, Ord, Eq, Generic)
 
 data Function = Function
-  { name :: Text.Text
-  , description :: Text.Text
-  , parameters :: Parameters
+  { name :: !Text
+  , description :: !Text
+  , parameters :: !Parameters
+  , supportedEvalBackend :: [EvalBackend]
+  }
+  deriving (Show, Read, Ord, Eq, Generic)
+
+data FunctionImplementation = FunctionImplementation
+  { declaration :: !Function
+  , implementation :: !(Map EvalBackend Text)
   }
   deriving (Show, Read, Ord, Eq, Generic)
 
 newtype Parameters = Parameters
-  { getParameters :: Map.Map String Parameter
+  { getParameters :: Map Text Parameter
   }
   deriving (Show, Read, Ord, Eq, Generic)
 
 data Parameter = Parameter
-  { parameterType :: String
-  , parameterEnum :: [String]
-  , parameterDescription :: String
+  { parameterType :: !Text
+  , parameterEnum :: ![Text]
+  , parameterDescription :: !Text
   }
   deriving (Show, Read, Ord, Eq, Generic)
 
 data SimpleResponse
-  = SimpleResponse ResponseWithReason
-  | SimpleError EvaluatorError
+  = SimpleResponse !ResponseWithReason
+  | SimpleError !EvaluatorError
+  deriving (Show, Read, Ord, Eq, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+data FnArguments = FnArguments
+  { fnEvalBackend :: Maybe EvalBackend
+  , fnArguments :: Map Text (Maybe FnLiteral)
+  }
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -186,21 +253,29 @@ instance (HasServer api ctx) => HasServer (OperationId desc :> api) ctx where
 -- Web Service Handlers
 -- ----------------------------------------------------------------------------
 
-data EvalBackends
+data EvalBackend
   = GenericMathLang
   | Simala
-  deriving (Show, Eq, Ord, Enum, Bounded)
+  deriving (Show, Eq, Ord, Enum, Read, Bounded)
 
-handler :: Server Api
+handler :: ServerT Api AppM
 handler =
   FunctionApi
     { functionRoutes =
         FunctionCrud
-          { batchEntities = handlerFunctions
+          { batchEntities = getAllFunctions
           , singleEntity = \name ->
               SingleFunctionApi
                 { getFunction =
                     getFunctionHandler name
+                , putFunction =
+                    putFunctionHandler name
+                , postFunction =
+                    postFunctionHandler name
+                , deleteFunction =
+                    deleteFunctionHandler name
+                , evalFunction =
+                    evalFunctionHandler name
                 }
           , functionEvaluation =
               FunctionEvaluationApi
@@ -212,71 +287,183 @@ handler =
           }
     }
 
-handlerFunctions :: Handler [SimpleFunction]
-handlerFunctions = do
-  pure $ fmap toSimpleFunction $ Map.elems functionSpecs
+evalFunctionHandler :: String -> FnArguments -> AppM SimpleResponse
+evalFunctionHandler name' args = do
+  functionsTVar <- asks functionDatabase
+  functions <- liftIO $ readTVarIO functionsTVar
+  case Map.lookup name functions of
+    Nothing -> throwError err404
+    Just fnImpl ->
+      runEvaluatorFor args.fnEvalBackend fnImpl args
  where
-  toSimpleFunction s =
-    SimpleFunction
-      { simpleName = name s
-      , simpleDescription = description s
-      }
+  name = Text.pack name'
 
-computeQualifiesHandler ::
-  [(ByteString, Maybe ByteString)] -> Handler SimpleResponse
-computeQualifiesHandler queryParameters = parseToFunctionCall queryParameters $ \backend params -> do
-  runEvaluatorFor
-    backend
-    ComputeQualifies
-    params
+runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> FnArguments -> AppM SimpleResponse
+runEvaluatorFor engine validatedFunc fnArguments = do
+  eval <- evaluationEngine evalBackend validatedFunc
+  evaluationResult <-
+    timeoutAction $
+      runExceptT
+        ( runEvaluatorForFunction
+            eval
+            (Map.assocs fnArguments.fnArguments)
+        )
 
-rodentsAndVerminHandler ::
-  [(ByteString, Maybe ByteString)] ->
-  Handler SimpleResponse
-rodentsAndVerminHandler queryParameters = parseToFunctionCall queryParameters $ \backend params -> do
-  runEvaluatorFor
-    backend
-    RodentsAndVermin
-    params
-
-parseToFunctionCall :: [(ByteString, Maybe ByteString)] -> (Maybe EvalBackends -> [(Text, Maybe FnLiteral)] -> Handler a) -> Handler a
-parseToFunctionCall queryParameters k = do
-  backend <- getQueryParam (join (List.lookup "backend" queryParameters))
-  params <-
-    traverse
-      ( \(name, val) -> do
-          fnLiteral <- getQueryParam val
-          let
-            name' = Text.decodeUtf8 name
-          pure (name', fnLiteral)
-      )
-      queryParameters
-  let finalParams = filter (("backend" /=) . fst) params
-  k
-    backend
-    finalParams
-
-getQueryParam :: (FromHttpApiData a) => Maybe ByteString -> Handler (Maybe a)
-getQueryParam Nothing = pure Nothing
-getQueryParam (Just bs) = case parseQueryParamByteString bs of
-  Left err -> throwError err400{errBody = TL.encodeUtf8 $ TL.fromStrict err}
-  Right a -> pure $ Just a
-
-runEvaluatorFor :: Maybe EvalBackends -> FunctionName -> [(Text, Maybe FnLiteral)] -> Handler SimpleResponse
-runEvaluatorFor engine name arguments = do
-  evaluationResult <- timeoutAction $ runExceptT (runEvaluatorForFunction eval name arguments)
   case evaluationResult of
     Left err -> pure $ SimpleError err
     Right r -> pure $ SimpleResponse r
  where
-  eval = evaluationEngine $ Maybe.fromMaybe Simala engine
+  evalBackend = Maybe.fromMaybe Simala engine
 
-getFunctionHandler :: String -> Handler Function
-getFunctionHandler name = case Map.lookup (Text.pack name) functionSpecs of
-  Nothing -> throwError err404
-  Just function -> pure function
+deleteFunctionHandler :: String -> AppM ()
+deleteFunctionHandler name' = do
+  functionsTVar <- asks functionDatabase
+  exists <- liftIO $ atomically $ stateTVar functionsTVar $ \functions ->
+    case Map.member name functions of
+      True ->
+        (True, Map.delete name functions)
+      False ->
+        (False, functions)
 
-timeoutAction :: IO b -> Handler b
+  when (not exists) $
+    throwError
+      err404
+        { errBody =
+            "Resource "
+              <> BS.fromStrict (Text.encodeUtf8 name)
+              <> " does not exist"
+        }
+ where
+  name = Text.pack name'
+
+putFunctionHandler :: String -> FunctionImplementation -> AppM ()
+putFunctionHandler name' updatedFunctionImpl = do
+  validatedFunction <- validateFunction updatedFunctionImpl
+  functionsTVar <- asks functionDatabase
+  exists <- liftIO $ atomically $ stateTVar functionsTVar $ \functions ->
+    case Map.member name functions of
+      True ->
+        (True, Map.insert name validatedFunction functions)
+      False ->
+        (False, functions)
+
+  when (not exists) $
+    -- Error code has been chosen in accordance with
+    -- https://stackoverflow.com/a/70371989
+    throwError
+      err404
+        { errBody =
+            "Resource "
+              <> BS.fromStrict (Text.encodeUtf8 name)
+              <> " does not exist"
+        }
+ where
+  name = Text.pack name'
+
+postFunctionHandler :: String -> FunctionImplementation -> AppM ()
+postFunctionHandler name' newFunctionImpl = do
+  validatedFunction <- validateFunction newFunctionImpl
+  functionsTVar <- asks functionDatabase
+  exists <- liftIO $ atomically $ stateTVar functionsTVar $ \functions ->
+    case Map.member name functions of
+      True ->
+        (True, functions)
+      False ->
+        (False, Map.insert name validatedFunction functions)
+
+  when exists $
+    -- Error code has been chosen in accordance with
+    -- https://stackoverflow.com/a/70371989
+    throwError
+      err409
+        { errBody =
+            "Resource "
+              <> BS.fromStrict (Text.encodeUtf8 name)
+              <> " already exists"
+        }
+ where
+  name = Text.pack name'
+
+validateFunction :: FunctionImplementation -> AppM ValidatedFunction
+validateFunction fn = do
+  evaluators <- Map.traverseWithKey validateImplementation fn.implementation
+  pure
+    ValidatedFunction
+      { fnImpl = fn.declaration
+      , fnEvaluator = evaluators
+      }
+ where
+  validateImplementation :: EvalBackend -> Text -> AppM Evaluator
+  validateImplementation GenericMathLang _program = throwError err409{errBody = "Can't add or modify gml programs."}
+  validateImplementation Simala program = do
+    case runExcept $ Simala.simalaEvaluator (toDecl fn.declaration) program of
+      Left err -> throwError err422{errBody = "Failed to parse program: " <> TL.encodeUtf8 (TL.pack $ show err)}
+      Right parsed -> pure parsed
+
+getAllFunctions :: AppM [SimpleFunction]
+getAllFunctions = do
+  functions <- liftIO . readTVarIO =<< asks functionDatabase
+  pure $ fmap (toSimpleFunction . fnImpl) $ Map.elems functions
+ where
+  toSimpleFunction s =
+    SimpleFunction
+      { simpleName = s.name
+      , simpleDescription = s.description
+      }
+
+computeQualifiesHandler ::
+  [(ByteString, Maybe ByteString)] -> AppM SimpleResponse
+computeQualifiesHandler queryParameters = undefined
+
+-- parseToFunctionCall queryParameters $ \backend params -> do
+-- runEvaluatorFor
+--   backend
+--   ComputeQualifies
+--   params
+
+rodentsAndVerminHandler ::
+  [(ByteString, Maybe ByteString)] ->
+  AppM SimpleResponse
+rodentsAndVerminHandler queryParameters = undefined
+
+--  parseToFunctionCall queryParameters $ \backend params -> do
+-- runEvaluatorFor
+-- backend
+-- RodentsAndVermin
+-- params
+
+-- parseToFunctionCall :: [(ByteString, Maybe ByteString)] -> (Maybe EvalBackend -> [(Text, Maybe FnLiteral)] -> AppM a) -> AppM a
+-- parseToFunctionCall queryParameters k = do
+--   backend <- getQueryParam (join (List.lookup "backend" queryParameters))
+--   params <-
+--     traverse
+--       ( \(name, val) -> do
+--           fnLiteral <- getQueryParam val
+--           let
+--             name' = Text.decodeUtf8 name
+--           pure (name', fnLiteral)
+--       )
+--       queryParameters
+--   let
+--     finalParams = filter (("backend" /=) . fst) params
+--   k
+--     backend
+--     finalParams
+
+-- getQueryParam :: (FromHttpApiData a) => Maybe ByteString -> AppM (Maybe a)
+-- getQueryParam Nothing = pure Nothing
+-- getQueryParam (Just bs) = case parseQueryParamByteString bs of
+--   Left err -> throwError err400{errBody = TL.encodeUtf8 $ TL.fromStrict err}
+--   Right a -> pure $ Just a
+
+getFunctionHandler :: String -> AppM Function
+getFunctionHandler name = do
+  functions <- liftIO . readTVarIO =<< asks functionDatabase
+  case Map.lookup (Text.pack name) functions of
+    Nothing -> throwError err404
+    Just function -> pure function.fnImpl
+
+timeoutAction :: IO b -> AppM b
 timeoutAction act =
   liftIO (timeout (seconds 5) act) >>= \case
     Nothing -> throwError err500
@@ -288,69 +475,13 @@ timeoutAction act =
 -- "Database" layer
 -- ----------------------------------------------------------------------------
 
-evaluationEngine :: EvalBackends -> Evaluator
-evaluationEngine = \case
-  GenericMathLang -> genericMathLangEvaluator
-  Simala -> simalaEvaluator
+evaluationEngine :: EvalBackend -> ValidatedFunction -> AppM Evaluator
+evaluationEngine b valFn = do
+  case Map.lookup b valFn.fnEvaluator of
+    Nothing -> throwError err404
+    Just eval -> pure eval
 
-functionSpecs :: Map.Map Text.Text Function
-functionSpecs =
-  Map.fromList
-    [ (name f, f)
-    | f <- [personQualifiesFunction, rodentsAndVerminFunction]
-    ]
-
--- | Metadata about the function that the user might want to know.
--- Further, an LLM could use this info to ask specific questions to the user.
-personQualifiesFunction :: Function
-personQualifiesFunction =
-  Function
-    "compute_qualifies"
-    [__i|Determines if a person qualifies for the purposes of the rule.
-      The input object describes the person's properties in the primary parameters: walks, eats, drinks.
-      Secondary parameters can be given which are sufficient to determine some of the primary parameters.
-      A person drinks whether or not they consume an alcoholic or a non-alcoholic beverage, in part or in whole;
-      those specific details don't really matter.
-      The output of the function can be either a request for required information;
-      a restatement of the user input requesting confirmation prior to function calling;
-      or a Boolean answer with optional explanation summary.
-    |]
-    $ Parameters
-    $ Map.fromList
-      [ ("walks", Parameter "string" ["true", "false"] "Did the person walk?")
-      , ("eats", Parameter "string" ["true", "false"] "Did the person eat?")
-      , ("drinks", Parameter "string" ["true", "false"] "Did the person drink?")
-      , ("beverage type", Parameter "string" ["alcoholic", "non-alcoholic"] "Did the person drink an alcoholic beverage?")
-      , ("in whole", Parameter "string" ["true", "false"] "Did the person drink all of the beverage?")
-      ]
-
--- | Metadata about the function that the user might want to know.
--- Further, an LLM could use this info to ask specific questions to the user.
-rodentsAndVerminFunction :: Function
-rodentsAndVerminFunction =
-  Function
-    "vermin_and_rodent"
-    [__i|We do not cover any loss or damage caused by rodents, insects, vermin, or birds.
-    However, this exclusion does not apply to:
-    a) loss or damage to your contents caused by birds; or
-    b) ensuing covered loss unless any other exclusion applies or where an animal causes water to escape from
-       a household appliance, swimming pool or plumbing, heating or air conditioning system
-    |]
-    $ Parameters
-    $ Map.fromList
-      [ ("Loss or Damage.caused by insects", Parameter "string" ["true", "false"] "Was the damage caused by insects?")
-      , ("Loss or Damage.caused by birds", Parameter "string" ["true", "false"] "Was the damage caused by birds?")
-      , ("Loss or Damage.caused by vermin", Parameter "string" ["true", "false"] "Was the damage caused by vermin?")
-      , ("Loss or Damage.caused by rodents", Parameter "string" ["true", "false"] "Was the damage caused by rodents?")
-      , ("Loss or Damage.to Contents", Parameter "string" ["true", "false"] "Is the damage to your contents?")
-      , ("Loss or Damage.ensuing covered loss", Parameter "string" ["true", "false"] "Is the damage ensuing covered loss")
-      , ("any other exclusion applies", Parameter "string" ["true", "false"] "Are any other exclusions besides mentioned ones?")
-      , ("a household appliance", Parameter "string" ["true", "false"] "Did water escape from a household appliance due to an animal?")
-      , ("a swimming pool", Parameter "string" ["true", "false"] "Did water escape from a swimming pool due to an animal?")
-      , ("a plumbing, heating, or air conditioning system", Parameter "string" ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
-      ]
-
--- ----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Json encoders and decoders that are not derived.
 -- We often need custom instances, as we want to be more lenient in what we accept
 -- than what aeson does by default. Further, we try to provide a specific json schema.
@@ -370,21 +501,21 @@ instance ToJSON SimpleFunction where
 
 instance FromJSON SimpleFunction where
   parseJSON = Aeson.withObject "Function" $ \o -> do
-    "function" :: Text.Text <- o .: "type"
+    "function" :: Text <- o .: "type"
     props <- o .: "function"
-    (n, d) <-
+    simpleFn <-
       Aeson.withObject
         "function body"
         ( \p -> do
-            (,)
+            SimpleFunction
               <$> p .: "name"
               <*> p .: "description"
         )
         props
-    pure $ SimpleFunction n d
+    pure simpleFn
 
 instance ToJSON Function where
-  toJSON (Function n desc params) =
+  toJSON (Function n desc params backends) =
     Aeson.object
       [ "type" .= Aeson.String "function"
       , "function"
@@ -392,24 +523,37 @@ instance ToJSON Function where
             [ "name" .= Aeson.String n
             , "description" .= Aeson.String desc
             , "parameters" .= params
+            , "supportedBackends" .= backends
             ]
       ]
 
 instance FromJSON Function where
   parseJSON = Aeson.withObject "Function" $ \o -> do
-    "function" :: Text.Text <- o .: "type"
+    "function" :: Text <- o .: "type"
     props <- o .: "function"
-    (n, d, p) <-
-      Aeson.withObject
-        "function body"
-        ( \p -> do
-            (,,)
-              <$> p .: "name"
-              <*> p .: "description"
-              <*> p .: "parameters"
-        )
-        props
-    pure $ Function n d p
+    Aeson.withObject
+      "function body"
+      ( \p -> do
+          Function
+            <$> p .: "name"
+            <*> p .: "description"
+            <*> p .: "parameters"
+            <*> p .: "supportedBackends"
+      )
+      props
+
+instance ToJSON FunctionImplementation where
+  toJSON fnImpl =
+    Aeson.object
+      [ "declaration" .= fnImpl.declaration
+      , "implementation" .= fnImpl.implementation
+      ]
+
+instance FromJSON FunctionImplementation where
+  parseJSON = Aeson.withObject "Function Implementation" $ \o -> do
+    FunctionImplementation
+      <$> o .: "declaration"
+      <*> o .: "implementation"
 
 instance ToJSON Parameters where
   toJSON (Parameters props) =
@@ -420,7 +564,7 @@ instance ToJSON Parameters where
 
 instance FromJSON Parameters where
   parseJSON = Aeson.withObject "Parameters" $ \o -> do
-    _ :: Text.Text <- o .: "type"
+    _ :: Text <- o .: "type"
     props <- o .: "properties"
     pure $ Parameters props
 
@@ -439,14 +583,38 @@ instance FromJSON Parameter where
       <*> p .: "enum"
       <*> p .: "description"
 
-instance FromHttpApiData EvalBackends where
+instance FromHttpApiData EvalBackend where
   parseQueryParam t = case Text.toLower t of
     "gml" -> Right GenericMathLang
     "simala" -> Right Simala
     _ -> Left $ "Invalid evaluation backend: " <> t
+
+instance ToJSON EvalBackend where
+  toJSON = \case
+    GenericMathLang -> Aeson.String "gml"
+    Simala -> Aeson.String "simala"
+
+instance FromJSON EvalBackend where
+  parseJSON (Aeson.String s) = case Text.toLower s of
+    "gml" -> pure GenericMathLang
+    "simala" -> pure Simala
+    o -> Aeson.prependFailure "EvalBackend" (Aeson.typeMismatch "String" $ Aeson.String o)
+  parseJSON o = Aeson.prependFailure "EvalBackend" (Aeson.typeMismatch "String" o)
+
+instance ToJSONKey EvalBackend
+
+instance FromJSONKey EvalBackend
 
 parseQueryParamByteString :: (FromHttpApiData a) => ByteString -> Either Text a
 parseQueryParamByteString bs =
   case Text.decodeUtf8' bs of
     Left err -> Left $ Text.pack $ show err
     Right t -> parseQueryParam t
+
+toDecl :: Function -> Api.FunctionDeclaration
+toDecl fn =
+  Api.FunctionDeclaration
+    { Api.name = fn.name
+    , Api.description = fn.description
+    , Api.parameters = Map.keysSet $ fn.parameters.getParameters
+    }

@@ -10,7 +10,7 @@ module Schema (
 
 --
 
-import Backend.Api
+import Backend.Api hiding (description, name)
 import Control.Lens hiding ((.=))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -49,7 +49,7 @@ instance (HasOpenApi sub) => HasOpenApi (QueryString :> sub) where
       mempty
         & name .~ "backend"
         & in_ .~ ParamQuery
-        & schema ?~ Inline (toParamSchema $ Proxy @EvalBackends)
+        & schema ?~ Inline (toParamSchema $ Proxy @EvalBackend)
 
     param =
       mempty
@@ -118,37 +118,42 @@ instance ToSchema SimpleFunction where
                ]
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON SimpleResponse' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema SimpleResponse
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON SimpleResponse' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema EvaluatorError
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON SimpleResponse' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema ParameterMismatch
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON ResponseWithReason' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema ResponseWithReason
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON Reasoning' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema Reasoning
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON Reasoning' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema ReasoningTree
 
 -- This is correct, since we don't overwrite the
--- 'ToJSON Reasoning' instance yet.
+-- 'ToJSON' instance yet.
 instance ToSchema ReasonNode
+
+-- This is correct, since we don't overwrite the
+-- 'ToJSON' instance yet.
+instance ToSchema FnArguments
 
 instance ToSchema Function where
   declareNamedSchema _ = do
     textRef <- declareSchemaRef (Proxy @Text.Text)
     parametersRef <- declareSchemaRef (Proxy @Parameters)
+    evalBackendsRef <- declareSchemaRef (Proxy @[EvalBackend])
     pure $
       NamedSchema (Just "Function") $
         mempty
@@ -163,6 +168,7 @@ instance ToSchema Function where
                       & properties
                         .~ [ ("name", textRef)
                            , ("description", textRef)
+                           , ("supportedBackends", evalBackendsRef)
                            ,
                              ( "parameters"
                              , Inline $
@@ -176,16 +182,30 @@ instance ToSchema Function where
                  )
                ]
 
+instance ToSchema FunctionImplementation where
+  declareNamedSchema _ = do
+    implRef <- declareSchemaRef (Proxy @(Map EvalBackend Text.Text))
+    functionDeclRef <- declareSchemaRef (Proxy @Function)
+    pure $
+      NamedSchema (Just "Implementation") $
+        mempty
+          & title ?~ "Implementation"
+          & type_ ?~ OpenApiObject
+          & properties
+            .~ [ ("declaration", functionDeclRef)
+               , ("implementation", implRef)
+               ]
+
 instance ToSchema Parameters where
   declareNamedSchema _ = do
-    parameterSchema <- declareSchemaRef (Proxy @Parameter)
+    -- parameterSchema <- declareSchemaRef (Proxy @Parameter)
     mapSchema <- declareNamedSchema (Proxy @(Map String Parameter))
     pure $
       mapSchema
         & name ?~ "FunctionParameters"
-        & schema . properties
-          .~ [ ("prop", parameterSchema)
-             ]
+        -- & schema . properties
+        --   .~ [ ("prop", parameterSchema)
+        --      ]
 
 instance ToSchema Parameter where
   declareNamedSchema _ = do
@@ -225,13 +245,13 @@ instance ToSchema FnLiteral where
       NamedSchema (Just "Literal") $
         toParamSchema p
 
-instance ToSchema EvalBackends where
+instance ToSchema EvalBackend where
   declareNamedSchema p = do
     pure $
-      NamedSchema (Just "EvalBackends") $
+      NamedSchema (Just "EvalBackend") $
         toParamSchema p
 
-instance ToParamSchema EvalBackends where
+instance ToParamSchema EvalBackend where
   toParamSchema _ =
     mempty
       & type_ ?~ OpenApiString

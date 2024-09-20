@@ -55,7 +55,6 @@ import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey, (.:), (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
-import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -115,30 +114,6 @@ data FunctionCrud' mode = FunctionCrud
       mode
         :- Capture "name" String
           :> SingleFunctionApi
-  , functionEvaluation ::
-      mode
-        :- NamedRoutes FunctionEvaluationApi
-  }
-  deriving (Generic)
-
-data FunctionEvaluationApi mode = FunctionEvaluationApi
-  { computeQualifiesFunc ::
-      mode
-        :- "compute_qualifies"
-          :> "eval"
-          :> QueryString
-          :> Summary "Compute whether a person qualifies based on their properties"
-          :> OperationId "runComputeQualifies"
-          :> Post '[JSON] SimpleResponse
-  , rodentsAndVerminFunc ::
-      mode
-        :- "rodents_and_vermin"
-          :> "eval"
-          :> QueryString
-          :> Summary "Compute whether a person qualifies based on their properties."
-          :> Description "A response value of `0` means that the Loss or Damage is covered, while `1` means the Loss or Damage is not covered."
-          :> OperationId "runRodentsAndVermin"
-          :> Post '[JSON] SimpleResponse
   }
   deriving (Generic)
 
@@ -216,7 +191,7 @@ data SimpleResponse
 
 data FnArguments = FnArguments
   { fnEvalBackend :: Maybe EvalBackend
-  , fnArguments :: [(Text, (Maybe FnLiteral))]
+  , fnArguments :: Map Text (Maybe FnLiteral)
   }
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
@@ -277,13 +252,6 @@ handler =
                 , evalFunction =
                     evalFunctionHandler name
                 }
-          , functionEvaluation =
-              FunctionEvaluationApi
-                { computeQualifiesFunc =
-                    computeQualifiesHandler
-                , rodentsAndVerminFunc =
-                    rodentsAndVerminHandler
-                }
           }
     }
 
@@ -306,7 +274,7 @@ runEvaluatorFor engine validatedFunc args = do
       runExceptT
         ( runEvaluatorForFunction
             eval
-            args.fnArguments
+            (Map.assocs args.fnArguments)
         )
 
   case evaluationResult of
@@ -410,51 +378,6 @@ getAllFunctions = do
       { simpleName = s.name
       , simpleDescription = s.description
       }
-
-computeQualifiesHandler ::
-  [(ByteString, Maybe ByteString)] -> AppM SimpleResponse
-computeQualifiesHandler queryParameters = undefined
-
--- parseToFunctionCall queryParameters $ \backend params -> do
--- runEvaluatorFor
---   backend
---   ComputeQualifies
---   params
-
-rodentsAndVerminHandler ::
-  [(ByteString, Maybe ByteString)] ->
-  AppM SimpleResponse
-rodentsAndVerminHandler queryParameters = undefined
-
---  parseToFunctionCall queryParameters $ \backend params -> do
--- runEvaluatorFor
--- backend
--- RodentsAndVermin
--- params
-
--- parseToFunctionCall :: [(ByteString, Maybe ByteString)] -> (Maybe EvalBackend -> [(Text, Maybe FnLiteral)] -> AppM a) -> AppM a
--- parseToFunctionCall queryParameters k = do
---   backend <- getQueryParam (join (List.lookup "backend" queryParameters))
---   params <-
---     traverse
---       ( \(name, val) -> do
---           fnLiteral <- getQueryParam val
---           let
---             name' = Text.decodeUtf8 name
---           pure (name', fnLiteral)
---       )
---       queryParameters
---   let
---     finalParams = filter (("backend" /=) . fst) params
---   k
---     backend
---     finalParams
-
--- getQueryParam :: (FromHttpApiData a) => Maybe ByteString -> AppM (Maybe a)
--- getQueryParam Nothing = pure Nothing
--- getQueryParam (Just bs) = case parseQueryParamByteString bs of
---   Left err -> throwError err400{errBody = TL.encodeUtf8 $ TL.fromStrict err}
---   Right a -> pure $ Just a
 
 getFunctionHandler :: String -> AppM Function
 getFunctionHandler name = do
@@ -604,12 +527,6 @@ instance FromJSON EvalBackend where
 instance ToJSONKey EvalBackend
 
 instance FromJSONKey EvalBackend
-
-parseQueryParamByteString :: (FromHttpApiData a) => ByteString -> Either Text a
-parseQueryParamByteString bs =
-  case Text.decodeUtf8' bs of
-    Left err -> Left $ Text.pack $ show err
-    Right t -> parseQueryParam t
 
 toDecl :: Function -> Api.FunctionDeclaration
 toDecl fn =

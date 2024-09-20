@@ -216,7 +216,7 @@ data SimpleResponse
 
 data FnArguments = FnArguments
   { fnEvalBackend :: Maybe EvalBackend
-  , fnArguments :: Map Text (Maybe FnLiteral)
+  , fnArguments :: [(Text, (Maybe FnLiteral))]
   }
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
@@ -299,14 +299,14 @@ evalFunctionHandler name' args = do
   name = Text.pack name'
 
 runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> FnArguments -> AppM SimpleResponse
-runEvaluatorFor engine validatedFunc fnArguments = do
+runEvaluatorFor engine validatedFunc args = do
   eval <- evaluationEngine evalBackend validatedFunc
   evaluationResult <-
     timeoutAction $
       runExceptT
         ( runEvaluatorForFunction
             eval
-            (Map.assocs fnArguments.fnArguments)
+            args.fnArguments
         )
 
   case evaluationResult of

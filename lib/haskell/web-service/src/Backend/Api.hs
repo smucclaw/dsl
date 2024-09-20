@@ -12,17 +12,15 @@ import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.Scientific qualified as Scientific
+import Data.Set (Set)
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Read qualified as TextReader
 import GHC.Generics (Generic)
 import Optics.Cons
 import Servant.API
-import Data.Text (Text)
 
-data FunctionName
-  = ComputeQualifies
-  | RodentsAndVermin
-  deriving (Show, Read, Ord, Eq)
+type FunctionName = Text
 
 data FnLiteral
   = FnLitInt !Integer
@@ -50,6 +48,18 @@ instance FromJSON FnLiteral where
       | Right d <- Scientific.toBoundedRealFloat val -> pure $ FnLitDouble d
       | otherwise -> Aeson.typeMismatch "Failed to parse number into bounded real or integer" (Aeson.Number val)
     obj -> Aeson.typeMismatch "Failed to parse FnLiteral" obj
+
+data Evaluator = Evaluator
+  { runEvaluatorForFunction ::
+      [(Text, Maybe FnLiteral)] ->
+      ExceptT EvaluatorError IO ResponseWithReason
+  }
+
+data FunctionDeclaration = FunctionDeclaration
+  { name :: !Text
+  , description :: !Text
+  , parameters :: !(Set Text)
+  }
 
 data ResponseWithReason = ResponseWithReason
   { responseValue :: FnLiteral
@@ -121,7 +131,3 @@ parseTextAsFnLiteral t
     ('\"', t') <- uncons t
     (t'', '\"') <- unsnoc t'
     pure t''
-
-data Evaluator = Evaluator
-  { runEvaluatorForFunction :: FunctionName -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError IO ResponseWithReason
-  }

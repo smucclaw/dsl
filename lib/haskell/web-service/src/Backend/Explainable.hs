@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Backend.Explainable (genericMathLangEvaluator) where
@@ -10,7 +11,6 @@ import Control.Monad (foldM)
 import Control.Monad.Except
 import Control.Monad.IO.Class
 import Data.HashMap.Strict qualified as HashMap
-import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -18,16 +18,31 @@ import Data.Tree qualified as Tree
 import Explainable (XP)
 import Explainable.MathLang
 
-genericMathLangEvaluator :: Evaluator
-genericMathLangEvaluator =
+genericMathLangEvaluator :: FunctionDeclaration -> Expr Double -> Evaluator
+genericMathLangEvaluator fnDecl expr =
   Evaluator
-    { runEvaluatorForFunction = \name params -> case name of
-        ComputeQualifies -> personQualifiesImpl params
-        RodentsAndVermin -> rodentsAndVerminImpl params
+    { runEvaluatorForFunction = functionHandler fnDecl expr
     }
 
-evaluator :: (MonadIO m) => MyState -> Expr Double -> ExceptT EvaluatorError m ResponseWithReason
-evaluator s scenario = do
+functionHandler :: (MonadIO m) => FunctionDeclaration -> Expr Double -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
+functionHandler decl impl args
+  | length decl.parameters /= length args =
+      throwError $
+        RequiredParameterMissing $
+          ParameterMismatch
+            { expectedParameters = length decl.parameters
+            , actualParameters = length args
+            }
+  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k decl.parameters) args =
+      throwError $
+        UnknownArguments $
+          fmap fst unknowns
+  | otherwise = do
+      evaluatorState <- transformParameters args
+      runExplainableInterpreter evaluatorState impl
+
+runExplainableInterpreter :: (MonadIO m) => MyState -> Expr Double -> ExceptT EvaluatorError m ResponseWithReason
+runExplainableInterpreter s scenario = do
   executionResult <- liftIO $ try (xplainF () s scenario)
   case executionResult of
     Left (e :: IOError) -> do
@@ -72,130 +87,3 @@ reasoningFromXp (Tree.Node (xpExampleCode, xpJustification) children) =
   ReasoningTree
     (ReasonNode (fmap Text.pack xpExampleCode) (fmap Text.pack xpJustification))
     (fmap reasoningFromXp children)
-
--- ----------------------------------------------------------------------------
--- Example Rules
--- ----------------------------------------------------------------------------
-
-functionHandler :: (MonadIO m) => Set Text -> [(Text, Maybe FnLiteral)] -> Expr Double -> ExceptT EvaluatorError m ResponseWithReason
-functionHandler labels arguments func
-  | length labels /= length arguments =
-      throwError $
-        RequiredParameterMissing $
-          ParameterMismatch
-            { expectedParameters = length labels
-            , actualParameters = length arguments
-            }
-  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k labels) arguments =
-      throwError $
-        UnknownArguments $
-          fmap fst unknowns
-  | otherwise = do
-      evaluatorState <- transformParameters arguments
-      evaluator evaluatorState func
-
-rodentsAndVerminImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
-rodentsAndVerminImpl args = functionHandler argument_labels args rodentsAndVermin
- where
-  argument_labels :: Set Text
-  argument_labels =
-    Set.fromList
-      [ "Loss or Damage.caused by insects"
-      , "Loss or Damage.caused by birds"
-      , "Loss or Damage.caused by vermin"
-      , "Loss or Damage.caused by rodents"
-      , "Loss or Damage.to Contents"
-      , "Loss or Damage.ensuing covered loss"
-      , "any other exclusion applies"
-      , "a household appliance"
-      , "a swimming pool"
-      , "a plumbing, heating, or air conditioning system"
-      ]
-
-personQualifiesImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
-personQualifiesImpl args = functionHandler argument_labels args personQualifies
- where
-  argument_labels :: Set Text
-  argument_labels =
-    Set.fromList
-      [ "drinks"
-      , "walks"
-      , "eats"
-      ]
-
--- | Example function which computes whether a person qualifies for *something*.
-personQualifies :: Expr Double
-personQualifies =
-  "qualifies"
-    @|= MathPred
-      ( getvar "walks" |&& (getvar "drinks" ||| getvar "eats")
-      )
-
-rodentsAndVermin :: Expr Double
-rodentsAndVermin =
-  "not covered"
-    @|= ( MathITE
-            (Just "Not Covered If \8230")
-            ( PredFold
-                Nothing
-                PLAnd
-                [ PredFold
-                    Nothing
-                    PLOr
-                    [ PredVar "Loss or Damage.caused by rodents"
-                    , PredVar "Loss or Damage.caused by insects"
-                    , PredVar "Loss or Damage.caused by vermin"
-                    , PredVar "Loss or Damage.caused by birds"
-                    ]
-                , PredFold
-                    Nothing
-                    PLAnd
-                    [ PredNot
-                        Nothing
-                        ( PredFold
-                            Nothing
-                            PLOr
-                            [ PredFold
-                                Nothing
-                                PLAnd
-                                [ PredVar "Loss or Damage.to Contents"
-                                , PredFold
-                                    Nothing
-                                    PLAnd
-                                    [PredVar "Loss or Damage.caused by birds"]
-                                ]
-                            , PredFold
-                                Nothing
-                                PLAnd
-                                [ PredVar "Loss or Damage.ensuing covered loss"
-                                , PredFold
-                                    Nothing
-                                    PLAnd
-                                    [ PredNot
-                                        Nothing
-                                        ( PredFold
-                                            Nothing
-                                            PLOr
-                                            [ PredVar "any other exclusion applies"
-                                            , PredFold
-                                                Nothing
-                                                PLOr
-                                                [ PredVar "a household appliance"
-                                                , PredVar "a swimming pool"
-                                                , PredVar
-                                                    "a plumbing, heating, or air conditioning system"
-                                                ]
-                                            ]
-                                        )
-                                    ]
-                                ]
-                            ]
-                        )
-                    ]
-                ]
-            )
-            -- (MathSet "Loss or Damage" (MathVar "Not Covered"))
-            --
-            (Val Nothing 1.0)
-            (Val Nothing 0.0)
-        )

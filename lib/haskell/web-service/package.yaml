@@ -29,7 +29,6 @@ dependencies:
 - mtl
 - prettyprinter
 - text
-- effectful
 - string-interpolate
 - numeric-extras
 - servant ^>= 0.20.2
@@ -47,6 +46,7 @@ dependencies:
 - optics
 - optparse-applicative
 - scientific
+- stm
 # Backends
 - explainable
 - simala

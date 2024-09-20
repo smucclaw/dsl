@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
@@ -10,9 +11,7 @@ import Control.Monad.Error.Class
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
 import Data.Map.Strict qualified as Map
-import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.String.Interpolate (i)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Simala.Eval.Monad qualified as Simala
@@ -22,32 +21,40 @@ import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
-simalaEvaluator :: Evaluator
-simalaEvaluator =
-  Evaluator
-    { runEvaluatorForFunction = \name params -> case name of
-        ComputeQualifies -> computeQualifiedImpl params
-        RodentsAndVermin -> rodentsAndVerminImpl params
-    }
+simalaEvaluator ::
+  (Monad m) =>
+  FunctionDeclaration ->
+  Text ->
+  ExceptT EvaluatorError m Evaluator
+simalaEvaluator fnDecl fnImpl =
+  case Simala.parseExpr "" fnImpl of
+    Left err -> throwError $ InterpreterError $ "Failed to parse Simala program: " <> Text.pack err
+    Right expr ->
+      pure $
+        Evaluator
+          { runEvaluatorForFunction = functionHandler fnDecl expr
+          }
 
-functionHandler :: (MonadIO m) => Set Text -> [(Text, Maybe FnLiteral)] -> Text -> ExceptT EvaluatorError m ResponseWithReason
-functionHandler labels arguments func
-  | length labels /= length arguments =
+functionHandler ::
+  FunctionDeclaration ->
+  Simala.Expr ->
+  [(Text, Maybe FnLiteral)] ->
+  ExceptT EvaluatorError IO ResponseWithReason
+functionHandler decl impl args
+  | length decl.parameters /= length args =
       throwError $
         RequiredParameterMissing $
           ParameterMismatch
-            { expectedParameters = length labels
-            , actualParameters = length arguments
+            { expectedParameters = length decl.parameters
+            , actualParameters = length args
             }
-  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k labels) arguments =
+  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k decl.parameters) args =
       throwError $
         UnknownArguments $
           fmap fst unknowns
   | otherwise = do
-      evaluatorState <- transformParameters arguments
-      case Simala.parseExpr "" func of
-        Left err -> throwError $ InterpreterError $ "Failed to parse Simala program: " <> Text.pack err
-        Right expr -> evaluator evaluatorState expr
+      evaluatorState <- transformParameters args
+      evaluator evaluatorState impl
 
 evaluator :: (MonadIO m) => Simala.Env -> Simala.Expr -> ExceptT EvaluatorError m ResponseWithReason
 evaluator env expr = do
@@ -118,83 +125,3 @@ simalaValToFnLiteral = \case
   Simala.VBool b -> pure $ FnLitBool b
   Simala.VAtom atom -> pure $ FnLitString atom
   val -> throwError $ InterpreterError $ "Cannot translate " <> Simala.render val
-
-rodentsAndVerminImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
-rodentsAndVerminImpl args = functionHandler argument_labels args rodentsAndVermin
- where
-  argument_labels :: Set Text
-  argument_labels =
-    Set.fromList
-      [ "Loss or Damage.caused by insects"
-      , "Loss or Damage.caused by birds"
-      , "Loss or Damage.caused by vermin"
-      , "Loss or Damage.caused by rodents"
-      , "Loss or Damage.to Contents"
-      , "Loss or Damage.ensuing covered loss"
-      , "any other exclusion applies"
-      , "a household appliance"
-      , "a swimming pool"
-      , "a plumbing, heating, or air conditioning system"
-      ]
-
-computeQualifiedImpl :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
-computeQualifiedImpl args = functionHandler argument_labels args computeQualifies
- where
-  argument_labels :: Set Text
-  argument_labels =
-    Set.fromList
-      [ "drinks"
-      , "walks"
-      , "eats"
-      ]
-
-computeQualifies :: Text
-computeQualifies =
-  [i|
-  let
-    computeQualifies = fun () => walks && (drinks || eats)
-  in
-    computeQualifies ()
-|]
-
-rodentsAndVermin :: Text
-rodentsAndVermin =
-  [i|
-  let
-    notCoveredIf = fun (b) => if b then true else false
-  in
-  let
-    lossOrDamagedByAnimals =
-         `Loss or Damage.caused by rodents`
-      || `Loss or Damage.caused by insects`
-      || `Loss or Damage.caused by vermin`
-      || `Loss or Damage.caused by birds`
-  in
-  let
-    damageToContentsAndCausedByBirds =
-         `Loss or Damage.to Contents`
-      && `Loss or Damage.caused by birds`
-  in
-  let
-    ensuingCoveredLoss = `Loss or Damage.ensuing covered loss`
-  in
-  let
-    exclusionsApply =
-         `any other exclusion applies`
-      || `a household appliance`
-      || `a swimming pool`
-      || `a plumbing, heating, or air conditioning system`
-  in
-  let
-    rodentsAndVermin = fun () => notCoveredIf
-      ( lossOrDamagedByAnimals
-        && not
-         (  damageToContentsAndCausedByBirds
-         || (  ensuingCoveredLoss
-            && not ( exclusionsApply )
-            )
-         )
-      )
-  in
-    rodentsAndVermin ()
-|]

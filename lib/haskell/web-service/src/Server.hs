@@ -558,7 +558,10 @@ instance ToJSON Function where
 
 instance FromJSON Function where
   parseJSON = Aeson.withObject "Function" $ \o -> do
-    "function" :: Text <- o .: "type"
+    fnType <- o .: "type"
+    case fnType :: Text of
+      "function" -> pure ()
+      e -> fail $ "Expected \"function\" but got" <> Text.unpack e
     props <- o .: "function"
     Aeson.withObject
       "function body"

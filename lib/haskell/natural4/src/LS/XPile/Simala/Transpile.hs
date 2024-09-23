@@ -52,7 +52,6 @@ import AnyAll.BoolStruct qualified as AA
 
 import LS.Log qualified as Log
 import LS.Renamer.Rules
-import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type qualified as Simala
 
@@ -722,7 +721,7 @@ applySelector expr proj = Simala.Project expr proj
 
 mkLetIn :: Simala.Transparency -> Simala.Name -> Simala.Expr -> Simala.Expr -> Simala.Expr
 mkLetIn transparency name rhs nextExpr =
-  Simala.Let transparency name rhs nextExpr
+  Simala.Let (Simala.NonRec transparency name rhs) nextExpr
 
 mkFunction :: Simala.Transparency -> Simala.Name -> [Simala.Name] -> Simala.Expr -> Simala.Expr -> Simala.Expr
 mkFunction transparency name params rhs nextExpr =

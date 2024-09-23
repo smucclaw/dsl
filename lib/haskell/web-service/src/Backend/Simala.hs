@@ -73,7 +73,7 @@ evaluator inputs outputVars decls = do
     Left err -> throwError $ InterpreterError $ "Failed to evaluate expression: " <> Simala.render err
     Right () -> do
       case evalTrace of
-        [(Right (VRecord outputs), trace)] -> do
+        ((Right (VRecord outputs), trace) : _) -> do
           outputsFn' <- traverse (\(k, v) -> fmap (k,) (simalaValToFnLiteral v)) outputs
           -- Only keep the fields in the output that were actually requested.
           -- If nothing was explicitly requested, we keep all outputs.

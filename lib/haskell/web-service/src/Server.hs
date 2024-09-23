@@ -55,9 +55,11 @@ module Server (
   toDecl,
 ) where
 
+import Chronos qualified
 import Control.Applicative
 import Control.Concurrent.STM
-import Control.Monad (when)
+import Control.Exception (evaluate)
+import Control.Monad (forM, when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
@@ -69,14 +71,21 @@ import Data.Aeson.Key qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.ByteString qualified as BS
 import Data.Fixed
+import Data.Int
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe qualified as Maybe
+import Data.Scientific (Scientific)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.Encoding qualified as TL
+import Data.Tuple.Extra qualified as Tuple
 import Data.Typeable
+import GHC.Clock qualified as Clock
 import GHC.Generics
 import GHC.TypeLits
 import Servant
@@ -85,8 +94,6 @@ import System.Timeout (timeout)
 import Backend.Api
 import Backend.Api as Api
 import Backend.Simala qualified as Simala
-import Data.Scientific (Scientific)
-import Data.Text.Lazy.Encoding qualified as TL
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -203,6 +210,7 @@ newtype Parameters = Parameters
 
 data Parameter = Parameter
   { parameterType :: !Text
+  , parameterAlias :: !(Maybe Text)
   , parameterEnum :: ![Text]
   , parameterDescription :: !Text
   }
@@ -289,22 +297,82 @@ evalFunctionHandler name' args = do
   case Map.lookup name functions of
     Nothing -> throwError err404
     Just fnImpl ->
-      runEvaluatorFor args.fnEvalBackend fnImpl args
+      runEvaluatorFor args.fnEvalBackend fnImpl (Map.assocs args.fnArguments) Nothing
  where
   name = Text.pack name'
 
 batchFunctionHandler :: String -> BatchRequest -> AppM BatchResponse
-batchFunctionHandler = undefined
+batchFunctionHandler name' batchArgs = do
+  functionsTVar <- asks functionDatabase
+  functions <- liftIO $ readTVarIO functionsTVar
+  case Map.lookup name functions of
+    Nothing -> throwError err404
+    Just fnImpl -> do
+      (execTime, responses) <- stopwatchM $ forM batchArgs.batchRequestCases $ \inputCase -> do
+        let
+          args = Map.assocs $ fmap Just inputCase.inputCaseAttributes
 
-runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> FnArguments -> AppM SimpleResponse
-runEvaluatorFor engine validatedFunc args = do
+        r <- runEvaluatorFor (Just Simala) fnImpl args outputFilter
+        pure (inputCase.inputCaseId, r)
+
+      let
+        nCases = length responses
+
+        successfulRuns =
+          Maybe.mapMaybe
+            ( \(rid, simpleRes) -> case simpleRes of
+                SimpleResponse r -> Just (rid, r)
+                SimpleError _ -> Nothing
+            )
+            responses
+
+        nSuccessful = length successfulRuns
+        nIgnored = nCases - nSuccessful
+
+      pure $
+        BatchResponse
+          { batchResponseCases =
+              [ OutputCase
+                { outputCaseId = rid
+                , outputCaseAttributes = Map.fromList response.responseValue
+                }
+              | (rid, response) <- successfulRuns
+              ]
+          , batchResponseSummary =
+              OutputSummary
+                { outputSummaryCasesRead = nCases
+                , outputSummaryCasesProcessed = nSuccessful
+                , outputSummaryCasesIgnored = nIgnored
+                , outputSummaryProcessorDurationSec = nsToS execTime
+                , outputSummaryCasesPerSec = nsToS execTime / realToFrac nCases
+                , outputSummaryProcessorQueuedSec = 0
+                }
+          }
+ where
+  outputFilter = if null outputFilter' then Nothing else Just outputFilter'
+  outputFilter' =
+    Set.fromList $
+      Maybe.mapMaybe
+        ( \case
+            OutcomeAttribute t -> Just t
+            OutcomePropertyObject _ -> Nothing
+        )
+        batchArgs.batchRequestOutcomes
+  name = Text.pack name'
+
+  nsToS :: Chronos.Timespan -> Centi
+  nsToS n = (realToFrac @Int @Centi $ fromIntegral @Int64 @Int (Chronos.getTimespan n)) / 10e9
+
+runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> [(Text, Maybe FnLiteral)] -> Maybe (Set Text) -> AppM SimpleResponse
+runEvaluatorFor engine validatedFunc args outputFilter = do
   eval <- evaluationEngine evalBackend validatedFunc
   evaluationResult <-
     timeoutAction $
       runExceptT
         ( runEvaluatorForFunction
             eval
-            (Map.assocs args.fnArguments)
+            args
+            outputFilter
         )
 
   case evaluationResult of
@@ -418,11 +486,19 @@ getFunctionHandler name = do
 
 timeoutAction :: IO b -> AppM b
 timeoutAction act =
-  liftIO (timeout (seconds 5) act) >>= \case
+  liftIO (timeout (seconds 60) act) >>= \case
     Nothing -> throwError err500
     Just r -> pure r
  where
   seconds n = 1_000_000 * n
+
+stopwatchM :: AppM a -> AppM (Chronos.Timespan, a)
+stopwatchM action = do
+  start <- liftIO Clock.getMonotonicTimeNSec
+  a' <- action
+  a <- liftIO $ evaluate a'
+  end <- liftIO Clock.getMonotonicTimeNSec
+  pure ((Chronos.Timespan (fromIntegral (end - start))), a)
 
 -- ----------------------------------------------------------------------------
 -- "Database" layer
@@ -522,17 +598,19 @@ instance FromJSON Parameters where
     pure $ Parameters props
 
 instance ToJSON Parameter where
-  toJSON (Parameter ty enum desc) =
+  toJSON p =
     Aeson.object
-      [ "type" .= ty
-      , "enum" .= enum
-      , "description" .= desc
+      [ "type" .= p.parameterType
+      , "alias" .= p.parameterAlias
+      , "enum" .= p.parameterEnum
+      , "description" .= p.parameterDescription
       ]
 
 instance FromJSON Parameter where
   parseJSON = Aeson.withObject "Parameter" $ \p ->
     Parameter
       <$> p .: "type"
+      <*> p .: "alias"
       <*> p .: "enum"
       <*> p .: "description"
 
@@ -563,8 +641,15 @@ toDecl fn =
   Api.FunctionDeclaration
     { Api.name = fn.name
     , Api.description = fn.description
-    , Api.parameters = Map.keysSet $ fn.parameters.getParameters
+    , Api.parametersLongNames = Map.keysSet $ fn.parameters.getParameters
+    , Api.parametersMapping = shortToLongNameMapping
     }
+ where
+  shortToLongNameMapping :: Map Text Text
+  shortToLongNameMapping =
+    Map.fromList $
+      Maybe.mapMaybe (fmap Tuple.swap . Tuple.secondM parameterAlias) $
+        Map.assocs fn.parameters.getParameters
 
 -- ----------------------------------------------------------------------------
 -- Oracle DB
@@ -742,9 +827,9 @@ outputSummaryEncoder os =
     [ "casesRead" .= outputSummaryCasesRead os
     , "casesProcessed" .= outputSummaryCasesProcessed os
     , "casesIgnored" .= outputSummaryCasesIgnored os
-    , "processorDurationSec" .= (toSci $ outputSummaryProcessorDurationSec os)
-    , "processorCasesPerSec" .= (toSci $ outputSummaryCasesPerSec os)
-    , "processorQueuedSec" .= (toSci $ outputSummaryProcessorQueuedSec os)
+    , "processorDurationSec" .= toSci (outputSummaryProcessorDurationSec os)
+    , "processorCasesPerSec" .= toSci (outputSummaryCasesPerSec os)
+    , "processorQueuedSec" .= toSci (outputSummaryProcessorQueuedSec os)
     ]
  where
   toSci = realToFrac @Centi @Scientific

@@ -21,19 +21,19 @@ import Explainable.MathLang
 genericMathLangEvaluator :: FunctionDeclaration -> Expr Double -> Evaluator
 genericMathLangEvaluator fnDecl expr =
   Evaluator
-    { runEvaluatorForFunction = functionHandler fnDecl expr
+    { runEvaluatorForFunction = \args _ -> functionHandler fnDecl expr args
     }
 
 functionHandler :: (MonadIO m) => FunctionDeclaration -> Expr Double -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
 functionHandler decl impl args
-  | length decl.parameters /= length args =
+  | length decl.parametersLongNames /= length args =
       throwError $
         RequiredParameterMissing $
           ParameterMismatch
-            { expectedParameters = length decl.parameters
+            { expectedParameters = length decl.parametersLongNames
             , actualParameters = length args
             }
-  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k decl.parameters) args =
+  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k decl.parametersLongNames) args =
       throwError $
         UnknownArguments $
           fmap fst unknowns
@@ -48,7 +48,7 @@ runExplainableInterpreter s scenario = do
     Left (e :: IOError) -> do
       throwError $ InterpreterError $ Text.pack $ show e
     Right (res, xp, _, _) -> do
-      pure $ ResponseWithReason (FnLitDouble res) (Reasoning $ reasoningFromXp xp)
+      pure $ ResponseWithReason [("output", FnLitDouble res)] (Reasoning $ reasoningFromXp xp)
 
 transformParameters :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m MyState
 transformParameters attrs = do

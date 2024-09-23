@@ -11,6 +11,7 @@ import Control.Monad.Trans.Except (ExceptT)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
+import Data.Map.Strict (Map)
 import Data.Scientific qualified as Scientific
 import Data.Set (Set)
 import Data.Text (Text)
@@ -52,17 +53,19 @@ instance FromJSON FnLiteral where
 data Evaluator = Evaluator
   { runEvaluatorForFunction ::
       [(Text, Maybe FnLiteral)] ->
+      Maybe (Set Text) ->
       ExceptT EvaluatorError IO ResponseWithReason
   }
 
 data FunctionDeclaration = FunctionDeclaration
   { name :: !Text
   , description :: !Text
-  , parameters :: !(Set Text)
+  , parametersLongNames :: !(Set Text)
+  , parametersMapping :: !(Map Text Text)
   }
 
 data ResponseWithReason = ResponseWithReason
-  { responseValue :: FnLiteral
+  { responseValue :: [(Text, FnLiteral)]
   , responseReasoning :: Reasoning
   }
   deriving (Show, Read, Ord, Eq, Generic)

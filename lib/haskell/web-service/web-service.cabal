@@ -42,6 +42,7 @@ library
     , aeson-combinators
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , containers
     , directory
     , explainable
@@ -83,6 +84,7 @@ executable web-service-exe
     , aeson-combinators
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , containers
     , directory
     , explainable
@@ -130,6 +132,7 @@ test-suite web-service-test
     , aeson-combinators
     , base >=4.7 && <5
     , bytestring
+    , chronos
     , containers
     , directory
     , explainable

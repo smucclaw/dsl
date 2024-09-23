@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wall -Wno-orphans #-}
 
 module Schema (
   serverOpenApi,
@@ -26,7 +26,7 @@ import Servant
 import Servant.OpenApi
 import Server hiding (description, name)
 
-type ServerName = Text.Text
+type ServerName = Text
 
 serverOpenApi :: Maybe ServerName -> OpenApi
 serverOpenApi serverName =
@@ -98,7 +98,7 @@ instance (KnownSymbol desc, HasOpenApi api) => HasOpenApi (OperationId desc :> a
 
 instance ToSchema SimpleFunction where
   declareNamedSchema _ = do
-    textRef <- declareSchemaRef (Proxy @Text.Text)
+    textRef <- declareSchemaRef (Proxy @Text)
     pure $
       NamedSchema (Just "Function") $
         mempty
@@ -151,7 +151,7 @@ instance ToSchema FnArguments
 
 instance ToSchema Function where
   declareNamedSchema _ = do
-    textRef <- declareSchemaRef (Proxy @Text.Text)
+    textRef <- declareSchemaRef (Proxy @Text)
     parametersRef <- declareSchemaRef (Proxy @Parameters)
     evalBackendsRef <- declareSchemaRef (Proxy @[EvalBackend])
     pure $
@@ -184,7 +184,7 @@ instance ToSchema Function where
 
 instance ToSchema FunctionImplementation where
   declareNamedSchema _ = do
-    implRef <- declareSchemaRef (Proxy @(Map EvalBackend Text.Text))
+    implRef <- declareSchemaRef (Proxy @(Map EvalBackend Text))
     functionDeclRef <- declareSchemaRef (Proxy @Function)
     pure $
       NamedSchema (Just "Implementation") $
@@ -209,8 +209,9 @@ instance ToSchema Parameters where
 
 instance ToSchema Parameter where
   declareNamedSchema _ = do
-    textSchema <- declareSchemaRef (Proxy @Text.Text)
-    textListSchema <- declareSchemaRef (Proxy @[Text.Text])
+    textSchema <- declareSchemaRef (Proxy @Text)
+    mTextSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    textListSchema <- declareSchemaRef (Proxy @[Text])
     pure $
       NamedSchema (Just "FunctionParameter") $
         mempty
@@ -219,12 +220,15 @@ instance ToSchema Parameter where
           & properties
             .~ [ ("enum", textListSchema)
                , ("description", textSchema)
+               , ("alias", mTextSchema)
                , ("type", textSchema)
                ]
+          & required .~ ["type"]
           & example
             ?~ Aeson.object
-              [ "enum" .= (["true", "false", "unknown"] :: Aeson.Array)
+              [ "enum" .= (["true", "false", "uncertain"] :: Aeson.Array)
               , "description" .= Aeson.String "Can a person walk?"
+              , "alias" .= Aeson.String "w"
               , "type" .= Aeson.String "string"
               ]
 

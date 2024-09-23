@@ -33,7 +33,7 @@ extra-deps:
   commit: a6d675bcbe1585fc652f95f60e0dec826a660646
 
 - github: smucclaw/simala
-  commit: 85afeb86678a65d48bfac2bbb90306693d51582e
+  commit: 891511dd9a73f936ae1c0171fca26eec5f9e2d2c
 
 - monad-validate-1.3.0.0
 - simple-smt-0.9.7

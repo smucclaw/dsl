@@ -34,6 +34,9 @@ import Simala.Expr.Evaluator qualified as Simala
 import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type as Simala
+import qualified Data.List as List
+import Control.Applicative (asum)
+import qualified Data.Maybe as Maybe
 
 simalaEvaluator ::
   (Monad m) =>
@@ -67,27 +70,38 @@ evaluator ::
   ExceptT EvaluatorError m ResponseWithReason
 evaluator inputs outputVars decls = do
   let
-    evalCall = Eval $ App (Var "rules") [Record inputs]
-    declsWithInput = decls <> [evalCall]
-    (result, evalTrace) = Simala.runEval' (Simala.evalDecls declsWithInput)
-  case result of
-    Left err -> throwError $ InterpreterError $ "Failed to evaluate expression: " <> Simala.render err
-    Right () -> do
-      case evalTrace of
-        [(Right (VRecord outputs), trace)] -> do
-          outputsFn' <- traverse (\(k, v) -> fmap (k,) (simalaValToFnLiteral v)) outputs
-          -- Only keep the fields in the output that were actually requested.
-          -- If nothing was explicitly requested, we keep all outputs.
-          let outputsFn = maybe outputsFn' (\keys -> filter (\(k, _) -> Set.member k keys) outputsFn') outputVars
-          pure $
-            ResponseWithReason
-              { responseValue = outputsFn
-              , responseReasoning = Reasoning $ reasoningFromEvalTrace trace
-              }
-        (Left err, trace):_ -> do
-          liftIO $ Text.putStrLn $ Simala.renderFullTrace trace
-          throwError $ InterpreterError $ "Unexpected output format: " <> Simala.render err
-        _ -> throwError $ InterpreterError $ "Unexpected output format"
+    rulesName = asum $ fmap (\case
+        NonRec _ name _
+          | Text.isPrefixOf "rules" name -> Just name
+        Rec _ name _
+          | Text.isPrefixOf "rules" name -> Just name
+        _ -> Nothing) decls
+
+  case rulesName of
+    Nothing -> throwError $ InterpreterError $ "No \"rules\" function found"
+    Just ruleName -> do
+      let
+        evalCall = Eval $ App (Var ruleName) [Record inputs]
+        declsWithInput = decls <> [evalCall]
+        (result, evalTrace) = Simala.runEval' (Simala.evalDecls declsWithInput)
+      case result of
+        Left err -> throwError $ InterpreterError $ "Failed to evaluate expression: " <> Simala.render err
+        Right () -> do
+          case evalTrace of
+            [(Right (VRecord outputs), trace)] -> do
+              outputsFn' <- traverse (\(k, v) -> fmap (k,) (simalaValToFnLiteral v)) outputs
+              -- Only keep the fields in the output that were actually requested.
+              -- If nothing was explicitly requested, we keep all outputs.
+              let outputsFn = maybe outputsFn' (\keys -> filter (\(k, _) -> Set.member k keys) outputsFn') outputVars
+              pure $
+                ResponseWithReason
+                  { responseValue = outputsFn
+                  , responseReasoning = Reasoning $ reasoningFromEvalTrace trace
+                  }
+            (Left err, trace):_ -> do
+              liftIO $ Text.putStrLn $ Simala.renderFullTrace trace
+              throwError $ InterpreterError $ "Unexpected output format: " <> Simala.render err
+            _ -> throwError $ InterpreterError $ "Unexpected output format"
 
 reasoningFromEvalTrace :: Simala.EvalTrace -> ReasoningTree
 reasoningFromEvalTrace = go

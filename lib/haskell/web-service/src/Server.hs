@@ -762,6 +762,8 @@ fnLiteralDecoder =
     <|> (FnLitDouble <$> ACD.double)
     <|> (FnLitBool <$> ACD.bool)
     <|> (parseTextAsFnLiteral <$> ACD.text)
+    <|> (FnArray <$> ACD.list fnLiteralDecoder)
+    <|> (FnObject <$> ACD.list (liftA2 (,) ACD.text fnLiteralDecoder))
 
 batchRequestEncoder :: BatchRequest -> Aeson.Value
 batchRequestEncoder br =

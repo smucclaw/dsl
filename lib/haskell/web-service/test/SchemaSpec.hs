@@ -43,6 +43,8 @@ instance Arbitrary FnLiteral where
       , (4, FnLitDouble <$> arbitrary)
       , (4, FnLitString <$> arbitrary)
       , (4, FnLitInt <$> arbitrary)
+      -- , (1, FnArray <$> arbitrary)
+      -- , (1, FnObject <$> arbitrary)
       , (1, pure FnUnknown)
       , (1, pure FnUncertain)
       ]

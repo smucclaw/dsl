@@ -194,6 +194,7 @@ instance ToSchema FnLiteral where
     mTextSchema <- declareSchemaRef (Proxy @Text)
     fracSchema <- declareSchemaRef (Proxy @Double)
     boolSchema <- declareSchemaRef (Proxy @Bool)
+    fnLiteralSchema <- declareSchemaRef (Proxy @FnLiteral)
     pure $
       NamedSchema (Just "Literal") $
         (toParamSchema p)
@@ -206,8 +207,13 @@ instance ToSchema FnLiteral where
                   mempty
                     & type_ ?~ OpenApiObject
                     & properties .~ []
+                    & additionalProperties ?~ AdditionalPropertiesAllowed True
                , Inline $
                   mempty & type_ ?~ OpenApiNull
+               , Inline $
+                  mempty
+                    & type_ ?~ OpenApiArray
+                    & items ?~ OpenApiItemsObject fnLiteralSchema
                ]
 
 instance ToSchema EvalBackend where

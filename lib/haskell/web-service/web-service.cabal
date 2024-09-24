@@ -67,6 +67,7 @@ library
     , text
     , transformers
     , unordered-containers
+    , vector
     , wai
     , wai-logger
     , warp
@@ -109,6 +110,7 @@ executable web-service-exe
     , text
     , transformers
     , unordered-containers
+    , vector
     , wai
     , wai-logger
     , warp
@@ -159,6 +161,7 @@ test-suite web-service-test
     , text
     , transformers
     , unordered-containers
+    , vector
     , wai
     , wai-logger
     , warp

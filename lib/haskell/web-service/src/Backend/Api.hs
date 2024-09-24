@@ -9,14 +9,18 @@ module Backend.Api (
 
 import Control.Monad.Trans.Except (ExceptT)
 import Data.Aeson as Aeson
+import Data.Aeson.Key qualified as Aeson
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Types as Aeson
+import Data.Bifunctor (bimap)
+import Data.Foldable qualified as Foldable
 import Data.Map.Strict (Map)
 import Data.Scientific qualified as Scientific
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Read qualified as TextReader
+import Data.Vector qualified as V
 import GHC.Generics (Generic)
 import Optics.Cons
 import Servant.API
@@ -28,6 +32,8 @@ data FnLiteral
   | FnLitDouble !Double
   | FnLitBool !Bool
   | FnLitString !Text
+  | FnArray [FnLiteral]
+  | FnObject [(Text, FnLiteral)]
   | FnUncertain
   | FnUnknown
   deriving (Show, Read, Ord, Eq, Generic)
@@ -38,6 +44,8 @@ instance ToJSON FnLiteral where
     FnLitDouble val -> String $ tshow val
     FnLitBool val -> String $ tshow val
     FnLitString val -> String val
+    FnArray vals -> Array $ V.fromList $ fmap toJSON vals
+    FnObject ps -> Object $ Aeson.fromList $ fmap (bimap Aeson.fromText toJSON) ps
     FnUncertain -> Object $ Aeson.fromList []
     FnUnknown -> Null
    where
@@ -53,15 +61,18 @@ instance FromJSON FnLiteral where
       | Right d <- Scientific.toBoundedRealFloat val -> pure $ FnLitDouble d
       | otherwise -> Aeson.typeMismatch "Failed to parse number into bounded real or integer" (Number val)
     Null -> pure FnUnknown
+    Array vals -> FnArray <$> traverse parseJSON (Foldable.toList vals)
     Object o
       | [] <- Aeson.toList o -> pure FnUncertain
-    obj -> Aeson.typeMismatch "Failed to parse FnLiteral" obj
+      | otherwise -> do
+          ps <- traverse (\(k, v) -> fmap (Aeson.toText k,) (parseJSON v)) (Aeson.toList o)
+          pure $ FnObject ps
 
 data RunFunction = RunFunction
   { runFunction ::
-      -- ^ Parameters to the function
+      -- \^ Parameters to the function
       [(Text, Maybe FnLiteral)] ->
-      -- ^ Output filter, as the function may return a record of
+      -- \^ Output filter, as the function may return a record of
       -- outputs.
       -- If this filter is 'Nothing', we do not filter anything.
       Maybe (Set Text) ->
@@ -91,15 +102,18 @@ data Reasoning = Reasoning
   deriving anyclass (FromJSON, ToJSON)
 
 emptyTree :: Reasoning
-emptyTree = Reasoning
-  { getReasoning = ReasoningTree
-    { treeNode = ReasonNode
-        { reasoningNodeExampleCode = []
-        , reasoningNodeExplanation = []
-        }
-    , treeChildren = []
+emptyTree =
+  Reasoning
+    { getReasoning =
+        ReasoningTree
+          { treeNode =
+              ReasonNode
+                { reasoningNodeExampleCode = []
+                , reasoningNodeExplanation = []
+                }
+          , treeChildren = []
+          }
     }
-  }
 
 -- | Basically a rose tree, but serialisable to json and specialised to our purposes.
 data ReasoningTree = ReasoningTree
@@ -108,7 +122,6 @@ data ReasoningTree = ReasoningTree
   }
   deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
-
 
 data ReasonNode = ReasonNode
   { reasoningNodeExampleCode :: [Text]

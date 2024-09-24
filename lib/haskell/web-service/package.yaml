@@ -49,6 +49,7 @@ dependencies:
 - optparse-applicative
 - scientific
 - stm
+- vector
 # Backends
 - explainable
 - simala

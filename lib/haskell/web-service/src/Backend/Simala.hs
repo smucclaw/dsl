@@ -22,6 +22,7 @@ import Simala.Expr.Evaluator qualified as Simala
 import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type as Simala
+import Data.Tuple.Extra (secondM)
 
 createSimalaFunction ::
   (Monad m) =>
@@ -184,18 +185,30 @@ fnLiteralToSimalaVar = \case
   FnLitDouble d -> pure $ Lit $ FracLit d
   FnLitBool b -> pure $ Lit $ BoolLit b
   FnLitString atom -> pure $ Atom atom
+  FnArray elems -> do
+    simalaExprs <- traverse fnLiteralToSimalaVar elems
+    pure $ List simalaExprs
+  FnObject ps -> do
+    simalaExprs <- traverse (secondM fnLiteralToSimalaVar) ps
+    pure $ Record simalaExprs
   FnUncertain -> pure uncertain
   FnUnknown -> pure unknown
 
 simalaValToFnLiteral :: (Monad m) => Val -> ExceptT EvaluatorError m FnLiteral
 simalaValToFnLiteral = \case
-  Simala.VInt integer -> pure $ FnLitInt $ fromIntegral integer
-  Simala.VBool b -> pure $ FnLitBool b
-  Simala.VAtom atom
+  VInt integer -> pure $ FnLitInt $ fromIntegral integer
+  VBool b -> pure $ FnLitBool b
+  VAtom atom
     | uncertainName == atom -> pure FnUncertain
     | unknownName == atom -> pure FnUnknown
     | otherwise -> pure $ FnLitString atom
-  Simala.VFrac f -> pure $ FnLitDouble f
+  VFrac f -> pure $ FnLitDouble f
+  VList vals -> do
+    fnVals <- traverse simalaValToFnLiteral vals
+    pure $ FnArray fnVals
+  VRecord ps -> do
+    fnPairs <- traverse (secondM simalaValToFnLiteral) ps
+    pure $ FnObject fnPairs
   val -> throwError $ InterpreterError $ "Cannot translate \"" <> Simala.render val <> "\""
 
 -- ----------------------------------------------------------------------------

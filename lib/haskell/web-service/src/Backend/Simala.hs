@@ -27,6 +27,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 import Simala.Eval.Monad qualified as Simala
 import Simala.Eval.Type qualified as Simala
 import Simala.Expr.Evaluator qualified as Simala
@@ -73,7 +74,7 @@ evaluator inputs outputVars decls = do
     Left err -> throwError $ InterpreterError $ "Failed to evaluate expression: " <> Simala.render err
     Right () -> do
       case evalTrace of
-        ((Right (VRecord outputs), trace) : _) -> do
+        [(Right (VRecord outputs), trace)] -> do
           outputsFn' <- traverse (\(k, v) -> fmap (k,) (simalaValToFnLiteral v)) outputs
           -- Only keep the fields in the output that were actually requested.
           -- If nothing was explicitly requested, we keep all outputs.
@@ -83,7 +84,10 @@ evaluator inputs outputVars decls = do
               { responseValue = outputsFn
               , responseReasoning = Reasoning $ reasoningFromEvalTrace trace
               }
-        e -> throwError $ InterpreterError $ "Unexpected output format: " <> Text.pack (show e)
+        (Left err, trace):_ -> do
+          liftIO $ Text.putStrLn $ Simala.renderFullTrace trace
+          throwError $ InterpreterError $ "Unexpected output format: " <> Simala.render err
+        _ -> throwError $ InterpreterError $ "Unexpected output format"
 
 reasoningFromEvalTrace :: Simala.EvalTrace -> ReasoningTree
 reasoningFromEvalTrace = go
@@ -150,7 +154,7 @@ transformParameters decl attrs = do
 
 fnLiteralToSimalaVar :: (MonadIO m) => FnLiteral -> ExceptT EvaluatorError m Expr
 fnLiteralToSimalaVar = \case
-  FnLitInt integer -> pure $ Lit $ IntLit $ fromIntegral integer
+  FnLitInt integer -> pure $ Lit $ FracLit $ fromIntegral integer
   FnLitDouble d -> pure $ Lit $ FracLit d
   FnLitBool b -> pure $ Lit $ BoolLit b
   FnLitString atom -> pure $ Atom atom
@@ -160,4 +164,5 @@ simalaValToFnLiteral = \case
   Simala.VInt integer -> pure $ FnLitInt $ fromIntegral integer
   Simala.VBool b -> pure $ FnLitBool b
   Simala.VAtom atom -> pure $ FnLitString atom
+  Simala.VFrac f -> pure $ FnLitDouble f
   val -> throwError $ InterpreterError $ "Cannot translate " <> Simala.render val

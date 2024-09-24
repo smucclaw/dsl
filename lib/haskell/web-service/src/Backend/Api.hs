@@ -8,9 +8,9 @@ module Backend.Api (
 ) where
 
 import Control.Monad.Trans.Except (ExceptT)
-import Data.Aeson (FromJSON (..), ToJSON (..))
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Types qualified as Aeson
+import Data.Aeson as Aeson
+import Data.Aeson.KeyMap qualified as Aeson
+import Data.Aeson.Types as Aeson
 import Data.Map.Strict (Map)
 import Data.Scientific qualified as Scientific
 import Data.Set (Set)
@@ -28,33 +28,45 @@ data FnLiteral
   | FnLitDouble !Double
   | FnLitBool !Bool
   | FnLitString !Text
+  | FnUncertain
+  | FnUnknown
   deriving (Show, Read, Ord, Eq, Generic)
 
 instance ToJSON FnLiteral where
   toJSON = \case
-    FnLitInt val -> Aeson.String $ tshow val
-    FnLitDouble val -> Aeson.String $ tshow val
-    FnLitBool val -> Aeson.String $ tshow val
-    FnLitString val -> Aeson.String val
+    FnLitInt val -> String $ tshow val
+    FnLitDouble val -> String $ tshow val
+    FnLitBool val -> String $ tshow val
+    FnLitString val -> String val
+    FnUncertain -> Object $ Aeson.fromList []
+    FnUnknown -> Null
    where
     tshow :: forall a. (Show a) => a -> Text
     tshow = Text.pack . show
 
 instance FromJSON FnLiteral where
   parseJSON = \case
-    Aeson.String val -> pure $ parseTextAsFnLiteral val
-    Aeson.Bool val -> pure $ FnLitBool val
-    Aeson.Number val
+    String val -> pure $ parseTextAsFnLiteral val
+    Bool val -> pure $ FnLitBool val
+    Number val
       | Just (i :: Int) <- Scientific.toBoundedInteger val -> pure $ FnLitInt $ fromIntegral i
       | Right d <- Scientific.toBoundedRealFloat val -> pure $ FnLitDouble d
-      | otherwise -> Aeson.typeMismatch "Failed to parse number into bounded real or integer" (Aeson.Number val)
+      | otherwise -> Aeson.typeMismatch "Failed to parse number into bounded real or integer" (Number val)
+    Null -> pure FnUnknown
+    Object o
+      | [] <- Aeson.toList o -> pure FnUncertain
     obj -> Aeson.typeMismatch "Failed to parse FnLiteral" obj
 
-data Evaluator = Evaluator
-  { runEvaluatorForFunction ::
+data RunFunction = RunFunction
+  { runFunction ::
+      -- ^ Parameters to the function
       [(Text, Maybe FnLiteral)] ->
+      -- ^ Output filter, as the function may return a record of
+      -- outputs.
+      -- If this filter is 'Nothing', we do not filter anything.
       Maybe (Set Text) ->
       ExceptT EvaluatorError IO ResponseWithReason
+  -- ^ Run a function with parameters
   }
 
 data FunctionDeclaration = FunctionDeclaration
@@ -78,6 +90,17 @@ data Reasoning = Reasoning
   deriving (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
+emptyTree :: Reasoning
+emptyTree = Reasoning
+  { getReasoning = ReasoningTree
+    { treeNode = ReasonNode
+        { reasoningNodeExampleCode = []
+        , reasoningNodeExplanation = []
+        }
+    , treeChildren = []
+    }
+  }
+
 -- | Basically a rose tree, but serialisable to json and specialised to our purposes.
 data ReasoningTree = ReasoningTree
   { treeNode :: ReasonNode
@@ -85,6 +108,7 @@ data ReasoningTree = ReasoningTree
   }
   deriving stock (Show, Read, Ord, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
+
 
 data ReasonNode = ReasonNode
   { reasoningNodeExampleCode :: [Text]

@@ -18,10 +18,10 @@ import Data.Tree qualified as Tree
 import Explainable (XP)
 import Explainable.MathLang
 
-genericMathLangEvaluator :: FunctionDeclaration -> Expr Double -> Evaluator
+genericMathLangEvaluator :: FunctionDeclaration -> Expr Double -> RunFunction
 genericMathLangEvaluator fnDecl expr =
-  Evaluator
-    { runEvaluatorForFunction = \args _ -> functionHandler fnDecl expr args
+  RunFunction
+    { runFunction = \args _ -> functionHandler fnDecl expr args
     }
 
 functionHandler :: (MonadIO m) => FunctionDeclaration -> Expr Double -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
@@ -77,6 +77,8 @@ transformParameters attrs = do
           state
             { symtabS = HashMap.insert (Text.unpack key) (Text.unpack t) (symtabS state)
             }
+      p ->
+        throwError $ InterpreterError $ "Gml can't handle parameter type: " <> Text.pack (show p)
   foldM (\s (k, v) -> splitParameters k v s) explainableState attrs
 
 -- | Translate a Tree of explanations into a reasoning tree that can be sent over

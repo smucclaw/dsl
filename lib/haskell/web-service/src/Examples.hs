@@ -56,7 +56,7 @@ personQualifiesFunction = do
                 ]
         , supportedEvalBackend = [GenericMathLang, Simala]
         }
-  simalaEval <- Simala.simalaEvaluator (toDecl fnDecl) computeQualifiesSimala
+  simalaEval <- Simala.createSimalaFunction (toDecl fnDecl) computeQualifiesSimala
   pure $
     ValidatedFunction
       { fnImpl = fnDecl
@@ -104,7 +104,7 @@ rodentsAndVerminFunction = do
                 ]
         , supportedEvalBackend = [GenericMathLang, Simala]
         }
-  simalaEval <- Simala.simalaEvaluator (toDecl fnDecl) rodentsAndVerminSimala
+  simalaEval <- Simala.createSimalaFunction (toDecl fnDecl) rodentsAndVerminSimala
   pure $
     ValidatedFunction
       { fnImpl = fnDecl

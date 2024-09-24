@@ -3,22 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Backend.Simala (simalaEvaluator) where
+module Backend.Simala (createSimalaFunction) where
 
-import Backend.Api (
-  Evaluator (..),
-  EvaluatorError (InterpreterError, UnknownArguments),
-  FnLiteral (..),
-  FunctionDeclaration (parametersLongNames, parametersMapping),
-  ReasonNode (
-    ReasonNode,
-    reasoningNodeExampleCode,
-    reasoningNodeExplanation
-  ),
-  Reasoning (Reasoning),
-  ReasoningTree (..),
-  ResponseWithReason (..),
- )
+import Control.Applicative (asum)
 import Control.Monad.Error.Class
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
@@ -27,79 +14,102 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.IO qualified as Text
+
+import Backend.Api
 import Simala.Eval.Monad qualified as Simala
 import Simala.Eval.Type qualified as Simala
 import Simala.Expr.Evaluator qualified as Simala
 import Simala.Expr.Parser qualified as Simala
 import Simala.Expr.Render qualified as Simala
 import Simala.Expr.Type as Simala
-import qualified Data.List as List
-import Control.Applicative (asum)
-import qualified Data.Maybe as Maybe
 
-simalaEvaluator ::
+createSimalaFunction ::
   (Monad m) =>
   FunctionDeclaration ->
   Text ->
-  ExceptT EvaluatorError m Evaluator
-simalaEvaluator fnDecl fnImpl =
+  ExceptT EvaluatorError m RunFunction
+createSimalaFunction fnDecl fnImpl =
   case Simala.parseDecls "" fnImpl of
     Left err -> throwError $ InterpreterError $ "Failed to parse Simala program: " <> Text.pack err
     Right expr ->
       pure $
-        Evaluator
-          { runEvaluatorForFunction = functionHandler fnDecl expr
+        RunFunction
+          { runFunction = runSimalaFunction fnDecl expr
           }
 
-functionHandler ::
+runSimalaFunction ::
   FunctionDeclaration ->
   [Decl] ->
   [(Text, Maybe FnLiteral)] ->
   Maybe (Set Text) ->
   ExceptT EvaluatorError IO ResponseWithReason
-functionHandler decl impl args outputs = do
+runSimalaFunction decl impl args outputFilter = do
   input <- transformParameters decl args
-  evaluator input outputs impl
+  evalSimala input outputFilter impl
 
-evaluator ::
-  (MonadIO m) =>
+-- | Evaluate the simala program using the given parameters.
+--
+-- We assume each program defines a function named 'rules' which we think as the
+-- the main entry point of a program.
+-- We additionally allow a function named 'rules*' (e.g. 'rules_1234') to be the
+-- main entry point to simala.
+evalSimala ::
+  (Monad m) =>
+  -- | A record of inputs which are assumed to be validated and complete.
+  -- Complete means that each parameter specified in a 'FunctionDeclaration'
+  -- is included in this row.
   Row Expr ->
+  -- | Optional output variable filter. If 'Nothing', no filter is applied.
   Maybe (Set Text) ->
+  -- | The parsed program to evaluate.
   [Decl] ->
   ExceptT EvaluatorError m ResponseWithReason
-evaluator inputs outputVars decls = do
+evalSimala inputs outputFilter decls = do
   let
-    rulesName = asum $ fmap (\case
-        NonRec _ name _
-          | Text.isPrefixOf "rules" name -> Just name
-        Rec _ name _
-          | Text.isPrefixOf "rules" name -> Just name
-        _ -> Nothing) decls
+    isRulesName = Text.isPrefixOf "rules"
 
-  case rulesName of
-    Nothing -> throwError $ InterpreterError $ "No \"rules\" function found"
-    Just ruleName -> do
+    mMainRuleName =
+      asum $
+        fmap
+          ( \case
+              NonRec _ name _
+                | isRulesName name -> Just name
+              Rec _ name _
+                | isRulesName name -> Just name
+              _ -> Nothing
+          )
+          decls
+
+  case mMainRuleName of
+    Nothing -> throwError $ InterpreterError $ "No \"rules\" main function found"
+    Just mainRuleName -> do
       let
-        evalCall = Eval $ App (Var ruleName) [Record inputs]
+        -- To get anything evaluated, we programmatically add a so-called '#eval'
+        -- declaration.
+        -- In simala, this looks like '#eval rules({...})'.
+        -- We expect each program has exactly one such '#eval' declaration.
+        -- TODO: As we have parsed the program, we could reject a program if it contains a '#eval' decl.
+        evalCall = Eval $ App (Var mainRuleName) [Record inputs]
         declsWithInput = decls <> [evalCall]
         (result, evalTrace) = Simala.runEval' (Simala.evalDecls declsWithInput)
       case result of
         Left err -> throwError $ InterpreterError $ "Failed to evaluate expression: " <> Simala.render err
         Right () -> do
           case evalTrace of
-            [(Right (VRecord outputs), trace)] -> do
-              outputsFn' <- traverse (\(k, v) -> fmap (k,) (simalaValToFnLiteral v)) outputs
+            [(Right (VRecord outputRecord), trace)] -> do
               -- Only keep the fields in the output that were actually requested.
               -- If nothing was explicitly requested, we keep all outputs.
-              let outputsFn = maybe outputsFn' (\keys -> filter (\(k, _) -> Set.member k keys) outputsFn') outputVars
+              let
+                filteredOutputs = maybe outputRecord (\keys -> filter (\(k, _) -> Set.member k keys) outputRecord) outputFilter
+
+              transformedOutputs <- traverse (\(k, v) -> fmap (k,) (simalaValToFnLiteral v)) filteredOutputs
               pure $
                 ResponseWithReason
-                  { responseValue = outputsFn
+                  { responseValue = transformedOutputs
                   , responseReasoning = Reasoning $ reasoningFromEvalTrace trace
                   }
-            (Left err, trace):_ -> do
-              liftIO $ Text.putStrLn $ Simala.renderFullTrace trace
+            (Left err, _trace) : _ -> do
+              -- TODO: add logging, this is a program that crashed during evaluation
               throwError $ InterpreterError $ "Unexpected output format: " <> Simala.render err
             _ -> throwError $ InterpreterError $ "Unexpected output format"
 
@@ -134,6 +144,10 @@ reasoningFromEvalTrace = go
   renderResult Nothing (Right x) = Simala.render x
   renderResult Nothing (Left x) = Simala.render x
 
+-- | Given a list of parameters with values, transform them to the 'simala'
+-- equivalent if possible.
+-- We map short names to their long forms, as we expect the program to
+-- exclusively use the long form.
 transformParameters :: (MonadIO m) => FunctionDeclaration -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m (Row Expr)
 transformParameters decl attrs = do
   let
@@ -147,8 +161,8 @@ transformParameters decl attrs = do
         True -> pure key
       val <- case mValue of
         Nothing ->
-          -- null is resolved to 'uncertain per OIA convention
-          pure uncertain
+          -- null is resolved to 'unknown per OIA convention
+          pure unknown
         Just arg -> do
           fnLiteralToSimalaVar arg
 
@@ -161,10 +175,8 @@ transformParameters decl attrs = do
 
   let
     allInputs =
-      env <> fmap (,uncertain) parametersNotGiven
+      env <> fmap (,unknown) parametersNotGiven
   pure allInputs
- where
-  uncertain = Atom "uncertain"
 
 fnLiteralToSimalaVar :: (MonadIO m) => FnLiteral -> ExceptT EvaluatorError m Expr
 fnLiteralToSimalaVar = \case
@@ -172,11 +184,32 @@ fnLiteralToSimalaVar = \case
   FnLitDouble d -> pure $ Lit $ FracLit d
   FnLitBool b -> pure $ Lit $ BoolLit b
   FnLitString atom -> pure $ Atom atom
+  FnUncertain -> pure uncertain
+  FnUnknown -> pure unknown
 
-simalaValToFnLiteral :: (MonadIO m) => Val -> ExceptT EvaluatorError m FnLiteral
+simalaValToFnLiteral :: (Monad m) => Val -> ExceptT EvaluatorError m FnLiteral
 simalaValToFnLiteral = \case
   Simala.VInt integer -> pure $ FnLitInt $ fromIntegral integer
   Simala.VBool b -> pure $ FnLitBool b
-  Simala.VAtom atom -> pure $ FnLitString atom
+  Simala.VAtom atom
+    | uncertainName == atom -> pure FnUncertain
+    | unknownName == atom -> pure FnUnknown
+    | otherwise -> pure $ FnLitString atom
   Simala.VFrac f -> pure $ FnLitDouble f
-  val -> throwError $ InterpreterError $ "Cannot translate " <> Simala.render val
+  val -> throwError $ InterpreterError $ "Cannot translate \"" <> Simala.render val <> "\""
+
+-- ----------------------------------------------------------------------------
+-- Constants for function evaluation
+-- ----------------------------------------------------------------------------
+
+uncertain :: Expr
+uncertain = Atom uncertainName
+
+uncertainName :: Name
+uncertainName = "uncertain"
+
+unknown :: Expr
+unknown = Atom unknownName
+
+unknownName :: Name
+unknownName = "uncertain"

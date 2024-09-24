@@ -40,9 +40,11 @@ instance Arbitrary FnLiteral where
   arbitrary =
     Q.frequency
       [ (1, FnLitBool <$> arbitrary)
-      , (3, FnLitDouble <$> arbitrary)
-      , (3, FnLitString <$> arbitrary)
-      , (3, FnLitInt <$> arbitrary)
+      , (4, FnLitDouble <$> arbitrary)
+      , (4, FnLitString <$> arbitrary)
+      , (4, FnLitInt <$> arbitrary)
+      , (1, pure FnUnknown)
+      , (1, pure FnUncertain)
       ]
 
 instance Arbitrary Reasoning where
@@ -79,7 +81,7 @@ instance Arbitrary ReasoningTree where
         Q.shuffle (first : rest)
 
 instance Arbitrary ResponseWithReason where
-  arbitrary = ResponseWithReason <$> arbitrary <*> arbitrary
+  arbitrary = ResponseWithReason <$> arbitrary <*> pure emptyTree
 
 instance Arbitrary EvaluatorError where
   arbitrary = Q.oneof [InterpreterError <$> arbitrary]

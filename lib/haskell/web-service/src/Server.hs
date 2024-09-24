@@ -106,7 +106,7 @@ data DbState = DbState
 
 data ValidatedFunction = ValidatedFunction
   { fnImpl :: !Function
-  , fnEvaluator :: !(Map EvalBackend Evaluator)
+  , fnEvaluator :: !(Map EvalBackend RunFunction)
   }
   deriving (Generic)
 
@@ -369,7 +369,7 @@ runEvaluatorFor engine validatedFunc args outputFilter = do
   evaluationResult <-
     timeoutAction $
       runExceptT
-        ( runEvaluatorForFunction
+        ( runFunction
             eval
             args
             outputFilter
@@ -459,10 +459,10 @@ validateFunction fn = do
       , fnEvaluator = evaluators
       }
  where
-  validateImplementation :: EvalBackend -> Text -> AppM Evaluator
+  validateImplementation :: EvalBackend -> Text -> AppM RunFunction
   validateImplementation GenericMathLang _program = throwError err409{errBody = "Can't add or modify gml programs."}
   validateImplementation Simala program = do
-    case runExcept $ Simala.simalaEvaluator (toDecl fn.declaration) program of
+    case runExcept $ Simala.createSimalaFunction (toDecl fn.declaration) program of
       Left err -> throwError err422{errBody = "Failed to parse program: " <> TL.encodeUtf8 (TL.pack $ show err)}
       Right parsed -> pure parsed
 
@@ -504,7 +504,7 @@ stopwatchM action = do
 -- "Database" layer
 -- ----------------------------------------------------------------------------
 
-evaluationEngine :: EvalBackend -> ValidatedFunction -> AppM Evaluator
+evaluationEngine :: EvalBackend -> ValidatedFunction -> AppM RunFunction
 evaluationEngine b valFn = do
   case Map.lookup b valFn.fnEvaluator of
     Nothing -> throwError err404

@@ -40,9 +40,13 @@ instance Arbitrary FnLiteral where
   arbitrary =
     Q.frequency
       [ (1, FnLitBool <$> arbitrary)
-      , (3, FnLitDouble <$> arbitrary)
-      , (3, FnLitString <$> arbitrary)
-      , (3, FnLitInt <$> arbitrary)
+      , (4, FnLitDouble <$> arbitrary)
+      , (4, FnLitString <$> arbitrary)
+      , (4, FnLitInt <$> arbitrary)
+      -- , (1, FnArray <$> arbitrary)
+      -- , (1, FnObject <$> arbitrary)
+      , (1, pure FnUnknown)
+      , (1, pure FnUncertain)
       ]
 
 instance Arbitrary Reasoning where
@@ -79,7 +83,7 @@ instance Arbitrary ReasoningTree where
         Q.shuffle (first : rest)
 
 instance Arbitrary ResponseWithReason where
-  arbitrary = ResponseWithReason <$> arbitrary <*> arbitrary
+  arbitrary = ResponseWithReason <$> arbitrary <*> pure emptyTree
 
 instance Arbitrary EvaluatorError where
   arbitrary = Q.oneof [InterpreterError <$> arbitrary]
@@ -87,15 +91,15 @@ instance Arbitrary EvaluatorError where
 instance Arbitrary SimpleResponse where
   arbitrary =
     Q.oneof
-      [ Server.SimpleResponse <$> arbitrary
-      , Server.SimpleError <$> arbitrary
+      [ SimpleResponse <$> arbitrary
+      , SimpleError <$> arbitrary
       ]
 
 instance Arbitrary Parameters where
-  arbitrary = Server.Parameters <$> arbitrary
+  arbitrary = Parameters <$> arbitrary
 
 instance Arbitrary Parameter where
-  arbitrary = Server.Parameter <$> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary = Parameter <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary Function where
   arbitrary = Server.Function <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
@@ -112,4 +116,51 @@ instance Arbitrary FnArguments where
     Server.FnArguments <$> arbitrary <*> arbitrary
 
 instance Arbitrary SimpleFunction where
-  arbitrary = Server.SimpleFunction <$> arbitrary <*> arbitrary
+  arbitrary = SimpleFunction <$> arbitrary <*> arbitrary
+
+instance Arbitrary OutcomeStyle where
+  arbitrary = Q.chooseEnum (ValueOnly, BaseAttributes)
+
+instance Arbitrary OutcomeObject where
+  arbitrary =
+    OutcomeObject
+      <$> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+
+instance Arbitrary BatchRequest where
+  arbitrary =
+    BatchRequest
+      <$> arbitrary
+      <*> arbitrary
+
+instance Arbitrary BatchResponse where
+  arbitrary =
+    BatchResponse
+      <$> arbitrary
+      <*> arbitrary
+
+instance Arbitrary Outcomes where
+  arbitrary = Q.oneof [OutcomeAttribute <$> arbitrary, OutcomePropertyObject <$> arbitrary]
+
+instance Arbitrary InputCase where
+  arbitrary = InputCase <$> arbitrary <*> arbitrary
+
+instance Arbitrary OutputCase where
+  arbitrary =
+    OutputCase
+      <$> arbitrary
+      <*> arbitrary
+
+instance Arbitrary OutputSummary where
+  arbitrary =
+    OutputSummary
+      <$> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary
+      <*> arbitrary

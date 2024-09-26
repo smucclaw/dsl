@@ -21,8 +21,10 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 - aeson
+- aeson-combinators
 - bytestring
 - containers
+- chronos
 - extra
 - unordered-containers
 - transformers
@@ -47,6 +49,7 @@ dependencies:
 - optparse-applicative
 - scientific
 - stm
+- vector
 # Backends
 - explainable
 - simala

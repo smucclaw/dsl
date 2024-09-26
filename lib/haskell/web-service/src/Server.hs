@@ -42,36 +42,58 @@ module Server (
   EvalBackend (..),
   FunctionImplementation (..),
   FnArguments (..),
+  Outcomes (..),
+  OutcomeObject (..),
+  OutcomeStyle (..),
+  BatchRequest (..),
+  InputCase (..),
+  OutputCase (..),
+  BatchResponse (..),
+  OutputSummary (..),
 
   -- * utilities
   toDecl,
 ) where
 
+import Chronos qualified
+import Control.Applicative
 import Control.Concurrent.STM
-import Control.Monad (when)
+import Control.Exception (evaluate)
+import Control.Monad (forM, when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey, (.:), (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Combinators.Decode (Decoder)
+import Data.Aeson.Combinators.Decode qualified as ACD
+import Data.Aeson.Key qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
 import Data.ByteString qualified as BS
+import Data.Fixed
+import Data.Int
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe qualified as Maybe
+import Data.Scientific (Scientific)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.Encoding qualified as TL
+import Data.Tuple.Extra qualified as Tuple
 import Data.Typeable
+import GHC.Clock qualified as Clock
 import GHC.Generics
 import GHC.TypeLits
 import Servant
 import System.Timeout (timeout)
 
+import Backend.Api
 import Backend.Api as Api
 import Backend.Simala qualified as Simala
-import Data.Text.Lazy.Encoding qualified as TL
 
 -- ----------------------------------------------------------------------------
 -- Servant API
@@ -84,7 +106,7 @@ data DbState = DbState
 
 data ValidatedFunction = ValidatedFunction
   { fnImpl :: !Function
-  , fnEvaluator :: !(Map EvalBackend Evaluator)
+  , fnEvaluator :: !(Map EvalBackend RunFunction)
   }
   deriving (Generic)
 
@@ -148,6 +170,16 @@ data SingleFunctionApi' mode = SingleFunctionApi
           :> ReqBody '[JSON] FnArguments
           :> OperationId "evalFunction"
           :> Post '[JSON] SimpleResponse
+  , batchFunction ::
+      mode
+        :- "batch"
+          :> Summary "Run a function using a batch of arguments"
+          :> Description "Evaluate a function with a batch of arguments, conforming to Oracle Intelligent Advisor Batch API"
+          :> ReqBody '[JSON] BatchRequest
+          :> Post '[JSON] BatchResponse
+  -- ^ Run a function with a "batch" of parameters.
+  -- This API aims to be consistent with
+  -- https://docs.oracle.com/en/cloud/saas/b2c-service/opawx/using-batch-assess-rest-api.html
   }
   deriving (Generic)
 
@@ -178,6 +210,7 @@ newtype Parameters = Parameters
 
 data Parameter = Parameter
   { parameterType :: !Text
+  , parameterAlias :: !(Maybe Text)
   , parameterEnum :: ![Text]
   , parameterDescription :: !Text
   }
@@ -251,6 +284,8 @@ handler =
                     deleteFunctionHandler name
                 , evalFunction =
                     evalFunctionHandler name
+                , batchFunction =
+                    batchFunctionHandler name
                 }
           }
     }
@@ -262,19 +297,82 @@ evalFunctionHandler name' args = do
   case Map.lookup name functions of
     Nothing -> throwError err404
     Just fnImpl ->
-      runEvaluatorFor args.fnEvalBackend fnImpl args
+      runEvaluatorFor args.fnEvalBackend fnImpl (Map.assocs args.fnArguments) Nothing
  where
   name = Text.pack name'
 
-runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> FnArguments -> AppM SimpleResponse
-runEvaluatorFor engine validatedFunc args = do
+batchFunctionHandler :: String -> BatchRequest -> AppM BatchResponse
+batchFunctionHandler name' batchArgs = do
+  functionsTVar <- asks functionDatabase
+  functions <- liftIO $ readTVarIO functionsTVar
+  case Map.lookup name functions of
+    Nothing -> throwError err404
+    Just fnImpl -> do
+      (execTime, responses) <- stopwatchM $ forM batchArgs.batchRequestCases $ \inputCase -> do
+        let
+          args = Map.assocs $ fmap Just inputCase.inputCaseAttributes
+
+        r <- runEvaluatorFor (Just Simala) fnImpl args outputFilter
+        pure (inputCase.inputCaseId, r)
+
+      let
+        nCases = length responses
+
+        successfulRuns =
+          Maybe.mapMaybe
+            ( \(rid, simpleRes) -> case simpleRes of
+                SimpleResponse r -> Just (rid, r)
+                SimpleError _ -> Nothing
+            )
+            responses
+
+        nSuccessful = length successfulRuns
+        nIgnored = nCases - nSuccessful
+
+      pure $
+        BatchResponse
+          { batchResponseCases =
+              [ OutputCase
+                { outputCaseId = rid
+                , outputCaseAttributes = Map.fromList response.responseValue
+                }
+              | (rid, response) <- successfulRuns
+              ]
+          , batchResponseSummary =
+              OutputSummary
+                { outputSummaryCasesRead = nCases
+                , outputSummaryCasesProcessed = nSuccessful
+                , outputSummaryCasesIgnored = nIgnored
+                , outputSummaryProcessorDurationSec = nsToS execTime
+                , outputSummaryCasesPerSec = nsToS execTime / realToFrac nCases
+                , outputSummaryProcessorQueuedSec = 0
+                }
+          }
+ where
+  outputFilter = if null outputFilter' then Nothing else Just outputFilter'
+  outputFilter' =
+    Set.fromList $
+      Maybe.mapMaybe
+        ( \case
+            OutcomeAttribute t -> Just t
+            OutcomePropertyObject _ -> Nothing
+        )
+        batchArgs.batchRequestOutcomes
+  name = Text.pack name'
+
+  nsToS :: Chronos.Timespan -> Centi
+  nsToS n = (realToFrac @Int @Centi $ fromIntegral @Int64 @Int (Chronos.getTimespan n)) / 10e9
+
+runEvaluatorFor :: Maybe EvalBackend -> ValidatedFunction -> [(Text, Maybe FnLiteral)] -> Maybe (Set Text) -> AppM SimpleResponse
+runEvaluatorFor engine validatedFunc args outputFilter = do
   eval <- evaluationEngine evalBackend validatedFunc
   evaluationResult <-
     timeoutAction $
       runExceptT
-        ( runEvaluatorForFunction
+        ( runFunction
             eval
-            (Map.assocs args.fnArguments)
+            args
+            outputFilter
         )
 
   case evaluationResult of
@@ -361,10 +459,10 @@ validateFunction fn = do
       , fnEvaluator = evaluators
       }
  where
-  validateImplementation :: EvalBackend -> Text -> AppM Evaluator
+  validateImplementation :: EvalBackend -> Text -> AppM RunFunction
   validateImplementation GenericMathLang _program = throwError err409{errBody = "Can't add or modify gml programs."}
   validateImplementation Simala program = do
-    case runExcept $ Simala.simalaEvaluator (toDecl fn.declaration) program of
+    case runExcept $ Simala.createSimalaFunction (toDecl fn.declaration) program of
       Left err -> throwError err422{errBody = "Failed to parse program: " <> TL.encodeUtf8 (TL.pack $ show err)}
       Right parsed -> pure parsed
 
@@ -388,23 +486,31 @@ getFunctionHandler name = do
 
 timeoutAction :: IO b -> AppM b
 timeoutAction act =
-  liftIO (timeout (seconds 5) act) >>= \case
+  liftIO (timeout (seconds 60) act) >>= \case
     Nothing -> throwError err500
     Just r -> pure r
  where
   seconds n = 1_000_000 * n
 
+stopwatchM :: AppM a -> AppM (Chronos.Timespan, a)
+stopwatchM action = do
+  start <- liftIO Clock.getMonotonicTimeNSec
+  a' <- action
+  a <- liftIO $ evaluate a'
+  end <- liftIO Clock.getMonotonicTimeNSec
+  pure ((Chronos.Timespan (fromIntegral (end - start))), a)
+
 -- ----------------------------------------------------------------------------
 -- "Database" layer
 -- ----------------------------------------------------------------------------
 
-evaluationEngine :: EvalBackend -> ValidatedFunction -> AppM Evaluator
+evaluationEngine :: EvalBackend -> ValidatedFunction -> AppM RunFunction
 evaluationEngine b valFn = do
   case Map.lookup b valFn.fnEvaluator of
     Nothing -> throwError err404
     Just eval -> pure eval
 
--------------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
 -- Json encoders and decoders that are not derived.
 -- We often need custom instances, as we want to be more lenient in what we accept
 -- than what aeson does by default. Further, we try to provide a specific json schema.
@@ -452,7 +558,10 @@ instance ToJSON Function where
 
 instance FromJSON Function where
   parseJSON = Aeson.withObject "Function" $ \o -> do
-    "function" :: Text <- o .: "type"
+    fnType <- o .: "type"
+    case fnType :: Text of
+      "function" -> pure ()
+      e -> fail $ "Expected \"function\" but got" <> Text.unpack e
     props <- o .: "function"
     Aeson.withObject
       "function body"
@@ -492,17 +601,19 @@ instance FromJSON Parameters where
     pure $ Parameters props
 
 instance ToJSON Parameter where
-  toJSON (Parameter ty enum desc) =
+  toJSON p =
     Aeson.object
-      [ "type" .= ty
-      , "enum" .= enum
-      , "description" .= desc
+      [ "type" .= p.parameterType
+      , "alias" .= p.parameterAlias
+      , "enum" .= p.parameterEnum
+      , "description" .= p.parameterDescription
       ]
 
 instance FromJSON Parameter where
   parseJSON = Aeson.withObject "Parameter" $ \p ->
     Parameter
       <$> p .: "type"
+      <*> p .: "alias"
       <*> p .: "enum"
       <*> p .: "description"
 
@@ -533,5 +644,222 @@ toDecl fn =
   Api.FunctionDeclaration
     { Api.name = fn.name
     , Api.description = fn.description
-    , Api.parameters = Map.keysSet $ fn.parameters.getParameters
+    , Api.parametersLongNames = Map.keysSet $ fn.parameters.getParameters
+    , Api.parametersMapping = shortToLongNameMapping
     }
+ where
+  shortToLongNameMapping :: Map Text Text
+  shortToLongNameMapping =
+    Map.fromList $
+      Maybe.mapMaybe (fmap Tuple.swap . Tuple.secondM parameterAlias) $
+        Map.assocs fn.parameters.getParameters
+
+-- ----------------------------------------------------------------------------
+-- Oracle DB
+-- ----------------------------------------------------------------------------
+
+type Id = Int
+
+data Outcomes
+  = OutcomeAttribute Text
+  | OutcomePropertyObject OutcomeObject
+  deriving (Show, Eq, Ord)
+
+data OutcomeObject = OutcomeObject
+  { outcomeObjectId :: Text
+  , outcomeObjectShowSilent :: Maybe Bool
+  , outcomeObjectShowInvisible :: Maybe Bool
+  , outcomeObjectResolveIndecisionRelationships :: Maybe Bool
+  , outcomeObjectKnownOutcomeStyle :: Maybe OutcomeStyle
+  , outcomeObjectUnknownOutcomeStyle :: Maybe OutcomeStyle
+  }
+  deriving (Show, Eq, Ord)
+
+data OutcomeStyle
+  = ValueOnly
+  | DecisionReport
+  | BaseAttributes
+  deriving (Show, Ord, Eq, Enum, Bounded)
+
+data BatchRequest = BatchRequest
+  { batchRequestOutcomes :: [Outcomes]
+  , batchRequestCases :: [InputCase]
+  }
+  deriving (Show, Eq, Ord)
+
+data InputCase = InputCase
+  { inputCaseId :: Id
+  , inputCaseAttributes :: Map Text FnLiteral
+  }
+  deriving (Show, Eq, Ord)
+
+data OutputCase = OutputCase
+  { outputCaseId :: Id
+  , outputCaseAttributes :: Map Text FnLiteral
+  }
+  deriving (Show, Eq, Ord)
+
+data BatchResponse = BatchResponse
+  { batchResponseCases :: [OutputCase]
+  , batchResponseSummary :: OutputSummary
+  }
+  deriving (Show, Eq, Ord)
+
+data OutputSummary = OutputSummary
+  { outputSummaryCasesRead :: Int
+  , outputSummaryCasesProcessed :: Int
+  , outputSummaryCasesIgnored :: Int
+  , outputSummaryProcessorDurationSec :: Fixed E2
+  , outputSummaryCasesPerSec :: Fixed E2
+  , outputSummaryProcessorQueuedSec :: Fixed E2
+  }
+  deriving (Show, Eq, Ord)
+
+-- ----------------------------------------------------------------------------
+-- Batch request json
+-- ----------------------------------------------------------------------------
+
+batchRequestDecoder :: Decoder BatchRequest
+batchRequestDecoder =
+  BatchRequest
+    <$> ACD.key "outcomes" (ACD.list outcomesDecoder)
+    <*> ACD.key "cases" (ACD.list inputCaseDecoder)
+
+outcomeStyleDecoder :: Decoder OutcomeStyle
+outcomeStyleDecoder =
+  ACD.text >>= \case
+    "value-only" -> pure ValueOnly
+    "decision-report" -> pure DecisionReport
+    "base-attributes" -> pure BaseAttributes
+    val -> fail $ "Unknown value " <> show val
+
+outcomeObjectDecoder :: Decoder OutcomeObject
+outcomeObjectDecoder =
+  OutcomeObject
+    <$> ACD.key "id" ACD.text
+    <*> ACD.maybeKey "showSilent" ACD.bool
+    <*> ACD.maybeKey "showInvisible" ACD.bool
+    <*> ACD.maybeKey "resolveIndecisionRelationships" ACD.bool
+    <*> ACD.maybeKey "knownOutcomeStyle" outcomeStyleDecoder
+    <*> ACD.maybeKey "unknownOutcomeStyle" outcomeStyleDecoder
+
+outcomesDecoder :: Decoder Outcomes
+outcomesDecoder =
+  (OutcomeAttribute <$> ACD.text)
+    <|> (OutcomePropertyObject <$> outcomeObjectDecoder)
+
+inputCaseDecoder :: Decoder InputCase
+inputCaseDecoder = do
+  caseId <- ACD.key "@id" ACD.int
+  attributes <- ACD.mapStrict fnLiteralDecoder
+  let
+    attributes' = Map.delete "@id" attributes
+  pure $ InputCase caseId attributes'
+
+fnLiteralDecoder :: Decoder FnLiteral
+fnLiteralDecoder =
+  (FnLitInt <$> ACD.integer)
+    <|> (FnLitDouble <$> ACD.double)
+    <|> (FnLitBool <$> ACD.bool)
+    <|> (parseTextAsFnLiteral <$> ACD.text)
+    <|> (FnArray <$> ACD.list fnLiteralDecoder)
+    <|> (FnObject <$> ACD.list (liftA2 (,) ACD.text fnLiteralDecoder))
+
+batchRequestEncoder :: BatchRequest -> Aeson.Value
+batchRequestEncoder br =
+  Aeson.object
+    [ "outcomes" .= fmap outcomesEncoder (batchRequestOutcomes br)
+    ]
+
+outcomesEncoder :: Outcomes -> Aeson.Value
+outcomesEncoder (OutcomeAttribute t) = Aeson.String t
+outcomesEncoder (OutcomePropertyObject o) =
+  Aeson.object
+    [ "@id" .= outcomeObjectId o
+    , "showSilent" .= outcomeObjectShowSilent o
+    , "showInvisible" .= outcomeObjectShowInvisible o
+    , "resolveIndecisionRelationships" .= outcomeObjectResolveIndecisionRelationships o
+    , "knownOutcomeStyle" .= fmap outcomeStyleEncoder (outcomeObjectKnownOutcomeStyle o)
+    , "unknownOutcomeStyle" .= fmap outcomeStyleEncoder (outcomeObjectUnknownOutcomeStyle o)
+    ]
+
+outcomeStyleEncoder :: OutcomeStyle -> Aeson.Value
+outcomeStyleEncoder = \case
+  ValueOnly -> Aeson.String "value-only"
+  DecisionReport -> Aeson.String "decision-report"
+  BaseAttributes -> Aeson.String "base-attributes"
+
+-- ----------------------------------------------------------------------------
+-- Batch response json
+-- ----------------------------------------------------------------------------
+
+batchResponseDecoder :: Decoder BatchResponse
+batchResponseDecoder =
+  BatchResponse
+    <$> ACD.key "cases" (ACD.list casesDecoder)
+    <*> ACD.key "summary" summaryDecoder
+
+casesDecoder :: Decoder OutputCase
+casesDecoder = do
+  caseId <- ACD.key "@id" ACD.int
+  attributes <- ACD.mapStrict fnLiteralDecoder
+  let
+    attributes' = Map.delete "@id" attributes
+  pure $ OutputCase caseId attributes'
+
+summaryDecoder :: Decoder OutputSummary
+summaryDecoder =
+  OutputSummary
+    <$> ACD.key "casesRead" ACD.int
+    <*> ACD.key "casesProcessed" ACD.int
+    <*> ACD.key "casesIgnored" ACD.int
+    <*> ACD.key "processorDurationSec" (fmap toFixed ACD.scientific)
+    <*> ACD.key "processorCasesPerSec" (fmap toFixed ACD.scientific)
+    <*> ACD.key "processorQueuedSec" (fmap toFixed ACD.scientific)
+ where
+  toFixed = realToFrac @Scientific @Centi
+
+batchResponseEncoder :: BatchResponse -> Aeson.Value
+batchResponseEncoder br =
+  Aeson.object $
+    [ "cases" .= (fmap outputCaseEncoder $ batchResponseCases br)
+    , "summary" .= outputSummaryEncoder (batchResponseSummary br)
+    ]
+
+outputSummaryEncoder :: OutputSummary -> Aeson.Value
+outputSummaryEncoder os =
+  Aeson.object
+    [ "casesRead" .= outputSummaryCasesRead os
+    , "casesProcessed" .= outputSummaryCasesProcessed os
+    , "casesIgnored" .= outputSummaryCasesIgnored os
+    , "processorDurationSec" .= toSci (outputSummaryProcessorDurationSec os)
+    , "processorCasesPerSec" .= toSci (outputSummaryCasesPerSec os)
+    , "processorQueuedSec" .= toSci (outputSummaryProcessorQueuedSec os)
+    ]
+ where
+  toSci = realToFrac @Centi @Scientific
+
+outputCaseEncoder :: OutputCase -> Aeson.Value
+outputCaseEncoder oc =
+  Aeson.object $
+    [ "@id" .= outputCaseId oc
+    ]
+      <> [ (Aeson.fromText k .= v)
+         | (k, v) <- Map.assocs $ outputCaseAttributes oc
+         ]
+
+-- ----------------------------------------------------------------------------
+-- Final FromJSON/ToJSON instances
+-- ----------------------------------------------------------------------------
+
+instance FromJSON BatchRequest where
+  parseJSON = ACD.fromDecoder batchRequestDecoder
+
+instance ToJSON BatchRequest where
+  toJSON = batchRequestEncoder
+
+instance ToJSON BatchResponse where
+  toJSON = batchResponseEncoder
+
+instance FromJSON BatchResponse where
+  parseJSON = ACD.fromDecoder batchResponseDecoder

@@ -18,22 +18,22 @@ import Data.Tree qualified as Tree
 import Explainable (XP)
 import Explainable.MathLang
 
-genericMathLangEvaluator :: FunctionDeclaration -> Expr Double -> Evaluator
+genericMathLangEvaluator :: FunctionDeclaration -> Expr Double -> RunFunction
 genericMathLangEvaluator fnDecl expr =
-  Evaluator
-    { runEvaluatorForFunction = functionHandler fnDecl expr
+  RunFunction
+    { runFunction = \args _ -> functionHandler fnDecl expr args
     }
 
 functionHandler :: (MonadIO m) => FunctionDeclaration -> Expr Double -> [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m ResponseWithReason
 functionHandler decl impl args
-  | length decl.parameters /= length args =
+  | length decl.parametersLongNames /= length args =
       throwError $
         RequiredParameterMissing $
           ParameterMismatch
-            { expectedParameters = length decl.parameters
+            { expectedParameters = length decl.parametersLongNames
             , actualParameters = length args
             }
-  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k decl.parameters) args =
+  | unknowns@(_ : _) <- filter (\(k, _) -> Set.notMember k decl.parametersLongNames) args =
       throwError $
         UnknownArguments $
           fmap fst unknowns
@@ -48,7 +48,7 @@ runExplainableInterpreter s scenario = do
     Left (e :: IOError) -> do
       throwError $ InterpreterError $ Text.pack $ show e
     Right (res, xp, _, _) -> do
-      pure $ ResponseWithReason (FnLitDouble res) (Reasoning $ reasoningFromXp xp)
+      pure $ ResponseWithReason [("output", FnLitDouble res)] (Reasoning $ reasoningFromXp xp)
 
 transformParameters :: (MonadIO m) => [(Text, Maybe FnLiteral)] -> ExceptT EvaluatorError m MyState
 transformParameters attrs = do
@@ -77,6 +77,8 @@ transformParameters attrs = do
           state
             { symtabS = HashMap.insert (Text.unpack key) (Text.unpack t) (symtabS state)
             }
+      p ->
+        throwError $ InterpreterError $ "Gml can't handle parameter type: " <> Text.pack (show p)
   foldM (\s (k, v) -> splitParameters k v s) explainableState attrs
 
 -- | Translate a Tree of explanations into a reasoning tree that can be sent over

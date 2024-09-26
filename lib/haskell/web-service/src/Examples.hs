@@ -50,13 +50,13 @@ personQualifiesFunction = do
         , parameters =
             Parameters $
               Map.fromList
-                [ ("walks", Parameter "string" ["true", "false"] "Did the person walk?")
-                , ("eats", Parameter "string" ["true", "false"] "Did the person eat?")
-                , ("drinks", Parameter "string" ["true", "false"] "Did the person drink?")
+                [ ("walks", Parameter "string"  Nothing ["true", "false"] "Did the person walk?")
+                , ("eats", Parameter "string"   Nothing ["true", "false"] "Did the person eat?")
+                , ("drinks", Parameter "string" Nothing ["true", "false"] "Did the person drink?")
                 ]
         , supportedEvalBackend = [GenericMathLang, Simala]
         }
-  simalaEval <- Simala.simalaEvaluator (toDecl fnDecl) computeQualifiesSimala
+  simalaEval <- Simala.createSimalaFunction (toDecl fnDecl) computeQualifiesSimala
   pure $
     ValidatedFunction
       { fnImpl = fnDecl
@@ -91,20 +91,20 @@ rodentsAndVerminFunction = do
         , parameters =
             Parameters $
               Map.fromList
-                [ ("Loss or Damage.caused by insects", Parameter "string" ["true", "false"] "Was the damage caused by insects?")
-                , ("Loss or Damage.caused by birds", Parameter "string" ["true", "false"] "Was the damage caused by birds?")
-                , ("Loss or Damage.caused by vermin", Parameter "string" ["true", "false"] "Was the damage caused by vermin?")
-                , ("Loss or Damage.caused by rodents", Parameter "string" ["true", "false"] "Was the damage caused by rodents?")
-                , ("Loss or Damage.to Contents", Parameter "string" ["true", "false"] "Is the damage to your contents?")
-                , ("Loss or Damage.ensuing covered loss", Parameter "string" ["true", "false"] "Is the damage ensuing covered loss")
-                , ("any other exclusion applies", Parameter "string" ["true", "false"] "Are any other exclusions besides mentioned ones?")
-                , ("a household appliance", Parameter "string" ["true", "false"] "Did water escape from a household appliance due to an animal?")
-                , ("a swimming pool", Parameter "string" ["true", "false"] "Did water escape from a swimming pool due to an animal?")
-                , ("a plumbing, heating, or air conditioning system", Parameter "string" ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
+                [ ("Loss or Damage.caused by insects", Parameter "string" Nothing ["true", "false"]  "Was the damage caused by insects?")
+                , ("Loss or Damage.caused by birds", Parameter "string" Nothing ["true", "false"]     "Was the damage caused by birds?")
+                , ("Loss or Damage.caused by vermin", Parameter "string" Nothing ["true", "false"]    "Was the damage caused by vermin?")
+                , ("Loss or Damage.caused by rodents", Parameter "string" Nothing ["true", "false"]   "Was the damage caused by rodents?")
+                , ("Loss or Damage.to Contents", Parameter "string" Nothing ["true", "false"] "Is the damage to your contents?")
+                , ("Loss or Damage.ensuing covered loss", Parameter "string" Nothing ["true", "false"] "Is the damage ensuing covered loss")
+                , ("any other exclusion applies", Parameter "string" Nothing ["true", "false"] "Are any other exclusions besides mentioned ones?")
+                , ("a household appliance", Parameter "string" Nothing ["true", "false"] "Did water escape from a household appliance due to an animal?")
+                , ("a swimming pool", Parameter "string" Nothing ["true", "false"] "Did water escape from a swimming pool due to an animal?")
+                , ("a plumbing, heating, or air conditioning system", Parameter "string" Nothing ["true", "false"] "Did water escape from a plumbing, heating or conditioning system due to an animal?")
                 ]
         , supportedEvalBackend = [GenericMathLang, Simala]
         }
-  simalaEval <- Simala.simalaEvaluator (toDecl fnDecl) rodentsAndVerminSimala
+  simalaEval <- Simala.createSimalaFunction (toDecl fnDecl) rodentsAndVerminSimala
   pure $
     ValidatedFunction
       { fnImpl = fnDecl
@@ -124,52 +124,47 @@ rodentsAndVerminFunction = do
 computeQualifiesSimala :: Text
 computeQualifiesSimala =
   [i|
-  let
-    computeQualifies = fun () => walks && (drinks || eats)
-  in
-    computeQualifies ()
+  rules = fun(i) =>
+    { qualifies = i.walks && (i.drinks || i.eats)
+    }
 |]
 
 rodentsAndVerminSimala :: Text
 rodentsAndVerminSimala =
   [i|
-  let
-    notCoveredIf = fun (b) => if b then true else false
-  in
-  let
-    lossOrDamagedByAnimals =
-         `Loss or Damage.caused by rodents`
-      || `Loss or Damage.caused by insects`
-      || `Loss or Damage.caused by vermin`
-      || `Loss or Damage.caused by birds`
-  in
-  let
-    damageToContentsAndCausedByBirds =
-         `Loss or Damage.to Contents`
-      && `Loss or Damage.caused by birds`
-  in
-  let
-    ensuingCoveredLoss = `Loss or Damage.ensuing covered loss`
-  in
-  let
-    exclusionsApply =
-         `any other exclusion applies`
-      || `a household appliance`
-      || `a swimming pool`
-      || `a plumbing, heating, or air conditioning system`
-  in
-  let
-    rodentsAndVermin = fun () => notCoveredIf
-      ( lossOrDamagedByAnimals
-        && not
-         (  damageToContentsAndCausedByBirds
-         || (  ensuingCoveredLoss
-            && not ( exclusionsApply )
-            )
-         )
-      )
-  in
-    rodentsAndVermin ()
+  rules = fun(i) =>
+    let
+      notCoveredIf = fun (b) => if b then true else false ;
+
+      lossOrDamagedByAnimals =
+           i.`Loss or Damage.caused by rodents`
+        || i.`Loss or Damage.caused by insects`
+        || i.`Loss or Damage.caused by vermin`
+        || i.`Loss or Damage.caused by birds` ;
+
+      damageToContentsAndCausedByBirds =
+           i.`Loss or Damage.to Contents`
+        && i.`Loss or Damage.caused by birds` ;
+
+      ensuingCoveredLoss = i.`Loss or Damage.ensuing covered loss` ;
+
+      exclusionsApply =
+           i.`any other exclusion applies`
+        || i.`a household appliance`
+        || i.`a swimming pool`
+        || i.`a plumbing, heating, or air conditioning system` ;
+
+    in
+      { covered = notCoveredIf
+        ( lossOrDamagedByAnimals
+          && not
+          (  damageToContentsAndCausedByBirds
+          || (  ensuingCoveredLoss
+              && not ( exclusionsApply )
+              )
+          )
+        )
+      }
 |]
 
 -- | Example function which computes whether a person qualifies for *something*.
@@ -251,5 +246,5 @@ rodentsAndVerminGml =
 
 builtinProgram :: Except EvaluatorError a -> a
 builtinProgram m = case runExcept m of
-  Left err -> error $ "Builtin failed to load" <> show err
+  Left err -> error $ "Builtin failed to load " <> show err
   Right e -> e

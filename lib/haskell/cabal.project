@@ -36,9 +36,7 @@ source-repository-package
 allow-newer:
   compact:*,
   udpipe-hs:base,
-  gf:*,
-  Cabal,
-  Cabal-syntax
+  gf:*
 
 constraints:
     graphviz ==2999.20.2.0

@@ -12,7 +12,6 @@
 -- Largely a wrapper. Most of the functionality is in the anyall lib.
 module LS.XPile.Purescript
   ( -- * These are the top-level entry points for the Purescript transpiler
-    asPurescript,
     translate2PS,
   )
 where
@@ -89,36 +88,20 @@ textMT = map mt2text
 slashNames :: [RuleName] -> String
 slashNames names = T.unpack (T.intercalate " / " (mt2text <$> names))
 
-mutterRuleNameAndBS ::          [([RuleName], [BoolStructT])]
-                    -> XPileLog [([RuleName], [BoolStructT])]
-mutterRuleNameAndBS rnbss = do
-  mutterd 3 "rulename, bs pairs:"
-  for_ rnbss \(names, bs) -> do
-    mutterdhsf 4 (slashNames names) pShowNoColorS bs
-  pure rnbss
-
 -- two boolstructT: one question and one phrase
 namesAndStruct :: Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndStruct l4i rl = do
-  mutter [i|*** namesAndStruct: running on #{length rl} rules|]
-  mutter "calling qaHornsT against l4i"
-  mutterdhsf 3 "we know qaHornsT returns" pShowNoColorS (qaHornsT l4i)
-  mutterRuleNameAndBS [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
+  pure [ (names, [bs]) | (names, bs) <- qaHornsT l4i]
 
 -- | for each rule, construct the questions for that rule;
 -- and then jam them together with all the names for all the rules???
 namesAndQ :: NLGEnv -> Interpreted -> [Rule] -> XPileLog [([RuleName], [BoolStructT])]
 namesAndQ env l4i rl = do
-  mutterdhsf 3 "namesAndQ: name" show name
-  mutterdhsf 3 "namesAndQ: about to call ruleQuestions with alias=" show alias
   expandedRules <- expandRulesForNLGE l4i rl
   questStruct <- traverse (ruleQuestions env alias) expandedRules
-  mutterdhsf 3 "namesAndQ: back from ruleQuestions, questStruct =" pShowNoColorS questStruct
   let wut = concat [ [ (name, q) -- [TODO] this is probably the source of bugs.
                      | q' <- q ]
                    | q <- questStruct ]
-  mutter [i|*** wut the heck are we returning? like, #{length wut} things.|]
-  sequenceA_ [ mutterdhsf 4 (show n) pShowNoColorS w | (n,w) <- zip [1..] wut ]
   return wut
   where
     name = map ruleLabelName rl
@@ -136,15 +119,10 @@ combine' :: Int -- ^ depth
          -> [([RuleName], [BoolStructT])]
          -> XPileLog [([RuleName], [BoolStructT])]
 
-combine' d [] []     = mutter "*** combine: case 1, nil" >> pure []
-combine' d (b:bs) [] = mutter "*** combine: case 2, nil" >> pure []
-combine' d [] (q:qs) = mutter "*** combine: case 3, nil" >> pure []
+combine' d [] []     = pure []
+combine' d (b:bs) [] = pure []
+combine' d [] (q:qs) = pure []
 combine' d (b:bs) (q:qs) = do
-  mutterd  d "combine: case 4, non-nil"
-  mutterd1 d "input"
-  mutterdhsf (d+2) "fst b"    pShowNoColorS (fst b)
-  mutterdhsf (d+2) "snd b ++" pShowNoColorS (snd b)
-  mutterdhsf (d+2) "snd q"    pShowNoColorS (snd q)
   (:) (fst b, snd b <> snd q) <$> combine' (d+1) bs qs
 
 
@@ -171,7 +149,6 @@ labelQs = map alwaysLabeled
 
 biggestQ :: NLGEnv -> Interpreted -> [Rule] -> XPileLog [BoolStructT]
 biggestQ env l4i rl = do
-  mutter "*** biggestQ: running"
   let alias = listToMaybe [ (you,org) | DefNameAlias{name = you, detail = org} <- rl]
   q <- ruleQuestionsNamed env alias `traverse` expandRulesForNLG l4i  rl
   let flattened = q |$> second (AA.extractLeaves <$>) -- \(x,ys) -> (x, [ AA.extractLeaves y | y <- ys])
@@ -200,84 +177,6 @@ biggestS env l4i rl = do
     if null sorted
       then []
       else pure $ onlys ! fst (DL.head sorted)
-
--- | top level entry point for purescript generation
---
--- [TODO] how do we modularize and abstract from the NLG and the GF interaction here?
--- 1. because other modules might want to take advantage of NLG too.
--- 2. because maybe we want to decouple and decline NLG here for simplicity.
-
-asPurescript
-  :: NLGEnv -- ^ Used to produce more human readable versions of the questions
-  -> Interpreted
-  -> [Rule]
-  -> XPileLogE String
-asPurescript env l4i rl = do
-  let nlgEnvStr = env |> gfLang |> showLanguage
-  mutter [i|** asPurescript running for gfLang=#{nlgEnvStr}|]
-
-  mutterd 3 "building namesAndStruct"
-  nAS <- namesAndStruct l4i rl
-  mutterdhsf 3 "built namesAndStruct" pShowNoColorS nAS
-
-  mutterd 3 "building namesAndQ"
-  nAQ <- namesAndQ      env l4i rl
-  mutterdhsf 3 "built namesAndQ" pShowNoColorS nAQ
-
-  mutterd 3 "combining nAS and nAQ to form c'"
-  c'  <- combine nAS nAQ
-  mutterdhsf 3 "c' =" pShowNoColorS c'
-
-  guts <- for c' \(names, bs) -> do
-    let Just (hbs, tbs) = DL.uncons bs
-        fixedNot = map fixNot tbs
-        jq       = justQuestions hbs fixedNot
-        labeled  = alwaysLabeled jq
-    mutterdhsf 3 "names: " show ( mt2text <$> names )
-    mutterdhsf 4 "hbs = head boolstruct" show hbs
-    mutterdhsf 4 "tbs = tail boolstruct" show tbs
-    mutterdhsf 4 "fixedNot" show fixedNot
-    mutterdhsf 4 "jq" show jq
-    mutterdhsf 4 "labeled" show labeled
-    -- return as an Either
-    xpReturn $ toTuple ( T.intercalate " / " (mt2text <$> names) , labeled)
-
-  let nlgEnvStrLower = Char.toLower <$> nlgEnvStr
-      listOfMarkings = Map.toList . AA.getMarking $ getMarkings l4i
-      gutsRights = rights guts
-      gutsLefts  = lefts  guts
-
-  mutterdhsf 3 "Guts, Lefts (fatal errors)"        pShowNoColorS gutsLefts
-  mutterdhsf 3 "Guts, Rights (successful results)" pShowNoColorS gutsRights
-
-  mutter "*** Markings"
-  mutters do
-    m <- listOfMarkings
-    pure [__i|
-      **** #{fst m}
-      #{snd m}|]
-
-  xpReturn [__i|
-    #{nlgEnvStrLower} :: Object.Object (Item String)
-    #{nlgEnvStrLower} = Object.fromFoldable
-      #{pShowNoColor gutsRights}
-    #{nlgEnvStrLower}Marking :: Marking
-    #{nlgEnvStrLower}Marking = Marking $ Map.fromFoldable
-      #{TL.replace "False" "false"
-        . TL.replace "True" "true"
-        . pShowNoColor $
-            fmap toTuple listOfMarkings}
-  |]
-          -- #{pretty $ showLanguage $ gfLang env}Statements :: Object.Object (Item String)
-          -- , (pretty $ showLanguage $ gfLang env) <> "Statements = Object.fromFoldable " <>
-          --   (pretty $ TL.unpack (
-          --       pShowNoColor
-          --         [ toTuple ( T.intercalate " / " (mt2text <$> names)
-          --                 , alwaysLabeled (justStatements (head bs) (map fixNot (tail bs))))
-          --         | (names,bs) <- (combine (namesAndStruct env rl) (namesAndQ env rl))
-          --         ]
-          --       )
-          --   )
 
 translate2PS :: [NLGEnv] -> NLGEnv -> Interpreted -> XPileLogE String
 translate2PS nlgEnvs eng l4i = do

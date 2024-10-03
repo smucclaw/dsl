@@ -309,8 +309,7 @@ translate2AaJson nlgEnvs eng l4i = do
       case hornByLang of
         Left err -> xpError err
         Right hornByLang -> xpReturn [__i|
-          #{nlgEnvStrLower} :: Object.Object (Item String)
-          #{nlgEnvStrLower} = Object.fromFoldable
+          {
             #{pShowNoColor $ DL.nub hornByLang}
         |]
   -- mutterdhsf 2 "qaHornsAllLangs" pShowNoColorS qaHornsRights

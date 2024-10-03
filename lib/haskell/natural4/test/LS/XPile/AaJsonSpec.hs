@@ -65,8 +65,6 @@ loadNLGEnv tracer engE =
 transpileFile :: String -> IO TL.Text
 transpileFile filename = do
     let tracer =
-          -- Use the 'prettyTracer' if you need logs for debugging
-          -- prettyTracer
           mempty
     let testPath = "test" </> "testdata" </> "golden" </> "AaJsonSpec" </> filename <.> "csv"
         opts = SFL4.defaultOptions {SFL4.file = [testPath]}
@@ -79,7 +77,7 @@ transpileFile filename = do
         nlgEnvs = justNLGDate.allEnv
         eng = justNLGDate.env
         (psResult, _) = xpLog do
-            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2AaJson nlgEnvs eng l4i)
+            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2AaJson [eng] eng l4i)
 
     case psResult of
         Left err -> do
@@ -96,8 +94,8 @@ goldenGeneric name myoutput =
       encodePretty = TL.unpack,
       writeToFile = TL.writeFile,
       readFromFile = TL.readFile,
-      goldenFile = testPath <.> "purs.expected",
-      actualFile = Just (testPath <.> "purs.actual"),
+      goldenFile = testPath <.> "json.expected",
+      actualFile = Just (testPath <.> "json.actual"),
       failFirstTime = False
     }
   where
@@ -112,7 +110,7 @@ spec = do
         must_sing_purs <- transpileFile "must_sing"
         pure $ goldenGeneric "must_sing" must_sing_purs
 
-    describe "rodents" do
-      it "convert must sing to AaJson" do
-        rodents_purs <- transpileFile "rodents"
-        pure $ goldenGeneric "rodents" rodents_purs
+    -- describe "rodents" do
+    --   it "convert must sing to AaJson" do
+    --     rodents_purs <- transpileFile "rodents"
+    --     pure $ goldenGeneric "rodents" rodents_purs

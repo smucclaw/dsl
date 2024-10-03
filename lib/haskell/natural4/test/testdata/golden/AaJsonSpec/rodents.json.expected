@@ -1,0 +1,87 @@
+
+
+nl4eng :: Object.Object (Item String)
+nl4eng = Object.fromFoldable
+  [ Tuple "Covered If …"
+    ( Not
+        ( All
+            ( Pre "all of:" )
+            [ Any
+                ( Pre "Is the Loss or Damage caused by" )
+                [ Leaf "rodents?"
+                , Leaf "insects?"
+                , Leaf "vermin?"
+                , Leaf "birds?"
+                ]
+            , Not
+                ( Any
+                    ( Pre "any of:" )
+                    [ All
+                        ( Pre "all of:" )
+                        [ Leaf "is Loss or Damage to contents?"
+                        , Leaf "is Loss or Damage caused by birds?"
+                        ]
+                    , All
+                        ( Pre "all of:" )
+                        [ Leaf "is Loss or Damage ensuing covered loss?"
+                        , Not
+                            ( Any
+                                ( Pre "any of:" )
+                                [ Leaf "does any other exclusion apply?"
+                                , Any
+                                    ( Pre "did an animal cause water to escape from" )
+                                    [ Leaf "a household appliance?"
+                                    , Leaf "a swimming pool?"
+                                    , Leaf "a plumbing, heating, or air conditioning system?"
+                                    ]
+                                ]
+                            )
+                        ]
+                    ]
+                )
+            ]
+        )
+    )
+, Tuple "Not Covered If …"
+    ( All
+        ( Pre "all of:" )
+        [ Any
+            ( Pre "Is the Loss or Damage caused by" )
+            [ Leaf "rodents?"
+            , Leaf "insects?"
+            , Leaf "vermin?"
+            , Leaf "birds?"
+            ]
+        , Not
+            ( Any
+                ( Pre "any of:" )
+                [ All
+                    ( Pre "all of:" )
+                    [ Leaf "is Loss or Damage to contents?"
+                    , Leaf "is Loss or Damage caused by birds?"
+                    ]
+                , All
+                    ( Pre "all of:" )
+                    [ Leaf "is Loss or Damage ensuing covered loss?"
+                    , Not
+                        ( Any
+                            ( Pre "any of:" )
+                            [ Leaf "does any other exclusion apply?"
+                            , Any
+                                ( Pre "did an animal cause water to escape from" )
+                                [ Leaf "a household appliance?"
+                                , Leaf "a swimming pool?"
+                                , Leaf "a plumbing, heating, or air conditioning system?"
+                                ]
+                            ]
+                        )
+                    ]
+                ]
+            )
+        ]
+    )
+]
+
+
+
+allLang = ["nl4chi", "nl4eng", "nl4may"]

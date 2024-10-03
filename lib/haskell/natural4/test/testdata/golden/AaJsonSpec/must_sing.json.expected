@@ -1,31 +1,33 @@
 
 
-{
-    "Person": {
-        "All": {
-            "label": {
-                "Pre": "all of:"
-            },
-            "children": [
-                {
-                    "Leaf": "does the person walk?"
-                },
-                {
-                    "Any": {
-                        "label": {
-                            "Pre": "any of:"
-                        },
-                        "children": [
-                            {
-                                "Leaf": "does the person eat?"
-                            },
-                            {
-                                "Leaf": "does the person drink?"
+[
+    {
+        "Person": {
+            "All": {
+                "children": [
+                    {
+                        "Leaf": "does the person walk?"
+                    },
+                    {
+                        "Any": {
+                            "children": [
+                                {
+                                    "Leaf": "does the person eat?"
+                                },
+                                {
+                                    "Leaf": "does the person drink?"
+                                }
+                            ],
+                            "label": {
+                                "Pre": "any of:"
                             }
-                        ]
+                        }
                     }
+                ],
+                "label": {
+                    "Pre": "all of:"
                 }
-            ]
+            }
         }
     }
-}
+]

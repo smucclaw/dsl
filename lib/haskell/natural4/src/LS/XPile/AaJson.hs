@@ -17,7 +17,7 @@ module LS.XPile.AaJson
 where
 
 import AnyAll qualified as AA
-import AnyAll.BoolStruct (alwaysLabeled)
+import AnyAll.BoolStruct (alwaysLabeled, BoolStructLT)
 import Control.Monad (join)
 import Data.Bifunctor (Bifunctor (..), second)
 import Data.Char qualified as Char
@@ -66,6 +66,10 @@ import LS.XPile.Logging
   )
 import PGF (showLanguage)
 import Text.Pretty.Simple (pShowNoColor)
+import Data.Aeson (ToJSON(toJSON), object, (.=),Value, encode)
+import Data.Aeson.Key (fromString)
+import Base (Generic)
+import Data.Aeson.Encode.Pretty (encodePretty)
 
 -- | extract the tree-structured rules from Interpreter
 -- currently: construct a Data.Map of rulenames to exposed decision root expanded BSR
@@ -76,6 +80,22 @@ import Text.Pretty.Simple (pShowNoColor)
 -- | shim for Purescript tuples which use slightly different syntax
 data Tuple a b = Tuple a b
   deriving (Show, Eq, Ord)
+
+labelToAaJson :: AA.Label T.Text -> Value
+labelToAaJson (AA.Pre a) = object [ "Pre" .= a ]
+labelToAaJson (AA.PrePost a b) = object [ "PrePost" .= [a,b] ]
+labelToAaJson (AA.Metadata a) = object [ "Metadata" .= a ]
+
+bsToAaJson :: BoolStructLT -> Value
+bsToAaJson (AA.All l bs) = object [ "All" .= object["label" .= labelToAaJson l, "children" .= [bsToAaJson c | c <- bs] ]]
+bsToAaJson (AA.Any l bs) = object [ "Any" .= object["label" .= labelToAaJson l, "children" .=  [bsToAaJson c | c <- bs] ]]
+bsToAaJson (AA.Leaf a) = object [ "Leaf" .= a ]
+bsToAaJson (AA.Not bs) = object [ "Not" .= bs]
+
+instance ToJSON (Tuple String BoolStructLT) where
+ toJSON (Tuple a b) =
+    object [ fromString a .= bsToAaJson b]
+
 
 -- | output Haskell tuples to Purescript
 toTuple :: (a,b) -> Tuple a b
@@ -309,8 +329,7 @@ translate2AaJson nlgEnvs eng l4i = do
       case hornByLang of
         Left err -> xpError err
         Right hornByLang -> xpReturn [__i|
-          {
-            #{pShowNoColor $ DL.nub hornByLang}
+            #{encodePretty $ toJSON $ DL.nub hornByLang}
         |]
   -- mutterdhsf 2 "qaHornsAllLangs" pShowNoColorS qaHornsRights
 

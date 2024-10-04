@@ -64,6 +64,7 @@ module LS.Lib
     jsonMode,
     vueMode,
     pursMode,
+    aajsonMode,
     uppaalMode,
     simalaMode,
     defaultModes,
@@ -407,6 +408,7 @@ defaultModes =
   , jsonMode
   , vueMode
   , pursMode
+  , aajsonMode
   , mdMode
   , gftreesMode
   , groundsMode
@@ -518,6 +520,9 @@ dmnMode = MkModeName "dmn"
 
 pursMode :: ModeName
 pursMode = MkModeName "purs"
+
+aajsonMode :: ModeName
+aajsonMode = MkModeName "aajson"
 
 mdMode :: ModeName
 mdMode = MkModeName "md"

@@ -1,6 +1,6 @@
 cabal-version: 1.18
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -54,6 +54,7 @@ library
       LS.Utils.TextUtils
       LS.Utils.UtilsREPLDev
       LS.Verdict
+      LS.XPile.AaJson
       LS.XPile.Common
       LS.XPile.CoreL4
       LS.XPile.CoreL4.LogicProgram
@@ -445,6 +446,7 @@ test-suite natural4-test
       LS.RenamerSpec
       LS.TextuaL4Spec
       LS.TypesSpec
+      LS.XPile.AaJsonSpec
       LS.XPile.CoreL4.LogicProgramSpec
       LS.XPile.GenericMathLang.TranslateL4Spec
       LS.XPile.JSONSchemaSpec

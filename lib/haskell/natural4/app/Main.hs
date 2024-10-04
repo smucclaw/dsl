@@ -77,6 +77,7 @@ import LS.XPile.Org (toOrg)
 import LS.XPile.Petri (toPetri)
 import LS.XPile.Prolog (rulesToProlog, rulesToSCasp)
 import LS.XPile.Purescript (translate2PS)
+import LS.XPile.AaJson (translate2AaJson)
 import LS.XPile.SVG qualified as AAS
 import LS.XPile.Simala.Transpile qualified as Simala
 import LS.XPile.Typescript (asTypescript)
@@ -425,6 +426,10 @@ transpilersMap =
   , ( SFL4.pursMode
     , "anyall representation dumped as Purescript source code for mv'ing into RuleLib/*.purs"
     , [purescriptTranspiler]
+    )
+  , ( SFL4.aajsonMode
+    , "anyall representation dumped as json source code to be used by the web app"
+    , [aajsonTranspiler]
     )
   -- old position of nativeMode in on-disk output
   , ( SFL4.logicalEnglishMode
@@ -803,6 +808,21 @@ purescriptTranspiler =
       let (psResult, psErrors) = xpLog do
             mutter "* main calling translate2PS"
             fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2PS nlgd.allEnv nlgd.env ds.interpreted)
+      pure (Success (commentIfError "-- ! -- " psResult) (Just psErrors))
+      )
+
+aajsonTranspiler :: Transpiler
+aajsonTranspiler =
+  MkTranspiler
+    { subdir     = "aajson"
+    , extension  = "json"
+    , entryPoint = go
+    , output     = DefaultTranspilerOutput (MkTranspilerOutputConfig Just writeFile putStrLn)
+    }
+  where
+    go = withNLGData (\ nlgd ds -> do
+      let (psResult, psErrors) = xpLog do
+            translate2AaJson nlgd.allEnv ds.interpreted
       pure (Success (commentIfError "-- ! -- " psResult) (Just psErrors))
       )
 

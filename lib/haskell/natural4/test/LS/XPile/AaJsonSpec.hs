@@ -77,7 +77,7 @@ transpileFile filename = do
         nlgEnvs = justNLGDate.allEnv
         eng = justNLGDate.env
         (psResult, _) = xpLog do
-            fmapE (<> ("\n\n" <> "allLang = [\"" <> strLangs <> "\"]")) (translate2AaJson [eng] eng l4i)
+            translate2AaJson nlgEnvs eng l4i
 
     case psResult of
         Left err -> do
@@ -110,7 +110,7 @@ spec = do
         must_sing_purs <- transpileFile "must_sing"
         pure $ goldenGeneric "must_sing" must_sing_purs
 
-    -- describe "rodents" do
-    --   it "convert must sing to AaJson" do
-    --     rodents_purs <- transpileFile "rodents"
-    --     pure $ goldenGeneric "rodents" rodents_purs
+    describe "rodents" do
+      it "convert must sing to AaJson" do
+        rodents_purs <- transpileFile "rodents"
+        pure $ goldenGeneric "rodents" rodents_purs

@@ -1,87 +1,626 @@
-
-
-nl4eng :: Object.Object (Item String)
-nl4eng = Object.fromFoldable
-  [ Tuple "Covered If …"
-    ( Not
-        ( All
-            ( Pre "all of:" )
-            [ Any
-                ( Pre "Is the Loss or Damage caused by" )
-                [ Leaf "rodents?"
-                , Leaf "insects?"
-                , Leaf "vermin?"
-                , Leaf "birds?"
-                ]
-            , Not
-                ( Any
-                    ( Pre "any of:" )
-                    [ All
-                        ( Pre "all of:" )
-                        [ Leaf "is Loss or Damage to contents?"
-                        , Leaf "is Loss or Damage caused by birds?"
-                        ]
-                    , All
-                        ( Pre "all of:" )
-                        [ Leaf "is Loss or Damage ensuing covered loss?"
-                        , Not
-                            ( Any
-                                ( Pre "any of:" )
-                                [ Leaf "does any other exclusion apply?"
-                                , Any
-                                    ( Pre "did an animal cause water to escape from" )
-                                    [ Leaf "a household appliance?"
-                                    , Leaf "a swimming pool?"
-                                    , Leaf "a plumbing, heating, or air conditioning system?"
-                                    ]
-                                ]
-                            )
-                        ]
-                    ]
-                )
-            ]
-        )
-    )
-, Tuple "Not Covered If …"
-    ( All
-        ( Pre "all of:" )
-        [ Any
-            ( Pre "Is the Loss or Damage caused by" )
-            [ Leaf "rodents?"
-            , Leaf "insects?"
-            , Leaf "vermin?"
-            , Leaf "birds?"
-            ]
-        , Not
-            ( Any
-                ( Pre "any of:" )
-                [ All
-                    ( Pre "all of:" )
-                    [ Leaf "is Loss or Damage to contents?"
-                    , Leaf "is Loss or Damage caused by birds?"
-                    ]
-                , All
-                    ( Pre "all of:" )
-                    [ Leaf "is Loss or Damage ensuing covered loss?"
-                    , Not
-                        ( Any
-                            ( Pre "any of:" )
-                            [ Leaf "does any other exclusion apply?"
-                            , Any
-                                ( Pre "did an animal cause water to escape from" )
-                                [ Leaf "a household appliance?"
-                                , Leaf "a swimming pool?"
-                                , Leaf "a plumbing, heating, or air conditioning system?"
-                                ]
-                            ]
-                        )
-                    ]
-                ]
-            )
-        ]
-    )
+[
+  [
+    {
+        "Covered If …": {
+            "Not": {
+                "All": {
+                    "children": [
+                        {
+                            "Any": {
+                                "children": [
+                                    {
+                                        "Leaf": "些 啮 齿？"
+                                    },
+                                    {
+                                        "Leaf": "些 昆 虫？"
+                                    },
+                                    {
+                                        "Leaf": "蠹 虫？"
+                                    },
+                                    {
+                                        "Leaf": "些 鸟？"
+                                    }
+                                ],
+                                "label": {
+                                    "Pre": "那 个 损 失 或 损 害 的 原 因"
+                                }
+                            }
+                        },
+                        {
+                            "Not": {
+                                "Any": {
+                                    "children": [
+                                        {
+                                            "All": {
+                                                "children": [
+                                                    {
+                                                        "Leaf": ""
+                                                    },
+                                                    {
+                                                        "Leaf": "损 失 或 损 害 是 被 些 鸟 的 原 因 的 吗？"
+                                                    }
+                                                ],
+                                                "label": {
+                                                    "Pre": "all of:"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "All": {
+                                                "children": [
+                                                    {
+                                                        "Leaf": "损 失 或 损 害 是 保 户 [UseN] 接 着 的 吗？"
+                                                    },
+                                                    {
+                                                        "Not": {
+                                                            "Any": {
+                                                                "children": [
+                                                                    {
+                                                                        "Leaf": "任 何 其 他 排 除 [UseV] [UseV] [UseV] [UseV] 吗？"
+                                                                    },
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "一 个 家 用 电 器？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "一 个 游 泳 池？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "管 路 系 统 或 暖 通 空 调？"
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": ""
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "any of:"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ],
+                                                "label": {
+                                                    "Pre": "all of:"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "label": {
+                                        "Pre": "any of:"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "label": {
+                        "Pre": "all of:"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "Not Covered If …": {
+            "All": {
+                "children": [
+                    {
+                        "Any": {
+                            "children": [
+                                {
+                                    "Leaf": "些 啮 齿？"
+                                },
+                                {
+                                    "Leaf": "些 昆 虫？"
+                                },
+                                {
+                                    "Leaf": "蠹 虫？"
+                                },
+                                {
+                                    "Leaf": "些 鸟？"
+                                }
+                            ],
+                            "label": {
+                                "Pre": "那 个 损 失 或 损 害 的 原 因"
+                            }
+                        }
+                    },
+                    {
+                        "Not": {
+                            "Any": {
+                                "children": [
+                                    {
+                                        "All": {
+                                            "children": [
+                                                {
+                                                    "Leaf": ""
+                                                },
+                                                {
+                                                    "Leaf": "损 失 或 损 害 是 被 些 鸟 的 原 因 的 吗？"
+                                                }
+                                            ],
+                                            "label": {
+                                                "Pre": "all of:"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "All": {
+                                            "children": [
+                                                {
+                                                    "Leaf": "损 失 或 损 害 是 保 户 [UseN] 接 着 的 吗？"
+                                                },
+                                                {
+                                                    "Not": {
+                                                        "Any": {
+                                                            "children": [
+                                                                {
+                                                                    "Leaf": "任 何 其 他 排 除 [UseV] [UseV] [UseV] [UseV] 吗？"
+                                                                },
+                                                                {
+                                                                    "Any": {
+                                                                        "children": [
+                                                                            {
+                                                                                "Leaf": "一 个 家 用 电 器？"
+                                                                            },
+                                                                            {
+                                                                                "Leaf": "一 个 游 泳 池？"
+                                                                            },
+                                                                            {
+                                                                                "Leaf": "管 路 系 统 或 暖 通 空 调？"
+                                                                            }
+                                                                        ],
+                                                                        "label": {
+                                                                            "Pre": ""
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "label": {
+                                                                "Pre": "any of:"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "label": {
+                                                "Pre": "all of:"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "label": {
+                                    "Pre": "any of:"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    }
+],
+[
+    {
+        "Covered If …": {
+            "Not": {
+                "All": {
+                    "children": [
+                        {
+                            "Any": {
+                                "children": [
+                                    {
+                                        "Leaf": "rodents?"
+                                    },
+                                    {
+                                        "Leaf": "insects?"
+                                    },
+                                    {
+                                        "Leaf": "vermin?"
+                                    },
+                                    {
+                                        "Leaf": "birds?"
+                                    }
+                                ],
+                                "label": {
+                                    "Pre": "Is the Loss or Damage caused by"
+                                }
+                            }
+                        },
+                        {
+                            "Not": {
+                                "Any": {
+                                    "children": [
+                                        {
+                                            "All": {
+                                                "children": [
+                                                    {
+                                                        "Leaf": "is Loss or Damage to contents?"
+                                                    },
+                                                    {
+                                                        "Leaf": "is Loss or Damage caused by birds?"
+                                                    }
+                                                ],
+                                                "label": {
+                                                    "Pre": "all of:"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "All": {
+                                                "children": [
+                                                    {
+                                                        "Leaf": "is Loss or Damage ensuing covered loss?"
+                                                    },
+                                                    {
+                                                        "Not": {
+                                                            "Any": {
+                                                                "children": [
+                                                                    {
+                                                                        "Leaf": "does any other exclusion apply?"
+                                                                    },
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "a household appliance?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "a swimming pool?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "a plumbing, heating, or air conditioning system?"
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "did an animal cause water to escape from"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "any of:"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ],
+                                                "label": {
+                                                    "Pre": "all of:"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "label": {
+                                        "Pre": "any of:"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "label": {
+                        "Pre": "all of:"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "Not Covered If …": {
+            "All": {
+                "children": [
+                    {
+                        "Any": {
+                            "children": [
+                                {
+                                    "Leaf": "rodents?"
+                                },
+                                {
+                                    "Leaf": "insects?"
+                                },
+                                {
+                                    "Leaf": "vermin?"
+                                },
+                                {
+                                    "Leaf": "birds?"
+                                }
+                            ],
+                            "label": {
+                                "Pre": "Is the Loss or Damage caused by"
+                            }
+                        }
+                    },
+                    {
+                        "Not": {
+                            "Any": {
+                                "children": [
+                                    {
+                                        "All": {
+                                            "children": [
+                                                {
+                                                    "Leaf": "is Loss or Damage to contents?"
+                                                },
+                                                {
+                                                    "Leaf": "is Loss or Damage caused by birds?"
+                                                }
+                                            ],
+                                            "label": {
+                                                "Pre": "all of:"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "All": {
+                                            "children": [
+                                                {
+                                                    "Leaf": "is Loss or Damage ensuing covered loss?"
+                                                },
+                                                {
+                                                    "Not": {
+                                                        "Any": {
+                                                            "children": [
+                                                                {
+                                                                    "Leaf": "does any other exclusion apply?"
+                                                                },
+                                                                {
+                                                                    "Any": {
+                                                                        "children": [
+                                                                            {
+                                                                                "Leaf": "a household appliance?"
+                                                                            },
+                                                                            {
+                                                                                "Leaf": "a swimming pool?"
+                                                                            },
+                                                                            {
+                                                                                "Leaf": "a plumbing, heating, or air conditioning system?"
+                                                                            }
+                                                                        ],
+                                                                        "label": {
+                                                                            "Pre": "did an animal cause water to escape from"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "label": {
+                                                                "Pre": "any of:"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "label": {
+                                                "Pre": "all of:"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "label": {
+                                    "Pre": "any of:"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    }
+],
+[
+    {
+        "Covered If …": {
+            "Not": {
+                "All": {
+                    "children": [
+                        {
+                            "Any": {
+                                "children": [
+                                    {
+                                        "Leaf": "rodensia-rodensia?"
+                                    },
+                                    {
+                                        "Leaf": "serangga-serangga?"
+                                    },
+                                    {
+                                        "Leaf": "binatang perosak?"
+                                    },
+                                    {
+                                        "Leaf": "burung-burung?"
+                                    }
+                                ],
+                                "label": {
+                                    "Pre": "Adakah Kerugian atau Kerosakan disebabkan oleh"
+                                }
+                            }
+                        },
+                        {
+                            "Not": {
+                                "Any": {
+                                    "children": [
+                                        {
+                                            "All": {
+                                                "children": [
+                                                    {
+                                                        "Leaf": ""
+                                                    },
+                                                    {
+                                                        "Leaf": "adakah Kerugian atau Kerosakan disebabkan burung-burung?"
+                                                    }
+                                                ],
+                                                "label": {
+                                                    "Pre": "all of:"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "All": {
+                                                "children": [
+                                                    {
+                                                        "Leaf": "adakah Kerugian atau Kerosakan berlaku akibat [UseN] yang dilindungi [UseN]?"
+                                                    },
+                                                    {
+                                                        "Not": {
+                                                            "Any": {
+                                                                "children": [
+                                                                    {
+                                                                        "Leaf": "adakah sebarang pengecualian lain [UseV]?"
+                                                                    },
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "perkakas rumah?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "kolam renang?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "sistem paip atau HVAC?"
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": ""
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "any of:"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ],
+                                                "label": {
+                                                    "Pre": "all of:"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "label": {
+                                        "Pre": "any of:"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "label": {
+                        "Pre": "all of:"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "Not Covered If …": {
+            "All": {
+                "children": [
+                    {
+                        "Any": {
+                            "children": [
+                                {
+                                    "Leaf": "rodensia-rodensia?"
+                                },
+                                {
+                                    "Leaf": "serangga-serangga?"
+                                },
+                                {
+                                    "Leaf": "binatang perosak?"
+                                },
+                                {
+                                    "Leaf": "burung-burung?"
+                                }
+                            ],
+                            "label": {
+                                "Pre": "Adakah Kerugian atau Kerosakan disebabkan oleh"
+                            }
+                        }
+                    },
+                    {
+                        "Not": {
+                            "Any": {
+                                "children": [
+                                    {
+                                        "All": {
+                                            "children": [
+                                                {
+                                                    "Leaf": ""
+                                                },
+                                                {
+                                                    "Leaf": "adakah Kerugian atau Kerosakan disebabkan burung-burung?"
+                                                }
+                                            ],
+                                            "label": {
+                                                "Pre": "all of:"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "All": {
+                                            "children": [
+                                                {
+                                                    "Leaf": "adakah Kerugian atau Kerosakan berlaku akibat [UseN] yang dilindungi [UseN]?"
+                                                },
+                                                {
+                                                    "Not": {
+                                                        "Any": {
+                                                            "children": [
+                                                                {
+                                                                    "Leaf": "adakah sebarang pengecualian lain [UseV]?"
+                                                                },
+                                                                {
+                                                                    "Any": {
+                                                                        "children": [
+                                                                            {
+                                                                                "Leaf": "perkakas rumah?"
+                                                                            },
+                                                                            {
+                                                                                "Leaf": "kolam renang?"
+                                                                            },
+                                                                            {
+                                                                                "Leaf": "sistem paip atau HVAC?"
+                                                                            }
+                                                                        ],
+                                                                        "label": {
+                                                                            "Pre": ""
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "label": {
+                                                                "Pre": "any of:"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "label": {
+                                                "Pre": "all of:"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "label": {
+                                    "Pre": "any of:"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    }
 ]
-
-
-
-allLang = ["nl4chi", "nl4eng", "nl4may"]
+]

@@ -36,7 +36,25 @@ source-repository-package
 allow-newer:
   compact:*,
   udpipe-hs:base,
-  gf:*
+  gf:*,
+  -- allows to use `cabal repl --enable-multi-repl`.
+  -- as this requires Cabal(-syntax) >= 3.12
+  -- However, we don't want to allow newer Cabal and Cabal-syntax
+  -- in general, as we then may use `Cabal-3.12` and `Cabal-syntax-3.14`
+  -- which leads to terrible error messages such as:
+  --
+  -- Error:
+  --  Problem with module re-exports:
+  --    - The module 'Distribution.Compat.Typeable'
+  --      is not exported by any suitable package.
+  --      It occurs in neither the 'exposed-modules' of this package,
+  --      nor any of its 'build-depends' dependencies.
+  --  In the stanza 'library'
+  --  In the package 'Cabal-3.12.1.0'
+  --
+  baby-l4:Cabal-syntax,
+  baby-l4:Cabal
+
 
 constraints:
     graphviz ==2999.20.2.0

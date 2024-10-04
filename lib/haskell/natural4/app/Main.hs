@@ -822,7 +822,7 @@ aajsonTranspiler =
   where
     go = withNLGData (\ nlgd ds -> do
       let (psResult, psErrors) = xpLog do
-            translate2AaJson nlgd.allEnv nlgd.env ds.interpreted
+            translate2AaJson nlgd.allEnv ds.interpreted
       pure (Success (commentIfError "-- ! -- " psResult) (Just psErrors))
       )
 

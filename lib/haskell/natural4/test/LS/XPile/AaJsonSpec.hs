@@ -77,7 +77,7 @@ transpileFile filename = do
         nlgEnvs = justNLGDate.allEnv
         eng = justNLGDate.env
         (psResult, _) = xpLog do
-            translate2AaJson nlgEnvs eng l4i
+            translate2AaJson nlgEnvs l4i
 
     case psResult of
         Left err -> do

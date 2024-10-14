@@ -7,7 +7,7 @@
 # to be used for project dependencies. For example:
 #
 
-resolver: lts-22.29
+resolver: lts-22.37
 
 packages:
 - natural4

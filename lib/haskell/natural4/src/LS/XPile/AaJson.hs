@@ -93,7 +93,8 @@ translate2AaJson nlgEnvs l4i = do
   let rules = origrules l4i
 
   qaHornsAllLangs :: [Either XPileLogW String] <-
-    for nlgEnvs \nlgEnv -> do
+    for nlgEnvs \nlgEnv@(NLGEnv {gfLang}) -> do
+      let nlgEnvStrLower = gfLang |> showLanguage |$> Char.toLower
 
       hornByLang :: Either XPileLogW [(String, BoolStructLT)] <-
         qaHornsByLang rules nlgEnv l4i
@@ -101,7 +102,7 @@ translate2AaJson nlgEnvs l4i = do
       case hornByLang of
         Left err -> xpError err
         Right haveHorn -> xpReturn [__i|
-            #{encodePretty $ toAaJson <$> (DL.nub haveHorn)}
+            { "#{nlgEnvStrLower}" : #{encodePretty $ toAaJson <$> (DL.nub haveHorn)} }
         |]
 
   let qaHornsStrings = rights qaHornsAllLangs

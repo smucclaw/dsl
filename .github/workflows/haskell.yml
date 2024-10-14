@@ -40,7 +40,7 @@ jobs:
       - name: Install Ubuntu Prerequisites (libpcre)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get install libpcre3-dev
+          sudo apt-get install libpcre3-dev liblzma-dev
 
       - name: Install MacOS Prerequisites (libpcre)
         if: startsWith(matrix.os, 'macOS')

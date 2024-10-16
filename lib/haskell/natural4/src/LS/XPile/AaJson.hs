@@ -102,14 +102,14 @@ translate2AaJson nlgEnvs l4i = do
       case hornByLang of
         Left err -> xpError err
         Right haveHorn -> xpReturn [__i|
-            { "#{nlgEnvStrLower}" : #{encodePretty $ toAaJson <$> (DL.nub haveHorn)} }
+           "#{nlgEnvStrLower}" : #{encodePretty $ toAaJson <$> (DL.nub haveHorn)}
         |]
 
   let qaHornsStrings = rights qaHornsAllLangs
   xpReturn [__i|
-    [
+    {
       #{DL.intercalate ",\n" qaHornsStrings}
-    ]
+    }
   |]
 
 qaHornsByLang :: [Rule] -> NLGEnv -> Interpreted -> XPileLogE [(String, BoolStructLT)]

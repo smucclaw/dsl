@@ -114,3 +114,8 @@ spec = do
       it "convert must sing to AaJson" do
         rodents_purs <- transpileFile "rodents"
         pure $ goldenGeneric "rodents" rodents_purs
+    
+    describe "pdpa" do
+      it "convert must sing to AaJson" do
+        rodents_purs <- transpileFile "pdpa"
+        pure $ goldenGeneric "pdpa" rodents_purs

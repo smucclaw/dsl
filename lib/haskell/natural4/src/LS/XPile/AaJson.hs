@@ -72,7 +72,7 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 
 labelToAaJson :: AA.Label T.Text -> Value
 labelToAaJson (AA.Pre a) = object [ "Pre" .= a ]
-labelToAaJson (AA.PrePost a b) = object [ "PrePost" .= [a,b] ]
+labelToAaJson (AA.PrePost a b) = object [ "Pre" .= a, "Post" .= b ]
 labelToAaJson (AA.Metadata a) = object [ "Metadata" .= a ]
 
 bsToAaJson :: BoolStructLT -> Value

@@ -1,0 +1,1289 @@
+{
+  "nl4chi" : [
+    {
+        "Assessment": {
+            "All": {
+                "children": [
+                    {
+                        "Not": {
+                            "Leaf": "你 是 公 共 机 构 吗？"
+                        }
+                    },
+                    {
+                        "Leaf": "数 据 泄 露 发 生 了 在 2022 年 2 月 1 日 还 是 之 后 吗？"
+                    },
+                    {
+                        "Leaf": "你 意 识 到 数 据 泄 露 可 能 已 经 发 生 了 吗？"
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    },
+    {
+        "Notify Individuals / Notify PDPC": {
+            "All": {
+                "children": [
+                    {
+                        "All": {
+                            "children": [
+                                {
+                                    "Any": {
+                                        "children": [
+                                            {
+                                                "Any": {
+                                                    "children": [
+                                                        {
+                                                            "Leaf": "access 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "use 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "disclosure 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "copying 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "modification 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "disposal 吗？"
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Post": "",
+                                                        "Pre": "有 any unauthorised 的 吗"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "Any": {
+                                                    "children": [
+                                                        {
+                                                            "Leaf": "access 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "use 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "disclosure 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "copying 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "modification 吗？"
+                                                        },
+                                                        {
+                                                            "Leaf": "disposal 吗？"
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Post": "of the personal data is likely to occur",
+                                                        "Pre": "loss of storage medium on which personal data is stored in circumstances where the unauthorised"
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "label": {
+                                            "Pre": "any of:"
+                                        }
+                                    }
+                                },
+                                {
+                                    "Not": {
+                                        "Leaf": ""
+                                    }
+                                },
+                                {
+                                    "Any": {
+                                        "children": [
+                                            {
+                                                "All": {
+                                                    "children": [
+                                                        {
+                                                            "All": {
+                                                                "children": [
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "full name 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "alias 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "identification number 吗？"
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "the data breach relates to the individual's"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "1 The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "2 The income of the individual from the sale of any goods or property. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "3 The number of any credit card, charge card or debit card issued to or in the name of the individual. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "4 The number assigned to any account the individual has with any organisation that is a bank or finance company. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "5.a is or had been the subject of any investigation under the CYPA; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.b is or had been arrested, on or after 1 July 2020, for an offence committed under any written law; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.c is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.d is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.e is or was the subject of an order made by a court under the CYPA; or 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.f is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "5 Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "6.a the individual who has been or is the subject of any investigation, examination, assessment or treatment under the VAA relating to whether the individual is a vulnerable adult experiencing or at risk of abuse, neglect or self-neglect; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.b the individual as a vulnerable adult who has been committed to a place of temporary care and protection or place of safety or to the care of a fit person under the VAA; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.c the individual as a vulnerable adult who is the subject of an order made by a court under the VAA; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.d a place of temporary care and protection or place of safety in which an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is committed, or the location of such a place of temporary care and protection or place of safety; or 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.e a fit person under whose care an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is placed, or the location of the premises of such a fit person. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "6 Any information that identifies, or is likely to lead to the identification of — b"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "7.a to create a secure electronic record or secure electronic signature; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "7.b to verify the integrity of a secure electronic record; or 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "7.c to verify the authenticity or integrity of a secure electronic signature. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "7 Any private key of or relating to the individual that is used or may be used —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "8 The net worth of the individual. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "9 The deposit of moneys by the individual with any organisation. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "10 The withdrawal by the individual of moneys deposited with any organisation. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "11 The granting by an organisation of advances, loans and other facilities by which the individual, being a customer of the organisation, has access to funds or financial guarantees. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "12 The incurring by the organisation of any liabilities other than those mentioned in paragraph 11 on behalf of the individual. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "13 The payment of any moneys, or transfer of any property, by any person to the individual, including the amount of the moneys paid or the value of the property transferred, as the case may be. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "14 The creditworthiness of the individual. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "15 The individual’s investment in any capital markets products. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "16.a owed by the individual to an organisation; or 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "16.b owed by an organisation to the individual. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "16 The existence, and amount due or outstanding, of any debt —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "17.a the terms and conditions of any accident and health policy or life policy (called in this item the applicable policy) of which the individual is the policy owner or under which the individual is a beneficiary; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.b the premium payable by the policy owner under the applicable policy; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.c the benefits payable to any beneficiary under the applicable policy; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.d any information relating to any claim on, or payment under, the applicable policy, including the condition of the health of the individual and the diagnosis, treatment, prevention or alleviation of any ailment, condition, disability, disease, disorder or injury that the individual has suffered or is suffering from; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.e any other information that the individual is the policy owner of, or a beneficiary under, an applicable policy. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "17 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "18.a any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.b Human Immunodeficiency Virus Infection; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "mental illness; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.c schizophrenia or delusional disorder; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.d substance abuse and addiction, including drug addiction and alcoholism 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "18 The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "19.a the donation or receipt of a human egg or human sperm; or 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "19.b any contraceptive operation or procedure or abortion. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "19 The provision of treatment to the individual for or in respect of —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "20.a subject to section 4(4)(b) of the Act, the donation and removal of any organ from the body of the deceased individual for the purpose of its transplantation into the body of another individual; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "20.b the donation and removal of any specified organ from the individual, being a living organ donor, for the purpose of its transplantation into the body of another individual; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "20.c the transplantation of any organ mentioned in sub-paragraph (a) or (b) into the body of the individual. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "20 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "21 Subject to section 4(4)(b) of the Act, the suicide or attempted suicide of the individual. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "22 Domestic abuse, child abuse or sexual abuse involving or alleged to involve the individual. 吗？"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "23.a information that the individual is or had been adopted pursuant to an adoption order made under the Adoption of Children Act (Cap. 4), or is or had been the subject of an application for an adoption order; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.b the identity of the natural father or mother of the individual; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.c the identity of the adoptive father or mother of the individual; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.d the identity of any applicant for an adoption order; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.e the identity of any person whose consent is necessary under that Act for an adoption order to be made, whether or not the court has dispensed with the consent of that person in accordance with that Act; 吗？"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.f any other information that the individual is or had been an adopted child or relating to the adoption of the individual. 吗？"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "23 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "any of:"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "all of:"
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "All": {
+                                                                "children": [
+                                                                    {
+                                                                        "Not": {
+                                                                            "Leaf": "the organisation has taken any action to render it unlikely that the notifiable data breach will result in significant harm to the individual 吗？"
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "Not": {
+                                                                            "Leaf": "the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual 吗？"
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "all of:"
+                                                                }
+                                                            }
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Pre": "all of:"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "Leaf": "the number of affected individuals > the prescribed threshold of affected individuals 吗？"
+                                            }
+                                        ],
+                                        "label": {
+                                            "Pre": "any of:"
+                                        }
+                                    }
+                                }
+                            ],
+                            "label": {
+                                "Pre": "all of:"
+                            }
+                        }
+                    },
+                    {
+                        "Not": {
+                            "Leaf": "你 是 公 共 机 构 吗？"
+                        }
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    }
+],
+"nl4eng" : [
+    {
+        "Assessment": {
+            "All": {
+                "children": [
+                    {
+                        "Not": {
+                            "Leaf": "are you a public agency?"
+                        }
+                    },
+                    {
+                        "Leaf": "did the data breach occur on or after 1 Feb 2022?"
+                    },
+                    {
+                        "Leaf": "have you become aware that a data breach may have occurred?"
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    },
+    {
+        "Notify Individuals / Notify PDPC": {
+            "All": {
+                "children": [
+                    {
+                        "All": {
+                            "children": [
+                                {
+                                    "Any": {
+                                        "children": [
+                                            {
+                                                "Any": {
+                                                    "children": [
+                                                        {
+                                                            "Leaf": "access?"
+                                                        },
+                                                        {
+                                                            "Leaf": "use?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disclosure?"
+                                                        },
+                                                        {
+                                                            "Leaf": "copying?"
+                                                        },
+                                                        {
+                                                            "Leaf": "modification?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disposal?"
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Post": "of personal data",
+                                                        "Pre": "is there any unauthorised"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "Any": {
+                                                    "children": [
+                                                        {
+                                                            "Leaf": "access?"
+                                                        },
+                                                        {
+                                                            "Leaf": "use?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disclosure?"
+                                                        },
+                                                        {
+                                                            "Leaf": "copying?"
+                                                        },
+                                                        {
+                                                            "Leaf": "modification?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disposal?"
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Post": "Does the following hold: of the personal data is likely to occur",
+                                                        "Pre": "Does the following hold: loss of storage medium on which personal data is stored in circumstances where the unauthorised"
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "label": {
+                                            "Pre": "any of:"
+                                        }
+                                    }
+                                },
+                                {
+                                    "Not": {
+                                        "Leaf": "did the data breach occur only within an organisation?"
+                                    }
+                                },
+                                {
+                                    "Any": {
+                                        "children": [
+                                            {
+                                                "All": {
+                                                    "children": [
+                                                        {
+                                                            "All": {
+                                                                "children": [
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "full name?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "alias?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "identification number?"
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "Does the following hold: the data breach relates to the individual's"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "1 The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "2 The income of the individual from the sale of any goods or property.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "3 The number of any credit card, charge card or debit card issued to or in the name of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "4 The number assigned to any account the individual has with any organisation that is a bank or finance company.?"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "5.a is or had been the subject of any investigation under the CYPA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.b is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.c is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.d is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.e is or was the subject of an order made by a court under the CYPA; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.f is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 5 Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "6.a the individual who has been or is the subject of any investigation, examination, assessment or treatment under the VAA relating to whether the individual is a vulnerable adult experiencing or at risk of abuse, neglect or self-neglect;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.b the individual as a vulnerable adult who has been committed to a place of temporary care and protection or place of safety or to the care of a fit person under the VAA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.c the individual as a vulnerable adult who is the subject of an order made by a court under the VAA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.d a place of temporary care and protection or place of safety in which an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is committed, or the location of such a place of temporary care and protection or place of safety; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.e a fit person under whose care an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is placed, or the location of the premises of such a fit person.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 6 Any information that identifies, or is likely to lead to the identification of — b"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "7.a to create a secure electronic record or secure electronic signature;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "7.b to verify the integrity of a secure electronic record; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "7.c to verify the authenticity or integrity of a secure electronic signature.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 7 Any private key of or relating to the individual that is used or may be used —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "8 The net worth of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "9 The deposit of moneys by the individual with any organisation.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "10 The withdrawal by the individual of moneys deposited with any organisation.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "11 The granting by an organisation of advances, loans and other facilities by which the individual, being a customer of the organisation, has access to funds or financial guarantees.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "12 The incurring by the organisation of any liabilities other than those mentioned in paragraph 11 on behalf of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "13 The payment of any moneys, or transfer of any property, by any person to the individual, including the amount of the moneys paid or the value of the property transferred, as the case may be.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "14 The creditworthiness of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "15 The individual’s investment in any capital markets products.?"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "16.a owed by the individual to an organisation; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "16.b owed by an organisation to the individual.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 16 The existence, and amount due or outstanding, of any debt —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "17.a the terms and conditions of any accident and health policy or life policy (called in this item the applicable policy) of which the individual is the policy owner or under which the individual is a beneficiary;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.b the premium payable by the policy owner under the applicable policy;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.c the benefits payable to any beneficiary under the applicable policy;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.d any information relating to any claim on, or payment under, the applicable policy, including the condition of the health of the individual and the diagnosis, treatment, prevention or alleviation of any ailment, condition, disability, disease, disorder or injury that the individual has suffered or is suffering from;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.e any other information that the individual is the policy owner of, or a beneficiary under, an applicable policy.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 17 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "18.a any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.b Human Immunodeficiency Virus Infection;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "mental illness;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.c schizophrenia or delusional disorder;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.d substance abuse and addiction, including drug addiction and alcoholism?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 18 The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "19.a the donation or receipt of a human egg or human sperm; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "19.b any contraceptive operation or procedure or abortion.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 19 The provision of treatment to the individual for or in respect of —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "20.a subject to section 4(4)(b) of the Act, the donation and removal of any organ from the body of the deceased individual for the purpose of its transplantation into the body of another individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "20.b the donation and removal of any specified organ from the individual, being a living organ donor, for the purpose of its transplantation into the body of another individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "20.c the transplantation of any organ mentioned in sub-paragraph (a) or (b) into the body of the individual.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 20 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "21 Subject to section 4(4)(b) of the Act, the suicide or attempted suicide of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "22 Domestic abuse, child abuse or sexual abuse involving or alleged to involve the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "23.a information that the individual is or had been adopted pursuant to an adoption order made under the Adoption of Children Act (Cap. 4), or is or had been the subject of an application for an adoption order;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.b the identity of the natural father or mother of the individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.c the identity of the adoptive father or mother of the individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.d the identity of any applicant for an adoption order;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.e the identity of any person whose consent is necessary under that Act for an adoption order to be made, whether or not the court has dispensed with the consent of that person in accordance with that Act;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.f any other information that the individual is or had been an adopted child or relating to the adoption of the individual.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Does the following hold: 23 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "any of:"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "all of:"
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "All": {
+                                                                "children": [
+                                                                    {
+                                                                        "Not": {
+                                                                            "Leaf": "the organisation has taken any action to render it unlikely that the notifiable data breach will result in significant harm to the individual?"
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "Not": {
+                                                                            "Leaf": "the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual?"
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "all of:"
+                                                                }
+                                                            }
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Pre": "all of:"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "Leaf": "the number of affected individuals > the prescribed threshold of affected individuals?"
+                                            }
+                                        ],
+                                        "label": {
+                                            "Pre": "any of:"
+                                        }
+                                    }
+                                }
+                            ],
+                            "label": {
+                                "Pre": "all of:"
+                            }
+                        }
+                    },
+                    {
+                        "Not": {
+                            "Leaf": "are you a public agency?"
+                        }
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    }
+],
+"nl4may" : [
+    {
+        "Assessment": {
+            "All": {
+                "children": [
+                    {
+                        "Not": {
+                            "Leaf": "adakah kamu agensi awam?"
+                        }
+                    },
+                    {
+                        "Leaf": "adakah pelanggaran data berlaku pada atau selepas 1 Feb 2022?"
+                    },
+                    {
+                        "Leaf": "adakah kamu sudah pelanggaran data mungkin sudah berlaku menyedari?"
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    },
+    {
+        "Notify Individuals / Notify PDPC": {
+            "All": {
+                "children": [
+                    {
+                        "All": {
+                            "children": [
+                                {
+                                    "Any": {
+                                        "children": [
+                                            {
+                                                "Any": {
+                                                    "children": [
+                                                        {
+                                                            "Leaf": "access?"
+                                                        },
+                                                        {
+                                                            "Leaf": "use?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disclosure?"
+                                                        },
+                                                        {
+                                                            "Leaf": "copying?"
+                                                        },
+                                                        {
+                                                            "Leaf": "modification?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disposal?"
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Post": "",
+                                                        "Pre": "adakah any unauthorised ada"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "Any": {
+                                                    "children": [
+                                                        {
+                                                            "Leaf": "access?"
+                                                        },
+                                                        {
+                                                            "Leaf": "use?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disclosure?"
+                                                        },
+                                                        {
+                                                            "Leaf": "copying?"
+                                                        },
+                                                        {
+                                                            "Leaf": "modification?"
+                                                        },
+                                                        {
+                                                            "Leaf": "disposal?"
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Post": "Adakah perkara berikut berlaku: of the personal data is likely to occur",
+                                                        "Pre": "Adakah perkara berikut berlaku: loss of storage medium on which personal data is stored in circumstances where the unauthorised"
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "label": {
+                                            "Pre": "any of:"
+                                        }
+                                    }
+                                },
+                                {
+                                    "Not": {
+                                        "Leaf": "adakah pelanggaran data berlaku [AdAdv]?"
+                                    }
+                                },
+                                {
+                                    "Any": {
+                                        "children": [
+                                            {
+                                                "All": {
+                                                    "children": [
+                                                        {
+                                                            "All": {
+                                                                "children": [
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "full name?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "alias?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "identification number?"
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "Adakah perkara berikut berlaku: the data breach relates to the individual's"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "Any": {
+                                                                            "children": [
+                                                                                {
+                                                                                    "Leaf": "1 The amount of any wages, salary, fee, commission, bonus, gratuity, allowance or other remuneration paid or payable to the individual by any person, whether under a contract of service or a contract for services.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "2 The income of the individual from the sale of any goods or property.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "3 The number of any credit card, charge card or debit card issued to or in the name of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "4 The number assigned to any account the individual has with any organisation that is a bank or finance company.?"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "5.a is or had been the subject of any investigation under the CYPA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.b is or had been arrested, on or after 1 July 2020, for an offence committed under any written law;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.c is or had been taken into care or custody by the Director-General of Social Welfare, a protector, any officer generally or specially authorised in that behalf in writing by the Director-General or protector or a police officer under the CYPA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.d is attending or had attended a family programme in relation to an application to be made under section 50 of the CYPA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.e is or was the subject of an order made by a court under the CYPA; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "5.f is or had been concerned in any proceedings in any court or on appeal from any court, whether the individual is the person against or in respect of whom the proceedings are taken or a witness in those proceedings.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 5 Any information that identifies, or is likely to lead to the identification of, the individual as a child or young person who —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "6.a the individual who has been or is the subject of any investigation, examination, assessment or treatment under the VAA relating to whether the individual is a vulnerable adult experiencing or at risk of abuse, neglect or self-neglect;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.b the individual as a vulnerable adult who has been committed to a place of temporary care and protection or place of safety or to the care of a fit person under the VAA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.c the individual as a vulnerable adult who is the subject of an order made by a court under the VAA;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.d a place of temporary care and protection or place of safety in which an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is committed, or the location of such a place of temporary care and protection or place of safety; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "6.e a fit person under whose care an individual or a vulnerable adult mentioned in sub-paragraph (a), (b) or (c) is placed, or the location of the premises of such a fit person.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 6 Any information that identifies, or is likely to lead to the identification of — b"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "7.a to create a secure electronic record or secure electronic signature;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "7.b to verify the integrity of a secure electronic record; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "7.c to verify the authenticity or integrity of a secure electronic signature.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 7 Any private key of or relating to the individual that is used or may be used —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "8 The net worth of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "9 The deposit of moneys by the individual with any organisation.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "10 The withdrawal by the individual of moneys deposited with any organisation.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "11 The granting by an organisation of advances, loans and other facilities by which the individual, being a customer of the organisation, has access to funds or financial guarantees.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "12 The incurring by the organisation of any liabilities other than those mentioned in paragraph 11 on behalf of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "13 The payment of any moneys, or transfer of any property, by any person to the individual, including the amount of the moneys paid or the value of the property transferred, as the case may be.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "14 The creditworthiness of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "15 The individual’s investment in any capital markets products.?"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "16.a owed by the individual to an organisation; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "16.b owed by an organisation to the individual.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 16 The existence, and amount due or outstanding, of any debt —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "17.a the terms and conditions of any accident and health policy or life policy (called in this item the applicable policy) of which the individual is the policy owner or under which the individual is a beneficiary;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.b the premium payable by the policy owner under the applicable policy;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.c the benefits payable to any beneficiary under the applicable policy;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.d any information relating to any claim on, or payment under, the applicable policy, including the condition of the health of the individual and the diagnosis, treatment, prevention or alleviation of any ailment, condition, disability, disease, disorder or injury that the individual has suffered or is suffering from;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "17.e any other information that the individual is the policy owner of, or a beneficiary under, an applicable policy.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 17 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "18.a any sexually-transmitted disease such as Chlamydial Genital Infection, Gonorrhoea and Syphilis;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.b Human Immunodeficiency Virus Infection;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "mental illness;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.c schizophrenia or delusional disorder;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "18.d substance abuse and addiction, including drug addiction and alcoholism?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 18 The assessment, diagnosis, treatment, prevention or alleviation by a health professional of any of the following affecting the individual:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "19.a the donation or receipt of a human egg or human sperm; or?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "19.b any contraceptive operation or procedure or abortion.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 19 The provision of treatment to the individual for or in respect of —"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "20.a subject to section 4(4)(b) of the Act, the donation and removal of any organ from the body of the deceased individual for the purpose of its transplantation into the body of another individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "20.b the donation and removal of any specified organ from the individual, being a living organ donor, for the purpose of its transplantation into the body of another individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "20.c the transplantation of any organ mentioned in sub-paragraph (a) or (b) into the body of the individual.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 20 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "21 Subject to section 4(4)(b) of the Act, the suicide or attempted suicide of the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Leaf": "22 Domestic abuse, child abuse or sexual abuse involving or alleged to involve the individual.?"
+                                                                                },
+                                                                                {
+                                                                                    "Any": {
+                                                                                        "children": [
+                                                                                            {
+                                                                                                "Leaf": "23.a information that the individual is or had been adopted pursuant to an adoption order made under the Adoption of Children Act (Cap. 4), or is or had been the subject of an application for an adoption order;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.b the identity of the natural father or mother of the individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.c the identity of the adoptive father or mother of the individual;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.d the identity of any applicant for an adoption order;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.e the identity of any person whose consent is necessary under that Act for an adoption order to be made, whether or not the court has dispensed with the consent of that person in accordance with that Act;?"
+                                                                                            },
+                                                                                            {
+                                                                                                "Leaf": "23.f any other information that the individual is or had been an adopted child or relating to the adoption of the individual.?"
+                                                                                            }
+                                                                                        ],
+                                                                                        "label": {
+                                                                                            "Pre": "Adakah perkara berikut berlaku: 23 Any of the following:"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            ],
+                                                                            "label": {
+                                                                                "Pre": "any of:"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "all of:"
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "All": {
+                                                                "children": [
+                                                                    {
+                                                                        "Not": {
+                                                                            "Leaf": "the organisation has taken any action to render it unlikely that the notifiable data breach will result in significant harm to the individual?"
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "Not": {
+                                                                            "Leaf": "the organisation already implemented any technological measure to render it unlikely that the notifiable data breach will result in significant harm to the individual?"
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "label": {
+                                                                    "Pre": "all of:"
+                                                                }
+                                                            }
+                                                        }
+                                                    ],
+                                                    "label": {
+                                                        "Pre": "all of:"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "Leaf": "the number of affected individuals > the prescribed threshold of affected individuals?"
+                                            }
+                                        ],
+                                        "label": {
+                                            "Pre": "any of:"
+                                        }
+                                    }
+                                }
+                            ],
+                            "label": {
+                                "Pre": "all of:"
+                            }
+                        }
+                    },
+                    {
+                        "Not": {
+                            "Leaf": "adakah kamu agensi awam?"
+                        }
+                    }
+                ],
+                "label": {
+                    "Pre": "all of:"
+                }
+            }
+        }
+    }
+]
+}

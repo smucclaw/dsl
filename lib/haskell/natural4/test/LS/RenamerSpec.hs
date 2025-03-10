@@ -91,9 +91,6 @@ spec = do
         |]
     test'
       "fail-id-func-multi-wrong-arity-3"
-      -- This doesn't fail as it can be renamed to
-      -- `x g x`, which is strictly speaking legit. Perhaps,
-      -- if `x` is a function, this even makes sense?
       [i|
         GIVEN x
         DECIDE f x IS x x g

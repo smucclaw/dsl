@@ -126,6 +126,14 @@ basicTests = do
           y IS 5
       |]
   transpilerTest
+    "giveth-2"
+    [i|
+      GIVETH x
+      DECIDE x
+      WHERE
+        x IS 5
+      |]
+  transpilerTest
     "giveth-record"
     [i|
       GIVETH y

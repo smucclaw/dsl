@@ -367,15 +367,17 @@ relationalPredicateToSimala :: RnRelationalPredicate -> Transpiler SimalaTerm
 relationalPredicateToSimala = \case
   RnRelationalTerm lhs -> lhsMultiTermToSimala lhs
   RnConstraint lhs LS.RPis rhs -> case lhs of
-    (mtHead : args)
-      | Just (fnName, fnParams) <- isFunctionDeclaration mtHead args -> do
+    RnFunDecl fnName fnParams -> do
+      rhsExpr <- rhsMultiTermToSimala rhs
+      mkFunctionTerm (toSimalaName fnName) (fmap toSimalaName fnParams) (TermExpr rhsExpr)
+    RnProjection name selectors -> do
+      rhsExpr <- rhsMultiTermToSimala rhs
+      mkAssignmentTerm (toSimalaName name) (fmap toSimalaName selectors) rhsExpr
+    term@(RnExprName _)
+      | Just name <- isVariableName term -> do
           rhsExpr <- rhsMultiTermToSimala rhs
-          mkFunctionTerm (toSimalaName fnName) (fmap toSimalaName fnParams) (TermExpr rhsExpr)
-      | Just (var, selectors) <- isVariableOrProjection mtHead args -> do
-          rhsExpr <- rhsMultiTermToSimala rhs
-          mkAssignmentTerm (toSimalaName var) (fmap toSimalaName selectors) rhsExpr
-      | otherwise -> throwError $ UnsupportedMultiTerm lhs
-    [] -> throwError UnsupportedEmptyMultiTerm
+          mkVariableTerm (toSimalaName name) rhsExpr
+    term -> throwError $ UnsupportedExpression term
   RnConstraint lhs predicate rhs -> do
     lhsSimalaExpr' <- lhsMultiTermToSimala lhs
     lhsSimalaExpr <- toSimalaExpression lhsSimalaExpr'
@@ -451,26 +453,28 @@ fixedArity b arity params' = do
   params <- assertLength arity params'
   pure $ TermExpr $ Simala.Builtin b params
 
-lhsMultiTermToSimala :: RnMultiTerm -> Transpiler SimalaTerm
-lhsMultiTermToSimala [rnExpr] = case rnExpr of
+lhsMultiTermToSimala :: RnExpr -> Transpiler SimalaTerm
+lhsMultiTermToSimala rnExpr = case rnExpr of
   RnExprName name -> mkVariableTerm (toSimalaName name) Simala.Undefined
   RnExprBuiltin builtin -> pure $ TermExpr $ builtinToSimala builtin
   RnExprLit lit -> pure $ TermExpr $ litToSimala lit
-lhsMultiTermToSimala (mtHead : rest)
-  | Just (fnName, fnParams) <- isFunctionDeclaration mtHead rest =
-      mkFunctionHead (toSimalaName fnName) (fmap toSimalaName fnParams)
-  | Just (varName, selectors) <- isVariableOrProjection mtHead rest =
-      mkAssignmentTerm (toSimalaName varName) (fmap toSimalaName selectors) Simala.Undefined
-lhsMultiTermToSimala exprs = throwError $ UnsupportedLeftSide exprs
+  RnFunDecl fnName fnParams ->
+    mkFunctionHead (toSimalaName fnName) (fmap toSimalaName fnParams)
+  RnProjection varName selectors ->
+    mkAssignmentTerm (toSimalaName varName) (fmap toSimalaName selectors) Simala.Undefined
+  expr@RnFunApp{} -> throwError $ UnsupportedLeftSide expr
 
-rhsMultiTermToSimala :: RnMultiTerm -> Transpiler Simala.Expr
-rhsMultiTermToSimala [rnExpr] = pure $ exprToSimala rnExpr
-rhsMultiTermToSimala (mtHead : rest)
-  | Just _fnName <- isFunction mtHead = pure $ Simala.App (exprToSimala mtHead) $ fmap exprToSimala rest
-  | Just (varName, selectors) <- isVariableOrProjection mtHead rest = case selectors of
-      [] -> pure $ Simala.Var $ toSimalaName varName
-      (sel : ssel) -> pure $ applySelectors (toSimalaName varName) (fmap toSimalaName (sel :| ssel))
-rhsMultiTermToSimala exprs = throwError $ UnsupportedRightSide exprs
+rhsMultiTermToSimala :: RnExpr -> Transpiler Simala.Expr
+rhsMultiTermToSimala = \case
+  RnExprName name -> pure $ Simala.Var $ toSimalaName name
+  RnExprBuiltin builtin -> pure $ builtinToSimala builtin
+  RnExprLit lit -> pure $ litToSimala lit
+  RnFunApp fnName fnArgs -> do
+    args <- traverse rhsMultiTermToSimala fnArgs
+    pure $ Simala.App (Simala.Var $ toSimalaName fnName) args
+  RnProjection varName [] -> pure $ Simala.Var $ toSimalaName varName
+  RnProjection varName (sel : ssel) -> pure $ applySelectors (toSimalaName varName) (fmap toSimalaName (sel :| ssel))
+  expr@RnFunDecl{} -> throwError $ UnsupportedRightSide expr
 
 boolStructToSimala :: RnBoolStructR -> Transpiler Simala.Expr
 boolStructToSimala = \case
@@ -491,29 +495,8 @@ boolStructToSimala = \case
     toSimalaExpression simalaNot
 
 -- ----------------------------------------------------------------------------
--- Rule pattern recognition
--- ----------------------------------------------------------------------------
-
-isVariableOrProjection :: RnExpr -> [RnExpr] -> Maybe (RnName, [RnName])
-isVariableOrProjection name selectors = do
-  rnName <- isVariable name
-  rnSelectors <- traverse isSelector selectors
-  pure (rnName, rnSelectors)
-
-isFunctionDeclaration :: (Traversable t) => RnExpr -> t RnExpr -> Maybe (RnName, t RnName)
-isFunctionDeclaration mtHead args = do
-  fnName <- isFunction mtHead
-  argNames <- traverse isVariable args
-  pure (fnName, argNames)
-
--- ----------------------------------------------------------------------------
 -- Renamed Names utilities
 -- ----------------------------------------------------------------------------
-
-exprToSimala :: RnExpr -> Simala.Expr
-exprToSimala (RnExprName name) = Simala.Var $ toSimalaName name
-exprToSimala (RnExprBuiltin builtin) = builtinToSimala builtin
-exprToSimala (RnExprLit lit) = litToSimala lit
 
 litToSimala :: RnLit -> Simala.Expr
 litToSimala = \case
@@ -521,22 +504,6 @@ litToSimala = \case
   RnDouble _double -> error "Floating point numbers are unsupported in simala"
   RnBool boolean -> Simala.Lit $ Simala.BoolLit boolean
   RnString text -> Simala.Atom text
-
-isFunction :: RnExpr -> Maybe RnName
-isFunction expr = isExprOfType expr (RnFunction ==)
-
-isVariable :: RnExpr -> Maybe RnName
-isVariable expr = isExprOfType expr (RnVariable ==)
-
-isSelector :: RnExpr -> Maybe RnName
-isSelector expr = isExprOfType expr (RnSelector ==)
-
-isExprOfType :: RnExpr -> (RnNameType -> Bool) -> Maybe RnName
-isExprOfType (RnExprName name) hasTy
-  | hasTy name.rnNameType = Just name
-  | otherwise = Nothing
-isExprOfType (RnExprBuiltin _) _ = Nothing
-isExprOfType (RnExprLit _) _ = Nothing
 
 -- ----------------------------------------------------------------------------
 -- Name translations
@@ -606,7 +573,7 @@ assertNonEmpty :: [a] -> Transpiler (NonEmpty a)
 assertNonEmpty [] = throwAssertion UnexpectedEmptyList
 assertNonEmpty (x : xs) = pure $ x :| xs
 
-assertPredicateIsMultiTerm :: Text -> RnRelationalPredicate -> Transpiler RnMultiTerm
+assertPredicateIsMultiTerm :: Text -> RnRelationalPredicate -> Transpiler RnExpr
 assertPredicateIsMultiTerm _errMsg (RnRelationalTerm mt) = pure mt
 assertPredicateIsMultiTerm errMsg predicate =
   throwAssertion $ NotMultiTerm errMsg predicate
@@ -636,8 +603,8 @@ toSimalaExpression :: SimalaTerm -> Transpiler Simala.Expr
 toSimalaExpression = \case
   TermExpr expr -> pure expr
   TermAttribute name [] Simala.Undefined -> pure $ Simala.Var name
-  TermAttribute name (sel:ssels) Simala.Undefined -> pure $ applySelectors name (sel:|ssels)
-  t@TermAttribute{} -> throwError $ UnexpectedSimalaTerm "TermExpr or TermAttribute"  t
+  TermAttribute name (sel : ssels) Simala.Undefined -> pure $ applySelectors name (sel :| ssels)
+  t@TermAttribute{} -> throwError $ UnexpectedSimalaTerm "TermExpr or TermAttribute" t
   t@TermApp{} -> throwError $ UnexpectedSimalaTerm "TermExpr or TermAttribute" t
   t@TermFunction{} -> throwError $ UnexpectedSimalaTerm "TermExpr or TermAttribute" t
   t@TermLetIn{} -> throwError $ UnexpectedSimalaTerm "TermExpr or TermAttribute" t
@@ -778,11 +745,10 @@ mergeRecordUpdates rows = do
 data TranspilerError
   = TermToDeclUnsupported SimalaTerm
   | UnsupportedLocalTerm Text SimalaTerm
-  | UnsupportedMultiTerm RnMultiTerm
-  | UnsupportedEmptyMultiTerm
+  | UnsupportedExpression RnExpr
   | ImpossibleLeftSide SimalaTerm
-  | UnsupportedLeftSide RnMultiTerm
-  | UnsupportedRightSide RnMultiTerm
+  | UnsupportedLeftSide RnExpr
+  | UnsupportedRightSide RnExpr
   | UnexpectedSimalaTerm !Text SimalaTerm
   | NotImplemented Text
   | UnsupportedPredicate LS.RPRel
@@ -813,10 +779,8 @@ renderTranspilerError = \case
     "Cannot convert SimalaTerm to Decl: " <> tshow term
   UnsupportedLocalTerm herald term ->
     herald <> ": Unexpected local term: " <> tshow term
-  UnsupportedMultiTerm multiTerm ->
-    "Unsupported RnMultiTerms: " <> tshow multiTerm
-  UnsupportedEmptyMultiTerm ->
-    "Unexpected empty list of RnMultiTerms"
+  UnsupportedExpression multiTerm ->
+    "Unsupported RnExprs: " <> tshow multiTerm
   ImpossibleLeftSide term ->
     "The following SimalaTerm cannot occur on the left hand side of an assignment: " <> tshow term
   UnsupportedLeftSide multiTerm ->

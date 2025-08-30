@@ -1,21 +1,18 @@
 Right
     [ Hornlike
         ( RnHornlike
-            { name =
-                [ RnExprName
-                    ( RnName
-                        { rnOccName = MTT "f" :| []
-                        , rnUniqueId = 1
-                        , rnNameType = RnFunction
-                        }
-                    )
-                , RnExprName
-                    ( RnName
-                        { rnOccName = MTT "x" :| []
-                        , rnUniqueId = 0
-                        , rnNameType = RnVariable
-                        }
-                    )
+            { name = RnFunDecl
+                ( RnName
+                    { rnOccName = MTT "f" :| []
+                    , rnUniqueId = 1
+                    , rnNameType = RnFunction
+                    }
+                )
+                [ RnName
+                    { rnOccName = MTT "x" :| []
+                    , rnUniqueId = 0
+                    , rnNameType = RnVariable
+                    }
                 ]
             , super = Nothing
             , keyword = Decide
@@ -38,29 +35,28 @@ Right
             , clauses =
                 [ RnHornClause
                     { rnHcHead = RnConstraint
-                        [ RnExprName
+                        ( RnFunDecl
                             ( RnName
                                 { rnOccName = MTT "f" :| []
                                 , rnUniqueId = 1
                                 , rnNameType = RnFunction
                                 }
                             )
-                        , RnExprName
-                            ( RnName
+                            [ RnName
                                 { rnOccName = MTT "x" :| []
                                 , rnUniqueId = 0
                                 , rnNameType = RnVariable
                                 }
-                            )
-                        ] RPis
-                        [ RnExprName
+                            ]
+                        ) RPis
+                        ( RnExprName
                             ( RnName
                                 { rnOccName = MTT "y" :| []
                                 , rnUniqueId = 2
                                 , rnNameType = RnVariable
                                 }
                             )
-                        ]
+                        )
                     , rnHcBody = Nothing
                     }
                 ]
@@ -69,15 +65,13 @@ Right
             , wwhere =
                 [ Hornlike
                     ( RnHornlike
-                        { name =
-                            [ RnExprName
-                                ( RnName
-                                    { rnOccName = MTT "y" :| []
-                                    , rnUniqueId = 2
-                                    , rnNameType = RnVariable
-                                    }
-                                )
-                            ]
+                        { name = RnExprName
+                            ( RnName
+                                { rnOccName = MTT "y" :| []
+                                , rnUniqueId = 2
+                                , rnNameType = RnVariable
+                                }
+                            )
                         , super = Nothing
                         , keyword = Where
                         , given = Nothing
@@ -99,29 +93,30 @@ Right
                         , clauses =
                             [ RnHornClause
                                 { rnHcHead = RnConstraint
-                                    [ RnExprName
+                                    ( RnExprName
                                         ( RnName
                                             { rnOccName = MTT "y" :| []
                                             , rnUniqueId = 2
                                             , rnNameType = RnVariable
                                             }
                                         )
-                                    ] RPis
-                                    [ RnExprName
+                                    ) RPis
+                                    ( RnFunApp
                                         ( RnName
                                             { rnOccName = MTT "g" :| []
                                             , rnUniqueId = 4
                                             , rnNameType = RnFunction
                                             }
                                         )
-                                    , RnExprName
-                                        ( RnName
-                                            { rnOccName = MTT "x" :| []
-                                            , rnUniqueId = 0
-                                            , rnNameType = RnVariable
-                                            }
-                                        )
-                                    ]
+                                        [ RnExprName
+                                            ( RnName
+                                                { rnOccName = MTT "x" :| []
+                                                , rnUniqueId = 0
+                                                , rnNameType = RnVariable
+                                                }
+                                            )
+                                        ]
+                                    )
                                 , rnHcBody = Nothing
                                 }
                             ]
@@ -143,21 +138,18 @@ Right
                     )
                 , Hornlike
                     ( RnHornlike
-                        { name =
-                            [ RnExprName
-                                ( RnName
-                                    { rnOccName = MTT "g" :| []
-                                    , rnUniqueId = 4
-                                    , rnNameType = RnFunction
-                                    }
-                                )
-                            , RnExprName
-                                ( RnName
-                                    { rnOccName = MTT "d" :| []
-                                    , rnUniqueId = 3
-                                    , rnNameType = RnVariable
-                                    }
-                                )
+                        { name = RnFunDecl
+                            ( RnName
+                                { rnOccName = MTT "g" :| []
+                                , rnUniqueId = 4
+                                , rnNameType = RnFunction
+                                }
+                            )
+                            [ RnName
+                                { rnOccName = MTT "d" :| []
+                                , rnUniqueId = 3
+                                , rnNameType = RnVariable
+                                }
                             ]
                         , super = Nothing
                         , keyword = Where
@@ -180,29 +172,28 @@ Right
                         , clauses =
                             [ RnHornClause
                                 { rnHcHead = RnConstraint
-                                    [ RnExprName
+                                    ( RnFunDecl
                                         ( RnName
                                             { rnOccName = MTT "g" :| []
                                             , rnUniqueId = 4
                                             , rnNameType = RnFunction
                                             }
                                         )
-                                    , RnExprName
-                                        ( RnName
+                                        [ RnName
                                             { rnOccName = MTT "d" :| []
                                             , rnUniqueId = 3
                                             , rnNameType = RnVariable
                                             }
-                                        )
-                                    ] RPis
-                                    [ RnExprName
+                                        ]
+                                    ) RPis
+                                    ( RnExprName
                                         ( RnName
                                             { rnOccName = MTT "y" :| []
                                             , rnUniqueId = 2
                                             , rnNameType = RnVariable
                                             }
                                         )
-                                    ]
+                                    )
                                 , rnHcBody = Nothing
                                 }
                             ]
@@ -211,15 +202,13 @@ Right
                         , wwhere =
                             [ Hornlike
                                 ( RnHornlike
-                                    { name =
-                                        [ RnExprName
-                                            ( RnName
-                                                { rnOccName = MTT "y" :| []
-                                                , rnUniqueId = 2
-                                                , rnNameType = RnVariable
-                                                }
-                                            )
-                                        ]
+                                    { name = RnExprName
+                                        ( RnName
+                                            { rnOccName = MTT "y" :| []
+                                            , rnUniqueId = 2
+                                            , rnNameType = RnVariable
+                                            }
+                                        )
                                     , super = Nothing
                                     , keyword = Where
                                     , given = Nothing
@@ -229,33 +218,33 @@ Right
                                         [ RnHornClause
                                             { rnHcHead = RnNary RPis
                                                 [ RnRelationalTerm
-                                                    [ RnExprName
+                                                    ( RnExprName
                                                         ( RnName
                                                             { rnOccName = MTT "y" :| []
                                                             , rnUniqueId = 2
                                                             , rnNameType = RnVariable
                                                             }
                                                         )
-                                                    ]
+                                                    )
                                                 , RnNary RPsum
                                                     [ RnRelationalTerm
-                                                        [ RnExprName
+                                                        ( RnExprName
                                                             ( RnName
                                                                 { rnOccName = MTT "d" :| []
                                                                 , rnUniqueId = 3
                                                                 , rnNameType = RnVariable
                                                                 }
                                                             )
-                                                        ]
+                                                        )
                                                     , RnRelationalTerm
-                                                        [ RnExprName
+                                                        ( RnExprName
                                                             ( RnName
                                                                 { rnOccName = MTT "d" :| []
                                                                 , rnUniqueId = 3
                                                                 , rnNameType = RnVariable
                                                                 }
                                                             )
-                                                        ]
+                                                        )
                                                     ]
                                                 ]
                                             , rnHcBody = Nothing

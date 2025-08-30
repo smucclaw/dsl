@@ -19,7 +19,6 @@ module LS.Renamer.Rules (
   RnTypedMulti (..),
   RnParamText (..),
   RnRuleName,
-  RnMultiTerm,
   RnExpr (..),
   RnName (..),
   RnNameType (..),
@@ -28,14 +27,21 @@ module LS.Renamer.Rules (
   RnLit (..),
   RnRelationalPredicate (..),
   RnBoolStructR,
-  OccName,
   Unique,
+  OccName,
   mkSimpleOccName,
 
   -- * Builtins
   RnBuiltin (..),
   isL4BuiltIn,
   l4Builtins,
+
+  -- * Utilities
+  isFunctionName,
+  isVariableName,
+  isSelectorName,
+  isExprOfNameType,
+  isNameOrLitOrBuiltin,
 
   -- * Pretty functions for types that do not have a canonical 'Pretty' unique
   prettyMT,
@@ -80,7 +86,7 @@ data RnHornClause = RnHornClause
   }
   deriving (Eq, Ord, Show, Generic)
 
-type RnRuleName = RnMultiTerm
+type RnRuleName = RnExpr
 type RnEntityType = RnName
 
 data RnHornlike = RnHornlike
@@ -153,6 +159,9 @@ data RnExpr
   = RnExprName RnName
   | RnExprBuiltin RnBuiltin
   | RnExprLit RnLit
+  | RnFunDecl RnName [RnName]
+  | RnFunApp RnName [RnExpr]
+  | RnProjection RnName [RnName]
   deriving (Eq, Ord, Show, Generic)
 
 data RnLit
@@ -162,13 +171,11 @@ data RnLit
   | RnString Text
   deriving (Eq, Ord, Show, Generic)
 
-type RnMultiTerm = [RnExpr]
-
 data RnRelationalPredicate
   = -- | Might be something like a record access.
-    RnRelationalTerm RnMultiTerm
-  | RnConstraint RnMultiTerm LS.RPRel RnMultiTerm
-  | RnBoolStructR RnMultiTerm LS.RPRel RnBoolStructR
+    RnRelationalTerm RnExpr
+  | RnConstraint RnExpr LS.RPRel RnExpr
+  | RnBoolStructR RnExpr LS.RPRel RnBoolStructR
   | RnNary LS.RPRel [RnRelationalPredicate]
   deriving (Eq, Ord, Show, Generic)
 
@@ -200,6 +207,32 @@ l4Builtins =
 
 oTHERWISE :: OccName
 oTHERWISE = mkSimpleOccName "OTHERWISE"
+
+-- ----------------------------------------------------------------------------
+-- Renamer utilities
+-- ----------------------------------------------------------------------------
+
+isFunctionName :: RnExpr -> Maybe RnName
+isFunctionName expr = isExprOfNameType expr (RnFunction ==)
+
+isVariableName :: RnExpr -> Maybe RnName
+isVariableName expr = isExprOfNameType expr (RnVariable ==)
+
+isSelectorName :: RnExpr -> Maybe RnName
+isSelectorName expr = isExprOfNameType expr (RnSelector ==)
+
+isExprOfNameType :: RnExpr -> (RnNameType -> Bool) -> Maybe RnName
+isExprOfNameType (RnExprName name) hasTy
+  | hasTy name.rnNameType = Just name
+  | otherwise = Nothing
+isExprOfNameType _ _ = Nothing
+
+isNameOrLitOrBuiltin :: RnExpr -> Maybe RnExpr
+isNameOrLitOrBuiltin = \case
+  rn@RnExprName{} -> Just rn
+  rn@RnExprBuiltin{} -> Just rn
+  rn@RnExprLit{} -> Just rn
+  _ -> Nothing
 
 -- ----------------------------------------------------------------------------
 -- Pretty instances

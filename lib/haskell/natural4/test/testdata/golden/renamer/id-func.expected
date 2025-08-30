@@ -1,21 +1,18 @@
 Right
     [ Hornlike
         ( RnHornlike
-            { name =
-                [ RnExprName
-                    ( RnName
-                        { rnOccName = MTT "id" :| []
-                        , rnUniqueId = 1
-                        , rnNameType = RnFunction
-                        }
-                    )
-                , RnExprName
-                    ( RnName
-                        { rnOccName = MTT "x" :| []
-                        , rnUniqueId = 0
-                        , rnNameType = RnVariable
-                        }
-                    )
+            { name = RnFunDecl
+                ( RnName
+                    { rnOccName = MTT "id" :| []
+                    , rnUniqueId = 1
+                    , rnNameType = RnFunction
+                    }
+                )
+                [ RnName
+                    { rnOccName = MTT "x" :| []
+                    , rnUniqueId = 0
+                    , rnNameType = RnVariable
+                    }
                 ]
             , super = Nothing
             , keyword = Decide
@@ -38,29 +35,28 @@ Right
             , clauses =
                 [ RnHornClause
                     { rnHcHead = RnConstraint
-                        [ RnExprName
+                        ( RnFunDecl
                             ( RnName
                                 { rnOccName = MTT "id" :| []
                                 , rnUniqueId = 1
                                 , rnNameType = RnFunction
                                 }
                             )
-                        , RnExprName
+                            [ RnName
+                                { rnOccName = MTT "x" :| []
+                                , rnUniqueId = 0
+                                , rnNameType = RnVariable
+                                }
+                            ]
+                        ) RPis
+                        ( RnExprName
                             ( RnName
                                 { rnOccName = MTT "x" :| []
                                 , rnUniqueId = 0
                                 , rnNameType = RnVariable
                                 }
                             )
-                        ] RPis
-                        [ RnExprName
-                            ( RnName
-                                { rnOccName = MTT "x" :| []
-                                , rnUniqueId = 0
-                                , rnNameType = RnVariable
-                                }
-                            )
-                        ]
+                        )
                     , rnHcBody = Nothing
                     }
                 ]
